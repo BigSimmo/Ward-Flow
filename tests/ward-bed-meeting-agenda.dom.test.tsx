@@ -7,6 +7,8 @@ import type { WardCommandOutcome } from "@/components/ward-management/ward-share
 import { BedMeetingAgendaScreen } from "@/components/ward-management/bed-meeting/bed-meeting-agenda-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { SERVICE_SCOPE_STORAGE_KEY } from "@/components/ward-management/shell/ward-service-store";
+import { MEETING_STEPS } from "@/components/ward-management/bed-meeting/bed-meeting-run";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const submitted = vi.hoisted(() => ({
@@ -57,6 +59,29 @@ vi.mock("@/components/ward-management/shell/ward-access-store", async (importOri
 });
 
 describe("bed meeting agenda", () => {
+  it("runs a meeting service by service and ends on a summary (six features build)", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <BedMeetingAgendaScreen />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("bed-meeting-run-start"));
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Meeting");
+    expect(screen.queryByTestId("bed-meeting-run-start")).not.toBeInTheDocument();
+    for (let step = 0; step < 5; step += 1) fireEvent.click(screen.getByTestId("bed-meeting-run-next"));
+    fireEvent.click(screen.getByTestId("bed-meeting-run-finish"));
+    expect(screen.getByTestId("bed-meeting-run-summary")).toHaveTextContent(
+      "No actions were recorded in this meeting.",
+    );
+    // Back to the meeting returns to the last step with its service scope, not statewide.
+    fireEvent.click(screen.getByRole("button", { name: "Back to the meeting" }));
+    expect(window.sessionStorage.getItem(SERVICE_SCOPE_STORAGE_KEY)).toBe(MEETING_STEPS[MEETING_STEPS.length - 1]);
+    fireEvent.click(screen.getByTestId("bed-meeting-run-finish"));
+    fireEvent.click(screen.getByRole("button", { name: "Close meeting" }));
+    expect(screen.queryByTestId("bed-meeting-run-summary")).not.toBeInTheDocument();
+    expect(screen.getByTestId("bed-meeting-run-start")).toBeInTheDocument();
+  });
+
   it("retains a refused action draft and closes only after the retry is accepted", async () => {
     let finish!: (outcome: WardCommandOutcome) => void;
     const send = vi.fn(

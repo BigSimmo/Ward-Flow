@@ -1,6 +1,6 @@
 import { placeDisplayName } from "@/components/ward-management/ward-place-names";
 import type { WardConfiguration } from "@/components/ward-management/ward-configuration";
-import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
+import { bedIsOccupied, type Admission, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { decisionTargetReading } from "@/components/ward-management/ward-decision-targets";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -151,7 +151,7 @@ export function plannedRows(input: PlannedInput): PlannedRow[] {
 
   for (const booking of plannedAdmissions) {
     if (booking.state !== "booked" || !today(booking.expectedArrivalAt)) continue;
-    // The resolver reads the booking's own link (D-14 keeps that read in one place).
+    // The resolver reads the booking's own link (archived D-14 keeps that read in one place).
     const info = nameOf(booking);
     rows.push({
       id: `admission:${booking.id}`,
@@ -164,4 +164,67 @@ export function plannedRows(input: PlannedInput): PlannedRow[] {
   }
 
   return rows.map((row) => ({ ...row, later: row.at > until })).sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
+}
+
+/**
+ * Tomorrow on Home (six features build, Josh 9 Nov 2026): the expected discharges and planned
+ * admissions wards have already recorded for tomorrow (the Perth calendar day after `now`). Nothing
+ * is predicted or scored: a discharge counts only because its ward recorded that expected date.
+ */
+export type TomorrowOutlook = {
+  /** Start of tomorrow. */
+  dayStart: Instant;
+  discharges: PlannedRow[];
+  /** Of the discharges, how many the ward has confirmed. */
+  confirmed: number;
+  admissions: PlannedRow[];
+};
+
+export function tomorrowOutlook(
+  input: Pick<PlannedInput, "admissions" | "plannedAdmissions" | "units" | "nameOf"> & { endOfDay: Instant },
+): TomorrowOutlook {
+  const { admissions, plannedAdmissions, units, nameOf, endOfDay } = input;
+  const dayEnd = endOfDay + 24 * 60;
+  const tomorrow = (at: Instant | null | undefined): at is Instant =>
+    at !== undefined && at !== null && at >= endOfDay && at < dayEnd;
+  const unitName = new Map(units.map((unit) => [unit.id, unit.name]));
+  const ward = (unitId: string) => unitName.get(unitId) ?? placeDisplayName(unitId);
+  const who = (info: ResolvedPatientInfo) => ({
+    who: info.formalName,
+    ...(info.patient ? { recordId: info.patient.id } : {}),
+  });
+  const byTime = (a: PlannedRow, b: PlannedRow) => a.at - b.at || a.id.localeCompare(b.id);
+
+  let confirmed = 0;
+  const discharges: PlannedRow[] = [];
+  for (const admission of admissions) {
+    if (!bedIsOccupied(admission) || !tomorrow(admission.expectedDischargeAt)) continue;
+    if (admission.dischargeConfirmedAt !== null) confirmed += 1;
+    discharges.push({
+      id: `tomorrow-discharge:${admission.id}`,
+      at: admission.expectedDischargeAt,
+      kind: "discharge",
+      what: admission.dischargeConfirmedAt !== null ? "Discharge, confirmed" : "Expected discharge, not yet confirmed",
+      ...who(nameOf(admission)),
+      where: ward(admission.unitId),
+      later: true,
+    });
+  }
+
+  const booked: PlannedRow[] = [];
+  for (const booking of plannedAdmissions) {
+    if (booking.state !== "booked" || !tomorrow(booking.expectedArrivalAt)) continue;
+    const info = nameOf(booking);
+    booked.push({
+      id: `tomorrow-admission:${booking.id}`,
+      at: booking.expectedArrivalAt,
+      kind: "admission",
+      what: "Planned admission, expected arrival",
+      ...(info.patient ? who(info) : { who: booking.initials ? `Initials ${booking.initials}` : "Name not recorded" }),
+      where: ward(booking.unitId),
+      later: true,
+    });
+  }
+
+  return { dayStart: endOfDay, discharges: discharges.sort(byTime), confirmed, admissions: booked.sort(byTime) };
 }

@@ -31,7 +31,7 @@ export type WardRoleNextStep = {
  *
  * ⚠️ **EVERY DESTINATION IN THAT DRAWER IS THAT ROLE'S OWN HOME, NEVER THE REFERRAL YOU WERE JUST LOOKING
  * AT — AND THAT IS FORCED, NOT A SIMPLIFICATION.** Ward Flow navigation-shell plan
- * (`docs/superpowers/plans/2026-09-04-ward-flow-navigation-shell.md`, Decision 2). `ward-referral-
+ * (`docs/history/superpowers/plans/2026-09-04-ward-flow-navigation-shell.md`, Decision 2). `ward-referral-
  * visibility.ts` (FD-23) states this as an ARCHITECTURE, not a rule a component could relax: the
  * two projections are two TYPES, `WardScopedReferral` has no `destinations` field at all, nothing
  * converts one into the other, and no function there takes a role, a scope or a viewer argument.

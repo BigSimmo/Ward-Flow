@@ -88,7 +88,7 @@ const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent fi
  * inconvenient.**
  *
  * **So ruling ② — a coordinator sees who the patient is wherever they are SELECTING or ACTING ON
- * that person — wins over D-14's default-deny ON THIS SCREEN, and on no other by implication.**
+ * that person — wins over archived D-14's default-deny ON THIS SCREEN, and on no other by implication.**
  *
  * ⚠️ **THE GRANULARITY IS THE BOUND THAT KEEPS THIS COMPATIBLE WITH FD-23:** one movement's OWN
  * linked referral and the person it names. **Never a list of a person's referrals, never where else

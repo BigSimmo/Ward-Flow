@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 /**
- * D-16's catcher (`docs/ward-flow/owner-decisions-2026-09-1x.md`, `BRIEF-primary-action-seam.md`):
+ * Archived D-16's catcher (`docs/history/archive/dated-notes/owner-decisions-2026-09-1x.md`, `BRIEF-primary-action-seam.md`):
  * `WardBar`'s `primaryAction` prop is `ward-nav.ts`'s five-kind `WardPrimaryAction` union, not the
  * old `{ id, label, href }` shape — this file proves what each kind renders, that `"none"` and an
  * absent action both render nothing, and — the assertion the brief names as the one a reviewer
@@ -64,7 +64,7 @@ afterEach(() => {
   discardReferralDraft();
 });
 
-describe("WardBar primary action — the five kinds, D-16", () => {
+describe("WardBar primary action — the five kinds, archived D-16", () => {
   it('renders no button at all for kind "none"', () => {
     renderBar({ kind: "none" });
     expect(screen.queryByTestId("ward-bar-primary-action")).toBeNull();
@@ -128,7 +128,7 @@ describe("WardBar primary action — the five kinds, D-16", () => {
       const control = screen.getByTestId("ward-bar-primary-action");
       expect(control.tagName).toBe("BUTTON");
       expect(control).toHaveTextContent(label);
-      // Not disabled, not greyed out — D-16 is explicit this is the opposite of D-13's rejected
+      // Not disabled, not greyed out — archived D-16 is explicit this is the opposite of archived D-13's rejected
       // disabled-control shape: the control WORKS and answers on the first press.
       expect(control).not.toBeDisabled();
 
@@ -162,7 +162,7 @@ describe("WardBar primary action — the five kinds, D-16", () => {
   });
 });
 
-describe("WardBarMount — the layout-level route resolution, D-16", () => {
+describe("WardBarMount — the layout-level route resolution, archived D-16", () => {
   it("resolves the coordinator home route to the New menu (Triage or Referral)", () => {
     route.pathname = "/ward-flow";
     render(

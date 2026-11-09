@@ -1,0 +1,103 @@
+/* Run meeting (six features build, 9 Nov 2026): the summary at the end of a meeting. */
+.figure {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+.summaryActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+.spacer {
+  flex: 1;
+}
+.summary {
+  scroll-margin-top: 96px;
+}
+.group + .group {
+  margin-top: var(--wf-s-4);
+}
+.groupTitle {
+  margin: 0 0 6px;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--wf-fs-14);
+}
+.table th {
+  padding: 6px 8px 6px 0;
+  border-bottom: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+  text-align: left;
+}
+.table td {
+  padding: 8px 8px 8px 0;
+  border-bottom: 1px solid var(--wf-line);
+  vertical-align: top;
+  color: var(--wf-ink-1);
+}
+.right {
+  text-align: right !important;
+  padding-right: 0 !important;
+  white-space: nowrap;
+}
+.person {
+  font-weight: 600;
+}
+.doneTag {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--wf-surface-2);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+.empty {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-14);
+}
+.printMark {
+  display: none;
+}
+.summaryActions {
+  margin-top: var(--wf-s-4);
+}
+@media print {
+  .summaryActions {
+    display: none !important;
+  }
+  .printMark {
+    display: block;
+    margin-top: 12px;
+    font-size: 11px;
+  }
+}
+/* While the summary is open, paper carries the summary alone. */
+@media print {
+  .summaryPage > :not(.summary) {
+    display: none !important;
+  }
+}
+/* Every service's table lines up with the next. */
+.table {
+  table-layout: fixed;
+}
+.table th:nth-child(1) {
+  width: 32%;
+}
+.table th:nth-child(2) {
+  width: 32%;
+}
+.table th:nth-child(4) {
+  width: 14%;
+}

@@ -86,7 +86,7 @@ The shell now presents recovery messages through `shell/ward-recovery-notice.tsx
 
 The text-size guard now also inventories parsed font-size and font shorthand declarations through `scripts/ward-flow/font-size-inventory.mjs`, with an independent baseline and explicit unresolved-size reporting. Historical token-string ratchets remain in place.
 
-Read the [implementation and evidence record](../../superpowers/plans/2026-10-17-design-audit-resolution.md) for per-item audit dispositions and verification limits.
+Read the [implementation and evidence record](../../history/superpowers/plans/2026-10-17-design-audit-resolution.md) for per-item audit dispositions and verification limits.
 
 ## Feature flags, bed meeting TV and demo reset — 15 October 2026
 
@@ -140,7 +140,7 @@ The detailed map below retains its earlier line numbers and baseline counts; thi
 
 ## WA pathway audit update — 3 October 2026
 
-The dynamic ward page awaits `searchParams` and passes a fixed departure-planning boolean into `WardScreen`. Governance renders the new follow-up audit action with before/requested/after arrangement states. `discharges/discharge-follow-up.tsx` edits attributed arrangements through the protected command and shows the actual projected record or a refused-request message. “Plan departure” selects a ward and links to its real Decisions form. See the WA report (archived; see [ARCHIVE.md](../../ARCHIVE.md)).
+The dynamic ward page awaits `searchParams` and passes a fixed departure-planning boolean into `WardScreen`. Governance renders the new follow-up audit action with before/requested/after arrangement states. `discharges/discharge-follow-up.tsx` edits attributed arrangements through the protected command and shows the actual projected record or a refused-request message. “Plan departure” selects a ward and links to its real Decisions form. See the WA report (archived; see [the history index](../../history/README.md#deleted-files-kept-in-git-history)).
 
 ## Historical census — 25 September 2026
 

@@ -1,6 +1,6 @@
 // tests/ward-shell.dom.test.tsx
 //
-// Tasks 1 and 2 of docs/superpowers/plans/2026-09-04-ward-flow-navigation-shell.md, combined
+// Tasks 1 and 2 of docs/history/superpowers/plans/2026-09-04-ward-flow-navigation-shell.md, combined
 // into one file per the implementer brief (the two tasks share `ward-shell.tsx` and
 // `ward-shell.module.css`, so their assertions are kept together rather than split across the
 // two files the plan names — `tests/ward-shell-ground.test.ts` and

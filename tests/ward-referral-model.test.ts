@@ -1172,7 +1172,7 @@ describe("Referral privacy — structural", () => {
     // sentence carried it wrongly in all three of its copies)
     // exactly as before.
     //
-    // AND IT IS NOT A REFERRER. `referral-referrer.ts` answers WHO, a person, and D-12 forbids an
+    // AND IT IS NOT A REFERRER. `referral-referrer.ts` answers WHO, a person, and archived D-12 forbids an
     // organisation standing in a field labelled as one. A service is not a human being;
     // `tests/ward-referral-sending-team.test.ts` fails if `referralReferrerName` starts reading it.
     "sendingTeamName",

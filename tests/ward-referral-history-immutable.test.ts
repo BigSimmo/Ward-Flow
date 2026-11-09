@@ -1,6 +1,6 @@
 // tests/ward-referral-history-immutable.test.ts
 //
-// RB7 — correction notes (build plan item 27, docs/ward-flow/plans/2026-09-17-build-plan-referrals-transport.md).
+// RB7 — correction notes (build plan item 27, docs/history/plans-2026-09/2026-09-17-build-plan-referrals-transport.md).
 // `ADD_REFERRAL_CORRECTION` appends a new, attributed, timestamped note to `Referral.corrections`
 // and must NEVER rewrite `Referral.history` — the referral's own point-in-time written account
 // (`ward-model.ts`'s own doc comment on `history`: "STORED BYTE FOR BYTE... nothing may ever be

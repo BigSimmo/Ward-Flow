@@ -1,6 +1,6 @@
 // tests/ward-notices.test.ts
 //
-// Communication addendum (docs/ward-flow/plans/2026-09-1x-communication-addendum.md), §2 — the
+// Communication addendum (docs/history/plans-2026-09/2026-09-1x-communication-addendum.md), §2 — the
 // catcher for the model and reducer half of "the system can compute what a coordinator should do
 // next, and it cannot tell anybody anything." Seven assertions, named in the addendum's own order:
 //
@@ -251,7 +251,7 @@ describe("assertion 1 — each decision in §1.3's table raises the notice(s) it
   });
 
   /**
-   * STILL-04 / R3 (`docs/ward-flow/plans/2026-09-16-fix-plan-referral-model.md`). The ward-side
+   * STILL-04 / R3 (`docs/history/plans-2026-09/2026-09-16-fix-plan-referral-model.md`). The ward-side
    * notice used to read "… is now expected to receive the patient from referral …", which promises
    * a movement ACCEPT_REFERRAL never creates — spec D14 is explicit that acceptance decides only
    * that the network takes this referral. A ward reading that sentence could reasonably start
@@ -801,7 +801,7 @@ describe("Important 4 — the ed_medical-only referrer scope is visible to a tes
   });
 });
 
-// ── Item 48, Q3 (docs/ward-flow/plans/2026-09-17-build-plan-referrals-transport.md) — two more
+// ── Item 48, Q3 (docs/history/plans-2026-09/2026-09-17-build-plan-referrals-transport.md) — two more
 // decisions join the addendum's table: WITHDRAW_ACCEPTANCE tells the ward whose acceptance was
 // withdrawn, and RECORD_EXAMINATION tells the accepting ward when the outcome is `"revoked"`, in
 // the wording its own branch names (bed still held, or bed already released). Neither is tested

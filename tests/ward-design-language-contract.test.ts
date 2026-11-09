@@ -1,6 +1,6 @@
 // tests/ward-design-language-contract.test.ts
 //
-// Task 5 of docs/superpowers/plans/2026-09-04-ward-flow-design-foundation.md — the contract test
+// Task 5 of docs/history/superpowers/plans/2026-09-04-ward-flow-design-foundation.md — the contract test
 // that pins the Ward Flow design language so the other twelve routes cannot drift.
 //
 // ⚠️ THIS GATE COMPARES AGAINST THE CANONICAL DECLARATION, NEVER AGAINST WHAT A ROUTE ALREADY

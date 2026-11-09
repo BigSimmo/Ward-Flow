@@ -14,3 +14,7 @@ to 600.2 KB (599.7), `/ward-flow/movements/WF-001` 593.0 to 595.0 KB (594.5), `/
 573.0 to 573.9 KB (573.4) and `/ward-flow/statistics` 613.0 to 613.9 KB (613.4). The extra comes from
 this PR's shared shell code sitting alongside #1562's new shell pieces. Each total raise over main's
 numbers stays under 2.1 KB, inside the 5 KB a PR may add per screen.
+
+## After merging main 1b362e9 (9 Nov 2026, 19:50 UTC)
+
+Main had since raised movement, bed meeting and statistics (#1582) and taken #1560. This PR keeps its own limits above. A local build of the merged branch measured ED 521.3, secure ward 599.9, movement 594.7, bed meeting 573.6 and statistics 613.6 KB, all inside them. Hosted CI is the deciding measurement.

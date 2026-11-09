@@ -10,10 +10,17 @@ import { edHref } from "@/components/ward-management/shell/ward-facade";
 import { targetText } from "@/components/ward-management/forecast/ed-access-risk";
 import { forecastEdName, useForecastModel } from "@/components/ward-management/forecast/use-forecast-model";
 import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstant,
+  formatInstantWithDay,
+  perthDayLabel,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import styles from "./home-activity.module.css";
 import type { PlannedKind, PlannedRow } from "./planned-model";
+import { useTomorrowOutlook } from "./planned-rows";
 
 /** Long lists show this many first, then Show more. */
 const FIRST_ROWS = 8;
@@ -59,23 +66,7 @@ export function PlannedList({
               {row.later && !shown[index - 1]?.later ? (
                 <li className={styles.afterShift}>After your shift · later today</li>
               ) : null}
-              <li className={styles.twoLine} data-kind={row.kind}>
-                <StatusGlyph tone={KIND_TONE[row.kind]} size={9} className={styles.rowGlyph} />
-                <span className={styles.rowWho}>
-                  {row.recordId ? (
-                    <Link href={patientHref(row.recordId)} className={styles.personLink}>
-                      {row.who}
-                    </Link>
-                  ) : (
-                    <b>{row.who}</b>
-                  )}
-                </span>
-                <time className={styles.rowTimeStrong}>{formatInstantWithDay(row.at, now)}</time>
-                <span className={styles.rowWhat}>
-                  {row.kind === "target" ? <SrOnly>Your target, not a clinical standard: </SrOnly> : null}
-                  <span className={styles.rowKind}>{row.what}</span> · <SpelledCodes text={row.where} />
-                </span>
-              </li>
+              <PlannedRowItem row={row} now={now} />
             </Fragment>
           ))}
         </ol>
@@ -92,6 +83,7 @@ export function PlannedList({
           </button>
         </div>
       ) : null}
+      <TomorrowFoot now={now} />
     </Card>
   );
 }
@@ -123,5 +115,85 @@ function AccessForecastRow({ now }: { now: Instant }) {
         </Link>
       </span>
     </div>
+  );
+}
+
+function PlannedRowItem({ row, now }: { row: PlannedRow; now: Instant }) {
+  return (
+    <li className={styles.twoLine} data-kind={row.kind}>
+      <StatusGlyph tone={KIND_TONE[row.kind]} size={9} className={styles.rowGlyph} />
+      <span className={styles.rowWho}>
+        {row.recordId ? (
+          <Link href={patientHref(row.recordId)} className={styles.personLink}>
+            {row.who}
+          </Link>
+        ) : (
+          <b>{row.who}</b>
+        )}
+      </span>
+      <time className={styles.rowTimeStrong}>{formatInstantWithDay(row.at, now)}</time>
+      <span className={styles.rowWhat}>
+        {row.kind === "target" ? <SrOnly>Your target, not a clinical standard: </SrOnly> : null}
+        <span className={styles.rowKind}>{row.what}</span> · <SpelledCodes text={row.where} />
+      </span>
+    </li>
+  );
+}
+
+const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
+
+/**
+ * Tomorrow (six features build, Josh 9 Nov 2026): one summary line of what wards have recorded for
+ * tomorrow, with the people one tap away. Counts only recorded expected dates; nothing is predicted.
+ */
+function TomorrowFoot({ now }: { now: Instant }) {
+  const { dayStart, discharges, confirmed, admissions } = useTomorrowOutlook(now);
+  const [open, setOpen] = useState(false);
+  const rows = [...discharges, ...admissions].sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
+  const { dayZero } = useWardFlowSelect("dayZero");
+  const day = dayZero ? ` · ${perthDayLabel(dayStart, dayZero)}` : "";
+  return (
+    <section className={styles.tomorrow} aria-labelledby="home-tomorrow-title" data-testid="home-tomorrow">
+      <h3 id="home-tomorrow-title" className={styles.afterShift}>
+        Tomorrow{day}
+      </h3>
+      {rows.length === 0 ? (
+        <p className={styles.tomorrowEmpty}>No expected discharges or planned admissions recorded for tomorrow.</p>
+      ) : (
+        <button
+          type="button"
+          className={styles.tomorrowSummary}
+          aria-expanded={open}
+          aria-controls={open ? "home-tomorrow-list" : undefined}
+          onClick={() => setOpen((value) => !value)}
+          data-testid="home-tomorrow-summary"
+        >
+          <span className={styles.tomorrowFigures}>
+            <span>
+              <b className={styles.tomorrowNumber}>{discharges.length}</b>{" "}
+              {discharges.length === 1 ? "expected discharge" : "expected discharges"}
+              {discharges.length > 0 ? <span className={styles.tomorrowNote}> · {confirmed} confirmed</span> : null}
+            </span>
+            <span>
+              <b className={styles.tomorrowNumber}>{admissions.length}</b>{" "}
+              {admissions.length === 1 ? "planned admission" : "planned admissions"}
+            </span>
+          </span>
+          <span className={styles.tomorrowToggle}>{open ? "Hide" : "Show who"}</span>
+        </button>
+      )}
+      {open && rows.length > 0 ? (
+        <ol
+          id="home-tomorrow-list"
+          className={styles.plainList}
+          aria-label={`Recorded for tomorrow: ${plural(rows.length, "person", "people")}`}
+        >
+          {rows.map((row) => (
+            <PlannedRowItem key={row.id} row={row} now={now} />
+          ))}
+        </ol>
+      ) : null}
+      <p className={styles.tomorrowSource}>From expected dates wards have recorded. Not a prediction.</p>
+    </section>
   );
 }
