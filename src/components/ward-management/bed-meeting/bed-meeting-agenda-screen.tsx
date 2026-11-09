@@ -68,6 +68,7 @@ import { AgendaReferralsCopy, agendaReferralsText } from "./agenda-referrals-cop
 import {
   actionsRecordedSince,
   MEETING_STEPS,
+  MEETING_SUMMARY_PAGE_CLASS,
   MeetingRunControls,
   MeetingSummary,
   useMeetingRun,
@@ -377,9 +378,8 @@ function BedMeetingAgenda() {
   return (
     <main
       id="main-content"
-      className={styles.main}
+      className={run?.finished ? `${styles.main} ${MEETING_SUMMARY_PAGE_CLASS}` : styles.main}
       data-testid="bed-meeting-agenda"
-      data-meeting-summary={run?.finished ? "true" : undefined}
     >
       <Hero
         level={1}

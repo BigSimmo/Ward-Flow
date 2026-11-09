@@ -76,6 +76,9 @@ export function useMeetingRun(): [MeetingRun | null, (next: MeetingRun | null) =
 
 export const MEETING_STEPS: readonly HealthService[] = HEALTH_SERVICES;
 
+/** Put on the page while the summary is open, so print carries the summary alone. */
+export const MEETING_SUMMARY_PAGE_CLASS = styles.summaryPage;
+
 export type RecordedInMeeting = {
   id: string;
   name: string;
@@ -203,7 +206,7 @@ export function MeetingSummary({
 }) {
   const services = [...new Set(rows.map((row) => row.service))];
   return (
-    <Card className={styles.summary} data-testid="bed-meeting-run-summary" data-print-only-summary="true">
+    <Card className={styles.summary} data-testid="bed-meeting-run-summary">
       <CardHead
         title="Meeting summary"
         meta={`Started ${formatInstantWithDay(run.startedAt, now)} · ${rows.length} ${rows.length === 1 ? "action" : "actions"}`}

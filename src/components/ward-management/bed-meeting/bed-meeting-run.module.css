@@ -84,7 +84,7 @@
 }
 /* While the summary is open, paper carries the summary alone. */
 @media print {
-  :global(main[data-meeting-summary="true"]) > :not(:global([data-print-only-summary="true"])) {
+  .summaryPage > :not(.summary) {
     display: none !important;
   }
 }
