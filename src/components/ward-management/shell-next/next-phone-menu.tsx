@@ -37,7 +37,6 @@ import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle"
 
 import { isPhoneViewport, subscribeWardMenu } from "@/components/ward-management/shell/ward-drawer-bus";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
-import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import {
   BED_FINDER_MENU_ID as BED_FINDER_ID,
   isActiveRailEntry,
@@ -324,7 +323,11 @@ function backToTopOnRetap(event: MouseEvent<HTMLAnchorElement>): boolean {
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button) return false;
   if (trim(event.currentTarget.href) !== trim(location.href)) return false;
   event.preventDefault();
-  const behavior = wardScrollBehavior();
+  // Same rule as wardScrollBehavior (ward-scroll.ts), inlined: importing it put that module in every page's first load.
+  const reduced =
+    document.documentElement.hasAttribute("data-reduced-motion") ||
+    matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const behavior = reduced ? "instant" : "smooth";
   for (const scroller of [window, ...document.querySelectorAll("[data-wf-scroller]")])
     scroller.scrollTo({ top: 0, behavior });
   announceToWardShell("Top of the page.");
