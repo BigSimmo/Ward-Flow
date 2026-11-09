@@ -5,7 +5,7 @@
 import type { ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { HeroFootSlotProvider } from "@/components/wf/hero-foot-slot";
+import { HeroFootSlotProvider } from "@/components/wf";
 import { useDeskHomeHref } from "@/components/ward-management/shell/ward-access";
 
 const WardQuickHeroSlot = dynamic(() => import("./ward-quick-bar").then((m) => m.WardQuickHeroSlot));
