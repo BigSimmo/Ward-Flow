@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 import { Button, buttonClass, Card, CardBody, CardHead } from "@/components/wf";
 
@@ -24,25 +24,48 @@ const RUN_KEY = "ward-flow:bed-meeting-run";
 
 export type MeetingRun = { startedAt: Instant; step: number; finished: boolean };
 
+// The tab's copy of the run. Session storage keeps it across a reload; this copy covers a blocked store.
+let memoryRun: string | null = null;
+const runListeners = new Set<() => void>();
+
+function readRun(): string | null {
+  try {
+    return window.sessionStorage.getItem(RUN_KEY) ?? memoryRun;
+  } catch {
+    return memoryRun;
+  }
+}
+
+function subscribeRun(listener: () => void) {
+  runListeners.add(listener);
+  return () => runListeners.delete(listener);
+}
+
+function parseRun(raw: string | null): MeetingRun | null {
+  if (!raw) return null;
+  try {
+    const value = JSON.parse(raw) as Partial<MeetingRun>;
+    return typeof value.startedAt === "number" && typeof value.step === "number"
+      ? { startedAt: value.startedAt, step: value.step, finished: value.finished === true }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 export function useMeetingRun(): [MeetingRun | null, (next: MeetingRun | null) => void] {
-  const [run, setRun] = useState<MeetingRun | null>(null);
-  useEffect(() => {
+  const raw = useSyncExternalStore(subscribeRun, readRun, () => null);
+  const run = useMemo(() => parseRun(raw), [raw]);
+  const update = useCallback((next: MeetingRun | null) => {
+    memoryRun = next ? JSON.stringify(next) : null;
     try {
-      const saved = window.sessionStorage.getItem(RUN_KEY);
-      if (saved) setRun(JSON.parse(saved) as MeetingRun);
-    } catch {
-      // A blocked store only means the run starts again after a reload.
-    }
-  }, []);
-  const update = (next: MeetingRun | null) => {
-    setRun(next);
-    try {
-      if (next) window.sessionStorage.setItem(RUN_KEY, JSON.stringify(next));
+      if (memoryRun) window.sessionStorage.setItem(RUN_KEY, memoryRun);
       else window.sessionStorage.removeItem(RUN_KEY);
     } catch {
-      // As above.
+      // A blocked store keeps the run for this page view only.
     }
-  };
+    runListeners.forEach((listener) => listener());
+  }, []);
   return [run, update];
 }
 
@@ -94,7 +117,15 @@ export function actionsRecordedSince(input: {
   for (const admission of admissions) add(admission, serviceOfUnit.get(admission.unitId));
   return rows
     .sort((a, b) => a.order - b.order || a.at - b.at || a.id.localeCompare(b.id))
-    .map(({ order: _order, at: _at, ...row }) => row);
+    .map((row) => ({
+      id: row.id,
+      name: row.name,
+      service: row.service,
+      action: row.action,
+      owner: row.owner,
+      due: row.due,
+      done: row.done,
+    }));
 }
 
 /** The meeting's controls in the hero, where the agenda's own buttons sit: Previous, Next or Finish, and Stop. */
