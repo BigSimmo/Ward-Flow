@@ -32,7 +32,7 @@ import { WardClosuresDialog } from "./capacity-ward-closures-dialog";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import { bedKindsServed, isConfirmationFresh } from "./capacity-gap-words";
 import { capacityRequestIsOpen } from "@/components/ward-management/ward/ward-buzz-keys";
-import { OnBehalfReasonForm } from "../on-behalf-reason-form";
+import { OnBehalfReasonForm } from "../on-behalf-reason-form-lazy";
 import type { OnBehalfReasonId } from "../ward-on-behalf-reason";
 
 const DISCHARGES_HREF = "/ward-flow/discharges";

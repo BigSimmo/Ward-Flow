@@ -93,7 +93,7 @@ import { useDischargeWorkspaceState } from "./use-discharge-workspace-state";
 import { DischargeWeekendPrep } from "./discharge-weekend-prep";
 import { followUpWithinWindowCheck } from "./discharge-follow-up-check";
 import { DischargeAskOverdueWards } from "./discharge-message-ward";
-import { OnBehalfReasonForm } from "../on-behalf-reason-form";
+import { OnBehalfReasonForm } from "../on-behalf-reason-form-lazy";
 
 /**
  * Task 6, spec D9: the discharge and egress board. A coordinator's whole reason to open this
