@@ -8,3 +8,9 @@ in `wf/band.ts`. Referrals had only about 0.5 KB of headroom, so it is the one r
 other measured routes stay within their limits. A local build placed none of the Settings changes in
 the Referrals load, and the only trim available (dropping the toast's glyph) saves well under 1 KB,
 so the limit is raised by 3 KB, within the 5 KB a PR may raise without asking.
+
+9 November 2026. `/ward-flow/ward/rph-adult-secure` raised from 593.8 KB to 594.5 KB. Hosted CI
+measured 593.8 KB merged with main (just over the limit) and 593.4 KB for main alone, so this PR adds
+about 0.4 KB gzipped to the ward route: the same shared notes code plus the stable `data-wf-*` hooks
+on the shared Hero and card heading. The route had no headroom left on main, so the limit is raised by
+0.7 KB, within the 5 KB a PR may raise without asking.
