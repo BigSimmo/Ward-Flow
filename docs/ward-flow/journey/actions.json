@@ -144,7 +144,7 @@
     "nodes": ["raised", "rkDuplicate", "rkIntakeLost"],
     "roles": ["ed", "community", "ward", "coordinator"],
     "does": "Registers somebody with no referral, movement or bed record yet — the “searched, nobody came up, so add them” record.",
-    "needs": "A unique nonblank UMRN, given and family names, a real date of birth from 1900 through the applicable Perth day, and valid optional sex, gender, Indigenous-status and source-desk values. Optional preferred name, address, general practitioner, catchment community team and interpreter language are trimmed; blank means not recorded.",
+    "needs": "A unique nonblank UMRN, given and family names, a real date of birth from 1900 through the applicable Perth day, and valid optional sex, gender, Indigenous-status and source-desk values. Optional preferred name, address, general practitioner, catchment community team, interpreter language and the 22 optional administrative details (ADMIN_DETAIL_FIELDS: contacts, next of kin and support person, Medicare and funding, planning) are trimmed; blank means not recorded.",
     "changes": "Creates a new patient record, including any optional typed details given.",
     "reasons": ["GENDERS"],
     "refuses": [
@@ -168,12 +168,12 @@
         {
           "path": "src/components/ward-management/ward-patient-registration-reducer.ts",
           "line": 37,
-          "sha256": "36297e83737f7e5f2eb1db69fc4e64deac2be5d4793500b11f838dfc34da2629"
+          "sha256": "9e0f9c39d6d4a7f8f406fd438e09cd9ea7b7c6631a7bdd5e059d1f38de3caac4"
         },
         {
           "path": "src/components/ward-management/patients/add-patient.tsx",
           "line": 637,
-          "sha256": "8823744e1d995a3e01d40cbf36ec5e05465134a301db770d0d1d304af533a617"
+          "sha256": "3bee533593deb3bdfdecde073046ffab12a6a80c76fd4c007c322aa944b6c22f"
         },
         {
           "path": "src/components/ward-management/referrals/use-referral-command-completion.ts",
@@ -4276,7 +4276,7 @@
       "control": "Request update"
     },
     "review": {
-      "reviewedOn": "2026-11-07",
+      "reviewedOn": "2026-11-08",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4300,8 +4300,8 @@
         },
         {
           "path": "src/components/ward-management/capacity/capacity-screen.tsx",
-          "line": 173,
-          "sha256": "a9a9bda9107b06a7f2920fbcd5a2fe536e960f43d87cbffd78032c03d6f8362b"
+          "line": 171,
+          "sha256": "754572c7a5bd434a7e3ca238a5b0e6842173e34e1f7aabe10d97cd06e9211eff"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",

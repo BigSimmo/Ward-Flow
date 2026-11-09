@@ -186,7 +186,7 @@ function ReferrerLine({ form }: { form: FormApi }) {
           </Button>
         ) : null}
         {referral ? (
-          <Button variant="ghost" size="sm" onClick={() => form.openSummary("ref")}>
+          <Button variant="ghost" size="sm" onClick={() => form.openSummary("patient")}>
             View referral
           </Button>
         ) : null}

@@ -58,6 +58,28 @@ describe("Record details says each fact once", () => {
     expect(pane.getByText("14/03/1988")).toBeInTheDocument();
     expect(pane.queryByText("1988-03-14")).not.toBeInTheDocument();
   });
+
+  it("shows an admin detail recorded without its companion field (Note 3)", () => {
+    const pane = renderDetails(open, {
+      ...patient,
+      address: undefined,
+      suburb: undefined,
+      postcode: "6000",
+      nextOfKinName: undefined,
+      nextOfKinRelationship: "Sister",
+      supportPersonName: undefined,
+      supportPersonRole: "Carer",
+      medicareNumber: undefined,
+      medicareReference: "2",
+      medicareExpiry: "03/2029",
+    });
+    expect(pane.getByText("6000")).toBeInTheDocument();
+    expect(pane.getByText("Next of kin relationship")).toBeInTheDocument();
+    expect(pane.getByText("Sister")).toBeInTheDocument();
+    expect(pane.getByText("Carer")).toBeInTheDocument();
+    expect(pane.getByText("Medicare (number not recorded)")).toBeInTheDocument();
+    expect(pane.getByText("IRN 2 · 03/2029")).toBeInTheDocument();
+  });
 });
 
 describe("the placement rule on the one patient record (R-2026-09-04-A)", () => {

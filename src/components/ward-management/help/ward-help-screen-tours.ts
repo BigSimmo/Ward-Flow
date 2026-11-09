@@ -232,6 +232,8 @@ const AROUND: readonly Around[] = [
         body: "Admissions booked ahead. Press Arrived when the person reaches the ward.",
       },
       {
+        // Josh's fifth notes (8 Nov 2026): desktop shows drive times in the Mismatch drawer instead.
+        device: "phone",
         target: id("capacity-road-time"),
         title: "Nearest ready beds",
         body: "Ready beds by road distance from the place you choose. Distance only, not suitability.",
@@ -328,8 +330,8 @@ const AROUND: readonly Around[] = [
         body: "Act now, flagged urgent and due before the handover. Read Act now first.",
       },
       {
-        target: id("ward-handover-open-promises"),
-        title: "Ward promises to chase",
+        target: [id("ward-handover-open-promises"), id("ward-handover-promises-toggle")],
+        title: "Ward replies due",
         body: "Times a ward said it would ring back. Chase the overdue ones first.",
       },
       {
