@@ -15,7 +15,7 @@ import styles from "./ward-tool-leave-due.module.css";
 type DueRow = { id: string; bedLabel: string; dueAt: Instant; overdue: boolean };
 type DueWard = { unitId: string; name: string; rows: DueRow[] };
 
-function useLeaveDue(): DueWard[] {
+function useLeaveDue(): { wards: DueWard[]; absent: number } {
   const { leaveBeds, units, admissions, bedReleases } = useWardFlowSelect(
     "leaveBeds",
     "units",
@@ -46,25 +46,38 @@ function useLeaveDue(): DueWard[] {
           .sort((left, right) => left.dueAt - right.dueAt),
       });
     }
+    // An absence without leave is not "due back"; the panel says how many it leaves to the Leave page.
+    const absent = leaveBeds.filter((leave) => leave.absentWithoutLeave).length;
     // A ward desk's own ward first, then the rest in network order.
-    return wards.sort((left, right) => Number(own.has(right.unitId)) - Number(own.has(left.unitId)));
+    return {
+      wards: wards.sort((left, right) => Number(own.has(right.unitId)) - Number(own.has(left.unitId))),
+      absent,
+    };
   }, [leaveBeds, units, admissions, bedReleases, now, access]);
 }
 
 /** Leave beds due back today, for the Tools row count. */
 export function useLeaveDueCount(): number {
-  return useLeaveDue().reduce((sum, ward) => sum + ward.rows.length, 0);
+  return useLeaveDue().wards.reduce((sum, ward) => sum + ward.rows.length, 0);
 }
 
 /** Q326: who is due back from leave today, by ward. Beds only, never a name. */
 export function ToolLeaveDue({ onNavigate }: { onNavigate: () => void }) {
-  const wards = useLeaveDue();
+  const { wards, absent } = useLeaveDue();
   const now = useWardFlowClock();
-  // Feature 23: the full Leave page, everyone on leave with their status.
+  // Feature 23: the full Leave page, everyone on leave with their status. Polish (9 Nov 2026): the
+  // page also lists anyone absent without leave, so the panel says why its count is smaller.
   const seeAll = (
-    <Link href={WARD_LEAVE_HREF} className={styles.seeAll} onClick={onNavigate}>
-      See all leave
-    </Link>
+    <>
+      {absent > 0 ? (
+        <p className={styles.absentNote} data-testid="tool-leave-due-absent">
+          {absent} absent without leave, not counted here.
+        </p>
+      ) : null}
+      <Link href={WARD_LEAVE_HREF} className={styles.seeAll} onClick={onNavigate}>
+        See all leave
+      </Link>
+    </>
   );
   if (wards.length === 0)
     return (

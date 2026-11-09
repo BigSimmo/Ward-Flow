@@ -94,3 +94,9 @@
   font-weight: 600;
   text-decoration: none;
 }
+
+.absentNote {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}

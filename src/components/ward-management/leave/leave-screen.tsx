@@ -14,10 +14,10 @@ import { wardNames } from "@/components/ward-management/tools/ward-tool-remind-s
 import { LEAVE_STATUS_LABEL, leaveTrackerRows, type LeaveStatus } from "./leave-tracker";
 import styles from "./leave-screen.module.css";
 
-/** Red only for act now: a person missing. Overdue is amber, due today plain. */
+/** Red for act now, as the Tools sheet's Due back already marks it: a person missing or overdue back. */
 const STATUS_TONE: Record<LeaveStatus, WfTone> = {
   absent: "danger",
-  overdue: "warning",
+  overdue: "danger",
   due_today: "info",
   on_leave: "neutral",
 };

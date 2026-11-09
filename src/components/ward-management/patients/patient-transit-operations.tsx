@@ -53,6 +53,7 @@ import ph from "../referrals/referral-match-phone.module.css";
 import styles from "./patient-transit-operations.module.css";
 import { FindAWard, wardMatchesQuery } from "@/components/ward-management/referrals/find-a-ward";
 import { ExtendHoldControl } from "@/components/ward-management/ward-extend-hold";
+import { splitDuration } from "@/components/ward-management/ward-clock";
 
 /** All operational facts and eligibility are calculated from the current provider state. */
 /**
@@ -593,11 +594,17 @@ export function PatientTransitOperations({
             <p className={styles.hold} role="status">
               {remaining <= 0
                 ? "Pull time limit passed. The bed stays pulled until released or given a new limit."
-                : `Bed pulled · ${dur(remaining)} remaining · Pull time limit ${clock(movement.pullExpiresAt!)}`}
+                : `Bed pulled · ${splitDuration(remaining)} left · Pull time limit ${clock(movement.pullExpiresAt!)}${movement.pullExtensions?.length ? " · extended" : ""}`}
             </p>
           )}
           {open && movement.stage === "pulled" && (
-            <ExtendHoldControl movement={movement} dispatch={dispatch} rejections={rejections} now={now} />
+            <ExtendHoldControl
+              movement={movement}
+              dispatch={dispatch}
+              rejections={rejections}
+              now={now}
+              showHeldUntil={false}
+            />
           )}
           {/* The booked provider, CAD number, quoted ETA and escort show once, in the Transport block
               below this workspace (device audit, 11 Oct 2026). */}

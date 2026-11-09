@@ -118,12 +118,12 @@ export function pullExtensionChoices(
   );
 }
 
-/** "Pulled until 14:30 (extended)" once a hold has been extended; null otherwise. */
+/** "Pulled until 14:30 · extended" once a hold has been extended; null otherwise. */
 export function heldUntilExtendedLabel(
   movement: Pick<Movement, "stage" | "pullExpiresAt" | "pullExtensions">,
   now: Instant,
 ): string | null {
   if (movement.stage !== "pulled" || movement.pullExpiresAt === undefined) return null;
   if (!movement.pullExtensions?.length) return null;
-  return `Pulled until ${formatInstantWithDay(movement.pullExpiresAt, now)} (extended)`;
+  return `Pulled until ${formatInstantWithDay(movement.pullExpiresAt, now)} · extended`;
 }

@@ -14,7 +14,8 @@ import styles from "./ward-extend-hold.module.css";
 /**
  * Feature 11 (Josh, 9 Nov 2026): "Extend pull" on a pulled bed. Opens 1 h / 2 h / 4 h chips; only
  * the amounts the engine would take (`pullExtensionChoices`) are offered. Records `EXTEND_PULL`.
- * After an extension the line reads "Pulled until 14:30 (extended)". Takes the screen's `dispatch`,
+ * After an extension the line reads "Pulled until 14:30 · extended"; a host whose own status line
+ * already says so (the patient page) passes `showHeldUntil={false}`. Takes the screen's `dispatch`,
  * `rejections` and `now`, like the arrivals card that holds it, so it renders outside a provider
  * too; the Pull time limit is the configured one, or the default outside a provider.
  */
@@ -23,7 +24,8 @@ export function ExtendHoldControl({
   dispatch,
   rejections,
   now,
-}: { movement: Movement } & Pick<UndoableStepOptions, "dispatch" | "rejections" | "now">) {
+  showHeldUntil = true,
+}: { movement: Movement; showHeldUntil?: boolean } & Pick<UndoableStepOptions, "dispatch" | "rejections" | "now">) {
   const pullHoldMinutes =
     useOptionalWardFlowSelect("configuration")?.configuration.pullHoldMinutes ??
     defaultWardConfiguration().pullHoldMinutes;
@@ -38,7 +40,7 @@ export function ExtendHoldControl({
   const atMaximum = choices.length === 0;
   return (
     <div className={styles.extend} data-testid={`extend-hold-${movement.id}`}>
-      {heldUntil ? (
+      {showHeldUntil && heldUntil ? (
         <p className={styles.heldUntil} data-testid={`held-until-${movement.id}`}>
           {heldUntil}
         </p>

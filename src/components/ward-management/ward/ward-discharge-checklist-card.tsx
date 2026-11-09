@@ -12,7 +12,10 @@ import {
 import drawerStyles from "./ward-bed-dossier-drawer.module.css";
 import styles from "./ward-discharge-checklist-card.module.css";
 
-const STATE_ITEMS = DISCHARGE_CHECK_STATES.map((id) => ({ id, label: DISCHARGE_CHECK_STATE_LABELS[id] }));
+const STATE_ITEMS: { id: DischargeCheckState | ""; label: string }[] = DISCHARGE_CHECK_STATES.map((id) => ({
+  id,
+  label: DISCHARGE_CHECK_STATE_LABELS[id],
+}));
 
 /**
  * Feature 37 (9 Nov 2026): the discharge checklist on the bed drawer's Leaving tab. Four items, each
@@ -44,16 +47,21 @@ export function WardDischargeChecklistCard({
                 <span className={styles.detail}>{row.detail}</span>
               </span>
               {onRecord ? (
-                <Segmented
+                <Segmented<DischargeCheckState | "">
                   label={row.label}
                   size="sm"
+                  className={styles.states}
                   items={STATE_ITEMS}
-                  value={row.state}
+                  // Nothing pre-selected: an item no one has recorded (and no other record speaks
+                  // for) shows no choice until someone picks one; its line already says "Not recorded".
+                  value={row.source === "none" ? "" : row.state}
                   onChange={(state) => {
+                    if (state === "") return;
                     if (state !== row.state || row.source !== "ticked") onRecord(row.item, state);
                   }}
                 />
-              ) : (
+              ) : row.source === "none" ? null : (
+                // Unrecorded reads "Not recorded" on its line already, so it carries no badge.
                 <Badge size="sm" tone={row.state === "outstanding" ? "warning" : "neutral"}>
                   {DISCHARGE_CHECK_STATE_LABELS[row.state]}
                 </Badge>

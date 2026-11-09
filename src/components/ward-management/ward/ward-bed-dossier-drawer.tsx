@@ -368,8 +368,10 @@ export function WardBedDossierDrawer({
       />
     ) : null;
 
+  // Polish (9 Nov 2026): once the Expected line carries the "Date moved N times" badge, the count
+  // is said there once, not again as its own row.
   const dateMoves =
-    typeof bedItem?.dischargeDateMoves === "number"
+    eddMoved === null && typeof bedItem?.dischargeDateMoves === "number"
       ? bedItem.dischargeDateMoves === 0
         ? "Not moved"
         : `Moved ${bedItem.dischargeDateMoves} time${bedItem.dischargeDateMoves === 1 ? "" : "s"}`

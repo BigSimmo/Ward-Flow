@@ -16,8 +16,12 @@
   color: var(--wf-ink-1);
 }
 
+/* The rows share one pair of columns (subgrid), so every row's three-way choice starts and ends at
+ * the same place whatever its words or which option is chosen. */
 .list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--wf-s-3);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -26,7 +30,8 @@
 /* Every item the same shape: words on the left (wrapping), the three-way choice on the right edge. */
 .item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   align-items: center;
   gap: var(--wf-s-1) var(--wf-s-3);
   min-width: 0;
@@ -39,9 +44,20 @@
 
 /* Phone: the choice drops under the words, full width, so the words keep their line. */
 @media (max-width: 46.4375rem) {
-  .item {
+  .list {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* Three equal options, so the bold chosen word never shifts the others. */
+.states {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+}
+
+.states > * {
+  justify-content: center;
 }
 
 .text {

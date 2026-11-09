@@ -520,7 +520,7 @@ export function WardBoardDetailPanel({
                         htmlFor="ward-board-barrier-select"
                         className={cx(styles.leavingLabel, redesign.fieldLabel)}
                       >
-                        Main discharge hold-up (stay: {plural(occupied.days, "day", "days")})
+                        Long-stay barrier (stay: {plural(occupied.days, "day", "days")})
                       </label>
                       <Select
                         id="ward-board-barrier-select"
@@ -535,11 +535,11 @@ export function WardBoardDetailPanel({
                                 admissionId: occupied.key,
                                 barrier: val === "None" ? null : (val as DischargeBarrier),
                               }),
-                            `Hold-up for ${nameFor(occupied.key)}: ${val}`,
+                            `Long-stay barrier for ${nameFor(occupied.key)}: ${val}`,
                           );
                         }}
                       >
-                        <option value="None">None / Clear hold-up</option>
+                        <option value="None">None</option>
                         {DISCHARGE_BARRIERS.map((barrier) => (
                           <option key={barrier} value={barrier}>
                             {barrier}

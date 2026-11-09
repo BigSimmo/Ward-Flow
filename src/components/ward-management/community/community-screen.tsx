@@ -1190,6 +1190,7 @@ export function CommunityScreen(props: CommunityScreenProps) {
             teamId={view.team.id}
             units={view.units}
             now={view.now}
+            umrnLookup={view.umrnLookup}
             onMessage={view.setToastMessage}
           />
         ) : null}
@@ -1210,6 +1211,7 @@ export function CommunityScreen(props: CommunityScreenProps) {
                     teamId={view.team.id}
                     units={view.units}
                     now={view.now}
+                    umrnLookup={view.umrnLookup}
                     onMessage={view.setToastMessage}
                   />
                 ) : null}
