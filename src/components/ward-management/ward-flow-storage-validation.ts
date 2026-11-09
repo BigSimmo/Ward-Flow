@@ -118,6 +118,7 @@ const fits = (schema: z.ZodMiniType, value: unknown) => schema.safeParse(value).
 
 // zod 4 numbers refuse NaN and both infinities, and `z.int()` is a safe integer.
 const finite = z.number();
+const maybeAt = z.optional(finite); // Psychiatry review and ward wait list instants (9 Nov 2026).
 const counter = z.int().check(z.nonnegative());
 const text = z.string();
 const bool = z.boolean();
@@ -180,11 +181,7 @@ const NESTED_KEY_RULES = new Map<string, z.ZodMiniType>([
   ["legalForm", legalFormRule],
   ["medicalClearance", medicalClearanceRule],
   ["transportNeed", z.looseObject({ needed: bool, at: finite })],
-  // Psychiatry review tracker (9 Nov 2026): instants only.
-  [
-    "psychReview",
-    z.strictObject({ requestedAt: finite, registrarSeenAt: z.optional(finite), consultantSeenAt: z.optional(finite) }),
-  ],
+  ["psychReview", z.strictObject({ requestedAt: finite, registrarSeenAt: maybeAt, consultantSeenAt: maybeAt })],
   ["closure", closureRule],
   ...[
     "legalClock",
@@ -374,10 +371,8 @@ const unit = z
       ),
     ),
     isClosed: z.optional(bool),
-    // Ward wait list (9 Nov 2026): when the ward said it is ready for its next patient.
-    readyForNextAt: z.optional(finite),
-    // H-0978: one exact bed closed (`SET_BED_CLOSED`). A chosen reason, never typed text. Optional,
-    // so a state saved before closed marks existed still loads.
+    readyForNextAt: maybeAt, // Ward wait list (9 Nov 2026): when the ward said it is ready for its next patient.
+    // H-0978: one bed closed (`SET_BED_CLOSED`), a chosen reason, never typed text; optional for older saves.
     closedBeds: z.optional(
       z.array(
         z.looseObject({

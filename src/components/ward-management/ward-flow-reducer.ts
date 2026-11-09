@@ -591,15 +591,8 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
     plannedAdmissionSequence: 0,
   };
   // Closing the loop, package D (24 Oct 2026): a few synthetic marks so each record shows in the demo.
-  return applyExampleListsOverlay(
-    network
-      ? seed
-      : applyWaitlistDemoOverlay(
-          applyLoopChecksDemoOverlay(applyRulingsDemoOverlay(seed, NOW_ANCHOR), NOW_ANCHOR),
-          NOW_ANCHOR,
-        ),
-    NOW_ANCHOR,
-  );
+  const demo = network ? seed : applyLoopChecksDemoOverlay(applyRulingsDemoOverlay(seed, NOW_ANCHOR), NOW_ANCHOR);
+  return applyExampleListsOverlay(network ? demo : applyWaitlistDemoOverlay(demo, NOW_ANCHOR), NOW_ANCHOR);
 }
 
 /**
