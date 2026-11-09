@@ -131,11 +131,28 @@ export function WardHelpPracticeCard({
 
   return (
     <section className={`${s.card} ${s.practice}`} aria-labelledby={titleId} data-testid="ward-help-practice">
-      <h4 id={titleId} className={s.practiceTitle}>
-        <GraduationCap aria-hidden="true" size={16} strokeWidth={1.75} />
-        Practise a placement
-        <span>Synthetic data, for learning the screens</span>
-      </h4>
+      {/* Laid out as the tour row above it (Help overhaul, 9 Nov 2026): icon, title and one line, the
+          action on the right edge. */}
+      <div className={s.practiceTop}>
+        <span className={s.practiceIcon} aria-hidden="true">
+          <GraduationCap aria-hidden="true" strokeWidth={1.75} />
+        </span>
+        <div className={s.practiceText}>
+          <h4 id={titleId} className={s.practiceTitle}>
+            Practise a placement
+          </h4>
+          {progress === null && !inShared ? (
+            <p className={s.practiceSub}>Six steps, from bed request to arrival.</p>
+          ) : (
+            <span className={s.practiceSub}>Synthetic data, for learning the screens</span>
+          )}
+        </div>
+        {progress === null && !inShared ? (
+          <Button onClick={start} data-testid="ward-help-practice-start">
+            Start practice
+          </Button>
+        ) : null}
+      </div>
       {inShared ? (
         <div className={s.practiceActions}>
           <p className={s.intro} data-testid="ward-help-practice-shared-off">
@@ -144,14 +161,7 @@ export function WardHelpPracticeCard({
           </p>
           <WardTrainingSwitch testId="ward-help-training" />
         </div>
-      ) : progress === null ? (
-        <div className={s.practiceActions}>
-          <p className={s.intro}>Six steps, from bed request to arrival.</p>
-          <Button onClick={start} data-testid="ward-help-practice-start">
-            Start practice
-          </Button>
-        </div>
-      ) : (
+      ) : progress === null ? null : (
         <>
           <ol className={s.practiceSteps} data-testid="ward-help-practice-steps">
             {PRACTICE_STEPS.map((step) => {

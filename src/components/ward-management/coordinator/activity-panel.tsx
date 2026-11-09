@@ -5,7 +5,7 @@ import { useContext, useEffect, useMemo, useRef, useState, type RefObject } from
 import { SharedAccessContext } from "../shell/ward-shared-access-context";
 import { ActivityOwnCommand } from "./activity-own-command";
 
-import { Button, ChipGroup, Drawer, FilterChip, PillTabs, StatusGlyph, TabPanel, useIsPhone } from "@/components/wf";
+import { Button, ChipGroup, Drawer, FilterChip, StatusGlyph, TabPanel, Tabs } from "@/components/wf";
 import {
   ACTIVITY_CATEGORY_CHIPS,
   ACTIVITY_GLYPH,
@@ -130,7 +130,6 @@ function OpenActivityPanel({
     }
     wasOpen.current = open;
   }, [open, initialTab, live.length, capture]);
-  const isPhone = useIsPhone();
   const network = useWardNetwork();
   const access = useEffectiveWardAccess();
   const thresholds = useDueSoonThresholds();
@@ -237,16 +236,38 @@ function OpenActivityPanel({
 
   const tabs = [
     { id: "changes" as const, label: "Changes", count: review.shown.length },
-    { id: "recent" as const, label: isPhone ? "Recent" : "Recent activity", count: events.length },
+    { id: "recent" as const, label: "Recent", count: events.length },
     { id: "notices" as const, label: "Notices", count: unreadCount },
   ];
+
+  const scope = accessIsWholeNetwork(access) ? "Statewide" : "Your desk";
+  // The header's one calm line (page tops, Josh, 9 Nov 2026): what was sent to this desk, in place of
+  // an alert-style empty row in the Notices tab.
+  const noticeLine =
+    noticeViews.length === 0
+      ? "Nothing sent to this desk today"
+      : unreadCount > 0
+        ? `${unreadCount} unread ${unreadCount === 1 ? "notice" : "notices"} for this desk`
+        : "Every notice for this desk is read";
 
   return (
     <Drawer
       id={id}
       open={open}
       onClose={onClose}
-      title={accessIsWholeNetwork(access) ? "Activity · Statewide" : "Activity · Your desk"}
+      // The page-top look (Josh, 9 Nov 2026): "Activity" with its scope softer beside it. The heading
+      // keeps its full name for screen readers; the drawn line is the same words.
+      title={`Activity · ${scope}`}
+      titleAccessory={
+        <span className={styles.panelTitleShown} aria-hidden="true">
+          Activity <span>{scope}</span>
+        </span>
+      }
+      descriptionContent={
+        <p className={styles.panelLine} data-testid="ward-activity-notice-line">
+          {noticeLine}
+        </p>
+      }
       testId={testId}
       returnFocusRef={returnFocusRef}
       bodyTabIndex={bodyTabIndex}
@@ -256,10 +277,10 @@ function OpenActivityPanel({
       closeButtonClassName={styles.panelClose}
       headerBottom={
         <div className={styles.panelTabs}>
-          <PillTabs items={tabs} value={tab} onChange={setTab} label="Activity" idPrefix="home-activity" fill />
+          <Tabs items={tabs} value={tab} onChange={setTab} label="Activity" idPrefix="home-activity" />
         </div>
       }
-      contentClassName={styles.glyphScope}
+      contentClassName={`${styles.glyphScope} ${styles.activitySheet}`}
       bodyClassName={styles.panelBody}
       footerClassName={styles.panelFooter}
       footer={showFoot ? <ReviewFoot review={review} now={now} /> : undefined}
@@ -626,13 +647,8 @@ function NoticesBody({
       cancelled transport or a withdrawn acceptance.
     </p>
   );
-  if (notices.length === 0)
-    return (
-      <>
-        {about}
-        <p className={styles.empty}>Nothing has been sent to this desk today.</p>
-      </>
-    );
+  // With nothing sent, the header's calm line says so; the tab keeps only what a notice is.
+  if (notices.length === 0) return about;
   return (
     <>
       {about}

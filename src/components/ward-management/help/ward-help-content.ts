@@ -17,6 +17,7 @@ import type { WardChromeRole } from "@/components/ward-management/ward-chrome-ro
 import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 import { ROLE_SCREENS } from "@/components/ward-management/ward-role-access";
 import { CONTINUATION_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { WARD_COMMAND_HREF } from "@/components/ward-management/ward-nav";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
 import type { SiteIdentity } from "@/components/ward-management/ward-sites";
@@ -98,6 +99,12 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
         question: "How do I see one ED's patients?",
         answer:
           "Choose that ED's tile under ED pressure. The list narrows to that ED. Choose the tile again to see every ED.",
+      },
+      {
+        // Explain this number (Help overhaul, 9 Nov 2026): the three figures at the top of Home, in the
+        // glossary's own words, with the bed alert line from its one source (clinical-values.md).
+        question: "What do the figures at the top of Home mean?",
+        answer: `Open ED movements counts movements that started at an ED and have not closed, including people in transit. It is not how many people are in an ED right now. Beds ready counts beds the wards have confirmed as Ready, across the whole network. The last figure is the share of beds in use statewide: it reads at risk at ${CLINICAL_VALUES.bedAlertLine.value}% or more (the bed alert line) and beds in use below that.`,
       },
       {
         question: "What is Later today?",
