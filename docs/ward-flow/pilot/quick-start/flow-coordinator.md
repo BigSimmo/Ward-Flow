@@ -28,9 +28,10 @@ New here? Open **Help** and choose **Take the tour**.
    ward.
 3. **Pull the bed.** Once a ward accepts, press **Pull the bed**. It is kept until arrival or
    release, within the pull time limit.
-4. **Book transport.** Book it by phone first and note the CAD number, ETA and provider. Then log
-   it in the app, or record that none is needed. Use **Cancel transport** before **Release the
-   pulled bed** if plans change.
+4. **Book transport.** In the live service you book by phone first, then log the CAD number, ETA
+   and provider. In the shadow pilot, never phone a real transport provider: invent the booking
+   details and log them in the app, or record that none is needed. Use **Cancel transport** before
+   **Release the pulled bed** if plans change.
 5. **Hand over.** Open **Handover**, check what the next shift needs, then **Sign off**.
 
 ## Do not use it for
