@@ -32,7 +32,7 @@ import { minuteOfDayFromClockText } from "@/components/ward-management/ward-cloc
  *
  * `patientFound` stands for "the draft names a registered person" (`draft.patientId` is set). The
  * screen passes that one fact rather than the patient link itself, so this module never reads the
- * link and stays outside the D-14 allowlist (`tests/ward-patient-link-default-deny.test.ts`).
+ * link and stays outside the archived D-14 allowlist (`tests/ward-patient-link-default-deny.test.ts`).
  */
 export type ReferralDraftAnswers = {
   patientFound: boolean;

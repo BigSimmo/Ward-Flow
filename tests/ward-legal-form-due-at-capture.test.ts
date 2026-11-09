@@ -117,7 +117,7 @@ describe("a coordinator's own transport order can carry a deadline", () => {
 
 describe("every selectable code keeps a typed expiry now, per owner answer 1 (2026-09-17)", () => {
   /**
-   * 🔴 **CORRECTED 2026-09-17, T2 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`)
+   * 🔴 **CORRECTED 2026-09-17, T2 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`)
    * — THIS DESCRIBE BLOCK USED TO PIN THE OPPOSITE.** Until this date 1A, 3B and 3D dropped a
    * supplied due time silently, on the product owner's instruction of 2026-08-23 — *"please can
    * you leave the legal part and just start a clock once the patient arrives to ED. Keep it simple

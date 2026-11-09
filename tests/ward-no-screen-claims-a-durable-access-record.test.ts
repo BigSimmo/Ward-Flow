@@ -12,8 +12,8 @@ import { describe, expect, it } from "vitest";
  * claims a durable record of who looked."* A string test passes a screen that makes the same false
  * promise in different words.
  *
- * Background: `D-4` in `docs/ward-flow/owner-decisions-2026-09-1x.md`, and §E of
- * `docs/ward-flow/plans/2026-09-1x-lane-c-drawing-facts.md`. The Access record panel is session-only
+ * Background: `D-4` in `docs/history/archive/dated-notes/owner-decisions-2026-09-1x.md`, and §E of
+ * `docs/history/plans-2026-09/2026-09-1x-lane-c-drawing-facts.md`. The Access record panel is session-only
  * by design — a durable record of who looked at whom is a privacy surface nobody authorised — and a
  * screen promising one invites a clinician to rely on a trace that does not exist.
  *

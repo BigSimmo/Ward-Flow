@@ -1,6 +1,6 @@
 /*
  * `ward-service-scope-bar.tsx` — the fixed-wording strip a scoped screen mounts while a health
- * service is chosen (build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §3 "Scope
+ * service is chosen (build plan `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md` §3 "Scope
  * bar"). Tokens only, no hex. No coloured edge bar and no top highlight — the same owner ruling
  * `ward-bar.module.css`'s own header cites, applied here rather than re-argued.
  */

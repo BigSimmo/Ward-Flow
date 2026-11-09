@@ -423,9 +423,9 @@ export type Admission = {
    * Optional for earlier saves; never inferred from an unrelated stay or patient record. */
   plannedLegalStatus?: LegalStatus;
   /**
-   * ⚠️ **THE JOIN D-14 ADDS — A POINTER TO THE EXISTING PATIENT RECORD, NEVER A COPY.**
+   * ⚠️ **THE JOIN ARCHIVED D-14 ADDS — A POINTER TO THE EXISTING PATIENT RECORD, NEVER A COPY.**
    *
-   * Ruling D-14 (`docs/ward-flow/owner-decisions-2026-09-1x.md`, Ward Lead's ruling under
+   * Archived ruling D-14 (`docs/history/archive/dated-notes/owner-decisions-2026-09-1x.md`, Ward Lead's ruling under
    * delegation, 2026-09-11): *"Admission and Referral carry no `patientId`. Nothing joins a bed's
    * occupant to a person."* Added in the SAME change as the guard that actively refuses reading it
    * outside a permitted path — the two ship together or not at all, because a guard that is
@@ -467,7 +467,7 @@ export type Admission = {
    * no referral behind it.
    *
    * ⚠️ **NOTHING MAY READ IT YET, EXCEPT WHAT IS EXPLICITLY LISTED.**
-   * `tests/ward-patient-link-default-deny.test.ts` is D-14's enforcement: it default-denies every
+   * `tests/ward-patient-link-default-deny.test.ts` is archived D-14's enforcement: it default-denies every
    * ward-management source file from referencing `.patientId` on any record, and an allowlisted
    * exception must name the file, the reason, and the ruling that permits it. This field existing
    * on the type is not itself a permission to render it, join through it, or use it to answer any
@@ -841,7 +841,7 @@ export function liveMovementForAdmission(admission: Admission, movements: readon
 
 /**
  * The stay an arrived journey brought its person into, while they are still in the bed. Joined
- * only by explicit ids (D-14), and only when exactly one stay answers. Walk-through WT-03 (26 Oct
+ * only by explicit ids (archived D-14), and only when exactly one stay answers. Walk-through WT-03 (26 Oct
  * 2026): the ward records the next legal form for this person against the journey they came on.
  */
 export function admittedStayForArrival(movement: Movement, admissions: readonly Admission[]): Admission | undefined {

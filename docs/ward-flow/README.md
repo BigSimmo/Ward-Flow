@@ -11,17 +11,17 @@ _Updated 2026-10-24 - daily loop type check works on any OS; gate-tsc cache warn
 
 _Updated 2026-10-24 - added desk guides, staff notes and demo script to the reader table; Documentation owns._
 
-| Reader or task                      | Next page                                                                               |
-| ----------------------------------- | --------------------------------------------------------------------------------------- |
-| Coordinator exploring the prototype | [Coordinator guide](coordinator-guide-v2.md), with its stated evidence dates            |
-| Staff testing a desk                | [Desk guides](desk-guides/README.md) and [what's new for staff](STAFF-RELEASE-NOTES.md) |
-| Giving a demonstration              | [Demo script](DEMO-SCRIPT.md)                                                           |
-| First local run                     | [Local first run](LOCAL-FIRST-RUN.md)                                                   |
-| Builder                             | [Workflow](HOW-WE-WORK.md) and [current architecture](../codebase-index.md)             |
-| Returning to a task                 | [Task/receipt contract](../task-receipts.md) and [plan navigation](plans/README.md)     |
-| Looking for history                 | [Archive and restoration record](../ARCHIVE.md)                                         |
-| Running the hosted prototype        | [Operations runbook](OPERATIONS-RUNBOOK.md)                                             |
-| Running the shadow pilot            | [Shadow pilot pack](pilot/README.md)                                                    |
+| Reader or task                      | Next page                                                                                |
+| ----------------------------------- | ---------------------------------------------------------------------------------------- |
+| Coordinator exploring the prototype | [Coordinator guide](coordinator-guide-v2.md), with its stated evidence dates             |
+| Staff testing a desk                | [Desk guides](desk-guides/README.md) and [what's new for staff](STAFF-RELEASE-NOTES.md)  |
+| Giving a demonstration              | [Demo script](DEMO-SCRIPT.md)                                                            |
+| First local run                     | [Local first run](LOCAL-FIRST-RUN.md)                                                    |
+| Builder                             | [Workflow](HOW-WE-WORK.md) and [current architecture](../codebase-index.md)              |
+| Returning to a task                 | [Task/receipt contract](../task-receipts.md) and [plan navigation](plans/README.md)      |
+| Looking for history                 | [Archive and restoration record](../history/README.md#deleted-files-kept-in-git-history) |
+| Running the hosted prototype        | [Operations runbook](OPERATIONS-RUNBOOK.md)                                              |
+| Running the shadow pilot            | [Shadow pilot pack](pilot/README.md)                                                     |
 
 ## What Ward Flow is
 

@@ -44,8 +44,7 @@ const EXCLUDED_PREFIXES = [
   // scripts/check-dead-code-candidate.mjs refuses to call a symbol dead when a plan here
   // still names it. Confirmed on 2026-08-31: two of three docs this scanner flagged in
   // this pair of directories had 44 and 22 unchecked "- [ ]" tasks respectively.
-  "docs/superpowers/plans/",
-  "docs/superpowers/specs/",
+  "docs/ward-flow/plans/",
 ];
 
 function sh(args) {

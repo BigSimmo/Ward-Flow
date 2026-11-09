@@ -202,10 +202,12 @@ export const ED_ACCESS_TARGET_MINUTES = 1440;
 export const ED_ACCESS_TARGET_RANGE_MINUTES = { min: 720, max: 2160, step: 120 } as const;
 
 /**
- * How long a trip to a general hospital must be EXPECTED to last before the psychiatric bed is
- * given up, in hours. Ruling `FD-19` (owner, 2026-08-30): *a ward→ED-medical trip frees the bed
- * ONLY IF the stay is expected to exceed 48 hours, and that is overridable.* Below it, the bed
- * stays theirs and the person reads as on overnight leave.
+ * How long a trip to a general hospital must be EXPECTED to last before the held psychiatric bed
+ * is flagged for review, in hours. D-106 (Josh, 9 Nov 2026) keeps it at 24 hours and signed: past
+ * it, Ward Flow flags the held bed for a person to review and NEVER frees it by itself; at or
+ * below it, the bed stays theirs and the person reads as on overnight leave. Only an override
+ * frees the bed. (History: ruling `FD-19`, owner, 2026-08-30, said 48 hours; a clinical owner
+ * ruling of 14 Oct 2026 set 24 hours but had no D entry. D-106 is now the record.)
  *
  * 🔴 **THIS IS A BED-MANAGEMENT THRESHOLD AND IT IS NOT A STATUTORY PERIOD. It must never be
  * conflated with, sited beside, or reused as one.** It decides one thing only: whether a bed
@@ -216,9 +218,9 @@ export const ED_ACCESS_TARGET_RANGE_MINUTES = { min: 720, max: 2160, step: 120 }
  * ⚠️ **WHY THE PROVENANCE IS THE POINT AND NOT A FORMALITY.** This repository's standing refusal
  * is against inventing figures from the Mental Health Act, after three separate agents wrote
  * three different invented statutory durations into this directory (see
- * `tests/ward-legal-figure-guard.test.ts`). **48 is permitted precisely because the owner
- * supplied it** — it is his own operational figure, quoted from him, invented by nobody. A bare
- * `48` sitting in ward source near anything legal is exactly what a future reader would
+ * `tests/ward-legal-figure-guard.test.ts`). **24 is permitted precisely because the owner
+ * supplied it** (D-106) — it is his own operational figure, quoted from him, invented by nobody.
+ * A bare `24` sitting in ward source near anything legal is exactly what a future reader would
  * reasonably assume came from the Act, so the figure is named, sourced, and pinned rather than
  * written as a literal at the point of use.
  *
@@ -228,7 +230,7 @@ export const ED_ACCESS_TARGET_RANGE_MINUTES = { min: 720, max: 2160, step: 120 }
 export const ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS = 24;
 
 /**
- * 🔴 **DELETED 2026-09-17, T2 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`).**
+ * 🔴 **DELETED 2026-09-17, T2 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`).**
  * `FORM_1A_VALIDITY_HOURS`, `FORM_1A_EXAMINATION_WINDOW_HOURS` and `FORM_3D_DETENTION_WINDOW_HOURS`
  * stood here from 2026-09-16 (Ruling 1) until this date, each a computed statutory duration for a
  * Form 1A or 3D. The owner's ruling of 2026-09-17, put to him again after Ruling 1, is narrower
@@ -411,7 +413,7 @@ export type Unit = {
    * A forensic WARD — independent of `security`, see the note on `security` above.
    *
    * 🔴 **THIS COMMENT SAID "a forensic bed" AND THAT SEEDED FIVE FALSE STRINGS ON TWO SCREENS**
-   * (D-30, 2026-09-11). The flag sits on `Unit`, which is a ward: Broome's is a whole-ward flag
+   * (archived D-30, 2026-09-11). The flag sits on `Unit`, which is a ward: Broome's is a whole-ward flag
    * covering six beds, and `hub-screen.tsx`'s own governance comment had already said so while
    * the badge two hundred lines above it still read "Forensic bed". A coordinator told a ward is
    * "a forensic bed and is never offered" hears that ONE bed is excluded; all six are.
@@ -1467,7 +1469,7 @@ export type Referral = {
    * comment refuses two fields above.
    *
    * 🔴 **IT IS NOT A REFERRER AND MUST NEVER BE RENDERED AS ONE.** `referral-referrer.ts` answers
-   * a different question -- WHO, a person -- and D-12 forbids an organisation standing in a field
+   * a different question -- WHO, a person -- and archived D-12 forbids an organisation standing in a field
    * labelled as a person. **A service is not a human being**, and "Armadale Community Mental Health
    * Service" printed under "Referred by" is a fabricated attribution on a clinical record rather
    * than a formatting choice. `referralReferrerName` deliberately does not read this field, and
@@ -1569,7 +1571,7 @@ export type Referral = {
    * ⚠️ **TYPED TEXT, THE SAME AS `history`.** Each `note` is a person's own words, refused blank or
    * over `REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS` and never truncated (the reducer's `ADD_REFERRAL_CORRECTION`
    * case enforces both) — see `REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS`'s own comment for why this is a
-   * separate constant rather than a member of `REFERRAL_HISTORY_LIMITS`. D-11 CRITICAL: the event
+   * separate constant rather than a member of `REFERRAL_HISTORY_LIMITS`. Archived D-11 CRITICAL: the event
    * that writes this is on `WARD_FLOW_TYPED_TEXT_EVENT_TYPES`
    * (`ward-flow-persistence-classification.ts`), never the safe list, so dispatching one locks
    * session persistence exactly as a typed `history` does.
@@ -1580,7 +1582,7 @@ export type Referral = {
    */
   corrections?: ReferralCorrection[];
   /**
-   * T15 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`, item 12, owner answer 12,
+   * T15 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`, item 12, owner answer 12,
    * 17 September 2026): *"An admission from a referral carries the referral's broad diagnosis
    * category, marked tentative."* One of the eleven ICD-10-AM Chapter V block codes
    * (`TENTATIVE_DIAGNOSIS_BLOCKS`, `ward-diagnosis.ts`), never a free-text diagnosis — see that

@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 /**
  * THE STATISTICS SCREENS ARE NEVER SCOPED BY THE SERVICE SELECTOR (item 44, §2 rule S4).
  *
- * Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2 "Never hidden — S3/S4" and
+ * Build plan `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md` §2 "Never hidden — S3/S4" and
  * §3 "Statistics": the statistics home page and the overview section are whole-network pages, like
  * the bed board and the ward page. Choosing a service elsewhere in the shell must not narrow a
  * single figure here — it must only add ONE sentence, worded exactly, saying the figures already

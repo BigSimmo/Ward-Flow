@@ -21,7 +21,7 @@ import type { WardFlowState } from "./ward-flow-reducer";
  * about different records. Each keeps its own review, and desks share one only when the entry is
  * about the same record.
  *
- * Subjects carry no patient link (`patientId: null`): D-14 keeps that link to its allowlisted
+ * Subjects carry no patient link (`patientId: null`): archived D-14 keeps that link to its allowlisted
  * readers, and a synthetic entry has no reason to join a record to a person.
  *
  * Subjects are the first seeded records of each kind, so the same world always yields the same six

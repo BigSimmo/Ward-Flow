@@ -15,7 +15,7 @@ import type { Movement, Unit } from "../src/components/ward-management/ward-mode
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
- * T10 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`, item 8, owner answer
+ * T10 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`, item 8, owner answer
  * 8, 17 September 2026): *"gender at referral decides the incoming bed check."* The
  * `gender_designation` gate (renamed from `sex_designation`, `ward-eligibility.ts`) now reads
  * the gender RECORDED AT REFERRAL (`Movement.gender` / `WardReferralDestination.gender`) —

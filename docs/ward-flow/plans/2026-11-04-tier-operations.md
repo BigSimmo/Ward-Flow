@@ -78,7 +78,7 @@ reason before enabling enforcement. Development-only packages are outside this p
 
 ## Handover design only — I0
 
-Reuse the [existing handover design](2026-11-01-handover-redesign.md). A future build must name the
+Reuse the [existing handover design](../../history/plans-2026/2026-11-01-handover-redesign.md). A future build must name the
 authorised author, receiving desk, source revision, recorded time, item identity, storage lifetime,
 correction history and explicit sign-off meaning. The current role/access engine remains the
 authority for visibility and actions; a sign-off cannot stand in for a clinical decision.

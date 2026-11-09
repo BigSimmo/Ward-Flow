@@ -2,7 +2,7 @@
 //
 // The merged Movements screen (MERGE 03) answers "where is each patient in their move, and what is
 // carrying them" — `journeyStages` for the first half, `transportLegs`/`transportCounts` for the
-// second. Design lock: docs/superpowers/specs/2026-09-05-ward-flow-merges-1-3-design-lock.md §5.
+// second. Design lock: docs/history/superpowers/specs/2026-09-05-ward-flow-merges-1-3-design-lock.md §5.
 //
 // Every test here walks the real `wardMovements` fixture unless the behaviour under test has zero
 // occurrences in it (an empty stage, an expiring legal authority, a transport job nobody has

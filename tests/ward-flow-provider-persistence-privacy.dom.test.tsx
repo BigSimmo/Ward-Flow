@@ -25,7 +25,7 @@ import {
  *     payload back, and because dispatch-based locking needed no proof that every rejection path was
  *     accounted for);
  *   - a session that has dispatched only allowlisted events persists the seed's own prose unchanged
- *     rather than blanking it (F3 — covered directly in `ward-flow-provider.dom.test.tsx`'s D-11
+ *     rather than blanking it (F3 — covered directly in `ward-flow-provider.dom.test.tsx`'s archived D-11
  *     test; this file asserts the accompanying default-deny half);
  *   - `state.configuration` is validated on restore, not trusted;
  *   - a demo reset re-enables persistence after a typed-text lock, however it was dispatched;
@@ -466,7 +466,7 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
     /**
      * RB7 (build plan item 27, 2026-09-17): `ADD_REFERRAL_CORRECTION.note` is human-typed prose,
      * appended to `Referral.corrections` — the same shape `history` on `RECEIVE_REFERRAL` already
-     * is, and D-11 CRITICAL per the build brief: this event must be classified NOT text-safe, and
+     * is, and archived D-11 CRITICAL per the build brief: this event must be classified NOT text-safe, and
      * this test is the proof that dispatching it (a genuine acceptance here — a correction really
      * is written) locks persistence exactly as the ADD_PATIENT test at the top of this block does.
      */
