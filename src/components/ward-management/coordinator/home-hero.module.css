@@ -404,3 +404,8 @@
     padding-bottom: calc(var(--wf-s-4) + var(--wf-band-lip, 22px));
   }
 }
+
+/* The shell's Quick bar at the hero's foot (#1549): a clear step below the ED strip. */
+.hero.hero.hero [data-wf-quick-bar] {
+  margin-top: var(--wf-s-4, 16px);
+}
