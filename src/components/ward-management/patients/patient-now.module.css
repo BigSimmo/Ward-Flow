@@ -3249,3 +3249,17 @@
     line-height: 18px;
   }
 }
+
+/* Note 5 (approved mock-up): the selected record tab is a filled navy pill, matching the header. */
+.v6HeroTabsRow .v6Tab[aria-selected="true"],
+.v6HeroTabsRow .v6Tab[aria-selected="true"]:hover {
+  background: var(--wf-hero-1);
+  box-shadow: none;
+  color: var(--wf-hero-ink);
+}
+
+.v6HeroTabsRow .v6Tab[aria-selected="true"] .v6TabCount {
+  background: color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
+  box-shadow: none;
+  color: var(--wf-hero-ink);
+}

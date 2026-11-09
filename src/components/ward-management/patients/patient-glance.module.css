@@ -102,6 +102,47 @@
   }
 }
 
+/* Note 5 (approved mock-up, Nov 2026): on desktop too the facts read as one quiet strip, one
+ * column per fact split by hairlines, label over value, instead of a row of pills. */
+@media (min-width: 744px) {
+  .glance {
+    display: grid;
+    grid-template-columns: repeat(var(--glance-cols, 4), minmax(0, 1fr));
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+    border-radius: var(--wf-r-md, 12px);
+    background: color-mix(in srgb, var(--wf-hero-ink) 4%, transparent);
+  }
+
+  .tile,
+  .tile[data-flag] {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 9px 14px 10px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+  }
+
+  .tile + .tile {
+    border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
+  }
+
+  .label {
+    align-self: flex-start;
+  }
+
+  .sub {
+    white-space: normal;
+  }
+
+  .sub::before {
+    content: none;
+  }
+}
+
 /* Phone (Note 5, Josh 9 Nov 2026: "make the dark part more condensed ... the boxes too large",
  * then "shrink the curved boxes ... soften the colour"): the facts sit in one quiet panel, a
  * two-column grid split by hairlines, instead of a separate rounded box per fact. A flag keeps its
