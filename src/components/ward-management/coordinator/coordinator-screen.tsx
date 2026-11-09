@@ -819,7 +819,6 @@ export function CoordinatorScreen() {
             />
           </Hero>
 
-
           {/* Home flow (Q340, Q345, 3 Nov 2026): one row. Needs you and Flow lead as the raised switch; the
               stages follow, after a rule, as quieter tabs with counts (always shown; one opens Flow there). */}
           <nav
