@@ -15,6 +15,7 @@ import {
 import type { EdScreenContext } from "./ed-screen-context";
 import { EdInboxReferrals } from "./ed-screen-inbox";
 import { movementMedicalClearance, outstandingItem } from "./ed-screen-model";
+import { edClearanceTime } from "./ed-clearance-time";
 import { EdReferredPanel } from "./ed-screen-referred";
 import type { DepartmentTabKey } from "./use-ed-screen-state";
 import { edStageLabel } from "./ed-referral-status";
@@ -226,11 +227,8 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
                       </span>
                       <span className={styles.lstWhy}>
                         {outstandingItem(m).label}.{" "}
-                        {mc?.cleared
-                          ? `Medically cleared at ${formatInstantWithDay(mc.at, now)}.`
-                          : mc
-                            ? "Not medically cleared."
-                            : "Clearance pending."}
+                        {/* Medical clearance tracker (Josh sign-off, 9 Nov 2026): elapsed from arrival. */}
+                        {edClearanceTime(m.openedAt, mc, now).words}.
                       </span>
                     </span>
                     <span className={styles.lstEnd}>
@@ -289,7 +287,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
                       </span>
                       <span className={styles.lstWhy}>
                         {reviewed ? "Reviewed by psychiatry. " : "Not seen by psychiatry yet. "}
-                        {edStageLabel(m.stage)}
+                        {edStageLabel(m.stage)}. {edClearanceTime(m.openedAt, mc, now).words}.
                       </span>
                     </span>
                     <span className={styles.lstEnd}>

@@ -1,0 +1,76 @@
+/* Feature 26: alternatives to admission. Neutral throughout: colour only marks a chosen state. */
+.lede,
+.note {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.note {
+  color: var(--wf-ink-3);
+}
+
+.rows,
+.summary {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+}
+
+.label {
+  min-width: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+}
+
+/* Content-width segments, so "Declined by patient" is never cut short. */
+.track {
+  grid-auto-columns: auto;
+}
+
+.summary {
+  gap: 2px;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+}
+
+.foot {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+}
+
+@container referral-sheet (max-width: 34rem) {
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  .track {
+    grid-auto-columns: minmax(max-content, 1fr);
+  }
+}
+
+/* The read-only line in a receiving view. */
+.facts {
+  display: grid;
+  gap: 2px;
+}
+
+.factsTitle {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}

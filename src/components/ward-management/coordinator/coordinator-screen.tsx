@@ -79,6 +79,7 @@ import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen
 import type { PlacementSubject } from "./home-placement-drawer";
 import { usePlannedRows } from "./planned-rows";
 import { FLOW_STAGES, flowStageOf, type FlowStageId, PriorityQueue, type QueueHighlight } from "./priority-queue";
+import { WardReadyForNextLines } from "../ward/ward-ready-for-next-lines";
 
 /*
  * Audit S-25: the Home ED filter lasts for this browser session, so opening a patient and coming
@@ -819,6 +820,9 @@ export function CoordinatorScreen() {
               }
             />
           </Hero>
+
+          {/* Ward wait list (Josh, 9 Nov 2026): a ward that said it is ready for its next patient. */}
+          <WardReadyForNextLines />
 
           {/* Home flow (Q340, Q345, 3 Nov 2026): one row. Needs you and Flow lead as the raised switch; the
               stages follow, after a rule, as quieter tabs with counts (always shown; one opens Flow there). */}

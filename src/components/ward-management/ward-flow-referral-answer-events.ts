@@ -1,6 +1,7 @@
 import { numberedBedKindRefusal } from "./ward-bed-designation";
 import { closedToAdmissionsRefusal } from "./capacity/ward-closure";
 import { referralIntakeError } from "./referrals/referral-submission";
+import { alternativesConsideredError } from "./referrals/referral-alternatives";
 import { type AuditDecision } from "./ward-audit";
 import { GENDER_PLACEMENT_REASONS, GENDER_PLACEMENT_REFUSAL } from "@/components/ward-management/ward-change-reasons";
 import { type Instant } from "@/components/ward-management/ward-clock";
@@ -628,6 +629,16 @@ export function reduceReferralAnswerEvent(
           `RECEIVE_REFERRAL tentativeDiagnosis must be chosen from TENTATIVE_DIAGNOSIS_BLOCKS`,
         );
       }
+      // Feature 26: optional, never a gate. Only an ED, community or coordinator bed request may
+      // carry it, and only as listed options with listed outcomes.
+      if (event.alternativesConsidered !== undefined) {
+        const alternativesError = alternativesConsideredError(event.alternativesConsidered);
+        if (alternativesError) return reject(state, event, `RECEIVE_REFERRAL ${alternativesError}`);
+        if (event.role === "ward")
+          return reject(state, event, "RECEIVE_REFERRAL alternatives to admission are recorded by ED or community");
+        if (!event.destinations.some((destination) => destination.kind === "psychiatric_ward"))
+          return reject(state, event, "RECEIVE_REFERRAL alternatives to admission belong to a ward bed request");
+      }
       const sequence = state.frontDoorReferralSequence + 1;
       const created: Referral = {
         id: nextFrontDoorReferralId(sequence),
@@ -664,6 +675,11 @@ export function reduceReferralAnswerEvent(
         // T15 (item 12): absent means nobody has recorded one — never defaulted, never derived
         // from anything else on the referral.
         tentativeDiagnosis: event.tentativeDiagnosis,
+        ...(event.alternativesConsidered === undefined
+          ? {}
+          : {
+              alternativesConsidered: event.alternativesConsidered.map(({ option, outcome }) => ({ option, outcome })),
+            }),
       };
       return { ...state, referrals: [...state.referrals, created], frontDoorReferralSequence: sequence };
     }

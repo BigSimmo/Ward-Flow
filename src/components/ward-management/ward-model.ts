@@ -42,6 +42,7 @@ import type {
 import type {
   ClinicalReassessmentEntry,
   ExaminationOutcome,
+  PsychReview,
   GenderPlacement,
   MovementId,
   MovementRoot,
@@ -321,6 +322,12 @@ export type Unit = {
    * reopening, a prompt only: reopening always needs a person. Absent on a ward closed any other way.
    */
   admissionsClosure?: WardAdmissionsClosure;
+  /**
+   * Ward wait list (Josh, 9 Nov 2026): when the ward said it is ready for its next patient
+   * (`MARK_WARD_READY_FOR_NEXT`). A fact for the coordinator, never a placement: nobody is pulled
+   * because of it. Cleared by a pull into this ward or by the ward cancelling it.
+   */
+  readyForNextAt?: Instant;
   /** H-0978: beds closed one by one (`SET_BED_CLOSED`); a reopened one keeps `reopenedAt` as seat history. */
   closedBeds?: { bedNumber: number; at: Instant; by: string; reason?: WardClosureReason; reopenedAt?: Instant }[];
   /**
@@ -924,6 +931,13 @@ export type Movement = MovementBase & {
    *  examination only when this one's outcome is `"further_examination_ordered"` — see
    *  `supersededExaminations` below and `RECORD_EXAMINATION`'s own guard. */
   examination?: { at: Instant; outcome: ExaminationOutcome };
+  /**
+   * Psychiatry review tracker (Josh, 9 Nov 2026): when the emergency department asked for a
+   * psychiatric review (`REQUEST_PSYCH_REVIEW`) and when the registrar and consultant were recorded
+   * as having seen the person (`RECORD_PSYCH_REVIEW_SEEN`). Times as recorded; nothing is worked
+   * out from them and the ED list keeps its own order.
+   */
+  psychReview?: PsychReview;
   /**
    * Earlier examination records this movement has outgrown, oldest first. Owner item 7
    * (2026-09-17): a repeat examination is a NEW record, not an edit to the old one, so the
@@ -1600,6 +1614,13 @@ export type Referral = {
    * `Admission.tentativeDiagnosis`, defaulting to `null` there only.
    */
   tentativeDiagnosis?: TentativeDiagnosisBlock;
+  /**
+   * Feature 26 (Josh, 9 Nov 2026): the alternatives to admission the sender marked before asking for
+   * a ward bed, in the fixed order of `ADMISSION_ALTERNATIVE_OPTIONS`. Fixed-list choices only, never
+   * typed text, never a score or ranking, and never a gate on the bed request. Absent means none
+   * marked. Written only by `RECEIVE_REFERRAL`.
+   */
+  alternativesConsidered?: readonly import("./referrals/referral-alternatives").AlternativeConsidered[];
   /**
    * T12 (item 9): the front door's own copy of the same accountability record
    * `Movement.genderPlacements` carries — see `GenderPlacement`'s own doc comment. Written by

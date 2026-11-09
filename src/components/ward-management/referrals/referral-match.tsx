@@ -8,6 +8,7 @@ import {
   readyBedsPromisedSentence,
 } from "@/components/ward-management/ward-ready-bed-promises";
 import { ReferralIntakeSummary } from "./referral-intake-summary";
+import { ReferralAlternativesFacts } from "./referral-alternatives-facts";
 import { useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -580,6 +581,7 @@ export function ReferralMatchView({
         <Disclosure>
           <ReferralIntakeSummary intake={referral.intake} />
         </Disclosure>
+        <ReferralAlternativesFacts list={referral.alternativesConsidered} />
         {wardArms.length > 1 && (
           <label className={styles.fieldLabel}>
             Review recipient ward
@@ -1010,6 +1012,7 @@ export function ReferralMatchView({
           <Disclosure>
             <ReferralIntakeSummary intake={referral.intake} />
           </Disclosure>
+          <ReferralAlternativesFacts list={referral.alternativesConsidered} />
           {recipientSelect}
           {!hideDossierHeader ? (
             <div className={styles.matchDossierHeader}>
@@ -1131,6 +1134,7 @@ export function ReferralMatchView({
         <>
           {phone !== undefined ? (
             <>
+              <ReferralAlternativesFacts list={referral.alternativesConsidered} />
               {gpSourceNotice}
               {recipientSelect}
             </>

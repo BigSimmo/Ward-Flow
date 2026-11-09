@@ -101,6 +101,7 @@ import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel, waitFactors } from "@/components/ward-management/ward-priority";
 import { referenceDistance } from "@/components/ward-management/reference/ward-reference-distances";
+import { CandidateFit } from "@/components/ward-management/coordinator/shortlist-candidate-fit";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { openWardHelp } from "@/components/ward-management/help/ward-help-events";
@@ -1199,7 +1200,10 @@ export function ShortlistPanel({
           {/* "Eligible now" repeats the group heading, so the card no longer shows it; it stays for
           assistive technology. A reason for review is always on screen. */}
           {candidate.verdict.eligible ? (
-            <span className={`${shortlistStyles.candidateReason} sr-only`}>{candidateReason(candidate.verdict)}</span>
+            <>
+              <span className={`${shortlistStyles.candidateReason} sr-only`}>{candidateReason(candidate.verdict)}</span>
+              <CandidateFit unitId={candidate.unit.id} gates={candidate.verdict.gates} />
+            </>
           ) : (
             <span className={`${styles.shortlistCandidateReasonBad} ${shortlistStyles.candidateReason}`}>
               {candidateReason(candidate.verdict)}

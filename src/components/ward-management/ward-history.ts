@@ -127,6 +127,8 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   RECORD_LEGAL_FORM_CONTINUATION: { category: "patient", plainWording: "Statutory form continuation recorded" },
   CLEAR_EXPECT_FLAG: { category: "patient", plainWording: "Expected patient flag cleared" },
   RAISE_EXPECT_FLAG: { category: "patient", plainWording: "Expected patient flag raised" },
+  REQUEST_PSYCH_REVIEW: { category: "patient", plainWording: "Psychiatric review asked for" },
+  RECORD_PSYCH_REVIEW_SEEN: { category: "patient", plainWording: "Psychiatric review seen" },
   FLAG_LEGAL_MISMATCH: { category: "patient", plainWording: "Statutory placement mismatch flagged" },
 
   // 2.5 Capacity and bed release
@@ -173,6 +175,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   RECORD_REFERRAL_COMMITMENT: { category: "patient", plainWording: "Response commitment on a referral recorded" },
   ASK_MORE_WARDS: { category: "patient", plainWording: "More wards asked about a referral" },
   CLOSE_WARD_TO_ADMISSIONS: { category: "bed", plainWording: "Ward closed to admissions" },
+  MARK_WARD_READY_FOR_NEXT: { category: "bed", plainWording: "Ward ready for next patient marked" },
   REOPEN_WARD_TO_ADMISSIONS: { category: "bed", plainWording: "Ward reopened to admissions" },
   SET_BED_CLOSED: { category: "bed", plainWording: "Bed closed or reopened" },
   RECORD_BED_MEETING_ACTION: { category: "both", plainWording: "Bed meeting action recorded" },

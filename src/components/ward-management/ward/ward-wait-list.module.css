@@ -1,0 +1,99 @@
+/* Ward wait list (Josh, 9 Nov 2026): a quiet card in the pattern of the Referrals tab. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 4%, transparent);
+}
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+}
+.caps {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+}
+.note {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
+}
+.readyMark {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin-inline-start: auto;
+}
+.readyLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+.mono {
+  font-family: var(--wf-mono);
+  font-feature-settings: "tnum" 1;
+  white-space: nowrap;
+}
+.empty {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--wf-fs-13);
+}
+.table th,
+.table td {
+  padding: var(--wf-s-2) var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+  text-align: start;
+  vertical-align: top;
+  font-weight: 400;
+}
+.table thead th {
+  border-top: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+}
+.table .end {
+  text-align: end;
+}
+.name {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  text-decoration: none;
+}
+.name:hover {
+  text-decoration: underline;
+}
+.sub {
+  display: block;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+@media (max-width: 40rem) {
+  .ready {
+    margin-inline-start: 0;
+  }
+}

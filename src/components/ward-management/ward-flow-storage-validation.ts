@@ -23,6 +23,7 @@ import {
   isStayBlockRecords,
 } from "./ward-admissions";
 import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/referral-submission";
+import { alternativesConsideredError } from "./referrals/referral-alternatives"; // Feature 26
 import { REFERRAL_INFORMATION_NEED_IDS } from "./referrals/referral-information-needs";
 import { REFERRAL_CONTACT_OUTCOME_IDS, REFERRAL_OWNER_DESKS } from "./referrals/referral-owner-and-calls";
 import { REFERRAL_COMMITMENT_STEP_IDS } from "./referrals/referral-commitments";
@@ -178,6 +179,11 @@ const NESTED_KEY_RULES = new Map<string, z.ZodMiniType>([
   ["legalForm", legalFormRule],
   ["medicalClearance", medicalClearanceRule],
   ["transportNeed", z.looseObject({ needed: bool, at: finite })],
+  // Psychiatry review tracker (9 Nov 2026): instants only.
+  [
+    "psychReview",
+    z.strictObject({ requestedAt: finite, registrarSeenAt: z.optional(finite), consultantSeenAt: z.optional(finite) }),
+  ],
   ["closure", closureRule],
   ...[
     "legalClock",
@@ -367,6 +373,8 @@ const unit = z
       ),
     ),
     isClosed: z.optional(bool),
+    // Ward wait list (9 Nov 2026): when the ward said it is ready for its next patient.
+    readyForNextAt: z.optional(finite),
     // H-0978: one exact bed closed (`SET_BED_CLOSED`). A chosen reason, never typed text. Optional,
     // so a state saved before closed marks existed still loads.
     closedBeds: z.optional(
@@ -548,8 +556,7 @@ const movement = z
       const pause = movement.medicalDeterioration;
       if (pause === undefined) return true;
       if (pause.resumedAt !== undefined) return pause.resumedAt > pause.at;
-      // An unresumed pause holds the referral before placement: nothing accepted, no bed pulled,
-      // not medically cleared, and no live transport.
+      // An unresumed pause is before placement: nothing accepted, no bed pulled, not medically cleared, no transport.
       return (
         movement.acceptedUnitId === undefined &&
         movement.admissionId === undefined &&
@@ -591,8 +598,7 @@ const admission = z.looseObject({
   blockReason: z.nullable(z.enum(BED_RELEASE_BLOCKERS)),
   stayBlockRecords: z.optional(z.custom(isStayBlockRecords)), // absent in older saves.
   leavingDestination: z.nullable(z.custom(isLeavingDestination)),
-  // A stored barrier is a list value or absent; free text here would be typed text restored from
-  // storage (review finding A2-2).
+  // A stored barrier is a list value or absent; free text would be typed text restored (finding A2-2).
   dischargeBarrier: z.optional(z.nullable(z.custom(isDischargeBarrier))),
   // FD-10: the ward's own block, a listed block with a finite time, or absent in older saves.
   wardDiagnosis: z.optional(
@@ -698,6 +704,7 @@ const referral = z.looseObject({
   originUnitId: link,
   ownerHistory: z.optional(z.array(referralOwnerEntry)),
   contactLog: z.optional(z.array(referralContactEntry)),
+  alternativesConsidered: z.optional(z.unknown().check(z.refine((list) => alternativesConsideredError(list) === null))),
 });
 
 const bedRelease = z.looseObject({

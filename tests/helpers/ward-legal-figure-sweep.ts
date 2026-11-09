@@ -278,6 +278,8 @@ function candidatesForMovements(
       return unitIds.slice(-1).map((unitId) => ({ type, role, now, unitId, actingUnitId: unitId, reason: "staffing" }));
     case "REOPEN_WARD_TO_ADMISSIONS":
       return unitIds.slice(-1).map((unitId) => ({ type, role, now, unitId, actingUnitId: unitId }));
+    case "MARK_WARD_READY_FOR_NEXT":
+      return unitIds.slice(-1).map((unitId) => ({ type, role, now, unitId, actingUnitId: unitId }));
     // H-0978 / WS-15: reopen a bed already closed, else close one of a ward's top beds (stays fill
     // the lowest beds first), last ward first, so one close takes a single Ready bed from one ward.
     case "SET_BED_CLOSED":
@@ -752,7 +754,10 @@ function candidatesForMovements(
     case "RECORD_COUNTRY_EXTENSION":
     case "EVALUATE_ARRIVAL_LATENESS":
     case "CLEAR_EXPECT_FLAG":
+    case "REQUEST_PSYCH_REVIEW":
       return movementIds.map((movementId) => ({ type, role, now, movementId }));
+    case "RECORD_PSYCH_REVIEW_SEEN":
+      return movementIds.map((movementId) => ({ type, role, now, movementId, grade: "registrar" }));
     case "RAISE_EXPECT_FLAG":
       return movementIds.map((movementId) => ({ type, role, now, movementId, kind: "voluntary_48h" }));
     case "FLAG_LEGAL_MISMATCH":

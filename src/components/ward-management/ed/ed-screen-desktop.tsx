@@ -99,6 +99,7 @@ export function renderEdBoardTableRow(
       movementId={movement.id}
       patientName={patientInfo.formalName}
       clearance={medicalClearance}
+      arrivedAt={movement.openedAt}
       reviewed={movement.examination !== undefined}
       revokedNotice={examinationRevokedWhileBedHeld(movement) ? EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE : undefined}
       earlierExaminations={(movement.supersededExaminations ?? []).map(

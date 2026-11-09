@@ -76,6 +76,8 @@ describe("clinical values file", () => {
       veryLongWait: 2880,
       edAccessTarget: 1440,
       edMedicalBedRelease: 24,
+      // Medical clearance tracker (Josh sign-off, 9 Nov 2026): amber after six hours with none recorded.
+      edClearanceNotRecorded: 6,
       bedAlertLine: 85,
       occupancyAmber: 90,
       occupancySurge: 95,

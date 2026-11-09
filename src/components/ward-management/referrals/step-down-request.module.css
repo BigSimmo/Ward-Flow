@@ -1,0 +1,29 @@
+/* Feature 12: the step-down request button and the wards it offers. Neutral text, no colour. */
+.request {
+  display: grid;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  margin-block-start: var(--wf-s-2);
+}
+
+.note {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.wards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.figure {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}

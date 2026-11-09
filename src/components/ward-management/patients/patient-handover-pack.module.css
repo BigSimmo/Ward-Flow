@@ -1,0 +1,144 @@
+/* ED-to-ward handover pack (patient-handover-pack.tsx). Shell tokens follow the theme on screen and
+ * are forced light in print, as on the referral letter, so the printed page is ink on white. */
+
+.entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.entryText {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.entryTitle {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-15, var(--wf-fs-14)) / 1.3 var(--wf-font);
+}
+
+.entrySub {
+  margin: 2px 0 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.paper {
+  --pack-ink: var(--ink, var(--wf-ink-1));
+  --pack-ink-2: var(--ink-soft, var(--wf-ink-2));
+  --pack-line: var(--line, var(--wf-line));
+  display: grid;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--surface, var(--wf-surface));
+  color: var(--pack-ink);
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-bottom: var(--wf-s-3);
+  border-bottom: 2px solid var(--pack-ink);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--pack-ink-2);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  line-height: var(--wf-lh-11);
+  text-transform: uppercase;
+}
+
+.title {
+  margin: var(--wf-s-1) 0 0;
+  font-size: var(--wf-fs-16);
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.stamp {
+  margin: 0;
+  color: var(--pack-ink-2);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--wf-lh-12);
+}
+
+.section {
+  display: grid;
+  gap: var(--wf-s-1);
+  padding-bottom: var(--wf-s-2);
+  border-bottom: 1px solid var(--pack-line);
+}
+
+.section:last-of-type {
+  border-bottom: 0;
+}
+
+.sectionHead {
+  margin: 0;
+  color: var(--pack-ink-2);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  line-height: var(--wf-lh-11);
+  text-transform: uppercase;
+}
+
+.rows {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr);
+  gap: var(--wf-s-3);
+}
+
+.row dt {
+  color: var(--pack-ink-2);
+}
+
+.row dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.missing {
+  color: var(--pack-ink-2);
+  font-style: italic;
+}
+
+.note {
+  margin: 0;
+  color: var(--pack-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+@media (max-width: 480px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}

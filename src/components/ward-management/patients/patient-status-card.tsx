@@ -36,6 +36,7 @@ import { canDispatch } from "../ward-role-permissions";
 import { unitInScope } from "../ward-role-access";
 import { wardPlaceLookup } from "../ward-access-places";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
+import { NoReplyTimerList } from "../referrals/referral-no-reply-timers";
 
 /** One gate or fact on the status card: value, who owns it, when it last changed, at most one action. */
 interface StatusCell {
@@ -1059,6 +1060,15 @@ export function PatientStatusCard({
             </div>
           ))}
         </div>
+        {/* Referral response timer (Josh, 9 Nov 2026): each ward still to answer, with its time left. */}
+        {mode === "find" && context.movement && sender.movementFor(context.movement) === undefined ? (
+          <NoReplyTimerList
+            movement={context.movement}
+            now={context.now}
+            canEscalate={records !== null && routeRole === "coordinator"}
+            personName={context.patient ? `${context.patient.familyName}, ${context.patient.givenName}` : "this person"}
+          />
+        ) : null}
         {progress ? <PatientStayProgress progress={progress} /> : null}
         {children}
         {phoneQuiet ? <p className={styles.phFoot}>{phoneFoot ?? status.meta}</p> : null}

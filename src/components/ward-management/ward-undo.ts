@@ -94,6 +94,9 @@ export const UNDO_STEP_ACTIONS = {
     "RECORD_TRANSPORT_NEED",
     "RECORD_ED_PRESENTATION",
     "HANDOVER_READY",
+    // Psychiatry review tracker (Josh, 9 Nov 2026).
+    "REQUEST_PSYCH_REVIEW",
+    "RECORD_PSYCH_REVIEW_SEEN",
   ],
   UNDO_TRANSPORT_STEP: ["TRANSPORT_ACCEPTED", "TRANSPORT_EN_ROUTE", "PATIENT_COLLECTED", "PATIENT_ARRIVED"],
   // Audit A1-12 / A4-24 (13 Oct 2026): "Has left" is reversible from its toast, like Move bed.

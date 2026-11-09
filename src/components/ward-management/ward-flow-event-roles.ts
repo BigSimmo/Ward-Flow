@@ -551,6 +551,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   EVALUATE_ARRIVAL_LATENESS: ["coordinator", "ed", "ward"],
   RELEASE_AND_REOPEN_SEARCH: ["coordinator", "ward"],
   CLEAR_EXPECT_FLAG: ["ward", "coordinator", "ed", "community"],
+  // Psychiatry review tracker and ward wait list (Josh, 9 Nov 2026).
+  REQUEST_PSYCH_REVIEW: ["ed", "coordinator"],
+  RECORD_PSYCH_REVIEW_SEEN: ["ed", "coordinator"],
+  MARK_WARD_READY_FOR_NEXT: ["ward", "coordinator"],
   RAISE_EXPECT_FLAG: ["ward", "coordinator", "ed", "community"],
   FLAG_LEGAL_MISMATCH: ["ward", "coordinator"],
   EVALUATE_LEAVE_BED_WARNINGS: ["ward", "coordinator"],

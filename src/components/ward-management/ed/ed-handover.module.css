@@ -185,6 +185,7 @@
 }
 .checksList b {
   font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  font-variant-numeric: tabular-nums;
   color: var(--wf-ink-1);
 }
 .checksList li[data-level="warning"] b {
@@ -530,6 +531,20 @@
 }
 .listQuiet {
   color: var(--wf-ink-3);
+}
+/* Psychiatry review tracker (Josh, 9 Nov 2026): the stage under the next step, then its one-tap steps. */
+.listReview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--wf-s-2);
+  margin-top: 4px;
+}
+.listReviewLine {
+  flex: 1 1 100%;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / 18px var(--wf-font);
+  font-variant-numeric: tabular-nums;
 }
 .listTime {
   display: inline-flex;

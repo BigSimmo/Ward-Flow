@@ -17,6 +17,10 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import type { StepDownBoardRow } from "@/components/ward-management/ward-step-down";
 import styles from "@/components/ward-management/capacity/step-down-board.module.css";
+import {
+  StepDownRequestButton,
+  useStepDownRequestGate,
+} from "@/components/ward-management/referrals/step-down-request";
 
 /**
  * The bed coordinator's refer step for the Step down board, shared by the board and Capacity's
@@ -68,6 +72,10 @@ export function StepDownRowDetail({
   const { refer, canRefer, capReasons, setCapReasons, configuration, patientOf, setFocusMovementId, NOT_COORDINATOR } =
     kit;
   const primaryStepDownWard = row.wards[0]?.unit;
+  // Feature 12: a ward desk on its own candidate asks through its own referral (RECEIVE_REFERRAL)
+  // instead of the coordinator's Refer, which it cannot use.
+  const { asWard } = useStepDownRequestGate(row.fromUnit.id);
+  const wardRequest = !canRefer && asWard;
   return (
     <>
       {hideWho ? null : (
@@ -99,7 +107,11 @@ export function StepDownRowDetail({
           </select>
         </label>
       ) : null}
-      {row.wards.length === 0 ? (
+      {wardRequest ? (
+        <div className={styles.meta}>
+          <StepDownRequestButton row={row} />
+        </div>
+      ) : row.wards.length === 0 ? (
         <p className={styles.absent}>No ward passes every check with a Ready bed now.</p>
       ) : (
         <ul className={styles.wards} aria-label="Wards that fit with a Ready bed">

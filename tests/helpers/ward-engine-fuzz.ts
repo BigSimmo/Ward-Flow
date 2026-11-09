@@ -1088,6 +1088,19 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       return { type: "REOPEN_WARD_TO_ADMISSIONS", unitId: id(unit), actingUnitId: id(unit) };
     },
   ],
+  // Ward wait list (9 Nov 2026): ready for next patient, or its cancel, on an open ward.
+  [
+    1,
+    (state, random) => {
+      const unit = prefer(random, state.units, (candidate) => !candidate.isClosed);
+      return {
+        type: "MARK_WARD_READY_FOR_NEXT",
+        unitId: id(unit),
+        actingUnitId: id(unit),
+        ...(unit?.readyForNextAt !== undefined && chance(random, 0.5) ? { cancel: true as const } : {}),
+      };
+    },
+  ],
   // H-0978 / WS-15: one exact bed closed or reopened. Stays fill the lowest beds first (`seatStays`),
   // so a close aims at the top beds of a ward with a Ready bed; a reopen at a bed already closed.
   [
@@ -1686,6 +1699,16 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     })),
   ],
   [1, movementEvent("CLEAR_EXPECT_FLAG", (movement) => movement.expectFlag?.clearedAt === undefined)],
+  // Psychiatry review tracker (9 Nov 2026).
+  [1, movementEvent("REQUEST_PSYCH_REVIEW", (movement) => movement.psychReview === undefined)],
+  [
+    1,
+    movementEvent(
+      "RECORD_PSYCH_REVIEW_SEEN",
+      (movement) => movement.psychReview !== undefined,
+      (_state, random) => ({ grade: pick(random, ["registrar", "consultant"] as const) }),
+    ),
+  ],
   [1, movementEvent("CLEAR_MOVEMENT_URGENT_FLAG", (movement) => Boolean(movement.flaggedUrgent))],
   [1, movementEvent("RECORD_MOVEMENT_BLOCKER", undefined, () => ({ blocker: SYNTHETIC_NOTE }))],
   [1, movementEvent("CLEAR_MOVEMENT_BLOCKER")],
@@ -2084,6 +2107,22 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       // With no row held, sometimes still send the release, which must be refused and change nothing,
       // so a run that never holds a row at a sweep step still sends both events.
       return chance(random, 0.5) ? { ...event, type: "RELEASE_INBOX_ITEM_OWNERSHIP" } : event;
+    },
+  ],
+  // 9 Nov 2026: the sweep visits each builder once, so the release has its own builder too and is
+  // always sent at its sweep step, whatever the draw above gave (refused when nobody holds the row).
+  [
+    0.25,
+    (state, random) => {
+      const event = inboxEvent("TAKE_INBOX_ITEM_OWNERSHIP", (current) =>
+        Object.fromEntries(
+          Object.entries(current.inboxOwnership ?? {}).filter(([, history]) => {
+            const latest = history?.at(-1);
+            return latest !== undefined && latest.kind !== "released";
+          }),
+        ),
+      )(state, random)!;
+      return { ...event, type: "RELEASE_INBOX_ITEM_OWNERSHIP" };
     },
   ],
   [

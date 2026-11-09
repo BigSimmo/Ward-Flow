@@ -67,6 +67,9 @@ const CLINICAL_VALUE_NOTES = {
   edMedicalBedRelease: {
     source: "FD-19 (30 Aug 2026) (ward-model.ts provenance)",
   },
+  edClearanceNotRecorded: {
+    source: "Josh sign-off 9 Nov 2026, medical clearance tracker defaults",
+  },
   bedAlertLine: {
     source: "Josh, v6 shell boards 02 and 03b, 7 Oct 2026; D-24 had taken the eighty five line off until sourced",
     alternatives: [

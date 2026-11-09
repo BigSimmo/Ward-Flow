@@ -40,6 +40,8 @@ const PatientWardChangeCard = dynamic(() => import("./patient-ward-change-card")
 const PatientDischargeReadiness = dynamic(() => loadWardCards().then((m) => m.PatientDischargeReadiness));
 const PatientLastDay = dynamic(() => loadWardCards().then((m) => m.PatientLastDay));
 const PatientNextStepCard = dynamic(() => loadWardCards().then((m) => m.PatientNextStepCard));
+// Where the hours went and the handover pack (items 8 and 17) load on their own (phone script budget).
+const PatientJourneyExtras = dynamic(() => import("./patient-journey-extras").then((m) => m.PatientJourneyExtras));
 
 /** The values and handlers `PatientNowScreen` passes to its Now tab. */
 export type PatientNowPanelProps = {
@@ -54,6 +56,8 @@ export type PatientNowPanelProps = {
   gate: (eventType: WardFlowEventType, key?: string) => RoleGate;
   goneToEd: () => void;
   handleCopySummary: () => void;
+  /** Risk flags for the handover pack, from `referralSafetyFacts` only (H10). */
+  handoverRiskFlags: readonly string[] | undefined | "not_shared";
   isLiveBedflow: boolean;
   isPhone: boolean;
   isTransportBooked: boolean;
@@ -68,6 +72,8 @@ export type PatientNowPanelProps = {
   pathname: string;
   phoneMovement: boolean;
   phoneStatusFoot: string | undefined;
+  /** The name as the page header shows it, for the handover pack. */
+  patientName: string;
   record: PatientNowRecord;
   recordLeave: (expectedReturn: number, kind: LeaveKind, psychiatristAuthorised?: boolean) => void;
   recordReturn: () => void;
@@ -107,6 +113,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
     gate,
     goneToEd,
     handleCopySummary,
+    handoverRiskFlags,
     isLiveBedflow,
     isPhone,
     isTransportBooked,
@@ -121,6 +128,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
     pathname,
     phoneMovement,
     phoneStatusFoot,
+    patientName,
     record,
     recordLeave,
     recordReturn,
@@ -369,6 +377,17 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
             // Redesign (31 Oct 2026): a timeline of what was recorded, newest first, in place of the
             // near-empty bar.
             <PatientJourneyTimeline movement={liveMovement} now={now} onOpenHistory={() => openTab("history")} />
+          ) : null}
+          {isLiveBedflow && liveMovement ? (
+            <PatientJourneyExtras
+              movement={liveMovement}
+              patient={livePatient}
+              patientName={patientName}
+              acceptingUnit={acceptingUnit}
+              callTargets={callTargets}
+              riskFlags={handoverRiskFlags}
+              now={now}
+            />
           ) : null}
         </>
       }

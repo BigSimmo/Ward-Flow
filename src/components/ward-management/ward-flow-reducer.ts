@@ -188,6 +188,8 @@ import { withDemoStageTimes } from "@/components/ward-management/ward-demo-stage
 import { type SupportNotificationRecord } from "@/components/ward-management/ward-support-notifications";
 // Closing the loop, package D (24 Oct 2026).
 import { applyLoopChecksDemoOverlay } from "./ward-loop-checks-demo";
+import { applyWaitlistDemoOverlay } from "./ward-demo-waitlist";
+import { reduceReviewReadyEvent } from "./ward-flow-review-ready-events";
 // S6 example data (3 Nov 2026): no demo list opens empty. A live shared build swaps in a no-op.
 import { applyExampleListsOverlay } from "@/components/ward-management/ward-demo-example-lists";
 import { stepUndoSubjectId, subjectId } from "./ward-flow-subject-id";
@@ -587,7 +589,12 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
   };
   // Closing the loop, package D (24 Oct 2026): a few synthetic marks so each record shows in the demo.
   return applyExampleListsOverlay(
-    network ? seed : applyLoopChecksDemoOverlay(applyRulingsDemoOverlay(seed, NOW_ANCHOR), NOW_ANCHOR),
+    network
+      ? seed
+      : applyWaitlistDemoOverlay(
+          applyLoopChecksDemoOverlay(applyRulingsDemoOverlay(seed, NOW_ANCHOR), NOW_ANCHOR),
+          NOW_ANCHOR,
+        ),
     NOW_ANCHOR,
   );
 }
@@ -2202,6 +2209,17 @@ export function reduceClinicalEvent(
       };
       return replaceMovement(state, movement.id, updated);
     }
+
+    case "REQUEST_PSYCH_REVIEW":
+    case "RECORD_PSYCH_REVIEW_SEEN":
+    case "MARK_WARD_READY_FOR_NEXT":
+      return reduceReviewReadyEvent(state, event, decision, {
+        findMovement,
+        findUnit,
+        reject,
+        replaceMovement,
+        replaceUnit,
+      });
 
     case "RAISE_EXPECT_FLAG": {
       const movement = findMovement(state, event.movementId);

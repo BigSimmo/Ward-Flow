@@ -81,6 +81,8 @@ const SIGNED_BY_JOSH_20_OCT = { status: "signed", signedBy: "Josh (product owner
 const SIGNED_BY_JOSH_21_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-21" } as const;
 /** Josh approved the role access plan version 2, with its 12 month role ceiling, on 23 Oct 2026 (D-80). */
 const SIGNED_BY_JOSH_23_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-23" } as const;
+/** Josh signed the medical clearance tracker's defaults for the prototype on 9 Nov 2026. */
+const SIGNED_BY_JOSH_9_NOV = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-11-09" } as const;
 
 /**
  * The name each observation level is shown under, everywhere Ward Flow shows one (fix plan item 10,
@@ -173,6 +175,15 @@ export const CLINICAL_VALUES = {
     name: "Psychiatric bed released after a medical trip expected to last",
     group: "Emergency department waits",
     value: ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS,
+    unit: "hours",
+  },
+  edClearanceNotRecorded: {
+    // Josh sign-off 9 Nov 2026: an amber flag, never red; the clinician records clearance, the app
+    // never infers it.
+    ...SIGNED_BY_JOSH_9_NOV,
+    name: "ED patient with no medical clearance recorded flagged amber, from arrival, after",
+    group: "Emergency department waits",
+    value: 6,
     unit: "hours",
   },
 
