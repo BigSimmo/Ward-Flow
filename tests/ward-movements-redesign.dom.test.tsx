@@ -90,7 +90,7 @@ describe("Movements redesign: the coordinator's board", () => {
       expect(stage).not.toHaveAttribute("aria-pressed");
       expect(stage).toHaveAttribute("aria-haspopup", "dialog");
       expect(stage).not.toHaveAttribute("data-highlighted");
-      expect(stage.textContent).toMatch(/none waiting|longest /);
+      expect(stage.textContent).toMatch(/none waiting|longest /u);
     }
     fireEvent.click(stages[0]!);
     const sheet = screen.getByTestId("movement-people-sheet");

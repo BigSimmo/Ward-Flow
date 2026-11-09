@@ -11,7 +11,10 @@
 }
 
 .item {
-  padding: 0.3em 0.95em;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0.2em 0.95em;
   border-radius: 999px;
   color: var(--wf-ink-2);
   font-weight: 600;
@@ -23,10 +26,13 @@
   color: var(--wf-ink-1);
 }
 
+/* TV polish (Josh, 8 Nov 2026): the view on show reads from across the room, in the accent, not
+ * as a faint white pill on grey. */
 .item[aria-current="page"] {
-  background: var(--wf-surface);
-  box-shadow: var(--wf-e1);
-  color: var(--wf-ink-1);
+  background: var(--wf-accent-tint);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-accent) 45%, transparent);
+  color: var(--wf-accent-ink);
+  font-weight: 700;
 }
 
 .item:focus-visible {

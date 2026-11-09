@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { dayOf, DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { durMinutes } from "@/components/wf/format";
@@ -1136,7 +1136,7 @@ describe("movements board tab in the address", () => {
 });
 
 describe("M3: the worklist leads and check in lives on Transport (3 Nov 2026)", () => {
-  it("keeps the timeline behind a switch until it is turned on", () => {
+  it("keeps the timeline behind a switch that hides and shows it (shown by default, Note 7)", () => {
     window.localStorage.removeItem("ward-flow-movements-timeline");
     renderScreen();
     const panel = screen.getByRole("region", { name: "Today’s traffic" });
@@ -1150,16 +1150,33 @@ describe("M3: the worklist leads and check in lives on Transport (3 Nov 2026)", 
     expect(window.localStorage.getItem("ward-flow-movements-timeline")).toBe("on");
   });
 
-  it("links each leg still to be recorded to that job on the Transport page, with no pop-up here", () => {
+  it("opens the Check in drawer here for each leg still to be recorded, with a link on to Transport (Note 7)", async () => {
     renderScreen();
     const feed = screen.getByRole("region", { name: "Active transport legs" });
-    const links = within(feed).getAllByRole("link", { name: /^Check in .+ on Transport, next: / });
-    expect(links.length).toBeGreaterThan(0);
-    for (const link of links) {
-      expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/transport\/officer\?job=/u);
-    }
-    expect(within(feed).queryByRole("button", { name: /^Check in / })).toBeNull();
-    expect(screen.queryByTestId("transport-check-in")).toBeNull();
+    const buttons = within(feed).getAllByRole("button", { name: /^Check in .+, next: / });
+    expect(buttons.length).toBeGreaterThan(0);
+    expect(within(feed).queryByRole("link", { name: /^Check in / })).toBeNull();
+    fireEvent.click(buttons[0]!);
+    const drawer = await screen.findByTestId("movement-check-in-drawer");
+    expect(within(drawer).getByRole("list", { name: "Transport steps" })).toBeInTheDocument();
+    expect(within(drawer).getByRole("region", { name: "Next step" })).toBeInTheDocument();
+    expect(within(drawer).getByRole("link", { name: /Open full job on Transport/u })).toHaveAttribute(
+      "href",
+      expect.stringMatching(/^\/ward-flow\/transport\/officer\?job=/u),
+    );
+  });
+});
+
+describe("Note 7: opening a patient keeps the page where it is (8 Nov 2026)", () => {
+  it("opens the drawer from a transport leg without scrolling the worklist into view", () => {
+    renderScreen();
+    const feed = screen.getByRole("region", { name: "Active transport legs" });
+    const scroll = vi.spyOn(Element.prototype, "scrollIntoView");
+    scroll.mockClear();
+    fireEvent.click(within(feed).getAllByRole("button", { name: /^Inspect / })[0]);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(scroll).not.toHaveBeenCalled();
+    scroll.mockRestore();
   });
 });
 
