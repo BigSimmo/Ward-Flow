@@ -1977,6 +1977,7 @@ export function reduceClinicalEvent(
       });
 
     case "PULL_PATIENT":
+    case "EXTEND_PULL":
     case "RELEASE_PULL":
     case "RELEASE_HELD_BED":
     case "RELEASE_DIVERTED_BED":

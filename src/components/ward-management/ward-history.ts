@@ -97,6 +97,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   PATIENT_ARRIVED: { category: "both", plainWording: "Patient arrived at ward bed" },
   RECORD_ESCALATION: { category: "patient", plainWording: "Bed placement escalated to coordinator" },
   RELEASE_PULL: { category: "both", plainWording: "Allocated bed released back to ward" },
+  EXTEND_PULL: { category: "both", plainWording: "Pull time limit extended" },
   REFER_TO_COMMUNITY_TEAM: { category: "patient", plainWording: "Patient diverted to Community Mental Health" },
   RECORD_LEFT_DEPARTMENT: { category: "patient", plainWording: "Patient departed Emergency Department" },
   STEP_BACK_STAGE: { category: "patient", plainWording: "Movement stepped back to earlier stage" },

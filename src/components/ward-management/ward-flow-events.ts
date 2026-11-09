@@ -109,6 +109,7 @@ export type TransportExceptionInput = { gaps: TransportExceptionGap[]; reason: T
 export type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 export { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
+import type { PullHoldExtensionMinutes } from "@/components/ward-management/ward-operational-defaults";
 import type { ObservationLevelEvent } from "@/components/ward-management/ward-flow-observation-events";
 import type { RestrictivePracticeWardFlowEvent } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
 // Closing the loop, package D (24 Oct 2026).
@@ -957,6 +958,20 @@ export type WardFlowEvent =
        * different pull made since. Absent for every other caller, which behave as before.
        */
       expectedPull?: { unitId: string; stageIndex: number };
+    }
+  | {
+      /**
+       * Feature 11 (Josh, 9 Nov 2026): adds a chosen amount to a pulled bed's Pull time limit,
+       * never past `PULL_HOLD_MAX_TOTAL_MINUTES` from the pull. Same roles as `PULL_PATIENT`.
+       * Recorded on `Movement.pullExtensions`.
+       */
+      type: "EXTEND_PULL";
+      role: WardFlowRole;
+      now: Instant;
+      movementId: string;
+      minutes: PullHoldExtensionMinutes;
+      /** As `RELEASE_PULL`: the unit a `ward` caller claims to act as. Claim, not proof. */
+      actingUnitId?: string;
     }
   | {
       /**

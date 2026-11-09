@@ -112,6 +112,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   CHANGE_URGENCY: ["coordinator", "ed", "ward", "community"],
   CHANGE_LEGAL_STATUS: ["coordinator", "ed", "ward", "community"],
   RELEASE_PULL: ["coordinator", "ward"],
+  // Feature 11 (Josh, 9 Nov 2026): whoever may pull a bed may extend its hold.
+  EXTEND_PULL: ["coordinator", "ward"],
   // TR-D6 (owner, 2026-08-30): the team that BOOKED it, and the coordinator. The sending team
   // owns the job (TR-D5) and every movement originates at an emergency department
   // (`Movement.originEdId` is required), so the booking team is `ed`. ⚠️ `ward` is the

@@ -280,6 +280,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "RELEASE_HELD_BED",
   "RELEASE_DIVERTED_BED",
   "RELEASE_PULL",
+  // Feature 11: ids, the role and `minutes` from a fixed list. No typed text.
+  "EXTEND_PULL",
   "REOPEN_INBOX_ITEM",
   // Stream A, 9 Oct 2026: `inboxItemId` is an id (reviewed above), `until` a number and `reason` a
   // closed union (`InboxSnoozeReason`) offered by a `<select>`, never typed text.

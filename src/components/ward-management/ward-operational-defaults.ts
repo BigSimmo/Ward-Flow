@@ -68,6 +68,23 @@ export const ED_TREND_STEP_MINUTES = 2 * MINUTES_PER_HOUR;
 /** Minutes past the estimated arrival before a screen names a person as late. */
 export const LATE_ARRIVAL_GRACE_MINUTES = CLINICAL_VALUES.lateArrivalGrace.value;
 
+/**
+ * Transport list (feature 25, Josh 9 Nov 2026): a requested job nobody has accepted after this long
+ * is shown as Delayed. An operational setting for the transport desk, not a clinical or legal limit.
+ */
+export const TRANSPORT_ACCEPT_DELAY_MINUTES = 30;
+
+/**
+ * Bed hold extension (feature 11, Josh 9 Nov 2026). An operational setting, not a clinical or legal
+ * limit. A ward or coordinator can add one of these amounts to a pulled bed's Pull time limit
+ * (`EXTEND_PULL`), as long as the whole hold, from the pull to the new limit, stays within
+ * `PULL_HOLD_MAX_TOTAL_MINUTES`.
+ */
+export const PULL_HOLD_EXTENSION_MINUTES = [60, 120, 240] as const;
+export type PullHoldExtensionMinutes = (typeof PULL_HOLD_EXTENSION_MINUTES)[number];
+/** The longest a pulled bed can be held in all, extensions included: 12 hours. */
+export const PULL_HOLD_MAX_TOTAL_MINUTES = 12 * MINUTES_PER_HOUR;
+
 /** ED pressure on the side rail: amber once the longest wait reaches this. */
 export const ED_ELEVATED_PRESSURE_WAIT_MINUTES = CLINICAL_VALUES.edElevatedPressure.value;
 /** ED pressure on the side rail: red once the longest wait reaches this. */
@@ -273,6 +290,11 @@ export const OPERATIONAL_DEFAULTS: readonly OperationalDefault[] = [
     display: `${hoursText(EXPECT_FLAG_VOLUNTARY_MINUTES)} (voluntary), 7 days (involuntary)`,
   },
   { name: "Expected referral flagged to reconsider after", display: hoursText(EXPECT_RECONSIDER_AFTER_MINUTES) },
+  { name: "Longest a bed can stay pulled", display: hoursText(PULL_HOLD_MAX_TOTAL_MINUTES) },
+  {
+    name: "Transport job shown as delayed if not accepted after",
+    display: `${TRANSPORT_ACCEPT_DELAY_MINUTES} minutes`,
+  },
   { name: "Morning handover", display: "08:00" },
   { name: "Discharge board's Tonight group", display: "16:00 until midnight; later days show under Tomorrow" },
   {

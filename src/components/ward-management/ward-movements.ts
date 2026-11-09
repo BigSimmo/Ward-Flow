@@ -781,6 +781,8 @@ const seededMovements: Movement[] = [
     unwinds: [],
     stageChanges: [],
     pullExpiresAt: NOW_ANCHOR + 45,
+    // Feature 11 demo: the ward extended this hold by an hour while the bed was cleaned.
+    pullExtensions: [{ at: NOW_ANCHOR - 30, by: "ward", minutes: 60 }],
   },
   {
     id: "WF-017",

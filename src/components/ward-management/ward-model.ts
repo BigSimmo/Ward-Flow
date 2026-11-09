@@ -870,6 +870,12 @@ export type Movement = MovementBase & {
   /** When a pulled bed lapses. A pull cannot expire without a time to expire at. */
   pullExpiresAt?: Instant;
   /**
+   * Feature 11 (Josh, 9 Nov 2026): each "Extend pull" (`EXTEND_PULL`) on the current pull, oldest
+   * first. `PULL_PATIENT` clears it, so a re-pulled bed never reads as extended. Absent when the
+   * hold was never extended.
+   */
+  pullExtensions?: { at: Instant; by: WardFlowRole; minutes: number }[];
+  /**
    * D-72: the `acceptedAt` of the acceptance that asked for the extra-travel bed hold
    * (`ACCEPT_IN_PRINCIPLE.extendedHold`). A pull applies it only while that same acceptance stands
    * (`acceptedAt` and `acceptedUnitId` unchanged), so a withdrawn or replaced acceptance never

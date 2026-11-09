@@ -1,0 +1,29 @@
+/* Feature 11: Extend hold on a pulled bed. */
+.extend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 6px 0;
+}
+
+.heldUntil {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}

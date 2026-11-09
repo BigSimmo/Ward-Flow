@@ -531,6 +531,8 @@ const movement = z
     referralSourceAdmissionId: z.optional(id),
     acceptedUnitId: link,
     pullExpiresAt: z.optional(finite),
+    // Feature 11: each Extend hold on the current pull.
+    pullExtensions: z.optional(z.array(z.looseObject({ at: finite, by: text, minutes: finite }))),
     extendedHoldAt: z.optional(finite),
     closure: z.optional(closureRule),
     // D-74: the community purpose that closed this record is one of the two listed values, or absent.

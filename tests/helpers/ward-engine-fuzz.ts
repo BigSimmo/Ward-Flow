@@ -7,6 +7,7 @@
  * sent under a role the event does not permit, or with a stale or invented id, so the refusal
  * paths are exercised as well as the success paths. Synthetic seeded worlds only.
  */
+import { PULL_HOLD_EXTENSION_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import {
   CANCEL_TRANSPORT_REASONS,
   DIVERSION_REASONS,
@@ -530,6 +531,12 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
     3,
     movementEvent("RELEASE_PULL", ["pulled", "handover_ready", "moving"], (_state, random) => ({
       reason: pick(random, RELEASE_PULL_REASONS),
+    })),
+  ],
+  [
+    0.5,
+    movementEvent("EXTEND_PULL", ["pulled"], (_state, random) => ({
+      minutes: pick(random, PULL_HOLD_EXTENSION_MINUTES),
     })),
   ],
   [

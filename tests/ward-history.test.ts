@@ -59,7 +59,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // Gap list (Josh, 4 Nov 2026) adds RECORD_LEGAL_FORM_DETAILS and RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP.
       // Tier 1 item 6 (4 Nov 2026) adds UNDO_BED_STEP, UNDO_RELEASE_STEP and UNDO_PATIENT_RECORD.
       // Triage and risk (7 Nov 2026) adds RECORD_TRIAGE_SIGNED.
-      expect(allEventTypes.length).toBe(179);
+      // Feature 11 (Josh, 9 Nov 2026) adds EXTEND_PULL.
+      expect(allEventTypes.length).toBe(180);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

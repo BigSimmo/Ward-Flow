@@ -1,4 +1,5 @@
 // Closing the loop, package D (24 Oct 2026).
+import { PULL_HOLD_EXTENSION_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { buildOnCallDirectory } from "@/components/ward-management/on-call/on-call-directory";
 import { defaultHandoverShift, handoverAt } from "@/components/ward-management/handover/handover-model";
 import {
@@ -954,6 +955,10 @@ function candidatesForMovements(
       // Both scenarios, like RAISE_REFERRAL's real domain values above — not one hard-coded
       // choice that would leave the other half of `WARD_SCENARIOS` untested.
       return WARD_SCENARIOS.map((scenario) => ({ type, role, now, scenario }));
+    case "EXTEND_PULL":
+      return movementIds.flatMap((movementId) =>
+        PULL_HOLD_EXTENSION_MINUTES.map((minutes) => ({ type, role, now, movementId, minutes })),
+      );
     case "RELEASE_PULL":
       // One candidate per reason, same precedent as CHANGE_URGENCY/CHANGE_LEGAL_STATUS above —
       // `role` is the first permitted role (coordinator), so `actingUnitId` is never needed here.
@@ -1780,6 +1785,7 @@ export const MOVEMENT_TARGETED_EVENTS: ReadonlySet<WardFlowEvent["type"]> = new 
   "CHANGE_URGENCY",
   "CHANGE_LEGAL_STATUS",
   "RELEASE_PULL",
+  "EXTEND_PULL",
   "CANCEL_TRANSPORT",
   // WLQ-38 (owner, 2026-09-15). Same shape as CANCEL_TRANSPORT immediately above — a real
   // movement-targeted event, forced per code in the same block for the same reason (see that

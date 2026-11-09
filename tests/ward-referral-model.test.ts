@@ -593,6 +593,7 @@ describe("front-door contract — an ED may close to all admissions, never refus
     CHANGE_URGENCY: false,
     CHANGE_LEGAL_STATUS: false,
     RELEASE_PULL: false,
+    EXTEND_PULL: false,
     // Books a transport job; refuses nothing and names no subject.
     BOOK_TRANSPORT: false,
     // Adds a CAD number to a job booked with "CAD to follow"; refuses nothing.
