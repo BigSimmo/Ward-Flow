@@ -197,7 +197,9 @@ describe("Home's Activity panel: explicit review", () => {
     fireEvent.click(markTwo);
     // The review covers only the two it showed: reopened, the arrival is the one change left.
     closePanel();
+    await waitFor(() => expect(activityTrigger()).toHaveAttribute("aria-expanded", "false"));
     await openActivity();
+    await waitFor(() => expect(activityTrigger()).toHaveAttribute("aria-expanded", "true"));
     expect(panel()).toHaveTextContent("Since your review at 10:42");
     expect(reviewButton()).toHaveAccessibleName("Mark these 1 reviewed");
     const saved = parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY));
