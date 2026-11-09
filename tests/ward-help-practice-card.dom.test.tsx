@@ -114,11 +114,12 @@ describe("practice inside Help", () => {
     );
   });
 
-  it("is off in the shared workspace and offers nothing", () => {
+  it("is off in the shared workspace and offers only Start training (feature 47)", () => {
     renderCard({ sharedOn: true });
     expect(screen.getByTestId("ward-help-practice-shared-off")).toHaveTextContent(
-      "Practice is off in the shared workspace, where every step is saved for everyone. Use the demo on this device.",
+      "Practice is off in the shared workspace, where every step is saved for everyone. Start training to practise on synthetic patients that nobody else sees.",
     );
-    expect(screen.queryAllByRole("button")).toHaveLength(0);
+    expect(screen.getAllByRole("button").map((button) => button.textContent)).toEqual(["Start training"]);
+    expect(screen.getByTestId("ward-help-training-start")).toBeInTheDocument();
   });
 });

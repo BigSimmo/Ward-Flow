@@ -4,11 +4,14 @@
 // the page-wide preferences and drawer shortcuts. It replaced the old shell's lazy rail.
 
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { useIsPhone } from "@/components/wf";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
-import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { useCanOpenHref, useDeskHomeHref } from "@/components/ward-management/shell/ward-access";
+import { goToPageForShortcut, resetGoToShortcut } from "@/components/ward-management/shell/ward-goto-shortcuts";
+import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { closeWardDrawer } from "@/components/ward-management/shell/ward-drawer-bus";
 import {
   isTypingTarget,
@@ -33,19 +36,27 @@ const RailLoaded = dynamic(() =>
 
 function PhonePreferences() {
   useWardDocumentPreferences();
-  const canRefer = useCanOpenHref()(WARD_REFERRAL_INTAKE_HREF);
+  const canOpen = useCanOpenHref();
+  const canRefer = canOpen(WARD_REFERRAL_INTAKE_HREF);
+  const deskHome = useDeskHomeHref();
+  const router = useRouter();
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        resetGoToShortcut();
         closeWardDrawer();
         return;
       }
-      if (isTypingTarget(event.target)) return;
-      openDrawerForShortcut(event, canRefer);
+      // Another control used this key, so a G pressed before it no longer starts a go-to.
+      if (isTypingTarget(event.target) || openDrawerForShortcut(event, canRefer)) {
+        resetGoToShortcut();
+        return;
+      }
+      goToPageForShortcut(event, canOpen, (href) => navigateWithDirtyGuard(() => router.push(href)), deskHome);
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [canRefer]);
+  }, [canRefer, canOpen, deskHome, router]);
   return null;
 }
 

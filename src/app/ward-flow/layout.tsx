@@ -20,6 +20,7 @@ import { WARD_RAIL_EARLY_SCRIPT } from "@/components/ward-management/shell/ward-
 import { WardPhoneDesktopOnly } from "@/components/ward-management/shell/ward-phone-desktop-only";
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
 import { WardOfflineBanner, WardPracticeLine } from "@/components/ward-management/shell/ward-offline-banner";
+import { WardTrainingBanner } from "@/components/ward-management/shell/ward-training-banner";
 import { WardDowntimePackLine } from "@/components/ward-management/shell/ward-downtime-pack-line";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import { WardDemoNotSavedNote, WardDemoTypedTextNote } from "@/components/ward-management/shell/ward-demo-saving";
@@ -277,6 +278,12 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                 in priority order and the holder shows only the first one present
                 (ward-flow-layout.module.css), so a lower note never hides a higher one. A pull-now broadcast
                 comes first, so a recovery note waiting to be closed never hides it. Keep this order. */}
+                  {/* Feature 47: outside the one-note holder, so training always says so, under any note.
+                `data-wf-bar-training`: an always-present holder the band counts as part of the header
+                (wf/band.ts) and watches, so a hero bands from under the banner when it arrives. */}
+                  <div className={styles.trainingHolder} data-wf-bar-training="">
+                    <WardTrainingBanner />
+                  </div>
                   <div className={styles.bannerHolder} data-wf-bar-notes="">
                     {/* SD-02 (Josh, 5 Nov 2026): lost device saving outranks every other note. */}
                     <WardDemoNotSavedNote />

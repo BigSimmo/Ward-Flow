@@ -397,6 +397,15 @@
    place as the toasts, rather than pinned under the header where it pushed the page down. The
    holder floats above the page; on a phone it sits above the dock (the offline note's own sum).
    No transform, so the offline note's fixed marker and portal are unaffected. */
+/* Feature 47: holds the training banner under the header. In flow, never pinned: page rows that
+   pin under the header (view switches, tabs, table heads) take the same top edge, so a pinned
+   banner lay over them. flow-root keeps the banner's own margin inside, so the band (wf/band.ts)
+   measures the room it really takes. Empty and zero high while training is off. */
+.trainingHolder {
+  display: flow-root;
+  flex-shrink: 0;
+}
+
 .bannerHolder {
   --wf-notes-rest: calc(0.75rem + var(--wf-foot-bar-lift, 0px));
   position: fixed;

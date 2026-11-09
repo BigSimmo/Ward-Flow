@@ -12,6 +12,7 @@ import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { ListExportButton } from "@/components/ward-management/ward-list-export-button";
 import {
   Button,
   Card,
@@ -359,9 +360,36 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
       () => base.setCopyNote("Copying is not available in this browser."),
     );
   };
+  // Export (feature 44): the list on screen, never names; the builder loads on the click.
+  const exportList = async () =>
+    (await import("./discharge-export")).exportDischargeList({
+      nowView,
+      narrowed: [service, ward, status, base.blockerCategory, ...(nowView ? [] : [identity, base.destination])].some(
+        (value) => value !== "all",
+      ),
+      recordedDays: RECORDED_DAYS,
+      asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+      at: (instant) => formatSheetMoment(instant, dayZero),
+      wardName: (unitId) =>
+        unitLabel(
+          units.find((unit) => unit.id === unitId),
+          unitId,
+        ),
+      releases: visibleReleaseGroups.flatMap((key) =>
+        shownGroups[key].map((release) => ({
+          ...release,
+          statusWord: WORK_STATUS_LABELS[key === "discharged-today" ? "departed" : key],
+        })),
+      ),
+      recorded,
+      records,
+      destinationOf: (record) =>
+        LEAVING_DESTINATIONS.find((item) => item.id === record.leavingDestination)?.label ?? "Not recorded",
+      followUpOf: (record) => followUpOf(record).status,
+    });
+  const exportCount = nowView ? visibleReleaseGroups.reduce((n, k) => n + shownGroups[k].length, 0) : recorded.length;
   const filterCard = <DischargeFilterCard s={s} />;
-  // Page tops (Josh approved, 9 Nov 2026): the held-up reasons as one slim band in the hero, in place of
-  // the panel beside the list and the phone's "By reason" card.
+  // Page tops (Josh, 9 Nov 2026): the held-up reasons as one slim band in the hero.
   const reasons = barrierCounts.filter((barrier) => barrier.count > 0);
   // Ask overdue wards, now a hero chip (it was a bar under the hero).
   const askWards = useAskOverdueWards({
@@ -370,8 +398,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     now,
     dispatch,
   });
-  // The place the counts cover, for the hero's spoken heading (the header shows it on screen).
-  // It keeps the old eyebrow's words, so the heading still starts with the desk's place.
+  // The place the counts cover, for the hero's spoken heading in the old eyebrow's words.
   const heroPlace =
     ownWard || siteName
       ? `Discharges · ${ownWard ? ownWard.name : siteName}`
@@ -587,8 +614,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
         </p>
         <Hero
           className={cx(pageTop.hero, folderTabClasses.hero)}
-          // Page tops (Josh approved, 9 Nov 2026): one plain title, as Home's. The header names the page
-          // and the place, so the eyebrow is gone; the place still leads the screen reader's heading.
+          // Page tops (Josh, 9 Nov 2026): one plain title, as Home's; the place leads the spoken heading.
           title={
             nowView ? (
               <>
@@ -693,8 +719,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               <HeroQuickChips
                 label="Discharge actions"
                 items={[
-                  // DC1 round 2 (3 Nov 2026): the coordinator's most common chase is one tap, asking just
-                  // the wards with an overdue date. Page tops: a chip in the hero, not a bar under it.
+                  // DC1 round 2 (3 Nov 2026): ask just the wards with an overdue date; a hero chip.
                   ...(askWards && nowView && s.releaseActor.role === "coordinator"
                     ? [
                         {
@@ -706,8 +731,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                         },
                       ]
                     : []),
-                  // Page tops: the phone's Per day card is now a chip. It opens the day chart, so a phone can
-                  // still pick a day (and see releases due in 2+ days, which only a chosen day shows).
+                  // Page tops: the phone's Per day card is a chip that opens the day chart to pick a day.
                   ...(phoneDayChart
                     ? [
                         {
@@ -752,8 +776,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             }
             band={
               nowView && guarded.status === "allowed" && reasons.length > 0 ? (
-                // Redesign (Josh, 30 Oct): the held-up releases by reason. Page tops: one slim line in the
-                // hero; a reason highlights its rows, as the old panel's bars did.
+                // Redesign (Josh, 30 Oct): held-up releases by reason; a reason highlights its rows.
                 <HeroBand
                   title="Held up by reason"
                   testId="ward-discharge-barrier-bars"
@@ -909,6 +932,15 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       ? `${toWorkCount} to work${counts.departed > 0 ? ` · ${counts.departed} discharged` : ""}`
                       : `${shown} shown`}
               </span>
+              {/* Export (feature 44) sits with the list it exports, not in the page top (page-tops v6). */}
+              {isPhone ? null : (
+                <ListExportButton
+                  load={exportList}
+                  variant="ghost"
+                  disabled={exportCount === 0}
+                  testId="ward-discharge-export"
+                />
+              )}
             </header>
             {isPhone ? null : <DischargeFilterCard s={s} bare />}
             <div

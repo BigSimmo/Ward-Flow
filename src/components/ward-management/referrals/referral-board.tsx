@@ -20,9 +20,10 @@ import { presentationDecidedAt, outcomeLabel } from "./referral-board-model";
 import { acceptedReferralsAwaitingPull, acceptedWardOf, type AcceptedAwaitingPull } from "./accepted-ward-referral";
 import { ChevronLeft, ChevronRight, FileText, ListOrdered, TriangleAlert, UserRound } from "lucide-react";
 
+import { formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { overlayOpener } from "@/components/wf/sheet-focus";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { type Movement, type Referral } from "@/components/ward-management/ward-model";
+import { type Referral } from "@/components/ward-management/ward-model";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import { createReadmissionIndex, referralReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag, useReadmissionFlagVisible } from "@/components/ward-management/ward-readmission-flag";
@@ -73,6 +74,15 @@ import {
   waitWords,
   wardArm,
 } from "./referral-board-parts";
+import { referralWaitLine } from "./referral-wait";
+import {
+  REFERRAL_ACCEPT_CONTROL,
+  REFERRAL_DECLINE_CONTROL,
+  REFERRAL_DRAWER_TEST_ID,
+  isTyping,
+  isbarRecorded,
+  otherOverlayOpen,
+} from "./referral-board-helpers";
 import styles from "./referrals.module.css";
 import { demographicLabel, journeyDuration, referralJourneyStages } from "./referral-board-model";
 import { DecidedSection, QueuedSection } from "./referral-board-sections";
@@ -108,11 +118,10 @@ import { focusIsLost, rememberOpener, returnFocusToOpener, useIsPhone, type Focu
 import { focusAfterDecision, focusQueueFallback, nextQueuedId } from "./referral-focus-fallback";
 import mph from "./referral-match-phone.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { ListExportButton } from "@/components/ward-management/ward-list-export-button";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { recordIdFromParam } from "@/components/ward-management/shell/ward-record-address";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
-import { recordedMovementMedicalClearance } from "@/components/ward-management/ward-medical-clearance";
-import type { IsbarRecorded } from "./referral-board-sheets";
 
 /** The tier due times' status, read from the clinical values file so it changes when they are signed. */
 const DUE_TIMES_NOTE = allClinicalValuesSigned([
@@ -156,43 +165,8 @@ const DUE_TIMES_NOTE = allClinicalValuesSigned([
  * they are shown a pattern to copy that looks safe because it cites a real precedent. State the
  * property this file has; cite a neighbour only with the commit that fixes what it is being cited for.
  */
-/** The kit drawer the chosen referral opens in (drawer review, 6 Nov 2026). */
-const REFERRAL_DRAWER_TEST_ID = "ward-referral-detail";
-
-/**
- * Another overlay is over the page: a sheet, a menu's dialog or a form. The referral's own drawer is
- * not one, so the board's keys (J, K, A, D, S, 1 to 3) keep working while it is open.
- */
-function otherOverlayOpen(): boolean {
-  return Array.from(document.querySelectorAll('[aria-modal="true"]')).some(
-    (modal) => modal.getAttribute("data-testid") !== REFERRAL_DRAWER_TEST_ID,
-  );
-}
-
 type InspectorTab = "place" | "patient" | "timeline";
 type BoardSheet = "summary" | "keys" | null;
-
-/**
- * WS-18: the decision's own controls (`referral-match.tsx`) that the A and D keys use. A presses
- * Accept at the chosen ward, or an ED's Accept presentation, which still asks to confirm. The
- * community team's Accept referral decides in one press with no choice before it, so it stays a tap.
- * D opens the ward's decline reasons, or moves to an ED's or a community team's reason list.
- */
-const REFERRAL_ACCEPT_CONTROL =
-  '[data-testid="ward-referral-match-phone-accept"], [data-testid="ward-referral-match-accept-emergency_department"]';
-const REFERRAL_DECLINE_CONTROL =
-  '[data-testid="ward-referral-match-decline-open"], [data-testid="ward-referral-match-decline-reason-emergency_department"], [data-testid="ward-referral-match-decline-reason-community_team"]';
-
-function isTyping(target: EventTarget | null): boolean {
-  const element = target as HTMLElement | null;
-  if (!element) return false;
-  return (
-    element.tagName === "INPUT" ||
-    element.tagName === "TEXTAREA" ||
-    element.tagName === "SELECT" ||
-    element.isContentEditable === true
-  );
-}
 
 /**
  * Option A (Josh, 9 October 2026): the statewide referral queue as a dense table with a decision
@@ -370,6 +344,28 @@ export function ReferralBoard({
    */
   const phoneFiltered = phoneLayout && anyHighlight;
   const listedQueued = phoneFiltered ? queued.filter(isHighlighted) : queued;
+
+  // Export (feature 44): the whole queue (highlights only dim on a desktop), never names; the
+  // builder loads on the click.
+  const exportQueue = async () =>
+    (await import("./referral-export")).downloadReferralQueue(
+      queued,
+      {
+        sinceReferralOf: (referral) => referralWaitLine(referral, now),
+        umrnOf: (referral) => resolveSubjectPatient(referral, resolverState).umrn,
+        // An ASCII separator, so a spreadsheet opened without UTF-8 shows the label cleanly.
+        tierOf: (referral) => urgencyTierLabel(referral.urgency).replace(" · ", " - "),
+        priorityOf: (referral) => referralPriorityLabel(getReferralPriority(referral, now)),
+        fromOf: (referral) =>
+          siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode ?? ORIGIN_NOT_RECORDED,
+        needsOf: needWords,
+        at: (instant) => formatSheetMoment(instant, dayZero),
+      },
+      {
+        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+        scope: "Referral queue; every referral in this desk's queue, regardless of highlights",
+      },
+    );
 
   const decided = presentationLists.recentlyDecided;
   // The DENOMINATOR, uncapped. `decided` above is already truncated to the display limit, so its
@@ -720,6 +716,11 @@ export function ReferralBoard({
       ) : null}
     </span>
   );
+  // Export (feature 44, #1559) sits with the queue it exports, after the toolbar note.
+  const exportButton =
+    !phoneLayout && view === "queue" && queued.length > 0 ? (
+      <ListExportButton load={exportQueue} testId="ward-referral-export" />
+    ) : null;
   // Page tops (Josh, 9 Nov 2026): the coordinator's top is the shared page top (`referral-board-top`);
   // the ward, ED, community and site desks keep their own tops below.
   const coordinatorTop = !community && !wardDesk && !edDesk && !siteManager;
@@ -816,7 +817,12 @@ export function ReferralBoard({
             onAxis={() => setPhoneSheet("axis")}
             viewSwitch={viewSwitchWith}
             view={view}
-            tabsAside={toolbarNote}
+            tabsAside={
+              <>
+                {toolbarNote}
+                {exportButton}
+              </>
+            }
           >
             {phoneLayout ? phoneSheetNode : null}
           </ReferralCoordinatorTop>
@@ -983,6 +989,7 @@ export function ReferralBoard({
                   {/* Redesign (Josh, 30 Oct 2026): no Filter queue box. Seven rows need no search, and the
                       highlights and the app search cover finding one person. */}
                   {toolbarNote}
+                  {exportButton}
                 </div>
               )}
               <TabPanel idPrefix="ward-referral-view" id="queue" hidden={view !== "queue"}>
@@ -1469,17 +1476,4 @@ export function ReferralBoard({
       </main>
     </div>
   );
-}
-
-/** The record's legal status and clearance for the summary: the linked journey's, or the referral's own. */
-function isbarRecorded(
-  referral: Referral,
-  movements: readonly Movement[],
-  referrals: readonly Referral[],
-): IsbarRecorded {
-  const linked = movements.find((movement) => movement.referralId === referral.id && !movement.closure);
-  return {
-    legalStatus: linked?.legalStatus,
-    clearance: linked ? recordedMovementMedicalClearance(linked, referrals) : referral.medicalClearance,
-  };
 }
