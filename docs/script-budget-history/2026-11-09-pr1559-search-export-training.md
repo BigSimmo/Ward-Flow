@@ -26,3 +26,7 @@ Main had since raised movement, bed meeting and statistics (#1582) and taken #15
 ## After merging main 4105c7e (with #1563)
 
 #1563 moved main's limits to ED 521.0, secure 601.3, movement 594.8, bed meeting 573.5 and statistics 613.8. This PR keeps the same increments over main as before: +1.7 KB for ED, movement, bed meeting and statistics, and +1.2 KB for the secure ward. New limits: 522.7, 602.5, 596.5, 575.2 and 615.5. Hosted CI decides; each screen stays well within the 5 KB allowance.
+
+## Hosted CI on 2fb3331 (merged with main 4105c7e)
+
+Hosted CI measured three screens over: Referrals 568.7 KB (limit 568.0), secure ward 602.8 KB (602.5) and ARM ED 658.9 KB (657.0). The Referrals queue and ED lists now carry this PR's lazy Export button and the shared go-to and saved-view code. Limits set to the hosted measurement plus 0.2 KB: Referrals 568.9 (+0.9 over main), secure ward 603.0 (+1.7 over main) and ARM ED 659.1 (+2.1 over main). Each stays within the 5 KB per-screen allowance.
