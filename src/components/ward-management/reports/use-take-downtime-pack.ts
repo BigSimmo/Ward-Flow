@@ -69,7 +69,7 @@ export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | nu
         movements,
         now,
         // Surname first (D-83): "Family, Given · UMRN", the one identity line (bug list row 17).
-        identify: (movement) => patientIdentityLine(patientOf(movement)),
+        identify: (subject) => patientIdentityLine(patientOf(subject)),
       });
       if (!online) pack.offline = { lastSyncAt: lastDowntimeSyncAt(worldGeneration, now) };
       const shiftChangeAt = options?.shiftChangeAt;

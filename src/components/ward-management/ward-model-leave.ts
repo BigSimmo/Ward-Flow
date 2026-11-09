@@ -62,6 +62,14 @@ export type LeaveBed = {
 };
 
 /**
+ * D-38: where the person whose bed is held is, in the words every list uses. An absence without
+ * leave is never shown as approved leave. The Patients census and the statistics rosters read this.
+ */
+export function heldBedLabel(bed: Pick<LeaveBed, "absentWithoutLeave">): "Absent without leave" | "On leave" {
+  return bed.absentWithoutLeave ? "Absent without leave" : "On leave";
+}
+
+/**
  * The missing person steps a ward records while somebody is absent without leave, in the order the
  * Patient page shows them. Chosen, never typed. A step records only that it was done and when.
  */

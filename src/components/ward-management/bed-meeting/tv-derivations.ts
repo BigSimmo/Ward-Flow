@@ -29,7 +29,7 @@ import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { isEdInitiatedWithdrawal } from "@/components/ward-management/ed/ed-screen-model";
 import { isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import type { Admission } from "@/components/ward-management/ward-admissions";
+import { type Admission, admissionsForUnit } from "@/components/ward-management/ward-admissions";
 import type { ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { type DueSoonThresholds, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import {
@@ -155,12 +155,16 @@ export type WardTvSheet = {
   /** Ready beds still being made ready: counted in `capacity.ready`, never subtracted, always said. */
   pendingPreparation: number;
   bedCount: TvBedCountAge;
-  /** Accepted for this ward and not yet arrived, longest wait first. */
+  /**
+   * D-115 (Josh, 9 Nov 2026): "Coming in" is the ward board's figure, beds pulled or waitlisted for an
+   * admission (`buildIncoming`). `onTheWay` is those of them whose journey has left the department.
+   */
   incoming: { total: number; onTheWay: number };
   /** Asked of this ward and not yet answered by anyone. */
   askedCount: number;
   /** Everyone heading for this ward: the ones waiting on its answer first, then the accepted, each longest first. */
   coming: { rows: TvJourneyRow[]; more: number };
+  /** D-115: confirmed discharges only, as the ward board's "Going out today and tomorrow" counts them. */
   discharges: BedMeetingDischarges;
   going: WardTvGoingRow[];
   occupied: number;
@@ -169,6 +173,17 @@ export type WardTvSheet = {
   noDate: number;
   away: DailySheetPerson[];
 };
+
+/**
+ * D-115: the ward board's "Coming in" (`buildIncoming` in board/ward-board-model.ts): admissions pulled or
+ * waitlisted for the ward. Kept here rather than imported so the bed meeting bundle does not carry the board's
+ * styles; tests/ward-one-number-across-screens.test.ts holds the two counts equal.
+ */
+function comingIn(admissions: readonly Admission[], unitId: string): Admission[] {
+  return admissionsForUnit(admissions, unitId).filter(
+    (admission) => admission.state === "pulled" || admission.state === "waitlisted",
+  );
+}
 
 export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
   const { unit, movements, bedReleases, admissions, leaveBeds, now, thresholds, nameOf, namedHolds } = input;
@@ -196,13 +211,29 @@ export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
     .filter((movement) => movement.acceptedUnitId === unit.id)
     .map((movement) => row(movement, ED_STAGE_LABELS[movement.stage]))
     .sort(byWaitThenId);
+  // D-115: the board's own list, so the two screens print one "Coming in".
+  const arriving = comingIn(admissions, unit.id);
+  const arrivingMovementIds = new Set(arriving.map((admission) => admission.movementId));
   const onTheWay = open.filter(
     (movement) =>
-      movement.acceptedUnitId === unit.id &&
+      arrivingMovementIds.has(movement.id) &&
       ED_LEAVING_STAGES.includes(movement.stage) &&
       !deliveredAwaitingWard(movement) &&
       !isStoppedTransportAwaitingRelease(movement),
   ).length;
+  // D-115: "Going out" counts confirmed discharges only, so an expected release is left out of it.
+  const { discharges } = bedMeetingSheet({
+    units: [unit],
+    movements,
+    bedReleases: bedReleases.filter((release) => release.state !== "expected"),
+    admissions,
+    leaveBeds,
+    now,
+    thresholds,
+    service: null,
+    nameOf,
+    namedHolds: namedHolds ?? movements,
+  });
   const asked = open
     .filter((movement) => waitingOnWard(movement, unit.id))
     .map((movement) => row(movement, "Waiting on this ward's answer"))
@@ -215,11 +246,11 @@ export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
     capacity: sheet.capacity,
     pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
     bedCount: bedCountAge([unit], now),
-    incoming: { total: incoming.length, onTheWay },
+    incoming: { total: arriving.length, onTheWay },
     askedCount: asked.length,
     coming: { rows: coming.slice(0, TV_ROW_LIMIT), more: Math.max(0, coming.length - TV_ROW_LIMIT) },
-    discharges: sheet.discharges,
-    going: sheet.discharges.rows.map((row) => {
+    discharges,
+    going: discharges.rows.map((row) => {
       // A release's admission is a join key, never shown: it only finds the person's de-identified line.
       const admissionId = bedReleases.find((release) => release.id === row.id)?.admissionId;
       return { ...row, person: people.find((person) => person.key === admissionId) };
@@ -390,11 +421,12 @@ function serviceWardRows(input: MeetingInputs, scopedUnits: Unit[]): TvWardRow[]
     leaveBeds,
     input.namedHolds ?? movements,
   );
+  // D-115: going out is confirmed discharges only (held up or not), as on the ward board and ward TV.
   const groups = groupDischarges(
-    bedReleases.filter((release) => unitIds.has(release.unitId)),
+    bedReleases.filter((release) => unitIds.has(release.unitId) && release.state !== "expected"),
     now,
   );
-  const due = [...groups.blocked, ...groups.confirmed, ...groups.expected];
+  const due = [...groups.blocked, ...groups.confirmed];
   const open = movements.filter(isOpen);
   return capacity
     .map((row) => ({
@@ -404,7 +436,8 @@ function serviceWardRows(input: MeetingInputs, scopedUnits: Unit[]): TvWardRow[]
       ready: row.ready,
       lockedReady: row.lockedReady,
       asked: open.filter((movement) => waitingOnWard(movement, row.unit.id)).length,
-      coming: open.filter((movement) => movement.acceptedUnitId === row.unit.id).length,
+      // D-115: the ward board's "Coming in", beds pulled or waitlisted for an admission.
+      coming: comingIn(admissions, row.unit.id).length,
       going: due.filter((release) => release.unitId === row.unit.id).length,
     }))
     .sort((a, b) => a.name.localeCompare(b.name));

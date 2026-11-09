@@ -82,6 +82,13 @@ run individually per file; nothing here was executed. Back to [the code map inde
   heading, and ID-coded table row across roughly 30 files. `--check` fails if the committed index
   is stale. Deliberately excludes `how-to-write-to-the-owner.md` (instructions _to_ the owner, not
   a record of what he ruled).
+- **`scripts/ward-flow/permission-matrix.ts`** (394 lines) — Audit 7 (issue #1570). Generates
+  `docs/ward-flow/permission-matrix.md`, every action (`EVENT_ROLE` key) against every desk, by
+  asking the screen (`dispatchPermission`), the engine (`wardFlowReducer` on the synthetic seed),
+  the backend (`deskCommand` and `commandRefusal`) and the SQL row level security read as text.
+  Run with `node scripts/run-tsx.mjs`; `--check` fails when stale, and
+  `tests/ward-permission-matrix.test.ts` also fails on any layer disagreement it does not list.
+  `stub-style-imports.mjs` lets tsx load the CSS modules the shared engine reaches.
 - **`scripts/ward-flow/rules-index.mjs`** (130 lines) — Reads every lesson's frontmatter from the
   versioned historical copy (`docs/history/lessons/`) and generates
   `docs/ward-flow/RULES.md`, grouped by keyword-matched theme; anything unmatched is listed under
@@ -590,6 +597,7 @@ file in the repository against (`schemaVersion: 1`, `product: "ward-flow"`). Top
 | `design/third-edition-mockups/MANIFEST.json`                           | `mockup-manifest.mjs`                         | `node scripts/ward-flow/mockup-manifest.mjs --check`                                                                            |
 | `docs/ward-flow/OWNER-RULINGS.md`                                      | `owner-rulings-index.mjs`                     | `node scripts/ward-flow/owner-rulings-index.mjs --check`                                                                        |
 | `docs/ward-flow/RULES.md`                                              | `rules-index.mjs`                             | `node scripts/ward-flow/rules-index.mjs --check`                                                                                |
+| `docs/ward-flow/permission-matrix.md`                                  | `permission-matrix.ts`                        | `tests/ward-permission-matrix.test.ts`                                                                                          |
 | `docs/ward-flow/SCREEN-MAP.md`                                         | `screen-map.mjs`                              | `node scripts/ward-flow/screen-map.mjs --check`                                                                                 |
 | `docs/ward-flow/SCREEN-VERIFICATION.md`                                | `screen-verification.mjs`                     | `node scripts/ward-flow/screen-verification.mjs --check`                                                                        |
 | `design/third-edition-mockups/CONTACT-SHEET.html`                      | `contact-sheet.mjs`                           | none (visual reference page, not a gate)                                                                                        |
