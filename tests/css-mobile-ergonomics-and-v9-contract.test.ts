@@ -228,8 +228,8 @@ describe("states", () => {
     const css = read("src/components/ward-management/shell/ward-offline-banner.module.css");
     const banner = block(css, ".banner");
     expect(banner).toContain("position: fixed");
-    expect(banner).toContain("bottom: 0.75rem");
-    expect(css).toMatch(/\.banner \{\s*bottom: calc\(var\(--wf-dock-clear/u);
+    expect(banner).toContain("bottom: calc(0.75rem + var(--wf-foot-bar-lift, 0px))");
+    expect(css).toMatch(/\.banner \{\s*bottom: calc\(\s*var\(--wf-dock-clear/u);
   });
 
   it("ST8 (PR #1474 review): on paper the offline note prints in the page's flow, not fixed", () => {
@@ -240,7 +240,7 @@ describe("states", () => {
     expect(rule).toContain("transform: none !important");
     const layout = read("src/app/ward-flow/ward-flow-layout.module.css");
     const paper = layout.slice(layout.lastIndexOf("@media print {"));
-    expect(paper).toMatch(/\[data-wf-offline-slot\]:first-child\)::after \{\s*display: none;/u);
+    expect(paper).toMatch(/\.bannerHolder:not\(:empty\)\)::after \{\s*display: none;/u);
   });
 
   it("K11 (PR #1474 review): a refused select takes no taps", () => {
@@ -253,7 +253,7 @@ describe("states", () => {
     expect(block(css, ".banner")).toContain("pointer-events: none");
     expect(block(css, ".banner :is(a, button)")).toContain("pointer-events: auto");
     const layout = read("src/app/ward-flow/ward-flow-layout.module.css");
-    const room = block(layout, ".shellContent:has(> .bannerHolder > [data-wf-offline-slot]:first-child)::after");
+    const room = block(layout, ".shellContent:has(> .bannerHolder:not(:empty))::after");
     expect(room).toContain('content: ""');
     expect(room).toMatch(/block-size: \d/u);
   });

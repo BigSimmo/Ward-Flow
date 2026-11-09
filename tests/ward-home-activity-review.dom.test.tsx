@@ -101,7 +101,7 @@ describe("Home's Activity panel: explicit review", () => {
     renderHome();
     await openActivity();
     expect(within(panel()).getByRole("button", { name: "Mark these 2 reviewed" })).toBeInTheDocument();
-    fireEvent.click(within(panel()).getByRole("tab", { name: /Recent activity/u }));
+    fireEvent.click(within(panel()).getByRole("tab", { name: /^Recent/u }));
     fireEvent.click(within(panel()).getByRole("tab", { name: /Notices/u }));
     fireEvent.click(within(panel()).getByRole("tab", { name: /Changes/u }));
     closePanel();

@@ -121,7 +121,7 @@ describe("1. Home opens the shared Activity panel from the master design's bar",
     renderBar();
     fireEvent.click(screen.getByTestId("ward-bar-activity-trigger"));
     const dialog = await screen.findByRole("dialog", { name: "Activity · Statewide" });
-    for (const tab of [/^Changes/u, /^Recent activity/u, /^Notices/u])
+    for (const tab of [/^Changes/u, /^Recent/u, /^Notices/u])
       expect(within(dialog).getByRole("tab", { name: tab })).toBeInTheDocument();
   });
 });

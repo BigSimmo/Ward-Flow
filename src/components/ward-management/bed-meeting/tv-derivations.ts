@@ -22,6 +22,7 @@ import {
   edWaitingSeries,
   elapsedOpenMinutes,
   type EdSummary,
+  isUnderAForm,
 } from "@/components/ward-management/ed/ed-home-derivations";
 import { groupDischarges } from "@/components/ward-management/discharges/discharge-board-model";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
@@ -294,7 +295,7 @@ export function edTvSheet(input: TvInputs & { edId: string; accessTargetMinutes:
     service,
     accessTargetMinutes,
     noBed: summary.open.filter(edHasNoBedYet).length,
-    underForm: summary.open.filter((movement) => !!movement.legalForm && !isEdInitiatedWithdrawal(movement)).length,
+    underForm: summary.open.filter((movement) => isUnderAForm(movement) && !isEdInitiatedWithdrawal(movement)).length,
     held: inStages(ED_HELD_STAGES),
     leaving: inStages(ED_LEAVING_STAGES),
     people: people.slice(0, TV_ROW_LIMIT),

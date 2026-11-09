@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useMemo, type ReactNode } from "react";
 
 import { DrawerFootRow, PanelDrawer, StatusPill, buttonClass } from "@/components/wf";
-import { CapacityWardSidebar, useCapacityWardTabs } from "@/components/ward-management/capacity/capacity-ward-drawer";
+import { CapacityWardSidebar } from "@/components/ward-management/capacity/capacity-ward-drawer";
+import { useCapacityWardTabs } from "@/components/ward-management/capacity/capacity-ward-tabs";
 import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";

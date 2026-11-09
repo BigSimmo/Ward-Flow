@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { HOW_TO_IDS } from "@/components/ward-management/help/ward-help-howto";
@@ -8,6 +8,7 @@ import {
   clearHelpUsed,
   parseHelpUsed,
   recordHowToUsed,
+  useRecentHowTos,
 } from "@/components/ward-management/help/ward-help-usage";
 import { endWardFlowBrowserSession } from "@/components/ward-management/ward-browser-data";
 
@@ -35,6 +36,16 @@ describe("help usage counts", () => {
     expect(window.localStorage.getItem(HELP_USED_STORAGE_KEY)).toBe("pull-bed:2,theme:1");
     clearHelpUsed();
     expect(window.localStorage.getItem(HELP_USED_STORAGE_KEY)).toBeNull();
+  });
+
+  it("keeps the pairs in the order last used, so Recently opened lists the newest first", () => {
+    recordHowToUsed("pull-bed", HOW_TO_IDS);
+    recordHowToUsed("log-call", HOW_TO_IDS);
+    recordHowToUsed("chase-discharge-dates", HOW_TO_IDS);
+    recordHowToUsed("pull-bed", HOW_TO_IDS);
+    expect(window.localStorage.getItem(HELP_USED_STORAGE_KEY)).toBe("log-call:1,chase-discharge-dates:1,pull-bed:2");
+    const { result } = renderHook(() => useRecentHowTos(HOW_TO_IDS, 2));
+    expect(result.current).toEqual(["pull-bed", "chase-discharge-dates"]);
   });
 
   it("survives sign-out, because it holds nothing about a person", () => {

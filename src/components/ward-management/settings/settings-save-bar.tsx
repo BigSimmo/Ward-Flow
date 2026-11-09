@@ -37,6 +37,7 @@ export function SettingsSaveBar({
     <div
       className={cx(styles.saveBar, rx.saveBar)}
       role="region"
+      data-wf-foot-bar=""
       aria-label="Unsaved rule changes"
       data-testid="unsaved-draft-inspector"
     >

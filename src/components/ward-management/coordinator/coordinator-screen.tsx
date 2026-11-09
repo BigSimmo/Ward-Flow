@@ -780,7 +780,9 @@ export function CoordinatorScreen() {
                         className={heroStyles.figureLink}
                         data-testid="ward-home-occupancy-link"
                       >
-                        {statewideOccupancy >= BED_ALERT_THRESHOLD_PERCENT ? "at risk" : "beds in use"}
+                        {/* D-109 (Josh, 9 Nov 2026): the line tests the whole number shown, so "85%" never
+                            sits beside "beds in use". */}
+                        {Math.round(statewideOccupancy) >= BED_ALERT_THRESHOLD_PERCENT ? "at risk" : "beds in use"}
                       </Link>
                     </small>
                   </p>

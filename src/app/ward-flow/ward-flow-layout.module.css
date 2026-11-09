@@ -393,46 +393,66 @@
   }
 }
 
-/* Moved from inline styles (styles cleanup, 16 Oct 2026). */
+/* Note 14 (Josh, 8 Nov 2026): every notification rests at the bottom centre of the window, the same
+   place as the toasts, rather than pinned under the header where it pushed the page down. The
+   holder floats above the page; on a phone it sits above the dock (the offline note's own sum).
+   No transform, so the offline note's fixed marker and portal are unaffected. */
 .bannerHolder {
-  position: sticky;
-  top: var(--wf-header-height, 3.75rem);
-  z-index: 25;
-  contain: layout style;
-  min-height: 0;
-  /* F-13: every pinned banner keeps its full height. As a shrinkable item of the fixed-height
-     .shellContent column the holder was squeezed when the page ran long, and its banner (the
-     offline banner, then the downtime pack line) spilled over the page heading. */
+  --wf-notes-rest: calc(0.75rem + var(--wf-foot-bar-lift, 0px));
+  position: fixed;
+  inset-inline: 0;
+  bottom: var(--wf-notes-rest);
+  z-index: var(--wf-z-chrome);
+  box-sizing: border-box;
+  inline-size: fit-content;
+  max-inline-size: min(36rem, calc(100vw - 1.5rem));
+  margin-inline: auto;
+  /* The holder only places the note; taps beside the note reach the page. */
+  pointer-events: none;
   flex-shrink: 0;
-  /* WT-23 (walk-through, 26 Oct 2026): the pinned notes have margins round them, so a page scrolled
-     under the holder showed through those gaps and looked to run into the header. The holder takes
-     the page ground and a small foot, so the page passes behind it cleanly. */
-  background: var(--ground);
-  padding-bottom: 0.25rem;
 }
 
-/* With no note to show the holder stays empty and keeps no foot. */
-.bannerHolder:empty {
-  padding-bottom: 0;
+/* The note itself reads as a toast: one card, a soft lift, no page margins of its own. */
+.bannerHolder.bannerHolder > * {
+  margin: 0;
+  border-color: var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  box-shadow: var(--wf-e2);
+  pointer-events: auto;
+  animation: notesRise var(--wf-t-enter, 0.2s) var(--wf-ease-out, ease-out);
 }
 
-/* ST8: offline, the holder keeps only a hidden marker (the note itself rests at the window's foot),
-   so it stays as flat as an empty holder while the lower notes wait. */
-.bannerHolder:has(> [data-wf-offline-slot]:first-child) {
-  padding-bottom: 0;
-  background: transparent;
+@keyframes notesRise {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
 }
 
-/* While the offline note rests at the foot, the page ends with room for it, so its last lines are
-   never left under the note (PR #1474 review). */
-.shellContent:has(> .bannerHolder > [data-wf-offline-slot]:first-child)::after {
+@media (prefers-reduced-motion: reduce) {
+  .bannerHolder.bannerHolder > * {
+    animation: none;
+  }
+}
+
+@media (max-width: 46.4375rem) {
+  .bannerHolder {
+    --wf-notes-rest: calc(
+      var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + 0.5rem +
+        var(--wf-phone-foot-lift, 0px)
+    );
+  }
+}
+
+/* While a note shows, the page ends with room for it, so its last lines are never left under it. */
+.shellContent:has(> .bannerHolder:not(:empty))::after {
   content: "";
   display: block;
   flex-shrink: 0;
   block-size: 5rem;
 }
 
-/* Minimal warnings (design audit, Josh 1 Nov 2026): one pinned note at a time. The layout mounts the
+/* Minimal warnings (design audit, Josh 1 Nov 2026): one note at a time. The layout mounts the
    notes in priority order (demo not saved, broadcast, recovery, other tab's day, offline, downtime
    pack, desk preview, practice, typed text not kept; SD-02, Josh 5 Nov 2026) and each renders nothing when it has nothing to say, so the first one present is the most
    important and the rest wait until it goes. `!important` because a note's own display rule can be
@@ -448,37 +468,14 @@
   display: none !important;
 }
 
-/* Over a hero band (header at rest in ink) the notes sit on the band's top colour, so header, notes
-   and hero read as one surface and the page keeps its band (wf/band.ts, Josh 27 Oct 2026). Once the
-   page scrolls the header turns light and the holder goes back to the page ground. */
-.shellContent:has([data-wf-bar][data-band="ink"]) > .bannerHolder:not(:empty) {
-  background: var(--wf-hero-1);
-}
-
-/* It changes colour with the header, at the header's own pace (ward-bar.module.css). */
-.bannerHolder {
-  transition: background-color var(--wf-t-enter) var(--wf-ease-out);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .bannerHolder {
-    transition: none;
-  }
-}
-
 /*
  * P040: on a short phone screen (a phone held sideways at narrow width, or 200% zoom) the pinned
- * header plus the pinned notes under it left little room to scroll the page. Below 32rem of height
- * only the header stays pinned; the notes holder scrolls away with the page. Kept after the base
- * .bannerHolder rule so it wins the cascade. The scroll padding drops only the notes' room and keeps
+ * header left little room to scroll the page. The notes now float at the foot (Note 14), so the
+ * scroll padding keeps only the header's room and
  * clearance for the route-level pinned view row (Ward views, Referrals switch: up to 6.5rem).
  * Layout only: no wording changes.
  */
 @media screen and (max-width: 46.4375rem) and (max-height: 32rem) {
-  .bannerHolder {
-    position: static;
-  }
-
   .shellContent,
   .shellContent:has([data-testid="ward-offline-banner"]) {
     scroll-padding-top: calc(var(--wf-header-height) + 6.5rem);
@@ -516,8 +513,8 @@
     position: static;
   }
 
-  /* The room left for the offline note at the foot is screen only. */
-  .shellContent:has(> .bannerHolder > [data-wf-offline-slot]:first-child)::after {
+  /* The room left for a note at the foot is screen only. */
+  .shellContent:has(> .bannerHolder:not(:empty))::after {
     display: none;
   }
 }
