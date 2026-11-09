@@ -17,6 +17,10 @@ import { Button, Count, StatusGlyph, cx, durMinutes } from "@/components/wf";
 import { openMeetingAction } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useBedMeetingRecord } from "@/components/ward-management/bed-meeting/use-bed-meeting-done";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { movementOfferNoReplyWaits } from "./referral-no-reply";
+import { EscalateNoReply, NoReplyTimer } from "./referral-no-reply-timers";
+import { waitlistStands } from "@/components/ward-management/ward-waitlist";
 
 import styles from "./referral-page.module.css";
 
@@ -55,6 +59,8 @@ export function WardOffersTable({
   // Chase Undo (Josh, 3 Nov 2026): the toast offers Undo, so a Chase tapped by mistake comes back.
   const recordAction = useBedMeetingRecord("coordinator");
   const chasedFocus = useRef<string | null>(null);
+  // Referral response timer (Josh, 9 Nov 2026): the Settings answer limit, read once for every row.
+  const configuration = useOptionalWardFlowSelect("configuration")?.configuration;
   if (offers.length === 0) return null;
   const wardName = (unitId: string) => placeDisplayName(unitId, units).split(" — ")[0];
   // Note 11 (Josh, 9 Nov 2026): the list's state before its rows. Offers are oldest first, so the
@@ -63,7 +69,10 @@ export function WardOffersTable({
   const longest = Math.max(1, now - sentAt(offers[0]));
   const declinedTotal = offers.reduce(
     (sum, movement) =>
-      sum + movement.declines.filter((decline) => movement.referredUnitIds.includes(decline.unitId)).length,
+      sum +
+      movement.declines.filter(
+        (decline) => movement.referredUnitIds.includes(decline.unitId) && !waitlistStands(movement, decline.unitId),
+      ).length,
     0,
   );
   const chasedTotal = offers.filter((movement) => openMeetingAction(movement.meetingActions, "chase_ward")).length;
@@ -110,6 +119,8 @@ export function WardOffersTable({
             const toAnswer = movement.referredUnitIds.find((unitId) => !declined.has(unitId));
             const chased = openMeetingAction(movement.meetingActions, "chase_ward");
             const waited = now - sentAt(movement);
+            const waits = configuration ? movementOfferNoReplyWaits(movement, now, configuration, units) : [];
+            const overdue = waits.find((wait) => wait.pastLimit);
             return (
               <tr key={movement.id} data-testid={`ward-referral-board-ward-offer-${movement.id}`}>
                 <th scope="row" className={styles.offerName}>
@@ -124,12 +135,24 @@ export function WardOffersTable({
                   {/* Note 11: one chip per ward asked, carrying that ward's own answer. */}
                   <span className={styles.offerChips}>
                     {movement.referredUnitIds.map((unitId) => {
-                      const no = declined.has(unitId);
+                      // Ward wait list (Josh, 9 Nov 2026): a wait list answer keeps the referral live,
+                      // so it reads as "wait list", never as a decline.
+                      const listed = waitlistStands(movement, unitId);
+                      const no = declined.has(unitId) && !listed;
                       return (
                         <span key={unitId} className={cx(styles.offerChip, no && styles.offerChipNo)}>
                           <StatusGlyph tone={no ? "closed" : "neutral"} size={8} />
                           {wardName(unitId)}
-                          <span className="sr-only">{no ? ", declined" : ", awaiting answer"}</span>
+                          {listed ? <span className={styles.offerSent}>wait list</span> : null}
+                          <span className="sr-only">
+                            {no ? ", declined" : listed ? ", on its wait list" : ", awaiting answer"}
+                          </span>
+                          {(() => {
+                            const wait = waits.find((entry) => entry.unitId === unitId);
+                            return wait ? (
+                              <NoReplyTimer wait={wait} testId={`ward-offer-timer-${movement.id}-${unitId}`} />
+                            ) : null;
+                          })()}
                         </span>
                       );
                     })}
@@ -185,6 +208,14 @@ export function WardOffersTable({
                           {toAnswer ? <span className={styles.offerChaseWard}> {wardName(toAnswer)}</span> : null}
                         </Button>
                       )}
+                      {overdue || openMeetingAction(movement.meetingActions, "escalate_ward_answer") ? (
+                        <EscalateNoReply
+                          movement={movement}
+                          wait={overdue}
+                          now={now}
+                          personName={nameFor(who.formalName, who.umrn)}
+                        />
+                      ) : null}
                       <ChevronRight className={styles.offerChevron} size={16} aria-hidden="true" />
                     </div>
                   </td>

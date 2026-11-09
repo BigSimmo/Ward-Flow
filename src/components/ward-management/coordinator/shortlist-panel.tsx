@@ -101,6 +101,7 @@ import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel, waitFactors } from "@/components/ward-management/ward-priority";
 import { referenceDistance } from "@/components/ward-management/reference/ward-reference-distances";
+import { CandidateFit } from "@/components/ward-management/coordinator/shortlist-candidate-fit";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { openWardHelp } from "@/components/ward-management/help/ward-help-events";
@@ -261,9 +262,7 @@ function legalFormLine(movement: Movement, now: Instant) {
  * attaches; a referral is a request for a bed, not yet a movement, and carries no unit, no stage
  * and no legal clock of its own. This renders none of those: no "referred to", no ward column, no
  * back-link to a unit — only the facts the referral itself actually carries.
- *
- * The coordinator decides here with the Referrals board's own view (item 6a, 9 Nov 2026); any
- * other desk keeps the Decide link to that board on this referral (WS-04, 26 Oct 2026).
+ * Item 6a: the coordinator decides here in the board's own view; other desks keep Decide (WS-04).
  */
 export function ReferralPlacementPanel({
   referral,
@@ -1210,6 +1209,7 @@ export function ShortlistPanel({
               {candidateReason(candidate.verdict)}
             </span>
           )}
+          <CandidateFit unitId={candidate.unit.id} gates={candidate.verdict.gates} />
           {notice ? (
             <span
               className={`${
@@ -1265,6 +1265,7 @@ export function ShortlistPanel({
           >
             {reason}
           </span>
+          <CandidateFit unitId={candidate.unit.id} gates={candidate.verdict.gates} />
           <span id={describedBy} className="sr-only">
             Unavailable: {reason}. No recorded reason can place this person here.
           </span>

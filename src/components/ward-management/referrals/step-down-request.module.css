@@ -1,0 +1,76 @@
+/* Feature 12: the step-down request. One titled group: a summary line, the wards behind a
+   disclosure (by name, never ranked), then the one action. Neutral text, no colour. */
+.request {
+  display: grid;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  margin-block-start: var(--wf-s-2);
+  padding-block-start: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-1) var(--wf-s-2);
+}
+
+.title {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.summary,
+.note {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.disclosure > summary {
+  /* A 44px touch target; padding rather than flex keeps the disclosure triangle. */
+  padding-block: 12px;
+  line-height: 20px;
+  cursor: pointer;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+}
+
+.disclosure[open] > summary {
+  margin-block-end: var(--wf-s-1);
+}
+
+.wards {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wf-fs-12);
+}
+
+.wards li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding-block: 4px;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.wards li:last-child {
+  border-bottom: 0;
+}
+
+.name {
+  min-width: 0;
+  color: var(--wf-ink-1);
+}
+
+.figure {
+  flex: none;
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}

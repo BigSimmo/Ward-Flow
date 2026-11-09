@@ -22,6 +22,9 @@ export const BED_MEETING_ACTION_KINDS = [
   { id: "seek_bed_elsewhere", label: "Seek a bed elsewhere" },
   { id: "family_meeting", label: "Arrange family meeting" },
   { id: "review_legal_form", label: "Review legal form" },
+  // Referral response timer (Josh, 9 Nov 2026): a ward's answer is past the time limit and the
+  // coordinator escalated it with one tap. A task for the ward, recorded by a person, never automatic.
+  { id: "escalate_ward_answer", label: "Escalate ward answer" },
 ] as const;
 
 export type BedMeetingActionKind = (typeof BED_MEETING_ACTION_KINDS)[number]["id"];

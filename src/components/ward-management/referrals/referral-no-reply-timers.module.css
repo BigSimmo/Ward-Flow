@@ -1,0 +1,52 @@
+/* Referral response timer (Josh, 9 Nov 2026): calm figures, colour only for the overdue state. */
+.timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--wf-ink-3);
+  font-family: var(--wf-mono);
+  font-feature-settings: "tnum" 1;
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+.timer[data-overdue] {
+  color: var(--wf-danger-ink);
+  font-weight: 600;
+}
+.escalated {
+  padding: 2px var(--wf-s-2);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wf-ink-3) 12%, transparent);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+.list {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  list-style: none;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 28px;
+  font-size: var(--wf-fs-13);
+}
+.head {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.place {
+  color: var(--wf-ink-2);
+}
+.push {
+  margin-inline-start: auto;
+}
