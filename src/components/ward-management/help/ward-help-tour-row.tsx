@@ -71,11 +71,12 @@ export function TourRow({ role, onTour }: { role: WardTourRole; onTour: () => vo
           );
         })}
       </ol>
-      <span className={s.segments} aria-hidden="true">
-        {Array.from({ length: total }, (_, index) => (
-          <i key={index} data-done={index < at ? "" : undefined} />
-        ))}
-      </span>
+      {/* Progress shows once the tour has begun: an empty bar at the start only adds noise. */}
+      {at > 0 ? (
+        <span className={s.segments} aria-hidden="true">
+          <i style={{ width: `${Math.round((at / Math.max(1, total)) * 100)}%` }} />
+        </span>
+      ) : null}
       {welcome ? (
         <div className={s.tourWelcome}>
           <WardTourWelcome inline onStart={onTour} onClose={() => setWelcome(false)} />

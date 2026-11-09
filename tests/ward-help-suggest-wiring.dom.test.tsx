@@ -186,8 +186,10 @@ describe("Help suggestions as you type", () => {
     vi.useFakeTimers();
     try {
       const { field } = sheet();
+      // Help puts the caret in the box as it opens; let that settle, then move focus away for real.
+      act(() => vi.advanceTimersByTime(500));
       type(field, "pul");
-      fireEvent.blur(field, { relatedTarget: document.body });
+      act(() => field.blur());
       act(() => vi.advanceTimersByTime(200));
       expect(list()).toBeNull();
     } finally {

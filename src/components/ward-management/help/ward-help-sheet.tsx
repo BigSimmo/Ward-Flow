@@ -215,6 +215,11 @@ function WardHelpSheetView({
   const [checklist, setChecklist] = useState<string>();
   const [unread, setUnread] = useState(readUnread);
   const field = useRef<HTMLInputElement>(null);
+  // Opening Help on a computer puts the caret in the search box, so a question can be typed straight
+  // away (Help overhaul, 9 Nov 2026). That first, automatic focus keeps the sections showing; Try
+  // asking appears once the person clicks or tabs into the box themselves.
+  const typeFirst = !phone && !pointer.touchOnly;
+  const quietFocus = useRef(typeFirst);
   // Try asking sits outside the field, so Tab from the field moves into it instead of losing focus.
   const tryAsking = useRef<HTMLDivElement>(null);
   const focusStays = (next: EventTarget | null) =>
@@ -313,6 +318,8 @@ function WardHelpSheetView({
   /** New words in the field: the list shows again from the top, with nothing chosen yet. */
   const fieldWords = (words: string) => {
     setQuery(words);
+    // Typing straight after Help opened (the caret already waiting) still brings the suggestions.
+    setFocused(true);
     setLiteral(false);
     setActive(0);
     setActiveSuggestion(-1);
@@ -473,6 +480,7 @@ function WardHelpSheetView({
       open
       onClose={onClose}
       title="Help"
+      initialFocusRef={typeFirst ? field : undefined}
       headerLeading={
         <span className={`${barStyles.drawerTile} ${s.headTile}`} aria-hidden="true">
           <CircleHelp aria-hidden="true" className={barStyles.drawerHeadingIcon} strokeWidth={1.75} />
@@ -563,7 +571,14 @@ function WardHelpSheetView({
             value={query}
             onChange={(event) => fieldWords(event.target.value)}
             onKeyDown={onFieldKey}
-            onFocus={() => setFocused(true)}
+            onFocus={() => {
+              if (quietFocus.current) {
+                quietFocus.current = false;
+                return;
+              }
+              setFocused(true);
+            }}
+            onPointerDown={() => setFocused(true)}
             onBlur={(event) => {
               if (focusStays(event.relatedTarget)) return;
               // A pointer press on a suggestion can blur first, so close only once focus has settled away.

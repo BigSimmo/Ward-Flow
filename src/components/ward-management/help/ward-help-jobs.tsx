@@ -14,7 +14,6 @@ import {
   Compass,
   ExternalLink,
   Info,
-  LayoutDashboard,
   Link2,
   ListChecks,
   Play,
@@ -422,15 +421,12 @@ export function HelpTasks({
       {screen ? (
         <section className={`${s.card} ${s.here}`} aria-labelledby="ward-help-here" data-testid="ward-help-tasks-here">
           <div className={s.hereHead}>
-            <span className={s.hereIcon} aria-hidden="true">
-              <LayoutDashboard aria-hidden="true" strokeWidth={1.75} />
-            </span>
-            <div>
-              <h3 id="ward-help-here" className={s.hereTitle}>
-                <span>On this screen:</span> {screen.title}
-              </h3>
-              <p className={s.herePurpose}>{screen.purpose}</p>
-            </div>
+            <p className={s.hereEyebrow}>On this screen</p>
+            <h3 id="ward-help-here" className={s.hereTitle}>
+              <span className="sr-only">On this screen: </span>
+              {screen.title}
+            </h3>
+            <p className={s.herePurpose}>{screen.purpose}</p>
           </div>
           {here.length || around ? (
             <div className={s.tiles}>
@@ -451,15 +447,13 @@ export function HelpTasks({
                   <ArrowRight aria-hidden="true" className={s.aroundGo} strokeWidth={1.75} />
                 </button>
               ) : null}
-              {hereTiles.map((task, index) => {
+              {hereTiles.map((task) => {
                 const can = canShowTask(task, role, home, phone, showMeOn, pathname, access);
                 return (
                   <button
                     key={task.id}
                     type="button"
                     className={s.tile}
-                    // A lone tile at the end of an odd count takes the whole row.
-                    data-wide={hereTiles.length % 2 === 1 && index === hereTiles.length - 1 ? "" : undefined}
                     onClick={() => (can ? showMe(task.id) : reveal(task.id))}
                   >
                     <span className={s.tileTitle}>{task.title}</span>
@@ -470,7 +464,10 @@ export function HelpTasks({
                           Show me
                         </>
                       ) : (
-                        "Read how"
+                        <>
+                          Read how
+                          <ChevronRight aria-hidden="true" className={s.caret} strokeWidth={1.75} />
+                        </>
                       )}
                     </span>
                   </button>
@@ -496,7 +493,15 @@ export function HelpTasks({
         </section>
       ) : null}
 
-      <TourRow role={role} onTour={onTour} />
+      {/* Learning the app in one place (Help overhaul, 9 Nov 2026): the tour, then practice. */}
+      <section className={s.section} aria-labelledby="ward-help-learn" data-testid="ward-help-learn">
+        <h3 id="ward-help-learn" className={s.sectionHead}>
+          Learn Ward Flow
+        </h3>
+        <TourRow role={role} onTour={onTour} />
+        {/* The access admin records no ward work, so there is nothing to practise. */}
+        {role === "admin" ? null : <PracticeWhenLive role={role} onShowMe={onShowMe} showMeOn={showMeOn} />}
+      </section>
 
       {checklists.length && onOpenChecklist ? (
         <section className={s.section} aria-labelledby="ward-help-checklists" data-testid="ward-help-checklists">
@@ -524,9 +529,6 @@ export function HelpTasks({
           </div>
         </section>
       ) : null}
-
-      {/* The access admin records no ward work, so there is nothing to practise. */}
-      {role === "admin" ? null : <PracticeWhenLive role={role} onShowMe={onShowMe} showMeOn={showMeOn} />}
 
       <section className={s.section} aria-labelledby="ward-help-jobs" data-testid="ward-help-tasks">
         <h3 id="ward-help-jobs" className={s.sectionHead}>

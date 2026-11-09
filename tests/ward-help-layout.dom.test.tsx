@@ -50,6 +50,8 @@ describe("search-first Help layout", () => {
 
   it("offers questions to try when the box is focused and empty", () => {
     sheet();
+    // Help opens with the caret in the box on a computer; Try asking shows once the person clicks it.
+    fireEvent.pointerDown(screen.getByRole("combobox"));
     fireEvent.focus(screen.getByRole("combobox"));
     const tryAsking = screen.getByRole("region", { name: "Try asking" });
     // Home has its own walk round and questions (5 Nov 2026), which come before the general ones.
@@ -61,6 +63,7 @@ describe("search-first Help layout", () => {
   it("keeps Try asking open while Tab moves from the box into it, and closes it once focus leaves", () => {
     sheet();
     const box = screen.getByRole("combobox");
+    fireEvent.pointerDown(box);
     fireEvent.focus(box);
     expect(box.getAttribute("aria-controls")).toBeNull();
     const first = within(screen.getByRole("region", { name: "Try asking" })).getAllByRole("button")[0];
