@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { wardTvSheet, edTvSheet, meetingTvExtras } from "@/components/ward-management/bed-meeting/tv-derivations";
-import { buildIncoming } from "@/components/ward-management/board/ward-board-model";
+import {
+  edTvSheet,
+  meetingTvExtras,
+  tvHealthServices,
+  wardTvSheet,
+} from "@/components/ward-management/bed-meeting/tv-derivations";
+import { buildIncoming, outgoingToday } from "@/components/ward-management/board/ward-board-model";
 import { bedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
 import { edOpenSummaries, isUnderAForm } from "@/components/ward-management/ed/ed-home-derivations";
 import { occupiedBeds } from "@/components/ward-management/statistics/statistics-occupancy";
@@ -286,26 +291,70 @@ describe("one number, one answer across Home, the board, the TV, Statistics and 
   });
 
   /*
-   * Real disagreements found by this audit (9 Nov 2026). Not changed here: each is a finding.
-   *
-   * 1. "Coming in", ward board hero vs ward TV, on 12 of 22 seeded wards. The board counts the
-   *    ward's admissions in `pulled` or `waitlisted` (`buildIncoming`); the TV counts open journeys
-   *    accepted for the ward (`wardTvSheet().incoming.total`). Seed examples: scgh-adult-open board
-   *    3, TV 0; sjgs-adult-open board 1, TV 4; bun-adult-open board 0, TV 3; bty-youth board 2, TV 1.
-   * 2. "Going out today and tomorrow", ward board hero vs ward TV "Going out" ("Today and
-   *    tomorrow"). The board counts one basis only (`outgoingToday`, Confirmed by default, its
-   *    Expected toggle the other); the TV counts held up + confirmed + expected. Seed:
-   *    rph-adult-secure board 1, TV 3; scgh-adult-open board 0, TV 4. Board Confirmed + Expected
-   *    equals the TV on every seeded ward.
-   * 3. "Beds ready now" after a referral is accepted into a named bed (`ACCEPT_REFERRAL` with
-   *    `bedNumber`, the ward board's "Place here"). The TV and the printed sheet subtract the named
-   *    hold (WF-FIG-017, `namedHolds`), but Home, the ward board and Statistics call
-   *    `readyBedsNow`/`totalReadyBedsNow` without reservations. Seed + RF-005 accepted into
-   *    rph-older-adult bed 1: Home, board and Statistics 26, TV and print 25.
+   * D-115 (Josh, 9 Nov 2026) settled the first two disagreements this audit found:
+   * 1. "Coming in" is the ward board's figure, beds pulled or waitlisted for an admission
+   *    (`buildIncoming`). The ward TV used to count accepted journeys (scgh-adult-open board 3, TV 0).
+   * 2. "Going out today and tomorrow" counts confirmed discharges only, the board's default basis.
+   *    The ward TV used to add expected ones (rph-adult-secure board 1, TV 3).
    */
-  it.todo("Coming in: the ward board (admissions pulled or waitlisted) and the ward TV (accepted journeys) agree");
-  it.todo("Going out today and tomorrow: the ward board (one basis) and the ward TV (all due releases) agree");
+  const serviceWardRows = new Map(
+    tvHealthServices(state.units).flatMap((service) =>
+      meetingTvExtras({ ...tvInputs(state, now), service, thresholds }).wards.map((row) => [row.id, row] as const),
+    ),
+  );
+
+  it("coming in (D-115): the ward board, that ward's TV and the service TV's ward row", () => {
+    let wardsComing = 0;
+    for (const unit of state.units) {
+      const wardTv = wardTvSheet({ ...tvInputs(state, now), unit, thresholds });
+      const board = buildIncoming(unit, state.admissions, state.movements, now).length;
+      expect(
+        mismatches([
+          { screen: "ward board", value: board },
+          { screen: "ward TV", value: wardTv.incoming.total },
+          { screen: "service TV ward row", value: serviceWardRows.get(unit.id)?.coming ?? null },
+        ]),
+        unit.id,
+      ).toEqual([]);
+      if (board > 0) wardsComing += 1;
+    }
+    expect(wardsComing, "the seed has people coming in on several wards").toBeGreaterThan(1);
+  });
+
+  it("going out today and tomorrow (D-115): confirmed only, on the ward board and both TVs", () => {
+    let wardsGoing = 0;
+    let expectedLeftOut = 0;
+    for (const unit of state.units) {
+      const wardTv = wardTvSheet({ ...tvInputs(state, now), unit, thresholds });
+      const board = outgoingToday(unit, state.bedReleases, "confirmed", now).length;
+      expect(
+        mismatches([
+          { screen: "ward board", value: board },
+          {
+            screen: "ward TV",
+            value: wardTv.discharges.heldUp + wardTv.discharges.confirmed + wardTv.discharges.expected,
+          },
+          { screen: "service TV ward row", value: serviceWardRows.get(unit.id)?.going ?? null },
+        ]),
+        unit.id,
+      ).toEqual([]);
+      expect(wardTv.discharges.expected, `${unit.id}: no expected discharge is counted`).toBe(0);
+      if (board > 0) wardsGoing += 1;
+      expectedLeftOut += outgoingToday(unit, state.bedReleases, "expected", now).length;
+    }
+    expect(wardsGoing, "the seed has confirmed discharges").toBeGreaterThan(0);
+    expect(expectedLeftOut, "the seed has expected discharges the rule leaves out").toBeGreaterThan(0);
+  });
+
+  /*
+   * 3. "Beds ready now" after a referral is accepted into a named bed (`ACCEPT_REFERRAL` with
+   *    `bedNumber`, the ward board's "Place here"). D-115: that bed is ready on no screen. The TV and
+   *    print subtract the hold (WF-FIG-017); Home, the ward board, Statistics, Handover and Referrals
+   *    still call `readyBedsNow`/`totalReadyBedsNow` without it. Seed + RF-005 accepted into
+   *    rph-older-adult bed 1: Home, board and Statistics 26, TV and print 25. Not fixed yet: the board
+   *    passes no journeys or referrals (`board/ward-board.tsx`, held by open PRs).
+   */
   it.todo(
-    "Beds ready now: Home, the board and Statistics subtract a referral's named bed hold, as the TV and print do",
+    "Beds ready now (D-115): Home, the board and Statistics subtract a referral's named bed hold, as the TV and print do",
   );
 });
