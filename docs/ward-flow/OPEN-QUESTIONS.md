@@ -1,9 +1,8 @@
 # Ward Flow — open questions
 
-> **Historical since 17 September 2026. Not the list of what is left.** Josh decided on 24 October
-> 2026 that the one list is the [STATUS decision table and its "Waiting on Josh" list](STATUS.md#decision-status-d-numbers).
-> Answers are in [decisions.md](decisions.md) and dated `owner-answers-*.md` files. "None open" below
-> was true on 17 September only.
+> **Historical since 17 September 2026. Not the list of what is left.** Work is in the
+> [backlog](backlog.md). Questions for Josh are in [STATUS "Waiting on Josh"](STATUS.md#waiting-on-josh).
+> Answers are in [decisions.md](decisions.md). "None open" below was true on 17 September only.
 
 **Rewritten 17 September 2026, evening, round 2. Keeps only what is still genuinely open.** Re-derive
 before acting on anything below. For the full history of how each item was closed, see the dated
@@ -38,6 +37,8 @@ decided again.
 - **Which emergency-department drawing is the spec (item 42).** Answered:
   `emergency-department-third-edition.html` is confirmed as the ED drawing (archive/dated-notes/owner-answers-2026-09-17.md
   item 42; also registered at `/ed/[edId]` in `SCREEN-VERIFICATION.md`).
+- **ED-to-community referral routing.** Closed 17 September 2026 and moved here from "Deferred" on
+  9 November 2026: build now, all teams offered, the patient's area team first (`docs/history/archive/dated-notes/owner-answers-2026-09-17.md` item 14).
 - **`O-17.1` / two type scales.** Was never actually unanswered — already indexed in `OWNER-RULINGS.md`
   as "screens migrate at their own rebuild, never as a sweep". Housekeeping only.
 
@@ -152,14 +153,6 @@ on it without re-deriving against current git and `docs/ward-flow-task-ledger.md
   provider/deploy access to confirm. Trigger: someone with that access checks the live deploy; do
   not close it on the commit alone. Detail:
   `docs/ward-flow/handovers/ward-lead-close-out-2026-09-12.md` §3.
-- **ED-to-community referral routing** — an ED cannot refer onward to a community team; the form
-  shows this as a visible deferral rather than hiding it. ⚠️ **No reopening trigger is stated
-  anywhere** — that absence is itself the finding, not an oversight in this document. Detail:
-  `docs/history/ward-flow-ledger.md` §B (Q9). _(Closed 2026-09-17: the WLQ-19 ("revisit later") vs Ruling 16
-  ("build now") clash is settled — `docs/history/archive/dated-notes/owner-answers-2026-09-17.md` item 14: "ED to
-  community team referral: build now. All teams offered, the patient's area team first; while on a
-  form, not offered until the examination outcome is recorded; then allowed with legal status
-  shown." Ruling 16 wins; this is no longer a deferral, it is a build item.)_
 - **Deferred 17 Sept, second round (owner: "remove anything deferrable")** — seven items dropped
   from the round-two housekeeping sweep so it stayed inside its timebox, none a ruling reversal:
   (1) diversions T4a/T4b (destination change/diversion in transit); (2) the officer-screen print

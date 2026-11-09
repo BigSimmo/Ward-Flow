@@ -20,7 +20,7 @@ import type { Movement, MovementStage } from "@/components/ward-management/ward-
  *
  * ⚠️ **ONE LABEL SET, NEVER TWO.** These are on seven screens and a coordinator already reads them
  * there. A sentence that sits awkwardly around a label is recast AROUND the label — a mid-sentence
- * variant would be two wordings for one state, which is the defect D-32 forbids arriving as a fix.
+ * variant would be two wordings for one state, which is the defect archived D-32 forbids arriving as a fix.
  */
 export const stageCopy: Record<MovementStage, { label: string; shortLabel: string }> = {
   placement_requested: { label: "Placement requested", shortLabel: "Referred" },

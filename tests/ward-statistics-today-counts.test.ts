@@ -6,7 +6,7 @@ import { vi } from "vitest";
 /**
  * "ADMISSIONS TODAY" AND "DISCHARGES TODAY" ARE CALENDAR-DAY COUNTS, NOT STATE COUNTS.
  *
- * Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §1 "reports defect" (owner
+ * Build plan `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md` §1 "reports defect" (owner
  * answer 32): `statistics-screen.tsx` used to count every `"occupied"` or `"pulled"` admission as
  * an admission "today" and every `"departed"` one as a discharge "today", with no day bound at
  * all — a person admitted weeks ago and still on the ward counted as an admission today forever.

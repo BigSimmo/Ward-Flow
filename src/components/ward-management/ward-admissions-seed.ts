@@ -232,7 +232,7 @@ type OccupantExtras = {
   readonly referralId?: string;
   readonly movementId?: MovementId | null;
   /**
-   * D-14. The real patient this occupant is — a pointer, never invented, and never set without
+   * Archived D-14. The real patient this occupant is — a pointer, never invented, and never set without
    * `referralId` beside it: `Admission.patientId`'s own doc comment says the only honest way to
    * populate this seed is to reuse a pair `referralId` already authors, never a hand-picked patient
    * with no referral behind it. Set on exactly ONE occupant (`RF-RPHS-14`, `wardPatients[2]` —
@@ -412,7 +412,7 @@ type Departure = {
    */
   readonly referralId?: string;
   readonly movementId?: MovementId | null;
-  /** D-14. See `Occupant`'s own `patientId` field for the discipline this follows — set only
+  /** Archived D-14. See `Occupant`'s own `patientId` field for the discipline this follows — set only
    *  alongside a real `referralId`, and only on `AD-LEFT-01` (`RF-010` → `PT-001`, `wardPatients[0]`,
    *  sex Female, matching this departure's own recorded sex). */
   readonly patientId?: PatientId;

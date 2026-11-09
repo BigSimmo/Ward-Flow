@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 /**
- * MERGE 03 (owner-approved 2026-09-05, `docs/superpowers/specs/2026-09-05-ward-flow-merges-1-3-design-lock.md`
+ * MERGE 03 (owner-approved 2026-09-05, `docs/history/superpowers/specs/2026-09-05-ward-flow-merges-1-3-design-lock.md`
  * §2) folded the live vehicle tracker into `MovementsScreen` — the same movements, on the same
  * board, without a second view asking "where is everyone right now" a second way. This route
  * stays as a bookmark/deep-link backstop so an existing link to the transport tracker does not

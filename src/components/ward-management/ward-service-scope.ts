@@ -1,6 +1,6 @@
 /**
  * SERVICE MEMBERSHIP — one pure module, shared by every screen the service chooser scopes
- * (build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2, item 44). Until this
+ * (build plan `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md` §2, item 44). Until this
  * module existed, the only join deciding "does this belong to service S" lived inside the
  * handover page (`handover/handover-page.tsx`'s `movementInHandoverScope`, `case "service"`).
  * That page now delegates its service case here rather than keeping its own copy — a second
@@ -17,7 +17,7 @@
  *   and its emergency-department destinations. A community-team destination adds nothing — this
  *   application holds no registry mapping a team name to a site or a service.
  *
- * ⚠️ **NEVER `homeRegion`.** Owner ruling Q-2 (`docs/ward-flow/owner-decisions-2026-09-1x.md`):
+ * ⚠️ **NEVER `homeRegion`.** Owner ruling Q-2 (`docs/history/archive/dated-notes/owner-decisions-2026-09-1x.md`):
  * catchment — where a person lives — is INFORMATION, never a filter, and no bed is hidden or
  * excluded by it. `homeRegion` is a ten-way geographic guess (`HOME_REGIONS`) with no join to a
  * `HealthService` at all; reading it here would be inventing that join, not deriving it. Neither

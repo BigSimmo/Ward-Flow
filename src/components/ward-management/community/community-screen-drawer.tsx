@@ -171,7 +171,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
       : undefined;
 
   const footer = isPx ? (
-    // Edit dossier removed: it was not wired (simplification A5, 19 Oct 2026, supersedes D-16).
+    // Edit dossier removed: it was not wired (simplification A5, 19 Oct 2026, supersedes archived D-16).
     <div className={d.foot}>
       <Button variant="sec" onClick={() => openPatientCare()}>
         Record contact

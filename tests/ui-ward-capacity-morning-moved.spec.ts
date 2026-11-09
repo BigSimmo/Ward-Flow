@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "playwright/test";
 
 /**
- * Task 6 (Phase 6 fix line, Lane D — `docs/ward-flow/plans/2026-09-16-fix-plan-screens-and-drawings.md`,
+ * Task 6 (Phase 6 fix line, Lane D — `docs/history/plans-2026-09/2026-09-16-fix-plan-screens-and-drawings.md`,
  * Q4). Formerly this file's predecessor spec, covering the morning bed-state page
  * (`MorningPage`/`MorningTour` in `src/components/ward-management/morning/`) before MERGE 02
  * (owner-approved 2026-09-05) folded that board into `CapacityScreen` and turned

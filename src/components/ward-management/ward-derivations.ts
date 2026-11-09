@@ -328,7 +328,7 @@ export function isStoppedTransportAwaitingRelease(movement?: Movement | null): b
 }
 
 /**
- * T8 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`): the fixed sentence both the
+ * T8 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`): the fixed sentence both the
  * ED screen and the movement console render when `examinationRevokedWhileBedHeld` is true. One
  * shared constant rather than two hand-typed strings, so the two screens cannot drift apart —
  * deliberately DIFFERENT wording from `STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease`
@@ -1184,7 +1184,7 @@ function referralMatches(referral: Referral, needle: string): boolean {
 /**
  * An accepted referral with nothing yet built from it (audit A3-5). Accepting pulls no bed and
  * creates no movement, so until the ward starts the placement the referral is the only record of
- * that person. Linked by the referral's own id only (D-14: no patient link is read here). A
+ * that person. Linked by the referral's own id only (archived D-14: no patient link is read here). A
  * finished journey keeps its movement or admission, so it never comes back as a waiting referral.
  * Only a ward's acceptance waits for a bed: an ED psychiatry or community acceptance is complete
  * without one (Codex review, #547). The Patients page shows these in its census as Bed found; the

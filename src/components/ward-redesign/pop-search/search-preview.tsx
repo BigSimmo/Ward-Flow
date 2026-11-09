@@ -355,7 +355,7 @@ function PersonPreview({
   const stayHref = stayUnitId
     ? `${unitHref(stayUnitId)}${censusRow?.bedNumber !== undefined ? `?bed=${censusRow.bedNumber}` : ""}`
     : undefined;
-  // Through the shared resolver, never the raw patient link (D-14 default-deny).
+  // Through the shared resolver, never the raw patient link (archived D-14 default-deny).
   const openMovement = movements.find(
     (movement) => isOpen(movement) && resolveSubjectPatient(movement, lookup).patient?.id === patient.id,
   );

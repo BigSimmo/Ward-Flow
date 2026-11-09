@@ -1,7 +1,7 @@
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 
 /**
- * THE FILTER — owner ruling 2026-09-09 (`docs/ward-flow/owner-decisions-2026-09-09.md` §1).
+ * THE FILTER — owner ruling 2026-09-09 (`docs/history/archive/dated-notes/owner-decisions-2026-09-09.md` §1).
  *
  * "I want the handover to be a page that is completely filterable... filtered rapidly based on
  * Service, Ward, ED, Community, etc." Four dimensions, all verified against the live model —

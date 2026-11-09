@@ -691,7 +691,7 @@ describe('"What to show" — the movement-only facet row', () => {
       .getAllByRole("tab")
       .map((tab) => (tab.textContent ?? "").replace(/\s*(none|\d+)\s*$/, "").trim());
 
-    // Copied verbatim, in order, from docs/ward-flow/plans/2026-09-1x-lane-c-drawing-facts.md §A3:
+    // Copied verbatim, in order, from docs/history/plans-2026-09/2026-09-1x-lane-c-drawing-facts.md §A3:
     // "Everything · Accepted · No ward yet · No owner · Under 6 hours · 6 to 24 hours · Over 24 hours".
     expect(labels).toEqual([
       "Everything",
@@ -933,7 +933,7 @@ describe("the access record panel", () => {
     renderSearch();
 
     const panel = screen.getByTestId("ward-patient-search-access-record");
-    // D-4 (Ward Lead, 2026-09-11) — never the drawing's unqualified header note, and never the
+    // Archived D-4 (Ward Lead, 2026-09-11) — never the drawing's unqualified header note, and never the
     // plan's third, unrelated wording. See access-record.ts's own doc comment.
     expect(panel).toHaveTextContent("Search terms and times. Kept for this session only.");
     expect(screen.getByTestId("ward-patient-search-access-record-empty")).toHaveTextContent(
