@@ -20,7 +20,7 @@ import { defaultWardConfiguration } from "@/components/ward-management/ward-conf
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { WAIT_BANDS, waitBand } from "@/components/ward-management/delays/delays-board-model";
 /**
- * Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md`, task D2 (item 44 — the
+ * Build plan `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md`, task D2 (item 44 — the
  * service chooser, Movements lane). §2 "Per screen": *"the list is scoped. Figures and the 48-hour
  * chart are not, and a sentence says so."* §3 "Movements": the exact sentence, plus the shared
  * scope bar (S2: the urgent-outside-service line).

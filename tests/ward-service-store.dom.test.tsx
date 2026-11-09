@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md`, task S2 (item 44 — the
+ * Build plan `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md`, task S2 (item 44 — the
  * service chooser). This is the catcher for three things at once, per S2's own brief:
  *
  * 1. `shell/ward-service-store.ts` — the `sessionStorage`-backed module store the chosen health

@@ -66,7 +66,7 @@ export const useLocationSearch = createBrowserStore(subscribeToLocation, () => w
 /**
  * DA-15 (overall review, 20 Oct 2026): a screen's chosen tab, kept in the web address under `key`,
  * so a reload or a shared link opens the same tab. Only a fixed id from `allowed` is ever written or
- * read, never a name or typed text (D-11). An unknown or missing value reads as `fallback`, and
+ * read, never a name or typed text (archived D-11). An unknown or missing value reads as `fallback`, and
  * choosing `fallback` removes the key, so the plain address stays plain. Like Waiting's filters, the
  * address is read once the page is running: the first paint shows `fallback`.
  */

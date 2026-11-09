@@ -978,7 +978,7 @@ export function main(
   if (result.violations.length) {
     for (const violation of result.violations) stdout(`  x ${violation}`);
     stderr(
-      `[mockup-retirement] FAIL — ${result.violations.length} violation(s). See docs/mockup-retirement-policy.md.`,
+      `[mockup-retirement] FAIL — ${result.violations.length} violation(s). See docs/history/mockup-retirement-policy.md.`,
     );
     return 1;
   }

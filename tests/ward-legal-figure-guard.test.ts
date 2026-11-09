@@ -41,7 +41,7 @@ import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-obse
  * than one. Every claim below is demonstrated by an assertion in this file; where a part has a
  * limit, the limit is stated rather than glossed.
  *
- * 🔴 **CORRECTED 2026-09-17, T2 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`)
+ * 🔴 **CORRECTED 2026-09-17, T2 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`)
  * — PART 1 NO LONGER GATES BY CODE.** Struck in place rather than deleted, because the reading
  * that made it true is what a reader will otherwise re-derive. Until this date no form of ANY
  * code could carry a `dueAt` unless its code was on `DEADLINE_BEARING_FORM_PROVENANCE`, a fixed

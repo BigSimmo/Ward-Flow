@@ -90,7 +90,7 @@ export type WardAppearance = "auto" | "light" | "dark";
  * landed by Task 7, `a858d970f1`) — the sentence above is a historical quote of the phase-1.1
  * brief and is kept as a quote, not corrected in place, but it no longer describes the present.
  *
- * ⚠️ **UPDATE, D-16 (`docs/ward-flow/owner-decisions-2026-09-1x.md`): THE SEAM IS RESOLVED, AND THE
+ * ⚠️ **UPDATE, archived D-16 (`docs/history/archive/dated-notes/owner-decisions-2026-09-1x.md`): THE SEAM IS RESOLVED, AND THE
  * RESOLUTION IS THAT THIS FILE STOPS DEFINING ITS OWN `WardPrimaryAction` AT ALL.** The paragraph
  * this replaces recorded a real blocker: this file's own `{ id, label, href }` shape and
  * `ward-nav.ts`'s five-kind discriminated union shared a name but could not be resolved into one

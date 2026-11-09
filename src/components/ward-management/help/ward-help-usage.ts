@@ -2,7 +2,7 @@
  * HELP USAGE (Josh, 26 Oct 2026): which Ask help answers are used on this device, so the team can
  * see what staff look up before the pilot. An answer counts as used when someone opens it, or
  * presses its Show me or Go there. Only how-to ids and whole counts are stored, each id checked
- * against the known answers on read, so typed words never reach storage (D-11, D-18). The key carries
+ * against the known answers on read, so typed words never reach storage (archived D-11; D-18). The key carries
  * the `ward_flow_choice_` prefix that `ward-browser-data.ts` keeps at sign-out: it holds nothing about
  * a person, and counts that reset at every sign-in would show nothing.
  */

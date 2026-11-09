@@ -16,7 +16,7 @@ import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
- * T15 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`, item 12, owner answer 12,
+ * T15 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`, item 12, owner answer 12,
  * 17 September 2026): *"An admission from a referral carries the referral's broad diagnosis
  * category, marked tentative."* And the 29 August ruling behind it: *"easy to continually adjust
  * and refine along the way"* — an ED's own later choice REPLACES what a referral carried, it does

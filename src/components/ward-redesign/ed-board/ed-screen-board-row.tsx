@@ -104,7 +104,7 @@ function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
   const dischargeBlocked = dischargeChoiceBlockedReason(movement);
   const cmhtBlocked = communityReferralBlockedReason(movement);
   const linkedReferral = movement.referralId ? referrals.find((r) => r.id === movement.referralId) : undefined;
-  // D-14 (default-deny on the patient link): this used to fall back to
+  // Archived D-14 (default-deny on the patient link): this used to fall back to
   // `allPatients.find(...).suburb` via `linkedReferral.patientId`, which put
   // `.patientId` in a file `tests/ward-patient-link-default-deny.test.ts`'s
   // ALLOWLIST does not name — and item 14 never asked for that fallback.

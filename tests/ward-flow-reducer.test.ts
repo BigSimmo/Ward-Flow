@@ -376,7 +376,7 @@ describe("arrival", () => {
       movement(state, "WF-009").sex,
     );
 
-    // 🔴 R4 (docs/ward-flow/plans/2026-09-16-fix-plan-referral-model.md), 2026-09-17: this used to
+    // 🔴 R4 (docs/history/plans-2026-09/2026-09-16-fix-plan-referral-model.md), 2026-09-17: this used to
     // assert both fields `toBeNull()`, on the reasoning "an admission created by an arrival came
     // from a movement, not a referral - inventing a referral id would point at nothing". That was
     // true of every WF-009 admission only because PULL_PATIENT wrote `referralId: null`

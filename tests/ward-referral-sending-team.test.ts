@@ -13,7 +13,7 @@ import { SENDING_TEAM_NAME_LIMIT } from "@/components/ward-management/ward-model
  *
  * 🔴 **THE DANGEROUS VERSION OF THIS FEATURE IS THE HELPFUL ONE.** A sending team's name is the
  * most plausible thing in the model to reach for when a screen has a field labelled *"Referred
- * by"* and nothing to put in it. **D-12 forbids exactly that**: an organisation standing in a
+ * by"* and nothing to put in it. **Archived D-12 forbids exactly that**: an organisation standing in a
  * field labelled as a person is a fabricated attribution on a clinical record, not a formatting
  * choice. A service is not a human being, and a record saying a named person referred this
  * patient is a different clinical claim from one saying a service did.

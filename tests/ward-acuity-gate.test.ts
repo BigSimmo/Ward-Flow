@@ -265,7 +265,7 @@ describe("the shipped data exercises both branches", () => {
 
 /**
  * `eligibility()`'s acuity gate above renders a verdict; rendering a verdict does not stop a
- * transition. Owner ruling (2026-09-10, `docs/ward-flow/owner-decisions-2026-09-09.md` §5): acuity
+ * transition. Owner ruling (2026-09-10, `docs/history/archive/dated-notes/owner-decisions-2026-09-09.md` §5): acuity
  * is a staffing-capacity check, "overridable like them" — mirroring `remainingSpeciallingCapacity`'s
  * enforcement in `PULL_PATIENT`, exactly the pattern proven in `tests/ward-specialling-capacity.test.ts`.
  * These tests drive the REDUCER, not the gate, because that is the only place the property that

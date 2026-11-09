@@ -1,6 +1,6 @@
 /**
  * 🔴 **THE OWNER'S RULING, AS A PREDICATE.** 2026-09-09, in his words: *"the number should always
- * carry that it's invented"* (`docs/ward-flow/owner-decisions-2026-09-09.md` §2, `f22aac45a9`).
+ * carry that it's invented"* (`docs/history/archive/dated-notes/owner-decisions-2026-09-09.md` §2, `f22aac45a9`).
  *
  * Every item inside an "Invented figures" group must be **false-free read ALONE** — quoted,
  * screen-read, copied into a message, or reached after the heading has scrolled away. **A heading is
