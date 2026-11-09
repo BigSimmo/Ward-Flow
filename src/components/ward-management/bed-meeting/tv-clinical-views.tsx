@@ -102,7 +102,11 @@ export function Summary({ items }: { items: { label: string; value: number; tone
   return (
     <ul className={styles.summary} aria-label="At a glance">
       {items.map((item) => (
-        <li key={item.label} data-tone={item.value > 0 ? item.tone : undefined}>
+        <li
+          key={item.label}
+          data-tone={item.value > 0 ? item.tone : undefined}
+          data-zero={item.value === 0 ? "" : undefined}
+        >
           <b>{item.value}</b>
           {item.label}
         </li>
