@@ -36,21 +36,33 @@ export type AlertsTab = "now" | "earlier";
 
 const ICON = { size: 16, strokeWidth: 1.75, "aria-hidden": true } as const;
 
-/** The Yours chip's filter, for a desk that has a Yours filter at all. Choosing it opens Open. */
-export function yoursFilter(
-  lens: { counts: { yours?: number }; filter: string; setFilter: (filter: "all" | "yours") => void },
+type TopFilter = { count: number; on: boolean; toggle: () => void };
+
+/**
+ * The top's filters: the Yours chip and the Act now figure, for a desk that has each filter at all.
+ * Choosing one opens Open; choosing it again shows everything. A phone has no other Act now filter.
+ */
+export function topFilters(
+  lens: {
+    counts: { yours?: number; act?: number };
+    filter: string;
+    setFilter: (filter: "all" | "yours" | "act") => void;
+  },
   openNow: () => void,
-) {
-  const count = lens.counts.yours;
-  if (count === undefined) return undefined;
-  return {
-    count,
-    on: lens.filter === "yours",
-    toggle: () => {
-      openNow();
-      lens.setFilter(lens.filter === "yours" ? "all" : "yours");
-    },
+): { yours?: TopFilter; act?: TopFilter } {
+  const toggle = (id: "yours" | "act"): TopFilter | undefined => {
+    const count = lens.counts[id];
+    if (count === undefined) return undefined;
+    return {
+      count,
+      on: lens.filter === id,
+      toggle: () => {
+        openNow();
+        lens.setFilter(lens.filter === id ? "all" : id);
+      },
+    };
   };
+  return { yours: toggle("yours"), act: toggle("act") };
 }
 
 /** The rarer tools, at the end of the tab row: copy for handover and tab notifications. */
@@ -95,7 +107,7 @@ export function AlertsHero({
   live,
   actCount,
   waitEntries,
-  yours,
+  filters: { yours, act } = {},
   handleNext,
   openComposer,
   broadcastDisabledReason,
@@ -118,8 +130,8 @@ export function AlertsHero({
   /** Act now: the act-now alerts plus accepted referrals with no bed pulled (Q111). */
   actCount: number;
   waitEntries: QueueEntry[];
-  /** The Yours filter: its count and whether it is on. Absent for a desk with no rows of its own. */
-  yours?: { count: number; on: boolean; toggle: () => void };
+  /** The Yours and Act now filters: each count and whether it is on. Each is absent for a desk without it. */
+  filters?: { yours?: TopFilter; act?: TopFilter };
   handleNext: () => void;
   openComposer: (trigger: HTMLButtonElement) => void;
   /** Why this desk cannot broadcast, or undefined when it may. */
@@ -208,6 +220,7 @@ export function AlertsHero({
                 value: actCount,
                 label: "act now",
                 tone: actCount > 0 ? "danger" : undefined,
+                ...(act ? { onClick: act.toggle, pressed: act.on } : {}),
                 testId: "ward-alerts-figure-act",
               },
               { id: "wait", value: waitEntries.length, label: "waiting", testId: "ward-alerts-figure-wait" },

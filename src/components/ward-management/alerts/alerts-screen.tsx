@@ -90,7 +90,7 @@ import { ArrangeSwitch, type ArrangeBy } from "./alerts-view-switch";
 import homeStyles from "@/components/ward-management/coordinator/home-list.module.css";
 import { alertChecks } from "./alerts-checks";
 import { useAlertsHistory } from "./alerts-history";
-import { AlertsHero, AlertsToolsMenu, yoursFilter } from "./alerts-hero";
+import { AlertsHero, AlertsToolsMenu, topFilters } from "./alerts-hero";
 import { AcceptedPullRows, useAcceptedPull } from "@/components/ward-management/coordinator/accepted-pull-rows";
 import { AlertPullPhoneRows } from "./alerts-pull-phone-rows";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
@@ -1303,7 +1303,7 @@ function AlertsWorkspace() {
           live={live}
           actCount={actCount}
           waitEntries={waitEntries}
-          yours={yoursFilter(lens, () => setTab("now"))}
+          filters={topFilters(lens, () => setTab("now"))}
           handleNext={handleNext}
           openComposer={openComposer}
           broadcastDisabledReason={broadcastDisabledReason}

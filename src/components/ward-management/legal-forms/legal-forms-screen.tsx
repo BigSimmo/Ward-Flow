@@ -222,7 +222,15 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const { copied, copyNotice, copyText } = useLegalFormsCopy();
   const [tasksOpen, setTasksOpen] = useState(false);
   // Page tops: Start, Record incident and Change a room in the top open the seclusion view's dialogs.
-  const [seclusionAsk, setSeclusionAsk] = useState<SeclusionAsk | undefined>(undefined);
+  // `seen` drops the ask once the view has acted on it, so a remounted view does not reopen it.
+  const [seclusionAsk, setSeclusionAsk] = useState<(SeclusionAsk & { seen?: boolean }) | undefined>(undefined);
+  const seclusionView = (
+    <SeclusionFormsView
+      startFor={startFor}
+      ask={seclusionAsk?.seen ? undefined : seclusionAsk}
+      onAskSeen={() => setSeclusionAsk((ask) => ask && { ...ask, seen: true })}
+    />
+  );
   const isPhone = useIsPhone();
   // Forms in force (v10): the three most common types as chips on one line, the rest behind "+N".
   const [allCodes, setAllCodes] = useState(false);
@@ -969,7 +977,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
           <>
             {pageTop}
             {viewTabs}
-            {shownView === "seclusion" ? <SeclusionFormsView startFor={startFor} ask={seclusionAsk} /> : null}
+            {shownView === "seclusion" ? seclusionView : null}
             <Card className={styles.listCard} aria-label="Everyone on a form" hidden={shownView === "seclusion"}>
               {highlight ? (
                 <p className={styles.phoneNote}>
@@ -1054,7 +1062,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
             {pageTop}
             {viewTabs}
 
-            {shownView === "seclusion" ? <SeclusionFormsView startFor={startFor} ask={seclusionAsk} /> : breakdownNote}
+            {shownView === "seclusion" ? seclusionView : breakdownNote}
 
             <div className={styles.work} hidden={shownView === "seclusion"}>
               <Card className={styles.listCard} aria-label="Everyone on a form">

@@ -174,6 +174,20 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     }
   });
 
+  it('"/" opens Filters and puts the cursor in the ward search behind it', () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardIndex />
+      </WardFlowProvider>,
+    );
+    const filters = document.getElementById("ward-index-more-filters")!;
+    // Page tops (Josh, 9 Nov 2026): the search sits behind Filters, which starts closed.
+    expect(filters).not.toHaveAttribute("data-open");
+    fireEvent.keyDown(document.body, { key: "/" });
+    expect(filters).toHaveAttribute("data-open", "true");
+    expect(screen.getByRole("searchbox", { name: "Filter wards by keyword" })).toHaveFocus();
+  });
+
   it("filters ward cards by search query and opens the ward's side panel", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>

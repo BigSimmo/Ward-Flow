@@ -332,6 +332,32 @@ describe("Alerts phone hero (remaining-pages audit ops-14, 13 Oct 2026)", () => 
   });
 });
 
+describe("Alerts phone Act now filter (page tops, 9 Nov 2026)", () => {
+  // The phone's filter row leaves out Act now, so the top's Act now figure is the way to show only it.
+  it("the Act now figure turns the Act now filter on and off", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === "(max-width: 46.4375rem)",
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+    try {
+      renderScreen();
+      const figure = within(screen.getByTestId("ward-alerts-figure-act")).getByRole("button", { name: "act now" });
+      expect(figure).toHaveAttribute("aria-pressed", "false");
+      fireEvent.click(figure);
+      expect(figure).toHaveAttribute("aria-pressed", "true");
+      fireEvent.click(figure);
+      expect(figure).toHaveAttribute("aria-pressed", "false");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
 describe("Alerts counts agree (remaining-pages audit ops-3, 13 Oct 2026)", () => {
   it("the Open tab's open count is and the Tasks list, running targets included", () => {
     const lapsed = taskItems(seedWardFlowState(), NOW).find((item) => alertKindOf(item.id) === "hold");

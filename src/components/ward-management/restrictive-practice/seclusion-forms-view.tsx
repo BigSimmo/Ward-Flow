@@ -164,7 +164,11 @@ function ChoiceChips<T extends string>({
 /** A one-off ask from the page top: open Start or Record incident here. `n` changes per tap. */
 export type SeclusionAsk = { kind: "start" | "incident" | "room"; n: number };
 
-export function SeclusionFormsView({ startFor, ask }: { startFor?: string; ask?: SeclusionAsk } = {}) {
+export function SeclusionFormsView({
+  startFor,
+  ask,
+  onAskSeen,
+}: { startFor?: string; ask?: SeclusionAsk; onAskSeen?: () => void } = {}) {
   const access = useEffectiveWardAccess();
   const { now, admissions, role, visible, mayRecord, mayRecordIncident, live, rooms, lastDay } = useSeclusionSummary();
   const raise = useWardRaise(role);
@@ -178,7 +182,9 @@ export function SeclusionFormsView({ startFor, ask }: { startFor?: string; ask?:
   const roomsRef = useRef<HTMLElement>(null);
   // Page tops (Josh, 9 Nov 2026): Start, Record incident and Change a room sit in the page's top. A
   // new ask opens its dialog here (adjusted while rendering, React's pattern for state that follows a prop).
-  const [askSeen, setAskSeen] = useState(ask?.n ?? 0);
+  // An ask made while this view was still loading counts, so start below any ask; the page drops an ask
+  // once it is seen, so remounting this view never reopens an old one.
+  const [askSeen, setAskSeen] = useState(0);
   if (ask && ask.n !== askSeen) {
     setAskSeen(ask.n);
     if (ask.kind === "start" && mayRecord) setStartOpen(true);
@@ -187,6 +193,7 @@ export function SeclusionFormsView({ startFor, ask }: { startFor?: string; ask?:
   }
   // Change a room with several rooms: take the reader to the rooms list and its first Change.
   useEffect(() => {
+    if (ask) onAskSeen?.();
     if (ask?.kind !== "room" || rooms.length === 1) return;
     const list = roomsRef.current;
     list?.scrollIntoView?.({ block: "start", behavior: "smooth" });

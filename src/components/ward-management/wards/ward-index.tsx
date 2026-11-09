@@ -6,6 +6,7 @@ import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell
 import { setServiceScope, useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { BedSingle, ChevronRight, Circle, Lock, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -272,6 +273,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   const [view, setView] = useState<ViewMode>("cards");
   const [query, setQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   // Phone (v10): one list of wards; a tap opens the ward's card as a bottom sheet.
   const isPhone = useIsPhone();
   // shell-15 (Josh, 13 Oct 2026): on a phone the header's service is the one service control, so
@@ -302,6 +304,8 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
         return;
       }
       event.preventDefault();
+      // The search sits behind Filters (page tops): open it first, so the field shows before it takes focus.
+      flushSync(() => setFiltersOpen(true));
       searchRef.current?.focus();
     }
     window.addEventListener("keydown", onKeyDown);
@@ -455,7 +459,6 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
     (deskSite === undefined || (runnerUp?.ready ?? -1) < mostReady.ready);
   const drawerRow = drawerWardId === null ? undefined : rows.find((row) => row.unit.id === drawerWardId);
   const statewidePercent = totalBeds > 0 ? (totalOccupied / totalBeds) * 100 : null;
-  const [filtersOpen, setFiltersOpen] = useState(false);
   // Filters counts the filters it holds that are set. Order is not a filter, so it never counts.
   const moreFilterCount = (status !== "all" ? 1 : 0) + (cohort !== "all" ? 1 : 0);
   // Site bed manager: its own site first, then the rest as counts, folded after a few cards.
