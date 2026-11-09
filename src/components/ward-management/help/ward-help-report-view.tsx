@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Copy, Mail, ShieldAlert } from "lucide-react";
+import { ArrowLeft, CircleCheck, Copy, Mail, ShieldAlert } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Button, Field, Textarea } from "@/components/wf";
@@ -29,6 +29,15 @@ const STATUS_WORDS: Readonly<Record<Status, string>> = {
   "copy-failed": "Could not copy. Select the report below and copy it yourself.",
   "mail-opened": "Your email app should open with the report filled in. Press Send there.",
 };
+
+/** "8 Nov 2026" from the What's new date "2026-11-08", for the preview only (the report keeps the id). */
+function shortDate(isoDate: string): string {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  if (!year || !month || !day) return isoDate;
+  return new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(
+    Date.UTC(year, month - 1, day),
+  );
+}
 
 /** Opens the email app; a prop so tests need not navigate. */
 function openMailApp(href: string): void {
@@ -116,7 +125,19 @@ export function HelpReport({
     }
   };
 
-  const added = reportLines({ screen, path, desk, version, browser: "This browser", time: "When you send it" });
+  // The preview says what will be added in words a reader can scan; the sent report keeps the exact
+  // version id, browser, window size and time.
+  const added = reportLines({
+    screen,
+    path,
+    desk,
+    version,
+    browser: "This browser and window size",
+    time: "When you send it",
+  }).map(([label, value]) =>
+    label === "Version" && version ? ([label, `latest change ${shortDate(version.date)}`] as const) : [label, value],
+  );
+  const done = status === "copied" || status === "mail-opened";
 
   return (
     <>
@@ -129,7 +150,7 @@ export function HelpReport({
         </h3>
         <p className={s.herePurpose}>Tell the pilot team what went wrong, so it can be fixed.</p>
       </div>
-      <p className={`${s.card} ${s.answerText} ${s.startsAt} ${s.safety}`} data-testid="ward-help-report-reminder">
+      <p className={s.safety} data-testid="ward-help-report-reminder">
         <ShieldAlert aria-hidden="true" strokeWidth={1.75} />
         Do not include patient names or details.
       </p>
@@ -146,42 +167,55 @@ export function HelpReport({
           data-testid="ward-help-report-text"
         />
       </Field>
-      <section className={s.section} aria-label="Added for you">
-        <h4 className={s.sectionHead}>Added for you</h4>
-        <ul className={`${s.card} ${s.points}`} data-testid="ward-help-report-added">
-          {added.map(([label, value]) => (
-            <li key={label}>
-              <b>{label}:</b> {value}
-            </li>
-          ))}
-        </ul>
-      </section>
-      <div className={s.answerActions}>
-        {email ? (
-          <Button variant="pri" icon={Mail} onClick={send} data-testid="ward-help-report-email">
-            Email report
+      {/* The actions sit straight under the box, so they show on a phone without scrolling. */}
+      <div className={s.reportSend}>
+        <div className={s.answerActions}>
+          {email ? (
+            <Button variant="pri" icon={Mail} onClick={send} data-testid="ward-help-report-email">
+              Email report
+            </Button>
+          ) : null}
+          <Button
+            variant={email ? "sec" : "pri"}
+            icon={Copy}
+            onClick={() => void copy()}
+            data-testid="ward-help-report-copy"
+          >
+            Copy report
           </Button>
-        ) : null}
-        <Button
-          variant={email ? "sec" : "pri"}
-          icon={Copy}
-          onClick={() => void copy()}
-          data-testid="ward-help-report-copy"
+        </div>
+        <p className={s.note} data-testid="ward-help-report-destination">
+          {email
+            ? `Email goes to ${email}.`
+            : "No support address is set. Copy the report and send it to your pilot lead."}
+        </p>
+        <p
+          className={`${s.footStatus} ${s.reportStatus}`}
+          role="status"
+          aria-live="polite"
+          data-done={done ? "" : undefined}
+          data-testid="ward-help-report-status"
         >
-          Copy report
-        </Button>
+          {done ? <CircleCheck aria-hidden="true" strokeWidth={1.75} /> : null}
+          {STATUS_WORDS[status]}
+        </p>
       </div>
-      <p className={s.note} data-testid="ward-help-report-destination">
-        {email ? `Email goes to ${email}.` : "Paste the copied report into an email or message to your pilot lead."}
-      </p>
-      <p className={s.footStatus} role="status" aria-live="polite" data-testid="ward-help-report-status">
-        {STATUS_WORDS[status]}
-      </p>
       {fallback ? (
         <Field label="Report to copy">
           <Textarea readOnly value={fallback} rows={8} data-testid="ward-help-report-fallback" />
         </Field>
       ) : null}
+      <section className={s.section} aria-label="Added for you">
+        <h4 className={s.sectionHead}>Added for you</h4>
+        <dl className={s.reportAdded} data-testid="ward-help-report-added">
+          {added.map(([label, value]) => (
+            <div key={label}>
+              <dt>{label}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
     </>
   );
 }

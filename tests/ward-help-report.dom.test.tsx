@@ -85,12 +85,28 @@ describe("Report a problem", () => {
 
   it("lists what is added for the reporter", () => {
     report();
-    const added = screen.getByTestId("ward-help-report-added").textContent ?? "";
-    expect(added).toContain("Screen: Home (/ward-flow)");
-    expect(added).toContain("Desk: Bed manager");
-    expect(added).toContain("Version: latest change 2026-11-08");
-    expect(added).toContain("Browser:");
-    expect(added).toContain("Time:");
+    const pairs = Object.fromEntries(
+      Array.from(screen.getByTestId("ward-help-report-added").querySelectorAll("dt")).map((term) => [
+        term.textContent,
+        term.nextElementSibling?.textContent,
+      ]),
+    );
+    expect(pairs).toEqual({
+      Screen: "Home (/ward-flow)",
+      Desk: "Bed manager",
+      Version: "latest change 8 Nov 2026",
+      Browser: "This browser and window size",
+      Time: "When you send it",
+    });
+  });
+
+  it("puts Email report and Copy report straight under the box, before what is added", () => {
+    report();
+    const box = screen.getByRole("textbox", { name: "What happened?" });
+    const email = screen.getByRole("button", { name: "Email report" });
+    const added = screen.getByTestId("ward-help-report-added");
+    expect(box.compareDocumentPosition(email) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(email.compareDocumentPosition(added) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("asks for words first, and puts focus back in the box", () => {

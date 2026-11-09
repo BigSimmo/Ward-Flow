@@ -538,12 +538,14 @@ function WardHelpSheetView({
               setFocused(false);
               onView(view === "report" ? "tasks" : "report");
             }}
-            // A phone's foot has room for one short word beside Your desk and the synthetic note.
-            aria-label={phone ? "Report a problem" : undefined}
+            // One short word on every size: at the desktop sheet's width "Report a problem" beside
+            // Your desk, Shortcuts and the synthetic note wrapped every label onto two lines. The
+            // spoken name starts with the visible word.
+            aria-label="Report a problem"
             data-testid="ward-help-report-open"
           >
             <Flag aria-hidden="true" strokeWidth={1.75} />
-            {phone ? "Report" : "Report a problem"}
+            Report
           </button>
           <span className={s.footNote} data-testid="ward-help-synthetic">
             Synthetic prototype
