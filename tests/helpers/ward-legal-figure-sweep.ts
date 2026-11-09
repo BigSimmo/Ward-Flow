@@ -1132,10 +1132,13 @@ function candidatesForMovements(
         state: "done" as const,
       }));
     case "RECORD_FOLLOW_UP_REPLY":
-      // Feature 13 (9 Nov 2026): one accepted reply per stay. Community-scoped; no legal figure.
+      // Feature 13 (9 Nov 2026): one accepted reply per stay; no legal figure. Raised as the
+      // coordinator (also permitted): a community desk must name a team the stay was referred to,
+      // and the sweep's states hold no such stay. Team scoping is pinned in
+      // tests/ward-discharge-follow-through.test.ts.
       return state.admissions.map((admission) => ({
         type,
-        role,
+        role: "coordinator" as const,
         now,
         admissionId: admission.id,
         reply: "accepted" as const,
