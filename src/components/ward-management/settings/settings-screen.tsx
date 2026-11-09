@@ -60,7 +60,6 @@ import { usePhonePush } from "@/components/ward-management/shell/ward-phone-push
 import { changeDeviceAlerts } from "@/components/ward-management/settings/settings-device-alerts";
 import {
   Avatar,
-  Badge,
   Button,
   CountCircle,
   Hero,
@@ -120,8 +119,8 @@ import { SettingsDataSection, SettingsDemoTools, SettingsRulesFileCard } from ".
 import { SettingsReferenceCard } from "./settings-reference-card";
 import { SettingsRestoreDialog, type RestoreScope } from "./settings-restore-dialog";
 import { SettingsReviewDialog } from "./settings-review-dialog";
-import { surgeConfiguration } from "./settings-rule-catalogue";
-import { SettingsRulesPane } from "./settings-rules-pane";
+import { rulesAwayFromDefault, surgeConfiguration } from "./settings-rule-catalogue";
+import { ChangedOnlySwitch, RuleLastSave, SettingsRulesPane } from "./settings-rules-pane";
 import {
   SECTION_ICONS,
   SECTION_LABELS,
@@ -184,6 +183,8 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   });
   // Round 3: Save opens a review first; "file" when a loaded rules file put the draft there.
   const [review, setReview] = useState<"draft" | "file" | null>(null);
+  // Show changed only: held here so desktop can keep the switch in the sticky section bar.
+  const [changedOnly, setChangedOnly] = useState(false);
   const [localConfigurationFailure, setConfigurationFailure] = useState<string | null>(null);
   const configurationFailure = localConfigurationFailure ?? configurationSave.error ?? null;
   const latestConfiguration = useRef(configuration);
@@ -387,6 +388,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   const hasUnsavedRules = unsavedCount > 0;
   useDirtyStateGuard({ isDirty: hasUnsavedRules });
   const isSurge = isSurgePreset(draft);
+  const awayFromDefault = rulesAwayFromDefault(draft);
 
   // Recent rule saves, newest first, from the audit trail every save writes to.
   const ruleChanges = operational?.ruleChanges ?? null;
@@ -882,6 +884,9 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
         onSurge={handleSurge}
         blockReason={configurationBlockReason}
         readOnlyWords={readOnlyWords}
+        changedOnly={changedOnly}
+        onChangedOnly={setChangedOnly}
+        statusInHero={!isPhone}
       />
       <SettingsFold
         title="Rules file and reference tables"
@@ -1122,12 +1127,21 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
                   decorative
                   className={styles.avatar}
                 />
-                {deskProfile.name}
+                {/* Note 14 phone polish: the role sits beside the avatar under the name, so the band is
+                    one compact identity row rather than a name line and a role line under it. */}
+                <span className={styles.phoneWhoText}>
+                  <span className={styles.phoneWhoName}>{deskProfile.name}</span>
+                  {roleIsName ? null : (
+                    <span className={styles.phoneWhoRole}>
+                      <SrOnly>, </SrOnly>
+                      {deskProfile.role}
+                    </span>
+                  )}
+                </span>
               </span>
             }
             eyebrow={deskProfile.location}
-            chip={sharedEnabled ? undefined : <span className={styles.phoneProfileChip}>Demo profile</span>}
-            sub={roleIsName ? undefined : deskProfile.role}
+            className={styles.phoneProfile}
           />
 
           <div className={styles.phoneFind}>{findSetting}</div>
@@ -1217,6 +1231,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
           {hasUnsavedRules && sheetTab === null ? (
             <div
               className={styles.phoneSaveBar}
+              data-wf-phone-foot-bar=""
               role="region"
               aria-label="Unsaved rule changes"
               data-testid="unsaved-draft-inspector"
@@ -1295,37 +1310,70 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       <main id="main-content" className={styles.main}>
         <h1 className={styles.srOnly}>Settings</h1>
 
-        {/* ST1 (Josh, 3 Nov 2026): a compact top. Who you are on the left, Find a setting on the
-            right; the section tabs sit below it and stay in view while a long section scrolls. */}
+        {/* Note 14 (Josh, 8 Nov 2026): who you are, large, with role and desk on one quiet line and
+            Find a setting on the right; under a hairline, one strip says where the rules stand, the
+            last save and how saving works. The section tabs sit below in a full-width bar that stays
+            in view while a long section scrolls, with Show changed only beside them. */}
         <Hero
-          className={cx(styles.band, rx.bandCompact)}
+          className={cx(styles.band, rx.bandCompact, rx.profileHero)}
           testId="ward-settings-profile"
-          // A desk named by its role says the role once, in the title.
-          eyebrow={
-            deskProfile.name === deskProfile.role
-              ? deskProfile.location
-              : `${deskProfile.role} · ${deskProfile.location}`
+          lead={
+            <Avatar
+              name={deskProfile.name}
+              initials={deskProfile.initials}
+              online
+              decorative
+              className={cx(styles.avatar, rx.heroAvatar)}
+            />
           }
-          title={
-            <span className={styles.who}>
-              <Avatar
-                name={deskProfile.name}
-                initials={deskProfile.initials}
-                online
-                decorative
-                className={styles.avatar}
-              />
-              {deskProfile.name}
+          title={deskProfile.name}
+          titleMeta={
+            <span className={rx.heroMeta}>
+              {/* A desk named by its role says the role once, in the title. */}
+              {deskProfile.name === deskProfile.role
+                ? deskProfile.location
+                : `${deskProfile.role} · ${deskProfile.location}`}
             </span>
           }
-          titleMeta={
-            sharedEnabled ? undefined : (
-              <Badge variant="onHero" size="sm">
-                Demo profile
-              </Badge>
-            )
-          }
           aside={findSetting}
+          footKind="actions"
+          foot={
+            editsRules ? (
+              <dl className={rx.heroStrip} data-testid="ward-settings-status-strip">
+                <div className={rx.heroCell}>
+                  <dt>Rules</dt>
+                  <dd>
+                    <StatusGlyph tone={hasUnsavedRules ? "info" : "success"} size={8} />
+                    {hasUnsavedRules
+                      ? `${unsavedCount} unsaved`
+                      : awayFromDefault === 0
+                        ? "All at default"
+                        : `${awayFromDefault} changed from default`}
+                    <span className={rx.heroQuiet}>· {isSurge ? "Surge" : "Standard"}</span>
+                  </dd>
+                </div>
+                <div className={rx.heroCell}>
+                  <dt>Last save</dt>
+                  <dd data-testid="ward-settings-recent-changes" data-setting="recent-changes">
+                    <RuleLastSave ruleChanges={ruleChanges} now={now} />
+                  </dd>
+                </div>
+                <div className={rx.heroCell}>
+                  <dt>Saving</dt>
+                  {/* The Help tour's "Save rule changes" step points here while nothing is unsaved. */}
+                  <dd data-testid="ward-settings-save-bar">
+                    {readOnlyWords !== null ? (
+                      "Read only on this desk"
+                    ) : (
+                      <>
+                        <strong>Changes wait for Save.</strong> Each save is audited.
+                      </>
+                    )}
+                  </dd>
+                </div>
+              </dl>
+            ) : undefined
+          }
         />
 
         <div className={rx.sectionBand}>
@@ -1342,13 +1390,26 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
                   onClick={() => showSection(section)}
                   data-testid={`ward-settings-jump-${section}`}
                 >
-                  <Icon size={14} aria-hidden="true" />
+                  <Icon size={15} aria-hidden="true" />
                   {SECTION_LABELS[section]}
                   {section === "rules" && hasUnsavedRules ? <CountCircle n={unsavedCount} label="unsaved" /> : null}
                 </button>
               );
             })}
           </nav>
+          {editsRules ? (
+            <span className={rx.bandAside} data-setting="changed-only">
+              <ChangedOnlySwitch
+                checked={changedOnly}
+                onChange={(on) => {
+                  setChangedOnly(on);
+                  if (on) showSection("rules");
+                }}
+                awayFromDefault={awayFromDefault}
+                compact
+              />
+            </span>
+          ) : null}
         </div>
 
         {refusedLine}

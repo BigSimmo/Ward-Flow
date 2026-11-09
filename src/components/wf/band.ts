@@ -99,7 +99,10 @@ function barNotesIn(scroller: HTMLElement): HTMLElement | null {
 function barHeightIn(scroller: HTMLElement): number {
   const bar = scroller.querySelector<HTMLElement>("[data-wf-bar]");
   const notes = barNotesIn(scroller);
-  return (bar ? bar.offsetHeight : 0) + (notes ? notes.offsetHeight : 0);
+  // Note 14 (8 Nov 2026): the notes float at the window's foot and take no room under the header,
+  // except where a layout still keeps them in flow (TV board, print).
+  const notesInFlow = notes !== null && getComputedStyle(notes).position !== "fixed";
+  return (bar ? bar.offsetHeight : 0) + (notes && notesInFlow ? notes.offsetHeight : 0);
 }
 
 function sameBleed(a: Bleed, b: Bleed) {
