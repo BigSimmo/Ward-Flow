@@ -1596,7 +1596,7 @@
       {
         "path": "src/components/ward-management/ward-flow-bed-events.ts",
         "line": 618,
-        "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
+        "sha256": "ddebd9e68988d55d54e116ae85de0f490863cad54acec61a4750772c2b0685e8"
       },
       {
         "path": "src/components/ward-management/ward-flow-event-roles.ts",

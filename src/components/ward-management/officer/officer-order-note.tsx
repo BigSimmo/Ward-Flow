@@ -12,7 +12,7 @@ import styles from "./officer.module.css";
 export function OfficerOrderNote({ shown }: { shown: boolean }) {
   return shown ? (
     <p className={styles.panelNote} data-testid="ward-officer-order-note">
-      Late jobs first, then forms to upload, then furthest along.
+      Late or delayed jobs first, then forms to upload, then furthest along.
     </p>
   ) : null;
 }

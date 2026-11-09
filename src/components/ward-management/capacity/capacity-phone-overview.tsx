@@ -121,7 +121,7 @@ export function PhoneOverview({
           {/* Feature 21 polish (9 Nov 2026): 48 and 72 hours read like Tomorrow (likely figure on the
               right, range under the label), muted with the hatched swatch because their dates may move. */}
           {laterDays.slice(0, 2).map((day, index) => (
-            <li key={index} className={styles.phoneRow}>
+            <li key={day.hours} className={styles.phoneRow}>
               <div>
                 <b className={`${styles.small} ${styles.fcKpiSoftLabel}`}>
                   <span className={`${styles.fcSoftSwatch} ${styles.swHatch}`} aria-hidden="true" />

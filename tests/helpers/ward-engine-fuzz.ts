@@ -8,6 +8,8 @@
  * paths are exercised as well as the success paths. Synthetic seeded worlds only.
  */
 import { PULL_HOLD_EXTENSION_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { upcomingWeekendWindow } from "@/components/ward-management/discharges/discharge-weekend-review";
+import { perthMidnight } from "@/components/ward-management/ward-clock";
 import {
   CANCEL_TRANSPORT_REASONS,
   DIVERSION_REASONS,
@@ -1253,7 +1255,10 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         type: "MARK_WEEKEND_DISCHARGE_REVIEWED",
         admissionId: id(stay),
         actingUnitId: stay?.unitId ?? MISSING_ID,
-        weekendStart: Math.floor(random() * 3) * 1440,
+        // As the card sends it: this weekend's first midnight; now and then one out of reach, refused.
+        weekendStart: chance(random, 0.85)
+          ? upcomingWeekendWindow(currentNow, perthMidnight(2026, 10, 12)).start
+          : currentNow + 8 * 1440,
       };
     },
   ],
@@ -1280,7 +1285,11 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         actingUnitId: stay?.unitId ?? MISSING_ID,
         ready: chance(random, 0.2)
           ? null
-          : { since: stay?.arrivedAt ?? 0, reason: pick(random, DELAYED_DISCHARGE_REASONS) },
+          : {
+              // Now and then a day still to come, which is refused.
+              since: chance(random, 0.1) ? currentNow + 1440 : (stay?.arrivedAt ?? 0),
+              reason: pick(random, DELAYED_DISCHARGE_REASONS),
+            },
       };
     },
   ],

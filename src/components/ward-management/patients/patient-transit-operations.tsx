@@ -48,7 +48,7 @@ import {
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { ArrivalIdentityDialog } from "@/components/ward-management/arrival-identity-dialog";
-import { clock, dur } from "./patient-now-records";
+import { clock } from "./patient-now-records";
 import ph from "../referrals/referral-match-phone.module.css";
 import styles from "./patient-transit-operations.module.css";
 import { FindAWard, wardMatchesQuery } from "@/components/ward-management/referrals/find-a-ward";
@@ -1049,7 +1049,7 @@ export function PatientTransitOperations({
                 ? "No pull expiry recorded"
                 : remaining <= 0
                   ? "Pull expired · review required"
-                  : `${dur(remaining)} remaining`}
+                  : `${splitDuration(remaining)} remaining`}
             </small>
           </div>
           <div>

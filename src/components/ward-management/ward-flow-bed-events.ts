@@ -768,6 +768,10 @@ export function reduceBedEvent(
       }
       const ready = event.ready;
       if (ready !== null) {
+        // An untyped caller may send no value or a bare one: refuse it rather than read a field off it.
+        if (typeof ready !== "object") {
+          return reject(state, event, "SET_CLINICALLY_READY needs a reason and date, or null to clear");
+        }
         // On a safe-listed event, so anything off the list would reach browser storage as free text.
         if (!isDelayedDischargeReason(ready.reason)) {
           return reject(state, event, "SET_CLINICALLY_READY reason must be chosen from DELAYED_DISCHARGE_REASONS");

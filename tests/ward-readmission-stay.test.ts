@@ -12,6 +12,7 @@ import {
   readmissionsArrivedIn,
 } from "@/components/ward-management/ward-readmission";
 import { stayReadmissionCopy } from "@/components/ward-management/ward-readmission-copy";
+import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 
 describe("admissionReadmissionFlag", () => {
   const state = seedWardFlowState();
@@ -86,5 +87,23 @@ describe("admissionReadmissionFlag", () => {
       arrivals: 0,
       readmitted: 0,
     });
+  });
+});
+
+describe("the ward board's index without referrals (PR 1583 review)", () => {
+  const state = seedWardFlowState();
+  const whole = createReadmissionIndex(state);
+  const noReferrals = { ...state, referrals: [] };
+
+  it("resolves referral-linked stays through a passed identity projection, as the whole index does", () => {
+    // Without the projection a stay linked through a referral names nobody, so its flag is lost.
+    expect(createReadmissionIndex(noReferrals).dischargesByPerson.size).toBeLessThan(whole.dischargesByPerson.size);
+    const board = createReadmissionIndex(noReferrals, createPatientResolver(state));
+    expect(board.dischargesByPerson.size).toBe(whole.dischargesByPerson.size);
+    for (const admission of state.admissions.filter((row) => row.state === "occupied")) {
+      expect(stayReadmissionCopy(admission, state.movements, board)).toEqual(
+        stayReadmissionCopy(admission, state.movements, whole),
+      );
+    }
   });
 });

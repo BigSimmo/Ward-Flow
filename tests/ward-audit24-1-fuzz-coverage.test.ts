@@ -46,7 +46,9 @@ describe("random engine run coverage (audit 24-1 E-19)", () => {
         // As the safety test counts it: an accepted event adds no rejection. An accepted
         // RESET_SCENARIO or SET_SCENARIO starts a fresh world, so it may also clear earlier ones
         // (9 Nov 2026: with EXTEND_PULL added, a reset was only ever drawn after a refusal).
-        if (next.rejections.length <= state.rejections.length) accepted.add(event.type);
+        const resets = event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO";
+        const added = next.rejections.length - state.rejections.length;
+        if (added === 0 || (resets && added < 0)) accepted.add(event.type);
         state = next;
       }
       lastSeedRun = seed;

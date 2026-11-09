@@ -287,7 +287,7 @@ export function OfficerScreen() {
     setInvoluntaryHighlight(false);
   };
 
-  // Next action first: late, then forms still to upload, then the jobs furthest along.
+  // Next action first: late or delayed, then forms still to upload, then the jobs furthest along.
   const priority = (movement: Movement) => {
     // Audit round 2, A4-13 (phone): a job to accept is pinned to the top, oldest first, so a new
     // booking is the Next action rather than the last row.

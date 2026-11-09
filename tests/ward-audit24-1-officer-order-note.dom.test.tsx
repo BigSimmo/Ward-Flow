@@ -20,7 +20,7 @@ describe("officer job list order is stated (audit 24-1 decision 5)", () => {
       </WardFlowProvider>,
     );
     expect(screen.getByTestId("ward-officer-order-note").textContent).toBe(
-      "Late jobs first, then forms to upload, then furthest along.",
+      "Late or delayed jobs first, then forms to upload, then furthest along.",
     );
     fireEvent.click(within(screen.getByRole("radiogroup", { name: "Sort jobs" })).getByText("Longest wait"));
     expect(screen.queryByTestId("ward-officer-order-note")).toBeNull();

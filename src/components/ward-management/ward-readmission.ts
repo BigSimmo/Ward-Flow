@@ -62,9 +62,13 @@ function endedInDischarge(admission: Admission): admission is DischargedStay {
 /**
  * The index for one set of records. Pass the full referral list, not a filtered queue: a prior
  * stay is often linked to its person only through a referral that has since left the queue.
+ * A screen that may not read referrals passes `resolve`, the provider's identity projection, so a
+ * stay linked through a referral still resolves without the referral list reaching the screen.
  */
-export function createReadmissionIndex(records: ReadmissionRecords): ReadmissionIndex {
-  const resolve = createPatientResolver(records);
+export function createReadmissionIndex(
+  records: ReadmissionRecords,
+  resolve: ReadmissionIndex["resolve"] = createPatientResolver(records),
+): ReadmissionIndex {
   const dischargesByPerson = new Map<string, DischargedStay[]>();
   for (const admission of records.admissions) {
     if (!endedInDischarge(admission)) continue;

@@ -65,7 +65,7 @@ describe("EXTEND_PULL", () => {
     const saved = JSON.parse(JSON.stringify(f.state)) as WardFlowState;
     expect(isValidStoredWardFlowState(saved)).toBe(true);
     for (const tamper of [{ by: "typed words" }, { minutes: 90 }, { minutes: -60 }, { note: "typed words" }]) {
-      const copy = JSON.parse(JSON.stringify(saved)) as WardFlowState;
+      const copy = structuredClone(saved);
       Object.assign(copy.movements.find((m) => m.id === f.movementId)!.pullExtensions![0]!, tamper);
       expect(isValidStoredWardFlowState(copy)).toBe(false);
     }

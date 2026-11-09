@@ -156,6 +156,13 @@ describe("SET_CLINICALLY_READY", () => {
     }
   });
 
+  it("refuses a missing or bare value from an untyped caller instead of throwing", () => {
+    for (const ready of [undefined, "NDIS", 5]) {
+      const result = raise(ready as never);
+      expect(result.rejections.length).toBe(base.rejections.length + 1);
+    }
+  });
+
   it("restores the day and its reason only together", () => {
     const set = raise({ since: today - DAY, reason: "NDIS" });
     expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(set)))).toBe(true);

@@ -191,7 +191,7 @@ const MORE_SCREENS: readonly Around[] = [
       {
         target: [id("ward-officer-joblist"), named("Jobs", "section")],
         title: "Jobs",
-        body: "Late jobs first, then forms to upload, then furthest along. History holds the jobs closed today.",
+        body: "Late or delayed jobs first, then forms to upload, then furthest along. History holds the jobs closed today.",
       },
       {
         target: [starts("ward-officer-next-"), named("Next action", "section")],
