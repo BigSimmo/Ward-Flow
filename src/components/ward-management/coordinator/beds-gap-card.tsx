@@ -119,7 +119,7 @@ export function BedsGapCard({ now, bedsReady, condensed }: { now: Instant; bedsR
                 const next = tomorrowById.get(row.id);
                 const nextWord = next ? gapWord(next.likely) : undefined;
                 const ways = next ? waysToFree(next) : [];
-                const expanded = lever === row.id;
+                const expanded = lever === row.id && ways.length > 0;
                 return (
                   <Fragment key={row.id}>
                     <tr data-expanded={expanded ? "true" : undefined}>
