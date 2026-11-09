@@ -77,6 +77,36 @@
   content: "· ";
 }
 
+.act {
+  position: relative;
+  z-index: 1;
+  margin: 2px 0 0;
+}
+
+/* Note 5 (Josh, 9 Nov 2026): Record CTO reads as a quiet underlined line inside Legal. */
+.actButton {
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--wf-hero-ink);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font, inherit);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--wf-hero-ink) 40%, transparent);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.actButton[aria-disabled="true"] {
+  color: var(--wf-hero-ink-2);
+  cursor: not-allowed;
+}
+
+.actButton:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 /* The whole chip opens where the fact is kept; one tab stop, a full tap area. */
 .cover {
   position: absolute;

@@ -96,8 +96,6 @@ export type PatientNowSummaryProps = {
   glance?: JSX.Element;
   /** PT1: one of the five state tags, with the glyph tone. */
   stateTag?: { tag: string; tone: WfTone };
-  /** PT1 round 2: Record CTO beside New referral on a record with nothing open. */
-  recordCto?: { onClick: () => void; reason?: string };
   /** PT1 round 3: the patient's journey, six steps from ED to community care. */
   careSteps: CareStep[];
   onOpenHistory?: () => void;
@@ -152,7 +150,6 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
     where,
     glance,
     stateTag,
-    recordCto,
     careSteps,
     onOpenHistory,
   } = props;
@@ -563,19 +560,6 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                 <FileText size={14} strokeWidth={1.75} aria-hidden="true" />
                 New referral
               </Link>
-            ) : null}
-            {mode === "idle" && recordCto ? (
-              <Button
-                variant="onHero"
-                size="sm"
-                icon={Scale}
-                onClick={recordCto.onClick}
-                disabledReason={recordCto.reason}
-                reasonDisplay="tooltip"
-                data-testid="ward-person-record-cto"
-              >
-                Record CTO
-              </Button>
             ) : null}
           </>
         }

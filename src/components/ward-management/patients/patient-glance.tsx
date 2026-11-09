@@ -58,6 +58,8 @@ type GlanceTile = {
   quiet?: boolean;
   /** Opens where the fact is kept (Forms, Details). */
   onOpen?: () => void;
+  /** A quiet text action under the fact, above the tile's open cover (Record CTO). */
+  action?: { label: string; onClick: () => void; disabledReason?: string; testId: string };
   openLabel?: string;
 };
 
@@ -81,12 +83,14 @@ export type PatientGlanceProps = {
   healthAlerts?: readonly string[];
   onOpenForms?: () => void;
   onOpenDetails?: () => void;
+  /** Note 5 (Josh, 9 Nov 2026): Record CTO is a quiet line in Legal, not a button in the header. */
+  recordCto?: { onClick: () => void; reason?: string };
 };
 
 const PLACING: readonly PatientMode[] = ["find", "held", "transit"];
 const ON_STAY: readonly PatientMode[] = ["ward", "leave", "awol", "ed"];
 
-function legalTile({ patient, movement, formTimeLeft, mode, onOpenForms }: PatientGlanceProps): GlanceTile {
+function legalTile({ patient, movement, formTimeLeft, mode, onOpenForms, recordCto }: PatientGlanceProps): GlanceTile {
   const status = movement?.legalStatus ?? patient?.legalStatus;
   const cto = activeCommunityTreatmentOrder(patient);
   const open = (PLACING.includes(mode) || ON_STAY.includes(mode)) && mode !== "idle";
@@ -101,6 +105,17 @@ function legalTile({ patient, movement, formTimeLeft, mode, onOpenForms }: Patie
       value: "No order in force",
       quiet: true,
       sub: status ? `last recorded ${status}` : undefined,
+      // Note 5 (Josh, 9 Nov 2026): a CTO in force shows here by itself; recording one is a quiet
+      // line under the fact, not a header button.
+      action:
+        mode === "idle" && recordCto
+          ? {
+              label: "Record CTO",
+              onClick: recordCto.onClick,
+              disabledReason: recordCto.reason,
+              testId: "ward-person-record-cto",
+            }
+          : undefined,
     };
   }
   // Audit S-6: a referral or transport form that ended at arrival or at the examination is never
@@ -222,6 +237,20 @@ export function PatientGlance(props: PatientGlanceProps) {
             {tile.sub ? (
               <dd className={styles.sub} data-keep={tile.key === "legal" || tile.key === "risk" || undefined}>
                 {tile.sub}
+              </dd>
+            ) : null}
+            {tile.action ? (
+              <dd className={styles.act}>
+                <button
+                  type="button"
+                  className={styles.actButton}
+                  onClick={tile.action.disabledReason ? undefined : tile.action.onClick}
+                  aria-disabled={tile.action.disabledReason ? true : undefined}
+                  title={tile.action.disabledReason}
+                  data-testid={tile.action.testId}
+                >
+                  {tile.action.label}
+                </button>
               </dd>
             ) : null}
           </div>
