@@ -14,18 +14,30 @@ const role = z.enum(Object.keys(WARD_FLOW_ROLE_LABELS) as [string, ...string[]])
  */
 export const storedStaffRequests = z
   .array(
-    z.strictObject({
-      id,
-      unitId: id,
-      shiftStartAt: at,
-      count: z.union(STAFF_REQUEST_COUNTS.map((count) => z.literal(count))),
-      reasons: z.array(z.enum(STAFF_REQUEST_REASONS)).check(z.minLength(1)),
-      requestedAt: at,
-      requestedBy: role,
-      updatedAt: z.optional(at),
-      closedAt: z.optional(at),
-      closedBy: z.optional(role),
-      outcome: z.optional(z.enum(STAFF_REQUEST_OUTCOMES)),
-    }),
+    z
+      .strictObject({
+        id,
+        unitId: id,
+        shiftStartAt: at,
+        count: z.union(STAFF_REQUEST_COUNTS.map((count) => z.literal(count))),
+        reasons: z.array(z.enum(STAFF_REQUEST_REASONS)).check(
+          z.minLength(1),
+          z.refine((reasons) => new Set(reasons).size === reasons.length),
+        ),
+        requestedAt: at,
+        requestedBy: role,
+        updatedAt: z.optional(at),
+        closedAt: z.optional(at),
+        closedBy: z.optional(role),
+        outcome: z.optional(z.enum(STAFF_REQUEST_OUTCOMES)),
+      })
+      .check(
+        // Closed only as the reducer closes: outcome, time and role together, or none of them.
+        z.refine(
+          (row) =>
+            (row.outcome === undefined) === (row.closedAt === undefined) &&
+            (row.outcome === undefined) === (row.closedBy === undefined),
+        ),
+      ),
   )
   .check(z.refine((rows) => new Set(rows.map((row) => row.id)).size === rows.length));

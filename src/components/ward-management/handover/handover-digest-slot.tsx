@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import dynamic from "next/dynamic";
 import { FileText } from "lucide-react";
 
 import { Button } from "@/components/wf";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 
 import type { HandoverDigestAction, HandoverDigestInput } from "./handover-digest-model";
 
@@ -24,7 +25,16 @@ export function useHandoverDigestOpen(digestParam: boolean): [boolean, (open: bo
     setSeenParam(digestParam);
     if (digestParam) setOpen(true);
   }
-  return [open, setOpen];
+  const set = useCallback((next: boolean) => {
+    setOpen(next);
+    if (next) return;
+    // Closing drops `?digest=1`, so following "Read digest" again reopens it.
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("digest")) return;
+    url.searchParams.delete("digest");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  }, []);
+  return [open, set];
 }
 
 /** The hero's secondary Digest button, beside Start meeting. */
@@ -67,7 +77,7 @@ export function HandoverDigestSlot({
         window.requestAnimationFrame(() =>
           document
             .querySelector('[data-testid="ward-handover-open-promises"]')
-            ?.scrollIntoView({ block: "start", behavior: "smooth" }),
+            ?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() }),
         );
       }}
     />

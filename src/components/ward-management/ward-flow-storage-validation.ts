@@ -1429,6 +1429,8 @@ function consistent(state: StoredState, value: RecordValue): boolean {
 
   for (const key of Object.keys(state.dischargeRevisions)) if (!admissionIds.has(key)) return false;
   for (const key of Object.keys(state.morningRollupConfirmations)) if (!unitIds.has(key)) return false;
+  // Staff needed (feature 10): every request names a ward in this world.
+  for (const row of state.staffRequests ?? []) if (!unitIds.has(row.unitId)) return false;
   // H-IMPORT (#1455): live absence, active stays and numbered beds must each have one owner.
   return storedPlacementInvariants(value as unknown as WardFlowState, activePatientStays(state.admissions));
 }

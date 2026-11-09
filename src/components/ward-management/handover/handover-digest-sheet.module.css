@@ -58,7 +58,7 @@ button.row:focus-visible,
 a.row:focus-visible,
 .moreButton:focus-visible {
   outline: none;
-  box-shadow: var(--wf-focus-ring);
+  box-shadow: 0 0 0 2px var(--wf-focus-ring);
 }
 
 .figure {

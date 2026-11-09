@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { Button, Card, Sheet, StatusGlyph } from "@/components/wf";
 
@@ -17,7 +18,7 @@ import { SinceLastLookSheetBody, sinceLastLookCount, useSinceLastLook } from "./
  * picture the Activity panel reviews), so leaving Home never marks anything seen. Review captures
  * the changes, then marks them seen; anything that arrives while the sheet is open stays new.
  * Before any review this session it counts from the start of the shift, and says so.
- * Hidden when nothing is new. Loaded lazily (`home-pins-lazy.tsx`), so it stays off Home's first load.
+ * Hidden when nothing is new. Loaded lazily (`home-since-banner-lazy.tsx`), so it stays off Home's first load.
  */
 export function HomeSinceBanner({ now }: { now: Instant }) {
   const { scenario, referrals, movements, units, bedReleases, admissions, worldGeneration } = useWardFlowSelect(
@@ -34,6 +35,8 @@ export function HomeSinceBanner({ now }: { now: Instant }) {
     [scenario, referrals, movements, units, bedReleases, admissions, worldGeneration],
   );
   const { changes, markSeen } = useSinceLastLook(world, now, { explicit: true });
+  // A coordinator previewing another desk saves no review, so the sheet does not claim one.
+  const preview = useWardAccessSnapshot().previewOf !== null;
   const [review, setReview] = useState<ChangesSinceLastLook | null>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const slot = useRef<HTMLDivElement>(null);
@@ -81,7 +84,9 @@ export function HomeSinceBanner({ now }: { now: Instant }) {
         open={open}
         onClose={() => setReview(null)}
         title={review?.basis === "shift" ? "Since the shift started" : "Since you were last here"}
-        description={`Changes since ${formatInstantWithDay(review?.since ?? changes.since, now)} · now marked seen`}
+        description={`Changes since ${formatInstantWithDay(review?.since ?? changes.since, now)}${preview ? "" : " · now marked seen"}`}
+        bodyTabIndex={0}
+        bodyLabel="Changes since your last review"
         resolveReturnFocusTarget={returnFocusTarget}
       >
         <SinceLastLookSheetBody changes={open ? review : undefined} />

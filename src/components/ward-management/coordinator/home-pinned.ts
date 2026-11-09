@@ -132,7 +132,8 @@ export function pinnedRows(
         id,
         href,
         where: unitsById.get(stay.unitId)?.name ?? "Ward not recorded",
-        step: "On ward",
+        // A waitlisted or pulled stay holds a bed before arrival, so only an occupied one is on the ward.
+        step: stay.state === "occupied" ? "On ward" : "Bed held",
       });
       continue;
     }

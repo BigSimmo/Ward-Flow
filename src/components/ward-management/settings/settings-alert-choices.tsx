@@ -11,7 +11,7 @@ import {
   quietHoursText,
   useAlertPreferences,
 } from "@/components/ward-management/shell/ward-alert-preferences";
-import { WARD_SHELL_ROLE } from "@/components/ward-management/ward-chrome-role";
+import { WARD_SHELL_ROLE, wardTasksAreActionableForRole } from "@/components/ward-management/ward-chrome-role";
 
 import { SettingRow } from "./settings-rows";
 
@@ -27,18 +27,21 @@ export function SettingsAlertChoices() {
 
   return (
     <>
-      <SettingRow
-        setting="alerts-due-soon"
-        title="Due soon too"
-        sub="Amber alerts as well as act now"
-        testId="setting-alerts-due-soon-row"
-      >
-        <Switch
-          checked={preferences.dueSoon}
-          onCheckedChange={(next) => setPreferences({ ...preferences, dueSoon: next })}
-          label={<SrOnly>Due soon too</SrOnly>}
-        />
-      </SettingRow>
+      {/* Only the coordinator's task list is pushed to this device, so only it can add due soon. */}
+      {wardTasksAreActionableForRole(role) ? (
+        <SettingRow
+          setting="alerts-due-soon"
+          title="Due soon too"
+          sub="Amber alerts as well as act now"
+          testId="setting-alerts-due-soon-row"
+        >
+          <Switch
+            checked={preferences.dueSoon}
+            onCheckedChange={(next) => setPreferences({ ...preferences, dueSoon: next })}
+            label={<SrOnly>Due soon too</SrOnly>}
+          />
+        </SettingRow>
+      ) : null}
       {deskSeesStaffRequests(role) ? (
         <SettingRow
           setting="alerts-staff-requests"

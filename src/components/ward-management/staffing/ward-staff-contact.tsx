@@ -5,7 +5,7 @@ import { Phone, UserPlus } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/wf";
-import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useEffectiveWardAccess, useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
@@ -86,8 +86,11 @@ export function WardStaffContact({
   const flow = useOptionalWardFlowSelect("staffRequests", "dispatch");
   const routeRole = useRouteRole();
   const accessRole = useEffectiveWardAccess().role;
+  // A coordinator previewing another desk sees the request but changes nothing.
+  const previewing = useWardAccessSnapshot().previewOf !== null;
   const asker: WardFlowRole = routeRole === "bed_manager" ? "bed_manager" : "ward";
-  const closer: WardFlowRole | null = accessRole === "coordinator" || accessRole === "bed_manager" ? accessRole : null;
+  const closer: WardFlowRole | null =
+    !previewing && (accessRole === "coordinator" || accessRole === "bed_manager") ? accessRole : null;
   const raise = useWardRaise(asker);
   const raiseClose = useWardRaise(closer ?? asker);
   const [sheet, setSheet] = useState<"staff" | "contact" | null>(null);
@@ -96,7 +99,7 @@ export function WardStaffContact({
   const records = flow?.staffRequests ?? NONE;
   const open = openStaffRequestFor(records, unit.id, now);
   // Only the ward desk (or the site bed manager on its own ward) asks from here; never the executive.
-  const canAsk = flow !== null && (routeRole === "ward" || routeRole === "bed_manager");
+  const canAsk = flow !== null && !previewing && (routeRole === "ward" || routeRole === "bed_manager");
   const acting = asker === "ward" ? { actingUnitId: unit.id } : {};
   const tag = open ? (
     <StaffRequestTag

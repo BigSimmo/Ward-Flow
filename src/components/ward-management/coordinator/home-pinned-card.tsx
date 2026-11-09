@@ -30,7 +30,13 @@ import styles from "./home-pinned.module.css";
 export function HomePinnedCard({ now, phone }: { now: Instant; phone: boolean }) {
   const pinnedWards = useMyWards();
   const pinnedPatients = useMyPatients();
-  const store = useWardFlowSelect("units", "admissions", "bedReleases", "movements", "patients");
+  const { units, admissions, bedReleases, movements, patients } = useWardFlowSelect(
+    "units",
+    "admissions",
+    "bedReleases",
+    "movements",
+    "patients",
+  );
   const canOpen = useCanOpenHref();
   const patientOf = usePatientOf();
   const nameFor = usePatientNameDisplay();
@@ -42,19 +48,19 @@ export function HomePinnedCard({ now, phone }: { now: Instant; phone: boolean })
         ? pinnedRows(
             { wards: pinnedWards, patients: pinnedPatients },
             {
-              units: store.units,
-              admissions: store.admissions,
-              bedReleases: store.bedReleases,
-              movements: store.movements,
+              units,
+              admissions,
+              bedReleases,
+              movements,
               patientIdOf: (record) => patientOf(record).patient?.id,
-              patientIds: new Set(store.patients.map((patient) => patient.id)),
+              patientIds: new Set(patients.map((patient) => patient.id)),
               eds: allEmergencyDepartments(),
             },
             now,
             { ward: unitHref, patient: patientHref, canOpen },
           )
         : { wards: [], patients: [] },
-    [anyPin, pinnedWards, pinnedPatients, store, now, canOpen, patientOf],
+    [anyPin, pinnedWards, pinnedPatients, units, admissions, bedReleases, movements, patients, now, canOpen, patientOf],
   );
   const total = rows.wards.length + rows.patients.length;
   if (total === 0) return null;

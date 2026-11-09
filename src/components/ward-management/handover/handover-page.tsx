@@ -873,7 +873,8 @@ export function HandoverPage() {
               admissions,
               scopedMovements: rows.map((row) => row.movement),
               staffRequestRecords: staffRequests ?? [],
-              wardIds: wards.map((ward) => ward.id),
+              // An ED or team handover covers no ward's staffing, so it counts no staff requests.
+              wardIds: scope.kind === "ed" || scope.kind === "team" ? [] : wards.map((ward) => ward.id),
               beds: ownWard || edDesk ? null : { ready: readyTotal, needed: counts.bed },
               longest: longest && { movementId: longest.id, openedAt: longest.openedAt, place: longest.edShort },
             }

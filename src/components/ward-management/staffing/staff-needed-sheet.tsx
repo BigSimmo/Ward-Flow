@@ -80,12 +80,16 @@ export function StaffNeededSheet({
     : missing.length
       ? `Choose ${missing.join(", ").replace(/, ([^,]*)$/u, " and $1")}`
       : undefined;
+  // Held open while a save is in flight, so a reopened sheet cannot send a second request over it.
+  const close = () => {
+    if (!save.pending) onClose();
+  };
   const toggleReason = (value: StaffRequestReason) =>
     setReasons((current) => (current.includes(value) ? current.filter((item) => item !== value) : [...current, value]));
   return (
     <Sheet
       open={open}
-      onClose={onClose}
+      onClose={close}
       title="Staff needed"
       description={`${unitName}. Log that this ward needs more staff to meet current patient demand.`}
       placement="responsive-right"
@@ -99,7 +103,7 @@ export function StaffNeededSheet({
               {save.error}
             </span>
           ) : null}
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={close}>
             Cancel
           </Button>
           <Button

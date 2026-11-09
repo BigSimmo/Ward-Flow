@@ -105,7 +105,9 @@ export function openStaffRequests(
   state: { staffRequests?: readonly StaffRequestRecord[] },
   now: Instant,
 ): StaffRequestRecord[] {
-  return (state.staffRequests ?? []).filter((record) => isOpen(record, now));
+  return (state.staffRequests ?? [])
+    .filter((record) => isOpen(record, now))
+    .sort((a, b) => a.shiftStartAt - b.shiftStartAt || a.requestedAt - b.requestedAt);
 }
 
 /** The open request for one ward, the earliest shift first. */

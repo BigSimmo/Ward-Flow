@@ -121,11 +121,14 @@ export function WardActNowNotifier() {
       return;
     }
     const prior = previous.current;
-    previous.current = { generation: worldGeneration, ids: new Set(active.map((item) => item.id)) };
+    const ids = new Set(active.map((item) => item.id));
+    previous.current = { generation: worldGeneration, ids };
     if (prior === null || prior.generation !== worldGeneration || !enabled) return;
     const fresh = active.filter((item) => !prior.ids.has(item.id));
     const quiet = { on: quietOn, start: quietStart, end: quietEnd };
     const shown = alertsToShow(fresh, { dueSoon: wantsDueSoon, staffRequests: false, quiet }, minuteOfDay(now));
+    // Quiet hours hold due-soon alerts rather than drop them: left unseen, they come through after.
+    if (shown.held > 0) for (const item of fresh) if (item.tone === "warning") ids.delete(item.id);
     // One tap opens the one alert's own page where this desk may open it; a batch opens Alerts.
     const open = (only: InboxItem | undefined) => {
       const target = only?.href ?? (only?.movementId ? movementHref(only.movementId) : undefined);
@@ -158,30 +161,35 @@ export function WardActNowNotifier() {
       return;
     }
     const prior = staffSeen.current;
-    staffSeen.current = { generation: worldGeneration, ids: new Set(openStaff.map((record) => record.id)) };
+    const ids = new Set(openStaff.map((record) => record.id));
+    staffSeen.current = { generation: worldGeneration, ids };
     if (prior === null || prior.generation !== worldGeneration || !enabled || !wantsStaff) return;
+    const fresh = openStaff.filter((record) => !prior.ids.has(record.id));
     if (
       !extraAlertAllowed(minuteOfDay(now), {
         dueSoon: false,
         staffRequests: true,
         quiet: { on: quietOn, start: quietStart, end: quietEnd },
       })
-    )
+    ) {
+      // Held, not dropped: still unseen when quiet hours end.
+      for (const record of fresh) ids.delete(record.id);
       return;
-    const fresh = openStaff.filter((record) => !prior.ids.has(record.id));
+    }
+    const wards = [...new Set(fresh.map((record) => record.unitId))];
     const [only] = fresh;
     if (!only || notificationSupport() !== "granted") return;
     try {
       // Ward and count only: never a patient. Tap opens the ward.
       const ward = units.find((unit) => unit.id === only.unitId)?.name ?? "A ward";
-      const body = fresh.length === 1 ? `${ward} asked for more staff` : `${fresh.length} wards asked for more staff`;
+      const body = wards.length === 1 ? `${ward} asked for more staff` : `${wards.length} wards asked for more staff`;
       const notification = new window.Notification("Ward Flow: staff requested", {
         body: `${body}. Synthetic demo data.`,
         tag: "ward-flow-staff",
       });
       notification.onclick = () => {
         window.focus();
-        const href = fresh.length === 1 ? unitHref(only.unitId) : WARD_ALERTS_HREF;
+        const href = wards.length === 1 ? unitHref(only.unitId) : WARD_ALERTS_HREF;
         navigateWithDirtyGuard(() => router.push(canOpen(href) ? href : WARD_ALERTS_HREF));
         notification.close();
       };

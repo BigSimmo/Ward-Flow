@@ -81,6 +81,7 @@
 
 /* Phone hero buttons, as the ward hero's own quiet action. */
 .phoneAction {
+  position: relative;
   flex: none;
   display: inline-flex;
   align-items: center;
@@ -232,5 +233,14 @@
 }
 
 .phoneRow .tagAction {
+  position: relative;
   min-height: 40px;
+}
+
+/* A 40px control keeps a 48px tap area, as the kit's Button does on phones. */
+.phoneAction::after,
+.phoneRow .tagAction::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
 }

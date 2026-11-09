@@ -63,6 +63,12 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
   },
   { id: "alerts-due-soon", label: "Due soon too", tab: "alerts", keywords: "amber warning notifications" },
   {
+    id: "alerts-staff-requests",
+    label: "Staff requests",
+    tab: "alerts",
+    keywords: "staff needed ward ordering notifications",
+  },
+  {
     id: "alerts-quiet-hours",
     label: "Quiet hours",
     tab: "alerts",

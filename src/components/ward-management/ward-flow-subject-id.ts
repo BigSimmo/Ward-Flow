@@ -187,10 +187,10 @@ export function subjectId(event: WardFlowEvent): string {
     case "RECORD_DIRECTORY_CHECK":
       return event.entryId;
     // Staff needed (feature 10): a request is filed against its ward, its closing against itself.
+    // The ward, not the request id, so a refused close stays in the desk's scoped refusal feed.
     case "REQUEST_WARD_STAFF":
-      return event.unitId;
     case "CLOSE_WARD_STAFF_REQUEST":
-      return event.requestId;
+      return event.unitId;
     case "DISPATCH_BROADCAST_ALERT":
       return "broadcast";
     case "ACKNOWLEDGE_BROADCAST_ALERT":

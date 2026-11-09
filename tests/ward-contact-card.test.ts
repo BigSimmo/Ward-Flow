@@ -30,6 +30,9 @@ describe("ward contact card", () => {
     expect(consultant(day).availability).toMatch(/^Until \d\d:\d\d$/);
     expect(consultant(day).line).toBe("Day consultant");
     expect(consultant(night).line).toBe("On-call phone");
+    // Answering drives the row's status glyph: a line open now must never read as closed.
+    expect(consultant(day).answering).toBe(true);
+    expect(consultant(night).answering).toBe(true);
     expect(day.rows.find((row) => row.key === "switchboard")!.availability).toBe("24 hours");
   });
 
