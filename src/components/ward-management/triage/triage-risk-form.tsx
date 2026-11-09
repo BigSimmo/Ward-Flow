@@ -614,6 +614,8 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
     </Button>
   );
 
+  const notSet = <span className={styles.statEmpty}>Not set</span>;
+
   const howToButton = (
     <Button
       variant="onHero"
@@ -678,11 +680,11 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
               <>
                 <HeroStat
                   label="Urgency"
-                  value={state.urgency ? `${state.urgency} ${TIER_SHORT[state.urgency]}` : "–"}
+                  value={state.urgency ? `${state.urgency} ${TIER_SHORT[state.urgency]}` : notSet}
                 />
-                <HeroStat label="Legal" value={state.legal ? <LegalName name={LEGAL_NAME[state.legal]} /> : "–"} />
+                <HeroStat label="Legal" value={state.legal ? <LegalName name={LEGAL_NAME[state.legal]} /> : notSet} />
                 <HeroStat label="Risk flags" value={flagCount} />
-                <HeroStat label="Review" value={state.review ? REVIEW_SHORT[state.review] : "–"} />
+                <HeroStat label="Review" value={state.review ? REVIEW_SHORT[state.review] : notSet} />
               </>
             )
           }
@@ -697,7 +699,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                 </span>
                 {isPhone ? null : (
                   <span>
-                    Now at <b>{person.nowAt}</b>
+                    Location <b>{person.nowAt}</b>
                   </span>
                 )}
                 <span>

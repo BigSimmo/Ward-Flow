@@ -18,6 +18,7 @@ import {
 } from "./triage-psolis-lists";
 import { AHD, LEGAL, OUTCOMES, TIER_LONG, TIERS, WHO_TOLD, type Tier } from "./triage-risk-data";
 import { seeBy } from "./triage-see-by";
+import { FOLLOW_UP_CHOICES, followUpHint, followUpShown, recentDischargeFor } from "./triage-risk-safety";
 import { Choice, PickMany, Reveal, Row, type FormApi } from "./triage-risk-parts";
 import { acuteFlagNames, hasLegalForm } from "./triage-risk-state";
 import styles from "./triage-risk-form.module.css";
@@ -54,6 +55,10 @@ export function DecisionBody({ form }: { form: FormApi }) {
     state.urgency ? TIER_LONG[state.urgency] : "",
   );
   const asked = state.person.referral?.urgency ?? null;
+  // Follow-up (9 Nov 2026): a hint from marked current risk or a recent discharge on the record; never a choice.
+  const followHint = followUpShown(state.outcome)
+    ? followUpHint(state, recentDischargeFor(state.person.id, new Date(form.now)))
+    : null;
   const setActions = (actions: string[]) =>
     update((s) => {
       // Telling someone replaces "None needed".
@@ -164,6 +169,39 @@ export function DecisionBody({ form }: { form: FormApi }) {
       <Row label="Outcome">
         <Choice label="Outcome" options={OUTCOMES} value={state.outcome} onChange={(v) => set("outcome", v)} />
       </Row>
+      {followUpShown(state.outcome) ? (
+        <Reveal>
+          <Row label="Follow-up" hint="Contact after this triage" top>
+            <div className={styles.stack} data-testid="triage-follow-up">
+              <Choice
+                id="triage-follow-up"
+                label="Follow-up"
+                options={FOLLOW_UP_CHOICES}
+                value={state.followUp}
+                onChange={(v) => set("followUp", v)}
+              />
+              {followHint ? <UrgencyHint>{followHint}</UrgencyHint> : null}
+              {state.followUp === "none" ? (
+                <TextInput
+                  id="triage-follow-up-why"
+                  aria-label="Say why follow-up is not needed"
+                  placeholder="Say why"
+                  value={state.text.followUpWhy}
+                  onChange={(event) => setText("followUpWhy", event.target.value)}
+                />
+              ) : (
+                <TextInput
+                  id="triage-follow-up-who"
+                  aria-label="Who will contact"
+                  placeholder="Who will contact"
+                  value={state.text.followUpWho}
+                  onChange={(event) => setText("followUpWho", event.target.value)}
+                />
+              )}
+            </div>
+          </Row>
+        </Reveal>
+      ) : null}
       <Row label="Actions" top>
         <PickMany
           id="triage-actions"

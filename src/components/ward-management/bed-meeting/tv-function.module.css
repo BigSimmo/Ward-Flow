@@ -85,10 +85,13 @@
   background: var(--wf-surface-2);
 }
 
+/* TV polish (Josh, 8 Nov 2026): when the wait and form note do not fit beside the name, the note
+   moves under it instead of splitting the name over two lines. */
 .who {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.5em;
+  gap: 0 0.5em;
   min-width: 0;
 }
 
@@ -125,6 +128,24 @@
   flex: none;
   color: var(--wf-ink-3);
   font-size: var(--tv-small);
+}
+
+/* TV polish (Josh, 8 Nov 2026): an empty lane is quieter than one with people in it, so the eye
+ * goes to the lanes that need someone. Its "None" sits in a calm dashed slot, not as stray text. */
+.lane[data-empty] {
+  background: color-mix(in srgb, var(--wf-surface) 55%, transparent);
+}
+
+.lane[data-empty] .count {
+  background: transparent;
+  color: var(--wf-ink-3);
+}
+
+.none {
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px dashed var(--wf-line);
+  border-radius: var(--wf-r-md);
+  text-align: center;
 }
 
 .more {

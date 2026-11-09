@@ -161,7 +161,7 @@ function ReferrerLine({ form }: { form: FormApi }) {
   const open = changing || !line;
   return (
     <div className={styles.oneLine} data-testid="triage-referrer">
-      <span className={styles.from}>{referral ? "From referral" : "No referral"}</span>
+      <span className={styles.from}>{referral ? "From referral" : "Referrer · no referral linked"}</span>
       {referral ? (
         <span>
           <b>{referral.from}</b>

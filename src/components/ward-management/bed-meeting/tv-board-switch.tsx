@@ -15,7 +15,7 @@ export type TvBoard = "flow" | "clinical" | "handover" | "obs" | "legal" | "toda
  * One board per job (Josh, 4 Nov 2026: "add different types/versions based on the function
  * required"). Bed flow stays the default and keeps every existing link as it was.
  */
-const BOARDS: Record<"ward" | "ed", { id: TvBoard; label: string }[]> = {
+const BOARDS: Record<"ward" | "ed" | "meeting", { id: TvBoard; label: string }[]> = {
   ward: [
     { id: "clinical", label: "Clinical" },
     { id: "handover", label: "Handover" },
@@ -29,6 +29,9 @@ const BOARDS: Record<"ward" | "ed", { id: TvBoard; label: string }[]> = {
     { id: "beds", label: "Bed search" },
     { id: "flow", label: "Bed flow" },
   ],
+  // Note 13 (Josh, 8 Nov 2026): a bed meeting has one board, shown in the same place as a ward's or
+  // an ED's, so the TV's navigation looks the same on every screen.
+  meeting: [{ id: "flow", label: "Bed meeting" }],
 };
 
 export function tvBoardOf(value: string | undefined, kind: "ward" | "ed" | "meeting"): TvBoard {
@@ -49,7 +52,7 @@ export function BoardSwitch({
   hrefOf,
 }: {
   current: TvBoard;
-  kind: "ward" | "ed";
+  kind: "ward" | "ed" | "meeting";
   hrefOf: (board: TvBoard) => string;
 }) {
   return (
