@@ -12,13 +12,13 @@ import styles from "./home-folder.module.css";
  * the sheet's corners tighten.
  */
 
-/** Tab top inset, tab height, tab corner, inner curve and sheet corner (px). */
-const TAB_TOP = 8;
-const TAB_HEIGHT = 48;
-const TAB_RADIUS = 14;
-const FILLET = 12;
-const SHEET_RADIUS = 22;
-const DOCKED_SHEET_RADIUS = 14;
+/** Tab top inset, tab height, tab corner, inner curve and sheet corner (px). Compact (Josh, 9 Nov 2026). */
+const TAB_TOP = 6;
+const TAB_HEIGHT = 44;
+const TAB_RADIUS = 12;
+const FILLET = 10;
+const SHEET_RADIUS = 20;
+const DOCKED_SHEET_RADIUS = 12;
 const MOVE_MS = 280;
 
 type Geometry = { width: number; height: number; x0: number; x1: number; sheetRadius: number };
@@ -77,14 +77,11 @@ export function HomeFolderShape({ navRef, value }: { navRef: RefObject<HTMLEleme
     };
 
     const paint = (left: number, width: number, x0: number, x1: number) => {
-      const height = TAB_TOP + TAB_HEIGHT + SHEET_RADIUS;
-      const path = folderPath({
-        width: round(width),
-        height,
-        x0: round(x0),
-        x1: round(x1),
-        sheetRadius: docked ? DOCKED_SHEET_RADIUS : SHEET_RADIUS,
-      });
+      // The sheet's top edge runs on below the row by its corner, over whatever follows.
+      const sheetRadius = docked ? DOCKED_SHEET_RADIUS : SHEET_RADIUS;
+      const height = TAB_TOP + TAB_HEIGHT + sheetRadius;
+      const path = folderPath({ width: round(width), height, x0: round(x0), x1: round(x1), sheetRadius });
+      shape.style.height = `${height}px`;
       for (const node of [shape, back]) {
         node.style.left = `${round(left)}px`;
         node.style.width = `${round(width)}px`;

@@ -6,8 +6,8 @@
  */
 
 .hero.hero.hero {
-  /* Shared with the folder tabs (home-folder.module.css): tab inset 8 + tab 48 + sheet corner 22. */
-  --wf-folder-rise: 78px;
+  /* Shared with the folder tabs (home-folder.module.css): tab inset 6 + tab 44 + sheet corner 20. */
+  --wf-folder-rise: 70px;
   gap: 0;
 }
 
