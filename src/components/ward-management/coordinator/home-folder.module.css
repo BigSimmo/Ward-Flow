@@ -1,0 +1,254 @@
+/*
+ * Curved folder tabs (sticky header redesign, option A, Josh 9 Nov 2026). Home's list tabs rise into
+ * the slate hero's foot: the row overlaps the band by --wf-folder-rise (tab inset 8 + tab 48 + sheet
+ * corner 22), and `HomeFolderShape` (home-folder.tsx) paints the page sheet and the chosen tab as one
+ * outline. Tabs off the outline sit on slate in hero ink; the chosen one sits on the sheet in page ink.
+ * Doubled and tripled classes outrank the list switch's own phone rules (home-list.module.css).
+ */
+
+.nav.nav {
+  --wf-folder-rise: 78px;
+  /* Up by the rise and by Home's column gap (home.module.css .body). */
+  margin-top: calc(-1 * (var(--wf-folder-rise) + var(--wf-s-3)));
+  padding-top: 8px;
+  row-gap: var(--wf-s-2);
+  align-items: start;
+}
+
+/* The phone keeps the row sticky (home-flow.module.css); wider screens anchor the shape here. */
+@media (min-width: 46.5rem) {
+  .nav.nav {
+    position: relative;
+  }
+}
+
+/* The tabs' row is 48px and its sheet 22px below; everything after it sits on the sheet. */
+.nav.nav > :not(.shape):not(.back) {
+  position: relative;
+  z-index: 1;
+}
+
+.shape,
+.back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+.shape {
+  height: var(--wf-folder-rise, 78px);
+  background: var(--wf-page-canvas, var(--wf-canvas));
+}
+
+/* Pinned under the header (phone): the row's own slate, edge to edge, then the sheet's canvas. */
+.back {
+  bottom: 0;
+  display: none;
+  background: linear-gradient(
+    var(--wf-hero-2) 0 var(--wf-folder-rise, 78px),
+    var(--wf-page-canvas, var(--wf-canvas)) 0
+  );
+  box-shadow: 0 12px 16px -14px color-mix(in srgb, var(--wf-hero-edge) 80%, transparent);
+}
+
+.nav[data-docked] .back {
+  display: block;
+}
+
+/* The list switch: plain tabs on the slate, 48px tall; the chosen one takes page ink on the sheet. */
+.switch.switch.switch {
+  align-self: start;
+  height: 48px;
+  min-height: 48px;
+  margin: 0;
+  padding: 0;
+  gap: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.switch.switch.switch > * {
+  height: 48px;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--wf-hero-ink-2);
+  font: 500 var(--wf-fs-14) / 20px var(--wf-font);
+  letter-spacing: -0.01em;
+  gap: 6px;
+  transition: color var(--wf-m-base, 160ms) var(--wf-ease, ease);
+}
+
+.switch.switch.switch > *:hover {
+  color: var(--wf-hero-ink);
+  background: transparent;
+}
+
+.switch.switch.switch > [aria-checked="true"] {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.switch.switch.switch > * > :last-child {
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--wf-hero-ink-3);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.switch.switch.switch > [aria-checked="true"] > :last-child {
+  color: var(--wf-ink-3);
+}
+
+/* Needs you carries a small red dot before its count while anything needs a person now. */
+.nav[data-act] .switch.switch.switch > :first-child > :last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.nav[data-act] .switch.switch.switch > :first-child > :last-child::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--wf-hero-danger);
+}
+
+.nav[data-act] .switch.switch.switch > [aria-checked="true"]:first-child > :last-child::before {
+  background: var(--wf-danger);
+}
+
+.switch.switch.switch > *:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -4px;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.switch.switch.switch > :not([aria-checked="true"]):focus-visible {
+  outline-color: var(--wf-hero-ink);
+}
+
+/* More: on the slate beside the tabs. */
+.nav.nav > :last-child {
+  align-self: start;
+  margin-top: 4px;
+  color: var(--wf-hero-ink-2);
+}
+
+.more.more.more {
+  color: var(--wf-hero-ink-2);
+  background: transparent;
+}
+
+.more.more.more:hover {
+  color: var(--wf-hero-ink);
+  background: var(--wf-on-hero-fill);
+}
+
+.more.more.more:focus-visible {
+  --wf-focus-ring: var(--wf-hero-ink);
+}
+
+/* Desktop: the stage tabs share the first row, so they sit on the slate too. */
+@media (min-width: 64rem) {
+  .nav.nav [role="tablist"] [role="tab"] {
+    color: var(--wf-hero-ink-2);
+  }
+
+  .nav.nav [role="tablist"] [role="tab"]:hover {
+    color: var(--wf-hero-ink);
+    background: var(--wf-on-hero-fill);
+  }
+
+  .nav.nav [role="tablist"] [role="tab"][aria-selected="true"] {
+    color: var(--wf-hero-ink);
+    background: var(--wf-on-hero-hl);
+    outline-color: var(--wf-on-hero-line);
+  }
+
+  .nav.nav [role="tablist"] [role="tab"] > :last-child {
+    background: transparent;
+    color: var(--wf-hero-ink-3);
+  }
+
+  .nav.nav [role="tablist"] {
+    margin-top: 4px;
+  }
+
+  .rule.rule {
+    align-self: start;
+    margin-top: 14px;
+    background: var(--wf-on-hero-div);
+  }
+}
+
+/* Phone: the row runs edge to edge as before, without its canvas strip, since the folder draws it. */
+@media (max-width: 46.4375rem) {
+  .nav.nav {
+    padding-bottom: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .switch.switch.switch {
+    flex: 1 1 auto;
+  }
+
+  .switch.switch.switch > * {
+    flex: 1 1 auto;
+    padding: 0 12px;
+  }
+
+  .switch.switch.switch > *::after {
+    display: none;
+  }
+
+  .nav[data-docked] .switch.switch.switch > :not([aria-checked="true"]) {
+    color: var(--wf-hero-ink-2);
+  }
+}
+
+/* The smallest phones (320px): tighter tabs so Later today keeps its line. */
+@media (max-width: 22.5rem) {
+  .switch.switch.switch > * {
+    padding: 0 8px;
+    font-size: var(--wf-fs-13);
+    gap: 4px;
+  }
+}
+
+@media (forced-colors: active) {
+  .shape {
+    background: Canvas;
+  }
+
+  .switch.switch.switch > [aria-checked="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}
+
+@media print {
+  .shape,
+  .back {
+    display: none;
+  }
+
+  .nav.nav {
+    margin-top: 0;
+  }
+}

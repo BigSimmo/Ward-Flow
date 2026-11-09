@@ -331,12 +331,11 @@
   color: var(--wf-ink-2);
 }
 
-/* ── foot: the dock, with the + rising out of its own curved edge ("Rise", set 10) ──────────
- * The dock's top edge lifts in one smooth curve round the +, so the bar and the button read as one
- * piece. `::after` paints the dock (fill) and `::before` paints the same shape 1px higher in the
- * line colour, so only a hairline shows along the edge. Both are masked: a flat run each side and
- * the curved hump in the middle, 128px wide and 24px high. The extra foot padding keeps the dock
- * clear of Safari's bottom toolbar and the home indicator. */
+/* ── foot: the dock, a flat bar with the + seated in its row (Josh, 9 Nov 2026) ─────────────
+ * The dock's top edge runs straight across: `::after` paints the dock (fill) and `::before` paints
+ * the same box 1px higher in the line colour, so only a hairline shows along the edge. The + is a
+ * navy rounded square inside the row, so nothing rises above the bar any more. The extra foot
+ * padding keeps the dock clear of Safari's bottom toolbar and the home indicator. */
 .foot {
   position: relative;
   isolation: isolate;
@@ -347,26 +346,15 @@
 
 .foot::before,
 .foot::after {
-  --rise-run: linear-gradient(black, black);
-  --rise-hump: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='264' viewBox='0 0 128 264'%3E%3Cpath fill='black' d='M0 24H6C30 24 34 0 64 0S98 24 122 24H128V264H0Z'/%3E%3C/svg%3E");
-
   content: "";
   position: absolute;
-  inset: -24px 0 0;
+  inset: 0;
   z-index: -1;
-  -webkit-mask:
-    var(--rise-run) left 0 top 24px / calc(50% - 63.5px) 100% no-repeat,
-    var(--rise-hump) center top / 128px 264px no-repeat,
-    var(--rise-run) right 0 top 24px / calc(50% - 63.5px) 100% no-repeat;
-  mask:
-    var(--rise-run) left 0 top 24px / calc(50% - 63.5px) 100% no-repeat,
-    var(--rise-hump) center top / 128px 264px no-repeat,
-    var(--rise-run) right 0 top 24px / calc(50% - 63.5px) 100% no-repeat;
   pointer-events: none;
 }
 
 .foot::before {
-  top: -25px;
+  top: -1px;
   background: var(--wf-line-2);
 }
 
@@ -413,12 +401,18 @@
   cursor: pointer;
 }
 
+/* The icon box (Josh, 9 Nov 2026): 56 x 30, so the page you are on can show a tinted pill behind its
+   icon. It takes only 24px of the row (3px pulled in above and below), so the dock keeps its
+   height and every label stays where it was. */
 .dockIcon {
   position: relative;
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 24px;
+  width: 56px;
+  max-width: 100%;
+  height: 30px;
+  margin-block: -3px;
+  border-radius: 15px;
   color: var(--wf-ink-2);
 }
 
@@ -427,8 +421,9 @@
   height: 21px;
 }
 
-/* The page you are on: its icon in the accent, its label in full ink and bolder. */
+/* The page you are on: its icon in the accent on a tinted pill, its label in full ink and bolder. */
 .dockItem[aria-current="page"] .dockIcon {
+  background: var(--wf-accent-tint);
   color: var(--wf-accent);
 }
 
@@ -475,7 +470,7 @@
    The keyboard-open rule (ward-phone-page-dock.module.css) still outranks this. */
 @media (max-width: 46.4375rem) {
   /* Notices clear of the dock (Josh, 31 Oct 2026): the shared toast rests this far above the dock's
-     top (--wf-dock-clear) instead of 12px, which put it against the + hump. Read by the toast region
+     top (--wf-dock-clear) instead of 12px, which put it against the dock's + button. Read by the toast region
      in src/components/wf/overlay.module.css once its one-line change lands. */
   :global(body):has(.dock) {
     --wf-toast-dock-gap: 24px;
@@ -487,25 +482,28 @@
   }
 }
 
+/* Count badges (Josh, 9 Nov 2026): small dark pills at the icon's top-right, ringed in the dock's
+   own surface so they read clear of the icon. Text stays at the 12px floor (owner ruling D-3). */
 .dockCount {
   position: absolute;
-  top: -3px;
-  left: 19px;
+  top: -2px;
+  left: calc(50% + 3px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  border: 1px solid var(--wf-line-3);
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 0;
   border-radius: var(--wf-r-pill);
-  background: var(--wf-surface);
+  background: var(--wf-ink-1);
+  box-shadow: 0 0 0 2px var(--wf-surface);
   font-family: var(--wf-mono);
   font-size: var(--wf-fs-12);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1;
-  color: var(--wf-ink-1);
+  color: var(--wf-surface);
 }
 
 .riseSlot {
@@ -515,28 +513,37 @@
   min-height: 48px;
 }
 
-/* The dock's Create button is a deliberate round action button, one of the shapes that stay round. */
+/* The dock's Create button (Josh, 9 Nov 2026): a navy rounded square seated in the row, its top 1px
+   inside the bar's edge, so it sits level with the tabs instead of rising above the bar. The navy
+   holds in dark mode too (--wf-pri-2, 6.9:1 with the white +). An invisible 48px box round it keeps
+   the full thumb target. */
 .rise {
+  --rise-fill: light-dark(var(--wf-accent), var(--wf-pri-2));
+
   position: absolute;
-  top: -19px;
+  top: -1px;
   display: grid;
   place-items: center;
-  width: 54px;
-  height: 54px;
+  width: 46px;
+  height: 46px;
   border: 0;
-  border-radius: 50%;
-  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 24%, transparent),
-    0 3px 8px color-mix(in srgb, var(--wf-pri-edge) 34%, transparent);
+  border-radius: 15px;
+  background: var(--rise-fill);
+  box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--rise-fill) 70%, transparent);
   color: var(--wf-on-accent);
   cursor: pointer;
   transition: transform var(--wf-m-fast, 120ms) var(--wf-ease, ease);
 }
 
+.rise::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+}
+
 .rise svg {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
 }
 
 .rise:active {
@@ -636,7 +643,7 @@
     display: none;
   }
 
-  /* R7-02 (device sweep, 24 Oct 2026): with the painted hump hidden the foot was see-through, so
+  /* R7-02 (device sweep, 24 Oct 2026): with the painted edge hidden the foot was see-through, so
      page text ran into the dock labels. A system Canvas fill keeps the dock solid. */
   .foot {
     border-top: 1px solid CanvasText;

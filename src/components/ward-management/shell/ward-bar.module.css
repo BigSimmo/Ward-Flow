@@ -4278,3 +4278,51 @@
     white-space: nowrap;
   }
 }
+
+/*
+ * Sticky header redesign (option B "Slate bar", Josh 9 Nov 2026). Phone only.
+ * The page and its place read as one line ("Home · Statewide") with a 20px title. Over a band page
+ * the bar keeps the band's ink when it scrolls (ward-bar.tsx keeps data-band="ink"), so it stays
+ * slate and deepens to the band's foot colour instead of turning light. Home's list tabs pin under
+ * it on the same slate, so the bar drops its shadow while they are pinned.
+ */
+@media (max-width: 46.4375rem) {
+  .title.title {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+  }
+
+  .titleGroup.titleGroup {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .place.place,
+  .bar[data-scrolled="true"] .place.place {
+    font-size: var(--wf-fs-20);
+    font-weight: 650;
+    line-height: 24px;
+    letter-spacing: -0.02em;
+  }
+
+  .scopeBadgeContainer.scopeBadgeContainer {
+    flex: 0 0 auto;
+    width: auto;
+  }
+
+  .scopeBadgeBtn.scopeBadgeBtn {
+    font-size: var(--wf-fs-14);
+  }
+
+  .bar.bar.bar[data-band="ink"][data-scrolled="true"] {
+    background: var(--wf-hero-2);
+    border-bottom-color: var(--wf-hero-2);
+    box-shadow: 0 10px 22px -16px color-mix(in srgb, var(--wf-hero-edge) 90%, black);
+  }
+
+  :global(body):has([data-testid="home-lists"][data-docked]) .bar.bar.bar[data-band="ink"][data-scrolled="true"] {
+    box-shadow: none;
+  }
+}

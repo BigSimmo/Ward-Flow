@@ -138,6 +138,11 @@ export type HeroProps = {
    * title line plus this step: the figures, the second row, the foot and the lead are not drawn.
    */
   next?: HeroNextStep;
+  /**
+   * Sticky header redesign (Josh, 9 Nov 2026): free content drawn inside the band under the first row
+   * (Home's figures, next step and ED strip). The page styles it; the hero only places it.
+   */
+  children?: ReactNode;
   className?: string;
 };
 
@@ -168,6 +173,7 @@ export function Hero({
   band = true,
   condensed,
   next,
+  children,
   className,
 }: HeroProps) {
   const titleId = useId();
@@ -215,6 +221,7 @@ export function Hero({
         {aside ? <div className={styles.aside}>{aside}</div> : null}
       </div>
       {next ? <HeroNext next={next} /> : null}
+      {children}
       {bar || barAside ? (
         <div className={cx(styles.row, styles.barRow)}>
           {bar ? <div className={styles.bar}>{bar}</div> : null}
