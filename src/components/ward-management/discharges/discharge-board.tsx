@@ -3,7 +3,7 @@
 import { WardPeekButton } from "@/components/ward-management/board/ward-peek";
 import { useRef, useState } from "react";
 import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
-import { ChevronDown, ChevronRight, Copy, FileText, Filter, Printer, Send, Ambulance } from "lucide-react";
+import { ChevronDown, ChevronRight, Copy, FileText, Filter, Printer, Send, TrendingUp, Ambulance } from "lucide-react";
 import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import { dayOf, formatInstant, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
@@ -206,6 +206,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     selected,
     releaseId,
     isPhone,
+    phoneChart,
+    setPhoneChart,
     phoneFiltersOpen,
     setPhoneFiltersOpen,
     phoneGroupsOpen,
@@ -305,6 +307,11 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
       else day.expected += 1;
     }
   }
+  // The phone's Per day chip shows the overdue count, as the old Per day card did; its name adds today.
+  const phoneOverdue = chartDays[0] ? chartDays[0].expected + chartDays[0].blocked : 0;
+  const phoneTodayDay = chartDays.find((candidate) => candidate.key === 0);
+  const phoneToday = phoneTodayDay ? phoneTodayDay.expected + phoneTodayDay.blocked : 0;
+  const phoneDayChart = guarded.status === "allowed" && isPhone && nowView;
   // A day two or more ahead also holds releases the list leaves out (due in 2+ days, not held up).
   // DC5 (Josh, 3 Nov 2026): choosing that day's bar opens its people, so they join the Expected
   // group, lit and first, while the day stays chosen.
@@ -699,6 +706,23 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                         },
                       ]
                     : []),
+                  // Page tops: the phone's Per day card is now a chip. It opens the day chart, so a phone can
+                  // still pick a day (and see releases due in 2+ days, which only a chosen day shows).
+                  ...(phoneDayChart
+                    ? [
+                        {
+                          id: "per-day",
+                          label: "Per day",
+                          icon: <TrendingUp strokeWidth={1.75} aria-hidden="true" />,
+                          count: phoneOverdue,
+                          countTone: phoneOverdue > 0 ? ("warning" as const) : ("quiet" as const),
+                          // CB-3: the name starts with the chip's visible words (axe label-content-name-mismatch).
+                          ariaLabel: `Per day, ${phoneOverdue} overdue, ${phoneToday} today. Expected discharges per day, overdue and the next ${chartDays.filter((day) => day.key !== "past").length} days`,
+                          onClick: () => setPhoneChart("days"),
+                          testId: "ward-discharge-phone-per-day",
+                        },
+                      ]
+                    : []),
                   {
                     id: "copy",
                     label: "Copy counts",
@@ -791,6 +815,28 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             description="Filters narrow the list. Highlights never hide anyone."
           >
             {filterCard}
+          </PhoneSheet>
+        ) : null}
+        {phoneDayChart ? (
+          /* v10 phone: the day chart's sheet scrolls sideways with 48px tap columns. A tap highlights
+             rows and closes the sheet. */
+          <PhoneSheet
+            open={phoneChart === "days"}
+            onClose={() => setPhoneChart(null)}
+            title="Expected discharges per day"
+            description="Tap to highlight people in the list. Nobody is hidden."
+            height="tall"
+            data-testid="ward-discharge-phone-chart-sheet"
+          >
+            <DischargeDayChart
+              days={chartDays}
+              selected={highlight?.kind === "day" ? highlight.day : null}
+              onSelect={(day) => {
+                highlightOn({ kind: "day", day });
+                setPhoneChart(null);
+              }}
+              onClear={() => setHighlight(null)}
+            />
           </PhoneSheet>
         ) : null}
         {/* Josh, 30 Oct: the weekend and holiday cut-offs are a compact notice above the list, not a
