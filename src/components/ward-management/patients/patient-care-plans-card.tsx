@@ -183,7 +183,11 @@ export function PatientCarePlansCard({
         plan: { ...checked.plan, ...(draft.attachment ? { attachment: draft.attachment } : {}) },
       },
       plan ? "Care plan recorded. The earlier plan is marked superseded." : "Care plan recorded",
-      setProblem,
+      // A refused save reopens the form with what was typed, so nothing has to be entered again.
+      (reason) => {
+        setProblem(reason);
+        setForm("plan");
+      },
     );
   }
 
@@ -201,7 +205,10 @@ export function PatientCarePlansCard({
         ...(hearingTime ? { time: hearingTime } : {}),
       },
       "Tribunal hearing date recorded",
-      setProblem,
+      (reason) => {
+        setProblem(reason);
+        setForm("hearing");
+      },
     );
   }
 

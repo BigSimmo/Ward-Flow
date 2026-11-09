@@ -358,7 +358,14 @@ export function ReferralPatientStep({
                   />
                 </Field>
               </div>
-              <ReferralDuplicateCheck draft={newPatient} onUse={(key) => handleSelectPatient(key)} />
+              <ReferralDuplicateCheck
+                draft={newPatient}
+                onUse={(key) => {
+                  handleSelectPatient(key);
+                  // Selecting the person already chosen returns early, so close the form here too.
+                  setNewPatientOpen(false);
+                }}
+              />
               {newPatientError ? (
                 <p className={styles.fieldError} role="alert">
                   <StatusGlyph tone="danger" size={9} />
