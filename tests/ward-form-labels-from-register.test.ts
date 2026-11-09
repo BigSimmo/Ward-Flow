@@ -46,9 +46,14 @@ function walk(dir: string): string[] {
  *  violation this guard exists for lived (`<span>Form 1A (Exam referral)</span>`), so this file
  *  keeps its own extraction rather than widen that shared helper's contract for other callers. */
 function formLabelTextsIn(path: string): string[] {
+  const raw = readFileSync(path, "utf8");
+  // Both patterns need the literal word "Form", so a file without it cannot offend. Skipping the
+  // parse for those (about three in four files) keeps this guard well inside the test timeout on a
+  // busy CI runner, where parsing every file once ran past 30 seconds (9 Nov 2026).
+  if (!raw.includes("Form")) return [];
   const source = ts.createSourceFile(
     path,
-    readFileSync(path, "utf8"),
+    raw,
     ts.ScriptTarget.Latest,
     true,
     path.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
