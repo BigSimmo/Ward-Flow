@@ -50,7 +50,7 @@ export function HeroFigures({ items, label = "Figures" }: { items: HeroFigureIte
               {item.unit ? <small className={styles.figUnit}>{item.unit}</small> : null}
             </b>{" "}
             {item.href ? (
-              <Link href={item.href} className={labelClass} data-testid={item.linkTestId}>
+              <Link href={item.href} className={labelClass} data-testid={item.linkTestId} data-wf-fig-label="">
                 {item.label}
               </Link>
             ) : item.onClick ? (
@@ -60,6 +60,7 @@ export function HeroFigures({ items, label = "Figures" }: { items: HeroFigureIte
                 onClick={item.onClick}
                 aria-pressed={item.pressed}
                 data-testid={item.linkTestId}
+                data-wf-fig-label=""
               >
                 {item.label}
               </button>
@@ -353,7 +354,7 @@ export function HeroPill({ tone, text, action, testId }: HeroPillProps) {
   return (
     <p className={styles.pill} data-tone={tone} data-testid={testId}>
       {tone ? <span className={styles.pillDot} aria-hidden="true" /> : null}
-      <span>{text}</span>
+      <span className={styles.pillText}>{text}</span>
       {action?.href ? (
         <Link
           href={action.href}

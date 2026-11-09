@@ -1441,6 +1441,24 @@ tr:has(+ .moreRow) > td {
   --wf-folder-gap: var(--wf-s-2);
 }
 
+/* Phone: six places do not fit, so the row scrolls sideways to the screen's edge under a soft fade,
+   as the other phone folder rows do (QA, 9 Nov 2026). Five classes outrank the shared switch. */
+@media (max-width: 46.4375rem) {
+  .folder.folder.folder.folder.folder > [role="radiogroup"] {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, black calc(100% - 36px), transparent);
+    mask-image: linear-gradient(90deg, black calc(100% - 36px), transparent);
+  }
+
+  .folder.folder.folder.folder.folder > [role="radiogroup"]::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* The search leads the top: the field with its date of birth, then Add patient (desktop). */
 .findRow {
   display: flex;

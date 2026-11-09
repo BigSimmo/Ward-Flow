@@ -706,8 +706,9 @@
     min-height: 3rem;
   }
 
-  .main a,
-  .main button {
+  /* A hero figure's label keeps its own line height and a 24px hit area (QA, 9 Nov 2026). */
+  .main a:not(:where([data-wf-fig-label])),
+  .main button:not(:where([data-wf-fig-label], .glanceFigure)) {
     min-height: 3rem;
   }
 }
@@ -1338,6 +1339,7 @@
 /* Page tops (Josh, 9 Nov 2026): the slate top's search and order, the figure that opens At a
    glance, the quiet caption, and the Places and Catchments folder tabs. Tokens only. */
 .glanceFigure {
+  position: relative;
   padding: 0;
   border: 0;
   background: none;
@@ -1347,6 +1349,13 @@
   text-decoration-color: color-mix(in srgb, var(--wf-hero-ink) 40%, transparent);
   text-underline-offset: 3px;
   cursor: pointer;
+}
+
+/* A 24px hit area round the 16px label, without moving it (QA, 9 Nov 2026). */
+.glanceFigure::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
 }
 
 .glanceFigure:focus-visible {

@@ -34,6 +34,7 @@ import { waitingHref } from "../delays/waiting-href";
 import { HELD_UP_HREF } from "./capacity-held-up";
 import type { SiteEdWaiting } from "./capacity-site-ed";
 import styles from "./capacity-page.module.css";
+import pageTop from "@/components/ward-management/page-top-title.module.css";
 
 const WARDS_HREF = "/ward-flow/wards";
 const ICON = { size: 16, strokeWidth: 1.75, "aria-hidden": true } as const;
@@ -193,7 +194,7 @@ export function CapacityHero({
   return (
     <Hero
       level={1}
-      className={folderTabClasses.hero}
+      className={`${pageTop.hero} ${folderTabClasses.hero}`}
       // A chosen service or a site: say whose figures these are; otherwise the header says it.
       eyebrow={site || service !== null ? (site ? place : `${place}, not only ${service}`) : undefined}
       phoneEyebrow={site || service !== null ? "show" : undefined}

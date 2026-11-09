@@ -144,9 +144,16 @@ export function WardBoardHero(props: {
             <SrOnly>{`${figure.label}${figure.led ? ", shown in Going out" : ""}`}</SrOnly>
           </>
         ),
-        value: figure.value,
+        // The note ("(1 also held up)") stays on the value's line: band cells never wrap (QA, 9 Nov 2026).
+        value: figure.note ? (
+          <>
+            {figure.value}
+            <span className={styles.bandNote}> {figure.note}</span>
+          </>
+        ) : (
+          figure.value
+        ),
         tone: key === "blockedToday" && figure.value > 0 ? "danger" : undefined,
-        note: figure.note,
         testId: `ward-board-figure-${key}`,
       },
     ];
@@ -270,7 +277,7 @@ export function WardBoardHero(props: {
           </p>
         </HeroTop>
       </Hero>
-      <FolderTabs label={`${unit.name} screens`} value="stays" testId="ward-board-tabs">
+      <FolderTabs label={`${unit.name} screens`} value="stays" testId="ward-board-tabs" className={styles.boardFolder}>
         <WardBoardScreenNav unit={unit} beds={unit.beds} />
       </FolderTabs>
     </>

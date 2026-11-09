@@ -653,8 +653,9 @@
 
   /* Choice options keep the shared compact phone face; their hit area reaches 48px on its own, as
      does the Status and order button (`.phoneFilterButton`). */
-  .main a,
-  .main button:not(.mark):not([role="radio"]):not(.phoneFilterButton) {
+  /* A hero figure's label keeps its own line height and a 24px hit area (QA, 9 Nov 2026). */
+  .main a:not(:where([data-wf-fig-label])),
+  .main button:not(.mark):not([role="radio"]):not(.phoneFilterButton):not(:where([data-wf-fig-label])) {
     min-height: var(--spacing-tap, 3rem);
   }
 

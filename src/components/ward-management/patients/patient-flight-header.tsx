@@ -125,7 +125,8 @@ export function PatientFlightHeader({
         "Demographics not recorded"
       )}
       {preferredName ? ` · known as ${preferredName}` : null}
-      {location ? ` · ${location}` : null}
+      {/* Page tops (QA, 9 Nov 2026): one line; a long place ends in an ellipsis, the tags stay whole. */}
+      {location ? <span className={styles.phIdPlace}>{` · ${location}`}</span> : null}
       {interpreter && !glance ? ` · ${interpreter} interpreter` : null}
       {tags}
     </span>

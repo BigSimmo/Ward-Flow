@@ -26,6 +26,7 @@ import {
 } from "@/components/wf";
 
 import styles from "./ed-overview.module.css";
+import pageTop from "@/components/ward-management/page-top-title.module.css";
 
 type EdOverviewDepartment = {
   id: string;
@@ -133,7 +134,7 @@ export function EdOverview({
     >
       <Hero
         level={1}
-        className={folderTabClasses.hero}
+        className={`${pageTop.hero} ${folderTabClasses.hero}`}
         title={
           <>
             <SrOnly>{`${shortName(current.name)}, `}</SrOnly>

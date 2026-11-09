@@ -148,13 +148,52 @@ function FolderShape({ navRef, value }: { navRef: RefObject<HTMLElement | null>;
             place(false);
           });
     resize?.observe(nav);
-    // The switch can change width without the row doing so (a phone's shorter tab list after hydration).
-    const tabSwitch = nav.querySelector<HTMLElement>(`.${styles.switch}`);
-    if (tabSwitch) resize?.observe(tabSwitch);
+    // The switch can change width without the row doing so (a phone's shorter tab list after hydration),
+    // and a phone row that scrolls sideways carries the chosen tab with it.
+    const follow = () => place(false);
+    let tabSwitch: HTMLElement | null = null;
+    const watchSwitch = () => {
+      const next = nav.querySelector<HTMLElement>(`.${styles.switch}`);
+      if (next === tabSwitch) return;
+      tabSwitch?.removeEventListener("scroll", follow);
+      tabSwitch = next;
+      if (!next) return;
+      resize?.observe(next);
+      next.addEventListener("scroll", follow, { passive: true });
+    };
+    watchSwitch();
+    // The row's tabs can be swapped or relabelled after mount (a phone's own tab list, a count that
+    // arrives), so the outline follows any change inside the row.
+    const mutations =
+      typeof MutationObserver === "undefined"
+        ? null
+        : new MutationObserver(() => {
+            watchSwitch();
+            if (!moving) place(false);
+          });
+    mutations?.observe(nav, { childList: true, subtree: true, characterData: true });
+    // A tab's size or the row's bleed can ease into place (any transition, even reduced motion's
+    // near-zero one), so the outline is measured again once it has settled.
+    const settled = () => {
+      if (!moving) place(false);
+    };
+    nav.addEventListener("transitionend", settled);
+    // The hero above can settle after mount (its gutter bleed or a phone layout swap), so it is watched too,
+    // and the chosen tab is measured again once the web fonts have loaded.
+    const hero = nav.parentElement?.querySelector<HTMLElement>("[data-wf-hero]");
+    if (hero) resize?.observe(hero);
+    let live = true;
+    void document.fonts?.ready.then(() => {
+      if (live && !moving) place(false);
+    });
     document.addEventListener("scroll", checkDocked, { capture: true, passive: true });
     return () => {
+      live = false;
       cancelAnimationFrame(frame);
       resize?.disconnect();
+      mutations?.disconnect();
+      nav.removeEventListener("transitionend", settled);
+      tabSwitch?.removeEventListener("scroll", follow);
       document.removeEventListener("scroll", checkDocked, { capture: true });
     };
   }, [navRef, value]);

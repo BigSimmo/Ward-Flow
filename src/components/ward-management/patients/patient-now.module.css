@@ -2865,15 +2865,31 @@
 }
 
 .phIdSub {
-  /* F-05: the place at the end of the identity line wraps to a second line, not an ellipsis. */
-  display: -webkit-box;
+  /* Page tops (approved mock-up, 9 Nov 2026; was F-05's two lines): one line under the name. A long
+     place ends in an ellipsis (its full words stay in the text); the tags keep their size. */
+  display: flex;
+  flex: 0 1 100%;
+  align-items: center;
   min-width: 0;
   max-width: calc(100vw - 2 * var(--wf-s-4));
   overflow: hidden;
   font-size: var(--wf-fs-12);
-  white-space: normal;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  white-space: pre;
+}
+
+.phIdSub > * {
+  flex: none;
+}
+
+.phIdSub > .phIdPlace {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.phIdSub > .ptTag {
+  margin-left: var(--wf-s-2);
 }
 
 .phMoreRow {
@@ -3373,6 +3389,52 @@
   .ptGrid > :first-child:not(.ptFigures) > :nth-child(2) {
     padding-left: 0;
     border-left: 0;
+  }
+
+  /* Approved mock-up: Legal, Obs and Risk are small caps band labels before the value, no icons. */
+  .ptGrid.ptGrid.ptGrid > :first-child:not(.ptFigures) > * > :first-child {
+    align-self: baseline;
+    color: var(--wf-hero-ink-3);
+    font: 500 var(--wf-fs-12) / 16px var(--wf-font);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .ptGrid.ptGrid.ptGrid > :first-child:not(.ptFigures) > * > :first-child svg {
+    display: none;
+  }
+
+  .ptGrid.ptGrid.ptGrid > :first-child:not(.ptFigures) > * > :nth-child(2) {
+    font-size: var(--wf-fs-14);
+    line-height: 20px;
+  }
+
+  .ptGrid.ptGrid.ptGrid > :first-child:not(.ptFigures) > * {
+    gap: var(--wf-s-3);
+    padding-block: 6px;
+  }
+
+  .ptGrid.ptGrid.ptGrid > :first-child:not(.ptFigures) > :first-child {
+    padding-top: 0;
+  }
+
+  /* No eyebrow: the title shares its line with the Live pill, as on the other page tops. */
+  .v6Hero.v6Hero.v6Hero.v6Hero.v6Hero:not([data-phone-eyebrow]) div:has(> [data-wf-hero-title-line]) {
+    padding-top: 6px;
+  }
+
+  /* The title line already keeps 72px clear; with this the name stops short of the pill. */
+  .v6Hero.v6Hero.v6Hero:not([data-phone-eyebrow]):has([data-wf-live]) [data-wf-hero-title] {
+    padding-right: 56px;
+  }
+
+  /* The aside holds only the pinned Live pill here, so its row leaves no gap under the identity. */
+  .v6Hero.v6Hero.v6Hero div:has(> div > [data-wf-hero-title-line]) {
+    row-gap: 0;
+  }
+
+  .ptGrid.ptGrid {
+    margin-top: 0;
   }
 }
 

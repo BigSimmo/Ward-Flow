@@ -103,6 +103,19 @@ a.figLink:hover,
   cursor: pointer;
 }
 
+/* A linked label keeps its 16px line in the column; its hit area reaches 24px without moving it. */
+a.figLink,
+.figButton {
+  position: relative;
+}
+
+a.figLink::after,
+.figButton::after {
+  content: "";
+  position: absolute;
+  inset: -4px -4px;
+}
+
 .figLink:focus-visible,
 .figButton:focus-visible {
   outline: 2px solid var(--wf-hero-ink);
@@ -257,6 +270,14 @@ a.figLink:hover,
   background: var(--wf-on-hero-fill);
   color: var(--wf-on-hero-ink, var(--wf-hero-ink-2));
   font: 500 var(--wf-fs-13) / 18px var(--wf-font);
+  white-space: nowrap;
+}
+
+/* One line (QA, 9 Nov 2026): the words end in an ellipsis on a narrow phone; the action keeps its size. */
+.pillText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .pillDot {
@@ -268,6 +289,7 @@ a.figLink:hover,
 }
 
 .pillAction {
+  flex: none;
   padding: 0;
   border: 0;
   background: none;

@@ -71,6 +71,7 @@ import {
   type WaitClock,
 } from "./ed-index-parts";
 import styles from "./ed-index.module.css";
+import pageTop from "@/components/ward-management/page-top-title.module.css";
 
 /**
  * All emergency departments (8 Oct 2026, the "A Cards" mockup plus its wait lanes). One hero band
@@ -361,7 +362,7 @@ export function EdIndex() {
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
-          className={folderTabClasses.hero}
+          className={`${pageTop.hero} ${folderTabClasses.hero}`}
           title={
             <>
               <SrOnly>All EDs, </SrOnly>

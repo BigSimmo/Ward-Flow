@@ -71,6 +71,7 @@ import styles from "./ward-index.module.css";
 import { WardIndexDrawer } from "./ward-index-drawer";
 import { OtherSitesMore, SiteHead, otherSitesFolded } from "./ward-index-site-desk";
 import { WardIndexTabs } from "./ward-index-tabs";
+import pageTop from "@/components/ward-management/page-top-title.module.css";
 
 /**
  * All wards (v10). One hero band with the ready-bed answer, the statewide occupancy ring and the
@@ -544,7 +545,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
-          className={folderTabClasses.hero}
+          className={`${pageTop.hero} ${folderTabClasses.hero}`}
           // A site desk says whose wards these are; statewide, the header already says it.
           eyebrow={deskSite ? `Wards · ${deskSite.name}` : undefined}
           title={

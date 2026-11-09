@@ -455,10 +455,19 @@
     flex-wrap: nowrap;
   }
 
-  .tabs.tabs > [role="tablist"] {
+  /* Five classes outrank the shared switch's `overflow: visible`, so the row scrolls under a soft
+     fade and never runs under ⋯ (QA, 9 Nov 2026). */
+  .tabs.tabs.tabs.tabs.tabs > [role="tablist"] {
     flex: 1 1 auto;
     min-width: 0;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, black calc(100% - 28px), transparent);
+    mask-image: linear-gradient(90deg, black calc(100% - 28px), transparent);
+  }
+
+  .tabs.tabs.tabs.tabs.tabs > [role="tablist"]::-webkit-scrollbar {
+    display: none;
   }
 }
