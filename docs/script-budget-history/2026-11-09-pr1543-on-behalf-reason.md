@@ -8,7 +8,7 @@ Why it grew: D-80 item 17. The shared reducer now checks the coordinator's "on b
 
 Measured by hosted CI against main alone (main a08dd534). Main then raised these three budgets for its own growth (to 560.9, 594.3 and 589.2), so this PR's raise sits on top of main's:
 
-- `/ward-flow/referrals`: to 561.4 (main 560.9) (560.6 KB measured, main alone 560.2 KB, so +0.4 KB).
+- `/ward-flow/referrals`: to 562.0 (main 561.5 after its own later raise) (560.6 KB measured, main alone 560.2 KB, so +0.4 KB).
 - `/ward-flow/ward/rph-adult-secure`: to 595.3 (main 594.3) (594.6 KB measured, main alone 593.7 KB, so +0.9 KB).
 - `/ward-flow/movements/WF-001`: to 589.7 (main 589.2) (589.0 KB measured, main alone 588.6 KB, so +0.4 KB).
 

@@ -11,18 +11,14 @@
   border-bottom: 1px solid var(--wf-line);
 }
 
-.icon {
-  display: inline-flex;
-  color: var(--wf-ink-3);
-}
-
 .title {
-  font-weight: 600;
   color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
 }
 
 .summary {
   flex: 1;
+  font-size: var(--wf-fs-13);
   min-width: 0;
   color: var(--wf-ink-3);
   font-variant-numeric: tabular-nums;

@@ -4,6 +4,7 @@
 
 import { Check } from "lucide-react";
 import { type Dispatch, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { RadioGroup } from "@/components/wf";
 import { type Instant } from "@/components/ward-management/ward-clock";
@@ -53,6 +54,7 @@ export function renderNotABedPhoneReview({
   phone,
   handleDecline,
   handleEdAccept,
+  footSlot,
 }: {
   s: ReferralMatchState;
   referral: Referral;
@@ -60,6 +62,9 @@ export function renderNotABedPhoneReview({
   phone: ReactNode;
   handleDecline: (destinationKind: ReferralDestinationKind, reason?: ReferralDeclineReason) => void;
   handleEdAccept: () => void;
+  /** Note 11 (Josh, 9 Nov 2026): in the Referrals drawer, Decline and Accept presentation join the
+   * drawer's own anchored foot, as the ward decision does, instead of sitting mid-pane. */
+  footSlot?: HTMLElement | null;
 }) {
   const {
     edDeclineReason,
@@ -73,6 +78,80 @@ export function renderNotABedPhoneReview({
     wholeWithdrawControl: withdrawDetails,
   } = s;
   const wholeWithdrawControl = <Disclosure>{withdrawDetails}</Disclosure>;
+  const decisionFoot = (
+    <div className={ph.foot} data-in-drawer={footSlot ? "true" : undefined}>
+      {phoneDeclining ? (
+        <>
+          <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(false)}>
+            Back
+          </button>
+          <button
+            type="button"
+            className={ph.pri}
+            data-tone="danger"
+            data-testid="ward-referral-match-decline-emergency_department"
+            data-placement-action="decline"
+            aria-disabled={edDeclineReason === undefined ? "true" : undefined}
+            aria-describedby="ward-referral-match-decline-blocked-emergency_department"
+            title={edDeclineReason === undefined ? DECLINE_REASON_UNCHOSEN_ED : undefined}
+            onClick={
+              edDeclineReason === undefined
+                ? ignoreUnavailableActivation
+                : () => {
+                    handleDecline("emergency_department", edDeclineReason);
+                    setPhoneDeclining(false);
+                  }
+            }
+          >
+            <span className={ph.ell}>Confirm decline</span>
+          </button>
+        </>
+      ) : edAcceptConfirmOpen ? (
+        <>
+          <button
+            type="button"
+            className={ph.sec}
+            data-testid="ward-referral-match-cancel-accept-emergency_department"
+            onClick={() => setEdAcceptConfirmOpen(false)}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className={ph.pri}
+            data-testid="ward-referral-match-confirm-accept-emergency_department"
+            data-placement-action
+            onClick={handleEdAccept}
+          >
+            <span className={ph.ell}>Confirm acceptance</span>
+          </button>
+        </>
+      ) : (
+        <>
+          {/* Referrals redesign (31 Oct 2026): the ward sheet's own Decline id, so the board's D key
+              opens these reasons here too, now that desktop uses this ED review. */}
+          <button
+            type="button"
+            className={ph.sec}
+            data-testid="ward-referral-match-decline-open"
+            data-placement-action="decline"
+            onClick={() => setPhoneDeclining(true)}
+          >
+            Decline
+          </button>
+          <button
+            type="button"
+            className={ph.pri}
+            data-testid="ward-referral-match-accept-emergency_department"
+            data-placement-action
+            onClick={() => setEdAcceptConfirmOpen(true)}
+          >
+            <span className={ph.ell}>Accept presentation</span>
+          </button>
+        </>
+      )}
+    </div>
+  );
   return (
     <section
       className={`${styles.matchPanel} ${ph.sheet}`}
@@ -129,78 +208,7 @@ export function renderNotABedPhoneReview({
         </p>
       ) : null}
       {phoneDeclining ? null : phone}
-      <div className={ph.foot}>
-        {phoneDeclining ? (
-          <>
-            <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(false)}>
-              Back
-            </button>
-            <button
-              type="button"
-              className={ph.pri}
-              data-tone="danger"
-              data-testid="ward-referral-match-decline-emergency_department"
-              data-placement-action="decline"
-              aria-disabled={edDeclineReason === undefined ? "true" : undefined}
-              aria-describedby="ward-referral-match-decline-blocked-emergency_department"
-              title={edDeclineReason === undefined ? DECLINE_REASON_UNCHOSEN_ED : undefined}
-              onClick={
-                edDeclineReason === undefined
-                  ? ignoreUnavailableActivation
-                  : () => {
-                      handleDecline("emergency_department", edDeclineReason);
-                      setPhoneDeclining(false);
-                    }
-              }
-            >
-              <span className={ph.ell}>Confirm decline</span>
-            </button>
-          </>
-        ) : edAcceptConfirmOpen ? (
-          <>
-            <button
-              type="button"
-              className={ph.sec}
-              data-testid="ward-referral-match-cancel-accept-emergency_department"
-              onClick={() => setEdAcceptConfirmOpen(false)}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              className={ph.pri}
-              data-testid="ward-referral-match-confirm-accept-emergency_department"
-              data-placement-action
-              onClick={handleEdAccept}
-            >
-              <span className={ph.ell}>Confirm acceptance</span>
-            </button>
-          </>
-        ) : (
-          <>
-            {/* Referrals redesign (31 Oct 2026): the ward sheet's own Decline id, so the board's D key
-                opens these reasons here too, now that desktop uses this ED review. */}
-            <button
-              type="button"
-              className={ph.sec}
-              data-testid="ward-referral-match-decline-open"
-              data-placement-action="decline"
-              onClick={() => setPhoneDeclining(true)}
-            >
-              Decline
-            </button>
-            <button
-              type="button"
-              className={ph.pri}
-              data-testid="ward-referral-match-accept-emergency_department"
-              data-placement-action
-              onClick={() => setEdAcceptConfirmOpen(true)}
-            >
-              <span className={ph.ell}>Accept presentation</span>
-            </button>
-          </>
-        )}
-      </div>
+      {footSlot ? createPortal(decisionFoot, footSlot) : decisionFoot}
     </section>
   );
 }

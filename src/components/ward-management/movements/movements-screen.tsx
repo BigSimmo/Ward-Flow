@@ -1079,8 +1079,7 @@ export function MovementsScreen() {
                 units={units}
                 now={now}
                 selectedMovementId={detailId}
-                // Note 7: the drawer opens in place; the page does not scroll to the worklist row.
-                onSelectMovement={openDetail}
+                onSelectMovement={openDetail /* Note 7: opens in place, no scroll */}
                 onShowCorridor={(corridor) => setPeopleList(corridorPeople(corridor, movements, units, now))}
               />
             </MovementsTimelineSwitch>
@@ -1088,6 +1087,69 @@ export function MovementsScreen() {
         )}
 
         <div className={cx(styles.columns, flow.layout)}>
+          <aside className={styles.secondary} aria-label="Movement details">
+            {/* Movements redesign (1 Nov 2026, Q102): no separate Tier 1 card. The hero's Tier 1
+                count highlights those rows in the worklist, so the side column has one job. */}
+            {/* Transport and Shape of the day share one panel. The corner toggle swaps the view;
+                the region name follows whichever view is showing. The transport count stays off
+                the header: the bar caption already says how many legs are booked or moving. */}
+            {/* The region keeps its longer name, "Transport right now", which tests and earlier
+                readers know it by; the visible title is the mockup's shorter "Transport now". */}
+            <Card
+              aria-label={sideView === "transport" ? "Transport right now" : "Shape of the day"}
+              data-ward-primitive="panel"
+              className={styles.sideCard}
+            >
+              <CardHead
+                icon={sideView === "transport" ? Ambulance : ChartColumn}
+                title={sideView === "transport" ? "Transport now" : "Shape of the day"}
+                meta={
+                  sideView === "shape"
+                    ? shapeTab === "resolved"
+                      ? `${closedToday.length} resolved today`
+                      : `${openMovements.length} open`
+                    : undefined
+                }
+                action={
+                  <div className={styles.sideViewToggle} role="group" aria-label="Movement side view">
+                    <button
+                      type="button"
+                      aria-pressed={sideView === "transport"}
+                      onClick={() => startTransition(() => setSideView("transport"))}
+                      aria-label="Transport now"
+                      title="Transport now"
+                    >
+                      <Ambulance size={14} aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-pressed={sideView === "shape"}
+                      onClick={() => startTransition(() => setSideView("shape"))}
+                      aria-label="Shape of the day"
+                      title="Shape of the day"
+                    >
+                      <ChartColumn size={14} aria-hidden="true" />
+                    </button>
+                  </div>
+                }
+              />
+              {sideView === "transport" ? (
+                <>
+                  {/* Movements redesign (1 Nov 2026): four plain tiles in place of the stretched bar,
+                      each a count over its words, so the card reads at a glance. */}
+                  <TransportTiles legs={legs} withoutTransport={withoutTransportList} onShow={setPeopleList} />
+                  {legs.length === 0 ? (
+                    <p className={styles.absent}>No transport leg is booked or moving right now.</p>
+                  ) : (
+                    <div className={styles.transportWidget}>{transportFeed()}</div>
+                  )}
+                </>
+              ) : (
+                shapeOfDay
+              )}
+            </Card>
+          </aside>
+
           <div className={styles.primary}>
             {/* D-f: the scope bar and its "not these figures" sentence moved to the top of the
                 page (see the comment beside the header above) — never here, on the panel they were
@@ -1242,6 +1304,7 @@ export function MovementsScreen() {
                                   id={stage.id}
                                   title={stage.label}
                                   people={stage.movements.length}
+                                  longestMinutes={now - Math.min(...stage.movements.map((m) => m.openedAt))}
                                   open={openPhoneGroups.has(stage.id)}
                                   onToggle={() => togglePhoneGroup(stage.id)}
                                 />
@@ -1358,68 +1421,6 @@ export function MovementsScreen() {
               </div>
             </Card>
           </div>
-
-          <aside className={styles.secondary} aria-label="Movement details">
-            {/* Movements redesign (1 Nov 2026, Q102): no separate Tier 1 card. The hero's Tier 1
-                count highlights those rows in the worklist, so the side column has one job. */}
-            {/* Transport and Shape of the day share one panel. The corner toggle swaps the view;
-                the region name follows whichever view is showing. The transport count stays off
-                the header: the bar caption already says how many legs are booked or moving. */}
-            {/* The region keeps its longer name, "Transport right now", which tests and earlier
-                readers know it by; the visible title is the mockup's shorter "Transport now". */}
-            <Card
-              aria-label={sideView === "transport" ? "Transport right now" : "Shape of the day"}
-              data-ward-primitive="panel"
-              className={styles.sideCard}
-            >
-              <CardHead
-                title={sideView === "transport" ? "Transport now" : "Shape of the day"}
-                meta={
-                  sideView === "shape"
-                    ? shapeTab === "resolved"
-                      ? `${closedToday.length} resolved today`
-                      : `${openMovements.length} open`
-                    : undefined
-                }
-                action={
-                  <div className={styles.sideViewToggle} role="group" aria-label="Movement side view">
-                    <button
-                      type="button"
-                      aria-pressed={sideView === "transport"}
-                      onClick={() => startTransition(() => setSideView("transport"))}
-                      aria-label="Transport now"
-                      title="Transport now"
-                    >
-                      <Ambulance size={14} aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      aria-pressed={sideView === "shape"}
-                      onClick={() => startTransition(() => setSideView("shape"))}
-                      aria-label="Shape of the day"
-                      title="Shape of the day"
-                    >
-                      <ChartColumn size={14} aria-hidden="true" />
-                    </button>
-                  </div>
-                }
-              />
-              {sideView === "transport" ? (
-                <>
-                  {/* Movements redesign (1 Nov 2026): four plain tiles in place of the stretched bar,
-                      each a count over its words, so the card reads at a glance. */}
-                  <TransportTiles legs={legs} withoutTransport={withoutTransportList} onShow={setPeopleList} />
-                  {legs.length === 0 ? (
-                    <p className={styles.absent}>No transport leg is booked or moving right now.</p>
-                  ) : (
-                    <div className={styles.transportWidget}>{transportFeed()}</div>
-                  )}
-                </>
-              ) : (
-                shapeOfDay
-              )}
-            </Card>
-          </aside>
         </div>
 
         {/* Phone audit (1 Nov 2026): the three link cards sit after the list, so the first movement
