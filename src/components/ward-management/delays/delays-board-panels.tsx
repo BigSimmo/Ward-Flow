@@ -66,12 +66,15 @@ export function PersonPanel({
   now,
   onClose,
   onEscalate,
+  initialTab,
 }: {
   row: BoardRow;
   units: Unit[];
   now: Instant;
   onClose: () => void;
   onEscalate: (movement: Movement) => void;
+  /** Note 8, issue 4: the tab a person opens on when another part of the page asks (default Summary). */
+  initialTab?: "summary" | "wards";
 }) {
   const { referrals, setFocusMovementId } = useWardFlowSelect("referrals", "setFocusMovementId");
   const patientOf = usePatientOf();
@@ -108,9 +111,9 @@ export function PersonPanel({
   // lists sit behind a Wards tab. A new person always opens on Summary.
   const [tabState, setTabState] = useState<{ id: string; tab: "summary" | "wards" }>({
     id: movement.id,
-    tab: "summary",
+    tab: initialTab ?? "summary",
   });
-  const panelTab = tabState.id === movement.id ? tabState.tab : "summary";
+  const panelTab = tabState.id === movement.id ? tabState.tab : (initialTab ?? "summary");
   const setPanelTab = (tab: "summary" | "wards") => setTabState({ id: movement.id, tab });
   // v10 phone: a journey bar from arrival to now leads the person sheet.
   const isPhonePanel = useIsPhone();
@@ -622,8 +625,10 @@ export function Registers({
   // rail, so Longest quiet names the quiet people under every other blocker instead of repeating them.
   // "Show all" still filters the table to everyone quiet, and says so.
   const allQuietRows = rows.filter((row) => row.silent);
+  // Note 8, issue 3: nor does it repeat anyone already listed under Attention.
+  const attentionIds = new Set(attention.map(({ movement }) => movement.id));
   const quietRows = allQuietRows
-    .filter((row) => row.cause !== "awaiting_coordinator")
+    .filter((row) => row.cause !== "awaiting_coordinator" && !attentionIds.has(row.movement.id))
     .sort((a, b) => b.quiet - a.quiet);
   const placedCount = closedToday.filter((movement) => movement.closure?.outcome === "arrived").length;
   const notProceededCount = closedToday.filter((movement) => movement.closure?.outcome === "did_not_proceed").length;
@@ -682,7 +687,9 @@ export function Registers({
             </button>
           ))}
         </div>
-        <p className={polish.regNote}>{tabs.find((entry) => entry.id === tab)?.note}</p>
+        {/* Note 8, issue 3 (Josh, 8 Nov 2026): the tab's one-line note is read out, not shown, so the
+            rail opens straight on the people. */}
+        <p className="sr-only">{tabs.find((entry) => entry.id === tab)?.note}</p>
         <div
           role="tabpanel"
           id="delays-pane-escalated"
@@ -805,10 +812,6 @@ export function Registers({
             </>
           )}
         </div>
-        {/* W3: the old System tab was nearly always 0, so it is one quiet line under the lists. */}
-        <section aria-label="Delays with no named person" className={polish.regSystem}>
-          <NoStatewideDelays />
-        </section>
       </div>
       <div className={`${styles.sideB} ${styles.sideSplit} ${polish.regBody}`} hidden={part === "registers"}>
         <div className={styles.sec}>
@@ -853,6 +856,12 @@ export function Registers({
           </button>
         ) : null}
       </div>
+      {/* W3: the old System tab was nearly always 0. Note 8, issue 3: it is the card's quiet foot line. */}
+      {part === "quiet" ? null : (
+        <section aria-label="Delays with no named person" className={polish.regSystem}>
+          <NoStatewideDelays />
+        </section>
+      )}
     </section>
   );
 }
