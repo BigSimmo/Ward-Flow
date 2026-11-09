@@ -341,7 +341,7 @@ function BedMeetingAgenda() {
 
   const stepTo = (step: number) => {
     if (!run) return;
-    setRun({ ...run, step, finished: false });
+    setRun({ startedAt: run.startedAt, step, finished: false });
     setServiceScope(MEETING_STEPS[step] ?? null);
   };
   const startRun = () => {
@@ -351,6 +351,7 @@ function BedMeetingAgenda() {
   const recordedThisMeeting = run
     ? actionsRecordedSince({
         startedAt: run.startedAt,
+        until: run.finishedAt,
         now,
         movements,
         admissions,
@@ -412,7 +413,7 @@ function BedMeetingAgenda() {
                 pillClassName={phoneRows.heroPill}
                 onStep={stepTo}
                 onFinish={() => {
-                  setRun({ ...run, finished: true });
+                  setRun({ ...run, finished: true, finishedAt: now });
                   setServiceScope(null);
                 }}
                 onStop={() => setRun(null)}
@@ -467,7 +468,7 @@ function BedMeetingAgenda() {
           run={run}
           now={now}
           rows={recordedThisMeeting}
-          onBack={() => setRun({ ...run, finished: false })}
+          onBack={() => stepTo(run.step)}
           onClose={() => {
             setRun(null);
             setServiceScope(null);

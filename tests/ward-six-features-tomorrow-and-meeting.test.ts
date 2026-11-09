@@ -71,4 +71,26 @@ describe("Run meeting summary (six features build)", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ action: "Book transport", done: true, name: "Testperson, Synthetic" });
   });
+
+  it("leaves out actions recorded after the meeting finished", () => {
+    const admission = {
+      id: "s2",
+      unitId: "u1",
+      meetingActions: [
+        { kind: "book_transport", owner: "coordinator", dueAt: 300, recordedAt: 120 },
+        { kind: "chase_ndis", owner: "coordinator", dueAt: 300, recordedAt: 160 },
+      ],
+    } as unknown as Admission;
+    const rows = actionsRecordedSince({
+      startedAt: 100,
+      until: 150,
+      now: 170,
+      movements: [] as Movement[],
+      admissions: [admission],
+      units: [unit],
+      nameOf: () => "Testperson, Synthetic",
+      ownerText: () => "Bed coordinator",
+    });
+    expect(rows.map((row) => row.action)).toEqual(["Book transport"]);
+  });
 });

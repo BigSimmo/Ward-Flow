@@ -22,7 +22,7 @@ import styles from "./bed-meeting-run.module.css";
  */
 const RUN_KEY = "ward-flow:bed-meeting-run";
 
-export type MeetingRun = { startedAt: Instant; step: number; finished: boolean };
+export type MeetingRun = { startedAt: Instant; step: number; finished: boolean; finishedAt?: Instant };
 
 // The tab's copy of the run. Session storage keeps it across a reload; this copy covers a blocked store.
 let memoryRun: string | null = null;
@@ -46,7 +46,12 @@ function parseRun(raw: string | null): MeetingRun | null {
   try {
     const value = JSON.parse(raw) as Partial<MeetingRun>;
     return typeof value.startedAt === "number" && typeof value.step === "number"
-      ? { startedAt: value.startedAt, step: value.step, finished: value.finished === true }
+      ? {
+          startedAt: value.startedAt,
+          step: value.step,
+          finished: value.finished === true,
+          ...(typeof value.finishedAt === "number" ? { finishedAt: value.finishedAt } : {}),
+        }
       : null;
   } catch {
     return null;
@@ -81,9 +86,11 @@ export type RecordedInMeeting = {
   done: boolean;
 };
 
-/** Every action recorded since the meeting started, in service order, then by time recorded. */
+/** Every action recorded between the meeting's start and its finish (when finished), in service order, then by time recorded. */
 export function actionsRecordedSince(input: {
   startedAt: Instant;
+  /** The meeting's finish time: actions recorded after it belong to later work, not this meeting. */
+  until?: Instant;
   now: Instant;
   movements: readonly Movement[];
   admissions: readonly Admission[];
@@ -91,14 +98,14 @@ export function actionsRecordedSince(input: {
   nameOf: (record: Movement | Admission) => string;
   ownerText: (action: BedMeetingAction) => string;
 }): RecordedInMeeting[] {
-  const { startedAt, now, movements, admissions, units, nameOf, ownerText } = input;
+  const { startedAt, until, now, movements, admissions, units, nameOf, ownerText } = input;
   const serviceOfUnit = new Map(units.map((unit) => [unit.id, unitHealthService(unit)]));
   const serviceOfMovement = (movement: Movement) =>
     HEALTH_SERVICES.find((service) => movementBelongsToService(movement, service, [...units]));
   const rows: (RecordedInMeeting & { order: number; at: Instant })[] = [];
   const add = (record: Movement | Admission, service: string | undefined) => {
     for (const action of record.meetingActions ?? []) {
-      if (action.recordedAt < startedAt) continue;
+      if (action.recordedAt < startedAt || (until !== undefined && action.recordedAt > until)) continue;
       const known = service ?? "Service not recorded";
       rows.push({
         id: `${record.id}-${action.kind}-${action.recordedAt}`,
