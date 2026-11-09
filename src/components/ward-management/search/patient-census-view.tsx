@@ -574,26 +574,20 @@ const CensusTableRow = memo(function CensusTableRow({
           </span>
         </span>
       </td>
-      <td>
+      {/* Table polish (Nov 2026): inside "No ward asked yet" the group heading already says there is
+          nowhere to head to, so Where spans the Heading to column instead of 31 rows of the same words. */}
+      <td colSpan={showTo && row.group === "ask" ? 2 : undefined}>
         <span className={styles.two}>
           <b>{row.where}</b>
           <span>{row.whereSub}</span>
         </span>
       </td>
-      {showTo ? (
+      {showTo && row.group !== "ask" ? (
         <td>
-          {/* Redesign: inside "No ward asked yet" the group heading already says it, so the cell stays
-              quiet. Table polish (Nov 2026): a quiet "Not asked yet", never a bare dash (MissingValue rule). */}
-          {row.group === "ask" ? (
-            <span className={styles.two}>
-              <span>Not asked yet</span>
-            </span>
-          ) : (
-            <span className={styles.two}>
-              <b>{row.to}</b>
-              <span>{row.toSub}</span>
-            </span>
-          )}
+          <span className={styles.two}>
+            <b>{row.to}</b>
+            <span>{row.toSub}</span>
+          </span>
         </td>
       ) : null}
       <td>

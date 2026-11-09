@@ -2358,17 +2358,15 @@
   .groupHead .groupSub {
     display: none;
   }
+  /* Table polish (Nov 2026): the UMRN and the ward each take their own line, the same on every row,
+     instead of the ward wrapping under the UMRN behind a stray dot at 1280px. */
   .personMeta {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0 6px;
+    flex-direction: column;
+    gap: 1px;
     margin-top: 2px;
     color: var(--wf-ink-3);
     font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  }
-  .personMeta > span + span::before {
-    content: "·";
-    margin-right: 6px;
   }
   .personMeta .mono {
     color: var(--wf-ink-2);
