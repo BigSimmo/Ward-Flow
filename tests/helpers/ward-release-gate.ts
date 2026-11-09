@@ -406,7 +406,7 @@ export async function wardFigure(page: Page, figure: "occupied" | "ready"): Prom
   // H-0181: the name may end ", N being made ready" when a bed is being prepared. Page tops (9 Nov
   // 2026): the figure's word is lower case ("2 ready now") and its button is named by the figure and
   // the word together, so the number is read from that name.
-  const ready = region.getByRole("button", { name: /^\d+ ready now(?:,\s*\d+ being made ready)?$/iu });
+  const ready = region.getByRole("button", { name: /^\d+ ready now\b/iu });
   const name = await ready.evaluate((element) => {
     const ids = (element.getAttribute("aria-labelledby") ?? "").split(/\s+/u).filter(Boolean);
     const parts = ids.map((id) => element.ownerDocument.getElementById(id)?.textContent ?? "");

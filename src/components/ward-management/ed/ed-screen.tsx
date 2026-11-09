@@ -486,14 +486,16 @@ export function EdScreen({ edId }: EdScreenProps) {
 
         <EdRaiseIntoMovementSection ctx={ctx} />
 
+        {/* Forecasting build (Josh, 23 Oct 2026, screen 4), loaded lazily for the phone budget. It stays a
+            direct child here, outside the My list switch below, so hydration never remounts it and the
+            board does not jump as the page loads (release gate layout shift, 9 Nov 2026). */}
+        {edDesk || (!isPhone && phonePane === "needs") ? null : <EdAccessRiskCard edId={thisEdId} now={now} />}
+
         {/* Wider screens: My list shows the list in the board's place (page tops, 9 Nov 2026). */}
         {!isPhone && phonePane === "needs" ? (
           <EdNeedsYou items={needsYouItems} data-pane="needs" />
         ) : (
           <>
-            {/* Forecasting build (Josh, 23 Oct 2026, screen 4), loaded lazily for the phone budget. */}
-            {edDesk ? null : <EdAccessRiskCard edId={thisEdId} now={now} />}
-
             <EdBoardSection ctx={ctx} />
 
             {isPhone ? (
