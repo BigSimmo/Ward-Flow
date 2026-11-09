@@ -1,8 +1,7 @@
 "use client";
 
-import { Plus } from "lucide-react";
 import Link from "next/link";
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import {
   Button,
@@ -22,34 +21,28 @@ import {
 } from "@/components/wf";
 
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
-import { wardPlaceLookup } from "../ward-access-places";
 import { formatInstantWithDay, MINUTES_PER_DAY, type Instant } from "../ward-clock";
-import type { WardFlowRole } from "../ward-flow-roles";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import type { Unit } from "../ward-model";
 import { usePatientOf } from "../ward-patient-name";
-import { ROLE_SCREENS, unitInScope } from "../ward-role-access";
-import { canDispatch } from "../ward-role-permissions";
+import { ROLE_SCREENS } from "../ward-role-access";
 import { useWardFormSave, type WardFormSave } from "../use-ward-form-save";
 import {
   RESTRICTIVE_PRACTICES,
   WARD_INCIDENT_CATEGORIES,
   pastInstantFromClockText,
-  recentIncidents,
   restrictivePracticeLabel,
-  seclusionRoomView,
   wardIncidentLabel,
 } from "./restrictive-practice-view";
 import {
-  openEpisodes,
   typedTimeRefusal,
   type RestrictivePractice,
-  type RestrictivePracticeEpisode,
   type SeclusionRoomStatus,
   type WardIncidentCategory,
 } from "./ward-restrictive-practice";
 import styles from "./seclusion-forms-view.module.css";
+import { useSeclusionSummary, type SeclusionLiveRow, type SeclusionRoomState } from "./seclusion-summary";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 
 /**
@@ -62,24 +55,15 @@ import { fieldsMatchEveryWord } from "@/components/ward-management/search/search
  */
 export const SECLUSION_GOVERNANCE_HREF = "/ward-flow/governance?tab=registers";
 
-type RoomState = "in_use" | "out_of_service" | "not_recorded" | "available";
-const ROOM_STATE: Record<RoomState, { label: string; tone: WfTone }> = {
+const ROOM_STATE: Record<SeclusionRoomState, { label: string; tone: WfTone }> = {
   in_use: { label: "In use", tone: "warning" },
   out_of_service: { label: "Out of service", tone: "danger" },
   not_recorded: { label: "Not recorded", tone: "neutral" },
   available: { label: "Available", tone: "success" },
 };
-const ROOM_ORDER: Record<RoomState, number> = { in_use: 0, out_of_service: 1, not_recorded: 2, available: 3 };
 
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
-/** The desk this view acts as. Only the ward, its site's bed manager and the coordinator open it. */
-function useSeclusionRole(): WardFlowRole {
-  const access = useEffectiveWardAccess();
-  return access.role === "ward" ? "ward" : access.role === "bed_manager" ? "bed_manager" : "coordinator";
-}
-
-/** A typed `HH:MM` box with a Now button, and why its time cannot be used yet. */
 function useTypedTime(now: Instant, after?: Instant) {
   const [text, setText] = useState("");
   const at = pastInstantFromClockText(text, now);
@@ -177,96 +161,60 @@ function ChoiceChips<T extends string>({
   );
 }
 
-type LiveRow = { unit: Unit; episode: RestrictivePracticeEpisode; name: string; onWard: boolean };
+/** A one-off ask from the page top: open Start or Record incident here. `n` changes per tap. */
+export type SeclusionAsk = { kind: "start" | "incident" | "room"; n: number };
 
-export function SeclusionFormsView({ startFor }: { startFor?: string } = {}) {
-  const { units, admissions, now } = useWardFlowSelect("units", "admissions", "now");
+export function SeclusionFormsView({ startFor, ask }: { startFor?: string; ask?: SeclusionAsk } = {}) {
   const access = useEffectiveWardAccess();
-  const role = useSeclusionRole();
-  const patientOf = usePatientOf();
+  const { now, admissions, role, visible, mayRecord, mayRecordIncident, live, rooms, lastDay } = useSeclusionSummary();
   const raise = useWardRaise(role);
-  const places = wardPlaceLookup(units);
-  const visible = units.filter((unit) => unitInScope(access.scope, unit.id, places));
-  const mayRecord = canDispatch(role, "RECORD_RESTRICTIVE_PRACTICE_START");
   const acting = (unit: Unit) => ({ unitId: unit.id, ...(role === "ward" ? { actingUnitId: unit.id } : {}) });
-  const stayOf = (admissionId: string) => admissions.find((stay) => stay.id === admissionId);
-  const isOnWard = (unitId: string) => (admissionId: string) => {
-    const stay = stayOf(admissionId);
-    return stay !== undefined && stay.unitId === unitId && stay.state === "occupied";
-  };
-
-  // In use now, longest running first. An episode whose patient has left stays listed (audit S-3) so
-  // the ward can still record when it ended.
-  const live: LiveRow[] = visible
-    .flatMap((unit) =>
-      openEpisodes(unit.restrictivePractice).map((episode) => {
-        const stay = stayOf(episode.admissionId);
-        return {
-          unit,
-          episode,
-          // D-83: surname first.
-          name: stay ? patientOf(stay).formalName : "No longer on this ward",
-          onWard: isOnWard(unit.id)(episode.admissionId),
-        };
-      }),
-    )
-    .sort((a, b) => a.episode.startedAt - b.episode.startedAt);
-
-  const rooms = visible
-    .filter((unit) => unit.lockedBeds > 0 || unit.restrictivePractice?.seclusionRoom !== undefined)
-    .map((unit, index) => {
-      const room = seclusionRoomView(unit.restrictivePractice, isOnWard(unit.id));
-      const recorded = room.kind === "recorded" ? room : room.kind === "in_use" ? room.recorded : undefined;
-      const state: RoomState =
-        room.kind === "in_use" ? "in_use" : room.kind === "recorded" ? room.status : "not_recorded";
-      return { unit, index, state, recorded };
-    })
-    .sort((a, b) => ROOM_ORDER[a.state] - ROOM_ORDER[b.state] || a.index - b.index);
-  const available = rooms.filter((row) => row.state === "available").length;
 
   const startable = startFor ? admissions.find((stay) => stay.id === startFor && stay.state === "occupied") : undefined;
   const [startOpen, setStartOpen] = useState(startable !== undefined && mayRecord);
-  const [ending, setEnding] = useState<LiveRow | null>(null);
+  const [ending, setEnding] = useState<SeclusionLiveRow | null>(null);
   const [roomFor, setRoomFor] = useState<Unit | null>(null);
   const [incidentOpen, setIncidentOpen] = useState(false);
-  // Any ward in view can record an incident, not only wards with a seclusion room (review on #1366).
-  const incidentUnits = visible;
+  const roomsRef = useRef<HTMLElement>(null);
+  // Page tops (Josh, 9 Nov 2026): Start, Record incident and Change a room sit in the page's top. A
+  // new ask opens its dialog here (adjusted while rendering, React's pattern for state that follows a prop).
+  const [askSeen, setAskSeen] = useState(ask?.n ?? 0);
+  if (ask && ask.n !== askSeen) {
+    setAskSeen(ask.n);
+    if (ask.kind === "start" && mayRecord) setStartOpen(true);
+    if (ask.kind === "incident" && mayRecordIncident) setIncidentOpen(true);
+    if (ask.kind === "room" && rooms.length === 1) setRoomFor(rooms[0]!.unit);
+  }
+  // Change a room with several rooms: take the reader to the rooms list and its first Change.
+  useEffect(() => {
+    if (ask?.kind !== "room" || rooms.length === 1) return;
+    const list = roomsRef.current;
+    list?.scrollIntoView?.({ block: "start", behavior: "smooth" });
+    list?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
+    // Only a new ask moves focus; the rooms list changing under it does not.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ask?.n]);
   // Ward desks cannot open Governance, so the last day's incidents stay readable here.
   const seesGovernance = ROLE_SCREENS[access.role].governance !== undefined;
-  const lastDay = visible
-    .flatMap((unit) => recentIncidents(unit.restrictivePractice, now).map((incident) => ({ unit, incident })))
-    .sort((a, b) => b.incident.at - a.incident.at);
+  const incidentUnits = visible;
 
   return (
     <div className={styles.view} data-testid="seclusion-forms-view">
-      <Card data-testid="seclusion-live">
-        <CardHead
-          title="In use now"
-          meta={live.length === 0 ? "None recorded" : plural(live.length, "episode", "episodes")}
-          level={2}
-          action={
-            mayRecord ? (
-              <Button
-                variant="pri"
-                size="sm"
-                icon={Plus}
-                onClick={() => setStartOpen(true)}
-                data-testid="seclusion-start-open"
-              >
-                Start seclusion or restraint
-              </Button>
-            ) : undefined
-          }
-        />
-        {live.length === 0 ? (
-          <CardBody>
-            <p className={styles.note} data-testid="seclusion-live-empty">
-              {mayRecord
-                ? "No seclusion or restraint is recorded as in use."
-                : "No seclusion or restraint is recorded as in use. The ward records it."}
-            </p>
-          </CardBody>
-        ) : (
+      {/* The scope note stays first: it is the view's safety line (page tops, 9 Nov 2026: a slim line, no card). */}
+      <p className={styles.scopeNote} data-testid="seclusion-scope-note">
+        Operational view only. Times as typed. No order length, review time or legal limit is worked out. The legal
+        register stays in the health service&apos;s own system.
+      </p>
+      {live.length === 0 ? (
+        // Nothing in use: the page top says so ("None recorded as in use") and holds Start.
+        <p className={styles.srOnly} data-testid="seclusion-live-empty">
+          {mayRecord
+            ? "No seclusion or restraint is recorded as in use."
+            : "No seclusion or restraint is recorded as in use. The ward records it."}
+        </p>
+      ) : (
+        <Card data-testid="seclusion-live">
+          <CardHead title="In use now" meta={plural(live.length, "episode", "episodes")} level={2} />
           <ul className={styles.rows}>
             {live.map((row) => (
               <li key={row.episode.id} className={styles.row} data-testid="seclusion-live-row">
@@ -293,20 +241,13 @@ export function SeclusionFormsView({ startFor }: { startFor?: string } = {}) {
               </li>
             ))}
           </ul>
-        )}
-        <p className={cx(styles.note, styles.foot)} data-testid="seclusion-scope-note">
-          Operational view only. Times as typed. No order length, review time or legal limit is worked out. The legal
-          register stays in the health service&apos;s own system.
-        </p>
-      </Card>
+        </Card>
+      )}
 
       <div className={styles.pair}>
-        <Card data-testid="seclusion-rooms">
-          <CardHead
-            title="Seclusion rooms"
-            meta={`${available} of ${plural(rooms.length, "room", "rooms")} available`}
-            level={2}
-          />
+        {/* The available count is the page top's figure ("6 / 7 rooms available"). */}
+        <Card data-testid="seclusion-rooms" ref={roomsRef}>
+          <CardHead title="Seclusion rooms" level={2} />
           {rooms.length === 0 ? (
             <CardBody>
               <p className={styles.note}>No secure ward is in this desk&apos;s view.</p>
@@ -341,23 +282,8 @@ export function SeclusionFormsView({ startFor }: { startFor?: string } = {}) {
         </Card>
 
         <Card data-testid="seclusion-incidents-card">
-          <CardHead
-            title="Ward incidents"
-            meta={`${lastDay.length} in the last day`}
-            level={2}
-            action={
-              mayRecord && incidentUnits.length > 0 ? (
-                <Button
-                  variant="sec"
-                  size="sm"
-                  onClick={() => setIncidentOpen(true)}
-                  data-testid="seclusion-incident-open"
-                >
-                  Record incident
-                </Button>
-              ) : undefined
-            }
-          />
+          {/* Record incident is the page top's chip. */}
+          <CardHead title="Ward incidents" meta={`${lastDay.length} in the last day`} level={2} />
           {lastDay.length > 0 ? (
             <ul className={styles.rows} data-testid="seclusion-incidents">
               {lastDay.map(({ unit, incident }) => (
@@ -548,7 +474,7 @@ function EndDialog({
   onClose,
   onEnd,
 }: {
-  row: LiveRow;
+  row: SeclusionLiveRow;
   now: Instant;
   onClose: () => void;
   onEnd: (endedAt: Instant) => Raised;

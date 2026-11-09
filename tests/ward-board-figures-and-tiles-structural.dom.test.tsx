@@ -68,7 +68,9 @@ describe("the bed board never drops a tile or a figure at the DOM/JS level (item
     // Redesign (Josh, 31 Oct 2026): the ten boxes are one "Also on this ward" line, without the two
     // the hero already shows (Ready now and Pulled, not arrived). Nothing is dropped: those two are
     // asserted in the hero below.
-    const inHero = new Set<string>(["availableNow", "pulled"]);
+    // Page tops (Josh approved, 9 Nov 2026): on a wider screen Expected today is a hero figure too, and
+    // the band leaves it out.
+    const inHero = new Set<string>(["availableNow", "pulled", "expectedToday"]);
     const lineKeys = FIGURE_KEYS.filter((key) => !inHero.has(key));
     const band = screen.getByTestId("ward-board-triage");
     for (const key of lineKeys) {
@@ -79,8 +81,10 @@ describe("the bed board never drops a tile or a figure at the DOM/JS level (item
       .getAllByTestId(new RegExp("^ward-board-figure-"))
       .map((el) => el.getAttribute("data-testid"));
     expect(rendered.sort()).toEqual(lineKeys.map((key) => `ward-board-figure-${key}`).sort());
-    expect(screen.getByTestId("ward-board-headline")).toHaveTextContent("Ready now");
+    // Page tops (9 Nov 2026): the hero figures are lower case ("ready now").
+    expect(screen.getByTestId("ward-board-headline")).toHaveTextContent(/ready now/i);
     expect(screen.getByTestId("ward-board-band-stats")).toHaveTextContent("Pulled, not arrived");
+    expect(screen.getByTestId("ward-board-figure-expectedToday")).toHaveTextContent("Expected today");
   });
 
   it("draws exactly one tile per recorded bed, unfiltered, on more than one ward", () => {

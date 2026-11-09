@@ -21,7 +21,7 @@ import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-m
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 
 /**
@@ -60,9 +60,12 @@ describe("Capacity for the bed coordinator", () => {
     const rows = networkWardRows(seed.units, NOW_ANCHOR, seed.bedReleases, seed.admissions, seed.leaveBeds);
     const totals = networkTotals(rows);
     renderCapacity();
-    const hero = screen.getByRole("heading", { level: 1 });
-    expect(hero).toHaveTextContent(`${totals.ready} beds ready of ${totals.beds}`);
-    expect(screen.getByRole("heading", { name: "Mismatch" })).toBeInTheDocument();
+    // Page tops (Josh, 9 Nov 2026): the ready beds are the hero's first figure, and the mismatch by
+    // bed type is the hero's band.
+    expect(screen.getByTestId("capacity-hero-ready")).toHaveTextContent(
+      new RegExp(`^${totals.ready}\\s*/ ${totals.beds}\\s*beds? ready$`, "u"),
+    );
+    expect(screen.getByTestId("capacity-mismatch")).toHaveTextContent("Short now, by bed type");
     expect(screen.getByRole("heading", { name: "Bed forecast" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Bed map" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Bed meeting/ })).toBeInTheDocument();
@@ -112,7 +115,12 @@ describe("Capacity for a site bed manager", () => {
     const own = seed.units.filter((unit) => unit.siteCode === siteCode);
     const rows = networkWardRows(own, NOW_ANCHOR, seed.bedReleases, seed.admissions, seed.leaveBeds);
     const totals = networkTotals(rows);
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(`${totals.ready} beds ready of ${totals.beds}`);
+    const siteName = siteByCode(siteCode)!.name;
+    expect(screen.getByRole("group", { name: `${siteName} beds` })).toBeInTheDocument();
+    expect(screen.getAllByText(siteName).length).toBeGreaterThan(0);
+    expect(screen.getByTestId("capacity-hero-ready")).toHaveTextContent(
+      new RegExp(`^${totals.ready}\\s*/ ${totals.beds}\\s*beds? ready$`, "u"),
+    );
     expect(screen.getByRole("heading", { name: "Other sites" })).toBeInTheDocument();
     expect(screen.getByText(/Other sites show beds, never the people in them\./)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Ask / })).not.toBeInTheDocument();

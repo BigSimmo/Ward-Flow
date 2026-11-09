@@ -15,27 +15,20 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  Activity,
-  ArrowRight,
-  BarChart2,
-  ChevronDown,
-  ChevronRight,
-  ListFilter,
-  Network,
-  RotateCcw,
-  Search,
-  Star,
-  X,
-} from "lucide-react";
+import { ArrowRight, BarChart2, ChevronDown, ListFilter, Network, RotateCcw, Search, Star, X } from "lucide-react";
 
 import {
   Button,
   Card,
-  CheckingFoot,
   CardHead,
   Count,
+  FolderTabs,
+  folderTabClasses,
   Hero,
+  HeroAct,
+  HeroFigures,
+  HeroTop,
+  LiveChip,
   Kbd,
   PanelDrawer,
   Popover,
@@ -74,7 +67,8 @@ import { openReferralSheet } from "@/components/ward-management/shell/ward-drawe
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { communityTeamSuburbs, placePeople, type PlacePerson } from "./hub-place-people";
-import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
+import { usePageLive } from "@/components/ward-management/ward-page-live";
+import titles from "@/components/ward-management/page-top-title.module.css";
 
 import {
   recordHubVisit,
@@ -88,8 +82,8 @@ import { useWardFormSave } from "../use-ward-form-save";
 import styles from "./hub.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { HubPlaceRow } from "./hub-place-row";
-import { PlacesTrack } from "./places-track";
 import { useHubDesk } from "./hub-desk";
+import { PLACES_CATCHMENTS_HREF, PLACES_HREF } from "./places-hrefs";
 import { capacityRequestIsOpen } from "@/components/ward-management/ward/ward-buzz-keys";
 import {
   GROUP_ROWS,
@@ -317,8 +311,6 @@ export function HubScreen() {
     // A pinned or recent place opens itself even when a filter hides it (CodeRabbit, #1497).
     (previewOpen && selectedId ? byId.get(selectedId) : undefined) ??
     (isPhone ? undefined : searching ? visibleEntries[0] : (pinned[0] ?? ownEntries[0] ?? visibleEntries[0]));
-  // Phone "Check first": only a place the current filter shows, so its tap opens a preview.
-  const checkFirst = attention.filter((item) => results.some((entry) => entry.id === item.entry.id));
   const selectedRequest =
     selected === undefined
       ? undefined
@@ -346,41 +338,56 @@ export function HubScreen() {
       ),
   );
   const wardsWord = (n: number) => `${n} ${n === 1 ? "ward" : "wards"}`;
-  const bandTask: { title: string; action?: ReactNode } = (() => {
+  /** "Graylands Older Adult · bed count stale 5h" for one ward, else "2 wards need a bed check". */
+  const staleTitle = (list: readonly HubEntry[], verb: string) =>
+    list.length === 1 ? (
+      <>
+        {list[0].name}{" "}
+        <span className={titles.soft}>
+          · {isPhone ? "stale" : "bed count stale"}
+          {list[0].confirmedAt === undefined ? "" : ` ${durMinutes(now - list[0].confirmedAt)}`}
+        </span>
+      </>
+    ) : (
+      `${wardsWord(list.length)} ${verb}`
+    );
+  // PL1 follow-up: the band's task. Page tops (Josh, 9 Nov 2026): it is the top's act row.
+  const bandAct: ReactNode = (() => {
     if (deskSite !== undefined) {
       const first = staleWards.find((entry) => canOpen(entry.href));
-      if (staleWards.length === 0) return { title: "Your site's bed counts are current" };
-      return {
-        title: `${wardsWord(staleWards.length)} at your site ${staleWards.length === 1 ? "needs" : "need"} a bed check`,
-        action:
-          first === undefined ? undefined : (
-            <Link className={buttonClass({ variant: "onHero", size: "sm" })} href={first.href}>
-              Confirm beds
-            </Link>
-          ),
-      };
+      if (staleWards.length === 0)
+        return <HeroAct tone="calm" testId="hub-act" title="Your site's bed counts are current" />;
+      return (
+        <HeroAct
+          tone="warning"
+          testId="hub-act"
+          title={staleTitle(staleWards, "at your site need a bed check")}
+          action={first === undefined ? undefined : { label: "Confirm beds", href: first.href }}
+        />
+      );
     }
     if (unasked.length > 0) {
-      return {
-        title: `${wardsWord(unasked.length)} ${unasked.length === 1 ? "needs" : "need"} a bed check`,
-        action: (
-          <button
-            type="button"
-            className={buttonClass({ variant: "onHero", size: "sm" })}
-            onClick={() => {
+      return (
+        <HeroAct
+          tone="warning"
+          testId="hub-act"
+          title={staleTitle(unasked, "need a bed check")}
+          action={{
+            label: unasked.length === 1 ? "Ask the ward" : `Ask all ${unasked.length}`,
+            phoneLabel: "Ask",
+            testId: "hub-ask-stale",
+            onClick: () => {
               const raise = wardRaise(dispatch, "coordinator", now);
               for (const entry of unasked) raise("REQUEST_CAPACITY_REFRESH", { unitId: entry.id });
-            }}
-          >
-            {unasked.length === 1 ? `Ask ${unasked[0].name}` : `Ask all ${unasked.length}`}
-          </button>
-        ),
-      };
+            },
+          }}
+        />
+      );
     }
     if (staleWards.length > 0) {
-      return { title: `${wardsWord(staleWards.length)} asked to confirm beds` };
+      return <HeroAct tone="calm" testId="hub-act" title={`${wardsWord(staleWards.length)} asked to confirm beds`} />;
     }
-    return { title: "Every ward's bed count is current" };
+    return <HeroAct tone="calm" testId="hub-act" title="Every ward's bed count is current" />;
   })();
 
   // PL1 follow-up (Josh, 4 Nov 2026): the people a place's panel names, and the suburbs a team covers.
@@ -809,23 +816,16 @@ export function HubScreen() {
       className={styles.glanceAnchor}
       panelClassName={styles.glancePanel}
       trigger={(props) => (
+        // Page tops (Josh, 9 Nov 2026): the "voluntary only" figure's label opens At a glance, which
+        // names those wards and every bed count to check.
         <button
           type="button"
           {...props}
-          className={cx(styles.glanceChip, attention.length > 0 && styles.glanceChipWarn)}
+          className={styles.glanceFigure}
           data-testid="hub-glance-trigger"
+          aria-label={`voluntary only, at a glance: ${attention.length > 0 ? `${attention.length} to check` : "all bed counts current"}`}
         >
-          <Activity size={15} aria-hidden="true" />
-          <span>At a glance</span>
-          {attention.length > 0 ? (
-            <span className={styles.glanceChipCount}>{attention.length} to check</span>
-          ) : (
-            <span className={styles.glanceChipMeta}>All bed counts current</span>
-          )}
-          {unauthorised.length > 0 ? (
-            <span className={styles.glanceChipMeta}>· {unauthorised.length} voluntary only</span>
-          ) : null}
-          <ChevronDown size={14} aria-hidden="true" className={styles.glanceChipCaret} />
+          voluntary only
         </button>
       )}
     >
@@ -999,42 +999,105 @@ export function HubScreen() {
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
-          className={styles.hubHero}
-          // PL1 follow-up (Josh, 4 Nov 2026): the counts are said once, on the Wards, EDs and Teams switch.
-          eyebrow={deskSite !== undefined ? `Places · ${deskSite.name}` : "Places · Statewide"}
-          // The title is the band's task: the wards whose bed count needs checking, with the action.
+          className={cx(styles.hubHero, titles.hero, folderTabClasses.hero)}
           title={
             <>
               <SrOnly>Places, </SrOnly>
-              {bandTask.title}
+              Find a place
             </>
           }
-          titleMeta={bandTask.action}
-          aside={<PageLiveChip paused={paused} onTogglePause={togglePause} />}
-          // PL1 (Josh, 3 Nov 2026): the band holds the Places and Catchments switch; this page's own
-          // search moved into the list card, so the band no longer holds a second search box beside
-          // the header's global search.
-          bar={
-            <div className={styles.heroBar}>
-              <PlacesTrack value="places" />
-              {glanceTrigger}
-            </div>
+          aside={
+            <LiveChip state={paused ? "paused" : "live"} onHero age={formatInstant(now)} onTogglePause={togglePause} />
           }
-          foot={
-            isPhone ? undefined : (
-              <CheckingFoot
+        >
+          <HeroTop
+            testId="hub-top"
+            figures={
+              <HeroFigures
                 items={[
-                  {
-                    id: "oldest",
-                    label: deskSite !== undefined ? "Oldest bed count at your site" : "Oldest bed count",
-                    value: oldestConfirmedAt === undefined ? "Not recorded" : durMinutes(now - oldestConfirmedAt),
-                  },
+                  { id: "voluntary", value: unauthorised.length, label: glanceTrigger, testId: "hub-figure-voluntary" },
                 ]}
-                notChecked={["ED and team capacity, no feed"]}
               />
-            )
+            }
+            act={bandAct}
+          >
+            {/* The page's search and order lead the top (the list card no longer holds them). */}
+            <div className={styles.heroFind}>
+              {searchBox}
+              {isPhone ? (
+                <button
+                  type="button"
+                  className={styles.heroSort}
+                  aria-pressed={order === "name"}
+                  onClick={() => chooseOrder(order === "name" ? "service" : "name")}
+                >
+                  <ListFilter size={16} aria-hidden="true" />
+                  {order === "name" ? "A to Z" : "By service"}
+                </button>
+              ) : (
+                <span className={styles.heroOrder}>
+                  <span className={styles.heroOrderLabel}>Order</span>
+                  <Segmented
+                    label="Order"
+                    items={[
+                      { id: "service" as const, label: "Service" },
+                      { id: "name" as const, label: "A to Z" },
+                    ]}
+                    value={order}
+                    onChange={chooseOrder}
+                  />
+                </span>
+              )}
+            </div>
+            {/* Announced through `aria-describedby`. Escape clears BOTH the search and the preview. */}
+            <SrOnly id="hub-search-hint">
+              Typing narrows the list. Arrow keys preview a place, Enter opens it, Escape clears the search.
+            </SrOnly>
+            {isPhone ? null : (
+              <p className={styles.heroCaption}>
+                {deskSite !== undefined ? "Oldest bed count at your site" : "Oldest bed count"}{" "}
+                <b>{oldestConfirmedAt === undefined ? "not recorded" : durMinutes(now - oldestConfirmedAt)}</b> · Not
+                checked: ED and team capacity, no feed
+              </p>
+            )}
+          </HeroTop>
+        </Hero>
+        {/* PL1 (Josh, 3 Nov 2026): Places and Catchments stay two routes; page tops (9 Nov 2026) make
+            them the folder tabs, with the kind filter beside them on a desktop. */}
+        <FolderTabs
+          label="Places views"
+          value="places"
+          className={styles.folder}
+          testId="hub-tabs"
+          more={
+            isFiltered && !isPhone ? (
+              <button
+                type="button"
+                className={buttonClass({ variant: "ghost", size: "sm" })}
+                onClick={resetAllFilters}
+                aria-label="Reset all filters and search"
+              >
+                <RotateCcw size={13} aria-hidden="true" />
+                Reset
+              </button>
+            ) : undefined
           }
-        />
+        >
+          <div className={cx(folderTabClasses.switch, styles.placesSwitch)}>
+            <Link href={PLACES_HREF} aria-current="page">
+              Places
+            </Link>
+            <Link href={PLACES_CATCHMENTS_HREF}>Catchments</Link>
+          </div>
+          {isPhone ? null : (
+            <>
+              <span className={folderTabClasses.rule} aria-hidden="true" />
+              <div className={folderTabClasses.filters}>
+                <Segmented label="Show" items={kindItems} value={kind} onChange={chooseKind} />
+              </div>
+            </>
+          )}
+        </FolderTabs>
 
         <div className={styles.hubShell}>
           <Card as="section" className={styles.hubLeft} aria-label="Search results">
@@ -1051,79 +1114,6 @@ export function HubScreen() {
                 <Segmented label="Show" items={kindItems} value={kind} onChange={chooseKind} />
               </div>
             ) : null}
-            {isPhone ? (
-              <div className={styles.phoneControls}>
-                <div className={styles.phoneSearchRow}>
-                  {searchBox}
-                  <button
-                    type="button"
-                    className={styles.phoneSortButton}
-                    aria-pressed={order === "name"}
-                    onClick={() => chooseOrder(order === "name" ? "service" : "name")}
-                  >
-                    <ListFilter size={16} aria-hidden="true" />
-                    {order === "name" ? "A to Z" : "By service"}
-                  </button>
-                </div>
-                {queryMatches === undefined && checkFirst[0] ? (
-                  <button
-                    type="button"
-                    className={styles.phoneCheckFirst}
-                    onClick={() => select(checkFirst[0].entry.id)}
-                  >
-                    <StatusGlyph tone="warning" size={10} />
-                    <span className={styles.phoneCheckText}>
-                      <b>Check first: {checkFirst[0].entry.name}</b>
-                      <span>
-                        {checkFirst[0].entry.confirmedAt === undefined
-                          ? "Bed count not confirmed"
-                          : `Bed count confirmed ${durMinutes(now - checkFirst[0].entry.confirmedAt)} ago`}
-                        {checkFirst.length > 1 ? `. ${checkFirst.length - 1} more need a check.` : "."}
-                      </span>
-                    </span>
-                    <ChevronRight size={16} aria-hidden="true" />
-                  </button>
-                ) : null}
-                {/* Round 2: the Stale legend sentence is gone; the card above and each row's own
-                    words say it, and the row's spoken label explains it. */}
-              </div>
-            ) : (
-              <div className={styles.controls}>
-                {/* Note 10 (Josh, 8 Nov 2026): one row; a compact search box beside the switches. */}
-                <div className={styles.controlsRow}>
-                  {searchBox}
-                  <Segmented label="Show" items={kindItems} value={kind} onChange={chooseKind} />
-                  <span className={cx(styles.controlLabel, styles.orderLabel)}>Order</span>
-                  <Segmented
-                    label="Order"
-                    items={[
-                      { id: "service" as const, label: "Service" },
-                      { id: "name" as const, label: "A to Z" },
-                    ]}
-                    value={order}
-                    onChange={chooseOrder}
-                  />
-                  {isFiltered ? (
-                    <span className={styles.controlsEnd}>
-                      <button
-                        type="button"
-                        className={buttonClass({ variant: "ghost", size: "sm" })}
-                        onClick={resetAllFilters}
-                        aria-label="Reset all filters and search"
-                      >
-                        <RotateCcw size={13} aria-hidden="true" />
-                        Reset
-                      </button>
-                    </span>
-                  ) : null}
-                </div>
-                {/* Announced through `aria-describedby`. Escape clears BOTH the search and the preview. */}
-                <SrOnly id="hub-search-hint">
-                  Typing narrows the list. Arrow keys preview a place, Enter opens it, Escape clears the search.
-                </SrOnly>
-              </div>
-            )}
-
             {isPhone ? null : (
               <div className={styles.listHead} aria-hidden="true">
                 <span>Place</span>

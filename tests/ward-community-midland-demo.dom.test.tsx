@@ -24,11 +24,17 @@ function renderTeam(teamId: string) {
 describe("Midland community team demo (locked design)", () => {
   it("states the mock-up's figures in the hero and section tabs", () => {
     renderTeam("midland");
-    expect(screen.getByTestId("ward-community-hero-answer")).toHaveTextContent("142 on the caseload");
-    expect(screen.getByText("9 in hospital · 5 waiting for a case manager")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /CTO reviews due/u })).toHaveTextContent("3");
+    // Page-top redesign (Josh, 9 Nov 2026): figures, the act row, chips and the week-ahead band.
+    expect(screen.getByTestId("ward-community-hero-answer")).toHaveTextContent(/^142\s*on the caseload$/u);
+    const figures = screen.getByRole("group", { name: "Team figures" });
+    expect(within(figures).getByText("in hospital").closest("p")).toHaveTextContent(/^9 in hospital$/u);
+    expect(within(figures).getByText("no case manager").closest("p")).toHaveTextContent(/^5 no case manager$/u);
+    expect(screen.getByText("3 need someone today")).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("ward-community-glance")).getByRole("button", { name: /CTO reviews/u }),
+    ).toHaveTextContent("3");
     expect(screen.getByRole("tab", { name: /^Clinicians/u })).toHaveTextContent("Clinicians12");
-    expect(within(screen.getByTestId("ward-community-glance")).getByText("Byrne, Tom")).toBeInTheDocument();
+    expect(screen.getByTestId("community-top-duty")).toHaveTextContent("Duty: Byrne, Tom");
   });
 
   it("opens each section from its tab, with the Midland lists", () => {
@@ -73,22 +79,21 @@ describe("Midland community team demo (locked design)", () => {
     expect(screen.queryByText("Byrne, Tom")).not.toBeInTheDocument();
   });
 
-  it("counts referrals to answer from one source in the hero, the tab and the overview tile (audit B2)", () => {
+  // Page-top redesign (9 Nov 2026): the hero's referrals chip and the overview tile are gone, so the
+  // Referrals tab is the count's one place on the page.
+  it("counts referrals to answer from one source in the Referrals tab (audit B2)", () => {
     window.localStorage.clear();
     const counts = () => ({
-      hero: screen.getByRole("button", { name: /Referrals to answer/u }).textContent,
       tab: screen.getByRole("tab", { name: /^Referrals/u }).textContent,
     });
     const { unmount } = renderTeam("midland");
     const before = counts();
-    expect(before.hero).toContain(String(REFERRALS.length));
     expect(before.tab).toBe(`Referrals${REFERRALS.length}`);
     unmount();
     recordMidlandDecision(REFERRALS[0]!.id, "Accepted for Midland", Date.now());
     try {
       renderTeam("midland");
       const after = counts();
-      expect(after.hero).toContain(String(REFERRALS.length - 1));
       expect(after.tab).toBe(`Referrals${REFERRALS.length - 1}`);
     } finally {
       undoMidlandDecision(REFERRALS[0]!.id);

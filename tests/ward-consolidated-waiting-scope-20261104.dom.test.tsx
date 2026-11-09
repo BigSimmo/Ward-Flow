@@ -85,7 +85,9 @@ describe("own ED Capacity figure on desktop", () => {
     );
     const phoneLink = screen.getByTestId("capacity-hero-ed-waiting-link");
     const phoneHref = phoneLink.getAttribute("href");
-    const phoneName = phoneLink.getAttribute("aria-label");
+    // Page tops (Josh, 9 Nov 2026): one chip on both sizes, named by its words and count.
+    const phoneName = (phoneLink.textContent ?? "").trim();
+    expect(phoneName).toMatch(/^Waiting in .+/u);
     phoneView.unmount();
     phone.value = false;
     render(
@@ -98,7 +100,7 @@ describe("own ED Capacity figure on desktop", () => {
       expect(link.tagName).toBe("A");
       expect(link.getAttribute("href")).toBe(phoneHref);
       expect(new URL(link.getAttribute("href")!, window.location.origin).searchParams.get("ed")).toBe(edId);
-      expect(link).toHaveAccessibleName(phoneName!);
+      expect((link.textContent ?? "").trim()).toBe(phoneName);
     } finally {
       phone.value = true;
     }

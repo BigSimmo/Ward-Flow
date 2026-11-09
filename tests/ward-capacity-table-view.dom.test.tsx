@@ -58,7 +58,8 @@ describe("Capacity bed map, Rows layout", () => {
     expect(withReady, "no ward has a ready bed — the highlight proves nothing").toBeGreaterThan(0);
     expect(withReady, "every ward has a ready bed — nothing would be dimmed").toBeLessThan(rows.length);
     fireEvent.click(
-      within(bedMapRegion()).getByRole("button", {
+      // Page tops (Josh, 9 Nov 2026): on a desktop the highlights sit in the page's tab row.
+      within(screen.getByRole("group", { name: "Highlight wards" })).getByRole("button", {
         name: `Any ready · ${withReady} ${withReady === 1 ? "ward" : "wards"}`,
       }),
     );

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
 import { Download, type LucideIcon } from "lucide-react";
 
-import { Button, Card, CardHead, Hero, LiveChip, SrOnly, cx, useIsPhone } from "@/components/wf";
+import { Button, Card, CardHead, Hero, LiveChip, SrOnly, cx, folderTabClasses, useIsPhone } from "@/components/wf";
 import { useWardFlow, useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { calendarDateOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -12,6 +12,7 @@ import type { StatisticsSection } from "./statistics-sections";
 import { StatisticsNav, StatisticsSamplesSwitch, type StatisticsNavSection } from "./statistics-nav";
 import { downloadCsv, statisticsExportLines, type StatisticsExport } from "./statistics-csv";
 import styles from "./statistics-hero.module.css";
+import topTitle from "../shell/page-top-title.module.css";
 import phoneStyles from "./statistics-phone.module.css";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
 import { ExecutiveStatisticsUnavailable } from "./statistics-small-numbers";
@@ -71,8 +72,39 @@ export type StatisticsPhoneHero = {
 };
 
 /**
+ * The page-top redesign (Josh, 9 Nov 2026): one plain title with a soft second part, the Live pill,
+ * then the page's own `HeroTop` (figures, act row, chips, band). The sections follow as folder tabs.
+ * `content` receives the hero's export, so the page can offer it as a chip.
+ */
+export type StatisticsHeroTop = {
+  title: ReactNode;
+  /** The quieter second part of the title ("right now", "Royal Perth · adult locked"). */
+  soft?: ReactNode;
+  /** The Live pill beside the title; off where the title needs the width (a ward's phone top). Default on. */
+  live?: boolean;
+  content: (tools: { exportFigures?: () => void }) => ReactNode;
+};
+
+/** Downloads the hero's figures as a CSV, stamped with the board's date and time. */
+export function downloadStatisticsFigures(exportFigures: StatisticsExport, now: Instant, dayZero: Date) {
+  downloadCsv(
+    `ward-flow-synthetic-${exportFigures.stem}-figures.csv`,
+    statisticsExportLines(
+      exportFigures,
+      `${calendarDateOf(now, dayZero).toLocaleDateString("en-AU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        timeZone: "Australia/Perth",
+      })} ${formatInstant(now)} AWST`,
+    ),
+  );
+}
+
+/**
  * The one hero band on every statistics page: eyebrow, title and counts on the first row, the
- * section track with the Live chip and the Samples switch on the second.
+ * section track with the Live chip and the Samples switch on the second. With `top`, the page-top
+ * redesign instead (see `StatisticsHeroTop`).
  */
 export function StatisticsHero(props: Omit<Parameters<typeof StatisticsHeroView>[0], "frame">) {
   const control = useExecutiveStatisticsControl();
@@ -118,6 +150,7 @@ function StatisticsHeroView({
   chips,
   exportFigures,
   phone,
+  top,
   frame,
 }: {
   section: StatisticsNavSection;
@@ -143,6 +176,8 @@ function StatisticsHeroView({
   exportFigures?: StatisticsExport;
   /** Phone only (v10 phone): a sentence title, its subtitle, a leading ring and up to three figures. */
   phone?: StatisticsPhoneHero;
+  /** The page-top redesign (9 Nov 2026), on every size; `eyebrow`, `stats`, `chips` and `phone` are then unused. */
+  top?: StatisticsHeroTop;
   frame: { wardCount: number; dayZero: Date; liveNow: Instant };
 }) {
   const { wardCount, dayZero, liveNow } = frame;
@@ -156,24 +191,54 @@ function StatisticsHeroView({
       size="sm"
       icon={Download}
       data-testid="ward-statistics-export"
-      onClick={() =>
-        downloadCsv(
-          `ward-flow-synthetic-${exportFigures.stem}-figures.csv`,
-          statisticsExportLines(
-            exportFigures,
-            `${calendarDateOf(now, dayZero).toLocaleDateString("en-AU", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-              timeZone: "Australia/Perth",
-            })} ${formatInstant(now)} AWST`,
-          ),
-        )
-      }
+      onClick={() => downloadStatisticsFigures(exportFigures, now, dayZero)}
     >
       Export the figures
     </Button>
   ) : null;
+  if (top) {
+    return (
+      <>
+        <Hero
+          level={1}
+          className={cx(topTitle.hero, folderTabClasses.hero)}
+          title={
+            <>
+              {top.title}
+              {top.soft ? (
+                <>
+                  {" "}
+                  <span className={topTitle.soft}>{top.soft}</span>
+                </>
+              ) : null}
+            </>
+          }
+          aside={
+            top.live === false ? undefined : (
+              <LiveChip
+                state={paused ? "paused" : "live"}
+                onHero
+                age={formatInstant(now)}
+                onTogglePause={onTogglePause}
+              />
+            )
+          }
+        >
+          {top.content({
+            exportFigures: exportFigures ? () => downloadStatisticsFigures(exportFigures, now, dayZero) : undefined,
+          })}
+        </Hero>
+        <StatisticsNav
+          currentSection={section}
+          activeSlug={slug}
+          withSamples={false}
+          wardCount={wardCount}
+          variant="folder"
+          testId={navTestId}
+        />
+      </>
+    );
+  }
   if (isPhone) {
     // v10 phone: eyebrow with the Live chip and its time, the title, up to three figures on
     // hairlines, the range pill (or the page's own control) with pause, then the sections as chips.
@@ -291,6 +356,7 @@ export function StatisticsPage({
   tools,
   exportFigures,
   phone,
+  top,
   children,
 }: {
   section: StatisticsSection;
@@ -312,6 +378,8 @@ export function StatisticsPage({
   exportFigures?: StatisticsExport;
   /** The phone hero's own title, subtitle and figures (see `StatisticsHero`). */
   phone?: StatisticsPhoneHero;
+  /** The page-top redesign (see `StatisticsHeroTop`). */
+  top?: StatisticsHeroTop;
   children: ReactNode;
 }) {
   const isPhone = useIsPhone();
@@ -365,6 +433,7 @@ export function StatisticsPage({
           tools={tools}
           exportFigures={exportFigures}
           phone={phone}
+          top={top}
         />
         {children}
         <WardPrototypeFooter testId="ward-statistics-section-footer" note="Synthetic data" />

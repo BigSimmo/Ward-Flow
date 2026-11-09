@@ -385,8 +385,14 @@ const READERS: Record<ShellFigureId, ScreenReader> = {
     screen: "Capacity",
     component: CapacityScreen,
     read: (markup) =>
-      // Capacity redesign (31 Oct 2026): the hero title, "N beds ready of M", is the network total.
-      Number(oneNumber(markup, /(\d+)(?:<!-- -->| )*beds ready(?:<!-- -->| )*of\b/gu, "Capacity's hero title")),
+      // Page tops (9 Nov 2026): the hero's first figure, "N / M beds ready", is the network total.
+      Number(
+        oneNumber(
+          markup,
+          /data-testid="capacity-hero-ready"[^>]*><b\b[^>]*>(\d+)(?:<!-- -->)*<small\b/gu,
+          "Capacity's ready figure",
+        ),
+      ),
   },
   /** The Movements day panel states the complete open-movement count, independently of transport. */
   openMovements: {
@@ -405,7 +411,8 @@ const READERS: Record<ShellFigureId, ScreenReader> = {
       expect(headers, "Movements must render exactly one day panel header").toHaveLength(1);
       const counts = [
         ...headers[0][1].matchAll(
-          /<span\b[^>]*\bdata-ward-panel-count(?:="")?[^>]*>\s*<span\b[^>]*>Open movements<\/span>\s*<strong\b[^>]*>(\d+)<\/strong>\s*<\/span>/gu,
+          // Page tops (9 Nov 2026): the count is the hero's "N open movements" figure.
+          /<b\b[^>]*>(\d+)<\/b>(?:<!-- -->| )*<span\b[^>]*>open movements<\/span>/gu,
         ),
       ];
       expect(counts, "The day panel header must render exactly one own open-movement count").toHaveLength(1);

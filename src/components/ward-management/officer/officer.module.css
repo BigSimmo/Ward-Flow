@@ -2995,3 +2995,33 @@
 .jobDrawerBody > .detailTab {
   margin-top: var(--wf-s-1);
 }
+
+/* Page tops (Josh, 9 Nov 2026): Escort and Involuntary beside the Jobs and History tabs, quiet as
+   the tab row's second level. */
+.tabFilters {
+  gap: var(--wf-s-1);
+}
+
+.tabFilters > button {
+  min-height: 36px;
+  padding: 0 var(--wf-s-2);
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-14);
+}
+
+.tabFilters > button[aria-pressed="true"] {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.tabFilters > button > :last-child {
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+}

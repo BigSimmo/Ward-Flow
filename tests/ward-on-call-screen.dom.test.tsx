@@ -41,6 +41,12 @@ function renderOnCall() {
   );
 }
 
+/** Cover at is a menu on the top's first chip (page tops, 9 Nov 2026). */
+function pickCoverAt(label: string) {
+  fireEvent.click(screen.getByTestId("ward-on-call-cover"));
+  fireEvent.click(screen.getByRole("menuitemradio", { name: label }));
+}
+
 const row = (id: string) => screen.getByTestId(`ward-on-call-row-${id}`);
 const panel = () => within(screen.getByTestId("ward-on-call-role-panel"));
 const writeText = vi.fn<(text: string) => Promise<void>>();
@@ -81,7 +87,9 @@ describe("the on-call screen", () => {
   it("names the page and opens on a contact card", () => {
     renderOnCall();
     const hud = screen.getByTestId("ward-on-call-hud-island");
-    expect(within(hud).getByRole("heading", { level: 1, name: /^On-call: \d+ lines? answering$/u })).toBeVisible();
+    // Page tops (Josh, 9 Nov 2026): the heading is "Who to call now"; the answering count is a figure.
+    expect(within(hud).getByRole("heading", { level: 1, name: /^On-call: Who to call now$/u })).toBeVisible();
+    expect(screen.getByTestId("ward-on-call-figure-answering")).toHaveTextContent(/^\d+ answering, all lists$/u);
     expect(panel().getByRole("heading", { level: 2, name: "Bed coordinator" })).toBeVisible();
     expect(panel().getByText("Not verified")).toBeVisible();
   });
@@ -134,30 +142,26 @@ describe("the on-call screen", () => {
 
   it("shows cover at a later time, labelled as tomorrow when it has passed", () => {
     renderOnCall();
-    fireEvent.click(screen.getByRole("radio", { name: "03:00" }));
-    expect(screen.getByText("Who answers at 03:00 tomorrow")).toBeVisible();
+    pickCoverAt("03:00");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Who answers at 03:00 tomorrow$/u);
     expect(within(row("nmhs-bfc")).getByText("08:00")).toBeVisible();
     expect(within(row("nmhs-bfc")).getByText("On-call mobile")).toBeVisible();
   });
 
-  it("keeps the key lines in the hero with the anchor other pages link to", () => {
+  it("keeps the key lines in the hero, the State bed desk first, with the directory anchor", () => {
     const { container } = renderOnCall();
-    // OC3 (Josh, 4 Nov 2026): the strip groups its lines by job, each card with its own copy button.
-    const strip = within(screen.getByRole("group", { name: "Key lines" }));
-    const keys = strip.getAllByRole("button").filter((key) => key.dataset.testid?.startsWith("ward-on-call-key-"));
-    expect(keys.map((key) => key.dataset.testid?.replace("ward-on-call-key-", ""))).toEqual([
-      "sw-bfc",
-      "sw-gov",
-      "sw-mherl",
-      "nmhs-bfc",
-      "emhs-bfc",
-      "smhs-bfc",
-      "cahs-bfc",
-      "wachs-bfc",
-    ]);
-    expect(strip.getByRole("group", { name: "Statewide" })).toBeVisible();
-    expect(strip.getByRole("group", { name: "Bed flow" })).toBeVisible();
-    expect(container.querySelector("#ward-reach-bed")).toBe(screen.getByTestId("ward-on-call-key-sw-bfc"));
+    // Page tops (Josh, 9 Nov 2026): the State bed desk is the act row; the bed flow lines and the
+    // crisis line are one slim Key lines row, three shown and the rest one tap away.
+    expect(screen.getByTestId("ward-on-call-act")).toHaveTextContent(/^State bed desk08 0000 \d{4}until 20:00/u);
+    const strip = within(screen.getByRole("list", { name: "Key lines" }));
+    const keys = () =>
+      strip
+        .getAllByRole("button")
+        .map((key) => key.dataset.testid?.replace("ward-on-call-key-", ""))
+        .filter((id): id is string => id !== undefined);
+    expect(keys()).toEqual(["nmhs-bfc", "emhs-bfc", "smhs-bfc"]);
+    fireEvent.click(screen.getByRole("button", { name: /^All 6 lines/u }));
+    expect(keys()).toEqual(["nmhs-bfc", "emhs-bfc", "smhs-bfc", "cahs-bfc", "wachs-bfc", "sw-mherl"]);
     expect(container.querySelector("#ward-reach-switchboard")).toBe(screen.getByTestId("ward-on-call-directory"));
     fireEvent.click(screen.getByTestId("ward-on-call-key-sw-mherl"));
     expect(panel().getByRole("heading", { name: "Mental Health Emergency Response Line" })).toBeVisible();
@@ -191,10 +195,9 @@ describe("the on-call screen", () => {
   it("follows the service chosen in the header, keeping Statewide lines (OC2, OC3)", () => {
     setServiceScope("North Metro");
     renderOnCall();
-    const strip = within(screen.getByRole("group", { name: "Key lines" }));
-    const service = within(strip.getByRole("group", { name: /service$/u }));
-    expect(service.getByTestId("ward-on-call-key-nmhs-bfc")).toBeVisible();
-    expect(service.getByTestId("ward-on-call-key-nmhs-scon")).toBeVisible();
+    const strip = within(screen.getByRole("list", { name: "Key lines" }));
+    expect(strip.getByTestId("ward-on-call-key-nmhs-bfc")).toBeVisible();
+    expect(strip.getByTestId("ward-on-call-key-nmhs-scon")).toBeVisible();
     expect(strip.queryByTestId("ward-on-call-key-emhs-bfc")).not.toBeInTheDocument();
     expect(row("nmhs-bfc")).toBeVisible();
     expect(screen.queryByTestId("ward-on-call-row-emhs-bfc")).not.toBeInTheDocument();
@@ -202,9 +205,9 @@ describe("the on-call screen", () => {
     expect(row("sw-mherl")).toBeVisible();
   });
 
-  it("copies a key line's number from its card in one tap (OC3)", async () => {
+  it("copies the State bed desk's number from the top in one tap (OC3, page tops)", async () => {
     renderOnCall();
-    fireEvent.click(screen.getByRole("button", { name: "Copy MHERL number" }));
+    fireEvent.click(within(screen.getByTestId("ward-on-call-act")).getByRole("button", { name: "Copy number" }));
     await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
     const [first, number] = writeText.mock.calls[0]![0].split("\n");
     expect(first).toBe("Synthetic prototype.");
@@ -222,11 +225,13 @@ describe("the on-call screen", () => {
     expect(screen.queryByText("Prototype data, invented numbers")).not.toBeInTheDocument();
   });
 
-  it("v10: the title is the hero's one figure, and Downtime card says it is a preview", () => {
+  it("page tops: the top's three figures count every list, and Downtime card says it is a preview", () => {
     renderOnCall();
     const hud = screen.getByTestId("ward-on-call-hud-island");
-    const title = within(hud).getByRole("heading", { level: 1 }).textContent ?? "";
-    expect(title).toMatch(/^On-call: \d+ lines? answering$/u);
+    // Josh approved "all lists" (9 Nov 2026): the Show chips below count this tab only.
+    expect(within(hud).getByRole("group", { name: "Figures" })).toHaveTextContent(
+      /^\d+ answering, all lists\d+ closed\d+ check due, all lists$/u,
+    );
     expect(within(hud).getByRole("button", { name: /Downtime card/u })).toHaveAttribute(
       "title",
       "Preview until the Downtime page exists",
@@ -268,6 +273,7 @@ describe("the on-call screen", () => {
   it("picking a line that is not starred leaves My list for that line's tab", () => {
     renderOnCall();
     fireEvent.click(screen.getByRole("tab", { name: /^Mine/u }));
+    fireEvent.click(screen.getByRole("button", { name: /^All 6 lines/u }));
     fireEvent.click(screen.getByTestId("ward-on-call-key-sw-mherl"));
     expect(screen.getByRole("tab", { name: /^State(?! bed)/u })).toHaveAttribute("aria-selected", "true");
     expect(row("sw-mherl")).toBeVisible();
@@ -351,7 +357,7 @@ describe("the on-call screen", () => {
 
   it("points a closed line at whoever answers now", () => {
     renderOnCall();
-    fireEvent.click(screen.getByRole("radio", { name: "03:00" }));
+    pickCoverAt("03:00");
     fireEvent.click(within(row("nmhs-aml")).getByRole("button", { name: /^Aboriginal mental health liaison/u }));
     expect(panel().getByText(/Closed, opens/u)).toBeVisible();
     expect(panel().getByText(/Call now:/u)).toBeVisible();

@@ -15,7 +15,12 @@ import type { DischargeWorkspaceState } from "./use-discharge-workspace-state";
    the one barrier panel sits beside the list. */
 
 /** Now and History: in the hero on desktop and tablet, under it on a phone (v10). */
-export function DischargePopulationSwitch({ s }: { s: DischargeWorkspaceState }) {
+/**
+ * Now and Recorded. Page tops (Josh approved, 9 Nov 2026): the page's tabs, drawn as the shared
+ * folder tabs under the hero (`className` carries `folderTabClasses.switch`), so they are tabs
+ * (`aria-selected`) with Now's count beside its word.
+ */
+export function DischargePopulationSwitch({ s, className }: { s: DischargeWorkspaceState; className?: string }) {
   const {
     releaseGroups,
     population,
@@ -28,6 +33,7 @@ export function DischargePopulationSwitch({ s }: { s: DischargeWorkspaceState })
     clearSelection,
     sessionAdopted,
   } = s;
+  const toWork = releaseGroups.blocked.length + releaseGroups.confirmed.length + releaseGroups.expected.length;
   return (
     <>
       {!sessionAdopted ? (
@@ -36,15 +42,16 @@ export function DischargePopulationSwitch({ s }: { s: DischargeWorkspaceState })
         </span>
       ) : null}
       <div
-        className={pageStyles.populationSwitch}
-        role="group"
+        className={className ?? pageStyles.populationSwitch}
+        role="tablist"
         aria-label="Now or recorded"
         aria-busy={!sessionAdopted}
       >
         <button
           type="button"
+          role="tab"
           disabled={!sessionAdopted}
-          aria-pressed={population === "releases"}
+          aria-selected={population === "releases"}
           data-testid="ward-discharge-now"
           onClick={() => {
             setPopulation("releases");
@@ -57,14 +64,15 @@ export function DischargePopulationSwitch({ s }: { s: DischargeWorkspaceState })
         >
           Now
           {/* Josh, 30 Oct: Now says the hero's figure, the releases listed to work on. */}
-          <span className="sr-only">
-            , {releaseGroups.blocked.length + releaseGroups.confirmed.length + releaseGroups.expected.length} to work
-            now
+          <span className={pageStyles.tabCount} aria-hidden="true">
+            {toWork}
           </span>
+          <span className="sr-only">, {toWork} to work now</span>
         </button>
         <button
           type="button"
-          aria-pressed={population === "records"}
+          role="tab"
+          aria-selected={population === "records"}
           data-testid="ward-discharge-history"
           disabled={!sessionAdopted}
           onClick={() => {

@@ -1435,3 +1435,44 @@ tr:has(+ .moreRow) > td {
 .phoneStates::-webkit-scrollbar {
   display: none;
 }
+
+/* Page tops (Josh, 9 Nov 2026): the folder tabs follow the hero inside a wrap with an 8px gap. */
+.folder {
+  --wf-folder-gap: var(--wf-s-2);
+}
+
+/* The search leads the top: the field with its date of birth, then Add patient (desktop). */
+.findRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-width: 0;
+}
+
+.findRow .searchForm {
+  flex: 1 1 auto;
+  max-width: none;
+}
+
+/* Desktop: the Today band rides in the title line, before the Demo pill. */
+.titleBand {
+  display: flex;
+  align-items: center;
+  margin-right: var(--wf-s-4);
+}
+
+.titleBand > div {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--wf-s-3);
+}
+
+.titleBand li {
+  flex: 0 0 auto;
+}
+
+/* The date of birth switch keeps the field's height beside it. */
+.findRow .dobToggle {
+  height: 40px;
+}

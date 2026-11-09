@@ -11,25 +11,29 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { Ambulance, BedSingle, Camera, FileText, Printer, Users } from "lucide-react";
+import { Ambulance, BedSingle, Camera, FileText, Users } from "lucide-react";
 
 import {
-  Button,
   Card,
   CardHead,
   FactGrid,
   GroupHead,
+  FolderTabs,
   Hero,
-  HeroChip,
-  HeroChips,
-  PhoneHero,
+  HeroAct,
+  HeroFigures,
+  HeroPill,
+  HeroQuickChips,
+  HeroTop,
+  SrOnly,
+  folderTabClasses,
+  heroChipClassName,
   PhoneListRow,
   PhoneSheet,
   Segmented,
   Spinner,
   StatusGlyph,
   Tabs,
-  phoneRows,
   cx,
   durMinutes,
   tableClasses,
@@ -61,6 +65,7 @@ import { useDowntimePackAccess } from "./downtime-pack-context";
 import { nextDowntimePackAt } from "./downtime-pack-schedule";
 import { useTakeDowntimePack } from "./use-take-downtime-pack";
 import { reportDay, reportMoment } from "./report-parts";
+import topTitle from "../shell/page-top-title.module.css";
 import styles from "./reports.module.css";
 import tabsStyles from "./downtime-pack-tabs.module.css";
 
@@ -298,22 +303,15 @@ export function DowntimePackScreen() {
   const groups = serviceGroups(pack.wards);
 
   const totals = packTotals(pack);
-  const twin = (key: keyof PackTotals) =>
-    before && !taking && twinFor === pack
-      ? { twin: signed(totals[key] - before[key]), twinLabel: twinWords(totals[key] - before[key]) }
-      : {};
-
-  // A chip or tab shows its table; the others stay in the print copy only.
-  const jumpTo = (target: Section) => setSection(target);
+  // A tab shows its table; the others stay in the print copy only.
   const onScreen = (target: Section) => (isPhone || section === target ? undefined : tabsStyles.printOnlyPanel);
 
-  const snapshotButton = (variant: "onHero" | "sec") => (
+  // Page-top redesign (Josh, 9 Nov 2026): New snapshot is the top's one chip, gated as before.
+  const snapshotChip = (
     <span className={styles.gated}>
-      <Button
-        variant={variant}
-        // Phone (Josh, 31 Oct 2026): on the hero it is Home's hero pill.
-        className={variant === "onHero" ? phoneRows.heroPill : undefined}
-        icon={taking ? undefined : Camera}
+      <button
+        type="button"
+        className={heroChipClassName}
         onClick={newSnapshot}
         aria-disabled={!canSnapshot || undefined}
         aria-describedby={canSnapshot ? undefined : "downtime-snapshot-reason"}
@@ -324,9 +322,12 @@ export function DowntimePackScreen() {
             <Spinner /> Taking snapshot
           </>
         ) : (
-          "New snapshot"
+          <>
+            <Camera size={16} strokeWidth={1.75} aria-hidden="true" />
+            New snapshot
+          </>
         )}
-      </Button>
+      </button>
       {canSnapshot ? null : (
         <span id="downtime-snapshot-reason" className={styles.reasonOnHero}>
           {role !== "coordinator"
@@ -343,29 +344,6 @@ export function DowntimePackScreen() {
     window.print();
     markDowntimePackHandled(pack);
   };
-  const printButton = (
-    <Button
-      variant="light"
-      icon={Printer}
-      onClick={printPack}
-      aria-disabled={!ready || undefined}
-      data-testid="ward-downtime-print"
-    >
-      Print or save PDF
-    </Button>
-  );
-  const printButtonOnHero = (
-    <Button
-      variant="onHero"
-      className={phoneRows.heroPill}
-      icon={Printer}
-      onClick={printPack}
-      aria-disabled={!ready || undefined}
-      data-testid="ward-downtime-print"
-    >
-      Print
-    </Button>
-  );
   // Device audit 11 Oct 2026: a column where every row reads "Not recorded" only pads the print.
   const edAccepted = pack.edQueue.some((line) => line.acceptedWard !== "");
   const movesEta = pack.pendingMoves.some((line) => line.transportEta !== null);
@@ -381,16 +359,113 @@ export function DowntimePackScreen() {
         : `Taken ${formatSheetMoment(pack.generatedAt, dayZero, { includeYearAndZone: true })} · next pack ${nextPackAt}`}
     </span>
   );
-  const staleLine = stale ? (
-    <span className={styles.staleLine} data-testid="ward-downtime-stale">
-      <StatusGlyph tone="warning" size={9} />
-      {!pack.offline
-        ? `Stale · taken ${durMinutes(ageMinutes)} ago`
-        : syncedAt === null
-          ? "Stale · no update recorded"
-          : `Stale · last updated ${durMinutes(ageMinutes)} ago`}
-    </span>
-  ) : null;
+  const staleText = !stale
+    ? null
+    : !pack.offline
+      ? `Stale · taken ${durMinutes(ageMinutes)} ago`
+      : syncedAt === null
+        ? "Stale · no update recorded"
+        : `Stale · last updated ${durMinutes(ageMinutes)} ago`;
+
+  // Page-top redesign (Josh, 9 Nov 2026): the frozen time is the title, then the pack's totals, the
+  // print as the act row and New snapshot as the one chip. The tables follow as folder tabs.
+  const frozenTitle = pack.offline
+    ? `Offline · last updated ${syncedAt === null ? "not recorded" : formatInstantWithDay(syncedAt, now)}`
+    : `Frozen at ${frozenAt}`;
+  const day = reportDay(pack.generatedAt, dayZero);
+  const twins = before && !taking && twinFor === pack;
+  const tabItems: Array<{ id: Section; label: string; short: string; count: number }> = [
+    { id: "beds", label: "Beds by ward", short: "Beds", count: totals.ready },
+    { id: "ed", label: "ED queue", short: "ED", count: totals.ed },
+    { id: "moves", label: "Pending movements", short: "Moves", count: totals.moves },
+    { id: "forms", label: "Legal forms", short: "Forms", count: totals.forms },
+  ];
+  const twinKey: Record<Section, keyof PackTotals> = { beds: "ready", ed: "ed", moves: "moves", forms: "forms" };
+  const pageTop = (
+    <Hero
+      level={1}
+      className={cx(topTitle.hero, folderTabClasses.hero)}
+      eyebrow={<SrOnly>Downtime pack · synthetic data</SrOnly>}
+      title={
+        <>
+          <span data-testid="ward-downtime-frozen">{frozenTitle}</span>
+          {isPhone ? null : (
+            <>
+              {" "}
+              <span className={topTitle.soft}>{day}</span>
+            </>
+          )}
+        </>
+      }
+      aside={
+        <span data-page-top-pill="" data-print-hide>
+          <HeroPill text={isPhone ? day : "Synthetic data"} />
+        </span>
+      }
+    >
+      <HeroTop
+        figures={
+          <HeroFigures
+            label="Pack totals"
+            items={[
+              { id: "ready", value: totals.ready, label: "beds ready" },
+              {
+                id: "occupied",
+                value: pack.totals.occupied,
+                unit: <>&thinsp;/&thinsp;{pack.totals.beds}</>,
+                label: "occupied",
+              },
+              { id: "making-ready", value: pack.totals.pendingPreparation, label: "being made ready" },
+            ]}
+          />
+        }
+        act={
+          <HeroAct
+            tone={staleText ? "warning" : "calm"}
+            title={staleText ?? `Ready to print · next at ${pack.offline ? "when online" : nextPackAt}`}
+            titleTestId={staleText ? "ward-downtime-stale" : undefined}
+            action={{
+              label: "Print or save PDF",
+              phoneLabel: "Print",
+              onClick: printPack,
+              testId: "ward-downtime-print",
+            }}
+          />
+        }
+        chips={
+          <div className={styles.topChips} data-print-hide>
+            <HeroQuickChips
+              label="Pack actions"
+              items={[{ id: "snapshot", label: "New snapshot", node: snapshotChip }]}
+            />
+            {isPhone ? null : (
+              <p className={styles.topNote} data-testid="ward-downtime-keep-copy">
+                {KEEP_A_COPY}
+              </p>
+            )}
+          </div>
+        }
+      >
+        {twins ? (
+          <p className={styles.topTwins}>
+            <span aria-hidden="true">Against the last pack: </span>
+            {tabItems.map((item, index) => {
+              const delta = totals[twinKey[item.id]] - before[twinKey[item.id]];
+              return (
+                <span key={item.id}>
+                  <span aria-hidden="true">
+                    {index > 0 ? " · " : ""}
+                    {item.short} {signed(delta)}
+                  </span>
+                  <SrOnly>{`${item.label}: ${twinWords(delta)}.`}</SrOnly>
+                </span>
+              );
+            })}
+          </p>
+        ) : null}
+      </HeroTop>
+    </Hero>
+  );
 
   // The four tables, shared by desktop and by the phone's printout: paper from any device carries
   // every table in full, never only the section a phone had open (remaining-pages audit 13 Oct 2026).
@@ -407,7 +482,7 @@ export function DowntimePackScreen() {
           icon={BedSingle}
           title="Beds by ward"
           aside={
-            <span className={styles.headMeta}>
+            <span className={cx(styles.headMeta, styles.printOnlyInline)}>
               <b className={tabsStyles.readyGreen}>{pack.totals.ready}</b> ready
               {pack.totals.pendingPreparation > 0 ? (
                 <>
@@ -518,7 +593,7 @@ export function DowntimePackScreen() {
           icon={Users}
           title="ED queue"
           aside={
-            <span className={styles.headMeta}>
+            <span className={cx(styles.headMeta, styles.printOnlyInline)}>
               <b>{pack.edQueue.length}</b> still in ED
             </span>
           }
@@ -585,7 +660,7 @@ export function DowntimePackScreen() {
           icon={Ambulance}
           title="Pending movements"
           aside={
-            <span className={styles.headMeta}>
+            <span className={cx(styles.headMeta, styles.printOnlyInline)}>
               <b>{pack.pendingMoves.length}</b> accepted
             </span>
           }
@@ -640,7 +715,7 @@ export function DowntimePackScreen() {
           title="Legal forms"
           meta="Recorded times only, not legally checked"
           aside={
-            <span className={styles.headMeta}>
+            <span className={cx(styles.headMeta, styles.printOnlyInline)}>
               <b>{pack.legalForms.length}</b> forms
             </span>
           }
@@ -688,41 +763,20 @@ export function DowntimePackScreen() {
       <div className={cx(styles.page, styles.phonePage)} data-testid="ward-downtime-pack" data-ward-design="v10">
         <main id="main-content" className={styles.main}>
           <div className={styles.phoneScreenOnly} data-print-hide>
-            <PhoneHero
-              level={1}
-              className={cx(styles.downtimePhoneHero, tabsStyles.heroPillActions)}
-              // F-08 (phone review, Oct 2026): the synthetic marker, as the desktop eyebrow carries it. A
-              // frozen pack takes no Demo pill, whose pulse would read as live.
-              eyebrow="Downtime pack · synthetic data"
-              title={pack.offline ? `Frozen, ${frozenAt}` : `Frozen at ${frozenAt}`}
-              sub={`${reportDay(pack.generatedAt, dayZero)} · next pack ${pack.offline ? "when online" : nextPackAt}`}
-              // Ops-20 (13 Oct 2026): the counts sit once, in the section control below; the hero
-              // keeps the frozen time and the actions.
-              actions={
-                <>
-                  {snapshotButton("onHero")}
-                  {/* Phone printing is rare: Print is a secondary here, never the area's primary. */}
-                  {printButtonOnHero}
-                </>
-              }
-            />
-            {staleLine ? <p className={styles.phoneNote}>{staleLine}</p> : null}
+            {pageTop}
+            <FolderTabs label="Downtime pack tables" value={section} testId="ward-downtime-tabs">
+              <Segmented<Section>
+                className={folderTabClasses.switch}
+                size="md"
+                label="Downtime pack section"
+                value={section}
+                onChange={setSection}
+                items={tabItems.map((item) => ({ id: item.id, label: item.short, count: item.count }))}
+              />
+            </FolderTabs>
             <p className={styles.phoneNote} data-testid="ward-downtime-keep-copy">
               {KEEP_A_COPY}
             </p>
-            <Segmented<Section>
-              className={cx(styles.phoneSeg, styles.phoneSegPinned)}
-              size="md"
-              label="Downtime pack section"
-              value={section}
-              onChange={setSection}
-              items={[
-                { id: "beds", label: "Beds", count: totals.ready },
-                { id: "ed", label: "ED", count: totals.ed },
-                { id: "moves", label: "Moves", count: totals.moves },
-                { id: "forms", label: "Forms", count: totals.forms },
-              ]}
-            />
             {section === "beds" ? (
               groups.map((group) => (
                 <section key={group.service} className={styles.phoneGroup} aria-label={group.service}>
@@ -744,12 +798,12 @@ export function DowntimePackScreen() {
                         name={ward.name}
                         meta={<span className={styles.phoneMetaWrap}>{wardLine(ward)}</span>}
                         value={
+                          // Page-top redesign (Josh, 9 Nov 2026): "✓ 2 ready" on one line.
                           <span className={styles.phoneReady}>
                             {ward.counts.ready > 0 ? <StatusGlyph tone="success" size={9} /> : null}
-                            {ward.counts.ready}
+                            {ward.counts.ready} <small className={styles.phoneReadyUnit}>ready</small>
                           </span>
                         }
-                        time="ready"
                         onSelect={() =>
                           setSheet({
                             title: ward.name,
@@ -864,6 +918,7 @@ export function DowntimePackScreen() {
           </div>
           <div className={styles.printOnly} data-testid="ward-downtime-print-pack">
             <p className={styles.printMeta}>Downtime pack · synthetic data · {provenance}. All row times are AWST.</p>
+            <p className={styles.printMeta}>{takenLine}</p>
             <p className={styles.printMeta} data-testid="ward-downtime-print-notice">
               {PRINT_NOTICE}
             </p>
@@ -881,89 +936,24 @@ export function DowntimePackScreen() {
           pack, as the handover sheet sets its own page; the row styles are in ward-flow-print.css. */}
       <style>{DOWNTIME_PAGE_CSS}</style>
       <main id="main-content" className={styles.main}>
-        <Hero
-          level={1}
-          eyebrow="Downtime pack · synthetic data"
-          title="Downtime pack"
-          titleMeta={
-            <span className={styles.frozen} data-testid="ward-downtime-frozen">
-              <span className={styles.frozenDot} aria-hidden="true" />
-              {/* Visual desk, 22 Oct 2026: the full "taken offline · last updated" line pushed the title to
-                  "Dow…" at 1280, so the chip stays short and the taken line beside it says it in full. */}
-              {pack.offline ? "Offline · last updated " : "Frozen "}
-              <b>
-                {pack.offline && syncedAt !== null
-                  ? formatInstantWithDay(syncedAt, now)
-                  : pack.offline
-                    ? "not recorded"
-                    : frozenAt}
-              </b>
-            </span>
-          }
-          aside={
-            <span className={styles.heroActions} data-print-hide>
-              {snapshotButton("onHero")}
-              {printButton}
-            </span>
-          }
-          bar={
-            <HeroChips label="Pack totals, each shows its table">
-              <HeroChip
-                value={totals.ready}
-                label={
-                  pack.totals.pendingPreparation > 0
-                    ? `Beds ready · ${pack.totals.pendingPreparation} being made ready`
-                    : "Beds ready"
-                }
-                onPress={() => jumpTo("beds")}
-                {...twin("ready")}
-              />
-              {/* The chips use the tables' own names, so one thing has one word. */}
-              <HeroChip value={totals.ed} label="ED queue" onPress={() => jumpTo("ed")} {...twin("ed")} />
-              <HeroChip
-                value={totals.moves}
-                label="Pending movements"
-                onPress={() => jumpTo("moves")}
-                {...twin("moves")}
-              />
-              <HeroChip value={totals.forms} label="Legal forms" onPress={() => jumpTo("forms")} {...twin("forms")} />
-            </HeroChips>
-          }
-          barAside={
-            <span className={styles.heroLine}>
-              {staleLine}
-              {takenLine}
-            </span>
-          }
-        />
-
-        <p className={styles.cardNote} data-print-hide data-testid="ward-downtime-keep-copy">
-          {KEEP_A_COPY}
-        </p>
-
-        {/* One table on screen at a time, chosen here; the print copy still holds all four.
-            The hero chips just above carry each table's count, so the tabs name the tables only. */}
-        <div className={tabsStyles.tabBar} data-print-hide>
+        {pageTop}
+        {/* One table on screen at a time, chosen here; Print or save PDF still holds all four. */}
+        <FolderTabs label="Downtime pack tables" value={section} testId="ward-downtime-tabs">
           <Tabs<Section>
             label="Downtime pack section"
             idPrefix="downtime"
             value={section}
             onChange={setSection}
-            className={tabsStyles.tabs}
-            items={[
-              { id: "beds", label: "Beds by ward" },
-              { id: "ed", label: "ED queue" },
-              { id: "moves", label: "Pending movements" },
-              { id: "forms", label: "Legal forms" },
-            ]}
+            className={folderTabClasses.switch}
+            items={tabItems.map((item) => ({ id: item.id, label: item.label, count: item.count }))}
           />
-          <span className={tabsStyles.tabNote}>Print or save PDF holds all four tables.</span>
-        </div>
+        </FolderTabs>
 
         {/* F-08: the printout says it holds invented records before its first table. */}
         <p className={cx(styles.printOnly, styles.printMeta)} data-testid="ward-downtime-print-provenance">
           Downtime pack · {provenance}. All row times are AWST.
         </p>
+        <p className={cx(styles.printOnly, styles.printMeta)}>{takenLine}</p>
         <p className={cx(styles.printOnly, styles.printMeta)}>{PRINT_NOTICE}</p>
         {packTables}
 

@@ -199,15 +199,6 @@ export function durText(minutes: number): string {
   return `${Math.floor(v / (24 * 60))}d ${Math.floor((v % (24 * 60)) / 60)}h`;
 }
 
-/**
- * "Ends 15:42 as typed", or "Ended 15:42 as typed" once the typed time has gone by; empty when no
- * expiry was typed. Never a running figure (legal times only as typed, 31 Oct 2026).
- */
-export function typedTimeText(movement: Movement, now: Instant): string {
-  const dueAt = movement.legalForm?.dueAt;
-  return dueAt === undefined ? "" : typedTimeLine(dueAt, now);
-}
-
 export type FormEventItem = { id: string; sortAt: Instant; tone: WfTone; text: string };
 
 /** Recorded legal-form facts on one movement, newest first: what the record holds and nothing more. */

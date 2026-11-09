@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 
@@ -11,6 +13,7 @@ import type { HealthService, Movement } from "@/components/ward-management/ward-
 import { edLongestWaitTone, edPressure } from "@/components/ward-management/ward-pressure";
 import { edHealthService, healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 import { edShortName, siteByCode } from "@/components/ward-management/ward-sites";
+import { WARD_ED_HREF } from "@/components/ward-management/ward-nav";
 
 import heroStyles from "./home-hero.module.css";
 import styles from "./home.module.css";
@@ -269,7 +272,13 @@ export function HomeEdPressure({
       >
         <header className={heroStyles.edHead}>
           <h3 className={heroStyles.edLabel}>Waiting in ED</h3>
-          {population ? <p className={heroStyles.edPopulation}>{population}</p> : null}
+          {population ? (
+            // Page tops (Josh, 9 Nov 2026): the population line opens All EDs.
+            <Link href={WARD_ED_HREF} className={heroStyles.edPopulation} data-testid="ward-home-ed-all-link">
+              {population}
+              <ChevronRight size={14} strokeWidth={1.75} aria-hidden="true" />
+            </Link>
+          ) : null}
         </header>
         {list}
         {serviceFoot}

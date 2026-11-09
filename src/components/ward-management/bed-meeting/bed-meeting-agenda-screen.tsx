@@ -3,7 +3,7 @@
 import { useCallback, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import Link from "next/link";
-import { Check, Plus } from "lucide-react";
+import { Check, Ellipsis, FileText, Plus, Search } from "lucide-react";
 
 import {
   AppliedFilter,
@@ -15,22 +15,28 @@ import {
   ChipGroup,
   DisabledReason,
   FilterChip,
+  FolderTabs,
   Hero,
-  HeroStat,
+  HeroAct,
+  HeroFigures,
+  HeroQuickChips,
+  HeroTop,
+  Menu,
   SearchField,
+  folderTabClasses,
+  useIsPhone,
   Segmented,
   ShowMoreRow,
   StatusGlyph,
   TierTile,
   durMinutes,
   foldLimit,
-  phoneRows,
   cx,
-  Avatar,
   SrOnly,
 } from "@/components/wf";
 
 import { bedMeetingSheet } from "../capacity/bed-meeting-derivations";
+import pageTop from "../page-top-title.module.css";
 import { BedMeetingSheetLauncher } from "../capacity/bed-meeting-sheet";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
@@ -110,6 +116,9 @@ const CARD_TITLES: Record<string, string> = {
 };
 
 /** The hero's short names for the four lists; the cards keep their full titles. */
+/** Services shown as tabs on a phone before More (as Home's three tabs). */
+const PHONE_SERVICE_TABS = 3;
+
 const SHORT_TITLES: Record<string, string> = {
   "ed-waits": "ED waits",
   holds: "Pulled beds",
@@ -148,6 +157,9 @@ function BedMeetingAgenda() {
   const service = useServiceScope();
   const [chips, setChips] = useState<ReadonlySet<ListChip>>(new Set());
   const [query, setQuery] = useState("");
+  // Page tops (Josh, 9 Nov 2026): Find anyone is a chip in the top; it opens the search under the tabs.
+  const [findOpen, setFindOpen] = useState(false);
+  const isPhone = useIsPhone();
   // B1 extended (Josh, 4 Nov 2026): narrow every list to any group (ward, tier, legal status, age).
   const [groups, setGroups] = useState<AgendaGroupFilter>({});
   const grouped = agendaGroupFilterActive(groups);
@@ -274,12 +286,6 @@ function BedMeetingAgenda() {
       (item, index, all) =>
         hasOpenAction(item) && all.findIndex((other) => other.subject.id === item.subject.id) === index,
     );
-  const listCount = (id: ListChip) =>
-    id === "referrals"
-      ? queue.length
-      : id === "actioned"
-        ? actioned.length
-        : (sections.find((section) => section.id === id)?.items.length ?? 0);
   // "With an action" narrows the agenda lists to those people; the other chips pick which lists show.
   const actionedOnly = chips.has("actioned");
   const listChips: readonly ListChip[] = [...chips].filter((id) => id !== "actioned");
@@ -332,124 +338,228 @@ function BedMeetingAgenda() {
     <main id="main-content" className={styles.main} data-testid="bed-meeting-agenda">
       <Hero
         level={1}
-        eyebrow="Bed meeting"
-        title="Agenda"
-        titleMeta={`${service ?? "Statewide"} · as at ${formatInstantWithDay(now, now)}`}
-        stats={
+        className={cx(pageTop.hero, folderTabClasses.hero)}
+        title={
           <>
-            {sections.map((section) => (
-              <HeroStat key={section.id} value={section.total} label={SHORT_TITLES[section.id] ?? section.title} />
-            ))}
-            <HeroStat value={queue.length} label="Referrals" />
-            <HeroStat
-              value={summary.overdue.length + summary.open.length}
-              label={summary.overdue.length > 0 ? `Actions, ${summary.overdue.length} overdue` : "Actions"}
-              tone={summary.overdue.length > 0 ? "warning" : undefined}
-            />
+            <SrOnly>Bed meeting agenda: </SrOnly>
+            Lists <span className={pageTop.soft}>for the meeting</span>
           </>
         }
         aside={
-          // Phone (Josh, 31 Oct 2026): Home's hero pills, side by side.
-          <div className={`${styles.heroPillGroup} ${phoneRows.heroPills}`}>
-            {bedMeetingTvOn ? null : (
-              <BedMeetingSheetLauncher
-                now={now}
-                buttonClassName={`${buttonClass({ variant: "onHero", size: "sm" })} ${phoneRows.heroPill}`}
-                buildSheet={buildSheet}
-                actions={actionRows.map((row) => ({
-                  id: `${row.subject.id}-${row.action.kind}`,
-                  name: patientOf(row.record).formalName,
-                  action: bedMeetingActionLabel(row.action.kind),
-                  owner: ownerText(row.action),
-                  due: `${row.action.dueAt < now ? "was due" : "due"} ${formatInstantWithDay(row.action.dueAt, now)}`,
-                  overdue: row.action.dueAt < now,
-                }))}
-              />
-            )}
-            {/* The meeting room screen, behind the `bed-meeting-tv` flag as on Capacity. */}
-            {bedMeetingTvOn ? (
-              <Link
-                href={bedMeetingTvHref()}
-                className={`${buttonClass({ variant: "light", size: "sm" })} ${phoneRows.heroPill}`}
-                data-testid="agenda-start-meeting"
-                data-primary="true"
-              >
-                Start meeting
-              </Link>
-            ) : null}
-          </div>
+          // `data-wf-live` places the plain pill where the hero puts its Live pill.
+          <span className={pageTop.pill} data-wf-live="" data-testid="agenda-as-at">
+            As at {formatInstantWithDay(now, now)}
+          </span>
         }
-      />
+      >
+        <HeroTop
+          figures={
+            <HeroFigures
+              items={sections.slice(0, 3).map((section) => {
+                const short = SHORT_TITLES[section.id] ?? section.title;
+                const id = section.id as ListChip;
+                return {
+                  id: section.id,
+                  value: section.total,
+                  // Lower case like every page's figures; "ED" keeps its capitals.
+                  label: short.startsWith("ED") ? short : short.toLowerCase(),
+                  // Each figure shows just that list (tap again for every list), as the list chips did.
+                  onClick: () => toggleChip(id),
+                  testId: `agenda-figure-${section.id}`,
+                };
+              })}
+            />
+          }
+          act={
+            <HeroAct
+              tone={actionRows.length === 0 ? "calm" : summary.overdue.length > 0 ? "warning" : "calm"}
+              title={
+                actionRows.length === 0
+                  ? isPhone
+                    ? "No earlier actions waiting"
+                    : "No actions waiting from earlier meetings"
+                  : `${actionRows.length} ${actionRows.length === 1 ? "action" : "actions"} from earlier meetings`
+              }
+              sub={
+                actionRows.length === 0
+                  ? undefined
+                  : `${summary.overdue.length} overdue · ${summary.open.length} still open · ${summary.doneLastDay} done in the last day`
+              }
+              testId="agenda-act"
+              action={
+                // The meeting room screen, behind the `bed-meeting-tv` flag as on Capacity.
+                bedMeetingTvOn
+                  ? {
+                      label: "Start meeting",
+                      phoneLabel: "Start",
+                      href: bedMeetingTvHref(),
+                      testId: "agenda-start-meeting",
+                    }
+                  : undefined
+              }
+            />
+          }
+          chips={
+            <div className={styles.heroChips}>
+              <HeroQuickChips
+                label="Agenda tools"
+                items={[
+                  {
+                    id: "find",
+                    label: "Find anyone",
+                    icon: <Search strokeWidth={1.75} aria-hidden="true" />,
+                    pressed: findOpen,
+                    testId: "agenda-find-anyone",
+                    onClick: () => {
+                      setFindOpen((open) => !open);
+                      // Opening it puts the cursor in the search, so a name can be typed at once.
+                      requestAnimationFrame(() =>
+                        document
+                          .querySelector<HTMLInputElement>(
+                            'input[data-testid="bed-meeting-agenda-search"], [data-testid="bed-meeting-agenda-search"] input',
+                          )
+                          ?.focus(),
+                      );
+                    },
+                  },
+                  {
+                    id: "referrals",
+                    label: "Referrals",
+                    icon: <FileText strokeWidth={1.75} aria-hidden="true" />,
+                    count: queue.length,
+                    countTone: "quiet",
+                    pressed: chips.has("referrals"),
+                    testId: "agenda-referrals-chip",
+                    onClick: () => toggleChip("referrals"),
+                  },
+                  // Shown only while someone carries an open action, so the row stays short.
+                  ...(actioned.length > 0
+                    ? [
+                        {
+                          id: "actioned",
+                          label: "With an action",
+                          count: actioned.length,
+                          countTone: "quiet" as const,
+                          pressed: actionedOnly,
+                          testId: "agenda-actioned-chip",
+                          onClick: () => toggleChip("actioned"),
+                        },
+                      ]
+                    : []),
+                ]}
+              />
+              <AgendaGroupFilterControl options={groupOptions} value={groups} onChange={setGroups} onHero />
+              {bedMeetingTvOn ? null : (
+                <BedMeetingSheetLauncher
+                  now={now}
+                  buttonClassName={styles.heroChip}
+                  buildSheet={buildSheet}
+                  actions={actionRows.map((row) => ({
+                    id: `${row.subject.id}-${row.action.kind}`,
+                    name: patientOf(row.record).formalName,
+                    action: bedMeetingActionLabel(row.action.kind),
+                    owner: ownerText(row.action),
+                    due: `${row.action.dueAt < now ? "was due" : "due"} ${formatInstantWithDay(row.action.dueAt, now)}`,
+                    overdue: row.action.dueAt < now,
+                  }))}
+                />
+              )}
+            </div>
+          }
+        />
+      </Hero>
+      {/* B1 (Josh, 3 Nov 2026): the agenda follows the header's service, and these tabs change it in one tap,
+          so the meeting can go service by service. */}
+      <FolderTabs
+        label="Service"
+        value={service ?? "statewide"}
+        testId="bed-meeting-agenda-filters"
+        className={styles.folder}
+        more={
+          isPhone ? (
+            <Menu
+              label="More services"
+              align="end"
+              items={HEALTH_SERVICES.slice(PHONE_SERVICE_TABS).map((candidate) => ({
+                id: candidate,
+                label: healthServiceAcronym(candidate),
+                checked: service === candidate,
+                checkable: "radio" as const,
+                onSelect: () => setServiceScope(candidate),
+              }))}
+              trigger={(props) => (
+                <Button
+                  {...props}
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  icon={Ellipsis}
+                  className={folderTabClasses.more}
+                  aria-label="More services"
+                />
+              )}
+            />
+          ) : undefined
+        }
+      >
+        <Segmented
+          label="Service"
+          className={folderTabClasses.switch}
+          value={service ?? "statewide"}
+          onChange={(next) => setServiceScope(next === "statewide" ? null : (next as HealthService))}
+          items={[
+            { id: "statewide", label: "Statewide" },
+            // A phone shows three services and More, as Home; a service chosen from More joins the row.
+            ...HEALTH_SERVICES.filter(
+              (candidate, index) => !isPhone || index < PHONE_SERVICE_TABS || candidate === service,
+            ).map((candidate) => ({ id: candidate, label: healthServiceAcronym(candidate) })),
+          ]}
+        />
+      </FolderTabs>
       {/* D-91 (Josh, 31 Oct 2026): a printed agenda keeps a small synthetic-data mark, in the TV's words. */}
       <p className={styles.printMark} data-testid="agenda-print-mark">
         Synthetic prototype, not for clinical use
       </p>
 
-      {/* B1 (Josh, 3 Nov 2026): one filter bar. Service first, then the lists, then find anyone. */}
-      <div className={styles.filters} data-testid="bed-meeting-agenda-filters">
-        <div className={styles.filterLine}>
-          <Segmented
-            label="Service"
-            className={styles.serviceTrack}
-            value={service ?? "statewide"}
-            onChange={(next) => setServiceScope(next === "statewide" ? null : (next as HealthService))}
-            items={[
-              { id: "statewide", label: "Statewide" },
-              ...HEALTH_SERVICES.map((candidate) => ({ id: candidate, label: healthServiceAcronym(candidate) })),
-            ]}
-          />
-          <SearchField
-            className={styles.search}
-            value={query}
-            onValueChange={setQuery}
-            label="Find anyone to discuss"
-            placeholder="Find anyone by name or UMRN"
-            data-testid="bed-meeting-agenda-search"
-          />
+      {findOpen || grouped || (referralsHidden && serviceQueue.length > 0) ? (
+        <div className={styles.filters}>
+          {findOpen ? (
+            <SearchField
+              className={styles.search}
+              value={query}
+              onValueChange={setQuery}
+              label="Find anyone to discuss"
+              placeholder="Find anyone by name or UMRN"
+              data-testid="bed-meeting-agenda-search"
+            />
+          ) : null}
+          {grouped ? (
+            <div className={styles.appliedLine} data-testid="bed-meeting-agenda-groups-applied">
+              <ChipGroup label="Showing only" className={styles.chipRow}>
+                {AGENDA_GROUP_FACETS.flatMap((facet) =>
+                  [...(groups[facet] ?? [])].map((value) => (
+                    <AppliedFilter
+                      key={`${facet}-${value}`}
+                      onRemove={() => setGroups((current) => toggleGroup(current, facet, value))}
+                    >
+                      {agendaGroupValueLabel(facet, value, units)}
+                    </AppliedFilter>
+                  )),
+                )}
+              </ChipGroup>
+              <Button size="sm" variant="ghost" className={styles.clearGroups} onClick={() => setGroups({})}>
+                Clear
+              </Button>
+            </div>
+          ) : null}
+          {referralsHidden && serviceQueue.length > 0 ? (
+            <p className={styles.note} data-testid="bed-meeting-agenda-referrals-hidden">
+              {serviceQueue.length === 1 ? "1 referral is" : `${serviceQueue.length} referrals are`} left out. A
+              referral has a tier, but no ward, legal status or age group yet.
+            </p>
+          ) : null}
         </div>
-        <div className={styles.chipLine}>
-          <ChipGroup label="Lists" className={styles.chipRow}>
-            {LIST_CHIPS.map(([id, label]) =>
-              listCount(id) === 0 && !chips.has(id) ? null : (
-                <FilterChip
-                  key={id}
-                  pressed={chips.has(id)}
-                  count={listCount(id)}
-                  onPressedChange={() => toggleChip(id)}
-                >
-                  {label}
-                </FilterChip>
-              ),
-            )}
-          </ChipGroup>
-          <AgendaGroupFilterControl options={groupOptions} value={groups} onChange={setGroups} />
-        </div>
-        {grouped ? (
-          <div className={styles.appliedLine} data-testid="bed-meeting-agenda-groups-applied">
-            <ChipGroup label="Showing only" className={styles.chipRow}>
-              {AGENDA_GROUP_FACETS.flatMap((facet) =>
-                [...(groups[facet] ?? [])].map((value) => (
-                  <AppliedFilter
-                    key={`${facet}-${value}`}
-                    onRemove={() => setGroups((current) => toggleGroup(current, facet, value))}
-                  >
-                    {agendaGroupValueLabel(facet, value, units)}
-                  </AppliedFilter>
-                )),
-              )}
-            </ChipGroup>
-            <Button size="sm" variant="ghost" className={styles.clearGroups} onClick={() => setGroups({})}>
-              Clear
-            </Button>
-          </div>
-        ) : null}
-        {referralsHidden && serviceQueue.length > 0 ? (
-          <p className={styles.note} data-testid="bed-meeting-agenda-referrals-hidden">
-            {serviceQueue.length === 1 ? "1 referral is" : `${serviceQueue.length} referrals are`} left out. A referral
-            has a tier, but no ward, legal status or age group yet.
-          </p>
-        ) : null}
-      </div>
+      ) : null}
 
       {needle.length >= SEARCH_MIN ? (
         <Card data-testid="bed-meeting-agenda-found">
@@ -481,8 +591,9 @@ function BedMeetingAgenda() {
           empty card (no empty panels). The line stays where focus lands when the last one closes. */}
       {actionRows.length === 0 ? (
         <p
-          className={styles.noActions}
+          className={cx(styles.noActions, "sr-only")}
           data-testid="bed-meeting-action-summary"
+          tabIndex={-1}
           ref={actionSummary}
         >{`No actions waiting from earlier meetings${summary.doneLastDay > 0 ? ` · ${summary.doneLastDay} done in the last day` : ""}`}</p>
       ) : (
@@ -603,15 +714,6 @@ function BedMeetingAgenda() {
     </main>
   );
 }
-
-const LIST_CHIPS: readonly (readonly [ListChip, string])[] = [
-  ["ed-waits", "ED waits"],
-  ["holds", "Pulled beds"],
-  ["stranded", "Stranded"],
-  ["out-of-area", "Out of area"],
-  ["referrals", "Referrals"],
-  ["actioned", "With an action"],
-];
 
 /** One agenda list: its card, the first five people, then the kit's Show more row. */
 function AgendaList({
@@ -734,7 +836,6 @@ function AgendaRow({
   return (
     <li className={styles.agendaRow}>
       <div className={styles.row}>
-        <Avatar name={name} decorative className={styles.rowAvatar} />
         <div className={styles.rowText}>
           <span className={styles.name}>{name}</span>
           <span className={styles.detail}>{detail}</span>
@@ -752,10 +853,15 @@ function AgendaRow({
           <span className={cx(styles.figure, urgent && styles.figureUrgent)}>
             {urgent ? <StatusGlyph tone="danger" size={6} /> : null}
             <span className={styles.figureValue}>{item.value}</span>
-            <span className={styles.figureCaption}>
-              {item.caption}
-              {urgent && sectionId === "ed-waits" ? <SrOnly>, {LONG_WAIT_TEXT}</SrOnly> : null}
-            </span>
+            {/* Page tops (9 Nov 2026): an ED wait shows just its time; "waiting" stays for screen readers. */}
+            {sectionId === "ed-waits" ? (
+              <SrOnly>
+                {item.caption}
+                {urgent ? `, ${LONG_WAIT_TEXT}` : null}
+              </SrOnly>
+            ) : (
+              <span className={styles.figureCaption}>{item.caption}</span>
+            )}
           </span>
         ) : null}
         {chairs ? (
@@ -802,7 +908,8 @@ function AgendaRow({
 function urgentMeta(sectionId: string, items: readonly AgendaItem[], now: Instant): string | undefined {
   const urgent = items.filter((item) => urgencyOf(sectionId, item, now) !== null).length;
   if (urgent === 0) return undefined;
-  if (sectionId === "ed-waits") return `${items.length} · ${urgent} ${LONG_WAIT_TEXT}`;
+  // Page tops (9 Nov 2026): the hero figure carries the total, so the ED head names only the long waits.
+  if (sectionId === "ed-waits") return `${urgent} ${LONG_WAIT_TEXT}`;
   if (sectionId === "holds") return `${items.length} · ${urgent} expired`;
   return undefined;
 }

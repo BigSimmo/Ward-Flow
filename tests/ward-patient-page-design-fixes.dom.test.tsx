@@ -71,7 +71,8 @@ describe("patient page design fixes", () => {
     renderAt("WF-005");
     const root = screen.getByTestId("ward-person-screen");
     expect(root).toHaveTextContent("over T2 target (4h)");
-    expect(root).toHaveTextContent("5h 30msince opened");
+    // Page tops (9 Nov 2026): the wait is a hero figure, its value then its label.
+    expect(root).toHaveTextContent(/5h 30m\s?since opened/u);
     expect(root).not.toHaveTextContent("Overdue wait ·");
   });
 

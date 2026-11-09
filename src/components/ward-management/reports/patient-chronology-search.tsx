@@ -29,7 +29,8 @@ export function PatientChronologySearch({
   chosenId: string;
   onChoose: (id: string) => void;
   nameOf: (patient: Patient) => string;
-  size: "hero" | "phone";
+  /** "top": the page-top search with nobody chosen (Josh, 9 Nov 2026), on any size. */
+  size: "hero" | "phone" | "top";
   label: string;
 }) {
   const listId = useId();
@@ -78,8 +79,9 @@ export function PatientChronologySearch({
       {/* D-91: the one page search field, here the combobox that picks the patient. */}
       <SearchField
         role="combobox"
+        className={size === "top" ? start.topField : undefined}
         label={label}
-        placeholder={size === "phone" ? "Surname, first name or UMRN" : `${label} by surname or UMRN`}
+        placeholder={size === "hero" ? `${label} by surname or UMRN` : "Surname, first name or UMRN"}
         aria-autocomplete="list"
         aria-expanded={open}
         aria-controls={listId}

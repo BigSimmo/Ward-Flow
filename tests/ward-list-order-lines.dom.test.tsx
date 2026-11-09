@@ -90,9 +90,10 @@ describe("list order lines", () => {
   it("Waiting says its order and follows the order switch", () => {
     inProvider(<DelaysScreen />);
     const note = screen.getByTestId("delays-order-note");
-    expect(screen.getByRole("button", { name: "Longest wait" })).toHaveAttribute("aria-pressed", "true");
+    // Page tops (9 Nov 2026): the order is the tab row's switch.
+    expect(screen.getByRole("tab", { name: "Longest wait" })).toHaveAttribute("aria-selected", "true");
     expect(note).toHaveTextContent(/^Longest wait first$/u);
-    fireEvent.click(screen.getByRole("button", { name: "By hold-up" }));
+    fireEvent.click(screen.getByRole("tab", { name: "By hold-up" }));
     expect(screen.getByTestId("delays-order-note")).toHaveTextContent(
       "Form times first, then every other reason. Longest wait first in each.",
     );

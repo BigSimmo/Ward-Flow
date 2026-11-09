@@ -122,6 +122,10 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "ward/ward-drawer-discharge-date.tsx": { cover: "popup", why: "Opens only inside the bed drawer (WT-16)." },
   "ward/ward-observation-control.tsx": { cover: "held" },
   "ward/ward-screen.tsx": { cover: "held" },
+  "wards/ward-index.tsx": {
+    cover: "no form",
+    why: "Ask a ward to confirm its beds is one tap with no fields; the open states only fold filters and the phone rail.",
+  },
 };
 
 const SAVES =

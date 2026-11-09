@@ -61,14 +61,13 @@ describe("Handover title count (NA2-01)", () => {
     renderAt();
     // 1 Nov 2026 redesign: the count's spoken name is "n Act now (n people, m alerts)"; its face shows n.
     // CB-3 (axe 4.14): the name starts with the face's own "n Act now".
-    const pill = within(screen.getByTestId("ward-handover-kpi-strip")).getByRole("button", { name: /^\d+ Act now \(/ });
-    const match = /^(\d+) Act now \((\d+) (?:person|people), (\d+) alerts?\)$/.exec(
-      pill.getAttribute("aria-label") ?? "",
-    );
-    expect(match, pill.getAttribute("aria-label") ?? "").not.toBeNull();
-    const [, face, people, alerts] = match!.map(Number);
-    expect(face).toBe(people);
-    const count = Number(/^\d+/.exec((pill.textContent ?? "").trim())?.[0]);
+    // Page tops (9 Nov 2026): the top's "act now" figure; its value sits beside the label, whose
+    // spoken name adds the people and the alerts.
+    const pill = within(screen.getByTestId("ward-handover-hero")).getByRole("button", { name: /^act now ?\(/ });
+    const match = /^act now \((\d+) (?:person|people), (\d+) alerts?\)$/.exec(pill.textContent ?? "");
+    expect(match, pill.textContent ?? "").not.toBeNull();
+    const [, people, alerts] = match!.map(Number);
+    const count = Number(screen.getByTestId("ward-handover-figure-act").querySelector("b")?.textContent);
     expect(people).toBe(count);
     expect(people).toBeGreaterThan(0);
     // One person can carry more than one alert, never the other way round on the whole network.

@@ -1313,3 +1313,44 @@ button.strip:disabled {
 .dcCard:hover .dcGo {
   color: var(--wf-accent-ink);
 }
+
+/* Page tops (Josh, 9 Nov 2026): on a laptop the views sit after the order tabs as quiet words with
+   their counts, the chosen one on a soft track, as the second tab level does elsewhere. */
+.topFilters > div {
+  flex-wrap: nowrap;
+  gap: 2px;
+  padding: 0;
+  background: transparent;
+}
+
+.topFilters > div > button {
+  height: 32px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-14) / 18px var(--wf-font);
+  white-space: nowrap;
+}
+
+.topFilters > div > button:hover {
+  color: var(--wf-ink-1);
+  background: var(--wf-track);
+}
+
+.topFilters > div > button[aria-pressed="true"] {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  background: var(--wf-track);
+  box-shadow: inset 0 0 0 1px var(--wf-line);
+}
+
+.topFilters > div > button > span:last-child {
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  background: transparent;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / 16px var(--wf-mono);
+}

@@ -1,12 +1,9 @@
 "use client";
 
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
-import { deskPlaceLabel } from "@/components/ward-management/shell/ward-bar-desk-place";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
-import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
-import Link from "next/link";
 
-import { dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
+import { dayOf } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { SEVERE_CAUSES, delayGroups, type DelayCause } from "@/components/ward-management/delays/delays-derivations";
 import {
@@ -28,7 +25,6 @@ import {
 
 import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import type { Movement } from "@/components/ward-management/ward-model";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import {
   byLongestWait,
   corridorCounts,
@@ -47,23 +43,30 @@ import {
   noRecordedServiceMovementCount,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
-import { ArrowRightLeft, ChartColumn, Hourglass, FileBadge, Search, Ambulance, X } from "lucide-react";
+import { ArrowRightLeft, ChartColumn, Map as MapIcon, Search, SearchCheck, Ambulance, X } from "lucide-react";
 import {
   Card,
   CardHead,
+  FolderTabs,
   Hero,
+  HeroAct,
+  HeroFigures,
+  HeroQuickChips,
+  HeroTop,
   LiveChip,
   PhoneFilterFold,
   RadioGroup,
   ShowMoreRow,
-  StatusGlyph,
   TextInput,
   buttonClass,
   cx,
+  folderTabClasses,
   foldLimit,
   phoneRows,
   useIsPhone,
 } from "@/components/wf";
+import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
+import pageTop from "../page-top-hero.module.css";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { MovementDrawer } from "./movement-drawer";
 import { MovementHorizonGantt } from "./movement-horizon-gantt-lazy";
@@ -73,17 +76,14 @@ import { isCoordinatorStep, movementNextStep } from "./movement-next-step";
 import { useSenderPresentation } from "../ward-sender-presentation";
 import { movementPresentation } from "../ward-partial-view-presenters";
 import flow from "./movement-flow.module.css";
-import board from "@/components/ward-management/delays/delays-board.module.css";
-import strip from "@/components/ward-management/delays/waiting-polish.module.css";
 import styles from "./movements.module.css";
-import wardPin from "../ward-pinned-switch.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { MovementsPhoneNav } from "./movements-phone-nav";
 import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace } from "../use-return-to-place";
 import { ShapeOfTheDay } from "./movements-shape-of-day";
 import { MovementPeopleSheet, corridorPeople, type MovementPeopleList } from "./movement-people-sheet";
 import { TransportFeed, TransportTiles } from "./movements-transport-now";
-import { HighlightStat, LegalColumnHead, PhoneGroupHeading, StageRow } from "./movements-stage-row";
+import { LegalColumnHead, PhoneGroupHeading, StageRow } from "./movements-stage-row";
 import { CommunityNoJourneys, MovementCheckInDrawer, StagePipeline } from "./movements-lazy-parts";
 import {
   CAUSES,
@@ -102,6 +102,9 @@ export { causeOf, inServiceSuffix } from "./movements-screen-helpers";
 const MOVEMENT_BOARD_TABS = ["every", "resolved"] as const;
 /** Rows an open phone group shows before its "Show N more" row (the about-eight list rule). */
 const PHONE_GROUP_CAP = 8;
+/** The hero chips' icons (page tops, 9 Nov 2026). */
+const CHIP_ICON = { size: 16, strokeWidth: 1.75, "aria-hidden": true } as const;
+const focusedElement = () => (document.activeElement instanceof HTMLElement ? document.activeElement : undefined);
 const MOVEMENTS_ROUTE = "/ward-flow/movements";
 /** What Back brings back (`use-return-to-place.ts`). The tab lives in the address, and the search is typed text, so neither is kept here. */
 type MovementsPlace = {
@@ -708,14 +711,7 @@ export function MovementsScreen() {
   const arrivedMovements = closedToday.filter((m) => m.closure?.outcome === "arrived");
   const didNotProceedMovements = closedToday.filter((m) => m.closure?.outcome === "did_not_proceed");
 
-  // Hero tools (Josh, 9 Oct 2026: every page header carries page-specific tools). Each reads only
-  // the open records: the longest wait, the next recorded legal expiry (a typed `dueAt`, never a
-  // computed limit, D5), and the coordinator's own queue of next steps.
-  // The earliest opened open movement.
-  const longestWaiting = [...openMovements].sort((a, b) => a.openedAt - b.openedAt || a.id.localeCompare(b.id))[0];
-  const nextExpiry = openMovements
-    .filter((movement) => (currentLegalDueAt(movement) ?? -Infinity) >= now)
-    .sort((a, b) => currentLegalDueAt(a)! - currentLegalDueAt(b)!)[0];
+  // The coordinator's own queue of next steps (the hero's act row; page tops, 9 Nov 2026).
   const myQueue = byLongestWait(
     openMovements.filter(
       (movement) =>
@@ -880,163 +876,157 @@ export function MovementsScreen() {
 
         <section className={styles.daySection} aria-label="The day" data-ward-primitive="panel">
           <Hero
-            className={styles.dayHero}
-            eyebrow={
-              community && teamName
-                ? `Movements · ${teamName} team`
-                : isPhone
-                  ? `Movements · ${deskPlaceLabel(access, units) ?? service ?? "Statewide"}`
-                  : "Movements"
-            }
+            className={cx(styles.dayHero, pageTop.hero, folderTabClasses.hero)}
+            // Page tops (Josh, 9 Nov 2026): one plain title; the community desk still names its team.
+            eyebrow={community && teamName ? `Movements · ${teamName} team` : undefined}
             title={
-              // The title doubles as the "Open" day figure. Its DOM reads label first ("Open
-              // movements 70"), so the figure's own label anchors it like every stat beside it;
-              // CSS puts the number first on screen, as the mockup draws it.
-              <span className={styles.dayOpenTitle} data-ward-panel-count data-testid="movements-day-metric">
-                <span className={styles.dayOpenLabel}>Open movements</span>
-                <strong className={styles.dayOpenValue}>{openMovements.length}</strong>
-              </span>
-            }
-            titleMeta={
-              // Q196 (Josh, 1 Nov 2026): the phone shows the same counts as desktop. Home's phone hero
-              // no longer carries the invented-records line (F-08), so Movements drops it too.
-              <span className={flow.heroTitleMeta}>
-                {closedToday.length} resolved today · {activeCorridorCount} active corridors
-              </span>
+              <>
+                Journeys <span className={pageTop.titleSoft}>in progress</span>
+              </>
             }
             aside={<LiveChip state="live" onHero />}
-            // Movements redesign (1 Nov 2026): Waiting's header figures, each a big number over its
-            // label, beside the title. A figure highlights its rows in the worklist; nothing is hidden.
-            stats={
-              isPhone ? undefined : (
-                <div className={board.stats} role="group" aria-label="Highlight movements">
-                  {highlightOptions.map((option) => {
-                    const value = openMovements.filter(option.test).length;
-                    return (
-                      <button
-                        key={option.id}
-                        type="button"
-                        className={board.stat}
-                        aria-haspopup="dialog"
-                        onClick={() => showFigure(option)}
-                        data-testid="movements-day-metric"
-                      >
-                        <span className={board.statV}>{value}</span>
-                        <span className={board.statL}>
-                          {option.tone && value > 0 ? <StatusGlyph tone={option.tone} size={9} /> : null}
-                          {option.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                  <div className={cx(board.stat, board.statStatic)}>
-                    {/* Booked or moving only: arrived and cancelled legs are not on the road or booked. */}
-                    <span className={board.statV}>{counts.Accepted + counts["En route"] + counts.Collected}</span>
-                    <span className={board.statL}>On the road or booked</span>
-                  </div>
-                </div>
-              )
-            }
-            bar={
-              isPhone ? (
-                <div className={flow.highlights} role="group" aria-label="Highlight movements">
-                  {highlightOptions.map((option) => (
-                    <HighlightStat
-                      key={option.id}
-                      label={option.label}
-                      tone={option.tone}
-                      value={openMovements.filter(option.test).length}
-                      pressed={highlight === option.id}
-                      onToggle={() => showFigure(option)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className={strip.heroBar} role="group" aria-label="At a glance">
-                  {longestWaiting ? (
-                    <button
-                      type="button"
-                      className={strip.strip}
-                      onClick={() => openFromHero(longestWaiting.id)}
-                      title={`Open ${resolveSubjectPatient(longestWaiting, { patients, referrals }).formalName}`}
-                    >
-                      <Hourglass size={14} aria-hidden="true" className={strip.stripIcon} data-tone="danger" />
-                      <span className={strip.stripLabel}>Longest wait</span>
-                      <span className={strip.stripValue}>
-                        <b className={strip.heroNum}>{splitDuration(Math.max(now - longestWaiting.openedAt, 0))}</b>{" "}
-                        <span className={strip.heroName}>
-                          {resolveSubjectPatient(longestWaiting, { patients, referrals }).formalName}
-                        </span>
-                      </span>
-                    </button>
-                  ) : null}
-                  {nextExpiry ? (
-                    <button
-                      type="button"
-                      className={strip.strip}
-                      onClick={() => openFromHero(nextExpiry.id)}
-                      title="The soonest legal expiry still ahead, as typed on the form. Not legally checked."
-                    >
-                      <FileBadge size={14} aria-hidden="true" className={strip.stripIcon} data-tone="warning" />
-                      <span className={strip.stripLabel}>Next expiry</span>
-                      <span className={strip.stripValue}>
-                        <b className={strip.heroNum}>{formatInstantWithDay(currentLegalDueAt(nextExpiry)!, now)}</b>{" "}
-                        <span className={strip.heroName}>
-                          {resolveSubjectPatient(nextExpiry, { patients, referrals }).formalName}
-                        </span>
-                      </span>
-                      <span className={strip.stripLabel}>as typed</span>
-                    </button>
-                  ) : null}
-                  <span className={strip.strip}>
-                    <ArrowRightLeft size={14} aria-hidden="true" className={strip.stripIcon} />
-                    <span className={strip.stripLabel}>Resolved today</span>
-                    <span className={strip.stripValue}>
-                      <b className={strip.heroNum}>{arrivedMovements.length}</b> arrived ·{" "}
-                      <b className={strip.heroNum}>{didNotProceedMovements.length}</b> did not proceed
-                    </span>
-                  </span>
-                </div>
-              )
-            }
-            barAside={
-              <div className={cx(flow.heroTools, isPhone && phoneRows.heroPills)}>
-                {isPhone || community || !canOpenHref("/ward-flow/transport/officer") ? null : (
-                  <>
-                    {/* Phone: Transport opens from the "Transport now" card below the hero. */}
-                    <Link
-                      href="/ward-flow/transport/officer"
-                      className={buttonClass({ variant: "onHero", size: "sm" })}
-                    >
-                      <Ambulance size={14} aria-hidden="true" />
-                      Transport
-                    </Link>
-                  </>
-                )}
-                {myQueue[0] && !community ? (
-                  <button
-                    type="button"
-                    // One primary per screen (device audit): the shell's "Record a decision" is the
-                    // primary beside this on tablet and desktop; phone has no shell primary.
-                    // Phone: Home's 40px hero pill (Josh, 31 Oct 2026).
-                    className={buttonClass({
-                      variant: isPhone ? "light" : "onHero",
-                      size: "sm",
-                      className: isPhone ? phoneRows.heroPill : undefined,
-                    })}
-                    onClick={() => openFromHero(myQueue[0].id)}
-                    title={`Top of your queue: ${resolveSubjectPatient(myQueue[0], { patients, referrals }).formalName}. ${myQueue.length} open movements wait on a coordinator step.`}
-                  >
-                    Next in my queue
-                    <span className={flow.queueCount}>
-                      {myQueue.length}
-                      <span className={flow.queueNoun}> in queue</span>
-                    </span>
-                  </button>
-                ) : null}
-              </div>
-            }
-          />
+          >
+            <HeroTop
+              testId="movements-top"
+              // A figure highlights its rows in the worklist; nothing is hidden. The open count is
+              // the old title's figure; "on the road or booked" stays a desktop figure.
+              figures={
+                <HeroFigures
+                  label="Highlight movements"
+                  items={[
+                    {
+                      id: "open",
+                      value: openMovements.length,
+                      label: "open movements",
+                      testId: "movements-day-metric",
+                    },
+                    ...highlightOptions
+                      .filter((option) => option.id !== "over")
+                      .map((option) => ({
+                        id: option.id,
+                        value: openMovements.filter(option.test).length,
+                        label: option.id === "tier1" ? option.label : option.label.toLowerCase(),
+                        onClick: () => showFigure(option),
+                        testId: "movements-day-metric",
+                      })),
+                    ...(isPhone
+                      ? []
+                      : [
+                          {
+                            id: "road",
+                            // Booked or moving only: arrived and cancelled legs are not on the road or booked.
+                            value: counts.Accepted + counts["En route"] + counts.Collected,
+                            label: "on the road or booked",
+                            testId: "movements-day-metric",
+                          },
+                        ]),
+                  ]}
+                />
+              }
+              act={
+                myQueue[0] && !community ? (
+                  <HeroAct
+                    tone="warning"
+                    testId="movements-queue"
+                    title={`${myQueue.length} in your queue`}
+                    action={{
+                      label: "Next in my queue",
+                      phoneLabel: "Next",
+                      onClick: () => openFromHero(myQueue[0].id),
+                      testId: "movements-next-in-queue",
+                    }}
+                  />
+                ) : undefined
+              }
+              chips={
+                <HeroQuickChips
+                  label="Movement tools"
+                  items={[
+                    ...(community || !canOpenHref("/ward-flow/transport/officer")
+                      ? []
+                      : [
+                          isPhone
+                            ? {
+                                id: "transport",
+                                label: "Transport",
+                                icon: <Ambulance {...CHIP_ICON} />,
+                                onClick: () => startTransition(() => setPhoneSheet("transport")),
+                              }
+                            : {
+                                id: "transport",
+                                label: "Transport",
+                                icon: <Ambulance {...CHIP_ICON} />,
+                                href: "/ward-flow/transport/officer",
+                              },
+                        ]),
+                    {
+                      id: "find",
+                      label: "Find a bed",
+                      icon: <SearchCheck {...CHIP_ICON} />,
+                      onClick: () => requestToolsTool("bed-finder", focusedElement()),
+                    },
+                    {
+                      id: "corridors",
+                      label: "Corridors",
+                      icon: <MapIcon {...CHIP_ICON} />,
+                      count: activeCorridorCount,
+                      countTone: "quiet",
+                      countLabel: ` active`,
+                      testId: "movements-corridors-chip",
+                      onClick: () =>
+                        isPhone
+                          ? startTransition(() => setPhoneSheet("corridors"))
+                          : document.getElementById("movements-traffic")?.scrollIntoView({ block: "start" }),
+                    },
+                  ]}
+                />
+              }
+            />
+          </Hero>
+
+          {/* Page tops (Josh, 9 Nov 2026): the worklist's Open and Resolved today tabs sit under the
+              hero as the page's folder tabs (phone and tablet) or underline tabs (desktop). */}
+          <FolderTabs label="Movement worklist views" value={boardTab} testId="movements-tabs">
+            <div className={cx(styles.folderSwitch, folderTabClasses.switch)} role="tablist" aria-label="Movements">
+              {(
+                [
+                  { id: "every", label: isPhone ? "Open" : "Open and resolved", count: worklistMovements.length },
+                  { id: "resolved", label: "Resolved today", count: worklistClosedToday.length },
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  id={`movements-tab-${tab.id}`}
+                  aria-controls={`movements-pane-${tab.id}`}
+                  aria-selected={boardTab === tab.id}
+                  tabIndex={boardTab === tab.id ? 0 : -1}
+                  onClick={() => {
+                    keyboardTabFocus.current = null;
+                    startTransition(() => setBoardTab(tab.id));
+                  }}
+                  onKeyDown={(event) => {
+                    let next: "every" | "resolved";
+                    if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+                      next = tab.id === "every" ? "resolved" : "every";
+                    } else if (event.key === "Home") next = "every";
+                    else if (event.key === "End") next = "resolved";
+                    else return;
+                    event.preventDefault();
+                    // Selection is unchanged (Home on the first tab, End on the last): the tab is
+                    // already focused and no commit follows, so there is nothing to wait for.
+                    keyboardTabFocus.current = next === boardTab ? null : next;
+                    startTransition(() => setBoardTab(next));
+                  }}
+                >
+                  {/* Absence and zero (rule 2): "none", never a bare "0" — the same wording every
+                      other count on these screens uses, and a ruling rather than a default. */}
+                  <span>{tab.label}</span> <span>{tab.count === 0 ? "none" : tab.count}</span>
+                </button>
+              ))}
+            </div>
+          </FolderTabs>
 
           {/* Redesign (31 Oct 2026): one stage pipeline under the hero on a tablet or laptop, each
               stage with its count and longest wait. Phone (v10): the stage chips sit on the canvas
@@ -1065,6 +1055,7 @@ export function MovementsScreen() {
 
         {isPhone ? null : (
           <section
+            id="movements-traffic"
             className={cx(styles.trafficPanel, styles.trafficFullNames)}
             aria-label="Today’s traffic"
             data-ward-primitive="panel"
@@ -1160,54 +1151,8 @@ export function MovementsScreen() {
               data-ward-primitive="panel"
               className={cx(styles.wlCard, styles.wlWrapRows)}
             >
-              <CardHead
-                className={wardPin.pinnedSwitch}
-                icon={ArrowRightLeft}
-                title="Movement worklist"
-                action={
-                  <div className={styles.boardTabs} role="tablist" aria-label="Movements">
-                    {(
-                      [
-                        { id: "every", label: isPhone ? "Open" : "Open and resolved", count: worklistMovements.length },
-                        { id: "resolved", label: "Resolved today", count: worklistClosedToday.length },
-                      ] as const
-                    ).map((tab) => (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        role="tab"
-                        id={`movements-tab-${tab.id}`}
-                        aria-controls={`movements-pane-${tab.id}`}
-                        aria-selected={boardTab === tab.id}
-                        tabIndex={boardTab === tab.id ? 0 : -1}
-                        className={styles.boardTab}
-                        onClick={() => {
-                          keyboardTabFocus.current = null;
-                          startTransition(() => setBoardTab(tab.id));
-                        }}
-                        onKeyDown={(event) => {
-                          let next: "every" | "resolved";
-                          if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
-                            next = tab.id === "every" ? "resolved" : "every";
-                          } else if (event.key === "Home") next = "every";
-                          else if (event.key === "End") next = "resolved";
-                          else return;
-                          event.preventDefault();
-                          // Selection is unchanged (Home on the first tab, End on the last): the tab is
-                          // already focused and no commit follows, so there is nothing to wait for.
-                          keyboardTabFocus.current = next === boardTab ? null : next;
-                          startTransition(() => setBoardTab(next));
-                        }}
-                      >
-                        {/* Absence and zero (rule 2): "none", never a bare "0" — the same wording every
-                            other count on these screens uses, and a ruling rather than a default. */}
-                        <span>{tab.label}</span>{" "}
-                        <span className={styles.boardTabCount}>{tab.count === 0 ? "none" : tab.count}</span>
-                      </button>
-                    ))}
-                  </div>
-                }
-              />
+              {/* Page tops (9 Nov 2026): the tabs moved up under the hero; the phone drops this head. */}
+              {isPhone ? null : <CardHead icon={ArrowRightLeft} title="Movement worklist" />}
               <div className={flow.toolbar}>
                 {boardTab === "every" && !isPhone ? arrangeGroup : null}
                 {/* Phone audit (1 Nov 2026): Arrange folds into one Filter button, as on ED, so the first

@@ -13,19 +13,21 @@ import {
   useState,
   type MouseEvent as ReactMouseEvent,
 } from "react";
-import { UserPlus } from "lucide-react";
-
+import { ClipboardList, UserPlus } from "lucide-react";
 import {
   Card,
+  FolderTabs,
+  folderTabClasses,
   Hero,
-  HeroTrack,
+  HeroBand,
+  HeroQuickChips,
+  HeroTop,
   Icon,
   Segmented,
   LiveChip,
   SearchField,
   buttonClass,
   cx,
-  phoneRows,
   useMediaQuery,
 } from "@/components/wf";
 
@@ -58,6 +60,7 @@ import { compareFormalNames } from "@/components/ward-management/ward-name-colla
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
+import titles from "@/components/ward-management/page-top-title.module.css";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -101,7 +104,6 @@ import {
   CensusHistory,
   CensusTable,
   type CensusScrollPosition,
-  FlowChip,
   PhoneCensus,
   DobField,
   DobToggle,
@@ -781,23 +783,18 @@ export function PatientSearchPage() {
     setTab("now");
     setPatientState(next);
   };
-  // On the band the switch is the dark track; on a phone it sits on the page, under the hero.
-  const stateTrack = (
-    <HeroTrack<PatientStateFilter>
-      label="Where people are now"
-      value={patientState}
-      onChange={chooseState}
-      items={stateItems}
-    />
-  );
-  const phoneStateSwitch = (
-    <Segmented<PatientStateFilter>
-      label="Where people are now"
-      size="md"
-      value={patientState}
-      onChange={chooseState}
-      items={stateItems}
-    />
+  // Page tops (Josh, 9 Nov 2026): the switch is the page's folder tabs under the hero, at every width.
+  const stateTabs = (
+    <FolderTabs label="Where people are now" value={patientState} className={cs.folder} testId="ward-patient-states">
+      <Segmented<PatientStateFilter>
+        className={folderTabClasses.switch}
+        label="Where people are now"
+        size="md"
+        value={patientState}
+        onChange={chooseState}
+        items={stateItems}
+      />
+    </FolderTabs>
   );
 
   const groupTotals = countGroups(census.rows);
@@ -909,13 +906,43 @@ export function PatientSearchPage() {
   };
 
   // While a search runs on the phone, a group with no match gives way to the first one with any.
-  const flowLine = (() => {
+  // Page tops (Josh, 9 Nov 2026): today's closures as one slim band; a tap opens History.
+  const todayBand = (() => {
     const closed = census.closedToday;
-    const arrived = closed.filter((row) => row.outcome === "Arrived").length;
-    const left = closed.filter((row) => row.outcome === "Discharged" || row.outcome === "Transferred").length;
-    const stopped = closed.filter((row) => row.outcome === "Did not proceed").length;
-    return `Today ${arrived} arrived · ${left} left · ${stopped} did not proceed`;
+    const count = (test: (outcome: string) => boolean) => closed.filter((row) => test(row.outcome)).length;
+    const cell = (id: string, label: string, value: number) => ({
+      id,
+      label,
+      value,
+      onClick: () => setTab("history"),
+      ariaLabel: `${label} today ${value}, opens history`,
+    });
+    return (
+      <HeroBand
+        title="Today"
+        testId="ward-patient-search-today"
+        cells={[
+          cell(
+            "arrived",
+            "Arrived",
+            count((outcome) => outcome === "Arrived"),
+          ),
+          cell(
+            "left",
+            "Left",
+            count((outcome) => outcome === "Discharged" || outcome === "Transferred"),
+          ),
+          cell(
+            "stopped",
+            "Did not proceed",
+            count((outcome) => outcome === "Did not proceed"),
+          ),
+        ]}
+      />
+    );
   })();
+  const scopePlace = accessPlaceLabel(registerAccess, units);
+  const scopeWords = scopePlace === "Statewide" ? "statewide" : `at ${scopePlace}`;
   // shell-16: History lists every closure and search whatever is typed, so it shows no count while
   // a search is on rather than a figure that disagrees with the result.
   const historyCount = searching ? undefined : census.closedToday.length + accessRecord.length;
@@ -1019,60 +1046,72 @@ export function PatientSearchPage() {
         <h1 className="sr-only">Patients</h1>
         <div data-testid="ward-patient-search-cockpit" className={styles.v6HeroWrap}>
           <Hero
-            className={cx(cs.censusHero, isPhone && cs.heroPhone)}
-            // WF-11 (live test, 4 Nov 2026): the eyebrow names the desk's real scope, since the
-            // count is that scope's, not the state's. Shown on phones too, so the count keeps its scope.
-            eyebrow={`Patient register · ${accessPlaceLabel(registerAccess, units)}`}
-            phoneEyebrow="show"
-            title={`${census.rows.length} people`}
-            titleMeta={isPhone ? flowLine : undefined}
-            aside={
+            className={cx(cs.censusHero, titles.hero, folderTabClasses.hero, isPhone && cs.heroPhone)}
+            // WF-11 (live test, 4 Nov 2026): the title names the desk's real scope, since the counts are
+            // that scope's, not the state's. Page tops (Josh, 9 Nov 2026): "Find a patient statewide".
+            title={
               <>
-                {/* P140: Add patient comes first, away from the live/Demo chip, so it is not a mis-tap. */}
-                {isPhone || !canAddPatient ? null : (
-                  <Link
-                    href={WARD_ADD_PERSON_HREF}
-                    className={buttonClass({ variant: "light", size: "sm" })}
-                    data-testid="ward-patient-search-add"
-                    onClick={addPatientClick}
-                  >
-                    <Icon icon={UserPlus} size={14} />
-                    <span>Add patient</span>
-                  </Link>
-                )}
-                {isPhone ? null : <FlowChip closed={census.closedToday} onOpen={() => setTab("history")} />}
-                <LiveChip state="live" onHero />
+                Find a patient <span className={titles.soft}>{scopeWords}</span>
               </>
             }
-            bar={
-              <div className={cs.heroBar}>
-                {searchForm}
-                {isPhone ? null : <div className={cs.stateTrack}>{stateTrack}</div>}
-              </div>
+            aside={
+              <>
+                {/* Desktop: the Today band rides in the title line, before the Demo pill. */}
+                {isPhone ? null : <div className={cs.titleBand}>{todayBand}</div>}
+                <LiveChip state="live" onHero age={formatInstant(now)} />
+              </>
             }
-            footKind={isPhone && canAddPatient ? "actions" : "line"}
-            foot={
-              isPhone && canAddPatient ? (
-                <div className={cs.phoneHeroFoot}>
-                  {/* The five group figures live once, in the band under the hero (device audit
-                      11 Oct 2026): a three-up here repeated 51 / 41 / 242 directly above it. */}
-                  {/* shell-17 (13 Oct 2026): no phone Commands sheet. It repeated Add patient, Menu
-                      and the chips, and offered a bulk copy of patient rows on a handheld. */}
-                  <div className={phoneRows.heroPills}>
+          >
+            <HeroTop
+              testId="ward-patient-search-top"
+              act={
+                <div className={cs.findRow}>
+                  {searchForm}
+                  {/* P140: Add patient sits apart from the live/Demo chip, so it is not a mis-tap. */}
+                  {isPhone || !canAddPatient ? null : (
                     <Link
                       href={WARD_ADD_PERSON_HREF}
-                      className={cx(buttonClass({ variant: "onHero" }), phoneRows.heroPill, cs.heroPill)}
+                      className={buttonClass({ variant: "light" })}
                       data-testid="ward-patient-search-add"
                       onClick={addPatientClick}
                     >
                       <Icon icon={UserPlus} size={16} />
                       <span>Add patient</span>
                     </Link>
-                  </div>
+                  )}
                 </div>
-              ) : undefined
-            }
-          />
+              }
+              chips={
+                isPhone ? (
+                  <HeroQuickChips
+                    label="Patient actions"
+                    items={[
+                      ...(canAddPatient
+                        ? [
+                            {
+                              id: "add",
+                              label: "Add patient",
+                              icon: <UserPlus size={16} strokeWidth={1.75} aria-hidden="true" />,
+                              href: WARD_ADD_PERSON_HREF,
+                              testId: "ward-patient-search-add",
+                            },
+                          ]
+                        : []),
+                      {
+                        id: "copy",
+                        label: "Copy list",
+                        icon: <ClipboardList size={16} strokeWidth={1.75} aria-hidden="true" />,
+                        onClick: copyList,
+                        testId: "ward-patient-search-copy-list",
+                      },
+                    ]}
+                  />
+                ) : undefined
+              }
+              band={isPhone ? todayBand : undefined}
+            />
+          </Hero>
+          {stateTabs}
 
           {/* The counts and filters below the bar that tests and assistive tech read directly. Out of the
               Tab order (11 Oct 2026), so keyboard focus never lands on a control nobody can see. */}
@@ -1309,7 +1348,6 @@ export function PatientSearchPage() {
         {isPhone ? (
           <PhoneCensus
             rows={stateRows}
-            stateSwitch={phoneStateSwitch}
             totals={groupTotals}
             matched={groupMatches}
             searching={searching}

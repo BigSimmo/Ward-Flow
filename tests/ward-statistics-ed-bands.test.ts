@@ -102,7 +102,7 @@ describe("the five wait bands", () => {
     { minutes: 12 * HOUR - 1, band: "8 to 12 hours" },
     { minutes: 12 * HOUR, band: "12 to 24 hours" },
     { minutes: MINUTES_PER_DAY - 1, band: "12 to 24 hours" },
-    { minutes: MINUTES_PER_DAY, band: "Over 24 hours" },
+    { minutes: MINUTES_PER_DAY, band: "Past 24 hours" },
   ])("places a $minutes-minute wait in $band", ({ minutes, band }) => {
     const bands = edWaitBands([waiting("WF-edge", minutes)], HERE, NOW);
     const occupied = bands.filter((entry) => entry.count > 0);

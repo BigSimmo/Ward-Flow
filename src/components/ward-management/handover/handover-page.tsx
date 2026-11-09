@@ -14,7 +14,6 @@ import {
   MonitorPlay,
   Ellipsis,
   Printer,
-  Timer as TimerIcon,
 } from "lucide-react";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -37,16 +36,20 @@ import {
   Checkbox,
   Drawer,
   FilterChip,
+  FolderTabs,
   Hero,
+  HeroAct,
+  HeroFigures,
+  HeroQuickChips,
+  HeroTop,
+  folderTabClasses,
   type SinceItem,
   Icon,
-  LiveChip,
   Menu,
   Popover,
   PortraitList,
   PortraitRail,
   Segmented,
-  Count,
   StatusGlyph,
   TabPanel,
   Tabs,
@@ -102,20 +105,27 @@ import {
 } from "./handover-model";
 import { HandoverFlowPanel, HandoverSignOffPanel, HandoverSiteSignOffSlot } from "./handover-panels";
 import { handoverSignOffChecks, sheetSignOff } from "./handover-sign-off-checks";
-import { HandoverKeysHelp, HandoverMeetingTimer, ShowMoreRow, signOffWaitReason } from "./handover-sheet-parts";
+import { HandoverKeysHelp, ShowMoreRow, signOffWaitReason } from "./handover-sheet-parts";
 import * as desk from "./handover-desk";
 import { HandoverBeds } from "./handover-beds";
 import { LongStaySummary } from "./long-stay-summary";
 // Closing-the-loop package A (24 Oct 2026): open promises and callbacks carried over.
-import { HandoverOpenPromises, promisesHeroNext } from "./handover-open-promises";
-import { HandoverGlance, HandoverHeroCounts, HandoverShiftMenu } from "./handover-glance";
+import { HandoverOpenPromises, promisesHeroAct, promisesPhoneAct } from "./handover-open-promises";
+import {
+  HandoverMeetingChip,
+  HandoverShiftMenu,
+  HandoverSignOffChip,
+  HandoverSinceLine,
+  actNowLabel,
+} from "./handover-glance";
+import pageTop from "../page-top-title.module.css";
 import { screenColumnsFor } from "./handover-screen-columns";
 import { DEFAULT_PRINT_OPTIONS, HandoverPrintSheet } from "./handover-print-sheet";
 import { HandoverPhone } from "./handover-phone";
 import styles from "./handover-refined.module.css";
 
 import { NETWORK_SCOPE_VALUE, handoverScopeValue, parseHandoverScope } from "./handover-scope";
-import { HandoverChoiceMenu, HandoverHistory, HandoverScopeControl, StatusCheckIcon } from "./handover-page-parts";
+import { HandoverChoiceMenu, HandoverHistory, HandoverScopeControl } from "./handover-page-parts";
 import {
   allRecordsScopeLabel,
   handoverScopeLabel,
@@ -158,14 +168,6 @@ const GROUPING_LABEL: Record<HandoverGrouping, string> = {
 function groupingName(id: HandoverGrouping): string {
   return GROUPING_LABEL[id].replace("Group: ", "").replace(/^./, (first) => first.toUpperCase());
 }
-
-const PILL_TONE: Record<Exclude<HandoverPill, "new">, "danger" | "warning" | "neutral" | "info"> = {
-  act: "danger",
-  urg: "danger",
-  due: "warning",
-  bed: "neutral",
-  mov: "info",
-};
 
 const GROUP_TONE = {
   act: "danger",
@@ -375,15 +377,6 @@ export function HandoverPage() {
     [groups, collapsed],
   );
 
-  // Audit 24-4 decision 5 (Josh, 24 Oct 2026): Act now counts people (one row per journey), while
-  // Alerts counts alerts; one person can carry two, and some alerts have no journey. The pill names
-  // both, so the two screens are never read as disagreeing. An alert with no journey counts only on
-  // the whole network, where nothing is scoped out.
-  const actNowAlertCount = useMemo(() => {
-    const inScope = new Set<string>(rows.map((row) => row.movement.id));
-    return actNowItems.filter((item) => (item.movementId ? inScope.has(item.movementId) : scope.kind === "network"))
-      .length;
-  }, [actNowItems, rows, scope]);
   const counts = useMemo(
     () => ({
       act: rows.filter((row) => groupOf(row, now, cutoff) === "act").length,
@@ -901,13 +894,11 @@ export function HandoverPage() {
           shift={shift}
           onShift={setShift}
           now={now}
-          scopeLabel={scopeLabel}
           groups={groups}
           rows={rows}
           wards={wards}
           ctx={ctx}
           pill={pill}
-          onPill={togglePill}
           isHighlighted={isHighlighted}
           onClearHighlight={clearHighlight}
           signedAt={signedAt}
@@ -939,6 +930,8 @@ export function HandoverPage() {
           onToggleMeeting={toggleMeeting}
           history={<HandoverHistory {...historyProps} />}
           siteSignOff={siteSignOff}
+          promisesAct={promisesPhoneAct(referrals, now)}
+          onPill={togglePill}
         />
         <WardPrototypeFooter
           testId="ward-handover-governance"
@@ -951,6 +944,7 @@ export function HandoverPage() {
   const tabs = (
     <Tabs
       label="Handover views"
+      className={folderTabClasses.switch}
       idPrefix="ward-handover-tab"
       value={tab}
       onChange={(id) => {
@@ -960,121 +954,103 @@ export function HandoverPage() {
       items={[
         { id: "pts", label: "Patients", count: rows.length },
         // ROLE BRANCH (ed): an ED holds no ward, so there is no Beds tab.
-        ...(edDesk ? [] : [{ id: "beds" as const, label: "Beds", count: `${readyTotal} ready` }]),
+        ...(edDesk ? [] : [{ id: "beds" as const, label: "Beds", count: readyTotal }]),
         { id: "hist", label: "History" },
       ]}
     />
   );
 
   const shiftClock = formatInstantWithDay(shiftAt, now);
-  /*
-   * Sign off lives in one fixed place, the hero, on every tab (Josh, 3 Nov 2026: the bar over the
-   * list and then the block at its foot were replaced). It carries the check count and opens the
-   * checklist drawer, where the checks are reviewed and Sign off is the one filled button.
-   */
   const checksDone = signChecks.filter((check) => check.done).length;
-  const signOffButton = (
-    <Button
-      variant="light"
-      size="sm"
-      icon={StatusCheckIcon(signedAt !== null)}
-      onClick={showSignOff}
-      // CB-3: the name holds the visible "Sign off 1/5" first (axe label-content-name-mismatch).
-      aria-label={
-        signedAt !== null
-          ? undefined
-          : `Sign off ${checksDone}/${signChecks.length}, ${checksDone} of ${signChecks.length} checks clear`
-      }
-      data-testid="ward-handover-hero-sign-off"
-    >
-      {signedAt !== null ? (
-        `Signed ${formatInstantWithDay(signedAt, now)}`
-      ) : (
-        <>
-          Sign off <Count n={`${checksDone}/${signChecks.length}`} className={styles.heroSignCount} />
-        </>
-      )}
-    </Button>
-  );
   /*
-   * v10 (build guide Handover): the title is the answer. NA2-01 (audit 24 Oct 2026): it counts every
-   * row listed under Act now, Flagged urgent and Due by, the same sum the phone title uses
-   * (`handover-phone.tsx`), so the two never disagree and an Act now row is never left out. The
-   * eyebrow names the shift; five chips highlight rows; the foot holds the shift switch, the
-   * countdown and the bed meter. Sign off is the one light primary.
+   * Page tops (Josh, 9 Nov 2026). NA2-01: the title counts every row under Act now, Flagged urgent and
+   * Due by, the sum the phone title uses, so the two never disagree. Sign off stays in the top on every
+   * tab (Josh, 3 Nov 2026) and opens the checklist drawer, where Sign off is the one filled button.
    */
-  /*
-   * 1 Nov 2026, round 5 (Josh): the header answers what a bed manager asks first. One row of
-   * counts that highlight rows (Waiting's pattern), the handover chosen from one menu, and one slim
-   * at-a-glance line: when it starts, beds against demand, the longest wait and what changed.
-   */
-  const longest = rows.reduce<HandoverRow | null>(
-    (best, row) => (best === null || row.openedAt < best.openedAt ? row : best),
-    null,
-  );
-  const sinceLine = sinceItems
-    .filter((item) => item.value > 0)
-    .map((item) => `${item.value} ${item.word.replace(" on the sheet", "")}`)
-    .join(" · ");
-  const promisesNext = sheetOpen ? undefined : promisesHeroNext(referrals, now, promisesOpen, setPromisesOpen);
+  const promisesAct = sheetOpen ? undefined : promisesHeroAct(referrals, now, promisesOpen, setPromisesOpen);
+  const handoverCount = counts.act + counts.urg + counts.due;
   const hero = (
     <Hero
       level={1}
-      next={promisesNext}
+      className={cx(pageTop.hero, !sheetOpen && folderTabClasses.hero)}
       testId="ward-handover-hero"
-      eyebrow="Handover"
       // H-0887: the page heading names the page, not only the count.
       title={
         <>
-          <SrOnly>Handover:</SrOnly>{" "}
-          {ownWard
-            ? desk.peopleToHandOver(counts.act + counts.urg + counts.due)
-            : `${counts.act + counts.urg + counts.due} to hand over`}
+          <SrOnly>{`Handover, ${scopeLabel}:`}</SrOnly>{" "}
+          {ownWard ? desk.peopleToHandOver(handoverCount) : `${handoverCount} to hand over`}{" "}
+          <span className={pageTop.soft}>at {shiftClock}</span>
         </>
-      }
-      titleMeta={scopeLabel}
-      bar={
-        <HandoverHeroCounts
-          pills={ownWard ? desk.WARD_DESK_PILLS : desk.COORDINATOR_PILLS}
-          counts={counts}
-          pressed={pill}
-          actNowAlerts={actNowAlertCount}
-          dueLabel={`Due by ${formatInstantWithDay(cutoff, now)}`}
-          tones={PILL_TONE}
-          onPress={togglePill}
-        />
       }
       aside={
-        <>
-          <LiveChip state="live" onHero />
-          <HandoverShiftMenu shift={shift} now={now} label={`${shiftClock} ${shiftInfo.label}`} onChange={setShift} />
-          <Button
-            variant="onHero"
-            size="sm"
-            icon={TimerIcon}
-            aria-pressed={meetingStartedAt !== null}
-            onClick={toggleMeeting}
-          >
-            {meetingStartedAt !== null ? <HandoverMeetingTimer startedAt={meetingStartedAt} /> : "Start meeting"}
-          </Button>
-          {edDesk ? null : signOffButton}
-        </>
-      }
-      foot={
-        <HandoverGlance
+        <HandoverShiftMenu
+          shift={shift}
           now={now}
-          passed={passed}
-          shiftAt={shiftAt}
-          beds={ownWard || edDesk ? null : { ready: readyTotal, needed: counts.bed }}
-          longest={longest}
-          onOpen={(id) => {
-            // The patient opens on the Patients tab, so leave Beds, History or the print builder first.
-            setSheetOpen(false);
-            setTab("pts");
-            pick(id);
-          }}
-          sinceAt={newSince}
-          sinceLine={sinceLine}
+          label={{ clock: shiftClock, words: shiftInfo.label }}
+          onChange={setShift}
+        />
+      }
+    >
+      <HeroTop
+        figures={
+          <HeroFigures
+            // Each figure highlights its rows (all rows stay); the sheet says how many and clears it.
+            items={(
+              [
+                ["act", counts.act, actNowLabel(counts.act, actNowItems, rows, scope.kind === "network")],
+                ["urg", counts.urg, "urgent"],
+                ["due", counts.due, `due by ${formatInstantWithDay(cutoff, now)}`],
+              ] as const
+            ).map(([id, value, label]) => ({
+              id,
+              value,
+              label,
+              testId: `ward-handover-figure-${id}`,
+              onClick: () => togglePill(id),
+              pressed: pill === id,
+            }))}
+          />
+        }
+        act={promisesAct ? <HeroAct {...promisesAct} /> : undefined}
+        chips={
+          <HeroQuickChips
+            label="Handover actions"
+            items={[
+              {
+                id: "meeting",
+                label: "Start meeting",
+                node: <HandoverMeetingChip startedAt={meetingStartedAt} onClick={toggleMeeting} />,
+              },
+              ...(edDesk
+                ? []
+                : [
+                    {
+                      id: "sign",
+                      label: "Sign off",
+                      node: (
+                        <HandoverSignOffChip
+                          done={checksDone}
+                          total={signChecks.length}
+                          signed={signedAt === null ? null : formatInstantWithDay(signedAt, now)}
+                          onClick={showSignOff}
+                        />
+                      ),
+                    },
+                  ]),
+              {
+                id: "print",
+                label: "Print handover",
+                icon: <Printer strokeWidth={1.75} aria-hidden="true" />,
+                testId: "ward-handover-print",
+                onClick: () => setSheetOpen(true),
+              },
+            ]}
+          />
+        }
+      >
+        <HandoverSinceLine
+          since={formatInstantWithDay(newSince, now)}
+          items={sinceItems}
           signOffNote={
             edDesk
               ? signedAt !== null
@@ -1083,68 +1059,84 @@ export function HandoverPage() {
               : null
           }
         />
-      }
-    />
+      </HeroTop>
+    </Hero>
   );
 
   const toolbar = (
-    <div className={styles.toolbar}>
+    <FolderTabs
+      label="Handover views"
+      value={tab}
+      testId="ward-handover-tabs"
+      more={
+        <span className={styles.folderTools}>
+          <Popover
+            label="More handover actions"
+            align="end"
+            trigger={(props) => (
+              <Button
+                {...props}
+                variant="ghost"
+                size="sm"
+                iconOnly
+                icon={Ellipsis}
+                className={folderTabClasses.more}
+                aria-label="More handover actions"
+              />
+            )}
+          >
+            {() => (
+              <div className={styles.moreList}>
+                <Button variant="ghost" size="sm" icon={MonitorPlay} onClick={() => setPresent((on) => !on)}>
+                  {present ? "Exit present" : "Present on a screen"}
+                </Button>
+                <Button variant="ghost" size="sm" icon={ClipboardCopy} onClick={copySummary}>
+                  {copied ? "Copied" : "Copy summary"}
+                </Button>
+                <Link href="/ward-flow/reports/downtime" className={buttonClass({ variant: "ghost", size: "sm" })}>
+                  <Icon icon={Printer} size={14} />
+                  Downtime pack
+                </Link>
+                {/* B4: act now and due before the next handover, as Delays' For handover view. */}
+                <Link href={waitingHref("handover")} className={buttonClass({ variant: "ghost", size: "sm" })}>
+                  <Icon icon={Clock} size={14} />
+                  Open in Waiting
+                </Link>
+              </div>
+            )}
+          </Popover>
+          <Popover
+            label="Keyboard shortcuts"
+            align="end"
+            trigger={(props) => (
+              <Button
+                {...props}
+                ref={(node: HTMLButtonElement | null) => {
+                  props.ref.current = node;
+                  keysTriggerRef.current = node;
+                }}
+                variant="ghost"
+                size="sm"
+                iconOnly
+                icon={Keyboard}
+                className={folderTabClasses.more}
+                aria-label="Keyboard shortcuts"
+              />
+            )}
+          >
+            {() => (
+              <HandoverKeysHelp
+                enabled={singleKeyShortcutsEnabled}
+                onEnabledChange={setSingleKeyShortcutsEnabled}
+                signOff={!edDesk}
+              />
+            )}
+          </Popover>
+        </span>
+      }
+    >
       {tabs}
-      <span className={styles.spacer} />
-      <Popover
-        label="More handover actions"
-        align="end"
-        trigger={(props) => (
-          <Button {...props} variant="sec" size="sm" iconOnly icon={Ellipsis} aria-label="More handover actions" />
-        )}
-      >
-        {() => (
-          <div className={styles.moreList}>
-            <Button variant="ghost" size="sm" icon={MonitorPlay} onClick={() => setPresent((on) => !on)}>
-              {present ? "Exit present" : "Present on a screen"}
-            </Button>
-            <Button variant="ghost" size="sm" icon={ClipboardCopy} onClick={copySummary}>
-              {copied ? "Copied" : "Copy summary"}
-            </Button>
-            <Link href="/ward-flow/reports/downtime" className={buttonClass({ variant: "ghost", size: "sm" })}>
-              <Icon icon={Printer} size={14} />
-              Downtime pack
-            </Link>
-            {/* B4: act now and due before the next handover, as Delays' For handover view. */}
-            <Link href={waitingHref("handover")} className={buttonClass({ variant: "ghost", size: "sm" })}>
-              <Icon icon={Clock} size={14} />
-              Open in Waiting
-            </Link>
-          </div>
-        )}
-      </Popover>
-      <Popover
-        label="Keyboard shortcuts"
-        align="end"
-        trigger={(props) => (
-          <Button
-            {...props}
-            ref={(node: HTMLButtonElement | null) => {
-              props.ref.current = node;
-              keysTriggerRef.current = node;
-            }}
-            variant="sec"
-            size="sm"
-            iconOnly
-            icon={Keyboard}
-            aria-label="Keyboard shortcuts"
-          />
-        )}
-      >
-        {() => (
-          <HandoverKeysHelp
-            enabled={singleKeyShortcutsEnabled}
-            onEnabledChange={setSingleKeyShortcutsEnabled}
-            signOff={!edDesk}
-          />
-        )}
-      </Popover>
-    </div>
+    </FolderTabs>
   );
 
   const pastBanner = passed ? (
@@ -1182,10 +1174,7 @@ export function HandoverPage() {
         </div>
         {highlightControl}
         {viewControl}
-        <span className={styles.spacer} />
-        <Button variant="pri" icon={Printer} onClick={() => setSheetOpen(true)} data-testid="ward-handover-print">
-          Print handover
-        </Button>
+        {/* Print handover is the top's chip (page tops, 9 Nov 2026). */}
       </div>
       {(scope.kind === "network" || wardAllShown) && !anyHighlight ? null : (
         <div className={styles.scopeLine} data-testid="ward-handover-scope-line">
@@ -1473,12 +1462,13 @@ export function HandoverPage() {
       data-ward-design="v6"
     >
       {hero}
+      {/* The folder tabs rise out of the hero, so they come straight after it. */}
+      {sheetOpen ? null : toolbar}
       {sheetOpen || !promisesOpen ? null : (
         <HandoverOpenPromises referrals={referrals} units={units} now={now} layout="page" />
       )}
       {pastBanner}
       {sheetOpen || tab !== "pts" ? null : siteSignOff}
-      {sheetOpen ? null : toolbar}
       {body}
       {flowPanel}
       {!portrait ? (

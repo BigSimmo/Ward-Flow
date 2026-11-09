@@ -1,275 +1,321 @@
 "use client";
 
-import { ChevronDown, Presentation, Printer } from "lucide-react";
+import { useState } from "react";
+import { ChartColumn, ChevronDown, Clock, Presentation, Printer, Search } from "lucide-react";
 
 import {
-  buttonClass,
   durMinutes,
-  FigureLink,
-  figureLinkName,
+  folderTabClasses,
   Hero,
-  HeroChip,
-  HeroStat,
+  HeroBand,
+  HeroFigures,
+  HeroPill,
+  HeroQuickChips,
+  HeroTop,
+  heroChipClassName,
   Menu,
-  OccupancyRing,
   SrOnly,
-  wfNumClass,
+  type HeroChipItem,
 } from "@/components/wf";
-import { formatInstant } from "@/components/ward-management/ward-clock";
 import { formatWardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { PageLiveChip } from "@/components/ward-management/ward-page-live";
-import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
-import { BED_MEETING_AGENDA_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
-import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { PAGE_OWNERS } from "@/components/ward-management/ward-page-owners";
+import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
+import { BED_MEETING_AGENDA_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
+import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 
-import type { Highlight } from "./capacity-bed-map-cards";
+import type { BedKindGap } from "./capacity-derivations";
 import { isConfirmationFresh } from "./capacity-gap-words";
+import { shortNeed } from "./capacity-mismatch-band";
+import { MismatchPopup } from "./capacity-mismatch-popup";
 import type { CapacityModel } from "./capacity-model";
-import { gapWords } from "./capacity-range-line";
 import { waitingHref } from "../delays/waiting-href";
 import { HELD_UP_HREF } from "./capacity-held-up";
 import type { SiteEdWaiting } from "./capacity-site-ed";
 import styles from "./capacity-page.module.css";
 
+const WARDS_HREF = "/ward-flow/wards";
+const ICON = { size: 16, strokeWidth: 1.75, "aria-hidden": true } as const;
+
+/** "6 short", "2 spare", "enough": the band's short words (the Mismatch pop-up keeps the long ones). */
+function gapShort(gap: number): string {
+  if (gap === 0) return "enough";
+  return gap < 0 ? `${-gap} short` : `${gap} spare`;
+}
+
 /**
- * Capacity's hero: beds ready of all beds, the ring, and one chip row. The figures are the whole
- * modelled network (or the site, for a site bed manager), whatever service is chosen; the bed map
- * below is the part a service narrows, so the eyebrow says so.
+ * Capacity's top (page tops, Josh 9 Nov 2026): three figures, the counts-confirmed pill with the
+ * coordinator's Ask, the page's jobs as chips, and one slim band of the gap by bed type now (each
+ * cell opens who is waiting and where, the pop-up the Mismatch card used to open). The figures are
+ * the whole modelled network (or the site, for a site bed manager), whatever service is chosen;
+ * the bed map below is the part a service narrows, so the eyebrow then says so.
  */
 export function CapacityHero({
   model,
   isPhone,
   service,
-  tvHref,
   executive,
   edWaiting,
-  highlight,
-  onHighlight,
+  networkWide,
+  hideEmptyTypes,
+  tvHref,
   onSheet,
+  onForecast,
   onWard,
   onAskWard,
 }: {
   model: CapacityModel;
   isPhone: boolean;
   service: string | null;
-  /** The bed meeting TV link, or undefined when the TV view is off. */
-  tvHref: string | undefined;
-  /** The executive desk opens neither the bed meeting nor its TV view. */
+  /** The executive desk opens neither the bed meeting nor the bed finder. */
   executive: boolean;
   /** Site bed manager only: the site's own ED as counts (Josh, 30 Oct 2026). */
   edWaiting: SiteEdWaiting | null;
-  highlight: Highlight | null;
-  onHighlight: (highlight: Highlight) => void;
+  /** A service is chosen, but who is waiting is counted across the network, so the band says so. */
+  networkWide: boolean;
+  /** A site bed manager's site holds only some bed types; an empty type is left out. */
+  hideEmptyTypes: boolean;
+  /** The bed meeting TV link, or undefined when the TV view is off. */
+  tvHref: string | undefined;
   onSheet: () => void;
+  onForecast: () => void;
   onWard: (unitId: string) => void;
-  /** The coordinator's Ask on the counts figure; absent for a desk that may not ask a ward. */
+  /** The coordinator's Ask on the counts pill; absent for a desk that may not ask a ward. */
   onAskWard?: (unitId: string) => void;
 }) {
-  // Optional, so the screen also renders outside the app router (its tests, the design preview).
-  const router = useOptionalRouter();
   const canOpen = useCanOpenHref();
-  const { totals, gapTotals, occupancy, live, now, oldestCount, site, otherSiteRows } = model;
-  // Site bed manager (D-80): the hero is the site's; the rest of the network is one plain count.
+  const router = useOptionalRouter();
+  const go = (href: string) => (router ? router.push(href) : window.location.assign(href));
+  const [openKind, setOpenKind] = useState<BedKindGap["id"] | null>(null);
+  const { totals, gapTotals, gapRows, tomorrowByKind, occupancy, live, now, oldestCount, site } = model;
   const place = site ? site.name : "Modelled network";
-  const scope = service === null || site ? place : `${place}, not only ${service}`;
-  const elsewhereReady = otherSiteRows.reduce((sum, row) => sum + row.ready, 0);
-  const elsewhereBeds = otherSiteRows.reduce((sum, row) => sum + row.unit.beds, 0);
   const oldestStale = oldestCount ? !isConfirmationFresh(oldestCount.unit, now) : false;
   const { confirmations, heldUp } = model;
   const firstToConfirm = confirmations.waiting[0];
   const countTarget = firstToConfirm?.id ?? oldestCount?.unit.id;
-  return (
-    <Hero
-      level={1}
-      // The eyebrow says the figures cover the network, not only the chosen service.
-      phoneEyebrow="show"
-      eyebrow={`Capacity · ${scope}${isPhone ? "" : ` · ${totals.wards} wards · as at ${formatInstant(now)}`}`}
-      title={
-        <>
-          <SrOnly>Capacity, </SrOnly>
-          {totals.ready} {isPhone ? "ready" : "beds ready"} of {totals.beds}
-        </>
-      }
-      titleMeta={
-        isPhone ? (
-          <>
-            {gapWords(gapTotals.gap)} for <span className={wfNumClass}>{gapTotals.waiting}</span> needing a bed
-            {/* Kit rule a (Josh, 3 Nov 2026): Waiting owns the ED count, so it links there. */}
-            {edWaiting ? (
-              <>
-                {" · "}
-                <FigureLink
-                  value={edWaiting.waiting}
-                  label={`waiting in ${edWaiting.short}`}
-                  owner={{ ...PAGE_OWNERS.waiting, route: waitingHref(undefined, edWaiting.edId) }}
-                  onHero
-                  canOpen={canOpen(PAGE_OWNERS.waiting.route)}
-                  data-testid="capacity-hero-ed-waiting-link"
-                />
-              </>
-            ) : null}
-          </>
-        ) : totals.pendingPreparation ? (
-          `${totals.pendingPreparation} being made ready`
-        ) : undefined
-      }
-      lead={isPhone ? undefined : <OccupancyRing percent={occupancy.percent} alertAt={model.alertAt} scope={place} />}
-      stats={
-        isPhone ? (
-          <>
-            <HeroStat
-              value={model.lockedReady}
-              label="Locked ready"
-              tone="success"
-              pressed={highlight === "locked"}
-              onToggle={() => onHighlight("locked")}
-            />
-            <HeroStat value={model.pulled} label="Beds pulled" tone={model.pulled > 0 ? "warning" : undefined} />
-            <HeroStat
-              value={formatWardOccupancy(occupancy, "Not known")}
-              // Occupancy counts pulled beds as in use (audit P100, D-81), so the label says so; the count
-              // itself is the Beds pulled stat beside it, which keeps the label to two lines.
-              label={model.pulled > 0 ? "In use, including pulled" : "Of beds in use"}
-            />
-          </>
-        ) : undefined
-      }
-      bar={
-        isPhone ? undefined : (
-          <div className={styles.heroStats} role="group" aria-label={site ? `${site.name} beds` : "Network beds"}>
-            <HeroChip
-              value={model.lockedReady}
-              label="Locked ready"
-              pressed={highlight === "locked"}
-              onPress={() => onHighlight("locked")}
-            />
-            <HeroChip
-              value={model.openReady}
-              label="Open ready"
-              pressed={highlight === "open"}
-              onPress={() => onHighlight("open")}
-            />
-            <HeroChip value={model.pulled} label="Beds pulled" tone={model.pulled > 0 ? "warning" : undefined} />
-            <HeroChip
-              value={model.dueOutToday ?? "Not tracked"}
-              // Same source as each ward card's "freeing today" (release plans due today).
-              // The Bed forecast's discharge counts are the next 24h windows — a different figure.
-              label="Beds freeing today"
-            />
-            {/* Josh's fifth notes (8 Nov 2026): "This shift" folded into the strip. The counts
-                confirmed this shift open the ward still to confirm (or the oldest count), with the
-                coordinator's Ask beside it; held-up discharges open Discharges' held-up list. */}
-            <HeroChip
-              value={heldUp.total}
-              label={heldUp.total === 1 ? "Held-up discharge" : "Held-up discharges"}
-              tone={heldUp.total > 0 ? "warning" : undefined}
-              href={canOpen(HELD_UP_HREF) ? HELD_UP_HREF : undefined}
-              testId="capacity-hero-held-up"
-            />
-            <section aria-label="Bed counts confirmed" className={`${styles.heroShift} ${styles.heroJump}`}>
-              <HeroChip
-                value={`${confirmations.confirmed} of ${confirmations.total}`}
-                label={
-                  firstToConfirm
-                    ? `confirmed · ${firstToConfirm.name} ${durMinutes(Math.max(0, now - firstToConfirm.allocatable.confirmedAt))} old`
-                    : "counts confirmed this shift"
-                }
-                tone={firstToConfirm || oldestStale ? "warning" : undefined}
-                onPress={countTarget ? () => onWard(countTarget) : undefined}
-                testId="capacity-hero-confirmed"
-              />
-              {firstToConfirm && onAskWard ? (
-                <button
-                  type="button"
-                  className={styles.heroAsk}
-                  onClick={() => onAskWard(firstToConfirm.id)}
-                  aria-label={`Ask ${firstToConfirm.name} to confirm its beds`}
-                >
-                  Ask
-                </button>
-              ) : null}
-            </section>
-            {/* Site bed manager: the site's ED, counts only, with the All EDs page's words. */}
-            {/* WF-FIG-016: the same Waiting destination and accessible name as the phone figure. */}
-            {edWaiting ? (
-              <HeroChip
-                value={edWaiting.waiting}
-                label={<SpelledCodes text={`Waiting in ${edWaiting.short}`} />}
-                href={canOpen(PAGE_OWNERS.waiting.route) ? waitingHref(undefined, edWaiting.edId) : undefined}
-                linkLabel={figureLinkName({
-                  value: edWaiting.waiting,
-                  label: `waiting in ${edWaiting.short}`,
-                  owner: PAGE_OWNERS.waiting,
-                })}
-                testId="capacity-hero-ed-waiting-link"
-              />
-            ) : null}
-            {edWaiting && edWaiting.pastTarget > 0 ? (
-              <HeroChip
-                value={edWaiting.pastTarget}
-                label={<SpelledCodes text={`Past target in ${edWaiting.short}`} />}
-                tone="warning"
-              />
-            ) : null}
-            {site ? <HeroChip value={elsewhereReady} label={`ready at other sites, of ${elsewhereBeds} beds`} /> : null}
-          </div>
-        )
-      }
-      aside={
-        <>
-          <span className={styles.heroLive}>
-            <PageLiveChip paused={live.paused} onTogglePause={live.togglePause} />
-          </span>
-          {/* The executive desk: the bed meeting and its TV view are not this desk's screens. */}
-          {isPhone || executive ? null : (
-            <>
+  const byId = new Map(tomorrowByKind.kinds.map((kind) => [kind.id, kind]));
+  // Role view (site bed manager): a type with nobody waiting, no bed that fits and nothing
+  // forecast is left out, not drawn as 0 (the rule the Mismatch card had).
+  const typeRows = hideEmptyTypes
+    ? gapRows.filter((row) => {
+        const next = byId.get(row.id);
+        const forecastNothing = next === undefined || (next.low === 0 && next.likely === 0 && next.high === 0);
+        return row.waiting > 0 || row.bedsThatFit > 0 || !forecastNothing;
+      })
+    : gapRows;
+  const openRow = gapRows.find((row) => row.id === openKind) ?? null;
+  const gap = gapTotals.gap;
+  const occupancyLabel = (
+    <>
+      in use
+      {/* Occupancy counts pulled beds as in use (audit P100, D-81). */}
+      {model.pulled > 0 ? <SrOnly>, including pulled beds</SrOnly> : null}
+    </>
+  );
+
+  const chips: HeroChipItem[] = [
+    ...(executive
+      ? []
+      : [
+          {
+            id: "find",
+            label: "Find a bed",
+            icon: <Search {...ICON} />,
+            onClick: () => requestToolsTool("bed-finder", activeElement()),
+            testId: "capacity-hero-find-bed",
+          },
+          {
+            id: "meeting",
+            label: "Bed meeting",
+            // The sheet, the TV view and the agenda stay in one menu (MU3, Josh 5 Nov 2026).
+            node: (
               <Menu
                 label="Bed meeting"
-                align="end"
                 items={[
                   { id: "sheet", label: "Print the meeting sheet", icon: Printer, onSelect: onSheet },
                   ...(tvHref && canOpen(tvHref)
-                    ? [
-                        {
-                          id: "tv",
-                          label: "Open on TV",
-                          icon: Presentation,
-                          onSelect: () => (router ? router.push(tvHref) : window.location.assign(tvHref)),
-                        },
-                      ]
+                    ? [{ id: "tv", label: "Open on TV", icon: Presentation, onSelect: () => go(tvHref) }]
                     : []),
                   // Only when this desk may open the agenda (access audit, 31 Oct 2026).
                   ...(canOpen(BED_MEETING_AGENDA_HREF)
-                    ? [
-                        {
-                          id: "agenda",
-                          label: "Open the meeting agenda",
-                          onSelect: () =>
-                            router
-                              ? router.push(BED_MEETING_AGENDA_HREF)
-                              : window.location.assign(BED_MEETING_AGENDA_HREF),
-                        },
-                      ]
+                    ? [{ id: "agenda", label: "Open the meeting agenda", onSelect: () => go(BED_MEETING_AGENDA_HREF) }]
                     : []),
                 ]}
                 trigger={(props) => (
-                  <button
-                    type="button"
-                    {...props}
-                    className={buttonClass({ variant: "onHero" })}
-                    data-testid="capacity-bed-meeting"
-                  >
-                    <Printer size={16} strokeWidth={1.75} aria-hidden="true" /> Bed meeting{" "}
+                  <button type="button" {...props} className={heroChipClassName} data-testid="capacity-bed-meeting">
+                    <Printer {...ICON} />
+                    <span>Bed meeting</span>
                     <ChevronDown size={14} strokeWidth={1.75} aria-hidden="true" />
                   </button>
                 )}
               />
-            </>
-          )}
+            ),
+          },
+        ]),
+    // The phone's Overview opens with the forecast card, so the chip would repeat it there.
+    ...(isPhone
+      ? []
+      : [
+          {
+            id: "forecast",
+            label: "Bed forecast",
+            icon: <ChartColumn {...ICON} />,
+            onClick: onForecast,
+            testId: "capacity-hero-forecast",
+          },
+        ]),
+    {
+      id: "held-up",
+      label: heldUp.total === 1 ? "Held-up discharge" : "Held-up discharges",
+      icon: <Clock {...ICON} />,
+      count: heldUp.total,
+      countTone: "quiet",
+      href: canOpen(HELD_UP_HREF) ? HELD_UP_HREF : undefined,
+      testId: "capacity-hero-held-up",
+    },
+    // Site bed manager: the site's ED, counts only, with the All EDs page's words (WF-FIG-016).
+    ...(edWaiting && canOpen(PAGE_OWNERS.waiting.route)
+      ? [
+          {
+            id: "ed-waiting",
+            label: `Waiting in ${edWaiting.short}`,
+            count: edWaiting.waiting,
+            countTone: edWaiting.pastTarget > 0 ? ("warning" as const) : ("quiet" as const),
+            href: waitingHref(undefined, edWaiting.edId),
+            testId: "capacity-hero-ed-waiting-link",
+          },
+        ]
+      : []),
+  ];
+
+  const jobs = <HeroQuickChips label="Capacity jobs" items={chips} />;
+  return (
+    <Hero
+      level={1}
+      className={folderTabClasses.hero}
+      // A chosen service or a site: say whose figures these are; otherwise the header says it.
+      eyebrow={site || service !== null ? (site ? place : `${place}, not only ${service}`) : undefined}
+      phoneEyebrow={site || service !== null ? "show" : undefined}
+      title={
+        <>
+          <SrOnly>Capacity, </SrOnly>
+          Beds <span className={styles.titleSoft}>ready and short</span>
         </>
       }
-    />
+      aside={<PageLiveChip paused={live.paused} onTogglePause={live.togglePause} />}
+    >
+      <HeroTop
+        figures={
+          <HeroFigures
+            label={site ? `${site.name} beds` : "Network beds"}
+            items={[
+              {
+                id: "ready",
+                value: totals.ready,
+                unit: `/ ${totals.beds}`,
+                label: totals.ready === 1 ? "bed ready" : "beds ready",
+                testId: "capacity-hero-ready",
+              },
+              {
+                id: "gap",
+                value: Math.abs(gap),
+                label: `${gap < 0 ? "short" : gap > 0 ? "spare" : "short"} for ${gapTotals.waiting}`,
+                testId: "capacity-hero-gap",
+              },
+              {
+                id: "occupancy",
+                value: formatWardOccupancy(occupancy, "Not known"),
+                label: occupancyLabel,
+                href: canOpen(WARDS_HREF) ? WARDS_HREF : undefined,
+                underline: true,
+                testId: "capacity-hero-occupancy",
+              },
+            ]}
+          />
+        }
+        pill={
+          <HeroPill
+            tone={firstToConfirm || oldestStale ? "warning" : undefined}
+            testId="capacity-hero-confirmed"
+            text={
+              <>
+                <b className={styles.pillCount}>
+                  {confirmations.confirmed} of {confirmations.total}
+                </b>{" "}
+                {firstToConfirm
+                  ? `confirmed · ${firstToConfirm.name} ${durMinutes(Math.max(0, now - firstToConfirm.allocatable.confirmedAt))} old`
+                  : "counts confirmed this shift"}
+              </>
+            }
+            action={
+              firstToConfirm && onAskWard
+                ? {
+                    label: "Ask",
+                    ariaLabel: `Ask ${firstToConfirm.name} to confirm its beds`,
+                    onClick: () => onAskWard(firstToConfirm.id),
+                    testId: "capacity-hero-ask",
+                  }
+                : countTarget && (firstToConfirm || oldestStale)
+                  ? { label: "Open", onClick: () => onWard(countTarget), testId: "capacity-hero-open-count" }
+                  : undefined
+            }
+          />
+        }
+        // Wider screens: the chips sit right of the figures (Home's act place) with the pill under the
+        // figures; a phone stacks figures, pill, then chips (page tops, Josh 9 Nov 2026).
+        act={isPhone ? undefined : jobs}
+        chips={isPhone ? jobs : undefined}
+        // The site bed manager's home never shows the shell Quick bar as a second chip row.
+        quickBar={false}
+        band={
+          typeRows.length > 0 ? (
+            <HeroBand
+              title="Short now, by bed type"
+              aside={networkWide ? "Network-wide" : undefined}
+              testId="capacity-mismatch"
+              cells={typeRows.map((row) => {
+                const title = shortNeed(row.need);
+                const likely = byId.get(row.id)?.likely;
+                const short = row.gap < 0;
+                const tomorrow = likely === undefined ? "" : ` · tomorrow ${gapShort(likely)}`;
+                return {
+                  id: row.id,
+                  label: title,
+                  value: (
+                    <>
+                      {row.gap === 0 ? null : Math.abs(row.gap)}{" "}
+                      <span className={styles.bandWord}>{row.gap === 0 ? "enough" : short ? "short" : "spare"}</span>
+                    </>
+                  ),
+                  tone: short ? "warning" : "ok",
+                  note: `${row.waiting} waiting${tomorrow}`,
+                  ariaLabel: `${title}: ${gapShort(row.gap)} now, ${row.waiting} waiting · ${row.bedsThatFit} ready that fit${tomorrow}. Who is waiting and where`,
+                  onClick: () => setOpenKind(row.id),
+                  testId: `capacity-mismatch-${row.id}`,
+                };
+              })}
+            />
+          ) : undefined
+        }
+      />
+      <MismatchPopup
+        row={openRow}
+        title={shortNeed(openRow?.need ?? "")}
+        tomorrow={openKind ? byId.get(openKind) : undefined}
+        now={now}
+        onClose={() => setOpenKind(null)}
+        units={model.gapUnits}
+        onWard={(unitId) => {
+          setOpenKind(null);
+          onWard(unitId);
+        }}
+      />
+    </Hero>
   );
+}
+
+/** The chip that opened the bed finder gets focus back when it closes. */
+function activeElement(): HTMLElement | undefined {
+  return document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
 }

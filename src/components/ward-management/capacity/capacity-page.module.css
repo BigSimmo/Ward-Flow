@@ -131,23 +131,8 @@
   gap: var(--wf-s-2);
 }
 
-.heroStats {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wf-s-2);
-}
 /* Final polish (31 Oct 2026): the Demo pill takes the hero buttons' height (the kit pill reads
    its height from --wf-h-chip), so the aside is one row of equal controls. Phone keeps the chip. */
-.heroLive {
-  display: inline-flex;
-  align-items: center;
-}
-@media (min-width: 46.5rem) {
-  .heroLive {
-    --wf-h-chip: var(--wf-h-md);
-  }
-}
 
 /* ── Where the mismatch is ── */
 .mismatch {
@@ -930,12 +915,6 @@
 }
 
 /* ── Phone ── */
-.phoneTabs {
-  position: sticky;
-  top: var(--wf-header-height, 3.5rem);
-  z-index: 3;
-  width: 100%;
-}
 .phoneRows {
   margin: 0;
   padding: 0;
@@ -1089,11 +1068,6 @@
 /* The oldest-count jump sits at the right end of the hero's figures on desktop, where the chips
    share one line. Below that the chips wrap, and a wrapped jump starts its line at the left like
    the rest rather than sitting alone at the right (visual review, 5 Nov 2026). */
-@media (min-width: 75.0625rem) {
-  .heroJump {
-    margin-inline-start: auto;
-  }
-}
 
 /* Planned admissions, reused unchanged: Book keeps its icon beside the word in the narrow column,
    and each booking's facts wrap instead of ending in "…". */
@@ -3188,32 +3162,28 @@ button.helpLink {
 
 /* Josh's fifth notes (8 Nov 2026): the counts-confirmed chip and its Ask read as one joined control
    in the hero strip, replacing the "This shift" card's first section. */
-.heroShift {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: stretch;
+
+/* Page tops (Josh, 9 Nov 2026): the title's quieter second half and the pill's count, as on Home. */
+.titleSoft {
+  color: var(--wf-hero-ink-3);
+  font-weight: 500;
 }
-.heroShift > :first-child:not(:last-child) {
-  border-start-end-radius: 0;
-  border-end-end-radius: 0;
-}
-.heroAsk {
-  flex: none;
-  min-height: max(32px, var(--wf-tablet-tap, 0px));
-  padding: 0 var(--wf-s-3);
-  border: 1px solid var(--wf-on-hero-line);
-  border-inline-start: 0;
-  border-start-end-radius: var(--wf-r-ctl);
-  border-end-end-radius: var(--wf-r-ctl);
-  background: var(--wf-on-hero-fill);
+.pillCount {
+  font-family: var(--wf-mono);
+  font-weight: 600;
   color: var(--wf-hero-ink);
-  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
-  cursor: pointer;
 }
-.heroAsk:hover {
-  background: var(--wf-on-hero-hl);
+/* "6 short" in the hero band: the word beside the figure, in the figure's colour, in sans. */
+.bandWord {
+  font-family: var(--wf-font);
+  font-weight: 500;
 }
-.heroAsk:focus-visible {
-  outline: 2px solid var(--wf-hero-ink);
-  outline-offset: 2px;
+
+/* Phone: the page tabs pin under the header while the page scrolls, as Home's do. */
+@media (max-width: 46.4375rem) {
+  .pageTabs {
+    position: sticky;
+    top: var(--wf-header-height, 3.5rem);
+    z-index: 6;
+  }
 }

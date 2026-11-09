@@ -2396,3 +2396,9 @@
   min-height: 3rem;
   padding-block: 6px;
 }
+
+/* Page tops (9 Nov 2026): the worklist tabs under the hero (wf FolderTabs styles the tabs). */
+.folderSwitch {
+  display: flex;
+  align-items: stretch;
+}

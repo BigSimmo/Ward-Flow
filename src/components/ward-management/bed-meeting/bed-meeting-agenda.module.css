@@ -467,3 +467,95 @@
 .anchored {
   scroll-margin-block-start: var(--wf-s-8);
 }
+
+/* Page tops (Josh, 9 Nov 2026): the agenda's tools on the slate, beside the shared quick chips. */
+.heroChips {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.heroChips > ul {
+  flex: none;
+}
+
+/* The Filter trigger and the print launcher, drawn as the slate's quick chips (wf/hero-top). */
+.heroChip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 13px;
+  border: 1px solid var(--wf-on-hero-line);
+  border-radius: var(--wf-r-pill);
+  background: transparent;
+  color: var(--wf-hero-ink);
+  font: 500 13.5px / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.heroChip svg {
+  color: var(--wf-hero-ink-2);
+}
+
+@media (hover: hover) {
+  .heroChip:hover {
+    background: var(--wf-on-hero-fill);
+  }
+}
+
+.heroChip:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+}
+
+.heroChipCount {
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-hero-ink-2);
+}
+
+@media (max-width: 46.4375rem) {
+  /* One row that scrolls sideways, as the shared chips do on a phone. */
+  .heroChips {
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-inline: calc(-1 * var(--wf-s-4));
+    padding-inline: var(--wf-s-4);
+  }
+}
+
+/* List rows (page tops): the wait on one line, the place on one line, no avatars. */
+.agendaRow .rowText {
+  min-width: 0;
+}
+
+/* The page column's gap between the hero and the folder tabs. */
+.folder {
+  --wf-folder-gap: var(--wf-s-4);
+}
+
+/* On the slate the Filter chip sits in the chip row, beside Find anyone and Referrals. */
+.groupFilterOnHero {
+  margin-inline-start: 0;
+}
+
+/* Page tops (9 Nov 2026): the place stays on one line, and a phone keeps the red mark beside the time. */
+.agendaRow .detail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 30rem) {
+  .agendaRow .figure {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 5px;
+  }
+  .agendaRow .figure > :first-child:not(.figureValue) {
+    display: inline-flex;
+  }
+}

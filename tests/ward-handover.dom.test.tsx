@@ -59,7 +59,8 @@ describe("Handover page", () => {
     expect(screen.getByRole("heading", { level: 1, name: /to hand over/ })).toBeInTheDocument();
     // 1 Nov 2026 redesign: the handover is chosen from one menu that names it.
     expect(screen.getByTestId("ward-handover-shift")).toHaveTextContent(/^15:00/);
-    expect(screen.getByTestId("ward-handover-kpi-strip")).toBeInTheDocument();
+    // Page tops (9 Nov 2026): the top's figures replace the count strip.
+    expect(screen.getByTestId("ward-handover-figure-act")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /Patients/ })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tab", { name: /Beds/ })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /History/ })).toBeInTheDocument();
@@ -281,9 +282,8 @@ describe("Handover page", () => {
     const before = within(screen.getByTestId("ward-handover-sheet"))
       .getAllByRole("row")
       .filter((row) => row.hasAttribute("data-row-id")).length;
-    await user.click(
-      within(screen.getByTestId("ward-handover-kpi-strip")).getByRole("button", { name: /Finding a ward/ }),
-    );
+    // Page tops (9 Nov 2026): a top figure highlights its rows.
+    await user.click(within(screen.getByTestId("ward-handover-hero")).getByRole("button", { name: /^act now/ }));
     const after = within(screen.getByTestId("ward-handover-sheet"))
       .getAllByRole("row")
       .filter((row) => row.hasAttribute("data-row-id")).length;
@@ -380,19 +380,14 @@ describe("Handover sign-off belongs to one handover", () => {
 });
 
 describe("Handover counts agree (device audit 11 Oct 2026)", () => {
-  it("counts Finding a ward and Moving the way the meeting groups do", () => {
+  it("counts the top's figures the way the meeting groups do", () => {
     renderHandover();
-    const strip = screen.getByTestId("ward-handover-kpi-strip");
-    for (const [id, label] of [
-      ["bed", /Finding a ward/],
-      ["mov", /Moving/],
-    ] as const) {
-      const pill = within(strip)
-        .getAllByRole("button")
-        .find((button) => label.test(button.textContent ?? ""));
-      const group = screen.getByTestId(`ward-handover-group-${id}`);
-      const groupCount = group.querySelector("[class*=groupCount]")?.textContent;
-      expect(pill?.textContent).toMatch(new RegExp(`^${groupCount}\\D`, "u"));
+    // Page tops (9 Nov 2026): the top's act now, urgent and due by figures replace the count strip.
+    for (const id of ["act", "urg", "due"] as const) {
+      const figure = screen.getByTestId(`ward-handover-figure-${id}`).querySelector("b")?.textContent;
+      const group = screen.queryByTestId(`ward-handover-group-${id}`);
+      const groupCount = group?.querySelector("[class*=groupCount]")?.textContent ?? "0";
+      expect(figure, id).toBe(groupCount);
     }
   });
 });

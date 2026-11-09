@@ -219,7 +219,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
 
     // A blocker group's header folds and unfolds its own rows. Groups show in the By blocker view;
     // the board opens on Longest wait (audit A3-14).
-    fireEvent.click(screen.getByRole("button", { name: "By hold-up" }));
+    fireEvent.click(screen.getByRole("tab", { name: "By hold-up" }));
     const groupHeader = screen.getAllByTestId(/^delays-cause-/u)[0];
     expect(groupHeader, "no blocker group rendered under South Metro").toBeDefined();
     const before = listedIds().length;

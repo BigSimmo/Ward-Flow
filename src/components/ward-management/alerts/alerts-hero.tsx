@@ -1,321 +1,309 @@
 "use client";
 
-// The Alerts screen's hero: the phone hero with its directive card and Today sheet, or the desktop
-// hero with its figures, broadcast and tools. Moved out of `alerts-screen.tsx` for the line cap.
-import type { ReactNode, RefObject } from "react";
-import { Bell, BellRing, ChevronRight, Copy, Ellipsis, Pause, Play, Radio } from "lucide-react";
+// The Alerts screen's top. Page tops (Josh, 9 Nov 2026): one hero at every width, as on Home: the
+// act now, waiting and oldest figures, the next alert as the act row, Yours and Broadcast as chips
+// and one slim Today band. On a desktop the Today timeline sits above that band. Moved out of
+// `alerts-screen.tsx` for the line cap.
+import type { ReactNode } from "react";
+import { Bell, BellRing, Copy, Ellipsis, Radio, User } from "lucide-react";
 
 import {
   Button,
+  cx,
+  folderTabClasses,
   Hero,
+  HeroAct,
+  HeroBand,
+  HeroFigures,
+  HeroQuickChips,
+  HeroTop,
   LiveChip,
   Menu,
-  PhoneHero,
-  PhoneSheet,
-  StatusGlyph,
-  phoneRows,
-  type WfTone,
+  SrOnly,
+  type HeroChipItem,
 } from "@/components/wf";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { PageLiveChip, type usePageLive } from "@/components/ward-management/ward-page-live";
+import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import type { usePageLive } from "@/components/ward-management/ward-page-live";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 
 import type { getActiveBroadcastAlert } from "./ward-broadcast-model";
-import { minutesText } from "./alerts-model";
+import { minutesText, shownAgeFrom } from "./alerts-model";
 import type { QueueEntry } from "./alerts-queue";
+import titles from "@/components/ward-management/page-top-title.module.css";
 import styles from "./alerts.module.css";
 
 export type AlertsTab = "now" | "earlier";
 
-// Alerts redesign (Q112, Josh 1 Nov 2026): the title is the Act now and Waiting figures, Home's
-// count included. "New to you" is gone: nothing on the page explained it.
-function alertsHeroTitle(actCount: number, waitCount: number, wardName: string | undefined): string {
-  if (actCount > 0 || waitCount > 0) return `${actCount} act now, ${waitCount} waiting`;
-  return wardName ? `No alert for ${wardName}` : "No alert needs you";
+const ICON = { size: 16, strokeWidth: 1.75, "aria-hidden": true } as const;
+
+/** The Yours chip's filter, for a desk that has a Yours filter at all. Choosing it opens Open. */
+export function yoursFilter(
+  lens: { counts: { yours?: number }; filter: string; setFilter: (filter: "all" | "yours") => void },
+  openNow: () => void,
+) {
+  const count = lens.counts.yours;
+  if (count === undefined) return undefined;
+  return {
+    count,
+    on: lens.filter === "yours",
+    toggle: () => {
+      openNow();
+      lens.setFilter(lens.filter === "yours" ? "all" : "yours");
+    },
+  };
+}
+
+/** The rarer tools, at the end of the tab row: copy for handover and tab notifications. */
+export function AlertsToolsMenu({
+  canCopy,
+  onCopy,
+  notifyOn,
+  onNotify,
+}: {
+  canCopy: boolean;
+  onCopy: () => void;
+  notifyOn: boolean;
+  onNotify: () => void;
+}) {
+  return (
+    <Menu
+      label="More alert tools"
+      align="end"
+      items={[
+        ...(canCopy ? [{ id: "copy", label: "Copy for handover", icon: Copy, onSelect: onCopy }] : []),
+        {
+          id: "notify",
+          label: "Notify me in this tab",
+          icon: notifyOn ? BellRing : Bell,
+          checked: notifyOn,
+          meta: "No patient detail",
+          onSelect: onNotify,
+        },
+      ]}
+      trigger={(props) => (
+        <Button {...props} variant="ghost" size="sm" iconOnly icon={Ellipsis} aria-label="More alert tools" />
+      )}
+    />
+  );
 }
 
 export function AlertsHero({
   isPhone,
   wardName,
-  openCount,
-  runningCount,
   oldestRaised,
   now,
   live,
   actCount,
   waitEntries,
-  yoursCount,
+  yours,
   handleNext,
-  broadcastTriggerRef,
   openComposer,
   broadcastDisabledReason,
   activeBroadcast,
   onOpenBroadcast,
-  directiveTone,
   broadcastAcks,
-  phoneToday,
-  setPhoneToday,
-  todayChart,
-  notifyOn,
-  handleNotify,
   nextQueue,
-  handleCopy,
-  checkingFoot,
+  today,
+  checks,
+  onChecking,
+  onToday,
   todayBand,
 }: {
   isPhone: boolean;
   /** The desk's own ward, for "No alert for <ward>". */
   wardName: string | undefined;
-  /** Ops-3: the one active list the Now tab and Tasks badge count, running targets included. */
-  openCount: number;
-  runningCount: number;
   oldestRaised: Instant | undefined;
   now: Instant;
   live: ReturnType<typeof usePageLive>;
   /** Act now: the act-now alerts plus accepted referrals with no bed pulled (Q111). */
   actCount: number;
   waitEntries: QueueEntry[];
-  yoursCount: number;
+  /** The Yours filter: its count and whether it is on. Absent for a desk with no rows of its own. */
+  yours?: { count: number; on: boolean; toggle: () => void };
   handleNext: () => void;
-  broadcastTriggerRef: RefObject<HTMLButtonElement | null>;
   openComposer: (trigger: HTMLButtonElement) => void;
   /** Why this desk cannot broadcast, or undefined when it may. */
   broadcastDisabledReason?: string;
   activeBroadcast: ReturnType<typeof getActiveBroadcastAlert>;
-  /** Opens Now at the live broadcast (Q181). */
+  /** Opens Broadcasts at the live broadcast (Q181). */
   onOpenBroadcast: () => void;
-  directiveTone: WfTone;
   broadcastAcks: { acknowledged: number; of: number } | undefined;
-  phoneToday: boolean;
-  setPhoneToday: (open: boolean) => void;
-  todayChart: ReactNode;
-  notifyOn: boolean;
-  handleNotify: () => void;
   nextQueue: QueueEntry[];
-  handleCopy: () => void;
-  checkingFoot: ReactNode;
-  /** Desktop: the Today track and at-a-glance line, drawn in the band's foot. */
+  /** Today's raised and acted-on counts, as the timeline draws them. */
+  today: { raised: number; acted: number };
+  /** The Checking conditions; a tap opens the Checking sheet. Absent for a quiet ward. */
+  checks?: readonly { n: number }[];
+  onChecking: () => void;
+  /** Phone: Raised opens the Today sheet with the timeline. */
+  onToday: () => void;
+  /** Desktop: the Today timeline, drawn above the Today band. */
   todayBand?: ReactNode;
 }) {
   const deskRole = useEffectiveWardAccess().role;
   // Transport officer: only the coordinator takes an alert and only the coordinator or a bed manager
-  // broadcasts, so "Yours" is always 0 and Broadcast never works here. Both are left out.
-  const officerDesk = deskRole === "officer";
-  // Nurse in charge: a ward desk never broadcasts, so the greyed Broadcast is left out too.
-  const wardDesk = deskRole === "ward";
-  const canBroadcast = !officerDesk && !wardDesk;
-  const showNext = !(wardDesk && nextQueue.length === 0);
-  const heroTitle = alertsHeroTitle(actCount, waitEntries.length, wardName);
-  const runningText = runningCount > 0 ? ` · ${runningCount} running` : "";
+  // broadcasts, so Broadcast is left out. Nurse in charge: a ward desk never broadcasts either.
+  const canBroadcast = deskRole !== "officer" && deskRole !== "ward" && broadcastDisabledReason === undefined;
+  const next = nextQueue[0];
+  const nextFrom = next ? shownAgeFrom(next.item, next.raised) : undefined;
+  const flagged = checks?.filter((check) => check.n > 0).length ?? 0;
+
+  const chips: HeroChipItem[] = [
+    ...(yours
+      ? [
+          {
+            id: "yours",
+            label: "Yours",
+            icon: <User {...ICON} />,
+            count: yours.count,
+            countTone: "quiet" as const,
+            pressed: yours.on,
+            onClick: yours.toggle,
+            testId: "ward-alerts-yours",
+          },
+        ]
+      : []),
+    ...(canBroadcast
+      ? [
+          {
+            id: "broadcast",
+            label: "Broadcast alert",
+            icon: <Radio {...ICON} />,
+            testId: "ward-alerts-broadcast",
+            onClick: () => {
+              // The composer returns focus to the button that opened it.
+              const trigger = document.querySelector<HTMLButtonElement>('[data-testid="ward-alerts-broadcast"]');
+              if (trigger) openComposer(trigger);
+            },
+          },
+        ]
+      : []),
+  ];
+
   return (
-    <>
-      {isPhone ? (
+    <Hero
+      level={1}
+      className={cx(titles.hero, folderTabClasses.hero)}
+      testId="ward-alerts-hero"
+      title={
         <>
-          <PhoneHero
-            level={1}
-            data-testid="ward-alerts-phone-hero"
-            title={heroTitle}
-            // Alerts redesign (1 Nov 2026): "oldest 1h 12m · broadcast live"; the figures carry the counts.
-            sub={
-              oldestRaised !== undefined || activeBroadcast
-                ? [
-                    oldestRaised !== undefined ? `oldest ${minutesText(Math.max(0, now - oldestRaised))}` : "",
-                    officerDesk || yoursCount === 0 ? "" : `${yoursCount} yours`,
-                    activeBroadcast ? "broadcast live" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")
-                : openCount > 0
-                  ? `${openCount} open${runningText}`
-                  : "Checking every condition below"
-            }
-            eyebrow="Alerts"
-            // F-08: the standard Demo pill, as on every phone hero; Pause below holds the list.
-            chip={<LiveChip state={live.paused ? "paused" : "live"} onHero />}
-            // Alerts overhaul (4 Nov 2026): the title already counts act now and waiting, and the
-            // filter chips below filter by them, so the hero draws no figures of its own.
-            actions={
-              <div className={phoneRows.heroPills}>
-                {/* Phone (Josh, Q153, 1 Nov 2026): one hero action, the rest under "…". Working the
-                    next alert is the common action (Ops-14), so it is the one shown; a statewide
-                    broadcast is never a single tap from it (P017). A quiet ward has no next alert. */}
-                {showNext ? (
-                  <Button
-                    className={phoneRows.heroPill}
-                    variant="light"
-                    icon={ChevronRight}
-                    onClick={handleNext}
-                    data-testid="ward-alerts-phone-next"
-                  >
-                    Next alert
-                  </Button>
-                ) : (
-                  <Button
-                    className={phoneRows.heroPill}
-                    variant="light"
-                    icon={live.paused ? Play : Pause}
-                    aria-pressed={live.paused}
-                    title={live.paused ? "Resume live updates" : "Hold the list still"}
-                    onClick={live.togglePause}
-                  >
-                    {live.paused ? "Resume" : "Pause"}
-                  </Button>
-                )}
-                {showNext || canBroadcast ? (
-                  <Menu
-                    label="More alert actions"
-                    align="end"
-                    items={[
-                      ...(showNext
-                        ? [
-                            {
-                              id: "pause",
-                              label: live.paused ? "Resume live updates" : "Hold the list still",
-                              icon: live.paused ? Play : Pause,
-                              onSelect: live.togglePause,
-                            },
-                          ]
-                        : []),
-                      ...(canBroadcast
-                        ? [
-                            {
-                              id: "broadcast",
-                              label: "Broadcast alert",
-                              icon: Radio,
-                              disabled: broadcastDisabledReason !== undefined,
-                              meta: broadcastDisabledReason,
-                              onSelect: () => {
-                                if (broadcastTriggerRef.current) openComposer(broadcastTriggerRef.current);
-                              },
-                            },
-                          ]
-                        : []),
-                    ]}
-                    trigger={(props) => (
-                      <Button
-                        {...props}
-                        ref={(element: HTMLButtonElement | null) => {
-                          props.ref.current = element;
-                          broadcastTriggerRef.current = element;
-                        }}
-                        className={phoneRows.heroPill}
-                        variant="onHero"
-                        icon={Ellipsis}
-                        aria-label="More alert actions"
-                      />
-                    )}
-                  />
-                ) : null}
-              </div>
-            }
-          />
-          {activeBroadcast ? (
-            <button type="button" className={styles.phoneDirective} onClick={onOpenBroadcast}>
-              <StatusGlyph tone={directiveTone} />
-              <span className={styles.phoneCardText}>
-                <span className={styles.phoneCardTitle}>{activeBroadcast.title}</span>
-                <span className={styles.phoneCardMeta}>
-                  {broadcastAcks ? (
-                    <>
-                      <b className={styles.mono}>{broadcastAcks.acknowledged}</b> of{" "}
-                      <span className={styles.mono}>{broadcastAcks.of}</span> answered ·{" "}
-                    </>
-                  ) : null}
-                  ends <span className={styles.mono}>{formatInstantWithDay(activeBroadcast.expiresAt, now)}</span>
-                </span>
-              </span>
-              <ChevronRight size={16} aria-hidden="true" />
-            </button>
-          ) : null}
-          <PhoneSheet open={phoneToday} onClose={() => setPhoneToday(false)} title="Today" height="tall">
-            <div className={styles.phoneChecks}>{todayChart}</div>
-          </PhoneSheet>
+          Alerts <span className={titles.soft}>needing a person</span>
         </>
-      ) : (
-        <Hero
-          level={1}
-          eyebrow="Alerts"
-          title={heroTitle}
-          titleMeta={
-            // Alerts redesign (1 Nov 2026): "oldest 1h 12m · 2 yours".
-            oldestRaised !== undefined || (!officerDesk && yoursCount > 0) ? (
-              <span className={styles.heroMeta}>
-                {oldestRaised !== undefined ? (
-                  <>
-                    oldest <span className={styles.mono}>{minutesText(Math.max(0, now - oldestRaised))}</span>
-                  </>
-                ) : null}
-                {oldestRaised !== undefined && !officerDesk ? " · " : null}
-                {officerDesk ? null : (
-                  <>
-                    <span className={styles.mono}>{yoursCount}</span> yours
-                  </>
-                )}
-              </span>
-            ) : undefined
-          }
-          // Alerts overhaul (4 Nov 2026): one line of tools. The counts live once, on the filter chips
-          // under the band, so the band no longer repeats them. Next alert is the one filled action;
-          // Broadcast stays in view for a coordinator, and the rarer tools sit under "…".
-          aside={
-            <div className={styles.heroTools}>
-              <PageLiveChip paused={live.paused} onTogglePause={live.togglePause} />
-              {showNext ? (
-                <Button
-                  variant="light"
-                  size="sm"
-                  icon={ChevronRight}
-                  disabled={nextQueue.length === 0}
-                  onClick={handleNext}
-                >
-                  Next alert
-                </Button>
-              ) : null}
-              {canBroadcast ? (
-                <Button
-                  ref={broadcastTriggerRef}
-                  variant="onHero"
-                  size="sm"
-                  icon={Radio}
-                  disabledReason={broadcastDisabledReason}
-                  onClick={(event) => openComposer(event.currentTarget)}
-                >
-                  Broadcast alert
-                </Button>
-              ) : null}
-              <Menu
-                label="More alert tools"
-                align="end"
-                items={[
-                  ...(officerDesk
-                    ? []
-                    : [{ id: "copy", label: "Copy for handover", icon: Copy, onSelect: handleCopy }]),
-                  {
-                    id: "notify",
-                    label: "Notify me in this tab",
-                    icon: notifyOn ? BellRing : Bell,
-                    checked: notifyOn,
-                    meta: "No patient detail",
-                    onSelect: handleNotify,
-                  },
-                ]}
-                trigger={(props) => (
-                  <Button
-                    {...props}
-                    variant="onHero"
-                    size="sm"
-                    iconOnly
-                    icon={Ellipsis}
-                    aria-label="More alert tools"
-                  />
-                )}
-              />
-            </div>
-          }
-          // A quiet ward's checks sit in the side panel instead, so the screen may pass no foot.
-          foot={todayBand ?? (checkingFoot ? <div className={styles.checkingFootWide}>{checkingFoot}</div> : undefined)}
+      }
+      aside={
+        <LiveChip
+          state={live.paused ? "paused" : "live"}
+          onHero
+          age={formatInstant(now)}
+          onTogglePause={live.togglePause}
         />
-      )}
-    </>
+      }
+    >
+      <HeroTop
+        testId="ward-alerts-top"
+        figures={
+          <HeroFigures
+            items={[
+              {
+                id: "act",
+                value: actCount,
+                label: "act now",
+                tone: actCount > 0 ? "danger" : undefined,
+                testId: "ward-alerts-figure-act",
+              },
+              { id: "wait", value: waitEntries.length, label: "waiting", testId: "ward-alerts-figure-wait" },
+              ...(oldestRaised !== undefined
+                ? [
+                    {
+                      id: "oldest",
+                      value: minutesText(Math.max(0, now - oldestRaised)),
+                      label: "oldest",
+                      testId: "ward-alerts-figure-oldest",
+                    },
+                  ]
+                : []),
+            ]}
+          />
+        }
+        act={
+          next ? (
+            <HeroAct
+              tone={next.group === "act" ? "danger" : "warning"}
+              testId="ward-alerts-next"
+              title={
+                <>
+                  {next.item.title}
+                  {nextFrom !== undefined ? (
+                    <span className={titles.soft}> · {minutesText(Math.max(0, now - nextFrom))}</span>
+                  ) : null}
+                </>
+              }
+              action={{
+                label: "Next alert",
+                phoneLabel: "Open",
+                onClick: handleNext,
+                testId: "ward-alerts-next-action",
+              }}
+            />
+          ) : (
+            <HeroAct
+              tone="calm"
+              testId="ward-alerts-next"
+              titleTestId="ward-alerts-calm"
+              title={wardName ? `No alert for ${wardName}` : "No alert needs you"}
+            />
+          )
+        }
+        chips={chips.length > 0 ? <HeroQuickChips label="Alert actions" items={chips} /> : undefined}
+      >
+        {isPhone ? null : todayBand}
+        <HeroBand
+          // On a desktop the timeline above already heads it "Today".
+          title={isPhone ? "Today" : <SrOnly>Today</SrOnly>}
+          testId="ward-alerts-today"
+          cells={[
+            {
+              id: "raised",
+              label: "Raised",
+              value: today.raised,
+              onClick: isPhone ? onToday : undefined,
+              ariaLabel: isPhone ? `Raised ${today.raised}, open the Today timeline` : undefined,
+            },
+            { id: "acted", label: "Acted on", value: today.acted },
+            ...(checks
+              ? [
+                  {
+                    id: "checking",
+                    label: "Checking",
+                    value: (
+                      <>
+                        {flagged}{" "}
+                        <span className={styles.bandWords}>
+                          flagged · <b>{checks.length - flagged}</b> clear
+                        </span>
+                      </>
+                    ),
+                    onClick: onChecking,
+                    ariaLabel: `Checking ${flagged} flagged · ${checks.length - flagged} clear`,
+                    testId: "ward-alerts-checking",
+                  },
+                ]
+              : []),
+            activeBroadcast
+              ? {
+                  id: "broadcast",
+                  label: "Broadcast",
+                  value: "live",
+                  quiet: true,
+                  sub: broadcastAcks
+                    ? `${broadcastAcks.acknowledged} of ${broadcastAcks.of} answered · ${minutesText(Math.max(0, activeBroadcast.expiresAt - now))} left`
+                    : `${minutesText(Math.max(0, activeBroadcast.expiresAt - now))} left`,
+                  onClick: onOpenBroadcast,
+                  testId: "ward-alerts-broadcast-live",
+                }
+              : { id: "broadcast", label: "Broadcast", value: "none live", quiet: true },
+          ]}
+        />
+      </HeroTop>
+    </Hero>
   );
 }

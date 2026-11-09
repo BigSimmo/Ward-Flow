@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ChevronRight, type LucideIcon } from "lucide-react";
 
-import { GroupHead, Icon, IconTile, PhoneSheet, StatusGlyph, buttonClass, cx } from "@/components/wf";
+import { GroupHead, IconTile, PhoneSheet, StatusGlyph, cx } from "@/components/wf";
 
 import styles from "./statistics-phone-body.module.css";
 
@@ -166,37 +166,4 @@ export function PhoneSheetRow({
     </>
   );
 }
-
-/** The one primary action pinned at the foot of the phone screen ("Open the ward", "Print the report"). */
-export function PhonePinnedAction({
-  icon,
-  children,
-  href,
-  onClick,
-  testId,
-}: {
-  icon: LucideIcon;
-  children: ReactNode;
-  href?: string;
-  onClick?: () => void;
-  testId?: string;
-}) {
-  const className = cx(buttonClass({ variant: "pri" }), styles.pinnedButton);
-  return (
-    <div className={styles.pinned} data-print-hide>
-      {href ? (
-        <Link href={href} className={className} data-testid={testId}>
-          <Icon icon={icon} size={16} />
-          {children}
-        </Link>
-      ) : (
-        <button type="button" className={className} onClick={onClick} data-testid={testId}>
-          <Icon icon={icon} size={16} />
-          {children}
-        </button>
-      )}
-    </div>
-  );
-}
-
 export { styles as phoneBodyStyles };

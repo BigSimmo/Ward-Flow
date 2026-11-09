@@ -183,7 +183,11 @@ describe("the coordinator's Referrals board beside it", () => {
     renderAs(null);
     await settled("queued");
     const hero = screen.getByTestId("ward-referral-phone-hero");
-    expect(hero).toHaveTextContent("Referrals · statewide");
+    // Page tops (Josh, 9 Nov 2026): no eyebrow on the slate; the heading still names the page, and the
+    // coordinator's top carries no site's name.
+    expect(within(hero).getByText("Referrals")).toBeInTheDocument();
+    expect(hero).toHaveTextContent(/\d+ awaiting decision/u);
+    expect(hero).not.toHaveTextContent(/Fiona Stanley|Royal Perth/u);
     expect(within(hero).getByTestId("ward-referral-phone-beds")).toBeInTheDocument();
   });
 });

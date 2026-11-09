@@ -119,16 +119,24 @@ function drawerFact(drawer: HTMLElement, label: string): HTMLElement {
   return value as HTMLElement;
 }
 
-/** The Mismatch card's tile for one bed type, found by its title. */
-function mismatchTile(need: string): HTMLElement {
-  const card = screen.getByRole("region", { name: "Mismatch" });
-  const title = within(card).getByRole("heading", { level: 3, name: shortNeed(need) });
-  return title.closest("li") as HTMLElement;
+/**
+ * The hero band's cell for one bed type (page tops, Josh 9 Nov 2026: the Mismatch card became the
+ * hero's "Short now, by bed type" band, one cell per type, each opening who is waiting and where).
+ */
+function mismatchTile(row: { id: string; need: string }): HTMLElement {
+  const cell = within(screen.getByTestId("capacity-mismatch")).getByTestId(`capacity-mismatch-${row.id}`);
+  expect(cell, `cell ${row.id}`).toHaveTextContent(shortNeed(row.need));
+  return cell;
 }
 
-/** The tile's "now" figure, beside its title (the Tomorrow line under it is a different figure). */
+/** The cell's "now" figure, beside its title (the waiting and tomorrow note under it is a different line). */
 function tileNow(tile: HTMLElement): string {
-  return tile.querySelector("h3")?.nextElementSibling?.textContent?.trim() ?? "";
+  return (tile.querySelector('[class*="cellValue"]')?.textContent ?? "").replace(/\s+/gu, " ").trim();
+}
+
+/** The band's cells, in order. */
+function mismatchCells(): HTMLElement[] {
+  return Array.from(screen.getByTestId("capacity-mismatch").querySelectorAll<HTMLElement>("li > *"));
 }
 
 /** One of the bed forecast's three figures ("Now", "Tomorrow", "In 2 days"): value and sub-line. */
@@ -142,8 +150,9 @@ function forecastFigure(label: string): { value: string; sub: string } {
   return { value: value?.textContent ?? "", sub: sub?.textContent ?? "" };
 }
 
-function heroChips() {
-  return within(screen.getByRole("group", { name: "Network beds" }));
+/** The hero's ready figure ("23 / 140 beds ready"), spaces collapsed. */
+function heroReady(): string {
+  return (screen.getByTestId("capacity-hero-ready").textContent ?? "").replace(/\s+/gu, " ").trim();
 }
 
 function highlightChips(): HTMLElement[] {
@@ -168,28 +177,24 @@ describe("the Capacity screen", () => {
     expect(screen.getByRole("heading", { level: 1, name: /^Capacity,/u })).toBeInTheDocument();
   });
 
-  it("shows the ready-bed split in the hero, whose numbers are the real locked/open sums, never invented", () => {
-    const totalLocked = networkRows.reduce((sum, row) => sum + row.lockedReady, 0);
+  // Page tops (Josh, 9 Nov 2026): the hero's Locked ready / Open ready chips went with the new top;
+  // the split lives on as the bed map's "Locked ready" and "Open ready" highlights (ward counts).
+  // What the hero states is the network's ready beds of all beds, the real sums.
+  it("shows the network's ready beds in the hero, whose numbers are the real sums, never invented", () => {
     const totalReady = netTotals.ready;
     expect(totalReady, "no ready bed in the fixture — this guard proved nothing").toBeGreaterThan(0);
     renderScreen();
-    expect(screen.getByRole("heading", { level: 1 }).textContent?.replace(/\s+/gu, " ").trim()).toBe(
-      `Capacity, ${totalReady} beds ready of ${netTotals.beds}`,
-    );
-    expect(heroChips().getByRole("button", { name: /Locked ready/u })).toHaveTextContent(
-      new RegExp(`^${totalLocked}\\s*Locked ready$`, "u"),
-    );
-    expect(heroChips().getByRole("button", { name: /Open ready/u })).toHaveTextContent(
-      new RegExp(`^${totalReady - totalLocked}\\s*Open ready$`, "u"),
-    );
+    expect(heroReady()).toBe(`${totalReady}/ ${netTotals.beds} ${totalReady === 1 ? "bed ready" : "beds ready"}`);
   });
 
   it("renders exactly the four bed-type tiles the derivations return, each with its own real waiting and beds-that-fit", () => {
     renderScreen();
-    const card = screen.getByRole("region", { name: "Mismatch" });
-    expect(within(card).getAllByRole("heading", { level: 3 })).toHaveLength(gapRows.length);
+    expect(mismatchCells()).toHaveLength(gapRows.length);
     for (const row of gapRows) {
-      expect(mismatchTile(row.need), `tile ${row.id}`).toHaveTextContent(
+      const tile = mismatchTile(row);
+      // The cell shows who is waiting; its spoken name carries both figures.
+      expect(tile, `tile ${row.id}`).toHaveTextContent(`${row.waiting} waiting`);
+      expect(tile.getAttribute("aria-label"), `tile ${row.id}`).toContain(
         `${row.waiting} waiting · ${row.bedsThatFit} ready that fit`,
       );
     }
@@ -205,20 +210,21 @@ describe("the Capacity screen", () => {
     renderScreen();
     for (const row of shortfallRows) {
       // A glyph, the size of the gap and the word: "6 short". The magnitude is real too.
-      expect(tileNow(mismatchTile(row.need)), `tile ${row.id}`).toBe(`${Math.abs(row.gap)} short`);
+      expect(tileNow(mismatchTile(row)), `tile ${row.id}`).toBe(`${Math.abs(row.gap)} short`);
     }
   });
 
-  it("shows a non-negative gap as 'exactly enough' or 'N spare that fit' in words, never the word 'short'", () => {
+  it("shows a non-negative gap as 'enough' or 'N spare' in words, never the word 'short'", () => {
     const nonNegativeRows = gapRows.filter((row) => row.gap >= 0);
     expect(nonNegativeRows.length, "the fixture has no non-negative row — this guard proved nothing").toBeGreaterThan(
       0,
     );
     renderScreen();
     for (const row of nonNegativeRows) {
-      const now = tileNow(mismatchTile(row.need));
+      const now = tileNow(mismatchTile(row));
       expect(now, `tile ${row.id}`).not.toMatch(/short/iu);
-      expect(now, `tile ${row.id}`).toBe(row.gap === 0 ? "exactly enough" : `${row.gap} spare that fit`);
+      // The band's short words (page tops, Josh 9 Nov 2026); the pop-up keeps the long ones.
+      expect(now, `tile ${row.id}`).toBe(row.gap === 0 ? "enough" : `${row.gap} spare`);
     }
   });
 
@@ -231,12 +237,13 @@ describe("the Capacity screen", () => {
     expect(now.sub).toBe(`${gapTotals.waiting} waiting for ${gapTotals.bedsThatFit} beds that fit`);
   });
 
-  it("draws every network ward exactly once on the bed map, with an honest ward count in the hero", () => {
+  // Page tops (Josh, 9 Nov 2026): the ward count moved from the hero's eyebrow to the Wards tab.
+  it("draws every network ward exactly once on the bed map, with an honest ward count on the Wards tab", () => {
     renderScreen();
     expect(
-      screen.getByText(new RegExp(`· ${networkRows.length} wards? ·`, "u")),
-      "the hero does not say how many wards it counts",
-    ).toBeInTheDocument();
+      within(screen.getByTestId("capacity-tabs")).getByRole("radio", { name: /^Wards/u }),
+      "the Wards tab does not say how many wards it counts",
+    ).toHaveTextContent(new RegExp(`^Wards\\s*${networkRows.length}$`, "u"));
     expect(wardCards()).toHaveLength(networkRows.length);
     for (const row of networkRows) {
       expect(cardsOf(row.unit), `${row.unit.id} is not on the bed map exactly once`).toHaveLength(1);
@@ -363,24 +370,18 @@ describe("the Capacity screen", () => {
   });
 
   /**
-   * The total half of the same property, now the hero's "Beds freeing today" chip (the "Beds freeing"
-   * tab that used to carry it went with the redesign). Asserts the FIGURE, and the two fabrications
-   * `NetworkWardRow.freeing`'s own doc comment names — the literal word "undefined", and a bare `0`
-   * presented as the total when nothing is tracked.
+   * The total half of the same property. The hero's "Beds freeing today" chip went with the page
+   * tops (Josh, 9 Nov 2026): the freeing figure is now stated per ward, on each card and drawer
+   * (the test above). What stays asserted is the honesty `NetworkWardRow.freeing`'s own doc comment
+   * names: the hero never claims a freeing total it no longer draws, and never prints "undefined".
    */
-  it("reports the freeing total in the hero, or says the figure is not tracked", () => {
+  it("claims no freeing total in the hero, and prints no fabricated figure there", () => {
     const tracked = networkRows.map((row) => row.freeing).filter((value): value is number => value !== undefined);
-    const total = tracked.reduce((sum, value) => sum + value, 0);
+    expect(tracked.length, "no ward tracks a freeing figure — this guard proved nothing").toBeGreaterThan(0);
     renderScreen();
-    const chip = heroChips().getByText("Beds freeing today").parentElement as HTMLElement;
-    const value = chip.firstElementChild?.textContent ?? "";
-    if (tracked.length === 0) {
-      expect(value, "nothing is tracked, so the hero must not print a bare 0 as the total").not.toMatch(/^\s*0\s*$/u);
-      expect(value, "nothing is tracked, so the hero must say so in words").toMatch(/\p{L}/u);
-    } else {
-      expect(value, `the hero should report the real total ${total}`).toBe(String(total));
-    }
-    expect(chip).not.toHaveTextContent(/undefined/iu);
+    const hero = screen.getByRole("heading", { level: 1 }).closest("[data-wf-hero]") as HTMLElement;
+    expect(hero).not.toHaveTextContent(/freeing/iu);
+    expect(hero).not.toHaveTextContent(/undefined|NaN/u);
   });
 
   it("puts every ward behind a real hospital and service, never a bare unresolved site code", () => {
@@ -398,28 +399,20 @@ describe("the Capacity screen", () => {
     }
   });
 
-  // "Needs you" was the Attention tab, removed by the redesign. The Mismatch card's "Short" filter is
-  // the same list: exactly the bed types that are short, or the absence in words.
-  it("shows exactly the bed types that are short under 'Short', and states the absence in words when none are", () => {
+  // "Needs you" was the Attention tab, removed by the redesign, then the Mismatch card's "Short"
+  // filter. The hero band (page tops, Josh 9 Nov 2026) shows every type and says "short" in words on
+  // exactly the types that are short, or on none.
+  it("says 'short' on exactly the bed types that are short, and on none when none are", () => {
     const shortfalls = gapRows.filter((row) => row.gap < 0);
     renderScreen();
-    const card = screen.getByRole("region", { name: "Mismatch" });
-    fireEvent.click(within(card).getByRole("radio", { name: /^Short/u }));
-    if (shortfalls.length === 0) {
-      expect(card).toHaveTextContent(/no bed type is short/iu);
-    } else {
-      expect(
-        within(card)
-          .getAllByRole("heading", { level: 3 })
-          .map((heading) => heading.textContent),
-      ).toEqual(shortfalls.map((row) => shortNeed(row.need)));
-    }
+    const saysShort = gapRows.filter((row) => /\bshort\b/u.test(tileNow(mismatchTile(row))));
+    expect(saysShort.map((row) => row.id)).toEqual(shortfalls.map((row) => row.id));
   });
 
   it("keeps the whole-network mismatch facts unchanged while a ward is selected", () => {
     expect(networkRows.length, "no ward can be selected, so this comparison would be vacuous").toBeGreaterThan(0);
     renderScreen();
-    const mismatch = () => screen.getByRole("region", { name: "Mismatch" }).textContent;
+    const mismatch = () => screen.getByTestId("capacity-mismatch").textContent;
     const forecast = () => screen.getByRole("region", { name: "Bed forecast" }).textContent;
     const beforeSelection = [mismatch(), forecast()];
     expect(beforeSelection[0], "the mismatch card is empty, so selection cannot be compared").toBeTruthy();
@@ -515,14 +508,10 @@ describe("the Capacity screen", () => {
  * ward-counting chip names its noun and none reads exactly like a bed-counting hero figure.
  */
 describe("the Capacity screen never labels a bed count and a ward count with the same words", () => {
-  /** The hero chips count beds: each chip's label, without its figure. */
+  /** The hero figures count beds: each figure's label, without its value. */
   function heroLabels(): string[] {
-    return heroChips()
-      .getAllByRole("button")
-      .concat(
-        Array.from(screen.getByRole("group", { name: "Network beds" }).querySelectorAll<HTMLElement>(":scope > span")),
-      )
-      .map((chip) => (chip.lastElementChild?.textContent ?? "").replace(/\s+/gu, " ").trim())
+    return Array.from(screen.getByRole("group", { name: "Network beds" }).querySelectorAll<HTMLElement>(":scope > p"))
+      .map((figure) => (figure.lastElementChild?.textContent ?? "").replace(/\s+/gu, " ").trim())
       .filter((text) => text !== "");
   }
 
@@ -714,9 +703,9 @@ describe("the Capacity bed map's highlight chips mark the matching wards and nev
    */
   it("keeps the hero's bed count constant across every chip", () => {
     renderScreen();
-    const headline = () => screen.getByRole("heading", { level: 1 }).textContent;
+    const headline = heroReady;
     const initial = headline();
-    expect(initial, "the hero headline should count beds").toContain(`of ${netTotals.beds}`);
+    expect(initial, "the hero's ready figure should count beds").toContain(`/ ${netTotals.beds}`);
 
     const chips = highlightChips();
     expect(

@@ -11,26 +11,27 @@ import { installMatchMediaStub } from "./setup/jsdom.setup";
 /**
  * P017 (UI audit, 27 Oct 2026): on a phone, Broadcast sat right beside Next alert, so a thumb aiming
  * for the next alert could start a statewide broadcast. Q153 (Josh, 1 Nov 2026): the phone hero shows
- * one action, Next alert, and Broadcast sits under "…", never a single tap from it.
+ * one action, Next alert. Page tops (Josh, 9 Nov 2026): Next alert is the act row's one button, and
+ * Broadcast is a quiet chip on its own row below it that opens the composer, never a send.
  */
 afterEach(() => installMatchMediaStub(false));
 
-describe("phone Alerts hero: one action, Broadcast under the menu", () => {
-  it("shows Next alert as the only hero action and keeps Broadcast in the menu", () => {
+describe("phone Alerts hero: one action, Broadcast apart from it", () => {
+  it("shows Next alert as the act row's only action and keeps Broadcast on the chip row", () => {
     installMatchMediaStub(true);
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <AlertsScreen />
       </WardFlowProvider>,
     );
-    const next = screen.getByTestId("ward-alerts-phone-next");
-    const buttons = Array.from(next.parentElement!.querySelectorAll("button"));
-    expect(buttons.map((button) => button.getAttribute("aria-label") ?? (button.textContent ?? "").trim())).toEqual([
+    const act = screen.getByTestId("ward-alerts-next");
+    expect(Array.from(act.querySelectorAll("button")).map((button) => button.getAttribute("aria-label"))).toEqual([
       "Next alert",
-      "More alert actions",
     ]);
-    fireEvent.click(screen.getByRole("button", { name: "More alert actions" }));
-    expect(screen.getByRole("menuitem", { name: /Broadcast alert/ })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: /Hold the list still/ })).toBeInTheDocument();
+    const broadcast = screen.getByTestId("ward-alerts-broadcast");
+    expect(act.contains(broadcast)).toBe(false);
+    expect(broadcast.closest("ul")).toHaveAccessibleName("Alert actions");
+    fireEvent.click(broadcast);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });

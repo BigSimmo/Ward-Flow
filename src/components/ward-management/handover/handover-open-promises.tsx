@@ -14,7 +14,7 @@ import type { Referral, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { ChevronRight, PhoneCall } from "lucide-react";
-import { FormalName, Icon, StatusGlyph, type HeroNextStep } from "@/components/wf";
+import { FormalName, Icon, StatusGlyph, type HeroActProps } from "@/components/wf";
 
 import styles from "./handover-open-promises.module.css";
 
@@ -67,32 +67,48 @@ function openPromiseCounts(referrals: readonly Referral[], now: Instant): { tota
  * with the count and overdue count, and a button that opens the card at the top of the page.
  * Nothing when there are no open promises. The page leaves it out while print preview is open.
  */
-export function promisesHeroNext(
+/**
+ * Page tops (Josh, 9 Nov 2026): the ward replies as the top's one act row. Overdue replies are the
+ * act-now line ("1 ward reply overdue"); replies still to come are a quieter amber line. The button
+ * shows or hides the replies card (`onOpenChange`), or with `onShow` takes the reader to it.
+ */
+export function promisesHeroAct(
   referrals: readonly Referral[],
   now: Instant,
   open: boolean,
   onOpenChange: (open: boolean) => void,
-): HeroNextStep | undefined {
+): HeroActProps | undefined {
   const { total, overdue } = openPromiseCounts(referrals, now);
   if (total === 0) return undefined;
   return {
-    answer: (
-      <>
-        {total} ward {total === 1 ? "reply" : "replies"} due
-        {overdue > 0 ? (
-          <span className={styles.heroOverdue}>
-            <span>·</span>
-            <StatusGlyph tone="danger" size={8} />
-            {overdue} overdue
-          </span>
-        ) : null}
-      </>
-    ),
+    tone: overdue > 0 ? "danger" : "warning",
+    title:
+      overdue > 0
+        ? `${overdue} ward ${overdue === 1 ? "reply" : "replies"} overdue`
+        : `${total} ward ${total === 1 ? "reply" : "replies"} due`,
+    testId: "ward-handover-promises-act",
     action: {
       label: open ? "Hide replies" : "Show replies",
+      phoneLabel: open ? "Hide" : "Show",
       pressed: open,
       testId: "ward-handover-promises-toggle",
       onClick: () => onOpenChange(!open),
+    },
+  };
+}
+
+/** Phone: the replies card always shows under the top, so the act row's button takes the reader to it. */
+export function promisesPhoneAct(referrals: readonly Referral[], now: Instant): HeroActProps | undefined {
+  const act = promisesHeroAct(referrals, now, false, () => undefined);
+  if (!act) return undefined;
+  return {
+    ...act,
+    action: {
+      label: "Show replies",
+      phoneLabel: "Show",
+      testId: "ward-handover-promises-toggle",
+      onClick: () =>
+        document.querySelector('[data-testid="ward-handover-open-promises"]')?.scrollIntoView({ block: "start" }),
     },
   };
 }
@@ -144,7 +160,6 @@ export function HandoverOpenPromises({
       return { item, overdue, when, sortAt, ward, what, then, isCallback };
     })
     .sort((left, right) => left.sortAt - right.sortAt);
-  const overdueCount = rows.filter((row) => row.overdue).length;
   return (
     <section
       className={styles.panel}
@@ -156,12 +171,7 @@ export function HandoverOpenPromises({
         <Icon icon={PhoneCall} size={16} className={styles.headIcon} />
         Ward replies due
         <span className={styles.count}>{rows.length}</span>
-        {overdueCount > 0 ? (
-          <span className={styles.overdueCount}>
-            <StatusGlyph tone="danger" size={8} />
-            {overdueCount} overdue
-          </span>
-        ) : null}
+        {/* The overdue count is the page top's act row; each row still says Overdue. */}
         <span className={styles.note}>Earliest first</span>
       </h2>
       <ul className={styles.list}>

@@ -1949,3 +1949,101 @@ fieldset.formRow {
   padding: var(--wf-s-2) var(--wf-s-3);
   border-top: 1px solid var(--wf-line);
 }
+
+/* Page tops (Josh approved, 9 Nov 2026). Phone: each section is one flush list with hairlines
+   between people, not a stack of shadowed cards, and the due line is regular weight. A highlighted
+   person keeps the ink ring, drawn inside the list. Desktop: the search sits on the left, and the
+   keyboard hint is left out (the keys still work). */
+@media (max-width: 46.4375rem) {
+  .phoneList {
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+  }
+
+  .phoneList > .phoneCard {
+    border: 0;
+    border-top: 1px solid var(--wf-line);
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .phoneList > .phoneCard:first-child {
+    border-top: 0;
+  }
+
+  .phoneList > .phoneCardLit {
+    box-shadow: inset 0 0 0 1px var(--wf-ink-1);
+  }
+
+  .phoneList .pcDue,
+  .phoneList .pcDays {
+    font-weight: 400;
+  }
+}
+
+@media (min-width: 46.5rem) {
+  .toolbar {
+    justify-content: flex-start;
+  }
+
+  .toolbarTools {
+    margin-left: 0;
+  }
+
+  .keys {
+    display: none;
+  }
+}
+
+/* Page tops (9 Nov 2026): the highlights are the quieter second level of the folder tab row, each a
+   word with a mono count, the switched-on one on a soft track. On the slate below 64rem they take
+   the hero's ink. */
+.pills.pills {
+  flex-wrap: nowrap;
+  gap: 2px;
+  padding: 0;
+}
+.pills.pills .pill {
+  gap: 5px;
+  height: 32px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-14) / 18px var(--wf-font);
+  white-space: nowrap;
+}
+.pills.pills .pill:hover,
+.pills.pills .pill[aria-pressed="true"] {
+  background: var(--wf-track);
+  color: var(--wf-ink-1);
+}
+.pills.pills .pill[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 1px var(--wf-line);
+  font-weight: 600;
+}
+.pills.pills .pillCount {
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: 500 var(--wf-fs-12) / 16px var(--wf-mono);
+}
+@media (max-width: 63.9375rem) {
+  .pills.pills .pill {
+    color: var(--wf-hero-ink-2);
+  }
+  .pills.pills .pill:hover,
+  .pills.pills .pill[aria-pressed="true"] {
+    background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+    box-shadow: none;
+    color: var(--wf-hero-ink);
+  }
+}

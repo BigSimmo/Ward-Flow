@@ -146,7 +146,7 @@ export const ED_WAIT_BANDS = [
   { label: "4 to 8 hours", fromMinutes: 4 * 60 },
   { label: "8 to 12 hours", fromMinutes: 8 * 60 },
   { label: "12 to 24 hours", fromMinutes: 12 * 60 },
-  { label: "Over 24 hours", fromMinutes: MINUTES_PER_DAY },
+  { label: "Past 24 hours", fromMinutes: MINUTES_PER_DAY },
 ] as const;
 
 export type EdWaitBand = {

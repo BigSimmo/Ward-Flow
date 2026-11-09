@@ -68,10 +68,11 @@ describe("Transport desk redesign", () => {
     }
   });
 
-  it("puts the open-job count beside the title, not in it", () => {
+  it("keeps the open-job count out of the title, on the Jobs tab", () => {
     renderDesk();
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Transport");
-    expect(screen.getByText(`${jobs.length} jobs open`)).toBeInTheDocument();
+    // Page tops (Josh, 9 Nov 2026): the h1 names the desk and the Jobs folder tab carries the count.
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Transport desk right now");
+    expect(screen.getByRole("tab", { name: new RegExp(`^Jobs\\s*${jobs.length}$`, "u") })).toBeInTheDocument();
     expect(screen.queryByText("Transport dispatch")).toBeNull();
   });
 
@@ -147,7 +148,7 @@ describe("Transport desk, the transport officer's own view (as-officer-home)", (
     asOfficerDesk();
     renderDesk();
     expect(jobs.length).toBeGreaterThan(8);
-    expect(screen.getByText("Jobs · Transport desk")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Transport desk right now" })).toBeInTheDocument();
     const list = screen.getByTestId("ward-officer-joblist");
     expect(list.querySelectorAll("tr")).toHaveLength(8);
     fireEvent.click(screen.getByRole("button", { name: `Show all ${jobs.length} jobs` }));
@@ -162,13 +163,15 @@ describe("Transport desk, the transport officer's own view (as-officer-home)", (
     expect(screen.getByTestId("ward-officer-joblist").querySelectorAll("tr")).toHaveLength(jobs.length);
   });
 
-  it("moves Copy handover under the list on a phone", () => {
+  it("keeps one Copy handover on a phone, as the top's first chip", () => {
     installMatchMediaStub(true);
     asOfficerDesk();
     renderDesk();
+    // Page tops (Josh, 9 Nov 2026): the desk's own actions are the top's chips, so Copy handover
+    // moved from under the list to the chip row. There is still only one.
     const copies = screen.getAllByRole("button", { name: "Copy handover" });
     expect(copies).toHaveLength(1);
-    expect(copies[0]!.closest("header, [data-wf-hero]")).toBeNull();
+    expect(copies[0]!.closest("[data-wf-hero]")).not.toBeNull();
   });
 });
 

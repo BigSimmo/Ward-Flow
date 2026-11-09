@@ -1091,3 +1091,31 @@
     grid-row: span 4;
   }
 }
+
+/* Page tops (Josh, 9 Nov 2026): the bed meeting's Longest ED waits panel says "waiting" in its title,
+ * so the word after each time goes at every width (it stays for screen readers on other screens'
+ * lists), and the service table's Longest column gets a small lead so "19" and "2d 14h" never touch. */
+.panels[data-layout="meeting"] .panel[data-area="waits"] .waitWord {
+  display: none;
+}
+
+.panels[data-layout="meeting"] .table td[data-wait] {
+  padding-inline-start: var(--wf-s-3);
+}
+
+/* Page tops (9 Nov 2026): on a phone the bed meeting's tables fit their card (six columns at 390px). */
+@media (max-width: 46.4375rem) {
+  .panels[data-layout="meeting"] .table {
+    font-size: var(--wf-fs-14);
+  }
+
+  .panels[data-layout="meeting"] .table thead th {
+    font-size: var(--wf-fs-12);
+    line-height: 1.2;
+  }
+
+  .panels[data-layout="meeting"] .table th,
+  .panels[data-layout="meeting"] .table td {
+    padding-inline: 2px;
+  }
+}

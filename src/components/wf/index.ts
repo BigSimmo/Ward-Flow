@@ -24,6 +24,20 @@ export { Badge } from "./badge";
 export { Card, CardHead, CardBody, CardFoot } from "./card";
 export { Hero, HeroStat, type HeroNextStep } from "./hero";
 export { HeroFootSlotProvider } from "./hero-foot-slot";
+export {
+  HeroTop,
+  HeroFigures,
+  HeroAct,
+  HeroQuickChips,
+  HeroBand,
+  HeroPill,
+  heroChipClassName,
+  type HeroFigureItem,
+  type HeroActProps,
+  type HeroChipItem,
+  type HeroBandCell,
+} from "./hero-top";
+export { FolderTabs, folderTabClasses } from "./folder-tabs";
 export { useWfBandActive, useWfBandBleed, registerWfBandHero, WF_BAND_SCROLLED_PX } from "./band";
 export {
   CheckingFoot,
@@ -136,5 +150,5 @@ export {
 export { ListPicker, type ListPickerOption, type ListPickerProps } from "./list-picker";
 // Plan item 2j (Josh, 3 Nov 2026): a figure borrowed from its owning page links there, and one
 // that ignores the chosen service says "Network-wide" (scope from ward-figure-scope.ts, owners from ward-page-owners.ts).
-export { FigureLink, figureLinkName, wfNumClass, type FigureOwner } from "./figure-link";
+export { FigureLink, figureLinkName, type FigureOwner } from "./figure-link";
 export { NETWORK_WIDE, ScopeNote } from "./figure-scope";

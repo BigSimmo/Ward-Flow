@@ -17,6 +17,15 @@
   width: 100%;
 }
 
+/* The page-top lookup (Josh, 9 Nov 2026): a 44px field with 15px words, as the approved mock-up. */
+.topField :has(> input) {
+  min-height: 44px;
+}
+
+.topField input {
+  font-size: var(--wf-fs-15);
+}
+
 .results {
   position: absolute;
   z-index: 20;

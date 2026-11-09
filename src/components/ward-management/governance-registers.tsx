@@ -1,13 +1,13 @@
 "use client";
 
-import { ClipboardList, FileText, Fingerprint, History, ShieldCheck, X } from "lucide-react";
+import { Check, ClipboardList, Clock, FileText, Fingerprint, History, X } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useContext, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { allOverrides } from "@/components/ward-management/ward-derivations";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { ACCESS_RECORD_NOTE } from "@/components/ward-management/search/access-record";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -30,10 +30,15 @@ import {
   CardHead,
   Count,
   Field,
+  FolderTabs,
   Hero,
-  HeroStat,
-  HeroTrack,
+  HeroAct,
+  HeroFigures,
+  HeroQuickChips,
+  HeroTop,
+  LiveChip,
   Segmented,
+  folderTabClasses,
   Select,
   Sheet,
   StatusGlyph,
@@ -49,6 +54,7 @@ import {
 
 import { GovernanceRestrictiveRegister } from "./governance-restrictive-register";
 import thirdEdition from "./governance-third-edition.module.css";
+import pageTop from "./page-top-title.module.css";
 import { EventDetail, EventTable } from "./governance-event-detail";
 import { GovernancePhone } from "./governance-phone";
 import {
@@ -577,80 +583,20 @@ function GovernanceSession({
     registers: "Registers",
     reports: "Reports",
   };
-  // Audit settings-7: the hero reads the Waiting count the list shows, with follow-ups named apart.
-  const reviewTitle =
-    toReview.length === 0
-      ? "Nothing to review"
-      : followUp > 0
-        ? `${unreviewed} to review · ${followUp} follow-up`
-        : `${unreviewed} to review`;
-  const heroTitle =
-    tab === "review"
-      ? reviewTitle
-      : tab === "gaps"
-        ? totalGaps === 0
-          ? "No form gaps recorded"
-          : `${totalGaps} form ${totalGaps === 1 ? "gap" : "gaps"} across ${sites.filter((entry) => entry.gaps > 0).length} ${sites.filter((entry) => entry.gaps > 0).length === 1 ? "site" : "sites"}`
-        : tab === "audit"
-          ? "Audit trail"
-          : tab === "registers"
-            ? "Restrictive practice and incidents"
-            : "Reports";
   // Role (access admin): with nothing to review, the counts, filters and review controls have nothing
   // to act on, so the page shows the title, the tabs and one empty state with its Access log link.
   const adminEmpty = adminDesk && toReview.length === 0;
-  const heroStats =
-    tab === "review" && adminEmpty ? null : tab === "review" ? (
-      <>
-        <HeroStat
-          inline
-          value={overrideCount}
-          label="Overrides"
-          tone="neutral"
-          pressed={chip === "override"}
-          onToggle={() => toggleChip("override")}
-        />
-        <HeroStat
-          inline
-          value={refusedCount}
-          label="Refused or stale"
-          tone="neutral"
-          pressed={chip === "refused"}
-          onToggle={() => toggleChip("refused")}
-        />
-        <HeroStat
-          inline
-          value={accessCount}
-          label="Record access"
-          tone="neutral"
-          pressed={chip === "access"}
-          onToggle={() => toggleChip("access")}
-        />
-        <HeroStat
-          inline
-          value={patternCount}
-          label={adminDesk ? "Patterns" : "Pattern"}
-          tone="warning"
-          pressed={chip === "pattern"}
-          onToggle={() => toggleChip("pattern")}
-        />
-        <HeroStat
-          inline
-          value={followUp}
-          label={adminDesk ? "For follow-up" : "Follow-up"}
-          tone="warning"
-          pressed={chip === "follow-up"}
-          onToggle={() => toggleChip("follow-up")}
-        />
-      </>
-    ) : tab === "gaps" ? (
-      sites
-        .filter((entry) => entry.gaps > 0)
-        .slice(0, 3)
-        .map((entry) => <HeroStat key={entry.id} value={entry.gaps} label={entry.name} />)
-    ) : tab === "audit" ? (
-      <HeroStat value={allowed ? events.length : "Not shown"} label="Captured" />
-    ) : null;
+  // Page tops (Josh, 9 Nov 2026): the newest event still waiting, named in the act row, opens with one tap.
+  const newest = toReview.find((event) => reviewState(event) === "unreviewed") ?? toReview[0] ?? null;
+  const newestTitle = newest
+    ? `Newest ${newest.at === null ? "time unavailable" : formatInstantWithDay(newest.at, now)} · ${actionLabels[newest.action]}`
+    : "Nothing waiting for review";
+  const newestSub =
+    followUp > 0
+      ? `${followUp} follow-up required`
+      : patternCount > 0
+        ? `${patternCount} ${patternCount === 1 ? "pattern" : "patterns"} to look at`
+        : undefined;
   const reviewedOf = reviewable.length;
 
   // D-80 item 14: who opened the chosen row's record, when the row has one.
@@ -696,7 +642,6 @@ function GovernanceSession({
       announcement={announcement}
       canReview={canReview}
       changeTab={changeTab}
-      chip={chip}
       chipMatches={chipMatches}
       choose={choose}
       followUp={followUp}
@@ -714,8 +659,9 @@ function GovernanceSession({
       }
       refusedCount={refusedCount}
       reviewGate={reviewGate}
+      chip={chip}
+      toggleChip={toggleChip}
       reviewState={reviewState}
-      reviewTitle={reviewTitle}
       reviewable={reviewable}
       reviewedCount={reviewedCount}
       selected={selected}
@@ -728,7 +674,6 @@ function GovernanceSession({
       sites={sites}
       tab={tab}
       toReview={toReview}
-      toggleChip={toggleChip}
       totalGaps={totalGaps}
       units={units}
     />
@@ -739,81 +684,155 @@ function GovernanceSession({
     <div className={thirdEdition.governanceWorkspace} data-testid="ward-governance-workbench" data-ward-design="v8">
       <Hero
         level={2}
-        eyebrow={<span className={thirdEdition.heroEyebrow}>Governance · This session</span>}
-        title={heroTitle}
-        stats={heroStats}
-        aside={
-          tab === "review" && adminEmpty ? undefined : (
-            <span className={thirdEdition.heroActions}>
-              <span className={thirdEdition.reviewedRing}>
-                <span
-                  className={thirdEdition.ringDial}
-                  style={{
-                    ["--done" as string]: `${reviewedOf === 0 ? 0 : Math.round((reviewedCount / reviewedOf) * 360)}deg`,
-                  }}
-                  aria-hidden="true"
-                />
-                <span className={thirdEdition.stack}>
-                  <strong>
-                    {reviewedCount} of {reviewedOf}
-                  </strong>
-                  <span>reviewed</span>
-                </span>
-              </span>
-              <Button
-                variant="light"
-                size="sm"
-                data-testid="ward-governance-record-review"
-                disabledReason={
-                  !reviewGate.allowed ? reviewGate.reason : selected === null ? "Choose an event first" : undefined
+        className={cx(pageTop.hero, folderTabClasses.hero)}
+        title={
+          <>
+            Review <span className={pageTop.soft}>this session</span>
+          </>
+        }
+        aside={<LiveChip state="live" onHero age={formatInstant(now)} />}
+      >
+        <HeroTop
+          figures={
+            adminEmpty ? undefined : (
+              <HeroFigures
+                items={[
+                  // Each figure highlights its events in the review list; tap again to clear.
+                  {
+                    id: "override",
+                    value: overrideCount,
+                    label: "overrides",
+                    testId: "ward-governance-figure-override",
+                    onClick: () => toggleChip("override"),
+                    pressed: chip === "override",
+                  },
+                  {
+                    id: "refused",
+                    value: refusedCount,
+                    label: "refused or stale",
+                    onClick: () => toggleChip("refused"),
+                    pressed: chip === "refused",
+                  },
+                  {
+                    id: "access",
+                    value: accessCount,
+                    label: "record access",
+                    onClick: () => toggleChip("access"),
+                    pressed: chip === "access",
+                  },
+                  {
+                    id: "reviewed",
+                    value: reviewedCount,
+                    unit: ` of ${reviewedOf}`,
+                    label: "reviewed",
+                    testId: "ward-governance-figure-reviewed",
+                  },
+                ]}
+              />
+            )
+          }
+          act={
+            adminEmpty ? undefined : (
+              <HeroAct
+                tone="calm"
+                title={newestTitle}
+                sub={newestSub}
+                testId="ward-governance-act"
+                action={
+                  newest
+                    ? {
+                        label: "Review next",
+                        phoneLabel: "Review",
+                        testId: "ward-governance-review-next",
+                        onClick: () => choose(newest),
+                      }
+                    : undefined
                 }
-                reasonDisplay="tooltip"
-                onClick={() => {
-                  // Starting a review makes the event the user's own, so a rotation cannot close it.
-                  setAutoOpened(false);
-                  setEndorseOpen(true);
-                }}
-              >
-                Record review
-              </Button>
-            </span>
-          )
-        }
-        bar={
-          <HeroTrack<GovernanceTab>
-            label="Governance views"
-            value={tab}
-            onChange={changeTab}
-            items={
-              adminDesk
-                ? [
-                    { id: "review", label: "Review", count: toReview.length },
-                    { id: "audit", label: "Audit trail" },
-                  ]
-                : [
-                    { id: "review", label: "Review", count: toReview.length },
-                    { id: "gaps", label: "Form gaps by site" },
-                    { id: "audit", label: "Audit trail" },
-                    { id: "registers", label: "Registers" },
-                    { id: "reports", label: "Reports" },
-                  ]
-            }
-          />
-        }
-        barAside={
-          <span className={thirdEdition.heroActions}>
-            {/* A notice, not a button: plain text (device audit 11 Oct 2026). */}
-            <span className={thirdEdition.heroNotice}>Safety incidents not recorded here</span>
-            {/* Role (access admin): a patient's chronology is not this desk's to open. */}
-            {adminDesk ? null : (
-              <Link href={PATIENT_CHRONOLOGY_HREF} className={buttonClass({ variant: "onHero", size: "sm" })}>
-                <History size={14} aria-hidden="true" />
-                PIR chronology
-              </Link>
-            )}
-          </span>
-        }
-      />
+              />
+            )
+          }
+          chips={
+            <HeroQuickChips
+              label="Governance actions"
+              items={[
+                // Shown whenever events wait; a desk that may not review is told why in the form.
+                ...(adminEmpty
+                  ? []
+                  : [
+                      {
+                        id: "record",
+                        label: "Record review",
+                        icon: <Check strokeWidth={1.75} aria-hidden="true" />,
+                        testId: "ward-governance-record-review",
+                        onClick: () => {
+                          // Starting a review makes the event the user's own, so a rotation cannot close it.
+                          setAutoOpened(false);
+                          if (selected === null && newest) choose(newest, false);
+                          if (selected !== null || newest) setEndorseOpen(true);
+                        },
+                      },
+                    ]),
+                // Role (access admin): a patient's chronology is not this desk's to open.
+                ...(adminDesk
+                  ? []
+                  : [
+                      {
+                        id: "pir",
+                        label: "PIR chronology",
+                        icon: <Clock strokeWidth={1.75} aria-hidden="true" />,
+                        href: PATIENT_CHRONOLOGY_HREF,
+                      },
+                    ]),
+                // The two highlights the list's own filter does not offer, shown only while any wait.
+                ...(patternCount > 0
+                  ? [
+                      {
+                        id: "pattern",
+                        label: adminDesk ? "Patterns" : "Pattern",
+                        count: patternCount,
+                        pressed: chip === "pattern",
+                        onClick: () => toggleChip("pattern"),
+                      },
+                    ]
+                  : []),
+                ...(followUp > 0
+                  ? [
+                      {
+                        id: "follow-up",
+                        label: adminDesk ? "For follow-up" : "Follow-up",
+                        count: followUp,
+                        pressed: chip === "follow-up",
+                        onClick: () => toggleChip("follow-up"),
+                      },
+                    ]
+                  : []),
+              ]}
+            />
+          }
+        />
+      </Hero>
+      <FolderTabs label="Governance views" value={tab} testId="ward-governance-tabs">
+        <Segmented<GovernanceTab>
+          className={folderTabClasses.switch}
+          label="Governance views"
+          value={tab}
+          onChange={changeTab}
+          items={
+            adminDesk
+              ? [
+                  { id: "review", label: "Review", count: toReview.length },
+                  { id: "audit", label: "Audit trail" },
+                ]
+              : [
+                  { id: "review", label: "Review", count: toReview.length },
+                  { id: "gaps", label: "Form gaps", count: totalGaps },
+                  { id: "audit", label: "Audit trail" },
+                  { id: "registers", label: "Registers" },
+                  { id: "reports", label: "Reports" },
+                ]
+          }
+        />
+      </FolderTabs>
 
       {tab === "review" ? (
         <div className={thirdEdition.stackGap}>
@@ -828,12 +847,13 @@ function GovernanceSession({
             ) : (
               <CardHead
                 id="governance-review-title"
-                icon={ShieldCheck}
                 title="Waiting for review"
-                meta={<Count n={toReview.length} />}
                 aside={
                   <span className={thirdEdition.quietText}>
-                    {chip ? `${chipCount} of ${toReview.length} highlighted, all rows stay` : "Newest first."}
+                    {/* A notice, not a button: plain text (device audit 11 Oct 2026). Newest first is the act row's. */}
+                    {chip
+                      ? `${chipCount} of ${toReview.length} highlighted, all rows stay`
+                      : "Safety incidents not recorded here"}
                   </span>
                 }
               />

@@ -29,9 +29,12 @@
 }
 
 /* A bed someone is in, or on leave: the Capacity map's used fill. */
+/* Page-top redesign (Josh, 9 Nov 2026): in the dark theme the used fill was a pale blue that glared, so
+   the dark theme takes a mid navy mixed from the same token, with light words on it. */
 .bedTile[data-bed-kind="occupied"],
 .bedTile[data-bed-kind="leave"] {
-  background: var(--wf-data-1);
+  background: light-dark(var(--wf-data-1), color-mix(in srgb, var(--wf-data-1) 40%, var(--wf-surface)));
+  color: light-dark(var(--wf-surface), var(--wf-ink-1));
 }
 
 /* Pulled for a person on the way: the used colour in stripes, held and not yet in. */

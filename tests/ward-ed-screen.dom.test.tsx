@@ -1368,7 +1368,7 @@ describe("P3-1 (Ward Lead audit, 2026-09-17): 'Not reviewed' and 'No bed yet' ex
 });
 
 describe("D-24 (owner ruling, 26 Sept 2026): the long-wait flag is a default, never a breach", () => {
-  it("shows 'Waiting over 24 hours' for a movement open past the default, with no breach or standard wording", () => {
+  it("shows 'Waiting past 24 hours' for a movement open past the default, with no breach or standard wording", () => {
     // WF-019 at rgh-ed is seeded open for 2 days 14 hours (ward-movements.ts) specifically so a
     // wait outlasting a day has something real to render against.
     render(
@@ -1380,7 +1380,7 @@ describe("D-24 (owner ruling, 26 Sept 2026): the long-wait flag is a default, ne
     // Needs you opens as a slide-over where the full board table leaves no room beside it
     // (device audit 11 Oct 2026, owner pick A2).
     fireEvent.click(screen.getByTestId("wf-portrait-rail-trigger"));
-    const title = screen.getByText("Waiting over 24 hours");
+    const title = screen.getByText("Waiting past 24 hours");
     const row = title.closest("li");
     expect(row).not.toBeNull();
     expect(row).toHaveTextContent(seedPatientName("WF-019", "formalName"));
@@ -1403,9 +1403,12 @@ function seedPatientName(movementId: string, form: "displayName" | "formalName" 
 describe("S-19 (audit 13 Oct 2026): one 'No bed yet' rule for the hero and the board chip", () => {
   it("shows the same No bed yet count on every control that names it", () => {
     renderEd();
+    // Page tops (Josh, 9 Nov 2026): the hero's is a figure, "N no bed yet", whose value sits beside
+    // its pressable label; the board chip carries its count inside the button.
     const counts = screen
-      .getAllByText(/No bed yet/u)
-      .map((node) => Number(/(\d+)/u.exec(node.closest("button")?.textContent ?? "")?.[1] ?? NaN))
+      .getAllByText(/no bed yet/iu)
+      .map((node) => node.closest('[data-testid^="ward-ed-figure-"]') ?? node.closest("button"))
+      .map((control) => Number(/(\d+)/u.exec(control?.textContent ?? "")?.[1] ?? NaN))
       .filter((value) => !Number.isNaN(value));
     expect(counts.length).toBeGreaterThanOrEqual(2);
     expect(new Set(counts).size).toBe(1);

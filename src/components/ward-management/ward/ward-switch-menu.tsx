@@ -70,6 +70,56 @@ export function WardSwitchMenu({
   );
 }
 
+/**
+ * Page tops (Josh approved, 9 Nov 2026): the same list, opened from a hero chip the page draws (the
+ * chip carries `anchorTestId`). The page owns `open`; the list sits under the chip and focus returns
+ * to it on Escape.
+ */
+export function WardSwitchPopover({
+  unit,
+  switchUnits,
+  onChoose,
+  open,
+  onClose,
+  anchorTestId,
+}: {
+  unit: Unit;
+  switchUnits: readonly Unit[];
+  onChoose: (unitId: string) => void;
+  open: boolean;
+  onClose: () => void;
+  anchorTestId: string;
+}) {
+  // The chip is drawn by the shared hero parts, so it is found by its test id when the list opens.
+  const triggerRef = useMemo<RefObject<HTMLButtonElement | null>>(
+    () => ({
+      get current() {
+        return typeof document === "undefined"
+          ? null
+          : document.querySelector<HTMLButtonElement>(`[data-testid="${anchorTestId}"]`);
+      },
+    }),
+    [anchorTestId],
+  );
+  if (!open) return null;
+  return (
+    <WardSwitchPanel
+      unit={unit}
+      switchUnits={switchUnits}
+      triggerRef={triggerRef}
+      onClose={(returnFocus) => {
+        onClose();
+        if (returnFocus) triggerRef.current?.focus({ preventScroll: true });
+      }}
+      onChoose={(id, name) => {
+        onClose();
+        announceToWardShell(`${name}.`);
+        onChoose(id);
+      }}
+    />
+  );
+}
+
 function WardSwitchPanel({
   unit,
   switchUnits,

@@ -1,0 +1,441 @@
+"use client";
+
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
+import { type ReactNode, useId } from "react";
+
+import { buttonClass } from "./button";
+import { cx } from "./cx";
+import { useHeroFootSlot } from "./hero-foot-slot";
+import { StatusGlyph } from "./status-glyph";
+import styles from "./hero-top.module.css";
+
+/**
+ * Page tops (Josh, 9 Nov 2026, "build now, single PR"): the parts every page puts inside its slate
+ * hero, matched to Home's approved top. Figures, one act row, a status pill, quick chips and one slim
+ * band (strip), laid out by `HeroTop`. Pass `HeroTop` as the `children` of `Hero`. Figures shown here
+ * must come from the page's own derivations; nothing here counts or decides anything.
+ */
+
+type Press = { href?: string; onClick?: () => void };
+
+export type HeroFigureItem = Press & {
+  id: string;
+  value: ReactNode;
+  /** Small unit after the value ("%", "h"). */
+  unit?: ReactNode;
+  label: ReactNode;
+  /** Red only when the figure names something to act on now. */
+  tone?: "danger" | "warning" | "ok";
+  testId?: string;
+  /** Underline the label as a link even without `href` (it is underlined anyway with `href` or `onClick`). */
+  underline?: boolean;
+  /** Test id on the label's link or button. */
+  linkTestId?: string;
+  /** A toggle's state (`aria-pressed`) when the figure has `onClick`. */
+  pressed?: boolean;
+};
+
+/** A row of figures on the slate: equal columns on a phone (a long label takes the room it needs). */
+export function HeroFigures({ items, label = "Figures" }: { items: HeroFigureItem[]; label?: string }) {
+  return (
+    <div className={styles.figs} role="group" aria-label={label}>
+      {items.map((item) => {
+        const linked = Boolean(item.href || item.onClick);
+        const labelClass = cx(styles.figLabel, (linked || item.underline) && styles.figLink);
+        return (
+          <p key={item.id} className={styles.fig} data-tone={item.tone} data-testid={item.testId}>
+            <b className={styles.figValue}>
+              {item.value}
+              {item.unit ? <small className={styles.figUnit}>{item.unit}</small> : null}
+            </b>{" "}
+            {item.href ? (
+              <Link href={item.href} className={labelClass} data-testid={item.linkTestId}>
+                {item.label}
+              </Link>
+            ) : item.onClick ? (
+              <button
+                type="button"
+                className={cx(labelClass, styles.figButton)}
+                onClick={item.onClick}
+                aria-pressed={item.pressed}
+                data-testid={item.linkTestId}
+              >
+                {item.label}
+              </button>
+            ) : (
+              <span className={labelClass}>{item.label}</span>
+            )}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+type HeroActAction = Press & {
+  label: string;
+  /** Shorter label on a phone ("Show" for "Show act now"). The full label stays on wider screens. */
+  phoneLabel?: string;
+  /** A toggle's state (`aria-pressed`). */
+  pressed?: boolean;
+  testId?: string;
+};
+
+export type HeroActProps = {
+  /** `danger` = act now (red triangle), `warning` = amber dot, `calm` = no glyph. */
+  tone: "danger" | "warning" | "calm";
+  title: ReactNode;
+  /** One quiet line under the title; it ends in an ellipsis rather than wrap. */
+  sub?: ReactNode;
+  action?: HeroActAction;
+  testId?: string;
+  /** Test id on the title line (Home keeps `hero-next-answer`). */
+  titleTestId?: string;
+  /** Free words for `data-kind` (Home names its step: act, decide, overdue, none). */
+  kind?: string;
+};
+
+/** The one next step on the slate: a slim soft card, its single light button on the right. */
+export function HeroAct({ tone, title, sub, action, testId, titleTestId, kind }: HeroActProps) {
+  const label = action ? (
+    action.phoneLabel ? (
+      <>
+        <span className={styles.wideOnly}>{action.label}</span>
+        <span className={styles.phoneOnly}>{action.phoneLabel}</span>
+      </>
+    ) : (
+      action.label
+    )
+  ) : null;
+  const buttonClassName = cx(buttonClass({ variant: "light", size: "sm" }), styles.actButton);
+  // With a short phone label both words are in the markup; the full label is the spoken name everywhere.
+  const name = action?.phoneLabel ? action.label : undefined;
+  return (
+    <div className={styles.act} data-tone={tone} data-testid={testId} data-kind={kind} data-wf-hero-next="">
+      {tone === "calm" ? null : (
+        <StatusGlyph tone={tone === "danger" ? "danger" : "warning"} size={tone === "danger" ? 14 : 8} />
+      )}
+      <div className={styles.actText}>
+        <p className={styles.actTitle} data-testid={titleTestId}>
+          {title}
+        </p>
+        {sub ? <p className={styles.actSub}>{sub}</p> : null}
+      </div>
+      {action?.href ? (
+        <Link href={action.href} className={buttonClassName} aria-label={name} data-testid={action.testId}>
+          {label}
+        </Link>
+      ) : action ? (
+        <button
+          type="button"
+          className={buttonClassName}
+          onClick={action.onClick}
+          aria-pressed={action.pressed}
+          aria-label={name}
+          data-testid={action.testId}
+        >
+          {label}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+export type HeroChipItem = Press & {
+  id: string;
+  label: string;
+  /** A small icon element (say a lucide icon); it is hidden from screen readers. */
+  icon?: ReactNode;
+  count?: number;
+  /** `warning` (amber, the default) for work waiting; `quiet` for a plain tally. */
+  countTone?: "warning" | "quiet";
+  /** Words read after the count ("to do" reads "Ward updates, 1 to do"). */
+  countLabel?: string;
+  /** A toggle chip's state (`aria-pressed`). */
+  pressed?: boolean;
+  /** A chip that opens a panel below (`aria-expanded`), in place of `pressed`. */
+  expanded?: boolean;
+  /**
+   * The chip's full spoken name when the visible words are not enough ("Print list (may include
+   * identifiers)", "Switch ward, now Ward 5"). It replaces the name read from the label and count.
+   */
+  ariaLabel?: string;
+  testId?: string;
+  /**
+   * The page's own control in this place instead (a menu trigger, a stepper link), styled with
+   * `heroChipClassName`. `label` and the rest are then unused.
+   */
+  node?: ReactNode;
+};
+
+/** The quick chip's look, for a page's own control in a `HeroQuickChips` row (`HeroChipItem.node`). */
+export const heroChipClassName = styles.chip;
+
+/**
+ * Quick action chips on the slate (36px; one row that scrolls sideways on a phone). Named
+ * `HeroQuickChips` because `HeroChips` is the older v10 count-chip group.
+ */
+export function HeroQuickChips({ label, items }: { label: string; items: HeroChipItem[] }) {
+  return (
+    <ul className={styles.chips} aria-label={label}>
+      {items.map((item) => {
+        const body = (
+          <>
+            {item.icon ? (
+              <span className={styles.chipIcon} aria-hidden="true">
+                {item.icon}
+              </span>
+            ) : null}
+            <span>{item.label}</span>
+            {item.count !== undefined ? (
+              <b className={styles.chipCount} data-tone={item.countTone ?? "warning"}>
+                <span aria-hidden="true">{item.count}</span>
+                <span className="sr-only">
+                  , {item.count}
+                  {item.countLabel ? ` ${item.countLabel}` : ""}
+                </span>
+              </b>
+            ) : null}
+          </>
+        );
+        if (item.node) return <li key={item.id}>{item.node}</li>;
+        return (
+          <li key={item.id}>
+            {item.href ? (
+              <Link href={item.href} className={styles.chip} aria-label={item.ariaLabel} data-testid={item.testId}>
+                {body}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className={styles.chip}
+                onClick={item.onClick}
+                aria-pressed={item.expanded === undefined ? item.pressed : undefined}
+                aria-expanded={item.expanded}
+                aria-label={item.ariaLabel}
+                data-testid={item.testId}
+              >
+                {body}
+              </button>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+export type HeroBandCell = Press & {
+  id: string;
+  /** Short name ("ARM", "Locked adult"). */
+  label: ReactNode;
+  value: ReactNode;
+  /** First small line under (stacked) or after the name and value (inline). */
+  sub?: ReactNode;
+  /** Colour of the value. */
+  tone?: "danger" | "warning" | "ok";
+  /** Colour of `sub`; `danger` also puts a small red triangle before it. */
+  subTone?: "danger" | "warning" | "ok";
+  /** A second small line (sans), say "15 on forms". */
+  note?: ReactNode;
+  noteTone?: "danger" | "warning" | "ok";
+  /** Words instead of a number ("no wait"): drawn quiet. */
+  quiet?: boolean;
+  /** Spoken name for a pressable cell when the visible text is too terse. */
+  ariaLabel?: string;
+  pressed?: boolean;
+  testId?: string;
+};
+
+export type HeroBandProps = {
+  /** The band's small caps label ("Waiting in ED"). */
+  title: ReactNode;
+  /** Words on the right of the label ("62 in ED · 8 in transit"); wrap numbers in <b>. */
+  aside?: ReactNode;
+  /** Makes `aside` a link with a chevron. */
+  asideHref?: string;
+  cells: HeroBandCell[];
+  /** `inline`: name and value on one line (Home's ED strip). `stacked`: name over value. */
+  variant?: "inline" | "stacked";
+  testId?: string;
+};
+
+/** One slim strip of cells on the slate, hairlines between; it scrolls sideways with a fade on a phone. */
+export function HeroBand({ title, aside, asideHref, cells, variant = "inline", testId }: HeroBandProps) {
+  const titleId = useId();
+  return (
+    <div className={styles.band} data-testid={testId}>
+      <div className={styles.bandHead}>
+        <p className={styles.bandTitle} id={titleId}>
+          {title}
+        </p>
+        {aside ? (
+          asideHref ? (
+            <Link href={asideHref} className={cx(styles.bandAside, styles.bandAsideLink)}>
+              {aside}
+              <ChevronRight size={14} strokeWidth={1.75} aria-hidden="true" />
+            </Link>
+          ) : (
+            <p className={styles.bandAside}>{aside}</p>
+          )
+        ) : null}
+      </div>
+      <ul className={styles.cells} aria-labelledby={titleId} data-variant={variant}>
+        {cells.map((cell) => {
+          const body = (
+            <>
+              <span className={styles.cellTop}>
+                <span className={styles.cellLabel}>{cell.label}</span>
+                <span className={styles.cellValue} data-tone={cell.tone}>
+                  {cell.value}
+                </span>
+              </span>
+              {cell.sub ? (
+                <span className={styles.cellSub} data-tone={cell.subTone}>
+                  {cell.subTone === "danger" ? <StatusGlyph tone="danger" size={9} /> : null}
+                  {cell.sub}
+                </span>
+              ) : null}
+              {cell.note ? (
+                <span className={styles.cellNote} data-tone={cell.noteTone}>
+                  {cell.note}
+                </span>
+              ) : null}
+            </>
+          );
+          return (
+            <li key={cell.id} className={styles.cell} data-quiet={cell.quiet ? "" : undefined}>
+              {cell.href ? (
+                <Link
+                  href={cell.href}
+                  className={styles.cellBody}
+                  aria-label={cell.ariaLabel}
+                  data-testid={cell.testId}
+                >
+                  {body}
+                </Link>
+              ) : cell.onClick ? (
+                <button
+                  type="button"
+                  className={styles.cellBody}
+                  onClick={cell.onClick}
+                  aria-pressed={cell.pressed}
+                  aria-label={cell.ariaLabel}
+                  data-testid={cell.testId}
+                >
+                  {body}
+                </button>
+              ) : (
+                <span className={styles.cellBody} data-testid={cell.testId}>
+                  {body}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+export type HeroPillProps = {
+  /** `warning` shows a small amber dot before the words. */
+  tone?: "warning";
+  text: ReactNode;
+  /** `ariaLabel` names the action in full when the short label needs the pill's words ("Ask Ward 2K ..."). */
+  action?: Press & { label: string; ariaLabel?: string; testId?: string };
+  testId?: string;
+};
+
+/** A short status line in a pill ("21 of 22 confirmed · 1 not yet · Ask"). */
+export function HeroPill({ tone, text, action, testId }: HeroPillProps) {
+  return (
+    <p className={styles.pill} data-tone={tone} data-testid={testId}>
+      {tone ? <span className={styles.pillDot} aria-hidden="true" /> : null}
+      <span>{text}</span>
+      {action?.href ? (
+        <Link
+          href={action.href}
+          className={styles.pillAction}
+          aria-label={action.ariaLabel}
+          data-testid={action.testId}
+        >
+          {action.label}
+        </Link>
+      ) : action ? (
+        <button
+          type="button"
+          className={styles.pillAction}
+          onClick={action.onClick}
+          aria-label={action.ariaLabel}
+          data-testid={action.testId}
+        >
+          {action.label}
+        </button>
+      ) : null}
+    </p>
+  );
+}
+
+export type HeroTopProps = {
+  figures?: ReactNode;
+  act?: ReactNode;
+  pill?: ReactNode;
+  chips?: ReactNode;
+  /**
+   * `false` leaves the shell's Quick bar (the desk home's hero foot slot) out when the page passes
+   * no `chips` of its own, or passes them only on some screen sizes. Default `true`.
+   */
+  quickBar?: boolean;
+  band?: ReactNode;
+  /** Anything page-specific (search field, date stepper), full width at the foot. */
+  children?: ReactNode;
+  className?: string;
+  testId?: string;
+};
+
+/**
+ * Lays the parts out as Home does. Phone: figures, act, pill, chips, band, children, stacked.
+ * Tablet and desktop (46.5rem up): the act row sits right of the figures; with no act (and no pill)
+ * the chips take that place instead.
+ *
+ * The desk home's Quick bar (the shell's hero foot slot) is drawn here as the chip row, so a page
+ * never shows two chip rows: a page's own `chips` win and the Quick bar steps aside. `Hero` leaves
+ * its own foot slot out when a `HeroTop` is among its children. `quickBar={false}` leaves it out
+ * entirely, for a page whose own actions replace it.
+ */
+export function HeroTop({
+  figures,
+  act,
+  pill,
+  chips: ownChips,
+  quickBar = true,
+  band,
+  children,
+  className,
+  testId,
+}: HeroTopProps) {
+  // The Quick bar draws nothing off the desk's home, so it never takes the place beside the figures.
+  const footSlot = useHeroFootSlot();
+  const chipsBeside = !act && !pill && Boolean(figures) && Boolean(ownChips);
+  const chips = ownChips ?? (quickBar ? footSlot : null);
+  const beside = act ?? (chipsBeside ? chips : null);
+  return (
+    <div className={cx(styles.top, className)} data-testid={testId} data-wf-hero-top="">
+      {figures || beside ? (
+        <div className={styles.answer} data-solo={figures && beside ? undefined : ""}>
+          {figures}
+          {beside}
+        </div>
+      ) : null}
+      {pill}
+      {chipsBeside ? null : chips}
+      {band}
+      {children}
+    </div>
+  );
+}
+
+/** Read by `Hero`: this part draws the hero's foot slot (the Quick bar) itself. */
+HeroTop.wfTakesFootSlot = true;

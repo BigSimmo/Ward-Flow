@@ -153,7 +153,8 @@ describe("the override and decision registers hold only what this session record
     const text = container.textContent ?? "";
     expect(text).toContain("No override audit is recorded in this session.");
     expect(text).toContain("Safety incidents not recorded");
-    expect(text).toContain("This session");
+    // Page tops (9 Nov 2026): the title reads "Review this session".
+    expect(text).toContain("this session");
     for (const invented of ["Pendelton", "OVR-107", "Zero Safety Incidents", "Past 24 Hours Statewide"]) {
       expect(text, invented).not.toContain(invented);
     }
@@ -192,7 +193,7 @@ describe("Governance v10 pass (10 Oct 2026)", () => {
         <GovernanceWorkbench movements={seed.movements} units={seed.units} now={NOW} />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("radio", { name: /^Form gaps by site/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /^Form gaps/ }));
     const table = within(screen.getByRole("region", { name: "Gaps by site" })).getByRole("table");
     const fracs = within(table).getAllByTestId("wf-frac");
     expect(fracs.length).toBeGreaterThan(0);
@@ -236,11 +237,13 @@ describe("Governance phone review sheet (audit settings-4, 13 Oct 2026)", () => 
       fireEvent.click(screen.getByRole("button", { name: /Review next/ }));
       const sheet = screen.getByRole("dialog");
       const firstTitle = within(sheet).getByRole("heading", { level: 2 }).textContent;
-      expect(screen.queryByRole("button", { name: /Record review/ })).not.toBeInTheDocument();
+      // Page tops (9 Nov 2026): the top's Record review chip is never greyed either.
+      expect(screen.getByRole("button", { name: /Record review/ })).not.toHaveAttribute("aria-disabled", "true");
       const reviewed = within(sheet).getByRole("button", { name: "Reviewed" });
       expect(reviewed).not.toHaveAttribute("aria-disabled", "true");
       fireEvent.click(reviewed);
-      expect(screen.getByTestId("ward-governance-phone")).toHaveTextContent("5 to review");
+      // Page tops (9 Nov 2026): the Review tab carries the waiting count.
+      expect(screen.getByRole("radio", { name: /^Review/ })).toHaveTextContent("5");
       // The same sheet now holds the next waiting event.
       const next = screen.getByRole("dialog");
       expect(within(next).getByRole("heading", { level: 2 }).textContent).not.toBe(firstTitle);
@@ -291,8 +294,10 @@ describe("Governance phone audit fixes (13 Oct 2026)", () => {
   it("states the register's relation to the hero's session counts, so the two agree", () => {
     withPhone(() => {
       const hero = screen.getByTestId("ward-governance-phone");
-      expect(hero).toHaveTextContent(/3\s*Overrides/);
-      fireEvent.click(screen.getByRole("button", { name: /Registers/ }));
+      expect(hero).toHaveTextContent(/3\s*overrides/);
+      // Page tops (9 Nov 2026): Registers sits behind More on a phone.
+      fireEvent.click(screen.getByRole("button", { name: "More governance views" }));
+      fireEvent.click(screen.getByRole("menuitem", { name: /Registers/ }));
       expect(screen.getByTestId("ward-governance-overrides-session")).toHaveTextContent(
         "3 override events from this session wait in Review.",
       );
@@ -302,13 +307,16 @@ describe("Governance phone audit fixes (13 Oct 2026)", () => {
     });
   });
 
-  it("reads the hero title from the Waiting count and names follow-ups apart", () => {
+  it("reads the Review tab from the Waiting count and names follow-ups apart", () => {
     withPhone(() => {
-      const hero = screen.getByTestId("ward-governance-phone");
-      expect(hero).toHaveTextContent("6 to review");
+      // Page tops (9 Nov 2026): the Review tab carries the waiting count, the act row the follow-ups.
+      const reviewTab = () => screen.getByRole("radio", { name: /^Review/ });
+      expect(reviewTab()).toHaveTextContent("6");
       fireEvent.click(screen.getByRole("button", { name: /Review next/ }));
       fireEvent.click(screen.getByRole("button", { name: "Follow-up" }));
-      expect(hero).toHaveTextContent("5 to review · 1 follow-up");
+      // A follow-up stays in the list (so the tab still counts it); the act row names it apart.
+      expect(reviewTab()).toHaveTextContent("6");
+      expect(screen.getByTestId("ward-governance-act")).toHaveTextContent("1 follow-up required");
     });
   });
 

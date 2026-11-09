@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { BedSingle, ChevronLeft, ChevronRight, Copy, House, Route } from "lucide-react";
+import { BedSingle, ChevronLeft, ChevronRight, House, Route } from "lucide-react";
 
 import {
   Button,
   Icon,
-  LiveChip,
-  PhoneHero,
+  FolderTabs,
   Sheet,
   SrOnly,
   Segmented,
@@ -16,9 +15,10 @@ import {
   SearchField,
   ShowMoreRow,
   cx,
+  folderTabClasses,
   type WfTone,
 } from "@/components/wf";
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import type { OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
@@ -186,12 +186,8 @@ function PersonCard({
 }
 
 export function OutOfAreaPhone({
+  hero,
   people,
-  totalAway,
-  dueCount,
-  noPlanCount,
-  highlight,
-  onHighlight,
   query,
   onQuery,
   anyHighlight,
@@ -203,20 +199,14 @@ export function OutOfAreaPhone({
   selectedId,
   onSelect,
   onClose,
-  nextUpId,
-  onCopy,
   toolNote,
   renderPlan,
   shift,
   beds,
-  since,
 }: {
+  /** The page top (the shared hero), drawn above the folder tabs. */
+  hero: ReactNode;
   people: PhonePerson[];
-  totalAway: number;
-  dueCount: number;
-  noPlanCount: number;
-  highlight: string | null;
-  onHighlight: (key: "due" | "noplan") => void;
   query: string;
   onQuery: (value: string) => void;
   anyHighlight: boolean;
@@ -228,14 +218,10 @@ export function OutOfAreaPhone({
   selectedId: string | null;
   onSelect: (id: string) => void;
   onClose: () => void;
-  nextUpId: string | undefined;
-  onCopy: () => void;
   toolNote: string | null;
   renderPlan: (entry: OutOfAreaEntry) => ReactNode;
   shift: ReactNode;
   beds: ReactNode;
-  /** "42 bed days", under the three figures. */
-  since?: ReactNode;
 }) {
   const [tab, setTab] = useState<PhoneTab>("needs");
   const [mode, setMode] = useState<"peek" | "plan">("peek");
@@ -264,7 +250,6 @@ export function OutOfAreaPhone({
     .concat(ready, soon);
   const stepList = tab === "needs" && selected && needsList.includes(selected) ? needsList : people;
   const index = selected ? stepList.indexOf(selected) : -1;
-  const nextUp = nextUpId ? byId.get(nextUpId) : undefined;
 
   const open = (id: string) => {
     setMode("peek");
@@ -305,62 +290,22 @@ export function OutOfAreaPhone({
 
   return (
     <div className={styles.phone}>
-      {/* v10 phone: the standard dark hero, its figures jump or highlight as the tiles did. */}
-      <PhoneHero
-        level={1}
-        eyebrow="Out of area · Statewide"
-        chip={<LiveChip state="live" onHero age={formatInstant(now)} />}
-        // H-0887: the page heading names the page, not only the count.
-        title={
-          <>
-            <SrOnly>Out of area:</SrOnly> {totalAway} away from home
-          </>
-        }
-        sub={since}
-        figures={[
-          {
-            id: "home-today",
-            value: leaving.length,
-            label: "Home today",
-            tone: "success",
-            onPress: () => setTab("needs"),
-            actionLabel: `${leaving.length} Home today, going home today, show My list`,
-          },
-          {
-            id: "date-passed",
-            value: dueCount,
-            label: "Date passed",
-            tone: "warning",
-            onPress: () => onHighlight("due"),
-            pressed: highlight === "due",
-          },
-          {
-            id: "no-plan",
-            value: noPlanCount,
-            // "No plan" stays on one line; the spoken label names the noun, as the desktop's "No return plan" does.
-            label: "No plan",
-            actionLabel: `${noPlanCount} No plan, with no return plan, highlight them`,
-            // Design audit 4 (B21): a missing plan is waiting (the ring), not declined or closed (the cross).
-            tone: "neutral",
-            onPress: () => onHighlight("noplan"),
-            pressed: highlight === "noplan",
-          },
-        ]}
-      />
-
-      {/* Phone (v10): Needs you, Everyone and Beds as one 44px segmented control. */}
-      <Segmented<PhoneTab>
-        label="Out of area view"
-        className={styles.phoneTabs}
-        size="md"
-        value={tab}
-        onChange={setTab}
-        items={[
-          { id: "needs", label: "My list", count: ready.length + leaving.length },
-          { id: "all", label: "Everyone", count: people.length },
-          { id: "beds", label: "Beds" },
-        ]}
-      />
+      {hero}
+      {/* Page tops (9 Nov 2026): My list, Everyone and Beds as the folder tabs under the hero. */}
+      <FolderTabs label="Out of area views" value={tab} testId="ward-out-of-area-phone-tabs">
+        <Segmented<PhoneTab>
+          label="Out of area view"
+          className={folderTabClasses.switch}
+          size="md"
+          value={tab}
+          onChange={setTab}
+          items={[
+            { id: "needs", label: "My list", count: ready.length + leaving.length },
+            { id: "all", label: "Everyone", count: people.length },
+            { id: "beds", label: "Beds" },
+          ]}
+        />
+      </FolderTabs>
 
       {tab === "needs" ? (
         <div className={styles.phonePanel} role="region" id="ward-out-of-area-phone-panel-needs" aria-label="My list">
@@ -397,8 +342,8 @@ export function OutOfAreaPhone({
             </section>
           ) : null}
           <section className={styles.phoneSection} aria-label="Ready to go home">
+            {/* Page tops (9 Nov 2026): the rows carry the amber dot; the heading does not repeat it. */}
             <h2 className={styles.phoneSectionTitle}>
-              <StatusGlyph tone="warning" size={9} />
               Ready to go home <span className={styles.count}>{ready.length}</span>
             </h2>
             {ready.length ? (
@@ -485,29 +430,6 @@ export function OutOfAreaPhone({
         </div>
       ) : null}
 
-      <div className={styles.phoneBar}>
-        {nextUp ? (
-          <Button
-            variant="pri"
-            icon={Route}
-            className={styles.phoneBarMain}
-            onClick={() => open(nextUp.entry.admission.id)}
-          >
-            {/* Names in full (audit B5): the surname alone could match two people. */}
-            Plan next return <span className={styles.phoneBarName}>{nextUp.name}</span>
-          </Button>
-        ) : (
-          <Button
-            variant="sec"
-            className={styles.phoneBarMain}
-            disabledReason="Everyone has a return plan."
-            reasonDisplay="tooltip"
-          >
-            All planned
-          </Button>
-        )}
-        <Button variant="sec" iconOnly icon={Copy} aria-label="Copy summary for the bed meeting" onClick={onCopy} />
-      </div>
       {toolNote ? (
         <p className={styles.phoneToast} role="status">
           {toolNote}

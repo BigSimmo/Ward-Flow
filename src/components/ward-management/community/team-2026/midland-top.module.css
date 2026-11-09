@@ -1,0 +1,12 @@
+/* Midland's page top (9 Nov 2026): the find box sits in the tab row, before More. */
+.find {
+  flex: 0 1 15rem;
+  min-width: 9rem;
+  height: 32px;
+}
+
+.moreRow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}

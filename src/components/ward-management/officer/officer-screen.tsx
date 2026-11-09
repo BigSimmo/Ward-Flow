@@ -4,14 +4,25 @@ import { confirmLeavingShell } from "../shell/ward-leave-guard";
 
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
-import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { isOfficerJob, officerCancellationNotices } from "./officer-jobs";
 import { useOfficerDiversionSave } from "./use-officer-diversion-save";
 import { ReturnEarlyAlerts } from "@/components/ward-management/out-of-area/return-early-alerts";
 import { useTransportCommandFeedback } from "./use-transport-command-feedback";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Circle, Clock, Copy, ListChecks, Lock, MapPin, Plus, Search, ShieldCheck, X } from "lucide-react";
+import {
+  Circle,
+  ClipboardList,
+  ListChecks,
+  Lock,
+  MapPin,
+  Search,
+  Shield,
+  ShieldCheck,
+  Ambulance,
+  User,
+  X,
+} from "lucide-react";
 
 import {
   Button,
@@ -20,11 +31,15 @@ import {
   CardHead,
   EmptyState,
   FilterChip,
+  FolderTabs,
+  folderTabClasses,
   Hero,
-  HeroChip,
-  HeroChips,
+  HeroAct,
+  HeroBand,
+  HeroFigures,
+  HeroQuickChips,
+  HeroTop,
   LiveChip,
-  HeroStat,
   Icon,
   Kbd,
   Segmented,
@@ -37,20 +52,25 @@ import {
   TextInput,
   cx,
   durMinutes,
-  phoneRows,
   requestConfirm,
   tableClasses,
   useIsPhone,
   useModalFocus,
-  type WfTone,
+  type HeroChipItem,
 } from "@/components/wf";
 import { transportLeg } from "@/components/ward-management/ward-derivations";
 import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { formatDateOfBirth } from "@/components/ward-management/ward-patients";
-import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstant,
+  formatInstantWithDay,
+  formatSheetMoment,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
+import { usePageLive } from "@/components/ward-management/ward-page-live";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
-import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { TRANSPORT_PROVIDERS, type Movement, type Unit } from "@/components/ward-management/ward-model";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { movementOriginLabel, originSiteCode, sourceWardName } from "@/components/ward-management/ward-movement-origin";
@@ -68,6 +88,7 @@ import {
   packOutstanding,
   packRequired,
 } from "./officer-forms-pack";
+import titles from "@/components/ward-management/page-top-title.module.css";
 import styles from "./officer.module.css";
 import { OfficerFormCheckDialog } from "./officer-form-check-dialog";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
@@ -84,7 +105,6 @@ import {
   OFFICER_ACTION_REJECTION_LABELS,
   OFFICER_LEG_STEPS,
   type OfficerLeg,
-  PHONE_PILLS,
   type SortKey,
   acceptedBlockedReason,
   arrivedBlockedReason,
@@ -106,6 +126,7 @@ import { OfficerDeliveredRow } from "./officer-history-row";
 import {
   NeedsTransportCard,
   OfficerBookingPanel,
+  heldClock,
   scrollToNeedsTransport,
   useNeedsTransport,
   withCrewLimit,
@@ -128,6 +149,7 @@ export { isOfficerJob };
 
 /** ROLE BRANCH (officer): the officer's job list opens on this many rows, then "Show all". */
 const OFFICER_JOB_ROWS = 8;
+const CHIP_ICON = { size: 16, strokeWidth: 1.75, "aria-hidden": true } as const;
 
 /**
  * TRANSPORT PAGE A, 9 October 2026 (Josh picked direction A of the Transport mockups). The hero
@@ -180,7 +202,9 @@ export function OfficerScreen() {
     const movement = movements.find((candidate) => candidate.id === movementId);
     return movement ? officerListPatientName(movement) : "Not recorded";
   };
-  const now = useWardFlowClock();
+  // Page tops (9 Nov 2026): the Demo pill pauses the desk, as on Alerts and Places.
+  const live = usePageLive();
+  const now = live.now;
 
   const [collectCheckId, setCollectCheckId] = useState<string | null>(null);
   // #236 (Josh, 27 Oct): jobs whose crew tapped "Identity checked with the sending team". Sent with Collected; no gate.
@@ -440,11 +464,6 @@ export function OfficerScreen() {
   const crewEnRoute = legCount("En route");
   const pastEta = jobs.filter(late).length;
   const formsOutstanding = jobs.filter(packNeedsForms).length;
-
-  const nextArrival = jobs
-    .map((movement) => ({ movement, at: expectedArrival(movement)?.at }))
-    .filter((item): item is { movement: Movement; at: Instant } => item.at !== undefined && item.at >= now)
-    .sort((a, b) => a.at - b.at)[0];
 
   // Escape and "/" shortcut handler
   useEffect(() => {
@@ -731,34 +750,6 @@ export function OfficerScreen() {
     unitFor,
   };
 
-  // Larger screen: the shared hero chip every other page uses (site review U5). Phone keeps its own
-  // v10 design of three plain figures, so it stays on `HeroStat` and its phone styles.
-  const pillStat = (which: HighlightPill, value: number, label: string, short: string, tone?: WfTone) =>
-    isPhone ? (
-      <HeroStat
-        className={cx(styles.heroPill, PHONE_PILLS.includes(which) ? undefined : styles.deskOnly)}
-        value={value}
-        label={
-          <>
-            <span className={styles.longLabel}>{label}</span>
-            <span className={styles.shortLabel}>{short}</span>
-          </>
-        }
-        tone={tone}
-        pressed={pill === which}
-        onToggle={() => setPill((current) => (current === which ? null : which))}
-      />
-    ) : (
-      <HeroChip
-        key={which}
-        value={value}
-        label={label}
-        tone={tone}
-        pressed={pill === which}
-        onPress={() => setPill((current) => (current === which ? null : which))}
-      />
-    );
-
   const needCard = (
     <NeedsTransportCard
       needing={needing}
@@ -772,94 +763,146 @@ export function OfficerScreen() {
       onLog={openBooking}
     />
   );
-  const heroPillStats = (
+  // Page tops (Josh, 9 Nov 2026): one slate top as on Home. Three figures, the most urgent pulled bed
+  // as the act row, the desk's own actions as chips (the desk's Quick bar steps aside), and the job
+  // stages as one slim band that highlights rows.
+  const togglePill = (which: HighlightPill) => setPill((current) => (current === which ? null : which));
+  const firstNeed = needing[0];
+  const firstHeld = firstNeed ? heldClock(firstNeed, now) : undefined;
+  const providerChips: HeroChipItem[] =
+    isPhone || !showProviders
+      ? []
+      : activeProviders.map((provider) => ({
+          id: provider,
+          label: provider.replace(/ service$/, ""),
+          icon: <Ambulance {...CHIP_ICON} />,
+          count: jobs.filter((movement) => movement.transport?.provider === provider).length,
+          countTone: "quiet" as const,
+          countLabel: "jobs",
+          pressed: providerHighlight === provider,
+          onClick: () => setProviderHighlight((prev) => (prev === provider ? null : provider)),
+        }));
+  const escortCount = jobs.filter((job) => job.transport?.escortRequired).length;
+  const involuntaryCount = jobs.filter(jobIsInvoluntary).length;
+  const highlightChips = (
     <>
-      {/* Transport mock-up: the pulled beds still to book lead the counts, and jump to their list. */}
-      {needing.length > 0 && !isPhone ? (
-        <HeroChip
-          key="need"
-          value={needing.length}
-          label="Need transport"
-          tone="warning"
-          pressed={false}
-          onPress={scrollToNeedsTransport}
-        />
-      ) : null}
-      {pillStat("requested", awaitingDeparture, "To accept", "To accept", "neutral")}
-      {pillStat("accepted", crewToSend, "Crew to send", "To send", "neutral")}
-      {pillStat("en_route", crewEnRoute, "Crew en route", "En route", "info")}
-      {/* Redesign: the stage column's own word for the same state, so one state has one word. */}
-      {pillStat("collected", inCustody, "Collected", "Collected", "info")}
-      {pillStat("late", pastEta, "Past ward ETA", "Past ETA", pastEta > 0 ? "warning" : "neutral")}
-      {/* F-23 (phone review, Oct 2026): outstanding forms take the warning glyph on phone, not the
-          grey circle "0 Late" shows. A warning only: En route is never blocked. */}
-      {pillStat(
-        "forms",
-        formsOutstanding,
-        "Jobs need forms",
-        "Need forms", // Redesign: says what the count is, like To accept beside it.
-        // Redesign: amber at every width, as the rows' own form marks are.
-        formsOutstanding > 0 ? "warning" : "neutral",
-      )}
+      <FilterChip pressed={escortHighlight} onPressedChange={setEscortHighlight} count={escortCount}>
+        Escort
+      </FilterChip>
+      <FilterChip pressed={involuntaryHighlight} onPressedChange={setInvoluntaryHighlight} count={involuntaryCount}>
+        Involuntary
+      </FilterChip>
     </>
   );
-
-  // Hero tools: beside the title on the larger screen, under the figures on phone (v10).
-  // Phone (Josh, 31 Oct 2026): Copy handover and Arrivals are Home's 40px hero pills, side by side
-  // (the kit's `phoneRows.heroPills` / `phoneRows.heroPill`).
-  const heroTools = (
-    <div className={isPhone ? phoneRows.heroPills : styles.heroTools}>
-      {needing.length > 0 ? (
-        <Button
-          variant="pri"
-          size="sm"
-          icon={Plus}
-          className={isPhone ? phoneRows.heroPill : undefined}
-          onClick={() => openBooking(needing[0]!.id)}
-          data-testid="ward-officer-hero-log-booking"
-        >
-          Log booking
-        </Button>
-      ) : null}
-      {nextArrival ? (
-        <span className={styles.nextArrival} title="Next expected arrival">
-          <Icon icon={Clock} size={14} />
-          Next arrival <b>{formatInstantWithDay(nextArrival.at, now)}</b>
-          <span className={styles.nextArrivalPlace}>{destinationLabelFor(nextArrival.movement)}</span>
-        </span>
-      ) : null}
-      {/* ROLE BRANCH (officer): on a phone the hero is for today's figures; handover is an
-          end-of-shift step, so its button moves under the job list. */}
-      {officerDesk && isPhone ? null : (
-        <Button
-          variant="onHero"
-          size="sm"
-          icon={Copy}
-          className={isPhone ? phoneRows.heroPill : styles.copyButton}
-          onClick={copyHandover}
-          aria-label="Copy handover"
-          title="Copy a plain text summary of open jobs"
-        >
-          <span className={styles.longLabel}>Copy handover</span>
-        </Button>
-      )}
-      {/* Phone (v10): Arrivals jumps to the arrivals list below the jobs. */}
-      {isPhone && upcoming > 0 ? (
-        <Button
-          variant="onHero"
-          size="sm"
-          icon={Clock}
-          className={cx(styles.phArrivalsButton, phoneRows.heroPill)}
-          onClick={() =>
-            document
-              .getElementById("ward-officer-arrivals-heading")
-              ?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() })
-          }
-        >
-          Arrivals <span className={styles.phArrivalsCount}>{upcoming}</span>
-        </Button>
-      ) : null}
-    </div>
+  const heroTop = (
+    <HeroTop
+      testId="ward-officer-top"
+      figures={
+        <HeroFigures
+          items={[
+            {
+              id: "need",
+              value: needing.length,
+              label: "need transport",
+              onClick: needing.length > 0 ? scrollToNeedsTransport : undefined,
+              testId: "ward-officer-figure-need",
+            },
+            {
+              id: "forms",
+              value: formsOutstanding,
+              label: "need forms",
+              onClick: formsOutstanding > 0 ? () => togglePill("forms") : undefined,
+              testId: "ward-officer-figure-forms",
+            },
+            {
+              id: "late",
+              value: pastEta,
+              label: "past ward ETA",
+              tone: pastEta > 0 ? "warning" : undefined,
+              onClick: pastEta > 0 ? () => togglePill("late") : undefined,
+              testId: "ward-officer-figure-late",
+            },
+          ]}
+        />
+      }
+      act={
+        firstNeed && firstHeld ? (
+          <HeroAct
+            tone="warning"
+            testId="ward-officer-act"
+            // The list is most urgent tier first, so its first row is not always the longest wait.
+            title={`Most urgent · ${firstHeld.figure} ${firstHeld.label}`}
+            action={{
+              label: "Log booking",
+              phoneLabel: "Log",
+              onClick: () => openBooking(firstNeed.id),
+              testId: "ward-officer-hero-log-booking",
+            }}
+          />
+        ) : (
+          <HeroAct tone="calm" testId="ward-officer-act" title="Every pulled bed has transport logged" />
+        )
+      }
+      chips={
+        <HeroQuickChips
+          label="Transport actions"
+          items={[
+            {
+              id: "copy",
+              label: "Copy handover",
+              icon: <ClipboardList {...CHIP_ICON} />,
+              onClick: copyHandover,
+              testId: "ward-officer-copy-handover",
+            },
+            ...providerChips,
+            ...(isPhone
+              ? [
+                  {
+                    id: "escort",
+                    label: "Escort",
+                    icon: <User {...CHIP_ICON} />,
+                    count: escortCount,
+                    countTone: "quiet" as const,
+                    pressed: escortHighlight,
+                    onClick: () => setEscortHighlight((on) => !on),
+                  },
+                  {
+                    id: "involuntary",
+                    label: "Involuntary",
+                    icon: <Shield {...CHIP_ICON} />,
+                    count: involuntaryCount,
+                    countTone: "quiet" as const,
+                    pressed: involuntaryHighlight,
+                    onClick: () => setInvoluntaryHighlight((on) => !on),
+                  },
+                ]
+              : []),
+          ]}
+        />
+      }
+      band={
+        <HeroBand
+          title="Job stages"
+          variant="inline"
+          testId="ward-officer-stages"
+          cells={(
+            [
+              ["requested", "To accept", awaitingDeparture],
+              ["accepted", "Crew to send", crewToSend],
+              ["en_route", "En route", crewEnRoute],
+              ["collected", "Collected", inCustody],
+            ] as const
+          ).map(([which, label, value]) => ({
+            id: which,
+            label,
+            value,
+            pressed: pill === which,
+            onClick: () => togglePill(which),
+            ariaLabel: `${label} ${value}, highlight these jobs`,
+          }))}
+        />
+      }
+    />
   );
 
   // Drawer review (6 Nov 2026): a chosen job opens in the kit drawer over the page, so the list keeps
@@ -871,65 +914,58 @@ export function OfficerScreen() {
   const formsVary =
     jobs.length < 2 || new Set(jobs.map((movement) => (packRequired(movement) ? packCount(movement) : -1))).size > 1;
   useWardModalFocus(isPhone && panelOpen, sideRef, closeJob);
-  // Redesign: the count only. The stage chips below already split it, and "waiting" means an ED wait elsewhere.
-  const jobsLine = `${jobs.length} ${jobs.length === 1 ? "job" : "jobs"} open`;
 
   return (
     <div className={styles.screen} data-testid="ward-officer-screen" data-ward-design="v8">
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
-          className={styles.dispatchHero}
-          // P195 (audit 27 Oct 2026, Josh 27 Oct): the h1 is the screen name. Redesign: the eyebrow
-          // no longer repeats it, and the work it holds sits beside the title. ROLE BRANCH (officer):
-          // a short eyebrow names the desk, as the other role homes do, so the phone hero's first
-          // row is not the Demo chip alone.
-          eyebrow={officerDesk ? "Jobs · Transport desk" : undefined}
-          title="Transport"
-          titleMeta={jobsLine}
-          aside={isPhone ? <LiveChip state="live" onHero /> : heroTools}
-          barAside={isPhone ? heroTools : undefined}
-          bar={
-            isPhone ? (
-              <div className={styles.heroPills} role="group" aria-label="Highlight jobs">
-                {heroPillStats}
-              </div>
-            ) : (
-              <HeroChips label="Highlight jobs">{heroPillStats}</HeroChips>
-            )
+          className={cx(styles.dispatchHero, titles.hero, folderTabClasses.hero)}
+          // P195 (audit 27 Oct 2026, Josh 27 Oct): the h1 is the screen name; page tops (9 Nov 2026)
+          // name the desk and say it is the live picture.
+          title={
+            <>
+              Transport desk <span className={titles.soft}>right now</span>
+            </>
           }
-          foot={
-            showProviders ? (
-              <div className={styles.fleetPanel} role="group" aria-label="Highlight jobs by provider">
-                <span className={styles.fleetLabel}>Providers</span>
-                {activeProviders.map((provider) => {
-                  const providerJobs = jobs.filter((movement) => movement.transport?.provider === provider);
-                  const moving = providerJobs.filter((movement) => {
-                    const leg = transportLeg(movement.transport);
-                    return leg === "En route" || leg === "Collected";
-                  }).length;
-                  const isSelected = providerHighlight === provider;
-                  const jobCount = `${providerJobs.length} ${providerJobs.length === 1 ? "job" : "jobs"}`;
-                  return (
-                    <button
-                      key={provider}
-                      type="button"
-                      className={styles.fleetButton}
-                      onClick={() => setProviderHighlight((prev) => (prev === provider ? null : provider))}
-                      title={isSelected ? "Stop highlighting this provider" : `Highlight ${provider} jobs`}
-                      aria-pressed={isSelected}
-                      // Redesign: job count on screen, moving in the spoken label (CB-3: shown words lead).
-                      aria-label={`${provider.replace(/ service$/, "")} ${jobCount}, ${provider}, ${moving} moving`}
-                    >
-                      <span className={styles.fleetName}>{provider.replace(/ service$/, "")}</span>{" "}
-                      <span className={styles.fleetCounts}>{jobCount}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : undefined
+          aside={
+            <LiveChip
+              state={live.paused ? "paused" : "live"}
+              onHero
+              age={formatInstant(now)}
+              onTogglePause={live.togglePause}
+            />
           }
-        />
+        >
+          {heroTop}
+        </Hero>
+        {/* Page tops (9 Nov 2026): Jobs and History are the folder tabs under the top; on a desktop
+            the Escort and Involuntary highlights sit beside them. */}
+        <FolderTabs label="Transport views" value={jobsTab} testId="ward-officer-tabs">
+          <Tabs
+            className={folderTabClasses.switch}
+            label="Job lists"
+            idPrefix="ward-officer-jobs"
+            value={jobsTab}
+            onChange={setJobsTab}
+            items={[
+              { id: "jobs", label: "Jobs", count: jobs.length },
+              {
+                id: "history",
+                label: "History",
+                count: deliveredToday.length + officerRefusals.length + cancelledTransports.length,
+              },
+            ]}
+          />
+          {isPhone ? null : (
+            <>
+              <span className={folderTabClasses.rule} aria-hidden="true" />
+              <div className={cx(folderTabClasses.filters, styles.tabFilters)} role="group" aria-label="Highlight jobs">
+                {highlightChips}
+              </div>
+            </>
+          )}
+        </FolderTabs>
 
         {cancellations.length > 0 ? (
           // Redesign (31 Oct 2026): the page's own card and heading, at every width. The phone-only
@@ -1010,55 +1046,16 @@ export function OfficerScreen() {
           </Card>
         ) : null}
 
-        {isPhone && showProviders ? (
-          <div className={styles.phProviders} role="group" aria-label="Highlight jobs by provider">
-            {/* Zero providers are hidden (device audit, 11 Oct 2026): "0 Ambulance" took the row
-                and pushed a real one off screen. */}
-            {activeProviders.map((provider) => {
-              const isSelected = providerHighlight === provider;
-              return (
-                <button
-                  key={provider}
-                  type="button"
-                  className={styles.phProvider}
-                  onClick={() => setProviderHighlight((prev) => (prev === provider ? null : provider))}
-                  title={isSelected ? "Stop highlighting this provider" : `Highlight ${provider} jobs`}
-                  aria-pressed={isSelected}
-                >
-                  <span className={styles.phProviderCount}>
-                    {jobs.filter((movement) => movement.transport?.provider === provider).length}
-                  </span>
-                  {provider.replace(/ service$/, "")}
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
-
         <div className={styles.layout} data-open={panelOpen ? "true" : undefined}>
           <div className={styles.leftColumn}>
             {isPhone ? null : needCard}
             <Card className={styles.jobsPanel} aria-label="Jobs">
-              <div className={styles.tabsRow}>
-                <Tabs
-                  label="Job lists"
-                  idPrefix="ward-officer-jobs"
-                  value={jobsTab}
-                  onChange={setJobsTab}
-                  items={[
-                    { id: "jobs", label: "Jobs", count: jobs.length },
-                    {
-                      id: "history",
-                      label: "History",
-                      count: deliveredToday.length + officerRefusals.length + cancelledTransports.length,
-                    },
-                  ]}
-                />
-                <span className={styles.headNote}>
-                  {/* ROLE BRANCH (officer): no "Choose a patient" hint over a list that says it already. */}
-                  {panelOpen ? null : officerDesk ? null : "Choose a patient to open their job"}
-                </span>
-              </div>
+              {/* ROLE BRANCH (officer): no "Choose a patient" hint over a list that says it already. */}
+              {panelOpen || officerDesk ? null : (
+                <div className={styles.tabsRow}>
+                  <span className={styles.headNote}>Choose a patient to open their job</span>
+                </div>
+              )}
 
               <TabPanel idPrefix="ward-officer-jobs" id="jobs" hidden={jobsTab !== "jobs"}>
                 <div className={styles.toolbar} role="search" aria-label="Find transport jobs">
@@ -1077,20 +1074,6 @@ export function OfficerScreen() {
                     onClear={() => setSearchQuery("")}
                     trailing={searchQuery ? undefined : <Kbd>/</Kbd>}
                   />
-                  <FilterChip
-                    pressed={escortHighlight}
-                    onPressedChange={setEscortHighlight}
-                    count={jobs.filter((job) => job.transport?.escortRequired).length}
-                  >
-                    Escort
-                  </FilterChip>
-                  <FilterChip
-                    pressed={involuntaryHighlight}
-                    onPressedChange={setInvoluntaryHighlight}
-                    count={jobs.filter(jobIsInvoluntary).length}
-                  >
-                    Involuntary
-                  </FilterChip>
                   {anyHighlight ? (
                     <span className={styles.highlightNote}>
                       <span aria-hidden="true">{highlightedCount} highlighted</span>
@@ -1384,13 +1367,6 @@ export function OfficerScreen() {
                 </TabPanel>
               </TabPanel>
             </Card>
-
-            {/* ROLE BRANCH (officer): on a phone, Copy handover sits under the list as an end-of-shift step. */}
-            {officerDesk && isPhone ? (
-              <Button variant="sec" icon={Copy} onClick={copyHandover} title="Copy a plain text summary of open jobs">
-                Copy handover
-              </Button>
-            ) : null}
 
             {/* An empty Arrivals card ("0 still to come") is hidden (device audit, 11 Oct 2026). */}
             {renderArrivalsCard({

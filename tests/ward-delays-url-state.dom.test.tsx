@@ -16,7 +16,7 @@ function renderBoard() {
 }
 
 const pressed = (testId: string) => screen.getByTestId(testId).getAttribute("aria-pressed");
-const orderButton = (name: "By hold-up" | "Longest wait") => screen.getByRole("button", { name });
+const orderButton = (name: "By hold-up" | "Longest wait") => screen.getByRole("tab", { name });
 
 describe("the Delays board keeps its filters and order in the address", () => {
   it("writes a filter to the address, and a reload opens with it on", () => {
@@ -43,7 +43,7 @@ describe("the Delays board keeps its filters and order in the address", () => {
   it("opens a shared link's order, and writes the viewer's own choice", () => {
     window.history.replaceState(null, "", "/ward-flow/waiting?order=blocker");
     renderBoard();
-    expect(orderButton("By hold-up")).toHaveAttribute("aria-pressed", "true");
+    expect(orderButton("By hold-up")).toHaveAttribute("aria-selected", "true");
     fireEvent.click(orderButton("Longest wait"));
     expect(new URLSearchParams(window.location.search).get("order")).toBe("longest");
   });
@@ -55,7 +55,7 @@ describe("the Delays board keeps its filters and order in the address", () => {
     expect(window.location.search).toBe("");
     fireEvent.click(screen.getByTestId("delays-owner-wards"));
     expect(new URLSearchParams(window.location.search).get("order")).toBe("blocker");
-    expect(orderButton("By hold-up")).toHaveAttribute("aria-pressed", "true");
+    expect(orderButton("By hold-up")).toHaveAttribute("aria-selected", "true");
   });
 
   it("clearing the last filter from a link leaves the address bare", () => {

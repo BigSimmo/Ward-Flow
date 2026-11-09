@@ -157,14 +157,14 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
   {
     id: "wa-ed-prolonged-surge",
     name: "Long ED waits",
-    title: "Demo: ED waits over 24 hours",
+    title: "Demo: ED waits past 24 hours",
     severity: "critical",
     category: "ed_surge",
     targetScope: "metro_adult",
     targetScopeLabel: "Metropolitan Adult Units Only",
     defaultDurationMinutes: 240,
     defaultMessage:
-      "Demo alert. Not a live broadcast. Several ED waits at Fiona Stanley, Sir Charles Gairdner and Royal Perth are over 24 hours in this scenario. Place accepted referrals.",
+      "Demo alert. Not a live broadcast. Several ED waits at Fiona Stanley, Sir Charles Gairdner and Royal Perth are past 24 hours in this scenario. Place accepted referrals.",
   },
   {
     id: "wa-ed-bypass-advisory",

@@ -1,6 +1,6 @@
 "use client";
 import { useId } from "react";
-import { ChartColumn, OctagonAlert } from "lucide-react";
+import { ChartColumn } from "lucide-react";
 import { Button, Card } from "@/components/wf";
 import styles from "./discharge-flow-charts.module.css";
 
@@ -24,8 +24,6 @@ export type DischargeDay = {
   blocked: number;
   weekend: boolean;
 };
-
-export type DischargeBarrier = { id: string; label: string; count: number };
 
 const GRID_LINES = 4;
 
@@ -176,79 +174,6 @@ export function DischargeDayChart({
         {selected !== null ? (
           <Button size="sm" variant="ghost" onClick={onClear}>
             Clear day
-          </Button>
-        ) : null}
-      </footer>
-    </Card>
-  );
-}
-
-export function DischargeBarrierBars({
-  barriers,
-  selected,
-  onSelect,
-  onClear,
-  counts,
-}: {
-  barriers: DischargeBarrier[];
-  selected: string | null;
-  onSelect: (id: string) => void;
-  onClear: () => void;
-  /** What the bars count: bed releases on Now, people (admission records) on History. */
-  counts: "releases" | "people";
-}) {
-  const headingId = useId();
-  const shown = barriers.filter((barrier) => barrier.count > 0);
-  const total = shown.reduce((sum, barrier) => sum + barrier.count, 0);
-  const max = Math.max(1, ...shown.map((barrier) => barrier.count));
-  return (
-    <Card className={styles.card} aria-labelledby={headingId} data-testid="ward-discharge-barrier-bars">
-      <header className={styles.head}>
-        <h2 id={headingId} className={styles.title}>
-          <OctagonAlert size={16} aria-hidden="true" />
-          Held up by reason
-        </h2>
-        {/* Redesign (Josh, 30 Oct): the same held-up releases the hero chip counts, so one figure. */}
-        <span className={styles.count}>
-          {total} {counts === "releases" ? (total === 1 ? "release" : "releases") : total === 1 ? "person" : "people"}
-        </span>
-      </header>
-      {shown.length === 0 ? (
-        <p className={styles.empty}>No release is held up.</p>
-      ) : (
-        <ul className={styles.bars}>
-          {shown.map((barrier) => {
-            const pressed = selected === barrier.id;
-            return (
-              <li key={barrier.id}>
-                <button
-                  type="button"
-                  className={styles.barRow}
-                  aria-pressed={pressed}
-                  aria-label={`${barrier.label}: ${barrier.count} held up`}
-                  onClick={() => (pressed ? onClear() : onSelect(barrier.id))}
-                >
-                  <span className={styles.barLabel}>{barrier.label}</span>{" "}
-                  <span className={styles.track} aria-hidden="true">
-                    <span
-                      className={styles.fill}
-                      style={{ width: `${Math.max(4, Math.round((barrier.count / max) * 100))}%` }}
-                    />
-                  </span>{" "}
-                  <b className={styles.barValue} aria-hidden="true">
-                    {barrier.count}
-                  </b>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      <footer className={styles.foot}>
-        <span>Click a reason to highlight its people.</span>
-        {selected !== null ? (
-          <Button size="sm" variant="ghost" onClick={onClear}>
-            Clear
           </Button>
         ) : null}
       </footer>

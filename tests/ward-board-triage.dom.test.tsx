@@ -79,7 +79,11 @@ describe("ward board triage bar — the home page's six figures, in the home pag
     expect(Object.keys(CAPACITY_FIGURE_LABELS)).toHaveLength(6);
 
     for (const key of FIGURE_KEYS) {
-      const figure = key === "availableNow" ? figureFor(key) : within(bar).getByTestId(`ward-board-figure-${key}`);
+      // Page tops (9 Nov 2026): on a wider screen Expected today is a hero figure, not a band cell.
+      const figure =
+        key === "availableNow" || key === "expectedToday"
+          ? figureFor(key)
+          : within(bar).getByTestId(`ward-board-figure-${key}`);
       // The exact string the morning page renders. A board that typed "Available Now" or "Blocked"
       // would satisfy any check written against its own markup and fail this one.
       const text = figure.textContent ?? "";

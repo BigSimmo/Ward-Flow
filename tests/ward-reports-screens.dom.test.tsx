@@ -668,7 +668,8 @@ describe("read-only report screens", () => {
     const readySum = subtotals.reduce((sum, row) => sum + Number(within(row).getAllByRole("cell")[1].textContent), 0);
     expect(readySum).toBe(pack.totals.ready);
     expect(screen.getByTestId("ward-downtime-total-ready").textContent).toBe(String(pack.totals.ready));
-    expect(screen.getByTestId("ward-downtime-frozen").textContent).toMatch(/^Frozen \d\d:\d\d$/u);
+    // Page-top redesign (Josh, 9 Nov 2026): the frozen time is the page title.
+    expect(screen.getByTestId("ward-downtime-frozen").textContent).toMatch(/^Frozen at \d\d:\d\d$/u);
   });
 
   it("shows a delta twin on each hero figure after a new snapshot", () => {

@@ -110,6 +110,7 @@ describe("bed meeting TV offline wording (DA-07)", () => {
     act(() => {
       window.dispatchEvent(new Event("online"));
     });
-    expect(asAt).toHaveTextContent("updates on its own");
+    // Page tops (9 Nov 2026): once live again the as-at time moves back into the Live pill.
+    expect(screen.getByTestId("bed-meeting-tv-as-at")).toHaveTextContent("updates on its own");
   });
 });

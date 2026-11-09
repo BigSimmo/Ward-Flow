@@ -31,7 +31,8 @@
 .bed[data-kind="occupied"],
 .bed[data-kind="leave"],
 .swatch[data-kind="occupied"] {
-  background: var(--wf-data-1);
+  /* Page-top redesign (9 Nov 2026): a mid navy in the dark theme, not the glaring pale blue. */
+  background: light-dark(var(--wf-data-1), color-mix(in srgb, var(--wf-data-1) 40%, var(--wf-surface)));
 }
 
 /* Pulled for a person on the way: the used colour in stripes, so it reads as held and not yet in,

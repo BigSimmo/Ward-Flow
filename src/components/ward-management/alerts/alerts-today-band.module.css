@@ -31,6 +31,7 @@
 .track {
   position: relative;
   height: 58px;
+  margin-top: var(--wf-s-1);
   border-bottom: 1px solid var(--wf-on-hero-line);
 }
 .hour {
@@ -110,56 +111,6 @@
   color: var(--wf-hero-ink);
   font-weight: 700;
 }
-.glance {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0;
-  margin-top: var(--wf-s-1);
-  padding-top: var(--wf-s-2);
-  border-top: 1px solid var(--wf-on-hero-line);
-  color: var(--wf-hero-ink-2);
-  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-.glance > * {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 var(--wf-s-3);
-  min-height: 28px;
-  border-left: 1px solid var(--wf-on-hero-line);
-}
-.glance > *:first-child {
-  padding-left: 0;
-  border-left: 0;
-}
-.glance b {
-  color: var(--wf-hero-ink);
-  font-family: var(--wf-mono);
-  font-weight: 700;
-}
-.glance button {
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: none;
-  border: 0;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-  border-radius: var(--wf-r-sm);
-}
-.glance button:hover {
-  color: var(--wf-hero-ink);
-}
-.glance .glanceLabel {
-  color: var(--wf-hero-ink-3);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: 600;
-}
-
 .headNote {
   text-transform: none;
   letter-spacing: 0;
@@ -170,63 +121,4 @@
 }
 .mark[data-tone="info"] {
   color: var(--wf-hero-ink);
-}
-.livePulse {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--wf-success);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-success) 25%, transparent);
-}
-
-/* The Checking chip reads as plain glance text here. The band clips anything drawn over the page, so
-   its wrappers step aside and the list opens as its own row under the line. */
-.glanceChecking,
-.glanceChecking > div,
-.glanceChecking > div > div {
-  display: contents;
-}
-.glanceChecking button {
-  min-height: 28px;
-  padding: 0 var(--wf-s-3) 0 0;
-  border: 0;
-  border-radius: var(--wf-r-sm);
-}
-.glanceChecking button ~ * {
-  order: 1;
-  flex-basis: 100%;
-  margin-block: var(--wf-s-2) var(--wf-s-1);
-  padding: var(--wf-s-3);
-  border: 1px solid var(--wf-on-hero-line);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-hero-2);
-}
-
-/* Alerts overhaul (4 Nov 2026): folded by default to the one glance line. */
-.band:not([data-open]) .glance {
-  margin-top: 0;
-  padding-top: var(--wf-s-1);
-}
-.glance .toggle {
-  position: relative;
-  min-height: 28px;
-  color: var(--wf-hero-ink);
-  font-weight: 600;
-}
-.glance .toggle::after {
-  content: "";
-  position: absolute;
-  inset: -6px -4px;
-}
-.toggleIcon {
-  transition: transform 0.16s ease;
-  transform: rotate(-90deg);
-}
-.band[data-open] .toggleIcon {
-  transform: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .toggleIcon {
-    transition: none;
-  }
 }

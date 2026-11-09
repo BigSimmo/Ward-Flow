@@ -202,3 +202,18 @@
     display: none;
   }
 }
+/* Page tops (9 Nov 2026): the sentences and the As at stamp as one quiet line under the band. */
+p.heroNote {
+  margin: 0;
+}
+/* The two route links sit in the folder row as tabs. */
+.boardTabs {
+  display: flex;
+  align-items: center;
+}
+.boardTabs > a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}

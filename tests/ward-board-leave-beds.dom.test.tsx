@@ -72,8 +72,9 @@ function leaveBedsInProviderFor(unitId: string): number {
 
 function renderedOnLeaveFigure(): number {
   const figure = screen.getByTestId("ward-board-figure-onLeave");
-  // Redesign (31 Oct 2026): the figure is a phrase in the "Also on this ward" line, its count in bold.
-  const value = figure.querySelector("b")?.textContent ?? "";
+  // Page tops (9 Nov 2026): the figure is a cell of the hero's "Also on this ward" band, a word and its
+  // count; the words carry no digit, so the count is the cell's one number.
+  const value = figure.textContent?.match(/\d+/u)?.[0] ?? "";
   return Number.parseInt(value, 10);
 }
 

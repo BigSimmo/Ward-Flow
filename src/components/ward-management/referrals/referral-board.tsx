@@ -20,7 +20,6 @@ import { presentationDecidedAt, outcomeLabel } from "./referral-board-model";
 import { acceptedReferralsAwaitingPull, acceptedWardOf, type AcceptedAwaitingPull } from "./accepted-ward-referral";
 import { ChevronLeft, ChevronRight, FileText, ListOrdered, TriangleAlert, UserRound } from "lucide-react";
 
-import { type Instant } from "@/components/ward-management/ward-clock";
 import { overlayOpener } from "@/components/wf/sheet-focus";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { type Movement, type Referral } from "@/components/ward-management/ward-model";
@@ -30,7 +29,7 @@ import { ReadmissionFlag, useReadmissionFlagVisible } from "@/components/ward-ma
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { siteByCode } from "@/components/ward-management/ward-sites";
-import { acceptedAddressing, declinedAddressings, referralClocks } from "@/components/ward-management/ward-referrals";
+import { acceptedAddressing, referralClocks } from "@/components/ward-management/ward-referrals";
 import { OVERDUE_AFTER_MINUTES_BY_TIER } from "@/components/ward-management/ward-operational-defaults";
 import {
   Button,
@@ -71,6 +70,7 @@ import {
   openArms,
   readyUnitCount,
   referralTimeline,
+  waitWords,
   wardArm,
 } from "./referral-board-parts";
 import styles from "./referrals.module.css";
@@ -87,6 +87,8 @@ import panel from "./referral-panel.module.css";
 import { PatientTab, TimelineTab } from "./referral-panel-tabs";
 import { CommunityTeamLink, useCommunityDesk } from "./referral-community-desk";
 import { HighlightPills, decisionStats, deskHeroWords } from "./referral-board-hero";
+import { ReferralCoordinatorTop } from "./referral-board-top";
+import { HIGHLIGHT_KEYS, HIGHLIGHT_LABELS, highlightTest, type HighlightKey } from "./referral-highlights";
 
 // The bed meeting, ISBAR and shortcut sheets open only on request, so they load after first render.
 const IsbarSheet = dynamic(() => import("./referral-summary-sheet").then((m) => m.ReferralSummarySheet), {
@@ -167,8 +169,6 @@ function otherOverlayOpen(): boolean {
   );
 }
 
-type HighlightKey = "overdue" | "tier1" | "ward" | "ed" | "both" | "community" | "refused";
-const HIGHLIGHT_KEYS: readonly HighlightKey[] = ["overdue", "tier1", "ward", "ed", "both", "community", "refused"];
 type InspectorTab = "place" | "patient" | "timeline";
 type BoardSheet = "summary" | "keys" | null;
 
@@ -182,50 +182,6 @@ const REFERRAL_ACCEPT_CONTROL =
   '[data-testid="ward-referral-match-phone-accept"], [data-testid="ward-referral-match-accept-emergency_department"]';
 const REFERRAL_DECLINE_CONTROL =
   '[data-testid="ward-referral-match-decline-open"], [data-testid="ward-referral-match-decline-reason-emergency_department"], [data-testid="ward-referral-match-decline-reason-community_team"]';
-
-/**
- * The hero's highlight chips. Refused once sits in the queue toolbar. P154 (Josh, 27 October 2026,
- * option A): phone and desktop read the same type chips, Ward bed · ED · More than one · Community.
- */
-const HIGHLIGHT_LABELS: readonly (readonly [Exclude<HighlightKey, "refused">, string])[] = [
-  ["overdue", "Decision overdue"],
-  ["tier1", "Tier 1"],
-  ["ward", "Ward bed"],
-  ["ed", "ED"],
-  ["both", "More than one"],
-  ["community", "Community"],
-];
-
-/**
- * Audit round 2 (A2-13): the type chips count each referral once. A referral that asks for more
- * than one kind of place sits under More than one, not under each kind, so the chips sum to the
- * hero's "awaiting decision" count. P154: desktop pills use the same rule as the phone chips.
- */
-function askedKinds(referral: Referral): Set<string> {
-  return new Set(openArms(referral).map((arm) => arm.destination.kind));
-}
-
-function typeTest(key: "ward" | "ed" | "both" | "community", referral: Referral): boolean {
-  const kinds = askedKinds(referral);
-  if (key === "both") return kinds.size > 1;
-  if (kinds.size !== 1) return false;
-  const kind = key === "ward" ? "psychiatric_ward" : key === "ed" ? "emergency_department" : "community_team";
-  return kinds.has(kind);
-}
-
-function highlightTest(key: HighlightKey, referral: Referral, now: Instant): boolean {
-  if (key === "ward" || key === "ed" || key === "both" || key === "community") {
-    return typeTest(key, referral);
-  }
-  switch (key) {
-    case "overdue":
-      return isOverdue(referral, now);
-    case "tier1":
-      return referral.urgency === 1;
-    case "refused":
-      return declinedAddressings(referral).length > 0;
-  }
-}
 
 function isTyping(target: EventTarget | null): boolean {
   const element = target as HTMLElement | null;
@@ -521,12 +477,17 @@ export function ReferralBoard({
     handleSelect(queued[next]!.id);
   }
 
-  function selectNextOverdue() {
-    if (overdueQueued.length === 0) return;
+  // The referral Next overdue opens: the next overdue after the chosen one, else the first.
+  const nextOverdueReferral = (() => {
+    if (overdueQueued.length === 0) return undefined;
     const index = queued.findIndex((referral) => referral.id === selectedReferralId);
-    const after = queued.slice(index + 1).find((referral) => isOverdue(referral, now));
+    return queued.slice(index + 1).find((referral) => isOverdue(referral, now)) ?? overdueQueued[0]!;
+  })();
+
+  function selectNextOverdue() {
+    if (nextOverdueReferral === undefined) return;
     setView("queue");
-    handleSelect((after ?? overdueQueued[0]!).id);
+    handleSelect(nextOverdueReferral.id);
   }
 
   // H-0369: the drawer's body returns to its top only when another referral is chosen; opening or
@@ -579,12 +540,12 @@ export function ReferralBoard({
     } else if (key === "m" && !edDesk) {
       // Josh, 31 Oct 2026 (answer 35): the ED desk has no bed meeting list, so M does nothing there.
       e.preventDefault();
-      // MU1 (Josh, 5 Nov 2026): the desktop hero keeps the agenda under "...", so M goes straight
-      // there; the phone hero still has the link itself.
+      // Page tops (Josh, 9 Nov 2026): the agenda is the slate's Bed meeting chip on every layout, so
+      // M goes straight to it through the router, as the chip's link does.
       const meeting = document.querySelector('[data-testid="ward-referral-meeting"]');
-      if (meeting instanceof HTMLAnchorElement) meeting.click();
-      else if (meeting) {
+      if (meeting) {
         if (router) router.push(BED_MEETING_REFERRALS_HREF);
+        else if (meeting instanceof HTMLAnchorElement) meeting.click();
         else window.location.assign(BED_MEETING_REFERRALS_HREF);
       }
     } else if (e.key === "?") {
@@ -714,11 +675,11 @@ export function ReferralBoard({
   const siteName = siteScope ? (siteByCode(siteScope.siteCode)?.name ?? siteScope.siteCode) : undefined;
   const siteEmpty = siteManager && queued.length === 0;
 
-  const viewSwitch = (
+  const viewSwitchWith = (className: string) => (
     <Tabs
       label="Referral views"
       idPrefix="ward-referral-view"
-      className={a.viewTabs}
+      className={className}
       value={view}
       onChange={setView}
       items={[
@@ -726,6 +687,65 @@ export function ReferralBoard({
         { id: "history", label: "History", count: decidedTotal },
       ]}
     />
+  );
+  const viewSwitch = viewSwitchWith(a.viewTabs);
+  const toolbarNote = (
+    <span className={a.toolbarNote}>
+      {anyHighlight && view === "queue" ? (
+        <>
+          {anyHighlight ? (
+            <span data-testid="ward-referral-highlight-note">
+              <b>
+                {highlightedCount} of {queued.length}
+              </b>{" "}
+              {phoneFiltered ? "shown" : "highlighted · all rows stay"}
+            </span>
+          ) : null}
+          <Button variant="ghost" size="sm" onClick={clearHighlights}>
+            Clear
+          </Button>
+        </>
+      ) : view === "queue" && !siteEmpty && !emptyWardQueue ? (
+        // Redesign (Josh, 30 Oct 2026): History is newest decision first, so the queue's
+        // order note shows on the queue only. ROLE BRANCH (ward): none on an empty ward queue.
+        <span
+          className={a.orderNote}
+          data-testid="ward-referral-board-order-note"
+          title="Longest wait first, tier breaks ties"
+        >
+          <ListOrdered size={14} aria-hidden="true" />
+          <b>Longest wait first</b>
+          <span className={a.orderTie}> · tier breaks ties</span>
+        </span>
+      ) : null}
+    </span>
+  );
+  // Page tops (Josh, 9 Nov 2026): the coordinator's top is the shared page top (`referral-board-top`);
+  // the ward, ED, community and site desks keep their own tops below.
+  const coordinatorTop = !community && !wardDesk && !edDesk && !siteManager;
+  const phoneSheetNode = (
+    <Sheet
+      open={phoneSheet !== null}
+      onClose={() => setPhoneSheet(null)}
+      title={phoneSheet === "beds" ? BEDS_READY_SCOPED_TITLE : "Waiting time against due times"}
+      description={DUE_TIMES_NOTE}
+    >
+      <div className={p.sheetHero}>
+        {phoneSheet === "axis" ? (
+          <WaitRunway
+            compact
+            {...runwayProps}
+            onSelect={(id) => {
+              setPhoneSheet(null);
+              setView("queue");
+              handleSelect(id);
+            }}
+          />
+        ) : null}
+        {/* ROLE BRANCH (ward): no statewide beds panel on a ward desk. */}
+        {siteManager || wardDesk ? null : <BedsReady summary={bedsSummary} compact />}
+      </div>
+    </Sheet>
   );
 
   return (
@@ -741,7 +761,66 @@ export function ReferralBoard({
         {linkedReferralUnavailable && chosenReferralId === undefined ? (
           <p role="status">The requested referral is unavailable. Choose a referral from the queue to continue.</p>
         ) : null}
-        {phoneLayout ? (
+        {coordinatorTop ? (
+          <ReferralCoordinatorTop
+            testId={phoneLayout ? undefined : "ward-referral-kpis"}
+            isPhone={phoneLayout}
+            className={a.heroA}
+            {...(({ title, titleMeta }) => ({ title, titleMeta }))(
+              deskHeroWords({
+                queuedCount: queued.length,
+                oldest: oldestClocks ? durMinutes(oldestClocks.sinceReferral) : undefined,
+                medianDecision,
+                decidedCount: decisionMinutes.length,
+              }),
+            )}
+            overdueCount={overdueQueued.length}
+            overdueHighlighted={highlight === "overdue"}
+            onOverdueFigure={() => setHighlight((current) => (current === "overdue" ? null : "overdue"))}
+            nextOverdue={
+              nextOverdueReferral
+                ? {
+                    by: waitWords(nextOverdueReferral, now).due.replace(/ overdue$/u, ""),
+                    name: nameOf(nextOverdueReferral),
+                  }
+                : undefined
+            }
+            onNextOverdue={selectNextOverdue}
+            beds={bedsSummary}
+            onBeds={() => setPhoneSheet("beds")}
+            chips={(["ward", "ed", "both", "community", "refused"] as const)
+              .map((key) => ({
+                key,
+                label: key === "refused" ? "Refused once" : HIGHLIGHT_LABELS.find(([k]) => k === key)![1],
+                count: queued.filter((r) => highlightTest(key, r, now)).length,
+              }))
+              // Review fix 3: an empty highlight hides unless it is the one pressed.
+              .filter((chip) => chip.count > 0 || highlight === chip.key)}
+            highlight={highlight}
+            onHighlight={(key) => {
+              const chosen = HIGHLIGHT_KEYS.find((k) => k === key);
+              if (chosen) setHighlight((current) => (current === chosen ? null : chosen));
+            }}
+            runway={
+              queued.length > 0 ? (
+                <WaitRunway
+                  {...runwayProps}
+                  onSelect={(id) => {
+                    setView("queue");
+                    handleSelect(id);
+                  }}
+                />
+              ) : null
+            }
+            axisOpen={phoneSheet === "axis"}
+            onAxis={() => setPhoneSheet("axis")}
+            viewSwitch={viewSwitchWith}
+            view={view}
+            tabsAside={toolbarNote}
+          >
+            {phoneLayout ? phoneSheetNode : null}
+          </ReferralCoordinatorTop>
+        ) : phoneLayout ? (
           <ReferralPhoneTop>
             <ReferralPhoneHero
               // ROLE BRANCH (bed_manager): the site code fits the phone eyebrow, read only is said here,
@@ -799,28 +878,7 @@ export function ReferralBoard({
                 onOpen={() => setPhoneSheet("axis")}
               />
             ) : null}
-            <Sheet
-              open={phoneSheet !== null}
-              onClose={() => setPhoneSheet(null)}
-              title={phoneSheet === "beds" ? BEDS_READY_SCOPED_TITLE : "Waiting time against due times"}
-              description={DUE_TIMES_NOTE}
-            >
-              <div className={p.sheetHero}>
-                {phoneSheet === "axis" ? (
-                  <WaitRunway
-                    compact
-                    {...runwayProps}
-                    onSelect={(id) => {
-                      setPhoneSheet(null);
-                      setView("queue");
-                      handleSelect(id);
-                    }}
-                  />
-                ) : null}
-                {/* ROLE BRANCH (ward): no statewide beds panel on a ward desk. */}
-                {siteManager || wardDesk ? null : <BedsReady summary={bedsSummary} compact />}
-              </div>
-            </Sheet>
+            {phoneSheetNode}
           </ReferralPhoneTop>
         ) : (
           <div className={styles.v6HeroWrap} data-testid="ward-referral-kpis">
@@ -915,41 +973,18 @@ export function ReferralBoard({
             <Card className={cx(styles.v6QueueCard, a.queueCard, redesign.wrapRows)}>
               {/* Phone (Josh, 12 Oct 2026): Queue and History pin under the phone header, as Home's
                   queue switch does. The row sits in the queue card beside the list it pins over. */}
-              {phoneLayout ? <div className={cx(a.phoneViewRow, wardPin.pinnedSwitch)}>{viewSwitch}</div> : null}
-              <div className={cx(a.toolbar, redesign.toolbarDesk)}>
-                {phoneLayout ? null : viewSwitch}
-                {/* Redesign (Josh, 30 Oct 2026): no Filter queue box. Seven rows need no search, and the
-                    highlights and the app search cover finding one person. */}
-                <span className={a.toolbarNote}>
-                  {anyHighlight && view === "queue" ? (
-                    <>
-                      {anyHighlight ? (
-                        <span data-testid="ward-referral-highlight-note">
-                          <b>
-                            {highlightedCount} of {queued.length}
-                          </b>{" "}
-                          {phoneFiltered ? "shown" : "highlighted · all rows stay"}
-                        </span>
-                      ) : null}
-                      <Button variant="ghost" size="sm" onClick={clearHighlights}>
-                        Clear
-                      </Button>
-                    </>
-                  ) : view === "queue" && !siteEmpty && !emptyWardQueue ? (
-                    // Redesign (Josh, 30 Oct 2026): History is newest decision first, so the queue's
-                    // order note shows on the queue only. ROLE BRANCH (ward): none on an empty ward queue.
-                    <span
-                      className={a.orderNote}
-                      data-testid="ward-referral-board-order-note"
-                      title="Longest wait first, tier breaks ties"
-                    >
-                      <ListOrdered size={14} aria-hidden="true" />
-                      <b>Longest wait first</b>
-                      <span className={a.orderTie}> · tier breaks ties</span>
-                    </span>
-                  ) : null}
-                </span>
-              </div>
+              {phoneLayout && !coordinatorTop ? (
+                <div className={cx(a.phoneViewRow, wardPin.pinnedSwitch)}>{viewSwitch}</div>
+              ) : null}
+              {/* Page tops (9 Nov 2026): the coordinator's tabs and notes sit under the hero. */}
+              {coordinatorTop ? null : (
+                <div className={cx(a.toolbar, redesign.toolbarDesk)}>
+                  {phoneLayout ? null : viewSwitch}
+                  {/* Redesign (Josh, 30 Oct 2026): no Filter queue box. Seven rows need no search, and the
+                      highlights and the app search cover finding one person. */}
+                  {toolbarNote}
+                </div>
+              )}
               <TabPanel idPrefix="ward-referral-view" id="queue" hidden={view !== "queue"}>
                 {presentationLists.unavailable.length > 0 ? (
                   <div role="status">

@@ -26,6 +26,9 @@ import {
   Drawer,
   FactGrid,
   Hero,
+  HeroPill,
+  HeroTop,
+  SrOnly,
   PhoneHero,
   PhoneListRow,
   PhoneSheet,
@@ -62,6 +65,7 @@ import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard
 import { csvCell } from "@/components/ward-management/statistics/statistics-csv";
 
 import start from "./patient-chronology-start.module.css";
+import topTitle from "../shell/page-top-title.module.css";
 import { PatientChronologySearch } from "./patient-chronology-search";
 
 const NOT_RECORDED = "Not recorded";
@@ -325,7 +329,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
     </span>
   );
 
-  const patientSearch = (size: "hero" | "phone") => (
+  const patientSearch = (size: "hero" | "phone" | "top") => (
     <PatientChronologySearch
       people={people}
       chosenId={patientId}
@@ -334,6 +338,49 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
       size={size}
       label={chronology ? "Find another patient" : "Find a patient"}
     />
+  );
+
+  // Page-top redesign (Josh, 9 Nov 2026): with nobody chosen, the top is the lookup itself: "Find a
+  // patient", the generated time as a plain pill, and the patient search straight under the title.
+  const startTop = (
+    <Hero
+      level={1}
+      className={topTitle.hero}
+      eyebrow={<SrOnly>Reports · PIR chronology</SrOnly>}
+      title={
+        <>
+          Find a patient
+          {isPhone ? null : (
+            <>
+              {" "}
+              <span className={topTitle.soft}>to open their chronology</span>
+            </>
+          )}
+        </>
+      }
+      aside={
+        <span data-page-top-pill="">
+          <HeroPill
+            text={
+              <span data-testid="ward-chronology-generated">
+                Generated {formatInstant(now)}
+                <SrOnly>
+                  {" "}
+                  · {formatSheetMoment(now, dayZero, { includeYearAndZone: true })} · Synthetic demo data, not a
+                  clinical record
+                </SrOnly>
+                <span className={styles.printOnlyInline} data-testid="ward-chronology-print-filter">
+                  {" "}
+                  · Filter: {filterScope}
+                </span>
+              </span>
+            }
+          />
+        </span>
+      }
+    >
+      <HeroTop>{patientSearch("top")}</HeroTop>
+    </Hero>
   );
 
   // The start page, used with nobody chosen. No recently-opened store exists, so the list is
@@ -468,54 +515,57 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
         data-ward-design="v10"
       >
         <main id="main-content" className={styles.main}>
-          <PhoneHero
-            level={1}
-            eyebrow={
-              <span data-testid="ward-chronology-generated">
-                {/* Round 2: the app bar and title name the page, so the eyebrow is only the time. */}
-                Generated {formatInstant(now)}
-                <span className={phone.srOnly}>
-                  {" "}
-                  · PIR chronology, {formatSheetMoment(now, dayZero, { includeYearAndZone: true })} · Synthetic demo
-                  data
+          {chronology ? null : startTop}
+          {chronology ? (
+            <PhoneHero
+              level={1}
+              eyebrow={
+                <span data-testid="ward-chronology-generated">
+                  {/* Round 2: the app bar and title name the page, so the eyebrow is only the time. */}
+                  Generated {formatInstant(now)}
+                  <span className={phone.srOnly}>
+                    {" "}
+                    · PIR chronology, {formatSheetMoment(now, dayZero, { includeYearAndZone: true })} · Synthetic demo
+                    data
+                  </span>
+                  <span className={styles.printOnlyInline} data-testid="ward-chronology-print-filter">
+                    {" "}
+                    · Filter: {filterScope}
+                  </span>
                 </span>
-                <span className={styles.printOnlyInline} data-testid="ward-chronology-print-filter">
-                  {" "}
-                  · Filter: {filterScope}
-                </span>
-              </span>
-            }
-            title={
-              // Phone review F-33: one picker. With nobody chosen the title only says so, and the
-              // body's button is the way in; once chosen the name in the title changes patient.
-              chronology ? (
-                <button
-                  type="button"
-                  className={phone.who}
-                  aria-haspopup="dialog"
-                  aria-label={name ? `${name}, change patient` : "Change patient"}
-                  onClick={() => setPickerOpen(true)}
-                  data-testid="ward-chronology-phone-who"
-                >
-                  <span className={phone.whoName}>{name ?? "Change patient"}</span>
-                  <ChevronDown size={18} aria-hidden="true" />
-                </button>
-              ) : (
-                "Patient chronology"
-              )
-            }
-            sub={
-              chronology ? (
-                <>
-                  {umrnMissing ? <span>{umrn}</span> : <b className={phone.mono}>{umrn}</b>} · synthetic demo data, not
-                  a clinical record
-                </>
-              ) : (
-                "Synthetic demo data"
-              )
-            }
-            // Ops-19 (13 Oct 2026): the counts sit once, in the source tabs below.
-          />
+              }
+              title={
+                // Phone review F-33: one picker. With nobody chosen the title only says so, and the
+                // body's button is the way in; once chosen the name in the title changes patient.
+                chronology ? (
+                  <button
+                    type="button"
+                    className={phone.who}
+                    aria-haspopup="dialog"
+                    aria-label={name ? `${name}, change patient` : "Change patient"}
+                    onClick={() => setPickerOpen(true)}
+                    data-testid="ward-chronology-phone-who"
+                  >
+                    <span className={phone.whoName}>{name ?? "Change patient"}</span>
+                    <ChevronDown size={18} aria-hidden="true" />
+                  </button>
+                ) : (
+                  "Patient chronology"
+                )
+              }
+              sub={
+                chronology ? (
+                  <>
+                    {umrnMissing ? <span>{umrn}</span> : <b className={phone.mono}>{umrn}</b>} · synthetic demo data,
+                    not a clinical record
+                  </>
+                ) : (
+                  "Synthetic demo data"
+                )
+              }
+              // Ops-19 (13 Oct 2026): the counts sit once, in the source tabs below.
+            />
+          ) : null}
           {chronology ? (
             <>
               <div className={phone.seg}>
@@ -616,10 +666,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
               </div>
             </>
           ) : (
-            <div className={start.phoneStart}>
-              {patientSearch("phone")}
-              {startPage}
-            </div>
+            <div className={start.phoneStart}>{startPage}</div>
           )}
           <PhoneSheet
             open={pickerOpen}
@@ -779,35 +826,38 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   return (
     <div className={cx(styles.page, phone.outputPage)} data-testid="ward-patient-chronology" data-ward-design="v10">
       <main id="main-content" className={styles.main}>
-        <Hero
-          level={1}
-          eyebrow="Reports · PIR chronology"
-          title={name ?? "Patient chronology"}
-          titleMeta={
-            chronology ? <span className={umrnMissing ? styles.umrnMissing : styles.umrn}>{umrn}</span> : undefined
-          }
-          aside={
-            chronology ? (
-              <span className={styles.heroActions} data-print-hide>
-                <Button
-                  variant="onHero"
-                  icon={Printer}
-                  onClick={() => window.print()}
-                  data-testid="ward-chronology-print"
-                >
-                  Print
-                </Button>
-                <Button variant="light" icon={Download} onClick={downloadCsv} data-testid="ward-chronology-csv">
-                  Download CSV
-                </Button>
-              </span>
-            ) : undefined
-          }
-          // The counts live once, in the Summary rail beside the table (device audit 11 Oct 2026).
-          // The patient search is the header's main control; the generated line sits beside it.
-          bar={<div className={start.heroSearch}>{patientSearch("hero")}</div>}
-          barAside={<span className={cx(styles.heroLine, start.heroGenerated)}>{generated}</span>}
-        />
+        {chronology ? null : startTop}
+        {chronology ? (
+          <Hero
+            level={1}
+            eyebrow="Reports · PIR chronology"
+            title={name ?? "Patient chronology"}
+            titleMeta={
+              chronology ? <span className={umrnMissing ? styles.umrnMissing : styles.umrn}>{umrn}</span> : undefined
+            }
+            aside={
+              chronology ? (
+                <span className={styles.heroActions} data-print-hide>
+                  <Button
+                    variant="onHero"
+                    icon={Printer}
+                    onClick={() => window.print()}
+                    data-testid="ward-chronology-print"
+                  >
+                    Print
+                  </Button>
+                  <Button variant="light" icon={Download} onClick={downloadCsv} data-testid="ward-chronology-csv">
+                    Download CSV
+                  </Button>
+                </span>
+              ) : undefined
+            }
+            // The counts live once, in the Summary rail beside the table (device audit 11 Oct 2026).
+            // The patient search is the header's main control; the generated line sits beside it.
+            bar={<div className={start.heroSearch}>{patientSearch("hero")}</div>}
+            barAside={<span className={cx(styles.heroLine, start.heroGenerated)}>{generated}</span>}
+          />
+        ) : null}
 
         {chronology ? (
           <div className={styles.filterBar} data-print-hide>
@@ -1053,7 +1103,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
           startPage
         )}
 
-        <p className={styles.disclosure}>Times as recorded or typed, nothing calculated.</p>
+        {/* With nobody chosen the start page's own card says how times are kept. */}
+        {chronology ? <p className={styles.disclosure}>Times as recorded or typed, nothing calculated.</p> : null}
         <WardPrototypeFooter testId="ward-chronology-footer" note="Synthetic data" className={phone.phPageFoot} />
       </main>
     </div>

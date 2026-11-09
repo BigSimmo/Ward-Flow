@@ -6,11 +6,12 @@
  * Figures come from `delays-board-model.ts`; the one write is Escalate, which the screen dispatches.
  */
 import { edById } from "@/components/ward-management/ward-sites";
-import { deskPlaceLabel } from "@/components/ward-management/shell/ward-bar-desk-place";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { holdInPlace, returnFocusInPlace, wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
-import { Activity, ChevronDown, ChevronRight, Flag, X } from "lucide-react";
+import { Activity, ChevronDown, ChevronRight, ClipboardList, Clock, Flag, SearchCheck, X } from "lucide-react";
+import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
+import pageTop from "../page-top-hero.module.css";
 
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { activatedControl, hasOpenSheet } from "@/components/wf/sheet-focus";
@@ -26,24 +27,30 @@ import { FormalName, ShowMoreRow } from "@/components/wf";
 import { readDelaysFlat, transitNote, useDelaysFlatStore, useSideScroll, writeDelaysFlat } from "./delays-board-stores";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import {
-  CheckingFoot,
+  FolderTabs,
   Hero,
+  HeroAct,
+  HeroBand,
+  HeroFigures,
+  HeroQuickChips,
+  HeroTop,
   LiveChip,
   PhoneFilterFold,
+  PillTabs,
+  folderTabClasses,
   PhoneSheet,
   PortraitList,
   PortraitRail,
   TierTile,
   useIsPhone,
   useIsTabletPortrait,
-  type HeroNextStep,
   type PortraitGroup,
-  type WfTone,
 } from "@/components/wf";
 import { type DelayCause, type DelayGroup, type DelayOwnerId } from "./delays-derivations";
 import { BandBar, Glyph } from "./delays-board-parts";
 import {
   NO_FILTERS,
+  OVER_8H,
   OVER_24H,
   SILENT_MINUTES,
   H24,
@@ -55,13 +62,12 @@ import {
   catchmentName,
   filterRows,
   hasFilters,
-  isBreached,
-  isDueSoon,
   isPinned,
   ownerTiles,
   runwayBins,
   wardSummary,
   waitingOrderLine,
+  waitBand,
   waitTone,
   type BoardFilters,
   type BoardRow,
@@ -88,7 +94,7 @@ import { legalCell, phonePrefix } from "./delays-board-rows";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import waitingKeys from "./waiting.module.css";
 import polish from "./waiting-polish.module.css";
-import { WaitingHeroBar, WaitingKeyRow } from "./waiting-hero-bar";
+import { WaitingKeyRow } from "./waiting-hero-bar";
 import { useWaitingDeskWords } from "./waiting-desk-words";
 import { WaitingOwnerTiles } from "./waiting-owner-tiles";
 import { useShorterColumnAnchor } from "./waiting-column-anchor";
@@ -104,6 +110,8 @@ const OPEN_BY_DEFAULT: readonly DelayCause[] = [
 const GROUP_LIMIT = 5;
 
 const byWait = (a: BoardRow, b: BoardRow) => b.waited - a.waited;
+/** The hero chips' icons (page tops, 9 Nov 2026). */
+const CHIP_ICON = { size: 16, strokeWidth: 1.75, "aria-hidden": true } as const;
 
 export type DelaysBoardProps = {
   groups: DelayGroup[];
@@ -119,8 +127,11 @@ export type DelaysBoardProps = {
   onEscalate: (movement: Movement) => void;
   /** Rendered under the hero: the alias banner, the service scope bar and any notice. */
   banner?: ReactNode;
-  /** Round 4: the daily check's tile in the header (laptop, coordinator). */
-  heroCheck?: ReactNode;
+  /**
+   * The coordinator's daily check, as a hero chip (page tops, 9 Nov 2026): how many to check, whether
+   * today's check is recorded, and whether its list is open. The chip opens or closes the list.
+   */
+  dailyCheck?: { count: number; done: boolean; open: boolean; onToggle: () => void };
   /**
    * Note 8, issue 4 (Josh, 8 Nov 2026): another part of the page (the daily check) asks to open a
    * person here, on a given drawer tab. `n` changes on every ask, so the same person can reopen.
@@ -155,7 +166,7 @@ export function DelaysBoard({
   isOutsideService,
   onEscalate,
   banner,
-  heroCheck,
+  dailyCheck,
   empty,
   openRequest,
 }: DelaysBoardProps) {
@@ -163,9 +174,7 @@ export function DelaysBoard({
   const patientOf = usePatientOf();
   // Role views (nurse in charge, ED clinician): the desk's own words and lenses (`waiting-desk-words.ts`).
   const desk = useWaitingDeskWords(units);
-  // Q84 (Josh, 31 Oct 2026): a desk with one place (a site, a ward) names it, not "Statewide".
   const effectiveAccess = useEffectiveWardAccess();
-  const deskPlace = deskPlaceLabel(effectiveAccess, units);
   const accessRole = effectiveAccess.role;
   const { wardDesk, edDesk } = desk;
   // The shared act-now list, as the Handover sheet reads it, so For handover matches its Act now.
@@ -358,15 +367,10 @@ export function DelaysBoard({
   // Audit 6 (Josh, 20 Oct 2026) and Audit 24-4 NA2-10 (24 Oct): both count people still in an ED, as the TV does.
   const over8 = rows.filter(isOver8hInEd).length;
   const over24 = rows.filter(isOver24hInEd).length;
-  const dueSoon = rows.filter((row) => isDueSoon(row, thresholds)).length;
-  const breached = rows.filter(isBreached).length;
-  const formsPast = breached === 1 ? "form past its time" : "forms past their time";
-  // Overall review, 20 Oct 2026: the title leads with the one "waiting" figure (`waitingInEds`, the
-  // menu badge's figure too), then names whoever else is on this list ("8 in transit"), so the words
-  // add up to the list's own count.
+  // Overall review, 20 Oct 2026: the figures lead with the one "waiting" figure (`waitingInEds`, the
+  // menu badge's figure too), then name whoever else is on this list ("8 in transit"), so they add
+  // up to the list's own count.
   const split = useMemo(() => waitingSplit(rows.map((row) => row.movement)), [rows]);
-  const heroTitle = [`${split.waiting} waiting in ED`, ...notWaitingParts(split)].join(", ");
-  const silentCount = rows.filter((row) => row.silent).length;
   // Decision 1: the colour key shows only when a row carries a typed legal time for it to explain.
   const anyTypedTime = rows.some((row) => currentLegalDueAt(row.movement) !== undefined);
   const urgentMinutes = thresholds.urgentMinutes;
@@ -386,37 +390,6 @@ export function DelaysBoard({
       </Link>
     </p>
   );
-
-  const heroStat = (
-    value: number,
-    label: string,
-    tone: WfTone | undefined,
-    pressed: boolean,
-    onPress: (() => void) | undefined,
-    testId: string,
-  ) => {
-    const body = (
-      <>
-        <span className={styles.statV}>{value}</span>
-        <span className={styles.statL}>
-          <Glyph tone={value > 0 ? tone : undefined} />
-          {label}
-        </span>
-      </>
-    );
-    // A count with nobody behind it has nothing to filter, so it is plain text, not a dead button.
-    if (onPress === undefined)
-      return (
-        <div className={`${styles.stat} ${styles.statStatic}`} data-testid={testId}>
-          {body}
-        </div>
-      );
-    return (
-      <button type="button" className={styles.stat} aria-pressed={pressed} onClick={onPress} data-testid={testId}>
-        {body}
-      </button>
-    );
-  };
 
   const chips: { key: string; label: string; clear: () => void }[] = [];
   if (filters.owner !== null)
@@ -958,9 +931,11 @@ export function DelaysBoard({
       label={edDesk ? "Find a person" : "Find a person or ED"}
     />
   );
-  // Round 4 header tiles (`waiting-hero-bar.tsx`): the daily check and who passes 8h next. Plan item
-  // 2i (proposal): the longest wait shows once, as the list's first row, not in the header.
-  const heroBar = <WaitingHeroBar rows={rows} now={now} check={heroCheck} onOpen={reveal} />;
+  // Round 4 (`waiting-hero-bar.tsx`), now a hero chip (page tops, 9 Nov 2026): who passes 8h next,
+  // and how many more within the hour. The chip opens that person's row.
+  const under8 = rows.filter((row) => row.waited < OVER_8H).sort((x, y) => y.waited - x.waited);
+  const next8 = under8[0];
+  const next8Within = under8.filter((row) => OVER_8H - row.waited <= 60).length;
   // Plan item 2i (proposal): the hero's next step is the desk's own move. A coordinator's is "yours",
   // an ED desk's is the ED's and a ward desk's is the wards'. The figures are the whose-move tile's
   // own rows, so the sentence and the tile can never disagree.
@@ -974,35 +949,17 @@ export function DelaysBoard({
   const moveWords = siteDesk ? "waiting on your site's wards" : "waiting on your move";
   // A chosen service is named, so the sentence never reads as the statewide figure.
   const inService = service === null || wardDesk || edDesk || siteDesk ? "" : ` in ${service}`;
-  const heroNext: HeroNextStep = {
-    answer:
-      ownCount === 0
-        ? `Nobody is ${moveWords}${inService}`
-        : `${ownCount} ${ownCount === 1 ? "person is" : "people are"} ${moveWords}${inService}`,
-    // The tile's own sub fact, said as typed: a form due or past its time, or no suitable bed.
-    owner:
-      ownTile && ownCount > 0 && ownTile.sub.count > 0
-        ? ownOwner === "yours"
-          ? `${ownTile.sub.count} with a form due or past its time`
-          : ownOwner === "wards"
-            ? `${ownTile.sub.count} with no suitable bed`
-            : undefined
-        : undefined,
-    action:
-      ownCount > 0 || ownPressed
-        ? {
-            label: ownPressed ? "Show everyone" : ownCount === 1 ? "Show them" : `Show these ${ownCount}`,
-            pressed: ownPressed,
-            testId: "delays-next-action",
-            onClick: () =>
-              setFilters((current) => ({
-                ...current,
-                owner: current.owner === ownOwner ? null : ownOwner,
-                cause: null,
-              })),
-          }
-        : undefined,
-  };
+  // Page tops (Josh, 9 Nov 2026): the act row says it short ("41 on your move"); the tile's own sub
+  // fact stays as its quiet second line, said as typed.
+  const moveShort = siteDesk ? "on your site's wards" : "on your move";
+  const ownSub =
+    ownTile && ownCount > 0 && ownTile.sub.count > 0
+      ? ownOwner === "yours"
+        ? `${ownTile.sub.count} with a form due or past its time`
+        : ownOwner === "wards"
+          ? `${ownTile.sub.count} with no suitable bed`
+          : undefined
+      : undefined;
   const filterRow = (inSheet: boolean) => (
     <div className={`${styles.chead} ${styles.fRow}${inSheet ? ` ${styles.fRowSheet}` : ` ${polish.filterRow}`}`}>
       {/* Design review (22 Oct 2026, Josh approved): in the phone Filter sheet the views sit under
@@ -1051,104 +1008,201 @@ export function DelaysBoard({
     <>
       <Hero
         level={1}
-        // Role views: a ward desk's list is only the people coming to its ward, and an ED desk's phone
-        // eyebrow names its department, not "Statewide".
-        eyebrow={
-          wardDesk
-            ? desk.ownWardName
-              ? `Waiting · coming to ${desk.ownWardName}`
-              : "Waiting"
-            : isPhone
-              ? `Waiting · ${desk.place ?? deskPlace ?? service ?? "Statewide"}`
-              : "Waiting"
-        }
-        title={heroTitle}
-        // The footer carries the synthetic notice on every width; the phone hero no longer repeats it
-        // (design audit A36, 5 Nov 2026).
-        titleMeta={
+        // Role views: a ward desk's list is only the people coming to its ward.
+        eyebrow={wardDesk ? (desk.ownWardName ? `Waiting · coming to ${desk.ownWardName}` : "Waiting") : undefined}
+        title={
           <>
-            <b>{breached}</b> {formsPast}
+            ED waits <span className={pageTop.titleSoft}>right now</span>
           </>
         }
         testId="delays-hero"
-        className={styles.delaysHero}
-        next={heroNext}
-        // C1 (phone simplification, 19 Oct 2026): the card shrinks to this one line as the list scrolls.
-        condensed={`${heroTitle} · ${breached} ${formsPast}`}
-        stats={
-          <div className={styles.stats} role="group" aria-label="Filter by the headline counts">
-            {heroStat(
-              over8,
-              `Over ${H8}`,
-              "warning",
-              filters.threshold === 1,
-              over8 > 0 || filters.threshold === 1
-                ? () => {
-                    toggle("threshold", 1);
-                  }
-                : undefined,
-              "delays-stat-over8",
-            )}
-            {heroStat(
-              over24,
-              `Over ${H24}`,
-              "danger",
-              filters.threshold === 3,
-              over24 > 0 || filters.threshold === 3
-                ? () => {
-                    toggle("threshold", 3);
-                  }
-                : undefined,
-              "delays-stat-over24",
-            )}
-            {heroStat(
-              dueSoon,
-              isPhone ? `Form due ${windowText(urgentMinutes)}` : dueSoonLabel,
-              "danger",
-              filters.dueSoon,
-              dueSoon > 0 || filters.dueSoon
-                ? () => {
-                    toggle("dueSoon", true);
-                    if (!filters.dueSoon) setFlat(true);
-                  }
-                : undefined,
-              "delays-stat-due",
-            )}
-            {isPhone
-              ? null
-              : // Josh, 30 Oct 2026: a filter like its neighbours, as Longest quiet's "Show all quiet" is.
-                heroStat(
-                  silentCount,
-                  `No update for ${SILENT_MINUTES / 60}h and over`,
-                  "warning",
-                  filters.silent,
-                  silentCount > 0 || filters.silent ? () => toggle("silent", true) : undefined,
-                  "delays-stat-silent",
-                )}
-          </div>
-        }
+        className={`${styles.delaysHero} ${pageTop.hero} ${folderTabClasses.hero}`}
         aside={<LiveChip state="live" onHero />}
-        // Round 5 (Josh, 31 Oct 2026): one slim line in the dark band under the counts: the daily
-        // check, the longest wait and who passes 8h next. Laptop only.
-        bar={isPhone ? undefined : heroBar}
-        foot={
-          // This page watches conditions, so it says what it checked. Counts only, never "All clear".
-          // Redesign: on desktop the count is a header figure; the phone keeps the line.
-          isPhone ? (
-            <CheckingFoot
+      >
+        <HeroTop
+          testId="delays-top"
+          // Page tops (Josh, 9 Nov 2026): the waiting figure and who is not waiting, then the 8h
+          // and 24h counts, each of which filters the list.
+          figures={
+            <HeroFigures
+              label="Filter by the headline counts"
               items={[
+                { id: "waiting", value: split.waiting, label: "in ED", testId: "delays-stat-waiting" },
+                ...notWaitingParts(split).map((part) => {
+                  const space = part.indexOf(" ");
+                  return { id: part, value: part.slice(0, space), label: part.slice(space + 1) };
+                }),
+                ...(isPhone
+                  ? []
+                  : [
+                      {
+                        id: "over8",
+                        value: over8,
+                        label: `over ${H8}`,
+                        testId: "delays-stat-over8",
+                        linkTestId: "delays-stat-over8-filter",
+                        onClick: over8 > 0 || filters.threshold === 1 ? () => toggle("threshold", 1) : undefined,
+                      },
+                    ]),
                 {
-                  id: "silent",
-                  label: `No update for ${SILENT_MINUTES / 60}h and over`,
-                  value: silentCount,
-                  tone: silentCount > 0 ? "warning" : "neutral",
+                  id: "over24",
+                  value: over24,
+                  label: `past ${H24}`,
+                  testId: "delays-stat-over24",
+                  linkTestId: "delays-stat-over24-filter",
+                  onClick: over24 > 0 || filters.threshold === 3 ? () => toggle("threshold", 3) : undefined,
                 },
               ]}
-              notChecked={["system delays, no feed"]}
             />
-          ) : undefined
-        }
-      />
+          }
+          act={
+            ownCount > 0 || ownPressed ? (
+              <HeroAct
+                tone="danger"
+                testId="delays-next"
+                titleTestId="hero-next-answer"
+                title={`${ownCount} ${moveShort}${inService}`}
+                sub={ownSub}
+                action={{
+                  label: ownPressed ? "Show everyone" : ownCount === 1 ? "Show them" : `Show these ${ownCount}`,
+                  phoneLabel: ownPressed ? "All" : "Show",
+                  pressed: ownPressed,
+                  testId: "delays-next-action",
+                  onClick: () =>
+                    setFilters((current) => ({
+                      ...current,
+                      owner: current.owner === ownOwner ? null : ownOwner,
+                      cause: null,
+                    })),
+                }}
+              />
+            ) : (
+              <HeroAct
+                tone="calm"
+                testId="delays-next"
+                titleTestId="hero-next-answer"
+                title={`Nobody is ${moveWords}${inService}`}
+              />
+            )
+          }
+          chips={
+            <HeroQuickChips
+              label="Waiting tools"
+              items={[
+                ...(dailyCheck && dailyCheck.count > 0
+                  ? [
+                      {
+                        id: "check",
+                        label: "Daily check",
+                        icon: <ClipboardList {...CHIP_ICON} />,
+                        count: dailyCheck.done ? undefined : dailyCheck.count,
+                        countLabel: " to check",
+                        pressed: dailyCheck.open,
+                        onClick: dailyCheck.onToggle,
+                        testId: "ward-missed-check",
+                      },
+                    ]
+                  : []),
+                ...(next8
+                  ? [
+                      {
+                        id: "next8",
+                        label: `Next past ${H8} · ${formatInstantWithDay(now + (OVER_8H - next8.waited), now)}`,
+                        icon: <Clock {...CHIP_ICON} />,
+                        count: next8Within > 1 ? next8Within - 1 : undefined,
+                        countTone: "quiet" as const,
+                        countLabel: " more within the hour",
+                        onClick: () => reveal(next8.movement.id),
+                        testId: "delays-hero-next8",
+                      },
+                    ]
+                  : []),
+                ...(wardDesk
+                  ? []
+                  : [
+                      {
+                        id: "find",
+                        label: "Find a bed",
+                        icon: <SearchCheck {...CHIP_ICON} />,
+                        onClick: () =>
+                          requestToolsTool(
+                            "bed-finder",
+                            document.activeElement instanceof HTMLElement ? document.activeElement : undefined,
+                          ),
+                      },
+                    ]),
+              ]}
+            />
+          }
+          band={
+            // Phone: whose move as one slim band, in place of the sliding tiles under the hero.
+            isPhone && !wardShort ? (
+              <HeroBand
+                title="Whose move"
+                aside="longest wait"
+                testId="delays-whose-move"
+                cells={tiles.map((tile) => {
+                  const longest = tile.rows.reduce((most, row) => Math.max(most, row.waited), 0);
+                  const band = waitBand(longest);
+                  return {
+                    id: tile.owner,
+                    label: tile.name,
+                    value: tile.rows.length,
+                    sub: tile.rows.length > 0 ? splitDuration(longest) : undefined,
+                    subTone: band === 3 ? ("danger" as const) : band >= 1 ? ("warning" as const) : undefined,
+                    pressed: filters.owner === tile.owner,
+                    testId: `delays-owner-${tile.owner}`,
+                    onClick: () =>
+                      setFilters((current) => ({
+                        ...current,
+                        owner: current.owner === tile.owner ? null : tile.owner,
+                        cause: null,
+                      })),
+                  };
+                })}
+              />
+            ) : undefined
+          }
+        />
+      </Hero>
+      {/* Page tops (Josh, 9 Nov 2026): the list's order is the page's tabs, under the hero. The views
+          sit beside them on a laptop; on a phone they fold into Filter at the row's end. */}
+      {empty !== undefined ? null : (
+        <FolderTabs
+          label="Waiting list"
+          value={flat ? "flat" : "cause"}
+          testId="delays-tabs"
+          more={
+            isPhone ? (
+              <PhoneFilterFold
+                count={filterCount}
+                title="Filter the list"
+                className={`${styles.phoneFold} ${folderTabClasses.more}`}
+                data-testid="delays-filter-fold"
+              >
+                {filterRow(true)}
+              </PhoneFilterFold>
+            ) : undefined
+          }
+        >
+          <PillTabs
+            className={folderTabClasses.switch}
+            label="Order the table"
+            value={flat ? "flat" : "cause"}
+            onChange={(id) => setFlat(id === "flat")}
+            items={[
+              { id: "flat", label: "Longest wait" },
+              { id: "cause", label: "By hold-up" },
+            ]}
+          />
+          {isPhone ? null : (
+            <>
+              <span className={folderTabClasses.rule} aria-hidden="true" />
+              <div className={`${folderTabClasses.filters} ${polish.topFilters}`}>{filterRow(false)}</div>
+            </>
+          )}
+        </FolderTabs>
+      )}
       {banner}
       {empty !== undefined ? (
         <div className={styles.split} data-single={wardDesk || undefined}>
@@ -1161,8 +1215,9 @@ export function DelaysBoard({
         </div>
       ) : (
         <>
-          {/* Role view (nurse in charge): on a short list the whose-move tiles repeat the Blocker column. */}
-          {wardShort ? null : (
+          {/* Role view (nurse in charge): on a short list the whose-move tiles repeat the Blocker column.
+              Page tops (9 Nov 2026): a phone has them as the hero's Whose move band instead. */}
+          {wardShort || isPhone ? null : (
             <WaitingOwnerTiles
               tiles={tiles}
               pressed={filters.owner}
@@ -1201,40 +1256,9 @@ export function DelaysBoard({
                 <span className={styles.sp} />
                 {/* Round 4: search and the order switch share one line, at one height. */}
                 {searchField}
-                <div className={styles.seg} role="group" aria-label="Order the table">
-                  <button
-                    type="button"
-                    aria-pressed={!flat}
-                    onClick={() => {
-                      setFlat(false);
-                    }}
-                  >
-                    By hold-up
-                  </button>
-                  <button
-                    type="button"
-                    aria-pressed={flat}
-                    onClick={() => {
-                      setFlat(true);
-                    }}
-                  >
-                    Longest wait
-                  </button>
-                </div>
-                {isPhone ? (
-                  <PhoneFilterFold
-                    count={filterCount}
-                    title="Filter the list"
-                    className={styles.phoneFold}
-                    data-testid="delays-filter-fold"
-                  >
-                    {filterRow(true)}
-                  </PhoneFilterFold>
-                ) : null}
               </div>
-              {/* C1 (phone simplification, 19 Oct 2026): on a phone this row folds into the Filter
-                  button in the pinned row above. */}
-              {isPhone ? null : filterRow(false)}
+              {/* Page tops (9 Nov 2026): the order switch, the views and the phone's Filter moved up
+                  into the tabs under the hero. */}
               {portrait ? (
                 <div className={styles.portraitBody}>
                   <div className={styles.portraitTools}>{portraitRail}</div>

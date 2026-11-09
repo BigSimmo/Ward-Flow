@@ -4341,3 +4341,16 @@
     --inbox-entry: 9.25rem;
   }
 }
+
+/* Page tops (9 Nov 2026): the ward's three view tabs inside the shared folder row. */
+.folderTabList {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+/* A tab with no count keeps its label face: the folder styles a tab's last child as its count. */
+.folderTabList.folderTabList.folderTabList.folderTabList.folderTabList > * > .tabLabel:only-child {
+  color: inherit;
+  font: inherit;
+}

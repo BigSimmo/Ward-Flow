@@ -106,7 +106,7 @@ const EXCLUSIONS: readonly Exclusion[] = [
     id: "elapsed-band",
     why: "Histogram and filter bands that sort recorded waits; no target, breach or standard is named.",
     whole:
-      /^(?:(?:Under|Over) \d+ hours?|\d+ to \d+ hours|\d+ hours or more|Past \d+ hours|Waiting > \d+h|Sort by over \d+ hours|No open movement here has waited (?:under |over )?\d+(?: to \d+)? hours\.)$/,
+      /^(?:(?:Under|Over) \d+ hours?|\d+ to \d+ hours|\d+ hours or more|Past \d+ hours|Waiting > \d+h|Sort by over \d+ hours|No open movement here has waited (?:under |over |past )?\d+(?: to \d+)? hours\.)$/,
     strip: /\$\{\w+\} past \d+ hours/g,
   },
   {
@@ -119,8 +119,8 @@ const EXCLUSIONS: readonly Exclusion[] = [
   { id: "gauge-end", why: "The two ends of a 0 to 100% scale.", whole: /^(?:0|100)%$/ },
   {
     id: "long-wait-default",
-    why: 'Josh, 26 Sept (D-24): "waiting over 24 hours" is his named long-wait default (LONG_WAIT_MINUTES), shown neutral, never a breach.',
-    strip: /\bwaiting over 24 hours\b/gi,
+    why: 'Josh, 26 Sept (D-24): "waiting over 24 hours" is his named long-wait default (LONG_WAIT_MINUTES), shown neutral, never a breach. Worded "past 24 hours" since 9 Nov 2026 (Josh).',
+    strip: /\bwaiting (?:over|past) 24 hours\b/gi,
   },
   {
     id: "psolis-referral-type",
@@ -263,12 +263,6 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     why: "Help account memory (#1410, 4 Nov 2026): the 1 second pause before a change is saved; save delay, not a clinical time limit.",
     file: /^help\/ward-help-account-memory\.tsx$/,
     name: /^SEND_AFTER_MS$/,
-  },
-  {
-    id: "home-folder-tab-slide",
-    why: "Home's folder tabs (sticky header redesign, Josh 9 Nov 2026): how long the folder outline takes to slide to the chosen tab; an animation length, never shown, not a limit.",
-    file: /^coordinator\/home-folder\.tsx$/,
-    name: /^MOVE_MS$/,
   },
 ];
 

@@ -90,3 +90,36 @@
     padding: var(--wf-s-3);
   }
 }
+
+/* Page tops (Josh, 9 Nov 2026): on a desktop the filters are the tab row's quieter second level, as
+   Home's flow stages: plain words with mono counts, the chosen one on a soft fill. */
+.filterTabs {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.filterTabs .filterChips {
+  flex-wrap: nowrap;
+  gap: var(--wf-s-1);
+}
+.filterTabs .filterChips button {
+  min-height: 36px;
+  padding: 0 var(--wf-s-2);
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-14);
+}
+.filterTabs .filterChips button[aria-pressed="true"] {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+.filterTabs .filterChips button > :last-child {
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+}

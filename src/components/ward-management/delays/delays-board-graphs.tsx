@@ -485,7 +485,7 @@ export function DelaysBoardGraphs(props: Props) {
       <>
         <span className={styles.lg}>
           <StatusGlyph tone="danger" size={9} />
-          {`Over ${H24}, or recorded legal time within ${hoursOrDuration(urgentMinutes)}`}
+          {`Past ${H24}, or recorded legal time within ${hoursOrDuration(urgentMinutes)}`}
         </span>
         <span className={styles.lg}>
           <StatusGlyph tone="warning" size={9} />

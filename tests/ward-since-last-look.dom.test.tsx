@@ -290,7 +290,11 @@ describe("scoped Ward and ED last-look sheets", () => {
         <WardScreen unitId={state.units[0]!.id} />
       </WardFlowProvider>,
     );
-    expect(screen.getByTestId(`since-last-look-ward:${state.units[0]!.id}`)).toBeInTheDocument();
+    // Page tops (9 Nov 2026): on the Ward header the tracker is the hero's Updates chip.
+    expect(screen.getByTestId("ward-updates")).toHaveTextContent("Updates");
+    fireEvent.click(screen.getByTestId("ward-updates"));
+    expect(screen.getByRole("dialog", { name: "Since you last looked" })).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape" });
     ward.unmount();
     render(
       <WardFlowProvider initialNow={NOW}>

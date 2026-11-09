@@ -77,9 +77,11 @@ describe("Places as the site bed manager (D-80)", () => {
     expect(OWN_WARDS.length).toBeGreaterThan(0);
     renderAs(BED_MANAGER);
 
-    const title = await screen.findByRole("heading", { level: 1 });
-    // PL1 follow-up (Josh, 4 Nov 2026): the band's title is the site's bed-check task.
-    expect(title).toHaveTextContent(/at your site needs? a bed check|Your site's bed counts are current/u);
+    await screen.findByRole("heading", { level: 1 });
+    // PL1 follow-up (Josh, 4 Nov 2026): the site's bed-check task, now the hero's act row (page tops, 9 Nov).
+    expect(screen.getByTestId("hub-act")).toHaveTextContent(
+      /at your site needs? a bed check|bed count stale|Your site's bed counts are current/u,
+    );
     const own = screen.getByRole("region", { name: /^Your site, /u });
     expect(within(own).getAllByRole("listitem")).toHaveLength(OWN_WARDS.length);
     for (const unit of OWN_WARDS) expect(within(own).getByText(unit.name)).toBeInTheDocument();
@@ -131,8 +133,8 @@ describe("Places as the site bed manager (D-80)", () => {
   it("leaves the statewide coordinator's Places without a Your site group", () => {
     renderAs(null);
     expect(screen.queryByRole("region", { name: /^Your site, /u })).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      /needs? a bed check|bed count is current|asked to confirm/u,
+    expect(screen.getByTestId("hub-act")).toHaveTextContent(
+      /needs? a bed check|bed count stale|bed count is current|asked to confirm/u,
     );
   });
 });

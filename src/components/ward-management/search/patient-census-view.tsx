@@ -179,30 +179,6 @@ export function DobField({
   );
 }
 
-/** "Today ✓ 6 arrived ✕ 2 left – 1 did not proceed". Opens History. */
-export function FlowChip({ closed, onOpen }: { closed: readonly ClosedTodayRow[]; onOpen: () => void }) {
-  const arrived = closed.filter((row) => row.outcome === "Arrived").length;
-  const left = closed.filter((row) => row.outcome === "Discharged" || row.outcome === "Transferred").length;
-  const stopped = closed.filter((row) => row.outcome === "Did not proceed").length;
-  return (
-    <button type="button" className={styles.flow} onClick={onOpen} title="Opens history">
-      <span className={styles.flowLead}>Today</span>
-      <span className={styles.flowPart}>
-        <StatusGlyph tone="success" size={9} />
-        <b>{arrived}</b> arrived
-      </span>
-      <span className={styles.flowPart}>
-        <StatusGlyph tone="closed" size={9} />
-        <b>{left}</b> left
-      </span>
-      <span className={styles.flowPart}>
-        <CensusGlyphMark glyph="off" />
-        <b>{stopped}</b> did not proceed
-      </span>
-    </button>
-  );
-}
-
 /* ───────────────────────── the census table ───────────────────────── */
 
 export type CensusScrollPosition = { identity: string; top: number; left: number };
@@ -674,7 +650,7 @@ export function ShiftSummary(props: ShiftSummaryProps) {
     {
       id: "long",
       glyph: "risk",
-      title: "Over 24 hours",
+      title: "Past 24 hours",
       sub: "Your default, not a legal limit",
       value: props.highlightCounts.long,
       chip: "long",
@@ -1257,7 +1233,7 @@ export function PhoneCensus(props: PhoneCensusProps) {
   return (
     <section className={styles.phone} data-testid="ward-patient-search-results-console" aria-label="Patients">
       {/* PS1 (3 Nov 2026): the state switch replaces the six group jump buttons. */}
-      <div className={styles.phoneStates}>{props.stateSwitch}</div>
+      {props.stateSwitch ? <div className={styles.phoneStates}>{props.stateSwitch}</div> : null}
       <div className={cx(styles.phoneChips, phoneRows.chipRow)} role="group" aria-label="Highlight">
         {CENSUS_HIGHLIGHTS.map((chip) => (
           <FilterChip

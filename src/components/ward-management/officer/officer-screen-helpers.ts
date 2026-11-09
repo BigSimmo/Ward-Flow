@@ -281,9 +281,6 @@ export function arrivalsAxis(now: Instant, etas: readonly Instant[], reachHours 
 
 export type HistoryTab = "delivered" | "refused" | "cancelled";
 
-/** The three hero figures a phone keeps (phone plan: title plus at most three figures). */
-export const PHONE_PILLS: HighlightPill[] = ["late", "forms", "requested"];
-
 /** When the job reached its current leg, if the record says. A requested job carries no time. */
 export function stageStartedAt(movement: Movement): Instant | undefined {
   const transport = movement.transport;

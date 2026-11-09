@@ -180,10 +180,11 @@ function excludedBeyondTodayCount(): number {
   return line ? Number(line.textContent?.match(/\d+/)?.[0]) : 0;
 }
 
-/** The hero strip's held-up discharge count (it replaced the "This shift" card, 8 Nov 2026). */
+/** The hero's held-up discharge count (it replaced the "This shift" card, 8 Nov 2026; a chip's
+ *  count since the page tops, 9 Nov 2026). */
 function heldUpCount(): number {
   const chip = screen.getByTestId("capacity-hero-held-up");
-  return Number(/^\s*(\d+)/u.exec(chip.textContent ?? "")?.[1]);
+  return Number(/(\d+)\s*$/u.exec(chip.querySelector("b > [aria-hidden]")?.textContent ?? "")?.[1]);
 }
 
 function ConfirmCapacityProbe({ unitId, now }: { unitId: string; now: number }) {

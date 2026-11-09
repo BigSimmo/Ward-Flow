@@ -7,16 +7,22 @@
  */
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, ChevronRight, ClipboardCopy, Clock, Eye, Ellipsis } from "lucide-react";
+import { Check, ChevronDown, ClipboardCopy, Clock, Ellipsis, Users } from "lucide-react";
 import {
   Button,
   Drawer,
+  FolderTabs,
+  Hero,
+  HeroAct,
+  HeroFigures,
+  HeroQuickChips,
+  HeroTop,
+  folderTabClasses,
+  type HeroActProps,
   FactGrid,
   FilterChip,
   Icon,
-  LiveChip,
   Menu,
-  PhoneHero,
   PhoneSheet,
   PillTabs,
   Sheet,
@@ -39,7 +45,6 @@ import {
   groupOf,
   handoverAt,
   handoverHasPassed,
-  handoverShift,
   isActOrUrgent,
   isbarLines,
   obsLong,
@@ -55,13 +60,14 @@ import { wardClosedLine } from "../capacity/ward-closure";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { handoverDeskOf, peopleToHandOver } from "./handover-desk";
 import styles from "./handover-phone.module.css";
+import pageTop from "../page-top-title.module.css";
+import { HandoverSinceLine } from "./handover-glance";
 import parts from "./handover-sheet-parts.module.css";
 
 export type HandoverPhoneProps = {
   shift: HandoverShiftId;
   onShift: (id: HandoverShiftId) => void;
   now: Instant;
-  scopeLabel: string;
   /** Meeting-order groups (act, due, bed, acc, mov) with their titles. */
   groups: RowGroup[];
   /** Rows in scope. */
@@ -104,6 +110,8 @@ export type HandoverPhoneProps = {
   /** Q61 to Q63: the site bed manager's site sign-off, first on the sheet tab only, so opening a ward lands on its
    * sheet; null for any other desk. */
   siteSignOff?: ReactNode;
+  /** Page tops: the ward replies act row (overdue first); its button takes the reader to the replies card. */
+  promisesAct?: HeroActProps;
 };
 
 type PhoneTab = "pts" | "beds" | "hist";
@@ -413,7 +421,6 @@ export function HandoverPhone({
   shift,
   onShift,
   now,
-  scopeLabel,
   groups,
   rows,
   wards,
@@ -445,6 +452,7 @@ export function HandoverPhone({
   onToggleMeeting,
   history,
   siteSignOff,
+  promisesAct,
 }: HandoverPhoneProps) {
   // Role branches: the nurse in charge's one ward, and the ED desk (no Beds tab, no sign-off).
   const { ownWard, edDesk } = handoverDeskOf(
@@ -457,180 +465,155 @@ export function HandoverPhone({
   /** Sections the user has opened or closed, over each group's default. */
   const [toggled, setToggled] = useState<Record<string, boolean>>({});
 
-  const current = handoverShift(shift);
   const at = handoverAt(shift, now);
   const passed = handoverHasPassed(shift, now);
   const actCount = rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "act").length;
   const urgentCount = rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "urg").length;
   const dueCount = rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "due").length;
-  const waitCount = rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "bed").length;
   const readyCount = wards.reduce((total, ward) => total + ward.ready, 0);
   const highlightedCount = rows.filter(isHighlighted).length;
   const clock = formatInstantWithDay(at, now);
   const countdown = `${passed ? "passed" : "in"} ${durMinutes(Math.abs(at - now))}${passed ? " ago" : ""}`;
-  const sinceShown = sinceItems.filter((item) => item.id !== "opened");
 
   const isOpen = (id: string) => toggled[id] ?? CARD_GROUPS.has(id);
 
   return (
     <div className={styles.phone} data-testid="ward-handover-phone" data-ward-design="v10">
-      <PhoneHero
+      <Hero
         level={1}
-        data-testid="ward-handover-phone-hero"
-        // ROLE BRANCH (ward): a ward's name keeps its capital, and its ready beds are on it.
-        eyebrow={`${clock} ${current.label.toLowerCase()} · ${ownWard?.name ?? scopeLabel.toLowerCase()}`}
-        // F-08 (phone review, Oct 2026): the standard Demo pill sits beside the countdown.
-        chip={
-          <span className={styles.heroChips}>
-            <LiveChip state="live" age={null} onHero />
-            <span className={styles.heroCountdown}>{countdown}</span>
+        testId="ward-handover-phone-hero"
+        className={cx(pageTop.hero, folderTabClasses.hero)}
+        // A4-29 (audit round 2): the title counts every row listed under Act now, Urgent and Due, so it
+        // agrees with the figures beneath it.
+        title={
+          <>
+            {ownWard
+              ? peopleToHandOver(actCount + urgentCount + dueCount)
+              : `${actCount + urgentCount + dueCount} to hand over`}{" "}
+            <span className={pageTop.soft}>at {clock}</span>
+          </>
+        }
+        aside={
+          // `data-wf-live` places it where the hero puts its Live pill, on the title's line.
+          <span className={styles.countdownPill} data-wf-live="" data-testid="ward-handover-phone-countdown">
+            {countdown}
           </span>
         }
-        // A4-29 (audit round 2): the title counts every row listed under Act now and Due, so it
-        // agrees with the two figures beneath it.
-        title={
-          ownWard
-            ? peopleToHandOver(actCount + urgentCount + dueCount)
-            : `${actCount + urgentCount + dueCount} to hand over`
-        }
-        sub={
-          edDesk
-            ? // ROLE BRANCH (ed): this desk cannot sign off, so the line says who does, or when it was signed.
-              signedAt !== null
-              ? `Signed off ${formatInstantWithDay(signedAt, now)}`
-              : "Coordinator or ward signs off"
-            : `${signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)} · ` : ""}${readyCount} ${readyCount === 1 ? "bed" : "beds"} ready ${ownWard ? `on ${ownWard.name}` : `across ${scopeLabel.toLowerCase()}`}`
-        }
-        figures={[
-          {
-            id: "act",
-            value: actCount,
-            label: "Act now",
-            tone: "danger",
-            pressed: pill === "act",
-            onPress: () => onPill("act"),
-          },
-          // Audit 6 (Josh, 20 Oct 2026): flagged urgent is its own figure beside Act now, shown when any.
-          ...(urgentCount > 0
-            ? [
+      >
+        <HeroTop
+          figures={
+            <HeroFigures
+              items={[
+                { id: "act", value: actCount, label: "act now", onClick: () => onPill("act"), pressed: pill === "act" },
                 {
                   id: "urg",
                   value: urgentCount,
-                  label: "Urgent",
-                  tone: "danger" as const,
+                  label: "urgent",
+                  onClick: () => onPill("urg"),
                   pressed: pill === "urg",
-                  onPress: () => onPill("urg"),
                 },
-              ]
-            : []),
-          {
-            id: "due",
-            value: dueCount,
-            // ROLE BRANCH (ward): the desktop chip's words.
-            label: `${ownWard ? "Due by" : "Due"} ${formatInstantWithDay(ctx.cutoff, now)}`,
-            tone: "warning",
-            pressed: pill === "due",
-            onPress: () => onPill("due"),
-          },
-          // ROLE BRANCH (ward): finding a ward is the coordinator's work, so a ward desk has no such figure.
-          ...(ownWard
-            ? []
-            : [
                 {
-                  id: "bed",
-                  value: waitCount,
-                  // Short form of the "Finding a ward" group so it fits a 375px phone chip untruncated.
-                  label: "Finding ward",
-                  tone: "neutral" as const,
-                  pressed: pill === "bed",
-                  onPress: () => onPill("bed"),
+                  id: "due",
+                  value: dueCount,
+                  label: `due by ${formatInstantWithDay(ctx.cutoff, now)}`,
+                  onClick: () => onPill("due"),
+                  pressed: pill === "due",
                 },
-              ]),
-        ]}
-        actions={
-          <div className={phoneRows.heroPills}>
-            <Button
-              variant="onHero"
-              className={phoneRows.heroPill}
-              icon={Clock}
-              aria-haspopup="dialog"
-              aria-expanded={shiftSheetOpen}
-              onClick={() => setShiftSheetOpen(true)}
-              data-testid="ward-handover-phone-shift"
-            >
-              Change handover
-            </Button>
-            {/* Phone audit (Josh, 1 Nov 2026): one hero action on a phone; the rest sit under "…". */}
-            <Menu
-              label="More handover actions"
-              align="end"
+              ]}
+            />
+          }
+          act={promisesAct ? <HeroAct {...promisesAct} /> : undefined}
+          chips={
+            <HeroQuickChips
+              label="Handover actions"
               items={[
                 {
                   id: "meeting",
-                  label: meetingOn ? "Stop the meeting timer" : "Start the meeting timer",
-                  onSelect: onToggleMeeting,
+                  label: meetingOn ? "Meeting on" : "Start meeting",
+                  icon: <Users strokeWidth={1.75} aria-hidden="true" />,
+                  pressed: meetingOn,
+                  testId: "ward-handover-phone-meeting",
+                  onClick: onToggleMeeting,
+                },
+                {
+                  id: "shift",
+                  label: "Change handover",
+                  icon: <Clock strokeWidth={1.75} aria-hidden="true" />,
+                  testId: "ward-handover-phone-shift",
+                  onClick: () => setShiftSheetOpen(true),
                 },
               ]}
-              // While the meeting timer runs, the trigger says so in words, and its name keeps them.
-              trigger={(props) => (
-                <Button
-                  {...props}
-                  variant="onHero"
-                  className={phoneRows.heroPill}
-                  iconOnly={!meetingOn}
-                  icon={Ellipsis}
-                  aria-label={meetingOn ? "More handover actions, timer on" : "More handover actions"}
-                  data-testid="ward-handover-phone-more"
-                  data-meeting-on={meetingOn || undefined}
-                >
-                  {meetingOn ? "Timer on" : undefined}
-                </Button>
-              )}
             />
-          </div>
+          }
+        >
+          <HandoverSinceLine
+            since={since}
+            items={sinceItems}
+            onOpen={() => setSinceOpen(true)}
+            signOffNote={
+              edDesk
+                ? // ROLE BRANCH (ed): this desk cannot sign off, so the line says who does, or when it was signed.
+                  signedAt !== null
+                  ? `Signed off ${formatInstantWithDay(signedAt, now)}`
+                  : "Coordinator or ward signs off"
+                : null
+            }
+          />
+        </HeroTop>
+      </Hero>
+      <FolderTabs
+        label="Handover views"
+        value={tab}
+        testId="ward-handover-phone-tabs"
+        className={styles.folder}
+        more={
+          <Menu
+            label="More handover actions"
+            align="end"
+            items={[
+              {
+                id: "meeting",
+                label: meetingOn ? "Stop the meeting timer" : "Start the meeting timer",
+                onSelect: onToggleMeeting,
+              },
+              { id: "since", label: `What changed since ${since}`, onSelect: () => setSinceOpen(true) },
+              { id: "copy", label: copied ? "Copied" : "Copy summary", onSelect: onCopySummary },
+            ]}
+            // While the meeting timer runs, the trigger says so in words, and its name keeps them.
+            trigger={(props) => (
+              <Button
+                {...props}
+                variant="ghost"
+                size="sm"
+                iconOnly={!meetingOn}
+                icon={Ellipsis}
+                className={folderTabClasses.more}
+                aria-label={meetingOn ? "More handover actions, timer on" : "More handover actions"}
+                data-testid="ward-handover-phone-more"
+              >
+                {meetingOn ? "Timer on" : undefined}
+              </Button>
+            )}
+          />
         }
-      />
+      >
+        <PillTabs<PhoneTab>
+          label="Handover views"
+          className={folderTabClasses.switch}
+          value={tab}
+          onChange={setTab}
+          idPrefix="ward-handover-phone"
+          items={[
+            { id: "pts", label: "Patients", count: rows.length },
+            ...(edDesk ? [] : [{ id: "beds" as const, label: "Beds", count: readyCount }]),
+            { id: "hist", label: "History" },
+          ]}
+        />
+      </FolderTabs>
 
       <div className={styles.main}>
         {tab === "pts" ? siteSignOff : null}
-        <button
-          type="button"
-          className={styles.sinceCard}
-          aria-haspopup="dialog"
-          onClick={() => setSinceOpen(true)}
-          data-testid="ward-handover-phone-since"
-        >
-          <Icon icon={Eye} size={16} />
-          <span className={styles.sinceText}>
-            <span className={styles.sinceTitle}>Since previous handover at {since}</span>
-            <span className={styles.sinceMeta}>
-              {sinceShown.map((item, index) => (
-                <span key={item.id}>
-                  {index ? " · " : ""}
-                  <b>{item.value}</b> {item.word}
-                </span>
-              ))}
-            </span>
-          </span>
-          <Icon icon={ChevronRight} size={16} className={styles.chev} />
-        </button>
-
         {carryOver}
-
-        <div className={styles.seg}>
-          <PillTabs<PhoneTab>
-            label="Handover views"
-            value={tab}
-            onChange={setTab}
-            idPrefix="ward-handover-phone"
-            fill
-            items={[
-              { id: "pts", label: "Patients", count: rows.length },
-              ...(edDesk ? [] : [{ id: "beds" as const, label: "Beds" }]),
-              { id: "hist", label: "History" },
-            ]}
-          />
-        </div>
 
         {tab === "pts" ? (
           <div

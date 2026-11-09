@@ -6452,3 +6452,20 @@
   border-top: 0;
   padding-top: 0;
 }
+
+/* Page tops (Josh approved, 9 Nov 2026): a bed card's day count sat at 24px, above the hero's own
+   figures. It is now a quiet 15px mono figure with a small caps unit, on the grid and the person
+   cards alike. Last in the file so it wins over the earlier `.days` and `.personDays` rules. */
+.bedFigureRow .days,
+.personStay .personDays {
+  font-family: var(--mono);
+  font-size: 0.9375rem;
+  line-height: 1.25rem;
+}
+
+.bedFigureRow .daysUnit {
+  font-family: var(--body);
+  font-size: var(--t-0);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}

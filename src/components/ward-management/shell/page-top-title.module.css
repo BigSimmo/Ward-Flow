@@ -1,0 +1,39 @@
+/*
+ * The page-top title (Josh, 9 Nov 2026), for pages whose top is built from the shared HeroTop parts
+ * (Statistics, Ward statistics, Patient chronology, Downtime pack, Catchments, a community team):
+ * one plain title, its second part softer, on Home's line with the Live pill. Tokens only.
+ */
+
+.hero.hero.hero h1 {
+  font: 600 1.125rem / 24px var(--wf-font); /* 18px, the approved mock-up; no 18px token */
+  letter-spacing: -0.015em;
+  color: var(--wf-hero-ink);
+}
+
+.soft {
+  color: var(--wf-hero-ink-2);
+  font-weight: 450;
+}
+
+/* Phone: no eyebrow, so the title shares its line with the pill at the right, as on Home. */
+@media (max-width: 46.4375rem) {
+  .hero.hero.hero.hero.hero div:has(> div > h1) {
+    padding-top: 6px;
+  }
+
+  .hero.hero.hero:has([data-wf-live], [data-page-top-pill]) h1 {
+    padding-right: 136px;
+  }
+
+  /* A plain pill in the Live pill's place (a frozen pack's day). Its aside leaves no empty row. */
+  .hero.hero.hero [data-page-top-pill] {
+    position: absolute;
+    z-index: 1;
+    top: var(--wf-s-3);
+    right: max(var(--wf-band-right, 0px), var(--wf-s-4));
+  }
+
+  .hero.hero.hero div:has(> [data-page-top-pill]:only-child) {
+    display: contents;
+  }
+}

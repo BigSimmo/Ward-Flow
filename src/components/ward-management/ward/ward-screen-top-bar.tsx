@@ -3,25 +3,37 @@
 // The ward screen's ward card and top action bar. Split out of `ward-screen.tsx` (18 October 2026)
 // to keep that file under the line cap.
 
-import { Bell, Presentation, Search, Send } from "lucide-react";
-import { designationSummary } from "@/components/ward-management/ward-bed-designation";
+import { useEffect, useState } from "react";
+import { type WardHeroTopInput, wardHeroTopParts } from "./ward-hero-top-parts";
+import { Bed, Check, Presentation, Send, Zap } from "lucide-react";
 import { plural } from "@/components/ward-management/ward-plural";
 import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import Link from "next/link";
-import { formatInstant } from "@/components/ward-management/ward-clock";
-import { unitHealthService } from "@/components/ward-management/ward-service-scope";
-import { buttonClass, Hero, LiveChip, PhoneSheet, Sheet, TextInput, useIsTabletPortrait } from "@/components/wf";
+import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import {
+  buttonClass,
+  cx,
+  FolderTabs,
+  folderTabClasses,
+  Hero,
+  HeroQuickChips,
+  HeroTop,
+  LiveChip,
+  PhoneSheet,
+  Sheet,
+  SrOnly,
+} from "@/components/wf";
 import { WardPhoneFind } from "./ward-phone-find";
 import styles from "./ward.module.css";
+import pageTop from "../page-top-hero.module.css";
 import noticesSheet from "./ward-notices-sheet.module.css";
-import { SinceLastLookPill } from "../since-last-look-pill";
-import { phoneRows as rows } from "@/components/wf";
+import { useSinceLastLookReview } from "../since-last-look-pill";
 import { WardNotificationCenter } from "./ward-screen-lazy";
+import { WardSwitchPopover } from "./ward-switch-menu";
 import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction } from "react";
 import type { CapacityRefreshRequest, Movement, Notice, Unit } from "@/components/ward-management/ward-model";
 import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
 import type { RoleGate } from "@/components/ward-management/ward-role-gate";
-import type { SiteIdentity } from "@/components/ward-management/ward-sites";
 import type { WardScreenBed } from "./ward-screen-derivations";
 
 /** The ward card and top action bar, drawn from the ward screen's own state. */
@@ -49,18 +61,25 @@ export function moveBetweenWardTabs(event: KeyboardEvent<HTMLElement>): void {
 type WardScreenTopBarProps = {
   unit: Unit;
   isPhone: boolean;
-  site: SiteIdentity | undefined;
-  wardSwitchMenu: ReactElement | null;
+  /** The other wards this desk may open, and how to go to one; `null` when there are none. */
+  wardSwitch: { units: readonly Unit[]; onChoose: (unitId: string) => void } | null;
   states: BedStateCounts;
   online: boolean;
   now: number;
   confirmTriggerRef: RefObject<HTMLButtonElement | null>;
   openCapacityModal: () => void;
-  wardRibbon: ReactElement;
-  wardHeroFoot: ReactElement;
-  wardHeroFootAside: ReactElement;
+  /** "Day shift 07:00 to 15:00": the hero's title, the hours in the quieter weight. */
+  heroTitle: string;
+  wardHeroTop: WardHeroTopInput;
+  wardHeroMeta: ReactElement | null;
+  /** Decisions are due: its tab count is the red circle. */
+  decisionsDue: boolean;
   selectActiveTab: (next: "attn" | "board" | "coming" | "out" | "beds" | "referrals" | "return") => void;
-  wardMoreMenu: (triggerClassName: string, tablet: boolean) => ReactElement;
+  wardMoreMenu: (
+    triggerClassName: string,
+    tablet: boolean,
+    options?: { notices?: boolean; iconOnly?: boolean; testId?: string },
+  ) => ReactElement;
   raiseReferralGate: RoleGate;
   wardRoleLockNote: ReactElement | null;
   notificationCenterOpen: boolean;
@@ -83,8 +102,6 @@ type WardScreenTopBarProps = {
   bedQuery: string;
   setBedQuery: Dispatch<SetStateAction<string>>;
   activeTab: "attn" | "board" | "coming" | "out" | "beds" | "referrals" | "return";
-  unreadAlertsCount: number;
-  setDailySheetOpen: Dispatch<SetStateAction<boolean>>;
   tvViewsOn: boolean;
   handleRaiseWardReferral: (bedOverride?: unknown) => void;
   raisedReferral: { href: string; message: string; bed: number | null } | null;
@@ -93,19 +110,25 @@ type WardScreenTopBarProps = {
   bedsList: WardScreenBed[];
 };
 
+/** The shift's name, then its hours in the quieter weight ("Day shift" "07:00 to 15:00"). */
+function splitShift(line: string): { name: string; hours: string } {
+  const match = /^(.*?)\s+(\d{1,2}:\d{2}\s+to\s+\d{1,2}:\d{2})$/u.exec(line);
+  return match ? { name: match[1]!, hours: match[2]! } : { name: line, hours: "" };
+}
+
 export function WardScreenTopBar({
   unit,
   isPhone,
-  site,
-  wardSwitchMenu,
+  wardSwitch,
   states,
   online,
   now,
   confirmTriggerRef,
   openCapacityModal,
-  wardRibbon,
-  wardHeroFoot,
-  wardHeroFootAside,
+  heroTitle,
+  wardHeroTop,
+  wardHeroMeta,
+  decisionsDue,
   selectActiveTab,
   wardMoreMenu,
   raiseReferralGate,
@@ -129,7 +152,6 @@ export function WardScreenTopBar({
   bedQuery,
   setBedQuery,
   activeTab,
-  unreadAlertsCount,
   tvViewsOn,
   handleRaiseWardReferral,
   raisedReferral,
@@ -141,230 +163,131 @@ export function WardScreenTopBar({
   // inside WardScreen, which the compiler skips. Memoising it changed nothing visible but added
   // several KB to the phone download (script-budget.json).
   "use no memo";
-  // Josh, 1 Nov 2026: the ward's name is the heading; its hospital and facts sit in the eyebrow. The
-  // ward's position (ready and occupied) stays in the ribbon of figures under it, and is kept in the
-  // heading for screen readers.
+  // Josh, 1 Nov 2026: the ward's position (ready and occupied) is kept in the heading for screen
+  // readers. Page tops (Josh approved, 9 Nov 2026): the header names the ward, so the hero's title is
+  // the shift, as Home's names the moment; the ward's name leads the spoken heading.
   const position = `${plural(states.ready, "bed", "beds")} ready, ${states.occupied} occupied`;
-  const service = unitHealthService(unit);
-  const tabletFind = useIsTabletPortrait();
+  const shift = splitShift(heroTitle);
+  const { wardFigures, wardAct, wardBand } = wardHeroTopParts(wardHeroTop);
+  const updates = useSinceLastLookReview(`ward:${unit.id}`);
+  const [switchOpen, setSwitchOpen] = useState(false);
+  // The confirm dialog returns focus to its opener, and to the Confirm numbers chip when the opener
+  // is gone. The chip is drawn by the shared hero parts, so it is found by its test id.
+  useEffect(() => {
+    const chip = document.querySelector(`[data-testid="ward-confirm-numbers"]`);
+    confirmTriggerRef.current = chip instanceof HTMLButtonElement ? chip : null;
+  });
   const findBed = (next: string) => {
     setBedQuery(next);
     if (activeTab !== "attn" && activeTab !== "board") selectActiveTab("attn");
   };
-  const closePhoneNotices = () => {
+  const closeNotices = () => {
     setNotificationCenterOpen(false);
   };
-  const confirmButton = (
-    <button
-      ref={confirmTriggerRef}
-      type="button"
-      className={isPhone ? styles.phoneHeroAction : buttonClass({ variant: "light", size: "sm" })}
-      onClick={() => {
-        openCapacityModal();
-      }}
-    >
-      Confirm numbers
-    </button>
+  const tabValue = activeTab === "return" || activeTab === "referrals" ? activeTab : "attn";
+  const noticesPanel = (inSheet: boolean) => (
+    <WardNotificationCenter
+      inSheet={inSheet || undefined}
+      unitId={unit.id}
+      unitName={unit.name}
+      now={now}
+      movements={movements}
+      notices={notices}
+      refreshRequests={refreshRequests}
+      allocatable={unit.allocatable}
+      morningRollupConfirmed={isRollupConfirmedToday}
+      morningRollupDeadlinePassed={morningRollupDeadlinePassed}
+      morningRollupDeadlineMinutes={morningRollupDeadlineMinutes}
+      onConfirmMorningRollup={handleConfirmMorningRollup}
+      onAcknowledgeNotice={handleAcknowledgeNotice}
+      onDismissBuzz={handleDismissBuzz}
+      dismissedBuzzKeys={dismissedBuzzKeys}
+      onClose={closeNotices}
+    />
   );
   return (
     <section className={styles.topActionBarWrap} aria-label="This ward" data-testid={`ward-unit-card-${unit.id}`}>
       <h2 className={styles.srOnlyHeading}>This ward</h2>
       <Hero
-        className={styles.wardHero}
-        // The hospital name is not in the header, so the phone keeps the eyebrow (Q153).
-        phoneEyebrow="show"
-        eyebrow={
-          isPhone
-            ? `${site ? site.name.replace(/\s+(Public Hospital|Hospital|Health Campus|Health Service)$/u, "") : unit.siteCode}`
-            : [site ? site.name : unit.siteCode, service, unit.cohort, designationSummary(unit).toLowerCase()]
-                .filter(Boolean)
-                .join(" · ")
-        }
+        className={cx(styles.wardHero, pageTop.hero, folderTabClasses.hero)}
         title={
-          isPhone ? (
-            // On a phone the Switch ward chip sits beside the heading.
-            <span className={styles.phoneHeroTitle}>
-              <span className={styles.phoneHeroName}>
-                {unit.name}
-                <span className="sr-only">{`, ${position}`}</span>
-              </span>
-              {wardSwitchMenu}
-            </span>
-          ) : (
-            <>
-              {unit.name}
-              <span className="sr-only">{`, ${position}`}</span>
-            </>
-          )
+          <>
+            <SrOnly>{`${unit.name}, ${position}.`}</SrOnly> {shift.name}
+            {shift.hours ? <span className={pageTop.titleSoft}> {shift.hours}</span> : null}
+          </>
         }
-        titleMeta={isPhone ? undefined : wardSwitchMenu}
-        aside={
+        aside={<LiveChip state={online ? "live" : "offline"} onHero age={formatInstant(now)} />}
+      >
+        <HeroTop
+          figures={wardFigures}
+          act={wardAct}
+          chips={
+            <HeroQuickChips
+              label="Ward actions"
+              items={[
+                {
+                  id: "confirm",
+                  label: "Confirm numbers",
+                  icon: <Check strokeWidth={1.75} aria-hidden="true" />,
+                  onClick: openCapacityModal,
+                  testId: "ward-confirm-numbers",
+                },
+                {
+                  id: "updates",
+                  // The since-you-last-looked review, as the old "1 update since 10:27" pill.
+                  label: "Updates",
+                  icon: <Zap strokeWidth={1.75} aria-hidden="true" />,
+                  count: updates.count > 0 ? updates.count : undefined,
+                  countLabel: `${updates.count === 1 ? "update" : "updates"} since ${formatInstantWithDay(updates.since, now)}`,
+                  onClick: updates.open,
+                  testId: "ward-updates",
+                },
+                ...(raiseReferralGate.allowed
+                  ? [
+                      {
+                        id: "referral",
+                        label: "New referral",
+                        icon: <Send strokeWidth={1.75} aria-hidden="true" />,
+                        onClick: () => handleRaiseWardReferral(),
+                        testId: "ward-new-referral",
+                      },
+                    ]
+                  : []),
+                ...(wardSwitch
+                  ? [
+                      {
+                        id: "switch",
+                        label: "Switch ward",
+                        ariaLabel: `Switch ward, now ${unit.name}`,
+                        icon: <Bed strokeWidth={1.75} aria-hidden="true" />,
+                        onClick: () => setSwitchOpen((was) => !was),
+                        testId: "ward-switch-btn",
+                      },
+                    ]
+                  : []),
+              ]}
+            />
+          }
+          band={wardBand}
+        >
+          {wardHeroMeta}
+        </HeroTop>
+      </Hero>
+      <FolderTabs
+        label="Ward tabs"
+        value={tabValue}
+        act={decisionsDue ? 3 : undefined}
+        testId="ward-tabs"
+        more={
           isPhone ? (
-            <>
-              <SinceLastLookPill scopeKey={`ward:${unit.id}`} pillClassName={rows.heroPill} />
-              <LiveChip state={online ? "live" : "offline"} onHero age={formatInstant(now)} />
-            </>
+            wardMoreMenu(folderTabClasses.more, true, { notices: true, iconOnly: true, testId: "ward-phone-chip-more" })
           ) : (
-            <>
-              <SinceLastLookPill scopeKey={`ward:${unit.id}`} />
-              <LiveChip state={online ? "live" : "offline"} onHero age={formatInstant(now)} />
-              {confirmButton}
-            </>
-          )
-        }
-        stats={isPhone ? wardRibbon : undefined}
-        bar={isPhone ? undefined : wardRibbon}
-        foot={
-          isPhone ? (
-            // Option B: the numbers' confirm time and a quieter Confirm numbers sit under them, with
-            // Notices (the bell) and More beside it, where the chips above the tabs used to be.
-            <span className={styles.phoneHeroFoot}>
-              <span className={styles.phoneHeroConfirmed}>
-                {unit.allocatable.source === "ward" ? "Capacity confirmed" : "Last capacity figure"}{" "}
-                {formatInstant(unit.allocatable.confirmedAt)}
-              </span>
-              {confirmButton}
-              <button
-                ref={notificationTriggerRef}
-                type="button"
-                className={styles.phoneHeroIcon}
-                onClick={() => {
-                  setNotificationCenterOpen((prev) => !prev);
-                }}
-                aria-expanded={notificationCenterOpen}
-                aria-label={unreadAlertsCount > 0 ? `Notices, ${unreadAlertsCount} new` : "Notices"}
-                data-testid="ward-notifications-toggle-btn"
-              >
-                <Bell strokeWidth={1.75} size={18} aria-hidden="true" />
-                {unreadAlertsCount > 0 ? (
-                  <span className={styles.phoneHeroBadge} data-testid="ward-notification-count-badge">
-                    {unreadAlertsCount}
-                  </span>
-                ) : null}
-              </button>
-              {wardMoreMenu(styles.phoneHeroIcon, false)}
-            </span>
-          ) : (
-            wardHeroFoot
-          )
-        }
-        footAside={isPhone ? undefined : wardHeroFootAside}
-      />
-
-      {isPhone ? (
-        <>
-          {/* No New referral button on the phone (the More menu names the lock on its own row), so its
-              lock note is not shown above the tabs. */}
-          {wardRoleLockNote}
-          {/* Phone notices (20 Oct 2026): the bell opens a pop-up sheet rather than a panel pushed
-              into the page, so the page stays put behind it and Close returns to the bell. */}
-          <PhoneSheet
-            open={notificationCenterOpen}
-            onClose={closePhoneNotices}
-            title="Notices"
-            height="tall"
-            returnFocusRef={notificationTriggerRef}
-            data-testid="ward-notifications-sheet"
-          >
-            {/* The sheet closes from its own Close, scrim and Escape. */}
-            <div data-testid="ward-notification-center-wrap">
-              <WardNotificationCenter
-                inSheet
-                unitId={unit.id}
-                unitName={unit.name}
-                now={now}
-                movements={movements}
-                notices={notices}
-                refreshRequests={refreshRequests}
-                allocatable={unit.allocatable}
-                morningRollupConfirmed={isRollupConfirmedToday}
-                morningRollupDeadlinePassed={morningRollupDeadlinePassed}
-                morningRollupDeadlineMinutes={morningRollupDeadlineMinutes}
-                onConfirmMorningRollup={handleConfirmMorningRollup}
-                onAcknowledgeNotice={handleAcknowledgeNotice}
-                onDismissBuzz={handleDismissBuzz}
-                dismissedBuzzKeys={dismissedBuzzKeys}
-                onClose={closePhoneNotices}
-              />
-            </div>
-          </PhoneSheet>
-        </>
-      ) : null}
-      {isPhone ? null : (
-        <nav className={styles.tabBarWrap} aria-label="Ward tabs">
-          <ul
-            className={styles.tabList}
-            role="tablist"
-            id="mainTabList"
-            aria-label="Ward views"
-            onKeyDown={moveBetweenWardTabs}
-          >
-            {tabHome}
-            {tabReferrals}
-            {tabDecisions}
-          </ul>
-          {isPhone ? null : (
             <div className={styles.tabTools} role="toolbar" aria-label="Ward actions">
-              {/* Josh, 4 Nov 2026: on a tablet the find box is the same search icon as the phone's,
-                  opening in place, so the tab row keeps its room. */}
-              {tabletFind ? (
-                <WardPhoneFind value={bedQuery} onChange={findBed} />
-              ) : (
-                <TextInput
-                  type="search"
-                  icon={Search}
-                  boxClassName={styles.findBox}
-                  aria-label="Find a bed or person on this ward"
-                  placeholder="Find bed or person"
-                  value={bedQuery}
-                  onChange={(event) => findBed(event.target.value)}
-                  onClear={() => {
-                    setBedQuery("");
-                  }}
-                  data-testid="ward-find-input"
-                />
-              )}
-              {/* Approved 31 Oct 2026: Notices, Shift brief and Handover sit in the More menu at every
-                  desktop width, leaving three actions and More. The Notices drawer stays here; the More
-                  menu's Notices item opens it. */}
-              <div className={styles.notificationTriggerWrap}>
-                {/* Notices option A (22 Oct 2026): the desktop Notices open as the same right-hand drawer as
-                    Alerts, rather than a popover over the bed board. The Sheet closes itself. */}
-                <Sheet
-                  open={notificationCenterOpen}
-                  onClose={() => setNotificationCenterOpen(false)}
-                  ariaLabel="Notices"
-                  headerHidden
-                  placement="right"
-                  returnFocusRef={notificationTriggerRef}
-                  contentClassName={noticesSheet.sheet}
-                  bodyClassName={noticesSheet.body}
-                >
-                  {notificationCenterOpen ? (
-                    <div>
-                      <WardNotificationCenter
-                        unitId={unit.id}
-                        unitName={unit.name}
-                        now={now}
-                        movements={movements}
-                        notices={notices}
-                        refreshRequests={refreshRequests}
-                        allocatable={unit.allocatable}
-                        morningRollupConfirmed={isRollupConfirmedToday}
-                        morningRollupDeadlinePassed={morningRollupDeadlinePassed}
-                        morningRollupDeadlineMinutes={morningRollupDeadlineMinutes}
-                        onConfirmMorningRollup={handleConfirmMorningRollup}
-                        onAcknowledgeNotice={handleAcknowledgeNotice}
-                        onDismissBuzz={handleDismissBuzz}
-                        dismissedBuzzKeys={dismissedBuzzKeys}
-                        onClose={() => setNotificationCenterOpen(false)}
-                      />
-                    </div>
-                  ) : null}
-                </Sheet>
-              </div>
+              {/* Josh, 4 Nov 2026: the find box is the search icon that opens in place, so the tab row
+                  keeps its room (page tops: at every desktop width). */}
+              <WardPhoneFind value={bedQuery} onChange={findBed} />
               {/* This ward's own TV screen, behind the `bed-meeting-tv` flag. Desktop only. */}
-              {tvViewsOn && !isPhone ? (
+              {tvViewsOn ? (
                 <Link
                   className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolSolo}`}
                   href={bedMeetingTvHref({ ward: unit.id })}
@@ -374,19 +297,6 @@ export function WardScreenTopBar({
                   On TV
                 </Link>
               ) : null}
-              {/* WH9 (3 Nov 2026): Ward handover sits in Decisions and the More menu, so the toolbar
-                  keeps its row at every desktop width. */}
-              {wardMoreMenu(buttonClass({ variant: "ghost", size: "sm" }), true)}
-              <button
-                type="button"
-                className={buttonClass({ variant: "sec", size: "sm" })}
-                onClick={handleRaiseWardReferral}
-                title="Record a ward-to-ward referral with this ward as the sending ward."
-                {...raiseReferralGate.buttonProps}
-              >
-                <Send strokeWidth={1.75} size={16} aria-hidden="true" />
-                New referral
-              </button>
               <Link
                 className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolWide}`}
                 href={
@@ -403,11 +313,65 @@ export function WardScreenTopBar({
                 {/* Usability audit 24 Oct 2026: the longer label was cut off at 1280 px. */}
                 Referral form
               </Link>
-              {raiseReferralGate.note}
-              {wardRoleLockNote}
+              {/* Approved 31 Oct 2026: Notices, Shift brief and Handover sit in the More menu. */}
+              {wardMoreMenu(cx(buttonClass({ variant: "ghost", size: "sm" }), folderTabClasses.more), true)}
             </div>
-          )}
-        </nav>
+          )
+        }
+      >
+        {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab */}
+        <div
+          className={cx(folderTabClasses.switch, styles.folderTabList)}
+          role="tablist"
+          id="mainTabList"
+          aria-label="Ward views"
+          onKeyDown={moveBetweenWardTabs}
+        >
+          {tabHome}
+          {tabReferrals}
+          {tabDecisions}
+        </div>
+      </FolderTabs>
+      {raiseReferralGate.allowed ? null : raiseReferralGate.note}
+      {wardRoleLockNote}
+      {updates.sheet}
+      {wardSwitch ? (
+        <WardSwitchPopover
+          unit={unit}
+          switchUnits={wardSwitch.units}
+          onChoose={wardSwitch.onChoose}
+          open={switchOpen}
+          onClose={() => setSwitchOpen(false)}
+          anchorTestId="ward-switch-btn"
+        />
+      ) : null}
+      {isPhone ? (
+        // Phone notices (20 Oct 2026): a pop-up sheet, so the page stays put behind it and Close
+        // returns to where it was opened.
+        <PhoneSheet
+          open={notificationCenterOpen}
+          onClose={closeNotices}
+          title="Notices"
+          height="tall"
+          returnFocusRef={notificationTriggerRef}
+          data-testid="ward-notifications-sheet"
+        >
+          <div data-testid="ward-notification-center-wrap">{noticesPanel(true)}</div>
+        </PhoneSheet>
+      ) : (
+        // Notices option A (22 Oct 2026): the desktop Notices open as the same right-hand drawer as Alerts.
+        <Sheet
+          open={notificationCenterOpen}
+          onClose={closeNotices}
+          ariaLabel="Notices"
+          headerHidden
+          placement="right"
+          returnFocusRef={notificationTriggerRef}
+          contentClassName={noticesSheet.sheet}
+          bodyClassName={noticesSheet.body}
+        >
+          {notificationCenterOpen ? <div>{noticesPanel(false)}</div> : null}
+        </Sheet>
       )}
     </section>
   );

@@ -129,7 +129,7 @@ function movementsNeedingTransport(movements: readonly Movement[]): Movement[] {
  * person, read from the movement's own last pull. A record with no pull on file keeps the journey's
  * own wait, and says so.
  */
-function heldClock(movement: Movement, now: Instant): { figure: string; label: string } {
+export function heldClock(movement: Movement, now: Instant): { figure: string; label: string } {
   let pulledAt: Instant | undefined;
   for (const change of movement.stageChanges) if (change.to === "pulled") pulledAt = change.at;
   const since = pulledAt ?? movement.openedAt;

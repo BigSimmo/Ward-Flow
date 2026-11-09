@@ -57,9 +57,11 @@ describe("Handover carries open promises over (closing-the-loop package A)", () 
     inProvider(<HandoverPage />);
     // Note 12: the card stays shut until the hero strip's button opens it.
     expect(screen.queryByTestId("ward-handover-open-promises")).not.toBeInTheDocument();
-    expect(screen.getByTestId("hero-next-answer")).toHaveTextContent(/2 ward replies due\W+1 overdue/);
+    // Page tops (9 Nov 2026): the top's act row names the overdue reply; the card lists all of them.
+    expect(screen.getByTestId("ward-handover-promises-act")).toHaveTextContent("1 ward reply overdue");
     await user.click(screen.getByTestId("ward-handover-promises-toggle"));
     const panel = screen.getByTestId("ward-handover-open-promises");
+    expect(within(panel).getAllByTestId(/^ward-handover-promise-RF-/u)).toHaveLength(2);
     const rf001 = within(panel).getByTestId("ward-handover-promise-RF-001");
     expect(rf001).toHaveTextContent("Overdue");
     expect(within(rf001).getByRole("link")).toHaveAttribute("href", referralBoardHref("RF-001"));

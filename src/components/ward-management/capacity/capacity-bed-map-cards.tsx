@@ -38,16 +38,57 @@ const OPEN_FIRST = 2;
  */
 const WARDS_HREF = "/ward-flow/wards";
 
+/**
+ * The bed map's highlight chips: each lights the wards it matches and dims the rest; none hides a
+ * ward. In the map's title row on a phone; beside the page tabs on wider screens.
+ */
+export function BedMapHighlights({
+  model,
+  highlight,
+  onHighlight,
+  className,
+}: {
+  model: Pick<CapacityModel, "networkRows" | "now">;
+  highlight: Highlight | null;
+  onHighlight: (highlight: Highlight | null) => void;
+  className?: string;
+}) {
+  const { networkRows, now } = model;
+  const wardsMatching = (entry: (typeof HIGHLIGHTS)[number]) =>
+    networkRows.filter((row) => entry.test(row, isConfirmationFresh(row.unit, now))).length;
+  return (
+    <div className={className} role="group" aria-label="Highlight wards">
+      {HIGHLIGHTS.map((entry) => {
+        // Redesign (Josh, 30 Oct): the count names its noun, so "15 wards" cannot be read as the
+        // hero's bed counts.
+        const wards = wardsMatching(entry);
+        return (
+          <FilterChip
+            key={entry.id}
+            pressed={highlight === entry.id}
+            onPressedChange={(pressed) => onHighlight(pressed ? entry.id : null)}
+          >
+            {`${entry.label} · ${wards} ${wards === 1 ? "ward" : "wards"}`}
+          </FilterChip>
+        );
+      })}
+    </div>
+  );
+}
+
 export function BedMapCards({
   model,
   onSelectWard,
   selectedUnitId,
   highlight,
   onHighlight,
+  highlightsInCard = true,
 }: {
   model: CapacityModel;
   onSelectWard: (unitId: string) => void;
   selectedUnitId?: string;
+  /** False when the page draws the highlights itself, beside its tabs (desktop page top). */
+  highlightsInCard?: boolean;
   /** Owned by the page, so the hero's ready figures can light the same wards. */
   highlight: Highlight | null;
   onHighlight: (highlight: Highlight | null) => void;
@@ -96,22 +137,14 @@ export function BedMapCards({
         title="Bed map"
         action={
           <div className={styles.mapControls}>
-            <div className={styles.highlights} role="group" aria-label="Highlight wards">
-              {HIGHLIGHTS.map((entry) => {
-                // Redesign (Josh, 30 Oct): the count names its noun, so "15 wards" cannot be read as
-                // the hero's bed counts.
-                const wards = networkRows.filter((row) => entry.test(row, isConfirmationFresh(row.unit, now))).length;
-                return (
-                  <FilterChip
-                    key={entry.id}
-                    pressed={highlight === entry.id}
-                    onPressedChange={(pressed) => onHighlight(pressed ? entry.id : null)}
-                  >
-                    {`${entry.label} · ${wards} ${wards === 1 ? "ward" : "wards"}`}
-                  </FilterChip>
-                );
-              })}
-            </div>
+            {highlightsInCard ? (
+              <BedMapHighlights
+                className={styles.highlights}
+                model={model}
+                highlight={highlight}
+                onHighlight={onHighlight}
+              />
+            ) : null}
             <Segmented
               label="Bed map layout"
               items={[

@@ -52,36 +52,38 @@
   color: var(--wf-hero-ink);
 }
 
-/* Filter card */
+/* Page tops (Josh, 9 Nov 2026): no card around the filters (no boxes in boxes). Wider screens read
+   Status, Order and what is shown as one slim row; a phone has its service row here. */
 .filters {
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-3);
-  padding: var(--wf-s-3);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
-  box-shadow: var(--wf-e1);
+  padding: 0 2px;
 }
 
 .filterRow {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-2) var(--wf-s-3);
+  gap: var(--wf-s-2);
   min-width: 0;
+}
+
+@media (min-width: 64rem) {
+  .filterRow {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+}
+
+.filterLabel:not(:first-child) {
+  margin-left: var(--wf-s-3);
 }
 
 .filterLabel {
   font-size: var(--wf-fs-13);
   color: var(--wf-ink-3);
   white-space: nowrap;
-}
-
-.viewLabel {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .shownCount {
@@ -1052,21 +1054,8 @@
 }
 
 .phoneServices,
-.phoneViewRow,
 .phoneList,
 .sheetControls {
-  min-width: 0;
-}
-
-.phoneViewRow {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  width: 100%;
-}
-
-.phoneViewRow > :first-child {
-  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -1350,25 +1339,6 @@
   inset: -4px;
 }
 
-.phoneViewRow {
-  position: sticky;
-  top: var(--wf-header-height, 3.5rem);
-  z-index: 6;
-  width: auto;
-  margin: calc(var(--wf-s-2) * -1) calc(var(--wf-s-3) * -1);
-  padding: var(--wf-s-2) var(--wf-s-3);
-  background: var(--wf-canvas);
-}
-
-.phoneViewRow :global([role="radiogroup"]) {
-  width: 100%;
-}
-
-.phoneViewRow :global([role="radio"]) {
-  flex: 1 1 0;
-  justify-content: center;
-}
-
 /* Phone compact chips (Josh, 12 Oct 2026): the By service chips take the shared phone pill
  * (`--wf-phone-*`): 32px faces, 13px 600 labels, 12px mono counts. The row carries the hit area in
  * its padding so the 48px target is not clipped by the sideways scroll. Phone only. */
@@ -1402,10 +1372,6 @@
   align-items: baseline;
   gap: 2px var(--wf-s-3);
   color: var(--wf-ink-2);
-}
-
-.showingOrder {
-  color: var(--wf-ink-3);
 }
 
 /* The card's place in the chosen order, so Order visibly reshuffles the grid. */
@@ -1449,4 +1415,60 @@
   gap: var(--wf-s-2);
   margin: 0;
   font-size: var(--wf-fs-13);
+}
+
+/* Page tops (Josh, 9 Nov 2026): the title's quieter half, as on Home. */
+.titleSoft {
+  color: var(--wf-hero-ink-3);
+  font-weight: 500;
+}
+
+/* The cards keep the "+19 in 12h" words; the sparkline is read by screen readers only. */
+.main :global(svg[data-testid="ed-row-spark"]) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* Phone: the service row is slim 32px pills that fade before the Status and order button. */
+@media (max-width: 46.4375rem) {
+  .phoneFilterRow > .phoneFilterButton {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    border-radius: 999px;
+  }
+
+  .phoneServices {
+    mask-image: linear-gradient(90deg, currentColor calc(100% - 28px), transparent);
+  }
+
+  .phoneServices :global([role="radiogroup"]) {
+    gap: 6px;
+  }
+
+  /* 32px faces; an invisible cover keeps each tap area 48px tall. */
+  .phoneServices.phoneServices :global([role="radio"]) {
+    height: 32px;
+    min-height: 32px;
+    padding: 0 11px;
+    border-radius: 999px;
+    font-size: var(--wf-fs-13);
+  }
+
+  .phoneServices.phoneServices :global([role="radio"])::after {
+    inset: -8px 0;
+  }
+}
+
+/* Phone: the page tabs pin under the header while the page scrolls, as Home's do. */
+@media (max-width: 46.4375rem) {
+  .pageTabs {
+    position: sticky;
+    top: var(--wf-header-height, 3.5rem);
+    z-index: 6;
+  }
 }

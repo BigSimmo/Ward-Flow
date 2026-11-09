@@ -19,17 +19,27 @@ function bedTypeChipText(security: Security | undefined): string {
   return security === undefined ? "Bed type not recorded" : `${securityWord(security)} bed`;
 }
 import Link from "next/link";
-import { BedSingle, Check, Clock, Copy, Eye, FileText, Scale } from "lucide-react";
+import { BedSingle, Check, ClipboardList, Clock, Copy, FileText } from "lucide-react";
 import { PatientFlightHeader } from "./patient-flight-header";
 import { absenceStepsFor } from "@/components/ward-management/ward-model";
 import { type Patient } from "@/components/ward-management/ward-patients";
 import { dayLabel, type PatientStatusContext } from "./patient-status-card";
 import { type PatientNowRecord, STAGES, clock, dur } from "./patient-now-records";
 import styles from "./patient-now.module.css";
-import { Badge, Button, Card, CardHead, LiveChip, StatusGlyph, buttonClass, phoneRows } from "@/components/wf";
+import {
+  Badge,
+  Button,
+  Card,
+  CardHead,
+  HeroFigures,
+  HeroQuickChips,
+  LiveChip,
+  StatusGlyph,
+  buttonClass,
+} from "@/components/wf";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
-import { PhoneClearFact, getStageBedflowDetail } from "./patient-now-screen-helpers";
+import { clearToMove, getStageBedflowDetail } from "./patient-now-screen-helpers";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { CommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
 import { useState, type Dispatch, type JSX, type RefObject, type SetStateAction } from "react";
@@ -99,6 +109,10 @@ export type PatientNowSummaryProps = {
   /** PT1 round 3: the patient's journey, six steps from ED to community care. */
   careSteps: CareStep[];
   onOpenHistory?: () => void;
+  /** Page tops (9 Nov 2026): the Forms chip opens the Documents tab. */
+  onOpenForms?: () => void;
+  /** The chosen record tab (the folder tab follows it). */
+  tabValue: string;
 };
 
 export function PatientNowSummary(props: PatientNowSummaryProps) {
@@ -143,7 +157,6 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
     stayCurrent,
     stayDay,
     stayLeaveBed,
-    tierTone,
     urgencyTier,
     voluntaryNow,
     waitedStr,
@@ -152,6 +165,8 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
     stateTag,
     careSteps,
     onOpenHistory,
+    onOpenForms,
+    tabValue,
   } = props;
   // The placement's seven stages stay one tap away behind the journey (Josh chose the slim band).
   const [stagesOpen, setStagesOpen] = useState(false);
@@ -236,6 +251,78 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
       })}
     </ol>
   ) : null;
+  /* Page tops (Josh, 9 Nov 2026): a live movement's band leads with two figures, the wait (amber
+     past the tier's target, in the page's words) and how many move conditions are clear, the
+     status card's count. Tier, bed type and constant observation become small tags on the
+     identity line; Copy handover and Forms are the band's chips. Nothing here is new: every
+     figure is one the page already showed. */
+  const movementTop = isLiveBedflow && liveMovement ? liveMovement : undefined;
+  const overTarget = movementTop ? isTierOverdue(urgencyTier, now - movementTop.openedAt) : false;
+  const targetWords = `over T${urgencyTier} target (${tierOverdueAfterMinutes(urgencyTier) / 60}h)`;
+  const clear = movementTop ? clearToMove(mode, statusContext) : undefined;
+  const movementFigures =
+    movementTop && clear ? (
+      <span data-testid={isPhone ? "ward-patient-phone-figures" : undefined} className={styles.ptFigures}>
+        <HeroFigures
+          label="This movement"
+          items={[
+            {
+              id: "wait",
+              value: waitedStr,
+              /* "Target", not "limit", so it never reads as an Act limit. */
+              label: overTarget ? (isPhone ? targetWords : `since opened · ${targetWords}`) : "since opened",
+              tone: overTarget ? "warning" : undefined,
+            },
+            { id: "clear", value: clear.clear, unit: ` of ${clear.of}`, label: "clear to move" },
+            ...(movementTimeLeft && (isPhone || !glance)
+              ? [
+                  {
+                    id: "form",
+                    value: movementTimeLeft.text,
+                    label: `${movementTimeLeft.code} left`,
+                    tone: movementTimeLeft.standing === "later" ? undefined : ("warning" as const),
+                    testId: "ward-patient-hero-form-left",
+                  },
+                ]
+              : []),
+          ]}
+        />
+      </span>
+    ) : undefined;
+  const movementChips = movementTop ? (
+    <HeroQuickChips
+      label="Patient actions"
+      items={[
+        {
+          id: "copy",
+          label: copied ? "Copied" : "Copy handover",
+          icon: <ClipboardList size={16} strokeWidth={1.75} aria-hidden="true" />,
+          onClick: handleCopySummary,
+          testId: "ward-patient-copy-handover",
+        },
+        ...(onOpenForms
+          ? [
+              {
+                id: "forms",
+                label: "Forms",
+                icon: <FileText size={16} strokeWidth={1.75} aria-hidden="true" />,
+                onClick: onOpenForms,
+                testId: "ward-patient-forms-chip",
+              },
+            ]
+          : []),
+      ]}
+    />
+  ) : undefined;
+  const movementTags = movementTop ? (
+    <>
+      <span className={styles.ptTag}>{tierChipText(urgencyTier)}</span>
+      {isPhone ? null : <span className={styles.ptTag}>{bedTypeChipText(movementTop.security)}</span>}
+      {isConstantObservation(movementTop.observation) ? (
+        <span className={styles.ptTag}>{observationSummary(movementTop.observation)}</span>
+      ) : null}
+    </>
+  ) : undefined;
   const newReferralHref = livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new";
   return (
     <section className={styles.v6Summary} id="pnSubject" aria-label="Patient summary">
@@ -252,33 +339,16 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
             {tagText}
           </span>
         }
+        tags={movementTags}
+        figures={movementFigures}
+        chips={movementChips}
         phoneEyebrow={
-          phoneMovement ? (
-            // A3-20: the phone hero keeps the desktop's tier, bed type and observation. F-05 (phone
-            // review, Oct 2026): the observation level is its own chip, and the line may wrap to a
-            // second line rather than cut it off.
-            <span className={styles.phMoveEyebrow}>
-              {`Movement · ${tierChipText(urgencyTier)} · ${bedTypeChipText(liveMovement?.security)}`}
-              {liveMovement && isConstantObservation(liveMovement.observation) ? (
-                <span className={styles.phObsChip}>{observationSummary(liveMovement.observation)}</span>
-              ) : null}
-            </span>
-          ) : (
+          phoneMovement ? undefined : (
             <span className={styles.phEyebrow}>
               <StatusGlyph tone={tagTone} size={10} />
               {tagText}
             </span>
           )
-        }
-        phoneFootKind="actions"
-        phoneFoot={
-          phoneMovement ? (
-            <div className={phoneRows.heroPills}>
-              <Button variant="onHero" icon={Copy} className={phoneRows.heroPill} onClick={handleCopySummary}>
-                {copied ? "Copied" : "Copy handover"}
-              </Button>
-            </div>
-          ) : undefined
         }
         location={where}
         // Redesign: "Patient record · On ward" only repeated the pill beside the name, so it is
@@ -301,26 +371,8 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
         // active card's Legal status row); on the ward the day count and discharge date live in the
         // On ward card. With nothing left to add, the ward, Not active and CTO heroes carry no chips.
         facts={
-          phoneMovement ? (
-            <span className={styles.v6HeroFacts} data-testid="ward-patient-phone-figures">
-              <span className={styles.v6HeroFact}>
-                <strong className={styles.v6HeroWait}>{waitedStr}</strong>
-                <span>Since opened</span>
-              </span>
-              <PhoneClearFact mode={mode} context={statusContext} />
-              {movementTimeLeft ? (
-                <span className={styles.v6HeroFact} data-testid="ward-patient-hero-form-left">
-                  <strong className={styles.v6HeroWait}>{movementTimeLeft.text}</strong>
-                  <span className={styles.phFigLabel}>
-                    {movementTimeLeft.standing !== "later" ? (
-                      <StatusGlyph tone={movementTimeLeft.tone} size={9} />
-                    ) : null}
-                    {movementTimeLeft.code}
-                  </span>
-                </span>
-              ) : null}
-            </span>
-          ) : isPhone && !isLiveBedflow && mode === "ward" ? undefined : isPhone && !isLiveBedflow ? (
+          movementTop ? undefined : isPhone && !isLiveBedflow && mode === "ward" ? undefined : isPhone &&
+            !isLiveBedflow ? (
             /* v10 Patient, phone: three figures, the value over its label, from the record. */
             <span className={styles.v6HeroFacts} data-testid="ward-patient-phone-figures">
               {(mode === "idle" || mode === "cto"
@@ -421,50 +473,6 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                 ),
               )}
             </span>
-          ) : isLiveBedflow && liveMovement ? (
-            // Redesign (1 Nov 2026): count-led chips, the Home and Capacity hero pattern. The figure
-            // leads (the wait, the tier), then its glyph and words.
-            <span className={styles.v6HeroFacts}>
-              <span className={styles.v6HeroFact}>
-                <strong className={styles.v6HeroWait}>{waitedStr}</strong>
-                {isTierOverdue(urgencyTier, now - liveMovement.openedAt) ? (
-                  <>
-                    <StatusGlyph tone="danger" size={9} />
-                    {/* "Target", not "limit", so it never reads as an Act limit. */}
-                    since opened, over T{urgencyTier} target ({tierOverdueAfterMinutes(urgencyTier) / 60}h)
-                  </>
-                ) : (
-                  "since opened"
-                )}
-              </span>
-              <span className={styles.v6HeroFact}>
-                <strong className={styles.v6HeroWait}>{urgencyTier === undefined ? "T?" : `T${urgencyTier}`}</strong>
-                <StatusGlyph tone={tierTone} size={9} />
-                {tierChipText(urgencyTier).replace(/^T\d /, "")}
-              </span>
-              {/* Review 5 Nov 2026: the glance band above already shows Obs and Legal, so this row
-                  leaves them out rather than saying each twice. */}
-              {!glance && isConstantObservation(liveMovement.observation) ? (
-                <span className={styles.v6HeroFact}>
-                  <Eye size={14} strokeWidth={1.75} aria-hidden="true" />
-                  {observationSummary(liveMovement.observation)}
-                </span>
-              ) : null}
-              <span className={styles.v6HeroFact}>
-                <BedSingle size={14} aria-hidden="true" />
-                {bedTypeChipText(liveMovement.security)}
-              </span>
-              {!glance && movementTimeLeft ? (
-                <span className={styles.v6HeroFact} data-testid="ward-patient-hero-form-left">
-                  {movementTimeLeft.standing !== "later" ? (
-                    <StatusGlyph tone={movementTimeLeft.tone} size={9} />
-                  ) : (
-                    <Scale size={14} aria-hidden="true" />
-                  )}
-                  {movementTimeLeft.code} · <strong className={styles.v6HeroWait}>{movementTimeLeft.text}</strong>
-                </span>
-              ) : null}
-            </span>
           ) : mode === "ward" || mode === "idle" || mode === "cto" ? undefined : (
             <span className={styles.v6HeroFacts}>
               {(mode === "leave" || mode === "awol" || mode === "ed") && (
@@ -534,13 +542,14 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
           )
         }
         tabs={recordTabs}
+        tabValue={tabValue}
         actions={
           <>
             {modeMeta.quiet ? null : (
               // v10 phone: the movement page reads "Live HH:MM", the patient page a plain "Live".
               <LiveChip state="live" age={phoneMovement ? undefined : null} onHero />
             )}
-            {isPhone ? null : (
+            {isPhone || movementTop ? null : (
               <Button variant="onHero" size="sm" icon={Copy} onClick={handleCopySummary}>
                 {copied
                   ? "Copied"

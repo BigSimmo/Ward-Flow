@@ -6,29 +6,31 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useSyncExternalStore, type ComponentProps } from "react";
 
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
-import { Eye, GanttChart, LayoutGrid, List, Search, SlidersHorizontal } from "lucide-react";
+import { Check, Eye, Phone, Search, SlidersHorizontal, Users } from "lucide-react";
 
 import {
   Button,
   Card,
-  CheckingFoot,
   Drawer,
   EmptyState,
   GroupHead,
+  FolderTabs,
   Hero,
-  HeroStat,
-  Icon,
-  LiveChip,
+  HeroAct,
+  HeroFigures,
+  HeroQuickChips,
+  HeroTop,
   PhoneListRow,
   PhoneSheet,
   ScrollRow,
+  PillTabs,
   Segmented,
   SrOnly,
   StatusGlyph,
   buttonClass,
   cx,
+  folderTabClasses,
   useIsPhone,
-  useIsTabletPortrait,
   BarList,
   RowTrend,
 } from "@/components/wf";
@@ -54,6 +56,7 @@ import { edShortName } from "@/components/ward-management/ward-sites";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { edHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 
 import {
   CLOCK_TONE,
@@ -93,6 +96,12 @@ const HELD = ED_HELD_STAGES;
 const LEAVING = ED_LEAVING_STAGES;
 
 const PIPS_SHOWN = 12;
+
+/** Page tops (Josh, 9 Nov 2026): the figures read longest-first, as the page does. */
+const FIGURE_ORDER: readonly Highlight[] = ["severe", "past", "no-bed"];
+
+/** The chip that opened a tool gets focus back when it closes. */
+const focused = () => (document.activeElement instanceof HTMLElement ? document.activeElement : undefined);
 
 /** Lane scale: logarithmic from zero to seven days, so an hour and a week both stay readable. */
 const LANE_TICKS: readonly [number, string][] = [
@@ -158,7 +167,6 @@ export function EdIndex() {
   const [phoneView, setPhoneView] = useState<PhoneView>("list");
   const [phoneFiltersOpen, setPhoneFiltersOpen] = useState(false);
   const isPhone = useIsPhone();
-  const isTabletPortrait = useIsTabletPortrait();
 
   // D-91: the keyword box over these ~15 EDs went in the search and forms review (Josh, 30 Oct
   // 2026). The header search finds an ED by name or site.
@@ -321,11 +329,6 @@ export function EdIndex() {
     waiting: "Has waiting",
     clear: "Clear",
   };
-  const ORDER_WORDS: Record<OrderBy, string> = {
-    longest: "longest wait first",
-    most: "most waiting first",
-    service: "by service",
-  };
   const filterWords = [
     service === "all" ? null : service,
     status === "all" ? null : STATUS_WORDS[status],
@@ -338,7 +341,6 @@ export function EdIndex() {
         {filterWords.length > 0 ? <> · {filterWords.join(" · ")}</> : null}
         <SrOnly>, sample data</SrOnly>
       </span>
-      <span className={styles.showingOrder}>Sorted {ORDER_WORDS[order]}</span>
     </span>
   );
   const servicePicker = (
@@ -357,70 +359,97 @@ export function EdIndex() {
     <div className={styles.screen} data-testid="ward-ed-index" data-ward-design="v6">
       <main id="main-content" className={styles.main}>
         <Hero
-          // F-09 (phone review, Oct 2026): the phone eyebrow names how many EDs there are, so the "All
-          // EDs" count agrees with it; the title counts the EDs with someone waiting.
-          eyebrow={
-            isPhone
-              ? `Emergency · Statewide · ${rows.length} EDs`
-              : `Emergency · Statewide · ${rows.length} departments`
-          }
           level={1}
+          className={folderTabClasses.hero}
           title={
             <>
-              <SrOnly>All EDs,</SrOnly> {waiting} waiting across {rows.length} EDs
+              <SrOnly>All EDs, </SrOnly>
+              Every ED <span className={styles.titleSoft}>longest first</span>
             </>
           }
-          titleMeta={
-            // v10 phone: one quiet line under the title in place of the checking foot.
-            isPhone
-              ? waiting > 0 && longestRow
-                ? `Longest ${splitDuration(longest)} at ${longestRow.short} · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
-                : `Nobody waiting · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
-              : `${withWaiting.length} with someone waiting`
-          }
-          aside={
-            isPhone ? (
-              <LiveChip state={paused ? "paused" : "live"} age={null} onHero onTogglePause={togglePause} />
-            ) : (
-              <PageLiveChip paused={paused} onTogglePause={togglePause} />
-            )
-          }
-          stats={
-            // v10 phone: the first three highlight figures sit on hairlines, value over label.
-            isPhone
-              ? chips
-                  .slice(0, 3)
-                  .map((chip) => (
-                    <HeroStat
-                      key={chip.id}
-                      value={chip.value}
-                      label={chip.label}
-                      tone={chip.tone && chip.value > 0 ? chip.tone : undefined}
-                      pressed={highlight === chip.id}
-                      onToggle={() => setHighlight((value) => (value === chip.id ? null : chip.id))}
-                    />
-                  ))
-              : undefined
-          }
-          bar={
-            isPhone ? undefined : (
-              <div className={styles.heroChips} role="group" aria-label="Highlight people waiting">
-                {chips.map((chip) => (
-                  <HeroStat
-                    key={chip.id}
-                    inline
-                    value={chip.value}
-                    label={chip.label}
-                    tone={chip.tone && chip.value > 0 ? chip.tone : undefined}
-                    pressed={highlight === chip.id}
-                    onToggle={() => setHighlight((value) => (value === chip.id ? null : chip.id))}
-                  />
-                ))}
-              </div>
-            )
-          }
-          barAside={
-            activeChip ? (
+          aside={<PageLiveChip paused={paused} onTogglePause={togglePause} />}
+        >
+          <HeroTop
+            figures={
+              <HeroFigures
+                label="Highlight people waiting"
+                items={[
+                  {
+                    id: "waiting",
+                    value: waiting,
+                    label: `waiting in ${rows.length} EDs`,
+                    testId: "ed-index-figure-waiting",
+                  },
+                  // Each figure highlights its people, as the chips it replaces did; pressed again, it clears.
+                  ...chips
+                    .filter((chip) => chip.id === "severe" || chip.id === "past" || (!isPhone && chip.id === "no-bed"))
+                    .sort((a, b) => FIGURE_ORDER.indexOf(a.id) - FIGURE_ORDER.indexOf(b.id))
+                    .map((chip) => ({
+                      id: chip.id,
+                      value: chip.value,
+                      label: chip.label.toLowerCase(),
+                      pressed: highlight === chip.id,
+                      onClick: () => setHighlight((value) => (value === chip.id ? null : chip.id)),
+                      testId: `ed-index-figure-${chip.id}`,
+                    })),
+                ]}
+              />
+            }
+            act={
+              waiting > 0 && longestRow ? (
+                <HeroAct
+                  tone={
+                    longest >= accessTarget ? "danger" : longest >= ED_SEVERE_PRESSURE_WAIT_MINUTES ? "warning" : "calm"
+                  }
+                  title={`${longestRow.short} · ${splitDuration(longest)}${isPhone ? "" : ` · ${longestRow.summary.waiting} waiting`}`}
+                  action={{ label: "Enter", href: edHref(longestRow.summary.ed.id), testId: "ed-index-act-enter" }}
+                  testId="ed-index-act"
+                />
+              ) : (
+                <HeroAct tone="calm" title="Nobody waiting in any ED" testId="ed-index-act" />
+              )
+            }
+            chips={
+              <HeroQuickChips
+                label="Common jobs"
+                items={[
+                  {
+                    id: "find",
+                    label: "Find a bed",
+                    icon: <Search size={16} strokeWidth={1.75} aria-hidden="true" />,
+                    onClick: () => requestToolsTool("bed-finder", focused()),
+                    testId: "ed-index-find-bed",
+                  },
+                  {
+                    id: "contacts",
+                    label: "Call and contacts",
+                    icon: <Phone size={16} strokeWidth={1.75} aria-hidden="true" />,
+                    onClick: () => requestToolsTool("contacts", focused()),
+                    testId: "ed-index-contacts",
+                  },
+                  ...chips
+                    .filter((chip) => chip.id === "form" || chip.id === "held")
+                    .reverse()
+                    .map((chip) => ({
+                      id: chip.id,
+                      label: chip.label,
+                      icon:
+                        chip.id === "form" ? (
+                          <Users size={16} strokeWidth={1.75} aria-hidden="true" />
+                        ) : (
+                          <Check size={16} strokeWidth={1.75} aria-hidden="true" />
+                        ),
+                      count: chip.value,
+                      countTone: "quiet" as const,
+                      pressed: highlight === chip.id,
+                      onClick: () => setHighlight((value) => (value === chip.id ? null : chip.id)),
+                      testId: `ed-index-chip-${chip.id}`,
+                    })),
+                ]}
+              />
+            }
+          >
+            {activeChip ? (
               <span className={styles.heroNote} aria-live="polite" data-testid="ed-index-highlight-note">
                 <span>
                   <b className={styles.heroNum}>{highlightedEds}</b> of {withWaiting.length} EDs
@@ -430,98 +459,21 @@ export function EdIndex() {
                   Clear
                 </Button>
               </span>
-            ) : null
-          }
-          foot={
-            isPhone ? undefined : (
-              <CheckingFoot
-                items={[
-                  {
-                    id: "longest",
-                    label: waiting > 0 && longestRow ? `Longest, ${longestRow.short}` : "Longest",
-                    value: waiting > 0 ? splitDuration(longest) : 0,
-                  },
-                  // Design brief (Josh, 3 Nov 2026): the lines in the words the chips above use.
-                  { id: "target", label: "Red past", value: waitLine(accessTarget) },
-                  { id: "severe", label: "Amber past", value: waitLine(ED_SEVERE_PRESSURE_WAIT_MINUTES) },
-                ]}
-                notChecked={["referrals not yet a movement"]}
-              />
-            )
-          }
-          // At tablet portrait the line wrapped onto its own row; the footer note says it too.
-          footAside={isPhone || isTabletPortrait ? undefined : <span>Lists update once a minute</span>}
-        />
-
-        <section className={styles.filters} aria-label="Emergency department filters">
-          <div className={styles.filterRow}>
-            {isPhone ? null : (
-              <Segmented label="Health service" items={serviceItems} value={service} onChange={setService} size="md" />
-            )}
-            {isPhone ? (
-              // D-91: with the keyword box gone, the status and order button sits at the end of the
-              // health service chips, so the view switch below still runs the full width.
-              <div className={styles.phoneFilterRow}>
-                <ScrollRow className={styles.phoneServices}>
-                  <Segmented
-                    label="Health service"
-                    items={serviceItems}
-                    value={service}
-                    onChange={setService}
-                    size="md"
-                  />
-                </ScrollRow>
-                <Button
-                  variant="sec"
-                  iconOnly
-                  icon={SlidersHorizontal}
-                  aria-label={`Status and order${status !== "all" ? ", status filtered" : ""}`}
-                  aria-haspopup="dialog"
-                  onClick={() => setPhoneFiltersOpen(true)}
-                  className={styles.phoneFilterButton}
-                  data-testid="ed-index-phone-filters"
-                />
-              </div>
             ) : null}
-            {isPhone ? null : (
-              <Segmented
-                label="View"
-                items={[
-                  { id: "cards" as ViewMode, label: <ViewLabel icon={LayoutGrid} text="Cards" /> },
-                  { id: "table" as ViewMode, label: <ViewLabel icon={List} text="Table" /> },
-                  { id: "lanes" as ViewMode, label: <ViewLabel icon={GanttChart} text="Lanes" /> },
-                ]}
-                value={view}
-                onChange={setView}
-                size="md"
-              />
-            )}
-          </div>
-          <div className={styles.filterRow}>
-            {isPhone ? null : (
-              <>
-                <span className={styles.filterLabel}>Status</span>
-                {statusControl}
-                <span className={styles.filterLabel}>Order</span>
-                {orderControl}
-              </>
-            )}
-            <span className={styles.shownCount}>
-              {isFiltered ? (
-                <Button variant="ghost" size="sm" onClick={resetFilters}>
-                  Clear filters
-                </Button>
-              ) : null}
-              {matchCount}
-            </span>
-          </div>
-        </section>
+          </HeroTop>
+        </Hero>
 
-        {/* v10 phone: EDs, Wait lanes and By service stay pinned under the bar while the list
-            scrolls, so the switch sits outside the filters block. */}
-        {isPhone ? (
-          <div className={styles.phoneViewRow}>
+        {/* Page tops (Josh, 9 Nov 2026): the views are the page tabs. Wider screens put the health
+            service choice beside them as quiet filters; a phone keeps its own service row below. */}
+        <FolderTabs
+          label="All EDs views"
+          value={isPhone ? phoneView : view}
+          className={styles.pageTabs}
+          testId="ed-index-tabs"
+        >
+          {isPhone ? (
             <Segmented
+              className={folderTabClasses.switch}
               label="Show"
               items={[
                 { id: "list" as PhoneView, label: "EDs" },
@@ -533,8 +485,76 @@ export function EdIndex() {
               onChange={setPhoneView}
               size="md"
             />
-          </div>
-        ) : null}
+          ) : (
+            <>
+              <Segmented
+                className={folderTabClasses.switch}
+                label="View"
+                items={[
+                  { id: "cards" as ViewMode, label: "Cards" },
+                  { id: "table" as ViewMode, label: "Table" },
+                  { id: "lanes" as ViewMode, label: "Lanes" },
+                ]}
+                value={view}
+                onChange={setView}
+                size="md"
+              />
+              <span className={folderTabClasses.rule} aria-hidden="true" />
+              <div className={folderTabClasses.filters}>
+                <PillTabs
+                  label="Health service"
+                  items={serviceItems}
+                  value={service}
+                  onChange={(id) => setService(id as ServiceFilter)}
+                />
+              </div>
+            </>
+          )}
+        </FolderTabs>
+
+        <section className={styles.filters} aria-label="Emergency department filters">
+          {isPhone ? (
+            // D-91: with the keyword box gone, the status and order button sits at the end of the
+            // health service chips.
+            <div className={styles.phoneFilterRow}>
+              <ScrollRow className={styles.phoneServices}>
+                <Segmented
+                  label="Health service"
+                  items={serviceItems}
+                  value={service}
+                  onChange={setService}
+                  size="md"
+                />
+              </ScrollRow>
+              <Button
+                variant="sec"
+                iconOnly
+                icon={SlidersHorizontal}
+                aria-label={`Status and order${status !== "all" ? ", status filtered" : ""}`}
+                aria-haspopup="dialog"
+                onClick={() => setPhoneFiltersOpen(true)}
+                className={styles.phoneFilterButton}
+                data-testid="ed-index-phone-filters"
+              />
+            </div>
+          ) : (
+            // One slim row: Status, Order, then what is shown at the right end.
+            <div className={styles.filterRow}>
+              <span className={styles.filterLabel}>Status</span>
+              {statusControl}
+              <span className={styles.filterLabel}>Order</span>
+              {orderControl}
+              <span className={styles.shownCount}>
+                {isFiltered ? (
+                  <Button variant="ghost" size="sm" onClick={resetFilters}>
+                    Clear filters
+                  </Button>
+                ) : null}
+                {matchCount}
+              </span>
+            </div>
+          )}
+        </section>
 
         {shown.length === 0 ? (
           <Card className={styles.emptyCard}>
@@ -660,15 +680,6 @@ export function EdIndex() {
         />
       </main>
     </div>
-  );
-}
-
-function ViewLabel({ icon, text }: { icon: typeof List; text: string }) {
-  return (
-    <span className={styles.viewLabel}>
-      <Icon icon={icon} size={14} />
-      {text}
-    </span>
   );
 }
 

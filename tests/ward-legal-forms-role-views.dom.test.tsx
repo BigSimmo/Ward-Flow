@@ -42,9 +42,11 @@ describe("Legal forms redesign, coordinator desk", () => {
   it("shows the colour key, counts that name their noun and the next form to end", () => {
     renderScreen();
     expect(screen.getByText(TYPED_TIME_KEY)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /forms? to act on/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /forms?, time not written/ })).toBeInTheDocument();
-    expect(screen.getByText(/^(Next to end|Passed)/)).toBeInTheDocument();
+    // Page tops (9 Nov 2026): the top's figures highlight rows; each label names what it counts.
+    expect(screen.getByRole("button", { name: /^within \d+/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "no time written" })).toBeInTheDocument();
+    // Page tops (9 Nov 2026): the act row names the form to act on first, or says none is close.
+    expect(screen.getByTestId("ward-legal-act")).toHaveTextContent(/passed|within|None passed/i);
     expect(screen.getByRole("button", { name: "Record a form" })).toBeInTheDocument();
   });
 
@@ -99,7 +101,7 @@ describe("Legal forms redesign, nurse in charge (ward desk)", () => {
     renderScreen();
     expect(screen.queryByText(/^Next to end/)).toBeNull();
     // The title names the ward's own place.
-    expect(document.body.textContent).toMatch(new RegExp(`\\d+ forms? on moves to ${ward.name}`));
+    expect(screen.getByTestId("ward-legal-figure-on")).toHaveTextContent(new RegExp(`^\\d+ on moves to ${ward.name}$`));
     expect(screen.queryByRole("button", { name: "Record a form" })).toBeNull();
     const admitted = screen.getByTestId("ward-legal-forms-admitted");
     expect(admitted).toHaveTextContent("Admitted on a form");

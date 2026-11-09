@@ -90,13 +90,13 @@ import { ArrangeSwitch, type ArrangeBy } from "./alerts-view-switch";
 import homeStyles from "@/components/ward-management/coordinator/home-list.module.css";
 import { alertChecks } from "./alerts-checks";
 import { useAlertsHistory } from "./alerts-history";
-import { AlertsHero } from "./alerts-hero";
+import { AlertsHero, AlertsToolsMenu, yoursFilter } from "./alerts-hero";
 import { AcceptedPullRows, useAcceptedPull } from "@/components/ward-management/coordinator/accepted-pull-rows";
 import { AlertPullPhoneRows } from "./alerts-pull-phone-rows";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { groupSameKind, KindGroup } from "./alerts-queue-groups";
 import { PhoneOwnerMenu } from "./alerts-phone-owner";
-import { AlertsSidePanelEmpty, CheckingList, ChecksCard, ChecksChip, ownWardName } from "./alerts-checking";
+import { AlertsSidePanelEmpty, CheckingList, ChecksCard, ownWardName } from "./alerts-checking";
 import {
   AlertsBroadcastsPanel,
   AlertsClearedPanel,
@@ -508,7 +508,6 @@ function AlertsWorkspace() {
   const runningEntries = activeEntries.filter((entry) => entry.group === "running");
   const allEntries = useMemo(() => [...activeEntries, ...snoozedEntries], [activeEntries, snoozedEntries]);
   const countedActive = useMemo(() => activeEntries.filter((entry) => entry.group !== "running"), [activeEntries]);
-  const yoursCount = countedActive.filter((entry) => entry.mine).length;
   // Q111 (Josh, 1 Nov 2026): a ward's acceptance with no bed pulled is act now, coordinator's desk only.
   const toPull = useMemo(
     () => (coordDesk ? acceptedReferralsAwaitingPull(referrals, units, movements) : []),
@@ -914,8 +913,6 @@ function AlertsWorkspace() {
     setWatchHighlight(null);
   };
 
-  const directiveTone: WfTone =
-    activeBroadcast?.severity === "critical" ? "danger" : activeBroadcast?.severity === "warning" ? "warning" : "info";
   const pastBroadcasts = (broadcastAlerts ?? []).filter(
     (alert) => alert.id !== activeBroadcast?.id && !livePullNows.includes(alert),
   );
@@ -1281,10 +1278,8 @@ function AlertsWorkspace() {
   const checkingList = (
     <CheckingList checks={checks} watchHighlight={watchHighlight} onWatch={onWatch} showLabel={!quietWard} />
   );
-  // Nurse in charge: a quiet ward's side panel lists the checks, so the hero leaves them out.
-  const checkingFoot = quietWard ? undefined : <ChecksChip checks={checks}>{checkingList}</ChecksChip>;
-  // Alerts redesign (1 Nov 2026): on a desktop the Today track and the at-a-glance line sit in the
-  // band, in place of the Today card, the band's broadcast button and the Checking row.
+  // Desktop: the Today track above the top's Today band (page tops, 9 Nov 2026). A quiet ward's side
+  // panel lists the checks instead.
   const todayBand =
     isPhone || quietWard ? undefined : (
       <TodayBand
@@ -1293,9 +1288,6 @@ function AlertsWorkspace() {
         onPick={pickToday}
         {...today}
         noTimeCount={countedActive.filter((entry) => entry.raised === undefined).length}
-        checking={<div className={styles.checkingFootWide}>{checkingFoot}</div>}
-        liveBroadcast={activeBroadcast ? { until: activeBroadcast.expiresAt } : undefined}
-        onOpenBroadcast={openLiveBroadcast}
       />
     );
 
@@ -1306,31 +1298,44 @@ function AlertsWorkspace() {
         <AlertsHero
           isPhone={isPhone}
           wardName={wardName}
-          openCount={activeEntries.length}
-          runningCount={runningEntries.length}
           oldestRaised={oldestRaised}
           now={now}
           live={live}
           actCount={actCount}
           waitEntries={waitEntries}
-          yoursCount={yoursCount}
+          yours={yoursFilter(lens, () => setTab("now"))}
           handleNext={handleNext}
-          broadcastTriggerRef={broadcastTriggerRef}
           openComposer={openComposer}
           broadcastDisabledReason={broadcastDisabledReason}
           activeBroadcast={activeBroadcast}
           onOpenBroadcast={openLiveBroadcast}
-          directiveTone={directiveTone}
           broadcastAcks={broadcastAcks}
-          phoneToday={phoneToday}
-          setPhoneToday={setPhoneToday}
-          todayChart={todayChart}
-          notifyOn={notifyOn}
-          handleNotify={handleNotify}
           nextQueue={nextQueue}
-          handleCopy={handleCopy}
-          checkingFoot={checkingFoot}
+          today={{ raised: today.raised.length, acted: today.acted.length }}
+          checks={quietWard ? undefined : checks}
+          onChecking={() => setPhoneChecks(true)}
+          onToday={() => setPhoneToday(true)}
           todayBand={todayBand}
+        />
+        <AlertsViewTabs
+          isPhone={isPhone}
+          tabs={tabs}
+          value={shownTab}
+          onChange={setTab}
+          lens={quietWard ? undefined : lens}
+          end={
+            <span className={parts.tabsEnd}>
+              {!isPhone && shownTab === "now" && wardName === undefined ? (
+                <ArrangeSwitch value={arrangeBy} onChange={setArrangeBy} withOwner={namedOwners.length > 0} />
+              ) : null}
+              <AlertsToolsMenu
+                canCopy={access.role !== "officer"}
+                onCopy={handleCopy}
+                notifyOn={notifyOn}
+                onNotify={handleNotify}
+              />
+            </span>
+          }
         />
 
         {/* Feedback after a broadcast or an act on a row */}
@@ -1350,22 +1355,15 @@ function AlertsWorkspace() {
         <div className={styles.grid}>
           <div className={styles.column}>
             <Card as="section" className={styles.queueCard} aria-label="Alerts">
-              <AlertsViewTabs
-                isPhone={isPhone}
-                tabs={tabs}
-                value={shownTab}
-                onChange={setTab}
-                arrange={
-                  shownTab === "now" && wardName === undefined ? (
-                    <ArrangeSwitch value={arrangeBy} onChange={setArrangeBy} withOwner={namedOwners.length > 0} />
-                  ) : null
-                }
-              />
-
               {shownTab === "now" ? (
                 <TabPanel idPrefix="alerts" id="now">
-                  {quietWard ? null : (
-                    <OpenFilters lens={lens} end={isPhone && wardName === undefined ? phoneOwner : undefined} />
+                  {/* Page tops: a phone keeps its filters here, less the top's Act now and Yours. */}
+                  {quietWard || !isPhone ? null : (
+                    <OpenFilters
+                      lens={lens}
+                      omit={["act", "yours"]}
+                      end={wardName === undefined ? phoneOwner : undefined}
+                    />
                   )}
                   {/* Nurse in charge: one ward needs no arrange-by or owner lens (Josh, 31 Oct 2026, answer 17). */}
                   {wardName !== undefined || !anyHighlight ? null : (
@@ -1441,6 +1439,9 @@ function AlertsWorkspace() {
             )}
             <PhoneSheet open={phoneChecks} onClose={() => setPhoneChecks(false)} title="Checking" height="tall">
               <div className={styles.phoneChecks}>{checkingList}</div>
+            </PhoneSheet>
+            <PhoneSheet open={phoneToday} onClose={() => setPhoneToday(false)} title="Today" height="tall">
+              <div className={styles.phoneChecks}>{todayChart}</div>
             </PhoneSheet>
           </div>
         </div>

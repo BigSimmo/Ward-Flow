@@ -293,7 +293,7 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
     // Blocked chip: out of service is not recorded (owner ruling 2026-09-25) and folds into Closed.
     // Integration QA (3 Nov 2026): Ready and Occupied sit once, in the hero, not in this row.
     expect(screen.getByTestId("ward-hero-ready")).toHaveTextContent("1");
-    expect(screen.getByRole("region", { name: "Ward capacity" })).toHaveTextContent(/16\s*Occupied/u);
+    expect(screen.getByRole("group", { name: "Ward capacity" })).toHaveTextContent(/16\D*20\s*occupied/u);
     expect(chipRow).not.toHaveTextContent("Ready");
     expect(chipRow).not.toHaveTextContent("Occupied");
     expect(chipRow).toHaveTextContent("Pulled 2");

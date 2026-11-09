@@ -73,7 +73,8 @@ describe("the larger-screen card comes after the role check (WF-12)", () => {
     );
     const service = siteByCode("FSH")?.service;
     expect(service).toBeTruthy();
-    expect(screen.getAllByText(`Bed meeting · ${service}`).length).toBeGreaterThan(0);
-    expect(screen.queryByText("Bed meeting · All services")).not.toBeInTheDocument();
+    // Page tops (9 Nov 2026): the heading reads "Bed meeting", with the service read after it.
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(`Bed meeting · ${service}`);
+    expect(screen.getByRole("heading", { level: 1 })).not.toHaveTextContent("Bed meeting · All services");
   });
 });

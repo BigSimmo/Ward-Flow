@@ -202,8 +202,9 @@ describe("ED and Delays on a phone (C1)", () => {
     const fold = screen.getByTestId("delays-filter-fold");
     expect(fold.textContent).toBe("Filter");
 
-    // A hero figure is a filter too, so it counts.
-    fireEvent.click(screen.getByTestId("delays-stat-over8"));
+    // A hero figure is a filter too, so it counts. Page tops (9 Nov 2026): a phone shows Past 24h,
+    // not Over 8h.
+    fireEvent.click(screen.getByTestId("delays-stat-over24-filter"));
     expect(screen.getByTestId("delays-filter-fold").textContent).toMatch(/Filter·1filter on/);
 
     fireEvent.click(screen.getByTestId("delays-filter-fold"));

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Hero, useIsPhone } from "@/components/wf";
+import { FolderTabs, Hero, cx, folderTabClasses, useIsPhone } from "@/components/wf";
 import { patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
 import styles from "./patient-now.module.css";
 
@@ -34,6 +34,10 @@ export function PatientFlightHeader({
   tabs,
   actions,
   glance,
+  tags,
+  figures,
+  chips,
+  tabValue,
 }: {
   displayName: string;
   preferredName?: string | null;
@@ -65,6 +69,14 @@ export function PatientFlightHeader({
   actions?: ReactNode;
   /** PT1: legal, observation, risk, community, GP and alerts, under the identity line. */
   glance?: ReactNode;
+  /** Page tops (9 Nov 2026): small tags on the identity line (tier, bed type, constant obs). */
+  tags?: ReactNode;
+  /** Page tops: a live movement's figures, beside the glance facts on a desktop. */
+  figures?: ReactNode;
+  /** Page tops: the band's chips (Copy handover, Forms). */
+  chips?: ReactNode;
+  /** The chosen record tab, so the folder tab follows it (Now when not given). */
+  tabValue?: string;
 }) {
   // Q117 (Josh, 1 Nov 2026): when an interpreter is required, it shows on the record's first line,
   // because it changes how every call and handover is made. Otherwise it stays in Details only.
@@ -83,12 +95,15 @@ export function PatientFlightHeader({
             {patientAgeYears(patient, displayToday)} y, {patient.sex ? patient.sex.toLowerCase() : "sex not recorded"}
           </span>
           <span>DOB {australianDate(patient.dateOfBirth)}</span>
+          {/* Page tops: the place joins the identity line (it was the eyebrow). */}
+          {location ? <span>{location}</span> : null}
         </>
       ) : (
         <span>Demographics not recorded</span>
       )}
       {/* Redesign: the place is the eyebrow over the name, so the line under it does not repeat it.
           PT1: with the at a glance row, the interpreter shows once, under Alerts. */}
+      {tags}
       {glance ? null : interpreterTag}
       {patient?.confidential ? (
         <span className={styles.v6Confidential} data-testid="ward-patient-confidential-pill">
@@ -112,6 +127,7 @@ export function PatientFlightHeader({
       {preferredName ? ` · known as ${preferredName}` : null}
       {location ? ` · ${location}` : null}
       {interpreter && !glance ? ` · ${interpreter} interpreter` : null}
+      {tags}
     </span>
   );
   return (
@@ -120,11 +136,12 @@ export function PatientFlightHeader({
         level={1}
         // Bug pass (4 Nov 2026): a not active record keeps the same dark band and title as an active
         // one, as it already did on a phone; `quiet` still drops the stepper and timers.
-        className={styles.v6Hero}
+        className={cx(styles.v6Hero, folderTabClasses.hero)}
         // The phone eyebrow carries the mode or the movement's tier, bed type and observation chip,
         // none of which the header says, so it stays drawn (Q153).
         phoneEyebrow="show"
-        eyebrow={isPhone && phoneEyebrow ? phoneEyebrow : location ? `Patient · ${location}` : "Patient"}
+        // Page tops (9 Nov 2026): no eyebrow on a desktop; the place is on the identity line.
+        eyebrow={isPhone ? phoneEyebrow : undefined}
         title={displayName}
         titleMeta={
           isPhone ? (
@@ -156,8 +173,16 @@ export function PatientFlightHeader({
         bar={
           <div className={styles.v6HeroBar}>
             {isPhone ? null : idLine}
-            {glance}
+            {figures ? (
+              <div className={styles.ptGrid}>
+                {glance}
+                {figures}
+              </div>
+            ) : (
+              glance
+            )}
             {facts}
+            {chips}
             {steps}
             {journey}
           </div>
@@ -165,7 +190,7 @@ export function PatientFlightHeader({
       />
       {/* v10: the record tabs leave the hero and sit on the page, under the band. On a phone the
           screen renders this row itself, beside the record, so it can pin under the header. */}
-      {isPhone ? null : <PatientRecordTabsRow tabs={tabs} />}
+      {isPhone ? null : <PatientRecordTabsRow tabs={tabs} value={tabValue ?? "now"} />}
     </div>
   );
 }
@@ -175,8 +200,21 @@ export function PatientFlightHeader({
  * the record (not inside the hero) and adds the shared `pinnedSwitch` class, so it sticks under
  * the phone header while the record scrolls (Josh, 12 Oct 2026).
  */
-export function PatientRecordTabsRow({ tabs, className }: { tabs: ReactNode; className?: string }) {
-  return <div className={className ? `${styles.v6HeroTabsRow} ${className}` : styles.v6HeroTabsRow}>{tabs}</div>;
+export function PatientRecordTabsRow({
+  tabs,
+  value,
+  className,
+}: {
+  tabs: ReactNode;
+  value: string;
+  className?: string;
+}) {
+  // Page tops (Josh, 9 Nov 2026): the shared folder tabs, rising out of the band.
+  return (
+    <FolderTabs label="Record views" value={value} className={cx(styles.ptTabs, className)} testId="ward-patient-tabs">
+      {tabs}
+    </FolderTabs>
+  );
 }
 
 /** The language when the record says an interpreter is required ("Italian — interpreter required"). */

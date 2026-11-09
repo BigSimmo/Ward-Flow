@@ -61,6 +61,8 @@ function renderTv(props: Parameters<typeof BedMeetingTvScreen>[0] = {}) {
 }
 
 const figure = (testId: string) => within(screen.getByTestId(testId)).getAllByRole("definition")[0].textContent;
+// Page tops (9 Nov 2026): the bed meeting's figures are the slate's kit figures, value first, a plain number.
+const heroFigure = (testId: string) => screen.getByTestId(testId).querySelector("b")?.textContent;
 const shown = (value: number) => (value === 0 ? "None" : String(value));
 
 function seedInputs() {
@@ -188,36 +190,34 @@ describe("the bed meeting TV view", () => {
       service: null,
       nameOf: () => "",
     });
-    expect(figure("bed-meeting-tv-ready")).toBe(shown(sheet.capacity.ready));
-    // CS-10 (Audit 1): the ready figure says how old it is, on the checking line under the tiles
-    // (core pages redesign, 31 Oct 2026: each tile is one figure and one short line).
+    expect(heroFigure("bed-meeting-tv-ready")).toBe(String(sheet.capacity.ready));
+    // CS-10 (Audit 1): the ready figure says how old it is, on the checking line beside the top's chips
+    // (page tops, 9 Nov 2026: each figure is one number and a few words).
     expect(screen.getByTestId("bed-meeting-tv-checking")).toHaveTextContent(
       /^(Oldest count confirmed|\d+ wards? not confirmed since) \d\d:\d\d/,
     );
     // P025: the network mixes 60 and 90 minute wards, so the TV names the range.
     expect(screen.getByTestId("bed-meeting-tv-checking")).toHaveTextContent(/late after \d+( to \d+)? min/);
-    expect(figure("bed-meeting-tv-ed")).toBe(shown(sheet.ed.waiting));
+    expect(heroFigure("bed-meeting-tv-ed")).toBe(String(sheet.ed.waiting));
     const { heldUp, confirmed, expected } = sheet.discharges;
     // Held up discharges are listed in the panel, so the headline counts them.
     expect(heldUp).toBeGreaterThan(0);
-    expect(figure("bed-meeting-tv-discharges")).toBe(shown(heldUp + confirmed + expected));
-    expect(figure("bed-meeting-tv-delays")).toBe(shown(sheet.delays.total));
+    expect(heroFigure("bed-meeting-tv-discharges")).toBe(String(heldUp + confirmed + expected));
+    expect(heroFigure("bed-meeting-tv-delays")).toBe(String(sheet.delays.total));
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Bed meeting · All services");
-    // The state screen reads in handover order: waiting, longest, beds, discharges, delays.
-    const labels = within(screen.getByTestId("bed-meeting-tv-tiles"))
-      .getAllByRole("term")
-      .map((term) => term.firstElementChild?.textContent);
-    expect(labels).toEqual([
-      "Waiting in ED",
-      "Longest ED wait",
-      "Beds ready now",
-      "Discharges due today and tomorrow",
-      "Open movements",
-    ]);
-    // Every box says its state in words as well as colour.
-    for (const tile of within(screen.getByTestId("bed-meeting-tv-tiles")).getAllByRole("term")) {
-      expect(tile.textContent).toMatch(/Act now|Watch|Good|Steady/);
-    }
+    // The state screen reads in handover order: waiting, beds, discharges, movements; the longest
+    // wait sits on the act row's right.
+    const labels = within(screen.getByRole("group", { name: "Figures" }))
+      .getAllByRole("paragraph")
+      .map((item) => item.querySelector("span")?.textContent);
+    expect(labels).toEqual(["waiting in ED", "beds ready", "discharges due", "open movements"]);
+    const longest = sheet.ed.longestWaits[0];
+    if (!longest) throw new Error("expected someone waiting");
+    expect(screen.getByTestId("bed-meeting-tv-longest")).toHaveTextContent(
+      `longest ${splitDuration(longest.waitMinutes)}`,
+    );
+    // A long wait says so in words as well as the red mark.
+    expect(screen.getByTestId("bed-meeting-tv-act")).toHaveTextContent(`${sheet.ed.overLongWait} waiting`);
   });
 
   it("shows each health service on the state screen, from that service's own bed meeting sheet", () => {
@@ -259,8 +259,8 @@ describe("the bed meeting TV view", () => {
     const sheet = bedMeetingSheet({ ...inputs, service, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
     const extras = meetingTvExtras({ ...inputs, service, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(`Bed meeting · ${service}`);
-    expect(figure("bed-meeting-tv-ready")).toBe(shown(sheet.capacity.ready));
-    expect(figure("bed-meeting-tv-ed")).toBe(shown(sheet.ed.waiting));
+    expect(heroFigure("bed-meeting-tv-ready")).toBe(String(sheet.capacity.ready));
+    expect(heroFigure("bed-meeting-tv-ed")).toBe(String(sheet.ed.waiting));
     const wardRows = within(screen.getByTestId("bed-meeting-tv-wards-panel")).getAllByRole("row").slice(1);
     expect(wardRows.map((row) => row.querySelector("th")?.textContent)).toEqual(extras.wards.map((ward) => ward.name));
     for (const ward of extras.wards) {
@@ -716,13 +716,16 @@ describe("the ward and ED TV views", () => {
     expect(css).toMatch(
       /\.tile:nth-child\(3n \+ 1\):nth-last-child\(2\),\s*\.tile:nth-child\(3n \+ 2\):last-child \{\s*grid-column: span 3;/u,
     );
-    renderTv();
+    // The ward and ED screens keep their five tiles; the bed meeting's figures are in its top.
+    const { state } = seedInputs();
+    renderTv({ ward: state.units[0]!.id });
     expect(screen.getByTestId("bed-meeting-tv-tiles").children).toHaveLength(5);
   });
 
   it("says the ready beds' locked share plainly and counts discharges held up (TV-11, NA3-02)", () => {
     renderTv();
-    expect(screen.getByTestId("bed-meeting-tv-discharges")).toHaveTextContent(/\d+ discharges? held up/u);
+    // Page tops (9 Nov 2026): the figure counts them, and the checking line beside it says how many.
+    expect(screen.getByTestId("bed-meeting-tv-checking")).toHaveTextContent(/\d+ discharges? held up/u);
     expect(screen.getByTestId("bed-meeting-tv-ready")).not.toHaveTextContent(/locked, of/u);
   });
 

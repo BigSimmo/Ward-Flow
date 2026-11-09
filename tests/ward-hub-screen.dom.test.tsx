@@ -446,11 +446,12 @@ describe("Ward Flow Master Search Hub — a search must not change what the scre
   it("the band states the same task, not a query-filtered one, while a query is narrowing the list", () => {
     renderHub();
     // PL1 follow-up (Josh, 4 Nov 2026): the band's title is a task (the wards needing a bed check)
-    // and the kind counts are said once, on the Wards, EDs and Teams switch.
-    const band = () => document.querySelector<HTMLElement>("[data-wf-hero] h1")!;
+    // and the kind counts are said once, on the Wards, EDs and Teams switch. Page tops (9 Nov): the
+    // task is the hero's act row.
+    const band = () => screen.getByTestId("hub-act");
 
     const initial = band().textContent ?? "";
-    expect(initial).toMatch(/bed check|bed count is current|asked to confirm/iu);
+    expect(initial).toMatch(/bed check|bed count stale|bed count is current|asked to confirm/iu);
     expect(initial).not.toMatch(/\d+\s+places/iu);
 
     // Before any query the two are trivially equal, so this is measured only after narrowing —

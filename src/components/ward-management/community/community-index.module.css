@@ -19,15 +19,6 @@
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
-/* ---- Hero ---- */
-
-.heroActions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--wf-s-2);
-}
-
 .recentStrip {
   display: flex;
   flex-wrap: wrap;
@@ -43,37 +34,6 @@
   color: var(--wf-hero-ink-2);
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   white-space: nowrap;
-}
-
-.heroNote {
-  color: var(--wf-hero-ink-2);
-  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  white-space: nowrap;
-}
-
-/* v10 hero: mixed-face answer (words in Geist, figures in mono) and two highlight chips. */
-.heroFigure {
-  font-family: var(--wf-mono);
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-}
-
-/* QA 31 Oct 2026: on a wide screen the hero's stats holder keeps the two chips' width, so the title
-   block wraps its line instead and the chips stay side by side. Below 900px the hero moves the
-   stats to their own row. */
-@media (min-width: 901px) {
-  div:has(> .heroChips) {
-    flex-shrink: 0;
-  }
-}
-
-.heroChips {
-  display: flex;
-  /* Core pages review (31 Oct 2026): the longer title leaves less room, so the two chips wrap rather than clip. */
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-width: 0;
 }
 
 .resultHint {
@@ -146,13 +106,6 @@
   gap: var(--wf-s-2);
   padding: 0 var(--wf-s-4) var(--wf-s-3);
   border-bottom: 1px solid var(--wf-line-2);
-}
-
-/* PL1: the A to Z search takes the card's full width on its own row, as on Places, so the
-   placeholder reads whole instead of "Team, s". The filters sit on the row under it. */
-.searchBox {
-  flex: 1 1 100%;
-  min-width: 0;
 }
 
 .headNote {
@@ -613,19 +566,10 @@
   .readsAlike {
     min-height: var(--ward-tap, 48px);
   }
-
-  .heroNote {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
 }
 
 /* Phone (≤48rem), 8 Oct 2026: the hero actions start at the left edge like every other hero row. */
 @media (max-width: 46.4375rem) {
-  .heroActions {
-    justify-content: flex-start;
-  }
-
   /* Phone polish (8 Oct 2026, second pass). 12px gutters; the hero keeps the catchment guide and
      raise referral on one row (the referrals board stays in the menu); search shares a row with the
      reads-alike chip; the
@@ -635,24 +579,8 @@
     padding: var(--wf-s-3);
   }
 
-  .heroActions {
-    flex-wrap: nowrap;
-  }
-
-  .heroActions > [data-testid="community-action-referral-board"] {
-    display: none;
-  }
-
   .toolbar {
     padding: 0 var(--wf-s-3) var(--wf-s-3);
-  }
-
-  /* Search and the reads-alike chip share a row; the service filter takes the row under them. */
-  .toolbar > .searchBox {
-    flex: 1 1 0;
-    order: -2;
-    min-width: 0;
-    height: var(--spacing-tap, 3rem);
   }
 
   .toolbar > :nth-child(n + 3) {
@@ -703,28 +631,9 @@
   .side > [aria-labelledby="community-gateway-service-title"] {
     display: none;
   }
-
-  .heroChips {
-    display: grid;
-    grid-column: 1 / -1;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .heroChips > * {
-    min-width: 0;
-    padding: 0;
-    border-left: 0;
-  }
-
-  .heroChips :global(button) {
-    width: 100%;
-    min-height: var(--wf-touch);
-    min-width: 0;
-  }
 }
 
 /* v10 pass 3, phone: A to Z, Suburb, Alike and Services one tap apart, and sticky letter rows. */
-.phonePanes,
 .paneWrap {
   min-width: 0;
 }
@@ -1041,31 +950,6 @@
   }
 }
 
-/* v10 phone: the view switch stays under the bar while the list scrolls, as on Home. */
-@media (max-width: 46.4375rem) {
-  /* R2-03 / R1-15 / R3-15 (device sweep, 24 Oct 2026): doubled so it outranks the kit's
-     ScrollRow "position: relative", which turned this "top" into a 56px shove: a blank band above
-     the switch and the switch lying over the Suburb search and its Clear button. */
-  .phonePanes.phonePanes {
-    position: sticky;
-    top: var(--wf-header-height, 3.5rem);
-    z-index: 6;
-    margin: 0 calc(-1 * var(--wf-s-3));
-    padding: var(--wf-s-2) var(--wf-s-3);
-    background: var(--wf-canvas);
-  }
-}
-
-/* v10 phone panes run the full width. The Suburb pane's lookup draws no card chrome of its own
- * (the shared card's `plainOnPhone`, D-91). */
-@media (max-width: 46.4375rem) {
-  .phonePanes > div,
-  .phonePanes :global([role="radiogroup"]) {
-    flex: 1 1 auto;
-    width: 100%;
-  }
-}
-
 /* The 44px chips reach a 48px hit area. */
 @media (max-width: 46.4375rem) {
   .toolbar > :global([role="radiogroup"]) > :global([role="radio"]),
@@ -1087,19 +971,6 @@
  * Read alike figure is that filter there. A name that reads like others says so at the end of its
  * meta line, as the mockup ("EMHS · 1 suburb · reads like 3 others"). Phone only. */
 @media (max-width: 46.4375rem) {
-  .phonePanes {
-    max-width: none;
-  }
-
-  .phonePanes > div {
-    padding-inline: 0;
-  }
-
-  .phonePanes :global([role="radiogroup"]) > * {
-    flex: 1 1 0;
-    justify-content: center;
-  }
-
   .toolbar > button[aria-pressed] {
     display: none;
   }
@@ -1199,16 +1070,42 @@
   }
 }
 
-/* Layout sweep MEET-18: on an iPad in landscape the two highlight chips take their own row under the
-   title and actions (as the band already does below 900px), so neither the chip nor the eyebrow is
-   cut. The first rule selects the band's row, the second its stats slot. */
-@media (min-width: 46.5rem) and (max-width: 68.75rem) {
-  .main :has(> * > .heroChips) {
-    flex-wrap: wrap;
-  }
+/* Page top (Josh, 9 Nov 2026): the one search, with the source line under it, in the act row's place. */
+.topAsk {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  align-self: stretch;
+  text-align: start;
+}
 
-  .main :has(> .heroChips) {
-    flex-basis: 100%;
-    order: 3;
+@media (min-width: 46.5rem) {
+  .topAsk {
+    align-self: center;
   }
+}
+
+/* On the slate, as the mock-up: a quiet translucent field, not a white box. */
+.topSearch :has(> input) {
+  min-height: 40px;
+  border-color: var(--wf-on-hero-line);
+  background: var(--wf-on-hero-fill);
+  color: var(--wf-hero-ink-2);
+}
+
+.topSearch input {
+  color: var(--wf-hero-ink);
+  font-size: var(--wf-fs-15);
+}
+
+.topSearch input::placeholder {
+  color: var(--wf-hero-ink-2);
+}
+
+.topNote {
+  margin: 0;
+  color: var(--wf-hero-ink-2);
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
 }

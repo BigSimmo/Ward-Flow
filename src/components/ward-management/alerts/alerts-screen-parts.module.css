@@ -268,3 +268,10 @@
 .laneSection {
   display: contents;
 }
+
+/* Page tops (9 Nov 2026): the tab row's end, the arrange switch then the tools menu. */
+.tabsEnd {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}

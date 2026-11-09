@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Ellipsis } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -52,14 +51,17 @@ import { homeChipFigures, openEdJourneys } from "@/components/ward-management/wa
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import {
-  Button,
   buttonClass,
+  FolderTabs,
+  folderTabClasses,
   Hero,
+  HeroAct,
+  HeroFigures,
+  HeroTop,
   LiveChip,
   Menu,
   PillTabs,
   Segmented,
-  StatusGlyph,
   type HeroNextStep,
 } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
@@ -72,8 +74,6 @@ import { useHomeLayout } from "./home-layout";
 import { BedsGapCard, HomePlacementDrawer, HomeReleaseSheet, MyListCard } from "./home-list-lazy";
 import list from "./home-list.module.css";
 import flowStyles from "./home-flow.module.css";
-import folderStyles from "./home-folder.module.css";
-import { HomeFolderShape } from "./home-folder";
 import heroStyles from "./home-hero.module.css";
 import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 import type { PlacementSubject } from "./home-placement-drawer";
@@ -196,7 +196,7 @@ function HomeListMoreMenu() {
         <button
           type="button"
           {...props}
-          className={`${buttonClass({ variant: "ghost", size: "sm" })} ${folderStyles.more}`}
+          className={`${buttonClass({ variant: "ghost", size: "sm" })} ${folderTabClasses.more}`}
           data-testid="ward-home-more"
         >
           <Ellipsis size={16} strokeWidth={1.75} aria-hidden="true" />
@@ -739,7 +739,7 @@ export function CoordinatorScreen() {
 
         <div className={styles.body} data-testid="ward-coordinator-body">
           <Hero
-            className={`${styles.homeHero} ${heroStyles.hero}`}
+            className={`${styles.homeHero} ${heroStyles.hero} ${folderTabClasses.hero}`}
             // Sticky header redesign (Josh, 9 Nov 2026): one plain title on every size. The header already
             // names the page and place, so the eyebrow ("Modelled network · day shift") is gone.
             title={
@@ -757,80 +757,89 @@ export function CoordinatorScreen() {
               />
             }
           >
-            <div className={heroStyles.main}>
-              <div className={heroStyles.figures} role="group" aria-label="Figures">
-                <p className={heroStyles.figure} data-testid="home-figure-ed">
-                  <b>{edJourneys.total}</b>
-                  <small>open ED movements{service === null ? "" : ` in ${service}`}</small>
-                </p>
-                <p className={heroStyles.figure} data-testid="home-figure-beds">
-                  <b>{bedsReady}</b>
-                  <small>
-                    {bedsReady === 1 ? "bed" : "beds"} ready{networkWord}
-                  </small>
-                </p>
-                {statewideOccupancy === null ? null : (
-                  <p className={heroStyles.figure} data-testid="home-figure-occupancy">
-                    <b>{Math.round(statewideOccupancy)}%</b>
-                    <small>
-                      <Link
-                        href="/ward-flow/capacity"
-                        className={heroStyles.figureLink}
-                        data-testid="ward-home-occupancy-link"
-                      >
-                        {statewideOccupancy >= BED_ALERT_THRESHOLD_PERCENT ? "at risk" : "beds in use"}
-                      </Link>
-                    </small>
-                  </p>
-                )}
-              </div>
-              <div className={heroStyles.next} data-wf-hero-next="" data-kind={nextKind ?? "none"}>
-                {nextKind === "act" ? <StatusGlyph tone="danger" size={14} className={heroStyles.nextGlyph} /> : null}
-                <div className={heroStyles.nextText}>
-                  <p className={heroStyles.nextAnswer} data-testid="hero-next-answer">
-                    {heroNext.answer}
-                  </p>
-                  {checkingLine ? <p className={heroStyles.nextChecking}>{checkingLine}</p> : null}
-                </div>
-                {heroNext.action ? (
-                  <Button
-                    variant="light"
-                    className={heroStyles.nextAction}
-                    onClick={heroNext.action.onClick}
-                    aria-pressed={heroNext.action.pressed}
-                    data-testid={heroNext.action.testId}
-                  >
-                    {heroNext.action.label}
-                  </Button>
-                ) : null}
-              </div>
-            </div>
-            <HomeEdPressure
-              onHero
-              now={now}
-              movements={movements}
-              selectedEdId={selectedEdId}
-              onSelectEd={setSelectedEdId}
-              service={service}
-              population={
-                <span data-testid="ward-home-ed-population">
-                  <b>{edJourneys.stillInEd}</b> in ED · <b>{edJourneys.inTransit}</b> in transit
-                </span>
+            <HeroTop
+              figures={
+                <HeroFigures
+                  items={[
+                    {
+                      id: "ed",
+                      value: edJourneys.total,
+                      label: `open ED movements${service === null ? "" : ` in ${service}`}`,
+                      testId: "home-figure-ed",
+                    },
+                    {
+                      id: "beds",
+                      value: bedsReady,
+                      label: `${bedsReady === 1 ? "bed" : "beds"} ready${networkWord}`,
+                      testId: "home-figure-beds",
+                    },
+                    ...(statewideOccupancy === null
+                      ? []
+                      : [
+                          {
+                            id: "occupancy",
+                            value: `${Math.round(statewideOccupancy)}%`,
+                            label: statewideOccupancy >= BED_ALERT_THRESHOLD_PERCENT ? "at risk" : "beds in use",
+                            href: "/ward-flow/capacity",
+                            testId: "home-figure-occupancy",
+                            linkTestId: "ward-home-occupancy-link",
+                          },
+                        ]),
+                  ]}
+                />
+              }
+              act={
+                <HeroAct
+                  tone={nextKind === "act" ? "danger" : "calm"}
+                  kind={nextKind ?? "none"}
+                  title={heroNext.answer}
+                  titleTestId="hero-next-answer"
+                  sub={checkingLine}
+                  action={
+                    heroNext.action
+                      ? {
+                          label: heroNext.action.label,
+                          // v6 (Josh, 9 Nov 2026): the phone's act row keeps one short word.
+                          phoneLabel: heroNext.action.pressed ? undefined : "Show",
+                          pressed: heroNext.action.pressed,
+                          onClick: heroNext.action.onClick,
+                          testId: heroNext.action.testId,
+                        }
+                      : undefined
+                  }
+                />
+              }
+              band={
+                <HomeEdPressure
+                  onHero
+                  now={now}
+                  movements={movements}
+                  selectedEdId={selectedEdId}
+                  onSelectEd={setSelectedEdId}
+                  service={service}
+                  population={
+                    <span data-testid="ward-home-ed-population">
+                      <b>{edJourneys.stillInEd}</b> in ED · <b>{edJourneys.inTransit}</b> in transit
+                    </span>
+                  }
+                />
               }
             />
           </Hero>
 
           {/* Home flow (Q340, Q345, 3 Nov 2026): one row. Needs you and Flow lead as the raised switch; the
               stages follow, after a rule, as quieter tabs with counts (always shown; one opens Flow there). */}
-          <nav
+          <FolderTabs
             ref={listsNavRef}
-            className={`${flowStyles.nav} ${folderStyles.nav}`}
-            aria-label="Home lists"
-            data-testid="home-lists"
-            data-act={actNowCount > 0 ? "" : undefined}
+            className={flowStyles.nav}
+            label="Home lists"
+            value={shownView}
+            testId="home-lists"
+            act={actNowCount > 0 ? 1 : undefined}
+            more={<HomeListMoreMenu />}
           >
             <Segmented
-              className={`${list.viewSwitch} ${folderStyles.switch}`}
+              className={`${list.viewSwitch} ${folderTabClasses.switch}`}
               label="Home list"
               size="md"
               value={shownView}
@@ -851,8 +860,7 @@ export function CoordinatorScreen() {
                   : []),
               ]}
             />
-            <HomeFolderShape navRef={listsNavRef} value={shownView} />
-            <span className={`${flowStyles.navRule} ${folderStyles.rule}`} aria-hidden="true" />
+            <span className={`${flowStyles.navRule} ${folderTabClasses.rule}`} aria-hidden="true" />
             <div className={flowStyles.stageGroup} data-active={shownView === "queue" ? "true" : undefined}>
               <div className={flowStyles.stageTabs}>
                 <PillTabs
@@ -876,8 +884,7 @@ export function CoordinatorScreen() {
                 />
               </div>
             </div>
-            <HomeListMoreMenu />
-          </nav>
+          </FolderTabs>
 
           <div
             className={`${styles.grid} ${list.grid}`}

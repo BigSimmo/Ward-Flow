@@ -12,11 +12,14 @@ export function ChangeWard({
   units,
   currentId,
   className,
+  plain = false,
 }: {
   units: WardMetadata[];
   currentId: string;
   /** Extra class for the trigger (the phone hero's pill). */
   className?: string;
+  /** The trigger takes `className` alone (a page-top chip), not the hero button look. */
+  plain?: boolean;
 }) {
   const router = useOptionalRouter();
   return (
@@ -38,9 +41,11 @@ export function ChangeWard({
           {...props}
           type="button"
           className={
-            className
-              ? `${buttonClass({ variant: "onHero", size: "sm" })} ${className}`
-              : buttonClass({ variant: "onHero", size: "sm" })
+            plain
+              ? className
+              : className
+                ? `${buttonClass({ variant: "onHero", size: "sm" })} ${className}`
+                : buttonClass({ variant: "onHero", size: "sm" })
           }
         >
           Change ward

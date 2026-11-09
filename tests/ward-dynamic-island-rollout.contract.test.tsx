@@ -51,17 +51,12 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
       resolve(process.cwd(), "src/components/ward-management/handover/handover-page.tsx"),
       "utf8",
     );
-    // Refined Handover A (9 Oct 2026): the hero counts are the meeting-order groups. Round 6 (1 Nov
-    // 2026): the page mounts them from handover-glance.tsx.
-    expect(source).toContain("HandoverHeroCounts");
-    const glance = readFileSync(
-      resolve(process.cwd(), "src/components/ward-management/handover/handover-glance.tsx"),
-      "utf8",
-    );
-    expect(glance).toContain("ward-handover-kpi-strip");
-    expect(glance).toContain("Act now");
-    expect(glance).toContain("Finding a ward");
-    expect(glance).toContain("Moving");
+    // Refined Handover A (9 Oct 2026): the hero counts are the meeting-order groups. Page tops (Josh,
+    // 9 Nov 2026): the slate top's figures carry them, each highlighting its rows.
+    expect(source).toContain("HeroFigures");
+    expect(source).toContain("actNowLabel(");
+    expect(source).toContain('"urgent"');
+    expect(source).toContain("togglePill(id)");
   });
 
   it("Integration Screen 2: DischargeBoard mounts with WardFlowProvider and renders KPI testIds", () => {
@@ -112,11 +107,12 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
     );
 
     // CRITICAL: the mismatch by bed type must NEVER be removed or broken by HUD rollout. Since the
-    // Capacity redesign (31 Oct 2026) it is the Mismatch band, one tile per bed type.
-    const mismatch = within(screen.getByRole("region", { name: "Mismatch" }));
-    const tiles = within(mismatch.getByRole("list", { name: "Bed types, now and tomorrow" })).getAllByRole("listitem");
+    // Capacity redesign (31 Oct 2026) it is the Mismatch band, one tile per bed type; since the page
+    // tops (Josh, 9 Nov 2026) the band sits in the hero, "Short now, by bed type", one cell per type.
+    const mismatch = within(screen.getByTestId("capacity-mismatch"));
+    const tiles = mismatch.getByRole("list", { name: "Short now, by bed type" }).querySelectorAll(":scope > li");
     const gapRows = bedKindGaps(wardMovements, allUnits(), NOW_ANCHOR, wardAdmissions);
-    expect(tiles.map((tile) => within(tile).getByRole("heading").textContent)).toEqual(
+    expect(Array.from(tiles, (tile) => tile.querySelector('[class*="cellLabel"]')?.textContent)).toEqual(
       gapRows.map((row) => shortNeed(row.need)),
     );
   });
@@ -167,10 +163,10 @@ describe("5. Live Target Screen Component Mounts", () => {
       </WardFlowProvider>,
     );
 
-    const hud = screen.getByTestId("ward-handover-kpi-strip");
-    expect(hud).toBeDefined();
-    expect(within(hud).getByRole("button", { name: /Act now/ })).toBeDefined();
-    expect(within(hud).getByRole("button", { name: /Finding a ward/ })).toBeDefined();
+    // Page tops (Josh, 9 Nov 2026): the slate top's figures are the handover HUD.
+    const hud = screen.getByTestId("ward-handover-hero");
+    expect(within(hud).getByRole("button", { name: /^act now/ })).toBeDefined();
+    expect(within(hud).getByRole("button", { name: "urgent" })).toBeDefined();
   });
 
   it("Mounts DischargeBoard with WardFlowProvider and tests interactive filter clicking", () => {
@@ -206,8 +202,9 @@ describe("5. Live Target Screen Component Mounts", () => {
     expect(checklistBtn.getAttribute("aria-checked")).toBe("true");
     expect(screen.getByRole("region", { name: "Checklist" })).toBeInTheDocument();
 
-    // Every count names its noun (Josh, 30 Oct 2026): "forms to act on".
-    const actNow = screen.getByRole("button", { name: /to act on/u });
+    // Every count names its noun (Josh, 30 Oct 2026). Page tops (9 Nov 2026): the top's "within"
+    // figure is the urgency highlight.
+    const actNow = screen.getByRole("button", { name: /^within \d+/u });
     fireEvent.click(actNow);
     expect(actNow.getAttribute("aria-pressed")).toBe("true");
   });
@@ -222,12 +219,13 @@ describe("5. Live Target Screen Component Mounts", () => {
     // Capacity redesign (31 Oct 2026): the hero's chip row is the HUD and the Mismatch band
     // replaces the gap table.
     const hud = screen.getByRole("group", { name: "Network beds" });
-    const mismatch = screen.getByRole("region", { name: "Mismatch" });
+    const mismatch = screen.getByTestId("capacity-mismatch");
 
     expect(hud).toBeDefined();
     expect(mismatch).toBeDefined();
-    // v6: the hero carries the Live chip with its pause control, and the counts are hero stats.
+    // v6: the hero carries the Live chip with its pause control. Page tops (Josh, 9 Nov 2026): the
+    // counts are hero figures, the first the network's ready beds.
     expect(screen.getByRole("button", { name: /pause demo updates$/ })).toBeDefined();
-    expect(within(hud).getByRole("button", { name: /^\d+\s*locked (?:beds )?ready$/iu })).toBeDefined();
+    expect(within(hud).getByTestId("capacity-hero-ready")).toHaveTextContent(/^\d+\s*\/ \d+\s*beds? ready$/u);
   });
 });
