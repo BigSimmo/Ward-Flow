@@ -502,6 +502,9 @@ describe("who may raise which event", () => {
     // Out of area "Flag early" (Josh, 3 Nov 2026): the coordinator's return plan.
     FLAG_RETURN_EARLY: ["coordinator"],
     RECORD_DIRECTORY_CHECK: ["coordinator", "bed_manager", "ward", "ed", "community", "officer"],
+    // Staff needed (feature 10, 9 Nov 2026).
+    REQUEST_WARD_STAFF: ["ward", "coordinator", "bed_manager"],
+    CLOSE_WARD_STAFF_REQUEST: ["ward", "coordinator", "bed_manager"],
     RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
     RECORD_SITE_HANDOVER_SIGN_OFF: ["bed_manager", "coordinator"],
     // Triage and risk (7 Nov 2026): the desks that raise a referral, never the bed manager, officer,

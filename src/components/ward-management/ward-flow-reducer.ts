@@ -31,6 +31,7 @@ import { withDischargeMoveDemo } from "./coordinator/since-last-look-seed";
 import { reduceDirectoryCheck, type DirectoryCheckRecord } from "./on-call/on-call-checks";
 import type { SiteHandoverSignOffRecord } from "./site-sign-off/site-handover-sign-off";
 import type { TriageSignedRecord } from "./triage/triage-record";
+import { reduceStaffRequest, type StaffRequestRecord } from "./staffing/staff-requests";
 import { classifyLegalStatus, legalStatusIsDetained } from "@/components/ward-management/ward-legal-status";
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { referralState } from "./ward-referrals";
@@ -415,6 +416,8 @@ export type WardFlowState = WardAuditState & {
    * closed-list codes only, never typed text. Optional: absent in older saves, read as none.
    */
   triages?: TriageSignedRecord[];
+  /** Staff needed (feature 10, 9 Nov 2026): ward, shift, count, chosen reasons, times and roles only. */
+  staffRequests?: StaffRequestRecord[];
   /**
    * Shared mode only (Josh, 4 Nov 2026): nameless early-return notices for a desk that should hear a
    * flag but cannot see the stay. Worked out when the desk's copy is scoped; never written by the reducer.
@@ -2365,6 +2368,9 @@ export function reduceClinicalEvent(
     // Q61 (31 Oct 2026): a site handover sign-off; its Undo is a step undo above.
     case "RECORD_SITE_HANDOVER_SIGN_OFF":
       return reducerSlices().reduceSiteHandoverSignOff(state, event, reject);
+    case "REQUEST_WARD_STAFF":
+    case "CLOSE_WARD_STAFF_REQUEST":
+      return reduceStaffRequest(state, event, reject);
     // Triage and risk (7 Nov 2026): a signed triage on one person. No Undo: it is a signed record.
     case "RECORD_TRIAGE_SIGNED":
       return reducerSlices().reduceTriageSigned(state, event, reject);

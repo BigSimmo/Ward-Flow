@@ -67,6 +67,8 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   // Closing-the-loop (package E).
   RECORD_HOME_SERVICE_RETURN: { category: "patient", plainWording: "Return to home service requested or answered" },
   RECORD_DIRECTORY_CHECK: { category: "neither", plainWording: "On-call directory entry checked" },
+  REQUEST_WARD_STAFF: { category: "neither", plainWording: "Extra ward staff requested" },
+  CLOSE_WARD_STAFF_REQUEST: { category: "neither", plainWording: "Ward staff request closed" },
   // Out of area "Flag early" (Josh, 3 Nov 2026).
   FLAG_RETURN_EARLY: { category: "patient", plainWording: "Out of area return flagged early" },
 

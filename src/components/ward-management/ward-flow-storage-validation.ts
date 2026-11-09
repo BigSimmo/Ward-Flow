@@ -89,6 +89,7 @@ import { upgradeLegacyDeclineReasons } from "./ward-decline-legacy";
 import { upgradeLegacyObservationRows } from "./ward-observation-legacy";
 import { isTentativeDiagnosisBlock } from "./ward-diagnosis";
 import { isCommunityReferralPurpose } from "./ward-model-referral-parts";
+import { storedStaffRequests } from "./staffing/staff-requests-schema";
 
 // D-72: numbered device-copy stand-ins keep typed criteria distinct.
 export function typedCriterionNotKept(n: number): string {
@@ -1069,6 +1070,8 @@ const storedState = z.looseObject({
   handoverSignOffs: z.array(stamped),
   // Triage and risk (7 Nov 2026): signed triages, absent in older saves. Codes only, no typed text.
   triages: z.optional(storedTriageRecords),
+  // Staff needed (feature 10, 9 Nov 2026): absent in older saves. Ids, closed lists, times and roles only.
+  staffRequests: z.optional(storedStaffRequests),
   // Q61 (31 Oct 2026): site handover sign-offs, absent in older saves. Ids, times and a role only.
   siteHandoverSignOffs: z.optional(
     z.array(
@@ -1433,6 +1436,8 @@ function consistent(state: StoredState, value: RecordValue): boolean {
 
   for (const key of Object.keys(state.dischargeRevisions)) if (!admissionIds.has(key)) return false;
   for (const key of Object.keys(state.morningRollupConfirmations)) if (!unitIds.has(key)) return false;
+  // Staff needed (feature 10): every request names a ward in this world.
+  for (const row of state.staffRequests ?? []) if (!unitIds.has(row.unitId)) return false;
   // H-IMPORT (#1455): live absence, active stays and numbered beds must each have one owner.
   return storedPlacementInvariants(value as unknown as WardFlowState, activePatientStays(state.admissions));
 }

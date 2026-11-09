@@ -2556,6 +2556,8 @@ export type WardFlowEvent =
   | import("./out-of-area/return-early").ReturnEarlyEvent
   // Triage and risk (Josh's approved mock-up, built 7 Nov 2026): a signed triage on one person.
   | import("./triage/triage-record").TriageSignedEvent
+  // Staff needed (feature 10, 9 Nov 2026): a ward needs more staff, and the request closed.
+  | import("./staffing/staff-requests").StaffRequestEvent
   /*
    * v10 pass 2 (Josh, 10 Oct 2026): the build guide's "Toast with Undo". Each undo is a proper,
    * role-gated, audited event that restores the state its decision changed EXACTLY, and only within
