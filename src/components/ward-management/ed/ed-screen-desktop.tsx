@@ -264,6 +264,17 @@ export function renderEdBoardTableRow(
             Step {edWaitStep(minutesInDepartment)?.step}
           </span>
         ) : null}
+        {/* Six features build (Josh's sign-off, 9 Nov 2026): the step's suggested next step, as a prompt. */}
+        {edWaitStep(minutesInDepartment) ? (
+          <span
+            className={styles.a2Sub}
+            data-testid={`ward-ed-wait-next-step-${movement.id}`}
+            title={`Suggested next step: ${edWaitStep(minutesInDepartment)?.nextStep}`}
+          >
+            <span aria-hidden="true">{edWaitStep(minutesInDepartment)?.nextStepShort}</span>
+            <span className="sr-only">Suggested next step: {edWaitStep(minutesInDepartment)?.nextStep}</span>
+          </span>
+        ) : null}
         <span
           className={overTarget ? handover.overTarget : "sr-only"}
           data-testid={`ward-ed-access-target-${movement.id}`}

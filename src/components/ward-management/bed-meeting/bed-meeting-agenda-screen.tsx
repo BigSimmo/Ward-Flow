@@ -71,6 +71,14 @@ import {
 } from "./bed-meeting-actions";
 import { bedMeetingAgenda, meetingActionSummary, type AgendaItem, type MeetingActionRow } from "./bed-meeting-agenda";
 import { AgendaReferralsCopy, agendaReferralsText } from "./agenda-referrals-copy";
+import {
+  actionsRecordedSince,
+  MEETING_STEPS,
+  MEETING_SUMMARY_PAGE_CLASS,
+  MeetingRunControls,
+  MeetingSummary,
+  useMeetingRun,
+} from "./bed-meeting-run";
 import styles from "./bed-meeting-agenda.module.css";
 import { AgendaGroupFilterControl, toggleGroup } from "./bed-meeting-group-filter";
 import {
@@ -163,6 +171,9 @@ function BedMeetingAgenda() {
   // B1 extended (Josh, 4 Nov 2026): narrow every list to any group (ward, tier, legal status, age).
   const [groups, setGroups] = useState<AgendaGroupFilter>({});
   const grouped = agendaGroupFilterActive(groups);
+  // Run meeting (six features build, Josh 9 Nov 2026): step through the services, then a summary.
+  const [run, setRun] = useMeetingRun();
+  const running = run !== null && !run.finished;
 
   const scopedMovements = useMemo(
     () =>
@@ -240,14 +251,15 @@ function BedMeetingAgenda() {
     groupContext,
     serviceQueue,
   );
-  const actionInGroups = (row: MeetingActionRow) => inGroups({ subject: row.subject, record: row.record, detail: "" });
-  const summary = grouped
-    ? {
-        ...fullSummary,
-        overdue: fullSummary.overdue.filter(actionInGroups),
-        open: fullSummary.open.filter(actionInGroups),
-      }
-    : fullSummary;
+  // While a meeting runs or shows its summary, "From earlier meetings" leaves out what it recorded.
+  const earlier = (row: MeetingActionRow) => !run || row.action.recordedAt < run.startedAt;
+  const actionInGroups = (row: MeetingActionRow) =>
+    earlier(row) && inGroups({ subject: row.subject, record: row.record, detail: "" });
+  const summary = {
+    ...fullSummary,
+    overdue: fullSummary.overdue.filter(actionInGroups),
+    open: fullSummary.open.filter(actionInGroups),
+  };
   const unitName = (unitId: string | undefined) => units.find((unit) => unit.id === unitId)?.name;
   // A double click must close one action only. The list shifts up as an action closes, so a second
   // click lands on the next row, often another person's (Audit 7 NB-02). One Done per short pause.
@@ -334,40 +346,119 @@ function BedMeetingAgenda() {
           })
           .slice(0, 8);
 
+  const stepTo = (step: number) => {
+    if (!run) return;
+    setRun({ startedAt: run.startedAt, step, finished: false });
+    setServiceScope(MEETING_STEPS[step] ?? null);
+  };
+  const startRun = () => {
+    setRun({ startedAt: now, step: 0, finished: false });
+    setServiceScope(MEETING_STEPS[0]);
+  };
+  const recordedThisMeeting = run
+    ? actionsRecordedSince({
+        startedAt: run.startedAt,
+        until: run.finishedAt,
+        now,
+        movements,
+        admissions,
+        units,
+        nameOf: (record) => patientOf(record).formalName,
+        ownerText,
+      })
+    : [];
+  const itemsForService = (candidate: HealthService) => {
+    const inService = new Set(units.filter((unit) => unitHealthService(unit) === candidate).map((unit) => unit.id));
+    return bedMeetingAgenda(
+      {
+        movements: movements.filter((movement) => movementBelongsToService(movement, candidate, units)),
+        admissions: admissions.filter((admission) => inService.has(admission.unitId)),
+        bedReleases,
+        units,
+      },
+      now,
+      Number.POSITIVE_INFINITY,
+    ).reduce((total, section) => total + section.total, 0);
+  };
+
   return (
-    <main id="main-content" className={styles.main} data-testid="bed-meeting-agenda">
+    <main
+      id="main-content"
+      className={run?.finished ? `${styles.main} ${MEETING_SUMMARY_PAGE_CLASS}` : styles.main}
+      data-testid="bed-meeting-agenda"
+    >
       <Hero
         level={1}
         className={cx(pageTop.hero, folderTabClasses.hero)}
         title={
-          <>
-            <SrOnly>Bed meeting agenda: </SrOnly>
-            Lists <span className={pageTop.soft}>for the meeting</span>
-          </>
+          running ? (
+            <>
+              <SrOnly>Bed meeting running: </SrOnly>
+              Meeting{" "}
+              <span className={pageTop.soft}>
+                {service ? healthServiceAcronym(service) : "Statewide"} · {run.step + 1} of {MEETING_STEPS.length}
+              </span>
+            </>
+          ) : (
+            <>
+              <SrOnly>Bed meeting agenda: </SrOnly>
+              Lists <span className={pageTop.soft}>for the meeting</span>
+            </>
+          )
         }
         aside={
-          // `data-wf-live` places the plain pill where the hero puts its Live pill.
-          <span className={pageTop.pill} data-wf-live="" data-testid="agenda-as-at">
-            As at {formatInstantWithDay(now, now)}
-          </span>
+          running ? (
+            // Run meeting (six features, Josh 9 Nov 2026): the step controls take the pill's place.
+            <div className={styles.heroPillGroup}>
+              <MeetingRunControls
+                step={run.step}
+                onStep={stepTo}
+                onFinish={() => {
+                  setRun({ ...run, finished: true, finishedAt: now });
+                  setServiceScope(null);
+                }}
+                onStop={() => {
+                  setRun(null);
+                  setServiceScope(null);
+                }}
+              />
+            </div>
+          ) : (
+            // `data-wf-live` places the plain pill where the hero puts its Live pill.
+            <span className={pageTop.pill} data-wf-live="" data-testid="agenda-as-at">
+              As at {formatInstantWithDay(now, now)}
+            </span>
+          )
         }
       >
         <HeroTop
           figures={
             <HeroFigures
-              items={sections.slice(0, 3).map((section) => {
-                const short = SHORT_TITLES[section.id] ?? section.title;
-                const id = section.id as ListChip;
-                return {
-                  id: section.id,
-                  value: section.total,
-                  // Lower case like every page's figures; "ED" keeps its capitals.
-                  label: short.startsWith("ED") ? short : short.toLowerCase(),
-                  // Each figure shows just that list (tap again for every list), as the list chips did.
-                  onClick: () => toggleChip(id),
-                  testId: `agenda-figure-${section.id}`,
-                };
-              })}
+              items={[
+                ...sections.slice(0, 3).map((section) => {
+                  const short = SHORT_TITLES[section.id] ?? section.title;
+                  const id = section.id as ListChip;
+                  return {
+                    id: section.id,
+                    value: section.total,
+                    // Lower case like every page's figures; "ED" keeps its capitals.
+                    label: short.startsWith("ED") ? short : short.toLowerCase(),
+                    // Each figure shows just that list (tap again for every list), as the list chips did.
+                    onClick: () => toggleChip(id),
+                    testId: `agenda-figure-${section.id}`,
+                  };
+                }),
+                ...(running
+                  ? [
+                      {
+                        id: "recorded",
+                        value: recordedThisMeeting.length,
+                        label: "recorded this meeting",
+                        testId: "agenda-figure-recorded",
+                      },
+                    ]
+                  : []),
+              ]}
             />
           }
           act={
@@ -432,6 +523,17 @@ function BedMeetingAgenda() {
                     testId: "agenda-referrals-chip",
                     onClick: () => toggleChip("referrals"),
                   },
+                  // Run meeting (six features, Josh 9 Nov 2026): the chair steps through the services.
+                  ...(chairs && !run
+                    ? [
+                        {
+                          id: "run",
+                          label: "Run meeting",
+                          testId: "bed-meeting-run-start",
+                          onClick: startRun,
+                        },
+                      ]
+                    : []),
                   // Shown only while someone carries an open action, so the row stays short.
                   ...(actioned.length > 0
                     ? [
@@ -502,24 +604,51 @@ function BedMeetingAgenda() {
           ) : undefined
         }
       >
-        <Segmented
-          label="Service"
-          className={folderTabClasses.switch}
-          value={service ?? "statewide"}
-          onChange={(next) => setServiceScope(next === "statewide" ? null : (next as HealthService))}
-          items={[
-            { id: "statewide", label: "Statewide" },
-            // A phone shows three services and More, as Home; a service chosen from More joins the row.
-            ...HEALTH_SERVICES.filter(
-              (candidate, index) => !isPhone || index < PHONE_SERVICE_TABS || candidate === service,
-            ).map((candidate) => ({ id: candidate, label: healthServiceAcronym(candidate) })),
-          ]}
-        />
+        {running ? (
+          // While a meeting runs, the service tabs are its steps, each with its agenda count.
+          <Segmented
+            label="Meeting step"
+            className={folderTabClasses.switch}
+            value={MEETING_STEPS[run.step] ?? MEETING_STEPS[0]}
+            onChange={(next) => stepTo(MEETING_STEPS.indexOf(next as HealthService))}
+            items={MEETING_STEPS.map((candidate) => ({
+              id: candidate,
+              label: `${healthServiceAcronym(candidate)} ${itemsForService(candidate)}`,
+            }))}
+          />
+        ) : (
+          <Segmented
+            label="Service"
+            className={folderTabClasses.switch}
+            value={service ?? "statewide"}
+            onChange={(next) => setServiceScope(next === "statewide" ? null : (next as HealthService))}
+            items={[
+              { id: "statewide", label: "Statewide" },
+              // A phone shows three services and More, as Home; a service chosen from More joins the row.
+              ...HEALTH_SERVICES.filter(
+                (candidate, index) => !isPhone || index < PHONE_SERVICE_TABS || candidate === service,
+              ).map((candidate) => ({ id: candidate, label: healthServiceAcronym(candidate) })),
+            ]}
+          />
+        )}
       </FolderTabs>
       {/* D-91 (Josh, 31 Oct 2026): a printed agenda keeps a small synthetic-data mark, in the TV's words. */}
       <p className={styles.printMark} data-testid="agenda-print-mark">
         Synthetic prototype, not for clinical use
       </p>
+
+      {run?.finished ? (
+        <MeetingSummary
+          run={run}
+          now={now}
+          rows={recordedThisMeeting}
+          onBack={() => stepTo(run.step)}
+          onClose={() => {
+            setRun(null);
+            setServiceScope(null);
+          }}
+        />
+      ) : null}
 
       {findOpen || grouped || (referralsHidden && serviceQueue.length > 0) ? (
         <div className={styles.filters}>
