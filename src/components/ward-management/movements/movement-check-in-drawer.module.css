@@ -3,8 +3,15 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--wf-s-4);
+  align-content: start;
   min-width: 0;
   padding: var(--wf-s-4);
+}
+
+/* The facts sit inside the padded body, so the kit's own band padding and rule are dropped. */
+.facts.facts {
+  padding: 0;
+  border-top: 0;
 }
 
 .track {
@@ -72,10 +79,6 @@
 .next {
   display: grid;
   gap: var(--wf-s-2);
-  padding: var(--wf-s-3);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface-2);
 }
 
 .label {
@@ -110,12 +113,6 @@
   line-height: var(--wf-lh-13);
 }
 
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wf-s-2);
-}
-
 .toast {
   min-width: 0;
   overflow-wrap: anywhere;
@@ -124,22 +121,4 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--wf-s-2);
-}
-
-.link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--wf-accent);
-  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  text-decoration: none;
-}
-
-.link:hover {
-  text-decoration: underline;
-}
-
-.link:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
 }

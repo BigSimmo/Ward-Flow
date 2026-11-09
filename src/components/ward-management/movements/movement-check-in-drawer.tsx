@@ -11,7 +11,16 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-import { Button, PanelDrawer, StatusLine, buttonClass, requestConfirm } from "@/components/wf";
+import {
+  Button,
+  DrawerFacts,
+  DrawerFootRow,
+  PanelDrawer,
+  StatusLine,
+  StatusPill,
+  buttonClass,
+  requestConfirm,
+} from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { TransportExceptionReason, Unit } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -19,7 +28,7 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardShellPublic } from "@/components/ward-management/shell/ward-shell-public-context";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
-import { collectionGaps } from "@/components/ward-management/ward-transport-checks";
+import { collectionGaps, packForm, packRequirement } from "@/components/ward-management/ward-transport-checks";
 import {
   arrivedBlockedReason,
   collectedBlockedReason,
@@ -29,6 +38,7 @@ import {
 import { crewLimitFor } from "@/components/ward-management/officer/officer-crew-only";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useTransportCommandFeedback } from "@/components/ward-management/officer/use-transport-command-feedback";
+import { edById } from "@/components/ward-management/ward-sites";
 import { transportRouteLabels } from "./movements-screen-helpers";
 import s from "./movement-check-in-drawer.module.css";
 
@@ -66,6 +76,9 @@ export function MovementCheckInDrawer({
     ? units.find((candidate) => candidate.id === movement.acceptedUnitId)
     : undefined;
   const { originLabel, destinationLabel } = transportRouteLabels(movement, units);
+  const originEd = edById(movement.originEdId);
+  // The same short route as the transport row the coordinator just pressed (site code, then the unit).
+  const route = `${originEd ? `${originEd.siteCode} ED` : originLabel} to ${destinationLabel}`;
   const job = movement.transport;
   const identityKey = JSON.stringify([accessLifetime, movement.id, job?.id]);
   const identityTicked = identityChecked.has(identityKey);
@@ -127,13 +140,37 @@ export function MovementCheckInDrawer({
                 await reportOutcome(
                   movement.id,
                   () => raise("PATIENT_ARRIVED", { movementId: movement.id }),
-                  `Arrival at ward recorded for ${name}. The receiving ward confirms the arrival.`,
+                  `Arrival recorded for ${name}.`,
                   "Arrived at ward",
                 );
               },
             }
           : undefined;
   const next = step && crewLimit ? { ...step, blocked: crewLimit } : step;
+  // Note 7 polish (9 Nov 2026): the leg's state as a small tag beside the name, and the four facts a
+  // crew checks before moving the patient, read from the record ("Not recorded" when missing).
+  const delivered = job?.arrivedAt !== undefined;
+  const legLabel = delivered ? "Delivered" : leg === "Accepted" ? "Booked" : leg;
+  const order =
+    packRequirement(movement) === "not_required"
+      ? "Not needed"
+      : packForm(movement, "order")
+        ? "Recorded"
+        : "Not recorded";
+  const facts = [
+    { id: "provider", label: "Provider", value: job?.provider ?? "Not recorded" },
+    {
+      id: "escort",
+      label: "Escort",
+      value: job?.escortRequired === undefined ? "Not recorded" : job.escortRequired ? "Required" : "Not required",
+    },
+    { id: "order", label: "Transport order", value: order },
+    {
+      id: "fit",
+      label: "Fit to travel",
+      value: movement.medicalClearance?.cleared === true ? "Cleared" : "Not recorded",
+    },
+  ];
 
   const steps: Step[] = [
     { id: "booked", label: "Booked", at: job?.acceptedAt },
@@ -152,13 +189,30 @@ export function MovementCheckInDrawer({
         onClose={onClose}
         eyebrow="Check in · transport"
         title={name}
-        subtitle={`${originLabel} to ${destinationLabel}${job?.provider ? ` · ${job.provider}` : ""}${job?.escortRequired ? " · escort" : ""}`}
+        tag={
+          legLabel ? (
+            <StatusPill tone={delivered ? "success" : next?.blocked ? "warning" : "info"} size="sm">
+              {legLabel}
+            </StatusPill>
+          ) : undefined
+        }
+        subtitle={route}
         testId="movement-check-in-drawer"
         foot={
-          <Link href={`${TRANSPORT_HREF}?job=${encodeURIComponent(movement.id)}`} className={s.link}>
-            Open full job on Transport
-            <ArrowRight size={14} strokeWidth={1.75} aria-hidden="true" />
-          </Link>
+          <DrawerFootRow>
+            {next ? (
+              <Button variant="pri" size="md" disabled={Boolean(next.blocked)} onClick={() => void next.run()}>
+                {next.verb}
+              </Button>
+            ) : null}
+            <Link
+              href={`${TRANSPORT_HREF}?job=${encodeURIComponent(movement.id)}`}
+              className={buttonClass({ variant: "sec", size: "md" })}
+            >
+              Open full job on Transport
+              <ArrowRight size={14} strokeWidth={1.75} aria-hidden="true" />
+            </Link>
+          </DrawerFootRow>
         }
       >
         <div className={s.body}>
@@ -174,6 +228,8 @@ export function MovementCheckInDrawer({
               </li>
             ))}
           </ol>
+
+          <DrawerFacts items={facts} className={s.facts} />
 
           {next ? (
             <section className={s.next} aria-label="Next step">
@@ -197,13 +253,8 @@ export function MovementCheckInDrawer({
                 </label>
               ) : null}
               {next.blocked ? <p className={s.blocked}>{next.blocked}</p> : null}
-              <div className={s.actions}>
-                <Button variant="pri" size="md" disabled={Boolean(next.blocked)} onClick={() => void next.run()}>
-                  {next.verb}
-                </Button>
-              </div>
             </section>
-          ) : (
+          ) : toastText ? null : (
             <p className={s.blocked}>
               {job?.arrivedAt !== undefined
                 ? "Delivered. The receiving ward confirms the arrival."

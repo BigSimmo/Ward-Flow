@@ -21,9 +21,10 @@ import styles from "./stage-pipeline.module.css";
  * The wait colours use the same lines as the hero's pills: amber from the severe-pressure default
  * ("Over 8h"), red past the configured ED access target ("Past 24h").
  *
- * Josh's Note 7 (approved mock-up, 8 Nov 2026): a header sums the day in one line (open, past
- * target, which stage holds the longest wait) beside the wait key; each stage is a numbered card
- * with its share of open movements, and only a stage with waits past target gets a red chip.
+ * Josh's Note 7 (approved mock-up, 8 Nov 2026; polished 9 Nov): a header sums the day in one line
+ * (open, and which stage holds the longest wait; the hero already counts those past target) beside
+ * the wait key; the stages are numbered columns split by hairlines, each with its share of open
+ * movements, and only a stage with waits past target gets a red chip.
  */
 export function StagePipeline({
   stages,
@@ -51,7 +52,6 @@ export function StagePipeline({
   const totalOpen = stages.reduce((sum, stage) => sum + stage.movements.length, 0);
   const pastOf = (stage: JourneyStage) =>
     stage.movements.filter((movement) => now - movement.openedAt >= accessTarget).length;
-  const totalPast = stages.reduce((sum, stage) => sum + pastOf(stage), 0);
   const targetLabel = accessTarget % 60 === 0 ? `${accessTarget / 60}h` : durMinutes(accessTarget);
   return (
     <nav className={styles.pipeline} aria-label="Stages">
@@ -64,7 +64,7 @@ export function StagePipeline({
         <h2 className={styles.title}>
           Journey stages
           <span className={styles.summary}>
-            {totalOpen} open · {totalPast === 0 ? "none" : totalPast} past the {targetLabel} target
+            {totalOpen} open
             {worst !== undefined && worstStageId !== undefined
               ? ` · ${STAGE_SHORT[worst.id]} holds the longest wait`
               : ""}
@@ -80,8 +80,8 @@ export function StagePipeline({
         </span>
       </div>
       <ol className={styles.flow}>
-        {/* Stress test (3 Nov 2026): at most one act-now mark a row, so only the stage whose
-            longest wait is the worst past target carries "Longest wait". */}
+        {/* Stress test (3 Nov 2026): at most one act-now mark a stage, so the stage holding the
+            longest wait is named in the header, not given a second red chip. */}
         {stages.map((stage, index) => {
           const oldest = stage.movements[0];
           const waits = stage.movements.map((movement) => Math.max(0, now - movement.openedAt));
@@ -130,7 +130,6 @@ export function StagePipeline({
                     <span className={styles.stagePast} data-past={pastTarget > 0 ? "true" : undefined}>
                       {pastTarget > 0 ? `${pastTarget} past ${targetLabel}` : "On target"}
                     </span>
-                    {stage.id === worstStageId ? <span className={styles.worst}>Longest wait</span> : null}
                   </span>
                 </span>
               </button>
