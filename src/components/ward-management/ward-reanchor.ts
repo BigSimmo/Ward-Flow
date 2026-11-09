@@ -56,6 +56,11 @@ import { isSyntheticReferralTimelineBase } from "@/components/ward-management/wa
  */
 export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "flaggedAt",
+  // Psychiatry review steps (`Movement.psychReview`) and a ward ready for its next patient
+  // (`Unit.readyForNextAt`), 9 Nov 2026.
+  "registrarSeenAt",
+  "consultantSeenAt",
+  "readyForNextAt",
   "auditCaptureStartedAt",
   // v10 pass 2: when Add patient created a record (`Patient.addedAt`).
   "addedAt",

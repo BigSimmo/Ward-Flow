@@ -11,6 +11,7 @@ import type { Unit } from "../ward-model";
 import styles from "./ward-screen-referrals-tab.module.css";
 import wardStyles from "./ward.module.css";
 import { WardReferralInbox } from "./ward-screen-lazy";
+import { WardWaitList } from "./ward-wait-list";
 
 type WardScreenReferralsTabProps = {
   active: boolean;
@@ -77,6 +78,8 @@ export function WardScreenReferralsTab({
               <WardReferralInbox unitId={unit.id} embedded />
             )}
           </div>
+          {/* Ward wait list (Josh, 9 Nov 2026): who this ward waitlisted, and its ready mark. */}
+          <WardWaitList unit={unit} />
         </div>
       ) : null}
     </section>

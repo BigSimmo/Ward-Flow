@@ -269,6 +269,13 @@
     "further_examination_ordered"
    ]
   },
+  "PSYCH_REVIEW_GRADES": {
+   "file": "ward-model-movement-parts.ts",
+   "members": [
+    "registrar",
+    "consultant"
+   ]
+  },
   "ED_OUTCOMES": {
    "file": "ward-model-movement-parts.ts",
    "members": [

@@ -1,0 +1,133 @@
+/* Feature 26: alternatives to admission. Neutral throughout: colour only marks a chosen state. */
+.lede,
+.note {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.note {
+  color: var(--wf-ink-3);
+}
+
+.rows,
+.summary {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rows {
+  gap: 0;
+}
+
+.row {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding-block: 6px;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+/* Three quiet text choices per option; only the chosen one is drawn as a chip. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.chip {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+.chip:hover {
+  background: var(--wf-line);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
+}
+
+.chip[aria-pressed="true"] {
+  border-color: var(--wf-line-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip {
+    transition: none;
+  }
+}
+
+.label {
+  min-width: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+}
+
+.summary {
+  gap: 2px;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+}
+
+.foot {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+}
+
+/* On a phone-width sheet each 28px chip face keeps a transparent hit area to the 48px floor; the
+   row's block padding holds it, so neighbouring rows never overlap. */
+@container referral-sheet (max-width: 34rem) {
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+    padding-block: 10px;
+  }
+
+  .chip {
+    position: relative;
+  }
+
+  .chip::before {
+    content: "";
+    position: absolute;
+    inset: -10px 0;
+  }
+}
+
+/* The read-only line in a receiving view. */
+.facts {
+  display: grid;
+  gap: 2px;
+}
+
+.factsTitle {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}

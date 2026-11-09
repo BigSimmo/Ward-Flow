@@ -77,7 +77,8 @@ export type EligibilityGate = (typeof ELIGIBILITY_GATES)[number];
  * it as information, never as a check that was met (review 18 Oct 2026, item 3). The real staffing
  * check is `PULL_PATIENT`'s, which can see the admissions.
  */
-export type GateResult = { gate: EligibilityGate; pass: boolean; detail: string; info?: true };
+/** `need` marks an information-only gate whose need the patient has (fit line, D-110). */
+export type GateResult = { gate: EligibilityGate; pass: boolean; detail: string; info?: true; need?: true };
 export type EligibilityVerdict = { eligible: boolean; gates: GateResult[] };
 
 /** How a screen marks one gate: met, not met, or information only (`GateResult.info`). */
@@ -321,6 +322,7 @@ function acuityGate(requested: boolean, unit: Unit, noun: string): GateResult {
     gate: "acuity",
     pass: true,
     info: true,
+    ...(requested ? { need: true as const } : {}),
     detail: !requested
       ? `No high-acuity nursing requested ${noun === "referral" ? "on this referral" : "for this movement"}`
       : places > 0
@@ -345,6 +347,7 @@ function speciallingGate(observation: Observation | undefined, unit: Unit): Gate
     gate: "specialling",
     pass: true,
     info: true,
+    ...(needed > 0 ? { need: true as const } : {}),
     detail:
       observation === undefined
         ? "Observation level is not recorded on a referral"

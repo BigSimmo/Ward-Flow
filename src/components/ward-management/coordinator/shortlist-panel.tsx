@@ -101,6 +101,7 @@ import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel, waitFactors } from "@/components/ward-management/ward-priority";
 import { referenceDistance } from "@/components/ward-management/reference/ward-reference-distances";
+import { CandidateFit } from "@/components/ward-management/coordinator/shortlist-candidate-fit";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { openWardHelp } from "@/components/ward-management/help/ward-help-events";
@@ -1205,6 +1206,7 @@ export function ShortlistPanel({
               {candidateReason(candidate.verdict)}
             </span>
           )}
+          <CandidateFit unitId={candidate.unit.id} gates={candidate.verdict.gates} />
           {notice ? (
             <span
               className={`${
@@ -1260,6 +1262,7 @@ export function ShortlistPanel({
           >
             {reason}
           </span>
+          <CandidateFit unitId={candidate.unit.id} gates={candidate.verdict.gates} />
           <span id={describedBy} className="sr-only">
             Unavailable: {reason}. No recorded reason can place this person here.
           </span>

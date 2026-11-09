@@ -18,7 +18,7 @@ and the reducer still limit each desk to records in its own place.
 | Backend  | `deskCommand`, the role clause of `validSharedCommand` and `commandRefusal` (`backend/ward-flow/engine.ts`); no role is refused 403 in `shared-http.mjs`                                 | Called per cell                                     |
 | Database | Row level security policies and grants in `backend/ward-flow/migrations/` and `infra/`                                                                                                   | SQL read as text                                    |
 
-**181 actions x 10 desks = 1810 cells.**
+**184 actions x 10 desks = 1840 cells.**
 
 ## Matrix
 
@@ -80,6 +80,7 @@ and the reducer still limit each desk to records in its own place.
 | `MARK_NOTICE_READ`                          |            Y            |             Y             |         Y         |     Y     |        Y         |      Y       |       Y        |     -     |      -       |    -    |
 | `MARK_REFERRAL_INFORMATION_MET`             |            Y            |             Y             |         -         |     Y     |        -         |      Y       |       Y        |     -     |      -       |    -    |
 | `MARK_REFERRAL_OPENED`                      |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
+| `MARK_WARD_READY_FOR_NEXT`                  |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `OPEN_DISCHARGE_RECORD`                     |            Y            |             Y             |         -         |     Y     |        Y         |      -       |       Y        |     -     |      -       |    -    |
 | `PATIENT_ARRIVED`                           |            Y            |             Y             |         Y         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `PATIENT_COLLECTED`                         |            Y            |             Y             |         Y         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
@@ -129,6 +130,7 @@ and the reducer still limit each desk to records in its own place.
 | `RECORD_NO_REFERRAL`                        |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_OBSERVATION_LEVEL`                  |            Y            |             Y             |         -         |     Y     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_PATIENT_DISCHARGE`                  |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
+| `RECORD_PSYCH_REVIEW_SEEN`                  |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_REFERRAL_COMMITMENT`                |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_REFERRER_WITHDRAWAL`                |            Y            |             Y             |         -         |     Y     |        -         |      Y       |       Y        |     -     |      -       |    -    |
 | `RECORD_REPATRIATION`                       |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
@@ -157,6 +159,7 @@ and the reducer still limit each desk to records in its own place.
 | `REOPEN_WARD_TO_ADMISSIONS`                 |            Y            |             Y             |         -         |     Y     |        Y         |      -       |       -        |     -     |      -       |    -    |
 | `REPLY_BROADCAST_ALERT`                     |            Y            |             Y             |         -         |     Y     |        Y         |      -       |       -        |     -     |      -       |    -    |
 | `REQUEST_CAPACITY_REFRESH`                  |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
+| `REQUEST_PSYCH_REVIEW`                      |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `REQUEST_REFERRAL_INFORMATION`              |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `REQUEST_WARD_STAFF`                        |            Y            |             Y             |         -         |     Y     |        Y         |      -       |       -        |     -     |      -       |    -    |
 | `RESET_SCENARIO`                            |            Y            |             -             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |

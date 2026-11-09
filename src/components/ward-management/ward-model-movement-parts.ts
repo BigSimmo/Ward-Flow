@@ -547,6 +547,17 @@ export const EXAMINATION_OUTCOMES = [
 ] as const;
 export type ExaminationOutcome = (typeof EXAMINATION_OUTCOMES)[number];
 
+/** Psychiatry review tracker (Josh, 9 Nov 2026): who was recorded as having seen the person. */
+export const PSYCH_REVIEW_GRADES = ["registrar", "consultant"] as const;
+export type PsychReviewGrade = (typeof PSYCH_REVIEW_GRADES)[number];
+
+/** `Movement.psychReview`: when a review was asked for and when each grade saw the person. */
+export type PsychReview = {
+  requestedAt: Instant;
+  registrarSeenAt?: Instant;
+  consultantSeenAt?: Instant;
+};
+
 export const ED_OUTCOMES = ["for_discharge", "for_community_follow_up"] as const;
 export type EdOutcome = (typeof ED_OUTCOMES)[number];
 

@@ -1,0 +1,143 @@
+/* "Where the hours went" (patient-hours-breakdown.tsx). Tokens only; matches the journey timeline card. */
+
+.hours {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-2) var(--wf-s-3);
+}
+
+.title {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-15, var(--wf-fs-14)) / 1.3 var(--wf-font);
+}
+
+.meta {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.mono {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.table {
+  --wf-cell-pad-y: var(--wf-s-2);
+  width: 100%;
+}
+
+.numHead {
+  text-align: right;
+}
+
+.table th.stage {
+  height: auto;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  letter-spacing: normal;
+  text-align: left;
+  text-transform: none;
+  white-space: normal;
+}
+
+.stageInner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+}
+
+.stageText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.span {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  overflow-wrap: anywhere;
+}
+
+.swatch {
+  flex: none;
+  width: 12px;
+  height: 6px;
+  margin-top: 0.45em;
+  border-radius: 3px;
+  background: var(--wf-track);
+}
+
+.swatch[data-fill="none"] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--wf-line);
+}
+
+.swatch[data-fill="data-1"] {
+  --swatch: var(--wf-data-1);
+  background: var(--wf-data-1);
+}
+
+.swatch[data-fill="data-2"] {
+  --swatch: var(--wf-data-2);
+  background: var(--wf-data-2);
+}
+
+.swatch[data-fill="data-3"] {
+  --swatch: var(--wf-data-3);
+  background: var(--wf-data-3);
+}
+
+.swatch[data-fill="neutral"] {
+  --swatch: var(--wf-neutral);
+  background: var(--wf-neutral);
+}
+
+.swatch[data-hatch] {
+  background: repeating-linear-gradient(135deg, var(--swatch, var(--wf-data-2)) 0 2px, var(--wf-track) 2px 4px);
+}
+
+.table td.num,
+.table td.missing {
+  width: 1%;
+  height: auto;
+  max-width: none;
+  overflow: visible;
+}
+
+.num {
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.missing {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-13) var(--wf-font);
+  text-align: right;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.foot {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
