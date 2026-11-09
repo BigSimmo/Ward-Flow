@@ -1683,6 +1683,24 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       return { type: "UNDO_PATIENT_RECORD", patientId, ...(record ? { role: record.role } : {}) };
     },
   ],
+  // 9 Nov 2026: the same for a bed release step. New events shifted the random runs so a release
+  // step's own Undo was never drawn; a sweep step now always sends it, aimed at the newest one.
+  [
+    1,
+    (state, random) => {
+      const record = (state.undoRecords ?? [])
+        .flatMap((candidate) =>
+          candidate.kind === "step" && candidate.undoType === "UNDO_RELEASE_STEP" ? [candidate] : [],
+        )
+        .at(-1);
+      return {
+        type: "UNDO_RELEASE_STEP",
+        ...(record ? { role: record.role, ...undoSubjectField(state, record.subjectId) } : {}),
+        ...(record?.unitId ? { actingUnitId: record.unitId } : {}),
+        ...(record ? {} : { movementId: pick(random, state.movements)?.id ?? MISSING_ID }),
+      };
+    },
+  ],
   // Movement facts: arrival details, flags, blockers, escalation, documents.
   [
     2,

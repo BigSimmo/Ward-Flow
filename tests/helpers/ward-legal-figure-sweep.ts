@@ -2686,6 +2686,26 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
     offenders.push(...offendingFormsIn(deteriorated, `RECORD_ED_MEDICAL_DETERIORATION(${code})`));
 
     const forRelease = buildHeldMovementFor(code, NOW_ANCHOR);
+    // Feature 11 (9 Nov 2026): EXTEND_PULL has RELEASE_PULL's narrow precondition (a bed pulled now),
+    // which the round-robin cannot reliably reach for every code, so it is driven here the same way,
+    // on a throwaway copy of the same pulled movement. It moves only the pull's time limit.
+    const extended = wardFlowReducer(forRelease.state, {
+      type: "EXTEND_PULL",
+      role: EVENT_ROLE.EXTEND_PULL[0],
+      now: NOW_ANCHOR,
+      movementId: forRelease.movementId,
+      minutes: PULL_HOLD_EXTENSION_MINUTES[0],
+    });
+    expect(
+      extended.rejections,
+      `EXTEND_PULL for Form ${code} was refused: ${extended.rejections.at(-1)?.reason}`,
+    ).toEqual(forRelease.state.rejections);
+    expect(extended.movements.find((movement) => movement.id === forRelease.movementId)!.legalForm).toEqual(
+      forRelease.state.movements.find((movement) => movement.id === forRelease.movementId)!.legalForm,
+    );
+    accepted.add("EXTEND_PULL");
+    offenders.push(...offendingFormsIn(extended, `EXTEND_PULL(${code})`));
+
     const released = wardFlowReducer(forRelease.state, {
       type: "RELEASE_PULL",
       role: EVENT_ROLE.RELEASE_PULL[0],
