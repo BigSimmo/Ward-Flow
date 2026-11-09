@@ -18,7 +18,7 @@ and the reducer still limit each desk to records in its own place.
 | Backend  | `deskCommand`, the role clause of `validSharedCommand` and `commandRefusal` (`backend/ward-flow/engine.ts`); no role is refused 403 in `shared-http.mjs`                                 | Called per cell                                     |
 | Database | Row level security policies and grants in `backend/ward-flow/migrations/` and `infra/`                                                                                                   | SQL read as text                                    |
 
-**184 actions x 10 desks = 1840 cells.**
+**189 actions x 10 desks = 1890 cells.**
 
 ## Matrix
 
@@ -65,6 +65,7 @@ and the reducer still limit each desk to records in its own place.
 | `EVALUATE_ARRIVAL_LATENESS`                 |            Y            |             Y             |         -         |     Y     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `EVALUATE_LEAVE_BED_WARNINGS`               |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `EXTEND_BROADCAST_ALERT`                    |            Y            |             Y             |         -         |     -     |        Y         |      -       |       -        |     -     |      -       |    -    |
+| `EXTEND_PULL`                               |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `FLAG_BED_RELEASE`                          |            Y            |             Y             |         -         |     Y     |        Y         |      -       |       -        |     -     |      -       |    -    |
 | `FLAG_LEGAL_MISMATCH`                       |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `FLAG_MOVEMENT_TURNAROUND_PRIORITY`         |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
@@ -81,6 +82,7 @@ and the reducer still limit each desk to records in its own place.
 | `MARK_REFERRAL_INFORMATION_MET`             |            Y            |             Y             |         -         |     Y     |        -         |      Y       |       Y        |     -     |      -       |    -    |
 | `MARK_REFERRAL_OPENED`                      |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `MARK_WARD_READY_FOR_NEXT`                  |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
+| `MARK_WEEKEND_DISCHARGE_REVIEWED`           |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `OPEN_DISCHARGE_RECORD`                     |            Y            |             Y             |         -         |     Y     |        Y         |      -       |       Y        |     -     |      -       |    -    |
 | `PATIENT_ARRIVED`                           |            Y            |             Y             |         Y         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `PATIENT_COLLECTED`                         |            Y            |             Y             |         Y         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
@@ -103,6 +105,7 @@ and the reducer still limit each desk to records in its own place.
 | `RECORD_COMMUNITY_TREATMENT_ORDER`          |            Y            |             Y             |         -         |     -     |        -         |      -       |       Y        |     -     |      -       |    -    |
 | `RECORD_COUNTRY_EXTENSION`                  |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_DIRECTORY_CHECK`                    |            Y            |             Y             |         Y         |     Y     |        Y         |      Y       |       Y        |     -     |      -       |    -    |
+| `RECORD_DISCHARGE_CHECK`                    |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_DISCHARGE_DEPENDENCY`               |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_DISCHARGE_PLAN_CHANGE`              |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_DIVERSION`                          |            Y            |             Y             |         Y         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
@@ -111,6 +114,7 @@ and the reducer still limit each desk to records in its own place.
 | `RECORD_ED_PRESENTATION`                    |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_ESCALATION`                         |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_EXAMINATION`                        |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
+| `RECORD_FOLLOW_UP_REPLY`                    |            Y            |             Y             |         -         |     -     |        -         |      -       |       Y        |     -     |      -       |    -    |
 | `RECORD_HANDOVER_SIGN_OFF`                  |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_HOME_SERVICE_RETURN`                |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_LEAVE_BED`                          |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
@@ -170,6 +174,7 @@ and the reducer still limit each desk to records in its own place.
 | `SET_ARRIVAL_DETAILS`                       |            Y            |             Y             |         -         |     Y     |        -         |      Y       |       Y        |     -     |      -       |    -    |
 | `SET_BED_CLOSED`                            |            Y            |             Y             |         -         |     Y     |        Y         |      -       |       -        |     -     |      -       |    -    |
 | `SET_BED_PREPARATION`                       |            Y            |             Y             |         -         |     Y     |        Y         |      -       |       -        |     -     |      -       |    -    |
+| `SET_CLINICALLY_READY`                      |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `SET_CONFIGURATION`                         |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `SET_DISCHARGE_BARRIER`                     |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `SET_DISCHARGE_CRITERIA`                    |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
