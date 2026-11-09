@@ -144,7 +144,8 @@
 
 .event {
   display: grid;
-  grid-template-columns: 48px auto minmax(0, 1fr) auto;
+  /* The time column grows for an older open problem ("14:05 yesterday") instead of overlapping. */
+  grid-template-columns: minmax(48px, max-content) auto minmax(0, 1fr) auto;
   gap: var(--wf-s-1) var(--wf-s-3);
   align-items: start;
   padding: var(--wf-s-3) var(--wf-s-4);
@@ -196,7 +197,7 @@
 
 .members li {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
+  grid-template-columns: minmax(48px, max-content) minmax(0, 1fr);
   gap: var(--wf-s-3);
 }
 

@@ -143,7 +143,8 @@ function focusQueue(root: HTMLElement | null): void {
 }
 
 /** P124: what the footer's "N refused" count means, for a hover and for a screen reader. */
-const REFUSED_MARKER_EXPLANATION = "Actions the app refused to record this session. Details are under Refused.";
+const REFUSED_MARKER_EXPLANATION =
+  "Actions the app refused to record this session. Details are in Today's review, under Stopped by the app.";
 
 /**
  * Home: the coordinator's first screen (direction A, owner 10 Oct 2026).
