@@ -4,7 +4,6 @@ import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { deskPlaceLabel } from "@/components/ward-management/shell/ward-bar-desk-place";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
-import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "@/components/ward-management/ward-legal-clock";
 import Link from "next/link";
 
 import { dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
@@ -84,7 +83,7 @@ import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace 
 import { ShapeOfTheDay } from "./movements-shape-of-day";
 import { MovementPeopleSheet, corridorPeople, type MovementPeopleList } from "./movement-people-sheet";
 import { TransportFeed, TransportTiles } from "./movements-transport-now";
-import { HighlightStat, PhoneGroupHeading, StageRow } from "./movements-stage-row";
+import { HighlightStat, LegalColumnHead, PhoneGroupHeading, StageRow } from "./movements-stage-row";
 import { CommunityNoJourneys, MovementCheckInDrawer, StagePipeline } from "./movements-lazy-parts";
 import {
   CAUSES,
@@ -1259,15 +1258,7 @@ export function MovementsScreen() {
                 <span>Patient</span>
                 <span>Route</span>
                 <span>{boardTab === "resolved" ? "Outcome" : "Held up by"}</span>
-                {/* Note 7 item 11 (9 Nov 2026, held for Josh's wording review): where these heads show,
-                    the caveat is said once here instead of in every row. Rows keep it for screen
-                    readers, and show it again wherever these heads are hidden (phone, narrow, print). */}
-                <span title={LEGAL_LIMITS_NOT_CHECKED_NOTICE}>
-                  Legal
-                  <span className={flow.columnNote} data-testid="legal-column-not-checked">
-                    Not legally checked
-                  </span>
-                </span>
+                <LegalColumnHead />
                 <span className={flow.columnEnd}>{boardTab === "resolved" ? "Took" : "Waited"}</span>
                 <span className={flow.columnEnd}>{boardTab === "resolved" ? "Closed" : "Next step"}</span>
                 <span />
