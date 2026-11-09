@@ -131,6 +131,8 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-106](#d-106-clinical-values-from-the-9-november-2026-documentation-audit-9-november-2026)                                                            | Clinical values from the 9 Nov audit                                                 | Active                                           |
 | [D-107](#d-107-working-rules-and-documentation-from-the-9-november-2026-audit-9-november-2026)                                                          | Working rules from the 9 Nov audit                                                   | Active                                           |
 | [D-109](#d-109-homes-bed-alert-line-tests-the-whole-number-shown-9-november-2026)                                                                       | Home bed alert line tests the shown whole %                                          | Active                                           |
+| [D-110](#d-110-ed-and-referral-flow-neutral-fit-line-clearance-timing-and-alternatives-to-admission-9-november-2026) | ED and referral fit line, clearance timing, alternatives | Active |
+| [D-114](#d-114-allow-pull_request_target-for-three-workflows-only-9-november-2026)                                                                      | Allow pull_request_target for three workflows only                                   | Active                                           |
 
 ---
 
@@ -1370,3 +1372,11 @@ is inferred.
   - Alternatives to admission are an unranked, optional list on ward-bed referrals from ED or community: crisis team home visit, MH Hospital in the Home, step-up/step-down unit, short-stay unit and next-day community follow-up. Each can be marked not suitable, tried or declined by patient. It never blocks Send. Service names are placeholders until checked against local services.
 - **Why:** these cut the work of placing a patient without letting the app rank patients or wards, or make a clinical call.
 - **Boundary:** prototype rules on synthetic data; approves no merge or release.
+
+## D-114. Allow pull_request_target for three workflows only (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`). **Decided by:** Josh, in the Ward Flow project, choosing "Allow just these 3 workflows" on a decision card.
+- **Decision:** from 2 December 2026 GitHub blocks `pull_request_target` in public repositories unless an Actions event policy allows it ([GitHub changelog, 2 Nov 2026](https://github.blog/changelog/2026-11-02-pull_request_target-blocked-by-default-december-2)). Ward Flow keeps the trigger and adds a repository Actions event policy that allows it only for `pr-hold.yml`, `bot-author-policy.yml` and `ward-flow-ci-tidy.yml`. Everything else keeps GitHub's default block.
+- **How:** Josh adds the policy in the repository's Actions settings before the second brownout (16 November 2026, 16:00 to 18:00 UTC). The policy must also allow the other events those three files use (`merge_group`, `schedule`, `workflow_dispatch`). `ward-flow-budget-recheck.yml` is left out while its job stays switched off (`if: false`); turning it back on needs it added. No workflow file changes.
+- **Why:** the hold and bot-author checks must read their rules from `main`, so a pull request cannot edit its own check to pass. All three never check out or run pull-request code, which is the safe use GitHub describes. Switching them to `pull_request` would lose that protection.
+- **Boundary:** a repository setting Josh makes himself; agents do not change it.
