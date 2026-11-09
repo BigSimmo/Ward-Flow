@@ -178,7 +178,6 @@ async function goBackToWard(page: Page) {
  * proof the Confirmed count gave, made on the one record this journey moves rather than on a total.
  */
 
-/** Ready beds for this ward, off its card on the coordinator's bed map. */
 /** D-80 item 17: the coordinator says why before a ward's discharge record opens. */
 async function giveOnBehalfReason(page: Page) {
   const form = page.getByTestId("ward-on-behalf-reason");
@@ -186,6 +185,7 @@ async function giveOnBehalfReason(page: Page) {
   await form.getByRole("button", { name: "Open record" }).click();
 }
 
+/** Ready beds for this ward, off its card on the coordinator's bed map. */
 async function boardReady(page: Page): Promise<number> {
   return capacityReady(page, UNIT_ID, UNIT_NAME);
 }
@@ -199,6 +199,8 @@ async function boardReleaseStatus(page: Page, admissionId: string): Promise<stri
   await expect(panel).toBeVisible();
   await panel.getByRole("tab", { name: /^Discharges/u }).click();
   await panel.locator(`[id="capacity-discharge-discharge-${admissionId}"]`).click();
+  // D-80 item 17: the coordinator opens a ward's record only after giving a reason.
+  await giveOnBehalfReason(page);
   const status = panel.locator("dt", { hasText: /^Status$/u }).locator("xpath=following-sibling::dd[1]");
   await expect(status).toBeVisible();
   const text = ((await status.textContent()) ?? "").trim();
