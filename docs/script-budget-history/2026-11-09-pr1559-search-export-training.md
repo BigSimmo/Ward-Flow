@@ -7,3 +7,10 @@ shared shell code every page now loads: the training-mode store and connection i
 G-then-letter go-to keys in the rail, and the export button on list screens. The training banner was
 already split so only a small gate loads on every page, and the report picture library loads only
 when someone makes a report picture. Each raise is well under the 5 KB a PR may add per screen.
+
+After merging main a446dca15 (staff and handover tools, PR #1562), CI measured five routes just over.
+Raised: `/ward-flow/ed` 521.0 to 521.6 KB (measured 521.1), `/ward-flow/ward/rph-adult-secure` 599.0
+to 600.2 KB (599.7), `/ward-flow/movements/WF-001` 593.0 to 595.0 KB (594.5), `/ward-flow/bed-meeting`
+573.0 to 573.9 KB (573.4) and `/ward-flow/statistics` 613.0 to 613.9 KB (613.4). The extra comes from
+this PR's shared shell code sitting alongside #1562's new shell pieces. Each total raise over main's
+numbers stays under 2.1 KB, inside the 5 KB a PR may add per screen.
