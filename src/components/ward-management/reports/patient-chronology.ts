@@ -135,7 +135,7 @@ function stageLabel(stage: Movement["stage"] | undefined): string {
 }
 
 /**
- * The person's own records. Identity is resolved only through the D-14-authorised resolver
+ * The person's own records. Identity is resolved only through the archive D-14-authorised resolver
  * (`ward-patient-resolver.ts`), which attributes a record to a person through its explicit,
  * unambiguous links and nothing else; this module never reads the patient link itself.
  */

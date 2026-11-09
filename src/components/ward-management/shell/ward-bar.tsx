@@ -140,7 +140,7 @@ import styles from "./ward-bar.module.css";
  *   (`coordinator/activity-panel.tsx`, loaded on demand), which reads its own feed, changes and
  *   notices from the store. Home's changes button opens this same instance
  *   (`ward-activity-panel-store.ts`). The bar keeps only the notice count for its unread dot.
- * - 🔴 **`primaryAction` (`WARD_PRIMARY_ACTIONS`) IS NOW WIRED — D-16.** This component still takes
+ * - 🔴 **`primaryAction` (`WARD_PRIMARY_ACTIONS`) IS NOW WIRED — archive D-16.** This component still takes
  *   one resolved `WardPrimaryAction | undefined` and never performs its own lookup — the
  *   resolution from a pathname lives in `WardBarMount` at the bottom of this file, not here, for
  *   the reason given at that export's own doc comment (this bar is a Server Component's worth of
@@ -250,7 +250,7 @@ export type WardBarProps = {
    * never performs its own lookup (`WardBarMount`, at the bottom of this file, is the one caller
    * that resolves it from the route today). Absent, or `{ kind: "none" }`, both render no button;
    * every other kind renders — see this file's own header comment ("primaryAction... IS NOW
-   * WIRED — D-16") for what each kind draws.
+   * WIRED — archive D-16") for what each kind draws.
    */
   primaryAction?: WardPrimaryAction;
   /** Fires whenever the Service selector changes, so a future host page can scope its own data. */
@@ -1165,7 +1165,7 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
        * sideways at 375px (`ui-ward-statistics-journey.spec.ts`). As a direct child of `.bar` it
        * keeps its own place in the row and its labels collapse by the bar's container width.
        *
-       * D-16, item 43: five kinds, three shapes. "none" and an absent `primaryAction` render nothing.
+       * archive D-16, item 43: five kinds, three shapes. "none" and an absent `primaryAction` render nothing.
        * "new-referral" opens a menu of its three real destinations. The other three kinds open a
        * popover headed by their own label whose body reads exactly "Not wired in this prototype.",
        * and announce "<label> is not wired in this prototype." on first open. Never an `<a>`.

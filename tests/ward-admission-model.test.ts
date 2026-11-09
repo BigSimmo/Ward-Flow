@@ -561,7 +561,7 @@ describe("Admission privacy — structural", () => {
     // copy — see `Admission.patientId`'s own doc comment. Added in the same change as
     // `tests/ward-patient-link-default-deny.test.ts`, which actively refuses reading it anywhere
     // this ruling has not explicitly permitted; a field that widened the allowlist without also
-    // widening the refusal would be exactly the "guard satisfied by an absence" D-14 exists to end.
+    // widening the refusal would be exactly the "guard satisfied by an absence" archive D-14 exists to end.
     "patientId",
     "sex",
     // WIDENED ON PURPOSE, 2026-09-25 — owner rulings that a ward's male/female counts follow GENDER,

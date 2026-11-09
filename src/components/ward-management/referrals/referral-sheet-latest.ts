@@ -1,5 +1,5 @@
 // RQ9 (Josh, 3 Nov 2026): the one referral a patient panel's Referral button opens. Reads the
-// patient link (D-14 allowlist entry, tests/ward-patient-link-default-deny.test.ts) to find that
+// patient link (archive D-14 allowlist entry, tests/ward-patient-link-default-deny.test.ts) to find that
 // person's own latest referral, and nothing else: one referral, never a list or a history.
 import type { Referral } from "@/components/ward-management/ward-model";
 

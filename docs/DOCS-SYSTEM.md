@@ -2,30 +2,31 @@
 
 How Documentation keeps Ward Flow docs accurate on this tip. **Process doc - no product DDL.**
 
-_Updated 2026-11-08 - documentation audit fixes: one home per kind of truth, history folder, status page limit, one date line per page; Documentation owns._
+_Updated 2026-11-09 - working rules audit (D-107): one Where things live map replaces the kind-of-truth table; Documentation owns._
 
 ## Principles
 
 1. **One live source per topic** - archive or stub duplicates. Facts that change with the code live only in [`FACTS.md`](FACTS.md); see [Facts and retired terms](#facts-and-retired-terms).
 2. **One date line per page** - keep a single `_Updated YYYY-MM-DD - <why>; Documentation owns._` line near the top and replace it when you edit; do not stack a new line per edit, because Git already records each change. Living pages also carry the `last-checked` marker (pipeline step 7).
 3. **Names only for secrets** - never paste values, JWTs, or dashboard passwords.
-4. **One home per kind of truth** (Josh, 7 November 2026). Do not create another status store.
-
-   | Question              | The one home                                                                  |
-   | --------------------- | ----------------------------------------------------------------------------- |
-   | Where are we now?     | The **Now** section of [`ward-flow/STATUS.md`](ward-flow/STATUS.md)           |
-   | What is the plan?     | [`ward-flow/roadmap.md`](ward-flow/roadmap.md)                                |
-   | What is in flight?    | Open pull requests, summarised in the Now section                             |
-   | What did Josh decide? | [`ward-flow/decisions.md`](ward-flow/decisions.md); no new `owner-*.md` files |
-   | How do we work?       | [`AGENTS.md`](../AGENTS.md) and the topic files it links                      |
-   | What happened before? | [`history/`](history/README.md) and [`ARCHIVE.md`](ARCHIVE.md)                |
-
-   Notion is optional ([task receipts](task-receipts.md)).
-
+4. **One home per kind of truth** (Josh, 7 November 2026; D-107). Do not create another status store or a second copy of a rule; link to its home in [Where things live](#where-things-live). Notion is optional ([task receipts](task-receipts.md)).
 5. **One map improvement per pass** when cheap.
 6. **Ward Flow repository lock** - confirm `git remote get-url origin` is `https://github.com/BigSimmo/Ward-Flow.git` before editing. Use a separate worktree based on this repository's `main`; confirm the branch and tip before acting. `D:\Worktrees\Database\ward-lead` and `BigSimmo/Database` are legacy sources, not Ward Flow destinations.
 7. **Recheck triggers** - relevant source, boot command or entry path changes refresh affected maintained guidance; operator changes restamp runbooks. Update the existing task receipt at meaningful lifecycle events; preserve dated status evidence.
 8. **Say the evidence limit once.** A document records what was checked; only source, tests and observed runs prove behaviour. State a page's evidence boundary once, near the top, rather than repeating "does not establish" or "is not proof" in every paragraph.
+
+## Where things live
+
+| What                  | The one home                                                                                                                                                                  |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rules (how we work)   | [`AGENTS.md`](../AGENTS.md), the topic files in [`agents/`](agents/) and [`ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md)                                               |
+| Decisions             | [`ward-flow/decisions.md`](ward-flow/decisions.md), with its status table; no new `owner-*.md` files                                                                          |
+| Clinical values       | [`ward-flow/clinical-values.md`](ward-flow/clinical-values.md), generated; never edit it by hand                                                                              |
+| Backlog               | `ward-flow/backlog.md`                                                                                                                                                        |
+| Status (where we are) | The **Now** section of [`ward-flow/STATUS.md`](ward-flow/STATUS.md), with the plan in [`ward-flow/roadmap.md`](ward-flow/roadmap.md); work in flight is in open pull requests |
+| Plans                 | [`ward-flow/plans/`](ward-flow/plans/README.md), active plans only                                                                                                            |
+| Design                | [`design/DESIGN-SYSTEM.md`](design/DESIGN-SYSTEM.md) and the [design review prompt](design/design-review-artifact-prompt.md)                                                  |
+| History               | [`history/`](history/README.md) and [`ARCHIVE.md`](ARCHIVE.md)                                                                                                                |
 
 ## Pipeline
 

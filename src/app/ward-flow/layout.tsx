@@ -101,7 +101,7 @@ import styles from "./ward-flow-layout.module.css";
  * identical staleness in `ward-shell-types.ts` and left this one standing, in the file it was
  * editing.** **The rail and the bar read the publication store themselves.**
  *
- * 🔴 **D-16, THE PRIMARY-ACTION SEAM: `WardBar` BECAME `WardBarMount` HERE.** The bar's own
+ * 🔴 **archive D-16, THE PRIMARY-ACTION SEAM: `WardBar` BECAME `WardBarMount` HERE.** The bar's own
  * `primaryAction` prop needs `WARD_PRIMARY_ACTIONS` resolved against the current route
  * (`resolveWardPrimaryAction`, `ward-nav.ts`) — a lookup this layout cannot perform itself despite
  * being the file the brief names for it: this file is a Server Component, so it cannot call

@@ -47,7 +47,7 @@ Start with the cheapest check that can fail for the changed behavior. Add anothe
 
 > **Historical selection examples:** this table includes the former Production UI workflow and retired process reference. Use the current commands and CI topology below.
 
-Browser gates are expensive; select the affected checks before starting them. Prefer selection, duration-balanced groups, and within-session cache reuse over raising Playwright workers (`workers: 1`, `fullyParallel: false`, `retries: 0` stay required — see `#093` and the removed `docs/process-hardening.md`, recorded in [ARCHIVE.md](ARCHIVE.md)).
+Browser gates are expensive; select the affected checks before starting them. Prefer selection, duration-balanced groups, and within-session cache reuse over raising Playwright workers (`workers: 1`, `fullyParallel: false`, `retries: 0` stay required — see `#093` and the removed `docs/process-hardening.md`, recorded in [the history index](history/README.md#deleted-files-kept-in-git-history)).
 
 | Change type                           | Run this                                                                       | Avoid                                                     |
 | ------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------- |

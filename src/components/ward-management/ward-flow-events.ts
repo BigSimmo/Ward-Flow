@@ -1721,7 +1721,7 @@ export type WardFlowEvent =
        * are kept structurally apart, and `tests/ward-referral-history-immutable.test.ts` for the
        * static proof that this case never touches `history` itself.
        *
-       * 🔴 **D-11 CRITICAL.** `note` is human-typed prose — this event type belongs on
+       * 🔴 **archive D-11 CRITICAL.** `note` is human-typed prose — this event type belongs on
        * `WARD_FLOW_TYPED_TEXT_EVENT_TYPES` (`ward-flow-persistence-classification.ts`), never the
        * text-safe list, so dispatching it (accepted or refused) locks session persistence for the
        * rest of the session exactly as a typed `history` on `RECEIVE_REFERRAL` already does.

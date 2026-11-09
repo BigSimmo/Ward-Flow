@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * 🔴 **OWNER RULING D-3 HAD AN ENFORCEMENT THAT RAN NOWHERE.**
+ * 🔴 **OWNER RULING archive D-3 HAD AN ENFORCEMENT THAT RAN NOWHERE.**
  *
  * `scripts/ward-flow/check-text-size-floor.mjs` implemented the ruling — no NEW sub-12px text in ward
  * CSS — and **no npm script, no test and no CI invoked it.** ⚠️ **That is this repository's catalogued
@@ -98,7 +98,7 @@ describe("the D-3 text-size ratchet is reachable and still ratchets", () => {
    * 🔴 **THE COMMENT QUESTION, PINNED RATHER THAN SETTLED — AND THIS CASE IS THE PRICE OF SETTLING IT.**
    *
    * The counter matches the token string **wherever it appears, including inside a CSS comment**. That
-   * is why documenting D-3 inside ward CSS would raise the count, and why the script's own explanation
+   * is why documenting archive D-3 inside ward CSS would raise the count, and why the script's own explanation
    * lives in a `.mjs` file.
    *
    * ⚠️ **Somebody will propose making it comment-blind, and it is a reasonable proposal.** This case

@@ -1,6 +1,6 @@
 # Ward Flow UI and local server workflow
 
-_Updated 2026-11-05 - small phone buttons are 40px (Q295) and DESIGN-SYSTEM.md is the standard (design audit K21); 2026-10-31 - current design rules from the redesign mock-ups and the kit (Josh, 31 Oct); 2026-10-23 - surface the D-74/D-75 mock-up evidence and approval requirements; Documentation owns._
+_Updated 2026-11-09 - design work follows the design review prompt; owner design rules live in DESIGN-SYSTEM.md and HOW-WE-WORK §6 only (D-107); Documentation owns._
 
 Read before UI changes, mockups, browser evidence or a local app link. [AGENTS.md](../../AGENTS.md) governs safeguards. The dedicated repository engine/tests own behaviour; current accepted appearance must be preserved.
 
@@ -15,41 +15,21 @@ Read before UI changes, mockups, browser evidence or a local app link. [AGENTS.m
 
 ## Building UI
 
-Before building from a mock-up, follow the
-[D-74 standing approval rule](../ward-flow/decisions.md#d-74-owner-answers-to-the-21-october-open-questions-21-october-2026)
-and [D-75 evidence rule](../ward-flow/decisions.md#d-75-ux-audit-follow-up-page-caching-community-gaps-and-the-extra-travel-bed-hold-21-october-2026):
-make it from screenshots and visual assessment of the running app at current `main` or the
-hosted site, record which commit it depicts, and obtain Josh's explicit approval of that
-specific mock-up before implementation. This does not authorise a provider read or deployment.
+Every design task, of any size, follows the
+[design review prompt](../design/design-review-artifact-prompt.md) (Josh, 9 November 2026,
+[D-107](../ward-flow/decisions.md#d-107-working-rules-and-documentation-from-the-9-november-2026-audit-9-november-2026)). It carries forward D-74 (Josh approves before
+build) and D-75 (start from the running app), and replaces the D-91 mock-up viewer. Build in the real app with React, TypeScript, the kit and CSS Modules; never a
+separate HTML or JavaScript UI that must be rewritten. None of this authorises publication,
+a provider read or deployment.
 
-React mockups, owner direction of 5 October 2026:
-
-- Build interactive mockups in React and TypeScript with the site's existing Next.js routes, reusable components and CSS Modules. Design the real components that can become the approved site. Never build a separate HTML or JavaScript UI that must be rewritten.
-- Reuse shared Ward Flow state, reducer actions and synthetic records rather than duplicating logic or data. Keep preview-only controls and fixtures small and separate. A shareable HTML preview bundles the same React components.
-- On approval, integrate the reviewed components directly and keep their working interactions. Run only checks that cover plausible changed behaviour, and avoid repeated full suites, builds or screenshot matrices. An explicit request for static images, plain HTML or another framework wins. None of this authorises publication or deployment.
-
-Design rules in force (31 October 2026, sizes corrected 5 November 2026). The design system of record
-is [DESIGN-SYSTEM.md](../design/DESIGN-SYSTEM.md) (Q327);
-[design-system-v9.md](../../design/v9/design-system-v9.md) section 14 keeps the earlier owner rulings.
-
-- **Control size.** No 48px controls. A phone button, small ones included, shows at 40px (Q295) with an
-  invisible cover that keeps the 48px tap area; phone tabs and chips are 40px in a 48px track (Q225); desktop segmented and pill
-  tabs are 30px at 13px. The one exception (Josh, 31 Oct): Accept, Pull and Decline stay a full 48px on phones. Text never goes below 12px.
-- **No coloured side edges** or stripes on rows, cards, tiles or stat boxes. Tone goes in the
-  StatusGlyph or a small tinted tag; borders stay neutral.
-- **Legal-form times only as typed**, never a countdown, "due in" or "passed … ago" (D-93, replacing
-  D-71 item 5). Reused real parts can still compute one; check before reusing.
-- **Pop-ups:** a status tag beside the title, tabs inside when there is a lot to show, and the main
-  actions pinned at the foot. The styled "Leave this page?" confirm replaces the browser's own box.
-- **Dates** are typed in the kit's DD/MM/YYYY date box, never the browser's date picker.
-- **Fewer warnings.** Keep a warning only where a rule or a real risk needs it; safeguard wording
-  stays word for word.
-- **Keep:** surname first, nothing pre-selected, names wrap in full, synthetic data only.
+The owner design rules (control sizes, no coloured side edges, legal-form times, pop-ups, dates,
+fewer warnings) have one home: [DESIGN-SYSTEM.md](../design/DESIGN-SYSTEM.md), the design system of
+record (Q327), with the build-failing ones in
+[HOW-WE-WORK §6](../ward-flow/HOW-WE-WORK.md#6-owner-rules-that-fail-builds-or-reviews).
 
 Design and wiring:
 
-- The working engine is authoritative for behaviour. For appearance, a page Josh has approved in the redesign mock-up viewer (D-91) is authoritative once it is built; any other page keeps the accepted app at current `main`. Historical drawings and token notes do not authorise a restyle. Keep status understandable and controls accessible.
+- The working engine is authoritative for behaviour. For appearance, the accepted app at current `main` stands until Josh approves a design through the [design review prompt](../design/design-review-artifact-prompt.md). Historical drawings and token notes do not authorise a restyle. Keep status understandable and controls accessible.
 - Every offered control must work or accessibly expose why it is unavailable. Wire a new route into the real role navigation and verify it is reachable. Screenshots alone do not prove controls. Detail: [wiring-and-bundle-budget.md](wiring-and-bundle-budget.md).
-- Owner rules that fail reviews (D4 wording, D5 Act limits, no typed text in browser storage, privacy wording, design tokens) are in HOW-WE-WORK section 6.
 - Repository contracts and committed tests outrank generic external skills and style plugins. Never change committed tokens or tests to satisfy a generic rule, and name the rule when an external one drives a change.
 - Figma sync follows [figma-sync.md](figma-sync.md). Code is the source of truth.

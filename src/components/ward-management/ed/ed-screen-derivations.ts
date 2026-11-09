@@ -255,7 +255,7 @@ export function deriveEdScreen({
   // and the filter above stays as it is. It leaves this list when a journey starts from it, when
   // the person is already on the board, or when no ward is still considering it.
   const siteCode = edById(thisEdId)?.siteCode;
-  // D-14: the board's people are matched by the resolver's UMRN, never by reading the patient link.
+  // archive D-14: the board's people are matched by the resolver's UMRN, never by reading the patient link.
   const resolveState = { patients: registryPatients, referrals, movements };
   const boardUmrns = new Set(
     patients

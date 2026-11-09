@@ -782,7 +782,7 @@ function statusFor(
     };
   }
 
-  // A record with nothing open. Where else they have stayed is not read here (D-14): the screen
+  // A record with nothing open. Where else they have stayed is not read here (archive D-14): the screen
   // shows only what the patient record itself holds.
   const activeEngagement = recordExtrasFor(patient?.id)?.community?.find((item) => item.status === "active");
   return {

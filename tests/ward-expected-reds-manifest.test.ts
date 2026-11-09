@@ -114,7 +114,7 @@ describe("the expected-red manifest", () => {
    * ✅ **When empty, the green is BACKED BY A MACHINERY PROOF rather than by absence:** the validator
    * is made to accept a well-formed entry and reject a malformed one, here, in the same case that
    * reports the zero. **That is the same substitution `ward-token-layer.test.ts` makes for its spacing
-   * ladder, and the same shape the D-3 ratchet now uses for a departed file — not a failure, but it
+   * ladder, and the same shape the archive D-3 ratchet now uses for a departed file — not a failure, but it
    * must be SAID.**
    */
   it("🔴 states whether it walked anything at all, rather than passing silently on zero", () => {

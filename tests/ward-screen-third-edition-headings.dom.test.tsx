@@ -145,7 +145,7 @@ describe("the ward screen's heading contract", () => {
  * and its codepoint checked, not typed.
  *
  * 🔴 **THE FOURTH PANEL — `Coming in` — WAS HANDED BACK AND THE OWNER HAS SINCE RULED IT IN.**
- * D-20-REVISED. A2 refused the rename because `ward-pull-vocabulary.dom.test.tsx` named that heading
+ * archive D-20-REVISED. A2 refused the rename because `ward-pull-vocabulary.dom.test.tsx` named that heading
  * and A2 read the guard's property as the wording itself. **It is not:** the property is the "Pull a
  * bed" button and three `not.toMatch(/hold|held/i)` negatives, all of which survive the rename
  * untouched. The heading was incidental to the guard after all.
@@ -160,7 +160,7 @@ describe("the ward screen's heading contract", () => {
 const RENAMED_PANELS: readonly (readonly [string, string])[] = [
   ["Ward figures, right now", "Ward figures, right now"],
   ["Awaiting your answer", "Awaiting your answer"],
-  // D-20-REVISED. Both layers identical on purpose: before the rename the label read "Accepted,
+  // archive D-20-REVISED. Both layers identical on purpose: before the rename the label read "Accepted,
   // pulled or en route" and the heading "Accepted, pulled or en route here" — the same words minus
   // one, the third such pair found on this screen.
   ["Coming in", "Coming in"],

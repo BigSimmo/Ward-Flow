@@ -2,7 +2,7 @@
  * WAS THIS HELPFUL? (Josh, 2 Nov 2026). A yes or no on a Help answer, counted on this device only,
  * so the team can see which answers need rewriting before the pilot. Only how-to ids and whole
  * counts are stored, each id checked against the known answers on read: nothing typed and nothing
- * about a person (D-11, D-18). The key carries the `ward_flow_choice_` prefix kept at sign-out, as the
+ * about a person (archive D-11, D-18). The key carries the `ward_flow_choice_` prefix kept at sign-out, as the
  * usage counts do (`ward-help-usage.ts`), and the Settings usage card shows and clears both.
  */
 import { createBrowserStore } from "@/lib/client-store-factory";

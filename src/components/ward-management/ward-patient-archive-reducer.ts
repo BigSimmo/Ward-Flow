@@ -13,7 +13,7 @@ export function reducePatientArchive(
 ): WardFlowState {
   if (!isPatientArchiveReason(event.reason))
     return reject(state, event, "ARCHIVE_PATIENT needs a reason from the list");
-  // D-14: the event's patient is read through the allow-listed subjectId, not here.
+  // archive D-14: the event's patient is read through the allow-listed subjectId, not here.
   const patientId = subjectId(event);
   const problem = patientArchiveProblem(state, patientId);
   if (problem !== undefined) return reject(state, event, problem);

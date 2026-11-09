@@ -1,6 +1,6 @@
 # Triage form: webPSOLIS pick-lists, review and handover
 
-Audience: the next Ward Flow chat and Josh. Status: reviewed and decided, not built. Owner: Claude (7 Nov 2026). Synthetic data only.
+Audience: the next Ward Flow chat and Josh. Status: done. The review merged in PR #1502 and the pick-lists were built in PR #1504 (both 8 Nov 2026). Owner: Claude (7 Nov 2026). Synthetic data only.
 
 Original objective: Josh supplied photos of the webPSOLIS SSCD "New Triage" form's dropdowns (7 Nov 2026) to add to Ward Flow's triage and risk form. This note reviews them, records the option lists, recommends how each belongs in the form, and hands the build to a new chat. The triage form was built in #1500 (merged 7 Nov 2026, main `6b1352c93`).
 

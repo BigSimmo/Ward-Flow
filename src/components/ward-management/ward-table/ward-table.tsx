@@ -51,7 +51,7 @@ import styles from "./ward-table.module.css";
  *      mid-scroll has a cue where their eyes are, not just in a sentence below the fold.
  *
  * `overflowing` is the opposite kind of fact from `hasScrollThreshold`: not "this table was BUILT
- * to scroll", but "it IS scrolling, right now, at the viewport this render is for". D-10
+ * to scroll", but "it IS scrolling, right now, at the viewport this render is for". archive D-10
  * (`docs/ward-flow/owner-decisions-2026-09-1x.md`) ruled that a caller's affordance sentence must
  * be true only while genuinely overflowing — a standing "this table can scroll" claim would be
  * false on a wide screen — and this component still has no `scrollWidth` access to know that for

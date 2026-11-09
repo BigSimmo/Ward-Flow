@@ -2,23 +2,23 @@ import { isDischargeCriterion } from "@/components/ward-management/ward-discharg
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 
 /**
- * 🔴 **D-11 — Ward Lead's delegated ruling D-11, 2026-09-11, not the owner's.** The owner released a
+ * 🔴 **archive D-11 — Ward Lead's delegated ruling archive D-11, 2026-09-11, not the owner's.** The owner released a
  * blocked queue of twelve questions under his standing instruction: *"Go ahead with all
  * recommendations for 12 blockers."* `docs/ward-flow/owner-decisions-2026-09-1x.md`'s 2026-09-11
  * section introduction states plainly that he "has not stated a clinical position on any of the
  * questions below," that every ruling in that section "is MINE" (Ward Lead's), and that "a later
  * reader must not quote any of them back as 'the owner decided'."
  *
- * **What D-11 itself says**, narrowly: a clinician typing a patient's referral history into the
+ * **What archive D-11 itself says**, narrowly: a clinician typing a patient's referral history into the
  * intake form's draft box should be WARNED before navigating away, and that text should never be
  * PERSISTED. It is a ruling about one form's free-text history field, given because holding that
  * draft would write clinical prose about a named person into browser storage on a shared computer,
  * where the next user may be a different clinician or none at all.
  *
- * **What follows below is this session's own design choice, not D-11 restated.** Applying D-11's
+ * **What follows below is this session's own design choice, not archive D-11 restated.** Applying archive D-11's
  * underlying concern — human-typed text surviving into shared browser storage — to the WHOLE
  * persisted session, and to every field in this event union that can carry such text rather than
- * only the one field D-11 named, is a generalisation made here, on the same reasoning, not a
+ * only the one field archive D-11 named, is a generalisation made here, on the same reasoning, not a
  * quotation of a wider ruling that does not exist.
  *
  * 🔴 **THIS COMMENT PREVIOUSLY NAMED `Referral.history` AND `Movement.blocker` AS THE ONLY TWO
@@ -74,7 +74,7 @@ export const WARD_FLOW_TYPED_TEXT_EVENT_TYPES: ReadonlySet<WardFlowEvent["type"]
   "RECORD_ESCALATION",
   // RB7 (build plan item 27, 2026-09-17): `note` is human-typed prose, appended to
   // `Referral.corrections` — exactly the same shape `history` on `RECEIVE_REFERRAL` above already
-  // is, and the reason D-11 named this list's rule at all.
+  // is, and the reason archive D-11 named this list's rule at all.
   "ADD_REFERRAL_CORRECTION",
   // Owner's third ruling, 2026-09-17: `cadNumber` is the CAD transport number a person types while
   // logging a phone-made booking — typed text, stored verbatim on `TransportJob.cadNumber`, with

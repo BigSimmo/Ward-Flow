@@ -527,7 +527,7 @@ export function WardReferralDetailDrawer({
   // Since D-79 this shows the name, UMRN and documents, so opening it is a record view (D-80).
   // Logged on the server in the signed-in shared workspace only; nothing in the local demo.
   const session = useContext(SharedSessionContext);
-  // The patient this drawer already names, not the journey's link (D-14).
+  // The patient this drawer already names, not the journey's link (archive D-14).
   const patientId = identity.patient?.id;
   useEffect(() => {
     if (patientId) session?.logRecordView(patientId, "referral");

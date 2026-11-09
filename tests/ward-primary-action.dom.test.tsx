@@ -128,7 +128,7 @@ describe("WardBar primary action — the five kinds, D-16", () => {
       const control = screen.getByTestId("ward-bar-primary-action");
       expect(control.tagName).toBe("BUTTON");
       expect(control).toHaveTextContent(label);
-      // Not disabled, not greyed out — D-16 is explicit this is the opposite of D-13's rejected
+      // Not disabled, not greyed out — archive D-16 is explicit this is the opposite of archive D-13's rejected
       // disabled-control shape: the control WORKS and answers on the first press.
       expect(control).not.toBeDisabled();
 

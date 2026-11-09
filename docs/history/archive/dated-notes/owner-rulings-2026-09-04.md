@@ -12,6 +12,8 @@ the owner can correct it rather than discover it.
 
 ## R-2026-09-04-A — The patient record may hold the placement field set
 
+> **Partly replaced by [D-105](../../../ward-flow/decisions.md) (8 November 2026):** next of kin and a nominated person or carer may now be optional record-only fields. The rest of this ruling stands.
+
 **Asked:** which facts may the patient record hold? Owner ruling PD-1 of 2026-08-30 permitted name,
 record number, date of birth and age, stated that address and narrative history were **not** ruled
 on, and that **silence is not permission**. The approved design adds seven more.
@@ -205,6 +207,8 @@ a real recipient, and it is performed as one.
 the Overview, Legal and forms, Transport and Timeline tabs.
 
 ## R-2026-09-04-G — "It suggests nothing" is WITHDRAWN. The board is to match patients to beds.
+
+> **Replaced by [D-71](../../../ward-flow/decisions.md) (20 October 2026), recorded in D-106:** no suggested or ranked wards.
 
 🔴 **THIS REVERSES SPEC D4, WHICH WAS NEVER AN OWNER RULING.** It was inferred, hardened into
 emphatic comments, enforced across four source files, and then obeyed by every session that met it —

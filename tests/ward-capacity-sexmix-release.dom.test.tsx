@@ -46,7 +46,7 @@ const SUBJECT = "rph-adult-secure";
 
 /** Someone in a bed on the subject ward with no linked movement, so recording that they left is
  *  not refused as in transit. The destination used below never trips the involuntary-discharge
- *  boundary, so a patient link is fine (the seed links every person since D-14). */
+ *  boundary, so a patient link is fine (the seed links every person since archive D-14). */
 const LEAVER = wardAdmissions.find((a) => a.unitId === SUBJECT && a.state === "occupied" && a.movementId === null);
 
 function RecordLeaving() {

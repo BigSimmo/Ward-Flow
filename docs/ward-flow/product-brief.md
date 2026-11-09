@@ -79,7 +79,8 @@ journeys that matter most:
    `X` / `not_stated` placements require coordinator review and a nurse unit manager's tick per
    `D-31` / `R2-2`), and `allocatable_bed` (closed/pulled/occupied bed state). By contrast,
    `cohort` (age/specialty) and `security` (open vs secure) can be overridden by a coordinator
-   with a logged clinical reason (`D-16`, `D-37`, `ward-eligibility.ts`).
+   with a logged clinical reason (`D-16`, `ward-eligibility.ts`; the cited `D-37` posture is now
+   replaced by D-87).
 4. **Leaving the ward.** Two tracks run side by side: the person leaves (to the community, another
    ward, a general hospital, residential care, custody, and other endings) and the bed is released
    and prepared. What is holding a discharge up is recorded and shown on the delays board.
@@ -89,19 +90,16 @@ journeys that matter most:
 
 ## Where it stands today
 
-> [!NOTE]
-> **Historical snapshot (25 September 2026):** The bullets below reflect the state of the prototype on 25 September 2026 when this product brief was drafted. For live route counts, shared prototype workspace support, and current test suite counts, see [`docs/ward-flow/STATUS.md`](STATUS.md).
+_Refreshed 9 November 2026. The detail is in [STATUS.md](STATUS.md); open work is in the [backlog](backlog.md)._
 
-- **Built on synthetic data only.** 34 screens each have a design drawing, and all 34 were looked
-  at in a browser on 21 September; some still differ from their drawing in detail (see
-  [`STATUS.md`](STATUS.md)).
-- **It runs inside one browser.** Nothing is sent to a server; each browser holds its own copy for
-  the session. So two people on two computers do not see the same board.
-- **There is no real sign-in.** The sign-in screen lets you pick a role; it does not prove who you
-  are.
-- **Notices stay inside the app.** Nothing goes out by SMS, email or pager.
-- **The ward test suite had known failures** at its last full count (21–22 September). It was not
-  re-run for this brief.
+- **Still synthetic data only.** No real patient information, and not approved for clinical use.
+- **Shared, signed-in prototype.** An opt-in shared server with sign-in and role access by desk
+  (D-80, built). Shared save, reload and conflict are not yet fully tested on the hosted site.
+- **Every screen redesigned** to the approved mock-ups, with Help, a triage and risk form, and phone
+  and tablet layouts.
+- **Next:** pilot readiness. No real data until every item of the real-data gate is signed (D-87).
+
+The 25 September snapshot that stood here is in the file's Git history.
 
 ## What a first pilot in a WA hospital needs
 

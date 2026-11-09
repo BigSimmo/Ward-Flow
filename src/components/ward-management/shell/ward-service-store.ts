@@ -14,7 +14,7 @@
  * the tab. A demo reset also leaves it alone — it is not part of `WARD_FLOW_DEMO_STORAGE_KEY`'s
  * persisted clinical state, and nothing here reads or writes that key.
  *
- * 🔴 **D-11-SAFE BY CONSTRUCTION.** Ward Flow's own rule against typed text in browser storage is
+ * 🔴 **archive D-11-SAFE BY CONSTRUCTION.** Ward Flow's own rule against typed text in browser storage is
  * satisfied not by masking or trimming, but by never accepting anything BUT a fixed id in the
  * first place: `readStoredService` only ever returns a value that is `===` one of `HEALTH_SERVICES`
  * exactly. Free text, a stale id from a build that renamed a service, or storage tampering, all

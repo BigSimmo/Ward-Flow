@@ -199,7 +199,7 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
       to: admission.leftAt ?? (bedIsOccupied(admission) ? now : (admission.arrivedAt as Instant)),
     }));
 
-  // People, not stays: resolved through the D-14 resolver (this module never reads the patient link
+  // People, not stays: resolved through the archive D-14 resolver (this module never reads the patient link
   // itself); an unresolved stay counts as its own person.
   const resolve = createPatientResolver({ patients, referrals, movements });
   const personOf = (admission: Admission) => resolve(admission).patient?.id ?? `stay:${admission.id}`;

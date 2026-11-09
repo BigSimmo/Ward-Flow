@@ -5,7 +5,7 @@ hands back Ward Flow work.** Written 17 September 2026; repository and integrati
 updated 2 October 2026. The current repository's `AGENTS.md` governs operational safeguards;
 this guide supersedes older process notes within that boundary. Start at [`README.md`](README.md).
 
-_Updated 2026-11-08 - sections 1, 4, 8 and 9 follow the documentation audit: the status page's Now section, decisions recorded only in decisions.md, and history moved to docs/history (Josh, 7 November 2026); Documentation owns._
+_Updated 2026-11-09 - working rules audit (D-107): design follows the design review prompt, one home each for claims, protected work and receipts, old plan references point to docs/history; Documentation owns._
 
 > **The current rules are in this `BigSimmo/Ward-Flow` repository's `AGENTS.md`**, and Josh's
 > standing rulings are in [`decisions.md`](decisions.md). Where this file differs from `AGENTS.md`,
@@ -32,18 +32,12 @@ _Updated 2026-11-08 - sections 1, 4, 8 and 9 follow the documentation audit: the
 6. Keep other tools' work. The owner's words: do not remove or significantly alter Antigravity's
    progress, design or builds; fix and perfect them.
 
-### Mockups that become the site
+### Design work
 
-Owner direction, 5 October 2026: create interactive mockups with the site's React/TypeScript
-components, Next.js routes and CSS Modules. Reuse the shared synthetic records, provider and
-reducer so approval leads to direct integration, rather than an HTML-to-React rewrite. Keep
-preview controls separate; shared HTML previews bundle the same React components. Honour an
-explicit request for another format. Verify only the affected behaviour and reuse valid evidence
-on unchanged code, following the [UI workflow](../agents/building-ui.md#building-ui) linked from `AGENTS.md`.
-
-D-75 requires screenshots and visual assessment of the running app at current `main` or
-the hosted site, identifying the commit used for the mockup. Under D-74, build from a
-mockup only after Josh explicitly approves that mockup. See the [recorded decisions](decisions.md).
+Every design task, from a one-line fix to a new page, follows the
+[design review prompt](../design/design-review-artifact-prompt.md) (Josh, 9 November 2026, D-107).
+It builds in the real app from before screenshots and asks Josh once before anything is published.
+[DESIGN-SYSTEM.md](../design/DESIGN-SYSTEM.md) is the design record.
 
 ## 2. Branches and worktrees
 
@@ -55,21 +49,24 @@ mockup only after Josh explicitly approves that mockup. See the [recorded decisi
 - **Every editing thread gets its own worktree and branch**, based on the verified Ward Flow
   `main` tip, so threads never share a working tree. Check the branch, status and base before editing.
   Read-only threads (reviews, questions, reports) need no worktree.
-- **Your branch and its open PR are your claim** (Q374, 3 Nov 2026). Before editing, check open
-  PRs and branches for one already changing the same files. Writing claim lines is no longer
-  required. An optional shared log can still record a hold on files: the commit hook blocks a
-  file another branch holds there, and a missing log no longer blocks. That log lives outside Git
-  and is shared by all writers in that boundary. `WARD_SIGNOUT_FILE` selects its exact path;
-  otherwise `WARD_FLOW_LOGS/sign-out.md`, then the Windows default
-  `D:/Repos/ward-flow-logs/sign-out.md` or non-Windows `~/ward-flow-logs/sign-out.md` applies.
-  An unreadable claims folder still blocks. Isolated Cloud work follows
-  [Cloud ownership](../agents/cloud-ownership.md): establish actual checkout/file ownership and
-  record the environment boundary, unavailable other-host state and checkpoint before editing.
-  A local log never proves desktop/global clearance. An overlap needs the other owner's release or applicable scoped takeover authority. Josh's standing document permission covers routine exact-file handoffs within an authorised task's project, purpose and audience; a claimed document alone needs no renewed approval. Prefer task-owned [draft copies](../agents/document-drafts.md) and follow the [handoff procedure](../agents/cloud-ownership.md#routine-document-handoffs). When an existing optional log is used, record each exact taken-over file as
-  `path/to/file (approved takeover by Josh: <scope>)` on your own line, preserve the other session's
-  edits and reconcile them through the authorised integration process. A folder-wide marker does not grant a takeover.
-  When the optional log was used and the exact task ownership is handed back or integrated, append `RELEASED <date> | <owner> | <branch> | <reason>; repo=BigSimmo/Ward-Flow` to the shared
-  append-only log. That releases every claim on the branch; to release only some files, add a `files=<path>, <path>` field before the reason. The single-user interactive exception (`SKIP_SIGNOUT_GUARD=1`, an explicit per-commit opt-in) is defined in [AGENTS.md hard rule 7](../../AGENTS.md#hard-rules).
+- **Your branch and its open PR are your claim** (Q374, 3 Nov 2026). This is the one detail home
+  for claims; [AGENTS.md hard rule 7](../../AGENTS.md#hard-rules) is the rule. Before editing, check
+  open PRs and branches for one already changing the same files. An overlap needs the other owner's
+  release or Josh's scoped takeover. Write no claim lines, claim files or issue comments.
+- **Optional shared log.** An existing log outside Git can still hold files: the commit hook blocks a
+  file another branch holds there, and a missing log does not block. `WARD_SIGNOUT_FILE` selects its
+  path; otherwise `WARD_FLOW_LOGS/sign-out.md`, then `D:/Repos/ward-flow-logs/sign-out.md` on Windows
+  or `~/ward-flow-logs/sign-out.md` elsewhere. An unreadable log or claims folder blocks. Where a
+  group uses one, release a branch with
+  `RELEASED <date> | <owner> | <branch> | <reason>; repo=BigSimmo/Ward-Flow`, or add
+  `files=<path>, <path>` before the reason to release only those files. Do not start a new log.
+  Cloud threads: [Cloud ownership](../agents/cloud-ownership.md).
+- **Document handoffs.** Josh's standing document permission covers routine exact-file handoffs within
+  an authorised task's project, purpose and audience. Prefer task-owned
+  [draft copies](../agents/document-drafts.md) and the
+  [document coordination procedure](../agents/shared-context-and-memory.md#autonomous-document-coordination).
+  The single-user exception (`SKIP_SIGNOUT_GUARD=1`, per commit) is defined in
+  [AGENTS.md hard rule 7](../../AGENTS.md#hard-rules).
 - Reuse dependencies only from a trusted checkout of the same Ward Flow commit and lockfile.
   Never link to the old Database checkout; follow the current repository setup instructions.
 - Within an approved task a thread edits and commits freely on its own branch. It does not touch
@@ -137,8 +134,8 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   classifier selects the full unit population and production Ward journeys for source, tooling,
   unknown, deleted or renamed inputs; a related-test pass cannot supply that broader verdict.
   Reuse only still-valid evidence for its actual scope at integration.
-- No mutation proofs unless your brief names one. This overrides the per-task mutation lines in the
-  16 and 17 September plans.
+- No mutation proofs unless your brief names one. The mutation lines in the September plans (now in
+  `docs/history/plans-2026-09/`) are history.
 - "focused-test capacity is full" is a shared lock held by someone else. Wait and retry. It is never a
   pass or a fail.
 - Run browser journeys when selected by the current gate or needed for the changed interface.
@@ -216,12 +213,10 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   the StatusGlyph before the label or value, or a small tinted tag; selected is the selected tint
   with a neutral border. `tests/wf-no-side-stripes.test.ts` keeps new ones out, and each page build
   removes its page's remaining ones. This replaces the 9 October "thin act now edge".
-- **Visual changes start as an approved mock-up.** All visual design lives in the redesign mock-up
-  viewer (D-91). A real page changes its look only when Josh has approved that page's mock-up;
-  until then real-app pull requests carry behaviour and accessibility fixes only. Older drawings,
-  typography, card, masthead and punctuation prescriptions do not authorise a restyle. Keep
-  synthetic disclosure and understandable status. Compact badges still need meaningful accessible
-  labels.
+- **Visual changes follow the [design review prompt](../design/design-review-artifact-prompt.md)**
+  (Josh, 9 November 2026, D-107): built in the real app, shown as before and after screenshots and
+  approved once by Josh before publishing. Older drawings do not authorise a restyle. Keep synthetic
+  disclosure and understandable status; compact badges still need meaningful accessible labels.
 - **Line caps never change on-screen words (Josh, 26 October 2026, decision list item 36).** When a
   file is at its `max-lines` cap (`eslint-rules/max-lines-baseline.mjs`), make room by moving code
   out or splitting the file, never by shortening, merging or dropping text a person reads. A cap is
@@ -274,15 +269,14 @@ would add overhead, and distinguish requested routing from observed execution.
 
 ## 9. Superseding a document
 
-Delete or move a document only with Josh's yes, recorded in [ARCHIVE.md](../ARCHIVE.md) (§10). Moved history goes to [`docs/history/`](../history/README.md). Otherwise keep it and put this banner at the top:
+Delete or move a document only with Josh's yes ([AGENTS.md hard rule 8](../../AGENTS.md#hard-rules)), recorded in [ARCHIVE.md](../ARCHIVE.md). Moved history goes to [`docs/history/`](../history/README.md). Otherwise keep it and put this banner at the top:
 
 > SUPERSEDED on <date> by <path>. Kept for history; do not follow.
 
 ## 10. Protected work
 
-Deleting or moving any Ward Flow document (including superseded ones), handover, worktree, unpushed
-ward branch, memory file or backup needs the owner's explicit yes, with exactly what would be lost stated
-first. Back up before any cleanup or fold. "Nothing imports it" is never enough.
+The rule is [AGENTS.md hard rule 8](../../AGENTS.md#hard-rules). Back up before any cleanup, and
+"nothing imports it" is never enough.
 
 ## 11. If your brief does not cover a decision
 
@@ -304,12 +298,8 @@ writer's final commit rather than claiming another owner's changes. If owned edi
 uncommitted, name them and the reason. Preserve other branches, worktrees, backups and processes.
 Release only the claims/locks this task owns when handing it back.
 
-Update the same task identity under [the receipt contract](../task-receipts.md). One final compact
-contribution may include start/completion metadata for a single uninterrupted scoped reversible
-task with no unresolved ownership, new provider/publication boundary or substantial recovery need.
-A real pause, blocker, transfer or scope change needs an immediate update; substantial work keeps
-meaningful checkpoints. Newly checked evidence is required for Last verified; timestamp-only
-refresh does not establish freshness.
+Commits and the PR body are the record of the task. Receipts are optional in prototype mode
+(3 October 2026); see [task receipts](../task-receipts.md).
 
 Report the usable result, source identity, owned diff, checks and unverified stages. An actual
 remaining acceptance blocker keeps that stage incomplete; an unrequested later stage does not.

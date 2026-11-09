@@ -1,6 +1,6 @@
 # Ward Flow Git and publication workflow
 
-_Updated 2026-10-24 - in-flight CI check described once, with its fail-open and fail-closed cases from `scripts/guard-push.mjs`; Documentation owns._
+_Updated 2026-11-09 - fewest PRs, no merge queue, the integration thread and the five-PR cap written in one place (Josh, 9 Nov 2026, D-107); Documentation owns._
 
 Read this reference before committing, publishing, reviewing or observing CI. [AGENTS.md](../../AGENTS.md) governs safeguards. Use only the applicable section; provider and ownership boundaries remain binding.
 
@@ -33,11 +33,26 @@ When the user says `open PR`, `create PR` or `publish PR` without also asking fo
 - **Base every PR on `main`; never stack PRs (Q373, 3 Nov 2026).** When a lower PR in a stack merges, GitHub retargets or closes the PR above it and its auto-merge is dropped, which is how auto-merge was going missing. If one change needs another, wait for the first to merge, then branch from the new `main`.
 - **Hold a PR with the `hold` label, not a written note (Q373).** Never write "auto-merge OFF" or similar in a PR body, handover or doc. To hold a PR, add the `hold` label and say why in one PR comment; leave auto-merge alone. The `Ward Flow hold` check (`.github/workflows/pr-hold.yml`) fails while the label is on, so a held PR cannot merge even with auto-merge armed once that check is required. Nobody arms auto-merge on a PR labelled `hold`, and only Josh (or the session he tells) removes it.
 - Leave unrelated open PRs alone. Before calling a GitHub `DIRTY` or `CONFLICTING` branch a real conflict, run `git merge-tree --write-tree origin/main <tip>`. A clean tree means the branch is only behind.
-- Each push to a PR cancels its running CI and starts a new run, and one run fills most of the account's 20 runners, so other PRs wait. Gather a round of fixes (a review round or a CI failure) into one push, not one push per finding. Merge `origin/main` into a PR branch only for a real conflict or a failing check whose fix is on main, or when the owner asks for the branch sync below. Being behind main is not a reason on its own.
+- Each push to a PR cancels its running CI and starts a new run, and one run fills most of the account's 20 runners, so other PRs wait. Gather a round of fixes (a review round or a CI failure) into one push, not one push per finding. Merge `origin/main` into a PR branch only for a real conflict or a failing check whose fix is on main, or when the owner asks for the branch sync below. Being behind main is not a reason on its own. No merge queue is in use, so this normal merge is how a branch catches up.
 - Background PR sweeps, the branch-sync scripts and the inherited `Run PR` and babysit shortcuts are retired. Sync a PR branch with `main` only when the owner asks, one branch at a time, with a normal merge.
-- If asked to watch CI, check at most every 5 minutes for at most 30 minutes, then report where it stands. Never leave a scheduled job watching a PR. Treat merge-queue state as read-only.
+- If asked to watch CI, check at most every 5 minutes for at most 30 minutes, then report where it stands. Never leave a scheduled job watching a PR.
 - **A PR that changes something staff will see adds one small file to `src/components/ward-management/help/whats-new/`**, named `<YYYY-MM-DD-short-slug>.json` (the date of the change, then a few lower-case words) and holding `{ "line": "One plain sentence." }`: under 120 characters, no PR numbers or code words. Never edit another PR's file, so What's new cannot conflict. The build combines the files and shows the last 6 months of them (older files stay in the repository), the app's What's new note and Help list show the line after the next daily release, and the release workflow copies it into that release's notes. Engineering-only changes add nothing.
-- Bundle changes into one PR only after checking the branch, owner and authorised scope. Never weaken, skip or relax a required check to save time.
+- Never weaken, skip or relax a required check to save time.
+
+## Fewest PRs
+
+Josh, 9 November 2026 ([D-107](../ward-flow/decisions.md#d-107-working-rules-and-documentation-from-the-9-november-2026-audit-9-november-2026)): keep the number of PRs as low as possible.
+
+- **One PR per thread.** A thread opens one PR for its task and keeps adding to it.
+- **Fold follow-ups in.** A fix, review round or small extra for the same task goes into the thread's open PR as new commits, not a new PR.
+- **Combine related work.** When two pieces of work touch the same area or ship together, put them in one PR. Before adding work to a PR, check its branch, owner and authorised scope.
+- **The one allowed split is a held clinical PR.** A change that needs Josh's clinical sign-off goes in its own PR with the `hold` label, so the rest can merge without waiting. No other reason splits a thread's work.
+
+## Integration thread and the five-PR cap
+
+- **No merge queue is in use.** PRs merge straight into `main` once the required checks pass. The `merge_group` triggers in the workflows are dormant. If Josh turns a merge queue on later, this section and AGENTS.md hard rule 6 change first.
+- **The integration thread** is the one thread Josh names to own PR integration ("Own Ward Flow PR integration", 5 Nov 2026). It may arm, re-arm and merge any owner's PR, set the merge order and fix merge conflicts on any PR branch. It keeps every other limit in AGENTS.md hard rule 6: required checks, no `hold` PRs, no force-push or history rewrite while armed.
+- **Five open PRs at most.** The integration thread holds the number of open PRs at five or fewer by merging ready ones first. Other threads help by keeping to one PR each.
 
 ## Reviews
 

@@ -17,7 +17,7 @@ export type EventLogEntry = {
   accepted: boolean;
   movementId?: string;
   admissionId?: string;
-  // No patientId: D-14 keeps the patient link out of everything but its allowlisted readers.
+  // No patientId: archive D-14 keeps the patient link out of everything but its allowlisted readers.
   referralId?: string;
   unitId?: string;
   actingUnitId?: string;

@@ -22,7 +22,7 @@ import type { Referral } from "@/components/ward-management/ward-model";
  *
  * ⚠️ **AND IT IS NOT A REFERRER.** `referral-referrer.ts` — its sibling in this directory, named
  * that way so the distinction is visible in the file list rather than only in prose — answers WHO,
- * a person, and D-12 forbids an organisation standing in a field labelled as one. **A service is
+ * a person, and archive D-12 forbids an organisation standing in a field labelled as one. **A service is
  * not a human being.** These two helpers must never be merged, however similar their call sites
  * look.
  */

@@ -1,4 +1,4 @@
-// Communication addressees and notices (owner ruling D-2). Moved out of `ward-model.ts` unchanged;
+// Communication addressees and notices (owner ruling archive D-2). Moved out of `ward-model.ts` unchanged;
 // that file re-exports all of it.
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
@@ -7,7 +7,7 @@ import type { PatientId } from "@/components/ward-management/ward-patients";
 
 /**
  * COMMUNICATION — ADDENDUM TO THE THIRD-EDITION MASTER BUILD PLAN
- * (`docs/ward-flow/plans/2026-09-1x-communication-addendum.md`, §0–§1), owner ruling **D-2**,
+ * (`docs/ward-flow/plans/2026-09-1x-communication-addendum.md`, §0–§1), owner ruling **archive D-2**,
  * 2026-09-10. Read that file's §0 before touching anything below: the system already has a
  * substantial work list (`buildActionInbox`, `ward-derivations.ts`) and this is deliberately NOT a
  * second one. `buildActionInbox` is a pure DERIVATION from `movements`/`units` with no addressee and

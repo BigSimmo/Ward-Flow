@@ -105,7 +105,7 @@ export function reducePlacementEvent(
        * would count the patient's own held bed against them.
        */
       /**
-       * D-14 / R4: `resolvedReferral` inlines `referralForMovement`'s resolution (importing
+       * archive D-14 / R4: `resolvedReferral` inlines `referralForMovement`'s resolution (importing
        * `ward-derivations.ts` would be circular). `undefined` when the movement has no `referralId`
        * or it does not resolve. Computed once, with `patientId`, so the "already in a bed" check
        * below and the new stay's fields agree on who the patient is.

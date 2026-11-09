@@ -220,7 +220,7 @@ function bedReleased(state: WardFlowState): WardFlowState {
     if (!admission || admission.state !== "occupied") return false;
     // An admission with no linked movement sidesteps `RECORD_LEAVING`'s in-transit refusal; the
     // destination below never trips the involuntary-discharge boundary, so a patient link is fine
-    // (the seed links every person since D-14, so requiring none would find nobody).
+    // (the seed links every person since archive D-14, so requiring none would find nobody).
     if (admission.movementId !== null) return false;
     return true;
   });

@@ -372,7 +372,7 @@ export type WardFlowState = WardAuditState & {
   inboxOwnership: Record<string, InboxOwnershipEntry[]>;
   inboxSnoozes: Record<string, InboxSnoozeEntry[]>;
   /**
-   * Authored notices (owner ruling D-2), beside `buildActionInbox`'s derived list. Appended only
+   * Authored notices (owner ruling archive D-2), beside `buildActionInbox`'s derived list. Appended only
    * through `appendNotices`, which refuses a `demo`-addressed notice. Never read or written by
    * `buildActionInbox`, so inbox actions cannot raise a notice and a notice cannot change the
    * derived inbox.

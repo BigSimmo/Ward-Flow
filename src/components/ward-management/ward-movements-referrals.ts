@@ -215,7 +215,7 @@ export type MidlandDemonstrationRow = {
   readonly urgency: UrgencyLevel;
   readonly history: string;
   /**
-   * D-14 (2026-09-11) set this on exactly one row, `RF-RPHS-14`, reusing the SAME real
+   * archive D-14 (2026-09-11) set this on exactly one row, `RF-RPHS-14`, reusing the SAME real
    * referral-and-admission pair `admissionId` above already authors — `ward-admissions-seed.ts`
    * carries the matching `patientId` on `AD-RPHS-14` itself.
    *
@@ -356,7 +356,7 @@ export const MIDLAND_DEMONSTRATION_ROWS: readonly MidlandDemonstrationRow[] = [
  */
 const midlandDemonstrationReferrals: Referral[] = MIDLAND_DEMONSTRATION_ROWS.map((row) => ({
   id: row.id,
-  // D-14. Spread-with-condition, never `patientId: row.patientId`, so a row with no patient (none
+  // archive D-14. Spread-with-condition, never `patientId: row.patientId`, so a row with no patient (none
   // currently — T2, seed-audit follow-up, linked the last eight) would produce a referral with NO
   // key at all rather than one holding `undefined` — the same discipline `wardScopedReferral`'s
   // own conditional spreads follow, and the shape `Referral.patientId`'s own doc comment requires
@@ -909,7 +909,7 @@ export const referrals: Referral[] = completeSyntheticReferralIntakes([
      * the second clock `P9-D2` exists to keep honest.
      */
     id: "RF-010",
-    // D-14 (2026-09-11): the join back to `AD-LEFT-01` (`ward-admissions-seed.ts`).
+    // archive D-14 (2026-09-11): the join back to `AD-LEFT-01` (`ward-admissions-seed.ts`).
     patientId: "PT-010",
     ageBand: "Adult",
     destinations: [

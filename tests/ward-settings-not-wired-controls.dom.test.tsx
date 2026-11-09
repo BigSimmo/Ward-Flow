@@ -37,7 +37,7 @@ import { ToastProvider } from "@/components/wf";
  * its own Preview settings, and this suite now holds every one of them to the same rule.
  *
  * Site review (12 Oct 2026): Preview controls are no longer `aria-disabled`. Each works like any
- * other control and says it is not wired when pressed (D-16), so nothing reads as refused.
+ * other control and says it is not wired when pressed (archive D-16), so nothing reads as refused.
  *
  * Overall review, 20 Oct 2026 (Josh accepted): "hide every not-wired button in the pilot build, so
  * nothing on screen pretends to work." D-72 then deleted the Preview settings outright; the last
@@ -72,7 +72,7 @@ function renderSettings() {
 
 describe("settings screen: every Preview control says it is not wired", () => {
   // Site review (12 Oct 2026): the coordinator is never shown a greyed or refused control. A Preview
-  // control works like any other (D-16): it is not aria-disabled, and pressing it says
+  // control works like any other (archive D-16): it is not aria-disabled, and pressing it says
   // "<name> is not wired in this prototype." The only aria-disabled controls left are a wired
   // stepper at its bound and Alerts on this device, whose row says why (tests/ward-phone-push.dom.test.tsx).
   it.each(SECTIONS.map((name) => ({ name })))("$name: no Preview control is greyed", ({ name }) => {

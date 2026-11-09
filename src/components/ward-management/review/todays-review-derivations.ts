@@ -84,7 +84,7 @@ export function todaysReview(input: TodaysReviewInput): TodaysReview {
     const newestFirst = [...members].sort((a, b) => b.decline.at - a.decline.at);
     events.push({
       kind: "decline",
-      // Keyed by ward and its newest decline, never by a patient link (D-14).
+      // Keyed by ward and its newest decline, never by a patient link (archive D-14).
       id: `decline-${unitId}-${newestFirst[0]!.decline.at}`,
       at: newestFirst[0]!.decline.at,
       unitId,

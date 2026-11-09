@@ -1392,7 +1392,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
    * into 641px would hide a clinical column outright or drop text below the type floor — both worse
    * than honest, signposted scrolling.
    *
-   * **D-10 overrides §5.8's own shade for this board**: `--edge-shade` does not resolve in this
+   * **archive D-10 overrides §5.8's own shade for this board**: `--edge-shade` does not resolve in this
    * stylesheet's (second-edition) token layer at all — it silently paints nothing — and this design
    * language has already rejected a gradient cue twice, in `ward-table.module.css` and
    * `coordinator.module.css`, because it degrades to nothing under `forced-colors: active`. So the

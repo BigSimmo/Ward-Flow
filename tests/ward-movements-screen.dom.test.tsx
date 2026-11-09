@@ -799,7 +799,7 @@ describe("the Corridors strip", () => {
  * 🔴 **THE SECOND TEST IS THE ONE THAT MATTERS AND IT IS ABOUT A REFUSAL, NOT A FEATURE.** The
  * drawing's Person section opens with a name. The data to fill it exists — a two-hop join reaches a
  * person — and `tests/ward-patient-link-default-deny.test.ts` refuses this file the read, by design
- * (D-14). ⚠️ **A section that simply omitted the name would read as a movement nobody has
+ * (archive D-14). ⚠️ **A section that simply omitted the name would read as a movement nobody has
  * identified, which is a different and false statement**, so the screen says what is withheld and
  * that the link exists.
  *

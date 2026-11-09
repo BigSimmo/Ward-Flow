@@ -151,7 +151,7 @@ export function plannedRows(input: PlannedInput): PlannedRow[] {
 
   for (const booking of plannedAdmissions) {
     if (booking.state !== "booked" || !today(booking.expectedArrivalAt)) continue;
-    // The resolver reads the booking's own link (D-14 keeps that read in one place).
+    // The resolver reads the booking's own link (archive D-14 keeps that read in one place).
     const info = nameOf(booking);
     rows.push({
       id: `admission:${booking.id}`,

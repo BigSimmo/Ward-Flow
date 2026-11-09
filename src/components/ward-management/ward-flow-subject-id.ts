@@ -10,7 +10,7 @@ import { PATIENT_RECORD_UNDO_TYPES, undoStepSubjectId } from "./ward-undo";
 /**
  * The subject a step and its Undo are filed against (Tier 1 item 6, 4 Nov 2026). A community
  * treatment order or an archive is filed against its patient record, read here because this file is
- * on the D-14 allowlist; every other step keeps `undoStepSubjectId`.
+ * on the archive D-14 allowlist; every other step keeps `undoStepSubjectId`.
  */
 export function stepUndoSubjectId(event: object): string {
   const fields = event as { type?: unknown; patientId?: unknown };

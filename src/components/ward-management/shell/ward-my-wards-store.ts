@@ -7,7 +7,7 @@
  * the `ward-` prefix, so `clearWardFlowBrowserData` sweeps it at sign-out, and the in-memory copy
  * below registers its own reset, so the next person at the device starts with no pins.
  *
- * **Ward ids only, never typed text (D-11, D-18).** The stored value is a JSON array of ward ids,
+ * **Ward ids only, never typed text (archive D-11, D-18).** The stored value is a JSON array of ward ids,
  * each checked against `WARD_ID_PATTERN` and capped at `MY_WARDS_LIMIT` on every read. Free text,
  * a stale build's value or tampering reads as "no pins", never as an error. A pinned id that names
  * no ward in today's network is skipped by the reader that renders it, not here, because this store

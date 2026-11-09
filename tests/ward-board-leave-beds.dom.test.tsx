@@ -11,7 +11,7 @@ import { useWardFlow, WardFlowOverride, WardFlowProvider } from "@/components/wa
 /**
  * 🔴 **THE BOARD PRINTS AN "ON LEAVE" FIGURE AND USED TO COUNT IT OVER AN EMPTY ARRAY.**
  *
- * Owner ruling D-23. `ward-board.tsx` declared `const leaveBeds = [] as const` and passed it into
+ * Owner ruling archive D-23. `ward-board.tsx` declared `const leaveBeds = [] as const` and passed it into
  * three derivations. **Two of the three never read it** — `headlineAvailable` and
  * `constraintSentence` both reduce to `capacityBreakdown(...).availableNow`, which is
  * `min(allocatable, empty)` and touches no leave bed. **The third does:** `capacityBreakdown`'s

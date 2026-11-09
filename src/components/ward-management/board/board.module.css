@@ -179,7 +179,7 @@
  *
  * ⚠️ **Modelled on `.triageHeading` and `.destinationsHeading`, which are this file's own panel
  * headings, rather than invented.** Tokens only, and `--t-3` is the smallest used here — nothing
- * in this rule is below the 12px floor (owner ruling D-3).
+ * in this rule is below the 12px floor (owner ruling archive D-3).
  */
 .screenName {
   margin: 0;

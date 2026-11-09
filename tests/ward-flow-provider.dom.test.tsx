@@ -353,7 +353,7 @@ describe("WardFlowProvider", () => {
    * itself corrected 2026-09-17 after previously — and wrongly — claiming an anchor mismatch was
    * discarded); a save missing a field the reducer's state actually needs is discarded rather than
    * patched with an invented default; and the discharge-record request-id counter continues past a
-   * restored audit log rather than restarting at 0. Whether free text ever reaches storage (D-11) is
+   * restored audit log rather than restarting at 0. Whether free text ever reaches storage (archive D-11) is
    * covered by `tests/ward-flow-provider-persistence-privacy.dom.test.tsx`, not by this block.
    *
    * Fake timers pin `new Date()` (and therefore `wallClockNow()`/`demoDayZero()`, both real
@@ -405,7 +405,7 @@ describe("WardFlowProvider", () => {
       // OPPOSITE — that `sanitizeForStorage` blanked every `Movement.blocker` and `Referral.history`
       // to `""` before a write, seeded or typed alike. That was itself the defect: after a restore
       // the console showed every movement as `Blocked — Somebody wrote: ""`, the priority queue lost
-      // its obstruction points, and every history read "Not written yet". D-11's actual concern is
+      // its obstruction points, and every history read "Not written yet". archive D-11's actual concern is
       // runtime-TYPED text on a shared computer, and the fixture's own seeded prose is not a
       // disclosure — it ships inside the application bundle already. Protection now comes from
       // `WARD_FLOW_TYPED_TEXT_EVENT_TYPES`'s default-deny gate (see the new

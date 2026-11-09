@@ -411,7 +411,7 @@ export type Unit = {
    * A forensic WARD — independent of `security`, see the note on `security` above.
    *
    * 🔴 **THIS COMMENT SAID "a forensic bed" AND THAT SEEDED FIVE FALSE STRINGS ON TWO SCREENS**
-   * (D-30, 2026-09-11). The flag sits on `Unit`, which is a ward: Broome's is a whole-ward flag
+   * (archive D-30, 2026-09-11). The flag sits on `Unit`, which is a ward: Broome's is a whole-ward flag
    * covering six beds, and `hub-screen.tsx`'s own governance comment had already said so while
    * the badge two hundred lines above it still read "Forensic bed". A coordinator told a ward is
    * "a forensic bed and is never offered" hears that ONE bed is excluded; all six are.
@@ -1467,7 +1467,7 @@ export type Referral = {
    * comment refuses two fields above.
    *
    * 🔴 **IT IS NOT A REFERRER AND MUST NEVER BE RENDERED AS ONE.** `referral-referrer.ts` answers
-   * a different question -- WHO, a person -- and D-12 forbids an organisation standing in a field
+   * a different question -- WHO, a person -- and archive D-12 forbids an organisation standing in a field
    * labelled as a person. **A service is not a human being**, and "Armadale Community Mental Health
    * Service" printed under "Referred by" is a fabricated attribution on a clinical record rather
    * than a formatting choice. `referralReferrerName` deliberately does not read this field, and
@@ -1569,7 +1569,7 @@ export type Referral = {
    * ⚠️ **TYPED TEXT, THE SAME AS `history`.** Each `note` is a person's own words, refused blank or
    * over `REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS` and never truncated (the reducer's `ADD_REFERRAL_CORRECTION`
    * case enforces both) — see `REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS`'s own comment for why this is a
-   * separate constant rather than a member of `REFERRAL_HISTORY_LIMITS`. D-11 CRITICAL: the event
+   * separate constant rather than a member of `REFERRAL_HISTORY_LIMITS`. archive D-11 CRITICAL: the event
    * that writes this is on `WARD_FLOW_TYPED_TEXT_EVENT_TYPES`
    * (`ward-flow-persistence-classification.ts`), never the safe list, so dispatching one locks
    * session persistence exactly as a typed `history` does.

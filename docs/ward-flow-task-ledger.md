@@ -20,7 +20,7 @@ _Updated 2026-10-21 - clarify task and decision navigation; Documentation owns. 
 > 🟢 **STATUS AS OF 16 OCTOBER 2026: read this first.** This file now holds the open backlog and the
 > recent reconciliation history, **§7.78 to §7.81** below. The 30 August to 13 October record (§6, §7.8 to §7.77 and the
 > 13 September master ledger) moved to
-> the task ledger history (archived; see [ARCHIVE.md](ARCHIVE.md)) on
+> the task ledger history (archived; see [the history index](history/README.md#deleted-files-kept-in-git-history)) on
 > 16 October 2026. Keep it for the reasoning, but do not treat its status lists as current.
 >
 > - Estate baseline reconciled on 16 October 2026 across PRs #1–#364 (`5ddeb7d5`, PR #363, which merged after #364).
@@ -51,7 +51,7 @@ to read WHY), `ward-flow-hubs-and-patient-plan.md`, `ward-flow-roadmap.md`, the 
 ## Earlier history
 
 Everything from 30 August to 13 October 2026 (the sync points, completion plans, §6 rulings and §7.8 to §7.77) is in
-the task ledger history (archived; see [ARCHIVE.md](ARCHIVE.md)). It is kept for the reasoning and is not current.
+the task ledger history (archived; see [the history index](history/README.md#deleted-files-kept-in-git-history)). It is kept for the reasoning and is not current.
 
 ## §7.78 — Post-Audit Remediation Baseline & Open Issues Ledger (14 October 2026)
 
@@ -355,8 +355,8 @@ not hosted CI, deployment, clinical approval or closure of unrelated audit findi
 
 ### Integrated audit-resolution follow-up (all 44 retained IDs; 16 October 2026)
 
-The same audit task now has a [six-workstream implementation plan](superpowers/plans/2026-10-16-audit-resolution.md)
-and [complete per-issue resolution receipt](superpowers/plans/2026-10-16-audit-resolution-results.md).
+The same audit task now has a [six-workstream implementation plan](history/superpowers/plans/2026-10-16-audit-resolution.md)
+and [complete per-issue resolution receipt](history/superpowers/plans/2026-10-16-audit-resolution-results.md).
 The local branch `codex/resolve-audit-20261016` starts at `c9f271a9`, which already includes
 PRs #365 and #366. It implements 34 findings, rechecks nine already-merged findings and retains
 R43 as an upstream-blocked braces advisory. The receipt distinguishes focused regressions,
@@ -381,7 +381,7 @@ all required components, eight unit shards and three browser groups. That hosted
 the earlier pending full-unit/browser and integration observations. Read-only Railway records show
 the app, backend and shared frontend deployed from the merged commit; fresh authenticated browser
 acceptance remains open because this execution environment blocks the hosted domain. The
-[same resolution receipt](superpowers/plans/2026-10-16-audit-resolution-results.md#post-merge-close-out-and-remaining-acceptance--17-october-2026)
+[same resolution receipt](history/superpowers/plans/2026-10-16-audit-resolution-results.md#post-merge-close-out-and-remaining-acceptance--17-october-2026)
 records the deployed identities, open PR overlaps and R43's unchanged upstream block and 22 October review.
 
 ## §7.82 — Decided owner questions from PR #383 review threads (17 October 2026)
