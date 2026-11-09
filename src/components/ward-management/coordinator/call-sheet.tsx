@@ -335,10 +335,12 @@ function WardGroup({
       </dl>
       {fresh.length > 0 ? <ol className={styles.items}>{fresh.map(renderItem)}</ol> : null}
       {repeats.length > 0 ? (
-        <details className={styles.repeat}>
+        <details className={`${styles.repeat} source-print`}>
           <summary>
-            {repeats.length} {repeats.length === 1 ? "patient" : "patients"} also listed under ward{" "}
-            {Math.min(...repeats.map((item) => firstAt.get(item.referral.id) ?? position))}
+            {repeats.length} {repeats.length === 1 ? "patient" : "patients"} also listed under{" "}
+            {wardList(
+              [...new Set(repeats.map((item) => firstAt.get(item.referral.id) ?? position))].sort((x, y) => x - y),
+            )}
           </summary>
           <ol className={styles.items}>{repeats.map(renderItem)}</ol>
         </details>
@@ -444,4 +446,10 @@ function WardState({ group, now }: { group: CallSheetGroup; now: Instant }) {
       {text}
     </span>
   );
+}
+
+/** "ward 2", "wards 1 and 3", "wards 1, 2 and 4". */
+function wardList(positions: number[]): string {
+  if (positions.length === 1) return `ward ${positions[0]}`;
+  return `wards ${positions.slice(0, -1).join(", ")} and ${positions[positions.length - 1]}`;
 }
