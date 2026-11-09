@@ -1,7 +1,7 @@
 # 9 Nov 2026, discharge and capacity features (PR #1583)
 
-Raised ED 519.9 to 522.2, ward 599.0 to 601.5, movement 593.0 to 595.5, bed meeting 572.0 to 574.5
-and statistics 611.9 to 614.4 (2.3 to 2.5 KB each). Every other route fits its existing limit.
+Raised ED 519.9 to 522.0, ward 599.0 to 601.3, movement 593.0 to 595.4, bed meeting 572.0 to 574.3
+and statistics 611.9 to 614.2 (2.1 to 2.4 KB each). Every other route fits its existing limit.
 
 Why: the PR's new engine records (clinically ready date and reason, Extend pull, weekend discharge
 review, discharge checklist, follow-up reply and the discharge date trail) join the shared engine
@@ -14,14 +14,14 @@ demo overlay reads the readmission window from `ward-clinical-values.ts` instead
 `ward-readmission.ts` into the shared chunk. That saved about 0.3 KB per route; what is left is
 state every screen restores and validates on first load.
 
-Measured locally with the webpack production build (`npm run build`) on the trimmed branch, KB gzipped:
+Measured locally with the webpack production build (`npm run build`) on the branch after the review fixes (e0bbdca46), KB gzipped:
 
 | Route       | Main a6740f02 | This PR | Limit | New limit |
 | ----------- | ------------- | ------- | ----- | --------- |
-| ED          | 519.8         | 521.7   | 519.9 | 522.2     |
-| ward        | 598.2         | 601.0   | 599.0 | 601.5     |
-| movement    | 593.1         | 595.0   | 593.0 | 595.5     |
-| bed meeting | 572.0         | 574.0   | 572.0 | 574.5     |
-| statistics  | 612.0         | 613.9   | 611.9 | 614.4     |
+| ED          | 519.8         | 521.8   | 519.9 | 522.0     |
+| ward        | 598.2         | 601.1   | 599.0 | 601.3     |
+| movement    | 593.1         | 595.2   | 593.0 | 595.4     |
+| bed meeting | 572.0         | 574.1   | 572.0 | 574.3     |
+| statistics  | 612.0         | 614.0   | 611.9 | 614.2     |
 
-Each new limit allows the measured size plus 0.5 KB, within the 5 KB a PR may raise without asking.
+Each new limit allows the measured size plus 0.2 KB (HOW-WE-WORK §6), within the 5 KB a PR may raise without asking.
