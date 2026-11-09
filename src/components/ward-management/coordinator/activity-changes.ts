@@ -206,7 +206,7 @@ type Capture = { snapshot: LastLookSnapshot; lines: readonly ChangeLine[]; revie
  * browser session only (`useSinceLastLook` in its explicit mode): opening, scrolling, switching tabs,
  * closing or leaving the screen marks nothing.
  */
-export function useHomeChanges(now: Instant) {
+function useHomeChanges(now: Instant) {
   const store = useWardFlowSelect(
     "scenario",
     "referrals",

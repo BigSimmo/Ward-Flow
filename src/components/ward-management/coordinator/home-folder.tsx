@@ -23,8 +23,8 @@ const MOVE_MS = 280;
 
 type Geometry = { width: number; height: number; x0: number; x1: number; sheetRadius: number };
 
-/** The folder's outline as an SVG path, in the shape's own box. Exported for tests. */
-export function folderPath({ width: W, height: H, x0: rawX0, x1, sheetRadius: R }: Geometry): string {
+/** The folder's outline as an SVG path, in the shape's own box. */
+function folderPath({ width: W, height: H, x0: rawX0, x1, sheetRadius: R }: Geometry): string {
   const yT = TAB_TOP;
   const yS = TAB_TOP + TAB_HEIGHT;
   const r = TAB_RADIUS;
