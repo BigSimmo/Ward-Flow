@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 import { useIsBreakGlassRecord } from "../shell/ward-access";
 import { useEffectiveWardAccess, useWardAccessSnapshot } from "../shell/ward-access-store";
 import { useWardFlowSelect } from "../ward-flow-provider";
+import { patientIdentityLine } from "../ward-patient-resolver";
 import type { WardAccess } from "../ward-role-access";
 import { useRefocusAfterRowLeaves } from "../use-refocus-after-row-leaves";
 import type { BedMeetingAction, BedMeetingActionOwner, BedMeetingSubject } from "./bed-meeting-actions";
@@ -31,7 +32,11 @@ export function MeetingActionsDue({ subject }: { subject: BedMeetingSubject | un
   const access = useEffectiveWardAccess();
   const { previewOf } = useWardAccessSnapshot();
   const isBreakGlass = useIsBreakGlassRecord();
-  const { movements, admissions } = useWardFlowSelect("movements", "admissions");
+  const { movements, admissions, resolvePatientIdentity } = useWardFlowSelect(
+    "movements",
+    "admissions",
+    "resolvePatientIdentity",
+  );
   // H-0150: held here, not in the list, so the toast's Undo outlives the row and the card it closes.
   const desk = deskRole(access);
   // A desk that owns no action never shows the list, so the fallback role is never used.
@@ -47,10 +52,13 @@ export function MeetingActionsDue({ subject }: { subject: BedMeetingSubject | un
   const due = (record?.meetingActions ?? []).filter(
     (action) => action.doneAt === undefined && deskOwnsAction(access, desk, action),
   );
+  // Audit 1 (#1564, Josh approved 9 Nov 2026): the card names whose actions these are, name and UMRN.
+  const patient = record ? patientIdentityLine(resolvePatientIdentity(record)) : undefined;
   return (
     <ActionList
       key={`${subject.kind}:${subject.id}`}
       subject={subject}
+      patient={patient}
       desk={desk}
       actions={due}
       onMarkDone={markActionDone}
@@ -61,11 +69,13 @@ export function MeetingActionsDue({ subject }: { subject: BedMeetingSubject | un
 /** The focus owner survives the last row and its lazy-loaded card being removed. */
 function ActionList({
   subject,
+  patient,
   desk,
   actions,
   onMarkDone,
 }: {
   subject: BedMeetingSubject;
+  patient: string | undefined;
   desk: BedMeetingActionOwner;
   actions: readonly BedMeetingAction[];
   onMarkDone: MarkBedMeetingActionDone;
@@ -84,6 +94,7 @@ function ActionList({
       {actions.length > 0 ? (
         <DueActions
           subject={subject}
+          patient={patient}
           desk={desk}
           actions={actions}
           onMarkDone={onMarkDone}
