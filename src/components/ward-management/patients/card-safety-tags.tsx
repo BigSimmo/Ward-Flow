@@ -32,16 +32,14 @@ export function CardSafetyTags({
   return (
     <span className={styles.tags} data-testid={testId}>
       {flags && dayZero ? (
-        <>
+        // One wrapped line, not a stack of chips: the row stays short on a busy board (9 Nov 2026 review).
+        <span className={styles.flags}>
           <span className={styles.when}>
             Referral {perthDayLabel(flags.raisedAt, dayZero).replace(/^[A-Za-z]{3} /u, "")}
           </span>
-          {flags.labels.map((label) => (
-            <Badge key={label} size="sm">
-              {label}
-            </Badge>
-          ))}
-        </>
+          {" · "}
+          {flags.labels.join(", ")}
+        </span>
       ) : null}
       {language ? <Badge size="sm">{language} interpreter</Badge> : null}
     </span>
