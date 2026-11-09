@@ -1,5 +1,4 @@
 "use client";
-
 import { useCharacterShortcutsPreference } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -17,7 +16,6 @@ import {
   Printer,
   Timer as TimerIcon,
 } from "lucide-react";
-
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
