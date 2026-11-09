@@ -9,6 +9,8 @@
  */
 import { useState } from "react";
 
+import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
+
 import {
   Button,
   ChipGroup,
@@ -53,6 +55,8 @@ export function SafetyPlanDrawer({
 }) {
   const { state } = form;
   const [draft, setDraft] = useState<SafetyPlanDraft>(BLANK_SAFETY_PLAN);
+  // The draft last added to the plan; typed answers beyond it are unsaved.
+  const [added, setAdded] = useState<SafetyPlanDraft>(BLANK_SAFETY_PLAN);
   const [wasOpen, setWasOpen] = useState(open);
   // On opening, step 6 starts from the means safety rows when it is still empty.
   if (open !== wasOpen) {
@@ -62,9 +66,16 @@ export function SafetyPlanDrawer({
   const contacts = contactsFor(state.person.id);
   const filled = stepsFilled(draft);
   const anything = SAFETY_PLAN_STEPS.some((step) => draft[step.key].trim()) || draft.withPerson;
+  // The drawer keeps its draft after closing, so leaving with answers not yet added warns like the form.
+  useDirtyStateGuard({
+    isDirty: anything && draft !== added,
+    confirmMessage:
+      "Leave without adding the safety plan? Ward Flow does not keep typed answers, so they will be lost.",
+  });
   const set = (key: keyof SafetyPlanDraft, value: string | boolean) => setDraft((d) => ({ ...d, [key]: value }));
   const add = () => {
     form.setText("rp", applySafetyPlan(state.text.rp, draft));
+    setAdded(draft);
     form.say("Safety plan added under the plan headings.");
     onClose();
   };
