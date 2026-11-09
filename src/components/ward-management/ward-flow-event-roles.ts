@@ -575,6 +575,11 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // same list as RAISE_REFERRAL. Not the bed manager, officer, executive or access admin, which do
   // not open the referral intake either.
   RECORD_TRIAGE_SIGNED: ["ed", "community", "ward", "coordinator"],
+  // Staff needed (feature 10, 9 Nov 2026): the ward, the coordinator or the site bed manager asks; the
+  // coordinator or bed manager records the outcome, and a ward may only withdraw its own (reducer).
+  // Not the executive, which changes nothing (D-80).
+  REQUEST_WARD_STAFF: ["ward", "coordinator", "bed_manager"],
+  CLOSE_WARD_STAFF_REQUEST: ["ward", "coordinator", "bed_manager"],
   // Contacting a team is this record. The team that made the call, or the coordinator logging it.
   // Decision 43 (Josh, 31 Oct 2026): the ED no longer holds it. It was unused: the only place to
   // record a contact is the community team page, which an ED desk cannot open.

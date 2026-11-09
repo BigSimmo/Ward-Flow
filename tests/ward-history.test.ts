@@ -61,7 +61,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // Triage and risk (7 Nov 2026) adds RECORD_TRIAGE_SIGNED.
       // Care plans and safety flags (D-104, 9 Nov 2026) adds RECORD_CARE_PLAN, RECORD_TRIBUNAL_HEARING,
       // RECORD_TRIBUNAL_OUTCOME and SET_CULTURAL_SUPPORT_REQUEST.
-      expect(allEventTypes.length).toBe(183);
+      // Staff needed (9 Nov 2026) adds REQUEST_WARD_STAFF and CLOSE_WARD_STAFF_REQUEST.
+      expect(allEventTypes.length).toBe(185);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];
