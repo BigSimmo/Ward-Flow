@@ -173,7 +173,7 @@
         {
           "path": "src/components/ward-management/patients/add-patient.tsx",
           "line": 637,
-          "sha256": "1409871d1ec41cff150999c0397b930aa2d3bd713919ea172d36bd9f30acb460"
+          "sha256": "3bee533593deb3bdfdecde073046ffab12a6a80c76fd4c007c322aa944b6c22f"
         },
         {
           "path": "src/components/ward-management/referrals/use-referral-command-completion.ts",
@@ -232,7 +232,7 @@
         {
           "path": "src/components/ward-management/ed/ed-lists-desktop.tsx",
           "line": 185,
-          "sha256": "8518ea7f54c62d51a726bc4a8238e50e95ad1ea26bb9a033455a48fca57026ad"
+          "sha256": "67bbb3cc99b32e5568a5678243204afa6c8e643c30d95eab25cad77cf06bc9f3"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -288,7 +288,7 @@
         {
           "path": "src/components/ward-management/ed/ed-lists-desktop.tsx",
           "line": 305,
-          "sha256": "8518ea7f54c62d51a726bc4a8238e50e95ad1ea26bb9a033455a48fca57026ad"
+          "sha256": "67bbb3cc99b32e5568a5678243204afa6c8e643c30d95eab25cad77cf06bc9f3"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -949,7 +949,7 @@
         {
           "path": "src/components/ward-management/coordinator/shortlist-panel.tsx",
           "line": 839,
-          "sha256": "9a503976756f8b350c23b9082c3c571d7bf1f8e8010655fdbc143e3660bbd43c"
+          "sha256": "1a2de68f0b3cc65d14cf35a81203d4b402617d7e057d2f0e9a1285b73f573295"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
@@ -1206,7 +1206,7 @@
         {
           "path": "src/components/ward-management/coordinator/shortlist-panel.tsx",
           "line": 881,
-          "sha256": "9a503976756f8b350c23b9082c3c571d7bf1f8e8010655fdbc143e3660bbd43c"
+          "sha256": "1a2de68f0b3cc65d14cf35a81203d4b402617d7e057d2f0e9a1285b73f573295"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
@@ -5126,7 +5126,7 @@
         {
           "path": "src/components/ward-management/settings/settings-screen.tsx",
           "line": 440,
-          "sha256": "41344dbf5e4297b757bdfb09a3ce6c5a9b0fc8feb88221f03bbaf134d1fd8f07"
+          "sha256": "fa52bcd4e5208f810ee6c117bcf3d8a6b4dee06412dc595e94a3e6cb4333a35e"
         }
       ]
     }
