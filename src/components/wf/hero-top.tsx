@@ -17,6 +17,10 @@ import styles from "./hero-top.module.css";
  * must come from the page's own derivations; nothing here counts or decides anything.
  */
 
+// The parts below opt out of the React Compiler ("use no memo"): they are on every page's first load, and
+// memoising them added about 1 KB to each phone download (script-budget.json) while changing nothing
+// visible. Each renders only from its props, so plain re-rendering looks the same.
+
 type Press = { href?: string; onClick?: () => void };
 
 export type HeroFigureItem = Press & {
@@ -46,6 +50,7 @@ export function HeroFigures({
   label?: string;
   testId?: string;
 }) {
+  "use no memo";
   return (
     <div className={styles.figs} role="group" aria-label={label} data-testid={testId}>
       {items.map((item) => (
@@ -56,6 +61,7 @@ export function HeroFigures({
 }
 
 function HeroFigure({ item }: { item: HeroFigureItem }) {
+  "use no memo";
   const id = useId();
   const valueId = `${id}-value`;
   const labelId = `${id}-label`;
@@ -118,6 +124,7 @@ export type HeroActProps = {
 
 /** The one next step on the slate: a slim soft card, its single light button on the right. */
 export function HeroAct({ tone, title, sub, action, testId, titleTestId, kind }: HeroActProps) {
+  "use no memo";
   const label = action ? (
     action.phoneLabel ? (
       <>
@@ -203,6 +210,7 @@ export const heroChipClassName = styles.chip;
  * `HeroQuickChips` because `HeroChips` is the older v10 count-chip group.
  */
 export function HeroQuickChips({ label, items }: { label: string; items: HeroChipItem[] }) {
+  "use no memo";
   return (
     <ul className={styles.chips} aria-label={label}>
       {items.map((item) => {
@@ -278,6 +286,7 @@ export type HeroBandCell = Press & {
 
 /** True while the list is wider than its box (watched only when `watch` is set). */
 function useScrollsSideways(ref: { current: HTMLElement | null }, watch: boolean): boolean {
+  "use no memo";
   const [scrolls, setScrolls] = useState(false);
   useEffect(() => {
     const list = ref.current;
@@ -310,6 +319,7 @@ export type HeroBandProps = {
 
 /** One slim strip of cells on the slate, hairlines between; it scrolls sideways with a fade on a phone. */
 export function HeroBand({ title, aside, asideHref, cells, variant = "inline", testId }: HeroBandProps) {
+  "use no memo";
   const titleId = useId();
   const listRef = useRef<HTMLUListElement>(null);
   const pressable = cells.some((cell) => cell.href || cell.onClick);
@@ -413,6 +423,7 @@ export type HeroPillProps = {
 
 /** A short status line in a pill ("21 of 22 confirmed · 1 not yet · Ask"). */
 export function HeroPill({ tone, text, action, testId }: HeroPillProps) {
+  "use no memo";
   return (
     <p className={styles.pill} data-tone={tone} data-testid={testId}>
       {tone ? <span className={styles.pillDot} aria-hidden="true" /> : null}
@@ -479,6 +490,7 @@ export function HeroTop({
   className,
   testId,
 }: HeroTopProps) {
+  "use no memo";
   // The Quick bar draws nothing off the desk's home, so it never takes the place beside the figures.
   const footSlot = useHeroFootSlot();
   const chipsBeside = !act && !pill && Boolean(figures) && Boolean(ownChips);

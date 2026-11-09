@@ -134,6 +134,9 @@ export function useSinceLastLookReview(scopeKey: string): {
   open: () => void;
   sheet: ReactNode;
 } {
+  // Opted out of the React Compiler, as the ward's top bar that calls it is (ward-screen-top-bar.tsx);
+  // `world` keeps its own useMemo, so the review sees the same changes.
+  "use no memo";
   const { scenario, referrals, movements, units, bedReleases, worldGeneration } = useWardFlowSelect(
     "scenario",
     "referrals",

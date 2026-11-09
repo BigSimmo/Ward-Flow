@@ -91,6 +91,9 @@ export function ReferralCoordinatorTop({
   /** After the tabs: the phone's waiting-time and beds sheet. */
   children?: ReactNode;
 }) {
+  // Opted out of the React Compiler, as the shared page top parts are (hero-top.tsx): memoising it
+  // added to the Referrals phone download (script-budget.json) and changed nothing visible.
+  "use no memo";
   const chipItems: HeroChipItem[] = [
     {
       id: "meeting",

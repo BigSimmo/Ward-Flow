@@ -43,6 +43,9 @@ function folderPath({ width: W, height: H, x0: rawX0, x1, sheetRadius: R }: Geom
   return `${start}${end}`;
 }
 
+// FolderShape and FolderTabs opt out of the React Compiler ("use no memo"), as the page top parts do
+// (hero-top.tsx): on every page's first load, and the effect already reruns only when `value` changes.
+
 const round = (value: number) => Math.round(value * 10) / 10;
 
 /**
@@ -50,6 +53,7 @@ const round = (value: number) => Math.round(value * 10) / 10;
  * above (a sibling `[data-wf-hero]`) to run edge to edge, and the chosen tab in the row's switch.
  */
 function FolderShape({ navRef, value }: { navRef: RefObject<HTMLElement | null>; value: string }) {
+  "use no memo";
   const shapeRef = useRef<HTMLDivElement>(null);
   const backRef = useRef<HTMLDivElement>(null);
   const shown = useRef<{ x0: number; x1: number } | null>(null);
@@ -247,6 +251,7 @@ export const FolderTabs = forwardRef<HTMLElement, FolderTabsProps>(function Fold
   { label, value, act, children, more, className, testId },
   ref,
 ) {
+  "use no memo";
   const navRef = useRef<HTMLElement>(null);
   useImperativeHandle(ref, () => navRef.current as HTMLElement);
   return (
