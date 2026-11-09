@@ -197,7 +197,7 @@ Source-contract SHA256: 8a359def82204acc665eab03e3ceda04189574b47d71fee1ab15f4cb
   effects: Moves Movement.pullExpiresAt later and appends { at, by, minutes } to Movement.pullExtensions; no bed count, stage or notice changes. PULL_PATIENT clears the list on a new pull.
   tests: tests/ward-extend-pull.test.ts
   Reviewed source: src/components/ward-management/ward-flow-placement-events.ts:452; SHA256 62e57aee26be1bd4d8352a3c56fc92662a8aef7d87149e16ebc63677d5782aa0
-  Reviewed source: src/components/ward-management/ward-bed-hold.ts:102; SHA256 d025626fefe36e275a8d1b92b18a0551f316ed29e45a1c3049c6ae48fad14f86
+  Reviewed source: src/components/ward-management/ward-bed-hold.ts:100; SHA256 66d243fd9af21c34e04a52c14a440df880d84de5f501e21a6c43f033da401108
 - BOOK_TRANSPORT — diagram-reviewed; event roles: ed, ward, community, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:153
