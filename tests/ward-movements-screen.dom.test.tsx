@@ -267,9 +267,10 @@ describe("the Movements screen", () => {
     const transportPanel = openTransportSummary();
     for (const leg of legs) {
       const row = findTransportRow(transportPanel, leg.movement.id);
-      // The redesign keeps the provider and the full route in the row's name and title, and the
-      // short route ("SCGH ED → ward") on the row itself.
-      expect(row.getAttribute("aria-label"), `provider missing for ${leg.movement.id}`).toContain(leg.provider);
+      // The redesign keeps the provider in the row's spoken name and the full route in its title,
+      // and the short route ("SCGH ED → ward") on the row itself. Since 9 Nov 2026 the name is the
+      // row's own words plus spoken extras (WCAG 2.5.3), not an aria-label that replaces them.
+      expect(row.textContent, `provider missing for ${leg.movement.id}`).toContain(leg.provider);
       expect(row.getAttribute("title"), `provider missing for ${leg.movement.id}`).toContain(leg.provider);
 
       const originEd = edById(leg.movement.originEdId);

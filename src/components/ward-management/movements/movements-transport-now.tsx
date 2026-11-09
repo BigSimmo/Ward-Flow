@@ -172,22 +172,23 @@ export function TransportFeed({
                       onPicked?.();
                       onOpen(leg.movement.id);
                     }}
-                    aria-label={`Inspect ${person.formalName}, ${LEG_STATE_LABEL[leg.state]} via ${leg.provider}`}
                     title={`${originLabel} to ${destinationLabel}, ${leg.provider}`}
                   >
+                    {/* The name is the row's own words in order, with spoken extras only before and
+                        after them, so what a voice user reads aloud matches (WCAG 2.5.3). */}
+                    <span className="sr-only">Inspect</span>{" "}
                     <span className={tr.name}>
                       {person.formalName}
                       {leg.movement.transport?.escortRequired ? (
-                        <ShieldCheck size={13} className={tr.icon} aria-label="Escort required" />
+                        <ShieldCheck size={13} className={tr.icon} aria-hidden="true" />
                       ) : null}
                     </span>
                     <span className={tr.route}>
                       {originEd ? `${originEd.siteCode} ED` : originLabel}
                       <ArrowRight size={11} aria-hidden="true" className={tr.icon} />
-                      <span className="sr-only"> to </span>
                       {destinationLabel}
                     </span>
-                    <span className={tr.steps} aria-label="Transport steps">
+                    <span className={tr.steps}>
                       {legSteps(leg.movement, leg.state).map((step) => (
                         <span key={step.id} className={tr.step} data-state={step.state}>
                           <i aria-hidden="true" />
@@ -196,10 +197,10 @@ export function TransportFeed({
                         </span>
                       ))}
                     </span>
-                    <span className={tr.when}>
-                      <span className="sr-only">{LEG_STATE_LABEL[leg.state]}, booked </span>
-                      {durMinutes(leg.minutesSinceBooked)}
-                      <span className="sr-only"> ago</span>
+                    <span className={tr.when}>{durMinutes(leg.minutesSinceBooked)}</span>
+                    <span className="sr-only">
+                      {`, ${LEG_STATE_LABEL[leg.state]} via ${leg.provider}, booked ${durMinutes(leg.minutesSinceBooked)} ago`}
+                      {leg.movement.transport?.escortRequired ? ", escort required" : ""}
                     </span>
                   </button>
                   {next && transportOpen ? (
