@@ -71,7 +71,7 @@
 }
 .figures dd {
   margin: 0;
-  font: 600 var(--wf-fs-16) / 1.2 var(--font-mono);
+  font: 600 var(--wf-fs-16) / 1.2 var(--wf-mono);
   font-variant-numeric: tabular-nums;
 }
 .note {

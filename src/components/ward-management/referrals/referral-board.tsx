@@ -1214,7 +1214,11 @@ export function ReferralBoard({
                         </button>
                         {selectedReferral.patientId ? (
                           <PatientPeekLink
-                            movementId={movements.find((movement) => movement.referralId === selectedReferral.id)?.id}
+                            movementId={
+                              movements.find(
+                                (movement) => movement.referralId === selectedReferral.id && !movement.closure,
+                              )?.id
+                            }
                             href={patientHref(selectedReferral.patientId)}
                             className={buttonClass({ variant: "sec", size: "md" })}
                             data-testid="ward-referral-open-patient"

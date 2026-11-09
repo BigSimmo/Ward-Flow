@@ -22,7 +22,8 @@ export { FormalName } from "./formal-name";
 export { Button, DisabledReason, buttonClass, type ButtonSize } from "./button";
 export { Badge } from "./badge";
 export { Card, CardHead, CardBody, CardFoot } from "./card";
-export { Hero, HeroFootSlotProvider, HeroStat, type HeroNextStep } from "./hero";
+export { Hero, HeroStat, type HeroNextStep } from "./hero";
+export { HeroFootSlotProvider } from "./hero-foot-slot";
 export { useWfBandActive, useWfBandBleed, registerWfBandHero, WF_BAND_SCROLLED_PX } from "./band";
 export {
   CheckingFoot,

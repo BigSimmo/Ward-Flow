@@ -111,8 +111,9 @@ function QuickChipRow({
                 <Icon aria-hidden="true" strokeWidth={1.75} />
                 {control.label}
                 {count ? (
-                  <b className={styles.count} aria-label={`, ${count} to do`}>
-                    {count}
+                  <b className={styles.count}>
+                    <span aria-hidden="true">{count}</span>
+                    <span className="sr-only">, {count} to do</span>
                   </b>
                 ) : null}
                 <span className="sr-only">, {control.detail}</span>
@@ -130,12 +131,7 @@ function controlIcon(control: QuickControl): LucideIcon {
 }
 
 /**
- * Phone (Josh, 9 Nov 2026): one "Quick actions" button at the foot of the hero, under the
- * need-a-person line, instead of a sideways row of chips. It names the first few controls and opens
- * them all in a bottom sheet; each row then opens its tool on this page, as the chips did.
- */
-/**
- * Given to every page's band hero through HeroFootSlotProvider (layout), and drawn on the desk's home
+ * Given to the desk home's band hero through WardQuickHeroProvider (layout), and drawn on the desk's home
  * only. It sits under the act now row, as in the confirmed header design (Josh, 9 Nov 2026): a chip
  * row on desktop and tablet, one Quick actions button on phone.
  */
@@ -150,6 +146,11 @@ export function WardQuickHeroSlot() {
   );
 }
 
+/**
+ * Phone (Josh, 9 Nov 2026): one "Quick actions" button at the foot of the hero, under the
+ * need-a-person line, instead of a sideways row of chips. It names the first few controls and opens
+ * them all in a bottom sheet; each row then opens its tool on this page, as the chips did.
+ */
 function QuickActionsLauncher({
   controls,
   unconfirmed,
@@ -193,8 +194,9 @@ function QuickActionsLauncher({
           </small>
         </span>
         {unconfirmed ? (
-          <b className={styles.count} aria-label={`, ${unconfirmed} to do`}>
-            {unconfirmed}
+          <b className={styles.count}>
+            <span aria-hidden="true">{unconfirmed}</span>
+            <span className="sr-only">, {unconfirmed} to do</span>
           </b>
         ) : null}
         <ChevronRight className={styles.launchChevron} aria-hidden="true" strokeWidth={1.75} />
@@ -230,8 +232,9 @@ function QuickActionsLauncher({
                     <small>{control.detail}</small>
                   </span>
                   {count ? (
-                    <b className={styles.sheetCount} aria-label={`, ${count} to do`}>
-                      {count}
+                    <b className={styles.sheetCount}>
+                      <span aria-hidden="true">{count}</span>
+                      <span className="sr-only">, {count} to do</span>
                     </b>
                   ) : null}
                   <ChevronRight className={styles.sheetChevron} aria-hidden="true" strokeWidth={1.75} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { WardPeekButton } from "@/components/ward-management/board/ward-peek";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { CalendarCheck, FileText, Pencil, X } from "lucide-react";
 
@@ -34,6 +34,12 @@ import type { StepDownBoardRow } from "@/components/ward-management/ward-step-do
 import type { PlannedListApi } from "./planned-admissions-panel";
 import { StepDownRowDetail, type StepDownReferKit } from "./step-down-board";
 import styles from "./capacity-page.module.css";
+
+// Ward peek (D-98): loaded when a drawer opens, so the Capacity page's first download stays the same.
+const WardPeekButton = dynamic(
+  () => import("@/components/ward-management/board/ward-peek").then((m) => m.WardPeekButton),
+  { ssr: false },
+);
 
 /**
  * Capacity issue 6 (Josh, 3 Nov 2026): a planned move's pop-up, modelled on the Movements one.

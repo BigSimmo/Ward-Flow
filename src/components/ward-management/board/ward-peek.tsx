@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ArrowUpRight, BedSingle } from "lucide-react";
 import { Button, Popover } from "@/components/wf";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { unitReadyBedCount } from "@/components/ward-management/search/ward-smart-search";
+import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { wardBedsInUse } from "@/components/ward-management/ward-occupancy";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { siteByCode } from "@/components/ward-management/ward-sites";
@@ -34,7 +34,8 @@ export function WardPeekButton({
   const canOpen = useCanOpenHref();
   const unit = units.find((candidate) => candidate.id === unitId);
   if (!unit || !canOpen(href)) return null;
-  const ready = unitReadyBedCount(unit, admissions, referrals);
+  // Same rule as Search's ready count, without pulling Search's code into every board.
+  const ready = unit.allocatable && unit.empty ? readyBedsNow(unit, admissions, [], referrals) : null;
   const inUse = wardBedsInUse(unit, admissions, bedReleases);
   const site = siteByCode(unit.siteCode)?.name;
   return (

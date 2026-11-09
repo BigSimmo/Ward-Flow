@@ -10,6 +10,7 @@ export function openPatientPeek(movementId: string) {
 }
 
 export function onPatientPeek(listener: (request: PatientPeekRequest) => void): () => void {
+  if (typeof window === "undefined") return () => {};
   const handler = (event: Event) => listener((event as CustomEvent<PatientPeekRequest>).detail);
   window.addEventListener(PATIENT_PEEK_EVENT, handler);
   return () => window.removeEventListener(PATIENT_PEEK_EVENT, handler);

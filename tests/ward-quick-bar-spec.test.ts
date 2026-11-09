@@ -16,7 +16,7 @@ describe("Quick bar (Josh, 8 Nov 2026)", () => {
     for (const [role, controls] of Object.entries(QUICK_BAR)) {
       const offers = controls.some((control) => control.kind === "referral");
       const screens = ROLE_SCREENS[role as keyof typeof ROLE_SCREENS];
-      const mayRefer = role === "coordinator" || screens["referral-new"] !== undefined;
+      const mayRefer = screens["referral-new"] !== undefined;
       if (offers) expect(mayRefer, role).toBe(true);
     }
   });

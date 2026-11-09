@@ -71,7 +71,7 @@ export function CoordinatorFootMenu({
               type="button"
               className={styles.action}
               onClick={() => {
-                close({ restoreFocus: false });
+                close();
                 onShowWards();
               }}
             >
