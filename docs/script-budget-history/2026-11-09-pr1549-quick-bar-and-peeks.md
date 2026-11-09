@@ -4,16 +4,17 @@ Raised, each by 3.0 KB on top of `main` as of `3900d1388` (after PR #1543's own 
 
 Measured sizes, KB gzipped, from hosted CI's production build at `1dbe80b2d` (before `main`'s PR #1543 was merged in, which adds 0.4 to 1.0 KB to four routes):
 
-| Route                   | Old limit | New limit | Measured |
-| ----------------------- | --------- | --------- | -------- |
-| `/ward-flow`            | 562.1     | 565.1     | 563.1    |
-| referrals               | 562.0     | 565.0     | 562.6    |
-| ED                      | 516.9     | 519.9     | 517.8    |
-| ward `rph-adult-secure` | 595.3     | 598.3     | 595.2    |
-| movements `WF-001`      | 589.7     | 592.7     | 590.3    |
-| Capacity                | 662.5     | 667.5     | 666.6    |
-| `arm-ed`                | 654.0     | 657.0     | 655.1    |
-| statistics              | 608.9     | 611.9     | 609.9    |
+| Route                   | Old limit | New limit | Measured               |
+| ----------------------- | --------- | --------- | ---------------------- |
+| `/ward-flow`            | 562.1     | 565.1     | 563.1                  |
+| referrals               | 562.0     | 565.0     | 562.6                  |
+| ED                      | 516.9     | 519.9     | 517.8                  |
+| ward `rph-adult-secure` | 595.3     | 598.3     | 595.2                  |
+| movements `WF-001`      | 589.7     | 592.7     | 590.3                  |
+| Capacity                | 662.5     | 667.5     | 666.6                  |
+| `arm-ed`                | 654.0     | 657.0     | 655.1                  |
+| statistics              | 608.9     | 611.9     | 609.9                  |
+| bed meeting             | 569.8     | 571.0     | 570.6 (at `9052c2370`) |
 
 Measured locally on this PR against `main` 079d46ed6 built the same way: growth of 2.2 to 2.9 KB on every route, and 3.0 KB on Capacity. Hosted CI has measured about 0.9 KB above the local figure.
 
