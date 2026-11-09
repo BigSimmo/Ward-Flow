@@ -203,10 +203,12 @@ export const ED_ACCESS_TARGET_MINUTES = 1440;
 export const ED_ACCESS_TARGET_RANGE_MINUTES = { min: 720, max: 2160, step: 120 } as const;
 
 /**
- * How long a trip to a general hospital must be EXPECTED to last before the psychiatric bed is
- * given up, in hours. Ruling `FD-19` (owner, 2026-08-30): *a ward→ED-medical trip frees the bed
- * ONLY IF the stay is expected to exceed 48 hours, and that is overridable.* Below it, the bed
- * stays theirs and the person reads as on overnight leave.
+ * How long a trip to a general hospital must be EXPECTED to last before the held psychiatric bed
+ * is flagged for review, in hours. D-106 (Josh, 9 Nov 2026) keeps it at 24 hours and signed: past
+ * it, Ward Flow flags the held bed for a person to review and NEVER frees it by itself; at or
+ * below it, the bed stays theirs and the person reads as on overnight leave. Only an override
+ * frees the bed. (History: ruling `FD-19`, owner, 2026-08-30, said 48 hours; a clinical owner
+ * ruling of 14 Oct 2026 set 24 hours but had no D entry. D-106 is now the record.)
  *
  * 🔴 **THIS IS A BED-MANAGEMENT THRESHOLD AND IT IS NOT A STATUTORY PERIOD. It must never be
  * conflated with, sited beside, or reused as one.** It decides one thing only: whether a bed
@@ -217,9 +219,9 @@ export const ED_ACCESS_TARGET_RANGE_MINUTES = { min: 720, max: 2160, step: 120 }
  * ⚠️ **WHY THE PROVENANCE IS THE POINT AND NOT A FORMALITY.** This repository's standing refusal
  * is against inventing figures from the Mental Health Act, after three separate agents wrote
  * three different invented statutory durations into this directory (see
- * `tests/ward-legal-figure-guard.test.ts`). **48 is permitted precisely because the owner
- * supplied it** — it is his own operational figure, quoted from him, invented by nobody. A bare
- * `48` sitting in ward source near anything legal is exactly what a future reader would
+ * `tests/ward-legal-figure-guard.test.ts`). **24 is permitted precisely because the owner
+ * supplied it** (D-106) — it is his own operational figure, quoted from him, invented by nobody.
+ * A bare `24` sitting in ward source near anything legal is exactly what a future reader would
  * reasonably assume came from the Act, so the figure is named, sourced, and pinned rather than
  * written as a literal at the point of use.
  *

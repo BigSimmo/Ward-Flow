@@ -1576,7 +1576,7 @@
       {
         "path": "src/components/ward-management/ward-derivations-transport.ts",
         "line": 265,
-        "sha256": "ae020d976cbae443b88a3f3620e2c8ea3d058bc837909c3200ff94b65311a2a8"
+        "sha256": "877a3c89501efb8f518b4bae3e30b51efd042e38b4b066f2db6ebbc81591ebba"
       },
       {
         "path": "src/components/ward-management/ward-derivations.ts",
@@ -1686,7 +1686,7 @@
       {
         "path": "src/components/ward-management/ward-model.ts",
         "line": 1,
-        "sha256": "428c112d88dcefdda948780296a603d7ea2611ee8f9193592a27078d21fc80cc"
+        "sha256": "18cda3f65ae8cbb6e252b3a1d7ed2a4b033a8ef682b5219a0007162cb727ff37"
       },
       {
         "path": "src/components/ward-management/ward-patient-registration-reducer.ts",
