@@ -37,6 +37,7 @@ import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle"
 
 import { isPhoneViewport, subscribeWardMenu } from "@/components/ward-management/shell/ward-drawer-bus";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import {
   BED_FINDER_MENU_ID as BED_FINDER_ID,
   isActiveRailEntry,
@@ -323,7 +324,7 @@ function backToTopOnRetap(event: MouseEvent<HTMLAnchorElement>): boolean {
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button) return false;
   if (trim(event.currentTarget.href) !== trim(location.href)) return false;
   event.preventDefault();
-  const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+  const behavior = wardScrollBehavior();
   for (const scroller of [window, ...document.querySelectorAll("[data-wf-scroller]")])
     scroller.scrollTo({ top: 0, behavior });
   announceToWardShell("Top of the page.");
