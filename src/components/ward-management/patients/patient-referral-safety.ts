@@ -14,6 +14,7 @@
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { seededReferralDossier } from "@/components/ward-management/ward-referral-dossier-seed";
+import { riskFlagLabel } from "@/components/ward-management/referrals/referral-risk-flags";
 
 export type ReferralSafetyFacts =
   /** The movement names a referral this desk cannot see. Show nothing from it. */
@@ -64,4 +65,22 @@ export function referralSafetyFacts(
     raisedAt: movement.openedAt,
     diagnosisAsWritten: diagnosisOnMovement ?? dossier?.workingDiagnosis,
   };
+}
+
+/** What a card may show from the referral: its flags in words and the referral's date. */
+export type ReferralCardFlags = { labels: readonly string[]; raisedAt: number };
+
+/**
+ * Cards (Josh, 9 Nov 2026, care plans and safety flags thread: defaults approved): the ED board and
+ * a ward's bed request show the referral's flags as small worded tags under the same three
+ * conditions, through `referralSafetyFacts`. `referrals` is the desk's scoped workspace; only the
+ * referral the movement names is looked up, so a desk that cannot see it gets nothing. Nothing
+ * also when the referral flagged none.
+ */
+export function referralCardFlags(movement: Movement, referrals: readonly Referral[]): ReferralCardFlags | undefined {
+  const visible =
+    movement.referralId === undefined ? undefined : referrals.find((referral) => referral.id === movement.referralId);
+  const facts = referralSafetyFacts(movement, visible);
+  if (facts.kind !== "shown" || !facts.riskFlags || facts.riskFlags.length === 0) return undefined;
+  return { labels: facts.riskFlags.map(riskFlagLabel), raisedAt: facts.raisedAt };
 }

@@ -117,6 +117,7 @@ import {
 } from "@/components/ward-management/movements/movement-workspace-derivations";
 
 import styles from "./movement-workspace-cockpit.module.css";
+import { escalationByLabel, escalationHistory, escalationNextLabel } from "./escalation-history";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
 const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent first.";
@@ -199,6 +200,7 @@ export function MovementWorkspaceCockpit({
 
   const presentation = movementPresentation(patient, sender.movementFor(patient));
   const progressText = movementProgressText(presentation);
+  const escalations = escalationHistory(patient);
 
   const destination = patient.acceptedUnitId ? units.find((unit) => unit.id === patient.acceptedUnitId) : undefined;
   const verdict = destination ? eligibility(patient, destination, now) : undefined;
@@ -355,7 +357,7 @@ export function MovementWorkspaceCockpit({
     ...(patient.examination
       ? [{ at: patient.examination.at, label: `Examined · ${patient.examination.outcome.replaceAll("_", " ")}` }]
       : []),
-    ...(patient.escalation ? [{ at: patient.escalation.at, label: `Escalated to ${patient.escalation.contact}` }] : []),
+    ...escalations.map((entry) => ({ at: entry.at, label: `Escalated to ${entry.contact}` })),
     ...(patient.acceptedAt !== undefined && patient.acceptedUnitId !== undefined
       ? [{ at: patient.acceptedAt, label: `Accepted by ${unitName(patient.acceptedUnitId)}` }]
       : []),
@@ -1013,32 +1015,31 @@ export function MovementWorkspaceCockpit({
             {/* Escalation Section */}
             <div data-testid="ward-patient-escalation" className={styles.panelCard}>
               <div className={styles.panelCardHeader}>
-                <h2 className={styles.panelCardTitle}>Escalation</h2>
+                <h2 className={styles.panelCardTitle}>Escalation history</h2>
               </div>
               <div className={styles.panelCardBody}>
                 {progressText ? (
                   <p className={styles.actionSay}>{progressText}</p>
-                ) : patient.escalation ? (
-                  <dl className={styles.factGrid}>
-                    <div className={styles.factRow}>
-                      <dt className={styles.factLabel}>When</dt>
-                      <dd className={styles.factValue}>{formatInstantWithDay(patient.escalation.at, now)}</dd>
-                    </div>
-                    <div className={styles.factRow}>
-                      <dt className={styles.factLabel}>Units tried</dt>
-                      <dd className={styles.factValue}>
-                        {patient.escalation.triedUnitIds.map((unitId) => unitName(unitId)).join(", ")}
-                      </dd>
-                    </div>
-                    <div className={styles.factRow}>
-                      <dt className={styles.factLabel}>Contact</dt>
-                      <dd className={styles.factValue}>{patient.escalation.contact}</dd>
-                    </div>
-                    <div className={styles.factRow}>
-                      <dt className={styles.factLabel}>What came back</dt>
-                      <dd className={styles.factValue}>None recorded.</dd>
-                    </div>
-                  </dl>
+                ) : escalations.length > 0 ? (
+                  // Item 28: every escalation, oldest first, with what happened next (derived).
+                  <ol
+                    className={styles.timelineList}
+                    aria-label="Escalation history"
+                    data-testid="ward-escalation-history"
+                  >
+                    {escalations.map((entry, index) => (
+                      <li key={`${entry.at}-${index}`} className={styles.timelineItem}>
+                        <time className={styles.timelineWhen}>{formatInstantWithDay(entry.at, now)}</time>
+                        <span className={styles.timelineWhat}>
+                          {escalationByLabel(entry)} escalated to {entry.contact} · wards tried:{" "}
+                          {entry.triedUnitIds.length > 0
+                            ? entry.triedUnitIds.map((unitId) => unitName(unitId)).join(", ")
+                            : "none recorded"}{" "}
+                          · next: {escalationNextLabel(entry.next, unitName, (at) => formatInstantWithDay(at, now))}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
                 ) : (
                   <p className={styles.actionSay}>No escalation recorded.</p>
                 )}

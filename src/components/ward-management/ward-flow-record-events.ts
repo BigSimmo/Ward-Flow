@@ -1068,9 +1068,15 @@ export function reduceRecordedFactEvent(
       if (movement.closure) {
         return reject(state, event, `cannot escalate a closed movement (${movement.closure.reason})`);
       }
+      const escalation = { at: event.now, triedUnitIds: [...event.triedUnitIds], contact: event.contact };
+      // Item 28: the latest stays on `escalation` for every existing reader; `escalations` keeps
+      // each one. A record saved before the list began starts it from its one recorded escalation.
+      // Its raising role was not saved then, so it carries none.
+      const earlier = movement.escalations ?? (movement.escalation ? [{ ...movement.escalation }] : []);
       const updated: Movement = {
         ...movement,
-        escalation: { at: event.now, triedUnitIds: [...event.triedUnitIds], contact: event.contact },
+        escalation,
+        escalations: [...earlier, { ...escalation, by: event.role }],
       };
       return replaceMovement(state, movement.id, updated);
     }

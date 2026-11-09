@@ -27,7 +27,15 @@ export function referralGenderOf(answer: ReferralGenderAnswer): ReferralGender |
 
 export const CHART_MAX_BYTES = 2 * 1024 * 1024;
 export const CHART_MIME_TYPES = ["application/pdf", "image/png", "image/jpeg"] as const;
-export const REFERRAL_RISK_FLAGS = ["aggression", "absconding", "medical", "vulnerable", "suicide"] as const;
+// `securityEscort` (Josh, 9 Nov 2026, care plans and safety flags thread: defaults approved).
+export const REFERRAL_RISK_FLAGS = [
+  "aggression",
+  "absconding",
+  "medical",
+  "vulnerable",
+  "suicide",
+  "securityEscort",
+] as const;
 
 export type ReferralChart = {
   kind: "medication" | "observation" | "other";

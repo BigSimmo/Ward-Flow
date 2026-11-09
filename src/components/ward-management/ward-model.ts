@@ -490,6 +490,9 @@ export type Decline = {
 /** What a screen says in place of a reason the desk's copy does not carry (D-80). */
 export const DECLINE_REASON_NOT_SHARED = "Reason not shared";
 
+/** One recorded escalation (item 28). `by` is absent only on one carried over from an older save. */
+export type EscalationRecord = { at: Instant; by?: WardFlowRole; triedUnitIds: string[]; contact: string };
+
 export type MovementClosure = {
   at: Instant;
   outcome: "arrived" | "did_not_proceed";
@@ -961,8 +964,15 @@ export type Movement = MovementBase & {
     reason: WithdrawalReason;
     detail?: WardRequestWithdrawalReason;
   }[];
-  /** Recorded when the network is exhausted. */
+  /** Recorded when the network is exhausted. The latest escalation; `escalations` keeps them all. */
   escalation?: { at: Instant; triedUnitIds: string[]; contact: string };
+  /**
+   * Item 28 (Josh, 9 Nov 2026, care plans and safety flags thread: defaults approved): every
+   * escalation, oldest first, append-only. `by` is the raising role, never a person. Absent on
+   * records saved before it; read through `escalationRecords` (movements/escalation-history.ts),
+   * which falls back to `escalation`. What happened next is derived, never typed.
+   */
+  escalations?: EscalationRecord[];
   /** Every pull released and transport job cancelled against this movement, oldest first. Empty
    *  for a movement nothing has ever been unwound on. See `UnwindRecord`'s own doc comment. */
   unwinds: UnwindRecord[];

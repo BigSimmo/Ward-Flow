@@ -490,6 +490,27 @@ const seededMovements: Movement[] = [
       ],
       contact: "State bed coordination desk",
     },
+    // Item 28 (Josh, 9 Nov 2026): synthetic history, an earlier escalation before the latest.
+    escalations: [
+      {
+        at: NOW_ANCHOR - 240,
+        by: "coordinator",
+        triedUnitIds: ["rph-adult-secure", "gry-adult-secure"],
+        contact: "Site bed manager on call",
+      },
+      {
+        at: NOW_ANCHOR - 3,
+        by: "coordinator",
+        triedUnitIds: [
+          "rph-adult-secure",
+          "gry-adult-secure",
+          "bty-adult-secure",
+          "fsh-adult-secure",
+          "rgh-adult-secure",
+        ],
+        contact: "State bed coordination desk",
+      },
+    ],
   },
   {
     id: "WF-010",

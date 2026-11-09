@@ -118,6 +118,7 @@ export const HUMAN_ONLY_TEXT_FIELDS: readonly string[] = [
   "reassessmentNote",
   "reassessmentHistory[].note",
   "escalation.contact",
+  "escalations[].contact",
   "cadNumber",
   "trackingNumber",
   "uploadedForms[].formName",

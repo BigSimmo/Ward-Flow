@@ -528,15 +528,17 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
       "`RECORD_ESCALATION` stores the caller's own account — the instant, the units they say they tried, and " +
       "the contact — verifying none of it against the movement's referral history.",
     sourceFile: WARD_RECORD_EVENTS,
-    evidence: "escalation: { at: event.now, triedUnitIds: [...event.triedUnitIds], contact: event.contact },",
+    // Item 28 (9 Nov 2026): the account moved into one `escalation` value the reducer stores on both
+    // `escalation` and the `escalations` history; still stored as given.
+    evidence: "const escalation = { at: event.now, triedUnitIds: [...event.triedUnitIds], contact: event.contact };",
     falsifiedBy: {
       change:
         "The reducer starts checking the caller's account against the movement's own referral history instead of " +
         "storing it as given.",
-      find: "escalation: { at: event.now, triedUnitIds: [...event.triedUnitIds], contact: event.contact },",
+      find: "const escalation = { at: event.now, triedUnitIds: [...event.triedUnitIds], contact: event.contact };",
       replaceWith:
-        "escalation: { at: event.now, triedUnitIds: event.triedUnitIds.filter((unitId) => " +
-        "movement.declines.some((decline) => decline.unitId === unitId)), contact: event.contact },",
+        "const escalation = { at: event.now, triedUnitIds: event.triedUnitIds.filter((unitId) => " +
+        "movement.declines.some((decline) => decline.unitId === unitId)), contact: event.contact };",
     },
   },
 

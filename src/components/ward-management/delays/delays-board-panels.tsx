@@ -47,6 +47,12 @@ import { standingSuffix, typedTimeStanding } from "@/components/ward-management/
 import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import redesign from "./waiting.module.css";
 import polish from "./waiting-polish.module.css";
+import {
+  escalationByLabel,
+  escalationHistory,
+  escalationNextLabel,
+  escalationRecords,
+} from "@/components/ward-management/movements/escalation-history";
 
 /** Round 7: candidate wards shown before Show more. */
 const CANDIDATE_LIMIT = 5;
@@ -84,6 +90,8 @@ export function PersonPanel({
   const typedStanding = typedTimeStanding(movement, now, thresholds);
   const patient = patientOf(movement);
   const escalation = movement.escalation;
+  // Item 28: the escalations before the latest, each with what happened next (derived).
+  const earlierEscalations = escalationHistory(movement).slice(0, -1);
   const triedUnits = (escalation?.triedUnitIds ?? [])
     .map((unitId) => units.find((unit) => unit.id === unitId))
     .filter((unit): unit is Unit => unit !== undefined);
@@ -326,6 +334,21 @@ export function PersonPanel({
                         ))}
                       </>
                     )}
+                    {earlierEscalations.length > 0 ? (
+                      <span data-testid="delays-escalation-history">
+                        {" · Earlier: "}
+                        {earlierEscalations
+                          .map(
+                            (entry) =>
+                              `${formatInstantWithDay(entry.at, now)} to ${entry.contact} by ${escalationByLabel(entry)}, then ${escalationNextLabel(
+                                entry.next,
+                                (unitId) => units.find((unit) => unit.id === unitId)?.name ?? "a ward",
+                                (at) => formatInstantWithDay(at, now),
+                              ).replace(/^\w/u, (first) => first.toLowerCase())}`,
+                          )
+                          .join("; ")}
+                      </span>
+                    ) : null}
                   </span>
                 </p>
               ) : null}
@@ -696,6 +719,9 @@ export function Registers({
                     <span className={styles.ell}>{patientOf(movement).formalName}</span>
                     <small className={styles.ell}>
                       {`To ${escalation.contact}, ${formatInstantWithDay(escalation.at, now)}`}
+                      {escalationRecords(movement).length > 1
+                        ? ` · escalated ${escalationRecords(movement).length} times`
+                        : null}
                       {isOutsideService(movement) ? (
                         <span data-testid={`delays-escalation-outside-${movement.id}`}>{` · Outside ${service}`}</span>
                       ) : null}
