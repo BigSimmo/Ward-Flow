@@ -129,12 +129,12 @@ export function WardSearchCommands({
             className={styles.commandBtn}
             disabled={!resultsCurrent}
             aria-pressed={savedHere}
+            aria-label="Save this screen and its filters to My views"
             data-testid="ward-global-search-cmd-save-view"
             onClick={onToggleSaveView}
           >
-            <span className={styles.commandLabel}>
-              {savedHere ? "Remove this screen from My views" : "Save this screen and its filters to My views"}
-            </span>
+            {/* One name; aria-pressed says whether it is saved, and pressing again removes it. */}
+            <span className={styles.commandLabel}>Save this screen and its filters to My views</span>
             <kbd className={styles.hintKbd}>{savedHere ? "Saved" : "Save"}</kbd>
           </button>
         ) : null}

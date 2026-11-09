@@ -37,9 +37,18 @@ it("exports the Waiting list without names", async () => {
   expect(lines[2]).toContain("Waiting; everyone on the list");
   expect(lines[5]?.startsWith('"Record","UMRN","ED"')).toBe(true);
   expect(lines.length).toBeGreaterThan(6);
+  const cells = new Set(lines.flatMap((line) => line.split(",").map((cell) => cell.replace(/^"'?|"$/gu, ""))));
   const state = seedWardFlowState();
   for (const movement of state.movements) {
     const person = resolveSubjectPatient(movement, state);
-    if (person.patient) expect(csv).not.toContain(person.patient.familyName);
+    if (person.patient) {
+      expect(csv).not.toContain(person.patient.familyName);
+      // A given name can also name a place (Fiona Stanley Hospital), so it is checked as a whole
+      // cell and beside the family name.
+      expect(cells).not.toContain(person.patient.givenName);
+      expect(csv).not.toContain(`${person.patient.givenName} ${person.patient.familyName}`);
+    }
+    // Initials are short, so they are checked as a whole cell: "ED" in a header is not a person.
+    if (person.initials) expect(cells).not.toContain(person.initials);
   }
 });

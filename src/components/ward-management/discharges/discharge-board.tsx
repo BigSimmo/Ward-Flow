@@ -374,7 +374,12 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     const what = nowView ? "Discharges, Now" : `Discharges, Recorded in the last ${RECORDED_DAYS} days`;
     const filters = [service, ward, status, base.blockerCategory, ...(nowView ? [] : [identity, base.destination])];
     const narrowed = filters.some((value) => value !== "all");
-    const shownWords = narrowed ? "the rows the current filters show" : "every row in this desk's scope";
+    // Now exports the release groups the list shows, not every record in scope; the header says so.
+    const shownWords = nowView
+      ? `the discharges by bed ${narrowed ? "the current filters show" : "the list shows"}, by status`
+      : narrowed
+        ? "the recorded discharges the current filters show"
+        : "every recorded discharge in this desk's scope";
     const provenance = {
       asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
       scope: `${what}; ${shownWords} (highlights do not narrow it)`,
@@ -405,6 +410,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     };
     exporter.downloadDischargeReleases(rows, { umrnOf, wardName, statusOf: (row) => row.statusWord, at }, provenance);
   };
+  const exportCount = nowView ? visibleReleaseGroups.reduce((n, k) => n + shownGroups[k].length, 0) : recorded.length;
   // Now and Recorded: in the hero on desktop and tablet, under it on a phone (v10).
   const populationSwitch = <DischargePopulationSwitch s={s} />;
   const filterCard = <DischargeFilterCard s={s} />;
@@ -913,7 +919,14 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       : `${shown} shown`}
               </span>
               {/* Export (feature 44) sits with the list it exports, not in the page top (page-tops v6). */}
-              {isPhone ? null : <ListExportButton load={exportList} variant="ghost" testId="ward-discharge-export" />}
+              {isPhone ? null : (
+                <ListExportButton
+                  load={exportList}
+                  variant="ghost"
+                  disabled={exportCount === 0}
+                  testId="ward-discharge-export"
+                />
+              )}
             </header>
             {isPhone ? null : <DischargeFilterCard s={s} bare />}
             <div

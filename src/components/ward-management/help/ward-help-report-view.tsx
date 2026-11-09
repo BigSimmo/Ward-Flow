@@ -90,6 +90,15 @@ export function HelpReport({
   // Arriving in the view moves focus to its heading, so a screen reader says where it is.
   useEffect(() => heading.current?.focus(), []);
 
+  // Closing Help (or leaving this view) mid-drawing ends the run, so a picture that finishes later
+  // never makes a preview address that nothing would revoke.
+  useEffect(() => {
+    const runs = pictureRun;
+    return () => {
+      runs.current += 1;
+    };
+  }, []);
+
   // The preview's address lives only while it is shown.
   const previewUrl = picture.state === "ready" ? picture.url : "";
   useEffect(() => (previewUrl ? () => URL.revokeObjectURL(previewUrl) : undefined), [previewUrl]);
@@ -147,7 +156,11 @@ export function HelpReport({
     return copiedText(reportText(text, context()));
   };
 
+  const pictureMaking = picture.state === "making";
+
   const copy = async () => {
+    // Copied now, the report would say "Picture attached: no" for a picture still on its way.
+    if (pictureMaking) return;
     const report = checked();
     if (!report) return;
     try {
@@ -205,7 +218,13 @@ export function HelpReport({
       {/* The actions sit straight under the box, so they show on a phone without scrolling. */}
       <div className={s.reportSend}>
         <div className={s.answerActions}>
-          <Button variant="pri" icon={Copy} onClick={() => void copy()} data-testid="ward-help-report-copy">
+          <Button
+            variant="pri"
+            icon={Copy}
+            onClick={() => void copy()}
+            disabledReason={pictureMaking ? "Wait for the picture to finish." : undefined}
+            data-testid="ward-help-report-copy"
+          >
             Copy report
           </Button>
         </div>

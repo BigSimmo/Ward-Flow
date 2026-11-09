@@ -7,7 +7,7 @@ import type { OnBehalfReasonId } from "./ward-on-behalf-reason";
 import { WardDemoNotSavedContext } from "@/components/ward-management/shell/ward-demo-saving";
 import { WardRecoveryNoticeContext } from "@/components/ward-management/shell/ward-recovery-notice";
 import { ToastDeviceSaveContext } from "@/components/wf";
-import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
+import { clearReferralDraftMemory, clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
 import { seedSafeSenderId, useOpenTabsDay } from "./ward-flow-open-tabs-day";
 import { clearLegacySessionDrafts, setDraftScenarioScope } from "./ward-session-drafts";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
@@ -773,7 +773,9 @@ function WardFlowWorld({
       }
       const before = commandsRef.current.world;
       const next = wardFlowReducer(before, event);
-      if (before.worldGeneration !== next.worldGeneration) clearReferralDraftSession();
+      // Feature 47: a training reset keeps the real world's stored drafts and browser session.
+      if (before.worldGeneration !== next.worldGeneration)
+        (inTraining ? clearReferralDraftMemory : clearReferralDraftSession)();
       commandsRef.current.world = next;
       dispatchContainer(event);
       if (!inTraining) broadcastDispatchEvent(event.type, getOrCreateBroadcastInstanceId(broadcastInstanceIdRef));
@@ -1171,7 +1173,7 @@ function WardFlowWorld({
       };
       // Continue past every record-request id either world has used (`nextOpenRequestSequence`).
       openRequestSequence.current = Math.max(openRequestSequence.current, nextOpenRequestSequence(world.auditEvents));
-      clearReferralDraftSession();
+      (inTraining ? clearReferralDraftMemory : clearReferralDraftSession)();
       ownsLocalDayRef.current = true;
       savesOnDeviceRef.current = false;
       commandsRef.current.world = world;
@@ -1182,7 +1184,7 @@ function WardFlowWorld({
       });
       return { ok: true };
     },
-    [initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled],
+    [initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled, inTraining],
   );
 
   const reportSnapshotReady = !shared.enabled || container.world === shared.snapshot?.payload.state;

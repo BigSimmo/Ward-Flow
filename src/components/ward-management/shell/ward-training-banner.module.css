@@ -1,10 +1,8 @@
 /* Feature 47: the training sandbox line. Calm, not a warning: the accent tint with a neutral hairline
-   all round (no coloured side edge, DESIGN-SYSTEM §1.4). Pinned under the header like the notes
-   holder, one step beneath it, so a pull-now or offline note still shows over it while it lasts. */
+   all round (no coloured side edge, DESIGN-SYSTEM §1.4). It sits in flow under the header, in the
+   layout's training holder (`.trainingHolder`), which the band counts as part of the header. Not
+   pinned: a page's own pinned rows take the same top edge and the banner lay over them. */
 .banner {
-  position: sticky;
-  top: var(--wf-header-height, 3.75rem);
-  z-index: 24;
   display: flex;
   flex-wrap: wrap;
   flex-shrink: 0;

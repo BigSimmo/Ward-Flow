@@ -75,6 +75,31 @@ export function overlap(a: Box, b: Box): Box {
   return { x, y, width, height };
 }
 
+/** An overflow value that cuts off what lies outside the element's own box. */
+const CLIPPING_OVERFLOW = /^(auto|scroll|hidden|clip|overlay)$/u;
+
+function clipsContent(element: Element): boolean {
+  if (element.tagName === "ASIDE") return true;
+  const style = element.ownerDocument.defaultView?.getComputedStyle(element);
+  if (!style) return false;
+  return [style.overflowX, style.overflowY].some((value) => CLIPPING_OVERFLOW.test(value));
+}
+
+/**
+ * The part of an element that shows on screen inside the picture's root: its box held inside the
+ * sidebar's own column and inside every scrolling or clipping ancestor, so a scrolled menu can never
+ * reach the rail's header or footer, or uncover the page. Both axes are clipped even where only one
+ * scrolls: a smaller readable box only pixelates more.
+ */
+export function visibleBoxOf(element: Element, root: Element): Box {
+  let box = boxOf(element);
+  for (let node = element.parentElement; node; node = node.parentElement) {
+    if (clipsContent(node)) box = overlap(box, boxOf(node));
+    if (node === root) break;
+  }
+  return box;
+}
+
 function canvasBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) =>
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("no picture"))), "image/png"),
@@ -96,11 +121,8 @@ export async function makeReportPicture(doc: Document = document): Promise<Blob>
     rootBox,
     Array.from(doc.querySelectorAll(READABLE_SELECTOR))
       .filter((element) => root.contains(element))
-      // Held inside the sidebar's own column, so a scrolled menu can never uncover the page.
-      .map((element) => {
-        const column = element.closest("aside");
-        return column ? overlap(boxOf(element), boxOf(column)) : boxOf(element);
-      }),
+      // Held inside the sidebar's column and the menu's own scroller (see visibleBoxOf).
+      .map((element) => visibleBoxOf(element, root)),
     { width, height },
   );
 

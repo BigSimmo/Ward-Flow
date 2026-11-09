@@ -35,7 +35,7 @@ Capacity
 - Shift+A: Open Activity.
 - [: Fold the side menu to icons, or open it again.
 - Alt+N: Jump to the newest notice's button, and back. Option+N on a Mac.
-- G: Go to a page: press G, then H Home, E ED, W Waiting, B Wards, D Discharges, R Referrals, C Capacity, S Statistics.
+- G: Go to a page: press G, then H Home, E ED, W Waiting, B Wards, D Discharges, R Referrals, C Capacity, S Statistics. Pages your desk cannot open are skipped.
 - Esc: Close what is open, or step back.
 - ?: Show these shortcuts. On Handover and Referrals, list that page's own keys.
 

@@ -1,4 +1,4 @@
-import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Referral } from "@/components/ward-management/ward-model";
 import { downloadCsv } from "@/components/ward-management/statistics/statistics-csv";
 
@@ -13,7 +13,11 @@ export type ListExportProvenance = NonNullable<Parameters<typeof downloadCsv>[2]
 export type ReferralExportRow = Pick<Referral, "id" | "raisedAt">;
 
 export type ReferralExportContext<R extends ReferralExportRow = ReferralExportRow> = {
-  readonly now: Instant;
+  /**
+   * The queue's own "Since referral" words (`referralWaitLine`), so the file stops counting at triage
+   * exactly as the screen does, never a fresh raised-to-now span.
+   */
+  readonly sinceReferralOf: (referral: R) => string;
   readonly umrnOf: (referral: R) => string;
   readonly tierOf: (referral: R) => string;
   readonly priorityOf: (referral: R) => string;
@@ -46,7 +50,7 @@ export function referralExportLines<R extends ReferralExportRow>(
       ctx.tierOf(referral),
       ctx.priorityOf(referral),
       ctx.at(referral.raisedAt),
-      splitDuration(Math.max(0, ctx.now - referral.raisedAt)),
+      ctx.sinceReferralOf(referral),
       ctx.fromOf(referral),
       ctx.needsOf(referral).join("; ") || "None",
     ]),

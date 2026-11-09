@@ -1402,7 +1402,7 @@ export const KEYBOARD_SHORTCUTS: readonly {
   {
     keys: "G",
     action:
-      "Go to a page: press G, then H Home, E ED, W Waiting, B Wards, D Discharges, R Referrals, C Capacity, S Statistics.",
+      "Go to a page: press G, then H Home, E ED, W Waiting, B Wards, D Discharges, R Referrals, C Capacity, S Statistics. Pages your desk cannot open are skipped.",
     // The short line names no page: type-ahead must not offer it for a page this desk cannot open.
     short: "Go to a main page: G, then that page's letter",
     group: "Move around",

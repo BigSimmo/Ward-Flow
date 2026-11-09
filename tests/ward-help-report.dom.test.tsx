@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
@@ -260,5 +260,55 @@ describe("Report a problem", () => {
     });
     expect(screen.queryByTestId("ward-help-report-picture-preview")).toBeNull();
     expect(revokeObjectURL).toHaveBeenCalledWith("blob:preview");
+  });
+
+  it("holds Copy report while the picture is being made, so the report never says no picture by mistake", async () => {
+    let finish: (blob: Blob) => void = () => undefined;
+    makePicture.mockImplementationOnce(() => new Promise<Blob>((resolve) => (finish = resolve)));
+    const createObjectURL = vi.fn(() => "blob:preview");
+    const original = { createObjectURL: URL.createObjectURL, revokeObjectURL: URL.revokeObjectURL };
+    Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() });
+    onTestFinished(() => {
+      Object.assign(URL, original);
+    });
+    const { box } = report();
+    fireEvent.change(box, { target: { value: SAFE } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("checkbox", { name: "Include a picture of this screen" }));
+    });
+    const copyButton = screen.getByRole("button", { name: "Copy report" });
+    expect(copyButton).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText("Wait for the picture to finish.")).toBeTruthy();
+    await act(async () => {
+      fireEvent.click(copyButton);
+    });
+    expect(writeText).not.toHaveBeenCalled();
+    await act(async () => {
+      finish(new Blob(["png"], { type: "image/png" }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Copy report" }));
+    });
+    expect(writeText.mock.calls[0]?.[0] as string).toContain("Picture attached: yes");
+  });
+
+  it("makes no preview address for a picture that finishes after Help closed", async () => {
+    let finish: (blob: Blob) => void = () => undefined;
+    makePicture.mockImplementationOnce(() => new Promise<Blob>((resolve) => (finish = resolve)));
+    const createObjectURL = vi.fn(() => "blob:late");
+    const original = { createObjectURL: URL.createObjectURL };
+    Object.assign(URL, { createObjectURL });
+    onTestFinished(() => {
+      Object.assign(URL, original);
+    });
+    report();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("checkbox", { name: "Include a picture of this screen" }));
+    });
+    cleanup();
+    await act(async () => {
+      finish(new Blob(["png"], { type: "image/png" }));
+    });
+    expect(createObjectURL).not.toHaveBeenCalled();
   });
 });

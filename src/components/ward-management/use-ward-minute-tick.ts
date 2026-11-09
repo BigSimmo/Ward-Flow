@@ -20,7 +20,8 @@ export function useWardMinuteTick(active: boolean, setTick: Dispatch<SetStateAct
       }, delay);
     };
 
-    scheduleNextTick();
+    // A tab opened (or mounted) in the background starts ticking only once it is shown.
+    if (document.visibilityState === "visible") scheduleNextTick();
 
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {

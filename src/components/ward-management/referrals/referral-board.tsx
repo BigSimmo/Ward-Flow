@@ -73,6 +73,7 @@ import {
   referralTimeline,
   wardArm,
 } from "./referral-board-parts";
+import { referralWaitLine } from "./referral-wait";
 import styles from "./referrals.module.css";
 import { demographicLabel, journeyDuration, referralJourneyStages } from "./referral-board-model";
 import { DecidedSection, QueuedSection } from "./referral-board-sections";
@@ -422,21 +423,13 @@ export function ReferralBoard({
     (await import("./referral-export")).downloadReferralQueue(
       queued,
       {
-        now,
+        sinceReferralOf: (referral) => referralWaitLine(referral, now),
         umrnOf: (referral) => resolveSubjectPatient(referral, resolverState).umrn,
         tierOf: (referral) => urgencyTierLabel(referral.urgency),
         priorityOf: (referral) => referralPriorityLabel(getReferralPriority(referral, now)),
         fromOf: (referral) =>
           siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode ?? ORIGIN_NOT_RECORDED,
-        needsOf: (referral) => {
-          const ward = wardArm(referral)?.destination;
-          return [
-            ward?.secureBedNeeded ? "Locked bed" : null,
-            ward?.involuntaryBedNeeded ? "Involuntary bed" : null,
-            ward?.highAcuityNursingNeeded ? "High acuity nursing" : null,
-            referral.transportNeeded ? "Transport" : null,
-          ].filter((need): need is string => need !== null);
-        },
+        needsOf: needWords,
         at: (instant) => formatSheetMoment(instant, dayZero),
       },
       {

@@ -9,7 +9,8 @@ import { CORE_SEARCH_VIEWS } from "@/components/ward-management/search/ward-smar
  *
  * Privacy: a saved view holds a screen's address and its filter settings, never a person. Only the
  * app's main screens (the ones search lists) can be saved, so a patient's own page never can, and
- * any free-text part of the address is dropped. The name is the screen's own title, never typed.
+ * only the address's filter parts are kept (`FILTER_PARAMS`). The name is the screen's own title,
+ * never typed.
  */
 export type SavedView = { id: string; title: string; href: string };
 
@@ -17,8 +18,38 @@ const KEY = "ward-flow-saved-views";
 const CHANGE = "ward-flow-saved-views-change";
 export const SAVED_VIEW_LIMIT = 12;
 
-/** Address parts that could carry typed words, dropped before a view is saved. */
-const TEXT_PARAMS = new Set(["q", "query", "search", "text", "find", "name", "note", "notes", "comment"]);
+/**
+ * The only address parts a saved view keeps: the main screens' own filter, tab and order settings
+ * (Waiting's `delays-url-state.ts`, `useAddressTab` keys, Handover's `scope`, Forms' `view`). Anything
+ * else, such as `referral`, `movement`, `record`, `admission`, `patientId`, `bed`, `alert` or `job`,
+ * points at one record and is dropped, so a saved view reopens a list, never a person's form.
+ */
+const FILTER_PARAMS = new Set([
+  "blocker",
+  "due",
+  "ed",
+  "flow",
+  "focus",
+  "list",
+  "locked",
+  "order",
+  "origin",
+  "owner",
+  "passed",
+  "quiet",
+  "scope",
+  "service",
+  "shift",
+  "show",
+  "site",
+  "status",
+  "tab",
+  "view",
+  "wait",
+  "ward",
+]);
+/** A filter value is a short fixed id, never typed words or an encoded record address. */
+const FILTER_VALUE = /^[A-Za-z0-9:_-]{1,40}$/u;
 
 const EMPTY: readonly SavedView[] = [];
 let cache: { raw: string | null; views: readonly SavedView[] } = { raw: null, views: EMPTY };
@@ -72,13 +103,13 @@ function subscribe(onChange: () => void) {
 
 export const useSavedViews = createBrowserStore(subscribe, readSavedViews, EMPTY);
 
-/** The address with free-text parts dropped and the rest in a fixed order, or null for no screen. */
+/** The address with only its filter parts, in a fixed order, or null for no screen. */
 export function savableView(pathname: string, search: string): { title: string; href: string } | null {
   const screen = CORE_SEARCH_VIEWS.find((view) => view.href.split("?")[0] === pathname);
   if (!screen) return null;
   const params = new URLSearchParams(search);
   const kept = [...params.entries()]
-    .filter(([key, value]) => !TEXT_PARAMS.has(key.toLowerCase()) && value.length <= 40)
+    .filter(([key, value]) => FILTER_PARAMS.has(key) && FILTER_VALUE.test(value))
     .sort(([a], [b]) => a.localeCompare(b));
   const query = new URLSearchParams(kept).toString();
   return {
@@ -94,13 +125,12 @@ export function toggleSavedView(view: { title: string; href: string }): boolean 
     writeSavedViews(current.filter((saved) => saved.href !== view.href));
     return false;
   }
-  const sameTitle = current.filter((saved) => saved.title.replace(/ \(\d+\)$/u, "") === view.title).length;
-  const title = sameTitle > 0 ? `${view.title} (${sameTitle + 1})` : view.title;
+  // The first number no saved view of this name holds, so removing "(2)" frees it for the next save.
+  const taken = new Set(current.map((saved) => saved.title));
+  let number = 1;
+  while (taken.has(number === 1 ? view.title : `${view.title} (${number})`)) number += 1;
+  const title = number === 1 ? view.title : `${view.title} (${number})`;
   const id = `view-${Date.now().toString(36)}`;
   writeSavedViews([{ id, title, href: view.href }, ...current].slice(0, SAVED_VIEW_LIMIT));
   return true;
-}
-
-export function removeSavedView(id: string): void {
-  writeSavedViews(readSavedViews().filter((saved) => saved.id !== id));
 }

@@ -166,7 +166,7 @@ describe("Discharges export", () => {
 describe("Referral queue export", () => {
   it("lists the queue with needs as fixed words, without names", () => {
     const lines = referralExportLines([{ id: "RF-1", raisedAt: 60, ...NAME }], {
-      now: 180,
+      sinceReferralOf: () => "20m referral to triage",
       umrnOf: () => "UM000005",
       tierOf: () => "Tier 1 · Urgent",
       priorityOf: () => "Overdue",
@@ -181,7 +181,7 @@ describe("Referral queue export", () => {
       "Tier 1 · Urgent",
       "Overdue",
       "T+60",
-      "2h 00m",
+      "20m referral to triage",
       "-Synthetic hospital",
       "Locked bed; Transport",
     ]);

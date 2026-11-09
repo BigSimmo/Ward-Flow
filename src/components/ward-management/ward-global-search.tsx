@@ -530,7 +530,7 @@ export function WardGlobalSearch({
     [permittedGroups, answer],
   );
   // My views (feature 45): a person's saved screens lead when their name matches.
-  const myViews = useSearchMyViews(open, trimmed, canOpenHref);
+  const myViews = useSearchMyViews(open, trimmed, permittedResult);
   const allGroups = useMemo(
     () => [
       ...(myViews.matchGroup ? [myViews.matchGroup] : []),
