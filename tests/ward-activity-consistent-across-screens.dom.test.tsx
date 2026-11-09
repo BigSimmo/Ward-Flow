@@ -85,11 +85,11 @@ describe("the Activity panel is consistently wired across all screens", () => {
     const { user, sheet } = await openActivityPanel();
 
     expect(within(sheet).getByRole("heading", { name: "Activity · Statewide" })).toBeInTheDocument();
-    for (const tab of [/Changes/u, /Recent activity/u, /Notices/u])
+    for (const tab of [/Changes/u, /^Recent/u, /Notices/u])
       expect(within(sheet).getByRole("tab", { name: tab })).toBeInTheDocument();
 
-    await user.click(within(sheet).getByRole("tab", { name: /Recent activity/u }));
-    expect(within(sheet).getByRole("tab", { name: /Recent activity/u }).textContent).toMatch(/20$/u);
+    await user.click(within(sheet).getByRole("tab", { name: /^Recent/u }));
+    expect(within(sheet).getByRole("tab", { name: /^Recent/u }).textContent).toMatch(/20$/u);
     const feed = within(sheet).getByRole("list", { name: "Recent activity" });
     expect(within(feed).getAllByRole("listitem")).toHaveLength(20);
     const escalations = within(within(sheet).getByRole("group", { name: "Filter events by category" })).getByRole(

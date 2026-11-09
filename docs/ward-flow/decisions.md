@@ -130,6 +130,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-105](#d-105-optional-clerk-details-on-the-patient-record-8-november-2026)                                                                            | Optional clerk details on the patient record                                         | Active                                           |
 | [D-106](#d-106-clinical-values-from-the-9-november-2026-documentation-audit-9-november-2026)                                                            | Clinical values from the 9 Nov audit                                                 | Active                                           |
 | [D-107](#d-107-working-rules-and-documentation-from-the-9-november-2026-audit-9-november-2026)                                                          | Working rules from the 9 Nov audit                                                   | Active                                           |
+| [D-109](#d-109-homes-bed-alert-line-tests-the-whole-number-shown-9-november-2026)                                                                       | Home bed alert line tests the shown whole %                                          | Active                                           |
 
 ---
 
@@ -1352,3 +1353,10 @@ is inferred.
   7. **A bare D-number in `src/` or `tests/` means this log.** A comment that cites the delegated rulings in [`owner-decisions-2026-09-1x.md`](../history/archive/dated-notes/owner-decisions-2026-09-1x.md) writes "archived D-n".
 - **Also from the audit:** D-96 was reworded so a bed named for a referral is "pulled", matching D-81 and D-85. D-28 and D-30 to D-35 are marked "Source unverified", awaiting Josh's keep or strike pass. Old entries that later ones replace now say so in place.
 - **Why:** fewer PRs and one decision home mean fewer conflicts and fewer rulings lost between threads.
+
+## D-109. Home's bed alert line tests the whole number shown (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`). **Decided by:** Josh, in the Ward Flow project, choosing "Test the shown whole number" on a decision card.
+- **Decision:** the statewide figure at the top of Home, and every bed alert dot and count, reads "at risk" when the whole percentage it shows is at or above the bed alert line, and "beds in use" below it. So 84.5% to 84.9% shows "85% at risk", never "85% beds in use".
+- **How:** `coordinator-screen.tsx` compares `Math.round(statewideOccupancy)` with the bed alert line, and `isBedAlert` (`ward-service-bed-alerts.ts`) rounds the same way, so the rail, phone menu and executive bed alert dots and counts match. Built in PR #1561.
+- **Boundary:** a prototype display rule on synthetic data; approves no merge or release.
