@@ -65,6 +65,14 @@ import {
 } from "./bed-meeting-actions";
 import { bedMeetingAgenda, meetingActionSummary, type AgendaItem, type MeetingActionRow } from "./bed-meeting-agenda";
 import { AgendaReferralsCopy, agendaReferralsText } from "./agenda-referrals-copy";
+import {
+  actionsRecordedSince,
+  MEETING_STEPS,
+  MEETING_SUMMARY_PAGE_CLASS,
+  MeetingRunControls,
+  MeetingSummary,
+  useMeetingRun,
+} from "./bed-meeting-run";
 import styles from "./bed-meeting-agenda.module.css";
 import { AgendaGroupFilterControl, toggleGroup } from "./bed-meeting-group-filter";
 import {
@@ -151,6 +159,9 @@ function BedMeetingAgenda() {
   // B1 extended (Josh, 4 Nov 2026): narrow every list to any group (ward, tier, legal status, age).
   const [groups, setGroups] = useState<AgendaGroupFilter>({});
   const grouped = agendaGroupFilterActive(groups);
+  // Run meeting (six features build, Josh 9 Nov 2026): step through the services, then a summary.
+  const [run, setRun] = useMeetingRun();
+  const running = run !== null && !run.finished;
 
   const scopedMovements = useMemo(
     () =>
@@ -228,14 +239,15 @@ function BedMeetingAgenda() {
     groupContext,
     serviceQueue,
   );
-  const actionInGroups = (row: MeetingActionRow) => inGroups({ subject: row.subject, record: row.record, detail: "" });
-  const summary = grouped
-    ? {
-        ...fullSummary,
-        overdue: fullSummary.overdue.filter(actionInGroups),
-        open: fullSummary.open.filter(actionInGroups),
-      }
-    : fullSummary;
+  // While a meeting runs or shows its summary, "From earlier meetings" leaves out what it recorded.
+  const earlier = (row: MeetingActionRow) => !run || row.action.recordedAt < run.startedAt;
+  const actionInGroups = (row: MeetingActionRow) =>
+    earlier(row) && inGroups({ subject: row.subject, record: row.record, detail: "" });
+  const summary = {
+    ...fullSummary,
+    overdue: fullSummary.overdue.filter(actionInGroups),
+    open: fullSummary.open.filter(actionInGroups),
+  };
   const unitName = (unitId: string | undefined) => units.find((unit) => unit.id === unitId)?.name;
   // A double click must close one action only. The list shifts up as an action closes, so a second
   // click lands on the next row, often another person's (Audit 7 NB-02). One Done per short pause.
@@ -328,18 +340,62 @@ function BedMeetingAgenda() {
           })
           .slice(0, 8);
 
+  const stepTo = (step: number) => {
+    if (!run) return;
+    setRun({ startedAt: run.startedAt, step, finished: false });
+    setServiceScope(MEETING_STEPS[step] ?? null);
+  };
+  const startRun = () => {
+    setRun({ startedAt: now, step: 0, finished: false });
+    setServiceScope(MEETING_STEPS[0]);
+  };
+  const recordedThisMeeting = run
+    ? actionsRecordedSince({
+        startedAt: run.startedAt,
+        until: run.finishedAt,
+        now,
+        movements,
+        admissions,
+        units,
+        nameOf: (record) => patientOf(record).formalName,
+        ownerText,
+      })
+    : [];
+  const itemsForService = (candidate: HealthService) => {
+    const inService = new Set(units.filter((unit) => unitHealthService(unit) === candidate).map((unit) => unit.id));
+    return bedMeetingAgenda(
+      {
+        movements: movements.filter((movement) => movementBelongsToService(movement, candidate, units)),
+        admissions: admissions.filter((admission) => inService.has(admission.unitId)),
+        bedReleases,
+        units,
+      },
+      now,
+      Number.POSITIVE_INFINITY,
+    ).reduce((total, section) => total + section.total, 0);
+  };
+
   return (
-    <main id="main-content" className={styles.main} data-testid="bed-meeting-agenda">
+    <main
+      id="main-content"
+      className={run?.finished ? `${styles.main} ${MEETING_SUMMARY_PAGE_CLASS}` : styles.main}
+      data-testid="bed-meeting-agenda"
+    >
       <Hero
         level={1}
         eyebrow="Bed meeting"
-        title="Agenda"
-        titleMeta={`${service ?? "Statewide"} · as at ${formatInstantWithDay(now, now)}`}
+        title={running ? "Meeting" : "Agenda"}
+        titleMeta={
+          running
+            ? `${service ?? "Statewide"} · ${run.step + 1} of ${MEETING_STEPS.length}`
+            : `${service ?? "Statewide"} · as at ${formatInstantWithDay(now, now)}`
+        }
         stats={
           <>
             {sections.map((section) => (
               <HeroStat key={section.id} value={section.total} label={SHORT_TITLES[section.id] ?? section.title} />
             ))}
+            {running ? <HeroStat value={recordedThisMeeting.length} label="Recorded this meeting" /> : null}
             <HeroStat value={queue.length} label="Referrals" />
             <HeroStat
               value={summary.overdue.length + summary.open.length}
@@ -351,6 +407,31 @@ function BedMeetingAgenda() {
         aside={
           // Phone (Josh, 31 Oct 2026): Home's hero pills, side by side.
           <div className={`${styles.heroPillGroup} ${phoneRows.heroPills}`}>
+            {running ? (
+              <MeetingRunControls
+                step={run.step}
+                pillClassName={phoneRows.heroPill}
+                onStep={stepTo}
+                onFinish={() => {
+                  setRun({ ...run, finished: true, finishedAt: now });
+                  setServiceScope(null);
+                }}
+                onStop={() => {
+                  setRun(null);
+                  setServiceScope(null);
+                }}
+              />
+            ) : null}
+            {chairs && !run ? (
+              <button
+                type="button"
+                className={`${buttonClass({ variant: "onHero", size: "sm" })} ${phoneRows.heroPill}`}
+                onClick={startRun}
+                data-testid="bed-meeting-run-start"
+              >
+                Run meeting
+              </button>
+            ) : null}
             {bedMeetingTvOn ? null : (
               <BedMeetingSheetLauncher
                 now={now}
@@ -385,19 +466,46 @@ function BedMeetingAgenda() {
         Synthetic prototype, not for clinical use
       </p>
 
+      {run?.finished ? (
+        <MeetingSummary
+          run={run}
+          now={now}
+          rows={recordedThisMeeting}
+          onBack={() => stepTo(run.step)}
+          onClose={() => {
+            setRun(null);
+            setServiceScope(null);
+          }}
+        />
+      ) : null}
+
       {/* B1 (Josh, 3 Nov 2026): one filter bar. Service first, then the lists, then find anyone. */}
       <div className={styles.filters} data-testid="bed-meeting-agenda-filters">
         <div className={styles.filterLine}>
-          <Segmented
-            label="Service"
-            className={styles.serviceTrack}
-            value={service ?? "statewide"}
-            onChange={(next) => setServiceScope(next === "statewide" ? null : (next as HealthService))}
-            items={[
-              { id: "statewide", label: "Statewide" },
-              ...HEALTH_SERVICES.map((candidate) => ({ id: candidate, label: healthServiceAcronym(candidate) })),
-            ]}
-          />
+          {/* While a meeting runs, the service switch is its steps, each with its agenda count. */}
+          {running ? (
+            <Segmented
+              label="Meeting step"
+              className={styles.serviceTrack}
+              value={MEETING_STEPS[run.step] ?? MEETING_STEPS[0]}
+              onChange={(next) => stepTo(MEETING_STEPS.indexOf(next as HealthService))}
+              items={MEETING_STEPS.map((candidate) => ({
+                id: candidate,
+                label: `${healthServiceAcronym(candidate)} ${itemsForService(candidate)}`,
+              }))}
+            />
+          ) : (
+            <Segmented
+              label="Service"
+              className={styles.serviceTrack}
+              value={service ?? "statewide"}
+              onChange={(next) => setServiceScope(next === "statewide" ? null : (next as HealthService))}
+              items={[
+                { id: "statewide", label: "Statewide" },
+                ...HEALTH_SERVICES.map((candidate) => ({ id: candidate, label: healthServiceAcronym(candidate) })),
+              ]}
+            />
+          )}
           <SearchField
             className={styles.search}
             value={query}

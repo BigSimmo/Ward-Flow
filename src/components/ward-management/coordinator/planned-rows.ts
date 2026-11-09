@@ -7,7 +7,7 @@ import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-manageme
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 
-import { plannedRows, type PlannedRow } from "./planned-model";
+import { plannedRows, tomorrowOutlook, type PlannedRow, type TomorrowOutlook } from "./planned-model";
 
 /** The rest of the shift's planned rows, read once by Home for the tab count and the list. */
 export function usePlannedRows(now: Instant): readonly PlannedRow[] {
@@ -35,5 +35,16 @@ export function usePlannedRows(now: Instant): readonly PlannedRow[] {
         nameOf,
       }),
     [movements, admissions, plannedAdmissions, units, configuration, now, until, endOfDay, nameOf],
+  );
+}
+
+/** Tomorrow's recorded expected discharges and planned admissions, for the foot of Later today. */
+export function useTomorrowOutlook(now: Instant): TomorrowOutlook {
+  const { admissions, plannedAdmissions, units } = useWardFlowSelect("admissions", "plannedAdmissions", "units");
+  const nameOf = usePatientOf();
+  const endOfDay = (dayOf(now) + 1) * MINUTES_PER_DAY;
+  return useMemo(
+    () => tomorrowOutlook({ admissions, plannedAdmissions: plannedAdmissions ?? [], units, nameOf, endOfDay }),
+    [admissions, plannedAdmissions, units, nameOf, endOfDay],
   );
 }
