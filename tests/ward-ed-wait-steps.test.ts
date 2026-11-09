@@ -36,4 +36,11 @@ describe("ED long wait steps (Top 25 item 13)", () => {
     expect(edWaitStep(long)?.label).toBe("Step 3, over 24 hours");
     expect(edWaitStep(severe)?.label).toBe("Step 2, over 8 hours");
   });
+
+  it("gives each step its signed-off next step (Josh, 9 Nov 2026)", () => {
+    expect(edWaitStep(elevated)?.nextStep).toBe("Ask wards with a free bed");
+    expect(edWaitStep(severe)?.nextStep).toBe("Call the site bed manager");
+    expect(edWaitStep(long)?.nextStep).toBe("Consider an out-of-area bed and add to the bed meeting");
+    expect(edWaitStep(veryLong)?.nextStep).toBe("Tell the executive on call");
+  });
 });

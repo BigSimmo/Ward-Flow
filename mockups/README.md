@@ -25,7 +25,7 @@ the authoritative list of exact live paths (regenerate it after any change here)
 table exists to group those paths by topic and record a status for each one.
 
 **When a mockup may be deleted, and by whom, is
-[`docs/mockup-retirement-policy.md`](../docs/mockup-retirement-policy.md).** This index is the
+[`docs/history/mockup-retirement-policy.md`](../docs/history/mockup-retirement-policy.md).** This index is the
 record that policy gates on, and `npm run check:mockups` fails when the two drift apart.
 
 **Status key** — _Prototype app_: a full working tool, not a design sketch, out of scope
@@ -264,7 +264,7 @@ already documented below and are not part of this route index.
 ## Retired mockups
 
 The durable record of every mockup removed from this repository, required by
-[`docs/mockup-retirement-policy.md`](../docs/mockup-retirement-policy.md) and enforced by
+[`docs/history/mockup-retirement-policy.md`](../docs/history/mockup-retirement-policy.md) and enforced by
 `npm run check:mockups`: a route deleted without an entry here fails the gate, and an entry
 here for a route that still exists fails it too. Recover any of these from git history if the
 alternatives need re-reading — that is the archive, and a second copy of design scratch is the
@@ -321,7 +321,7 @@ policy's evidence bar is drawn from.
 
 ## Retired developer-gated routes (owner decisions)
 
-Tier B of [`docs/mockup-retirement-policy.md`](../docs/mockup-retirement-policy.md) refuses every
+Tier B of [`docs/history/mockup-retirement-policy.md`](../docs/history/mockup-retirement-policy.md) refuses every
 deletion under a developer-gated prefix, because that subtree is live in production behind
 `DeveloperAreaGate` and removing a screen from it is a product decision rather than cleanup. That
 refusal is unconditional and stays that way. This table is where a decision the owner **has** made

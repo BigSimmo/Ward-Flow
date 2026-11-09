@@ -1,14 +1,15 @@
 # Screen definition of done
 
-_Updated 2026-10-23 - add the D-74/D-75 mock-up evidence and approval prerequisite; Documentation owns._
+_Updated 2026-11-09 - header brought up to date: DESIGN-SYSTEM.md is the design record and the design review prompt is the standing process (D-107); Documentation owns._
 
-## Active acceptance checklist — 2 October 2026
+## Active acceptance checklist — status 9 November 2026
 
-The current accepted Ward Flow app is the appearance baseline. The owner reconfirmed the current
-local `main` design during the stale-rules review on 2 October. Old mockups and D-28 are historical
-references, not a new redesign commission. The historical checklist below is retained to explain
-earlier failures; its mockup-matching and blanket fold commands are superseded by this section and
-[HOW-WE-WORK](HOW-WE-WORK.md).
+The accepted Ward Flow app at current `main` is the appearance baseline until Josh approves a
+design through the [design review prompt](../design/design-review-artifact-prompt.md).
+[DESIGN-SYSTEM.md](../design/DESIGN-SYSTEM.md) is the design record. Old drawings, mock-ups and
+D-28 are background only, not a redesign commission. The historical checklist below is kept to
+explain earlier failures; its mock-up-matching and blanket fold commands are superseded by this
+section and [HOW-WE-WORK](HOW-WE-WORK.md).
 
 - [ ] Record the accepted baseline revision and actual checked revision. Include any dirty inputs
       in the evidence notes. Do not infer visual acceptance from a source hash or a passing test.

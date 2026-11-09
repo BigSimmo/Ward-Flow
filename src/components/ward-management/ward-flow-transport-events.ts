@@ -974,7 +974,7 @@ export function reduceTransportEvent(
        *
        * Owner answer 30: nothing arranges a replacement on either branch, so each sentence states
        * only that the job was cancelled and nothing has been rebooked. Wording from
-       * `docs/ward-flow/plans/2026-09-17-build-plan-referrals-transport.md` §4, T1.
+       * `docs/history/plans-2026-09/2026-09-17-build-plan-referrals-transport.md` §4, T1.
        */
       const cancelledNote = bedIsHeld
         ? "the bed is still pulled and nothing has been rebooked."

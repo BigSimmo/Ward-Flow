@@ -25,7 +25,7 @@ import {
 import { typeDate } from "./helpers/type-date-time";
 
 /**
- * T3 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`), owner answers 1 and 5: the
+ * T3 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`), owner answers 1 and 5: the
  * clinician types the expiry written on a legal form and, on a later occasion, an extension
  * written on a fresh form — for ANY selected form, never a computed statutory duration. This file
  * drives the intake fields, the "Record expiry from the form"/"Record an extension" actions block,

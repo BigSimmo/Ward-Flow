@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md`, task A3 (item 52, owner
+ * Build plan `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md`, task A3 (item 52, owner
  * answer 52). `ward-rail.tsx`'s own header used to explain why the chosen service was left out of
  * the rail entirely (a colour-only `.svcStripe` bar, omitted as a judgement call). Owner answer 52
  * resolved that call: the rail now carries the chosen service too, but as a WORD next to a small

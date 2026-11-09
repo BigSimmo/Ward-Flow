@@ -27,7 +27,7 @@ import { showWholeHomeQueue } from "./helpers/ward-home-queue";
 import { showEveryoneWaiting } from "./helpers/ward-home-queue";
 
 /**
- * Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md`, task B1 (item 44 — the
+ * Build plan `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md`, task B1 (item 44 — the
  * service chooser, §2 "Command: the patients queue and pressure strip are scoped. The flow
  * diagram stays whole-network with a foot sentence. The shortlist is never scoped. The referrals
  * tab follows referral membership. S2 applies.").

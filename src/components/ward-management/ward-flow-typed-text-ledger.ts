@@ -58,6 +58,8 @@ const NOT_TYPED_KEYS: { readonly [T in TypedTextEventType]: readonly string[] } 
     "atsCategory",
     "originSiteCode",
     "tentativeDiagnosis",
+    // Feature 26: fixed-list options and outcomes only; the reducer refuses anything else.
+    "alternativesConsidered",
     "service",
     "riskFlags",
     "mimeType",

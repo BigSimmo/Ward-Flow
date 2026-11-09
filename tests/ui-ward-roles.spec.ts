@@ -731,7 +731,7 @@ test.describe("@mockup Emergency department screen", () => {
     }
 
     // The department clock and the form clock are shown as different things — Task T1
-    // (docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md item 1, owner answer 1): the
+    // (docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md item 1, owner answer 1): the
     // form column reads only a clinician's own typed expiry, never the department's arrival time.
     // ED handover table (1 Nov 2026): the department clock is the table's own In ED column.
     await expect(page.getByRole("columnheader", { name: "In ED" }).first()).toBeVisible();
@@ -774,7 +774,7 @@ test.describe("@mockup Emergency department screen", () => {
   });
 
   /**
-   * 🔴 **RE-POINTED, Task T1 (docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md item 1),
+   * 🔴 **RE-POINTED, Task T1 (docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md item 1),
    * NOT DELETED — its premise (a merged "legal clock" dated from `formedAt` or `openedAt`) is gone,
    * but the fixture facts it was pinned to are still true and still worth proving on a rendered
    * page.**

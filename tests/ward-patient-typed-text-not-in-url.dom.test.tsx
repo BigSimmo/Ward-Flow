@@ -4,7 +4,7 @@ import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 /*
- * THE PRIVACY CATCHER for owner ruling D-11 (`docs/ward-flow/owner-decisions-2026-09-1x.md`
+ * THE PRIVACY CATCHER for archived owner ruling D-11 (`docs/history/archive/dated-notes/owner-decisions-2026-09-1x.md`
  * ~685-697): a patient's typed name or record number must never reach the address bar. Before this
  * fix, `patient-typeahead.tsx`'s "Add this person" link and `patient-search.tsx`'s two "Add patient"
  * links carried the typed text as a `?name=`/`?search=` query parameter on the way to

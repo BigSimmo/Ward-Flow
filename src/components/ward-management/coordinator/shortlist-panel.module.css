@@ -792,6 +792,12 @@
   white-space: nowrap;
 }
 
+/* Smart bed match fit line (9 Nov 2026): quiet words, no tone, no order. */
+.candidateFit {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
 .candidateNotice {
   justify-self: start;
   font-size: var(--wf-fs-12);

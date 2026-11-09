@@ -77,7 +77,7 @@ export type OverrideSignOff = { role: WardFlowRole; name: string };
 export const OVERRIDE_SIGN_OFF_NAME_MAX = 60;
 
 /**
- * T12 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`, item 9, owner answer 9,
+ * T12 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`, item 9, owner answer 9,
  * 17 September 2026): *"Non-binary patient: coordinator places with a recorded reason after
  * checking with the ward, preferring a single room."*
  *
@@ -546,6 +546,17 @@ export const EXAMINATION_OUTCOMES = [
   "further_examination_ordered",
 ] as const;
 export type ExaminationOutcome = (typeof EXAMINATION_OUTCOMES)[number];
+
+/** Psychiatry review tracker (Josh, 9 Nov 2026): who was recorded as having seen the person. */
+export const PSYCH_REVIEW_GRADES = ["registrar", "consultant"] as const;
+export type PsychReviewGrade = (typeof PSYCH_REVIEW_GRADES)[number];
+
+/** `Movement.psychReview`: when a review was asked for and when each grade saw the person. */
+export type PsychReview = {
+  requestedAt: Instant;
+  registrarSeenAt?: Instant;
+  consultantSeenAt?: Instant;
+};
 
 export const ED_OUTCOMES = ["for_discharge", "for_community_follow_up"] as const;
 export type EdOutcome = (typeof ED_OUTCOMES)[number];

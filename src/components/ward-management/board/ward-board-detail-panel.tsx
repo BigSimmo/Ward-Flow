@@ -41,6 +41,7 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import { PersonEntry } from "./ward-board-person-entry";
 import { WardDiagnosisControl } from "./ward-board-ward-diagnosis";
 import { plural } from "@/components/ward-management/ward-plural";
+import { WardStepDownRequest } from "@/components/ward-management/referrals/step-down-request";
 
 /** Redesign: the record's buttons are the kit's, so the panel matches the rest of the page. */
 // Long labels ("Gone to an ED" and others) wrap inside the panel
@@ -509,6 +510,11 @@ export function WardBoardDetailPanel({
                         "Mark for step-down"
                       )}
                     </button>
+                    {/* Feature 12 (9 Nov 2026): the ward asks a step-down ward through its own referral. */}
+                    <WardStepDownRequest
+                      admission={admissions.find((admission) => admission.id === occupied.key)}
+                      fullWidthClassName={styles.fullWidthBtn}
+                    />
                   </div>
                   {occupied.days !== null && occupied.days >= CLINICAL_VALUES.longStayPrompt.value && (
                     <div

@@ -91,7 +91,7 @@ const SERVICE_SCOPED_SCREEN_LIST =
 export const SERVICE_SCOPE_SHEET_LINE = `Narrows ${SERVICE_SCOPED_SCREEN_LIST}`;
 export const SERVICE_SCOPE_NOTE = `One service, or all of them. ${SERVICE_SCOPED_SCREEN_LIST} narrow${SERVICE_SCOPED_SCREENS.length === 1 ? "s" : ""} their lists to it. The bed shortlist, whole-network figures, the rail counts and the drawers do not. Each count is the people waiting in that service's emergency departments; a narrowed list also shows people referred to its wards.`;
 
-/** The exact sentence standard §8.6 already uses for a drawn-and-not-wired control (D-16) — named
+/** The exact sentence standard §8.6 already uses for a drawn-and-not-wired control (archived D-16) — named
  *  in one place so the three "not wired" primary-action kinds and any future caller share the
  *  identical wording rather than each typing a close paraphrase. */
 export const NOT_WIRED_SUFFIX = "is not wired in this prototype.";

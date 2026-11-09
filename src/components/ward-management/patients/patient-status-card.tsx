@@ -26,12 +26,15 @@ import { recordExtrasFor } from "./patient-record-extras";
 import { stayProgress } from "./patient-now-ward";
 // Loads with the other ward cards, only for a stay (phone script budget).
 const PatientStayProgress = dynamic(() => import("./patient-now-ward-cards").then((m) => m.PatientStayProgress));
+// The coordinator-only no-reply timers load on their own (phone script budget, item 1).
+const NoReplyTimerList = dynamic(() => import("../referrals/referral-no-reply-timers").then((m) => m.NoReplyTimerList));
 import styles from "./patient-status-card.module.css";
 import { useSenderPresentation } from "../ward-sender-presentation";
 import { movementPresentation } from "../ward-partial-view-presenters";
 import type { SenderMovementPartialView } from "../ward-partial-view-contract";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { useRouteRole } from "../ward-role-gate";
+import { usePatientNameDisplay } from "../settings/discreet-names";
 import { canDispatch } from "../ward-role-permissions";
 import { unitInScope } from "../ward-role-access";
 import { wardPlaceLookup } from "../ward-access-places";
@@ -782,7 +785,7 @@ function statusFor(
     };
   }
 
-  // A record with nothing open. Where else they have stayed is not read here (D-14): the screen
+  // A record with nothing open. Where else they have stayed is not read here (archived D-14): the screen
   // shows only what the patient record itself holds.
   const activeEngagement = recordExtrasFor(patient?.id)?.community?.find((item) => item.status === "active");
   return {
@@ -878,6 +881,7 @@ export function PatientStatusCard({
   const sender = useSenderPresentation();
   const access = useEffectiveWardAccess();
   const routeRole = useRouteRole();
+  const nameFor = usePatientNameDisplay();
   const records = useOptionalWardFlowSelect("units");
   const acceptingUnitId = context.movement?.acceptedUnitId;
   // The real accepting unit and the desk's existing permission/scope keep its receiving action.
@@ -1059,6 +1063,22 @@ export function PatientStatusCard({
             </div>
           ))}
         </div>
+        {/* Referral response timer (Josh, 9 Nov 2026): each ward still to answer, with its time left. */}
+        {mode === "find" &&
+        routeRole === "coordinator" &&
+        context.movement &&
+        sender.movementFor(context.movement) === undefined ? (
+          <NoReplyTimerList
+            movement={context.movement}
+            now={context.now}
+            canEscalate={records !== null}
+            personName={
+              context.patient
+                ? nameFor(`${context.patient.familyName}, ${context.patient.givenName}`, context.patient.umrn)
+                : "this person"
+            }
+          />
+        ) : null}
         {progress ? <PatientStayProgress progress={progress} /> : null}
         {children}
         {phoneQuiet ? <p className={styles.phFoot}>{phoneFoot ?? status.meta}</p> : null}

@@ -1,6 +1,6 @@
 // tests/ward-pull-keeps-referral-link.test.ts
 //
-// R4 (docs/ward-flow/plans/2026-09-16-fix-plan-referral-model.md): `PULL_PATIENT` used to write
+// R4 (docs/history/plans-2026-09/2026-09-16-fix-plan-referral-model.md): `PULL_PATIENT` used to write
 // `referralId: null` and `homeRegion: null` on every admission it built, UNCONDITIONALLY — even
 // when the movement it pulled from carried a real, resolved `Movement.referralId`.
 // `admissionBelongsToTeam` (community/community-derivations.ts) reads exactly that field, so a

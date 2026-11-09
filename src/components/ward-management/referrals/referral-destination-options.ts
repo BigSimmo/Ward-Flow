@@ -86,12 +86,11 @@ export type DestinationOption = {
   readonly label: string;
   readonly catchment: DestinationCatchment;
   /*
-   * ⚠️ "Never a score" and "never a rank" below DESCRIBE these two fields; they are no longer a
-   * prohibition on the screen. Spec D4's "it suggests nothing" was withdrawn by owner ruling
-   * R-2026-09-04-G — the board is to match patients to beds, with the user still making the final
-   * acceptance. A rank, if one is ever built, would be a NEW field carrying its own provenance,
-   * not these two quietly changing meaning: `figures` are read off the network and `reasons` are
-   * rules a clinician can disagree with, and both are worth keeping as exactly that.
+   * ⚠️ "Not a score" and "not a rank" below are the rule, not only a description. Owner ruling
+   * R-2026-09-04-G (which had let the board match patients to beds) is replaced by D-71, confirmed
+   * by D-106 (Josh, 9 Nov 2026): Ward Flow never suggests or ranks wards. These two fields describe
+   * an option; they never score or rank it. `figures` are read off the network and `reasons` are
+   * rules a clinician can disagree with, and the person choosing makes the decision.
    */
   /** Figures that bear on the choice, read off the seeded network. Not a score. */
   readonly figures: readonly string[];

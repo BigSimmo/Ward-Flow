@@ -11,12 +11,11 @@ import {
   genderReviewNeeded,
   type LegalStatus,
   type Movement,
-  type Referral,
   type Unit,
 } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
-import { stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
+import { stayLegalStatus, type StayLegalSource } from "@/components/ward-management/ward-stay-legal";
 
 /**
  * STEP-DOWN BOARD (Top 25 item 8). A stay flagged for step-down care
@@ -148,7 +147,8 @@ export function deriveStepDownBoard(input: {
   units: readonly Unit[];
   movements: readonly Movement[];
   patients?: readonly Patient[];
-  referrals?: readonly Referral[];
+  /** Only for the stay's recorded legal status (`stayLegalStatus`), never anything else. */
+  referrals?: StayLegalSource["referrals"];
   now: Instant;
 }): StepDownBoardRow[] {
   const rows: StepDownBoardRow[] = [];

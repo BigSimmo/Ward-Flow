@@ -58,13 +58,13 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
    */
   RECORD_LEGAL_FORM_RECEIVED: ["ed", "ward", "community", "coordinator"],
   /*
-   * T4 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`). `ed` alone, on
+   * T4 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`). `ed` alone, on
    * `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning immediately above: the place physically holding
    * the form is who can say a receipt was recorded in error, with the same D-80 sender check.
    */
   CORRECT_LEGAL_FORM_RECEIPT: ["ed", "ward", "community", "coordinator"],
   /*
-   * T2 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`). `ed`, on
+   * T2 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`). `ed`, on
    * `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning: the department physically holding the form is
    * who reads the expiry off it. `coordinator` joins it here — unlike that event, this one is also
    * how a regional EXTENSION gets recorded, and item 5's own wording ("the clinician records the
@@ -551,6 +551,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   EVALUATE_ARRIVAL_LATENESS: ["coordinator", "ed", "ward"],
   RELEASE_AND_REOPEN_SEARCH: ["coordinator", "ward"],
   CLEAR_EXPECT_FLAG: ["ward", "coordinator", "ed", "community"],
+  // Psychiatry review tracker and ward wait list (Josh, 9 Nov 2026).
+  REQUEST_PSYCH_REVIEW: ["ed", "coordinator"],
+  RECORD_PSYCH_REVIEW_SEEN: ["ed", "coordinator"],
+  MARK_WARD_READY_FOR_NEXT: ["ward", "coordinator"],
   RAISE_EXPECT_FLAG: ["ward", "coordinator", "ed", "community"],
   FLAG_LEGAL_MISMATCH: ["ward", "coordinator"],
   EVALUATE_LEAVE_BED_WARNINGS: ["ward", "coordinator"],

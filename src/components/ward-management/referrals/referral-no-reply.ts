@@ -1,7 +1,8 @@
 import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardConfiguration } from "@/components/ward-management/ward-configuration";
-import type { Referral, Unit } from "@/components/ward-management/ward-model";
+import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { isAwaitingAnswer, referralDestinationLabel } from "@/components/ward-management/ward-referrals";
+import { waitlistStands } from "@/components/ward-management/ward-waitlist";
 
 /**
  * "REFERRAL STUCK" — NO REPLY RECORDED WITHIN THE TIME LIMIT (Josh's list item 17, 25 Oct 2026).
@@ -65,6 +66,48 @@ export function referralNoReplyWaits(
     });
   }
   return waits;
+}
+
+/**
+ * REFERRAL RESPONSE TIMER (Josh, 9 Nov 2026): the same wait, for a ward offer made straight on the
+ * movement (`REFER_TO_UNITS`), which writes no `Referral` arm. One entry per ward still to answer:
+ * asked, not declined and not on its wait list. The same time limit as above; no second limit.
+ *
+ * The clock starts when the current decision wait opened, else the first referral, else when the
+ * journey opened: the same "sent" time the offers table already shows, so the two never disagree.
+ */
+export function movementOfferNoReplyWaits(
+  movement: Movement,
+  now: Instant,
+  configuration: Pick<WardConfiguration, "referralDecisionTargetMinutes">,
+  units: readonly Pick<Unit, "id" | "name">[],
+): NoReplyWait[] {
+  if (movement.closure || movement.acceptedUnitId !== undefined) return [];
+  const askedAt = movement.referralDecisionOpenedAt ?? movement.referredAt ?? movement.openedAt;
+  if (!Number.isFinite(askedAt)) return [];
+  const declined = new Set(movement.declines.map((decline) => decline.unitId));
+  const limitMinutes = configuration.referralDecisionTargetMinutes;
+  const waitedMinutes = Math.max(0, now - askedAt);
+  return movement.referredUnitIds
+    .filter((unitId) => !declined.has(unitId) && !waitlistStands(movement, unitId))
+    .map((unitId) => ({
+      referralId: movement.referralId ?? movement.id,
+      place: units.find((unit) => unit.id === unitId)?.name ?? unitId,
+      unitId,
+      askedAt,
+      waitedMinutes,
+      limitMinutes,
+      pastLimit: waitedMinutes > limitMinutes,
+    }));
+}
+
+/**
+ * The timer's words: "1h 20m left" inside the limit, "Overdue 40m" past it. A plain answer
+ * target set in Settings, not a legal time (D-93 covers legal times only).
+ */
+export function noReplyTimeLabel(wait: Pick<NoReplyWait, "waitedMinutes" | "limitMinutes">): string {
+  const remaining = wait.limitMinutes - wait.waitedMinutes;
+  return remaining >= 0 ? `${splitDuration(remaining)} left` : `Overdue ${splitDuration(-remaining)}`;
 }
 
 /** "Stuck: no reply from Ward 4B for 2h 10m (limit 2h)", or `undefined` while every wait is inside it. */

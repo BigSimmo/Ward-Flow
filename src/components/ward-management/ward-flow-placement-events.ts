@@ -105,7 +105,7 @@ export function reducePlacementEvent(
        * would count the patient's own held bed against them.
        */
       /**
-       * D-14 / R4: `resolvedReferral` inlines `referralForMovement`'s resolution (importing
+       * Archived D-14 / R4: `resolvedReferral` inlines `referralForMovement`'s resolution (importing
        * `ward-derivations.ts` would be circular). `undefined` when the movement has no `referralId`
        * or it does not resolve. Computed once, with `patientId`, so the "already in a bed" check
        * below and the new stay's fields agree on who the patient is.
@@ -266,7 +266,7 @@ export function reducePlacementEvent(
       }
 
       /**
-       * Owner ruling (`docs/ward-flow/owner-decisions-2026-09-09.md` §5): high-acuity nursing is a
+       * Owner ruling (`docs/history/archive/dated-notes/owner-decisions-2026-09-09.md` §5): high-acuity nursing is a
        * staffing-capacity check too. `eligibility()`'s `acuity` gate only sees the authored total;
        * `remainingHighAcuityCapacity` knows what is left. Mirrors the specialling guard, including
        * membership-checked overrides, and `acuity` is deliberately not in `SUITABILITY_GATES`.
@@ -352,6 +352,8 @@ export function reducePlacementEvent(
         // `releasePulledBedAndAdmission`.
         allocatableLocked: bedKindTaken === "locked" ? unit.allocatableLocked - 1 : unit.allocatableLocked,
       };
+      // Ward wait list (Josh, 9 Nov 2026): a pull into this ward answers its "ready for next patient".
+      delete updatedUnit.readyForNextAt;
       /**
        * The patient becomes a person in a bed, built in the same shape the seed builds so every
        * consumer renders it.

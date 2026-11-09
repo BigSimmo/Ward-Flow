@@ -24,7 +24,7 @@ export interface WardHistoryEntry {
   who: string;
   role: WardFlowRole | "Not recorded";
   reason: string;
-  /** D-14: no patient link. History is joined to a record (movement, admission, referral), never
+  /** Archived D-14: no patient link. History is joined to a record (movement, admission, referral), never
    *  to a person, so the patient link is deliberately never copied here. */
   relatedLinks: {
     movementId?: string;
@@ -129,6 +129,8 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   RECORD_LEGAL_FORM_CONTINUATION: { category: "patient", plainWording: "Statutory form continuation recorded" },
   CLEAR_EXPECT_FLAG: { category: "patient", plainWording: "Expected patient flag cleared" },
   RAISE_EXPECT_FLAG: { category: "patient", plainWording: "Expected patient flag raised" },
+  REQUEST_PSYCH_REVIEW: { category: "patient", plainWording: "Psychiatric review asked for" },
+  RECORD_PSYCH_REVIEW_SEEN: { category: "patient", plainWording: "Psychiatric review seen" },
   FLAG_LEGAL_MISMATCH: { category: "patient", plainWording: "Statutory placement mismatch flagged" },
 
   // 2.5 Capacity and bed release
@@ -179,6 +181,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   RECORD_REFERRAL_COMMITMENT: { category: "patient", plainWording: "Response commitment on a referral recorded" },
   ASK_MORE_WARDS: { category: "patient", plainWording: "More wards asked about a referral" },
   CLOSE_WARD_TO_ADMISSIONS: { category: "bed", plainWording: "Ward closed to admissions" },
+  MARK_WARD_READY_FOR_NEXT: { category: "bed", plainWording: "Ward ready for next patient marked" },
   REOPEN_WARD_TO_ADMISSIONS: { category: "bed", plainWording: "Ward reopened to admissions" },
   SET_BED_CLOSED: { category: "bed", plainWording: "Bed closed or reopened" },
   RECORD_BED_MEETING_ACTION: { category: "both", plainWording: "Bed meeting action recorded" },
@@ -386,7 +389,7 @@ export const EARLIER_HISTORY_NOT_RECORDED_ENTRY: WardHistoryEntry = {
 
 /**
  * Pure read-only selector returning one patient's record history (by movement, admission or
- * referral id; D-14 keeps the patient link out) over a plain array of events.
+ * referral id; archived D-14 keeps the patient link out) over a plain array of events.
  * Agnostic of storage; prepends "Earlier history not recorded".
  */
 export function selectPatientHistory(
@@ -404,7 +407,7 @@ export function selectPatientHistory(
     const config = historyConfig(event.type);
     if (!config || (config.category !== "patient" && config.category !== "both")) continue;
 
-    // D-14 (patient link is default-deny): match on the record ids only, never the patient link.
+    // Archived D-14 (patient link is default-deny): match on the record ids only, never the patient link.
     const matchesPatient =
       eventFieldString(event, "movementId") === recordId ||
       eventFieldString(event, "admissionId") === recordId ||

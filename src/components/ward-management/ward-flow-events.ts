@@ -111,6 +111,7 @@ export type { WardFlowRole } from "@/components/ward-management/ward-flow-roles"
 export { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { ObservationLevelEvent } from "@/components/ward-management/ward-flow-observation-events";
+import type { ReviewReadyWardFlowEvent } from "./ward-flow-review-ready-events";
 import type { RestrictivePracticeWardFlowEvent } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
 // Closing the loop, package D (24 Oct 2026).
 import type { LoopCheckWardFlowEvent } from "@/components/ward-management/loop-checks/ward-loop-checks";
@@ -517,7 +518,7 @@ export type WardFlowEvent =
     }
   | {
       /**
-       * T4 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`): the undo
+       * T4 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`): the undo
        * `RECORD_LEGAL_FORM_RECEIVED` has never had. Clears `Movement.legalFormReceivedAt` and
        * appends the original instant, who corrected it and the fixed reason
        * (`LegalFormReceiptCorrectionReason`) to `Movement.legalFormReceiptCorrections`, so a
@@ -533,7 +534,7 @@ export type WardFlowEvent =
     }
   | {
       /**
-       * T2 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`), owner answer 1 and
+       * T2 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`), owner answer 1 and
        * item 5 (regional extensions): the clinician types the expiry written on the form they are
        * holding, and — later, for the same movement — a further extension written on a fresh form.
        * One event carries both: the reducer decides which this is from what `movement.legalForm`
@@ -868,6 +869,8 @@ export type WardFlowEvent =
     }
   // D-72 (21 Oct 2026): seclusion, restraint and incidents, operational only.
   | RestrictivePracticeWardFlowEvent
+  // Psychiatry review tracker and ward ready for next patient (Josh, 9 Nov 2026).
+  | ReviewReadyWardFlowEvent
   // Closing the loop, package D (24 Oct 2026): cancelled-move checks, acceptance conditions,
   // restriction reviews and closure transition marks. Records only.
   | LoopCheckWardFlowEvent
@@ -1531,6 +1534,11 @@ export type WardFlowEvent =
        * Absent means nobody has recorded one.
        */
       tentativeDiagnosis?: TentativeDiagnosisBlock;
+      /**
+       * Feature 26: alternatives to admission marked before a ward bed request. Fixed-list choices
+       * only; see `Referral.alternativesConsidered`. Absent means none marked.
+       */
+      alternativesConsidered?: readonly import("./referrals/referral-alternatives").AlternativeConsidered[];
     }
   | {
       type: "HOLD_REFERRAL_BED";
@@ -1722,7 +1730,7 @@ export type WardFlowEvent =
        * are kept structurally apart, and `tests/ward-referral-history-immutable.test.ts` for the
        * static proof that this case never touches `history` itself.
        *
-       * 🔴 **D-11 CRITICAL.** `note` is human-typed prose — this event type belongs on
+       * 🔴 **Archived D-11 CRITICAL.** `note` is human-typed prose — this event type belongs on
        * `WARD_FLOW_TYPED_TEXT_EVENT_TYPES` (`ward-flow-persistence-classification.ts`), never the
        * text-safe list, so dispatching it (accepted or refused) locks session persistence for the
        * rest of the session exactly as a typed `history` on `RECEIVE_REFERRAL` already does.

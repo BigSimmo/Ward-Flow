@@ -110,6 +110,7 @@ export function renderEdBoardTableRow(
       movementId={movement.id}
       patientName={patientInfo.formalName}
       clearance={medicalClearance}
+      arrivedAt={movement.openedAt}
       reviewed={movement.examination !== undefined}
       revokedNotice={examinationRevokedWhileBedHeld(movement) ? EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE : undefined}
       earlierExaminations={(movement.supersededExaminations ?? []).map(
@@ -281,6 +282,17 @@ export function renderEdBoardTableRow(
             title={edWaitStep(minutesInDepartment)?.label}
           >
             Step {edWaitStep(minutesInDepartment)?.step}
+          </span>
+        ) : null}
+        {/* Six features build (Josh's sign-off, 9 Nov 2026): the step's suggested next step, as a prompt. */}
+        {edWaitStep(minutesInDepartment) ? (
+          <span
+            className={styles.a2Sub}
+            data-testid={`ward-ed-wait-next-step-${movement.id}`}
+            title={`Suggested next step: ${edWaitStep(minutesInDepartment)?.nextStep}`}
+          >
+            <span aria-hidden="true">{edWaitStep(minutesInDepartment)?.nextStepShort}</span>
+            <span className="sr-only">Suggested next step: {edWaitStep(minutesInDepartment)?.nextStep}</span>
           </span>
         ) : null}
         <span

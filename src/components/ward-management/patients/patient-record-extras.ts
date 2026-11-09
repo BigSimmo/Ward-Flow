@@ -37,7 +37,8 @@ export interface PastEpisode {
   /** Recorded events in the episode. Counts only; no typed text. */
   events?: { seclusion?: number; restraint?: number; awol?: number; leave?: number; transfers?: number };
   /** Readmitted within 28 days of the previous discharge. */
-  readmit28?: boolean;
+  /** Readmitted within the register's readmission window (`readmissionWindow`), as the record states it. */
+  readmitWithinWindow?: boolean;
 }
 
 interface CareContact {
@@ -649,7 +650,7 @@ const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
         legalSummary: "Involuntary",
         outcome: "Discharged to Midland Community Team",
         events: { restraint: 1, leave: 4 },
-        readmit28: true,
+        readmitWithinWindow: true,
       },
       {
         id: "E-002-3",

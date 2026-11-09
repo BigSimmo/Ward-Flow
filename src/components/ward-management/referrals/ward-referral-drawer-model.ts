@@ -1,3 +1,4 @@
+import type { AlternativeMarks } from "./referral-alternatives";
 import { Hospital, Siren, User, Users } from "lucide-react";
 import { PATIENT_KEY_PREFIX } from "./referral-patient-key";
 import { useMemo } from "react";
@@ -580,6 +581,8 @@ export type KeptDraft = {
   unidentified?: string | null;
   /** Why a ward refers someone not in its beds, kept with the ward it was answered for. */
   notOnWard?: { unitId: string; reason: NotOnSendingWardReason };
+  /** Feature 26: alternatives to admission marked so far. Omitted when none. */
+  alternatives?: AlternativeMarks;
 };
 
 export type CommunityNeeds = Omit<Extract<ReferralNeeds, { kind: "community" }>, "kind">;

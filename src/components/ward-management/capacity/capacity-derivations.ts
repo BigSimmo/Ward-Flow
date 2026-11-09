@@ -1,7 +1,7 @@
 // src/components/ward-management/capacity/capacity-derivations.ts
 //
 // The computation behind Ward Flow's merged Capacity screen (MERGE 02, folding `capacity` and
-// `morning`). Design lock: docs/superpowers/specs/2026-09-05-ward-flow-merges-1-3-design-lock.md §5.
+// `morning`). Design lock: docs/history/superpowers/specs/2026-09-05-ward-flow-merges-1-3-design-lock.md §5.
 //
 // ⚠️ **THIS SCREEN ANSWERS "WHERE IS THE MISMATCH", NEVER "WHERE COULD THIS PERSON GO".** An
 // earlier design put a single patient's shortlist here and the owner corrected it — this file

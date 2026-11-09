@@ -5709,3 +5709,14 @@
   margin-top: var(--wf-s-1);
   min-height: 40px;
 }
+
+/* Medical clearance tracker (Josh sign-off, 9 Nov 2026): elapsed from arrival, figures in mono. */
+.clearanceTime {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  margin: var(--wf-s-1) 0 var(--wf-s-3);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+}

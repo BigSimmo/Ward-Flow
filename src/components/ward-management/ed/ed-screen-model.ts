@@ -597,7 +597,7 @@ export function outstandingItem(movement: Movement): OutstandingItem {
 /**
  * The typed expiry written on a legal form — `legalForm.dueAt` — is now the ONLY input to this
  * screen's form column. It is never computed from `formedAt`, `openedAt`, or any statutory
- * constant: `docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md` item 1, and the
+ * constant: `docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md` item 1, and the
  * owner's own words that day — *"the timer that starts when a patient arrives is separate to
  * forms. One records time in ED and the other is a forms category"* — are why the merge this
  * function replaced (`isCommunityFormed`/`legalClockReference`, dating a form clock from
@@ -729,7 +729,9 @@ export type EdStepEvent = Extract<
       | "RECORD_LEGAL_FORM_RECEIVED"
       | "RECORD_LEGAL_FORM_CODE"
       | "RECORD_ED_PRESENTATION"
-      | "HANDOVER_READY";
+      | "HANDOVER_READY"
+      | "REQUEST_PSYCH_REVIEW"
+      | "RECORD_PSYCH_REVIEW_SEEN";
   }
 >;
 
@@ -764,5 +766,9 @@ function edStepFact(event: EdStepEvent): string {
       return event.presentations.length ? "Presentation recorded" : "Presentation cleared";
     case "HANDOVER_READY":
       return "Marked handover ready";
+    case "REQUEST_PSYCH_REVIEW":
+      return "Psychiatric review asked";
+    case "RECORD_PSYCH_REVIEW_SEEN":
+      return event.grade === "registrar" ? "Recorded registrar seen" : "Recorded consultant seen";
   }
 }

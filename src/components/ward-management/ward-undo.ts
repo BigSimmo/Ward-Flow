@@ -94,6 +94,9 @@ export const UNDO_STEP_ACTIONS = {
     "RECORD_TRANSPORT_NEED",
     "RECORD_ED_PRESENTATION",
     "HANDOVER_READY",
+    // Psychiatry review tracker (Josh, 9 Nov 2026).
+    "REQUEST_PSYCH_REVIEW",
+    "RECORD_PSYCH_REVIEW_SEEN",
   ],
   UNDO_TRANSPORT_STEP: ["TRANSPORT_ACCEPTED", "TRANSPORT_EN_ROUTE", "PATIENT_COLLECTED", "PATIENT_ARRIVED"],
   // Audit A1-12 / A4-24 (13 Oct 2026): "Has left" is reversible from its toast, like Move bed.
@@ -124,7 +127,7 @@ export function undoStepTypeFor(action: string): UndoStepType | undefined {
 }
 
 const BED_STEP_TYPES: ReadonlySet<string> = new Set(["SET_BED_CLOSED", "END_LEAVE_BED", "UNDO_BED_STEP"]);
-/** Steps filed against the patient record they change; see `stepUndoSubjectId` (D-14 allowlisted). */
+/** Steps filed against the patient record they change; see `stepUndoSubjectId` (archived D-14 allowlisted). */
 export const PATIENT_RECORD_UNDO_TYPES: ReadonlySet<string> = new Set([
   "RECORD_COMMUNITY_TREATMENT_ORDER",
   "END_COMMUNITY_TREATMENT_ORDER",
@@ -149,7 +152,7 @@ export function undoStepSubjectId(event: object): string {
   };
   // Tier 1 item 6 (4 Nov 2026): these steps are filed against the bed, leave record or booking they
   // change, so each one's Undo takes back only its own subject. Patient record steps are filed in
-  // `stepUndoSubjectId` (ward-flow-subject-id.ts), the D-14 allowlisted file that reads the link.
+  // `stepUndoSubjectId` (ward-flow-subject-id.ts), the archived D-14 allowlisted file that reads the link.
   const type = typeof fields.type === "string" ? fields.type : "";
   if (BED_STEP_TYPES.has(type)) {
     if (typeof fields.leaveBedId === "string" && fields.leaveBedId.length > 0) return `leave:${fields.leaveBedId}`;

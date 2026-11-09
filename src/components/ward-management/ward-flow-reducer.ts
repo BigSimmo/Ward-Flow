@@ -189,6 +189,8 @@ import { withDemoStageTimes } from "@/components/ward-management/ward-demo-stage
 import { type SupportNotificationRecord } from "@/components/ward-management/ward-support-notifications";
 // Closing the loop, package D (24 Oct 2026).
 import { applyLoopChecksDemoOverlay } from "./ward-loop-checks-demo";
+import { applyWaitlistDemoOverlay } from "./ward-demo-waitlist";
+import { reduceReviewReadyEvent } from "./ward-flow-review-ready-events";
 // S6 example data (3 Nov 2026): no demo list opens empty. A live shared build swaps in a no-op.
 import { applyExampleListsOverlay } from "@/components/ward-management/ward-demo-example-lists";
 import { stepUndoSubjectId, subjectId } from "./ward-flow-subject-id";
@@ -373,7 +375,7 @@ export type WardFlowState = WardAuditState & {
   inboxOwnership: Record<string, InboxOwnershipEntry[]>;
   inboxSnoozes: Record<string, InboxSnoozeEntry[]>;
   /**
-   * Authored notices (owner ruling D-2), beside `buildActionInbox`'s derived list. Appended only
+   * Authored notices (archived owner ruling D-2), beside `buildActionInbox`'s derived list. Appended only
    * through `appendNotices`, which refuses a `demo`-addressed notice. Never read or written by
    * `buildActionInbox`, so inbox actions cannot raise a notice and a notice cannot change the
    * derived inbox.
@@ -589,10 +591,8 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
     plannedAdmissionSequence: 0,
   };
   // Closing the loop, package D (24 Oct 2026): a few synthetic marks so each record shows in the demo.
-  return applyExampleListsOverlay(
-    network ? seed : applyLoopChecksDemoOverlay(applyRulingsDemoOverlay(seed, NOW_ANCHOR), NOW_ANCHOR),
-    NOW_ANCHOR,
-  );
+  const demo = network ? seed : applyLoopChecksDemoOverlay(applyRulingsDemoOverlay(seed, NOW_ANCHOR), NOW_ANCHOR);
+  return applyExampleListsOverlay(network ? demo : applyWaitlistDemoOverlay(demo, NOW_ANCHOR), NOW_ANCHOR);
 }
 
 /**
@@ -1095,7 +1095,7 @@ function nextFrontDoorReferralId(sequence: number): string {
   return `RF-9${String(sequence).padStart(2, "0")}`;
 }
 
-// ── Communication addendum (docs/ward-flow/plans/2026-09-1x-communication-addendum.md) ──────────
+// ── Communication addendum (docs/history/plans-2026-09/2026-09-1x-communication-addendum.md) ──────────
 
 /**
  * Like `subjectId`, but reads an already-built `Notice.about` (movement, referral, unit, then
@@ -2211,6 +2211,17 @@ export function reduceClinicalEvent(
       };
       return replaceMovement(state, movement.id, updated);
     }
+
+    case "REQUEST_PSYCH_REVIEW":
+    case "RECORD_PSYCH_REVIEW_SEEN":
+    case "MARK_WARD_READY_FOR_NEXT":
+      return reduceReviewReadyEvent(state, event, decision, {
+        findMovement,
+        findUnit,
+        reject,
+        replaceMovement,
+        replaceUnit,
+      });
 
     case "RAISE_EXPECT_FLAG": {
       const movement = findMovement(state, event.movementId);

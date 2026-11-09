@@ -713,7 +713,7 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
      * inserting an unrelated field beside it. A contiguous citation spanning several fields is a
      * citation that any neighbouring change can falsify without touching the claim.
      *
-     * 🔴 **RE-EVIDENCED 2026-09-17, R4 (`docs/ward-flow/plans/2026-09-16-fix-plan-referral-model.md`).**
+     * 🔴 **RE-EVIDENCED 2026-09-17, R4 (`docs/history/plans-2026-09/2026-09-16-fix-plan-referral-model.md`).**
      * `PULL_PATIENT` no longer writes `referralId: null,` unconditionally — that was the defect the
      * plan names: `admissionBelongsToTeam` (`community/community-derivations.ts`) reads this exact
      * field, so it was `false` for every runtime admission without exception, and a community

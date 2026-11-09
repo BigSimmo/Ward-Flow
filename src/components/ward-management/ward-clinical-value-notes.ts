@@ -28,6 +28,8 @@ export interface ClinicalValueNote {
 }
 
 const OBSERVATION_LEVEL_SOURCE = "Fix plan item 10 (21 Oct 2026)";
+/** Values a screen typed in, moved into the register unsigned (D-106, Josh, 9 Nov 2026). */
+const ADDED_9_NOV_SOURCE = "Added to the register 9 Nov 2026 (D-106); no clinical decision yet";
 /** The triage form's urgency windows (Josh, 7 Nov 2026: list them here, synthetic until signed). */
 const TRIAGE_URGENCY_SOURCE =
   "WA mental health triage scale urgency categories, as on the triage form (SMHMR900); listed 7 Nov 2026, awaiting Josh's sign-off";
@@ -65,7 +67,12 @@ const CLINICAL_VALUE_NOTES = {
     alternatives: [{ value: 4 * MINUTES_PER_HOUR, where: "the original spec, superseded 22 Aug 2026" }],
   },
   edMedicalBedRelease: {
-    source: "FD-19 (30 Aug 2026) (ward-model.ts provenance)",
+    source:
+      "D-106 (Josh, 9 Nov 2026): figure kept and signed; the held bed is flagged for review, never freed by itself. The 14 Oct 2026 ruling that set this figure had no D entry",
+    alternatives: [{ value: 48, where: "FD-19, 30 Aug 2026" }],
+  },
+  edClearanceNotRecorded: {
+    source: "Josh sign-off 9 Nov 2026, medical clearance tracker defaults",
   },
   bedAlertLine: {
     source: "Josh, v6 shell boards 02 and 03b, 7 Oct 2026; D-24 had taken the eighty five line off until sourced",
@@ -118,6 +125,8 @@ const CLINICAL_VALUE_NOTES = {
   bookingEstimatePassed: {
     source: "Josh, 27 Oct 2026, 10:02 PM AWST, chat approval of 10 minutes (P068); synthetic until signed",
   },
+  redRowSnoozeCap: { source: ADDED_9_NOV_SOURCE },
+  supportNotificationLookback: { source: ADDED_9_NOV_SOURCE },
   lateArrivalGrace: {
     source: "D-22 (26 Sep 2026), labelled default",
   },
@@ -157,6 +166,7 @@ const CLINICAL_VALUE_NOTES = {
     source:
       "D-63 (16 Oct 2026), WACHS Criteria Led Discharge Guideline (16 Apr 2026), s 2.5 and s 3: a medical review within this window before discharge. Shortened from the D-60 figure",
   },
+  oldLeavePaper: { source: ADDED_9_NOV_SOURCE },
   leaveOpenWarning: {
     source: "D-23 (26 Sep 2026), Josh's default",
   },
@@ -222,9 +232,9 @@ const CLINICAL_VALUE_NOTES = {
   accessMaxTerm: {
     source: "D-80 (23 Oct 2026), a 12 month ceiling that fits the quarterly access review",
   },
+  accessGrantDefault: { source: ADDED_9_NOV_SOURCE },
   observationGeneral: {
-    source:
-      "Audit F3, Option A (26 Oct 2026): General observation interval: hourly. Pending Josh's approval comment on the PR",
+    source: "D-72 item 5 and D-106 (Josh, 9 Nov 2026): General observation interval: hourly (audit F3, Option A)",
   },
   observationIntermittentShort: {
     source: OBSERVATION_LEVEL_SOURCE,
