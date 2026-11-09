@@ -305,9 +305,20 @@ test("Community referral: a community team refers from its own desk, the ward it
   await expect(page.getByTestId("ward-board-say")).toContainText("Referral accepted.");
   await expect(page.getByTestId(bedTestId)).toHaveAttribute("data-state", "held");
   // H-0893: an answered referral folds behind "Show N answered" below the waiting ones, on the
-  // ward's Referrals tab.
-  await page.getByTestId("ward-tab-referrals").click();
-  await inbox.getByRole("button", { name: /^Show \d+ answered$/ }).click();
+  // ward's Referrals tab. Page tops (9 Nov 2026): the phone's view tabs now sit under the hero
+  // rather than pinned under the header, so leaving a long Bed board scrolls back up to them and the
+  // page shortens under the next tap. Hosted WebKit once found no answered card after the "Show" tap
+  // (PR #1581), so each step is checked, and repeated until the tab is chosen and the list is open.
+  const referralsTab = page.getByTestId("ward-tab-referrals");
+  const answeredToggle = inbox.getByRole("button", { name: /^(Show|Hide) \d+ answered$/ });
+  await expect(async () => {
+    if ((await referralsTab.getAttribute("aria-selected", { timeout: 2_000 })) !== "true")
+      await referralsTab.click({ timeout: 2_000 });
+    await expect(referralsTab).toHaveAttribute("aria-selected", "true", { timeout: 2_000 });
+    if ((await answeredToggle.getAttribute("aria-expanded", { timeout: 2_000 })) !== "true")
+      await answeredToggle.click({ timeout: 2_000 });
+    await expect(answeredToggle).toHaveAttribute("aria-expanded", "true", { timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
   await expect(inboxEntry).toContainText("Accepted");
   await expectAccessible(page, testInfo, "ward Bed board after accepting into a held bed");
   await expectNoReloadSince(page, "the ward accepting into a held bed");

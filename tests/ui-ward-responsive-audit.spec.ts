@@ -646,7 +646,9 @@ test.describe("@mockup phone navigation follows the stable header", () => {
     ["Patients", "/search", "census_folder__", 0],
     ["Capacity", "/capacity", "capacity-page_pageTabs__", 0],
     ["Home", "", "home-flow_nav__", 0],
-    ["Catchments", "/hub/catchments", "community-index_paneTabs__", 0],
+    // Next's webpack build names a class in `community-index.module.css` after its folder, as it does
+    // for any file ending `index.module.css`: `community_paneTabs__<hash>`.
+    ["Catchments", "/hub/catchments", "community_paneTabs__", 0],
     ["ED", "/ed/rph-ed", "ed-phone-fold_pageTabs__", 0],
     ["Ward statistics", "/statistics/ward/rph-adult-secure", "statistics-phone-body_stickySeg__", 0],
     ["Out-of-area", "/out-of-area", "out-of-area-board_phoneFolder__", 0],
