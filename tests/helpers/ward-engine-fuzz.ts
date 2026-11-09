@@ -2403,6 +2403,23 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       request: random() < 0.7 ? "Aboriginal liaison officer" : null,
     }),
   ],
+  // A release step's Undo, aimed at its own newest record. Only the random step undo drew it
+  // before, so a change in the builder count could leave the coverage sweep without it.
+  [
+    0,
+    (state) => {
+      const record = (state.undoRecords ?? []).findLast(
+        (candidate) => candidate.kind === "step" && candidate.undoType === "UNDO_RELEASE_STEP",
+      );
+      if (!record || record.kind !== "step") return { type: "UNDO_RELEASE_STEP" };
+      return {
+        type: "UNDO_RELEASE_STEP",
+        role: record.role,
+        ...undoSubjectField(state, record.subjectId),
+        ...(record.unitId ? { actingUnitId: record.unitId } : {}),
+      };
+    },
+  ],
 ];
 
 const ALL_BUILDERS = [...BUILDERS, ...MORE_BUILDERS];
