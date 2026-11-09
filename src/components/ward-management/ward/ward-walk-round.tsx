@@ -113,6 +113,7 @@ export function walkRoundBeds(rows: readonly WalkRoundSourceRow[], releases: rea
       row.bed.dischargeConfirmed,
       row.bed.pastDate,
       row.bed.dischargeDateMoves,
+      row.bed.eddDriftDays,
       row.bed.awayAtEdHours != null,
       row.bed.isSpecialling,
       row.bed.observation?.level,

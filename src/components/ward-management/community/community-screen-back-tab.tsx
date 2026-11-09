@@ -12,6 +12,7 @@ import { ArrowRight } from "lucide-react";
 import { currentCareContact, currentCareContactCompleted } from "../ward-care-journey";
 import { Field, Select, StatusGlyph } from "@/components/wf";
 import { CommunityFollowUp } from "./community-follow-up";
+import { CommunityFollowUpReply } from "./community-follow-up-reply";
 import styles from "./community.module.css";
 import { DEMO_COMMUNITY_EGRESS } from "./community-demo-cohort";
 import { unitName, expectedBackLabel, departureLabel, otherDepartureDestinations } from "./community-screen-helpers";
@@ -38,6 +39,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
     filteredDepartures,
     cannotResolve,
     activeTab,
+    setToastMessage,
   } = view;
   return (
     <div
@@ -251,6 +253,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                   >
                     <p className={styles.cardUnit}>{unitName(admission.unitId, units)}</p>
                     <p className={styles.cardDetail}>{expectedBackLabel(admission, now)}</p>
+                    <CommunityFollowUpReply admission={admission} teamId={team.id} onMessage={setToastMessage} />
                   </li>
                 ))}
               </ul>
@@ -329,6 +332,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                       Follow-up: {admission.followUp?.state?.replaceAll("_", " ") ?? "Not recorded"} · Contact:{" "}
                       {currentCareContact(admission.careJourney)?.outcome?.replaceAll("_", " ") ?? "Not recorded"}
                     </p>
+                    <CommunityFollowUpReply admission={admission} teamId={team.id} onMessage={setToastMessage} />
                     <CommunityFollowUp admissionId={admission.id} teamId={team.id} />
                   </li>
                 ))}

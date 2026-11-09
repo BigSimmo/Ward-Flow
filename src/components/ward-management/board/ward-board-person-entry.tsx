@@ -206,7 +206,11 @@ export function PersonEntry({
           // A plain line, not a tinted banner (D-94).
           <p className={styles.personLine}>
             This discharge date has moved {occupant.dischargeDateMoves}{" "}
-            {occupant.dischargeDateMoves === 1 ? "time" : "times"}.
+            {occupant.dischargeDateMoves === 1 ? "time" : "times"}
+            {occupant.dischargeDriftDays !== null && occupant.dischargeDriftDays > 0
+              ? `, ${occupant.dischargeDriftDays} ${occupant.dischargeDriftDays === 1 ? "day" : "days"} later than first set`
+              : ""}
+            .
           </p>
         )}
         {occupant.blockReason !== null && !blockerInBarrierTag(occupant) && (

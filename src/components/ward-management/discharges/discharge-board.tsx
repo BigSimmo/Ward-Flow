@@ -92,6 +92,8 @@ import { useDischargeWorkspaceState } from "./use-discharge-workspace-state";
 import { DischargeWeekendPrep } from "./discharge-weekend-prep";
 import { DischargeWeekendReview } from "./discharge-weekend-review-card";
 import { weekendReviewLeads } from "./discharge-weekend-review";
+import { DischargeSlippingList } from "./discharge-slipping-list";
+import { DischargeChecklistTag } from "./discharge-checklist-tag";
 import { followUpWithinWindowCheck } from "./discharge-follow-up-check";
 import { DischargeAskOverdueWards } from "./discharge-message-ward";
 import { OnBehalfReasonForm } from "../on-behalf-reason-form-lazy";
@@ -843,6 +845,20 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             foldable={isPhone}
           />
         ) : null}
+        {/* Feature 6 (9 Nov 2026): stays whose expected date has slipped past the flag, most slipped first. */}
+        {guarded.status === "allowed" && population === "releases" ? (
+          <DischargeSlippingList
+            records={visibleRecords}
+            units={units}
+            dayZero={dayZero}
+            onOpen={(admissionId, opener) => {
+              const release = s.bedReleases.find(
+                (candidate) => candidate.admissionId === admissionId && candidate.state !== "discharged",
+              );
+              if (release) openReleaseOn(release.id, opener, "milestones");
+            }}
+          />
+        ) : null}
         <div
           className={`${pageStyles.workspace} ${releaseList.workspace}`}
           data-recorded={population === "records" || undefined}
@@ -1017,6 +1033,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                       ? "No time yet"
                                       : "Not arranged"}
                               </span>
+                              <DischargeChecklistTag record={record} showChecklist={false} />
                             </td>
                           </tr>
                         );
@@ -1096,6 +1113,11 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                 <SrOnly>{criteriaChip.phrase}</SrOnly>
                               </span>
                             ) : null;
+                            // Features 37 and 13 (9 Nov 2026): the checklist tally and the team's follow-up reply.
+                            const checklistTag =
+                              linked && release.state !== "discharged" ? (
+                                <DischargeChecklistTag record={linked} dependencies={release.dependencies} />
+                              ) : null;
                             return (
                               <tr
                                 key={release.id}
@@ -1192,6 +1214,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                         <span className="sr-only">Not held up</span>
                                       )}
                                       {criteriaTag}
+                                      {checklistTag}
                                     </td>
                                   </>
                                 )}
@@ -1301,6 +1324,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                           </>
                                         )}
                                         {criteriaTag}
+                                        {checklistTag}
                                       </div>
                                     </td>
                                   </>
