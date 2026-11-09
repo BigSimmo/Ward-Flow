@@ -1778,8 +1778,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-weekend-review-events.ts",
-          "line": 25,
-          "sha256": "46beca3aa3e42a5eeb713b2ab1558db5b2e028a6a7360d05e6ea15f2a2e353c6"
+          "line": 23,
+          "sha256": "93cb711f5095007f8a032c3fc9af8a590770aeb303f65b564a18aa3c68b82954"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -3819,12 +3819,12 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 452,
-          "sha256": "b03b77bb8394e2b337bdc954f0f12d9f5ec818d4b232b832d8ab3ac5faae1cbd"
+          "sha256": "ade7e166fb23efcf07b1b4a1302baa1636aa20b1b8d180715baa3fbdaff54caf"
         },
         {
           "path": "src/components/ward-management/ward-bed-hold.ts",
-          "line": 100,
-          "sha256": "66d243fd9af21c34e04a52c14a440df880d84de5f501e21a6c43f033da401108"
+          "line": 106,
+          "sha256": "09719f7113167603fd7f39243459206c223bf3c82dad9b8a94c298ba31cf6e54"
         }
       ],
       "tests": ["tests/ward-extend-pull.test.ts"]

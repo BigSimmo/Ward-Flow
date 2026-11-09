@@ -9,7 +9,7 @@ import { WEEKEND_REVIEW_REACH_MINUTES } from "./ward-operational-defaults";
  * Feature 14 (Josh, 9 Nov 2026): a ward or the coordinator ticks a weekend discharge as reviewed.
  * `weekendStart` is that weekend's first midnight (`upcomingWeekendWindow`), so the tick belongs to
  * one weekend and the next week starts unticked. Records that a desk looked, with the time; it
- * changes no date, no bed and no plan. Kept in its own file for the events file's line cap.
+ * changes no date, no bed and no plan. It sits in its own file for the events file's line cap.
  */
 export type MarkWeekendDischargeReviewedEvent = {
   type: "MARK_WEEKEND_DISCHARGE_REVIEWED";

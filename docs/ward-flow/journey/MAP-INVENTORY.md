@@ -3,7 +3,7 @@
 The route is selective. Its action notes and the additional command models have source review evidence; source digests detect later edits. This does not establish runtime or clinical acceptance.
 
 ## 184 CURRENT ENGINE EVENTS
-Source-contract SHA256: 8a359def82204acc665eab03e3ceda04189574b47d71fee1ab15f4cba5fce2b1
+Source-contract SHA256: bb52149c60d387c65d54b5c6ce9498b21fd519ced6d7f7a3b0d10ef767fc02b4
 - RECORD_ADMISSION_CARE — diagram-reviewed; event roles: ward, coordinator, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:20
@@ -196,8 +196,8 @@ Source-contract SHA256: 8a359def82204acc665eab03e3ceda04189574b47d71fee1ab15f4cb
   guards: The new limit stays within PULL_HOLD_MAX_TOTAL_MINUTES (12 hours) of the pull; a lapsed limit is extended from now.
   effects: Moves Movement.pullExpiresAt later and appends { at, by, minutes } to Movement.pullExtensions; no bed count, stage or notice changes. PULL_PATIENT clears the list on a new pull.
   tests: tests/ward-extend-pull.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-placement-events.ts:452; SHA256 b03b77bb8394e2b337bdc954f0f12d9f5ec818d4b232b832d8ab3ac5faae1cbd
-  Reviewed source: src/components/ward-management/ward-bed-hold.ts:100; SHA256 66d243fd9af21c34e04a52c14a440df880d84de5f501e21a6c43f033da401108
+  Reviewed source: src/components/ward-management/ward-flow-placement-events.ts:452; SHA256 ade7e166fb23efcf07b1b4a1302baa1636aa20b1b8d180715baa3fbdaff54caf
+  Reviewed source: src/components/ward-management/ward-bed-hold.ts:106; SHA256 09719f7113167603fd7f39243459206c223bf3c82dad9b8a94c298ba31cf6e54
 - BOOK_TRANSPORT — diagram-reviewed; event roles: ed, ward, community, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:153
@@ -1202,7 +1202,7 @@ Source-contract SHA256: 8a359def82204acc665eab03e3ceda04189574b47d71fee1ab15f4cb
   Reviewed command model: Weekend discharge review tick with weekend, time and desk.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:539
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2341
-  Event/dispatch reference: src/components/ward-management/ward-flow-weekend-review-events.ts:14
+  Event/dispatch reference: src/components/ward-management/ward-flow-weekend-review-events.ts:15
   Subject: One current inpatient admission
   Before: No review tick for this weekend
   After: Weekend discharge review tick with weekend, time and desk
@@ -1212,7 +1212,7 @@ Source-contract SHA256: 8a359def82204acc665eab03e3ceda04189574b47d71fee1ab15f4cb
   guards: Weekend is within a week of now and not already ticked.
   effects: Appends to admission.weekendDischargeReviews only; changes no date, bed or plan.
   tests: tests/ward-weekend-discharge-review.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-weekend-review-events.ts:25; SHA256 46beca3aa3e42a5eeb713b2ab1558db5b2e028a6a7360d05e6ea15f2a2e353c6
+  Reviewed source: src/components/ward-management/ward-flow-weekend-review-events.ts:23; SHA256 93cb711f5095007f8a032c3fc9af8a590770aeb303f65b564a18aa3c68b82954
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:539; SHA256 3c43b8e68d4949ebbc7f75d1a4ec8af2dfde6df3ef221a9a8d26cd8218662ff1
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - SET_DISCHARGE_BARRIER — diagram-reviewed; event roles: ward, coordinator
