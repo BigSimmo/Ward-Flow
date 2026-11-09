@@ -30,7 +30,7 @@ import { WardFeatureFlagLink } from "@/components/ward-management/shell/ward-fea
 import { WardOfflineLinks } from "@/components/ward-management/shell/ward-offline-links";
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
 import { NextRail as WardRail } from "@/components/ward-management/shell-next/next-rail";
-import { WardQuickBar, WardQuickHeroSlot } from "@/components/ward-management/quick-bar/ward-quick-bar";
+import { WardQuickHeroSlot } from "@/components/ward-management/quick-bar/ward-quick-bar";
 import { PatientPeekHost } from "@/components/ward-management/patients/patient-peek-host";
 import { NextShellBoundary } from "@/components/ward-management/shell-next/next-shell-boundary";
 import { WardMainFocusTarget } from "@/components/ward-management/shell/ward-main-focus-target";
@@ -286,9 +286,7 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                 H-0111: a stored desk other than the coordinator's keeps the page area hidden on first
                 load until it is drawn for that desk (shell/ward-desk-early.ts). */}
                   <WardAccessGate>
-                    {/* Quick bar (Josh, 8 Nov 2026): the desk's most used controls, on its home only. */}
-                    <WardQuickBar />
-                    {/* On phone the Quick actions button sits at the foot of the home's hero (9 Nov 2026). */}
+                    {/* Quick bar (Josh, 8-9 Nov 2026): the desk's most used controls, at the foot of its home's hero. */}
                     <HeroFootSlotProvider value={<WardQuickHeroSlot />}>
                       <WardGround>{children}</WardGround>
                     </HeroFootSlotProvider>

@@ -11,6 +11,12 @@
   min-width: 0;
 }
 
+/* Inside the hero band (Josh, 9 Nov 2026): the hero gives the padding and the colour. */
+.bar[data-in-hero] {
+  padding: 0;
+  background: transparent;
+}
+
 .list {
   display: flex;
   gap: var(--wf-s-2);
@@ -101,12 +107,6 @@
     content: "";
     position: absolute;
     inset: -4px 0;
-  }
-
-  /* Inside the hero band (Josh, 9 Nov 2026): the hero gives the side padding; the row runs to its edge. */
-  .bar[data-in-hero] {
-    padding: 0;
-    background: transparent;
   }
 }
 

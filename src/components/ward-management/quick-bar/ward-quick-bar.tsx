@@ -78,14 +78,18 @@ function press(control: QuickControl, button: HTMLElement) {
   else requestToolsTool(control.tool, button);
 }
 
-export function WardQuickBar() {
-  const { controls, unconfirmed, onHome } = useQuickControls();
-  // On phone the desk's home hero carries the Quick actions button instead (WardQuickHeroSlot).
-  const isPhone = useIsPhone();
-  if (!onHome || isPhone) return null;
+/** Desktop and tablet: the chip row, at the foot of the home's hero under the act now row. */
+function QuickChipRow({
+  controls,
+  unconfirmed,
+}: {
+  controls: readonly QuickControl[];
+  unconfirmed: number | undefined;
+}) {
   return (
     <nav
       className={styles.bar}
+      data-in-hero=""
       aria-label="Quick controls"
       data-testid="ward-quick-bar"
       data-wf-quick-bar=""
@@ -131,14 +135,19 @@ function controlIcon(control: QuickControl): LucideIcon {
  * them all in a bottom sheet; each row then opens its tool on this page, as the chips did.
  */
 /**
- * Given to every page's band hero through HeroFootSlotProvider (layout). Draws only on phone, on the
- * desk's home.
+ * Given to every page's band hero through HeroFootSlotProvider (layout), and drawn on the desk's home
+ * only. It sits under the act now row, as in the confirmed header design (Josh, 9 Nov 2026): a chip
+ * row on desktop and tablet, one Quick actions button on phone.
  */
 export function WardQuickHeroSlot() {
   const { controls, unconfirmed, onHome } = useQuickControls();
   const isPhone = useIsPhone();
-  if (!onHome || !isPhone) return null;
-  return <QuickActionsLauncher controls={controls} unconfirmed={unconfirmed} />;
+  if (!onHome) return null;
+  return isPhone ? (
+    <QuickActionsLauncher controls={controls} unconfirmed={unconfirmed} />
+  ) : (
+    <QuickChipRow controls={controls} unconfirmed={unconfirmed} />
+  );
 }
 
 function QuickActionsLauncher({
