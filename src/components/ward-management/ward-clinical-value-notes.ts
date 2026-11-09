@@ -124,7 +124,7 @@ const CLINICAL_VALUE_NOTES = {
   },
   pullHoldMaxTotal: {
     source:
-      "Josh, 9 Nov 2026, decision card on the discharge and capacity review page: signed 720 minutes (feature 11)",
+      "Josh, 9 Nov 2026, decision card on the discharge and capacity review page: signed the proposed pull limit (feature 11)",
   },
   transportAcceptDelay: {
     source: "Josh, 9 Nov 2026, decision card on the discharge and capacity review page: signed 30 minutes (feature 25)",
