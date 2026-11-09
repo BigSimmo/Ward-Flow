@@ -8,7 +8,7 @@ import { useStatisticsCounts } from "@/components/ward-management/shell/ward-acc
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { MINUTES_PER_DAY, dayOf } from "@/components/ward-management/ward-clock";
-import type { Unit } from "@/components/ward-management/ward-model";
+import { heldBedLabel, type LeaveBed, type Unit } from "@/components/ward-management/ward-model";
 import { BED_MAP_LABELS, type BedMap } from "./statistics-bed-map";
 import { PhoneBody, PhoneList, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import { dateOf, isPastDate } from "./statistics-dates";
@@ -19,12 +19,24 @@ import beds from "./statistics-ward-phone-beds.module.css";
 
 export const ROSTER_FIRST_ROWS = 8;
 
-export const ADMISSION_STATE_LABELS: Record<Admission["state"], string> = {
+const ADMISSION_STATE_LABELS: Record<Admission["state"], string> = {
   waitlisted: "On waiting list",
   pulled: "Pulled",
   occupied: "In bed",
   departed: "Departed",
 };
+
+/**
+ * A roster row's status. A held bed reads as the census reads it (`heldBedLabel`, D-38), so an
+ * absence without leave is never shown as approved leave; anyone else reads their stay's state.
+ */
+export function rosterStatus(
+  admission: Pick<Admission, "id" | "state">,
+  leaveBeds: readonly Pick<LeaveBed, "admissionId" | "absentWithoutLeave">[],
+): string {
+  const held = leaveBeds.find((bed) => bed.admissionId === admission.id);
+  return held ? heldBedLabel(held) : ADMISSION_STATE_LABELS[admission.state];
+}
 
 /** Whole days since arrival, or null when the person has not arrived (or the record says later). */
 export function stayDaysOf(admission: Admission, now: number): number | null {
@@ -51,7 +63,7 @@ export function WardPhone({
   current: Admission[];
   now: number;
   dayZero: Date;
-  leaveBeds: readonly { admissionId: string }[];
+  leaveBeds: readonly Pick<LeaveBed, "admissionId" | "absentWithoutLeave">[];
   /** The Length of stay card (`#ward-stay`), after the lists, so the ward page's link lands here too. */
   stay?: ReactNode;
 }) {
@@ -118,8 +130,7 @@ export function WardPhone({
             >
               {(expanded ? shown : shown.slice(0, ROSTER_FIRST_ROWS)).map((admission) => {
                 const days = stayDaysOf(admission, now);
-                const onLeave = leaveBeds.some((bed) => bed.admissionId === admission.id);
-                const status = onLeave ? "On leave" : ADMISSION_STATE_LABELS[admission.state];
+                const status = rosterStatus(admission, leaveBeds);
                 return (
                   <PhoneListRow
                     key={admission.id}

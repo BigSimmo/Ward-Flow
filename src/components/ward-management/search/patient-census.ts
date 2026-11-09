@@ -15,7 +15,7 @@
  * page's own cause ranking (`delayGroups` and `ownerOf`), so the two pages never disagree about why
  * somebody is waiting. Nothing here ranks people by need; the sort is wait, tier or name only.
  */
-import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
+import { ORIGIN_NOT_RECORDED, heldBedLabel } from "@/components/ward-management/ward-model";
 import {
   delayGroups,
   ownerOf,
@@ -541,13 +541,7 @@ export function buildCensus(state: {
       transport: null,
       escort: false,
       // At ED for review the person is in ED while the ward keeps their bed.
-      where: away
-        ? "At ED"
-        : leave?.absentWithoutLeave
-          ? "Absent without leave"
-          : leave
-            ? "On leave"
-            : (unit?.name ?? "Ward not recorded"),
+      where: away ? "At ED" : leave ? heldBedLabel(leave) : (unit?.name ?? "Ward not recorded"),
       whereSub: away || leave ? `${unit?.name ?? "Ward"} bed kept` : siteName(unit?.siteCode),
       to:
         edd === null

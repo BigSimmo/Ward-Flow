@@ -133,8 +133,11 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-108](#d-108-six-bed-flow-features-keep-d-93-and-d-72-ed-long-wait-next-steps-9-november-2026)                                                        | Six features: keep D-93 and D-72, ED next steps                                      | Active                                           |
 | [D-109](#d-109-homes-bed-alert-line-tests-the-whole-number-shown-9-november-2026)                                                                       | Home bed alert line tests the shown whole %                                          | Active                                           |
 | [D-110](#d-110-ed-and-referral-flow-neutral-fit-line-clearance-timing-and-alternatives-to-admission-9-november-2026)                                    | ED and referral fit line, clearance timing, alternatives                             | Active                                           |
+| [D-111](#d-111-review-and-audit-plan-first-guards-and-four-open-answers-9-november-2026)                                                                | Review and audit plan: first guards and answers                                      | Active                                           |
 | [D-112](#d-112-phone-bottom-bar-the-floating-bar-9-november-2026)                                                                                       | Phone bottom bar: the floating bar                                                   | Active                                           |
+| [D-113](#d-113-second-patient-identifier-on-accept-and-mark-done-no-initials-search-9-november-2026)                                                    | Second identifier on accept and Mark done; no initials search                        | Active                                           |
 | [D-114](#d-114-allow-pull_request_target-for-three-workflows-only-9-november-2026)                                                                      | Allow pull_request_target for three workflows only                                   | Active                                           |
+| [D-115](#d-115-one-count-on-every-screen-and-a-missing-patient-shown-everywhere-9-november-2026)                                                        | One count on every screen; missing patient shown everywhere                          | Active                                           |
 | [D-116](#d-116-page-tops-the-pr-1581-recommendations-stand-9-november-2026)                                                                             | Page tops: PR #1581 recommendations stand                                            | Active                                           |
 
 ---
@@ -1385,6 +1388,20 @@ is inferred.
 - **Why:** these cut the work of placing a patient without letting the app rank patients or wards, or make a clinical call.
 - **Boundary:** prototype rules on synthetic data; approves no merge or release.
 
+## D-111. Review and audit plan: first guards and four open answers (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`), 11:37 PM AWST (15:37 UTC). **Decided by:** Josh, in the Ward Flow project thread "Plan reviews and audits for Ward Flow", answering "go ahead with all recommendations" and "go ahead with the response you recommend for all the questions".
+- **Decision:**
+  1. **Audit plan:** the 84-item ranked review and audit plan (Claude Doc, 9 Nov 2026) is the working plan. Issues #1564 to #1577 cover its top five and the two items next in line. The other items get issues when Josh names them.
+  2. **First build, ruling guards (#1572):** each of D-93, D-71, D-72 item 2 and R-2026-09-04-A keeps a named guard test, listed in `tests/ward-ruling-guardrails.test.ts`. D-72 item 2 gains its own guard, `tests/ward-downtime-pack-device-storage.dom.test.tsx`. The guards protect the rulings and change none of them.
+  3. **Signed values drift (#1573):** covered for its stated scope by `tests/ward-clinical-values.test.ts`. It checks the named constants and selected inline patterns against the table in `ward-clinical-values.ts`; it does not catch every threshold typed elsewhere, and it allows the separately typed `ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS`. The 24 h versus FD-19 48 h question for `edMedicalBedRelease` is a clinical question and stays with the held clinical PR.
+  4. **Phone size limits:** D-82 stands (up to 5 KB per screen per PR without asking). The trend is tracked as audit item 80.
+  5. **"rph-adult-secure":** this is the secure adult ward's board, not a separate page. No separate secure page is planned.
+  6. **Shift-change load test (audit item 52):** run at the 7:00 am, 3:00 pm and 9:30 pm Perth handovers with 100 concurrent synthetic users. These are defaults, to be confirmed with the pilot site before the test.
+  7. **Overnight alerts (audit item 55):** while Ward Flow holds synthetic data only, the uptime job's backend-down GitHub issue to Josh is enough and nobody is paged at night (Josh owns monitoring, D-97 item 5). Before real data, a named person gets phone alerts.
+  8. **Real patient data:** no date is set. Real data waits until audit items 16 (hazard log), 33 (database rules), 34 (privacy impact assessment), 35 (residency map), 42 (TGA classification), 43 (breach plan) and 44 (penetration test) are done, in addition to the real-data gate (D-87).
+- **Boundary:** synthetic data only. Approves no provider change, spending, merge or release, and changes no signed clinical value or clinical rule.
+
 ## D-112. Phone bottom bar: the floating bar (9 November 2026)
 
 - **Date:** 9 November 2026 (`2026-11-09`). **Decided by:** Josh, in the Ward Flow project. He rejected a light polish of the flat bar ("You are not polishing it at all"), chose option A, "Floating bar", of three built options on a decision card, and asked for it "compact ... and beautifully sized", following what large companies do for floating bars.
@@ -1394,6 +1411,16 @@ is inferred.
 - **Numbering:** recorded as D-112 because D-111 is claimed by the audit-answers entry in PR #1579.
 - **Boundary:** a prototype display change on synthetic data; no clinical logic changes; approves no merge or release.
 
+## D-113. Second patient identifier on accept and Mark done; no initials search (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`), 12:20 AM AWST on 10 November (16:20 UTC). **Decided by:** Josh, answering "Go ahead with all recommendations I approve" to the three choices raised by audits 1 and 3 (#1564, #1566). D-112 is claimed by PR #1580.
+- **Decision:**
+  1. **Accept in principle:** the Ward home "accept in principle" dialog shows the patient's UMRN beside the name, so a second identifier is visible at the moment of accepting.
+  2. **Bed meeting "Mark done":** the action names the patient it belongs to. No extra confirm step is added, so the action stays one tap.
+  3. **Initials search:** typed initials without full stops (such as "AM") do not match a patient by initials. Loose initials matches would raise the chance of picking the wrong person.
+- **Also in the same PR:** an exact typed name or UMRN now ranks first in the global search People group, so longer look-alike names can no longer push the exact match out of the six shown (audit 3 bug fix; search relevance, not a suggestion, so D-71 holds).
+- **Boundary:** synthetic data only. Display and search wording only; changes no signed clinical value or clinical rule, and approves no merge or release.
+
 ## D-114. Allow pull_request_target for three workflows only (9 November 2026)
 
 - **Date:** 9 November 2026 (`2026-11-09`). **Decided by:** Josh, in the Ward Flow project, choosing "Allow just these 3 workflows" on a decision card.
@@ -1401,6 +1428,20 @@ is inferred.
 - **How:** Josh adds the policy in the repository's Actions settings before the second brownout (16 November 2026, 16:00 to 18:00 UTC). The policy must also allow the other events those three files use (`merge_group`, `schedule`, `workflow_dispatch`). `ward-flow-budget-recheck.yml` is left out while its job stays switched off (`if: false`); turning it back on needs it added. No workflow file changes.
 - **Why:** the hold and bot-author checks must read their rules from `main`, so a pull request cannot edit its own check to pass. All three never check out or run pull-request code, which is the safe use GitHub describes. Switching them to `pull_request` would lose that protection.
 - **Boundary:** a repository setting Josh makes himself; agents do not change it.
+
+## D-115. One count on every screen, and a missing patient shown everywhere (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`), 1:20 AM AWST on 10 November (17:20 UTC). **Decided by:** Josh, answering "All of your recommendations" to six choices raised by audits 4 and 6 (#1567, #1569). D-114 is claimed by PR #1582.
+- **Decision:**
+  1. **"Coming in":** the ward board and the ward TV count the same thing: beds pulled or waitlisted for an admission.
+  2. **"Going out today and tomorrow":** every screen counts confirmed discharges only. An unconfirmed discharge is not counted.
+  3. **Beds ready after a referral is accepted into a named bed:** that bed is no longer ready on any screen (Home, ward board, Statistics, TV and print), because it is spoken for.
+  4. **Ward board tiles:** a patient absent without leave shows "Absent without leave" in red on their bed tile, as the ward screen already does.
+  5. **Downtime pack:** adds a line naming anyone absent without leave on each ward. The pack stays print or saved file only (D-72).
+  6. **Executive statistics:** counts an absence without leave separately from approved leave (D-38).
+- **Also in the same PR:** the Statistics ward rosters show "Absent without leave", not "On leave" (D-38, no new ruling needed).
+- **Built so far (PR #1579):** items 1, 2 and 5. Items 3, 4 and 6 wait until PRs #1581 and #1583 merge, because those PRs hold the ward board and access-scope files the changes need; each is pinned as a to-do test in the audit files.
+- **Boundary:** synthetic data only. Changes display counts and labels; changes no signed clinical value or clinical rule, and approves no merge or release.
 
 ## D-116. Page tops: the PR #1581 recommendations stand (9 November 2026)
 

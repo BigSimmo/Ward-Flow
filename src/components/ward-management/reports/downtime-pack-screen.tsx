@@ -467,6 +467,10 @@ export function DowntimePackScreen() {
     </Hero>
   );
 
+  // D-115 (audit 6): everyone absent without leave, by ward, named as the pack names everyone else.
+  const missing = pack.wards.flatMap((ward) =>
+    (ward.absentWithoutLeave ?? []).map((line) => ({ ward: ward.name, line })),
+  );
   // The four tables, shared by desktop and by the phone's printout: paper from any device carries
   // every table in full, never only the section a phone had open (remaining-pages audit 13 Oct 2026).
   const packTables = (
@@ -580,6 +584,16 @@ export function DowntimePackScreen() {
           </table>
         </div>
         <p className={styles.cardNote}>Ready includes beds being made ready. Occupied includes beds held for leave.</p>
+        {missing.length > 0 ? (
+          <ul className={styles.cardNote} data-testid="ward-downtime-awol">
+            {missing.map(({ ward, line }) => (
+              <li key={line.admissionId}>
+                <StatusGlyph tone="danger" size={9} /> Absent without leave, {ward}: {line.person}, since{" "}
+                {at(line.since)}
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </Card>
 
       <Card

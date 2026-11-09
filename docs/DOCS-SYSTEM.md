@@ -65,6 +65,7 @@ the descriptions and command map are curated and editable. Run `npm run docs:mai
 | [`design/third-edition-mockups/MANIFEST.json`](../design/third-edition-mockups/MANIFEST.json)           | `node scripts/ward-flow/mockup-manifest.mjs --write`                                                     | `node scripts/ward-flow/mockup-manifest.mjs --check`                    |
 | [`ward-flow/OWNER-RULINGS.md`](ward-flow/OWNER-RULINGS.md)                                              | `node scripts/ward-flow/owner-rulings-index.mjs --write`                                                 | `node scripts/ward-flow/owner-rulings-index.mjs --check`                |
 | [`ward-flow/RULES.md`](ward-flow/RULES.md)                                                              | `node scripts/ward-flow/rules-index.mjs --write`                                                         | `node scripts/ward-flow/rules-index.mjs --check`                        |
+| [`ward-flow/permission-matrix.md`](ward-flow/permission-matrix.md)                                      | `node scripts/run-tsx.mjs scripts/ward-flow/permission-matrix.ts`                                        | `tests/ward-permission-matrix.test.ts` (or the same command, `--check`) |
 | `<git-dir>/ward-organisation/ORGANISATION.md` ([`registry.json`](ward-flow/organisation/registry.json)) | `npm run ward:organise` (`node scripts/ward-flow/organisation.mjs --write-report --source working-tree`) | `npm run ward:organise:check`                                           |
 
 ## Documentation verification pipeline

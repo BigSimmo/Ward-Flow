@@ -421,10 +421,13 @@ describe("the ward and ED TV views", () => {
   it("shows one ward's figures from the Shift brief's and bed meeting's own selectors", () => {
     const { state, inputs } = seedInputs();
     // The ward with the most people coming in, so the panels have rows.
+    const comingScore = (candidate: (typeof state.units)[number]) => {
+      const own = wardTvSheet({ ...inputs, unit: candidate, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
+      return (own.incoming.total > 0 ? 100 : 0) + own.coming.rows.length;
+    };
     const unit = [...state.units].sort(
-      (a, b) =>
-        wardTvSheet({ ...inputs, unit: b, thresholds: DEFAULT_DUE_SOON_THRESHOLDS }).incoming.total -
-        wardTvSheet({ ...inputs, unit: a, thresholds: DEFAULT_DUE_SOON_THRESHOLDS }).incoming.total,
+      // D-115: "Coming in" counts beds, the panel lists journeys, so the ward needs both.
+      (a, b) => comingScore(b) - comingScore(a),
     )[0];
     const sheet = wardTvSheet({ ...inputs, unit, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
     renderTv({ ward: unit.id });
@@ -439,7 +442,12 @@ describe("the ward and ED TV views", () => {
     expect(figure("ward-tv-overdue")).toBe(shown(sheet.overdue.length));
     expect(sheet.incoming.total).toBeGreaterThan(0);
     // Waiting on this ward's answer comes first, then the people already accepted.
-    expect(sheet.coming.rows.length).toBe(Math.min(TV_ROW_LIMIT, sheet.askedCount + sheet.incoming.total));
+    // D-115: the panel lists journeys (asked, then accepted); the "Coming in" figure is the board's beds.
+    const accepted = state.movements.filter(
+      (movement) =>
+        movement.acceptedUnitId === unit.id && movement.closure === undefined && movement.stage !== "arrived",
+    ).length;
+    expect(sheet.coming.rows.length).toBe(Math.min(TV_ROW_LIMIT, sheet.askedCount + accepted));
     expect(within(screen.getByTestId("ward-tv-incoming-panel")).getAllByRole("listitem").length).toBe(
       sheet.coming.rows.length,
     );

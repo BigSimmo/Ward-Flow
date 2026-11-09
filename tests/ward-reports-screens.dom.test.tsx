@@ -660,6 +660,31 @@ describe("read-only report screens", () => {
     expect(cells.slice(0, 3)).toEqual(["4", "2", "1"]);
   });
 
+  it("names each person absent without leave under the bed table (D-115)", () => {
+    const remembered: DowntimePack = {
+      ...OLD_PACK,
+      wards: [
+        {
+          unitId: "U1",
+          name: "Sample ward",
+          service: "Sample service",
+          beds: 4,
+          counts: { ready: 1, pulled: 0, closed: 0, occupied: 3, beingMadeReady: 0, onLeave: 1 },
+          pendingPreparation: 0,
+          absentWithoutLeave: [{ admissionId: "A1", person: "Synthetic person", since: OLD_PACK.generatedAt }],
+        },
+      ],
+    };
+    inProvider(<DowntimePackScreen />, { pack: remembered });
+    const lines = screen.getByTestId("ward-downtime-awol");
+    expect(lines.textContent).toMatch(/^ ?Absent without leave, Sample ward: Synthetic person, since /u);
+  });
+
+  it("shows no absence line when nobody is absent", () => {
+    inProvider(<DowntimePackScreen />);
+    expect(screen.queryByTestId("ward-downtime-awol")).toBeNull();
+  });
+
   it("groups beds by service with subtotals that add up to the hero's ready count", () => {
     inProvider(<DowntimePackScreen />);
     const pack = lastDowntimePack()!;
