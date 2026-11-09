@@ -22,15 +22,7 @@ export function OfficerOrderNote({ shown }: { shown: boolean }) {
  * one press. With none delayed it says that instead of drawing an empty table. The announced count
  * carries its marker in its own run ("synthetic rows"), read by screen readers only.
  */
-export function OfficerDelayedNote({
-  delayed,
-  total,
-  onShowAll,
-}: {
-  delayed: number;
-  total: number;
-  onShowAll: () => void;
-}) {
+function OfficerDelayedNote({ delayed, total, onShowAll }: { delayed: number; total: number; onShowAll: () => void }) {
   return (
     <p className={styles.delayedNote} role="status" data-testid="ward-officer-delayed-note">
       {/* One inline run, so the hidden marker leaves no gap before the full stop. */}

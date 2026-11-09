@@ -1,5 +1,6 @@
 import type { BedMeetingActionKind, BedMeetingActionOwner, BedMeetingSubject } from "./bed-meeting/bed-meeting-actions";
 import type { CareChange } from "./ward-care-journey";
+import type { ExtendPullEvent } from "./ward-bed-hold";
 import type { OnBehalfReasonId } from "./ward-on-behalf-reason";
 import type {
   LeavingDestination,
@@ -960,7 +961,7 @@ export type WardFlowEvent =
       expectedPull?: { unitId: string; stageIndex: number };
     }
   // Feature 11 (Josh, 9 Nov 2026): extend a pulled bed's Pull time limit, declared beside its rule.
-  | import("./ward-bed-hold").ExtendPullEvent
+  | ExtendPullEvent
   | {
       /**
        * The sending team books the transport out — `TR-D1` (OWNER, 2026-08-30). Once a receiving
