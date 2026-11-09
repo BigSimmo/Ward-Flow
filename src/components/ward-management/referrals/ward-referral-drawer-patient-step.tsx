@@ -29,6 +29,7 @@ import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
 import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
+import { ReferralDuplicateCheck } from "./ward-referral-drawer-duplicate-check";
 
 /**
  * Names and suburbs have no hard cap (Josh, 5 Nov 2026), as on Add a patient: over 100 characters
@@ -357,6 +358,7 @@ export function ReferralPatientStep({
                   />
                 </Field>
               </div>
+              <ReferralDuplicateCheck draft={newPatient} onUse={(key) => handleSelectPatient(key)} />
               {newPatientError ? (
                 <p className={styles.fieldError} role="alert">
                   <StatusGlyph tone="danger" size={9} />
