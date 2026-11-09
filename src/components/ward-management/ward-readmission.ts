@@ -120,3 +120,45 @@ export function referralReadmissionFlag(referral: Referral, index: ReadmissionIn
 export function movementReadmissionFlag(movement: Movement, index: ReadmissionIndex): ReadmissionFlag | null {
   return priorDischargeWithinWindow(movement, movement.openedAt, index, movement.admissionId);
 }
+
+/**
+ * Feature 29 (Josh, 9 Nov 2026): the same flag on an inpatient stay, for the ward board, the patient
+ * page and Statistics. The same rule, measured from the same moment: the journey's referral when the
+ * stay came through one, otherwise when the bed was taken (pulled, else arrived). The stay itself is
+ * never its own earlier discharge.
+ */
+export function admissionReadmissionFlag(
+  admission: Admission,
+  movements: readonly Movement[],
+  index: ReadmissionIndex,
+): ReadmissionFlag | null {
+  const movement = admission.movementId
+    ? movements.find((candidate) => candidate.id === admission.movementId)
+    : undefined;
+  if (movement) return priorDischargeWithinWindow(movement, movement.openedAt, index, admission.id);
+  const at = admission.pulledAt ?? admission.arrivedAt;
+  if (at === null) return null;
+  return priorDischargeWithinWindow(admission, at, index, admission.id);
+}
+
+/**
+ * Feature 29: stays that reached a bed in `[from, to)`, and how many of them carry the flag, for the
+ * weekly Statistics count "Readmitted within 28 days". Counts stays, one per arrival.
+ */
+export function readmissionsArrivedIn(
+  admissions: readonly Admission[],
+  movements: readonly Movement[],
+  index: ReadmissionIndex,
+  from: Instant,
+  to: Instant,
+): { arrivals: number; readmitted: number } {
+  let arrivals = 0;
+  let readmitted = 0;
+  for (const admission of admissions) {
+    const at = admission.arrivedAt;
+    if (at === null || !Number.isFinite(at) || at < from || at >= to) continue;
+    arrivals += 1;
+    if (admissionReadmissionFlag(admission, movements, index)) readmitted += 1;
+  }
+  return { arrivals, readmitted };
+}
