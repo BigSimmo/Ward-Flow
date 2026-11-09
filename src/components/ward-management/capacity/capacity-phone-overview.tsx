@@ -45,7 +45,7 @@ export function PhoneOverview({
   const { gapRows, tomorrowByKind, forecast, week, wardsToCheck, networkRows, roadTimeFromEdId, now } = model;
   const canOpen = useCanOpenHref();
   const byId = new Map(tomorrowByKind.kinds.map((kind) => [kind.id, kind]));
-  const [tomorrow, twoDays] = forecast.horizons;
+  const [tomorrow, ...laterDays] = forecast.horizons;
   const weekOut = week.total.out.reduce((sum, value) => sum + value, 0);
   const openRow = gapRows.find((row) => row.id === openKind) ?? null;
   return (
@@ -118,20 +118,22 @@ export function PhoneOverview({
               </span>
             </li>
           ) : null}
-          {twoDays ? (
-            <li className={styles.phoneRow}>
+          {/* Feature 21 polish (9 Nov 2026): 48 and 72 hours read like Tomorrow (likely figure on the
+              right, range under the label), muted with the hatched swatch because their dates may move. */}
+          {laterDays.slice(0, 2).map((day, index) => (
+            <li key={index} className={styles.phoneRow}>
               <div>
                 <b className={`${styles.small} ${styles.fcKpiSoftLabel}`}>
                   <span className={`${styles.fcSoftSwatch} ${styles.swHatch}`} aria-hidden="true" />
-                  In 2 days
+                  In {index + 2} days
                 </b>
-                <span className={styles.mutedXs}>Likely {gapWords(twoDays.likely)} · may move</span>
+                <span className={styles.mutedXs}>
+                  Range {gapWords(day.low)} to {gapWords(day.high)} · may move
+                </span>
               </div>
-              <span className={`${styles.small} ${styles.muted}`}>
-                {gapWords(twoDays.low)} to {gapWords(twoDays.high)}
-              </span>
+              <span className={`${styles.small} ${styles.muted}`}>Likely {gapWords(day.likely)}</span>
             </li>
-          ) : null}
+          ))}
           <li className={styles.phoneRow}>
             <div>
               <b className={styles.small}>Next 7 days</b>

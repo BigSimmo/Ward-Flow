@@ -70,6 +70,21 @@ import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observati
 export const WARD_ADMISSIONS_ANCHOR: Instant = 10 * 60 + 42;
 
 /**
+ * Polish (9 Nov 2026, Weekend discharges): a date a whole number of days ahead gets a varied
+ * synthetic time, so lists such as the weekend review do not repeat one time. Within the 72 hour
+ * forecast it is a morning time no later than the anchor's (08:00 to 10:42), so a date stays inside
+ * every horizon (`<= now + N days`) it was in; beyond it, 08:00 to 15:30. Always the same day, so
+ * no day count moves.
+ */
+const MORNING_OFFSETS = [-162, -132, -102, -72, -42, -12, 0] as const;
+const DAY_OFFSETS = [-162, -102, -42, 0, 78, 198, 288] as const;
+function dischargeTimeOffset(dischargeInDays: number, tag: string, index: number): number {
+  if (!Number.isInteger(dischargeInDays) || dischargeInDays < 1) return 0;
+  const offsets = dischargeInDays > 3 ? DAY_OFFSETS : MORNING_OFFSETS;
+  return offsets[(index + tag.charCodeAt(tag.length - 1)) % offsets.length]!;
+}
+
+/**
  * How long before somebody arrives the bed was given away, in minutes.
  *
  * An INVENTED operational figure, like every bed number in this prototype. It exists so that a
@@ -350,7 +365,9 @@ function unitOccupants(
       arrivedAt,
       awayAtEmergencyDepartmentSince:
         extras?.awayAtEdHoursAgo === undefined ? null : WARD_ADMISSIONS_ANCHOR - extras.awayAtEdHoursAgo * 60,
-      expectedDischargeAt: hasDate ? WARD_ADMISSIONS_ANCHOR + dischargeInDays * MINUTES_PER_DAY : null,
+      expectedDischargeAt: hasDate
+        ? WARD_ADMISSIONS_ANCHOR + dischargeInDays * MINUTES_PER_DAY + dischargeTimeOffset(dischargeInDays, tag, index)
+        : null,
       dischargeDateMoves: hasDate ? index % 3 : 0,
       // A date that has moved was set in the last day. One that never moved was set a week before it
       // falls (or the morning after arrival, if later), so a stay past its date counts as delayed for

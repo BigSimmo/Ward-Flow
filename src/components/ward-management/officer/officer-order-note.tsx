@@ -1,4 +1,8 @@
-import { Button, SrOnly } from "@/components/wf";
+import { useState } from "react";
+import { Button, FilterChip, SrOnly } from "@/components/wf";
+import type { Instant } from "@/components/ward-management/ward-clock";
+import type { Movement } from "@/components/ward-management/ward-model";
+import { transportDelay } from "@/components/ward-management/transport/transport-delay";
 import styles from "./officer.module.css";
 
 /**
@@ -28,17 +32,42 @@ export function OfficerDelayedNote({
   onShowAll: () => void;
 }) {
   return (
-    <p className={styles.highlightNote} role="status" data-testid="ward-officer-delayed-note">
-      {delayed === 0 ? (
-        "No job is delayed."
-      ) : (
-        <>
-          Showing {delayed} delayed of {total} jobs<SrOnly> (synthetic rows)</SrOnly>.
-        </>
-      )}{" "}
+    <p className={styles.delayedNote} role="status" data-testid="ward-officer-delayed-note">
+      {/* One inline run, so the hidden marker leaves no gap before the full stop. */}
+      <span>
+        {delayed === 0 ? (
+          "No job is delayed."
+        ) : (
+          <>
+            Showing {delayed} delayed of {total} jobs<SrOnly> (synthetic rows)</SrOnly>.
+          </>
+        )}
+      </span>
       <Button variant="ghost" size="sm" onClick={onShowAll}>
         Show all
       </Button>
     </p>
   );
+}
+
+/**
+ * Feature 25: the Delayed filter, its chip, the phone's own chip row (the phone hides the toolbar,
+ * polish 9 Nov 2026) and the note that says jobs are hidden. `jobs` is the list to draw.
+ */
+export function useOfficerDelayedFilter(all: readonly Movement[], now: Instant, isPhone: boolean) {
+  const [only, setOnly] = useState(false);
+  const delayedJobs = all.filter((movement) => transportDelay(movement, now) !== null);
+  const chip = (
+    <FilterChip pressed={only} onPressedChange={setOnly} count={delayedJobs.length}>
+      Delayed
+    </FilterChip>
+  );
+  return {
+    jobs: only ? delayedJobs : all,
+    chip,
+    phoneRow: isPhone && (only || delayedJobs.length > 0) ? <div className={styles.phoneFilters}>{chip}</div> : null,
+    note: only ? (
+      <OfficerDelayedNote delayed={delayedJobs.length} total={all.length} onShowAll={() => setOnly(false)} />
+    ) : null,
+  };
 }

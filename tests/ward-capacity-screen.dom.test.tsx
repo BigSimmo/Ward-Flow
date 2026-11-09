@@ -761,8 +761,8 @@ describe("tomorrow's beds forecast", () => {
     // Capacity issue 3 (Josh, 3 Nov 2026): 48 hours leads with the likely figure, drawn softer, and
     // gives the range under it.
     expect(forecastFigure("In 2 days")).toEqual({
-      value: `Likely ${gapWords(twoDays!.likely)}`,
-      sub: `${gapWords(twoDays!.low)} to ${gapWords(twoDays!.high)}`,
+      value: gapWords(twoDays!.likely),
+      sub: `Likely; could be ${gapWords(twoDays!.low)} to ${gapWords(twoDays!.high)}`,
     });
     // PR #423 prototype disclosure: the forecast states its limits. Since the redesign they sit in
     // its "How this is worked out" fold, under the visible "Estimate only".

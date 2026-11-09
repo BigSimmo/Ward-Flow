@@ -29,12 +29,19 @@ describe("upcomingWeekendWindow", () => {
     expect(weekendReviewLeads(10 * 60, thursday)).toBe(true);
   });
 
-  it("keeps the weekend in progress on a Monday, and leads only on Thursday and Friday", () => {
+  it("moves on to the coming weekend on its Monday, and leads only on Thursday and Friday", () => {
     const monday = perthMidnight(2026, 10, 9);
     const window = upcomingWeekendWindow(9 * 60, monday);
-    expect(at(monday, window.start)).toBe("2026-11-07");
-    expect(at(monday, window.end - 1)).toBe("2026-11-09");
+    expect(at(monday, window.start)).toBe("2026-11-14");
+    expect(at(monday, window.end - 1)).toBe("2026-11-16");
     expect(weekendReviewLeads(9 * 60, monday)).toBe(false);
+  });
+
+  it("keeps the weekend in progress on its Sunday", () => {
+    const sunday = perthMidnight(2026, 10, 8);
+    const window = upcomingWeekendWindow(9 * 60, sunday);
+    expect(at(sunday, window.start)).toBe("2026-11-07");
+    expect(at(sunday, window.end - 1)).toBe("2026-11-09");
   });
 
   it("widens over Christmas and Boxing Day and their additional Monday", () => {

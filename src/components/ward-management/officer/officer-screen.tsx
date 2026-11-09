@@ -101,7 +101,7 @@ import {
   stageStartedAt,
 } from "./officer-screen-helpers";
 import { renderArrivalsCard } from "./officer-arrivals-card";
-import { OfficerDelayedNote, OfficerOrderNote } from "./officer-order-note";
+import { OfficerOrderNote, useOfficerDelayedFilter } from "./officer-order-note";
 import { type OfficerDetailTab, type OfficerJobDetailContext } from "./officer-job-detail";
 import { OfficerJobPanel, formsMissingNote } from "./officer-job-panel";
 import { OfficerDeliveredRow } from "./officer-history-row";
@@ -235,7 +235,6 @@ export function OfficerScreen() {
   const [sortKey, setSortKey] = useState<SortKey>("next");
   const [jobsTab, setJobsTab] = useState<JobsTab>("jobs");
   const [historyTab, setHistoryTab] = useState<HistoryTab>("delivered");
-  const [delayedOnly, setDelayedOnly] = useState(false); // Feature 25: the one filter that hides jobs.
 
   const late = (movement: Movement) => pastWardEta(movement, now);
   // Audit round 2, S-14: "To accept" holds only jobs the officer can accept now. A job whose bed is
@@ -293,14 +292,15 @@ export function OfficerScreen() {
     // Audit round 2, A4-13 (phone): a job to accept is pinned to the top, oldest first, so a new
     // booking is the Next action rather than the last row.
     if (isPhone && readyToAccept(movement)) return -1;
-    if (late(movement)) return 0;
+    // Polish (9 Nov 2026): a Delayed job (past ETA or not accepted in time) leads with the late ones.
+    if (late(movement) || transportDelay(movement, now) !== null) return 0;
     if (packOutstanding(movement)) return 1;
     const leg = movement.transport ? officerLeg(movement.transport) : undefined;
     return 2 + (3 - (leg ? OFFICER_LEG_STEPS.indexOf(leg) : 0));
   };
-  const delayedCount = jobs.filter((movement) => transportDelay(movement, now) !== null).length;
-  const filteredJobs = delayedOnly ? jobs.filter((movement) => transportDelay(movement, now) !== null) : jobs;
-  const sortedJobs = [...filteredJobs].sort((a, b) => {
+  // Feature 25: the one filter that hides jobs; its chip, phone row and note come with it.
+  const delayed = useOfficerDelayedFilter(jobs, now, isPhone);
+  const sortedJobs = [...delayed.jobs].sort((a, b) => {
     if (sortKey === "wait") return stageSince(a) - stageSince(b);
     if (sortKey === "eta") {
       return (
@@ -1082,9 +1082,7 @@ export function OfficerScreen() {
                     onClear={() => setSearchQuery("")}
                     trailing={searchQuery ? undefined : <Kbd>/</Kbd>}
                   />
-                  <FilterChip pressed={delayedOnly} onPressedChange={setDelayedOnly} count={delayedCount}>
-                    Delayed
-                  </FilterChip>
+                  {delayed.chip}
                   <FilterChip
                     pressed={escortHighlight}
                     onPressedChange={setEscortHighlight}
@@ -1127,20 +1125,15 @@ export function OfficerScreen() {
                   </span>
                 </div>
 
+                {delayed.phoneRow}
                 {/* Audit 24-1 decision 5: the next-action order is said on screen (not on the officer's phone). */}
                 <OfficerOrderNote shown={jobs.length > 0 && sortKey === "next" && !(officerDesk && isPhone)} />
-                {delayedOnly ? (
-                  <OfficerDelayedNote
-                    delayed={delayedCount}
-                    total={jobs.length}
-                    onShowAll={() => setDelayedOnly(false)}
-                  />
-                ) : null}
+                {delayed.note}
                 {jobs.length === 0 ? (
                   <p className={styles.placeholder} data-testid="ward-officer-empty">
                     No outstanding jobs: each has arrived or its movement has closed.
                   </p>
-                ) : filteredJobs.length === 0 ? null : (
+                ) : delayed.jobs.length === 0 ? null : (
                   <div className={styles.tableScroll}>
                     <table
                       className={`${tableClasses.table} ${styles.jobsTable}`}

@@ -54,15 +54,17 @@ function windowFrom(saturday: number, dayZero: Date): WeekendWindow {
 }
 
 /**
- * The weekend being reviewed: the one in progress while today falls inside it, otherwise the next.
- * On a Thursday before Good Friday the window starts on the Friday.
+ * The weekend being reviewed: the one in progress on its Saturday and Sunday (or earlier holiday
+ * days), otherwise the next. On its last day, usually the Monday, most of it is past, so the list
+ * moves on to the coming weekend (polish, 9 Nov 2026). On a Thursday before Good Friday the window
+ * starts on the Friday.
  */
 export function upcomingWeekendWindow(now: Instant, dayZero: Date): WeekendWindow {
   const today = dayOf(now);
   const weekday = weekdayOf(today, dayZero);
   const lastSaturday = today - ((weekday + 1) % 7);
   const current = windowFrom(lastSaturday, dayZero);
-  if (today <= current.lastDay) return current;
+  if (today < current.lastDay) return current;
   return windowFrom(lastSaturday + 7, dayZero);
 }
 

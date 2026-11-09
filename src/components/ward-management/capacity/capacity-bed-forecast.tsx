@@ -142,20 +142,21 @@ export function BedForecast({
         {twoDays ? (
           <Kpi
             label="In 2 days"
-            value={`Likely ${gapWords(twoDays.likely)}`}
+            value={gapWords(twoDays.likely)}
             tone={twoDays.likely}
             soft
-            sub={`${gapWords(twoDays.low)} to ${gapWords(twoDays.high)}`}
+            sub={`Likely; could be ${gapWords(twoDays.low)} to ${gapWords(twoDays.high)}`}
           />
         ) : null}
-        {/* Feature 21 (Josh, 9 Nov 2026): the third day, 72 hours out, read as softly as the second. */}
+        {/* Feature 21 (Josh, 9 Nov 2026): the third day, 72 hours out, read as softly as the second. Polish
+            (9 Nov): the likely figure alone sits in the value, so all five tiles share one figure size. */}
         {threeDays ? (
           <Kpi
             label="In 3 days"
-            value={`Likely ${gapWords(threeDays.likely)}`}
+            value={gapWords(threeDays.likely)}
             tone={threeDays.likely}
             soft
-            sub={`${gapWords(threeDays.low)} to ${gapWords(threeDays.high)}`}
+            sub={`Likely; could be ${gapWords(threeDays.low)} to ${gapWords(threeDays.high)}`}
           />
         ) : null}
         <Kpi

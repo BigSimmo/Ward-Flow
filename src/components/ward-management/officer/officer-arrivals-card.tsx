@@ -48,7 +48,9 @@ export function renderArrivalsCard(ctx: OfficerArrivalsContext) {
         id="ward-officer-arrivals-heading"
         title="Arrivals"
         icon={undefined}
-        meta={`${upcoming} still to come`}
+        // Polish (9 Nov 2026): an estimate already past is said, so "0 still to come" never sits
+        // over a listed arrival.
+        meta={`${upcoming} still to come${arrivals.length > upcoming ? ` · ${arrivals.length - upcoming} past ETA` : ""}`}
         aside={<span className={styles.headNote}>Ward ETA first, else booking estimate</span>}
       />
       <CardBody>

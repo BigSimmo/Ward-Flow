@@ -30,7 +30,7 @@ function Figure({ value, shown }: { value: number; shown: boolean }) {
 /**
  * Feature 42 (Josh, 9 Nov 2026): bed days lost to delayed discharge, ward by day, for the week the
  * page shows. Rows are wards with any, most first; cells carry the figure and one neutral-to-amber
- * shade; the last column and row are totals. A phone shows the wards' weekly totals as a list.
+ * shade; the last column and row are totals. A phone stacks each ward over its seven day cells.
  * Every figure comes from `delayedDischargeHeatmap`; nothing here counts.
  */
 export function WeeklyDelayHeatmap({
@@ -77,6 +77,15 @@ export function WeeklyDelayHeatmap({
         : null}
     </Foot>
   );
+  const legend = (
+    <div className={styles.legend} aria-hidden="true">
+      <span>Bed days a day</span>
+      {[1, 2, 3, 4].map((step) => (
+        <i key={step} className={styles.swatch} data-step={step} />
+      ))}
+      <span>up to {bedDays(map.max)}</span>
+    </div>
+  );
   return (
     <StatCardR
       id="rd-delay-heatmap"
@@ -88,14 +97,38 @@ export function WeeklyDelayHeatmap({
       {map.rows.length === 0 ? (
         <p className={styles.empty}>No bed days lost to delayed discharge in this week.</p>
       ) : isPhone ? (
-        <ol className={styles.list} aria-label="Wards by bed days lost this week">
-          {map.rows.slice(0, limit).map((row) => (
-            <li key={row.unitId}>
-              <span>{row.name}</span>
-              <span className={styles.figure}>{bedDays(row.total)}</span>
-            </li>
-          ))}
-        </ol>
+        // Polish (9 Nov 2026): the phone keeps the days. Each ward is its name and week total over a
+        // strip of seven narrow shaded day cells; the day letters sit once above, the totals last.
+        <div className={styles.phone}>
+          <div className={styles.phoneDays} aria-hidden="true">
+            {map.dayStarts.map((start) => (
+              <span key={start}>{dayLabel(start)}</span>
+            ))}
+          </div>
+          <ol className={styles.list} aria-label="Wards by bed days lost this week">
+            {[...map.rows.slice(0, limit), { unitId: "", name: "Total", days: map.dayTotals, total: map.total }].map(
+              (row) => (
+                <li key={row.unitId || "total"} data-total={row.unitId ? undefined : "true"}>
+                  <span className={styles.phoneName}>{row.name}</span>
+                  <span className={styles.figure}>{bedDays(row.total)}</span>
+                  <span className={styles.strip}>
+                    {row.days.map((value, index) => (
+                      <span
+                        key={map.dayStarts[index]}
+                        className={styles.cell}
+                        data-step={row.unitId ? heatStep(value, map.max) : undefined}
+                      >
+                        <SrOnly>{dayLabel(map.dayStarts[index]!)} </SrOnly>
+                        <Figure value={value} shown={shown(map.dayStarts[index]!)} />
+                      </span>
+                    ))}
+                  </span>
+                </li>
+              ),
+            )}
+          </ol>
+          {legend}
+        </div>
       ) : (
         <>
           <div className={styles.scroll} role="region" aria-label="Bed days lost by ward and day" tabIndex={0}>
@@ -146,13 +179,7 @@ export function WeeklyDelayHeatmap({
               </tfoot>
             </table>
           </div>
-          <div className={styles.legend} aria-hidden="true">
-            <span>Bed days a day</span>
-            {[1, 2, 3, 4].map((step) => (
-              <i key={step} className={styles.swatch} data-step={step} />
-            ))}
-            <span>up to {bedDays(map.max)}</span>
-          </div>
+          {legend}
         </>
       )}
       {hidden > 0 ? (

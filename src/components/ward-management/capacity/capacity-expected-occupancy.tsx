@@ -15,7 +15,7 @@ import styles from "./capacity-expected-occupancy.module.css";
  * Feature 21 (Josh, 9 Nov 2026): Expected occupancy. A ward per row, the next 24, 48 and 72 hours
  * as columns, and the network total last. Each cell is the likely beds taken out of the ward's beds,
  * with the percentage; the range (only confirmed discharges leave, to everything on record leaves)
- * is read out and shown on hover. A plain table, so a phone scrolls it sideways inside the card.
+ * is read out and shown on hover. On a phone each ward stacks: name, then the four times under it.
  * Loaded after the page (`capacity-expected-occupancy-lazy.tsx`): the Capacity route has little
  * phone script headroom, and the table sits at the foot of the forecast card.
  *

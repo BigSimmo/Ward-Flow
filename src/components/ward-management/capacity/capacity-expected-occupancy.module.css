@@ -75,11 +75,49 @@
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
-/* Phone: the percentage sits under the count so four columns fit 400px without scrolling. */
+/* Phone (polish, 9 Nov 2026): each ward is a stacked block, its name on its own line and the four
+ * times as equal columns under it, so the 72 h column never runs past the sheet's edge. */
 @media (max-width: 480px) {
+  .table,
+  .table thead,
+  .table tbody,
+  .table tfoot {
+    display: block;
+  }
+  .table tr {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border-bottom: 1px solid var(--wf-line);
+  }
   .table th,
   .table td {
-    padding-inline: 4px;
+    padding: 2px 4px;
+    border: 0;
+  }
+  .table tbody tr,
+  .table tfoot tr {
+    padding-block: 6px;
+  }
+  .table thead th:first-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .table tr > th[scope="row"] {
+    grid-column: 1 / -1;
+    white-space: normal;
+  }
+  .total {
+    border-top: 1px solid var(--wf-line-2);
+  }
+  .total th,
+  .total td {
+    border-top: 0;
+  }
+  .table tfoot tr {
+    border-bottom: 0;
   }
   .cell {
     flex-direction: column;

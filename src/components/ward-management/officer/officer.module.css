@@ -629,6 +629,24 @@
   color: var(--wf-ink-2);
 }
 
+/* Polish (9 Nov 2026): the Delayed filter's note sits on the list's inset, like the order note. */
+.delayedNote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  margin: 0;
+  padding: 0 var(--wf-s-4) var(--wf-s-2);
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.phoneFilters {
+  display: flex;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-1) 0;
+}
+
 .panelNote {
   margin: 0;
   padding: var(--wf-s-3) var(--wf-s-4);
