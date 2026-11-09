@@ -7,7 +7,7 @@
   --wf-focus-gap: var(--wf-hero-1);
   background: var(--wf-hero-1);
   color: var(--wf-hero-ink);
-  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  padding: var(--wf-s-1) var(--wf-s-4) var(--wf-s-3);
   min-width: 0;
 }
 
@@ -34,83 +34,72 @@
   display: flex;
   align-items: center;
   gap: var(--wf-s-2);
-  min-height: 44px;
-  padding: 6px 12px 6px 8px;
+  min-height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-3) 0 10px;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
-  border-radius: var(--wf-r-lg);
+  border-radius: var(--wf-r-pill);
   background: color-mix(in srgb, var(--wf-hero-ink) 7%, transparent);
   color: inherit;
-  font: inherit;
-  text-align: left;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  white-space: nowrap;
   cursor: pointer;
+  transition:
+    background-color var(--wf-t-micro) var(--wf-ease-out),
+    border-color var(--wf-t-micro) var(--wf-ease-out);
 }
 
-.control:hover {
-  background: color-mix(in srgb, var(--wf-hero-ink) 13%, transparent);
-  border-color: color-mix(in srgb, var(--wf-hero-ink) 30%, transparent);
+@media (hover: hover) {
+  .control:hover {
+    background: color-mix(in srgb, var(--wf-hero-ink) 13%, transparent);
+    border-color: color-mix(in srgb, var(--wf-hero-ink) 30%, transparent);
+  }
 }
 
-.icon {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--wf-r-md);
-  background: color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
+.control:active {
+  background: color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
 }
 
-.icon svg {
+.control:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.control svg {
+  flex: none;
   width: 16px;
   height: 16px;
-}
-
-.words {
-  display: grid;
-  line-height: 1.2;
-}
-
-.words strong {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font: 600 var(--wf-fs-13) / 1.2 var(--wf-font);
-  white-space: nowrap;
-}
-
-.words em {
-  font: 400 var(--wf-fs-12, 12px) / 1.2 var(--wf-font);
-  font-style: normal;
   color: var(--wf-hero-ink-2);
-  white-space: nowrap;
 }
 
 .count {
-  padding: 0 6px;
-  border-radius: 6px;
+  padding: 0 var(--wf-s-1);
+  border-radius: var(--wf-r-tag);
   background: var(--wf-hero-warning);
   color: var(--wf-hero-1);
-  font: 600 12px / 18px var(--font-mono);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
 }
 
-/* Phone: chips without the second line, so five fit across before the row scrolls. */
+@media (prefers-reduced-motion: reduce) {
+  .control {
+    transition: none;
+  }
+}
+
+/* Phone: 40px chips with a 48px tap area, in one row that scrolls sideways. */
 @media (max-width: 46.4375rem) {
   .bar {
     padding: 0 var(--wf-s-3) var(--wf-s-2);
   }
 
   .control {
+    position: relative;
     min-height: 40px;
-    padding: 4px 12px 4px 6px;
-    border-radius: var(--wf-r-pill);
   }
 
-  .icon {
-    width: 24px;
-    height: 24px;
-    border-radius: var(--wf-r-pill);
-  }
-
-  .words em {
-    display: none;
+  .control::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
   }
 }

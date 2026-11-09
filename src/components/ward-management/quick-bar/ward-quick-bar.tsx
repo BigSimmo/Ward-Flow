@@ -91,21 +91,16 @@ export function WardQuickBar() {
                 className={styles.control}
                 onClick={(event) => press(control, event.currentTarget)}
                 aria-haspopup="dialog"
+                title={control.detail}
               >
-                <span className={styles.icon} aria-hidden="true">
-                  <Icon aria-hidden="true" strokeWidth={1.75} />
-                </span>
-                <span className={styles.words}>
-                  <strong>
-                    {control.label}
-                    {count ? (
-                      <b className={styles.count} aria-label={`, ${count} to do`}>
-                        {count}
-                      </b>
-                    ) : null}
-                  </strong>
-                  <em>{control.detail}</em>
-                </span>
+                <Icon aria-hidden="true" strokeWidth={1.75} />
+                {control.label}
+                {count ? (
+                  <b className={styles.count} aria-label={`, ${count} to do`}>
+                    {count}
+                  </b>
+                ) : null}
+                <span className="sr-only">, {control.detail}</span>
               </button>
             </li>
           );
