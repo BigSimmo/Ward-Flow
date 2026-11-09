@@ -23,12 +23,13 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  */
 
 const REPORTS_DIR = join(process.cwd(), "src/components/ward-management/reports");
-const STORAGE_APIS = /\b(localStorage|sessionStorage|indexedDB|caches\s*\.|document\.cookie|navigator\.storage)\b/u;
+const STORAGE_APIS =
+  /\b(localStorage|sessionStorage|indexedDB|caches\s*\??\.|document\s*\??\.\s*cookie|navigator\s*\??\.\s*storage)\b/u;
 const SYNTHETIC_NAME = "Synthetic person";
 
 function downtimePackSources(): string[] {
   return readdirSync(REPORTS_DIR)
-    .filter((name) => /^(downtime-pack[\w-]*|use-take-downtime-pack)\.tsx?$/u.test(name))
+    .filter((name) => /^(downtime-pack[\w.-]*|use-take-downtime-pack)\.tsx?$/u.test(name))
     .map((name) => join(REPORTS_DIR, name));
 }
 
@@ -74,6 +75,9 @@ describe("downtime pack keeps no board data on the device (D-72 item 2)", () => 
   it("flags a storage call when one is written (non-vacuity)", () => {
     expect(storageCalls('localStorage.setItem("ward-pack", json);')).toHaveLength(1);
     expect(storageCalls("await caches.open('pack');")).toHaveLength(1);
+    expect(storageCalls("await caches?.open('pack');")).toHaveLength(1);
+    expect(storageCalls("const jar = document?.cookie;")).toHaveLength(1);
+    expect(storageCalls("await navigator?.storage.persist();")).toHaveLength(1);
     expect(storageCalls("// localStorage is never used here")).toHaveLength(0);
   });
 
