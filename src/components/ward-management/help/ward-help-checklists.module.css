@@ -179,8 +179,11 @@
   line-height: var(--wf-lh-12);
 }
 
-/* Once practice runs, its steps and actions line up under the title, not the icon. */
-.practice > :not(.practiceTop) {
+/* Once practice runs, its steps, status line and actions line up under the title, not the icon.
+ * Notices and the reset confirm keep the card's full width (PR #1558 review). */
+.practice > .practiceSteps,
+.practice > p[role="status"],
+.practice > .practiceActions {
   margin-left: 44px;
 }
 
