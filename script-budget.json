@@ -5,10 +5,10 @@
     "/ward-flow/referrals": 568.0,
     "/ward-flow/ed": 519.9,
     "/ward-flow/ward/rph-adult-secure": 599.0,
-    "/ward-flow/movements/WF-001": 593.5,
+    "/ward-flow/movements/WF-001": 593.3,
     "/ward-flow/capacity": 645.0,
     "/ward-flow/ed/arm-ed": 657.0,
-    "/ward-flow/bed-meeting": 572.5,
-    "/ward-flow/statistics": 612.5
+    "/ward-flow/bed-meeting": 572.2,
+    "/ward-flow/statistics": 612.2
   }
 }
