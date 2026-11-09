@@ -18,6 +18,7 @@ import styles from "./ward-answer-accept-dialog.module.css";
 export function WardAcceptDialog({
   movement,
   patientName,
+  patientUmrn,
   unitName,
   now,
   extended,
@@ -29,6 +30,8 @@ export function WardAcceptDialog({
 }: {
   movement: Movement;
   patientName: string;
+  /** Audit 1 (#1564, Josh approved 9 Nov 2026): a second identifier beside the name. */
+  patientUmrn?: string;
   unitName: string;
   now: Instant;
   extended: boolean;
@@ -68,6 +71,7 @@ export function WardAcceptDialog({
             <dd className={styles.factValue} id="ward-answer-allocating-movement">
               <strong className={styles.name}>{patientName}</strong>
               <span className={styles.factSub}>
+                {patientUmrn ? `${patientUmrn} · ` : null}
                 {movement.cohort} · Tier {movement.urgency}
                 {movement.referredAt === undefined
                   ? null

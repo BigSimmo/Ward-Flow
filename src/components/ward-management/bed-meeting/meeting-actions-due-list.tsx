@@ -24,12 +24,15 @@ import type { MarkBedMeetingActionDone } from "./use-bed-meeting-done";
  */
 export function DueActions({
   subject,
+  patient,
   desk,
   actions,
   onMarkDone,
   onBeforeDone,
 }: {
   subject: BedMeetingSubject;
+  /** The patient's name and UMRN, so the card says whose actions these are (Audit 1, #1564). */
+  patient?: string;
   desk: BedMeetingActionOwner;
   actions: readonly BedMeetingAction[];
   onMarkDone: MarkBedMeetingActionDone;
@@ -55,7 +58,11 @@ export function DueActions({
   });
   return (
     <Card data-testid="meeting-actions-due">
-      <CardHead title="Agreed at the bed meeting" meta={`${actions.length}`} level={2} />
+      <CardHead
+        title="Agreed at the bed meeting"
+        meta={patient ? `${patient} · ${actions.length}` : `${actions.length}`}
+        level={2}
+      />
       <CardBody>
         <ul className={styles.list} ref={list}>
           {actions.map((action, index) => (

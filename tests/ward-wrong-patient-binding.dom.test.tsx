@@ -32,6 +32,7 @@ import {
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR, unitById } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
+import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import { getBedStep } from "./helpers/ward-bed-steps";
 
@@ -269,10 +270,24 @@ describe("a referral accept stays with the person whose dialog opened (Audit 1, 
     expect(accepts[0]).toMatchObject({ movementId: TARGET, unitId: WARD.id });
   });
 
-  // The accept dialog shows the name, cohort, tier and referral time, but no record number (UMRN)
-  // or bed: accepting in principle does not allocate one. Adding a UMRN line is a visible change to
-  // an approved dialog (Josh, 31 Oct 2026 redesign), so it is left for an owner decision.
-  it.todo("the accept-in-principle dialog shows a second identifier (UMRN) beside the name");
+  // Josh approved 9 Nov 2026: the dialog shows the UMRN beside the name (no bed is allocated here).
+  it("the accept-in-principle dialog shows the patient's UMRN beside the name", async () => {
+    const state = seedWardFlowState();
+    const { umrn } = resolveSubjectPatient(
+      state.movements.find((movement) => movement.id === TARGET)!,
+      state,
+    );
+    expect(umrn).toMatch(/\S/u);
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardScreen unitId={WARD.id} />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(await screen.findByTestId(`ward-accept-${TARGET}`));
+    const patient = screen.getByTestId("ward-accept-dialog").querySelector("#ward-answer-allocating-movement")!;
+    expect(patient.querySelector("strong")).toHaveTextContent(/^[^,]+, [^,]+$/u);
+    expect(patient).toHaveTextContent(umrn);
+  });
 });
 
 describe("a bed meeting task marked done stays with its own patient (Audit 1, #1564)", () => {
@@ -331,6 +346,18 @@ describe("a bed meeting task marked done stays with its own patient (Audit 1, #1
     fireEvent.click(screen.getByTestId("record-both"));
     expect(events.filter((event) => event.type === "RECORD_BED_MEETING_ACTION")).toHaveLength(2);
     const markDone = await screen.findByRole("button", { name: "Mark done: Book transport" });
+    // Josh approved 9 Nov 2026: the card names whose actions these are, name and UMRN (no confirm).
+    const line = (subject: BedMeetingSubject) =>
+      patientIdentityLine(
+        resolveSubjectPatient(
+          seed.movements.find((movement) => movement.id === subject.id)!,
+          seed,
+        ),
+      );
+    expect(line(a)).not.toBe(line(b));
+    const card = screen.getByTestId("meeting-actions-due");
+    expect(card).toHaveTextContent(line(a));
+    expect(card).not.toHaveTextContent(line(b));
 
     act(() => reorder.lists());
     fireEvent.click(markDone);
@@ -339,9 +366,4 @@ describe("a bed meeting task marked done stays with its own patient (Audit 1, #1
     expect(done).toHaveLength(1);
     expect(done[0]).toMatchObject({ subject: a, action: "book_transport" });
   });
-
-  // The Mark done card lists the action only ("Book transport"); the patient is named by the record
-  // it sits in, and there is no confirm step. Adding a name and UMRN to the card, or a confirm, is a
-  // visible change to an approved screen, so it is left for an owner decision.
-  it.todo("the bed meeting Mark done shows the patient's name and a second identifier on the card or a confirm");
 });
