@@ -208,3 +208,15 @@ Source digests for `ward-change-reasons.ts`, `ward-flow-referral-answer-events.t
 ## Source review — 8 Nov 2026 (repo review fixes, PR #1523)
 
 Source digests for `ward-flow-reducer.ts`, `ward-flow-placement-events.ts`, `ward-flow-transport-events.ts`, `ward-derivations.ts` and `movement-workflow-actions.tsx` were re-reviewed after these edits: a departure from a locked bed now caps free locked beds at the ward's locked beds; `PULL_PATIENT` resolves the patient once (referral, then movement, then event) for both the already-in-a-bed check and the new stay; arrival lateness ignores closed movements. Event names, roles, guards described in the notes and graph edges are unchanged.
+
+## Source review — 9 Nov 2026 (D-80 item 17, PR #1543)
+
+Source digests were re-reviewed after the coordinator's "on behalf of the ward" reason, file by file:
+
+- `ward-flow-protected-record-events.ts`: `OPEN_DISCHARGE_RECORD` now refuses a coordinator's opening without a reason from the closed `ON_BEHALF_REASONS` list, and refuses a reason sent by any other desk (`invalid-payload`). The `OPEN_DISCHARGE_RECORD` notes, its refusal row and its screen note were corrected. One import line moved later citations down by one to five lines; `REVIEW_AUDIT_EVENT`, `UNDO_AUDIT_REVIEW`, `RECORD_PATIENT_DISCHARGE`, `RECORD_ADMISSION_CARE` and `RECORD_ADMISSION_FOLLOW_UP` behaviour is unchanged.
+- `ward-flow-events.ts`: `OPEN_DISCHARGE_RECORD` gains an optional `onBehalfReason` field, plus one type import. Every other event's payload is unchanged; its 36 citations moved by one to three lines.
+- `ward-flow-storage-validation.ts`: a stored `OPEN_DISCHARGE_RECORD` audit row is refused when its `onBehalfReason` is off the list. The cited locked-bed invariant moved from line 455 to 456, unchanged.
+- `ward-flow-provider.tsx`: `openDischargeRecord` takes the optional reason and passes it on the dispatch; an import replaced a blank line. The cited dispatch lines for `RECORD_LEAVING`, `ADVANCE_CLOCK`, `RESET_SCENARIO`, `RECORD_PATIENT_DISCHARGE` and `OPEN_DISCHARGE_RECORD` did not move.
+- `discharge-board.tsx` and `capacity-ward-drawer.tsx`: a coordinator's record opening now waits for the reason picker (loaded lazily from `on-behalf-reason-form-lazy.tsx`) before dispatching. `CLEAR_BED_RELEASE_BLOCK` (line 489 to 490) and `REQUEST_CAPACITY_REFRESH` (line 248 to 258) are unchanged in role, payload and guard.
+
+`handover/handover-page.tsx` (two blank lines removed) is not a cited source.

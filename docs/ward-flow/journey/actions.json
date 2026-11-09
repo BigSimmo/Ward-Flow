@@ -3381,7 +3381,7 @@
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
           "line": 1235,
-          "sha256": "8354486556b7bf27cbc5c040ee6e4f2570525ad50bbb95c5d3fef135ba900f54"
+          "sha256": "3f97c08f79b64a4f43a8b235aa48c3aa70df07a2414d4db238da2d1b1fa2cc3b"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
@@ -4042,8 +4042,8 @@
         },
         {
           "path": "src/components/ward-management/discharges/discharge-board.tsx",
-          "line": 489,
-          "sha256": "e0ffaafb2ba89f4f0ddd7ee3fd751f98915f9cbb0b2c24da25256fac05cf7f28"
+          "line": 490,
+          "sha256": "b9cea0059105092e540f874eb4db85c64083ff4c90376c78beb1a20f59e3730b"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
@@ -4295,8 +4295,8 @@
         },
         {
           "path": "src/components/ward-management/capacity/capacity-ward-drawer.tsx",
-          "line": 248,
-          "sha256": "9823c0983610317d541845b3a9535a004c11ace23b8b9e5eb89fa2f9b13cc40c"
+          "line": 258,
+          "sha256": "82b7253c29830c0f1f2431f244a1ebbe2a5dce5c70ca9070018617c5cdf770bc"
         },
         {
           "path": "src/components/ward-management/capacity/capacity-screen.tsx",
@@ -4981,12 +4981,12 @@
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
           "line": 438,
-          "sha256": "8354486556b7bf27cbc5c040ee6e4f2570525ad50bbb95c5d3fef135ba900f54"
+          "sha256": "3f97c08f79b64a4f43a8b235aa48c3aa70df07a2414d4db238da2d1b1fa2cc3b"
         },
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
           "line": 871,
-          "sha256": "8354486556b7bf27cbc5c040ee6e4f2570525ad50bbb95c5d3fef135ba900f54"
+          "sha256": "3f97c08f79b64a4f43a8b235aa48c3aa70df07a2414d4db238da2d1b1fa2cc3b"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
@@ -5028,7 +5028,7 @@
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
           "line": 1151,
-          "sha256": "8354486556b7bf27cbc5c040ee6e4f2570525ad50bbb95c5d3fef135ba900f54"
+          "sha256": "3f97c08f79b64a4f43a8b235aa48c3aa70df07a2414d4db238da2d1b1fa2cc3b"
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
@@ -5166,18 +5166,18 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
-          "line": 457,
-          "sha256": "8b3f5fac10eff9018aefb9cf83a8cfdd06fb5f97ca040a5176507e70b96c700b"
+          "line": 462,
+          "sha256": "a6c8fc4bfd515eb3a93440995df00ed3affb7f1240c19f0a064deb9cb152f02e"
         },
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
           "line": 1254,
-          "sha256": "8354486556b7bf27cbc5c040ee6e4f2570525ad50bbb95c5d3fef135ba900f54"
+          "sha256": "3f97c08f79b64a4f43a8b235aa48c3aa70df07a2414d4db238da2d1b1fa2cc3b"
         },
         {
           "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
-          "line": 467,
-          "sha256": "8b3f5fac10eff9018aefb9cf83a8cfdd06fb5f97ca040a5176507e70b96c700b"
+          "line": 472,
+          "sha256": "a6c8fc4bfd515eb3a93440995df00ed3affb7f1240c19f0a064deb9cb152f02e"
         }
       ]
     }
@@ -5190,16 +5190,25 @@
     "nodes": ["rkDischarge"],
     "roles": ["coordinator", "ward", "community", "bed_manager"],
     "does": "Checks actor access to a discharge record and appends its protected open/read audit receipt. It runs before the generic switch.",
-    "needs": "A valid actor, current generation, valid request id/optional namespace and an accessible admission. A repeated matching receipt is reused only while that read remains allowed.",
-    "changes": "Records an accepted read audit event; changes no admission or bed figure.",
+    "needs": "A valid actor, current generation, valid request id/optional namespace and an accessible admission. A coordinator must also give an on-behalf-of-the-ward reason from the closed `ON_BEHALF_REASONS` list (D-80 item 17); any other desk sends none. A repeated matching receipt is reused only while that read remains allowed.",
+    "changes": "Records an accepted read audit event, carrying the coordinator's listed reason as `onBehalfReason`; changes no admission or bed figure.",
     "reasons": [],
-    "refuses": [],
+    "refuses": [
+      {
+        "when": "Guard: event.role === \"coordinator\" ? !isOnBehalfReason(event.onBehalfReason) : event.onBehalfReason !== undefined",
+        "message": "Choose why you are opening this ward's record on the ward's behalf. Nothing was opened.",
+        "source": {
+          "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
+          "line": 186
+        }
+      }
+    ],
     "screen": {
       "screen": "ward-flow-provider.tsx (discharge context)",
-      "control": "Open the discharge record through its audited context"
+      "control": "Open the discharge record through its audited context; the Discharges board and the Capacity ward drawer ask a coordinator for the reason first"
     },
     "review": {
-      "reviewedOn": "2026-11-05",
+      "reviewedOn": "2026-11-09",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -5208,13 +5217,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
-          "line": 177,
-          "sha256": "8b3f5fac10eff9018aefb9cf83a8cfdd06fb5f97ca040a5176507e70b96c700b"
+          "line": 178,
+          "sha256": "a6c8fc4bfd515eb3a93440995df00ed3affb7f1240c19f0a064deb9cb152f02e"
         },
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
           "line": 1283,
-          "sha256": "8354486556b7bf27cbc5c040ee6e4f2570525ad50bbb95c5d3fef135ba900f54"
+          "sha256": "3f97c08f79b64a4f43a8b235aa48c3aa70df07a2414d4db238da2d1b1fa2cc3b"
         }
       ]
     }
@@ -5245,8 +5254,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
-          "line": 130,
-          "sha256": "8b3f5fac10eff9018aefb9cf83a8cfdd06fb5f97ca040a5176507e70b96c700b"
+          "line": 131,
+          "sha256": "a6c8fc4bfd515eb3a93440995df00ed3affb7f1240c19f0a064deb9cb152f02e"
         },
         {
           "path": "src/components/ward-management/governance-registers.tsx",
@@ -5876,8 +5885,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
-          "line": 223,
-          "sha256": "8b3f5fac10eff9018aefb9cf83a8cfdd06fb5f97ca040a5176507e70b96c700b"
+          "line": 228,
+          "sha256": "a6c8fc4bfd515eb3a93440995df00ed3affb7f1240c19f0a064deb9cb152f02e"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
@@ -5896,13 +5905,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
-          "line": 269,
-          "sha256": "8b3f5fac10eff9018aefb9cf83a8cfdd06fb5f97ca040a5176507e70b96c700b"
+          "line": 274,
+          "sha256": "a6c8fc4bfd515eb3a93440995df00ed3affb7f1240c19f0a064deb9cb152f02e"
         },
         {
           "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
-          "line": 277,
-          "sha256": "8b3f5fac10eff9018aefb9cf83a8cfdd06fb5f97ca040a5176507e70b96c700b"
+          "line": 282,
+          "sha256": "a6c8fc4bfd515eb3a93440995df00ed3affb7f1240c19f0a064deb9cb152f02e"
         }
       ]
     }
@@ -5933,8 +5942,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
-          "line": 434,
-          "sha256": "8b3f5fac10eff9018aefb9cf83a8cfdd06fb5f97ca040a5176507e70b96c700b"
+          "line": 439,
+          "sha256": "a6c8fc4bfd515eb3a93440995df00ed3affb7f1240c19f0a064deb9cb152f02e"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",

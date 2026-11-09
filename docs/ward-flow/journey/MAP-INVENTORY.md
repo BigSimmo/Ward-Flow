@@ -3,16 +3,16 @@
 The route is selective. Its action notes and the additional command models have source review evidence; source digests detect later edits. This does not establish runtime or clinical acceptance.
 
 ## 179 CURRENT ENGINE EVENTS
-Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca6992c9aa
+Source-contract SHA256: d6fffe741d25efd2ee9bb4198cae36246858c78a29d776231eea3a7b37b444cc
 - RECORD_ADMISSION_CARE — diagram-reviewed; event roles: ward, coordinator, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:20
-  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:208
+  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:213
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1572
 - RECORD_ADMISSION_FOLLOW_UP — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:21
-  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:208
+  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:213
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1571
 - RECORD_PATIENT_DISCHARGE — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
@@ -26,12 +26,12 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
 - OPEN_DISCHARGE_RECORD — diagram-reviewed; event roles: coordinator, ward, community, bed_manager
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:25
-  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:177
+  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:178
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1567
 - REVIEW_AUDIT_EVENT — diagram-reviewed; event roles: coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:26
-  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:130
+  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:131
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1568
 - RAISE_REFERRAL — diagram-reviewed; event roles: ed, community, ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
@@ -301,7 +301,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-away-from-ward-exclusive.test.ts
   Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:372; SHA256 76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:211; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:1369; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:1372; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - RECORD_ABSENCE_STEP — modelled; event roles: ward, coordinator
   Source-reviewed command model: Same absence with one timed step appended.
@@ -320,7 +320,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-absence-and-cto.test.ts
   Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:424; SHA256 76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:212; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:1378; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:1381; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - RECORD_COMMUNITY_TREATMENT_ORDER — modelled; event roles: community, coordinator
   Source-reviewed command model: Form 5A recorded with time and desk label; any ended order retained in earlier history.
@@ -341,7 +341,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-absence-and-cto.test.ts
   Reviewed source: src/components/ward-management/ward-flow-record-legal-events.ts:155; SHA256 130c5ccae5b6ddf3f3cd4a212863a74f8468bb136ee4400992e852141b5941b4
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:213; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:1387; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:1390; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - END_COMMUNITY_TREATMENT_ORDER — modelled; event roles: community, coordinator
   Source-reviewed command model: Same order retained with endedAt=now.
@@ -359,7 +359,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-absence-and-cto.test.ts
   Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:666; SHA256 a63ee87e0e4c23df938c2732ded19ca0e95f859bf586980d00fa0fdb648694f3
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:214; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:1394; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:1397; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - RECORD_LEAVING — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
@@ -397,7 +397,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-stay-discharge-blocker.test.ts
   Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:264; SHA256 76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:234; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:1827; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:1830; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - CLEAR_STAY_DISCHARGE_BLOCKER — modelled; event roles: ward, bed_manager, coordinator
   Source-reviewed command model: Admission blockReason=null; clearance retained on matching pending release or admission.
@@ -417,7 +417,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-stay-discharge-blocker.test.ts
   Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:246; SHA256 a63ee87e0e4c23df938c2732ded19ca0e95f859bf586980d00fa0fdb648694f3
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:235; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:1839; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:1842; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - RECORD_OBSERVATION_LEVEL — modelled; event roles: ed, ward, coordinator
   Source-reviewed command model: Named target and any agreeing linked open counterpart carry the new observation and append from/to history.
@@ -475,7 +475,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-cld-turnaround-priority.test.ts
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2008; SHA256 425afe32ddba76ff91a15caa4a0e790002640df2114ca13f3398c313233ff80d
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:306; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:685; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:688; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-turnaround-priority.ts:65; SHA256 f4a062f776b7e676eb045bd32daf9aac4a636392dab5599a571687cbf47db4b8
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - FLAG_REFERRAL_TURNAROUND_PRIORITY — modelled; event roles: coordinator
@@ -496,7 +496,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-cld-turnaround-priority.test.ts
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2009; SHA256 425afe32ddba76ff91a15caa4a0e790002640df2114ca13f3398c313233ff80d
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:307; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:694; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:697; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-turnaround-priority.ts:65; SHA256 f4a062f776b7e676eb045bd32daf9aac4a636392dab5599a571687cbf47db4b8
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - MARK_REFERRAL_OPENED — modelled; event roles: ward, coordinator
@@ -515,7 +515,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-referral-followup.test.ts
   Reviewed source: src/components/ward-management/ward-flow-referral-followup-events.ts:102; SHA256 a7980fe9e58a4d1fcc774d48dfeb4e2673b66d0624fef24d00fae7b1fcf32039
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:310; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:709; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:712; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - REQUEST_REFERRAL_INFORMATION — modelled; event roles: ward, coordinator
   Source-reviewed command model: New listed needs appended; existing open needs retained without duplication.
@@ -535,7 +535,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-referral-followup.test.ts
   Reviewed source: src/components/ward-management/ward-flow-referral-followup-events.ts:118; SHA256 a7980fe9e58a4d1fcc774d48dfeb4e2673b66d0624fef24d00fae7b1fcf32039
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:311; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:722; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:725; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - MARK_REFERRAL_INFORMATION_MET — modelled; event roles: ed, community, ward, coordinator
   Source-reviewed command model: Selected open request(s) stamped metAt and metBy; checklist history retained.
@@ -556,7 +556,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-sender-information-supplied.test.ts
   Reviewed source: src/components/ward-management/ward-flow-referral-followup-events.ts:148; SHA256 a7980fe9e58a4d1fcc774d48dfeb4e2673b66d0624fef24d00fae7b1fcf32039
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:313; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:733; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:736; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - ASSIGN_REFERRAL — modelled; event roles: coordinator, ed, community
   Source-reviewed command model: ownerHistory appended; its last owner is the current chasing desk.
@@ -575,7 +575,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-referral-owner-and-calls-scope.test.ts
   Reviewed source: src/components/ward-management/ward-flow-referral-owner-events.ts:44; SHA256 13b724abff93f6ec86c6b232d9ea7f00e66609f8297122508a7976198f8ce19e
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:316; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:757; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:760; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
   Reviewed source: src/components/ward-management/referrals/referral-owner-and-calls-model.ts:28; SHA256 783d84f0aa1cc62b1f388bfabaa637c851ef47570a4ebfefc94406d550e4bde3
 - LOG_REFERRAL_CONTACT — modelled; event roles: coordinator, ed, community
@@ -596,7 +596,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-referral-owner-and-calls.test.ts
   Reviewed source: src/components/ward-management/ward-flow-referral-owner-events.ts:67; SHA256 13b724abff93f6ec86c6b232d9ea7f00e66609f8297122508a7976198f8ce19e
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:317; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:772; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:775; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
   Reviewed source: src/components/ward-management/referrals/referral-owner-and-calls-model.ts:28; SHA256 783d84f0aa1cc62b1f388bfabaa637c851ef47570a4ebfefc94406d550e4bde3
 - RECORD_REFERRAL_COMMITMENT — modelled; event roles: coordinator, ward
@@ -619,7 +619,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-referral-commitments.test.ts
   Reviewed source: src/components/ward-management/ward-flow-referral-commitment-events.ts:24; SHA256 a304422664462b4413fa82c9ae19d0425aef260d8ccf65239ca708d722b08994
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:319; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:789; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:792; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
   Reviewed source: src/components/ward-management/referrals/referral-owner-and-calls-model.ts:28; SHA256 783d84f0aa1cc62b1f388bfabaa637c851ef47570a4ebfefc94406d550e4bde3
   Reviewed source: src/components/ward-management/referrals/referral-commitments-model.ts:73; SHA256 b8ad888efb64576aa225df86d86b58d9e31306fda7791fe9815a00a4c6c82325
@@ -663,7 +663,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-closure.test.ts
   Reviewed source: src/components/ward-management/ward-flow-ward-closure-events.ts:44; SHA256 2fd18c518e21b86c1cda4b425c6cf5163251b409d3cddffd1f8a3b225f5142ef
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:323; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:808; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:811; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - REOPEN_WARD_TO_ADMISSIONS — modelled; event roles: ward, bed_manager, coordinator
   Source-reviewed command model: isClosed=false; admissionsClosure removed.
@@ -682,7 +682,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-loop-checks.test.ts
   Reviewed source: src/components/ward-management/ward-flow-ward-closure-events.ts:72; SHA256 2fd18c518e21b86c1cda4b425c6cf5163251b409d3cddffd1f8a3b225f5142ef
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:324; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:819; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:822; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - SET_BED_CLOSED — modelled; event roles: ward, bed_manager, coordinator
   Source-reviewed command model: closed=true appends a mark; closed=false stamps active mark reopenedAt.
@@ -703,7 +703,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-bed-closed-mark-kinds.test.ts
   Reviewed source: src/components/ward-management/ward-flow-bed-closure-events.ts:56; SHA256 e19afdf5df97f09582af829f62e2ff463cbf9ef8ba8e2b873e79ea7e7931497f
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:326; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:827; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:830; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - RECORD_BED_MEETING_ACTION — modelled; event roles: coordinator
   Source-reviewed command model: meetingActions appended with chosen task, owner and due time.
@@ -725,7 +725,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-consolidated-meeting-counts-20261104.test.ts
   Reviewed source: src/components/ward-management/ward-flow-bed-meeting-events.ts:61; SHA256 b28604a0b11e841e1daf151279719831992a89765e8553a84974993d57ed5e2c
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:331; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:843; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:846; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - COMPLETE_BED_MEETING_ACTION — modelled; event roles: coordinator, ward, ed, community
   Source-reviewed command model: Same action stamped doneAt and doneBy.
@@ -745,7 +745,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-consolidated-meeting-counts-20261104.test.ts
   Reviewed source: src/components/ward-management/ward-flow-bed-meeting-events.ts:105; SHA256 b28604a0b11e841e1daf151279719831992a89765e8553a84974993d57ed5e2c
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:332; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:858; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:861; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - RECORD_RESTRICTIVE_PRACTICE_START — modelled; event roles: ward, coordinator
   Source-reviewed command model: New episode with typed start and recording metadata appended.
@@ -1011,7 +1011,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-override-surfaces.test.ts
   Reviewed source: src/components/ward-management/ward-flow-referral-answer-events.ts:664; SHA256 d6089cc12f33527518cfdc52219d4a95c51d494c3edeebe3c0024fbaa47d607b
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:426; SHA256 cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:1527; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:1530; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - DECLINE_REFERRAL — diagram-reviewed; event roles: ward, coordinator, ed, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
@@ -1205,7 +1205,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-criteria-led-discharge.test.ts
   Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:752; SHA256 a63ee87e0e4c23df938c2732ded19ca0e95f859bf586980d00fa0fdb648694f3
   Reviewed source: src/components/ward-management/ward-discharge-criteria.ts:271; SHA256 70e720fb09a6a8bd9ab6952b29e786e949b7c635b3eded6a97c9be8582648c5b
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:2098; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:2101; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - RECORD_ED_MEDICAL_DETERIORATION — modelled; event roles: ed, coordinator
   Reviewed command model: placement_requested, medically uncleared and explicitly paused; acceptance and reservation removed.
@@ -1225,7 +1225,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-medical-deterioration-ui.dom.test.tsx
   tests: tests/ward-reservation-release-capacity.test.ts
   Reviewed source: src/components/ward-management/ward-flow-record-events.ts:1155; SHA256 ee5696ec766ac08e39d9bfbd105b5bfcd891a77901a8032e0bf8833978f5e464
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:2112; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:2115; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - RECORD_MOVEMENT_MEDICAL_CLEARANCE — diagram-reviewed; event roles: ed, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
@@ -1262,7 +1262,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   effects: A new form code also clears the typed receipt mark and any paper details typed for the old form.
   tests: tests/ward-ed-handover-events.test.ts
   Reviewed source: src/components/ward-management/ward-flow-record-legal-events.ts:274; SHA256 130c5ccae5b6ddf3f3cd4a212863a74f8468bb136ee4400992e852141b5941b4
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:2144; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:2147; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-undo.ts:74; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-access-state.ts:817; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - RECORD_ED_PRESENTATION — modelled; event roles: ed, coordinator
@@ -1282,7 +1282,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   effects: Does not change movement stage, diagnosis, legal status or capacity. Included in ED-step Undo.
   tests: tests/ward-ed-handover-events.test.ts
   Reviewed source: src/components/ward-management/ward-flow-record-legal-events.ts:205; SHA256 130c5ccae5b6ddf3f3cd4a212863a74f8468bb136ee4400992e852141b5941b4
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:2160; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:2163; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-undo.ts:92; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - RECORD_LEGAL_FORM_DETAILS — modelled; event roles: ed, coordinator, ward
@@ -1491,7 +1491,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-top25-broadcast-extend.dom.test.tsx
   Reviewed source: src/components/ward-management/alerts/ward-broadcast-reducer.ts:228; SHA256 cd46a2fc3599a4dbc092b05eda177f7da454de1cd8642597fa17bf3281a11907
   Reviewed source: src/components/ward-management/alerts/ward-broadcast-reducer.ts:461; SHA256 cd46a2fc3599a4dbc092b05eda177f7da454de1cd8642597fa17bf3281a11907
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:2379; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:2382; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:704; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - ADD_BROADCAST_ALERT_UNITS — modelled; event roles: coordinator, bed_manager
   Reviewed command model: Existing recipients plus new unique named desks.
@@ -1510,7 +1510,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   effects: Does not reset expiry or clear previous replies/acknowledgements.
   tests: tests/ward-broadcast-add-units.test.ts
   Reviewed source: src/components/ward-management/alerts/ward-broadcast-reducer.ts:243; SHA256 cd46a2fc3599a4dbc092b05eda177f7da454de1cd8642597fa17bf3281a11907
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:2378; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:2381; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:704; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - RAISE_PULL_NOW — modelled; event roles: coordinator
   Reviewed command model: Same movement plus active Pull now addressed to the relevant wards.
@@ -1530,7 +1530,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-global-alerts.test.ts
   Reviewed source: src/components/ward-management/alerts/ward-broadcast-reducer.ts:293; SHA256 cd46a2fc3599a4dbc092b05eda177f7da454de1cd8642597fa17bf3281a11907
   Reviewed source: src/components/ward-management/alerts/ward-broadcast-model.ts:317; SHA256 0e5f3b91bc8eaa35959313c446cd9cfd8a986fea2b3b6d0f6b37aa23edd7a316
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:2400; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:2403; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:725; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - REPLY_BROADCAST_ALERT — modelled; event roles: ward, bed_manager, coordinator
   Reviewed command model: Reply appended; desk also acknowledged.
@@ -1551,7 +1551,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-global-alerts.test.ts
   tests: tests/ward-broadcast-audience-bed-call-wards.test.ts
   Reviewed source: src/components/ward-management/alerts/ward-broadcast-reducer.ts:348; SHA256 cd46a2fc3599a4dbc092b05eda177f7da454de1cd8642597fa17bf3281a11907
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:2399; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:2402; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - BOOK_PLANNED_ADMISSION — modelled; event roles: coordinator, bed_manager, ward
   Reviewed command model: New PA-* record in booked state, holding no bed.
@@ -1575,7 +1575,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-audit24-1-planned-booking-authorised.test.ts
   Reviewed source: src/components/ward-management/capacity/planned-admissions-reducer.ts:299; SHA256 fcd8e3b7667a295dc58225efa80ca7dc36863ad203ca4b6873c535c7ae5a0eb3
   Reviewed source: src/components/ward-management/capacity/planned-admissions-reducer.ts:263; SHA256 fcd8e3b7667a295dc58225efa80ca7dc36863ad203ca4b6873c535c7ae5a0eb3
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:2415; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:2418; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - CHANGE_PLANNED_ADMISSION — modelled; event roles: coordinator, bed_manager, ward
   Reviewed command model: Still booked, with revised fields, changedAt and incremented changeCount.
@@ -1600,7 +1600,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-audit24-1-planned-booking-authorised.test.ts
   Reviewed source: src/components/ward-management/capacity/planned-admissions-reducer.ts:383; SHA256 fcd8e3b7667a295dc58225efa80ca7dc36863ad203ca4b6873c535c7ae5a0eb3
   Reviewed source: src/components/ward-management/capacity/planned-admissions-reducer.ts:263; SHA256 fcd8e3b7667a295dc58225efa80ca7dc36863ad203ca4b6873c535c7ae5a0eb3
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:2450; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:2453; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - CANCEL_PLANNED_ADMISSION — modelled; event roles: coordinator, bed_manager, ward
   Reviewed command model: cancelled with cancel reason and time.
@@ -1619,7 +1619,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   effects: The step can be taken back by UNDO_RELEASE_STEP within the Undo window, filed against the booking.
   tests: tests/ward-planned-admissions.test.ts
   Reviewed source: src/components/ward-management/capacity/planned-admissions-reducer.ts:459; SHA256 fcd8e3b7667a295dc58225efa80ca7dc36863ad203ca4b6873c535c7ae5a0eb3
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:2472; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:2475; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - CONVERT_PLANNED_ADMISSION — modelled; event roles: ward, coordinator
   Reviewed command model: Plan arrived and linked to a new occupied admission.
@@ -1641,7 +1641,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-planned-admissions.test.ts
   tests: tests/ward-planned-arrival-closed-bed.test.ts
   Reviewed source: src/components/ward-management/capacity/planned-admissions-reducer.ts:483; SHA256 fcd8e3b7667a295dc58225efa80ca7dc36863ad203ca4b6873c535c7ae5a0eb3
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:2500; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:2503; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - RECORD_SUPPORT_NOTIFICATION — modelled; event roles: ward, coordinator
   Reviewed command model: Another told/not_applicable record appended.
@@ -1662,7 +1662,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-support-notifications.test.ts
   tests: tests/ward-discharge-support-notification.test.ts
   Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:671; SHA256 76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:2503; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:2506; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:866; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - SEND_RELEASE_SUPPORT_NOTICE — modelled; event roles: ward, coordinator
   Reviewed command model: confirmed release with service marked Sent.
@@ -1767,7 +1767,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
 - UNDO_AUDIT_REVIEW — modelled; event roles: coordinator
   Reviewed command model: That review removed while audit history remains.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:615
-  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:103
+  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:104
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1569
   Subject: One captured-event review in the current world generation
   Before: Latest review on its captured event
@@ -1781,8 +1781,8 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   effects: Does not erase the reviewed event or its original review/Undo audit entries.
   tests: tests/ward-undo-and-bed-board.test.ts
   tests: tests/ward-governance.dom.test.tsx
-  Reviewed source: src/components/ward-management/ward-flow-protected-record-events.ts:102; SHA256 8b3f5fac10eff9018aefb9cf83a8cfdd06fb5f97ca040a5176507e70b96c700b
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:2567; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-protected-record-events.ts:103; SHA256 a6c8fc4bfd515eb3a93440995df00ed3affb7f1240c19f0a064deb9cb152f02e
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:2570; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-undo.ts:482; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - PLACE_IN_BED — modelled; event roles: ward, coordinator
@@ -1804,7 +1804,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-undo-and-bed-board.test.ts
   tests: tests/ward-release-pull-undo-guard.test.ts
   Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:96; SHA256 a63ee87e0e4c23df938c2732ded19ca0e95f859bf586980d00fa0fdb648694f3
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:2572; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:2575; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - UNDO_PLACE_IN_BED — modelled; event roles: ward, coordinator
   Reviewed command model: Prior bed number/kind and associated hold numbers restored.
@@ -1824,7 +1824,7 @@ Source-contract SHA256: 3dbb571306ac7c862ad5bffc044dbb3298d1b98145c3c9d8471921ca
   tests: tests/ward-undo-and-bed-board.test.ts
   tests: tests/ward-release-pull-undo-guard.test.ts
   Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:134; SHA256 7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e
-  Reviewed source: src/components/ward-management/ward-flow-events.ts:2592; SHA256 c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689
+  Reviewed source: src/components/ward-management/ward-flow-events.ts:2595; SHA256 59f4d3c98eeb44efff468d5c3527a8e55894f72aca75897a41b125e41e0b70ec
   Reviewed source: src/components/ward-management/ward-undo.ts:482; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - UNDO_REFER_TO_UNITS — modelled; event roles: coordinator
