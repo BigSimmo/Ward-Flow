@@ -32,9 +32,13 @@ test.describe("@mockup seclusion and restraint record", () => {
     const liveRows = page.getByTestId("seclusion-live-row");
     const before = await liveRows.count();
 
-    await page.getByTestId("seclusion-start-open").click();
     const start = page.getByTestId("seclusion-start-dialog");
-    await expect(start).toBeVisible();
+    // The first press can land before React hydrates the page (seen in CI on 9 Nov 2026), so press
+    // again until the dialog opens, as the statistics journey does.
+    await expect(async () => {
+      if (!(await start.isVisible())) await page.getByTestId("seclusion-start-open").click();
+      await expect(start).toBeVisible({ timeout: 3_000 });
+    }, "Start an episode never opened its dialog").toPass({ timeout: 30_000 });
     const record = start.getByRole("button", { name: "Record start" });
     // Nothing is pre-selected: no patient, no practice and no time.
     await expect(record).toHaveAttribute("aria-disabled", "true");

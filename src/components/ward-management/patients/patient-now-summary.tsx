@@ -96,8 +96,6 @@ export type PatientNowSummaryProps = {
   glance?: JSX.Element;
   /** PT1: one of the five state tags, with the glyph tone. */
   stateTag?: { tag: string; tone: WfTone };
-  /** PT1 round 2: Record CTO beside New referral on a record with nothing open. */
-  recordCto?: { onClick: () => void; reason?: string };
   /** PT1 round 3: the patient's journey, six steps from ED to community care. */
   careSteps: CareStep[];
   onOpenHistory?: () => void;
@@ -152,7 +150,6 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
     where,
     glance,
     stateTag,
-    recordCto,
     careSteps,
     onOpenHistory,
   } = props;
@@ -510,26 +507,31 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
           )
         }
         steps={
-          <>
-            <PatientCareJourneyStrip
-              steps={careSteps}
-              onOpenHistory={onOpenHistory}
-              extra={
-                isLiveBedflow && !isPhone ? (
-                  <button
-                    type="button"
-                    className={journeyToggleClass}
-                    aria-expanded={stagesOpen}
-                    onClick={() => setStagesOpen((open) => !open)}
-                    data-testid="ward-patient-stages-toggle"
-                  >
-                    {stagesOpen ? "Hide placement steps" : "Placement steps"}
-                  </button>
-                ) : undefined
-              }
-            />
-            {isLiveBedflow && !isPhone && stagesOpen ? STEPPER : null}
-          </>
+          // Note 5 (Josh, 9 Nov 2026): a strip with no step reached (nothing open) is empty dots, and
+          // a one-step strip ("Community") only repeats the card below, so either leaves the band to
+          // keep it short. A live placement always keeps it for its steps toggle.
+          !isLiveBedflow && (careSteps.length < 2 || !careSteps.some((step) => step.state !== "next")) ? undefined : (
+            <>
+              <PatientCareJourneyStrip
+                steps={careSteps}
+                onOpenHistory={onOpenHistory}
+                extra={
+                  isLiveBedflow && !isPhone ? (
+                    <button
+                      type="button"
+                      className={journeyToggleClass}
+                      aria-expanded={stagesOpen}
+                      onClick={() => setStagesOpen((open) => !open)}
+                      data-testid="ward-patient-stages-toggle"
+                    >
+                      {stagesOpen ? "Hide placement steps" : "Placement steps"}
+                    </button>
+                  ) : undefined
+                }
+              />
+              {isLiveBedflow && !isPhone && stagesOpen ? STEPPER : null}
+            </>
+          )
         }
         tabs={recordTabs}
         actions={
@@ -558,19 +560,6 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                 <FileText size={14} strokeWidth={1.75} aria-hidden="true" />
                 New referral
               </Link>
-            ) : null}
-            {mode === "idle" && recordCto ? (
-              <Button
-                variant="onHero"
-                size="sm"
-                icon={Scale}
-                onClick={recordCto.onClick}
-                disabledReason={recordCto.reason}
-                reasonDisplay="tooltip"
-                data-testid="ward-person-record-cto"
-              >
-                Record CTO
-              </Button>
             ) : null}
           </>
         }

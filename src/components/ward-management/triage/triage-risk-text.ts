@@ -218,6 +218,12 @@ export function parseHeadedText(text: string): [string, string][] {
   return out.filter(([, body]) => body.trim());
 }
 
+/** A line that starts a known heading ("Plan:", "crisis (Rosa):"), as `parseHeadedText` reads it. */
+export function isHeadingLine(line: string): boolean {
+  const known = headingsKnown();
+  return new RegExp(String.raw`^(${known.map(escapeRegExp).join("|")})(\s*\([^)]{0,60}\))?\s*:`, "i").test(line.trim());
+}
+
 export function headingFilled(text: string, heading: string): boolean {
   const match = text.match(new RegExp(`^${escapeRegExp(heading)}:(.*)$`, "mi"));
   return Boolean(match && match[1].trim().length > 2);

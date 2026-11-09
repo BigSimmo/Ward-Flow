@@ -172,6 +172,13 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
     }
   };
 
+  // Note 8, issue 4: the daily check opens a person in this page's drawer when they are on the list.
+  const [openRequest, setOpenRequest] = useState<{ id: string; tab: "summary" | "wards"; n: number }>();
+  const onBoardIds = useMemo(
+    () => new Set(groups.flatMap((group) => group.movements.map((movement) => movement.id))),
+    [groups],
+  );
+
   const banner = (
     <>
       {service === null ? null : (
@@ -190,7 +197,13 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
         isPhone ? (
           <DailyCheckLine />
         ) : (
-          <DailyCheckList open={checkOpen} listId={checkListId} onClose={() => setCheckOpen(false)} />
+          <DailyCheckList
+            open={checkOpen}
+            listId={checkListId}
+            onClose={() => setCheckOpen(false)}
+            onBoardIds={onBoardIds}
+            onOpenPerson={(id, tab) => setOpenRequest((current) => ({ id, tab, n: (current?.n ?? 0) + 1 }))}
+          />
         )
       ) : null}
     </>
@@ -210,6 +223,7 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
           isOutsideService={isOutsideService}
           onEscalate={escalate}
           banner={banner}
+          openRequest={openRequest}
           heroCheck={
             showMissedRequests && !isPhone ? (
               <DailyCheckHeroTile
