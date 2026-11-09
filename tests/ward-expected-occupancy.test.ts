@@ -10,7 +10,7 @@ import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { bedReleases } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
-import type { BedRelease } from "@/components/ward-management/ward-model";
+import type { BedRelease, Movement } from "@/components/ward-management/ward-model";
 
 const NOW = NOW_ANCHOR;
 const unit = allUnits()[0]!;
@@ -82,6 +82,20 @@ describe("expectedOccupancy", () => {
       expect(h.likely).toBe(rows.reduce((sum, row) => sum + row.horizons[index]!.likely, 0)),
     );
     expect(total.takenNow).toBe(rows.reduce((sum, row) => sum + row.takenNow, 0));
+  });
+
+  it("counts a bed held by name for an incoming journey as taken now (WF-FIG-017)", () => {
+    const journey = {
+      id: "WF-OC-HOLD",
+      stage: "pulled",
+      acceptedUnitId: unit.id,
+      heldBedNumber: 1,
+    } as unknown as Movement;
+    const without = expectedOccupancy([unit], [], [] as Admission[], NOW);
+    const withHold = expectedOccupancy([unit], [], [] as Admission[], NOW, [], [journey]);
+    expect(bedStates(unit, [], [], [], [journey]).pulled).toBe(1);
+    expect(withHold.rows[0]!.takenNow).toBe(without.rows[0]!.takenNow + 1);
+    expect(withHold.rows[0]!.horizons[0]!.high).toBe(without.rows[0]!.horizons[0]!.high + 1);
   });
 
   it("says a percentage, or Not recorded with no beds", () => {

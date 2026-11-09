@@ -6,7 +6,7 @@
 // named person on the way), less the discharges recorded in the window, plus the admissions booked
 // to arrive in it. People still waiting without a ward are not given one here.
 import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
-import { bedStates } from "@/components/ward-management/ward-bed-states";
+import { bedStates, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 import { bedsForecast } from "./beds-forecast";
@@ -39,12 +39,14 @@ export function expectedOccupancy(
   admissions: readonly Admission[],
   now: Instant,
   planned: readonly PlannedAdmission[] = [],
+  /** Journeys and referrals holding a bed by name (WF-FIG-017), as Capacity's other figures take them. */
+  reservations: readonly ReservationReferral[] = [],
 ): ExpectedOccupancy {
   // A closed ward counts as zero capacity (clinical owner ruling, 14 Oct 2026), so it has no row.
   const rows = units
     .filter((unit) => !unit.isClosed)
     .map((unit): OccupancyRow => {
-      const states = bedStates(unit, admissions, [...releases], []);
+      const states = bedStates(unit, admissions, [...releases], [], reservations);
       const takenNow = states.occupied + states.pulled;
       // The forecast for this ward alone, with nobody waiting: waiting people have no ward yet.
       const forecast = bedsForecast([unit], [...releases], [...admissions], [], now, planned);

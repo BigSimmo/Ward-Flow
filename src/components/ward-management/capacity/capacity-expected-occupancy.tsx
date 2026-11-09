@@ -34,10 +34,17 @@ export function ExpectedOccupancyTable({
   now: Instant;
   stacked?: boolean;
 }) {
-  const { admissions, plannedAdmissions } = useWardFlowSelect("admissions", "plannedAdmissions");
+  const { admissions, plannedAdmissions, movements, referrals } = useWardFlowSelect(
+    "admissions",
+    "plannedAdmissions",
+    "movements",
+    "referrals",
+  );
+  // WF-FIG-017: a bed held by name for a journey or referral is taken, as on Capacity's other figures.
+  const reservations = useMemo(() => [...movements, ...referrals], [movements, referrals]);
   const occupancy = useMemo(
-    () => expectedOccupancy(units, bedReleases, admissions, now, plannedAdmissions ?? []),
-    [units, bedReleases, admissions, now, plannedAdmissions],
+    () => expectedOccupancy(units, bedReleases, admissions, now, plannedAdmissions ?? [], reservations),
+    [units, bedReleases, admissions, now, plannedAdmissions, reservations],
   );
   // The forecast draws twice (the desk card and the phone sheet), so the heading id is per copy.
   const titleId = useId();
