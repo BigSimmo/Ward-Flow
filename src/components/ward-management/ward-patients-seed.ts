@@ -675,7 +675,7 @@ export const wardPatients: Patient[] = [
     // Care plans and safety flags (9 Nov 2026), synthetic: a current plan and the one it replaced.
     carePlans: [
       {
-        id: "CP-PT-036-1",
+        id: "PT-036-CP-1",
         type: "Community care plan",
         agreedBy: "Midland Community Team",
         agreedOn: "2026-03-12",
@@ -686,7 +686,7 @@ export const wardPatients: Patient[] = [
         recordedBy: "community",
       },
       {
-        id: "CP-PT-036-2",
+        id: "PT-036-CP-2",
         type: "Frequent presenter plan",
         agreedBy: "Midland Community Team with ED",
         agreedOn: "2026-10-06",

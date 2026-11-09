@@ -40,7 +40,7 @@ export const CARE_PLAN_HELPS_EXTRA_MAX = 120;
 /** A synthetic prototype keeps at most this many care plans per person (current plus superseded). */
 export const CARE_PLAN_HISTORY_MAX = 20;
 
-export type CarePlanAttachment = {
+type CarePlanAttachment = {
   fileType: UploadedFileType;
   sizeBytes: number;
   addedAt: Instant;
@@ -174,7 +174,7 @@ export type CulturalSupportRequest = (typeof CULTURAL_SUPPORT_REQUESTS)[number];
  * before clinical use. The figure and its status live in `ward-clinical-values.ts`.
  */
 export const FREQUENT_PRESENTER_ED_THRESHOLD = CLINICAL_VALUES.frequentPresenterEdPresentations.value;
-export const FREQUENT_PRESENTER_WINDOW_MONTHS = 12;
+const FREQUENT_PRESENTER_WINDOW_MONTHS = 12;
 
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 
@@ -202,7 +202,7 @@ export function edPresentationsInWindow(
   }).length;
 }
 
-export function isFrequentPresenter(
+function isFrequentPresenter(
   episodes: readonly { kind: string; start: string }[] | undefined,
   todayIso: string,
 ): boolean {
@@ -266,7 +266,7 @@ function carerToldOn(
  * discharge (its discharge checklist, not yet merged); until then this reads the advisory support
  * notification checklist. Point this one function at their field once it lands.
  */
-export function carerToldAtDischarge(
+function carerToldAtDischarge(
   subjects: readonly { occasion: CarerToldOccasion; subjectId: string }[],
   notifications: readonly CarerToldRecord[] | undefined,
 ): CarerToldMoment {
