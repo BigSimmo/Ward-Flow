@@ -1041,7 +1041,6 @@ export function PatientNowScreen({
       riskFlagsWhen={referralWhen}
       riskNotShared={referralSafety.kind === "not_shared"}
       healthAlerts={recordExtrasFor(livePatient?.id)?.alerts}
-      today={displayToday}
       onOpenForms={() => openTab("documents")}
       onOpenDetails={() => openTab("details")}
       recordCto={
@@ -1228,6 +1227,7 @@ export function PatientNowScreen({
                   todayIso={perthIsoDay(displayToday)}
                   nowClock={perthClockTime(displayToday)}
                   hasCarer={(extras?.supports.length ?? 0) > 0}
+                  episodes={extras?.episodes}
                   gate={gate}
                   run={(event, success, onRefused) => runStep(event, { success, onRefused })}
                 />

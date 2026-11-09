@@ -1,5 +1,13 @@
 /* Care plan, tribunal hearing, carer told and cultural support on Now (9 Nov 2026). Calm and dense. */
 
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) 0;
+}
+
 .facts {
   display: grid;
   gap: var(--wf-s-2);

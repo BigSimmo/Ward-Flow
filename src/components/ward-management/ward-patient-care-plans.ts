@@ -244,19 +244,41 @@ type CarerToldRecord = {
  * the advisory support notification checklist (`RECORD_SUPPORT_NOTIFICATION`). `subjects` are the
  * checklist's completed moves for this person, newest first. Reads only what a person recorded.
  */
+function carerToldOn(
+  occasion: CarerToldOccasion,
+  subjects: readonly { occasion: CarerToldOccasion; subjectId: string }[],
+  notifications: readonly CarerToldRecord[] | undefined,
+): CarerToldMoment {
+  const subject = subjects.find((candidate) => candidate.occasion === occasion);
+  if (!subject) return { occasion, status: "none" };
+  let latest: CarerToldRecord | undefined;
+  for (const record of notifications ?? [])
+    if (record.occasion === occasion && record.subjectId === subject.subjectId && record.party === "carer")
+      latest = record;
+  if (!latest) return { occasion, status: "not-yet" };
+  if (latest.outcome === "not_applicable") return { occasion, status: "not-applicable" };
+  return { occasion, status: "told", who: latest.who, contactedAt: latest.contactedAt ?? latest.at };
+}
+
+/**
+ * The discharge line, behind one adapter. The discharge thread owns "carer or family told" at
+ * discharge (its discharge checklist, not yet merged); until then this reads the advisory support
+ * notification checklist. Point this one function at their field once it lands.
+ */
+export function carerToldAtDischarge(
+  subjects: readonly { occasion: CarerToldOccasion; subjectId: string }[],
+  notifications: readonly CarerToldRecord[] | undefined,
+): CarerToldMoment {
+  return carerToldOn("discharge", subjects, notifications);
+}
+
 export function carerToldMoments(
   subjects: readonly { occasion: CarerToldOccasion; subjectId: string }[],
   notifications: readonly CarerToldRecord[] | undefined,
 ): CarerToldMoment[] {
-  return (["admission", "transfer", "discharge"] as const).map((occasion): CarerToldMoment => {
-    const subject = subjects.find((candidate) => candidate.occasion === occasion);
-    if (!subject) return { occasion, status: "none" };
-    let latest: CarerToldRecord | undefined;
-    for (const record of notifications ?? [])
-      if (record.occasion === occasion && record.subjectId === subject.subjectId && record.party === "carer")
-        latest = record;
-    if (!latest) return { occasion, status: "not-yet" };
-    if (latest.outcome === "not_applicable") return { occasion, status: "not-applicable" };
-    return { occasion, status: "told", who: latest.who, contactedAt: latest.contactedAt ?? latest.at };
-  });
+  return [
+    carerToldOn("admission", subjects, notifications),
+    carerToldOn("transfer", subjects, notifications),
+    carerToldAtDischarge(subjects, notifications),
+  ];
 }

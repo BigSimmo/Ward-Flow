@@ -32,6 +32,7 @@ import {
   TRIBUNAL_OUTCOMES,
   carerToldMoments,
   currentCarePlan,
+  frequentPresenterTag,
   tribunalHearingPassedWithoutOutcome,
   validateCarePlanInput,
   type CarePlanHelp,
@@ -95,6 +96,7 @@ export function PatientCarePlansCard({
   todayIso,
   nowClock,
   hasCarer,
+  episodes,
   gate,
   role,
   run,
@@ -107,6 +109,8 @@ export function PatientCarePlansCard({
   nowClock: string;
   /** False when the record holds no carer or support person. */
   hasCarer: boolean;
+  /** Earlier episodes of care, for the frequent presenter tag. */
+  episodes?: readonly { kind: string; start: string }[];
   gate: Gate;
   run: (event: WardFlowEvent, success: string, onRefused: (reason: string) => void) => void;
 }) {
@@ -139,6 +143,7 @@ export function PatientCarePlansCard({
   const superseded = (patient.carePlans ?? []).filter((item) => item.status === "Superseded").length;
   const hearing = patient.tribunalHearing;
   const hearingPassed = tribunalHearingPassedWithoutOutcome(hearing, todayIso, nowClock);
+  const presenter = frequentPresenterTag(episodes, patient.carePlans, todayIso);
   const planGate = gate("RECORD_CARE_PLAN");
   const hearingGate = gate("RECORD_TRIBUNAL_HEARING");
   const outcomeGate = gate("RECORD_TRIBUNAL_OUTCOME");
@@ -222,7 +227,7 @@ export function PatientCarePlansCard({
     <Card data-testid="ward-patient-care-plan-card">
       <CardHead
         icon={ClipboardList}
-        title="Care plan"
+        title="Care and safety"
         level={3}
         action={
           form === "plan" ? null : (
@@ -239,6 +244,14 @@ export function PatientCarePlansCard({
         }
       />
       <CardBody>
+        {presenter || patient.culturalSupportRequested ? (
+          <p className={styles.tags} data-testid="ward-patient-care-flags">
+            {presenter ? <Badge size="sm">{presenter}</Badge> : null}
+            {patient.culturalSupportRequested ? (
+              <Badge size="sm">{`${patient.culturalSupportRequested} requested`}</Badge>
+            ) : null}
+          </p>
+        ) : null}
         {problem ? (
           <p className={styles.problem} role="alert">
             {problem}
