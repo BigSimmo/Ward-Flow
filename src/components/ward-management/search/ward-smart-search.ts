@@ -730,16 +730,22 @@ function searchReferrals(
   });
 }
 
-/** 0 = prefix or word-start, 1 = buried in a word, 2 = no text hit (kept in the original order). */
+/**
+ * 0 = a field equals the query, 1 = prefix or word-start, 2 = buried in a word, 3 = no text hit
+ * (ties keep the original order). Audit 3 (#1566): an exact name or record number must lead, or
+ * longer look-alikes ("Alex Morgans") listed earlier pushed "Alex Morgan" past the group limit.
+ */
 function matchTier(fields: readonly (string | undefined)[], needle: string): number {
   const q = foldPatientSearchText(needle);
   if (q.length === 0) return 0;
-  const haystacks = fields.filter((field): field is string => Boolean(field)).map(foldPatientSearchHaystack);
+  const present = fields.filter((field): field is string => Boolean(field));
+  if (present.some((field) => foldPatientSearchText(field) === q)) return 0;
+  const haystacks = present.map(foldPatientSearchHaystack);
   const terms = q.split(" ");
   const words = haystacks.flatMap((hay) => hay.split(/[^\p{L}\p{N}]+/u));
   if (haystacks.some((hay) => hay.startsWith(q)) || terms.every((term) => words.some((word) => word.startsWith(term))))
-    return 0;
-  return terms.every((term) => haystacks.some((hay) => hay.includes(term))) ? 1 : 2;
+    return 1;
+  return terms.every((term) => haystacks.some((hay) => hay.includes(term))) ? 2 : 3;
 }
 
 function rankAndLimit<T>(
