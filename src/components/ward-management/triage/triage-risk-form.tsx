@@ -12,7 +12,7 @@
  * outcome, legal status, review and the risk flags marked present); the typed text is never in it,
  * so it never reaches the workspace or browser storage (HOW-WE-WORK §6). Every person is synthetic.
  */
-import { BellRing, BookUser, CircleHelp, FileText, Inbox } from "lucide-react";
+import { BellRing, BookUser, CircleHelp, FileText } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -57,7 +57,11 @@ import { MentalStateBody } from "./triage-risk-mse";
 import { SectionCard, StatusMark, type FormApi } from "./triage-risk-parts";
 import { AssessmentBody, ReviewBody } from "./triage-risk-review";
 import { PlanBody, RiskBody } from "./triage-risk-risk";
-import { AllFactorsDrawer, HowToDrawer, SummaryDocument, SummaryDrawer } from "./triage-risk-sheets";
+import { AllFactorsDrawer, SummaryDocument, SummaryDrawer } from "./triage-risk-sheets";
+import { HowToDrawer } from "./triage-risk-how";
+import { ContactsPop, TeamPop } from "./triage-risk-pops";
+import { seeBy } from "./triage-see-by";
+import { navigateWithDirtyGuard, useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { SideSummary } from "./triage-risk-side";
 import { TriageStart } from "./triage-risk-start";
 import { TRIAGE_NEW_HREF, triageHrefFor, useTriagePeople } from "./use-triage-people";
@@ -381,10 +385,13 @@ export function TriageScreen({ patientId }: { patientId: string }) {
     <TriageForm
       key={initial.person.id}
       initial={initial}
-      onStartNew={() => {
-        router.push(TRIAGE_NEW_HREF);
-        scrollPageTop();
-      }}
+      onStartNew={() =>
+        // A button, not a link, so ask before leaving typed work like every other exit.
+        navigateWithDirtyGuard(() => {
+          router.push(TRIAGE_NEW_HREF);
+          scrollPageTop();
+        })
+      }
     />
   );
 }
@@ -469,6 +476,18 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
     signed,
   });
   const flagCount = allFactors(state).filter((f) => f.mark === "y").length;
+  // The see-by time (Josh, 9 Nov 2026): arithmetic on the reviewed time and the chosen tier's window.
+  const due = seeBy(
+    state.urgency,
+    state.text.revTime,
+    boardWallClock(boardNow, dayZero),
+    state.urgency ? TIER_LONG[state.urgency] : "",
+  );
+  // Leaving drops typed text (it is never stored), so warn before any way out once something is entered.
+  useDirtyStateGuard({
+    isDirty: !signed && state !== initial,
+    confirmMessage: "Leave without signing? Ward Flow does not keep typed triage text, so it will be lost.",
+  });
 
   // The index marks the section in view.
   useEffect(() => {
@@ -677,15 +696,13 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                   DOB <b className={styles.mono}>{person.dob}</b>
                 </span>
                 {isPhone ? null : (
-                  <>
-                    <span>
-                      Now at <b>{person.nowAt}</b>
-                    </span>
-                    <span>
-                      Community team <b>{person.team}</b>
-                    </span>
-                  </>
+                  <span>
+                    Now at <b>{person.nowAt}</b>
+                  </span>
                 )}
+                <span>
+                  Community team <TeamPop patientId={person.id} recordHref={person.recordHref} />
+                </span>
               </p>
               {/* Alert first, then allergies, legal status in full words (as typed), then the rest. */}
               <HeroChips label="Alerts, allergies and legal" className={styles.bannerTags}>
@@ -697,6 +714,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                     testId="triage-signed-tag"
                   />
                 ) : null}
+                {due ? <HeroChip value={`See by ${due.when}`} label={due.basis} testId="triage-see-by" /> : null}
                 {person.alert ? <HeroChip value="Alert" tone="warning" label={person.alert} /> : null}
                 <HeroChip
                   value="Allergies"
@@ -734,8 +752,8 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                   </>
                 ) : undefined,
               )}
-              {bannerLink("Patient profile", "Profile", BookUser, () => openSummary("profile"))}
-              {isPhone ? null : bannerLink("Referral", "Referral", Inbox, () => openSummary("ref"))}
+              {bannerLink("Patient and referral", "Patient", BookUser, () => openSummary("patient"))}
+              <ContactsPop patientId={person.id} recordHref={person.recordHref} />
               {howToButton}
             </div>
           }
@@ -909,6 +927,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
       <HowToDrawer
         open={sheet === "how"}
         onClose={() => setSheet(null)}
+        onGoTo={(section) => jump(section)}
         onStartNew={() => {
           setSheet(null);
           onStartNew();
