@@ -50,6 +50,19 @@ const isOption = (value: unknown): value is AdmissionAlternativeOption =>
 const isOutcome = (value: unknown): value is AdmissionAlternativeOutcome =>
   (ADMISSION_ALTERNATIVE_OUTCOMES as readonly unknown[]).includes(value);
 
+/** The sheet's marks before Send, as a kept draft holds them: option to outcome. */
+export type AlternativeMarks = Partial<Record<AdmissionAlternativeOption, AdmissionAlternativeOutcome>>;
+
+/** A kept draft's marks: listed options with listed outcomes and nothing else. */
+export function isAlternativeMarks(value: unknown): value is AlternativeMarks {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.entries(value).every(([option, outcome]) => isOption(option) && isOutcome(outcome))
+  );
+}
+
 /**
  * Why a supplied list cannot be stored, or `null` when it can. A present list must hold one to
  * five entries, each a listed option with a listed outcome and nothing else, no option twice.

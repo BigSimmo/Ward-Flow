@@ -379,6 +379,7 @@ export function useWardReferralDrawerState({
   const sectionIds = sectionIdsFor(destType);
   const [edNeeds, setEdNeeds] = useState<EdNeeds>(kept?.edNeeds ?? {});
   const [edArrivalWrong, setEdArrivalWrong] = useState(false);
+  const alternatives = useReferralAlternatives(destType === "ward" && !sendingWard, activePatientKey, kept);
   const draftNow: KeptDraft & { needsChartReattachment: boolean } = {
     submissionId: recoveryId,
     needsChartReattachment: draftNeedsChartReattachment(kept, documentation.charts),
@@ -419,6 +420,7 @@ export function useWardReferralDrawerState({
     edNeeds,
     unidentified,
     notOnWard,
+    ...alternatives.draftField,
   };
   const [openingDraft] = useState(() => (kept ? "" : draftFingerprint(draftNow)));
   const draftJson = draftFingerprint(draftNow);
@@ -512,8 +514,7 @@ export function useWardReferralDrawerState({
       closeRequestRef.current = null;
     };
   }, [closeRequestRef, requestClose]);
-  // Close guard: a modal over the drawer (shared contract). Declared before the drawer's own modal hook
-  // so it leaves the stack first when both close together.
+  // Close guard for a modal over the drawer: declared before the drawer's own modal hook, so it leaves first.
   const guardBoxRef = useRef<HTMLDivElement | null>(null);
   const { rootRef: guardRootRef } = useModalFocus({
     open: guardOpen,
@@ -892,7 +893,6 @@ export function useWardReferralDrawerState({
     setFlowError(null);
     activateSection(sectionIds[sectionIds.indexOf(activeSection) - 1] ?? "patient");
   }
-  const alternatives = useReferralAlternatives(destType === "ward" && !sendingWard); // Feature 26
   function handleDispatch() {
     const error =
       patientError() ??

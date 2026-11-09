@@ -541,9 +541,19 @@
   gap: var(--wf-s-3);
   min-width: 0;
 }
-.listReview > button {
+.listReview > button,
+.listReviewSeen {
   flex: none;
   white-space: nowrap;
+}
+.listReviewSeen {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+.listReviewSeenBy {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / 16px var(--wf-font);
 }
 .listReviewText {
   display: grid;

@@ -242,12 +242,18 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                 // Psychiatry review tracker (Josh, 9 Nov 2026): the stage as recorded, in the row's
                 // own place. The list keeps its order; the stage never moves a row.
                 const stage = psychReviewStage(m, now, minutes);
-                const reviewButton = (label: string, event: Parameters<typeof recordEdStep>[0], testId: string) => (
+                const reviewButton = (
+                  label: string,
+                  spoken: string,
+                  event: Parameters<typeof recordEdStep>[0],
+                  testId: string,
+                ) => (
                   <button
+                    key={testId}
                     type="button"
                     className={buttonClass({ variant: "sec", size: "sm" })}
                     data-testid={`${testId}-${m.id}`}
-                    aria-label={`${label} for ${person.formalName}`}
+                    aria-label={`${spoken} for ${person.formalName}`}
                     onClick={() => recordEdStep(event)}
                   >
                     {label}
@@ -268,37 +274,34 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                             {stage.line}
                           </span>
                         </span>
-                        {stage.next[0] === "ask"
-                          ? reviewButton(
-                              "Ask for review",
-                              { type: "REQUEST_PSYCH_REVIEW", role: "ed", now, movementId: m.id },
-                              "ward-ed-review-ask",
-                            )
-                          : stage.next[0] === "registrar"
-                            ? reviewButton(
-                                "Registrar seen",
+                        {stage.next[0] === "ask" ? (
+                          reviewButton(
+                            "Ask for review",
+                            "Ask for review",
+                            { type: "REQUEST_PSYCH_REVIEW", role: "ed", now, movementId: m.id },
+                            "ward-ed-review-ask",
+                          )
+                        ) : stage.next.length > 0 ? (
+                          // Either grade can be seen first, so both stay offered until one is recorded.
+                          <span className={handover.listReviewSeen}>
+                            {stage.next.length > 1 ? <span className={handover.listReviewSeenBy}>Seen by</span> : null}
+                            {stage.next.map((grade) => {
+                              const title = grade === "registrar" ? "Registrar" : "Consultant";
+                              return reviewButton(
+                                stage.next.length > 1 ? title : `${title} seen`,
+                                `${title} seen`,
                                 {
                                   type: "RECORD_PSYCH_REVIEW_SEEN",
                                   role: "ed",
                                   now,
                                   movementId: m.id,
-                                  grade: "registrar",
+                                  grade: grade as "registrar" | "consultant",
                                 },
-                                "ward-ed-review-registrar",
-                              )
-                            : stage.next[0] === "consultant"
-                              ? reviewButton(
-                                  "Consultant seen",
-                                  {
-                                    type: "RECORD_PSYCH_REVIEW_SEEN",
-                                    role: "ed",
-                                    now,
-                                    movementId: m.id,
-                                    grade: "consultant",
-                                  },
-                                  "ward-ed-review-consultant",
-                                )
-                              : null}
+                                `ward-ed-review-${grade}`,
+                              );
+                            })}
+                          </span>
+                        ) : null}
                       </span>
                     </td>
                     <td className={handover.alignEnd}>
