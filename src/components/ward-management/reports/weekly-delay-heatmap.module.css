@@ -1,0 +1,112 @@
+/* Feature 42 (9 Nov 2026): one sequential scale, neutral to amber, figures always printed. */
+.empty {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+.scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.scroll:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.grid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 2px;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.grid th {
+  padding: 4px var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font-weight: 500;
+  text-align: start;
+  white-space: nowrap;
+}
+.grid tbody th,
+.grid tfoot th {
+  color: var(--wf-ink-1);
+}
+.num,
+.cell {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+.grid th.num {
+  font-family: var(--wf-font);
+}
+.cell {
+  min-width: 3.25rem;
+  padding: 6px var(--wf-s-2);
+  border-radius: var(--wf-r-xs);
+  color: var(--wf-ink-1);
+}
+.total {
+  padding: 6px var(--wf-s-2);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+.cell[data-step="0"],
+.swatch[data-step="0"] {
+  background: var(--wf-surface);
+  color: var(--wf-ink-3);
+}
+.cell[data-step="1"],
+.swatch[data-step="1"] {
+  background: color-mix(in srgb, var(--wf-warning) 10%, var(--wf-surface));
+}
+.cell[data-step="2"],
+.swatch[data-step="2"] {
+  background: color-mix(in srgb, var(--wf-warning) 22%, var(--wf-surface));
+}
+.cell[data-step="3"],
+.swatch[data-step="3"] {
+  background: color-mix(in srgb, var(--wf-warning) 36%, var(--wf-surface));
+}
+.cell[data-step="4"],
+.swatch[data-step="4"] {
+  background: color-mix(in srgb, var(--wf-warning) 52%, var(--wf-surface));
+}
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.legend span:last-child {
+  margin-inline-start: 4px;
+}
+.swatch {
+  display: inline-block;
+  width: 18px;
+  height: 12px;
+  border: 1px solid var(--wf-line);
+  border-radius: 2px;
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.list li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-2) 0;
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+.list li + li {
+  border-top: 1px solid var(--wf-line);
+}
+.figure {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}

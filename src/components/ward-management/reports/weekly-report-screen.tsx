@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { CalendarDays, Printer } from "lucide-react";
 
 import { Button, HeroStat, Menu, SrOnly, buttonClass, useIsPhone } from "@/components/wf";
@@ -26,6 +26,8 @@ import {
 import { useOperationalPilot, usePilotFigures, type WeeklyPilot } from "./pilot-measures-section";
 import { reportWeek, weeklyOperationsReport, type WeeklyReport, type ReportWeek } from "./weekly-report";
 import { useOwnUnits } from "./use-own-units";
+import { WeeklyDelayHeatmap } from "./weekly-delay-heatmap-lazy";
+import { createReadmissionIndex, readmissionsArrivedIn } from "@/components/ward-management/ward-readmission";
 import styles from "./reports.module.css";
 import weekly from "./weekly-report.module.css";
 
@@ -196,6 +198,19 @@ function OperationalWeeklyReport({ offset, setOffset }: WeekPicker) {
     ],
   );
 
+  // Feature 29 (Josh, 9 Nov 2026): stays arriving in the week that carry the 28 day readmission flag.
+  const readmissions = useMemo(
+    () =>
+      readmissionsArrivedIn(
+        admissions.filter((admission) => units.some((unit) => unit.id === admission.unitId)),
+        movements,
+        createReadmissionIndex({ admissions, patients, referrals, movements, units: state.units }),
+        week.start,
+        week.countedEnd,
+      ),
+    [admissions, patients, referrals, movements, units, state.units, week],
+  );
+
   return (
     <WeeklyReportView
       offset={offset}
@@ -206,6 +221,19 @@ function OperationalWeeklyReport({ offset, setOffset }: WeekPicker) {
       now={now}
       paused={paused}
       togglePause={togglePause}
+      readmissions={readmissions}
+      heatmap={(isPhone) => (
+        // Feature 42 (Josh, 9 Nov 2026): bed days lost to delayed discharge, ward by day.
+        <WeeklyDelayHeatmap
+          units={units}
+          admissions={admissions}
+          bedReleases={bedReleases}
+          week={week}
+          now={now}
+          dayZero={dayZero}
+          isPhone={isPhone}
+        />
+      )}
       admissionLabel={(movementId) =>
         admissions.find((admission) => admission.movementId === movementId)?.id ?? "Not yet admitted"
       }
@@ -226,6 +254,8 @@ function WeeklyReportView({
   togglePause,
   admissionLabel,
   scopeLabel,
+  readmissions,
+  heatmap,
 }: WeekPicker & {
   week: ReportWeek;
   report: WeeklyViewReport;
@@ -236,6 +266,9 @@ function WeeklyReportView({
   togglePause: (() => void) | null;
   admissionLabel?: (movementId: string) => string;
   scopeLabel?: string;
+  /** Operational desks only: the executive weekly carries neither (features 29 and 42). */
+  readmissions?: { arrivals: number; readmitted: number };
+  heatmap?: (isPhone: boolean) => ReactNode;
 }) {
   const isPhone = useIsPhone();
   const figures = usePilotFigures(pilot);
@@ -451,6 +484,8 @@ function WeeklyReportView({
           week={{ value: String(offset), onChange: (next) => setOffset(Number(next)) }}
           onPrint={print}
           printLines={printLines}
+          readmissions={readmissions}
+          heatmap={heatmap?.(isPhone)}
         />
         <WardPrototypeFooter testId="ward-weekly-footer" note="Synthetic data" />
       </main>
