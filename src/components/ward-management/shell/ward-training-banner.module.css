@@ -1,0 +1,42 @@
+/* Feature 47: the training sandbox line. Calm, not a warning: the accent tint with a neutral hairline
+   all round (no coloured side edge, DESIGN-SYSTEM §1.4). Pinned under the header like the notes
+   holder, one step beneath it, so a pull-now or offline note still shows over it while it lasts. */
+.banner {
+  position: sticky;
+  top: var(--wf-header-height, 3.75rem);
+  z-index: 24;
+  display: flex;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  gap: var(--wf-s-2);
+  align-items: center;
+  margin: var(--wf-s-2) var(--wf-s-3) 0;
+  padding: var(--wf-s-1) var(--wf-s-2) var(--wf-s-1) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-accent-tint);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.icon {
+  flex: 0 0 auto;
+  color: var(--wf-accent-ink);
+}
+
+.text {
+  flex: 1 1 16rem;
+  min-width: 0;
+  margin: 0;
+}
+
+.text strong {
+  font-weight: 600;
+}
+
+@media print {
+  .banner {
+    display: none;
+  }
+}

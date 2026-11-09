@@ -4,11 +4,13 @@
 // the page-wide preferences and drawer shortcuts. It replaced the old shell's lazy rail.
 
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { useIsPhone } from "@/components/wf";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
-import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { useCanOpenHref, useDeskHomeHref } from "@/components/ward-management/shell/ward-access";
+import { goToPageForShortcut } from "@/components/ward-management/shell/ward-goto-shortcuts";
 import { closeWardDrawer } from "@/components/ward-management/shell/ward-drawer-bus";
 import {
   isTypingTarget,
@@ -33,7 +35,10 @@ const RailLoaded = dynamic(() =>
 
 function PhonePreferences() {
   useWardDocumentPreferences();
-  const canRefer = useCanOpenHref()(WARD_REFERRAL_INTAKE_HREF);
+  const canOpen = useCanOpenHref();
+  const canRefer = canOpen(WARD_REFERRAL_INTAKE_HREF);
+  const deskHome = useDeskHomeHref();
+  const router = useRouter();
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -41,11 +46,12 @@ function PhonePreferences() {
         return;
       }
       if (isTypingTarget(event.target)) return;
-      openDrawerForShortcut(event, canRefer);
+      if (openDrawerForShortcut(event, canRefer)) return;
+      goToPageForShortcut(event, canOpen, (href) => router.push(href), deskHome);
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [canRefer]);
+  }, [canRefer, canOpen, deskHome, router]);
   return null;
 }
 

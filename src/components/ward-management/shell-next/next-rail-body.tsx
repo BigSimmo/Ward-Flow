@@ -5,6 +5,7 @@
 import { WardRailFrame } from "@/components/ward-management/shell/ward-chrome-frame";
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
+import { goToPageForShortcut } from "@/components/ward-management/shell/ward-goto-shortcuts";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import {
   ArrowRight,
@@ -18,6 +19,7 @@ import {
   SunMoon,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
@@ -381,6 +383,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const canOpen = useCanOpenHref();
   const canRefer = canOpen(WARD_REFERRAL_INTAKE_HREF);
   const deskHome = useDeskHomeHref();
+  const router = useRouter();
   // B6: the person follows the desk. A non-coordinator desk (role access on) is its own role.
   // #790: an access admin's chrome reads as the executive, but the rail names the admin it is.
   const deskAccess = useEffectiveWardAccess();
@@ -486,6 +489,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
       }
       if (isTypingTarget(event.target)) return;
       if (openDrawerForShortcut(event, canRefer)) return;
+      if (goToPageForShortcut(event, canOpen, (href) => router.push(href), deskHome)) return;
 
       if (event.key !== "[" || !areCharacterShortcutsEnabled()) return;
       if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -499,7 +503,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, setOpen, setMoreOpen, openOverlay, isTabletLandscape, canRefer]);
+  }, [open, setOpen, setMoreOpen, openOverlay, isTabletLandscape, canRefer, canOpen, router, deskHome]);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {

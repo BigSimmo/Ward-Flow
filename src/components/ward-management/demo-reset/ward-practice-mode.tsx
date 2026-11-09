@@ -10,6 +10,8 @@ import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import { setPracticeSession as setSession, usePracticeSession } from "./ward-practice-session";
+import { useTrainingMode } from "./ward-training-mode";
+import { WardTrainingSwitch } from "./ward-training-switch";
 import { PRACTICE_STEPS, practiceProgress } from "./ward-practice-steps";
 import styles from "./ward-practice-mode.module.css";
 
@@ -18,7 +20,11 @@ import styles from "./ward-practice-mode.module.css";
  * wherever the Tools demo panel is. It used to follow the one tap Demo reset (`demo-reset` flag),
  * but Josh asked for every feature on (20 Oct 2026) while that reset stays off on the live site, so
  * practice no longer depends on it: no step needs the whole-network reset, and Stop then Start begins
- * a fresh practice. The steps tick off from the shared record; progress lives in this browser tab only.
+ * a fresh practice. The steps tick off from the record; progress lives in this browser tab only.
+ *
+ * Feature 47: Start training swaps in a throwaway synthetic world for this tab only
+ * (`ward-training-mode.ts`), so the steps are available in the shared workspace too while training,
+ * and nothing done there reaches anyone else.
  */
 export function WardPracticeMode({ className, headingClassName }: { className?: string; headingClassName?: string }) {
   const { movements, scenario, worldGeneration, shared } = useWardFlowSelect(
@@ -28,8 +34,9 @@ export function WardPracticeMode({ className, headingClassName }: { className?: 
     "shared",
   );
   const current = usePracticeSession();
-  // Audit 24-7 (CT-01): practice has no sandbox, so every step is a real save. In the shared
-  // workspace that save reaches everyone, so practice is off there and a running one stops.
+  const training = useTrainingMode();
+  // Audit 24-7 (CT-01): outside training every step is a real save. In the shared workspace that save
+  // reaches everyone, so practice is off there unless training is on (the provider then runs locally).
   const inShared = shared?.enabled === true;
   const startedWith =
     !inShared && current && current.scenario === scenario && current.generation === worldGeneration
@@ -52,9 +59,18 @@ export function WardPracticeMode({ className, headingClassName }: { className?: 
         Practise a placement
         <span>Synthetic data, for learning the screens</span>
       </h3>
+      <div className={styles.training} data-testid="ward-practice-training">
+        <p className={styles.intro}>
+          {training
+            ? "Training is on. Practice patients only: nothing you do is saved for anyone else, and Stop training discards it."
+            : "Training gives you a private copy of the demo with synthetic patients, for this tab only. Nothing you do there is saved for anyone else."}
+        </p>
+        <WardTrainingSwitch testId="ward-practice-training" />
+      </div>
       {inShared ? (
         <p className={styles.intro} data-testid="ward-practice-shared-off">
-          Practice is off in the shared workspace, where every step is saved for everyone. Use the demo on this device.
+          Practice is off in the shared workspace, where every step is saved for everyone. Start training to practise
+          safely.
         </p>
       ) : progress === null ? (
         <>

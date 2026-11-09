@@ -39,7 +39,6 @@ import { useIsPhone, WF_PHONE_QUERY } from "@/components/wf";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
-import { WARD_ADD_PERSON_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { useDeskRoleSwitch } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -61,6 +60,7 @@ import {
   type HelpSearchRows,
   type SearchResultGroup,
   type SearchResultItem,
+  START_ACTIONS,
 } from "./ward-global-search-groups";
 import { SearchOptionBody } from "./ward-global-search-option-body";
 import { WardSearchCommands } from "./ward-global-search-commands";
@@ -68,6 +68,7 @@ import { WardSearchKeyHints } from "./ward-global-search-key-hints";
 import { askWardHelp, looksLikeHelpQuestion } from "./help/ward-help-events";
 import { useWardFeatureFlag } from "./shell/ward-feature-flag-store";
 import { useAccessNavFilter } from "./shell/ward-access";
+import { useSearchMyViews } from "./ward-global-search-my-views";
 import { recentsLifetimeNow, rememberRecent, useSessionRecents } from "./ward-global-search-recents";
 import {
   EmptyTry,
@@ -240,7 +241,7 @@ const KIND_FILTERS: readonly { key: KindFilter; label: string; groups: readonly 
   { key: "referrals", label: "Referrals", groups: ["referrals"] },
   { key: "places", label: "Places", groups: ["beds", "wards", "eds", "teams", "suburbs"] },
   { key: "forms", label: "Forms", groups: ["forms"] },
-  { key: "views", label: "Views", groups: ["views"] },
+  { key: "views", label: "Views", groups: ["myviews", "views"] },
   { key: "tasks", label: "Alerts", groups: ["tasks"] },
   { key: "contacts", label: "Contacts", groups: ["contacts"] },
   { key: "help", label: "Help", groups: ["help"] },
@@ -253,25 +254,6 @@ const FULL_RESULTS_PER_GROUP = 40;
 
 /** The screens offered before anything is typed: the four a coordinator jumps to most. */
 const START_VIEW_KEYS = ["capacity", "delays", "referrals", "handover"] as const;
-
-const START_ACTIONS: readonly SearchResultItem[] = [
-  {
-    kind: "action",
-    kindLabel: "Action",
-    id: "new-referral",
-    title: "New referral",
-    meta: "",
-    href: WARD_REFERRAL_INTAKE_HREF,
-  },
-  {
-    kind: "action",
-    kindLabel: "Action",
-    id: "add-patient",
-    title: "Add patient",
-    meta: "",
-    href: WARD_ADD_PERSON_HREF,
-  },
-];
 
 const NEEDS_YOU_LIMIT = 3;
 
@@ -376,7 +358,7 @@ export function WardGlobalSearch({
   const askHelpOn = useWardFeatureFlag("help-ask");
   const lookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const isStart = trimmed.length === 0;
-  const showQuickCommands = isStart || /^(switch|clock|reset|handover|shortcuts|\?)/i.test(trimmed);
+  const showQuickCommands = isStart || /^(switch|clock|reset|handover|shortcuts|save|\?)/i.test(trimmed);
   const shortcutsExpanded = showShortcuts || trimmed === "?" || /^shortcuts/i.test(trimmed);
 
   const smartResults = useMemo(
@@ -547,13 +529,17 @@ export function WardGlobalSearch({
     ],
     [permittedGroups, answer],
   );
+  // My views (feature 45): a person's saved screens lead when their name matches.
+  const myViews = useSearchMyViews(open, trimmed, canOpenHref);
   const allGroups = useMemo(
-    () =>
-      permittedGroups.map((group) => ({
+    () => [
+      ...(myViews.matchGroup ? [myViews.matchGroup] : []),
+      ...permittedGroups.map((group) => ({
         ...group,
         items: group.items.slice(0, FULL_RESULTS_PER_GROUP),
       })),
-    [permittedGroups],
+    ],
+    [permittedGroups, myViews.matchGroup],
   );
 
   const kindCounts = useMemo(() => {
@@ -618,6 +604,7 @@ export function WardGlobalSearch({
         })),
       });
     }
+    if (myViews.startGroup) g.push(myViews.startGroup);
     if (recents.length > 0) {
       g.push({ key: "recent", heading: "Recent", items: [...recents] });
     }
@@ -631,7 +618,18 @@ export function WardGlobalSearch({
     return g
       .map((group) => ({ ...group, items: group.items.flatMap(permittedResult) }))
       .filter((group) => group.items.length > 0);
-  }, [tasks, recents, lookup, nameFor, tasksWord, startViews, canOpenHref, canRunAction, permittedResult]);
+  }, [
+    tasks,
+    recents,
+    lookup,
+    nameFor,
+    tasksWord,
+    startViews,
+    myViews.startGroup,
+    canOpenHref,
+    canRunAction,
+    permittedResult,
+  ]);
 
   // A chosen kind with nothing for the current query falls back to All, so a new query never shows
   // a false "No matches" while the chips beside it count real results.
@@ -1270,6 +1268,8 @@ export function WardGlobalSearch({
                 canOpenHref={canOpenHref}
                 shortcutsExpanded={shortcutsExpanded}
                 onToggleShortcuts={() => setShowShortcuts((previous) => !previous)}
+                savedHere={myViews.savedHere}
+                onToggleSaveView={myViews.toggleHere}
                 onAdvanceClock={() => {
                   if (wardFlow)
                     wardFlow.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: now ?? wardFlow.now, minutes: 15 });

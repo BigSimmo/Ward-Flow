@@ -5,6 +5,8 @@ import { useSyncExternalStore } from "react";
 import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
+import { onTrainingChange } from "./ward-training-mode";
+
 export type PracticeSession = { scenario: string; generation: number; startedWith: ReadonlySet<string> };
 
 /**
@@ -23,6 +25,8 @@ export function setPracticeSession(next: PracticeSession | null) {
 
 // A practice belongs to the person running it, so signing out ends it (PR #487).
 onWardSessionEnd(() => setPracticeSession(null));
+// A practice belongs to one world, so starting or stopping training ends it (feature 47).
+onTrainingChange(() => setPracticeSession(null));
 
 function subscribe(listener: () => void) {
   listeners.add(listener);

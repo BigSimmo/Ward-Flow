@@ -1392,6 +1392,14 @@ export const KEYBOARD_SHORTCUTS: readonly {
     short: "Jump to the newest notice, and back",
     group: "Move around",
   },
+  {
+    keys: "G",
+    action:
+      "Go to a page: press G, then H Home, E ED, W Waiting, B Wards, D Discharges, R Referrals, C Capacity, S Statistics.",
+    short:
+      "Go to a page: G, then H Home, E ED, W Waiting, B Wards, D Discharges, R Referrals, C Capacity, S Statistics",
+    group: "Move around",
+  },
   { keys: "Esc", action: "Close what is open, or step back.", short: "Close, or step back", group: "Move around" },
   {
     keys: "?",

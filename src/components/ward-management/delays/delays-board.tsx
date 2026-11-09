@@ -12,7 +12,12 @@ import { holdInPlace, returnFocusInPlace, wardScrollBehavior } from "@/component
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { Activity, ChevronDown, ChevronRight, Flag, X } from "lucide-react";
 
-import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
+import {
+  formatInstantWithDay,
+  formatSheetMoment,
+  type Instant,
+  splitDuration,
+} from "@/components/ward-management/ward-clock";
 import { activatedControl, hasOpenSheet } from "@/components/wf/sheet-focus";
 import Link from "next/link";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
@@ -23,6 +28,7 @@ import { patientAgeText } from "@/components/ward-management/ward-patients";
 import { type Movement, type Unit } from "@/components/ward-management/ward-model";
 import { bandIncludes, originCode, tightHours, WAIT_BANDS, windowText, type WaitBandId } from "./wait-bands";
 import { FormalName, ShowMoreRow } from "@/components/wf";
+import { ListExportButton } from "@/components/ward-management/ward-list-export-button";
 import { readDelaysFlat, transitNote, useDelaysFlatStore, useSideScroll, writeDelaysFlat } from "./delays-board-stores";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import {
@@ -280,6 +286,24 @@ export function DelaysBoard({
   // Drawer review (6 Nov 2026): the person opens in the kit drawer, a modal over the list, so nothing
   // opens until a person is chosen (the ward desk used to open its first person in a side column).
   const filtered = hasFilters(filters);
+  // Export (feature 44): the rows the filters leave, never names; the builder loads on the click.
+  const exportList = async () =>
+    (await import("./delays-export")).downloadWaitingList(
+      shown,
+      {
+        umrnOf: (row) => patientOf(row.movement).umrn,
+        edName: (edId) => (edId === undefined ? "Not recorded" : (edById(edId)?.name ?? edId)),
+        serviceName: (row) => catchmentName(row.origin),
+        causeTitle: (row) => desk.causeTitle(row.cause),
+        ownerName: (row) => desk.ownerName(row.owner),
+      },
+      {
+        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+        scope: filtered
+          ? `Waiting; the ${shown.length} of ${rows.length} people the current filters and search show`
+          : "Waiting; everyone on the list, no filter or search applied",
+      },
+    );
 
   const set = (patch: Partial<BoardFilters>) => {
     setFilters((current) => ({ ...current, ...patch }));
@@ -1044,6 +1068,7 @@ export function DelaysBoard({
           Clear
         </button>
       ) : null}
+      {inSheet ? null : <ListExportButton load={exportList} disabled={shown.length === 0} testId="delays-export" />}
     </div>
   );
 
