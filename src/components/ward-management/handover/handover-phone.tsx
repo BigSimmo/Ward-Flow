@@ -100,6 +100,8 @@ export type HandoverPhoneProps = {
   /** The meeting timer, as on desktop. */
   meetingOn: boolean;
   onToggleMeeting: () => void;
+  /** Feature 15: opens the Shift digest sheet. */
+  onOpenDigest?: () => void;
   history: ReactNode;
   /** Q61 to Q63: the site bed manager's site sign-off, first on the sheet tab only, so opening a ward lands on its
    * sheet; null for any other desk. */
@@ -443,6 +445,7 @@ export function HandoverPhone({
   chips,
   meetingOn,
   onToggleMeeting,
+  onOpenDigest,
   history,
   siteSignOff,
 }: HandoverPhoneProps) {
@@ -570,6 +573,7 @@ export function HandoverPhone({
                   label: meetingOn ? "Stop the meeting timer" : "Start the meeting timer",
                   onSelect: onToggleMeeting,
                 },
+                ...(onOpenDigest ? [{ id: "digest", label: "Shift digest", onSelect: onOpenDigest }] : []),
               ]}
               // While the meeting timer runs, the trigger says so in words, and its name keeps them.
               trigger={(props) => (

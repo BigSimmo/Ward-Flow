@@ -1601,12 +1601,12 @@
       {
         "path": "src/components/ward-management/ward-flow-event-roles.ts",
         "line": 1,
-        "sha256": "0465c43a2691b8e745cfb9343bc234404a5edf1cc743e839c949c49e581aca6d"
+        "sha256": "da718a803ac5e5ea82ad5bf85b5d535ac305dbf720a41fca6ff635d0fcb01ff3"
       },
       {
         "path": "src/components/ward-management/ward-flow-events.ts",
         "line": 1,
-        "sha256": "0e1c2bc3beebc0ea41415cc651bbae50d54cde9053fa585dc5e2017bbdfe5c4e"
+        "sha256": "edf74a22c6485a23265273e03d83720cd9aa6f811dcadd4d679f299709a67cf4"
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
@@ -1635,8 +1635,8 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-reducer.ts",
-        "line": 1161,
-        "sha256": "2d8f6f02d582e1c5ff2eeb20ec330add437f38dadc97803e48c05a90626d6c0d"
+        "line": 1164,
+        "sha256": "601fe03afb4bea9fb885697bc58e6b7d627ebd94b26e3bd809233a248675a5e8"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
@@ -1650,8 +1650,8 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-storage-validation.ts",
-        "line": 456,
-        "sha256": "a020c797213c9388fc68cca6e1f3f37432b8bb28fd391415feee20192151c653"
+        "line": 457,
+        "sha256": "187cce74787d06e0c1380160ef7ab3a904cb4e3ae9e2444a12b7771a1601d19a"
       },
       {
         "path": "src/components/ward-management/ward-flow-transport-events.ts",

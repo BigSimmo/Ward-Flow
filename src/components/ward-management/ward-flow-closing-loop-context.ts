@@ -3,6 +3,7 @@ import type { HomeServiceReturnRecord } from "./out-of-area/home-service-return"
 import type { ReturnEarlyFlagRecord, ReturnEarlyNotice } from "./out-of-area/return-early";
 import type { SiteHandoverSignOffRecord } from "./site-sign-off/site-handover-sign-off";
 import type { TriageSignedRecord } from "./triage/triage-record";
+import type { StaffRequestRecord } from "./staffing/staff-requests";
 import type { WardFlowState } from "./ward-flow-reducer";
 
 /**
@@ -26,6 +27,8 @@ export type ClosingLoopContext = {
   returnEarlyNotices?: ReturnEarlyNotice[];
   /** Signed triages (`RECORD_TRIAGE_SIGNED`, 7 Nov 2026): codes only, read by the triage form and the patient record. */
   triages?: TriageSignedRecord[];
+  /** Staff needed (`REQUEST_WARD_STAFF`, feature 10): read through `openStaffRequests`. */
+  staffRequests?: StaffRequestRecord[];
 };
 
 export const CLOSING_LOOP_CONTEXT_KEYS = {
@@ -35,6 +38,7 @@ export const CLOSING_LOOP_CONTEXT_KEYS = {
   returnEarlyFlags: true,
   returnEarlyNotices: true,
   triages: true,
+  staffRequests: true,
 } as const;
 
 const NONE: never[] = [];
@@ -47,5 +51,6 @@ export function closingLoopContext(state: WardFlowState): Required<ClosingLoopCo
     returnEarlyFlags: Array.isArray(state.returnEarlyFlags) ? state.returnEarlyFlags : NONE,
     returnEarlyNotices: Array.isArray(state.returnEarlyNotices) ? state.returnEarlyNotices : NONE,
     triages: Array.isArray(state.triages) ? state.triages : NONE,
+    staffRequests: Array.isArray(state.staffRequests) ? state.staffRequests : NONE,
   };
 }

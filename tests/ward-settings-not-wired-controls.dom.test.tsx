@@ -242,7 +242,8 @@ describe("settings screen: deleted Preview controls stay out of every build", ()
 
   it("find a setting offers no deleted row, and every result it offers is on screen", () => {
     expect(SETTINGS_SEARCH_ENTRIES.filter((entry) => DELETED_TARGETS.includes(entry.id))).toEqual([]);
-    expect(findSettings("quiet hours")).toEqual([]);
+    // Item 20 (9 Nov 2026): quiet hours came back as a wired row on this device's alerts.
+    expect(findSettings("quiet hours").map((entry) => entry.id)).toEqual(["alerts-quiet-hours"]);
     expect(findSettings("surge ends")).toEqual([]);
     expect(findSettings("handover").map((entry) => entry.id)).toEqual([]);
 

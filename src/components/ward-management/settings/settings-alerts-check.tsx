@@ -19,6 +19,7 @@ import { Button, Card, CardHead, SrOnly, StatusGlyph, Switch, buttonClass } from
 import styles from "@/components/ward-management/settings/settings.module.css";
 import rx from "./settings-layout.module.css";
 import { SettingRow } from "./settings-rows";
+import { SettingsAlertChoices } from "./settings-alert-choices";
 
 export function SettingsAlertsPane({
   notifications,
@@ -88,6 +89,7 @@ export function SettingsAlertsPane({
           phonePush={phonePush}
           onChange={onAlertsChange}
         />
+        <SettingsAlertChoices />
         <SettingsInstallHint />
         {phoneQuick ? null : (
           <SettingRow setting="buzz" title="Buzz sound" sub="Chime on an urgent buzz" testId="setting-buzz-alert-row">

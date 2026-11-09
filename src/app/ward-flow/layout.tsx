@@ -10,7 +10,7 @@ import {
 } from "@/components/wf";
 import { WardAccessibility } from "@/components/ward-management/shell/ward-accessibility";
 import { WardDetailsLightDismiss } from "@/components/ward-management/shell/ward-details-light-dismiss";
-import { WardActNowNotifier } from "@/components/ward-management/shell/ward-act-now-notifier";
+import { WardActNowNotifier } from "@/components/ward-management/shell/ward-act-now-notifier-lazy";
 import { WardPwaRegistration } from "@/components/ward-management/shell/ward-pwa-registration";
 import { NextBarMount as WardBarMount } from "@/components/ward-management/shell-next/next-bar";
 import { WARD_EARLY_TAP_SCRIPT } from "@/components/ward-management/shell/ward-early-tap";

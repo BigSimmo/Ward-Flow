@@ -313,6 +313,8 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   // Closing-the-loop (package E): directory checks name a mock directory entry and a desk, never a
   // person, so every desk keeps them.
   directoryChecks: (context) => context.state.directoryChecks ?? [],
+  // Staff needed (feature 10): a ward, a shift, a count and chosen reasons. Each desk keeps its wards'.
+  staffRequests: (context) => (context.state.staffRequests ?? []).filter((record) => context.unitIn(record.unitId)),
   // Closing-the-loop (package E): the coordinator's return plan, as repatriations below.
   homeServiceReturns: (context) =>
     context.coordinator
@@ -426,6 +428,7 @@ export function scopeWardFlowState(
   if (state.siteHandoverSignOffs === undefined) delete next.siteHandoverSignOffs;
   if (state.returnEarlyFlags === undefined) delete next.returnEarlyFlags;
   if (state.triages === undefined) delete next.triages;
+  if (state.staffRequests === undefined) delete next.staffRequests;
   if ((next.returnEarlyNotices as unknown[]).length === 0) delete next.returnEarlyNotices;
   return {
     state: closeReferences(next as WardFlowState, scoped.datesOnlyAdmissionIds, state, access.role !== "executive"),
