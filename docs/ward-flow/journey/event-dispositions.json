@@ -3824,7 +3824,7 @@
         {
           "path": "src/components/ward-management/ward-bed-hold.ts",
           "line": 106,
-          "sha256": "09719f7113167603fd7f39243459206c223bf3c82dad9b8a94c298ba31cf6e54"
+          "sha256": "20d171481ea1e540bf9a52bf1f694fa5ae8bdd86589bd31aeccf5a1c2f613336"
         }
       ],
       "tests": ["tests/ward-extend-pull.test.ts"]
