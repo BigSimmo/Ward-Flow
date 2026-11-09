@@ -31,6 +31,19 @@
   font-weight: 500;
 }
 
+.aside {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-4);
+}
+
+.hint {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
 .keyBands {
   display: flex;
   flex-wrap: wrap;
@@ -193,13 +206,6 @@
   background: color-mix(in srgb, var(--wf-danger) 12%, transparent);
   color: var(--wf-danger-ink, var(--wf-ink-1));
   font-weight: 600;
-}
-
-.key {
-  margin: 0;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
 }
 
 @media (max-width: 75rem) {

@@ -70,13 +70,18 @@ export function StagePipeline({
               : ""}
           </span>
         </h2>
-        <span className={styles.keyBands} aria-label="Wait bands">
-          {WAIT_BANDS.map((band, index) => (
-            <span key={band}>
-              <i className={board[`band${index}`]} aria-hidden="true" />
-              {band}
-            </span>
-          ))}
+        {/* Note 7 (9 Nov 2026): the how-to sits in the header beside the key, not as a loose line
+            under the strip; each stage's tooltip still gives its count in each wait band. */}
+        <span className={styles.aside}>
+          <span className={styles.hint}>Choose a stage to see its patients</span>
+          <span className={styles.keyBands} aria-label="Wait bands">
+            {WAIT_BANDS.map((band, index) => (
+              <span key={band}>
+                <i className={board[`band${index}`]} aria-hidden="true" />
+                {band}
+              </span>
+            ))}
+          </span>
         </span>
       </div>
       <ol className={styles.flow}>
@@ -137,7 +142,6 @@ export function StagePipeline({
           );
         })}
       </ol>
-      <p className={styles.key}>Choose a stage to see its patients. Hover a stage for the count in each wait band.</p>
     </nav>
   );
 }
