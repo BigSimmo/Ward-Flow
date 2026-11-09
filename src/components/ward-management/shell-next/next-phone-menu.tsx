@@ -319,17 +319,13 @@ const DOCK_ONE_LINE_CHARS = 12;
  * Returns true when it scrolled, so the caller skips its navigation announcement.
  */
 function backToTopOnRetap(event: MouseEvent<HTMLAnchorElement>): boolean {
-  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return false;
-  const trim = (path: string) => path.replace(/\/+$/u, "") || "/";
-  const target = new URL(event.currentTarget.href, window.location.href);
-  const here = trim(window.location.pathname) + window.location.search + window.location.hash;
-  if (trim(target.pathname) + target.search + target.hash !== here) return false;
+  const trim = (href: string) => href.replace(/\/+(?=$|[?#])/u, "");
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button) return false;
+  if (trim(event.currentTarget.href) !== trim(location.href)) return false;
   event.preventDefault();
-  const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-  document.querySelectorAll<HTMLElement>("[data-wf-scroller]").forEach((scroller) => {
+  const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+  for (const scroller of [window, ...document.querySelectorAll("[data-wf-scroller]")])
     scroller.scrollTo({ top: 0, behavior });
-  });
-  window.scrollTo({ top: 0, behavior });
   announceToWardShell("Top of the page.");
   return true;
 }
