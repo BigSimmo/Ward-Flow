@@ -278,9 +278,11 @@ const MODEL_CONSTANT_PROVENANCE: Record<string, string> = {
   PULL_HOLD_RANGE_MINUTES:
     "coordinator-usable slider band around PULL_HOLD_MINUTES — not statutory, not independently sourced",
 
-  // Product owner, 2026-08-30, ruling `FD-19` in the archived identity register
-  // (`docs/history/archive/decision-identity-register-2026-08-to-2026-09.md`): "a ward→ED-medical
-  // trip frees the bed ONLY IF the stay is expected to exceed 48 hours, and that is overridable".
+  // D-106 (Josh, 9 Nov 2026): 24 hours, signed. A ward→ED-medical trip expected to exceed 24 hours
+  // flags the held bed for a person to review; Ward Flow never frees it by itself, and only an
+  // override does. History: ruling `FD-19` (product owner, 2026-08-30, archived identity register
+  // `docs/history/archive/decision-identity-register-2026-08-to-2026-09.md`) said 48 hours; a
+  // clinical owner ruling of 14 Oct 2026 set 24 hours but had no D entry.
   //
   // ⚠️ THIS IS THE ONE ENTRY IN THIS LIST THAT IS A DURATION IN THE SAME UNITS A STATUTORY PERIOD
   // WOULD BE, so it is the one most likely to be mistaken for one. It is a BED-MANAGEMENT
@@ -293,8 +295,8 @@ const MODEL_CONSTANT_PROVENANCE: Record<string, string> = {
   // It is permitted because the OWNER SUPPLIED IT. The standing refusal is against inventing
   // figures from the Mental Health Act; this is his own service figure, quoted from him.
   ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS:
-    "product owner, 2026-08-30, ruling FD-19 — bed-management threshold deciding whether a bed " +
-    "stays assigned during a general-hospital trip; NOT a statutory period, and pinned apart " +
+    "D-106 (Josh, 9 Nov 2026), 24 hours, replacing FD-19's 48 — bed-management threshold past which a " +
+    "held bed is flagged for review during a general-hospital trip; NOT a statutory period, and pinned apart " +
     "from every legal surface by tests/ward-bed-release-threshold-provenance.test.ts",
 
   // The runtime mirror of the `urgency: 1 | 2 | 3` union that already existed on both `Movement`

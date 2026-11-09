@@ -227,8 +227,9 @@ export type BedRetentionDecision = {
 };
 
 /**
- * Ruling `FD-19` (owner, 2026-08-30): a ward→ED-medical trip expected to exceed
- * `ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS` is where the bed MAY be given up, and that is
+ * D-106 (Josh, 9 Nov 2026), which keeps the figure at 24 hours and replaces ruling `FD-19` (owner,
+ * 2026-08-30, 48 hours): a ward→ED-medical trip expected to exceed
+ * `ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS` flags the held bed for review, and that is
  * OVERRIDABLE. **This function never frees the bed by itself** (never-build rule: no auto-releasing
  * held beds). Above the threshold it returns `freesBed: false` with `requiresReview: true`, so a
  * person decides; at or below it, the bed stays theirs and the person reads as on overnight leave.

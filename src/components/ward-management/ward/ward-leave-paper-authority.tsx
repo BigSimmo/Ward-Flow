@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { Button, DateTimeField, StatusGlyph } from "@/components/wf";
 import { formTitleForCode } from "@/lib/form-register";
 import type { Admission } from "../ward-admissions";
+import { CLINICAL_VALUES } from "../ward-clinical-values";
 import { MINUTES_PER_DAY, perthDateTimeLocal } from "../ward-clock";
 import {
   INVOLUNTARY_DEPARTURE_REFUSAL,
@@ -20,8 +21,8 @@ import styles from "./ward-leave-paper-authority.module.css";
 /** Form titles come from the Chief Psychiatrist register, never hand-written (T5). */
 const registerLabel = (code: string) => `Form ${code} (${formTitleForCode(code) ?? code})`;
 
-/** #67: paper written longer ago than this is warned, never refused. */
-const OLD_PAPER_DAYS = 3;
+/** #67: paper written longer ago than this is warned, never refused. Read from the register (D-106). */
+const OLD_PAPER_DAYS = CLINICAL_VALUES.oldLeavePaper.value;
 
 const AUTHORITIES = [
   { id: "revocation", label: "Revocation of the order" },

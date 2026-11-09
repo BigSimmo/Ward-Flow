@@ -190,7 +190,9 @@ function AccessAdminPanel() {
   const describe = (access: WardAccess) => `${ACCESS_ROLE_LABELS[access.role]}, ${place(access)}`;
   const live = source.memberships.filter((m) => membershipStatus(m, now) !== "ended");
   const open = source.requests.filter((r) => r.decision === null);
-  const defaultEnd = now + 90 * MINUTES_PER_DAY;
+  // Read from the register (D-106, 9 Nov 2026); synthetic until signed.
+  const defaultDays = CLINICAL_VALUES.accessGrantDefault.value;
+  const defaultEnd = now + defaultDays * MINUTES_PER_DAY;
 
   return (
     <>
@@ -230,11 +232,11 @@ function AccessAdminPanel() {
                       onClick={() =>
                         run(
                           () => source.decide(request.id, "approved", defaultEnd),
-                          `Given for 90 days: ${describe(request.access)}.`,
+                          `Given for ${plural(defaultDays, "day")}: ${describe(request.access)}.`,
                         )
                       }
                     >
-                      Give for 90 days
+                      Give for {plural(defaultDays, "day")}
                     </Button>
                     <Button
                       size="sm"

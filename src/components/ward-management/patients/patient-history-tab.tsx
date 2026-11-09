@@ -40,11 +40,16 @@ import { LEAVING_DESTINATIONS, type Admission } from "../ward-admissions";
 import type { Patient } from "../ward-patients";
 import type { PatientRegistrationScope } from "../ward-patient-registration";
 import { calendarDateOf, perthDateLabel, perthDayLabel } from "../ward-clock";
+import { CLINICAL_VALUES } from "../ward-clinical-values";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { originName } from "@/components/ward-management/ward-movement-origin";
 import { STAGES, type PatientNowRecord } from "./patient-now-records";
 import { recordExtrasFor, type EpisodeKind, type PastEpisode, type RecordDocument } from "./patient-record-extras";
 import s from "./patient-history-tab.module.css";
+
+/** The readmission window, read from the register (`readmissionWindow`), never typed in a label. */
+const READMISSION_DAYS = CLINICAL_VALUES.readmissionWindow.value;
+const READMITTED_WITHIN = `Readmitted within ${READMISSION_DAYS} days`;
 
 type LogEvent = { at: number; tone: WfTone; text: string };
 type Presentation = PatientNowRecord["presentations"][number];
@@ -221,7 +226,10 @@ function patternsOf(rows: EpisodeRow[]): { k: string; v: string }[] {
   }
   const readmits = rows.filter((row) => row.readmit28);
   if (readmits.length > 0)
-    out.push({ k: "28-day readmissions", v: `${readmits.length} · ${readmits.map(monthYear).join(", ")}` });
+    out.push({
+      k: `${READMISSION_DAYS}-day readmissions`,
+      v: `${readmits.length} · ${readmits.map(monthYear).join(", ")}`,
+    });
   return out;
 }
 
@@ -610,7 +618,7 @@ function StatRow({
         n={discharged ? numericLabel(discharged) : "None"}
         label={lastAdmission?.end || !lastAdmission ? "Last discharge" : "Last admission"}
         sub={lastAdmission?.where ?? "No admission recorded"}
-        tag={lastAdmission?.readmit28 ? "Readmitted within 28 days" : undefined}
+        tag={lastAdmission?.readmit28 ? READMITTED_WITHIN : undefined}
       />
     </div>
   );
@@ -842,7 +850,7 @@ function EpisodeItem({ row, documents }: { row: EpisodeRow; documents: RecordDoc
             </span>
             <span className={s.outcomeLine}>
               <span className={s.outcomeText}>{row.outcome}</span>
-              {row.readmit28 ? <Badge size="sm">Readmitted within 28 days</Badge> : null}
+              {row.readmit28 ? <Badge size="sm">{READMITTED_WITHIN}</Badge> : null}
               {counts.map(([key, word]) => (
                 <Badge key={key} size="sm" n={row.counts?.[key]}>
                   {word}
