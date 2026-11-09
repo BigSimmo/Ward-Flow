@@ -311,3 +311,33 @@
     color: var(--wf-ink-2);
   }
 }
+
+/*
+ * Counts sit up and to the right of their label, like a superscript (Josh, 9 Nov 2026), so each tab
+ * is its label's width plus a small tail and the chosen folder stays balanced round the word. Text
+ * stays at the 12px floor; the badge shrinks to a 16px circle.
+ */
+.switch.switch.switch > *,
+.nav.nav [role="tablist"] [role="tab"] {
+  gap: 2px;
+}
+
+.switch.switch.switch > * > :last-child,
+.nav.nav [role="tablist"] [role="tab"] > :last-child {
+  position: relative;
+  top: -5px;
+  align-self: center;
+  margin-top: 0;
+  font-size: var(--wf-fs-12);
+  line-height: 12px;
+}
+
+.nav[data-act] .switch.switch.switch > :first-child > :last-child {
+  min-width: 16px;
+  height: 16px;
+  top: -4px;
+  margin-left: 2px;
+  padding: 0 4px;
+  border-radius: 8px;
+  line-height: 16px;
+}
