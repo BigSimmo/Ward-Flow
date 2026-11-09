@@ -9,7 +9,7 @@ import { splitDuration } from "@/components/ward-management/ward-clock";
 import { LegalFormNextStep, LegalFormSummary } from "@/components/ward-management/legal-forms/legal-form-card";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { JourneyStrip, PhoneSheet } from "@/components/wf";
-import { CardSafetyTags } from "@/components/ward-management/patients/card-safety-tags";
+import { CardSafetyTagsLazy as CardSafetyTags } from "@/components/ward-management/patients/card-safety-tags-lazy";
 import { edJourneyStages } from "./ed-journey";
 import { edRowReferralStatus, edStageLabel } from "./ed-referral-status";
 import type { EdBoardRowModel } from "./ed-screen-board-row";

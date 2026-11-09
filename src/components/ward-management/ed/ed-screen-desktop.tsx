@@ -20,7 +20,7 @@ import { noFormWords as formNotHeldWords } from "@/components/ward-management/wa
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edWaitStep } from "@/components/ward-management/ward-ed-wait-steps";
 import { buttonClass, StatusGlyph } from "@/components/wf";
-import { CardSafetyTags } from "@/components/ward-management/patients/card-safety-tags";
+import { CardSafetyTagsLazy as CardSafetyTags } from "@/components/ward-management/patients/card-safety-tags-lazy";
 import { EdActionsMenu } from "./ed-board-controls";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";

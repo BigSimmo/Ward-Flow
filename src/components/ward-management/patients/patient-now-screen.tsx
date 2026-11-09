@@ -40,6 +40,9 @@ import dynamic from "next/dynamic";
 import { preloadWhenIdle } from "../preload-when-idle";
 // The arrival-time dialog has no initial-page content. Load it only after its action is opened.
 // (Document details load through the cancellable UploadFormsModal below.)
+// Care and safety (Josh, 9 Nov 2026) sits below the first screen of the Now tab, so its code loads
+// on its own rather than with the patient page's first load.
+const PatientCarePlansCard = dynamic(() => import("./patient-care-plans-card").then((m) => m.PatientCarePlansCard));
 const ArrivalTimeModal = dynamic(() => import("../referrals/arrival-time-modal").then((m) => m.ArrivalTimeModal));
 // F-10: transit operations only draw inside the Destination sheet, so their code loads on its own,
 // fetched once the page is idle, rather than with the patient page.
@@ -105,7 +108,6 @@ import {
   perthClockTime,
   perthIsoDay,
 } from "@/components/ward-management/ward-clock";
-import { PatientCarePlansCard } from "./patient-care-plans-card";
 import type { TransportBookingAnswers } from "@/components/ward-management/ward-transport-checks";
 import {
   BLANK_TRANSPORT_BOOKING,
