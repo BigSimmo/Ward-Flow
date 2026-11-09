@@ -41,14 +41,26 @@ function walk(dir: string): string[] {
   );
 }
 
+/** True when a file's source could hold a form label once its escapes are decoded. */
+export function mayHoldFormLabel(raw: string): boolean {
+  return /\bForm(?:\s+\d|\\)|\\[ux]/.test(raw);
+}
+
 /** Every string-shaped literal AND every JSX text node in one file — `tests/helpers/ast-string-
  *  literals.ts`'s `literalsIn` deliberately skips JSX text, which is exactly where the KPI-strip
  *  violation this guard exists for lived (`<span>Form 1A (Exam referral)</span>`), so this file
  *  keeps its own extraction rather than widen that shared helper's contract for other callers. */
 function formLabelTextsIn(path: string): string[] {
+  const raw = readFileSync(path, "utf8");
+  // Both patterns need "Form", whitespace and a digit in one fragment once escapes are decoded. A
+  // file whose source has none of that, no "Form" before an escape (such as \t) and no \u or \x
+  // escape anywhere (which could spell "Form" itself) cannot offend, so it is not parsed. That skips
+  // about nine files in ten and keeps this guard well inside the test timeout on a busy CI runner,
+  // where parsing every file ran past 30 seconds twice on 9 Nov 2026.
+  if (!mayHoldFormLabel(raw)) return [];
   const source = ts.createSourceFile(
     path,
-    readFileSync(path, "utf8"),
+    raw,
     ts.ScriptTarget.Latest,
     true,
     path.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
@@ -98,6 +110,13 @@ describe("every rendered form label comes from the Chief Psychiatrist register",
       }
     }
     expect(offenders).toEqual([]);
+  });
+
+  it("parses a file that spells a form label with escapes, and skips one that cannot hold a label", () => {
+    expect(mayHoldFormLabel(String.raw`export const t = "F\u006frm 1A (Exam referral)";`)).toBe(true);
+    expect(mayHoldFormLabel(String.raw`export const t = "Form\t1A (Exam referral)";`)).toBe(true);
+    expect(mayHoldFormLabel(`export const t = "Form 1A (Exam referral)";`)).toBe(true);
+    expect(mayHoldFormLabel(`export const t = "A form with no code";`)).toBe(false);
   });
 
   it("Form 3D's register title is the owner's 'further examination' order and carries no duration", () => {
