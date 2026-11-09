@@ -157,3 +157,10 @@
 .packToast .recoveryClose {
   margin-inline-start: 0;
 }
+
+/* Phone: the line is narrow, so the glyph gives its room to the words. */
+@media (max-width: 46.4375rem) {
+  .packGlyph {
+    display: none;
+  }
+}

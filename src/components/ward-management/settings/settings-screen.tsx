@@ -1131,7 +1131,6 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
               </span>
             }
             eyebrow={deskProfile.location}
-            chip={sharedEnabled ? undefined : <span className={styles.phoneProfileChip}>Demo profile</span>}
             sub={roleIsName ? undefined : deskProfile.role}
           />
 
@@ -1356,7 +1355,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
                       "Read only on this desk"
                     ) : (
                       <>
-                        <strong>Changes wait for Save.</strong> Each save is recorded in the audit.
+                        <strong>Changes wait for Save.</strong> Each save is audited.
                       </>
                     )}
                   </dd>
@@ -1396,6 +1395,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
                   if (on) showSection("rules");
                 }}
                 awayFromDefault={awayFromDefault}
+                compact
               />
             </span>
           ) : null}

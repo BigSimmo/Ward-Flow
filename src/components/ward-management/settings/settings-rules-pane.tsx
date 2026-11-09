@@ -435,12 +435,25 @@ export function ChangedOnlySwitch({
   onChange,
   awayFromDefault,
   className,
+  compact = false,
 }: {
   checked: boolean;
   onChange: (on: boolean) => void;
   awayFromDefault: number;
   className?: string;
+  /** The sticky section bar's shorter label (Note 14 polish). */
+  compact?: boolean;
 }) {
+  const count = awayFromDefault === 0 ? "none" : String(awayFromDefault);
+  if (compact)
+    return (
+      <Switch
+        checked={checked}
+        onCheckedChange={onChange}
+        className={cx(rx.changedOnlySwitch, className)}
+        label={`Changed from default (${count})`}
+      />
+    );
   return (
     <Switch
       checked={checked}

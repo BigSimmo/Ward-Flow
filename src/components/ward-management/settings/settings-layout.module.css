@@ -465,9 +465,9 @@
 /* Note 14 (Josh, 8 Nov 2026): the profile hero. A larger avatar with a soft ring, role and desk on
    one quiet line under the name, and a three-part status strip at the foot of the band. */
 .heroAvatar {
-  inline-size: 3.25rem;
-  block-size: 3.25rem;
-  font-size: var(--wf-fs-16, 1rem);
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  font-size: var(--wf-fs-13, 0.8125rem);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
 }
 
@@ -521,7 +521,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0 var(--wf-s-2);
+  gap: 0 6px;
   margin: 0;
   color: var(--wf-hero-ink);
   font-size: var(--wf-fs-13, 0.8125rem);
@@ -560,7 +560,8 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2) var(--wf-s-4);
-  margin-block: 0 var(--wf-s-2);
+  /* Tucks up into the page's row gap so the bar sits close under the band (Note 14 polish). */
+  margin-block: calc(-1 * var(--wf-s-2)) var(--wf-s-2);
   padding-block: var(--wf-s-2);
   border-bottom: 1px solid var(--wf-line);
   background: color-mix(in srgb, var(--wf-canvas) 88%, transparent);
@@ -584,7 +585,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--wf-s-2);
-  height: 36px;
+  height: 30px;
   padding: 0 var(--wf-s-3);
   border: 0;
   border-radius: var(--wf-r-sm, 8px);

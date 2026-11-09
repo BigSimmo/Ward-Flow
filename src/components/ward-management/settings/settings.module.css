@@ -1151,27 +1151,6 @@
   display: none;
 }
 
-/* v10 phone hero: "Demo profile" as a quiet filled tag beside the name. */
-.phoneProfileChip {
-  display: inline-flex;
-  align-items: center;
-  height: 22px;
-  padding: 0 8px;
-  /* A quiet filled tag: an outline alone read as a button that did nothing when tapped. */
-  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 20%, transparent);
-  border-radius: var(--wf-r-tag);
-  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
-  color: var(--wf-hero-ink);
-  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
-  white-space: nowrap;
-}
-
-/* Centre the chip on the name row (3px padding + 32px avatar + 3px = 38px), not the hero's 28px
-   eyebrow line it sits in. */
-.phoneProfileChip {
-  margin-top: calc((38px - 28px) / 2);
-}
-
 /* v10 phone sheets: the switch alone shows its state; the On or Off word stays for wider screens
  * (it is aria-hidden; the switch's aria-checked carries the state). */
 .phoneSheetBody [role="switch"] > span:last-child {
