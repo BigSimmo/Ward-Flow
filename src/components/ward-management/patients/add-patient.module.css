@@ -888,3 +888,42 @@
     max-width: 100%;
   }
 }
+
+/* Note 3 (Josh, 8 Nov 2026): the optional folds read as one calm list. A fold names its contents
+   in a few words; once something is in it, a small count says so. Open, its fields sit three across
+   on a wide screen, labels above, so a full registration is one short pass. */
+.foldCount {
+  flex: none;
+  padding: 1px var(--wf-s-2);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wf-success) 14%, var(--wf-surface));
+  color: var(--wf-success-ink, var(--wf-ink-1));
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.fold[open] {
+  background: color-mix(in srgb, var(--wf-surface-2) 55%, var(--wf-surface));
+}
+
+.fold[open] .foldSummary {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .foldBody {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .foldBody .span2 {
+    grid-column: span 2;
+  }
+}
+
+@media (min-width: 64rem) {
+  /* Sex and gender each need a row of chips, so that fold is two across. */
+  .fold[data-fold="about"] .foldBody {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

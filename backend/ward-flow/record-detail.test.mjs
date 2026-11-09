@@ -39,7 +39,35 @@ test("the detail of one patient names only the detail fields it holds", () => {
   assert.deepEqual(recordDetailOf({ address: "x".repeat(501), interpreterLanguage: "Greek" }), {
     interpreterLanguage: "Greek",
   });
-  assert.deepEqual([...RECORD_DETAIL_FIELDS], ["address", "interpreterLanguage"]);
+  assert.deepEqual(
+    [...RECORD_DETAIL_FIELDS],
+    [
+      "address",
+      "interpreterLanguage",
+      "mobilePhone",
+      "otherPhone",
+      "email",
+      "postcode",
+      "nextOfKinName",
+      "nextOfKinRelationship",
+      "nextOfKinPhone",
+      "supportPersonRole",
+      "supportPersonName",
+      "supportPersonPhone",
+      "medicareNumber",
+      "medicareReference",
+      "medicareExpiry",
+      "dvaFileNumber",
+      "healthFund",
+      "concessionCard",
+      "gpPhone",
+      "countryOfBirth",
+      "interpreterRequired",
+      "maritalStatus",
+      "advanceHealthDirective",
+      "enduringGuardian",
+    ],
+  );
 });
 
 const url = process.env.WARD_TEST_DATABASE_URL;

@@ -26,8 +26,8 @@
   min-width: 0;
 }
 
-/* Drawer review (6 Nov 2026): one column. "At a glance" is an unscrolled summary above the list,
-   which takes the full width; a chosen place opens in the kit drawer (hub-screen.tsx). */
+/* One column: the network list takes the full width; "At a glance" opens from the band (Note 10),
+   and a chosen place opens in the kit drawer (hub-screen.tsx). */
 .hubShell {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -35,14 +35,9 @@
   min-width: 0;
 }
 
-.hubLeft,
-.glanceCard {
+.hubLeft {
   min-width: 0;
   overflow: hidden;
-}
-
-.hubGlance {
-  min-width: 0;
 }
 
 /* The summary's sections sit side by side on a wide screen, each in its own column. */
@@ -741,10 +736,6 @@
  * (hub-screen.tsx). Review point 21: each row is the place's two lines, with a stale count's
  * "Stale 5h" on the right of them (round 2). Desktop is unchanged. */
 @media (max-width: 46.4375rem) {
-  .hubGlance {
-    display: none;
-  }
-
   .controlsRow + .controlsRow > :first-child,
   .controlsRow + .controlsRow > :nth-child(2) {
     display: none;
@@ -980,13 +971,14 @@
 
 /* Review point 21 (Josh approved 31 Oct 2026): Places is a directory. Search sits in the header. */
 /* PL1: the page search sits at the top of the list card it narrows. */
-.listSearchRow {
-  display: flex;
+/* Note 10 (Josh, 8 Nov 2026): a compact search box on the controls row, not a full-width bar. */
+.heroSearch {
+  flex: 0 1 18.75rem;
+  min-width: 12rem;
 }
 
-.heroSearch {
-  flex: 1 1 auto;
-  min-width: 0;
+.orderLabel {
+  margin-left: auto;
 }
 
 /* Wards by service: a count of wards, not beds. Each row searches its service. */
@@ -1164,5 +1156,188 @@
   .hubHero [aria-label="Places views"] > :is(a, button) {
     min-height: 40px;
     padding-block: 0;
+  }
+}
+
+/* Note 10 (Josh, 8 Nov 2026): "At a glance" opens from a chip in the band, so the network list
+   leads the page. The chip is amber while any ward's bed count needs a check. */
+.heroBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  min-width: 0;
+}
+
+.glanceAnchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.glanceChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 40px;
+  padding: 0 var(--wf-s-3);
+  border: 1.5px solid color-mix(in srgb, var(--wf-hero-ink) 32%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+  color: var(--wf-hero-ink);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Amber while any ward's bed count needs a check (the band's night warning token). */
+.glanceChipWarn {
+  border-color: var(--wf-warning);
+  background: color-mix(in srgb, var(--wf-warning) 16%, transparent);
+}
+
+.glanceChip:hover {
+  background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+}
+
+.glanceChipWarn:hover {
+  background: color-mix(in srgb, var(--wf-warning) 24%, transparent);
+}
+
+.glanceChip:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.glanceChipCaret {
+  transition: transform 120ms ease;
+}
+
+.glanceChip[aria-expanded="true"] .glanceChipCaret {
+  transform: rotate(180deg);
+}
+
+.glanceChipCount {
+  padding: 1px var(--wf-s-2);
+  border-radius: 999px;
+  background: var(--wf-warning);
+  color: var(--wf-hero-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 700;
+}
+
+.glanceChipMeta {
+  color: color-mix(in srgb, var(--wf-hero-ink) 78%, transparent);
+  font-weight: 500;
+}
+
+/* The panel opens inside the band, so it puts the page's day status and focus tokens back. */
+.glancePanel.glancePanel {
+  --wf-warning: var(--wf-warning-ink);
+  --wf-neutral: var(--wf-ink-3);
+  --wf-focus-ring: var(--wf-accent);
+  --wf-focus-gap: var(--wf-surface);
+  width: min(48rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 1rem);
+  max-height: min(36rem, 75vh);
+  overflow: auto;
+  padding: 0;
+  /* Solid, so the list behind never shows through the summary. */
+  background-color: var(--wf-surface);
+  background-image: none;
+}
+.glanceHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.glanceTitle {
+  margin: 0;
+  font-size: var(--wf-fs-15, var(--wf-fs-14));
+  font-weight: 600;
+}
+
+.glancePanel .glanceSection {
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.moreNote {
+  margin: var(--wf-s-2) 0 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.glancePanel .worthKnowing {
+  margin-top: var(--wf-s-3);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.glancePanel .decisionRow:last-child {
+  border-bottom: 0;
+}
+
+.glanceHeadEnd {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.glanceClose {
+  min-width: 32px;
+  padding-inline: 0;
+}
+
+.glanceHead {
+  border-bottom: 1px solid var(--wf-line);
+}
+
+/* Two columns in the pop-out: needs a check beside wards by service, then pinned and recent. */
+.glancePanel .glanceSection {
+  border-top: 0;
+}
+
+.glancePanel .glanceSection + .glanceSection {
+  border-top: 1px solid var(--wf-line);
+}
+
+@media (min-width: 64.0625rem) {
+  .glancePanel .overviewBody {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .glancePanel .overviewBody > .glanceSection:nth-child(2) {
+    border-top: 0;
+  }
+
+  .glancePanel .overviewBody > .glanceSection:nth-child(odd) {
+    border-left: 0;
+  }
+}
+
+/* Note 10 polish: on a wide screen the confirmed column is wide enough for its heading on one line. */
+@media (min-width: 64.0625rem) {
+  .listHead,
+  .resultMain {
+    grid-template-columns: minmax(0, 1fr) 11.5rem;
+  }
+
+  .listHead > :last-child {
+    white-space: nowrap;
+  }
+}
+
+/* Order and Reset stay together at the right end of the controls row. */
+.orderLabel ~ .controlsEnd {
+  margin-left: 0;
+}
+
+/* Phone: the glance stays off the compact band. After .glanceAnchor so it wins at equal specificity. */
+@media (max-width: 46.4375rem) {
+  .glanceAnchor {
+    display: none;
   }
 }

@@ -164,6 +164,34 @@ export type Patient = {
    */
   communityTreatmentOrder?: CommunityTreatmentOrder;
   /**
+   * Note 3 (Josh, 8 Nov 2026): the administrative details a ward clerk records at registration,
+   * each optional, typed or chosen as recorded and never inferred. They are record detail: no board,
+   * list or transport view carries them (`ward-shared-record-detail.ts`). Listed, in form order, in
+   * `ADMIN_DETAIL_FIELDS` below.
+   */
+  mobilePhone?: string;
+  otherPhone?: string;
+  email?: string;
+  postcode?: string;
+  nextOfKinName?: string;
+  nextOfKinRelationship?: string;
+  nextOfKinPhone?: string;
+  supportPersonRole?: string;
+  supportPersonName?: string;
+  supportPersonPhone?: string;
+  medicareNumber?: string;
+  medicareReference?: string;
+  medicareExpiry?: string;
+  dvaFileNumber?: string;
+  healthFund?: string;
+  concessionCard?: string;
+  gpPhone?: string;
+  countryOfBirth?: string;
+  interpreterRequired?: string;
+  maritalStatus?: string;
+  advanceHealthDirective?: string;
+  enduringGuardian?: string;
+  /**
    * WHEN THIS RECORD WAS ADDED through Add patient (`ADD_PATIENT`) — v10 pass 2 (Josh, 10 Oct 2026),
    * so the Add patient page can count "Added today". A fact about the RECORD, never about the person.
    * Absent on every seeded patient and on any patient saved before this field existed.
@@ -217,7 +245,57 @@ export const PATIENT_FIELDS = [
   "communityTreatmentOrder",
   "addedAt",
   "registrationScope",
+  "mobilePhone",
+  "otherPhone",
+  "email",
+  "postcode",
+  "nextOfKinName",
+  "nextOfKinRelationship",
+  "nextOfKinPhone",
+  "supportPersonRole",
+  "supportPersonName",
+  "supportPersonPhone",
+  "medicareNumber",
+  "medicareReference",
+  "medicareExpiry",
+  "dvaFileNumber",
+  "healthFund",
+  "concessionCard",
+  "gpPhone",
+  "countryOfBirth",
+  "interpreterRequired",
+  "maritalStatus",
+  "advanceHealthDirective",
+  "enduringGuardian",
 ] as const;
+
+/** Note 3 (Josh, 8 Nov 2026): the optional administrative details, in the order Add patient asks. */
+export const ADMIN_DETAIL_FIELDS = [
+  "mobilePhone",
+  "otherPhone",
+  "email",
+  "postcode",
+  "nextOfKinName",
+  "nextOfKinRelationship",
+  "nextOfKinPhone",
+  "supportPersonRole",
+  "supportPersonName",
+  "supportPersonPhone",
+  "medicareNumber",
+  "medicareReference",
+  "medicareExpiry",
+  "dvaFileNumber",
+  "healthFund",
+  "concessionCard",
+  "gpPhone",
+  "countryOfBirth",
+  "interpreterRequired",
+  "maritalStatus",
+  "advanceHealthDirective",
+  "enduringGuardian",
+] as const satisfies readonly (keyof Patient)[];
+
+export type AdminDetailField = (typeof ADMIN_DETAIL_FIELDS)[number];
 
 /** Whether this record was added through Add patient on the same demonstration day as `now`
  *  (instants are minutes from day zero's midnight, so a day is 1440 of them). */

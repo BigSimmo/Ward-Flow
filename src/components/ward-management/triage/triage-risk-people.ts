@@ -41,6 +41,8 @@ export type WorldPersonInput = {
   openReferral: TriageReferral | null;
   /** The person's last signed triage on the workspace, already read for the form; none when left out. */
   last?: PreviousTriage | null;
+  /** Every signed triage on the workspace for the person, newest first; none when left out. */
+  previous?: readonly PreviousTriage[];
   /** Health and safety alerts on the record (`recordExtrasFor`), allergies included; none when left out. */
   alerts?: readonly string[];
 };
@@ -76,6 +78,7 @@ export function previousTriageFrom(record: TriageSignedRecord, dayZero: Date): P
     label: `Last triage · ${when} · ${SIGNED_IN}`,
     when,
     urgencyText: `${record.urgency} ${TIER_LONG[record.urgency].toLowerCase()}`,
+    by: SIGNED_IN,
     outcome: record.outcome,
     legal: LEGAL_NAME[record.legal] ?? NOT_RECORDED,
     review: REVIEW_NAME[record.review] ?? NOT_RECORDED,
@@ -114,6 +117,7 @@ export function triagePersonFromWorld(input: WorldPersonInput): TriagePerson {
     allergies: allergies.length ? allergies.join(" · ") : NOT_RECORDED,
     referral: input.openReferral,
     last: input.last ?? null,
+    previous: input.previous ?? (input.last ? [input.last] : []),
     recordHref: `/ward-flow/people/${input.recordAddress}`,
   };
 }

@@ -586,6 +586,7 @@ describe("Ward Flow Master Search Hub — a time from another day says so", () =
     );
 
     // The header takes `now`, so it must stay a bare clock face — no day qualifier.
+    fireEvent.click(screen.getByTestId("hub-glance-trigger"));
     const asAt = screen.getByText(/^As at/).textContent ?? "";
     expect(asAt, "the 'as at' readout gained a day qualifier it does not need").not.toMatch(
       /yesterday|tomorrow|days ago/i,
@@ -613,7 +614,13 @@ describe("Ward Flow Master Search Hub — pinned places and recently opened", ()
     window.dispatchEvent(new Event("ward-hub-memory-change"));
   };
 
-  const glance = () => within(screen.getByRole("complementary", { name: /at a glance/i }));
+  // Note 10 (8 Nov 2026): "At a glance" is a pop-out opened from the band's chip.
+  const glance = () => {
+    if (screen.queryByRole("dialog", { name: /at a glance/i }) === null) {
+      fireEvent.click(screen.getByTestId("hub-glance-trigger"));
+    }
+    return within(screen.getByRole("dialog", { name: /at a glance/i }));
+  };
   const pinnedList = () => within(screen.getByRole("list", { name: "Pinned places" }));
 
   it("shows neither section until something is pinned or opened, so a fresh browser sees the screen unchanged", () => {
@@ -687,8 +694,8 @@ describe("Ward Flow Master Search Hub — pinned places and recently opened", ()
     window.dispatchEvent(new Event("ward-hub-memory-change"));
     renderHub();
 
-    expect(pinnedList().getByText("Mental Health Unit")).toBeInTheDocument();
     expect(glance().queryByText(/ward-that-was-retired/)).not.toBeInTheDocument();
+    expect(pinnedList().getByText("Mental Health Unit")).toBeInTheDocument();
     // ...and the count beside the heading reports what is SHOWN, not what is stored — otherwise it
     // would claim two while displaying one, which is this screen's own recurring defect.
     expect(within(glance().getByRole("heading", { name: /^pinned/i })).getByText("1")).toBeInTheDocument();
@@ -764,6 +771,7 @@ describe("Ward Flow Master Search Hub — the owner's activity sentence", () => 
      * §8.7 defines how a screen supplies its checks, and the screen's own comment still instructs
      * that the literal be replaced with the count then.
      */
+    fireEvent.click(screen.getByTestId("hub-glance-trigger"));
     expect(screen.getByText(/^As at/i)).toBeInTheDocument();
     expect(screen.queryByText(/No reconciliation is available for this page yet/i)).not.toBeInTheDocument();
     // The negative half, and it is the one that would have caught the defect: the screen must not
