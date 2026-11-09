@@ -12,11 +12,11 @@ import {
   Checkbox,
   DateField,
   Field,
-  Select,
+  isoDateAsTyped,
+  Segmented,
   TextInput,
   TimeField,
 } from "@/components/wf";
-import { isoDateAsTyped } from "@/components/wf/date-field";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import type { WardFlowEvent, WardFlowRole } from "../ward-flow-events";
 import type { Patient } from "../ward-patients";
@@ -267,19 +267,17 @@ export function PatientCarePlansCard({
               savePlan();
             }}
           >
-            <Field label="Plan type">
-              <Select
+            {/* Q36: a kit choice, never the browser's drop-down. Nothing starts chosen. */}
+            <div className={styles.choice}>
+              <span className={styles.choiceLabel}>Plan type</span>
+              <Segmented<CarePlanType | "">
+                label="Plan type"
+                items={CARE_PLAN_TYPES.map((type) => ({ id: type, label: type }))}
                 value={draft.type}
-                onChange={(event) => setDraft({ ...draft, type: event.target.value as CarePlanType | "" })}
-              >
-                <option value="">Choose</option>
-                {CARE_PLAN_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </Select>
-            </Field>
+                onChange={(type) => setDraft({ ...draft, type })}
+                className={styles.seg}
+              />
+            </div>
             <Field label="Agreed by" hint="Role or team">
               <TextInput
                 value={draft.agreedBy}
@@ -519,19 +517,19 @@ export function PatientCarePlansCard({
           <div data-testid="ward-patient-cultural-support">
             <dt>Cultural support</dt>
             <dd>
-              <Select
-                aria-label="Cultural support asked for by the person or family"
-                value={patient.culturalSupportRequested ?? ""}
-                onChange={(event) => setCultural(event.target.value)}
+              <Segmented<CulturalSupportRequest | "none">
+                label="Cultural support asked for by the person or family"
+                items={[
+                  { id: "none", label: "Not requested" },
+                  ...CULTURAL_SUPPORT_REQUESTS.map((request) => ({ id: request, label: `${request} requested` })),
+                ]}
+                value={patient.culturalSupportRequested ?? "none"}
+                onChange={(next) => {
+                  if (next !== (patient.culturalSupportRequested ?? "none")) setCultural(next);
+                }}
                 disabledReason={culturalGate.allowed ? undefined : culturalGate.reason}
-              >
-                <option value="">Not requested</option>
-                {CULTURAL_SUPPORT_REQUESTS.map((request) => (
-                  <option key={request} value={request}>
-                    {request} requested
-                  </option>
-                ))}
-              </Select>
+                className={styles.seg}
+              />
             </dd>
           </div>
         </dl>

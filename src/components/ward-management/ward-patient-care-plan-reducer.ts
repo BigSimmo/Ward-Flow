@@ -81,7 +81,7 @@ export function reducePatientCarePlanEvent(
     case "RECORD_TRIBUNAL_HEARING": {
       if (!isIsoDay(event.date)) return reject(state, event, "Enter the hearing date.");
       if (event.time !== undefined && !isClockText(event.time))
-        return reject(state, event, "The hearing time must be a 24-hour time, such as 14:30.");
+        return reject(state, event, "Enter the hearing time as hours and minutes, HH:MM.");
       return save({
         tribunalHearing: {
           date: event.date,

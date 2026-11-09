@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Badge, buttonClass, StatusGlyph } from "@/components/wf";
+import { Badge, buttonClass, SrOnly, StatusGlyph } from "@/components/wf";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import {
   duplicateCandidates,
@@ -60,7 +60,8 @@ export function ReferralDuplicateCheck({
           <>
             <p className={styles.lead}>
               <Badge size="sm" tone="warning">
-                {matches.length} to check
+                {matches.length}
+                <SrOnly> synthetic records</SrOnly> to check
               </Badge>{" "}
               This person may already be in the system. Check before adding them again.
             </p>

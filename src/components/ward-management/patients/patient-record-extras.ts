@@ -110,7 +110,7 @@ const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
   "PT-010": {
     alerts: [],
     supports: [
-      { name: "Davenporton, Rae", role: "Carer", relationship: "Sister", phone: "0491 570 412", notify: true },
+      { name: "Davenporton, Rae", role: "Carer", relationship: "Sister", phone: "0491 573 770", notify: true },
     ],
     episodes: [],
     documents: [],

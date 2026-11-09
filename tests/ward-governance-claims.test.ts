@@ -138,6 +138,15 @@ const FIELD_CLASS: Record<string, "identity" | "operational" | "clinical"> = {
   maritalStatus: "identity",
   advanceHealthDirective: "operational",
   enduringGuardian: "operational",
+  // D-104 (Josh, 9 Nov 2026, care plans and safety flags). A care plan is recorded as its type, who
+  // agreed it, its dates, a key contact and a fixed pick list of what helps, with one short line;
+  // the plan's own content is never held (an attachment keeps only its file type and size), so it
+  // is operational. The tribunal hearing date and outcome are legal process, the same class as
+  // `legalStatus`. A cultural support request is a service to arrange, asked for by the person or
+  // family and never derived from identity.
+  carePlans: "operational",
+  tribunalHearing: "operational",
+  culturalSupportRequested: "operational",
 };
 
 describe("the governance data and audit disclosures", () => {

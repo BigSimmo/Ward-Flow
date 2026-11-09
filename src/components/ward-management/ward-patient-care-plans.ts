@@ -10,6 +10,7 @@
 import type { Instant } from "./ward-clock";
 import type { WardFlowRole } from "./ward-flow-roles";
 import type { UploadedFileType } from "./ward-model-vocabulary";
+import { CLINICAL_VALUES } from "./ward-clinical-values";
 
 export const CARE_PLAN_TYPES = [
   "Crisis/safety plan",
@@ -170,9 +171,9 @@ export type CulturalSupportRequest = (typeof CULTURAL_SUPPORT_REQUESTS)[number];
 /**
  * ED presentations in the last twelve months that make a person a frequent presenter. Default
  * approved by Josh, 9 Nov 2026 (care plans and safety flags thread), quoted from memory: check
- * before clinical use.
+ * before clinical use. The figure and its status live in `ward-clinical-values.ts`.
  */
-export const FREQUENT_PRESENTER_ED_THRESHOLD = 4;
+export const FREQUENT_PRESENTER_ED_THRESHOLD = CLINICAL_VALUES.frequentPresenterEdPresentations.value;
 export const FREQUENT_PRESENTER_WINDOW_MONTHS = 12;
 
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];

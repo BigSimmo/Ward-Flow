@@ -54,7 +54,8 @@ type ClinicalValueGroup =
   | "Discharge, leave and absence"
   | "Access and privacy"
   | "Observation levels"
-  | "Triage urgency";
+  | "Triage urgency"
+  | "Patient flags";
 
 export type ClinicalValueEntry = ClinicalValueSignature & {
   /** What the rule does, in the words Settings lists it under. */
@@ -579,6 +580,16 @@ export const CLINICAL_VALUES = {
     group: "Triage urgency",
     value: 14,
     unit: "days",
+  },
+  // ---- Patient flags (care plans and safety flags, D-104, Josh, 9 Nov 2026) -----------------------
+  // The Frequent presenter tag shows when a person's ED presentations in the last twelve months reach
+  // this count. Josh approved the default from memory; synthetic until it is checked and signed.
+  frequentPresenterEdPresentations: {
+    status: "synthetic",
+    name: "Frequent presenter tag shown at ED presentations in 12 months",
+    group: "Patient flags",
+    value: 4,
+    unit: "count",
   },
 } satisfies Record<string, ClinicalValueEntry>;
 

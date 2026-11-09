@@ -102,6 +102,23 @@
   gap: var(--wf-s-3);
 }
 
+/* Plan type and cultural support are kit choices (Q36); they wrap on a phone rather than scroll. */
+.choice {
+  display: grid;
+  gap: var(--wf-s-1);
+  min-width: 0;
+}
+
+.choiceLabel {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+
+.seg {
+  flex-wrap: wrap;
+}
+
 .helps {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

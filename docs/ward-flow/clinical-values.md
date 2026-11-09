@@ -104,6 +104,7 @@ governance sign-off before real patient use (D-54).
 | Triage urgency | Triage urgency C: seen within | 12 hours | Synthetic value | WA mental health triage scale urgency categories, as on the triage form (SMHMR900); listed 7 Nov 2026, awaiting Josh's sign-off | None recorded | `triageUrgencyC` |
 | Triage urgency | Triage urgency D: seen within | 48 hours | Synthetic value | WA mental health triage scale urgency categories, as on the triage form (SMHMR900); listed 7 Nov 2026, awaiting Josh's sign-off | None recorded | `triageUrgencyD` |
 | Triage urgency | Triage urgency E: seen within | 14 days | Synthetic value | WA mental health triage scale urgency categories, as on the triage form (SMHMR900); listed 7 Nov 2026, awaiting Josh's sign-off | None recorded | `triageUrgencyE` |
+| Patient flags | Frequent presenter tag shown at ED presentations in 12 months | 4 | Synthetic value | Josh's product default, 9 Nov 2026 (D-104, care plans and safety flags); quoted from memory, check before clinical use | None recorded | `frequentPresenterEdPresentations` |
 
 <!-- clinical-values:end -->
 <!-- prettier-ignore-end -->
