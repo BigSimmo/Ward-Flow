@@ -309,9 +309,6 @@
    it at the edge). A class on the cell, so a new column never moves the rule onto the wrong one. */
 .jobsTable > thead th.nextCol {
   width: 9.5rem;
-  /* Table polish (Nov 2026): the heading sits over its right-aligned buttons. Scoped, as the shared
-     `.table th { text-align: left }` beats the bare `num` class. */
-  text-align: right;
 }
 
 /* With the job panel open beside it the table narrows: the forms column keeps its dots only. */
@@ -425,23 +422,16 @@
   white-space: nowrap;
 }
 
-/* Table polish (Nov 2026): the dots show only on the phone card, where the tag is hidden. */
 .formDots {
-  display: none;
+  display: inline-flex;
   gap: 3px;
-}
-
-@media (max-width: 46.4375rem) {
-  .formDots {
-    display: inline-flex;
-  }
 }
 
 .formsCell [data-complete="true"] {
   color: var(--wf-ink-2);
 }
 
-/* Redesign: one tag that names its noun ("3 to upload"); it may wrap in a narrow column. */
+/* Redesign: the dots, then one line that names its noun ("2 forms missing"), wrapping under them. */
 .formsCell.formsCell {
   flex-wrap: wrap;
   row-gap: 0;
@@ -450,13 +440,7 @@
 .formsMissing {
   color: var(--wf-warning-ink);
   font-size: var(--wf-fs-12);
-}
-
-/* Table polish (Nov 2026): a Forms tag wraps inside its column ("Form 4A / needed") instead of being
-   cut at 1280px. */
-.jobsTable .formsCell > span:last-child,
-.jobsTable .formsCell > span:last-child > span {
-  white-space: normal;
+  white-space: nowrap;
 }
 
 /* A form still to upload that does not block the next step: said, not flagged. */
@@ -2273,8 +2257,7 @@
   /* Audit B1 (5 Nov 2026): the forms label ("Form 4A needed", "3 to upload") stays visible and
      wraps under the dots. Hiding it left bare dots, and a title is no help on a touch iPad. It is
      still a warning, never a block (WLQ-5). */
-  .formsCell > span:last-child,
-  .formsCell > span:last-child .formsMissing {
+  .formsCell > span:last-child {
     white-space: normal;
   }
 }
