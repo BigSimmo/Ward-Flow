@@ -299,11 +299,12 @@
 
 .grid {
   display: grid;
-  /* Movements redesign (1 Nov 2026): Barrier and Legal are separate columns with fixed widths at
+  /* Movements audit (9 Nov 2026): Route takes the widest share so a ward name sits on one line and
+     rows stop growing to four lines. Movements redesign (1 Nov 2026): Barrier and Legal are separate columns with fixed widths at
      the ends, so no cell is ever squeezed to a letter wide; text that does not fit
      wraps onto a second line instead. */
   grid-template-columns:
-    2rem minmax(6rem, 1.1fr) minmax(6rem, 1fr) minmax(6.5rem, 1.3fr)
+    2rem minmax(8.5rem, 1fr) minmax(8rem, 1.25fr) minmax(7rem, 1.1fr)
     8.5rem 5rem 9rem 1.5rem;
   align-items: center;
   column-gap: var(--wf-s-3);
