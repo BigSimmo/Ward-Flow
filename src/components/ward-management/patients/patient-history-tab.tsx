@@ -129,7 +129,7 @@ type EpisodeRow = {
   legalSummary?: string;
   outcome: string;
   counts?: EventCounts;
-  readmit28?: boolean;
+  readmitWithinWindow?: boolean;
   episode?: PastEpisode;
   presentation?: Presentation;
 };
@@ -165,7 +165,7 @@ function episodeRow(e: PastEpisode): EpisodeRow {
     legalSummary: e.legalSummary,
     outcome: e.outcome,
     counts: e.events,
-    readmit28: e.readmit28,
+    readmitWithinWindow: e.readmitWithinWindow,
     episode: e,
   };
 }
@@ -224,7 +224,7 @@ function patternsOf(rows: EpisodeRow[]): { k: string; v: string }[] {
     const last = rows.find((row) => (row.counts?.[key] ?? 0) > 0);
     if (last) out.push({ k: word, v: monthYear(last) });
   }
-  const readmits = rows.filter((row) => row.readmit28);
+  const readmits = rows.filter((row) => row.readmitWithinWindow);
   if (readmits.length > 0)
     out.push({
       k: `${READMISSION_DAYS}-day readmissions`,
@@ -618,7 +618,7 @@ function StatRow({
         n={discharged ? numericLabel(discharged) : "None"}
         label={lastAdmission?.end || !lastAdmission ? "Last discharge" : "Last admission"}
         sub={lastAdmission?.where ?? "No admission recorded"}
-        tag={lastAdmission?.readmit28 ? READMITTED_WITHIN : undefined}
+        tag={lastAdmission?.readmitWithinWindow ? READMITTED_WITHIN : undefined}
       />
     </div>
   );
@@ -850,7 +850,7 @@ function EpisodeItem({ row, documents }: { row: EpisodeRow; documents: RecordDoc
             </span>
             <span className={s.outcomeLine}>
               <span className={s.outcomeText}>{row.outcome}</span>
-              {row.readmit28 ? <Badge size="sm">{READMITTED_WITHIN}</Badge> : null}
+              {row.readmitWithinWindow ? <Badge size="sm">{READMITTED_WITHIN}</Badge> : null}
               {counts.map(([key, word]) => (
                 <Badge key={key} size="sm" n={row.counts?.[key]}>
                   {word}

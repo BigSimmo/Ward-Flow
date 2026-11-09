@@ -247,8 +247,8 @@ export type BedRetentionDecision = {
  * 🔴 **AND THIS BOUNDARY IS EXACTLY BACKWARDS FROM THE USUAL ONE, WHICH IS WHY IT MUST NOT BE
  * "TIDIED".** A boundary case is normally the rare input you reason about last. Here it is the
  * COMMONEST input anybody will give: asked how long a general-hospital stay will be, a clinician
- * says *"about two days"*. **So `>` versus `>=` differs on the most likely value entered, not on
- * an edge** — the disagreement is the ordinary case, and it decides whether a real patient keeps
+ * says *"about a day"* or *"overnight"*, which is the 24-hour threshold itself (D-106). **So `>`
+ * versus `>=` differs on the most likely value entered, not on an edge** — the disagreement is the ordinary case, and it decides whether a real patient keeps
  * a bed. Confirmed by Ward Lead, 2026-09-06.
  *
  * 🔴 **THE UNKNOWN CASE IS A JUDGEMENT THE RULING DOES NOT MAKE, AND IT IS RECORDED AS ONE.**
