@@ -103,7 +103,7 @@ export const PAIRS = [
 export const SUPERSEDED = ["patient-search-console.html", "patient-search-working.html"];
 
 /**
- * Complete 60-route roster mapping every commissioned Ward Flow route (58 under
+ * Complete 61-route roster mapping every commissioned Ward Flow route (59 under
  * `/ward-flow/**` plus `/ward-flow-sign-in` and `/mockups/ward-flow-digest`)
  * to its screen folder and current React component file relative to
  * `src/components/ward-management/` (`null` for server redirect stubs and the HTML digest route handler).

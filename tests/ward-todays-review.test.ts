@@ -42,8 +42,12 @@ const override = (id: string, at: number | null, generation = 0): AuditEvent =>
     action: "PULL_PATIENT",
     details: { reason: null, overrideFactRecorded: true, targets: [] },
   }) as unknown as AuditEvent;
-const review = (eventId: string, generation = 0): AuditReview =>
-  ({ id: `r-${eventId}`, eventId, generation, at: NOW, byRole: "coordinator", decision: "reviewed" }) as AuditReview;
+const review = (
+  eventId: string,
+  generation = 0,
+  decision: AuditReview["decision"] = "reviewed",
+  id = `r-${eventId}`,
+): AuditReview => ({ id, eventId, generation, at: NOW, byRole: "coordinator", decision }) as AuditReview;
 const problem: InboxItem = {
   id: "p1",
   tone: "warning",
@@ -121,5 +125,20 @@ describe("todaysReview", () => {
     expect(result.counts.override).toBe(0);
     expect(result.todos).toEqual([{ kind: "open-problems", id: "todo-open-problems", count: 1 }]);
     expect(result.events.map((event) => event.id)).toEqual(["problem-p1"]);
+  });
+
+  it("leaves out a line timed later today than now", () => {
+    const later: Rejection = { id: "x2", at: NOW + 5, movementId: A!.id, attempted: "PULL_PATIENT", reason: "taken" };
+    const result = todaysReview(
+      input({ declines: [decline(A, "u1", NOW + 5)], auditEvents: [override("o3", NOW + 5)], rejections: [later] }),
+    );
+    expect(result.events).toEqual([]);
+    expect(result.todos).toEqual([]);
+  });
+
+  it("goes by the latest review decision, so a later follow-up un-ticks an override", () => {
+    const reviews = [review("o1"), review("o1", 0, "follow-up-required", "r-o1-later")];
+    const result = todaysReview(input({ auditEvents: [override("o1", NOW - 10)], auditReviews: reviews }));
+    expect(overridesToReview(result.todos)).toBe(1);
   });
 });

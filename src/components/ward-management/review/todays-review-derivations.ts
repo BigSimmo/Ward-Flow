@@ -56,9 +56,11 @@ const isToday = (at: Instant | null | undefined, now: Instant): at is Instant =>
   typeof at === "number" && at <= now && dayOf(at) === dayOf(now);
 
 function isReviewed(event: AuditEvent, reviews: readonly AuditReview[]): boolean {
-  return reviews.some(
-    (review) => review.eventId === event.id && review.generation === event.generation && review.decision === "reviewed",
-  );
+  // Reviews are appended, so the latest decision for this event and generation is the one that stands.
+  const latest = reviews
+    .filter((review) => review.eventId === event.id && review.generation === event.generation)
+    .at(-1);
+  return latest?.decision === "reviewed";
 }
 
 export function todaysReview(input: TodaysReviewInput): TodaysReview {

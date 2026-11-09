@@ -18,7 +18,6 @@ import {
 } from "@/components/wf";
 import { PillTabs } from "@/components/wf/choice";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { activeTaskItems } from "@/components/ward-management/ward-act-now-items";
 import type { AuditEvent, AuditReview } from "@/components/ward-management/ward-audit";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
@@ -111,11 +110,9 @@ export function TodaysReviewScreen() {
     "dispatch",
   );
   const now = useWardFlowClock();
-  const service = useServiceScope();
   const patientOf = usePatientOf();
   const umrnText = useUmrnText();
   const gate = useRoleGate();
-  const reviewGate = gate("REVIEW_AUDIT_EVENT");
   const [filter, setFilter] = useState<ReviewFilter>("all");
   const [openGroups, setOpenGroups] = useState<ReadonlySet<string>>(new Set());
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
@@ -175,7 +172,7 @@ export function TodaysReviewScreen() {
   const shiftLabel = formatInstantWithDay(now, now);
 
   function markReviewed(event: AuditEvent) {
-    if (!reviewGate.allowed || pending.has(event.id)) return;
+    if (!gate("REVIEW_AUDIT_EVENT", event.id).allowed || pending.has(event.id)) return;
     setPending((current) => new Set(current).add(event.id));
     const count = auditReviews.filter(
       (entry) => entry.eventId === event.id && entry.generation === event.generation,
@@ -215,6 +212,7 @@ export function TodaysReviewScreen() {
   function todoRow(todo: ReviewTodo) {
     if (todo.kind === "override") {
       const event = todo.event;
+      const reviewGate = gate("REVIEW_AUDIT_EVENT", event.id);
       const at = event.at === null ? "Time not recorded" : formatInstantWithDay(event.at, now);
       return (
         <li key={todo.id} className={styles.todo} data-done={todo.done || undefined} data-testid={todo.id}>
@@ -381,7 +379,7 @@ export function TodaysReviewScreen() {
         level={1}
         eyebrow="Activity"
         title="Today's review"
-        titleMeta={`${service ?? "Statewide"} · as at ${shiftLabel}`}
+        titleMeta={`Statewide · as at ${shiftLabel}`}
         stats={
           <>
             <HeroStat value={left} label="Overrides to review" tone={left > 0 ? "warning" : undefined} />
