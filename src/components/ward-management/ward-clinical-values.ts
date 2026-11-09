@@ -80,6 +80,8 @@ const SIGNED_BY_JOSH_20_OCT = { status: "signed", signedBy: "Josh (product owner
  */
 const SIGNED_BY_JOSH_21_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-21" } as const;
 /** Josh approved the role access plan version 2, with its 12 month role ceiling, on 23 Oct 2026 (D-80). */
+const SIGNED_BY_JOSH_9_NOV = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-11-09" } as const;
+
 const SIGNED_BY_JOSH_23_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-23" } as const;
 
 /**
@@ -290,16 +292,16 @@ export const CLINICAL_VALUES = {
     value: 10,
     unit: "minutes",
   },
-  // Discharge and capacity features (9 Nov 2026): figures the builds chose; nobody has signed them.
+  // Discharge and capacity features: Josh signed both on 9 Nov 2026 (decision card, review page).
   pullHoldMaxTotal: {
-    status: "synthetic",
+    ...SIGNED_BY_JOSH_9_NOV,
     name: "Longest a bed can stay pulled, extensions included",
     group: "Alerts and holds",
     value: 12 * MINUTES_PER_HOUR,
     unit: "minutes",
   },
   transportAcceptDelay: {
-    status: "synthetic",
+    ...SIGNED_BY_JOSH_9_NOV,
     name: "Transport job shown as delayed if not accepted after",
     group: "Alerts and holds",
     value: 30,
@@ -439,8 +441,8 @@ export const CLINICAL_VALUES = {
     unit: "days",
   },
   eddSlipFlag: {
-    // Discharge and capacity features (9 Nov 2026): a figure the build chose; nobody has signed it.
-    status: "synthetic",
+    // Discharge and capacity features: Josh signed this on 9 Nov 2026 (decision card, review page).
+    ...SIGNED_BY_JOSH_9_NOV,
     name: "Discharge date flagged as slipping, later than first set by more than",
     group: "Discharge, leave and absence",
     value: 3,

@@ -91,7 +91,7 @@ describe("clinical values file", () => {
       downtimePackStale: 60,
       preparingBedStale: 61,
       bookingEstimatePassed: 10,
-      // Discharge and capacity features (9 Nov 2026): figures the builds chose, synthetic until signed.
+      // Discharge and capacity features: signed by Josh on 9 Nov 2026.
       pullHoldMaxTotal: 720,
       transportAcceptDelay: 30,
       lateArrivalGrace: 60,
