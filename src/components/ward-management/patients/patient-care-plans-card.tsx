@@ -13,6 +13,7 @@ import {
   DateField,
   Field,
   isoDateAsTyped,
+  ListPicker,
   Segmented,
   TextInput,
   TimeField,
@@ -462,9 +463,10 @@ export function PatientCarePlansCard({
                   >
                     {hearing ? "New hearing date" : "Record hearing date"}
                   </Button>
-                  {hearing && !hearing.outcome ? <span className={styles.quietInline}>Outcome:</span> : null}
-                  {hearing && !hearing.outcome
-                    ? TRIBUNAL_OUTCOMES.map((outcome) => (
+                  {hearing && !hearing.outcome ? (
+                    <span className={styles.outcomeGroup}>
+                      <span className={styles.quietInline}>Outcome</span>
+                      {TRIBUNAL_OUTCOMES.map((outcome) => (
                         <Button
                           key={outcome}
                           size="sm"
@@ -474,8 +476,9 @@ export function PatientCarePlansCard({
                         >
                           {outcome}
                         </Button>
-                      ))
-                    : null}
+                      ))}
+                    </span>
+                  ) : null}
                 </span>
               )}
             </dd>
@@ -517,18 +520,19 @@ export function PatientCarePlansCard({
           <div data-testid="ward-patient-cultural-support">
             <dt>Cultural support</dt>
             <dd>
-              <Segmented<CulturalSupportRequest | "none">
-                label="Cultural support asked for by the person or family"
-                items={[
-                  { id: "none", label: "Not requested" },
-                  ...CULTURAL_SUPPORT_REQUESTS.map((request) => ({ id: request, label: `${request} requested` })),
-                ]}
+              <ListPicker
+                label="Asked for by the person or family"
                 value={patient.culturalSupportRequested ?? "none"}
+                options={[
+                  { value: "none", label: "Not requested" },
+                  ...CULTURAL_SUPPORT_REQUESTS.map((request) => ({ value: request, label: `${request} requested` })),
+                ]}
                 onChange={(next) => {
-                  if (next !== (patient.culturalSupportRequested ?? "none")) setCultural(next);
+                  const choice = (next ?? "none") as CulturalSupportRequest | "none";
+                  if (choice !== (patient.culturalSupportRequested ?? "none")) setCultural(choice);
                 }}
                 disabledReason={culturalGate.allowed ? undefined : culturalGate.reason}
-                className={styles.seg}
+                testId="ward-patient-cultural-support-picker"
               />
             </dd>
           </div>
