@@ -26,6 +26,7 @@ import {
   RotateCcw,
   Search,
   Star,
+  X,
 } from "lucide-react";
 
 import {
@@ -37,6 +38,7 @@ import {
   Hero,
   Kbd,
   PanelDrawer,
+  Popover,
   DrawerFootRow,
   Segmented,
   ShowMoreRow,
@@ -105,9 +107,9 @@ import {
  * ⚠️ **EVERY FIGURE ON THIS SCREEN IS DERIVED, NEVER COMPUTED HERE.** `hub-derivations.ts` owns the
  * arithmetic and the clinical rules; this file renders what it returns.
  *
- * Layout follows design/pages-v6/Places.png: a hero band, then "At a glance" as an unscrolled summary
- * above "The network" list at full width. Drawer review (6 Nov 2026): a chosen place opens in the
- * kit right drawer, so the page keeps one scroll. The mockup's drive-time controls
+ * Layout follows design/pages-v6/Places.png: a hero band, then "The network" list at full width.
+ * Note 10 (Josh, 8 Nov 2026): "At a glance" opens as a pop-out from a chip on the band. A chosen
+ * place opens in the kit right drawer, so the page keeps one scroll. The mockup's drive-time controls
  * (Drive from, Nearest, From Peel) and its 24-hour ready-beds chart have no data in this app and
  * are left out rather than drawn as dead controls.
  *
@@ -787,7 +789,7 @@ export function HubScreen() {
       boxClassName={isPhone ? styles.phoneSearchBox : styles.heroSearch}
       aria-label="Search wards, EDs and community teams"
       aria-describedby={isPhone ? undefined : "hub-search-hint"}
-      placeholder={isPhone ? "Search places" : "Search a ward, hospital, ED, team or service"}
+      placeholder={isPhone ? "Search places" : "Search ward, hospital or team"}
       value={query}
       onChange={(event) => setQuery(event.target.value)}
       onKeyDown={onSearchKeyDown}
@@ -797,6 +799,199 @@ export function HubScreen() {
         inputRef.current?.focus();
       }}
     />
+  );
+
+  // Note 10 (Josh, 8 Nov 2026): "At a glance" is a pop-out opened from the band, so the network
+  // list sits at the top of the page. The trigger names what needs doing, like Home's review counts.
+  const glanceTrigger = (
+    <Popover
+      label="At a glance"
+      className={styles.glanceAnchor}
+      panelClassName={styles.glancePanel}
+      trigger={(props) => (
+        <button
+          type="button"
+          {...props}
+          className={cx(styles.glanceChip, attention.length > 0 && styles.glanceChipWarn)}
+          data-testid="hub-glance-trigger"
+        >
+          <Activity size={15} aria-hidden="true" />
+          <span>At a glance</span>
+          {attention.length > 0 ? (
+            <span className={styles.glanceChipCount}>{attention.length} to check</span>
+          ) : (
+            <span className={styles.glanceChipMeta}>All bed counts current</span>
+          )}
+          {unauthorised.length > 0 ? (
+            <span className={styles.glanceChipMeta}>· {unauthorised.length} voluntary only</span>
+          ) : null}
+          <ChevronDown size={14} aria-hidden="true" className={styles.glanceChipCaret} />
+        </button>
+      )}
+    >
+      {(closeGlance) => (
+        <>
+          <div className={styles.glanceHead}>
+            <h2 className={styles.glanceTitle} id="hub-glance-title">
+              At a glance
+            </h2>
+            <div className={styles.glanceHeadEnd}>
+              <p className={styles.asAt}>
+                As at <b className={styles.asAtTime}>{formatInstant(now)}</b>
+              </p>
+              <button
+                type="button"
+                className={cx(buttonClass({ variant: "ghost", size: "sm" }), styles.glanceClose)}
+                aria-label="Close At a glance"
+                onClick={() => closeGlance()}
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+          {/* Drawer review (6 Nov 2026): the summary sits above the list and never scrolls on its own. */}
+          <div className={styles.overviewBody}>
+            <div className={styles.glanceSection}>
+              <h3 className={styles.sectionLabel}>
+                Needs a check <Count n={attention.length} />
+              </h3>
+              {attention.length === 0 ? (
+                <p className={styles.nothing}>
+                  {deskSite !== undefined
+                    ? `No ward at ${deskSite.name} is reporting a stale bed count right now.`
+                    : "No ward is reporting a stale bed count right now."}
+                </p>
+              ) : (
+                <ul className={styles.queue}>
+                  {attention.slice(0, 4).map(({ entry }) => (
+                    <li key={entry.id} className={styles.decisionRow}>
+                      <StatusGlyph tone="warning" size={8} />
+                      <div className={styles.decisionBody}>
+                        <span className={styles.decisionRef}>{entry.name}</span>
+                        <p className={styles.decisionReason}>{STALE_REASON}</p>
+                      </div>
+                      <button
+                        type="button"
+                        className={buttonClass({ variant: "ghost", size: "sm" })}
+                        onClick={() => {
+                          closeGlance(false);
+                          reveal(entry.id);
+                        }}
+                      >
+                        Show<SrOnly> {entry.name}</SrOnly>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {attention.length > 4 ? (
+                <p className={styles.moreNote}>{attention.length - 4} more marked Stale in the list.</p>
+              ) : null}
+              {/* ⚠️ NAMED, NOT COUNTED: the value is knowing WHICH ward cannot take an involuntary patient. */}
+              {unauthorised.length === 0 ? null : (
+                <p className={styles.worthKnowing}>
+                  <StatusGlyph tone="neutral" size={8} />
+                  <span>
+                    <b>Voluntary only</b> {unauthorised.map((entry) => entry.name).join(", ")}
+                    <SrOnly>, not set up for involuntary admissions</SrOnly>
+                  </span>
+                </p>
+              )}
+            </div>
+
+            <div className={styles.glanceSection}>
+              <div className={styles.sectionHeadRow}>
+                <h3 className={styles.sectionLabel}>Wards by service</h3>
+                <span className={styles.sectionHint}>Tap to filter</span>
+              </div>
+              <ul className={styles.serviceList} aria-label="Wards by health service">
+                {wardServices.map((group) => (
+                  <li key={group.label}>
+                    <button
+                      type="button"
+                      className={styles.serviceRow}
+                      onClick={() => {
+                        setQuery(group.label);
+                        if (kind !== "all" && kind !== "ward") setKind("all");
+                        inputRef.current?.focus();
+                      }}
+                    >
+                      <span>{group.label}</span>
+                      <span className={styles.serviceCount}>
+                        {group.entries.length} {group.entries.length === 1 ? "ward" : "wards"}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Pinned and recently opened render nothing until used. */}
+            {pinned.length === 0 ? null : (
+              <div className={styles.glanceSection}>
+                <h3 className={styles.sectionLabel}>
+                  Pinned <Count n={pinned.length} />
+                </h3>
+                <ul className={styles.memoryList} aria-label="Pinned places">
+                  {pinned.map((entry) => (
+                    <li key={entry.id}>
+                      <button
+                        type="button"
+                        className={styles.memoryRow}
+                        onClick={() => {
+                          closeGlance(false);
+                          select(entry.id);
+                        }}
+                      >
+                        <Star className={styles.memoryStar} size={14} aria-hidden="true" />
+                        <span className={styles.memoryName}>{entry.name}</span>
+                        <span className={styles.memoryStat}>{KIND_WORD_LONG[entry.kind]}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {recent.length === 0 ? null : (
+              <div className={styles.glanceSection}>
+                <h3 className={styles.sectionLabel}>Recently opened</h3>
+                <ul className={styles.memoryList} aria-label="Recently opened places">
+                  {recent.map((entry) => (
+                    <li key={entry.id}>
+                      <button
+                        type="button"
+                        className={styles.memoryRow}
+                        onClick={() => {
+                          closeGlance(false);
+                          select(entry.id);
+                        }}
+                      >
+                        <span className={styles.memoryName}>{entry.name}</span>
+                        <span className={styles.memoryStat}>{KIND_WORD_LONG[entry.kind]}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/*
+              THE DISCLOSURE. A screen showing invented bed figures under real Perth hospital
+              names owes a reader an account of which is which. Counts are derived, never typed.
+            */}
+            {/* A section, so the disclosure ends here: the list now follows the summary (drawer review). */}
+            <section className={styles.srOnly}>
+              <h4>What is invented</h4>
+              <p>
+                Every bed figure — ready, pulled, closed and occupied — is invented for this prototype and reflects no
+                real hospital&rsquo;s state.
+              </p>
+            </section>
+          </div>
+        </>
+      )}
+    </Popover>
   );
 
   return (
@@ -819,7 +1014,12 @@ export function HubScreen() {
           // PL1 (Josh, 3 Nov 2026): the band holds the Places and Catchments switch; this page's own
           // search moved into the list card, so the band no longer holds a second search box beside
           // the header's global search.
-          bar={<PlacesTrack value="places" />}
+          bar={
+            <div className={styles.heroBar}>
+              <PlacesTrack value="places" />
+              {glanceTrigger}
+            </div>
+          }
           foot={
             isPhone ? undefined : (
               <CheckingFoot
@@ -837,143 +1037,6 @@ export function HubScreen() {
         />
 
         <div className={styles.hubShell}>
-          <aside className={styles.hubGlance} aria-label="At a glance">
-            <Card as="section" className={styles.glanceCard} aria-labelledby="hub-glance-title">
-              <CardHead
-                icon={Activity}
-                id="hub-glance-title"
-                title="At a glance"
-                aside={
-                  <p className={styles.asAt}>
-                    As at <b className={styles.asAtTime}>{formatInstant(now)}</b>
-                  </p>
-                }
-              />
-              {/* Drawer review (6 Nov 2026): the summary sits above the list and never scrolls on its own. */}
-              <div className={styles.overviewBody}>
-                <div className={styles.glanceSection}>
-                  <h3 className={styles.sectionLabel}>
-                    Needs a check <Count n={attention.length} />
-                  </h3>
-                  {attention.length === 0 ? (
-                    <p className={styles.nothing}>
-                      {deskSite !== undefined
-                        ? `No ward at ${deskSite.name} is reporting a stale bed count right now.`
-                        : "No ward is reporting a stale bed count right now."}
-                    </p>
-                  ) : (
-                    <ul className={styles.queue}>
-                      {attention.slice(0, 4).map(({ entry }) => (
-                        <li key={entry.id} className={styles.decisionRow}>
-                          <StatusGlyph tone="warning" size={8} />
-                          <div className={styles.decisionBody}>
-                            <span className={styles.decisionRef}>{entry.name}</span>
-                            <p className={styles.decisionReason}>{STALE_REASON}</p>
-                          </div>
-                          <button
-                            type="button"
-                            className={buttonClass({ variant: "ghost", size: "sm" })}
-                            onClick={() => reveal(entry.id)}
-                          >
-                            Show<SrOnly> {entry.name}</SrOnly>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {attention.length > 4 ? (
-                    <p className={styles.nothing}>{attention.length - 4} more marked Stale in the list.</p>
-                  ) : null}
-                  {/* ⚠️ NAMED, NOT COUNTED: the value is knowing WHICH ward cannot take an involuntary patient. */}
-                  {unauthorised.length === 0 ? null : (
-                    <p className={styles.worthKnowing}>
-                      <StatusGlyph tone="neutral" size={8} />
-                      <span>
-                        <b>Voluntary only</b> {unauthorised.map((entry) => entry.name).join(", ")}
-                        <SrOnly>, not set up for involuntary admissions</SrOnly>
-                      </span>
-                    </p>
-                  )}
-                </div>
-
-                <div className={styles.glanceSection}>
-                  <div className={styles.sectionHeadRow}>
-                    <h3 className={styles.sectionLabel}>Wards by service</h3>
-                    <span className={styles.sectionHint}>Tap to search</span>
-                  </div>
-                  <ul className={styles.serviceList} aria-label="Wards by health service">
-                    {wardServices.map((group) => (
-                      <li key={group.label}>
-                        <button
-                          type="button"
-                          className={styles.serviceRow}
-                          onClick={() => {
-                            setQuery(group.label);
-                            if (kind !== "all" && kind !== "ward") setKind("all");
-                            inputRef.current?.focus();
-                          }}
-                        >
-                          <span>{group.label}</span>
-                          <span className={styles.serviceCount}>
-                            {group.entries.length} {group.entries.length === 1 ? "ward" : "wards"}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Pinned and recently opened render nothing until used. */}
-                {pinned.length === 0 ? null : (
-                  <div className={styles.glanceSection}>
-                    <h3 className={styles.sectionLabel}>
-                      Pinned <Count n={pinned.length} />
-                    </h3>
-                    <ul className={styles.memoryList} aria-label="Pinned places">
-                      {pinned.map((entry) => (
-                        <li key={entry.id}>
-                          <button type="button" className={styles.memoryRow} onClick={() => select(entry.id)}>
-                            <Star className={styles.memoryStar} size={14} aria-hidden="true" />
-                            <span className={styles.memoryName}>{entry.name}</span>
-                            <span className={styles.memoryStat}>{KIND_WORD_LONG[entry.kind]}</span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {recent.length === 0 ? null : (
-                  <div className={styles.glanceSection}>
-                    <h3 className={styles.sectionLabel}>Recently opened</h3>
-                    <ul className={styles.memoryList} aria-label="Recently opened places">
-                      {recent.map((entry) => (
-                        <li key={entry.id}>
-                          <button type="button" className={styles.memoryRow} onClick={() => select(entry.id)}>
-                            <span className={styles.memoryName}>{entry.name}</span>
-                            <span className={styles.memoryStat}>{KIND_WORD_LONG[entry.kind]}</span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/*
-                  THE DISCLOSURE. A screen showing invented bed figures under real Perth hospital
-                  names owes a reader an account of which is which. Counts are derived, never typed.
-                */}
-                {/* A section, so the disclosure ends here: the list now follows the summary (drawer review). */}
-                <section className={styles.srOnly}>
-                  <h4>What is invented</h4>
-                  <p>
-                    Every bed figure — ready, pulled, closed and occupied — is invented for this prototype and reflects
-                    no real hospital&rsquo;s state.
-                  </p>
-                </section>
-              </div>
-            </Card>
-          </aside>
           <Card as="section" className={styles.hubLeft} aria-label="Search results">
             {isPhone ? null : (
               <CardHead
@@ -1026,10 +1089,11 @@ export function HubScreen() {
               </div>
             ) : (
               <div className={styles.controls}>
-                <div className={styles.listSearchRow}>{searchBox}</div>
+                {/* Note 10 (Josh, 8 Nov 2026): one row; a compact search box beside the switches. */}
                 <div className={styles.controlsRow}>
+                  {searchBox}
                   <Segmented label="Show" items={kindItems} value={kind} onChange={chooseKind} />
-                  <span className={styles.controlLabel}>Order</span>
+                  <span className={cx(styles.controlLabel, styles.orderLabel)}>Order</span>
                   <Segmented
                     label="Order"
                     items={[

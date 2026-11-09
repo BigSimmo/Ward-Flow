@@ -170,7 +170,8 @@ describe("Show me around: in Help's On this screen card", () => {
     const onShowMe = renderCapacity();
     const tile = screen.getByTestId("ward-help-show-me-around");
     expect(tile.textContent).toMatch(/Show me around this screen/);
-    expect(tile.textContent).toMatch(/6 steps/);
+    // Josh's fifth notes (8 Nov 2026): Nearest ready beds is a phone-only step now.
+    expect(tile.textContent).toMatch(/5 steps/);
     fireEvent.click(tile);
     expect(onShowMe).toHaveBeenCalledWith("around-capacity");
   });

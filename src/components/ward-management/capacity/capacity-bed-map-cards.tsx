@@ -15,6 +15,7 @@ import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { openBedReleases } from "@/components/ward-management/ward-bed-availability";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 import type { CapacityModel } from "./capacity-model";
+import { UNCHANGED_SHIFTS_LISTED, type CountedFigure } from "./shift-confirmations";
 import styles from "./capacity-page.module.css";
 
 export type Highlight = "any" | "locked" | "open" | "stale";
@@ -248,6 +249,10 @@ function WardCard({
   // Capacity issue 7 (Josh, 3 Nov 2026): the beds this ward expects to free today, which State
   // bedflow used to show as "+N expected", now sit on the card itself.
   const freeing = row?.freeing ?? 0;
+  // Josh's fifth notes (8 Nov 2026): "This shift" is gone, so a count confirmed unchanged shift
+  // after shift is flagged on the ward's own card instead.
+  const sameShifts = (ward.unit.allocatable as CountedFigure).unchangedShifts ?? 0;
+  const sameCount = sameShifts >= UNCHANGED_SHIFTS_LISTED ? sameShifts : 0;
   return (
     <button
       type="button"
@@ -270,7 +275,7 @@ function WardCard({
         {ward.occupied} of {ward.unit.beds} occupied
       </span>
       <BedCells beds={ward.unit.beds} ready={ward.ready} used={inUse} parts={parts} />
-      {stale || notes.length || freeing > 0 ? (
+      {stale || sameCount || notes.length || freeing > 0 ? (
         <span className={styles.wardNote}>
           {freeing > 0 ? (
             <span className={`${styles.wardNoteItem} ${styles.okInk}`}>+{freeing}&nbsp;freeing&nbsp;today</span>
@@ -278,6 +283,11 @@ function WardCard({
           {stale ? (
             <span className={`${styles.wardNoteItem} ${styles.warnInk}`}>
               <StatusGlyph tone="warning" size={8} /> Count {durMinutes(Math.max(0, now - row.confirmedAt))} old
+            </span>
+          ) : null}
+          {sameCount ? (
+            <span className={`${styles.wardNoteItem} ${styles.warnInk}`}>
+              <StatusGlyph tone="warning" size={8} /> Same count {sameCount}&nbsp;shifts
             </span>
           ) : null}
           {notes.length ? (

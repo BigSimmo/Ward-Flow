@@ -704,3 +704,23 @@ tr[data-dim="true"] > :is(td, th) :is(a, b, strong, em, span, time, abbr, small,
     --wf-tablet-tap: var(--wf-touch);
   }
 }
+
+/* Paper palette (8 Nov 2026, printed documents). Print is always ink on white, so these are declared
+   once and never re-pointed by a theme. Used only inside print rules in ward-flow-print.css. */
+:root {
+  --wf-print-ink: #000;
+  --wf-print-muted: #5b6573;
+  --wf-print-blank: #8a94a0;
+  --wf-print-line: #b8c2cc;
+  --wf-print-on-band: #fff;
+  --wf-print-navy: #1f4d7a;
+  --wf-print-band: #245a8c;
+  --wf-print-tint: #e6eef8;
+  --wf-print-zebra: #f4f7fb;
+  --wf-print-rule: #cfdae6;
+  --wf-print-red: #9a3424;
+  --wf-print-red-tint: #fbe9e5;
+  --wf-print-green: #1c6343;
+  --wf-print-green-tint: #e4f2ea;
+  --wf-print-amber: #7a5208;
+}

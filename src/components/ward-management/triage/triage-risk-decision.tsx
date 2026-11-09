@@ -5,7 +5,7 @@
  * form only hints. Legal form and date are kept only as typed, never checked or counted down, and no
  * Mental Health Act section numbers are shown. Synthetic data only.
  */
-import { Info } from "lucide-react";
+import { Clock, Info } from "lucide-react";
 
 import { ChipGroup, FilterChip, Icon, Segmented, SrOnly, StatusGlyph, TextInput, phoneRows } from "@/components/wf";
 
@@ -16,7 +16,8 @@ import {
   REFERRED_TO_ACTIONS,
   type ActionGroup,
 } from "./triage-psolis-lists";
-import { AHD, LEGAL, OUTCOMES, TIERS, WHO_TOLD, type Tier } from "./triage-risk-data";
+import { AHD, LEGAL, OUTCOMES, TIER_LONG, TIERS, WHO_TOLD, type Tier } from "./triage-risk-data";
+import { seeBy } from "./triage-see-by";
 import { Choice, PickMany, Reveal, Row, type FormApi } from "./triage-risk-parts";
 import { acuteFlagNames, hasLegalForm } from "./triage-risk-state";
 import styles from "./triage-risk-form.module.css";
@@ -46,6 +47,12 @@ export function UrgencyHint({ children }: { children: string }) {
 export function DecisionBody({ form }: { form: FormApi }) {
   const { state, set, setText, update } = form;
   const acute = acuteFlagNames(state);
+  const due = seeBy(
+    state.urgency,
+    state.text.revTime,
+    new Date(form.now),
+    state.urgency ? TIER_LONG[state.urgency] : "",
+  );
   const asked = state.person.referral?.urgency ?? null;
   const setActions = (actions: string[]) =>
     update((s) => {
@@ -89,6 +96,19 @@ export function DecisionBody({ form }: { form: FormApi }) {
         />
         {acute.length ? (
           <UrgencyHint>{`Hint: flags include ${acute.join(", ")}. Consider A or B. You choose.`}</UrgencyHint>
+        ) : null}
+        {due ? (
+          <p className={styles.urgHint} data-testid="triage-see-by-hint">
+            <Icon icon={Clock} size={14} />
+            <span>
+              See by <b>{due.when}</b>.{" "}
+              {due.when === "Now"
+                ? "Immediate response."
+                : "Counted from the reviewed time with this tier's window. Shown on the banner too."}
+            </span>
+          </p>
+        ) : state.urgency && TIER_LONG[state.urgency] && !["F", "G"].includes(state.urgency) ? (
+          <UrgencyHint>Set the reviewed time and the see-by time appears.</UrgencyHint>
         ) : null}
       </Row>
       {state.urgency === "A" ? (

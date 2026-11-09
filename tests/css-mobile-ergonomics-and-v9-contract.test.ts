@@ -74,7 +74,8 @@ describe("Mobile 16px input floor, 44x44px touch targets, 320px DOB overflow & v
     expect(referralsCss).not.toMatch(/font-size:\s*var\(--t-0,\s*11px\)/);
 
     const railCss = readCss("src/components/ward-management/shell/ward-rail.module.css");
-    expect(railCss).toMatch(/\.rail\[data-rail="closed"\]\s+\.compactAlertPip\s*\{[^}]*min-height:\s*2\.75rem/);
+    // Note 3 (8 Nov 2026): the Bed alerts ring and its place name stand 3.5rem tall, above the 44px floor.
+    expect(railCss).toMatch(/\.rail\[data-rail="closed"\]\s+\.compactAlertPip\s*\{[^}]*min-height:\s*3\.5rem/);
     expect(railCss).toMatch(/\.rail\[data-rail="closed"\]\s+\.utilityLink\s*\{[^}]*width:\s*2\.75rem/);
     expect(railCss).toMatch(/\.rail\[data-rail="closed"\]\s+\.userProfileCard\s*\{[^}]*min-height:\s*2\.75rem/);
   });
@@ -121,7 +122,7 @@ describe("Mobile 16px input floor, 44x44px touch targets, 320px DOB overflow & v
     expect(css).toMatch(/\.readyMetro\s*\{[^}]*white-space:\s*nowrap/u);
     expect(css, "no empty rule").not.toMatch(/\{\s*\}/u);
     const body = readCss("src/components/ward-management/shell-next/next-rail-body.tsx");
-    expect(body).toMatch(/className=\{styles\.compactAlertVal\}>\{compactPipText\(firstRow\)\}/u);
+    expect(body).toMatch(/className=\{railParts\.compactAlertCaption\}>\{compactPipPlace\(firstRow\)\}/u);
   });
 });
 

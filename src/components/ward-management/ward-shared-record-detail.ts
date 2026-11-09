@@ -6,7 +6,34 @@ import type { WardFlowState } from "./ward-flow-reducer";
  * patient only once it has logged that the desk opened that record (`logRecordView`). Kept in step
  * with `backend/ward-flow/record-detail.mjs`. The local demo holds them in its own board as before.
  */
-const RECORD_DETAIL_FIELDS = ["address", "interpreterLanguage"] as const;
+// Note 3 (Josh, 8 Nov 2026): the clerk's administrative details (contacts, next of kin, Medicare and
+// the rest) are record detail too: no board, list or transport view needs them.
+const RECORD_DETAIL_FIELDS = [
+  "address",
+  "interpreterLanguage",
+  "mobilePhone",
+  "otherPhone",
+  "email",
+  "postcode",
+  "nextOfKinName",
+  "nextOfKinRelationship",
+  "nextOfKinPhone",
+  "supportPersonRole",
+  "supportPersonName",
+  "supportPersonPhone",
+  "medicareNumber",
+  "medicareReference",
+  "medicareExpiry",
+  "dvaFileNumber",
+  "healthFund",
+  "concessionCard",
+  "gpPhone",
+  "countryOfBirth",
+  "interpreterRequired",
+  "maritalStatus",
+  "advanceHealthDirective",
+  "enduringGuardian",
+] as const;
 
 export type RecordDetail = Partial<Record<(typeof RECORD_DETAIL_FIELDS)[number], string>>;
 

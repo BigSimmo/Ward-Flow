@@ -287,6 +287,16 @@ export function overlayOpener(): HTMLElement | null {
   return lastPressedControl?.isConnected ? lastPressedControl : null;
 }
 
+/**
+ * The control the person just activated: the one they clicked, tapped or pressed a key on. Unlike
+ * `document.activeElement` this is right on Safari, where a tap need not focus the button and focus
+ * can sit on an earlier field. Falls back to `overlayOpener()` when nothing was activated.
+ */
+export function activatedControl(): HTMLElement | null {
+  const origin = commandOrigin?.isConnected ? commandOrigin.closest<HTMLElement>(PRESSABLE) : null;
+  return origin ?? overlayOpener();
+}
+
 export function canRestoreFocusTo(target: HTMLElement | null) {
   if (target == null) return false;
   const top = openSheets[openSheets.length - 1];

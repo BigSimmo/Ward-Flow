@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { revealWardOption, wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import {
+  holdInPlace,
+  returnFocusInPlace,
+  revealWardOption,
+  wardScrollBehavior,
+} from "@/components/ward-management/ward-scroll";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -63,5 +68,64 @@ describe("Search option scrolling", () => {
     expect(() => revealWardOption(option)).not.toThrow();
     expect(scroller.scrollTop).toBe(0);
     expect(() => revealWardOption(null)).not.toThrow();
+  });
+});
+
+describe("Holding a tapped control in place (Note 7)", () => {
+  function runFrames() {
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      callback(0);
+      return 0;
+    });
+  }
+
+  it("scrolls the work column by the distance the control moved", () => {
+    runFrames();
+    const scroller = document.createElement("div");
+    scroller.setAttribute("data-wf-scroller", "");
+    const control = document.createElement("button");
+    scroller.append(control);
+    document.body.append(scroller);
+    scroller.scrollTop = 0;
+    let top = 400;
+    vi.spyOn(control, "getBoundingClientRect").mockImplementation(() => ({ top }) as DOMRect);
+    const spy = vi.spyOn(scroller, "scrollTop", "set");
+    // The first frame reads 400; a group unfolds above and the control is now 2,000px lower.
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      top = 2400;
+      callback(0);
+      return 0;
+    });
+    holdInPlace(control);
+    expect(spy).toHaveBeenCalledWith(2000);
+  });
+
+  it("returns focus to the opener without scrolling, or to the fallback when the opener is gone", () => {
+    runFrames();
+    const opener = document.createElement("button");
+    const row = document.createElement("button");
+    document.body.append(opener, row);
+    const focus = vi.spyOn(opener, "focus");
+    returnFocusInPlace(opener, () => row);
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    opener.remove();
+    returnFocusInPlace(opener, () => row);
+    expect(document.activeElement).toBe(row);
+  });
+});
+
+describe("The control that opened a panel (Safari tap)", () => {
+  it("is the tapped button even when focus sits on an earlier field", async () => {
+    const { activatedControl } = await import("@/components/wf/sheet-focus");
+    const field = document.createElement("input");
+    const button = document.createElement("button");
+    const label = document.createElement("span");
+    button.append(label);
+    document.body.append(field, button);
+    field.focus();
+    // Safari: the tap clicks the button but leaves focus on the field.
+    label.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(document.activeElement).toBe(field);
+    expect(activatedControl()).toBe(button);
   });
 });

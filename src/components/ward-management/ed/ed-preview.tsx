@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 
-import { ChevronLeft, ChevronRight, LogIn } from "lucide-react";
+import { BedSingle, ChevronLeft, ChevronRight, FileText, Hourglass, LogIn } from "lucide-react";
 
-import { Button, FactGrid, Icon, RowSpark, StatusGlyph, buttonClass, useIsPhone } from "@/components/wf";
+import { Button, FactGrid, Icon, StatusGlyph, buttonClass, useIsPhone } from "@/components/wf";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import { edHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
@@ -34,27 +34,42 @@ export function EdPreview({
   const isPhone = useIsPhone();
   return (
     <div className={styles.preview} data-testid="ed-index-preview-body">
-      <FactGrid
-        className={styles.previewFacts}
-        facts={[
-          { id: "waiting", label: "Waiting", value: <b className={styles.num}>{row.summary.waiting}</b> },
-          {
-            id: "past",
-            label: `Past ${waitLine(accessTarget)}`,
-            value: <b className={styles.num}>{row.pastTarget}</b>,
-          },
-          { id: "no-bed", label: "No bed yet", value: <b className={styles.num}>{row.noBed}</b> },
-          { id: "form", label: "Under a form", value: <b className={styles.num}>{row.forms}</b> },
-        ]}
-      />
-      <section className={styles.previewSection} aria-labelledby="ed-preview-trend">
-        <h3 id="ed-preview-trend" className={styles.eyebrow}>
-          {`Last ${trendSpanHours} hours`}
-        </h3>
-        <div className={styles.previewTrend}>
-          <RowSpark values={row.trend} name={row.short} big testId="ed-row-spark" />
-          <span className={styles.meta}>{`${row.trend.join(" · ")} now · every ${trendStepHours}h`}</span>
+      <section className={styles.previewSummary} aria-label={`${row.short} now`}>
+        <div className={styles.previewHero}>
+          <p className={styles.previewBig}>
+            <b className={styles.previewBigNum}>{row.summary.waiting}</b>
+            <span>waiting now</span>
+          </p>
+          <PreviewTrend values={row.trend} name={row.short} />
         </div>
+        <ul className={styles.previewTiles}>
+          {[
+            {
+              id: "past",
+              tone: "danger",
+              icon: Hourglass,
+              label: `Past ${waitLine(accessTarget)}`,
+              value: row.pastTarget,
+            },
+            { id: "no-bed", tone: "warning", icon: BedSingle, label: "No bed yet", value: row.noBed },
+            { id: "form", tone: "info", icon: FileText, label: "Under a form", value: row.forms },
+          ].map((tile) => (
+            <li
+              key={tile.id}
+              className={styles.previewTile}
+              data-tone={tile.value > 0 ? tile.tone : "none"}
+              data-testid={`ed-preview-${tile.id}`}
+            >
+              <span className={styles.previewTileIcon} aria-hidden="true">
+                <Icon icon={tile.icon} size={16} />
+              </span>
+              <span className={styles.previewTileText}>
+                <b>{tile.value}</b>
+                <span>{tile.label}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
       </section>
       <section className={styles.previewSection} aria-labelledby="ed-preview-people">
         <h3 id="ed-preview-people" className={styles.eyebrow}>
@@ -72,8 +87,11 @@ export function EdPreview({
                 className={styles.previewPerson}
                 data-act-now={person.clock === "past" ? "true" : undefined}
                 data-dim={personDim(person, highlight) ? "true" : undefined}
+                data-clock={person.clock}
               >
-                <StatusGlyph tone={CLOCK_TONE[person.clock]} size={9} />
+                <span className={styles.previewBadge}>
+                  <StatusGlyph tone={CLOCK_TONE[person.clock]} size={12} />
+                </span>
                 <span className={styles.previewText}>
                   <Link href={person.href} className={styles.previewName}>
                     {person.name}
@@ -90,6 +108,11 @@ export function EdPreview({
                   </span>
                 </span>
                 <EdWaitFigures person={person} />
+                <span
+                  className={styles.previewMeter}
+                  aria-hidden="true"
+                  style={{ width: `${Math.min(100, Math.max(4, (person.wait / accessTarget) * 100)).toFixed(1)}%` }}
+                />
               </li>
             ))}
           </ul>
@@ -229,16 +252,54 @@ export function EdPreviewSteps({ onStep }: { onStep: (by: -1 | 1) => void }) {
 
 /**
  * WF-02: since referral is the main figure; time in ED sits beside it with its own label, so the
- * home preview and the Waiting list never print two different waits under one word.
+ * home preview and the Waiting list never print two different waits under one word. Note 9: the
+ * figure leads in the body face, coloured by its clock, with its label in small type underneath.
  */
 function EdWaitFigures({ person }: { person: EdPerson }) {
-  if (person.sinceReferral === undefined) {
-    return <b className={styles.num}>{`${splitDuration(person.wait)} in ED`}</b>;
-  }
+  const main = person.sinceReferral ?? person.wait;
   return (
-    <span>
-      <b className={styles.num}>{`${splitDuration(person.sinceReferral)} since referral`}</b>
-      <span className={styles.meta}>{` · ${splitDuration(person.wait)} in ED`}</span>
+    <span className={styles.previewWait}>
+      <b className={styles.previewWaitNum}>{splitDuration(main)}</b>
+      <span className={styles.previewWaitLabel}>
+        {person.sinceReferral === undefined ? "in ED" : `since referral · ${splitDuration(person.wait)} in ED`}
+      </span>
     </span>
+  );
+}
+
+/** The 12 hour trend, shaded, with its first and last values named under it. */
+function PreviewTrend({ values, name }: { values: readonly number[]; name: string }) {
+  if (values.length < 2) return null;
+  const width = 120;
+  const height = 40;
+  const max = Math.max(4, ...values);
+  const x = (index: number) => (index * width) / (values.length - 1);
+  const y = (value: number) => (height - 3 - (value / max) * (height - 8)).toFixed(1);
+  const points = values.map((value, index) => `${x(index).toFixed(1)},${y(value)}`).join(" ");
+  const first = values[0];
+  const last = values[values.length - 1];
+  const change = last - first;
+  return (
+    <div className={styles.previewTrend}>
+      <svg
+        className={styles.previewSpark}
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
+        role="img"
+        aria-label={`${name}, waiting over ${trendSpanHours} hours, every ${trendStepHours}h: ${values.join(", ")}`}
+        focusable="false"
+        data-testid="ed-row-spark"
+      >
+        <polygon className={styles.previewSparkArea} points={`0,${height} ${points} ${width},${height}`} />
+        <polyline className={styles.previewSparkLine} points={points} vectorEffect="non-scaling-stroke" />
+      </svg>
+      <span className={styles.previewAxis}>
+        <span>{`${trendSpanHours}h ago · ${first}`}</span>
+        <span className={styles.previewDelta} data-tone={change > 0 ? "up" : change < 0 ? "down" : "level"}>
+          {change === 0 ? "level" : `${change > 0 ? "up" : "down"} ${Math.abs(change)}`}
+        </span>
+        <span>{`now · ${last}`}</span>
+      </span>
+    </div>
   );
 }

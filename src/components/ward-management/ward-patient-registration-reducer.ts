@@ -1,6 +1,6 @@
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { WardFlowEvent } from "./ward-flow-events";
-import { GENDERS, sameRecordNumber, type Patient } from "./ward-patients";
+import { ADMIN_DETAIL_FIELDS, GENDERS, sameRecordNumber, type AdminDetailField, type Patient } from "./ward-patients";
 import { isPatientRegistrationScope } from "./ward-patient-registration";
 import { perthIsoDay } from "./ward-clock";
 import { RECORDED_SEXES } from "./ward-model-vocabulary";
@@ -86,11 +86,13 @@ export function reducePatientRegistration(
     typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
   const suburb = optional(event.suburb);
   // RF7 (Josh, 3 Nov 2026): the rest of the person's details, each optional and never blocking.
+  // Note 3 (Josh, 8 Nov 2026): and the clerk's administrative details, on the same terms.
   const typedDetails: Partial<
     Pick<
       Patient,
       "preferredName" | "address" | "generalPractitioner" | "catchmentCommunityTeam" | "interpreterLanguage"
-    >
+    > &
+      Record<AdminDetailField, string>
   > = {};
   for (const key of [
     "preferredName",
@@ -98,6 +100,7 @@ export function reducePatientRegistration(
     "generalPractitioner",
     "catchmentCommunityTeam",
     "interpreterLanguage",
+    ...ADMIN_DETAIL_FIELDS,
   ] as const) {
     const value = optional(event[key]);
     if (value !== undefined) typedDetails[key] = value;

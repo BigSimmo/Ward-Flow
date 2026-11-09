@@ -877,6 +877,9 @@ export function DowntimePackScreen() {
 
   return (
     <div className={styles.page} data-testid="ward-downtime-pack" data-ward-design="v10">
+      {/* Paper (8 Nov 2026): landscape A4 so each patient row prints on one line. Mounted with the
+          pack, as the handover sheet sets its own page; the row styles are in ward-flow-print.css. */}
+      <style>{DOWNTIME_PAGE_CSS}</style>
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
@@ -975,3 +978,5 @@ function PhoneSection({ empty, count, children }: { empty: string; count: number
   if (count === 0) return <p className={styles.phoneNote}>0 · {empty}</p>;
   return <ul className={styles.phoneList}>{children}</ul>;
 }
+
+const DOWNTIME_PAGE_CSS = "@media print { @page { size: A4 landscape; margin: 9mm 10mm; } }";
