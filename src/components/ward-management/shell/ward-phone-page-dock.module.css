@@ -36,10 +36,10 @@
      var(--wf-dock-clear) instead of bottom: 0. The local class keeps the selector pure for the
      webpack CSS Modules build. */
   :global(body):has(.pageDock) {
-    --wf-dock-clear: calc(78px + max(10px, env(safe-area-inset-bottom, 0px)));
-    /* The floating bar's top edge plus an 8px gap (58px bar + bottom pad + 8px, D-112). A pinned bar
+    --wf-dock-clear: calc(79px + max(10px, env(safe-area-inset-bottom, 0px)));
+    /* The floating bar's top edge plus an 8px gap (59px bar + bottom pad + 8px, D-112). A pinned bar
        seats its box here, on the faded foot just above the bar (Josh, 12 Oct 2026, iPhone). */
-    --wf-dock-top: calc(66px + max(10px, env(safe-area-inset-bottom, 0px)));
+    --wf-dock-top: calc(67px + max(10px, env(safe-area-inset-bottom, 0px)));
   }
 
   :global(body):has(.pageDock) :global([data-wf-scroller]) {

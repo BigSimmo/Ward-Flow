@@ -496,8 +496,8 @@
   }
 
   :global(body):has(.twoLine.twoLine) {
-    --wf-dock-clear: calc(78px + max(10px, env(safe-area-inset-bottom, 0px)));
-    --wf-dock-top: calc(66px + max(10px, env(safe-area-inset-bottom, 0px)));
+    --wf-dock-clear: calc(79px + max(10px, env(safe-area-inset-bottom, 0px)));
+    --wf-dock-top: calc(67px + max(10px, env(safe-area-inset-bottom, 0px)));
   }
 }
 
@@ -826,7 +826,7 @@
 }
 
 /* ── Floating bar (D-112, Josh, 9 Nov 2026: option A, "compact and beautifully sized") ─────
- * The dock lifts off the foot as a compact frosted capsule, 58px tall, 14px from each side and 10px
+ * The dock lifts off the foot as a compact frosted capsule, 59px tall, 14px from each side and 10px
  * (or the home indicator) above the foot, as the floating tab bars of iOS and Material 3 do. Depth
  * follows those systems: a hairline edge, a faint light catch along the top, a tight contact shadow
  * and a soft wide ambient one, kept low so the bar floats without looking heavy. In dark mode,
@@ -854,11 +854,11 @@
 
 .dock.dock {
   position: relative;
-  height: 58px;
+  height: 59px;
   align-items: center;
   padding: 0 4.5px;
   border: 0.5px solid color-mix(in srgb, var(--wf-ink-1) 10%, transparent);
-  border-radius: 29px;
+  border-radius: 29.5px;
   background: color-mix(in srgb, var(--wf-surface) 76%, transparent);
   box-shadow:
     inset 0 0.5px 0
@@ -882,15 +882,15 @@
 
 /* The pill sits exactly 5px inside the capsule on every side (Josh, 9 Nov 2026: "the highlight is
    slightly off"; it had stretched to the capsule's full height, 1px from the top and bottom but 6px
-   from the end). 47px tall in the 57px inner capsule, with radius 23.5px, concentric with the bar. */
+   from the end). 48px tall in the 58px inner capsule, with radius 24px (the 48px tap-target floor), concentric with the bar. */
 .dock.dock .dockItem.dockItem {
   align-self: center;
   justify-content: center;
   gap: 2px;
-  height: 47px;
+  height: 48px;
   min-height: 0;
   padding: 0;
-  border-radius: 23.5px;
+  border-radius: 24px;
   transition: background-color var(--wf-m-fast, 120ms) var(--wf-ease, ease);
 }
 
