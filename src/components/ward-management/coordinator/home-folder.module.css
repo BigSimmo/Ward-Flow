@@ -8,6 +8,8 @@
 
 .nav.nav {
   --wf-bar-frost: color-mix(in srgb, var(--wf-hero-2) 94%, transparent);
+  /* How far the row reaches past the page's side padding; home-folder.tsx measures and sets it. */
+  --wf-folder-bleed: var(--wf-s-4);
   --wf-folder-rise: 66px;
   --wf-folder-row: 46px;
   /* Up by the rise and by Home's column gap (home.module.css .body). */
@@ -85,7 +87,7 @@
   height: 40px;
   min-height: 40px;
   /* Out to the sheet's edge (set by HomeFolderShape), so the first tab's label is centred. */
-  margin: 0 0 0 calc(-1 * var(--wf-folder-bleed, var(--wf-s-4)));
+  margin: 0 0 0 calc(-1 * var(--wf-folder-bleed));
   padding: 0;
   gap: 0;
   border: 0;
