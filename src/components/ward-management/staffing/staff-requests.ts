@@ -1,4 +1,4 @@
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { currentShiftStartInstant, shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -126,7 +126,7 @@ export function staffRequestShiftWord(record: Pick<StaffRequestRecord, "shiftSta
 
 /** "Staff requested 10:44 · 2 · this shift". */
 export function staffRequestTagText(record: StaffRequestRecord, now: Instant): string {
-  return `Staff requested ${formatInstant(record.updatedAt ?? record.requestedAt)} · ${record.count >= 4 ? "4+" : record.count} · ${staffRequestShiftWord(record, now)}`;
+  return `Staff requested ${formatInstantWithDay(record.updatedAt ?? record.requestedAt, now)} · ${record.count >= 4 ? "4+" : record.count} · ${staffRequestShiftWord(record, now)}`;
 }
 
 function shiftStartFor(shift: StaffRequestShift, now: Instant): Instant {
