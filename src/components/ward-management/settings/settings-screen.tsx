@@ -1231,6 +1231,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
           {hasUnsavedRules && sheetTab === null ? (
             <div
               className={styles.phoneSaveBar}
+              data-wf-phone-foot-bar=""
               role="region"
               aria-label="Unsaved rule changes"
               data-testid="unsaved-draft-inspector"

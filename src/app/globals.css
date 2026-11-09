@@ -2260,3 +2260,14 @@ html.theme-transitioning *:after {
 html:has([data-wf-bar-notes] > :not([data-wf-offline-slot]), [data-wf-offline-note]) {
   --wf-toast-note-lift: 3.75rem;
 }
+
+/* PR #1531 review: on a phone a note wraps to two or three lines, so toasts clear a taller note, and
+   the phone Settings save bar (data-wf-phone-foot-bar) lifts notes and toasts above its Save buttons. */
+@media (max-width: 46.4375rem) {
+  html:has([data-wf-bar-notes] > :not([data-wf-offline-slot]), [data-wf-offline-note]) {
+    --wf-toast-note-lift: 5.5rem;
+  }
+  html:has([data-wf-phone-foot-bar]) {
+    --wf-phone-foot-lift: 6rem;
+  }
+}

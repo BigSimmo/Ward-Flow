@@ -229,7 +229,7 @@ describe("states", () => {
     const banner = block(css, ".banner");
     expect(banner).toContain("position: fixed");
     expect(banner).toContain("bottom: calc(0.75rem + var(--wf-foot-bar-lift, 0px))");
-    expect(css).toMatch(/\.banner \{\s*bottom: calc\(var\(--wf-dock-clear/u);
+    expect(css).toMatch(/\.banner \{\s*bottom: calc\(\s*var\(--wf-dock-clear/u);
   });
 
   it("ST8 (PR #1474 review): on paper the offline note prints in the page's flow, not fixed", () => {

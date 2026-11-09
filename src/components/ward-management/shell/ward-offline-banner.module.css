@@ -37,7 +37,10 @@
 
 @media (max-width: 46.4375rem) {
   .banner {
-    bottom: calc(var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + 0.5rem);
+    bottom: calc(
+      var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + 0.5rem +
+        var(--wf-phone-foot-lift, 0px)
+    );
     font-size: var(--wf-fs-12);
   }
 }

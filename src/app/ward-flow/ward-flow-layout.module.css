@@ -434,7 +434,10 @@
 
 @media (max-width: 46.4375rem) {
   .bannerHolder {
-    --wf-notes-rest: calc(var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + 0.5rem);
+    --wf-notes-rest: calc(
+      var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + 0.5rem +
+        var(--wf-phone-foot-lift, 0px)
+    );
   }
 }
 
