@@ -50,16 +50,27 @@ const GUARDS: Guard[] = [
 
 const read = (path: string) => readFileSync(join(ROOT, path), "utf8");
 
+/** Drops block and line comments, so a commented-out test is not counted as live. */
+const liveCode = (source: string) => source.replace(/\/\*[\s\S]*?\*\//gu, "").replace(/(^|[^:\\])\/\/.*$/gmu, "$1");
+
 describe("ruling guardrail register", () => {
   it.each(GUARDS)("$ruling keeps its own recorded entry", ({ source, entry }) => {
     expect(read(source)).toMatch(entry);
+  });
+
+  it("does not count commented-out tests (non-vacuity)", () => {
+    const code = liveCode(
+      'it("live", () => { expect(1).toBe(1); });\n// it("gone", () => { expect(2).toBe(2); });\n/* it("gone too") */',
+    );
+    expect(code.match(/\bit\(/gu)).toHaveLength(1);
+    expect(code.match(/\bexpect\(/gu)).toHaveLength(1);
   });
 
   it.each(GUARDS)("$ruling still has its guard tests, each naming the ruling", ({ ruling, guards }) => {
     for (const guard of guards) {
       expect(existsSync(join(ROOT, guard)), `${guard} is missing`).toBe(true);
       expect(read(guard), `${guard} no longer names ${ruling}`).toContain(ruling);
-      const source = read(guard);
+      const source = liveCode(read(guard));
       const tests = source.match(/\bit(\.each\([^)]*\))?\(/gu) ?? [];
       expect(tests.length, `${guard} has fewer than two tests`).toBeGreaterThanOrEqual(2);
       expect((source.match(/\bexpect\(/gu) ?? []).length, `${guard} asserts nothing`).toBeGreaterThanOrEqual(

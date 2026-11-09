@@ -24,7 +24,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const REPORTS_DIR = join(process.cwd(), "src/components/ward-management/reports");
 const STORAGE_APIS =
-  /\b(localStorage|sessionStorage|indexedDB|caches\s*\??\.|document\s*\??\.\s*cookie|navigator\s*\??\.\s*storage)\b/u;
+  /\b(?:localStorage|sessionStorage|indexedDB)\b|\bcaches\s*\??\.|\bdocument\s*\??\.\s*cookie\b|\bnavigator\s*\??\.\s*storage\b/u;
 const SYNTHETIC_NAME = "Synthetic person";
 
 function downtimePackSources(): string[] {
@@ -33,8 +33,15 @@ function downtimePackSources(): string[] {
     .map((name) => join(REPORTS_DIR, name));
 }
 
+/** Drops block and line comments so only live code is scanned. */
+function withoutComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//gu, "").replace(/(^|[^:\\])\/\/.*$/gmu, "$1");
+}
+
 function storageCalls(source: string): string[] {
-  return source.split("\n").filter((line) => !/^\s*(\/\/|\*|\/\*)/u.test(line) && STORAGE_APIS.test(line));
+  return withoutComments(source)
+    .split("\n")
+    .filter((line) => STORAGE_APIS.test(line));
 }
 
 function takePack() {
@@ -78,7 +85,10 @@ describe("downtime pack keeps no board data on the device (D-72 item 2)", () => 
     expect(storageCalls("await caches?.open('pack');")).toHaveLength(1);
     expect(storageCalls("const jar = document?.cookie;")).toHaveLength(1);
     expect(storageCalls("await navigator?.storage.persist();")).toHaveLength(1);
+    expect(storageCalls("await caches?.[name];")).toHaveLength(1);
+    expect(storageCalls('localStorage.setItem("k", v); // keep')).toHaveLength(1);
     expect(storageCalls("// localStorage is never used here")).toHaveLength(0);
+    expect(storageCalls("/*\n * sessionStorage stays unused\n */")).toHaveLength(0);
   });
 
   it("no downtime pack source calls browser storage", () => {
