@@ -1138,6 +1138,6 @@ is inferred.
 ## D-109. Home's bed alert line tests the whole number shown (9 November 2026)
 
 - **Date:** 9 November 2026 (`2026-11-09`). **Decided by:** Josh, in the Ward Flow project, choosing "Test the shown whole number" on a decision card.
-- **Decision:** the statewide figure at the top of Home reads "at risk" when the whole percentage it shows is at or above the bed alert line, and "beds in use" below it. So 84.5% to 84.9% shows "85% at risk", never "85% beds in use".
-- **How:** `coordinator-screen.tsx` compares `Math.round(statewideOccupancy)` with the bed alert line, built in PR #1561. Other bed alert markers (the rail dots) still use the unrounded value.
+- **Decision:** the statewide figure at the top of Home, and every bed alert dot and count, reads "at risk" when the whole percentage it shows is at or above the bed alert line, and "beds in use" below it. So 84.5% to 84.9% shows "85% at risk", never "85% beds in use".
+- **How:** `coordinator-screen.tsx` compares `Math.round(statewideOccupancy)` with the bed alert line, and `isBedAlert` (`ward-service-bed-alerts.ts`) rounds the same way, so the rail, phone menu and executive bed alert dots and counts match. Built in PR #1561.
 - **Boundary:** a prototype display rule on synthetic data; approves no merge or release.

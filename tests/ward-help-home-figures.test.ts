@@ -12,3 +12,14 @@ describe("Explain this number: Home's figures in Help", () => {
     expect(entry?.answer).toContain(`${CLINICAL_VALUES.bedAlertLine.value}% or more`);
   });
 });
+
+describe("bed alert line tests the whole number shown (D-109)", () => {
+  it("alerts at 84.5% (shown as 85%) and not at 84.4% (shown as 84%)", async () => {
+    const { isBedAlert, formatOccupancyPercent } =
+      await import("@/components/ward-management/shell/ward-service-bed-alerts");
+    expect(formatOccupancyPercent(84.5)).toBe("85%");
+    expect(isBedAlert(84.5)).toBe(true);
+    expect(formatOccupancyPercent(84.4)).toBe("84%");
+    expect(isBedAlert(84.4)).toBe(false);
+  });
+});
