@@ -219,7 +219,7 @@ export function HandoverSiteSignOff({
                   </span>
                   <Button
                     onClick={() => onOpenWard(ward.unitId)}
-                    aria-label={`${signed ? "View" : "Open"} ${name} handover`}
+                    aria-label={signed ? `View ${name} handover` : `Open handover for ${name}`}
                   >
                     {signed ? "View" : "Open handover"}
                   </Button>

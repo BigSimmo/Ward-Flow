@@ -1,4 +1,5 @@
 import { validDischargeRequestNamespace } from "./ward-discharge-records";
+import { isOnBehalfReason } from "./ward-on-behalf-reason";
 import { restoreRuleProblem, storedPlacementInvariants } from "./ward-flow-storage-invariants";
 import { hasDuplicateRetainedUmrns } from "./ward-retained-umrn";
 import {
@@ -771,8 +772,9 @@ const auditEvent = z
     z.refine(
       (row) =>
         (row.action !== "OPEN_DISCHARGE_RECORD" ||
-          row.details.requestNamespace === undefined ||
-          validDischargeRequestNamespace(row.details.requestNamespace)) &&
+          ((row.details.requestNamespace === undefined ||
+            validDischargeRequestNamespace(row.details.requestNamespace)) &&
+            (row.details.onBehalfReason === undefined || isOnBehalfReason(row.details.onBehalfReason)))) &&
         (row.action !== "RECORD_ADMISSION_CARE" ||
           (row.details.kind === "care" &&
             (row.details.recorded === undefined ||

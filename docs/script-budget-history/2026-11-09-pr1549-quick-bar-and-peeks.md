@@ -1,6 +1,6 @@
 # 9 Nov 2026, Quick bar and peek panels (PR #1549)
 
-Raised, each by 3.0 KB: `/ward-flow` 562.1 to 565.1, referrals 561.5 to 564.5, ED 516.9 to 519.9, ward `/ward-flow/ward/rph-adult-secure` 594.3 to 597.3, movements `/ward-flow/movements/WF-001` 589.2 to 592.2, `/ward-flow/ed/arm-ed` 653.6 to 656.6 and statistics 608.9 to 611.9. Capacity 662.5 to 667.5 (5.0 KB; main alone was already over its limit). Bed meeting is unchanged.
+Raised, each by 3.0 KB on top of `main` as of `3900d1388` (after PR #1543's own raises): `/ward-flow` 562.1 to 565.1, referrals 562.0 to 565.0, ED 516.9 to 519.9, ward `/ward-flow/ward/rph-adult-secure` 595.3 to 598.3, movements `/ward-flow/movements/WF-001` 589.7 to 592.7, `/ward-flow/ed/arm-ed` 654.0 to 657.0 and statistics 608.9 to 611.9. Capacity 662.5 to 667.5 (5.0 KB; main alone was already over its limit). Bed meeting is unchanged.
 
 Measured locally on this PR against `main` 079d46ed6 built the same way: growth of 2.2 to 2.9 KB on every route, and 3.0 KB on Capacity. Hosted CI has measured about 0.9 KB above the local figure.
 

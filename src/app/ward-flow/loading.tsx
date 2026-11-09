@@ -2,6 +2,7 @@ import { WardLoadingShape, type WardLoadingShapePaths } from "@/components/ward-
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import styles from "./loading.module.css";
+import { WardLoadingStatus } from "./loading-status";
 
 /** The three pages whose placeholder takes their shape. */
 const SHAPED_PAGES: WardLoadingShapePaths = {
@@ -25,22 +26,7 @@ const SHAPED_PAGES: WardLoadingShapePaths = {
 export default function WardFlowLoading() {
   return (
     <main id="main-content" className={styles.main} aria-busy="true" data-testid="ward-flow-loading">
-      <p className={styles.status} role="status">
-        <span className={styles.spin} aria-hidden="true" />
-        Loading page
-        {/* Q275 (pre-launch review E3, 2 Nov 2026): a page change that never finished showed this
-            forever. After 15 s this line shows (a CSS delay, so the boundary ships no extra code); its
-            Reload button is handled by the layout's inline script (ward-loading-note-early.ts),
-            which reloads the address. Josh (5 Nov 2026, design audit card 8): the same words and
-            the same 15 s as the first-load note (WARD_LOADING_SLOW_MS, DESIGN-SYSTEM §6). */}
-        <span className={styles.slow} data-testid="ward-loading-slow">
-          Still loading. Check the connection.
-          {/* eslint-disable-next-line local/require-button-wiring -- wired by WARD_LOADING_NOTE_EARLY_SCRIPT */}
-          <button type="button" className={styles.retry} data-wf-loading-reload="">
-            Reload
-          </button>
-        </span>
-      </p>
+      <WardLoadingStatus />
       <WardLoadingShape paths={SHAPED_PAGES} />
       <WardPrototypeFooter />
     </main>

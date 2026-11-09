@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  */
 const guard = vi.hoisted(() => ({ path: "/ward-flow/settings", phone: false, failReport: false }));
 vi.mock("next/headers", () => ({
+  cookies: async () => ({ get: () => undefined }),
   headers: async () =>
     new Headers({
       "user-agent": guard.phone ? "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Mobile" : "desktop",

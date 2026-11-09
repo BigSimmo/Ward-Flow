@@ -1,5 +1,6 @@
 import type { BedMeetingActionKind, BedMeetingActionOwner, BedMeetingSubject } from "./bed-meeting/bed-meeting-actions";
 import type { CareChange } from "./ward-care-journey";
+import type { OnBehalfReasonId } from "./ward-on-behalf-reason";
 import type {
   DischargeBarrier,
   LeavingDestination,
@@ -184,6 +185,8 @@ export type WardFlowEvent =
       expectedGeneration: number;
       requestId: number;
       requestNamespace?: string;
+      /** D-80 item 17: the coordinator's "on behalf of the ward" reason, required for that role only. */
+      onBehalfReason?: OnBehalfReasonId;
     }
   | {
       type: "REVIEW_AUDIT_EVENT";

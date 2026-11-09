@@ -15,9 +15,9 @@ On a phone, the bar at the bottom has **My jobs, Alerts, Create, On-call, Activi
 
 1. **Open a job.** Choose a job from the list to see the booking, the forms and the arrival plan.
 2. **Move it along.** Press **Mark accepted**, then **Mark en route**, **Mark collected** and
-   **Mark delivered** as each step happens.
+   **Mark arrived at ward** as each step happens.
 3. **Undo a slip.** If you pressed the wrong step, use **Undo** on the message straight away.
-4. **Divert.** If the patient must go somewhere else, use **Divert** and record the diversion.
+4. **Divert.** After collection, if the patient must go somewhere else, use **Divert** and record the diversion.
 5. **Check the forms.** Use **Inspect form** to check the forms pack before you leave.
 6. **Hand over.** Use **Copy handover** for a plain summary of open jobs.
 

@@ -37,7 +37,7 @@ describe("provider session record API", () => {
     expect(current.readDischargeRecord(coordinator, record.admissionId, null)).toEqual({ status: "denied" });
     let handle: DischargeOpenHandle | null = null;
     act(() => {
-      handle = current.openDischargeRecord(coordinator, record.admissionId);
+      handle = current.openDischargeRecord(coordinator, record.admissionId, "ward-asked");
       expect(current.readDischargeRecord(coordinator, record.admissionId, handle)).toEqual({ status: "denied" });
     });
     expect(current.readDischargeRecord(coordinator, record.admissionId, handle).status).toBe("allowed");
@@ -57,14 +57,14 @@ describe("provider session record API", () => {
     const record = firstRecord();
     let oldHandle!: DischargeOpenHandle;
     act(() => {
-      oldHandle = current.openDischargeRecord(coordinator, record.admissionId);
+      oldHandle = current.openDischargeRecord(coordinator, record.admissionId, "ward-asked");
     });
     act(() => current.dispatch({ type: "RESET_SCENARIO", role: "demo", now: current.now }));
     expect(current.worldGeneration).toBe(1);
     expect(current.readAuditEvents(coordinator)).toEqual({ status: "allowed", value: [] });
     let newHandle!: DischargeOpenHandle;
     act(() => {
-      newHandle = current.openDischargeRecord(coordinator, record.admissionId);
+      newHandle = current.openDischargeRecord(coordinator, record.admissionId, "ward-asked");
     });
     expect(newHandle.requestId).toBeGreaterThan(oldHandle.requestId);
     expect(newHandle.generation).toBe(1);
@@ -81,7 +81,7 @@ describe("provider session record API", () => {
     const record = firstRecord();
     let first!: DischargeOpenHandle;
     act(() => {
-      first = current.openDischargeRecord(coordinator, record.admissionId);
+      first = current.openDischargeRecord(coordinator, record.admissionId, "ward-asked");
     });
     expect(current.readDischargeRecord({ role: "ed" }, record.admissionId, first)).toEqual({ status: "denied" });
     expect(current.readDischargeRecord(coordinator, "other-record", first)).toEqual({ status: "denied" });
@@ -91,7 +91,7 @@ describe("provider session record API", () => {
     expect(current.readAuditEvents(coordinator)).toEqual({ status: "allowed", value: [] });
     let remounted!: DischargeOpenHandle;
     act(() => {
-      remounted = current.openDischargeRecord(coordinator, record.admissionId);
+      remounted = current.openDischargeRecord(coordinator, record.admissionId, "ward-asked");
     });
     expect(remounted.requestId).toBe(first.requestId);
     // Handles are deliberately local to a provider subtree; none is persisted across remount.
