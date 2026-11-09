@@ -2324,13 +2324,15 @@
     table-layout: fixed;
   }
   /* DC2 (3 Nov 2026): four columns, the Stage column gone; the action never wraps. */
+  /* Table polish (Nov 2026): Person gives 4% to Expected out, so "Expected out" and "Tue 10 Nov,
+     10:42" fit at 1280px beside the barrier column instead of being cut or running into Held up by. */
   .workTable th.colPerson,
   .workTable td.colPerson {
-    width: 34%;
+    width: 30%;
   }
   .workTable th.colOut,
   .workTable td.colOut {
-    width: 20%;
+    width: 24%;
   }
   .workTable th.colBlocker,
   .workTable td.colBlocker {
@@ -2388,7 +2390,8 @@
     margin-top: 2px;
     color: var(--wf-ink-3);
     font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
-    white-space: nowrap;
+    /* Wraps at the comma rather than running into the next column (table polish, Nov 2026). */
+    white-space: normal;
   }
   .stagePill {
     display: inline-flex;

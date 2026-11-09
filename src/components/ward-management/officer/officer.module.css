@@ -450,7 +450,13 @@
 .formsMissing {
   color: var(--wf-warning-ink);
   font-size: var(--wf-fs-12);
-  white-space: nowrap;
+}
+
+/* Table polish (Nov 2026): a Forms tag wraps inside its column ("Form 4A / needed") instead of being
+   cut at 1280px. */
+.jobsTable .formsCell > span:last-child,
+.jobsTable .formsCell > span:last-child > span {
+  white-space: normal;
 }
 
 /* A form still to upload that does not block the next step: said, not flagged. */
