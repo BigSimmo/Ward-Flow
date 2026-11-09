@@ -779,7 +779,9 @@ export function CoordinatorScreen() {
                           {
                             id: "occupancy",
                             value: `${Math.round(statewideOccupancy)}%`,
-                            label: statewideOccupancy >= BED_ALERT_THRESHOLD_PERCENT ? "at risk" : "beds in use",
+                            // D-109 (Josh, 9 Nov 2026): the line tests the whole number shown, so "85%" never sits beside "beds in use".
+                            label:
+                              Math.round(statewideOccupancy) >= BED_ALERT_THRESHOLD_PERCENT ? "at risk" : "beds in use",
                             href: "/ward-flow/capacity",
                             testId: "home-figure-occupancy",
                             linkTestId: "ward-home-occupancy-link",

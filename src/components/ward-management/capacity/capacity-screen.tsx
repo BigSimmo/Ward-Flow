@@ -3,6 +3,7 @@
 import { useWardFormSave } from "../use-ward-form-save";
 import { wardScrollBehavior } from "../ward-scroll";
 
+import dynamic from "next/dynamic";
 import { startTransition, useEffect, useMemo, useState } from "react";
 
 import {
@@ -34,17 +35,30 @@ import { BedForecast } from "./capacity-bed-forecast";
 import { BedMapCards, BedMapHighlights, type Highlight } from "./capacity-bed-map-cards";
 import { ComingIn } from "./capacity-coming-in";
 import { CapacityHero } from "./capacity-hero";
-import { BedMeetingSheetDialog } from "./capacity-meeting-sheet-dialog";
 import { useCapacityModel, type CapacityModel } from "./capacity-model";
 import { OtherSitesCounts } from "./capacity-other-sites";
 import { PhoneOverview } from "./capacity-phone-overview";
 import { PlannedCounts } from "./capacity-planned-counts";
-import { ScenarioDialog } from "./capacity-scenario-dialog";
 import { useSiteEdWaiting } from "./capacity-site-ed";
 import { heldUpReleases } from "./capacity-held-up";
 import { shiftConfirmations, unchangedConfirmations } from "./shift-confirmations";
-import { CapacityWardFoot, CapacityWardSidebar, useCapacityWardTabs } from "./capacity-ward-drawer";
+import { useCapacityWardTabs } from "./capacity-ward-tabs";
 import styles from "./capacity-page.module.css";
+
+// Phone size limit (9 Nov 2026): the ward drawer's body and the two pop-ups load when first opened,
+// not with the page. Each is drawn only while open, as the bed meeting sheet already was.
+const ScenarioDialog = dynamic(() => import("./capacity-open-parts").then((m) => m.ScenarioDialog), {
+  ssr: false,
+});
+const BedMeetingSheetDialog = dynamic(() => import("./capacity-open-parts").then((m) => m.BedMeetingSheetDialog), {
+  ssr: false,
+});
+const CapacityWardFoot = dynamic(() => import("./capacity-open-parts").then((m) => m.CapacityWardFoot), {
+  ssr: false,
+});
+const CapacityWardSidebar = dynamic(() => import("./capacity-open-parts").then((m) => m.CapacityWardSidebar), {
+  ssr: false,
+});
 
 type Popup = { kind: "scenario" } | { kind: "sheet" } | { kind: "ward"; unitId: string } | { kind: "forecast" } | null;
 type PageTab = "overview" | "wards" | "planned";
@@ -315,12 +329,9 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
         />
       </main>
 
-      <ScenarioDialog
-        open={popup?.kind === "scenario"}
-        onClose={() => setPopup(null)}
-        model={model.forecastModel}
-        networkWide={networkWide}
-      />
+      {popup?.kind === "scenario" ? (
+        <ScenarioDialog open onClose={() => setPopup(null)} model={model.forecastModel} networkWide={networkWide} />
+      ) : null}
       {sheet ? <BedMeetingSheetDialog open onClose={() => setPopup(null)} sheet={sheet} now={now} /> : null}
       <PanelDrawer
         open={selectedRow !== undefined}

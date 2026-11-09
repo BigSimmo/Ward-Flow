@@ -6,7 +6,7 @@ import { type ReactNode, useMemo } from "react";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 
 import { Card, StatusGlyph, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
-import { edOpenSummaries, isDetainedUnderTheAct } from "@/components/ward-management/ed/ed-home-derivations";
+import { edOpenSummaries, isUnderAForm } from "@/components/ward-management/ed/ed-home-derivations";
 import { clockState, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Movement } from "@/components/ward-management/ward-model";
@@ -88,12 +88,7 @@ export function HomeEdPressure({
   // first. One with nobody waiting and no one on forms folds into one quiet "KEMH, PCH: no wait" tile,
   // unless it is the one the queue is filtered to, so the filter can always be turned off.
   const needsSomething = (row: (typeof sorted)[number]) =>
-    row.waiting > 0 ||
-    row.breaching > 0 ||
-    row.ed.id === selectedEdId ||
-    openFor(row.ed.id).some(
-      (movement) => movement.legalForm !== undefined || isDetainedUnderTheAct(movement.legalStatus),
-    );
+    row.waiting > 0 || row.breaching > 0 || row.ed.id === selectedEdId || openFor(row.ed.id).some(isUnderAForm);
   const rows = sorted.filter(needsSomething);
   const clear = sorted.filter((row) => !needsSomething(row));
   const clearCodes = clear.map((row) => row.ed.siteCode).join(", ");
@@ -109,9 +104,7 @@ export function HomeEdPressure({
         const serviceAcronym = healthServiceAcronym(rawService);
         const open = openFor(row.ed.id);
         // H1 (Josh, 3 Nov 2026): the tile counts the people on forms, not a missing due time.
-        const onForms = open.filter(
-          (movement) => movement.legalForm !== undefined || isDetainedUnderTheAct(movement.legalStatus),
-        ).length;
+        const onForms = open.filter(isUnderAForm).length;
         const deadlines = open.flatMap((movement) => {
           const dueAt = currentLegalDueAt(movement);
           return dueAt === undefined ? [] : [clockState(dueAt, now, thresholds)];

@@ -109,7 +109,7 @@ describe("the Recent activity count and the Notices count are never summed", () 
 
   it("reads the Recent activity count as the feed's events alone, not events plus notices", async () => {
     const { user, sheet } = await openActivityPanel();
-    const recentTab = within(sheet).getByRole("tab", { name: /Recent activity/u });
+    const recentTab = within(sheet).getByRole("tab", { name: /^Recent/u });
     await user.click(recentTab);
     const events = within(within(sheet).getByRole("list", { name: "Recent activity" })).getAllByRole("listitem");
     expect(events.length, "the seeded world records events, or this is vacuous").toBeGreaterThan(0);
