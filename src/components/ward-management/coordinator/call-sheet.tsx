@@ -38,9 +38,12 @@ type CallStep = {
 };
 type CallBatch = { scope: object; referralIds: string[]; steps: CallStep[] };
 
-/** A patient with referrals to several wards is one patient; a referral with no patient link counts as its own. */
-function personKey(item: CallSheetGroup["items"][number]): string {
-  return item.referral.patientId ?? `referral:${item.referral.id}`;
+/**
+ * One referral sent to several wards is counted and listed in full once. Keyed by referral, never by
+ * the patient link: D-14 keeps where else a patient has been out of ward screens.
+ */
+function referralKey(item: CallSheetGroup["items"][number]): string {
+  return item.referral.id;
 }
 
 /**
@@ -71,11 +74,11 @@ export function CallSheet() {
   const { referrals, units } = useWardFlowSelect("referrals", "units");
   const now = useWardFlowClock();
   const groups = callOrder(callSheetGroups(referrals, units), now);
-  const patients = new Set(groups.flatMap((group) => group.items.map(personKey))).size;
-  // Each patient is listed in full once, under the first ward in call order; later wards fold them.
+  const waiting = new Set(groups.flatMap((group) => group.items.map(referralKey))).size;
+  // Each referral is listed in full once, under the first ward in call order; later wards fold them.
   const firstAt = new Map<string, number>();
   groups.forEach((group, index) => {
-    for (const item of group.items) if (!firstAt.has(personKey(item))) firstAt.set(personKey(item), index + 1);
+    for (const item of group.items) if (!firstAt.has(referralKey(item))) firstAt.set(referralKey(item), index + 1);
   });
   const late = groups.filter((group) => group.nextCallbackAt !== undefined && group.nextCallbackAt <= now).length;
   return (
@@ -84,7 +87,7 @@ export function CallSheet() {
         <div className={styles.headText}>
           {groups.length > 0 ? (
             <p className={styles.summary} data-testid="ward-call-sheet-summary">
-              <b>{patients}</b> {patients === 1 ? "patient" : "patients"} waiting on <b>{groups.length}</b>{" "}
+              <b>{waiting}</b> {waiting === 1 ? "referral" : "referrals"} waiting on <b>{groups.length}</b>{" "}
               {groups.length === 1 ? "ward" : "wards"}
               {late > 0 ? (
                 <>
@@ -285,8 +288,8 @@ function WardGroup({
     (promise !== "" || callback !== "" ? commitGate.reason : undefined) ??
     (outcome === "" ? "Choose what the ward said" : undefined);
   const headingId = `${baseId}-ward`;
-  const fresh = group.items.filter((item) => (firstAt.get(personKey(item)) ?? position) === position);
-  const repeats = group.items.filter((item) => (firstAt.get(personKey(item)) ?? position) !== position);
+  const fresh = group.items.filter((item) => (firstAt.get(referralKey(item)) ?? position) === position);
+  const repeats = group.items.filter((item) => (firstAt.get(referralKey(item)) ?? position) !== position);
   const renderItem = (item: CallSheetGroup["items"][number]) => {
     const who = patientOf(item.referral);
     return (
@@ -345,9 +348,9 @@ function WardGroup({
       {repeats.length > 0 ? (
         <details className={`${styles.repeat} source-print`}>
           <summary>
-            {repeats.length} {repeats.length === 1 ? "patient" : "patients"} also listed under{" "}
+            {repeats.length} {repeats.length === 1 ? "referral" : "referrals"} also listed under{" "}
             {wardList(
-              [...new Set(repeats.map((item) => firstAt.get(personKey(item)) ?? position))].sort((x, y) => x - y),
+              [...new Set(repeats.map((item) => firstAt.get(referralKey(item)) ?? position))].sort((x, y) => x - y),
             )}
           </summary>
           <ol className={styles.items}>{repeats.map(renderItem)}</ol>
