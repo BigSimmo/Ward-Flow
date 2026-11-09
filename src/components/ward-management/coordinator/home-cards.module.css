@@ -229,6 +229,11 @@
 .leverToggle[aria-expanded="true"] .leverChevron {
   transform: rotate(180deg);
 }
+@media (prefers-reduced-motion: reduce) {
+  .leverChevron {
+    transition: none;
+  }
+}
 .fitTable td.waysRow,
 .waysRow td {
   padding-top: 0;

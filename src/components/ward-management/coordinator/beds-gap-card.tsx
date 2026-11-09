@@ -18,7 +18,7 @@ export const HOME_FORECAST_HREF = "/ward-flow/capacity#capacity-forecast";
 
 /**
  * Josh's notes 4 (9 Nov 2026): a bed type opens to the discharges behind tomorrow's figure, so the
- * shortfall becomes a list of who to chase. Counts only, from the forecast; nothing is proposed.
+ * shortfall becomes a list of discharges to chase. Counts only, from the forecast; nothing is proposed.
  */
 function waysToFree(kind: KindForecast): { count: number; text: string }[] {
   return [

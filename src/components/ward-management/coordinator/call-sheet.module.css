@@ -222,14 +222,36 @@
   padding-left: 36px;
 }
 
+.repeat > .items {
+  padding-left: 0;
+}
+
 .repeat > summary,
 .times > summary {
   display: inline-flex;
   align-items: center;
   min-height: 32px;
   color: var(--wf-accent-ink);
+  gap: 6px;
   font: 500 var(--wf-fs-13) / 18px var(--wf-font);
   cursor: pointer;
+}
+
+/* display:inline-flex drops the native marker, so the open or closed state gets its own chevron. */
+.repeat > summary::before,
+.times > summary::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+}
+
+.repeat[open] > summary::before,
+.times[open] > summary::before {
+  transform: rotate(45deg);
 }
 
 .repeat[open] > summary,

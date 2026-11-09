@@ -200,8 +200,6 @@
   background: var(--wf-hover);
 }
 
-/* H1 (Josh, 3 Nov 2026): a tile whose forms are due or overdue is outlined in that tone all round
-   (a full ring, never a coloured side edge, D-94). */
 /* Josh's notes 4 (9 Nov 2026): no tone-coloured outline on a tile (design system principle 4).
    The forms line's own glyph already carries the tone. */
 

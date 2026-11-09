@@ -754,11 +754,13 @@
 }
 
 .compactWhere.compactWhere {
+  order: 2;
   color: var(--wf-ink-2);
   font: 400 var(--wf-fs-13) / 18px var(--wf-font);
 }
 
 .compactTag.compactTag {
+  order: 1;
   margin-top: var(--wf-s-1);
   padding: 0 var(--wf-s-2);
   border: 0;
@@ -786,7 +788,7 @@
 /* Josh's notes 4 (9 Nov 2026): Home's desktop row reads like the phone row. Glyph, the patient,
    the issue as a quiet label and the place stack in one wide text column; the time sits top right
    on the name's line and the one action sits under it. The text no longer wraps into four lines
-   beside two fixed columns. The Alerts page keeps its own row (no .hrowStacked). */
+   beside two fixed columns. Alerts' accepted-to-pull rows share this row, so both pages match. */
 .hrow.hrowStacked {
   grid-template-columns: 1rem minmax(0, 1fr) max-content;
   align-items: start;
@@ -857,6 +859,21 @@
 @media (max-width: 46.4375rem) {
   .hrow.hrowStacked {
     grid-template-columns: 1rem minmax(0, 1fr) auto;
+  }
+
+  /* First paint below the phone line: the time stays top right and the action spans under the text. */
+  .hrowStacked .hrowEnd {
+    display: contents;
+  }
+
+  .hrowStacked .hrowAge {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .hrowStacked .hrowAction {
+    grid-column: 2 / -1;
+    grid-row: 2;
   }
 }
 

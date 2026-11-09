@@ -44,7 +44,7 @@ const MORE_SCREENS: readonly Around[] = [
       {
         target: id("home-my-list"),
         title: "Needs you",
-        body: "Act now first, then referrals to decide and what you are waiting on others for. Choosing a row opens its placement checks beside the list; a person always chooses the bed.",
+        body: "Act now first, then referrals to decide and what you are waiting on others for. A row for someone waiting for a bed opens their placement checks; other rows open the record they are about. A person always chooses the bed.",
       },
       {
         device: "desk",

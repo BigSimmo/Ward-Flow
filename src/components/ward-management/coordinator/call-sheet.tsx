@@ -38,14 +38,12 @@ type CallStep = {
 };
 type CallBatch = { scope: object; referralIds: string[]; steps: CallStep[] };
 
+/** A patient with referrals to several wards is one patient; a referral with no patient link counts as its own. */
+function personKey(item: CallSheetGroup["items"][number]): string {
+  return item.referral.patientId ?? `referral:${item.referral.id}`;
+}
+
 /**
- * COORDINATED CALL SHEET (closing-the-loop package A, 24 Oct 2026). Every referral still waiting
- * on a ward, grouped by ward: the last call logged, what is still unanswered, promised times and
- * the next callback. One "Record call outcome" per ward logs the same outcome against each linked
- * referral in one go. Screen and print only: nothing is emailed or shared from here, and no link
- * carries patient details. Wards follow the network's own order and referrals keep their recorded
- * order inside each ward. Nothing is ranked or proposed.
- *
  * Josh's notes 4 (9 Nov 2026), "Ward calls": wards are listed in call order by time alone (a
  * callback already due first, then the soonest callback, then the longest-waiting referral), each
  * numbered, with one status tag saying why it sits where it does. Patients are counted once across
@@ -59,15 +57,25 @@ export function callOrder(groups: readonly CallSheetGroup[], now: Instant): Call
     (a, b) => rank(a) - rank(b) || (rank(a) === 1 ? a.nextCallbackAt! - b.nextCallbackAt! : 0) || oldest(a) - oldest(b),
   );
 }
+
+/**
+ * COORDINATED CALL SHEET (closing-the-loop package A, 24 Oct 2026). Every referral still waiting
+ * on a ward, grouped by ward: the last call logged, what is still unanswered, promised times and
+ * the next callback. One "Record call outcome" per ward logs the same outcome against each linked
+ * referral in one go. Screen and print only: nothing is emailed or shared from here, and no link
+ * carries patient details. Referrals keep their recorded order inside each ward. Nothing is proposed.
+ *
+ * Josh's notes 4 (9 Nov 2026), "Ward calls": the sheet lists wards in call order (see callOrder).
+ */
 export function CallSheet() {
   const { referrals, units } = useWardFlowSelect("referrals", "units");
   const now = useWardFlowClock();
   const groups = callOrder(callSheetGroups(referrals, units), now);
-  const patients = new Set(groups.flatMap((group) => group.items.map((item) => item.referral.id))).size;
+  const patients = new Set(groups.flatMap((group) => group.items.map(personKey))).size;
   // Each patient is listed in full once, under the first ward in call order; later wards fold them.
   const firstAt = new Map<string, number>();
   groups.forEach((group, index) => {
-    for (const item of group.items) if (!firstAt.has(item.referral.id)) firstAt.set(item.referral.id, index + 1);
+    for (const item of group.items) if (!firstAt.has(personKey(item))) firstAt.set(personKey(item), index + 1);
   });
   const late = groups.filter((group) => group.nextCallbackAt !== undefined && group.nextCallbackAt <= now).length;
   return (
@@ -81,7 +89,7 @@ export function CallSheet() {
               {late > 0 ? (
                 <>
                   {" · "}
-                  <b>{late}</b> {late === 1 ? "callback" : "callbacks"} late
+                  <b>{late}</b> {late === 1 ? "ward" : "wards"} late on a callback
                 </>
               ) : null}
             </p>
@@ -277,8 +285,8 @@ function WardGroup({
     (promise !== "" || callback !== "" ? commitGate.reason : undefined) ??
     (outcome === "" ? "Choose what the ward said" : undefined);
   const headingId = `${baseId}-ward`;
-  const fresh = group.items.filter((item) => (firstAt.get(item.referral.id) ?? position) === position);
-  const repeats = group.items.filter((item) => (firstAt.get(item.referral.id) ?? position) !== position);
+  const fresh = group.items.filter((item) => (firstAt.get(personKey(item)) ?? position) === position);
+  const repeats = group.items.filter((item) => (firstAt.get(personKey(item)) ?? position) !== position);
   const renderItem = (item: CallSheetGroup["items"][number]) => {
     const who = patientOf(item.referral);
     return (
@@ -339,7 +347,7 @@ function WardGroup({
           <summary>
             {repeats.length} {repeats.length === 1 ? "patient" : "patients"} also listed under{" "}
             {wardList(
-              [...new Set(repeats.map((item) => firstAt.get(item.referral.id) ?? position))].sort((x, y) => x - y),
+              [...new Set(repeats.map((item) => firstAt.get(personKey(item)) ?? position))].sort((x, y) => x - y),
             )}
           </summary>
           <ol className={styles.items}>{repeats.map(renderItem)}</ol>
@@ -365,7 +373,11 @@ function WardGroup({
           </Field>
         </div>
         <details className={styles.times} open={promise !== "" || callback !== "" ? true : undefined}>
-          <summary>Add a promised time or callback</summary>
+          <summary>
+            {promise !== "" || callback !== ""
+              ? `Promised time or callback set${promise !== "" ? `: answer by ${formatInstantWithDay(now + Number(promise), now)}` : ""}${callback !== "" ? `${promise !== "" ? "," : ":"} callback ${formatInstantWithDay(now + Number(callback), now)}` : ""}`
+              : "Add a promised time or callback"}
+          </summary>
           <div className={styles.row}>
             <CommitmentTimeSelect
               label="Answer promised by"

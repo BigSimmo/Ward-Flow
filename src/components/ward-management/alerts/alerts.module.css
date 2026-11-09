@@ -376,6 +376,13 @@ button.check[aria-pressed="true"] {
   margin-right: var(--wf-s-1);
 }
 
+/* On a phone the row glyphs sit centred in their 1rem column, so the heading's glyph centres too. */
+@media (max-width: 46.4375rem) {
+  .groupGlyph {
+    justify-content: center;
+  }
+}
+
 .groupAside {
   margin-left: auto;
   color: var(--wf-ink-3);
