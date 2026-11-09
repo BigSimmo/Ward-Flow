@@ -1601,17 +1601,17 @@
       {
         "path": "src/components/ward-management/ward-flow-event-roles.ts",
         "line": 1,
-        "sha256": "cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302"
+        "sha256": "33dceca8873314e290476223b86e37e0d7ea6f4c4f3db9cd2afeda921d828cf3"
       },
       {
         "path": "src/components/ward-management/ward-flow-events.ts",
         "line": 1,
-        "sha256": "886fe5b09cad6bd5aff289f22458630f5d02e17aac04c668c42eb54372db63fe"
+        "sha256": "a936f5522cd7ebf0528eae4e3fbb1d4bd76352a7285ea807746c4b1f8321f7b9"
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
-        "line": 421,
-        "sha256": "007cbd333b772289599478982709bc0d8297c77ab194082ded1010b83b785942"
+        "line": 428,
+        "sha256": "62e57aee26be1bd4d8352a3c56fc92662a8aef7d87149e16ebc63677d5782aa0"
       },
       {
         "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
@@ -1636,7 +1636,7 @@
       {
         "path": "src/components/ward-management/ward-flow-reducer.ts",
         "line": 1161,
-        "sha256": "425afe32ddba76ff91a15caa4a0e790002640df2114ca13f3398c313233ff80d"
+        "sha256": "d303b7879eb25f72157d8ed8380e2a526c1f6b732f61a95b77b8da3fdba9b3ca"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
@@ -1651,12 +1651,12 @@
       {
         "path": "src/components/ward-management/ward-flow-storage-validation.ts",
         "line": 456,
-        "sha256": "a020c797213c9388fc68cca6e1f3f37432b8bb28fd391415feee20192151c653"
+        "sha256": "c40762b8f04bbc53b4c00122b6e0fb885969ebc26d4984c24bdd6692b1551295"
       },
       {
         "path": "src/components/ward-management/ward-flow-transport-events.ts",
         "line": 85,
-        "sha256": "e861d25f2a0eebbb6dbf107fbe98fe83c9d8ec548998d5e64f4f5fd4858ab19f"
+        "sha256": "f38d13aff93c5b31cca1553379826c6dbb0dc830275a9779450a106748942159"
       },
       {
         "path": "src/components/ward-management/ward-flow-undo-events.ts",
@@ -1686,7 +1686,7 @@
       {
         "path": "src/components/ward-management/ward-model.ts",
         "line": 1,
-        "sha256": "e650e8c810e2aabc4075bac45ac9a6e05e9e116308cf028d8877450632e51f06"
+        "sha256": "ab7ef1f03394e008f6851a928d5c909e216877ccee61e8efbaf4ef19d85057c6"
       },
       {
         "path": "src/components/ward-management/ward-patient-registration-reducer.ts",
