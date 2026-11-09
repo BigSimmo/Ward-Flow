@@ -18,7 +18,7 @@ describe("Report a problem: patient detail check", () => {
     ["the card for UM100001 froze", "record-number"],
     ["number 20034567 again", "record-number"],
     ["Medicare 2123 45679 1 shown", "medicare"],
-    ["call 0412 345 678 back", "phone"],
+    ["call 0491 570 156 back", "phone"],
     ["rang +61 8 9224 1234", "phone"],
     ["ward phone 9224 1234", "phone"],
     ["email jane.citizen@example.invalid", "email"],
@@ -48,13 +48,13 @@ describe("Report a problem: patient detail check", () => {
   });
 
   it("names each kind once, in a fixed order, and never repeats the words", () => {
-    const kinds = findPatientDetails("Mr Smith, 0412 345 678, Mr Jones, UMRN 7654321"); // precommit-scan: allow
+    const kinds = findPatientDetails("Mr Smith, 0491 570 156, Mr Jones, UMRN 7654321"); // precommit-scan: allow
     expect(kinds).toEqual(["record-number", "phone", "titled-name"]);
     const refusal = patientDetailRefusal(kinds);
     expect(refusal).toBe(
       "Remove patient details first. This looks like it has a record number (UMRN or MRN), a phone number and a name with a title, like Mr Smith. The time and screen are added for you.",
     );
-    expect(refusal).not.toContain("0412");
+    expect(refusal).not.toContain("0491");
     expect(refusal).not.toContain("Jones");
   });
 });
