@@ -4,7 +4,10 @@ import { Children, isValidElement, type ReactElement } from "react";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/headers", () => ({
+  cookies: async () => ({ get: () => undefined }),
+  headers: async () => new Headers(),
+}));
 
 import WardFlowMockupLayout from "@/app/ward-flow/layout";
 import { WardWorkspaceHost } from "@/components/ward-management/shell/ward-workspace-host";

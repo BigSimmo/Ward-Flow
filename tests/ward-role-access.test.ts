@@ -162,7 +162,6 @@ describe("the access table", () => {
       community: {
         alerts: "own",
         community: "own",
-        delays: "own",
         "legal-forms": "own",
         movements: "own",
         "on-call": "all",
@@ -221,6 +220,21 @@ describe("the access table", () => {
     expect(screenDecision(ed, screenForPath(`${BASE}/ed/x`), places).open).toBe(true);
     const team = { role: "community", scope: { kind: "team", teamName: "Any team" } } as const;
     expect(screenDecision(team, screenForPath(`${BASE}/community`), places)).toEqual({ open: false, why: "place" });
+  });
+
+  it("closes typed Waiting addresses to the community desk and keeps the desks' own off-menu views (desk walk, 8 Nov 2026)", () => {
+    const team = { role: "community", scope: { kind: "team", teamName: "Any team" } } as const;
+    for (const path of [`${BASE}/waiting`, `${BASE}/delays`, `${BASE}/queue`])
+      expect(screenDecision(team, screenForPath(path), places), path).toEqual({ open: false, why: "role" });
+    // D-80 item 5: the community desk's own journeys stay on Movements (under More).
+    expect(screenDecision(team, screenForPath(`${BASE}/movements`), places).open).toBe(true);
+    // The ward and ED desks keep their own Waiting views; the ED keeps its Handover branch (31 Oct 2026).
+    const ward = { role: "ward", scope: { kind: "ward", unitIds: ["u"] } } as const;
+    const ed = { role: "ed", scope: { kind: "ed", edId: "x" } } as const;
+    expect(screenDecision(ward, screenForPath(`${BASE}/waiting`), places).open).toBe(true);
+    expect(screenDecision(ed, screenForPath(`${BASE}/waiting`), places).open).toBe(true);
+    expect(screenDecision(ed, screenForPath(`${BASE}/handover`), places).open).toBe(true);
+    expect(screenDecision(ed, screenForPath(`${BASE}/movements`), places).open).toBe(true);
   });
 
   it("opens a community team page to a service desk only for its own service's teams (H-0113)", () => {

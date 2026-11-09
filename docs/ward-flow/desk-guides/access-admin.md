@@ -15,8 +15,8 @@ phone, both are under **Menu**.
 1. **Answer a request.** When someone asks for access, press **Give for 90 days** or **Decline**.
 2. **Give a role.** Choose the person, one desk (for example Nurse in charge) and one place (for
    example their ward), then press **Give role**. Every grant has an end date within a set ceiling.
-3. **Cover.** Use **Give cover** only for someone who already holds a ward or ED role. Press
-   **End cover** when it is no longer needed.
+3. **Cover.** You don't give cover from this desk. A bed coordinator, or a nurse in charge or ED
+   clinician for their own ward or ED, uses **Give cover** and **End cover**.
 4. **Remove access.** Press **Remove** when a person changes job or leaves.
 5. **Check the list.** Review who holds which desk and place, and when each grant ends.
 

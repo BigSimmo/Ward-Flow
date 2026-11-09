@@ -15,7 +15,7 @@ function Workspace() {
   const read = readDischargeRecord(actor, admission.id, handle);
   return (
     <>
-      <button onClick={() => setHandle(openDischargeRecord(actor, admission.id))}>Open record</button>
+      <button onClick={() => setHandle(openDischargeRecord(actor, admission.id, "ward-asked"))}>Open record</button>
       {read.status === "allowed" && <DischargeFollowUp record={read.value} actor={actor} />}
     </>
   );

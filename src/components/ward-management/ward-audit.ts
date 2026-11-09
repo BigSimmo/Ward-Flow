@@ -42,6 +42,7 @@ import { PAPER_EXPIRY_CORRECTION_REASONS, type LegalFormExpiryCorrectionReason }
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
 import type { WardFlowEvent } from "./ward-flow-events";
 import { isBreakGlassReviewId } from "./ward-break-glass-review-id";
+import { isOnBehalfReason, type OnBehalfReasonId } from "./ward-on-behalf-reason";
 import type { BreakGlassReasonId, WardAccessRole } from "./ward-role-access";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { inboxRowMovementId } from "./ward-inbox-reducer";
@@ -255,7 +256,8 @@ export type AuditEvent = AuditBase &
     | {
         category: "record-access";
         action: "OPEN_DISCHARGE_RECORD";
-        details: { requestId: number | null; requestNamespace?: string };
+        /** `onBehalfReason`: D-80 item 17, the coordinator's closed-list reason for opening a ward's record. */
+        details: { requestId: number | null; requestNamespace?: string; onBehalfReason?: OnBehalfReasonId };
       }
     | { category: "record-access"; action: "BREAK_GLASS"; details: BreakGlassAuditDetails }
     | { category: "review"; action: "REVIEW_AUDIT_EVENT"; details: { decision: AuditReview["decision"] | null } }
@@ -642,6 +644,7 @@ export function captureAuditEvent(
           ...(validDischargeRequestNamespace(event.requestNamespace)
             ? { requestNamespace: event.requestNamespace }
             : {}),
+          ...(isOnBehalfReason(event.onBehalfReason) ? { onBehalfReason: event.onBehalfReason } : {}),
         },
       };
       break;

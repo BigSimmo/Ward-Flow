@@ -5,6 +5,8 @@
 **This is the product and design overview.** Use the [documentation portal](../README.md) to find the
 page for your task; [`AGENTS.md`](../../AGENTS.md) remains the repository instruction root.
 
+_Updated 2026-11-08 - added the shadow pilot pack to the reader table; Documentation owns._
+
 _Updated 2026-10-24 - daily loop type check works on any OS; gate-tsc cache warning; Documentation owns._
 
 _Updated 2026-10-24 - added desk guides, staff notes and demo script to the reader table; Documentation owns._
@@ -19,6 +21,7 @@ _Updated 2026-10-24 - added desk guides, staff notes and demo script to the read
 | Returning to a task                 | [Task/receipt contract](../task-receipts.md) and [plan navigation](plans/README.md)     |
 | Looking for history                 | [Archive and restoration record](../ARCHIVE.md)                                         |
 | Running the hosted prototype        | [Operations runbook](OPERATIONS-RUNBOOK.md)                                             |
+| Running the shadow pilot            | [Shadow pilot pack](pilot/README.md)                                                    |
 
 ## What Ward Flow is
 

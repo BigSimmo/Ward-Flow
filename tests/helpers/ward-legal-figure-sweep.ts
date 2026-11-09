@@ -516,6 +516,8 @@ function candidatesForMovements(
         role,
         now,
         ...(role === "ward" ? { actingUnitId: admission.unitId } : {}),
+        // D-80 item 17: a coordinator opens a ward's record with an "on behalf of the ward" reason.
+        ...(role === "coordinator" ? { onBehalfReason: "ward-asked" as const } : {}),
         admissionId: admission.id,
         expectedGeneration: state.worldGeneration,
         requestId: state.auditSequence + 1,

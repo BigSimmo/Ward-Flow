@@ -3,7 +3,7 @@
 import { whenStreamRevealed } from "./when-stream-revealed";
 import { localCommandOutcome, useLocalCommandCompletion, type LocalCommandState } from "./use-local-command-completion";
 import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
-
+import type { OnBehalfReasonId } from "./ward-on-behalf-reason";
 import { WardDemoNotSavedContext } from "@/components/ward-management/shell/ward-demo-saving";
 import { WardRecoveryNoticeContext } from "@/components/ward-management/shell/ward-recovery-notice";
 import { ToastDeviceSaveContext } from "@/components/wf";
@@ -156,7 +156,7 @@ type WardFlowContextValue = closingLoop.ClosingLoopContext & {
     actingRole?: "ward" | "coordinator",
   ): ReturnType<WardCommandDispatch>;
   readDischargeRecords(actor: WardRecordActor, unitId?: string): RecordRead<readonly DischargeRecord[]>;
-  openDischargeRecord(actor: WardRecordActor, admissionId: string): DischargeOpenHandle;
+  openDischargeRecord(actor: WardRecordActor, admissionId: string, reason?: OnBehalfReasonId): DischargeOpenHandle;
   readDischargeRecord(
     actor: WardRecordActor,
     admissionId: string,
@@ -1269,7 +1269,7 @@ function WardFlowWorld({
         readAuditEvents: (actor) => readAuditEvents(shown, actor),
         readGovernanceAuditEvents: (actor) => readGovernanceAuditEvents(shown, actor),
         readAuditReviews: (actor) => readAuditReviews(shown, actor),
-        openDischargeRecord: (actor, admissionId) => {
+        openDischargeRecord: (actor, admissionId, onBehalfReason) => {
           if (!safeCounter(openRequestSequence.current) || openRequestSequence.current >= Number.MAX_SAFE_INTEGER)
             throw new Error("Record request allocation unavailable");
           const handle = {
@@ -1277,7 +1277,7 @@ function WardFlowWorld({
             requestId: openRequestSequence.current++,
             requestNamespace: newDischargeRequestNamespace(),
           };
-          const declaredActor = validRecordActor(actor) ? actor : { role: "demo" as const };
+          const declaredActor = { ...(validRecordActor(actor) ? actor : { role: "demo" as const }), onBehalfReason };
           dispatch({
             ...declaredActor,
             type: "OPEN_DISCHARGE_RECORD",

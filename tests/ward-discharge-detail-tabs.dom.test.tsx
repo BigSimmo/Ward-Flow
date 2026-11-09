@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { giveOnBehalfReason } from "./helpers/ward-on-behalf-reason";
 
 describe("discharge detail tabs", () => {
   it.each(["release", "record"])("links %s tabs and panels, with one tab stop and arrow navigation", async (kind) => {
@@ -17,6 +18,7 @@ describe("discharge detail tabs", () => {
     if (kind === "record") await user.click(screen.getByTestId("ward-discharge-history"));
     const worklist = screen.getByRole("region", { name: "Discharge worklist" });
     await user.click(within(worklist).getAllByRole("button")[0]);
+    if (kind === "record") giveOnBehalfReason();
     // Drawer review (6 Nov 2026): the kit drawer's tabs sit under its head, and the drawer shows the
     // selected tab's panel as the one scroll area.
     const tablist = screen.getByRole("tablist", { name: "Discharge inspection sections" });

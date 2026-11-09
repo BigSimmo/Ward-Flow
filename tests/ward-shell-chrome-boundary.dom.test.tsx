@@ -15,6 +15,7 @@ import { NextShellBoundary } from "@/components/ward-management/shell-next/next-
 const broken = vi.hoisted(() => ({ rail: false, bar: false }));
 
 vi.mock("next/headers", () => ({
+  cookies: async () => ({ get: () => undefined }),
   headers: async () => new Headers({ "user-agent": "desktop", "sec-ch-ua-mobile": "?0" }),
 }));
 vi.mock("next/navigation", () => ({

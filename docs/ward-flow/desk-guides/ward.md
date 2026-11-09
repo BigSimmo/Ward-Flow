@@ -25,7 +25,7 @@ and going** is under **Menu**.
 3. **Answer it.** Choose the pull time limit (standard or extra travel), then press **Accept in
    principle**. It saves in one tap, and the message that appears has **Undo** if you pressed it by
    mistake. Or press **Decline**, pick a reason and **Confirm decline**.
-4. **Arrivals.** When the patient reaches the ward, press **Confirm Arrival**.
+4. **Arrivals.** When the patient reaches the ward, press **Confirm arrival**.
 5. **Away and discharge.** On a bed, use **Mark at an ED** when your patient goes to an ED, and
    **Mark them back** when they return. Record a discharge with **They have left**.
 6. **Hand over.** Open **Handover**, check the sheet, then **Sign off**.
