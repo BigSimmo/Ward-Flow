@@ -131,7 +131,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-106](#d-106-clinical-values-from-the-9-november-2026-documentation-audit-9-november-2026)                                                            | Clinical values from the 9 Nov audit                                                 | Active                                           |
 | [D-107](#d-107-working-rules-and-documentation-from-the-9-november-2026-audit-9-november-2026)                                                          | Working rules from the 9 Nov audit                                                   | Active                                           |
 | [D-109](#d-109-homes-bed-alert-line-tests-the-whole-number-shown-9-november-2026)                                                                       | Home bed alert line tests the shown whole %                                          | Active                                           |
-| [D-110](#d-110-ed-and-referral-flow-neutral-fit-line-clearance-timing-and-alternatives-to-admission-9-november-2026) | ED and referral fit line, clearance timing, alternatives | Active |
+| [D-110](#d-110-ed-and-referral-flow-neutral-fit-line-clearance-timing-and-alternatives-to-admission-9-november-2026)                                    | ED and referral fit line, clearance timing, alternatives                             | Active                                           |
 | [D-114](#d-114-allow-pull_request_target-for-three-workflows-only-9-november-2026)                                                                      | Allow pull_request_target for three workflows only                                   | Active                                           |
 
 ---
