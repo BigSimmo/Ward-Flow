@@ -416,7 +416,10 @@ function BedMeetingAgenda() {
                   setRun({ ...run, finished: true, finishedAt: now });
                   setServiceScope(null);
                 }}
-                onStop={() => setRun(null)}
+                onStop={() => {
+                  setRun(null);
+                  setServiceScope(null);
+                }}
               />
             ) : null}
             {chairs && !run ? (

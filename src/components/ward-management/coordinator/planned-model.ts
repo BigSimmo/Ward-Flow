@@ -1,6 +1,6 @@
 import { placeDisplayName } from "@/components/ward-management/ward-place-names";
 import type { WardConfiguration } from "@/components/ward-management/ward-configuration";
-import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
+import { bedIsOccupied, type Admission, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { decisionTargetReading } from "@/components/ward-management/ward-decision-targets";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -198,13 +198,13 @@ export function tomorrowOutlook(
   let confirmed = 0;
   const discharges: PlannedRow[] = [];
   for (const admission of admissions) {
-    if (admission.state === "departed" || !tomorrow(admission.expectedDischargeAt)) continue;
-    if (admission.dischargeConfirmedAt) confirmed += 1;
+    if (!bedIsOccupied(admission) || !tomorrow(admission.expectedDischargeAt)) continue;
+    if (admission.dischargeConfirmedAt !== null) confirmed += 1;
     discharges.push({
       id: `tomorrow-discharge:${admission.id}`,
       at: admission.expectedDischargeAt,
       kind: "discharge",
-      what: admission.dischargeConfirmedAt ? "Discharge, confirmed" : "Expected discharge, not yet confirmed",
+      what: admission.dischargeConfirmedAt !== null ? "Discharge, confirmed" : "Expected discharge, not yet confirmed",
       ...who(nameOf(admission)),
       where: ward(admission.unitId),
       later: true,

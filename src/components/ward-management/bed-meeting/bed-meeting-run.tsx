@@ -5,6 +5,7 @@ import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { Button, buttonClass, Card, CardBody, CardHead } from "@/components/wf";
 
 import type { Admission } from "../ward-admissions";
+import { onWardSessionEnd } from "../ward-browser-data";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import type { Movement, Unit } from "../ward-model";
 import { HEALTH_SERVICES, type HealthService } from "../ward-model-vocabulary";
@@ -27,6 +28,17 @@ export type MeetingRun = { startedAt: Instant; step: number; finished: boolean; 
 // The tab's copy of the run. Session storage keeps it across a reload; this copy covers a blocked store.
 let memoryRun: string | null = null;
 const runListeners = new Set<() => void>();
+
+// Signing out ends the meeting, so the next person in this tab never inherits it.
+onWardSessionEnd(() => {
+  memoryRun = null;
+  try {
+    window.sessionStorage.removeItem(RUN_KEY);
+  } catch {
+    // Nothing stored to clear.
+  }
+  runListeners.forEach((listener) => listener());
+});
 
 function readRun(): string | null {
   try {

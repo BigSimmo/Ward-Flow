@@ -1134,3 +1134,12 @@ is inferred.
   2. **Patient peek:** panel buttons that went to the Patient page (Waiting's Movement, Home's Patient record, Referrals' Patient, Handover's Open patient) open the person's placement deck in a side panel (a bottom sheet on a phone), with "Open full Patient page" one link away. **This changes where Ask wards (D-77 item 4) opens from Movements:** it used to go to the Patient page and now opens in the Patient peek. The 3-ward limit (D-76) is unchanged. A new-tab click still opens the full page.
   3. **Ward peek and pop-ups:** ward buttons in Capacity and Discharges panels show the ward's ready and in-use beds with a link to the ward's board or ward page. Waiting's Coordinator and ED board buttons open pop-ups that do the common job (Wards tab, Find a bed, the ED's waiting and longest wait).
 - **Boundary:** no change to who may see what; each peek is offered only where the desk could open the page it replaces. Synthetic data only.
+
+## D-108. Six bed-flow features: keep D-93 and D-72, ED long-wait next steps (9 November 2026)
+
+- **Date:** 9 November 2026, 8:00 PM AWST (12:00 UTC). **Decided by:** Josh, in the Ward Flow project, answering "Go ahead with all your recommendations" on the six features review.
+- **Decision:**
+  1. **Keep D-93 and D-72.** No countdown to legal deadlines (legal times stay as typed), and no offline copy of the board on the device (downtime stays print or PDF only).
+  2. **ED long-wait next steps.** Each ED wait step shows a suggested next step for a person to take: Step 1, ask wards with a free bed; Step 2, call the site bed manager; Step 3, consider an out-of-area bed and add to the bed meeting; Step 4, tell the executive on call. This is prototype wording, not WA Health escalation policy. It suggests no ward and does not change the queue order (D-71).
+  3. **Build only the gaps.** Home shows tomorrow's expected discharges and planned admissions from recorded dates, labelled "Not a prediction". The bed meeting agenda gains a Run meeting mode that steps through each health service and ends on a printable summary. The weekly report, bed meeting print and TV views, ED step badges, expected discharge dates and downtime pack already existed and are not rebuilt.
+- **Boundary:** synthetic data only; approves no merge, release or provider change.

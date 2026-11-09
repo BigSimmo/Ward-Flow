@@ -664,7 +664,7 @@ a.eventText:hover {
   padding: 10px var(--wf-s-4);
   border: 0;
   background: transparent;
-  color: var(--wf-ink);
+  color: var(--wf-ink-1);
   font: inherit;
   font-size: var(--wf-fs-14);
   text-align: left;

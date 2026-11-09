@@ -21,18 +21,17 @@ export type EdWaitStep = {
   fromMinutes: number;
   /** "Step 2, over 8 hours". */
   label: string;
-  /** The suggested next step for this wait (Josh's sign-off, 9 Nov 2026). A prompt for a person, never an automatic action. */
+  /** The suggested next step for this wait (D-108). A prompt for a person, never an automatic action. */
   nextStep: string;
   /** The same step in two or three words, for the narrow wait column. */
   nextStepShort: string;
 };
 
 /**
- * Suggested next step per wait step. Josh signed off these defaults on 9 Nov 2026 (six features
- * thread, "Go ahead with all your recommendations"). They are prototype wording, not WA Health
+ * Suggested next step per wait step. Josh signed off these defaults on 9 Nov 2026 (D-108). They are prototype wording, not WA Health
  * escalation policy. No ward is suggested and the queue order does not change (D-71).
  */
-export const ED_WAIT_NEXT_STEPS: Readonly<Record<EdWaitStep["step"], string>> = {
+const ED_WAIT_NEXT_STEPS: Readonly<Record<EdWaitStep["step"], string>> = {
   1: "Ask wards with a free bed",
   2: "Call the site bed manager",
   3: "Consider an out-of-area bed and add to the bed meeting",

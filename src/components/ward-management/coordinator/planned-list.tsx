@@ -164,7 +164,7 @@ function TomorrowFoot({ now }: { now: Instant }) {
           type="button"
           className={styles.tomorrowSummary}
           aria-expanded={open}
-          aria-controls="home-tomorrow-list"
+          aria-controls={open ? "home-tomorrow-list" : undefined}
           onClick={() => setOpen((value) => !value)}
           data-testid="home-tomorrow-summary"
         >

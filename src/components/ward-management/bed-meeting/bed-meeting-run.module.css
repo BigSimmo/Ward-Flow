@@ -43,7 +43,7 @@
   padding: 8px 8px 8px 0;
   border-bottom: 1px solid var(--wf-line);
   vertical-align: top;
-  color: var(--wf-ink);
+  color: var(--wf-ink-1);
 }
 .right {
   text-align: right !important;
