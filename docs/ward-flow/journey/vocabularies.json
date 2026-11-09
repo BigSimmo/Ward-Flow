@@ -709,7 +709,10 @@
     "interpreterRequired",
     "maritalStatus",
     "advanceHealthDirective",
-    "enduringGuardian"
+    "enduringGuardian",
+    "carePlans",
+    "tribunalHearing",
+    "culturalSupportRequested"
    ]
   },
   "ELIGIBILITY_GATES": {
