@@ -79,7 +79,8 @@ export function useHelpUsed(known: ReadonlySet<string>): readonly { id: string; 
 }
 
 /** The answers this device opened most recently, newest first: ids only, from the same record. */
-export function useRecentHowTos(known: ReadonlySet<string>, limit = 3): readonly string[] {
+export function useRecentHowTos(known: ReadonlySet<string>, limit?: number): readonly string[] {
   const raw = useHelpUsedRaw();
-  return [...parseHelpUsed(raw, known).keys()].reverse().slice(0, limit);
+  const newestFirst = [...parseHelpUsed(raw, known).keys()].reverse();
+  return limit === undefined ? newestFirst : newestFirst.slice(0, limit);
 }

@@ -136,6 +136,14 @@ describe("How do I… task list", () => {
     expect(within(answer).getByRole("button", { expanded: true })).toBeTruthy();
   });
 
+  it("keeps this desk's recent answers even after many newer ones from elsewhere", () => {
+    recordHowToUsed("sign-off-handover", HOW_TO_IDS);
+    const mine = new Set(tasksForDesk("coordinator").map((task) => task.id));
+    for (const id of [...HOW_TO_IDS].filter((each) => !mine.has(each)).slice(0, 8)) recordHowToUsed(id, HOW_TO_IDS);
+    renderTasks();
+    expect(within(screen.getByTestId("ward-help-recent")).getByText(/Hand over to the next shift/)).toBeTruthy();
+  });
+
   it("draws no On this screen card on a page Help has nothing for", () => {
     route.pathname = "/ward-flow/somewhere-else";
     renderTasks({ pathname: route.pathname, screen: undefined });

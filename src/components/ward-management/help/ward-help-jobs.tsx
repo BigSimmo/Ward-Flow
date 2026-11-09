@@ -374,7 +374,9 @@ export function HelpTasks({
   const aroundSteps = around ? showMeSteps(around, phone ? "phone" : "desk", role).length : 0;
   // Recently opened (Help overhaul, 9 Nov 2026): this desk's answers last opened on this device,
   // newest first, from the id-only usage record. Shown only once there is something to pick up.
-  const recentIds = useRecentHowTos(HOW_TO_IDS, 6);
+  // The whole device history is filtered to this desk first, so another desk's (or a walk round's)
+  // newer answers never push this desk's out of the three shown (PR #1558 review).
+  const recentIds = useRecentHowTos(HOW_TO_IDS);
   const recent = useMemo(
     () =>
       recentIds
