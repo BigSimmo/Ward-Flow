@@ -722,7 +722,7 @@ function EdPresentation({
       ) : isPhone ? (
         <>
           {personPhone}
-          {clearanceCard}
+          <PhoneBody testId="ward-statistics-ed-phone-clearance">{clearanceCard}</PhoneBody>
         </>
       ) : edCountsDesk ? (
         <>

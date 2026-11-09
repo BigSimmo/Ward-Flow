@@ -10,16 +10,17 @@
 import { useState } from "react";
 import { ClipboardList } from "lucide-react";
 import { Button, Dialog } from "@/components/wf";
-import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { handoverPackModel, handoverPackText, type HandoverPackInput } from "./patient-handover-pack";
 import styles from "./patient-handover-pack.module.css";
 
-export function PatientHandoverPackButton({ input }: { input: HandoverPackInput }) {
+export function PatientHandoverPackButton({ input, dayZero }: { input: HandoverPackInput; dayZero: Date }) {
   const [open, setOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const pack = handoverPackModel(input);
-  const stamp = `${formatInstantWithDay(input.now, input.now)} AWST`;
+  // A printed pack outlives its day, so it carries the full date, never a bare clock face.
+  const stamp = formatSheetMoment(input.now, dayZero, { includeYearAndZone: true });
   async function copy() {
     try {
       await copyTextToClipboard(handoverPackText(pack, stamp));

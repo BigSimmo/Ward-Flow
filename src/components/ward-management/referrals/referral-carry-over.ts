@@ -63,7 +63,7 @@ function stayMovement(admission: Admission, movements: readonly Movement[]): Mov
  * The person's current stay: a bed occupied now. Found through the patient resolver, never by
  * reading the patient link off the stay (D-14, tests/ward-patient-link-default-deny.test.ts).
  */
-export function currentStayFor(patientId: string, record: CarryOverRecord): Admission | undefined {
+function currentStayFor(patientId: string, record: CarryOverRecord): Admission | undefined {
   return record.admissions.find(
     (admission) => admission.state === "occupied" && resolveSubjectPatient(admission, record).patient?.id === patientId,
   );
@@ -73,7 +73,7 @@ export function currentStayFor(patientId: string, record: CarryOverRecord): Admi
  * The person's own latest referral in the referrals this desk can already see: one referral, never
  * a history (the RQ9 reader, `latestReferralForPerson`, on the D-14 allowlist).
  */
-export function latestReferralFor(patientId: string, record: CarryOverRecord): Referral | undefined {
+function latestReferralFor(patientId: string, record: CarryOverRecord): Referral | undefined {
   return latestReferralForPerson(patientId, record.referrals);
 }
 
@@ -144,7 +144,13 @@ export function referralCarryOver(
   if (stay && !referralIsNewer) out.highAcuity = fromStay(stay.highAcuity);
   else if (ward) out.highAcuity = fromReferral(ward.highAcuityNursingNeeded);
   else if (stay) out.highAcuity = fromStay(stay.highAcuity);
-  if (ward) out.security = fromReferral(ward.secureBedNeeded ? "Secure" : "Open");
+  // Bed security: the same rule, from the movement that brought the current stay; else the referral's.
+  const stayMovement = stay?.movementId
+    ? record.movements.find((movement) => movement.id === stay.movementId)
+    : undefined;
+  if (stayMovement && !referralIsNewer) out.security = fromStay(stayMovement.security);
+  else if (ward) out.security = fromReferral(ward.secureBedNeeded ? "Secure" : "Open");
+  else if (stayMovement) out.security = fromStay(stayMovement.security);
   // Age band: the stay's ward cohort is the current one; else the referral's.
   if (stayUnit && !referralIsNewer) out.ageBand = fromStay(stayUnit.cohort);
   else if (referral) out.ageBand = fromReferral(referral.ageBand);
@@ -163,7 +169,7 @@ export function carriedNoteFor<T>(fact: CarriedFact<T> | undefined, current: T):
  * already answers keeps that answer: the legal status when one is recorded, bed security and age
  * band while a journey is open.
  */
-export function carryOverToApply(
+function carryOverToApply(
   carry: ReferralCarryOver,
   known: { journeyOpen: boolean; legalRecorded: boolean; ageBandKnown: boolean },
 ): ReferralCarryOver {

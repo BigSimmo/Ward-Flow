@@ -1262,6 +1262,7 @@ export function ShortlistPanel({
           >
             {reason}
           </span>
+          <CandidateFit unitId={candidate.unit.id} gates={candidate.verdict.gates} />
           <span id={describedBy} className="sr-only">
             Unavailable: {reason}. No recorded reason can place this person here.
           </span>

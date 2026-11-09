@@ -55,6 +55,8 @@ export function reduceReviewReadyEvent(
     decision.outcome = "accepted";
     decision.reasonCode = "none";
   };
+  // Every event here writes `event.now` into the record, so a non-finite time never gets that far.
+  if (!Number.isFinite(event.now)) return reject(state, event, `${event.type} requires a finite current time`);
   switch (event.type) {
     case "REQUEST_PSYCH_REVIEW": {
       const movement = findMovement(state, event.movementId);

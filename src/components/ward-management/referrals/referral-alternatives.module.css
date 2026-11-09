@@ -101,10 +101,23 @@
   gap: var(--wf-s-3);
 }
 
+/* On a phone-width sheet each 28px chip face keeps a transparent hit area to the 48px floor; the
+   row's block padding holds it, so neighbouring rows never overlap. */
 @container referral-sheet (max-width: 34rem) {
   .row {
     grid-template-columns: minmax(0, 1fr);
     gap: 4px;
+    padding-block: 10px;
+  }
+
+  .chip {
+    position: relative;
+  }
+
+  .chip::before {
+    content: "";
+    position: absolute;
+    inset: -10px 0;
   }
 }
 

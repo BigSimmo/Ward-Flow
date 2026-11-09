@@ -860,7 +860,11 @@ function ActionForm({
   const [dueHours, setDueHours] = useState<string>(String(BED_MEETING_ACTION_DUE_HOURS[1]));
   const owners = BED_MEETING_ACTION_OWNERS.filter((candidate) => candidate !== "ward" || item.unitId !== undefined);
   // One open action per kind per person, as the reducer insists: offer only the kinds still free.
-  const kinds = BED_MEETING_ACTION_KINDS.filter((entry) => !openMeetingAction(item.record.meetingActions, entry.id));
+  // An answer escalation is recorded from the referral response timer, for the ward it names, so the
+  // agenda never offers it as a free choice on a row that has no ward answer outstanding.
+  const kinds = BED_MEETING_ACTION_KINDS.filter(
+    (entry) => entry.id !== "escalate_ward_answer" && !openMeetingAction(item.record.meetingActions, entry.id),
+  );
   // Polish (Josh, 3 Nov 2026): the asks this list usually needs come first, the rest after.
   const fits: readonly string[] = SUGGESTED_KINDS[sectionId] ?? [];
   const suggested = fits.flatMap((fit) => kinds.filter((entry) => entry.id === fit));

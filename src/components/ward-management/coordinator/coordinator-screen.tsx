@@ -824,7 +824,7 @@ export function CoordinatorScreen() {
           </Hero>
 
           {/* Ward wait list (Josh, 9 Nov 2026): a ward that said it is ready for its next patient. */}
-          <WardReadyForNextLines />
+          <WardReadyForNextLines now={now} />
 
           {/* Home flow (Q340, Q345, 3 Nov 2026): one row. Needs you and Flow lead as the raised switch; the
               stages follow, after a rule, as quieter tabs with counts (always shown; one opens Flow there). */}

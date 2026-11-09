@@ -63,7 +63,7 @@ export type HandoverPackInput = {
   readonly now: Instant;
 };
 
-export type HandoverPackSection = {
+type HandoverPackSection = {
   readonly id:
     "patient" | "legal" | "risks" | "clearance" | "medication" | "ed-contacts" | "care-contacts" | "outstanding";
   readonly heading: string;
@@ -78,11 +78,14 @@ export type HandoverPack = {
   readonly sections: readonly HandoverPackSection[];
 };
 
-/** The pack is offered once a ward has accepted the movement and while it is still open. */
+/**
+ * The pack is offered once a ward has accepted a movement that started in an emergency department,
+ * while it is still open. A ward-to-ward transfer is not an ED handover, so it gets no pack.
+ */
 export function handoverPackAvailable(
-  movement: Pick<Movement, "acceptedUnitId" | "closure"> | undefined,
-): movement is Pick<Movement, "acceptedUnitId" | "closure"> & { acceptedUnitId: string } {
-  return movement?.acceptedUnitId !== undefined && movement.closure === undefined;
+  movement: Pick<Movement, "acceptedUnitId" | "closure" | "originEdId"> | undefined,
+): movement is Pick<Movement, "acceptedUnitId" | "closure" | "originEdId"> & { acceptedUnitId: string } {
+  return movement?.acceptedUnitId !== undefined && movement.originEdId !== undefined && movement.closure === undefined;
 }
 
 export const MEDICATION_LIST_NOTE =
@@ -98,7 +101,7 @@ function contactRows(contacts: readonly HandoverContact[]): ReferralLetterRow[] 
   if (contacts.length === 0) return [{ label: "Contact", value: NOT_RECORDED, missing: true }];
   return contacts.map((contact) => ({
     label: contact.role || "Contact",
-    value: [contact.name, contact.number ?? "number not recorded"].filter(Boolean).join(" · "),
+    value: [contact.name, contact.number?.trim() || "number not recorded"].filter(Boolean).join(" · "),
   }));
 }
 

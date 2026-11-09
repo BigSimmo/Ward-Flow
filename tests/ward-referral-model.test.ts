@@ -1578,6 +1578,13 @@ describe("Referral privacy — structural", () => {
           ).toContain(key);
         }
       }
+      // Feature 26: each marked alternative carries its option and outcome and nothing else.
+      for (const entry of referral.alternativesConsidered ?? []) {
+        expect(Object.keys(entry).sort(), `${referral.id}'s alternative carries extra keys`).toEqual([
+          "option",
+          "outcome",
+        ]);
+      }
     }
   });
 

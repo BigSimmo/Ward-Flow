@@ -25,7 +25,7 @@ function ageSexWords(patient: Patient | undefined, dayZero: Date, now: Instant):
   if (!patient) return "";
   const years = patient.dateOfBirth ? patientAgeYears(patient, calendarDateOf(now, dayZero)) : Number.NaN;
   const age = Number.isFinite(years) && years >= 0 ? `${years}` : "age not recorded";
-  return `${age}, ${patient.sex?.trim() ? patient.sex.toLowerCase() : "sex not recorded"}`;
+  return `${age}, ${patient.sex?.trim() ? patient.sex.trim().toLowerCase() : "sex not recorded"}`;
 }
 
 export function PatientJourneyExtras({
@@ -89,7 +89,7 @@ export function PatientJourneyExtras({
   return (
     <>
       <PatientHoursBreakdown movement={movement} now={now} />
-      {pack ? <PatientHandoverPackButton input={pack} /> : null}
+      {pack ? <PatientHandoverPackButton input={pack} dayZero={dayZero} /> : null}
     </>
   );
 }

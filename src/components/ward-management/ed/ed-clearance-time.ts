@@ -30,7 +30,7 @@ export type EdClearanceTime =
 
 type RecordedClearance = { readonly cleared: boolean; readonly at: Instant };
 
-/** One patient's clearance line: "Not cleared · 3h 40m since arrival", "Cleared in 2h 15m" and so on. */
+/** One patient's clearance line: "Not recorded · 3h 40m since arrival", "Cleared in 2h 15m" and so on. */
 export function edClearanceTime(
   arrivedAt: Instant,
   clearance: RecordedClearance | undefined,
@@ -40,7 +40,7 @@ export function edClearanceTime(
     const elapsed = Math.max(now - arrivedAt, 0);
     return {
       kind: "not_recorded",
-      words: `Not cleared · ${splitDuration(elapsed)} since arrival`,
+      words: `Not recorded · ${splitDuration(elapsed)} since arrival`,
       flagged: elapsed >= ED_CLEARANCE_FLAG_MINUTES,
     };
   }

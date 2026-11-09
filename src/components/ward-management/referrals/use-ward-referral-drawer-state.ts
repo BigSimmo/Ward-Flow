@@ -230,7 +230,7 @@ export function useWardReferralDrawerState({
   const { carry, start, carryFor } = useReferralCarryOver(kept, initialPatientKey); // Feature 39
   const [ageBand, setAgeBand] = useState<Cohort | "">(start.ageBand ?? "");
   // Finding 36: the soft note for an adult from 18 to 24, set with the prefilled band.
-  const [ageBandNote, setAgeBandNote] = useState<string | null>(null);
+  const [ageBandNote, setAgeBandNote] = useState<string | null>(("ageBandNote" in start && start.ageBandNote) || null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [guardOpen, setGuardOpen] = useState(false);

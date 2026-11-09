@@ -20,7 +20,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
 
 export type HoursStageKey = "review" | "form" | "bed" | "transport";
 
-export type HoursStageStatus =
+type HoursStageStatus =
   /** Both boundaries recorded, in order. */
   | "recorded"
   /** Started at the latest recorded boundary of an open journey; runs to now. */
@@ -52,6 +52,8 @@ export type HoursBreakdown = {
   readonly endAt: Instant;
   /** No departure and no closure recorded: the total runs to now. */
   readonly open: boolean;
+  /** What ended the total: a recorded departure, else the record's closure; undefined while open. */
+  readonly endedBy?: "departure" | "closure";
   readonly totalMinutes: number;
   readonly stages: readonly HoursStage[];
   /**
@@ -107,7 +109,9 @@ export function hoursBreakdown(movement: HoursMovement, now: Instant): HoursBrea
   const totalMinutes = endAt - openedAt;
 
   const reviewAt = finite(movement.examination?.at);
-  const formAt = finite(movement.legalFormReceivedAt ?? movement.formedAt);
+  // Only a received form ends this stage. `formedAt` is when the referral for examination was made,
+  // not when a form arrived, so it never stands in for one.
+  const formAt = finite(movement.legalFormReceivedAt);
   const referredAt = finite(movement.referredAt);
   const acceptedAt = finite(movement.acceptedAt);
   const formNotNeeded =
@@ -176,7 +180,8 @@ export function hoursBreakdown(movement: HoursMovement, now: Instant): HoursBrea
   const measuredTotal = measured.reduce((sum, interval) => sum + (interval.end - interval.start), 0);
   const otherMinutes = overlap || outside ? undefined : Math.max(0, totalMinutes - measuredTotal);
 
-  return { openedAt, endAt, open, totalMinutes, stages, otherMinutes, overlap };
+  const endedBy = departure !== undefined ? "departure" : closedAt !== undefined ? "closure" : undefined;
+  return { openedAt, endAt, open, ...(endedBy ? { endedBy } : {}), totalMinutes, stages, otherMinutes, overlap };
 }
 
 /** "5h 20m", "45m" or "2d 3h": whole minutes as elapsed hours, for the table's mono figures. */
@@ -199,10 +204,12 @@ export function medianStageMinutes(
   movements: readonly HoursMovement[],
   now: Instant,
 ): { key: HoursStageKey; label: string; median?: number; journeys: number }[] {
-  const closed = movements.filter((movement) => movement.closure !== undefined);
   const byStage = new Map<HoursStageKey, { label: string; values: number[] }>();
-  for (const movement of closed) {
-    for (const stage of hoursBreakdown(movement, now).stages) {
+  for (const movement of movements) {
+    // The same end the breakdown uses: a recorded departure or a closure ends the journey.
+    const breakdown = hoursBreakdown(movement, now);
+    if (breakdown.open) continue;
+    for (const stage of breakdown.stages) {
       const entry = byStage.get(stage.key) ?? { label: stage.label, values: [] };
       if (stage.status === "recorded" && stage.minutes !== undefined) entry.values.push(stage.minutes);
       byStage.set(stage.key, entry);

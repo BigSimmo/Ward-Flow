@@ -93,7 +93,7 @@
   font-size: var(--wf-fs-12);
 }
 @media (max-width: 40rem) {
-  .ready {
+  .readyMark {
     margin-inline-start: 0;
   }
 }

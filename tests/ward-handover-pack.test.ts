@@ -48,11 +48,16 @@ const value = (pack: ReturnType<typeof handoverPackModel>, id: string, label: st
 describe("handover pack model", () => {
   it("is offered only once a ward has accepted and the movement is open", () => {
     expect(handoverPackAvailable(undefined)).toBe(false);
-    expect(handoverPackAvailable({ acceptedUnitId: undefined, closure: undefined })).toBe(false);
-    expect(handoverPackAvailable({ acceptedUnitId: "U-SYNTH", closure: undefined })).toBe(true);
+    expect(handoverPackAvailable({ acceptedUnitId: undefined, closure: undefined, originEdId: "ED-SYNTH" })).toBe(
+      false,
+    );
+    expect(handoverPackAvailable({ acceptedUnitId: "U-SYNTH", closure: undefined, originEdId: "ED-SYNTH" })).toBe(true);
+    // A ward-to-ward transfer has no ED, so it is not an ED handover.
+    expect(handoverPackAvailable({ acceptedUnitId: "U-SYNTH", closure: undefined, originEdId: undefined })).toBe(false);
     expect(
       handoverPackAvailable({
         acceptedUnitId: "U-SYNTH",
+        originEdId: "ED-SYNTH",
         closure: { at: 1 } as HandoverPackInput["movement"]["closure"],
       }),
     ).toBe(false);

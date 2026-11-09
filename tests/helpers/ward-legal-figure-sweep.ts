@@ -757,7 +757,9 @@ function candidatesForMovements(
     case "REQUEST_PSYCH_REVIEW":
       return movementIds.map((movementId) => ({ type, role, now, movementId }));
     case "RECORD_PSYCH_REVIEW_SEEN":
-      return movementIds.map((movementId) => ({ type, role, now, movementId, grade: "registrar" }));
+      return movementIds.flatMap((movementId) =>
+        (["registrar", "consultant"] as const).map((grade) => ({ type, role, now, movementId, grade })),
+      );
     case "RAISE_EXPECT_FLAG":
       return movementIds.map((movementId) => ({ type, role, now, movementId, kind: "voluntary_48h" }));
     case "FLAG_LEGAL_MISMATCH":

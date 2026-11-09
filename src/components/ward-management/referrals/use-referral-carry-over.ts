@@ -1,5 +1,9 @@
 import { useState } from "react";
+import { calendarDateOf } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { resolveSubjectPatient } from "../ward-patient-resolver";
+import { referralAgeBand } from "./referral-age-band";
+import { PATIENT_KEY_PREFIX } from "./referral-patient-key";
 import type { KeptDraft } from "./ward-referral-drawer-model";
 import { carriedCommunityNeeds, referralCarryForKey, type ReferralCarryOver } from "./referral-carry-over";
 
@@ -21,8 +25,25 @@ export function useReferralCarryOver(kept: KeptDraft | null, initialPatientKey: 
   const now = useWardFlowClock();
   const read = (key: string, ageBandKnown: boolean) =>
     referralCarryForKey(key, { admissions, movements, patients, referrals, units, dayZero }, now, ageBandKnown);
-  const [carry, setCarry] = useState<ReferralCarryOver>(() => (kept ? {} : read(initialPatientKey, false)));
-  const start: Partial<KeptDraft> = kept ?? startOf(carry);
+  // Finding 36: the record's date of birth gives the age band first, for the person the sheet opens
+  // on exactly as for one picked later, and only a person with no usable date of birth falls back
+  // to the carried band.
+  function dobBand(key: string) {
+    const movement = movements.find((candidate) => candidate.id === key);
+    const record = movement
+      ? resolveSubjectPatient(movement, { patients, referrals, movements }).patient
+      : key.startsWith(PATIENT_KEY_PREFIX)
+        ? patients.find((patient) => patient.id === key.slice(PATIENT_KEY_PREFIX.length))
+        : undefined;
+    return dayZero instanceof Date ? referralAgeBand(record?.dateOfBirth, calendarDateOf(now, dayZero)) : null;
+  }
+  const [opening] = useState(() => (kept ? null : dobBand(initialPatientKey)));
+  const [carry, setCarry] = useState<ReferralCarryOver>(() => (kept ? {} : read(initialPatientKey, !!opening?.band)));
+  const start: Partial<KeptDraft> & { ageBandNote?: string } = kept ?? {
+    ...startOf(carry),
+    ...(opening?.band ? { ageBand: opening.band } : {}),
+    ...(opening?.note ? { ageBandNote: opening.note } : {}),
+  };
   /** Reads the carried facts for a newly picked person, keeps them, and returns what fields open with. */
   function carryFor(key: string, ageBandKnown: boolean): Partial<KeptDraft> {
     const next = read(key, ageBandKnown);

@@ -30,6 +30,9 @@
 }
 
 .disclosure > summary {
+  /* A 44px touch target; padding rather than flex keeps the disclosure triangle. */
+  padding-block: 12px;
+  line-height: 20px;
   cursor: pointer;
   font-size: var(--wf-fs-12);
   font-weight: 500;

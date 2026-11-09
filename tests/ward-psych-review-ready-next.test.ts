@@ -227,6 +227,15 @@ describe("referral response timer", () => {
       dueAt: NOW_ANCHOR + 60,
     });
     expect(refusals(seeded, escalated)).toEqual([]);
+    const recorded = escalated.movements
+      .find((candidate) => candidate.id === movement.id)
+      ?.meetingActions?.find((action) => action.kind === "escalate_ward_answer");
+    expect(recorded).toMatchObject({
+      owner: "ward",
+      ownerUnitId: movement.referredUnitIds[0],
+      dueAt: NOW_ANCHOR + 60,
+      recordedAt: NOW_ANCHOR,
+    });
     const ward = apply(seeded, {
       type: "RECORD_BED_MEETING_ACTION",
       role: "ward",

@@ -18,7 +18,7 @@ describe("medical clearance tracker, one patient (Josh sign-off, 9 Nov 2026)", (
   it("shows elapsed time since arrival when no clearance is recorded, never a countdown", () => {
     expect(edClearanceTime(ARRIVED, undefined, NOW)).toEqual({
       kind: "not_recorded",
-      words: "Not cleared · 3h 40m since arrival",
+      words: "Not recorded · 3h 40m since arrival",
       flagged: false,
     });
   });
@@ -54,13 +54,13 @@ describe("medical clearance tracker, one patient (Josh sign-off, 9 Nov 2026)", (
     expect(edClearanceTime(ARRIVED, undefined, ARRIVED + 6 * 60 - 1).flagged).toBe(false);
     const atSix = edClearanceTime(ARRIVED, undefined, ARRIVED + 6 * 60);
     expect(atSix.flagged).toBe(true);
-    expect(atSix.words).toBe("Not cleared · 6h 00m since arrival");
+    expect(atSix.words).toBe("Not recorded · 6h 00m since arrival");
     // A recorded answer is never flagged by the tracker: the clinician has spoken.
     expect(edClearanceTime(ARRIVED, { cleared: false, at: ARRIVED + 10 }, ARRIVED + 600).flagged).toBe(false);
   });
 
   it("never counts a future arrival as negative time", () => {
-    expect(edClearanceTime(NOW + 5, undefined, NOW).words).toBe("Not cleared · 0m since arrival");
+    expect(edClearanceTime(NOW + 5, undefined, NOW).words).toBe("Not recorded · 0m since arrival");
   });
 });
 

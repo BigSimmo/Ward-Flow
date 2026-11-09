@@ -74,7 +74,7 @@ export function StepDownRowDetail({
   const primaryStepDownWard = row.wards[0]?.unit;
   // Feature 12: a ward desk on its own candidate asks through its own referral (RECEIVE_REFERRAL)
   // instead of the coordinator's Refer, which it cannot use.
-  const { asWard } = useStepDownRequestGate(row.fromUnit.id);
+  const { asWard } = useStepDownRequestGate(row.fromUnit.id, row.admission);
   const wardRequest = !canRefer && asWard;
   return (
     <>

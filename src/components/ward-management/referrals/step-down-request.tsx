@@ -26,7 +26,7 @@ import styles from "./step-down-request.module.css";
  * name order, only when they fit within the parallel referral cap; otherwise none is, and the
  * referrer chooses. Nothing is sent until the referrer confirms.
  */
-export function stepDownRequestHref(patientId: string, wardUnitIds: readonly string[], cap: number): string {
+function stepDownRequestHref(patientId: string, wardUnitIds: readonly string[], cap: number): string {
   return raiseReferralHref({
     patientId,
     source: "psychiatric_ward",
@@ -39,16 +39,24 @@ export function stepDownRequestHref(patientId: string, wardUnitIds: readonly str
  * Whether this desk may send a step-down request for a stay on `fromUnitId`: it acts as a ward,
  * the role may raise a referral (RECEIVE_REFERRAL), and the stay is on a ward the desk holds.
  */
-export function useStepDownRequestGate(fromUnitId: string | undefined) {
-  const gate = useRoleGate()("RECEIVE_REFERRAL", fromUnitId);
+export function useStepDownRequestGate(fromUnitId: string | undefined, admission: Admission | undefined) {
+  // The patient's own record decides exceptional-access read-only, as every patient action does.
+  // The person comes through the resolver, never the stay's patient link itself (D-14).
+  const { patients, movements } = useWardFlowSelect("patients", "movements");
+  const patientId = admission ? resolveSubjectPatient(admission, { patients, movements }).patient?.id : undefined;
+  const gate = useRoleGate({ patientId })("RECEIVE_REFERRAL", fromUnitId);
   const routeRole = useRouteRole();
   const access = useEffectiveWardAccess();
-  const ownWard = !!fromUnitId && (access.scope.kind !== "ward" || access.scope.unitIds.includes(fromUnitId));
+  // The referral sheet takes its sending ward from the desk, so only a single-ward desk can send:
+  // a desk holding several wards would open a sheet that cannot tell which ward is asking.
+  const ownWard =
+    !!fromUnitId &&
+    (access.scope.kind !== "ward" || (access.scope.unitIds.length === 1 && access.scope.unitIds[0] === fromUnitId));
   return { asWard: routeRole === "ward" && ownWard, gate };
 }
 
 /** One stay's step-down row, read the board's way, or undefined when it is not a candidate. */
-export function useStepDownRow(admission: Admission | undefined): StepDownBoardRow | undefined {
+function useStepDownRow(admission: Admission | undefined): StepDownBoardRow | undefined {
   const { units, movements, patients } = useWardFlowSelect("units", "movements", "patients");
   const now = useWardFlowClock();
   return useMemo(() => {
@@ -70,7 +78,7 @@ export function StepDownRequestButton({
   fullWidthClassName?: string;
 }) {
   const { configuration, patients, movements } = useWardFlowSelect("configuration", "patients", "movements");
-  const { gate } = useStepDownRequestGate(row.fromUnit.id);
+  const { gate } = useStepDownRequestGate(row.fromUnit.id, row.admission);
   // The person through the resolver, never the stay's patient link itself (D-14).
   const patientId = resolveSubjectPatient(row.admission, { patients, movements }).patient?.id;
   const reason = !gate.allowed
@@ -148,7 +156,7 @@ export function WardStepDownRequest({
   fullWidthClassName?: string;
 }) {
   const row = useStepDownRow(admission);
-  const { asWard } = useStepDownRequestGate(admission?.unitId);
+  const { asWard } = useStepDownRequestGate(admission?.unitId, admission);
   if (!row || !asWard) return null;
   return <StepDownRequestButton row={row} fullWidthClassName={fullWidthClassName} />;
 }

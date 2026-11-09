@@ -118,6 +118,7 @@ describe("alternatives to admission: RECEIVE_REFERRAL", () => {
   it("is optional: a bed request with nothing marked is accepted and stores no field", () => {
     const { created, refused } = run(receive());
     expect(refused).toBe(false);
+    expect(created).toHaveLength(1);
     expect(created[0]).not.toHaveProperty("alternativesConsidered");
   });
 

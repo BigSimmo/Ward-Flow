@@ -15,7 +15,7 @@ import { waitlistStands } from "@/components/ward-management/ward-waitlist";
 import styles from "./ward-wait-list.module.css";
 
 /** When the person was first asked about: the referral, else when the journey opened (as the offers table). */
-export function waitListSince(movement: Movement): Instant {
+function waitListSince(movement: Movement): Instant {
   return movement.referredAt ?? movement.openedAt;
 }
 
@@ -72,7 +72,7 @@ export function WardWaitList({ unit }: { unit: Unit }) {
       { success: cancel ? `${unit.name} no longer marked ready.` : `${unit.name} marked ready for next patient.` },
     );
   };
-  const ready = unit.readyForNextAt;
+  const ready = unit.isClosed ? undefined : unit.readyForNextAt;
   return (
     <section className={styles.card} aria-labelledby="ward-wait-list-heading" data-testid="ward-wait-list">
       <div className={styles.head}>

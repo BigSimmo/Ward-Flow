@@ -28,7 +28,7 @@ export function NoReplyTimer({ wait, testId }: { wait: NoReplyWait; testId?: str
 }
 
 /** The movement's per-ward waits, or none outside a provider. */
-export function useMovementOfferWaits(movement: Movement | undefined, now: Instant): NoReplyWait[] {
+function useMovementOfferWaits(movement: Movement | undefined, now: Instant): NoReplyWait[] {
   const flow = useOptionalWardFlowSelect("configuration", "units");
   if (!flow || !movement) return [];
   return movementOfferNoReplyWaits(movement, now, flow.configuration, flow.units);
@@ -52,7 +52,14 @@ export function EscalateNoReply({
 }) {
   const record = useBedMeetingRecord("coordinator");
   const focusAfter = useRef(false);
-  const open = openMeetingAction(movement.meetingActions, "escalate_ward_answer");
+  // An escalation belongs to the ward it was raised for: once that ward answers, the next overdue
+  // ward offers its own Escalate rather than showing the earlier ward's.
+  const open = movement.meetingActions?.find(
+    (action) =>
+      action.kind === "escalate_ward_answer" &&
+      action.doneAt === undefined &&
+      (wait?.unitId === undefined || action.ownerUnitId === undefined || action.ownerUnitId === wait.unitId),
+  );
   if (open)
     return (
       <span
@@ -110,7 +117,20 @@ export function NoReplyTimerList({
   personName: string;
 }) {
   const waits = useMovementOfferWaits(movement, now);
-  if (waits.length === 0) return null;
+  if (waits.length === 0) {
+    // Every ward has answered, but a recorded escalation stays in view until it is marked done.
+    if (!canEscalate || !openMeetingAction(movement.meetingActions, "escalate_ward_answer")) return null;
+    return (
+      <ul className={styles.list} aria-label="Ward answers" data-testid="ward-patient-answer-timers">
+        <li className={styles.row}>
+          <span className={styles.head}>Ward answer</span>
+          <span className={styles.push}>
+            <EscalateNoReply movement={movement} wait={undefined} now={now} personName={personName} />
+          </span>
+        </li>
+      </ul>
+    );
+  }
   const firstOverdue = waits.find((wait) => wait.pastLimit);
   return (
     <ul className={styles.list} aria-label="Ward answers" data-testid="ward-patient-answer-timers">

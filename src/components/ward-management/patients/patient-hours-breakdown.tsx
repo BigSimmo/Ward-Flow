@@ -64,10 +64,17 @@ export function PatientHoursBreakdown({ movement, now }: { movement: Movement; n
         </h2>
         <span className={styles.meta}>
           <span className={styles.mono}>{hoursText(breakdown.totalMinutes)}</span>{" "}
-          {breakdown.open ? "since opened, so far" : "from opened to departure"}
+          {breakdown.open
+            ? "since opened, so far"
+            : breakdown.endedBy === "departure"
+              ? "from opened to departure"
+              : "from opened to closing"}
         </span>
       </div>
-      {segments.length > 0 ? <StackBar segments={segments} label="Where the hours went" /> : null}
+      {/* Overlapping stages are not shares of the total, so the bar is left out rather than mislead. */}
+      {segments.length > 0 && breakdown.otherMinutes !== undefined ? (
+        <StackBar segments={segments} label="Where the hours went" />
+      ) : null}
       <table className={`${tableClasses.table} ${styles.table}`}>
         <thead>
           <tr>

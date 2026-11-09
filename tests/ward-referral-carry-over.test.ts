@@ -150,8 +150,9 @@ describe("referral carry-over (feature 39)", () => {
     expect(carry.legalExpiry?.from).toBe("stay");
     expect(carry.legalExpiry?.value).toMatch(/clinician-entered$/);
     expect(carry.highAcuity).toEqual({ value: false, from: "stay", note: "From current stay" });
+    // Bed security follows the same rule, from the movement that brought the stay (review, 9 Nov 2026).
+    expect(carry.security?.from).toBe("stay");
     // Facts only the referral holds still come from it, marked as such.
-    expect(carry.security?.from).toBe("referral");
     expect(carry.interpreter?.from).toBe("referral");
   });
 

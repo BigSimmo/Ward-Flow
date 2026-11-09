@@ -87,6 +87,11 @@ export function alternativesConsideredError(value: unknown): string | null {
   return null;
 }
 
+/** An option's place in the fixed list, for storing marks in listed order (never a ranking). */
+export function alternativeListPosition(option: AdmissionAlternativeOption): number {
+  return ADMISSION_ALTERNATIVE_OPTIONS.indexOf(option);
+}
+
 /** The marked entries in the fixed order, whatever order they were marked in. */
 export function orderedAlternatives(
   marks: Partial<Record<AdmissionAlternativeOption, AdmissionAlternativeOutcome>>,

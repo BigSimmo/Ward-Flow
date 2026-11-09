@@ -26,6 +26,8 @@ import { recordExtrasFor } from "./patient-record-extras";
 import { stayProgress } from "./patient-now-ward";
 // Loads with the other ward cards, only for a stay (phone script budget).
 const PatientStayProgress = dynamic(() => import("./patient-now-ward-cards").then((m) => m.PatientStayProgress));
+// The coordinator-only no-reply timers load on their own (phone script budget, item 1).
+const NoReplyTimerList = dynamic(() => import("../referrals/referral-no-reply-timers").then((m) => m.NoReplyTimerList));
 import styles from "./patient-status-card.module.css";
 import { useSenderPresentation } from "../ward-sender-presentation";
 import { movementPresentation } from "../ward-partial-view-presenters";
@@ -36,7 +38,6 @@ import { canDispatch } from "../ward-role-permissions";
 import { unitInScope } from "../ward-role-access";
 import { wardPlaceLookup } from "../ward-access-places";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
-import { NoReplyTimerList } from "../referrals/referral-no-reply-timers";
 
 /** One gate or fact on the status card: value, who owns it, when it last changed, at most one action. */
 interface StatusCell {
@@ -1061,11 +1062,14 @@ export function PatientStatusCard({
           ))}
         </div>
         {/* Referral response timer (Josh, 9 Nov 2026): each ward still to answer, with its time left. */}
-        {mode === "find" && context.movement && sender.movementFor(context.movement) === undefined ? (
+        {mode === "find" &&
+        routeRole === "coordinator" &&
+        context.movement &&
+        sender.movementFor(context.movement) === undefined ? (
           <NoReplyTimerList
             movement={context.movement}
             now={context.now}
-            canEscalate={records !== null && routeRole === "coordinator"}
+            canEscalate={records !== null}
             personName={context.patient ? `${context.patient.familyName}, ${context.patient.givenName}` : "this person"}
           />
         ) : null}

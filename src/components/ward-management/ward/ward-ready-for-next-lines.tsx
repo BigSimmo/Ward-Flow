@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { StatusGlyph } from "@/components/wf";
-import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
@@ -16,14 +16,17 @@ import styles from "./ward-ready-for-next-lines.module.css";
  * on the coordinator's Home, never a recommendation: it names the wait list's oldest referral only
  * because that is the ward's own first-in, first-out list, and the coordinator still pulls by hand.
  */
-export function WardReadyForNextLines() {
+export function WardReadyForNextLines({ now: heldNow }: { now?: Instant } = {}) {
   const { units, movements, referrals, patients } = useWardFlowSelect("units", "movements", "referrals", "patients");
-  const now = useWardFlowClock();
+  // Home passes its own clock, which holds still while Home is paused.
+  const clockNow = useWardFlowClock();
+  const now = heldNow ?? clockNow;
   const nameFor = usePatientNameDisplay();
   const ready = useMemo(
     () =>
       units
-        .filter((unit) => unit.readyForNextAt !== undefined)
+        // A ward closed to admissions is not ready for anyone, whatever it said before closing.
+        .filter((unit) => unit.readyForNextAt !== undefined && !unit.isClosed)
         .sort((a, b) => a.readyForNextAt! - b.readyForNextAt! || a.name.localeCompare(b.name)),
     [units],
   );

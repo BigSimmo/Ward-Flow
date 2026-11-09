@@ -1,7 +1,7 @@
 import { numberedBedKindRefusal } from "./ward-bed-designation";
 import { closedToAdmissionsRefusal } from "./capacity/ward-closure";
 import { referralIntakeError } from "./referrals/referral-submission";
-import { alternativesConsideredError } from "./referrals/referral-alternatives";
+import { alternativeListPosition, alternativesConsideredError } from "./referrals/referral-alternatives";
 import { type AuditDecision } from "./ward-audit";
 import { GENDER_PLACEMENT_REASONS, GENDER_PLACEMENT_REFUSAL } from "@/components/ward-management/ward-change-reasons";
 import { type Instant } from "@/components/ward-management/ward-clock";
@@ -678,7 +678,10 @@ export function reduceReferralAnswerEvent(
         ...(event.alternativesConsidered === undefined
           ? {}
           : {
-              alternativesConsidered: event.alternativesConsidered.map(({ option, outcome }) => ({ option, outcome })),
+              // Stored in the fixed listed order whatever order it arrived in, never a ranking.
+              alternativesConsidered: event.alternativesConsidered
+                .map(({ option, outcome }) => ({ option, outcome }))
+                .sort((a, b) => alternativeListPosition(a.option) - alternativeListPosition(b.option)),
             }),
       };
       return { ...state, referrals: [...state.referrals, created], frontDoorReferralSequence: sequence };
