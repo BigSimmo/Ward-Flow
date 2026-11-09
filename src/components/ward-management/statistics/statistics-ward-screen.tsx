@@ -59,7 +59,7 @@ import { MINUTES_PER_DAY, dayOf, formatSheetMoment } from "@/components/ward-man
 import { SMALL_NUMBER_NOT_SHOWN } from "@/components/ward-management/ward-access-scope";
 import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
-import type { Unit } from "@/components/ward-management/ward-model";
+import type { LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { wardStatistics } from "@/components/ward-management/ward-statistics";
 
@@ -86,7 +86,7 @@ import { BedsNowCard, ReferralsCard } from "./statistics-ward-cards";
 import { ChangeWard } from "./statistics-ward-change-ward";
 import { CompactBedMap } from "./statistics-ward-compact-bed-map";
 import compact from "./statistics-ward-compact.module.css";
-import { ADMISSION_STATE_LABELS, ROSTER_FIRST_ROWS, WardPhone, stayDaysOf } from "./statistics-ward-phone";
+import { ROSTER_FIRST_ROWS, WardPhone, rosterStatus, stayDaysOf } from "./statistics-ward-phone";
 import ward from "./statistics-ward.module.css";
 
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
@@ -1093,7 +1093,7 @@ function Roster({
   current: Admission[];
   now: number;
   dayZero: Date;
-  leaveBeds: readonly { admissionId: string }[];
+  leaveBeds: readonly Pick<LeaveBed, "admissionId" | "absentWithoutLeave">[];
 }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<RosterFilter>("all");
@@ -1102,11 +1102,10 @@ function Roster({
 
   // The admission model records a ward, not a numbered bed: each row is a recorded admission.
   const rows = current.map((admission) => {
-    const onLeave = leaveBeds.some((bed) => bed.admissionId === admission.id);
     const days = stayDaysOf(admission, now);
     return {
       admission,
-      status: onLeave ? "On leave" : ADMISSION_STATE_LABELS[admission.state],
+      status: rosterStatus(admission, leaveBeds),
       sex: SEX_MARK[admission.sex] ?? admission.sex.toLowerCase(),
       days,
       long: stayBand(admission, now)?.id === "over-3-months",

@@ -1671,7 +1671,7 @@
       {
         "path": "src/components/ward-management/ward-model-leave.ts",
         "line": 1,
-        "sha256": "8fd3116a9d3c3de961b164bfb2b93bb1767a1b40a94bfec68ed8b82e99c56c41"
+        "sha256": "ef7c345e94d36c3ee2e7ee4c1eda650106340a856d29afdb1da1feadc38aea4e"
       },
       {
         "path": "src/components/ward-management/ward-model-notices.ts",

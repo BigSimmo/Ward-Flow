@@ -254,8 +254,9 @@ export function useEffectiveWardAccess(): WardAccess {
 }
 
 /** The access role as the existing chrome knows roles. An access admin has no clinical chrome, so it
- *  reads as executive there, which offers no actions at all. */
-function chromeRoleForAccess(access: WardAccess): WardChromeRole {
+ *  reads as executive there, which offers no actions at all. Exported for the permission matrix
+ *  (`scripts/ward-flow/permission-matrix.ts`), which asks the screen layer the same question. */
+export function chromeRoleForAccess(access: WardAccess): WardChromeRole {
   return access.role === "admin" ? "executive" : access.role;
 }
 

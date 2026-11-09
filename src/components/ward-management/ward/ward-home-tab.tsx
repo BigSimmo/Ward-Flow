@@ -2054,10 +2054,12 @@ export function WardHomeTab({
         // The referral the accept dialog was opened for, while it is still waiting here (CS-08).
         const acceptMovement = visibleIncoming.find((movement) => movement.id === acceptFor);
         if (!acceptMovement) return null;
+        const acceptIdentity = resolvePatientIdentity(acceptMovement);
         return (
           <WardAcceptDialog
             movement={acceptMovement}
-            patientName={resolvePatientIdentity(acceptMovement).formalName}
+            patientName={acceptIdentity.formalName}
+            patientUmrn={acceptIdentity.umrn.trim() || undefined}
             unitName={unit.name}
             now={now}
             extended={acceptExtended}
