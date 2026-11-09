@@ -111,7 +111,7 @@ import shortlistStyles from "./shortlist-panel.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { FIT_LABEL, fitGroups, type FitKind } from "./home-fit";
 import { NextWardAfterRefusal } from "./next-ward-after-refusal";
-import { HomeReferralDecision } from "./home-referral-decision";
+import { HomeReferralDecision, HomeReferralNote } from "./home-referral-decision";
 import { PreMatchCleaningNote } from "./prematch-cleaning-note";
 import { TIER_TARGETS_NOTE, queueWaitThresholds } from "./priority-queue";
 import { plural } from "@/components/ward-management/ward-plural";
@@ -313,7 +313,7 @@ export function ReferralPlacementPanel({
               area and never an address (PD-3), in the wording every reader uses. Never a filter (Q-2). */}
           <Fact label="Suburb" value={referralSuburbLabel(referral.suburb)} testId="ward-referral-placement-suburb" />
         </dl>
-        <p className={shortlistStyles.listNote}>A request for a bed.</p>
+        <HomeReferralNote className={shortlistStyles.listNote} />
       </div>
       <HomeReferralDecision
         referral={referral}

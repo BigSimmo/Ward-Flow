@@ -48,10 +48,16 @@ describe("Log a delay as a short form in Tools (item 6c)", () => {
     );
     fireEvent.click(screen.getByTestId("ward-tools-toggle-log-delay"));
     const form = await screen.findByTestId("tools-log-delay");
-    fireEvent.change(within(form).getByRole("searchbox", { name: "Find a person by name or UR number" }), {
+    const search = within(form).getByRole("searchbox", { name: "Find a person by name or UR number" });
+    // The first person's UR number, as the list shows it.
+    const ur = form.querySelector("strong span")!.textContent!;
+    fireEvent.change(search, { target: { value: ur } });
+    expect(within(form).getAllByRole("radio").length).toBeGreaterThan(0);
+    for (const radio of within(form).getAllByRole("radio")) expect(radio.closest("label")).toHaveTextContent(ur);
+    fireEvent.change(search, {
       target: { value: "zzzz-no-one" },
     });
-    expect(within(form).getByText("No one open matches.")).toBeInTheDocument();
+    expect(within(form).getByText("Nobody open matches.")).toBeInTheDocument();
   });
 });
 

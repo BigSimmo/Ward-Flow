@@ -409,9 +409,11 @@ export function CoordinatorScreen() {
 
   const referralQueueAll = referralQueueOrder(referrals);
   const referralQueue = isReferralInServiceScope ? referralQueueAll.filter(isReferralInServiceScope) : referralQueueAll;
-  // Resolved from the live queue each render, so a referral that leaves the queue drops the selection.
+  // Resolved from the live queue each render. A referral decided in Home's panel (item 6a) leaves the
+  // queue but stays open on its outcome, as on the board (CS-15), so its Undo toast still arrives.
   const selectedReferral = selectedReferralId
-    ? referralQueue.find((referral) => referral.id === selectedReferralId)
+    ? (referralQueue.find((referral) => referral.id === selectedReferralId) ??
+      referrals.find((referral) => referral.id === selectedReferralId))
     : undefined;
   const hasPanelSubject = Boolean(selectedReferral || selectedMovement);
   // Home v7 (Josh, 22 Oct 2026): Placement never previews the first patient in the list. It opens

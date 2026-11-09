@@ -55,7 +55,7 @@ export function ToolLogDelay() {
         ({ who }) => who.formalName.toLowerCase().includes(needle) || who.umrn.toLowerCase().includes(needle),
       )
     : people;
-  const chosen = people.find(({ movement }) => movement.id === personId);
+  const chosen = matches.find(({ movement }) => movement.id === personId);
   const folded = matches.slice(0, foldLimit(matches.length, PERSON_LIMIT));
   const shown = all || needle ? matches : chosen && !folded.includes(chosen) ? [...folded, chosen] : folded;
   const hidden = needle ? 0 : foldHidden(matches.length, PERSON_LIMIT);
@@ -92,12 +92,13 @@ export function ToolLogDelay() {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           onClear={() => setQuery("")}
+          disabled={save.pending}
           placeholder="Name or UR number"
           aria-label="Find a person by name or UR number"
           autoComplete="off"
         />
         {shown.length === 0 ? (
-          <p className={styles.saved}>{needle ? "No one open matches." : "No one open at this desk."}</p>
+          <p className={styles.saved}>{needle ? "Nobody open matches." : "Nobody open at this desk."}</p>
         ) : (
           <div className={styles.card}>
             {shown.map(({ movement, who }) => {
@@ -108,6 +109,7 @@ export function ToolLogDelay() {
                   name="log-delay-person"
                   className={styles.option}
                   checked={movement.id === personId}
+                  disabled={save.pending}
                   onChange={() => {
                     setPersonId(movement.id);
                     setSaved(null);
@@ -141,6 +143,7 @@ export function ToolLogDelay() {
           id={`${baseId}-text`}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
+          disabled={save.pending}
           placeholder="Awaiting single-room clean"
           autoComplete="off"
           aria-describedby={`${baseId}-hint`}
