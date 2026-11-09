@@ -223,8 +223,13 @@
     padding: 0 12px;
   }
 
+  /* The visible tab is 40px; an invisible cover keeps each tap area 48px tall. */
   .switch.switch.switch > *::after {
-    display: none;
+    content: "";
+    display: block;
+    position: absolute;
+    inset: -4px 0;
+    background: none;
   }
 
   .nav[data-docked] .switch.switch.switch > :not([aria-checked="true"]) {
@@ -474,5 +479,24 @@
 
   .nav.nav [role="tablist"] [role="tab"][aria-selected="true"] > :last-child {
     color: var(--wf-ink-2);
+  }
+
+  .nav.nav [role="tablist"] [role="tab"]:focus-visible,
+  .nav.nav [role="tablist"] [role="tab"][aria-selected="true"]:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Phone and tablet: the 32px stage filters keep a 48px tap area with an invisible cover. */
+@media (max-width: 63.99rem) {
+  .nav.nav [role="tablist"] [role="tab"] {
+    position: relative;
+  }
+
+  .nav.nav [role="tablist"] [role="tab"]::after {
+    content: "";
+    position: absolute;
+    inset: -8px 0;
   }
 }
