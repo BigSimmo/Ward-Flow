@@ -180,3 +180,24 @@
     transition: none;
   }
 }
+
+/* Josh's notes 4 (9 Nov 2026): figures line up in fixed right-aligned columns with tabular digits,
+   and words stay neutral ink; the glyph carries the tone (design system principle 3). */
+.fitTable thead th:not(:first-child) {
+  width: 7.5rem;
+}
+.fitTable td {
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+}
+.fitTable td.warnInk,
+.fitTable td.okInk {
+  color: var(--wf-ink-2);
+}
+.fitTable td b {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+.fitTable tbody tr:hover {
+  background: var(--wf-hover);
+}
