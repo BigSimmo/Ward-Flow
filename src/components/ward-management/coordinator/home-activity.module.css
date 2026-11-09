@@ -160,12 +160,12 @@
   width: calc(100% + 32px);
   margin-inline: -16px;
 }
-/* Phone: the grip sits on the slate too. */
-.glyphScope > :first-child:not([data-sheet-header]) {
+/* Phone: the grip sits on the slate too. Only the panel's sheet: Home's screen also takes `.glyphScope`. */
+.activitySheet > :first-child:not([data-sheet-header]) {
   border-radius: 16px 16px 0 0;
   background: var(--wf-hero-1);
 }
-.glyphScope > :first-child:not([data-sheet-header]) > span {
+.activitySheet > :first-child:not([data-sheet-header]) > span {
   background: var(--wf-on-hero-line);
 }
 /* The heading keeps "Activity · Statewide" for screen readers; the drawn title is beside it. */

@@ -280,7 +280,7 @@ function OpenActivityPanel({
           <Tabs items={tabs} value={tab} onChange={setTab} label="Activity" idPrefix="home-activity" />
         </div>
       }
-      contentClassName={styles.glyphScope}
+      contentClassName={`${styles.glyphScope} ${styles.activitySheet}`}
       bodyClassName={styles.panelBody}
       footerClassName={styles.panelFooter}
       footer={showFoot ? <ReviewFoot review={review} now={now} /> : undefined}
