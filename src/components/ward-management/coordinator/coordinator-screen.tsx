@@ -74,6 +74,8 @@ import list from "./home-list.module.css";
 import flowStyles from "./home-flow.module.css";
 import folderStyles from "./home-folder.module.css";
 import { HomeFolderShape } from "./home-folder";
+import { HomePinnedCard } from "./home-pinned-card";
+import { HomeSinceBanner } from "./home-since-banner-lazy";
 import heroStyles from "./home-hero.module.css";
 import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 import type { PlacementSubject } from "./home-placement-drawer";
@@ -887,6 +889,11 @@ export function CoordinatorScreen() {
             ref={queueFocusRef}
           >
             <div className={`${styles.side} ${list.workCol}`}>
+              {/* Features 40 and 31 (9 Nov 2026): what changed since the last review, then this person's
+                  pins. Both sit inside the column, under the folder tabs, so the approved tab join is
+                  untouched, and both render nothing until there is something to show. */}
+              <HomeSinceBanner now={now} />
+              <HomePinnedCard now={now} phone={isPhone} />
               {shownView === "planned" ? (
                 <PlannedList now={now} rows={plannedRows} title="Later today" />
               ) : shownView === "queue" ? (

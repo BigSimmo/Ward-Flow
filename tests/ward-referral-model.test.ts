@@ -678,6 +678,9 @@ describe("front-door contract — an ED may close to all admissions, never refus
     RECORD_HOME_SERVICE_RETURN: false,
     // Closing-the-loop (package E): records that a directory entry was checked. Not a refusal.
     RECORD_DIRECTORY_CHECK: false,
+    // Staff needed (feature 10): a ward asks for staff, and the request is closed. Nobody is refused.
+    REQUEST_WARD_STAFF: false,
+    CLOSE_WARD_STAFF_REQUEST: false,
     // Out of area "Flag early" (3 Nov 2026): records that a return may come sooner. Not a refusal.
     FLAG_RETURN_EARLY: false,
     SET_DISCHARGE_BARRIER: false,

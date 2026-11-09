@@ -61,6 +61,13 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
     tab: "alerts",
     keywords: "browser notifications phone push mobile lock screen desktop act now red alert notify",
   },
+  { id: "alerts-due-soon", label: "Due soon too", tab: "alerts", keywords: "amber warning notifications" },
+  {
+    id: "alerts-quiet-hours",
+    label: "Quiet hours",
+    tab: "alerts",
+    keywords: "night overnight mute silence do not disturb",
+  },
   { id: "buzz", label: "Buzz sound", tab: "alerts", keywords: "chime urgent audio sound test" },
   {
     id: "theme",

@@ -1,0 +1,236 @@
+/* Staff needed (feature 10) and the ward contact card (feature 32). */
+
+.actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+/* Its own line under the phone hero's foot row. */
+.phoneRow {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+/* The desktop hero's foot, right: the open request above the capacity time. */
+.footStack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--wf-s-2);
+}
+
+/* A quiet worded tag on the hero: a state, not an alarm. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 32px;
+  padding: 0 var(--wf-s-1) 0 var(--wf-s-3);
+  border: 1px solid var(--wf-on-hero-line);
+  border-radius: var(--wf-r-pill);
+  font: 500 var(--wf-fs-13) / 1.2 var(--wf-font);
+  color: var(--wf-hero-ink);
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.tagText {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tagActions {
+  display: inline-flex;
+  margin-left: auto;
+}
+
+/* On a phone the tag is one line under the two buttons: short words, actions at the right. */
+.phoneRow .tag {
+  flex: 1 1 100%;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+}
+
+.tagAction {
+  min-height: 32px;
+  padding: 0 var(--wf-s-2);
+  border: 0;
+  border-radius: var(--wf-r-pill);
+  background: transparent;
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  color: var(--wf-hero-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--wf-hero-ink) 40%, transparent);
+  cursor: pointer;
+}
+
+.tagAction:hover {
+  background: var(--wf-on-hero-fill);
+}
+
+.tagAction:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
+}
+
+/* Phone hero buttons, as the ward hero's own quiet action. */
+.phoneAction {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  min-height: 40px;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
+  border-radius: var(--wf-r-ctl);
+  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  color: var(--wf-hero-ink);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.phoneAction:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Sheet body */
+.lede {
+  margin: 0 0 var(--wf-s-4);
+  font: 400 var(--wf-fs-14) / 1.45 var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.group {
+  margin: 0 0 var(--wf-s-4);
+  padding: 0;
+  border: 0;
+}
+
+.groupLabel {
+  display: block;
+  margin: 0 0 var(--wf-s-2);
+  padding: 0;
+  font: 600 var(--wf-fs-13) / 1.3 var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+/* A form's choices wrap on a phone too, so every reason shows without sideways scrolling. */
+.group .chipsWrap {
+  flex-wrap: wrap;
+  overflow-x: visible;
+}
+
+.groupHint {
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+
+.note {
+  margin: 0;
+  font: 400 var(--wf-fs-12) / 1.45 var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--wf-s-2);
+}
+
+.status {
+  font: 500 var(--wf-fs-13) / 1.3 var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+/* Contact card */
+.contactHead {
+  margin: 0 0 var(--wf-s-3);
+  font: 400 var(--wf-fs-13) / 1.4 var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.contactList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contactRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  padding: var(--wf-s-3) 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.contactRow:first-child {
+  border-top: 0;
+}
+
+.contactWho {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.contactLabel {
+  font: 600 var(--wf-fs-14) / 1.3 var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.contactSub {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1);
+  font: 400 var(--wf-fs-12) / 1.4 var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.contactNumber {
+  font: 500 var(--wf-fs-14) / 1.3 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+}
+
+.missing {
+  font: 400 var(--wf-fs-13) / 1.3 var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.contactFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin-top: var(--wf-s-3);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.link {
+  font: 600 var(--wf-fs-13) / 1.3 var(--wf-font);
+  color: var(--wf-accent-ink);
+}
+
+.phoneRow .tagAction {
+  min-height: 40px;
+}

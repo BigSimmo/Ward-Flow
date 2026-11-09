@@ -93,21 +93,35 @@ export async function enableActNowNotifications(): Promise<NotificationSupport> 
 export { newActNowItems } from "@/components/ward-management/ward-act-now-items";
 
 /** The words a notification shows: the alert title only, never who it is about. */
-export function actNowNotificationText(items: readonly InboxItem[]): { title: string; body: string } {
+export function actNowNotificationText(
+  items: readonly InboxItem[],
+  kind: "act-now" | "due-soon" = "act-now",
+): { title: string; body: string } {
   const [only] = items;
-  const body = items.length === 1 && only ? only.title : `${items.length} new act-now alerts`;
-  return { title: "Ward Flow: act now", body: `${body}. Synthetic demo data.` };
+  const many = kind === "act-now" ? "new act-now alerts" : "alerts due soon";
+  const body = items.length === 1 && only ? only.title : `${items.length} ${many}`;
+  return {
+    title: kind === "act-now" ? "Ward Flow: act now" : "Ward Flow: due soon",
+    body: `${body}. Synthetic demo data.`,
+  };
 }
 
-/** Shows one notification for a batch of new act-now rows. Never throws. */
-export function showActNowNotification(items: readonly InboxItem[], onOpen: () => void): boolean {
+/**
+ * Shows one notification for a batch of new rows. Never throws. Item 20 (9 Nov 2026): a tap opens
+ * the one row's own page when the batch has one row, so `onOpen` gets that row.
+ */
+export function showActNowNotification(
+  items: readonly InboxItem[],
+  onOpen: (only: InboxItem | undefined) => void,
+  kind: "act-now" | "due-soon" = "act-now",
+): boolean {
   if (items.length === 0 || notificationSupport() !== "granted") return false;
   try {
-    const { title, body } = actNowNotificationText(items);
-    const notification = new window.Notification(title, { body, tag: "ward-flow-act-now" });
+    const { title, body } = actNowNotificationText(items, kind);
+    const notification = new window.Notification(title, { body, tag: `ward-flow-${kind}` });
     notification.onclick = () => {
       window.focus();
-      onOpen();
+      onOpen(items.length === 1 ? items[0] : undefined);
       notification.close();
     };
     return true;

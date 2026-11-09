@@ -315,6 +315,9 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "RECORD_HOME_SERVICE_RETURN",
   // Closing-the-loop (package E): a directory entry id only. No typed text.
   "RECORD_DIRECTORY_CHECK",
+  // Staff needed (feature 10): ward and request ids, closed lists and a whole count. No typed text.
+  "REQUEST_WARD_STAFF",
+  "CLOSE_WARD_STAFF_REQUEST",
   // Out of area "Flag early" (3 Nov 2026): an admission id and a site code the reducer checks. No typed text.
   "FLAG_RETURN_EARLY",
   "SET_DISCHARGE_BARRIER",
@@ -515,6 +518,9 @@ type WardFlowReviewedStringOrUnknownKey =
   // Q61 (31 Oct 2026): the site handover sign-off names a site code; the reducer refuses a code with
   // no wards, and the shared server any site but the caller's own. Not about a person; never typed.
   | "siteCode"
+  // Staff needed (feature 10): `CLOSE_WARD_STAFF_REQUEST.requestId` names a reducer-minted "SR-N" id;
+  // the reducer finds the request or refuses. Not about a person; never typed.
+  | "requestId"
   // Optional reassessmentNote on `ACCEPT_REFERRAL`; checked at runtime in `eventCarriesTypedTextPayload`
   // so any dispatch carrying `reassessmentNote` locks persistence just like `overrideSignOff`.
   | "reassessmentNote";
