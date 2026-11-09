@@ -113,6 +113,31 @@ const FIELD_CLASS: Record<string, "identity" | "operational" | "clinical"> = {
   addedAt: "operational",
   // Bounded source-desk access metadata for an unlinked registration, not a clinical fact.
   registrationScope: "operational",
+  // Note 3 (Josh, 8 Nov 2026): the clerk's administrative details. Contacts, identifiers and
+  // personal facts are identity; funding, GP phone, postcode and legal planning are operational.
+  // None is clinical: an advance health directive is recorded as present or not, never its content.
+  mobilePhone: "identity",
+  otherPhone: "identity",
+  email: "identity",
+  postcode: "operational",
+  nextOfKinName: "identity",
+  nextOfKinRelationship: "identity",
+  nextOfKinPhone: "identity",
+  supportPersonRole: "operational",
+  supportPersonName: "identity",
+  supportPersonPhone: "identity",
+  medicareNumber: "identity",
+  medicareReference: "identity",
+  medicareExpiry: "identity",
+  dvaFileNumber: "identity",
+  healthFund: "operational",
+  concessionCard: "identity",
+  gpPhone: "operational",
+  countryOfBirth: "identity",
+  interpreterRequired: "identity",
+  maritalStatus: "identity",
+  advanceHealthDirective: "operational",
+  enduringGuardian: "operational",
 };
 
 describe("the governance data and audit disclosures", () => {
