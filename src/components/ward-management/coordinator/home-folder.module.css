@@ -252,3 +252,28 @@
     margin-top: 0;
   }
 }
+
+/* One count style across both tab levels: plain mono numbers, no grey boxes (Josh, 9 Nov 2026). */
+.nav.nav [role="tablist"] [role="tab"] > :last-child {
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 63.99rem) {
+  .nav.nav [role="tablist"] [role="tab"] > :last-child {
+    color: var(--wf-ink-3);
+  }
+
+  .nav.nav [role="tablist"] [role="tab"][aria-selected="true"] {
+    outline: 0;
+    font-weight: 600;
+  }
+
+  .nav.nav [role="tablist"] [role="tab"][aria-selected="true"] > :last-child {
+    color: var(--wf-ink-2);
+  }
+}
