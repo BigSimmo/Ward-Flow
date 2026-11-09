@@ -87,7 +87,6 @@ import list from "./home-list.module.css";
 import flowStyles from "./home-flow.module.css";
 import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 import type { PlacementSubject } from "./home-placement-drawer";
-import { PlacementPrompt } from "./placement-prompt";
 import { usePlannedRows } from "./planned-rows";
 import { FLOW_STAGES, flowStageOf, type FlowStageId, PriorityQueue, type QueueHighlight } from "./priority-queue";
 
@@ -1221,9 +1220,8 @@ export function CoordinatorScreen() {
               {isPhone || chosenAlert ? null : (
                 <BedsGapCard now={now} bedsReady={bedsReady} condensed={hasPanelSubject} />
               )}
-              {!sheetPlacement && !hasPanelSubject && !chosenAlert ? (
-                <PlacementPrompt next={actEntries.find((entry) => entry.movement)} onOpen={alertHandlers.onSelect} />
-              ) : null}
+              {/* Josh's notes 4 (9 Nov 2026): Placement shows only once someone is chosen. The old
+                  at-rest prompt repeated the top of My list, so the column now starts with beds. */}
               {/* Later today steps aside while Placement is open, so Placement keeps the whole column. */}
               {!isPhone && layout !== "tablet-portrait" && !hasPanelSubject && !chosenAlert ? (
                 <PlannedList now={now} rows={plannedRows} title="Later today" />

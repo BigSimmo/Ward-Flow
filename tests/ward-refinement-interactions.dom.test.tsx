@@ -117,7 +117,7 @@ describe("Q004 refinement interaction regressions", () => {
 
     // Home v7 (Josh, 22 Oct 2026): nobody is pre-selected. At rest Placement is a prompt with
     // nothing to act on, and no queue row is pressed until a coordinator picks one.
-    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
+    expect(screen.queryByTestId("home-placement-prompt")).toBeNull(); // notes 4: no at-rest prompt
     expect(document.querySelector('aside[aria-label="Placement"]')).toBeNull();
     expect(screen.queryByLabelText("Referral placement")).toBeNull();
     expect(row).toHaveAttribute("aria-pressed", "false");
@@ -128,7 +128,7 @@ describe("Q004 refinement interaction regressions", () => {
     const shortlist = screen.getByRole("complementary", { name: "Placement" });
     fireEvent.click(within(shortlist).getByRole("button", { name: "Close placement and clear selection" }));
 
-    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
+    expect(screen.queryByTestId("home-placement-prompt")).toBeNull(); // notes 4: no at-rest prompt
     expect(document.querySelector('aside[aria-label="Placement"]')).toBeNull();
     expect(row).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByTestId("ward-refinement-domain-state").textContent).toBe(before);
@@ -146,7 +146,7 @@ describe("Q004 refinement interaction regressions", () => {
     showFlow();
     expect(screen.queryByRole("button", { name: /^Offer /u })).toBeNull();
     expect(screen.queryByTestId("ward-placement-top-of-queue")).toBeNull();
-    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
+    expect(screen.queryByTestId("home-placement-prompt")).toBeNull(); // notes 4: no at-rest prompt
     expect(screen.getByTestId("ward-refinement-domain-state").textContent).toBe(before);
   });
 
@@ -160,7 +160,7 @@ describe("Q004 refinement interaction regressions", () => {
 
     fireEvent.click(screen.getByRole("radio", { name: /^Needs you/u }));
     expect(document.querySelector('aside[aria-label="Placement"]')).toBeNull();
-    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
+    expect(screen.queryByTestId("home-placement-prompt")).toBeNull(); // notes 4: no at-rest prompt
   });
 
   it("highlights exactly as many queue rows as the hero's Overdue count says", () => {
