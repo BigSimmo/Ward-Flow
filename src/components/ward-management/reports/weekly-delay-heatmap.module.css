@@ -1,12 +1,15 @@
 /* Feature 42 (9 Nov 2026): one sequential scale, neutral to amber, figures always printed. */
 .empty {
   margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
   color: var(--wf-ink-3);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
+/* The card has no body padding of its own; the grid and legend sit on the card's 16px inset. */
 .scroll {
   max-width: 100%;
   overflow-x: auto;
+  padding: var(--wf-s-2) calc(var(--wf-s-4) - 10px) 0;
 }
 .scroll:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
@@ -37,6 +40,7 @@
 }
 .grid th.num {
   font-family: var(--wf-font);
+  text-align: end;
 }
 .cell {
   min-width: 3.25rem;
@@ -48,6 +52,10 @@
   padding: 6px var(--wf-s-2);
   color: var(--wf-ink-1);
   font-weight: 600;
+}
+.total[data-zero="true"] {
+  color: var(--wf-ink-3);
+  font-weight: 400;
 }
 .cell[data-step="0"],
 .swatch[data-step="0"] {
@@ -73,10 +81,14 @@
 .legend {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 4px;
-  margin-top: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
   color: var(--wf-ink-3);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.legend span:first-child {
+  margin-inline-end: 4px;
 }
 .legend span:last-child {
   margin-inline-start: 4px;
@@ -92,7 +104,7 @@
   display: flex;
   flex-direction: column;
   margin: 0;
-  padding: 0;
+  padding: 0 var(--wf-s-4);
   list-style: none;
 }
 .list li {

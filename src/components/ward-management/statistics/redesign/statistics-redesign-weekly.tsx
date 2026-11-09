@@ -169,7 +169,8 @@ export function WeeklyBody(props: WeeklyBodyProps) {
       ? [
           {
             name: `Readmitted within ${READMISSION_WINDOW_DAYS} days`,
-            sub: `of ${plural(props.readmissions.arrivals, "arrival", "arrivals")} in the week`,
+            // "Stays", not "arrivals": measure 1 counts arrivals from a Ward Flow request, a smaller group.
+            sub: `of ${plural(props.readmissions.arrivals, "stay", "stays")} started in the week`,
             value: props.readmissions.readmitted,
             testId: "ward-weekly-readmitted",
           },

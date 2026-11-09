@@ -29,16 +29,17 @@ export function DelayedReasonsCard({
     <StatCardR
       id="rd-delayed-reasons"
       title="Delayed bed days by reason"
-      meta="Clinically ready, not gone"
+      meta={`${daysText(data.network.bedDays)} bed days · from the clinically ready day`}
       data-testid="ward-weekly-delayed-reasons"
       foot={
         <Foot
           how={[
             "Counted from the day the ward recorded the person as clinically ready, to when they left or the end of the week.",
             "Each stay counts under the reason recorded now; earlier reasons are not kept.",
+            "Recorded on the bed board.",
           ]}
         >
-          Recorded on the bed board
+          Not the Delayed discharge figure above, which counts from the expected date.
         </Foot>
       }
     >
@@ -47,28 +48,28 @@ export function DelayedReasonsCard({
       ) : (
         <>
           <DataTable
-            cols={["Reason", ">Bed days", ">Stays"]}
+            cols={["Reason", ">Stays", ">Bed days"]}
             caption="Delayed bed days by reason in the week, network, synthetic"
             rows={[
               ...rows.map((row) => ({
                 key: row.reason,
-                cells: [DELAYED_DISCHARGE_REASON_SHORT[row.reason], daysText(row.bedDays), String(row.stays)],
+                cells: [DELAYED_DISCHARGE_REASON_SHORT[row.reason], String(row.stays), daysText(row.bedDays)],
               })),
               {
                 key: "total",
                 kind: "total" as const,
-                cells: ["Network", daysText(data.network.bedDays), String(data.network.stays)],
+                cells: ["Network", String(data.network.stays), daysText(data.network.bedDays)],
               },
             ]}
           />
           <DataTable
-            cols={["Ward", ">Bed days", "Main reason"]}
+            cols={["Ward", "Main reason", ">Bed days"]}
             caption="Delayed bed days by ward in the week, synthetic"
             rows={wards.map((ward) => {
               const main = ward.rows.reduce((best, row) => (row.bedDays > best.bedDays ? row : best));
               return {
                 key: ward.unitId,
-                cells: [wardName(ward.unitId), daysText(ward.bedDays), DELAYED_DISCHARGE_REASON_SHORT[main.reason]],
+                cells: [wardName(ward.unitId), DELAYED_DISCHARGE_REASON_SHORT[main.reason], daysText(ward.bedDays)],
               };
             })}
           />

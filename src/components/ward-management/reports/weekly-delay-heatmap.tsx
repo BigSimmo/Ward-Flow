@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+
+import { SrOnly, ShowMoreRow, foldHidden, foldLimit } from "@/components/wf";
 
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { perthDateLabel, type Instant } from "@/components/ward-management/ward-clock";
@@ -10,9 +12,19 @@ import { delayedDischargeHeatmap, heatStep } from "./delay-heatmap";
 import type { ReportWeek } from "./weekly-report";
 import styles from "./weekly-delay-heatmap.module.css";
 
-/** One decimal, so part days read; a whole day without the ".0". */
+/** One decimal throughout, so a column of part and whole days lines up ("2.0" beside "0.9"). */
 function bedDays(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+  return value === 0 ? "0" : value.toFixed(1);
+}
+
+/** Wards shown before "Show all": the design system's eight rows. */
+const WARDS_SHOWN = 8;
+
+/** A day with nothing lost stays blank so the shaded days stand out; a screen reader still hears 0. */
+function Figure({ value, shown }: { value: number; shown: boolean }) {
+  if (!shown) return null;
+  if (value === 0) return <SrOnly>0</SrOnly>;
+  return <>{bedDays(value)}</>;
 }
 
 /**
@@ -29,6 +41,7 @@ export function WeeklyDelayHeatmap({
   now,
   dayZero,
   isPhone,
+  pressureBedDays,
 }: {
   units: readonly Unit[];
   admissions: readonly Admission[];
@@ -37,11 +50,16 @@ export function WeeklyDelayHeatmap({
   now: Instant;
   dayZero: Date;
   isPhone: boolean;
+  /** The week's "Delayed discharge" figure in Pressure this week, so a difference is said, not left. */
+  pressureBedDays?: number;
 }) {
+  const [showAll, setShowAll] = useState(false);
   const map = useMemo(
     () => delayedDischargeHeatmap(units, admissions, bedReleases, week.start, week.countedEnd),
     [units, admissions, bedReleases, week.start, week.countedEnd],
   );
+  const hidden = foldHidden(map.rows.length, WARDS_SHOWN);
+  const limit = showAll ? map.rows.length : foldLimit(map.rows.length, WARDS_SHOWN);
   const dayLabel = (start: Instant) => perthDateLabel(start, dayZero, { weekday: "short", day: "numeric" });
   const shown = (start: Instant) => start < week.countedEnd && start <= now;
   const foot = (
@@ -52,6 +70,11 @@ export function WeeklyDelayHeatmap({
       ]}
     >
       {map.wardsWithNone > 0 ? `${map.wardsWithNone} more wards with none` : "Every ward in view"}
+      {pressureBedDays !== undefined && Math.abs(pressureBedDays - map.total) >= 0.05
+        ? `. Pressure this week counts ${bedDays(pressureBedDays)} past the expected date only; this grid adds ${bedDays(
+            Math.round((map.total - pressureBedDays) * 10) / 10,
+          )} under recorded hold-ups.`
+        : null}
     </Foot>
   );
   return (
@@ -66,7 +89,7 @@ export function WeeklyDelayHeatmap({
         <p className={styles.empty}>No bed days lost to delayed discharge in this week.</p>
       ) : isPhone ? (
         <ol className={styles.list} aria-label="Wards by bed days lost this week">
-          {map.rows.map((row) => (
+          {map.rows.slice(0, limit).map((row) => (
             <li key={row.unitId}>
               <span>{row.name}</span>
               <span className={styles.figure}>{bedDays(row.total)}</span>
@@ -94,12 +117,12 @@ export function WeeklyDelayHeatmap({
                 </tr>
               </thead>
               <tbody>
-                {map.rows.map((row) => (
+                {map.rows.slice(0, limit).map((row) => (
                   <tr key={row.unitId}>
                     <th scope="row">{row.name}</th>
                     {row.days.map((value, index) => (
                       <td key={map.dayStarts[index]} className={styles.cell} data-step={heatStep(value, map.max)}>
-                        {shown(map.dayStarts[index]!) ? bedDays(value) : ""}
+                        <Figure value={value} shown={shown(map.dayStarts[index]!)} />
                       </td>
                     ))}
                     <td className={`${styles.num} ${styles.total}`}>{bedDays(row.total)}</td>
@@ -110,7 +133,11 @@ export function WeeklyDelayHeatmap({
                 <tr>
                   <th scope="row">Total</th>
                   {map.dayTotals.map((value, index) => (
-                    <td key={map.dayStarts[index]} className={`${styles.num} ${styles.total}`}>
+                    <td
+                      key={map.dayStarts[index]}
+                      className={`${styles.num} ${styles.total}`}
+                      data-zero={value === 0 ? "true" : undefined}
+                    >
                       {shown(map.dayStarts[index]!) ? bedDays(value) : ""}
                     </td>
                   ))}
@@ -120,14 +147,19 @@ export function WeeklyDelayHeatmap({
             </table>
           </div>
           <div className={styles.legend} aria-hidden="true">
-            <span>0</span>
+            <span>Bed days a day</span>
             {[1, 2, 3, 4].map((step) => (
               <i key={step} className={styles.swatch} data-step={step} />
             ))}
-            <span>{bedDays(map.max)} bed days</span>
+            <span>up to {bedDays(map.max)}</span>
           </div>
         </>
       )}
+      {hidden > 0 ? (
+        <ShowMoreRow onClick={() => setShowAll((open) => !open)} expanded={showAll}>
+          {showAll ? "Show fewer" : `Show all ${map.rows.length} wards`}
+        </ShowMoreRow>
+      ) : null}
     </StatCardR>
   );
 }

@@ -352,7 +352,17 @@ function unitOccupants(
         extras?.awayAtEdHoursAgo === undefined ? null : WARD_ADMISSIONS_ANCHOR - extras.awayAtEdHoursAgo * 60,
       expectedDischargeAt: hasDate ? WARD_ADMISSIONS_ANCHOR + dischargeInDays * MINUTES_PER_DAY : null,
       dischargeDateMoves: hasDate ? index % 3 : 0,
-      dischargeDateSetAt: hasDate ? WARD_ADMISSIONS_ANCHOR - (6 + (index % 5) * 5) * 60 : null,
+      // A date that has moved was set in the last day. One that never moved was set a week before it
+      // falls (or the morning after arrival, if later), so a stay past its date counts as delayed for
+      // the whole time since, not only since yesterday (polish pass, 9 Nov 2026, Weekly heatmap).
+      dischargeDateSetAt: hasDate
+        ? index % 3 === 0
+          ? Math.min(
+              WARD_ADMISSIONS_ANCHOR - (6 + (index % 5) * 5) * 60,
+              Math.max(arrivedAt + 18 * 60, WARD_ADMISSIONS_ANCHOR + (dischargeInDays - 7) * MINUTES_PER_DAY),
+            )
+          : WARD_ADMISSIONS_ANCHOR - (6 + (index % 5) * 5) * 60
+        : null,
       dischargeDateSetBy: hasDate ? DISCHARGE_DATE_SETTERS[index % DISCHARGE_DATE_SETTERS.length] : null,
       dischargeConfirmedAt: isConfirmed ? WARD_ADMISSIONS_ANCHOR - confirmedHoursAgo * 60 : null,
       // Owner ruling 5 (2026-09-01) leaves this field family with exactly one role spelling, so
@@ -667,7 +677,8 @@ const occupiedBeds: Admission[] = [
     ["Male", "Perth Metropolitan", 3, null, { patientId: "PT-G-AD-FSHS-04" }],
     ["Male", "Great Southern", 12, 4, { patientId: "PT-G-AD-FSHS-05" }],
     ["Male", "Mid West", null, 6, { patientId: "PT-G-AD-FSHS-06" }],
-    ["Male", "Kimberley", 130, -2, { patientId: "PT-G-AD-FSHS-07" }],
+    // Polish pass (9 Nov 2026): 4 days past the date, so the Weekly heatmap spreads across the week.
+    ["Male", "Kimberley", 130, -4, { patientId: "PT-G-AD-FSHS-07" }],
     ["Male", "South West", 5, 9, { patientId: "PT-G-AD-FSHS-08" }],
     ["Male", "Goldfields-Esperance", 20, 2, { patientId: "PT-G-AD-FSHS-09" }],
     ["Male", "Pilbara", 60, 8, { patientId: "PT-G-AD-FSHS-10" }],
@@ -699,7 +710,8 @@ const occupiedBeds: Admission[] = [
       { blockReason: "Awaiting receiving-service acceptance", referralId: "RF-ARMA-02", patientId: "PT-096" },
     ],
     ["Female", "Mid West", 45, 6, { patientId: "PT-G-AD-ARMA-03" }],
-    ["Male", "Kimberley", 130, -2, { patientId: "PT-G-AD-ARMA-04" }],
+    // Polish pass (9 Nov 2026): 6 days past the date, so the Weekly heatmap spreads across the week.
+    ["Male", "Kimberley", 130, -6, { patientId: "PT-G-AD-ARMA-04" }],
     ["Female", "South West", 5, 9, { patientId: "PT-G-AD-ARMA-05" }],
     ["Male", "Goldfields-Esperance", 20, 2, { patientId: "PT-G-AD-ARMA-06" }],
     ["Female", "Pilbara", 60, 8, { patientId: "PT-G-AD-ARMA-07" }],
@@ -749,7 +761,8 @@ const occupiedBeds: Admission[] = [
     ["Female", "Mid West", 45, 6, { patientId: "PT-G-AD-RGHS-13" }],
   ]),
   ...unitOccupants("fre-adult-open", "FREA", ADULT_OPEN_DIAGNOSES, [
-    ["Female", "Kimberley", 130, -2, { patientId: "PT-G-AD-FREA-01" }],
+    // Polish pass (9 Nov 2026): 5 days past the date, so the Weekly heatmap spreads across the week.
+    ["Female", "Kimberley", 130, -5, { patientId: "PT-G-AD-FREA-01" }],
     ["Male", "South West", 5, 9, { patientId: "PT-G-AD-FREA-02" }],
     ["Female", "Goldfields-Esperance", 20, 2, { patientId: "PT-G-AD-FREA-03" }],
     ["Male", "Pilbara", 60, 8, { patientId: "PT-G-AD-FREA-04" }],

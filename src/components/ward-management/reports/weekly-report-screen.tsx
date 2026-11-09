@@ -244,6 +244,7 @@ function OperationalWeeklyReport({ offset, setOffset }: WeekPicker) {
           now={now}
           dayZero={dayZero}
           isPhone={isPhone}
+          pressureBedDays={report.delayedDischarge.bedDays}
         />
       )}
       admissionLabel={(movementId) =>
