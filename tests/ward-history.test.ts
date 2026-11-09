@@ -48,6 +48,7 @@ describe("Ward Flow Read-Only Plain History", () => {
       // RECORD_ACCEPTANCE_CONDITION, MARK_ACCEPTANCE_CONDITION_MET, RECORD_RESTRICTION_REVIEW and
       // MARK_CLOSURE_TRANSITION_ITEM. Package A adds RECORD_REFERRAL_COMMITMENT; package E adds two.
       // Package B adds RECORD_DISCHARGE_DEPENDENCY and RECORD_DISCHARGE_PLAN_CHANGE.
+      // Features 37 and 13 (9 Nov 2026) add RECORD_DISCHARGE_CHECK and RECORD_FOLLOW_UP_REPLY.
       // Audit 24-1 decision 4 (24 Oct 2026) removes RELEASE_BED; old records keep their wording.
       // H-0150 adds UNDO_BED_MEETING_ACTION.
       // H-0978 / WS-15 (26 Oct 2026) adds SET_BED_CLOSED.
@@ -61,7 +62,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // Triage and risk (7 Nov 2026) adds RECORD_TRIAGE_SIGNED.
       // Feature 11 (Josh, 9 Nov 2026) adds EXTEND_PULL.
       // Feature 14 (9 Nov 2026) adds MARK_WEEKEND_DISCHARGE_REVIEWED.
-      expect(allEventTypes.length).toBe(181);
+      // Features 37 and 13 (9 Nov 2026) add RECORD_DISCHARGE_CHECK and RECORD_FOLLOW_UP_REPLY.
+      expect(allEventTypes.length).toBe(183);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

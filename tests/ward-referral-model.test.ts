@@ -742,6 +742,10 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // Closing-the-loop package B (24 Oct 2026): discharge logistics decline nobody.
     RECORD_DISCHARGE_DEPENDENCY: false,
     RECORD_DISCHARGE_PLAN_CHANGE: false,
+    // Features 37 and 13 (9 Nov 2026): a checklist tick and a community follow-up reply. A decline
+    // there answers follow-up after discharge; it refuses no referral or placement.
+    RECORD_DISCHARGE_CHECK: false,
+    RECORD_FOLLOW_UP_REPLY: false,
     // v10 pass 2: undo restores the state before a decision (a queued referral, a review or a bed),
     // and a bed move changes which bed a current stay is in. None of the four declines anybody.
     UNDO_REFERRAL_DECISION: false,

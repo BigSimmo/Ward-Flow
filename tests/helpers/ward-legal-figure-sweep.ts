@@ -1120,6 +1120,26 @@ function candidatesForMovements(
         owner: "pharmacy" as const,
         state: "outstanding" as const,
       }));
+    case "RECORD_DISCHARGE_CHECK":
+      // Feature 37 (9 Nov 2026): one ticked item per stay, against its own unit. No legal figure.
+      return state.admissions.map((admission) => ({
+        type,
+        role,
+        now,
+        admissionId: admission.id,
+        actingUnitId: admission.unitId,
+        item: "gp_letter" as const,
+        state: "done" as const,
+      }));
+    case "RECORD_FOLLOW_UP_REPLY":
+      // Feature 13 (9 Nov 2026): one accepted reply per stay. Community-scoped; no legal figure.
+      return state.admissions.map((admission) => ({
+        type,
+        role,
+        now,
+        admissionId: admission.id,
+        reply: "accepted" as const,
+      }));
     case "RECORD_DISCHARGE_PLAN_CHANGE":
       // Closing-the-loop package B: one destination per release, against its own unit.
       return state.bedReleases.map((release) => ({

@@ -2340,6 +2340,10 @@ export function reduceClinicalEvent(
       return reducerSlices().reduceWardDiagnosis(state, event, reject);
     case "MARK_WEEKEND_DISCHARGE_REVIEWED":
       return reducerSlices().reduceWeekendDischargeReview(state, event, reject);
+    // Features 37 and 13 (9 Nov 2026): the discharge checklist and the community follow-up reply.
+    case "RECORD_DISCHARGE_CHECK":
+    case "RECORD_FOLLOW_UP_REPLY":
+      return reducerSlices().reduceDischargeCheckEvent(state, event, reject);
     // Closing-the-loop (package E).
     case "RECORD_HOME_SERVICE_RETURN":
       return reduceHomeServiceReturn(state, event, reject);

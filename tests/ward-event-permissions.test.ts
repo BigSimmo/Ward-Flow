@@ -527,6 +527,8 @@ describe("who may raise which event", () => {
     SEND_RELEASE_SUPPORT_NOTICE: ["ward", "coordinator"],
     RECORD_DISCHARGE_DEPENDENCY: ["ward", "coordinator"],
     RECORD_DISCHARGE_PLAN_CHANGE: ["ward", "coordinator"],
+    RECORD_DISCHARGE_CHECK: ["ward", "coordinator"],
+    RECORD_FOLLOW_UP_REPLY: ["community", "coordinator"],
     RECORD_ARRIVAL_CHECK: ["ed", "coordinator"],
     // v10 pass 2 (Josh, 10 Oct 2026): Undo and the ward Bed board. The reducer narrows the referral
     // undo to the role that decided (a ward to its own unit) or the coordinator.

@@ -1,5 +1,7 @@
 import type { BedMeetingAction } from "./bed-meeting/bed-meeting-actions";
 import type { CareJourney } from "./ward-care-journey";
+import type { DischargeDateTrail } from "./ward-discharge-date-trail";
+import type { DischargeChecks, FollowUpReply } from "./ward-discharge-checklist";
 import {
   BED_RELEASE_BLOCKERS,
   type BedReleaseBlocker,
@@ -662,6 +664,12 @@ export type Admission = {
   /** How many times the expected date has been moved. A count of revisions to the WARD'S plan,
    *  never a measure of a person — it says the plan kept changing, not that anybody was slow. */
   dischargeDateMoves: number;
+  /**
+   * Feature 6 (9 Nov 2026): the first expected date and each later move, append-only and bounded
+   * (`ward-discharge-date-trail.ts`). Absent on stays saved before it existed and on stays with no
+   * date; never inferred. A record of the ward's plan, never a measure of the person.
+   */
+  dischargeDateTrail?: DischargeDateTrail;
   /** When the current expected date was set. `null` when there is none. */
   dischargeDateSetAt: Instant | null;
   /** WHO set it, as a ROLE drawn from `DISCHARGE_ROLE_LABELS` — and NEVER a personal name. Same
@@ -762,6 +770,10 @@ export type Admission = {
   followUp: FollowUpRecord | null;
   /** Closed workflow facts; absent on legacy saves, never inferred during restoration. */
   careJourney?: CareJourney;
+  /** Feature 37 (9 Nov 2026): the ticked discharge checklist items (`RECORD_DISCHARGE_CHECK`). Absent until one is ticked. */
+  dischargeChecks?: DischargeChecks;
+  /** Feature 13 (9 Nov 2026): the community team's reply to follow-up (`RECORD_FOLLOW_UP_REPLY`). Absent until it replies. */
+  followUpReply?: FollowUpReply;
   /**
    * Primary discharge barrier for long-stay patients (length of stay >= 7 days).
    * Chosen from DISCHARGE_BARRIERS fixed vocabulary, never typed or free text.
@@ -822,6 +834,7 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   awayAtEmergencyDepartmentSince: true,
   expectedDischargeAt: true,
   dischargeDateMoves: true,
+  dischargeDateTrail: true,
   dischargeDateSetAt: true,
   dischargeDateSetBy: true,
   dischargeConfirmedAt: true,
@@ -834,6 +847,8 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   leftAt: true,
   followUp: true,
   careJourney: true,
+  dischargeChecks: true,
+  followUpReply: true,
   meetingActions: true,
 };
 

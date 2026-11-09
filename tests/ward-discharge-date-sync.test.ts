@@ -66,6 +66,11 @@ describe("pending bed releases follow an edited stay discharge date", () => {
       dischargeDateMoves: 3,
       dischargeDateSetAt: NOW_ANCHOR,
       dischargeDateSetBy: role === "ward" ? "Nurse in charge" : null,
+      // Feature 6: a stay saved before trails existed starts its trail at its earlier date.
+      dischargeDateTrail: {
+        firstExpectedAt: stay.expectedDischargeAt,
+        revisions: [{ at: NOW_ANCHOR, previousExpectedAt: stay.expectedDischargeAt, expectedAt: MOVED_DATE }],
+      },
     });
     expect(changed.bedReleases[0]).toEqual({ ...release, expectedAt: MOVED_DATE });
     expect(changed.bedReleases[1]).toBe(historical);

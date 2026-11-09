@@ -250,9 +250,20 @@ function hoursText(minutes: number): string {
 /** The second waiting band on the statistics screens (twice the long-wait default, unsigned). */
 export const VERY_LONG_WAIT_MINUTES = CLINICAL_VALUES.veryLongWait.value;
 
+/**
+ * Feature 6 (9 Nov 2026): a stay is listed under "Discharge dates slipping" on the Discharges board
+ * once its expected discharge date sits more than this many days after the first date the ward set.
+ * An operational setting for spotting a drifting plan, not a clinical or legal limit.
+ */
+export const EDD_SLIP_FLAG_DAYS = 3;
+
 /** This group's entries for the settings list; `OPERATIONAL_DEFAULTS` below includes them. */
 const OPERATIONAL_DEFAULTS_FIX: readonly OperationalDefault[] = [
   { name: "Wait shown as very long from", display: hoursText(VERY_LONG_WAIT_MINUTES) },
+  {
+    name: "Discharge date flagged as slipping after",
+    display: `more than ${EDD_SLIP_FLAG_DAYS} days later than first set`,
+  },
 ];
 
 /** The list the settings screen shows, read-only, in the order a coordinator meets them. */

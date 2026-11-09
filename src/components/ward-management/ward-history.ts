@@ -232,6 +232,9 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   // Closing-the-loop package B (24 Oct 2026).
   RECORD_DISCHARGE_DEPENDENCY: { category: "bed", plainWording: "Discharge dependency recorded" },
   RECORD_DISCHARGE_PLAN_CHANGE: { category: "bed", plainWording: "Discharge plan changed" },
+  // Features 37 and 13 (9 Nov 2026).
+  RECORD_DISCHARGE_CHECK: { category: "patient", plainWording: "Discharge checklist item recorded" },
+  RECORD_FOLLOW_UP_REPLY: { category: "patient", plainWording: "Community team follow-up reply recorded" },
   RECORD_ARRIVAL_CHECK: { category: "patient", plainWording: "Arrival checklist item recorded" },
   // v10 pass 2 (10 Oct 2026): Undo and the ward Bed board.
   UNDO_REFERRAL_DECISION: { category: "patient", plainWording: "Referral decision undone" },

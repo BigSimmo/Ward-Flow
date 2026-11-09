@@ -612,6 +612,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // Closing-the-loop package B (24 Oct 2026): discharge logistics, recorded by the ward or the coordinator.
   RECORD_DISCHARGE_DEPENDENCY: ["ward", "coordinator"],
   RECORD_DISCHARGE_PLAN_CHANGE: ["ward", "coordinator"],
+  // Feature 37 (9 Nov 2026): the discharge checklist, ticked by whoever may record the discharge.
+  RECORD_DISCHARGE_CHECK: ["ward", "coordinator"],
+  // Feature 13 (9 Nov 2026): the community team answers follow-up; the coordinator may act for it.
+  RECORD_FOLLOW_UP_REPLY: ["community", "coordinator"],
   RECORD_ARRIVAL_CHECK: ["ed", "coordinator"],
   // v10 pass 2 (Josh, 10 Oct 2026): Undo. Every role that may answer a referral may take back its
   // OWN answer; the reducer refuses another role's decision (with a reason) unless the caller is the

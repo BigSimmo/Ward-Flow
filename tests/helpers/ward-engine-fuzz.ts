@@ -1210,6 +1210,34 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       };
     },
   ],
+  // Features 37 and 13 (9 Nov 2026): a discharge checklist tick and a community follow-up reply.
+  [
+    1,
+    (state, random) => {
+      const stay = stayFor(state, random, occupied);
+      return {
+        type: "RECORD_DISCHARGE_CHECK",
+        admissionId: id(stay),
+        actingUnitId: stay?.unitId ?? MISSING_ID,
+        item: pick(random, ["community_follow_up", "medicines", "carer_told", "gp_letter"] as const),
+        state: pick(random, ["done", "not_needed", "outstanding"] as const),
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const stay = stayFor(state, random, occupied);
+      const reply = pick(random, ["awaiting", "accepted", "declined"] as const);
+      return {
+        type: "RECORD_FOLLOW_UP_REPLY",
+        admissionId: id(stay),
+        actingTeamId: "midland",
+        reply,
+        ...(reply === "declined" ? { declineReason: "Outside catchment" as const } : {}),
+      };
+    },
+  ],
   [
     1,
     (state, random) => {

@@ -2543,8 +2543,8 @@ export type WardFlowEvent =
   // #398, the arrival checklist (D-72) and Ask more wards (D-76): declared beside their reducer cases.
   | ReleaseNoticeEvent
   | ArrivalCheckEvent
-  // Closing-the-loop package B (24 Oct 2026): discharge dependencies and plan changes.
-  | import("./discharges/discharge-dependency-events").DischargeDependencyEvent
+  // Package B (24 Oct 2026) dependencies and plan changes; features 37 and 13 (9 Nov 2026) checklist and reply.
+  | import("./discharges/discharge-check-events").DischargeDeskEvent
   | ObservationLevelEvent
   | RecordWardDiagnosisEvent
   // Feature 14 (Josh, 9 Nov 2026): the weekend discharge review tick.

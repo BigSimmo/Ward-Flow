@@ -1,5 +1,7 @@
 import { validDischargeRequestNamespace } from "./ward-discharge-records";
 import { isOnBehalfReason } from "./ward-on-behalf-reason";
+import { isDischargeDateTrail } from "./ward-discharge-date-trail";
+import { isDischargeChecks, isFollowUpReply } from "./ward-discharge-checklist";
 import { restoreRuleProblem, storedPlacementInvariants } from "./ward-flow-storage-invariants";
 import { hasDuplicateRetainedUmrns } from "./ward-retained-umrn";
 import {
@@ -605,6 +607,10 @@ const admission = z.looseObject({
       ),
     ),
   ),
+  // Features 6, 37 and 13 (9 Nov 2026): finite times and listed values only; absent in older saves.
+  dischargeDateTrail: z.optional(z.custom(isDischargeDateTrail)),
+  dischargeChecks: z.optional(z.custom(isDischargeChecks)),
+  followUpReply: z.optional(z.custom(isFollowUpReply)),
   leavingDestination: z.nullable(z.custom(isLeavingDestination)),
   // A stored barrier is a list value or absent; free text here would be typed text restored from
   // storage (review finding A2-2).

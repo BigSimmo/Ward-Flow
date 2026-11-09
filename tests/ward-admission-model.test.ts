@@ -93,6 +93,10 @@ function anAdmission(overrides: Partial<Admission> = {}): Admission {
     stepDownCandidate: false,
     // Smart features idea 5 (19 Oct 2026): bed meeting actions, so the built fixture carries every field.
     meetingActions: [],
+    // Features 6, 37 and 13 (9 Nov 2026), so the built fixture carries every field.
+    dischargeDateTrail: { firstExpectedAt: DAY_ZERO, revisions: [] },
+    dischargeChecks: {},
+    followUpReply: { state: "awaiting", at: DAY_ZERO, by: "community" },
     ...overrides,
   };
 }
@@ -611,6 +615,8 @@ describe("Admission privacy — structural", () => {
     "awayAtEmergencyDepartmentSince",
     "expectedDischargeAt",
     "dischargeDateMoves",
+    // Feature 6 (9 Nov 2026): the first expected date and each move. Times only, no free text.
+    "dischargeDateTrail",
     "dischargeDateSetAt",
     "dischargeDateSetBy",
     // WIDENED ON PURPOSE, 2026-08-29 — see this describe block's own doc comment. Two fields, and
@@ -628,6 +634,9 @@ describe("Admission privacy — structural", () => {
     "leftAt",
     "followUp",
     "careJourney",
+    // Features 37 and 13 (9 Nov 2026): listed checklist states and a listed reply, each with a time and role.
+    "dischargeChecks",
+    "followUpReply",
     // Smart features idea 5: chosen actions, owners and instants only.
     "meetingActions",
   ].sort();
@@ -693,6 +702,23 @@ describe("Admission privacy — structural", () => {
       dischargeCriteria: { setAt: DAY_ZERO, items: [{ criterion: "Accommodation confirmed", metAt: null }] },
       stepDownCandidate: true,
       meetingActions: [{ kind: "review_step_down", owner: "coordinator", dueAt: 600, recordedAt: 360 }],
+      dischargeDateTrail: {
+        firstExpectedAt: DAY_ZERO + 18 * MINUTES_PER_DAY,
+        revisions: [
+          {
+            at: DAY_ZERO + 5 * MINUTES_PER_DAY,
+            previousExpectedAt: DAY_ZERO + 18 * MINUTES_PER_DAY,
+            expectedAt: DAY_ZERO + 20 * MINUTES_PER_DAY,
+          },
+        ],
+      },
+      dischargeChecks: { gp_letter: { state: "done", at: DAY_ZERO + 29 * MINUTES_PER_DAY, by: "ward" } },
+      followUpReply: {
+        state: "declined",
+        reason: "GP follow-up instead",
+        at: DAY_ZERO + 4 * MINUTES_PER_DAY,
+        by: "community",
+      },
     };
     expect(Object.keys(canonical).sort()).toEqual(ALLOWED_ADMISSION_FIELDS);
   });

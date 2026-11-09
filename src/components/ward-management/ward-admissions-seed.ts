@@ -1059,7 +1059,73 @@ const waitlist: Admission[] = [
 
 /** Pulled beds held by routineMovements-generated WF-304/311/318/325 (stageFields admissionId). */
 
-export const wardAdmissions: Admission[] = [...occupiedBeds, ...departures, ...waitlist];
+/**
+ * Features 6, 37 and 13 (9 Nov 2026): a few synthetic stays carry a discharge date trail, ticked
+ * checklist items and a community team's follow-up reply, so each shows in the demo. Applied by id
+ * over the stays above; every figure is invented. A trail's moves match the stay's own
+ * `dischargeDateMoves`, and its last date is the stay's current expected date.
+ */
+const DAY = MINUTES_PER_DAY;
+type SeedTrail = { firstDaysEarlier: number; moves: readonly number[] };
+const SEED_DATE_TRAILS: Readonly<Record<string, SeedTrail>> = {
+  // Moved twice, now six days later than first set: listed under "Discharge dates slipping".
+  "AD-RPHS-06": { firstDaysEarlier: 6, moves: [3, 6] },
+  // Moved twice, now five days later.
+  "AD-SCGA-06": { firstDaysEarlier: 5, moves: [2, 5] },
+  // Moved once, four days later: still over the three-day flag.
+  "AD-FSHS-02": { firstDaysEarlier: 4, moves: [4] },
+  // Moved once by a day: a trail, but under the flag.
+  "AD-ARMA-14": { firstDaysEarlier: 1, moves: [1] },
+};
+const SEED_CHECKS: Readonly<Record<string, Admission["dischargeChecks"]>> = {
+  "AD-RPHS-02": {
+    medicines: { state: "done", at: WARD_ADMISSIONS_ANCHOR - 5 * 60, by: "ward" },
+    carer_told: { state: "done", at: WARD_ADMISSIONS_ANCHOR - 4 * 60, by: "ward" },
+  },
+  "AD-SJGA-05": {
+    community_follow_up: { state: "done", at: WARD_ADMISSIONS_ANCHOR - 20 * 60, by: "ward" },
+    gp_letter: { state: "not_needed", at: WARD_ADMISSIONS_ANCHOR - 19 * 60, by: "ward" },
+  },
+};
+const SEED_REPLIES: Readonly<Record<string, Admission["followUpReply"]>> = {
+  "AD-SJGA-05": { state: "accepted", at: WARD_ADMISSIONS_ANCHOR - 22 * 60, by: "community" },
+  "AD-FSHS-01": {
+    state: "declined",
+    reason: "GP follow-up instead",
+    at: WARD_ADMISSIONS_ANCHOR - 9 * 60,
+    by: "community",
+  },
+  "AD-RPHS-14": { state: "awaiting", at: WARD_ADMISSIONS_ANCHOR - 3 * 60, by: "community" },
+  "AD-LEFT-01": { state: "accepted", at: WARD_ADMISSIONS_ANCHOR - 30 * 60, by: "community" },
+};
+
+function withSeedFollowThrough(admission: Admission): Admission {
+  const trail = SEED_DATE_TRAILS[admission.id];
+  const checks = SEED_CHECKS[admission.id];
+  const reply = SEED_REPLIES[admission.id];
+  let next = admission;
+  if (trail && admission.expectedDischargeAt !== null) {
+    const first = admission.expectedDischargeAt - trail.firstDaysEarlier * DAY;
+    const dates = [first, ...trail.moves.map((days) => first + days * DAY)];
+    next = {
+      ...next,
+      dischargeDateMoves: trail.moves.length,
+      dischargeDateTrail: {
+        firstExpectedAt: first,
+        revisions: trail.moves.map((_, index) => ({
+          at: WARD_ADMISSIONS_ANCHOR - (trail.moves.length - index) * DAY,
+          previousExpectedAt: dates[index]!,
+          expectedAt: dates[index + 1]!,
+        })),
+      },
+    };
+  }
+  if (checks) next = { ...next, dischargeChecks: checks };
+  if (reply) next = { ...next, followUpReply: reply };
+  return next;
+}
+
+export const wardAdmissions: Admission[] = [...occupiedBeds, ...departures, ...waitlist].map(withSeedFollowThrough);
 
 /**
  * Three synthetic planned admissions for the calendar (stream D, 9 October 2026), authored against

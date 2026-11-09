@@ -100,6 +100,8 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "expectedAt",
   // Closing-the-loop package B (24 Oct 2026): the time a discharge plan change moved away from.
   "previousExpectedAt",
+  // Feature 6 (9 Nov 2026): the first expected discharge date on a stay's date trail.
+  "firstExpectedAt",
   "expectedReturn",
   "formedAt",
   "formWrittenAt",

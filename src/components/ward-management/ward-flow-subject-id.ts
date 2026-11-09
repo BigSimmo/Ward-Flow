@@ -170,6 +170,8 @@ export function subjectId(event: WardFlowEvent): string {
     case "SET_STEP_DOWN_CANDIDATE":
     case "RECORD_WARD_DIAGNOSIS":
     case "MARK_WEEKEND_DISCHARGE_REVIEWED":
+    case "RECORD_DISCHARGE_CHECK":
+    case "RECORD_FOLLOW_UP_REPLY":
     // Closing-the-loop (package E).
     case "RECORD_HOME_SERVICE_RETURN":
     case "FLAG_RETURN_EARLY":

@@ -218,8 +218,10 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
       outOfAreaMinutes += minutes;
       outOfAreaPeople.add(personOf(stay.admission));
     }
-    // Today's expected date: the history of earlier dates is not kept. It counts only from when it
-    // was set, so a past week is not measured against a date nobody had chosen yet.
+    // Today's expected date. Stays now keep their earlier dates (`dischargeDateTrail`, feature 6),
+    // but not when the first one was set, and older stays have no trail, so this still reads the
+    // current date only. It counts only from when it was set, so a past week is not measured
+    // against a date nobody had chosen yet.
     const expected = stay.admission.expectedDischargeAt;
     const setAt = stay.admission.dischargeDateSetAt;
     if (expected !== null && Number.isFinite(expected)) {

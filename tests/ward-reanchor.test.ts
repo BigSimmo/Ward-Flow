@@ -47,6 +47,8 @@ const MODEL_FILES = [
   "src/components/ward-management/out-of-area/home-service-return.ts",
   // Closing-the-loop package B (24 Oct 2026): discharge dependencies and plan changes on a bed release.
   "src/components/ward-management/discharges/discharge-dependencies.ts",
+  "src/components/ward-management/ward-discharge-date-trail.ts",
+  "src/components/ward-management/ward-discharge-checklist.ts",
 ];
 
 /**
