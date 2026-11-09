@@ -80,6 +80,8 @@ export type WeeklyBodyProps = {
   readmissions?: { arrivals: number; readmitted: number };
   /** Feature 42: the delayed discharge grid, under the week's pressure figures. Operational desks only. */
   heatmap?: ReactNode;
+  /** Item 5: the "Delayed bed days by reason" card, operational view only. */
+  delayedReasons?: ReactNode;
 };
 
 function total(value: Decisions): number | undefined {
@@ -430,6 +432,8 @@ export function WeeklyBody(props: WeeklyBodyProps) {
       </StatCardR>
 
       {props.heatmap}
+
+      {props.delayedReasons}
 
       <Grid layout="wide">
         <StatCardR

@@ -1,6 +1,7 @@
 import { DISCHARGE_ROLE_LABELS } from "@/components/ward-management/ward-admissions";
 import type {
   Admission,
+  DelayedDischargeReason,
   FollowUpRecord,
   LeavingDestination,
   PlannedAdmission,
@@ -251,6 +252,8 @@ type OccupantExtras = {
     readonly setHoursAgo: number;
     readonly items: readonly (readonly [DischargeCriterion, number | null])[];
   };
+  /** Item 5: clinically ready this many whole days before the anchor's day, and why not gone. Synthetic. */
+  readonly ready?: { readonly daysAgo: number; readonly reason: DelayedDischargeReason };
 };
 
 /**
@@ -362,6 +365,14 @@ function unitOccupants(
       leavingDestination: null,
       leftAt: null,
       followUp: null,
+      ...(extras?.ready
+        ? {
+            // The Perth midnight of the ready day, as the board's date box records it.
+            clinicallyReadySince:
+              (Math.floor(WARD_ADMISSIONS_ANCHOR / MINUTES_PER_DAY) - extras.ready.daysAgo) * MINUTES_PER_DAY,
+            delayedDischargeReason: extras.ready.reason,
+          }
+        : {}),
       ...(extras?.criteria
         ? {
             dischargeCriteria: {
@@ -521,7 +532,12 @@ const occupiedBeds: Admission[] = [
       "South West",
       34,
       -2,
-      { blockReason: "Awaiting accommodation", confirmedHoursAgo: 26, patientId: "PT-G-AD-RPHS-01" },
+      {
+        blockReason: "Awaiting accommodation",
+        confirmedHoursAgo: 26,
+        patientId: "PT-G-AD-RPHS-01",
+        ready: { daysAgo: 5, reason: "Accommodation / Housing" },
+      },
     ],
     // Confirmed and NOT blocked, so the blocked cross-cut above is compared against something.
     ["Male", "Mid West", 5, 3, { confirmedHoursAgo: 4, patientId: "PT-028" }],
@@ -534,7 +550,7 @@ const occupiedBeds: Admission[] = [
     ["Female", "Perth Metropolitan", 3, null, { awayAtEdHoursAgo: 6, patientId: "PT-G-AD-RPHS-04" }],
     ["Male", "Great Southern", 12, 4, { awayAtEdHoursAgo: 1, patientId: "PT-029" }],
     ["Female", "Perth Metropolitan", 45, 6, { patientId: "PT-032" }],
-    ["Male", "Perth Metropolitan", 130, -2, { patientId: "PT-033" }],
+    ["Male", "Perth Metropolitan", 130, -2, { patientId: "PT-033", ready: { daysAgo: 12, reason: "NDIS" } }],
     ["Female", "Perth Metropolitan", 5, 9, { patientId: "PT-035" }],
     ["Male", "Perth Metropolitan", 20, 2, { patientId: "PT-034" }],
     ["Female", "Pilbara", 60, 8, { patientId: "PT-G-AD-RPHS-10" }],
@@ -586,7 +602,7 @@ const occupiedBeds: Admission[] = [
   ]),
   ...unitOccupants("rph-older-adult", "RPHO", OLDER_ADULT_DIAGNOSES, [
     ["Female", "Peel", 9, null, { patientId: "PT-030" }],
-    ["Male", "Pilbara", 115, 1, { patientId: "PT-G-AD-RPHO-02" }],
+    ["Male", "Pilbara", 115, 1, { patientId: "PT-G-AD-RPHO-02", ready: { daysAgo: 9, reason: "RACF / Aged Care" } }],
     ["Female", "Peel", 40, -1, { patientId: "PT-G-AD-RPHO-03" }],
     ["Male", "Wheatbelt", 1, 7, { patientId: "PT-G-AD-RPHO-04" }],
     ["Female", "Gascoyne", 26, 3, { patientId: "PT-G-AD-RPHO-05" }],
@@ -622,7 +638,13 @@ const occupiedBeds: Admission[] = [
     ["Male", "Mid West", null, 6, { patientId: "PT-G-AD-SCGA-19" }],
   ]),
   ...unitOccupants("scgh-older-adult", "SCGO", OLDER_ADULT_DIAGNOSES, [
-    ["Female", "Perth Metropolitan", 130, -2, { patientId: "PT-040" }],
+    [
+      "Female",
+      "Perth Metropolitan",
+      130,
+      -2,
+      { patientId: "PT-040", ready: { daysAgo: 20, reason: "SAT / Public Guardian" } },
+    ],
     ["Male", "South West", 5, 9, { patientId: "PT-G-AD-SCGO-02" }],
     ["Female", "Goldfields-Esperance", 20, 2, { patientId: "PT-G-AD-SCGO-03" }],
     ["Male", "Pilbara", 60, 8, { patientId: "PT-G-AD-SCGO-04" }],

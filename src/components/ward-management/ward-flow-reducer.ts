@@ -1775,6 +1775,7 @@ export function reduceClinicalEvent(
     case "REQUEST_CAPACITY_REFRESH":
     case "SET_STEP_DOWN_CANDIDATE":
     case "SET_DISCHARGE_BARRIER":
+    case "SET_CLINICALLY_READY":
     case "SET_DISCHARGE_CRITERIA":
     case "UPLOAD_PATIENT_FORM":
     case "EVALUATE_LEAVE_BED_WARNINGS":

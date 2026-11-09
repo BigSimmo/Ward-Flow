@@ -174,6 +174,7 @@ export function subjectId(event: WardFlowEvent): string {
     case "RECORD_HOME_SERVICE_RETURN":
     case "FLAG_RETURN_EARLY":
     case "SET_DISCHARGE_BARRIER":
+    case "SET_CLINICALLY_READY":
     case "SET_DISCHARGE_CRITERIA":
       return event.admissionId;
     case "RECORD_SUPPORT_NOTIFICATION":

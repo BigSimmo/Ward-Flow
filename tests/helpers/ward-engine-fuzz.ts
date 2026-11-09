@@ -28,6 +28,7 @@ import {
   WARD_INTAKE_CONSTRAINTS,
 } from "@/components/ward-management/ward-change-reasons";
 import {
+  DELAYED_DISCHARGE_REASONS,
   DISCHARGE_BARRIERS,
   FOLLOW_UP_STATES,
   LEAVING_DESTINATIONS,
@@ -1231,6 +1232,20 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         admissionId: id(stay),
         actingUnitId: stay?.unitId ?? MISSING_ID,
         barrier: roll < 0.15 ? null : roll < 0.3 ? "None" : pick(random, DISCHARGE_BARRIERS),
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const stay = stayFor(state, random, occupied);
+      return {
+        type: "SET_CLINICALLY_READY",
+        admissionId: id(stay),
+        actingUnitId: stay?.unitId ?? MISSING_ID,
+        ready: chance(random, 0.2)
+          ? null
+          : { since: stay?.arrivedAt ?? 0, reason: pick(random, DELAYED_DISCHARGE_REASONS) },
       };
     },
   ],

@@ -1566,7 +1566,7 @@
       {
         "path": "src/components/ward-management/ward-change-reasons.ts",
         "line": 1,
-        "sha256": "6779b98751fd0fb6e6642ee11618f58b8543dd0312a10db856c8bf02db68c703"
+        "sha256": "19511f8035f760d6c5144696823c48316ce0723aa4565a7e7e868a15bfb7016d"
       },
       {
         "path": "src/components/ward-management/ward-configuration.ts",
@@ -1596,17 +1596,17 @@
       {
         "path": "src/components/ward-management/ward-flow-bed-events.ts",
         "line": 618,
-        "sha256": "a63ee87e0e4c23df938c2732ded19ca0e95f859bf586980d00fa0fdb648694f3"
+        "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
       },
       {
         "path": "src/components/ward-management/ward-flow-event-roles.ts",
         "line": 1,
-        "sha256": "a6ecb20e6d9976c94774aaf92dcbd01bb1ce820787992884bf026e65f8fafb93"
+        "sha256": "2eedf325e69035b63d12fdc21eae2632f2c0d053063f4ca13965bc6206665423"
       },
       {
         "path": "src/components/ward-management/ward-flow-events.ts",
         "line": 1,
-        "sha256": "59733a2f90a97b44d5f8e1edadabcfe6435dfafcc11e6ade917fa78047405338"
+        "sha256": "98877d865b8858d6c367351d44beeb65e978f4eb4fd553c453adb934af2676ee"
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
@@ -1636,7 +1636,7 @@
       {
         "path": "src/components/ward-management/ward-flow-reducer.ts",
         "line": 1161,
-        "sha256": "970eefb85722884a320c76f14cea1d7cd8fc65b330e0200ee71e455e141fc076"
+        "sha256": "ac1762032a139f1705e327d01877c23040c2465473583d0ed2cddf78a7b1a0db"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
@@ -1651,7 +1651,7 @@
       {
         "path": "src/components/ward-management/ward-flow-storage-validation.ts",
         "line": 456,
-        "sha256": "7e59625cafe81b30a701639d64ac7eae946ca8a722b9368030de98579c9e3b29"
+        "sha256": "d303619481d94b812eaf9980ae32af1d833592f32898027de5ee5b6f1b370d6b"
       },
       {
         "path": "src/components/ward-management/ward-flow-transport-events.ts",

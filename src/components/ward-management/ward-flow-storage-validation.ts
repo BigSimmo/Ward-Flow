@@ -12,6 +12,7 @@ import * as z from "zod/mini";
 import { validCareJourney, validCareChange } from "./ward-care-journey";
 import type { WardFlowState } from "./ward-flow-reducer";
 import {
+  isDelayedDischargeReason,
   isDischargeBarrier,
   isLeavingDestination,
   isPlannedAdmissionCancelReason,
@@ -608,6 +609,9 @@ const admission = z.looseObject({
   // A stored barrier is a list value or absent; free text here would be typed text restored from
   // storage (review finding A2-2).
   dischargeBarrier: z.optional(z.nullable(z.custom(isDischargeBarrier))),
+  // Item 5: a day's instant and a listed reason, or absent in older saves.
+  clinicallyReadySince: z.optional(nullableFinite),
+  delayedDischargeReason: z.optional(z.nullable(z.custom(isDelayedDischargeReason))),
   // FD-10: the ward's own block, a listed block with a finite time, or absent in older saves.
   wardDiagnosis: z.optional(
     z.looseObject({

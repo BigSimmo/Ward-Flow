@@ -684,6 +684,7 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // Out of area "Flag early" (3 Nov 2026): records that a return may come sooner. Not a refusal.
     FLAG_RETURN_EARLY: false,
     SET_DISCHARGE_BARRIER: false,
+    SET_CLINICALLY_READY: false,
     SET_DISCHARGE_CRITERIA: false,
     // D-34 cancels an accepted psychiatric allocation; it does not decline admission to ED.
     RECORD_ED_MEDICAL_DETERIORATION: false,

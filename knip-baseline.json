@@ -4,7 +4,6 @@
   "exports:src/components/ward-management/patients/patient-now-records.ts:PATIENT_NOW_RECORDS",
   "exports:src/components/ward-management/shell/use-mobile-keyboard.tsx:MobileKeyboardProvider",
   "exports:src/components/ward-management/shell/ward-bar-page-tools.tsx:WardBarPageTools",
-  "exports:src/components/ward-management/ward-change-reasons.ts:DISCHARGE_DELAY_REASONS",
   "exports:src/components/ward-management/ward-derivations.ts:isMoreRestrictiveThanRequired",
   "exports:src/components/ward-management/ward-derivations.ts:leaveBedNeedsOpenWarning",
   "exports:src/components/ward-management/ward-derivations.ts:movementTimeline",

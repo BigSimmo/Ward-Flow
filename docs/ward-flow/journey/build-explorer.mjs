@@ -81,6 +81,8 @@ const WRITES = {
   SET_STEP_DOWN_CANDIDATE: "Whether this admission is a candidate to step down to a lower level of care.",
   SET_DISCHARGE_BARRIER:
     "Stores a listed discharge barrier or clears it; no seven-day reducer gate and no bed count change.",
+  SET_CLINICALLY_READY:
+    "Stores the day an on-ward patient became clinically ready and one listed reason they have not gone, or clears both (Josh, 9 Nov 2026); no bed count change.",
   UPDATE_EXPECTED_DISCHARGE:
     "Sets the expected time, increments date-move count only when an existing date differs, and stamps when. A ward setter is Nurse in charge; coordinator setter is null. Pending linked bed-release dates follow; completed release dates stay historical.",
   RECORD_MOVEMENT_MEDICAL_CLEARANCE:

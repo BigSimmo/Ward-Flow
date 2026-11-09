@@ -538,6 +538,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // Feature 14 (Josh, 9 Nov 2026): the ward or coordinator ticks a weekend discharge as reviewed.
   MARK_WEEKEND_DISCHARGE_REVIEWED: ["ward", "coordinator"],
   SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
+  // Item 5 (Josh, 9 Nov 2026): the same roles that record a discharge hold-up.
+  SET_CLINICALLY_READY: ["ward", "coordinator"],
   SET_DISCHARGE_CRITERIA: ["ward", "coordinator"],
   RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
   RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator"],

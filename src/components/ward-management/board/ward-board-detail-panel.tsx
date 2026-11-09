@@ -40,6 +40,7 @@ import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { PersonEntry } from "./ward-board-person-entry";
 import { WardDiagnosisControl } from "./ward-board-ward-diagnosis";
+import { ClinicallyReadyControl } from "./ward-board-clinically-ready";
 import { plural } from "@/components/ward-management/ward-plural";
 
 /** Redesign: the record's buttons are the kit's, so the panel matches the rest of the page. */
@@ -546,6 +547,19 @@ export function WardBoardDetailPanel({
                         ))}
                       </Select>
                     </div>
+                  )}
+                  {occupied.days !== null && (
+                    <ClinicallyReadyControl
+                      key={`${occupied.key}-${occupied.clinicallyReady?.since ?? ""}-${occupied.clinicallyReady?.reason ?? ""}`}
+                      occupant={occupied}
+                      arrivedAt={admissions.find((a) => a.id === occupied.key)?.arrivedAt ?? null}
+                      unitId={unit.id}
+                      now={now}
+                      dayZero={dayZero}
+                      raise={raise}
+                      dispatchAndReport={dispatchAndReport}
+                      nameFor={nameFor}
+                    />
                   )}
                 </section>
               )}

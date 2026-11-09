@@ -322,6 +322,9 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // Out of area "Flag early" (3 Nov 2026): an admission id and a site code the reducer checks. No typed text.
   "FLAG_RETURN_EARLY",
   "SET_DISCHARGE_BARRIER",
+  // Item 5: an admission id, a day's instant and one reason from DELAYED_DISCHARGE_REASONS,
+  // membership-checked by the reducer. No typed text.
+  "SET_CLINICALLY_READY",
   // D-60: criteria are a closed list chosen from checkboxes. D-65 adds typed patient specific
   // criteria, so a dispatch naming any criterion off that list locks storage at payload level
   // (`eventCarriesTypedTextPayload` below). A save or tick of fixed criteria only stays safe.

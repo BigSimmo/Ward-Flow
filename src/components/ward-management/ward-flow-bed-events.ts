@@ -1,7 +1,8 @@
 import { updateExpectedDischargeDate } from "./ward-expected-discharge-update";
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { type CountedFigure, nextUnchangedShifts } from "./capacity/shift-confirmations";
-import { isDischargeBarrier, liveMovementForAdmission } from "./ward-admissions";
+import { isDelayedDischargeReason, isDischargeBarrier, liveMovementForAdmission } from "./ward-admissions";
+import { dayOf, MINUTES_PER_DAY } from "./ward-clock";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { nextStepUndoSeq, withUndoRecord } from "./ward-undo";
 import { numberedBedKind } from "./ward-bed-designation";
@@ -53,6 +54,7 @@ export type BedEvent = Extract<
       | "REQUEST_CAPACITY_REFRESH"
       | "SET_STEP_DOWN_CANDIDATE"
       | "SET_DISCHARGE_BARRIER"
+      | "SET_CLINICALLY_READY"
       | "SET_DISCHARGE_CRITERIA"
       | "UPLOAD_PATIENT_FORM"
       | "EVALUATE_LEAVE_BED_WARNINGS";
@@ -743,6 +745,47 @@ export function reduceBedEvent(
         dischargeBarrier: event.barrier === "None" ? null : event.barrier,
       };
 
+      return {
+        ...state,
+        admissions: state.admissions.map((a) => (a.id === admission.id ? updatedAdmission : a)),
+      };
+    }
+
+    // Item 5 (Josh, 9 Nov 2026): "Clinically ready for discharge since [date]" and the one reason,
+    // from DELAYED_DISCHARGE_REASONS, they have not gone. Both are set together or cleared together.
+    case "SET_CLINICALLY_READY": {
+      const admission = state.admissions.find((a) => a.id === event.admissionId);
+      if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
+      if (event.role === "ward" && event.actingUnitId !== admission.unitId) {
+        return reject(
+          state,
+          event,
+          `SET_CLINICALLY_READY was raised acting as unit ${event.actingUnitId} but admission ${admission.id} is at ${admission.unitId}`,
+        );
+      }
+      if (admission.state !== "occupied" || admission.arrivedAt === null) {
+        return reject(state, event, "SET_CLINICALLY_READY applies only to a patient on the ward");
+      }
+      const ready = event.ready;
+      if (ready !== null) {
+        // On a safe-listed event, so anything off the list would reach browser storage as free text.
+        if (!isDelayedDischargeReason(ready.reason)) {
+          return reject(state, event, "SET_CLINICALLY_READY reason must be chosen from DELAYED_DISCHARGE_REASONS");
+        }
+        // A day, not a moment: from the day they arrived up to today, never a day still to come.
+        if (
+          !Number.isFinite(ready.since) ||
+          ready.since < dayOf(admission.arrivedAt) * MINUTES_PER_DAY ||
+          dayOf(ready.since) > dayOf(event.now)
+        ) {
+          return reject(state, event, "SET_CLINICALLY_READY date must fall between arrival and today");
+        }
+      }
+      const updatedAdmission: Admission = {
+        ...admission,
+        clinicallyReadySince: ready?.since ?? null,
+        delayedDischargeReason: ready?.reason ?? null,
+      };
       return {
         ...state,
         admissions: state.admissions.map((a) => (a.id === admission.id ? updatedAdmission : a)),

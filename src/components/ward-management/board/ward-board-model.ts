@@ -14,6 +14,7 @@ import {
   type DischargeBarrier,
 } from "@/components/ward-management/ward-admissions";
 import { tentativeDiagnosisPhrase, type TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
+import { clinicallyReadyOf, type ClinicallyReadyLine } from "@/components/ward-management/ward-delayed-discharge";
 import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import {
   formatInstantWithDay,
@@ -294,6 +295,8 @@ export type Occupant = {
   blockReason: string | null;
   admissionId: string;
   dischargeBarrier: DischargeBarrier | null;
+  /** Item 5: clinically ready since a day, why not gone, and days delayed; null when not recorded. */
+  clinicallyReady: ClinicallyReadyLine | null;
   stepDownCandidate: boolean;
 };
 
@@ -386,6 +389,7 @@ export function buildOccupants(unit: Unit, admissions: readonly Admission[], now
       blockReason: admission.blockReason,
       admissionId: admission.id,
       dischargeBarrier: admission.dischargeBarrier ?? null,
+      clinicallyReady: clinicallyReadyOf(admission, now),
       stepDownCandidate: Boolean(admission.stepDownCandidate),
     }));
 }
