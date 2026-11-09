@@ -10,7 +10,7 @@
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-lg);
   background: var(--wf-surface);
-  box-shadow: 0 1px 2px rgb(16 24 32 / 6%);
+  box-shadow: var(--wf-e1);
 }
 
 .head {
