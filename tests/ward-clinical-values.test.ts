@@ -91,6 +91,9 @@ describe("clinical values file", () => {
       downtimePackStale: 60,
       preparingBedStale: 61,
       bookingEstimatePassed: 10,
+      // D-106 (Josh, 9 Nov 2026): moved into the register, synthetic, no clinical decision yet.
+      redRowSnoozeCap: 60,
+      supportNotificationLookback: 4320,
       lateArrivalGrace: 60,
       silentWardFirstReminder: 120,
       silentWardSecondReminder: 240,
@@ -104,6 +107,7 @@ describe("clinical values file", () => {
       dischargePrepWindow: 1440,
       dischargeCriteriaValidity: 1440,
       leaveOpenWarning: 1440,
+      oldLeavePaper: 3,
       awolBedHoldWarning: 240,
       ctoFollowUpWindow: 7,
       longStayPrompt: 7,
@@ -126,8 +130,10 @@ describe("clinical values file", () => {
       accessUnused: 45,
       // Role access plan v2 (Josh, 23 Oct 2026, D-80): the longest a role may be granted for.
       accessMaxTerm: 365,
+      // D-106 (Josh, 9 Nov 2026): the Give default for a request for access, synthetic.
+      accessGrantDefault: 90,
       // Observation levels (Josh, 21 Oct 2026): fix plan item 10.
-      // Audit F3, Option A (26 Oct 2026): General's interval, synthetic until Josh approves it.
+      // Audit F3, Option A (26 Oct 2026): General's interval, signed under D-72 item 5 and D-106.
       observationGeneral: 1,
       observationIntermittentShort: 15,
       observationIntermittentLong: 30,
@@ -289,13 +295,7 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
   { file: "ward-operational-defaults.ts", name: "UNDO_WINDOW_MINUTES", why: "software undo window" },
   { file: "ward-operational-defaults.ts", name: "ED_TREND_SPAN_MINUTES", why: "chart window" },
   { file: "ward-operational-defaults.ts", name: "ED_TREND_STEP_MINUTES", why: "chart step" },
-  { file: "ward-operational-defaults.ts", name: "RED_ROW_SNOOZE_CAP_MINUTES", why: "software snooze cap" },
   { file: "ward-operational-defaults.ts", name: "SNOOZE_MAX_MINUTES", why: "software snooze bound" },
-  {
-    file: "ward-operational-defaults.ts",
-    name: "SUPPORT_NOTIFICATION_TASK_LOOKBACK_MINUTES",
-    why: "how long a task list looks back, to keep it short",
-  },
   { file: "ward-operational-defaults.ts", name: "WAIT_FILTER_SHORT_MINUTES", why: "a search filter band" },
   { file: "ward-operational-defaults.ts", name: "AFTER_HOURS_START_HOUR", why: "a clock time" },
   { file: "ward-operational-defaults.ts", name: "AFTER_HOURS_END_HOUR", why: "a clock time" },
@@ -316,11 +316,6 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
   { file: "discharges/discharge-board.tsx", name: "CHART_DAYS_AHEAD", why: "chart window" },
   { file: "legal-forms/legal-forms-screen.tsx", name: "CHART_WINDOW_MINUTES", why: "chart window" },
   { file: "on-call/on-call-checks.ts", name: "CHECK_DUE_DAYS", why: "when a directory entry is re-checked" },
-  {
-    file: "ward/ward-leave-paper-authority.tsx",
-    name: "OLD_PAPER_DAYS",
-    why: "when an old leave paper gets a check-it-is-current warning; never refuses",
-  },
   { file: "ward-admissions.ts", name: "PLANNED_ADMISSION_MAX_STAY_DAYS", why: "input bound on a typed date" },
   { file: "ward-admissions.ts", name: "PLANNED_ADMISSION_WINDOW_DAYS", why: "how far ahead the planned list looks" },
   { file: "ward-bed-availability.ts", name: "MIDDAY_MINUTES", why: "a day-part bin" },
