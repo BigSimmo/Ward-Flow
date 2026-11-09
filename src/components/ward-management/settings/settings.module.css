@@ -844,6 +844,33 @@
   box-shadow: 0 0 0 2px var(--wf-hero-1);
 }
 
+/* Note 14 phone polish: name over role beside the avatar, one compact row. */
+.phoneWhoText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.phoneWhoName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneWhoRole {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  letter-spacing: 0;
+  color: color-mix(in srgb, var(--wf-hero-ink) 72%, transparent);
+}
+
+/* Less band under the identity row: the page lip still overlaps it. */
+.phoneProfile.phoneProfile {
+  padding-bottom: var(--wf-s-6);
+}
+
 /* Find a setting sits on the page here, not on the band: page ink and a 44px box. */
 .phoneFind .find {
   width: 100%;
@@ -1206,4 +1233,20 @@
 .phoneSheetBody .ruleStepper > span:first-child > [role="spinbutton"] {
   min-width: 0;
   white-space: nowrap;
+}
+
+/* Note 14 phone polish: a sheet's first card repeated the sheet's own title (Display in Display).
+ * The card keeps its heading for screen readers through aria-labelledby. */
+.phoneSheetBody div:has(> div > :is([id="display-title"], [id="alerts-title"], [id="profile-title"])) {
+  display: none;
+}
+
+/* The rule sheet's last-save line and Changed switch share one row. */
+.phoneSheetBody [data-setting="recent-changes"] {
+  flex: 1 1 auto;
+}
+
+.phoneSheetBody div:has(> [data-setting="recent-changes"]) {
+  row-gap: var(--wf-s-1);
+  margin-block-end: 0;
 }

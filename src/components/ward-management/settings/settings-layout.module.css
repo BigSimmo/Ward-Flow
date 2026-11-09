@@ -354,8 +354,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-3);
-  /* Clears the bar and the section tabs that stay in view above it. */
-  scroll-margin-top: calc(var(--wf-header-height, 3.5rem) + 4.5rem);
+  /* Clears the section tabs that stay in view. The page scroller's own scroll padding already clears
+     the top bar, so adding it here left a 75px gap under the tabs after a jump (Note 14 polish). */
+  scroll-margin-top: calc(3.5rem + var(--wf-s-3));
 }
 
 /* The section jumps in the band: a row of buttons that wraps, never a tab track. */

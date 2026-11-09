@@ -169,7 +169,12 @@ export function SettingsRulesPane({
               <RuleLastSave ruleChanges={ruleChanges} now={now} />
             </span>
             <span data-setting="changed-only">
-              <ChangedOnlySwitch checked={changedOnly} onChange={setChangedOnly} awayFromDefault={awayFromDefault} />
+              <ChangedOnlySwitch
+                checked={changedOnly}
+                onChange={setChangedOnly}
+                awayFromDefault={awayFromDefault}
+                compact
+              />
             </span>
           </div>
         </>

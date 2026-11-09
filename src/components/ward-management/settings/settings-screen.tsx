@@ -1127,11 +1127,21 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
                   decorative
                   className={styles.avatar}
                 />
-                {deskProfile.name}
+                {/* Note 14 phone polish: the role sits beside the avatar under the name, so the band is
+                    one compact identity row rather than a name line and a role line under it. */}
+                <span className={styles.phoneWhoText}>
+                  <span className={styles.phoneWhoName}>{deskProfile.name}</span>
+                  {roleIsName ? null : (
+                    <span className={styles.phoneWhoRole}>
+                      <SrOnly>, </SrOnly>
+                      {deskProfile.role}
+                    </span>
+                  )}
+                </span>
               </span>
             }
             eyebrow={deskProfile.location}
-            sub={roleIsName ? undefined : deskProfile.role}
+            className={styles.phoneProfile}
           />
 
           <div className={styles.phoneFind}>{findSetting}</div>
