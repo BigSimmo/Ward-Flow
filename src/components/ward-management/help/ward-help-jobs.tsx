@@ -323,6 +323,52 @@ function PracticeWhenLive({
 }
 
 /**
+ * Show me around this screen (page tops, Josh, 9 Nov 2026): one calm row in Help's slate top, first
+ * thing seen, in place of the old tile in the On this screen card. Only when Show me can play this
+ * screen's walk round (`ward-help-screen-tours.ts`) here; the step count is this size's own.
+ */
+export function HelpAroundRow({
+  role,
+  home,
+  pathname,
+  screen,
+  showMeOn,
+  onShowMe,
+}: {
+  role: WardTourRole;
+  home: string | undefined;
+  pathname: string;
+  screen: (ScreenHelp & { id: string }) | undefined;
+  showMeOn: boolean;
+  onShowMe: (id: string) => void;
+}) {
+  const phone = useIsPhone();
+  const access = useEffectiveWardAccess();
+  const walk = screen ? HOW_TOS.find((each) => each.id === aroundId(screen.id)) : undefined;
+  if (!walk || !canShowTask(walk, role, home, phone, showMeOn, pathname, access)) return null;
+  const steps = showMeSteps(walk, phone ? "phone" : "desk", role).length;
+  return (
+    <div className={s.act} data-testid="ward-help-show-me-around">
+      <span className={s.actText}>
+        <span className={s.actTitle}>Show me around this screen</span>
+        <span className={s.actSub}>{steps} steps · this screen only</span>
+      </span>
+      <button
+        type="button"
+        className={s.actGo}
+        aria-label="Start showing me around this screen"
+        onClick={() => {
+          recordHowToUsed(walk.id, HOW_TO_IDS);
+          onShowMe(walk.id);
+        }}
+      >
+        Start
+      </button>
+    </div>
+  );
+}
+
+/**
  * HOW DO I…: this screen first, as a card of its own jobs, then the tour, then the desk's jobs by
  * topic. Topic chips narrow the list; grouping only, never ranking. One answer is open at a time;
  * `openTask` opens one on arrival (Show me's Back to Help returns here with its task open).
@@ -366,12 +412,6 @@ export function HelpTasks({
     const isHere = (task: HowTo) => howToHref(task.go, role, home)?.split("#")[0] === pathname;
     return { here: desk.filter(isHere), mine: desk };
   }, [access, home, pathname, role]);
-  // This screen's walk round (`ward-help-screen-tours.ts`), when Show me can play it here.
-  const around = useMemo(() => {
-    const walk = screen ? HOW_TOS.find((each) => each.id === aroundId(screen.id)) : undefined;
-    return walk && canShowTask(walk, role, home, phone, showMeOn, pathname, access) ? walk : undefined;
-  }, [access, home, pathname, phone, role, screen, showMeOn]);
-  const aroundSteps = around ? showMeSteps(around, phone ? "phone" : "desk", role).length : 0;
   // Recently opened (Help overhaul, 9 Nov 2026): this desk's answers last opened on this device,
   // newest first, from the id-only usage record. Shown only once there is something to pick up.
   // The whole device history is filtered to this desk first, so another desk's (or a walk round's)
@@ -415,7 +455,7 @@ export function HelpTasks({
   };
   // From Recently opened: open the answer in the list below and bring it into view. Only Help's own
   // scrolling body moves (scrollIntoView would also shift the sheet itself), and the answer stops
-  // just under the pinned search and tabs.
+  // just under its top edge (search and tabs sit in the header above it).
   const reopen = (id: string) => {
     reveal(id);
     window.requestAnimationFrame(() => {
@@ -425,8 +465,7 @@ export function HelpTasks({
       // Focus follows the answer, so keyboard and screen reader users land on it too.
       row?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
       if (!row || !body) return;
-      const dock = body.querySelector<HTMLElement>("[data-help-dock]")?.offsetHeight ?? 0;
-      const top = row.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - dock - 8;
+      const top = row.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - 8;
       const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       body.scrollTo?.({ top, behavior: still ? "auto" : "smooth" });
     });
@@ -460,25 +499,8 @@ export function HelpTasks({
             </h3>
             <p className={s.herePurpose}>{screen.purpose}</p>
           </div>
-          {here.length || around ? (
+          {here.length ? (
             <div className={s.tiles}>
-              {around ? (
-                <button
-                  type="button"
-                  className={`${s.tile} ${s.aroundTile}`}
-                  onClick={() => showMe(around.id)}
-                  data-testid="ward-help-show-me-around"
-                >
-                  <span className={s.aroundDisc} aria-hidden="true">
-                    <Play aria-hidden="true" strokeWidth={0} />
-                  </span>
-                  <span className={s.aroundText}>
-                    <span className={s.tileTitle}>Show me around this screen</span>
-                    <span className={s.aroundSub}>{aroundSteps} steps · this screen only</span>
-                  </span>
-                  <ArrowRight aria-hidden="true" className={s.aroundGo} strokeWidth={1.75} />
-                </button>
-              ) : null}
               {hereTiles.map((task) => {
                 const can = canShowTask(task, role, home, phone, showMeOn, pathname, access);
                 return (

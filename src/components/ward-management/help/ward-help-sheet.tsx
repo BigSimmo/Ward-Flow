@@ -2,9 +2,9 @@
 
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 
-import { BookOpen, CircleHelp, Flag, Keyboard, Library, Search, Sparkles, UserRound, X } from "lucide-react";
+import { Flag, Keyboard, ListChecks, ListTodo, Search, UserRound, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
 
 import { TabPanel, Tabs, useIsPhone } from "@/components/wf";
@@ -27,9 +27,10 @@ import { helpSuggestionId, GhostCompletion, HelpSuggestList } from "./ward-help-
 import { typeAheadHelp, type HelpSuggestion } from "./ward-help-suggest";
 import { useHelpUsed } from "./ward-help-usage";
 import { howToHref } from "./ward-help-href";
-import { canShowTask, HelpTasks } from "./ward-help-jobs";
+import { canShowTask, HelpAroundRow, HelpTasks } from "./ward-help-jobs";
+import { checklistsForDesk } from "./ward-help-checklists";
 import s from "./ward-help-panel.module.css";
-import { HelpQuestions, HelpReference, QUESTIONS_ICON } from "./ward-help-reference-tabs";
+import { HelpQuestions, HelpReference } from "./ward-help-reference-tabs";
 import type { HelpSearchResult } from "./ward-help-search-index";
 import { useTourRole, type WardTourRole } from "./ward-help-store";
 import { tasksForDesk } from "./ward-help-task-list";
@@ -265,46 +266,18 @@ function WardHelpSheetView({
   }, [access, role, screen, used]);
 
   const tab = tabFor(view);
-  const QuestionsIcon = QUESTIONS_ICON;
+  // Plain words on the slate's folder tabs (page tops, Josh, 9 Nov 2026): no icons, the same names on
+  // every size.
   const tabs = [
-    {
-      id: "tasks" as const,
-      label: (
-        <>
-          <BookOpen aria-hidden="true" strokeWidth={1.75} />
-          How to
-        </>
-      ),
-    },
-    {
-      id: "questions" as const,
-      label: (
-        <>
-          <QuestionsIcon aria-hidden="true" strokeWidth={1.75} />
-          {phone ? "Questions" : "Common questions"}
-        </>
-      ),
-    },
-    {
-      id: "reference" as const,
-      label: (
-        <>
-          <Library aria-hidden="true" strokeWidth={1.75} />
-          Reference
-        </>
-      ),
-    },
-    {
-      id: "new" as const,
-      label: (
-        <>
-          <Sparkles aria-hidden="true" strokeWidth={1.75} />
-          What&rsquo;s new
-        </>
-      ),
-      count: unread || undefined,
-    },
+    { id: "tasks" as const, label: "How to" },
+    { id: "questions" as const, label: "Questions" },
+    { id: "reference" as const, label: "Reference" },
+    { id: "new" as const, label: <>What&rsquo;s new</>, count: unread || undefined },
   ];
+  // Quick jumps from the top to the How to tab's own lists, with their counts.
+  const checklistCount = useMemo(() => checklistsForDesk(role).length, [role]);
+  const jobCount = useMemo(() => tasksForDesk(role, access).length, [access, role]);
+  const [jump, setJump] = useState<string>();
 
   const typed = (words: string) => {
     setQuery(words);
@@ -472,6 +445,29 @@ function WardHelpSheetView({
     setChecklist(id);
     onView("checklist");
   };
+  // The top's calm parts (Show me around, the quick jumps and the tabs) step aside while a search,
+  // its suggestions or a view inside Help shows.
+  const calm = !searching && !suggesting && !inView;
+  const jumpTo = (id: string) => {
+    setJump(id);
+    if (tab !== "tasks") onView("tasks");
+  };
+  // Once How to shows, its list is brought to the top of Help's scrolling body (only the body moves;
+  // scrollIntoView would also shift the sheet) and focus lands on its first control.
+  useEffect(() => {
+    if (!jump || tab !== "tasks") return;
+    const frame = window.requestAnimationFrame(() => {
+      setJump(undefined);
+      const head = document.getElementById(jump);
+      const body = head?.closest<HTMLElement>("[data-sheet-body]");
+      head?.closest("section")?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
+      if (!head || !body) return;
+      const top = head.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - 8;
+      const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      body.scrollTo?.({ top, behavior: still ? "auto" : "smooth" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [jump, tab]);
 
   return (
     <Sheet
@@ -481,23 +477,16 @@ function WardHelpSheetView({
       onClose={onClose}
       title="Help"
       initialFocusRef={typeFirst ? field : undefined}
-      headerLeading={
-        <span className={`${barStyles.drawerTile} ${s.headTile}`} aria-hidden="true">
-          <CircleHelp aria-hidden="true" className={barStyles.drawerHeadingIcon} strokeWidth={1.75} />
-        </span>
-      }
-      descriptionContent={
-        <p className={s.context}>
-          <span className={s.deskTag}>
+      // The approved page top (Josh, 9 Nov 2026): a slate band with "Help on <screen>" and the desk,
+      // the search, Show me around and quick jumps, then folder tabs rising into the body.
+      titleAccessory={
+        <>
+          {screen ? <span className={s.titleOn}>on {screen.title}</span> : null}
+          <span className={s.rolePill}>
             <UserRound aria-hidden="true" strokeWidth={1.75} />
             {deskLabel(role)}
           </span>
-          {screen ? (
-            <span>
-              You are on <b>{screen.title}</b>
-            </span>
-          ) : null}
-        </p>
+        </>
       }
       // A right panel on a computer; on a phone (through 46.4375rem) a near-full bottom sheet whose header
       // controls stay below the top safe area (Josh, 2 Nov 2026).
@@ -507,10 +496,122 @@ function WardHelpSheetView({
       mobileHeaderSafeArea="padding"
       desktopBackdropClassName={barStyles.drawerBackdrop}
       contentClassName={`${barStyles.drawerSheet} ${barStyles.drawerSheetWide} ${s.sheet}`}
-      headerClassName={barStyles.drawerHeader}
-      titleClassName={barStyles.drawerTitle}
-      closeButtonClassName={barStyles.drawerClose}
-      bodyClassName={barStyles.drawerBody}
+      headerClassName={s.head}
+      titleClassName={s.title}
+      closeButtonClassName={s.close}
+      headerBottom={
+        <div className={s.dock} data-help-dock="">
+          <div className={s.field}>
+            <Search aria-hidden="true" strokeWidth={1.75} />
+            <input
+              ref={field}
+              type="search"
+              value={query}
+              onChange={(event) => fieldWords(event.target.value)}
+              onKeyDown={onFieldKey}
+              onFocus={() => {
+                if (quietFocus.current) {
+                  quietFocus.current = false;
+                  return;
+                }
+                setFocused(true);
+              }}
+              onPointerDown={() => setFocused(true)}
+              onBlur={(event) => {
+                if (focusStays(event.relatedTarget)) return;
+                // A pointer press on a suggestion can blur first, so close only once focus has settled away.
+                window.setTimeout(() => {
+                  if (!focusStays(document.activeElement)) setFocused(false);
+                }, 150);
+              }}
+              placeholder="Ask a question or search Help"
+              aria-label="Search Help"
+              // A combobox (2 Nov 2026): the suggestions list while it shows, else the answers below.
+              role="combobox"
+              aria-autocomplete="both"
+              aria-expanded={showList}
+              aria-controls={showList ? `${SUGGEST_ID}-list` : searching ? "ward-help-found" : undefined}
+              aria-activedescendant={
+                activeSuggestion >= 0 && suggestions[activeSuggestion]
+                  ? helpSuggestionId(SUGGEST_ID, activeSuggestion)
+                  : searching && rows.length
+                    ? `ward-help-found-${active}`
+                    : undefined
+              }
+              autoComplete="off"
+              spellCheck={false}
+              data-testid="ward-help-search"
+            />
+            <GhostCompletion typed={query} completion={completion} className={s.ghost} />
+            <span className={s.fieldEnd}>
+              {query ? (
+                <button
+                  type="button"
+                  className={s.clear}
+                  aria-label="Clear search"
+                  onClick={() => {
+                    setQuery("");
+                    field.current?.focus();
+                  }}
+                >
+                  <X aria-hidden="true" strokeWidth={1.75} />
+                </button>
+              ) : phone || pointer.touchOnly ? null : (
+                <kbd className={s.slash} aria-hidden="true">
+                  /
+                </kbd>
+              )}
+            </span>
+          </div>
+          {calm ? (
+            <>
+              <HelpAroundRow
+                role={role}
+                home={deskHref}
+                pathname={pathname}
+                screen={screen}
+                showMeOn={showMeOn}
+                onShowMe={onShowMe}
+              />
+              <div className={s.quick} role="group" aria-label="Go to">
+                {checklistCount > 0 ? (
+                  <button
+                    type="button"
+                    className={s.quickChip}
+                    onClick={() => jumpTo("ward-help-checklists")}
+                    data-testid="ward-help-jump-checklists"
+                  >
+                    <ListChecks aria-hidden="true" strokeWidth={1.75} />
+                    Checklists <span className={s.quickN}>{checklistCount}</span>
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className={s.quickChip}
+                  onClick={() => jumpTo("ward-help-jobs")}
+                  data-testid="ward-help-jump-jobs"
+                >
+                  <ListTodo aria-hidden="true" strokeWidth={1.75} />
+                  Your jobs <span className={s.quickN}>{jobCount}</span>
+                </button>
+              </div>
+            </>
+          ) : null}
+          <div className={s.tabsWrap}>
+            {calm ? (
+              <Tabs
+                items={tabs}
+                value={tab}
+                onChange={onView}
+                label="Help sections"
+                idPrefix="ward-help"
+                className={s.tabs}
+              />
+            ) : null}
+          </div>
+        </div>
+      }
+      bodyClassName={`${barStyles.drawerBody} ${s.body}`}
       footer={
         <div className={s.foot}>
           <button
@@ -562,81 +663,6 @@ function WardHelpSheetView({
       }
       footerClassName={barStyles.drawerFooter}
     >
-      <div className={s.dock} data-help-dock="">
-        <div className={s.field}>
-          <Search aria-hidden="true" strokeWidth={1.75} />
-          <input
-            ref={field}
-            type="search"
-            value={query}
-            onChange={(event) => fieldWords(event.target.value)}
-            onKeyDown={onFieldKey}
-            onFocus={() => {
-              if (quietFocus.current) {
-                quietFocus.current = false;
-                return;
-              }
-              setFocused(true);
-            }}
-            onPointerDown={() => setFocused(true)}
-            onBlur={(event) => {
-              if (focusStays(event.relatedTarget)) return;
-              // A pointer press on a suggestion can blur first, so close only once focus has settled away.
-              window.setTimeout(() => {
-                if (!focusStays(document.activeElement)) setFocused(false);
-              }, 150);
-            }}
-            placeholder="Ask a question or search Help"
-            aria-label="Search Help"
-            // A combobox (2 Nov 2026): the suggestions list while it shows, else the answers below.
-            role="combobox"
-            aria-autocomplete="both"
-            aria-expanded={showList}
-            aria-controls={showList ? `${SUGGEST_ID}-list` : searching ? "ward-help-found" : undefined}
-            aria-activedescendant={
-              activeSuggestion >= 0 && suggestions[activeSuggestion]
-                ? helpSuggestionId(SUGGEST_ID, activeSuggestion)
-                : searching && rows.length
-                  ? `ward-help-found-${active}`
-                  : undefined
-            }
-            autoComplete="off"
-            spellCheck={false}
-            data-testid="ward-help-search"
-          />
-          <GhostCompletion typed={query} completion={completion} className={s.ghost} />
-          <span className={s.fieldEnd}>
-            {query ? (
-              <button
-                type="button"
-                className={s.clear}
-                aria-label="Clear search"
-                onClick={() => {
-                  setQuery("");
-                  field.current?.focus();
-                }}
-              >
-                <X aria-hidden="true" strokeWidth={1.75} />
-              </button>
-            ) : phone || pointer.touchOnly ? null : (
-              <kbd className={s.slash} aria-hidden="true">
-                /
-              </kbd>
-            )}
-          </span>
-        </div>
-        {searching || suggesting || inView ? null : (
-          <Tabs
-            items={tabs}
-            value={tab}
-            onChange={onView}
-            label="Help sections"
-            idPrefix="ward-help"
-            className={s.tabs}
-          />
-        )}
-      </div>
-
       {/* While suggestions show for an unfinished word, a "No match" line below them would only
           contradict them, so it waits until the words match nothing on their own. */}
       {showList ? (

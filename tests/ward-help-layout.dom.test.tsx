@@ -110,7 +110,7 @@ describe("search-first Help layout", () => {
     fireEvent.click(screen.getByTestId("ward-help-view-tour"));
     expect(onTour).toHaveBeenCalledTimes(1);
     for (const [name, view] of [
-      ["Common questions", "questions"],
+      ["Questions", "questions"],
       ["Reference", "reference"],
       [/What.s new/u, "new"],
     ] as const) {

@@ -74,7 +74,7 @@ async function openRecentActivity() {
   render(<WardBar />);
   await user.click(screen.getByTestId("ward-bar-activity-trigger"));
   const sheet = await screen.findByTestId("ward-bar-activity-sheet");
-  await user.click(within(sheet).getByRole("tab", { name: /Recent activity/u }));
+  await user.click(within(sheet).getByRole("tab", { name: /^Recent/u }));
   return { user, sheet };
 }
 
@@ -137,7 +137,7 @@ describe("Activity category filter chips", () => {
     const { user, sheet } = await openRecentActivity();
     await user.click(chip(sheet, "Escalations"));
     await user.click(within(sheet).getByRole("tab", { name: /Notices/u }));
-    await user.click(within(sheet).getByRole("tab", { name: /Recent activity/u }));
+    await user.click(within(sheet).getByRole("tab", { name: /^Recent/u }));
     expect(chip(sheet, "Escalations")).toHaveAttribute("aria-pressed", "true");
     expect(feedRows(sheet)).toHaveLength(2);
   });

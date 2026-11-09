@@ -268,7 +268,7 @@ describe("How do I… in the Help sheet", () => {
     // What's new may carry this device's unread count after its name.
     expect(tabs.map((tab) => tab.textContent?.replace(/\d+$/u, ""))).toEqual([
       "How to",
-      "Common questions",
+      "Questions",
       "Reference",
       "What\u2019s new",
     ]);
@@ -294,11 +294,21 @@ describe("How do I… in the Help sheet", () => {
     expect(onView).toHaveBeenCalledWith("tasks");
   });
 
-  it("names the desk and the screen under the title", () => {
+  it("names the screen beside the title, with the desk, and offers quick jumps", () => {
     sheet();
     const sheetEl = screen.getByTestId("ward-help-sheet");
     expect(sheetEl.textContent).toContain("Bed coordinator");
-    expect(sheetEl.textContent).toMatch(/You are on Handover/);
+    expect(sheetEl.textContent).toMatch(/Helpon Handover/);
+    expect(screen.getByTestId("ward-help-jump-checklists").textContent).toMatch(/Checklists\s*5/);
+    expect(screen.getByTestId("ward-help-jump-jobs").textContent).toMatch(/Your jobs\s*\d+/);
+  });
+
+  it("puts the jumps, Show me around and the tabs aside while searching", () => {
+    sheet({ showMeOn: true });
+    fireEvent.change(screen.getByTestId("ward-help-search"), { target: { value: "release" } });
+    expect(screen.queryByTestId("ward-help-jump-jobs")).toBeNull();
+    expect(screen.queryByTestId("ward-help-show-me-around")).toBeNull();
+    expect(screen.queryByRole("tablist")).toBeNull();
   });
 
   it("opens Your desk and Shortcuts from the foot, each as a view inside Help", () => {
