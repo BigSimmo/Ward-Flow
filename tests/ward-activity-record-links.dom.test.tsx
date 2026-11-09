@@ -100,7 +100,7 @@ describe("activity rows link to the record (P170)", () => {
       render(<WardBar />);
       await user.click(screen.getByTestId("ward-bar-activity-trigger"));
       const sheet = await screen.findByTestId("ward-bar-activity-sheet");
-      await user.click(within(sheet).getByRole("tab", { name: /Recent activity/u }));
+      await user.click(within(sheet).getByRole("tab", { name: /^Recent/u }));
       expect(within(sheet).getByRole("link", { name: "A referral was triaged." })).toHaveAttribute(
         "href",
         patientChronologyHref("PT-1"),
