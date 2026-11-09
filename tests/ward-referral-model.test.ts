@@ -675,6 +675,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     SET_STEP_DOWN_CANDIDATE: false,
     // FD-10: the ward's own diagnosis block. Records an assessment, refuses nobody.
     RECORD_WARD_DIAGNOSIS: false,
+    // Feature 14: records that a desk reviewed a weekend discharge. Not a refusal.
+    MARK_WEEKEND_DISCHARGE_REVIEWED: false,
     // Closing-the-loop (package E): records a return request and the home service's answer. Not a refusal.
     RECORD_HOME_SERVICE_RETURN: false,
     // Closing-the-loop (package E): records that a directory entry was checked. Not a refusal.

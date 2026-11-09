@@ -61,6 +61,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   RECORD_OBSERVATION_LEVEL: { category: "patient", plainWording: "Observation level changed" },
   SET_STEP_DOWN_CANDIDATE: { category: "patient", plainWording: "Step-down pathway candidate status updated" },
   RECORD_WARD_DIAGNOSIS: { category: "patient", plainWording: "Ward's tentative diagnosis recorded" },
+  MARK_WEEKEND_DISCHARGE_REVIEWED: { category: "patient", plainWording: "Weekend discharge reviewed" },
   SET_DISCHARGE_BARRIER: { category: "patient", plainWording: "Discharge hold-up recorded" },
   SET_DISCHARGE_CRITERIA: { category: "patient", plainWording: "Discharge criteria updated" },
   RECORD_REPATRIATION: { category: "patient", plainWording: "Repatriation transfer arrangements logged" },

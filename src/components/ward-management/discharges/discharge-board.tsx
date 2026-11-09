@@ -90,6 +90,8 @@ import { useDischargeWorkspaceState } from "./use-discharge-workspace-state";
 // 31 Oct 2026) it is a compact notice ABOVE the list, so it loads with the board: loaded lazily, the
 // server's copy vanished on hydration and came back, and the whole list jumped (layout shift 0.21).
 import { DischargeWeekendPrep } from "./discharge-weekend-prep";
+import { DischargeWeekendReview } from "./discharge-weekend-review-card";
+import { weekendReviewLeads } from "./discharge-weekend-review";
 import { followUpWithinWindowCheck } from "./discharge-follow-up-check";
 import { DischargeAskOverdueWards } from "./discharge-message-ward";
 import { OnBehalfReasonForm } from "../on-behalf-reason-form-lazy";
@@ -478,6 +480,24 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     detailRelease && detailRelease.state !== "discharged" && !canRecordDeparture
       ? releaseActionLabel(detailRelease, canChangeDate)
       : null;
+  // Feature 14 (Josh, 9 Nov 2026): Weekend discharges sits first on Thursday and Friday, before the
+  // weekend, and under the list on other days. It follows the Service and Ward filters, as the list does.
+  const weekendReview =
+    guarded.status === "allowed" && population === "releases" ? (
+      <DischargeWeekendReview
+        records={records.filter(
+          (record) =>
+            s.scopedUnits.some((unit) => unit.id === record.unitId) && (ward === "all" || record.unitId === ward),
+        )}
+        releases={s.bedReleases}
+        units={units}
+        now={now}
+        dayZero={dayZero}
+        actorFor={s.recordActorFor}
+        dispatch={dispatch}
+      />
+    ) : null;
+  const weekendReviewFirst = weekendReviewLeads(now, dayZero);
   const drawerPrimary =
     phoneClearBlocker && detailRelease ? (
       <Button
@@ -800,6 +820,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
         ) : null}
         {/* Josh, 30 Oct: the weekend and holiday cut-offs are a compact notice above the list, not a
             panel under about 60 rows. */}
+        {weekendReviewFirst ? weekendReview : null}
         {guarded.status === "allowed" && population === "releases" ? (
           <DischargeWeekendPrep
             // DC3 (Josh, 3 Nov 2026): the card follows the Service and Ward filters, as the list does.
@@ -1430,6 +1451,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             />
           </div>
         ) : null}
+        {weekendReviewFirst ? null : weekendReview}
         <WardPrototypeFooter
           testId="ward-discharge-governance"
           note="This board shows only what a ward has recorded — a release expected, confirmed or discharged, and whether it is currently blocked — and it never adds an expected or unreleased bed into the Ready figure · Not approved for clinical use"

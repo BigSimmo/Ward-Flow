@@ -116,6 +116,7 @@ import type { RestrictivePracticeWardFlowEvent } from "@/components/ward-managem
 import type { LoopCheckWardFlowEvent } from "@/components/ward-management/loop-checks/ward-loop-checks";
 import type { ArrivalCheckEvent, ReleaseNoticeEvent } from "./ward-flow-release-notice-events";
 import type { RecordWardDiagnosisEvent } from "@/components/ward-management/ward-flow-diagnosis-events";
+import type { MarkWeekendDischargeReviewedEvent } from "@/components/ward-management/ward-flow-weekend-review-events";
 // The role table lives in its own file (line cap, 18 Oct 2026), re-exported here.
 export { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 
@@ -2552,6 +2553,8 @@ export type WardFlowEvent =
   | import("./discharges/discharge-dependency-events").DischargeDependencyEvent
   | ObservationLevelEvent
   | RecordWardDiagnosisEvent
+  // Feature 14 (Josh, 9 Nov 2026): the weekend discharge review tick.
+  | MarkWeekendDischargeReviewedEvent
   | import("./ward-flow-referral-ask-events").ReferralAskEvent
   // Closing-the-loop (package E): return requested vs home service agreed.
   | import("./out-of-area/home-service-return").HomeServiceReturnEvent

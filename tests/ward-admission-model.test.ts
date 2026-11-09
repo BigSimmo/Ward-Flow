@@ -81,6 +81,7 @@ function anAdmission(overrides: Partial<Admission> = {}): Admission {
     blockReason: null,
     stayBlockClearances: [],
     stayBlockRecords: [],
+    weekendDischargeReviews: [],
     leavingDestination: null,
     leftAt: null,
     followUp: null,
@@ -615,6 +616,8 @@ describe("Admission privacy — structural", () => {
     "stayBlockClearances",
     // WF-23 (5 Nov 2026): recorded hold-ups. A time, a role and a fixed-list value, no free text.
     "stayBlockRecords",
+    // Feature 14 (9 Nov 2026): weekend discharge review ticks. Two times and a role, no free text.
+    "weekendDischargeReviews",
     "leavingDestination",
     "leftAt",
     "followUp",
@@ -670,6 +673,7 @@ describe("Admission privacy — structural", () => {
       blockReason: "Awaiting transport",
       stayBlockClearances: [],
       stayBlockRecords: [],
+      weekendDischargeReviews: [],
       leavingDestination: "discharged-to-the-community",
       leftAt: DAY_ZERO + 30 * MINUTES_PER_DAY,
       // Populated for the same reason the ED timestamp above is: a null here would make the new

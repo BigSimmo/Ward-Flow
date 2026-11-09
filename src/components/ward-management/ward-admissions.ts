@@ -694,6 +694,16 @@ export type Admission = {
     readonly by: WardFlowRole;
     readonly blocker: BedReleaseBlocker;
   }>;
+  /**
+   * Feature 14 (Josh, 9 Nov 2026): the weekend discharge review ticks, append-only. Each keys to the
+   * weekend it was for (`weekendStart`, that weekend's first midnight), so a new week starts unticked.
+   * Records that a desk looked; never that the person may or should leave. Absent until the first.
+   */
+  weekendDischargeReviews?: ReadonlyArray<{
+    readonly weekendStart: Instant;
+    readonly at: Instant;
+    readonly by: WardFlowRole;
+  }>;
   /** Where this person went, once they have gone. `null` until then. */
   leavingDestination: LeavingDestination | null;
   /** When they went. `null` until then. */
@@ -775,6 +785,7 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   blockReason: true,
   stayBlockClearances: true,
   stayBlockRecords: true,
+  weekendDischargeReviews: true,
   leavingDestination: true,
   leftAt: true,
   followUp: true,

@@ -592,6 +592,18 @@ const admission = z.looseObject({
   dischargeConfirmedBy: nullableText,
   blockReason: z.nullable(z.enum(BED_RELEASE_BLOCKERS)),
   stayBlockRecords: z.optional(z.custom(isStayBlockRecords)), // absent in older saves.
+  // Feature 14 (9 Nov 2026): weekend discharge review ticks; absent in older saves.
+  weekendDischargeReviews: z.optional(
+    z.readonly(
+      z.array(
+        z.strictObject({
+          weekendStart: finite,
+          at: finite,
+          by: z.enum(Object.keys(WARD_FLOW_ROLE_LABELS) as [string, ...string[]]),
+        }),
+      ),
+    ),
+  ),
   leavingDestination: z.nullable(z.custom(isLeavingDestination)),
   // A stored barrier is a list value or absent; free text here would be typed text restored from
   // storage (review finding A2-2).

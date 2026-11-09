@@ -46,6 +46,7 @@ export type DischargeRecord = Readonly<
     | "followUp"
     | "careJourney"
     | "dischargeCriteria"
+    | "weekendDischargeReviews"
   >
 >;
 
@@ -215,6 +216,7 @@ function project(state: WardFlowState, admission: Admission, actor: WardRecordAc
     leavingDestination: admission.leavingDestination,
     followUp: admission.followUp,
     careJourney: admission.careJourney,
+    weekendDischargeReviews: admission.weekendDischargeReviews,
     // Fixed-list criteria, typed patient specific criteria (D-65) and times. A community reader gets
     // placeholders for the typed ones (criteriaFor).
     dischargeCriteria: criteriaFor(actor, admission.dischargeCriteria),

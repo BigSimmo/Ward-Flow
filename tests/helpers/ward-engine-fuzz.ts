@@ -1213,6 +1213,18 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     1,
     (state, random) => {
       const stay = stayFor(state, random, occupied);
+      return {
+        type: "MARK_WEEKEND_DISCHARGE_REVIEWED",
+        admissionId: id(stay),
+        actingUnitId: stay?.unitId ?? MISSING_ID,
+        weekendStart: Math.floor(random() * 3) * 1440,
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const stay = stayFor(state, random, occupied);
       const roll = random();
       return {
         type: "SET_DISCHARGE_BARRIER",

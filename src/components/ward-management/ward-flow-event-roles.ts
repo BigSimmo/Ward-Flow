@@ -535,6 +535,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
   // FD-10: the ward's own assessment. The coordinator may act for a ward (Josh, 10 Oct 2026).
   RECORD_WARD_DIAGNOSIS: ["ward", "coordinator"],
+  // Feature 14 (Josh, 9 Nov 2026): the ward or coordinator ticks a weekend discharge as reviewed.
+  MARK_WEEKEND_DISCHARGE_REVIEWED: ["ward", "coordinator"],
   SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
   SET_DISCHARGE_CRITERIA: ["ward", "coordinator"],
   RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],

@@ -60,7 +60,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // Tier 1 item 6 (4 Nov 2026) adds UNDO_BED_STEP, UNDO_RELEASE_STEP and UNDO_PATIENT_RECORD.
       // Triage and risk (7 Nov 2026) adds RECORD_TRIAGE_SIGNED.
       // Feature 11 (Josh, 9 Nov 2026) adds EXTEND_PULL.
-      expect(allEventTypes.length).toBe(180);
+      // Feature 14 (9 Nov 2026) adds MARK_WEEKEND_DISCHARGE_REVIEWED.
+      expect(allEventTypes.length).toBe(181);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

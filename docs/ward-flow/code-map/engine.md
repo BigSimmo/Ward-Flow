@@ -77,6 +77,7 @@ fails when a `ward-flow-*-events.ts` file is missing from this list.
 | `ward-flow-transport-events.ts`            | `reduceTransportEvent`                                | booking, accepting, en route, collected, arrived, handover ready, arrival details, lateness, stop and cancel                            |
 | `ward-flow-undo-events.ts`                 | `reduceUndoEvent`                                     | the `UNDO_*` events other than `UNDO_AUDIT_REVIEW`                                                                                      |
 | `ward-flow-ward-closure-events.ts`         | `reduceWardClosureEvent`                              | `CLOSE_WARD_TO_ADMISSIONS`, `REOPEN_WARD_TO_ADMISSIONS`                                                                                 |
+| `ward-flow-weekend-review-events.ts`       | `reduceWeekendDischargeReview`                        | `MARK_WEEKEND_DISCHARGE_REVIEWED` (the weekend discharge review tick)                                                                   |
 
 `ward-flow-events.ts` itself declares the union and holds no reducer.
 

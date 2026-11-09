@@ -2337,6 +2337,8 @@ export function reduceClinicalEvent(
     }
     case "RECORD_WARD_DIAGNOSIS":
       return reducerSlices().reduceWardDiagnosis(state, event, reject);
+    case "MARK_WEEKEND_DISCHARGE_REVIEWED":
+      return reducerSlices().reduceWeekendDischargeReview(state, event, reject);
     // Closing-the-loop (package E).
     case "RECORD_HOME_SERVICE_RETURN":
       return reduceHomeServiceReturn(state, event, reject);

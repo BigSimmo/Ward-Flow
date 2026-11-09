@@ -600,6 +600,15 @@ function candidatesForMovements(
         actingUnitId: admission.unitId,
         block: "F20–F29",
       }));
+    case "MARK_WEEKEND_DISCHARGE_REVIEWED":
+      return state.admissions.map((admission) => ({
+        type,
+        role,
+        now,
+        admissionId: admission.id,
+        actingUnitId: admission.unitId,
+        weekendStart: now,
+      }));
     case "SET_DISCHARGE_BARRIER":
       return state.admissions.map((admission) => ({
         type,

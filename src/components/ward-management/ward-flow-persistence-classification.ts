@@ -313,6 +313,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // FD-10: an admission id and one block from TENTATIVE_DIAGNOSIS_BLOCKS, membership-checked by
   // the reducer. No typed text.
   "RECORD_WARD_DIAGNOSIS",
+  // Feature 14: an admission id, a unit id and instants. No typed text.
+  "MARK_WEEKEND_DISCHARGE_REVIEWED",
   // Closing-the-loop (package E): an admission id, a site code, closed lists and instants. No typed text.
   "RECORD_HOME_SERVICE_RETURN",
   // Closing-the-loop (package E): a directory entry id only. No typed text.

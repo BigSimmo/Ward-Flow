@@ -22,6 +22,7 @@ import { reduceArrivalCheckEvent, reduceReleaseNoticeEvent } from "./ward-flow-r
 import { reduceRestrictivePracticeEvent } from "./ward-flow-restrictive-practice-events";
 import { reduceTransportEvent } from "./ward-flow-transport-events";
 import { reduceUndoEvent } from "./ward-flow-undo-events";
+import { reduceWeekendDischargeReview } from "./ward-flow-weekend-review-events";
 import { reduceWardClosureEvent } from "./ward-flow-ward-closure-events";
 import { reducePatientArchive } from "./ward-patient-archive-reducer";
 import { reducePatientRegistration } from "./ward-patient-registration-reducer";
@@ -57,6 +58,7 @@ const slices = {
   reduceUndoEvent,
   reduceWardClosureEvent,
   reduceWardDiagnosis,
+  reduceWeekendDischargeReview,
 };
 
 export type WardFlowReducerSlices = typeof slices;
