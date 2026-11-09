@@ -13,16 +13,17 @@ import {
   EmptyState,
   Hero,
   HeroStat,
+  PillTabs,
   StatusGlyph,
   type WfTone,
 } from "@/components/wf";
-import { PillTabs } from "@/components/wf/choice";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { activeTaskItems } from "@/components/ward-management/ward-act-now-items";
 import type { AuditEvent, AuditReview } from "@/components/ward-management/ward-audit";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { allDeclines } from "@/components/ward-management/ward-derivations";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { DECLINE_REASON_NOT_SHARED, type Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf, useUmrnText } from "@/components/ward-management/ward-patient-name";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
@@ -90,7 +91,6 @@ export function TodaysReviewScreen() {
     readAuditReviews,
     readGovernanceAuditEvents,
     readAuditEvents,
-    dispatch,
   } = useWardFlowSelect(
     "movements",
     "units",
@@ -107,12 +107,12 @@ export function TodaysReviewScreen() {
     "readAuditReviews",
     "readGovernanceAuditEvents",
     "readAuditEvents",
-    "dispatch",
   );
   const now = useWardFlowClock();
   const patientOf = usePatientOf();
   const umrnText = useUmrnText();
   const gate = useRoleGate();
+  const raise = useWardRaise("coordinator");
   const [filter, setFilter] = useState<ReviewFilter>("all");
   const [openGroups, setOpenGroups] = useState<ReadonlySet<string>>(new Set());
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
@@ -184,10 +184,7 @@ export function TodaysReviewScreen() {
         return next;
       });
     try {
-      const outcome = dispatch({
-        type: "REVIEW_AUDIT_EVENT",
-        role: "coordinator",
-        now,
+      const outcome = raise("REVIEW_AUDIT_EVENT", {
         eventId: event.id,
         expectedGeneration: event.generation,
         expectedReviewCount: count,
