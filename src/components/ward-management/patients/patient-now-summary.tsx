@@ -510,9 +510,10 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
           )
         }
         steps={
-          // Note 5 (Josh, 9 Nov 2026): on a phone, a strip with no step reached (nothing open) is
-          // three empty dots; it leaves the band to keep it short. Desktop keeps it.
-          isPhone && !careSteps.some((step) => step.state !== "next") ? undefined : (
+          // Note 5 (Josh, 9 Nov 2026): a strip with no step reached (nothing open) is empty dots, and
+          // a one-step strip ("Community") only repeats the card below, so either leaves the band to
+          // keep it short. A live placement always keeps it for its steps toggle.
+          !isLiveBedflow && (careSteps.length < 2 || !careSteps.some((step) => step.state !== "next")) ? undefined : (
             <>
               <PatientCareJourneyStrip
                 steps={careSteps}
