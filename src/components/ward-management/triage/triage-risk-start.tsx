@@ -114,11 +114,7 @@ function PersonRow({ person, onChoose }: { person: TriagePerson; onChoose: () =>
           </span>
           <span className={styles.personLine}>{legalLine(person)}</span>
           <span className={styles.tags}>
-            {person.referral ? (
-              <Badge>
-                Open referral {person.referral.id} · {person.referral.from}
-              </Badge>
-            ) : null}
+            {person.referral ? <Badge>Open referral · {person.referral.from}</Badge> : null}
             {person.last ? <Badge>Previous triage on record</Badge> : null}
           </span>
         </span>
@@ -164,6 +160,7 @@ function QueueRow({
       <div className={styles.rowActions}>
         <Button
           size="sm"
+          variant="ghost"
           icon={FileText}
           onClick={onOpenReferral}
           aria-haspopup="dialog"
@@ -174,7 +171,7 @@ function QueueRow({
         </Button>
         <Button
           size="sm"
-          variant="pri"
+          variant="tint"
           onClick={onChoose}
           aria-label={`Start triage for ${row.name}`}
           data-testid="triage-start-person"
@@ -294,7 +291,6 @@ export function TriageStart({ onChoose }: { onChoose: (person: TriagePerson) => 
             <p className={styles.glance} data-testid="triage-start-glance">
               {triageQueueGlance(awaiting)}
             </p>
-            <p className={styles.heroHint}>Choose who it is for. The form opens blank, with nothing pre-selected.</p>
           </div>
         }
       />

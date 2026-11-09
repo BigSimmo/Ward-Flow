@@ -108,6 +108,12 @@
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
 }
 
+/* A banner figure with nothing chosen yet reads quietly in words, not as a loud mono value. */
+.statEmpty {
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-hero-ink-2);
+}
+
 /* Index beside the form. */
 .layout {
   display: grid;
@@ -281,16 +287,15 @@
   display: grid;
   grid-template-columns: 10rem minmax(0, 1fr);
   gap: var(--wf-s-3);
-  align-items: center;
+  /* Polish (9 Nov 2026): every label lines up with its control's first line, so a choice that wraps
+   * (Mental Health Act, Where they were) no longer floats its label to the middle. */
+  align-items: start;
   min-width: 0;
 }
 
-.row[data-top] {
-  align-items: start;
-}
-
-.row[data-top] > .rowLabel {
-  padding-top: var(--wf-s-2);
+.row > .rowLabel {
+  /* Centres a one-line label on a 32px chip or a 40px choice track alike, within 2px. */
+  padding-top: 10px;
 }
 
 .rowLabel {
@@ -953,6 +958,62 @@
   font-variant-numeric: normal;
 }
 
+/* Polish (9 Nov 2026): the chips are facts, not headings, so their names sit at body size and the
+ * row stays one compact line where it fits. */
+.bannerTags.bannerTags > * {
+  min-height: 28px;
+  padding-block: 3px;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.bannerTags.bannerTags > * > :first-child {
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+/* A phone keeps the four banner actions on one row with their icons (Josh, 9 Nov 2026): smaller
+ * words and a tighter icon gap make the room, and each button grows to its own width so the longest
+ * ("Contacts 1") never clips. The banner chips tighten too, so the band reads as one compact block. */
+@media (max-width: 46.4375rem) {
+  .heroLinks.heroLinks {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 5px;
+    width: 100%;
+  }
+  .heroLinks.heroLinks :is(button, a) {
+    flex: 1 1 auto;
+    gap: 4px;
+    min-width: 0;
+    padding-inline: 6px;
+    font-size: var(--wf-fs-12);
+    white-space: nowrap;
+  }
+  .heroLinks.heroLinks :is(button, a) > span {
+    white-space: nowrap;
+  }
+  .heroLinks.heroLinks :is(button, a) > svg {
+    flex: none;
+    width: 14px;
+    height: 14px;
+  }
+  .bannerTags.bannerTags {
+    gap: 6px;
+  }
+  .bannerTags.bannerTags > * {
+    min-height: 26px;
+    padding-block: 2px;
+    padding-inline: 10px;
+    font-size: var(--wf-fs-12);
+    line-height: var(--wf-lh-12);
+  }
+  .bannerTags.bannerTags > * > :first-child {
+    font-size: var(--wf-fs-12);
+    line-height: var(--wf-lh-12);
+  }
+}
+
 /* Record tabs (Referral, Last triage, Profile): one card, a row per fact with a hairline between,
  * label left and value right; on a phone the label sits over its value. */
 .facts.recordCard {
@@ -1463,7 +1524,7 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 6px;
   }
-  .row[data-top] > .rowLabel,
+  .row > .rowLabel,
   .flagGroupLabel {
     padding-top: 0;
   }
@@ -2165,4 +2226,71 @@ button.signCheckRow:focus-visible {
   min-width: 0;
   color: var(--wf-ink-2);
   overflow-wrap: anywhere;
+}
+
+/* Build safety plan (9 Nov 2026): the button and its one quiet line, above the plan box. */
+.builderLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+}
+
+/* Means safety (9 Nov 2026): one row per means, Asked first, then what was found and who holds it. */
+.means {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.meansRow {
+  display: grid;
+  grid-template-columns: minmax(8rem, 10rem) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  min-width: 0;
+}
+
+.meansRow > .nudgeLine {
+  grid-column: 2;
+}
+
+.meansLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 6px;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.meansAnswers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.meansWho {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
+@media (max-width: 46.4375rem) {
+  .meansRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .meansRow > .nudgeLine {
+    grid-column: auto;
+  }
+
+  .meansLabel {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--wf-s-2);
+    padding-top: 0;
+  }
 }

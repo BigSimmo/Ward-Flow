@@ -25,7 +25,7 @@ function communityFor(patientId: string): Engagement | null {
   return community.find((c) => c.status === "active") ?? community[community.length - 1] ?? null;
 }
 
-function contactsFor(patientId: string): Extras["supports"] {
+export function contactsFor(patientId: string): Extras["supports"] {
   return recordExtrasFor(patientId)?.supports ?? [];
 }
 

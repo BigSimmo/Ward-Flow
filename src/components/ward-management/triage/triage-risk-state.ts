@@ -67,7 +67,15 @@ export type TextKey =
   | "venueOther"
   | "referralOther"
   | "problemOther"
-  | "actionOther";
+  | "actionOther"
+  /** Means safety "Who, where" for each row (9 Nov 2026), React only like every typed box. */
+  | "meansMed"
+  | "meansGun"
+  | "meansLig"
+  | "meansOther"
+  /** Follow-up: why it is not needed, and who will contact. */
+  | "followUpWhy"
+  | "followUpWho";
 
 export type TriageState = {
   /** Who the triage is for, from the record. Not an answer: it sets the banner and what the record offers. */
@@ -129,6 +137,13 @@ export type TriageState = {
   review: string | null;
   copyGiven: string[];
   sources: string[];
+  /**
+   * Means safety (9 Nov 2026), by row id from `MEANS_ROWS`: asked, then what was found. A row not
+   * here reads "Not asked yet"; unmarked never means No. React only; nothing is recorded on signing.
+   */
+  means: Record<string, { asked: boolean; status: string | null }>;
+  /** Follow-up contact after an outcome other than Accepted, from `FOLLOW_UP_CHOICES`. Never preset. */
+  followUp: string | null;
   text: Record<TextKey, string>;
 };
 
@@ -151,6 +166,12 @@ const NO_TEXT: Record<TextKey, string> = {
   referralOther: "",
   problemOther: "",
   actionOther: "",
+  meansMed: "",
+  meansGun: "",
+  meansLig: "",
+  meansOther: "",
+  followUpWhy: "",
+  followUpWho: "",
 };
 
 /**
@@ -204,6 +225,8 @@ export function blankTriage(person: TriagePerson, desk?: WardFlowRole): TriageSt
     review: null,
     copyGiven: [],
     sources: [],
+    means: {},
+    followUp: null,
     // The referrer is a fact from the referral, shown as a line with Change; nothing clinical is chosen.
     text: {
       ...NO_TEXT,

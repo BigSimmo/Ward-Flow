@@ -75,7 +75,7 @@ const STEPS: readonly Step[] = [
     title: "Formulation and plan",
     time: "5 min",
     text: "Who is at risk, of what, how soon, what keeps them safe, and the plan. Set the review, preview, then sign.",
-    tip: "Type .form, .plan or .all for the headings.",
+    tip: "Type .form, .plan or .all for the headings. Build safety plan adds the six steps in the person's words.",
   },
 ];
 

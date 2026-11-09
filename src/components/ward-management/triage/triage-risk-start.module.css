@@ -59,13 +59,6 @@
   padding: var(--wf-s-3) var(--wf-s-4);
 }
 
-.heroHint {
-  margin: 0;
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-  color: var(--wf-hero-ink-2);
-}
-
 /* Source chips on the left, the sort on the right; they wrap on a narrow screen. */
 .tools {
   display: flex;
@@ -87,9 +80,8 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface);
+  /* Flat rows in the card, not a box inside a box (9 Nov 2026 polish). */
+  border-top: 1px solid var(--wf-line);
 }
 
 .row {
@@ -97,7 +89,7 @@
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.6fr) auto;
   align-items: center;
   gap: var(--wf-s-2) var(--wf-s-4);
-  padding: var(--wf-s-3);
+  padding: var(--wf-s-3) 0;
   min-width: 0;
 }
 
@@ -319,17 +311,23 @@
     gap: var(--wf-s-3);
     padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-8);
   }
-  /* A phone stacks each referral: who, the facts, then two full-width buttons. */
+  /* A phone stacks each referral: who, the facts, then Referral and Start triage side by side. */
   .row {
     grid-template-columns: minmax(0, 1fr);
   }
   .rowActions {
-    flex-direction: column;
-    align-items: stretch;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
   }
   .rowActions > * {
-    width: 100%;
-    min-height: var(--wf-touch, 44px);
+    position: relative;
+    min-height: 40px;
+  }
+  /* A 40px button keeps a 48px tap area. */
+  .rowActions > *::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
   }
   .tools {
     flex-direction: column;
