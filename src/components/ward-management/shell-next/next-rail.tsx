@@ -10,7 +10,7 @@ import { useEffect } from "react";
 import { useIsPhone } from "@/components/wf";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { useCanOpenHref, useDeskHomeHref } from "@/components/ward-management/shell/ward-access";
-import { goToPageForShortcut } from "@/components/ward-management/shell/ward-goto-shortcuts";
+import { goToPageForShortcut, resetGoToShortcut } from "@/components/ward-management/shell/ward-goto-shortcuts";
 import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { closeWardDrawer } from "@/components/ward-management/shell/ward-drawer-bus";
 import {
@@ -43,11 +43,15 @@ function PhonePreferences() {
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        resetGoToShortcut();
         closeWardDrawer();
         return;
       }
-      if (isTypingTarget(event.target)) return;
-      if (openDrawerForShortcut(event, canRefer)) return;
+      // Another control used this key, so a G pressed before it no longer starts a go-to.
+      if (isTypingTarget(event.target) || openDrawerForShortcut(event, canRefer)) {
+        resetGoToShortcut();
+        return;
+      }
       goToPageForShortcut(event, canOpen, (href) => navigateWithDirtyGuard(() => router.push(href)), deskHome);
     }
     document.addEventListener("keydown", onKeyDown);

@@ -130,7 +130,7 @@ export function toggleSavedView(view: { title: string; href: string }): boolean 
   let number = 1;
   while (taken.has(number === 1 ? view.title : `${view.title} (${number})`)) number += 1;
   const title = number === 1 ? view.title : `${view.title} (${number})`;
-  const id = `view-${Date.now().toString(36)}`;
+  const id = `view-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   writeSavedViews([{ id, title, href: view.href }, ...current].slice(0, SAVED_VIEW_LIMIT));
   return true;
 }

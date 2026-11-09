@@ -70,7 +70,10 @@ export function useSearchMyViews(open: boolean, trimmed: string, permit: (item: 
     matchGroup,
     savedHere: here ? savedViews.some((view) => view.href === here.href) : null,
     toggleHere: () => {
-      if (here) toggleSavedView(here);
+      // Read the address at the click, so a route change while search is open saves the screen shown.
+      const current =
+        typeof window === "undefined" ? null : savableView(window.location.pathname, window.location.search);
+      if (current) toggleSavedView(current);
     },
   };
 }

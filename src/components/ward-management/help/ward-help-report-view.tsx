@@ -35,13 +35,14 @@ type Picture =
   | { readonly state: "off" | "making" | "failed" }
   | { readonly state: "ready"; readonly blob: Blob; readonly url: string };
 
-type PictureStatus = "" | "copied" | "copy-failed" | "saved";
+type PictureStatus = "" | "copied" | "copy-failed" | "saved" | "save-failed";
 
 const PICTURE_WORDS: Readonly<Record<PictureStatus, string>> = {
   "": "",
   copied: "Picture copied. Paste it into your email.",
   "copy-failed": "Could not copy the picture. Save it instead.",
   saved: "Picture saved. Attach it to your email.",
+  "save-failed": "Could not save the picture. Send the report without it.",
 };
 
 /** "8 Nov 2026" from the What's new date "2026-11-08", for the preview only (the report keeps the id). */
@@ -289,8 +290,12 @@ export function HelpReport({
               <Button
                 icon={Download}
                 onClick={() => {
-                  downloadBlob(picture.blob, PICTURE_FILENAME);
-                  setPictureStatus("saved");
+                  try {
+                    downloadBlob(picture.blob, PICTURE_FILENAME);
+                    setPictureStatus("saved");
+                  } catch {
+                    setPictureStatus("save-failed");
+                  }
                 }}
                 data-testid="ward-help-report-picture-save"
               >

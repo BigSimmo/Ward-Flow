@@ -5,7 +5,7 @@
 import { WardRailFrame } from "@/components/ward-management/shell/ward-chrome-frame";
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
-import { goToPageForShortcut } from "@/components/ward-management/shell/ward-goto-shortcuts";
+import { goToPageForShortcut, resetGoToShortcut } from "@/components/ward-management/shell/ward-goto-shortcuts";
 import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import {
@@ -477,6 +477,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        resetGoToShortcut();
         if (openOverlay !== null) {
           // An open sheet sits above this popover, so Escape closes the sheet only. The popover waits
           // for the next press instead of both closing on one.
@@ -490,8 +491,11 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
         closeWardDrawer();
         return;
       }
-      if (isTypingTarget(event.target)) return;
-      if (openDrawerForShortcut(event, canRefer)) return;
+      // Another control used this key, so a G pressed before it no longer starts a go-to.
+      if (isTypingTarget(event.target) || openDrawerForShortcut(event, canRefer)) {
+        resetGoToShortcut();
+        return;
+      }
       if (goToPageForShortcut(event, canOpen, (href) => navigateWithDirtyGuard(() => router.push(href)), deskHome))
         return;
 

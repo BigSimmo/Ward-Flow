@@ -32,16 +32,22 @@ export const CENSUS_EXPORT_HEADER = [
   "Waited",
 ] as const;
 
+const EXPORT_LEGAL_LABELS: ReadonlyMap<string, string> = new Map(
+  ["Voluntary", "Involuntary", "Detained", "Referred for exam", "Not recorded", "Informal", "Under a form"].map(
+    (label) => [label.toLowerCase(), label],
+  ),
+);
+
 /**
  * A referral's legal status can come from typed intake text, so only short known labels are
  * written out; anything else reads "Recorded (see Ward Flow)" (privacy ruling, Josh 9 Nov 2026).
  */
 export function exportLegal(legal: string): string {
-  return /^(?:Form [A-Z0-9]{1,4}|Voluntary|Involuntary|Detained|Referred for exam|Not recorded|Informal|Under a form)$/iu.test(
-    legal.trim(),
-  )
-    ? legal.trim()
-    : "Recorded (see Ward Flow)";
+  const text = legal.trim().replace(/\s+/gu, " ");
+  // A form code is one digit and one letter (1A, 3B, 6D): never a word, so "Form John" cannot pass.
+  const code = /^form ([0-9][a-z])$/iu.exec(text)?.[1];
+  if (code) return `Form ${code.toUpperCase()}`;
+  return EXPORT_LEGAL_LABELS.get(text.toLowerCase()) ?? "Recorded (see Ward Flow)";
 }
 
 export function censusExportLines(rows: readonly CensusExportRow[], ctx: CensusExportContext): (string | number)[][] {

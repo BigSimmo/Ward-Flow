@@ -36,7 +36,7 @@ export const GO_TO_KEY_WAIT = 1_500;
 
 let pendingSince: number | null = null;
 
-/** Test seam: forget a half-typed G. */
+/** Forget a half-typed G: another control used a key, or a test starts clean. */
 export function resetGoToShortcut(): void {
   pendingSince = null;
 }
