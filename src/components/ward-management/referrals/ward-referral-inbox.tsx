@@ -13,6 +13,7 @@ import { useRouteRole } from "../ward-role-gate";
 import { rolesOnlyReason } from "../ward-role-permissions";
 import { referralInboxName } from "./referral-inbox";
 import { ReferralIntakeSummary } from "./referral-intake-summary";
+import { ReferralAlternativesFacts } from "./referral-alternatives-facts";
 import { WardInformationNeedsPicker, useMarkReferralsOpened } from "./referral-information-needs-lazy";
 import { WardCommitmentControls } from "./referral-commitments-lazy";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
@@ -166,6 +167,7 @@ export function WardReferralInbox({ unitId, embedded = false }: { unitId: string
               : "Patient story not recorded")}
         </p>
         <ReferralIntakeSummary intake={entry.intake} />
+        <ReferralAlternativesFacts list={entry.alternativesConsidered} />
         {/* Finding 80: a refused answer shows on the card that was answered, not atop the inbox. */}
         {lastError && attempt?.id === entry.id ? (
           <p className={styles.flowError} role="alert" data-testid={`ward-referral-inbox-refusal-${entry.id}`}>

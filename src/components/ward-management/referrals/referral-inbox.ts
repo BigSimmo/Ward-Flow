@@ -13,6 +13,8 @@ export type WardReferralInboxEntry = {
   atsCategory?: Referral["atsCategory"];
   history: string;
   intake?: ReferralIntakeDetails;
+  /** Feature 26: what the sender marked before asking for a bed. Fixed-list choices only. */
+  alternativesConsidered?: Referral["alternativesConsidered"];
   state: ReferralAddressing["state"];
   withdrawnAt?: number;
   waitlistedAt?: number;
@@ -65,6 +67,9 @@ export function wardReferralInboxEntries(referrals: readonly Referral[], unitId:
         atsCategory: referral.atsCategory,
         history: referral.history,
         intake: referral.intake,
+        ...(referral.alternativesConsidered === undefined
+          ? {}
+          : { alternativesConsidered: referral.alternativesConsidered }),
         state: arm.state,
         withdrawnAt: arm.withdrawnAt,
         waitlistedAt: arm.waitlistedAt,

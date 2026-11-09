@@ -130,7 +130,11 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-105](#d-105-optional-clerk-details-on-the-patient-record-8-november-2026)                                                                            | Optional clerk details on the patient record                                         | Active                                           |
 | [D-106](#d-106-clinical-values-from-the-9-november-2026-documentation-audit-9-november-2026)                                                            | Clinical values from the 9 Nov audit                                                 | Active                                           |
 | [D-107](#d-107-working-rules-and-documentation-from-the-9-november-2026-audit-9-november-2026)                                                          | Working rules from the 9 Nov audit                                                   | Active                                           |
+| [D-108](#d-108-six-bed-flow-features-keep-d-93-and-d-72-ed-long-wait-next-steps-9-november-2026)                                                        | Six features: keep D-93 and D-72, ED next steps                                      | Active                                           |
 | [D-109](#d-109-homes-bed-alert-line-tests-the-whole-number-shown-9-november-2026)                                                                       | Home bed alert line tests the shown whole %                                          | Active                                           |
+| [D-110](#d-110-ed-and-referral-flow-neutral-fit-line-clearance-timing-and-alternatives-to-admission-9-november-2026)                                    | ED and referral fit line, clearance timing, alternatives                             | Active                                           |
+| [D-112](#d-112-phone-bottom-bar-the-floating-bar-9-november-2026)                                                                                       | Phone bottom bar: the floating bar                                                   | Active                                           |
+| [D-114](#d-114-allow-pull_request_target-for-three-workflows-only-9-november-2026)                                                                      | Allow pull_request_target for three workflows only                                   | Active                                           |
 
 ---
 
@@ -1354,9 +1358,45 @@ is inferred.
 - **Also from the audit:** D-96 was reworded so a bed named for a referral is "pulled", matching D-81 and D-85. D-28 and D-30 to D-35 are marked "Source unverified", awaiting Josh's keep or strike pass. Old entries that later ones replace now say so in place.
 - **Why:** fewer PRs and one decision home mean fewer conflicts and fewer rulings lost between threads.
 
+## D-108. Six bed-flow features: keep D-93 and D-72, ED long-wait next steps (9 November 2026)
+
+- **Date:** 9 November 2026, 8:00 PM AWST (12:00 UTC). **Decided by:** Josh, in the Ward Flow project, answering "Go ahead with all your recommendations" on the six features review.
+- **Decision:**
+  1. **Keep D-93 and D-72.** No countdown to legal deadlines (legal times stay as typed), and no offline copy of the board on the device (downtime stays print or PDF only).
+  2. **ED long-wait next steps.** Each ED wait step shows a suggested next step for a person to take: Step 1, ask wards with a free bed; Step 2, call the site bed manager; Step 3, consider an out-of-area bed and add to the bed meeting; Step 4, tell the executive on call. This is prototype wording, not WA Health escalation policy. It suggests no ward and does not change the queue order (D-71).
+  3. **Build only the gaps.** Home shows tomorrow's expected discharges and planned admissions from recorded dates, labelled "Not a prediction". The bed meeting agenda gains a Run meeting mode that steps through each health service and ends on a printable summary. The weekly report, bed meeting print and TV views, ED step badges, expected discharge dates and downtime pack already existed and are not rebuilt.
+- **Boundary:** synthetic data only; approves no merge, release or provider change.
+
 ## D-109. Home's bed alert line tests the whole number shown (9 November 2026)
 
 - **Date:** 9 November 2026 (`2026-11-09`). **Decided by:** Josh, in the Ward Flow project, choosing "Test the shown whole number" on a decision card.
 - **Decision:** the statewide figure at the top of Home, and every bed alert dot and count, reads "at risk" when the whole percentage it shows is at or above the bed alert line, and "beds in use" below it. So 84.5% to 84.9% shows "85% at risk", never "85% beds in use".
 - **How:** `coordinator-screen.tsx` compares `Math.round(statewideOccupancy)` with the bed alert line, and `isBedAlert` (`ward-service-bed-alerts.ts`) rounds the same way, so the rail, phone menu and executive bed alert dots and counts match. Built in PR #1561.
 - **Boundary:** a prototype display rule on synthetic data; approves no merge or release.
+
+## D-110. ED and referral flow: neutral fit line, clearance timing and alternatives to admission (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`). **Decided by:** Josh, in the Ward Flow project: "Show fit, keep neutral order" on a decision card, then "Yes to all recommendations" for medical clearance and alternatives to admission, then "Yes, one PR".
+- **Decision:**
+  - Smart bed match is a plain fit line on every shortlist ward card (sex, security, age, special care: met, not met, to check). The order stays neutral; there is no ranking or best match, so the never-build rule against best-match suggestions stands.
+  - Medical clearance is still recorded yes or no by a clinician. Ward Flow shows time since arrival or time to clearance, marks it amber after 6 hours with nothing recorded (`edClearanceNotRecorded` in `docs/ward-flow/clinical-values.md`), and adds a median time to clearance in ED Statistics.
+  - Alternatives to admission are an unranked, optional list on ward-bed referrals from ED or community: crisis team home visit, MH Hospital in the Home, step-up/step-down unit, short-stay unit and next-day community follow-up. Each can be marked not suitable, tried or declined by patient. It never blocks Send. Service names are placeholders until checked against local services.
+- **Why:** these cut the work of placing a patient without letting the app rank patients or wards, or make a clinical call.
+- **Boundary:** prototype rules on synthetic data; approves no merge or release.
+
+## D-112. Phone bottom bar: the floating bar (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`). **Decided by:** Josh, in the Ward Flow project. He rejected a light polish of the flat bar ("You are not polishing it at all"), chose option A, "Floating bar", of three built options on a decision card, and asked for it "compact ... and beautifully sized", following what large companies do for floating bars.
+- **Decision:** the phone bottom bar (dock) is a compact frosted capsule floating above the foot: 59 px tall, 14 px from each side and 10 px (or the home indicator) above the foot, with a hairline edge, a faint top highlight and a tight plus a wide low-opacity shadow (iOS and Material 3 style); the page fades into the canvas behind it. The page you are on is a soft accent pill holding its icon and label; the + is a 44 px round navy button in the middle. Badges sit on the icon corner and mean work waiting only, so Capacity's free-bed figure is not a badge (screen readers still hear it). A tab answers a press at once, and tapping the tab for the page you are on scrolls back to the top. A desk with a two-line label ("Coming and going", 31 October ruling) gets a 67 px capsule.
+- **Why:** the flat bar's + was heavy and pressed against its edge, badges hid their icons and mixed good news with work waiting, taps gave no feedback, and a second tap on the current tab did nothing. Josh wanted a significant, premium redesign.
+- **How:** `shell/ward-phone-menu.module.css` (floating bar block), `shell/ward-phone-page-dock.module.css` and `shell-next/next-phone-dock.module.css` (insets and the `--wf-dock-clear` / `--wf-dock-top` values that pinned bars and notices follow), `shell-next/next-phone-menu.tsx` (badge rule, tap again for top). Which tabs each desk has is unchanged. Replaces the 9 November flat-bar dock styling from the sticky header redesign.
+- **Numbering:** recorded as D-112 because D-111 is claimed by the audit-answers entry in PR #1579.
+- **Boundary:** a prototype display change on synthetic data; no clinical logic changes; approves no merge or release.
+
+## D-114. Allow pull_request_target for three workflows only (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`). **Decided by:** Josh, in the Ward Flow project, choosing "Allow just these 3 workflows" on a decision card.
+- **Decision:** from 2 December 2026 GitHub blocks `pull_request_target` in public repositories unless an Actions event policy allows it ([GitHub changelog, 2 Nov 2026](https://github.blog/changelog/2026-11-02-pull_request_target-blocked-by-default-december-2)). Ward Flow keeps the trigger and adds a repository Actions event policy that allows it only for `pr-hold.yml`, `bot-author-policy.yml` and `ward-flow-ci-tidy.yml`. Everything else keeps GitHub's default block.
+- **How:** Josh adds the policy in the repository's Actions settings before the second brownout (16 November 2026, 16:00 to 18:00 UTC). The policy must also allow the other events those three files use (`merge_group`, `schedule`, `workflow_dispatch`). `ward-flow-budget-recheck.yml` is left out while its job stays switched off (`if: false`); turning it back on needs it added. No workflow file changes.
+- **Why:** the hold and bot-author checks must read their rules from `main`, so a pull request cannot edit its own check to pass. All three never check out or run pull-request code, which is the safe use GitHub describes. Switching them to `pull_request` would lose that protection.
+- **Boundary:** a repository setting Josh makes himself; agents do not change it.

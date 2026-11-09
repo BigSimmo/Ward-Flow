@@ -1101,6 +1101,19 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       return { type: "REOPEN_WARD_TO_ADMISSIONS", unitId: id(unit), actingUnitId: id(unit) };
     },
   ],
+  // Ward wait list (9 Nov 2026): ready for next patient, or its cancel, on an open ward.
+  [
+    1,
+    (state, random) => {
+      const unit = prefer(random, state.units, (candidate) => !candidate.isClosed);
+      return {
+        type: "MARK_WARD_READY_FOR_NEXT",
+        unitId: id(unit),
+        actingUnitId: id(unit),
+        ...(unit?.readyForNextAt !== undefined && chance(random, 0.5) ? { cancel: true as const } : {}),
+      };
+    },
+  ],
   // H-0978 / WS-15: one exact bed closed or reopened. Stays fill the lowest beds first (`seatStays`),
   // so a close aims at the top beds of a ward with a Ready bed; a reopen at a bed already closed.
   [
@@ -1782,6 +1795,16 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     })),
   ],
   [1, movementEvent("CLEAR_EXPECT_FLAG", (movement) => movement.expectFlag?.clearedAt === undefined)],
+  // Psychiatry review tracker (9 Nov 2026).
+  [1, movementEvent("REQUEST_PSYCH_REVIEW", (movement) => movement.psychReview === undefined)],
+  [
+    1,
+    movementEvent(
+      "RECORD_PSYCH_REVIEW_SEEN",
+      (movement) => movement.psychReview !== undefined,
+      (_state, random) => ({ grade: pick(random, ["registrar", "consultant"] as const) }),
+    ),
+  ],
   [1, movementEvent("CLEAR_MOVEMENT_URGENT_FLAG", (movement) => Boolean(movement.flaggedUrgent))],
   [1, movementEvent("RECORD_MOVEMENT_BLOCKER", undefined, () => ({ blocker: SYNTHETIC_NOTE }))],
   [1, movementEvent("CLEAR_MOVEMENT_BLOCKER")],
@@ -2182,6 +2205,22 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       return chance(random, 0.5) ? { ...event, type: "RELEASE_INBOX_ITEM_OWNERSHIP" } : event;
     },
   ],
+  // 9 Nov 2026: the sweep visits each builder once, so the release has its own builder too and is
+  // always sent at its sweep step, whatever the draw above gave (refused when nobody holds the row).
+  [
+    0.25,
+    (state, random) => {
+      const event = inboxEvent("TAKE_INBOX_ITEM_OWNERSHIP", (current) =>
+        Object.fromEntries(
+          Object.entries(current.inboxOwnership ?? {}).filter(([, history]) => {
+            const latest = history?.at(-1);
+            return latest !== undefined && latest.kind !== "released";
+          }),
+        ),
+      )(state, random)!;
+      return { ...event, type: "RELEASE_INBOX_ITEM_OWNERSHIP" };
+    },
+  ],
   [
     1,
     (state, random) => ({
@@ -2388,25 +2427,26 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     })),
   ],
   // Staff needed (feature 10, 9 Nov 2026): one builder, so the sweep's list grows by one only. Closes
-  // an open request half the time, else a ward asks for staff.
+  // a request half the time (a missing one when none is open), else a ward asks for staff.
   [
     0.6,
     (state, random) => {
       const open = (state.staffRequests ?? []).filter((record) => record.outcome === undefined);
-      // With no open request it still sends a close, naming a missing one (refused), so a sweep
-      // step always covers the close event whatever the builder list order (re-aimed 9 Nov 2026).
-      if (chance(random, 0.5)) {
-        const request = pick(random, open);
-        const unitId = request?.unitId ?? id(pick(random, state.units));
+      const closing = chance(random, 0.5);
+      // With nothing open it still sends, naming a missing request (refused), so a sweep step
+      // always covers the close however the sweep lands (PR #1563 shifted it).
+      const request = closing
+        ? (pick(random, open) ?? { id: MISSING_ID, unitId: id(pick(random, state.units)) })
+        : undefined;
+      if (request)
         return {
           type: "CLOSE_WARD_STAFF_REQUEST",
-          requestId: request?.id ?? "SR-none",
-          unitId,
-          actingUnitId: unitId,
+          requestId: request.id,
+          unitId: request.unitId,
+          actingUnitId: request.unitId,
           // A ward may only withdraw, so withdrawing is accepted from every desk that may close.
           outcome: chance(random, 0.8) ? "withdrawn" : "arranged",
         };
-      }
       const unit = pick(random, state.units);
       return {
         type: "REQUEST_WARD_STAFF",
