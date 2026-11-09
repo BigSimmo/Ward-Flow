@@ -753,3 +753,73 @@ a.eventText:hover {
   height: 14px;
   color: var(--wf-hero-ink-2);
 }
+
+/* Tomorrow (six features build, 9 Nov 2026): recorded expected discharges and planned admissions. */
+.tomorrow {
+  border-top: 1px solid var(--wf-line);
+}
+.tomorrow > h3.afterShift {
+  margin: 0;
+  border-top: 0;
+}
+.tomorrowSummary {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: 10px var(--wf-s-4);
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-14);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+.tomorrowSummary:hover {
+  background: var(--wf-surface-2);
+}
+.tomorrowSummary:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.tomorrowFigures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px var(--wf-s-4);
+}
+.tomorrowNumber {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.tomorrowNote {
+  color: var(--wf-ink-3);
+}
+.tomorrowToggle {
+  flex: none;
+  color: var(--wf-accent);
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+}
+.tomorrow .plainList {
+  border-top: 1px solid var(--wf-line);
+}
+.tomorrowEmpty,
+.tomorrowSource {
+  margin: 0;
+  padding: 0 var(--wf-s-4) 10px;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+.tomorrowEmpty {
+  padding-top: 10px;
+  font-size: var(--wf-fs-14);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tomorrowSummary {
+    transition: none;
+  }
+}
