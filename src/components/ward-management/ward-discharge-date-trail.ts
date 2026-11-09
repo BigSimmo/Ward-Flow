@@ -71,7 +71,7 @@ export type SlippingDischarge = {
 
 /**
  * Stays not yet gone whose expected date is more than `thresholdDays` after the first one, most
- * slipped first. The threshold is an operational setting (`EDD_SLIP_FLAG_DAYS`).
+ * slipped first. The threshold is a synthetic clinical value (`EDD_SLIP_FLAG_DAYS`).
  */
 export function slippingDischarges(
   stays: readonly {

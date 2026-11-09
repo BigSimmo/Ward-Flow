@@ -91,6 +91,9 @@ describe("clinical values file", () => {
       downtimePackStale: 60,
       preparingBedStale: 61,
       bookingEstimatePassed: 10,
+      // Discharge and capacity features (9 Nov 2026): figures the builds chose, synthetic until signed.
+      pullHoldMaxTotal: 720,
+      transportAcceptDelay: 30,
       lateArrivalGrace: 60,
       silentWardFirstReminder: 120,
       silentWardSecondReminder: 240,
@@ -109,6 +112,7 @@ describe("clinical values file", () => {
       longStayPrompt: 7,
       delayedDischargeEscalation: 72,
       readmissionWindow: 28,
+      eddSlipFlag: 3,
       // Role access plan (Josh, 15 Oct 2026): new synthetic access and privacy values.
       breakGlassWindow: 60,
       breakGlassPerShift: 3,
@@ -302,6 +306,11 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
   { file: "ward-operational-defaults.ts", name: "MORNING_HANDOVER_MINUTES", why: "a clock time" },
   { file: "ward-operational-defaults.ts", name: "BED_MEETING_MINUTES", why: "a clock time" },
   { file: "ward-operational-defaults.ts", name: "READY_AT_AHEAD_LIMIT_MINUTES", why: "input bound on a typed time" },
+  {
+    file: "ward-operational-defaults.ts",
+    name: "WEEKEND_REVIEW_REACH_MINUTES",
+    why: "input bound: how far from now a weekend discharge review tick may name its weekend; flags nothing",
+  },
   {
     file: "ward-operational-defaults.ts",
     name: "DEFAULT_BROADCAST_DURATION_MINUTES",

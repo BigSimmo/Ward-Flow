@@ -290,6 +290,21 @@ export const CLINICAL_VALUES = {
     value: 10,
     unit: "minutes",
   },
+  // Discharge and capacity features (9 Nov 2026): figures the builds chose; nobody has signed them.
+  pullHoldMaxTotal: {
+    status: "synthetic",
+    name: "Longest a bed can stay pulled, extensions included",
+    group: "Alerts and holds",
+    value: 12 * MINUTES_PER_HOUR,
+    unit: "minutes",
+  },
+  transportAcceptDelay: {
+    status: "synthetic",
+    name: "Transport job shown as delayed if not accepted after",
+    group: "Alerts and holds",
+    value: 30,
+    unit: "minutes",
+  },
 
   // ---- Arrivals and answers ------------------------------------------------------------------
   lateArrivalGrace: {
@@ -421,6 +436,14 @@ export const CLINICAL_VALUES = {
     name: "Readmission flag, discharged from a ward within",
     group: "Discharge, leave and absence",
     value: 28,
+    unit: "days",
+  },
+  eddSlipFlag: {
+    // Discharge and capacity features (9 Nov 2026): a figure the build chose; nobody has signed it.
+    status: "synthetic",
+    name: "Discharge date flagged as slipping, later than first set by more than",
+    group: "Discharge, leave and absence",
+    value: 3,
     unit: "days",
   },
   // ---- Access and privacy (role access plan, Josh's go, 15 Oct 2026) ------------------------

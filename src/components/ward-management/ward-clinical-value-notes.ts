@@ -118,6 +118,13 @@ const CLINICAL_VALUE_NOTES = {
   bookingEstimatePassed: {
     source: "Josh, 27 Oct 2026, 10:02 PM AWST, chat approval of 10 minutes (P068); synthetic until signed",
   },
+  pullHoldMaxTotal: {
+    source:
+      "Bed hold extension build (feature 11, 9 Nov 2026); no decision recorded on the figure; synthetic until signed",
+  },
+  transportAcceptDelay: {
+    source: "Transport list build (feature 25, 9 Nov 2026); no decision recorded on the figure; synthetic until signed",
+  },
   lateArrivalGrace: {
     source: "D-22 (26 Sep 2026), labelled default",
   },
@@ -176,6 +183,10 @@ const CLINICAL_VALUE_NOTES = {
   },
   readmissionWindow: {
     source: "D-58 (15 Oct 2026), national mental health KPI for readmission within 28 days (AIHW); a prompt to look",
+  },
+  eddSlipFlag: {
+    source:
+      "Discharge dates slipping build (feature 6, 9 Nov 2026); no decision recorded on the figure; synthetic until signed",
   },
   breakGlassWindow: {
     source: "D-63 (16 Oct 2026), local privacy choice under MP 0015/16 need to know and audit",

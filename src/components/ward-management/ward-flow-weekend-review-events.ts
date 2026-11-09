@@ -1,8 +1,9 @@
-import { MINUTES_PER_DAY, type Instant } from "./ward-clock";
+import type { Instant } from "./ward-clock";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { WardFlowRole } from "./ward-flow-roles";
 import { sameWeekend } from "./discharges/discharge-weekend-review";
+import { WEEKEND_REVIEW_REACH_MINUTES } from "./ward-operational-defaults";
 
 /**
  * Feature 14 (Josh, 9 Nov 2026): a ward or the coordinator ticks a weekend discharge as reviewed.
@@ -18,9 +19,6 @@ export type MarkWeekendDischargeReviewedEvent = {
   admissionId: string;
   weekendStart: Instant;
 };
-
-/** How far from now a weekend may be named: the coming weekend is never more than a week away. */
-const REVIEW_REACH_MINUTES = 7 * MINUTES_PER_DAY;
 
 export function reduceWeekendDischargeReview(
   state: WardFlowState,
@@ -42,8 +40,8 @@ export function reduceWeekendDischargeReview(
   }
   if (
     !Number.isFinite(event.weekendStart) ||
-    event.weekendStart > event.now + REVIEW_REACH_MINUTES ||
-    event.weekendStart < event.now - REVIEW_REACH_MINUTES
+    event.weekendStart > event.now + WEEKEND_REVIEW_REACH_MINUTES ||
+    event.weekendStart < event.now - WEEKEND_REVIEW_REACH_MINUTES
   ) {
     return reject(state, event, "MARK_WEEKEND_DISCHARGE_REVIEWED weekend is not this week's");
   }

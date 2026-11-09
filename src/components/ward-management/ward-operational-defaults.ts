@@ -70,20 +70,20 @@ export const LATE_ARRIVAL_GRACE_MINUTES = CLINICAL_VALUES.lateArrivalGrace.value
 
 /**
  * Transport list (feature 25, Josh 9 Nov 2026): a requested job nobody has accepted after this long
- * is shown as Delayed. An operational setting for the transport desk, not a clinical or legal limit.
+ * is shown as Delayed. It flags work, so its figure is a synthetic clinical value (not a legal limit).
  */
-export const TRANSPORT_ACCEPT_DELAY_MINUTES = 30;
+export const TRANSPORT_ACCEPT_DELAY_MINUTES = CLINICAL_VALUES.transportAcceptDelay.value;
 
 /**
- * Bed hold extension (feature 11, Josh 9 Nov 2026). An operational setting, not a clinical or legal
- * limit. A ward or coordinator can add one of these amounts to a pulled bed's Pull time limit
+ * Bed hold extension (feature 11, Josh 9 Nov 2026). The amounts are operational settings, not clinical or
+ * legal limits. A ward or coordinator can add one of these amounts to a pulled bed's Pull time limit
  * (`EXTEND_PULL`), as long as the whole hold, from the pull to the new limit, stays within
  * `PULL_HOLD_MAX_TOTAL_MINUTES`.
  */
 export const PULL_HOLD_EXTENSION_MINUTES = [60, 120, 240] as const;
 export type PullHoldExtensionMinutes = (typeof PULL_HOLD_EXTENSION_MINUTES)[number];
-/** The longest a pulled bed can be held in all, extensions included: 12 hours. */
-export const PULL_HOLD_MAX_TOTAL_MINUTES = 12 * MINUTES_PER_HOUR;
+/** The longest a pulled bed can be held in all, extensions included: a synthetic clinical value. */
+export const PULL_HOLD_MAX_TOTAL_MINUTES = CLINICAL_VALUES.pullHoldMaxTotal.value;
 
 /** ED pressure on the side rail: amber once the longest wait reaches this. */
 export const ED_ELEVATED_PRESSURE_WAIT_MINUTES = CLINICAL_VALUES.edElevatedPressure.value;
@@ -253,9 +253,15 @@ export const VERY_LONG_WAIT_MINUTES = CLINICAL_VALUES.veryLongWait.value;
 /**
  * Feature 6 (9 Nov 2026): a stay is listed under "Discharge dates slipping" on the Discharges board
  * once its expected discharge date sits more than this many days after the first date the ward set.
- * An operational setting for spotting a drifting plan, not a clinical or legal limit.
+ * It flags a stay and colours its bed, so its figure is a synthetic clinical value (not a legal limit).
  */
-export const EDD_SLIP_FLAG_DAYS = 3;
+export const EDD_SLIP_FLAG_DAYS = CLINICAL_VALUES.eddSlipFlag.value;
+
+/**
+ * Feature 14 (9 Nov 2026): how far from now a weekend discharge review may name its weekend. The
+ * coming weekend is never more than a week away. An input bound on the tick, never a clinical limit.
+ */
+export const WEEKEND_REVIEW_REACH_MINUTES = 7 * 24 * MINUTES_PER_HOUR;
 
 /** This group's entries for the settings list; `OPERATIONAL_DEFAULTS` below includes them. */
 const OPERATIONAL_DEFAULTS_FIX: readonly OperationalDefault[] = [
