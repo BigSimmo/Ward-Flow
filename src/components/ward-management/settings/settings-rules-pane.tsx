@@ -62,6 +62,9 @@ export function SettingsRulesPane({
   onSurge,
   blockReason,
   readOnlyWords,
+  changedOnly: changedOnlyProp,
+  onChangedOnly,
+  statusInHero = false,
 }: {
   draft: WardConfiguration;
   /** The saved rules. */
@@ -77,10 +80,20 @@ export function SettingsRulesPane({
   blockReason: string | undefined;
   /** The read-only line for a desk that cannot change the rules (executive, nurse in charge, a coordinator who is not statewide). */
   readOnlyWords: string | null;
+  /** Show changed only, when the screen holds it (desktop keeps the switch in its sticky bar). */
+  changedOnly?: boolean;
+  onChangedOnly?: (on: boolean) => void;
+  /**
+   * Note 14 (Josh, 8 Nov 2026): on desktop the save rule, the last save and Show changed only sit
+   * in the page's header strip and sticky bar, so the pane leaves them out.
+   */
+  statusInHero?: boolean;
 }) {
   const rules = fullRules(draft);
   const saved = fullRules(configuration);
-  const [changedOnly, setChangedOnly] = useState(false);
+  const [ownChangedOnly, setOwnChangedOnly] = useState(false);
+  const changedOnly = changedOnlyProp ?? ownChangedOnly;
+  const setChangedOnly = onChangedOnly ?? setOwnChangedOnly;
   const awayFromDefault = rulesAwayFromDefault(draft);
   const surge = surgeChanges();
 
@@ -130,58 +143,42 @@ export function SettingsRulesPane({
     };
   };
 
-  const lastAccepted = ruleChanges?.find((change) => change.outcome === "accepted" && change.at !== null);
-
   return (
     <>
+      {/* A desk that cannot change the rules is told why beside them, wherever the status sits. */}
       {readOnlyWords !== null ? (
         <p className={styles.scopeLine}>
           <span className={cx(styles.scopeTag, rx.scopeTagPlain)}>Read only</span>
           <span>{readOnlyWords}</span>
         </p>
-      ) : (
-        // The Help tour's "Save rule changes" step points here while nothing is unsaved: the save bar
-        // itself shows only once a rule changes (Simplify Settings, Josh, 8 Nov 2026).
-        <p className={cx(styles.scopeLine, rx.scopeWords)} data-testid="ward-settings-save-bar">
-          <strong>Changes wait for Save.</strong>
-          <span>Each save is recorded in the audit.</span>
-        </p>
-      )}
-
-      {/* The five-row Recent changes card, as one line: the last save, who made it, what moved. */}
-      <div className={rx.rulesTopLine}>
-        <span className={rx.lastChange} data-testid="ward-settings-recent-changes" data-setting="recent-changes">
-          {ruleChanges === null ? (
-            "Rule-save history is not shown on this desk."
-          ) : lastAccepted?.at != null ? (
-            <>
-              <StatusGlyph tone="success" size={9} />
-              <span>
-                Changed {formatInstantWithDay(lastAccepted.at, now)} by{" "}
-                {lastAccepted.actor.role ? WARD_FLOW_ROLE_LABELS[lastAccepted.actor.role] : "a desk not recorded"}:{" "}
-                {configurationChangeText(lastAccepted.details.before, lastAccepted.details.after)}
-              </span>
-              <Link className={rx.inlineLink} href="/ward-flow/governance">
-                Full audit
-              </Link>
-            </>
-          ) : (
-            "No rule saves this session."
+      ) : null}
+      {statusInHero ? null : (
+        <>
+          {readOnlyWords !== null ? null : (
+            // The Help tour's "Save rule changes" step points here while nothing is unsaved: the save bar
+            // itself shows only once a rule changes (Simplify Settings, Josh, 8 Nov 2026).
+            <p className={cx(styles.scopeLine, rx.scopeWords)} data-testid="ward-settings-save-bar">
+              <strong>Changes wait for Save.</strong>
+              <span>Each save is recorded in the audit.</span>
+            </p>
           )}
-        </span>
-        <span data-setting="changed-only">
-          <Switch
-            checked={changedOnly}
-            onCheckedChange={setChangedOnly}
-            className={rx.changedOnlySwitch}
-            label={
-              awayFromDefault === 0
-                ? "Only rules changed from default (none)"
-                : `Only rules changed from default (${awayFromDefault})`
-            }
-          />
-        </span>
-      </div>
+
+          {/* The five-row Recent changes card, as one line: the last save, who made it, what moved. */}
+          <div className={rx.rulesTopLine}>
+            <span className={rx.lastChange} data-testid="ward-settings-recent-changes" data-setting="recent-changes">
+              <RuleLastSave ruleChanges={ruleChanges} now={now} />
+            </span>
+            <span data-setting="changed-only">
+              <ChangedOnlySwitch
+                checked={changedOnly}
+                onChange={setChangedOnly}
+                awayFromDefault={awayFromDefault}
+                compact
+              />
+            </span>
+          </div>
+        </>
+      )}
 
       {changedOnly && awayFromDefault === 0 ? (
         <p className={rx.calmLine} role="status">
@@ -408,5 +405,70 @@ export function SettingsRulesPane({
         </div>
       </div>
     </>
+  );
+}
+
+/** The last rule save in one line: when, which desk, what moved, and a link to the full audit. */
+export function RuleLastSave({
+  ruleChanges,
+  now,
+}: {
+  ruleChanges: readonly ConfigurationAuditEvent[] | null;
+  now: Instant;
+}) {
+  if (ruleChanges === null) return <>Rule-save history is not shown on this desk.</>;
+  const lastAccepted = ruleChanges.find((change) => change.outcome === "accepted" && change.at !== null);
+  if (lastAccepted?.at == null) return <>No rule saves this session.</>;
+  return (
+    <>
+      <StatusGlyph tone="success" size={9} />
+      <span>
+        Changed {formatInstantWithDay(lastAccepted.at, now)} by{" "}
+        {lastAccepted.actor.role ? WARD_FLOW_ROLE_LABELS[lastAccepted.actor.role] : "a desk not recorded"}:{" "}
+        {configurationChangeText(lastAccepted.details.before, lastAccepted.details.after)}
+      </span>
+      <Link className={rx.inlineLink} href="/ward-flow/governance">
+        Full audit
+      </Link>
+    </>
+  );
+}
+
+/** Show changed only: the rules away from their default, with how many there are. */
+export function ChangedOnlySwitch({
+  checked,
+  onChange,
+  awayFromDefault,
+  className,
+  compact = false,
+}: {
+  checked: boolean;
+  onChange: (on: boolean) => void;
+  awayFromDefault: number;
+  className?: string;
+  /** The sticky section bar's shorter label (Note 14 polish). */
+  compact?: boolean;
+}) {
+  const count = awayFromDefault === 0 ? "none" : String(awayFromDefault);
+  if (compact)
+    return (
+      <Switch
+        checked={checked}
+        onCheckedChange={onChange}
+        className={cx(rx.changedOnlySwitch, className)}
+        label={`Changed from default (${count})`}
+      />
+    );
+  return (
+    <Switch
+      checked={checked}
+      onCheckedChange={onChange}
+      className={cx(rx.changedOnlySwitch, className)}
+      label={
+        awayFromDefault === 0
+          ? "Only rules changed from default (none)"
+          : `Only rules changed from default (${awayFromDefault})`
+      }
+    />
   );
 }
