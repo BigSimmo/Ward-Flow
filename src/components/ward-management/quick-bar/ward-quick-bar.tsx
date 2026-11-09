@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import { useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   BellRing,
+  ChevronRight,
   CalendarClock,
   ChartColumn,
   Clock4,
@@ -19,7 +19,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { useIsPhone } from "@/components/wf";
+import { PhoneSheet, useIsPhone } from "@/components/wf";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { seesNetworkBedFigures } from "@/components/ward-management/ward-role-access";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
@@ -56,36 +56,10 @@ function useUnconfirmedCount(enabled: boolean): number | undefined {
 }
 
 /**
- * On phone the bar sits at the foot of the home's hero band, under its "need a person now" line, not
- * above the title (Josh, 9 Nov 2026). The hero may draw after the bar, so watch until it appears.
- */
-function usePhoneHeroSlot(active: boolean): HTMLElement | null {
-  const isPhone = useIsPhone();
-  const [slot, setSlot] = useState<HTMLElement | null>(null);
-  const watching = active && isPhone;
-  useEffect(() => {
-    if (!watching) return;
-    const find = () => {
-      const hero = document.querySelector<HTMLElement>('[data-wf-hero="band"]');
-      setSlot((current) => (current === hero ? current : hero));
-    };
-    const frame = requestAnimationFrame(find);
-    const observer = new MutationObserver(find);
-    observer.observe(document.body, { childList: true, subtree: true });
-    return () => {
-      cancelAnimationFrame(frame);
-      observer.disconnect();
-    };
-  }, [watching]);
-  if (!watching) return null;
-  return slot && slot.isConnected ? slot : null;
-}
-
-/**
  * One row of the desk's most used controls under the top bar, on the desk's home only (Josh, 8 Nov
  * 2026). Each control opens its tool in the Tools side panel on the same page, never a new page.
  */
-export function WardQuickBar() {
+function useQuickControls() {
   const pathname = usePathname();
   const home = useDeskHomeHref();
   const role = useEffectiveWardAccess().role;
@@ -96,17 +70,22 @@ export function WardQuickBar() {
       (control.kind === "tool" && (!NETWORK_TOOLS.has(control.tool) || seesNetworkBedFigures(role))),
   );
   const unconfirmed = useUnconfirmedCount(role === "coordinator");
-  const onHome = pathname === home && controls.length > 0;
-  const heroSlot = usePhoneHeroSlot(onHome);
-  if (!onHome) return null;
-  const press = (control: QuickControl, button: HTMLElement) => {
-    if (control.kind === "referral") openWardDrawer("referral");
-    else requestToolsTool(control.tool, button);
-  };
-  const bar = (
+  return { controls, unconfirmed, onHome: pathname === home && controls.length > 0 };
+}
+
+function press(control: QuickControl, button: HTMLElement) {
+  if (control.kind === "referral") openWardDrawer("referral");
+  else requestToolsTool(control.tool, button);
+}
+
+export function WardQuickBar() {
+  const { controls, unconfirmed, onHome } = useQuickControls();
+  // On phone the desk's home hero carries the Quick actions button instead (WardQuickHeroSlot).
+  const isPhone = useIsPhone();
+  if (!onHome || isPhone) return null;
+  return (
     <nav
       className={styles.bar}
-      data-in-hero={heroSlot ? "" : undefined}
       aria-label="Quick controls"
       data-testid="ward-quick-bar"
       data-wf-quick-bar=""
@@ -114,7 +93,7 @@ export function WardQuickBar() {
     >
       <ul className={styles.list}>
         {controls.map((control) => {
-          const Icon = control.kind === "referral" ? Plus : (ICONS[control.tool] ?? Zap);
+          const Icon = controlIcon(control);
           const count = control.kind === "tool" && control.tool === "quick-actions" ? unconfirmed : undefined;
           return (
             <li key={control.kind === "tool" ? control.tool : "referral"}>
@@ -140,5 +119,119 @@ export function WardQuickBar() {
       </ul>
     </nav>
   );
-  return heroSlot ? createPortal(bar, heroSlot) : bar;
+}
+
+function controlIcon(control: QuickControl): LucideIcon {
+  return control.kind === "referral" ? Plus : (ICONS[control.tool] ?? Zap);
+}
+
+/**
+ * Phone (Josh, 9 Nov 2026): one "Quick actions" button at the foot of the hero, under the
+ * need-a-person line, instead of a sideways row of chips. It names the first few controls and opens
+ * them all in a bottom sheet; each row then opens its tool on this page, as the chips did.
+ */
+/**
+ * Given to every page's band hero through HeroFootSlotProvider (layout). Draws only on phone, on the
+ * desk's home.
+ */
+export function WardQuickHeroSlot() {
+  const { controls, unconfirmed, onHome } = useQuickControls();
+  const isPhone = useIsPhone();
+  if (!onHome || !isPhone) return null;
+  return <QuickActionsLauncher controls={controls} unconfirmed={unconfirmed} />;
+}
+
+function QuickActionsLauncher({
+  controls,
+  unconfirmed,
+}: {
+  controls: readonly QuickControl[];
+  unconfirmed: number | undefined;
+}) {
+  const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const preview = controls
+    .slice(0, 3)
+    .map((control) => control.label)
+    .join(" · ");
+  const rest = controls.length - 3;
+  return (
+    <nav
+      className={styles.launch}
+      aria-label="Quick controls"
+      data-testid="ward-quick-bar"
+      data-wf-quick-bar=""
+      data-in-hero=""
+      data-print-hide
+    >
+      <button
+        ref={buttonRef}
+        type="button"
+        className={styles.launchButton}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={() => setOpen(true)}
+        data-testid="ward-quick-launch"
+      >
+        <span className={styles.launchIcon} aria-hidden="true">
+          <Zap aria-hidden="true" strokeWidth={1.75} />
+        </span>
+        <span className={styles.launchText}>
+          <b>Quick actions</b>
+          <small>
+            {preview}
+            {rest > 0 ? ` +${rest}` : ""}
+          </small>
+        </span>
+        {unconfirmed ? (
+          <b className={styles.count} aria-label={`, ${unconfirmed} to do`}>
+            {unconfirmed}
+          </b>
+        ) : null}
+        <ChevronRight className={styles.launchChevron} aria-hidden="true" strokeWidth={1.75} />
+      </button>
+      <PhoneSheet
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Quick actions"
+        description="Each opens here, on this page"
+        returnFocusRef={buttonRef}
+      >
+        <ul className={styles.sheetList} data-testid="ward-quick-sheet">
+          {controls.map((control) => {
+            const Icon = controlIcon(control);
+            const count = control.kind === "tool" && control.tool === "quick-actions" ? unconfirmed : undefined;
+            return (
+              <li key={control.kind === "tool" ? control.tool : "referral"}>
+                <button
+                  type="button"
+                  className={styles.sheetRow}
+                  aria-haspopup="dialog"
+                  onClick={() => {
+                    setOpen(false);
+                    const anchor = buttonRef.current;
+                    if (anchor) requestAnimationFrame(() => press(control, anchor));
+                  }}
+                >
+                  <span className={styles.sheetIcon} aria-hidden="true">
+                    <Icon aria-hidden="true" strokeWidth={1.75} />
+                  </span>
+                  <span className={styles.launchText}>
+                    <b>{control.label}</b>
+                    <small>{control.detail}</small>
+                  </span>
+                  {count ? (
+                    <b className={styles.sheetCount} aria-label={`, ${count} to do`}>
+                      {count}
+                    </b>
+                  ) : null}
+                  <ChevronRight className={styles.sheetChevron} aria-hidden="true" strokeWidth={1.75} />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </PhoneSheet>
+    </nav>
+  );
 }

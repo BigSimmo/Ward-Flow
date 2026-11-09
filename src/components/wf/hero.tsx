@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, type LucideIcon } from "lucide-react";
-import { useId, useRef, type ElementType, type ReactNode } from "react";
+import { createContext, useContext, useId, useRef, type ElementType, type ReactNode } from "react";
 import { useWfBandBleed } from "./band";
 import { Button } from "./button";
 import { cx } from "./cx";
@@ -142,6 +142,16 @@ export type HeroProps = {
 };
 
 /**
+ * Something the shell adds at the foot of a page's band hero (Josh, 9 Nov 2026: the phone Quick
+ * actions button sits under the hero's need-a-person line). Rendered in the hero's own tree, so the
+ * server and the browser draw the same thing. A quiet or card hero leaves it out.
+ */
+const HeroFootSlotContext = createContext<ReactNode>(null);
+export function HeroFootSlotProvider({ value, children }: { value: ReactNode; children: ReactNode }) {
+  return <HeroFootSlotContext.Provider value={value}>{children}</HeroFootSlotContext.Provider>;
+}
+
+/**
  * v6 hero band. One per page. Inside it status glyphs use their night values and focus turns
  * white. Use `light` for its one primary button and `onHero` for the rest.
  *
@@ -171,6 +181,7 @@ export function Hero({
   className,
 }: HeroProps) {
   const titleId = useId();
+  const footSlot = useContext(HeroFootSlotContext);
   const sectionRef = useRef<HTMLElement>(null);
   useWfBandBleed(sectionRef, band && !quiet);
   const statsRef = useRef<HTMLDivElement>(null);
@@ -227,6 +238,7 @@ export function Hero({
           {footAside ? <div className={styles.footAside}>{footAside}</div> : null}
         </div>
       ) : null}
+      {band && !quiet ? footSlot : null}
       {condensed ? <HeroCondensedLine heroRef={sectionRef}>{condensed}</HeroCondensedLine> : null}
     </section>
   );
