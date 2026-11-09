@@ -83,6 +83,7 @@ import { CapacityScreen } from "@/components/ward-management/capacity/capacity-s
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
+import { TodaysReviewScreen } from "@/components/ward-management/review/todays-review-screen";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
 import { StatisticsServicesIndexScreen } from "@/components/ward-management/statistics/statistics-services-index";
@@ -1379,6 +1380,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/statistics/teams`, render: () => createElement(StatisticsTeamsIndexScreen) },
   { route: `${ROUTE_PREFIX}/reports/downtime`, render: () => createElement(DowntimePackScreen) },
   { route: `${ROUTE_PREFIX}/reports/chronology`, render: () => createElement(PatientChronologyScreen) },
+  { route: `${ROUTE_PREFIX}/review`, render: () => createElement(TodaysReviewScreen) },
 ];
 
 describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on the map)", () => {
@@ -1482,7 +1484,8 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
     // agenda (`/bed-meeting/agenda`) was added, both 19 Oct 2026. Moved in both files together.
     // 44: the seclusion, restraint and incident view (`/seclusion`, D-72), 21 Oct 2026.
     // 46: the triage and risk form (`/people/[patientId]/triage`) and Start a triage (`/triage/new`), 7 Nov 2026.
-    expect(RENDERABLE_ROUTES.length).toBe(46);
+    // 47: Today's review (`/review`, Home notes 4, 9 Nov 2026).
+    expect(RENDERABLE_ROUTES.length).toBe(47);
   });
 });
 
