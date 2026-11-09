@@ -261,44 +261,44 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                       {m.cohort} · {m.sex}
                     </td>
                     <td>
-                      <span className={handover.listTag}>{outstandingItem(m).label}</span>
                       <span className={handover.listReview}>
-                        <span className={handover.listReviewLine} data-testid={`ward-ed-review-stage-${m.id}`}>
-                          {stage.line}
+                        <span className={handover.listReviewText}>
+                          <span className={handover.listTag}>{outstandingItem(m).label}</span>
+                          <span className={handover.listReviewLine} data-testid={`ward-ed-review-stage-${m.id}`}>
+                            {stage.line}
+                          </span>
                         </span>
-                        {stage.next.includes("ask")
+                        {stage.next[0] === "ask"
                           ? reviewButton(
                               "Ask for review",
                               { type: "REQUEST_PSYCH_REVIEW", role: "ed", now, movementId: m.id },
                               "ward-ed-review-ask",
                             )
-                          : null}
-                        {stage.next.includes("registrar")
-                          ? reviewButton(
-                              "Registrar seen",
-                              {
-                                type: "RECORD_PSYCH_REVIEW_SEEN",
-                                role: "ed",
-                                now,
-                                movementId: m.id,
-                                grade: "registrar",
-                              },
-                              "ward-ed-review-registrar",
-                            )
-                          : null}
-                        {stage.next.includes("consultant")
-                          ? reviewButton(
-                              "Consultant seen",
-                              {
-                                type: "RECORD_PSYCH_REVIEW_SEEN",
-                                role: "ed",
-                                now,
-                                movementId: m.id,
-                                grade: "consultant",
-                              },
-                              "ward-ed-review-consultant",
-                            )
-                          : null}
+                          : stage.next[0] === "registrar"
+                            ? reviewButton(
+                                "Registrar seen",
+                                {
+                                  type: "RECORD_PSYCH_REVIEW_SEEN",
+                                  role: "ed",
+                                  now,
+                                  movementId: m.id,
+                                  grade: "registrar",
+                                },
+                                "ward-ed-review-registrar",
+                              )
+                            : stage.next[0] === "consultant"
+                              ? reviewButton(
+                                  "Consultant seen",
+                                  {
+                                    type: "RECORD_PSYCH_REVIEW_SEEN",
+                                    role: "ed",
+                                    now,
+                                    movementId: m.id,
+                                    grade: "consultant",
+                                  },
+                                  "ward-ed-review-consultant",
+                                )
+                              : null}
                       </span>
                     </td>
                     <td className={handover.alignEnd}>

@@ -36,15 +36,20 @@ export function psychReviewStage(movement: Movement, now: Instant, minutesInDepa
     };
   if (review.registrarSeenAt !== undefined)
     return {
-      line: `Registrar seen · consultant pending · waiting ${splitDuration(waitedMinutes)}`,
+      line: `Registrar seen · consultant pending${waitText(waitedMinutes)}`,
       waitedMinutes,
       from: "request",
       next: ["consultant"],
     };
   return {
-    line: `Registrar review asked ${formatInstantWithDay(review.requestedAt, now)} · waiting ${splitDuration(waitedMinutes)}`,
+    line: `Registrar review asked ${formatInstantWithDay(review.requestedAt, now)}${waitText(waitedMinutes)}`,
     waitedMinutes,
     from: "request",
     next: ["registrar", "consultant"],
   };
+}
+
+/** " · waiting 2h 05m", or nothing in the first minute, so a fresh request never reads "waiting 0m". */
+function waitText(minutes: number): string {
+  return minutes < 1 ? "" : ` · waiting ${splitDuration(minutes)}`;
 }

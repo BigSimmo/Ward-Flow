@@ -55,11 +55,12 @@ export function ReferralAlternativesGroup({ sectionId, a }: { sectionId: string;
                     <span id={labelId} className={styles.label}>
                       {ADMISSION_ALTERNATIVE_LABELS[option]}
                     </span>
-                    <div className={`${drawer.segmented} ${styles.track}`} role="group" aria-labelledby={labelId}>
+                    <div className={styles.chips} role="group" aria-labelledby={labelId}>
                       {ADMISSION_ALTERNATIVE_OUTCOMES.map((outcome) => (
                         <button
                           key={outcome}
                           type="button"
+                          className={styles.chip}
                           aria-pressed={current === outcome}
                           onClick={() => a.setMark(option, current === outcome ? undefined : outcome)}
                         >

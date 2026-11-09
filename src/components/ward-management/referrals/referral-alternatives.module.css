@@ -20,23 +20,71 @@
   list-style: none;
 }
 
+.rows {
+  gap: 0;
+}
+
 .row {
   display: grid;
   min-width: 0;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--wf-s-3);
+  padding-block: 6px;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+/* Three quiet text choices per option; only the chosen one is drawn as a chip. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.chip {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+.chip:hover {
+  background: var(--wf-line);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
+}
+
+.chip[aria-pressed="true"] {
+  border-color: var(--wf-line-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip {
+    transition: none;
+  }
 }
 
 .label {
   min-width: 0;
   color: var(--wf-ink-1);
   font-size: var(--wf-fs-13);
-}
-
-/* Content-width segments, so "Declined by patient" is never cut short. */
-.track {
-  grid-auto-columns: auto;
 }
 
 .summary {
@@ -57,10 +105,6 @@
   .row {
     grid-template-columns: minmax(0, 1fr);
     gap: 4px;
-  }
-
-  .track {
-    grid-auto-columns: minmax(max-content, 1fr);
   }
 }
 

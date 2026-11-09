@@ -532,18 +532,24 @@
 .listQuiet {
   color: var(--wf-ink-3);
 }
-/* Psychiatry review tracker (Josh, 9 Nov 2026): the stage under the next step, then its one-tap steps. */
+/* Psychiatry review tracker (Josh, 9 Nov 2026): the next step and the review stage on the left,
+   one small action on the right, so a row stays one line tall where it fits. */
 .listReview {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 4px var(--wf-s-2);
-  margin-top: 4px;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+.listReviewText {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+  min-width: 0;
 }
 .listReviewLine {
-  flex: 1 1 100%;
   color: var(--wf-ink-2);
-  font: 400 var(--wf-fs-12) / 18px var(--wf-font);
+  font: 400 var(--wf-fs-12) / 16px var(--wf-font);
   font-variant-numeric: tabular-nums;
 }
 .listTime {

@@ -96,20 +96,24 @@ export function StepDownRequestButton({
       Send step-down request
     </Button>
   );
+  const count = row.wards.length;
   return (
     <div className={styles.request} data-testid="step-down-request">
-      {button}
-      {row.wards.length === 0 ? (
+      <div className={styles.head}>
+        <span className={styles.title}>Step-down</span>
+        <span className={styles.summary} data-testid="step-down-request-summary">
+          {count === 0
+            ? "No ward fits with a Ready bed now"
+            : `${count} ${count === 1 ? "ward fits" : "wards fit"} with a Ready bed`}
+        </span>
+      </div>
+      {count === 0 ? (
         <p className={styles.note} data-testid="step-down-request-wards">
-          No ward passes every check with a Ready bed now. You can still choose wards in the request.
+          You can still choose wards in the request.
         </p>
       ) : (
-        <>
-          <p className={styles.note}>
-            {preselected
-              ? "Offered in the request, by name. Untick any you do not want."
-              : `Wards that fit with a Ready bed, by name. Choose up to ${configuration.parallelReferralCap} in the request.`}
-          </p>
+        <details className={styles.disclosure}>
+          <summary>{preselected ? "Wards offered in the request, by name" : "Show wards, by name"}</summary>
           <ul
             className={styles.wards}
             data-testid="step-down-request-wards"
@@ -117,12 +121,17 @@ export function StepDownRequestButton({
           >
             {row.wards.map((ward) => (
               <li key={ward.unit.id}>
-                {ward.unit.name} <span className={styles.figure}>{ward.readyBeds}</span> ready
+                <span className={styles.name}>{ward.unit.name}</span>
+                <span className={styles.figure}>{ward.readyBeds} ready</span>
               </li>
             ))}
           </ul>
-        </>
+          {preselected ? null : (
+            <p className={styles.note}>Choose up to {configuration.parallelReferralCap} in the request.</p>
+          )}
+        </details>
       )}
+      {button}
     </div>
   );
 }

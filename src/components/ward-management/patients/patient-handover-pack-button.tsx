@@ -69,20 +69,30 @@ export function PatientHandoverPackButton({ input }: { input: HandoverPackInput 
             </div>
             <p className={styles.stamp}>{stamp}</p>
           </div>
-          {pack.sections.map((section) => (
-            <section key={section.id} className={styles.section} aria-label={section.heading}>
-              <h4 className={styles.sectionHead}>{section.heading}</h4>
-              <dl className={styles.rows}>
-                {section.rows.map((row, index) => (
-                  <div key={`${row.label}-${index}`} className={styles.row}>
-                    <dt>{row.label}</dt>
-                    <dd className={row.missing ? styles.missing : undefined}>{row.value}</dd>
-                  </div>
-                ))}
-              </dl>
-              {section.note ? <p className={styles.note}>{section.note}</p> : null}
-            </section>
-          ))}
+          <div className={styles.sections}>
+            {pack.sections.map((section) => {
+              // A section with one fact needs no second label saying the heading again.
+              const single = section.rows.length === 1;
+              return (
+                <section
+                  key={section.id}
+                  className={`${styles.section} ${section.rows.length > 3 ? styles.wide : ""}`}
+                  aria-label={section.heading}
+                >
+                  <h4 className={styles.sectionHead}>{section.heading}</h4>
+                  <dl className={styles.rows}>
+                    {section.rows.map((row, index) => (
+                      <div key={`${row.label}-${index}`} className={single ? styles.rowSingle : styles.row}>
+                        <dt className={single ? "sr-only" : undefined}>{row.label}</dt>
+                        <dd className={row.missing ? styles.missing : undefined}>{row.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  {section.note ? <p className={styles.note}>{section.note}</p> : null}
+                </section>
+              );
+            })}
+          </div>
           <p className={styles.note}>Printed or copied by hand only. Not sent by Ward Flow.</p>
         </article>
       </Dialog>
