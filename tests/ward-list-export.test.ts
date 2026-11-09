@@ -224,6 +224,7 @@ describe("census legal column", () => {
     expect(exportLegal("Form 1A")).toBe("Form 1A");
     expect(exportLegal("Voluntary")).toBe("Voluntary");
     expect(exportLegal("form 3b")).toBe("Form 3B");
+    expect(exportLegal("Detained awaiting examination")).toBe("Detained awaiting examination");
     expect(exportLegal("voluntary")).toBe("Voluntary");
     expect(exportLegal("Form John")).toBe("Recorded (see Ward Flow)");
     expect(exportLegal("FORM JOHN")).toBe("Recorded (see Ward Flow)");

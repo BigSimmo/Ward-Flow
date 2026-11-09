@@ -33,9 +33,16 @@ export const CENSUS_EXPORT_HEADER = [
 ] as const;
 
 const EXPORT_LEGAL_LABELS: ReadonlyMap<string, string> = new Map(
-  ["Voluntary", "Involuntary", "Detained", "Referred for exam", "Not recorded", "Informal", "Under a form"].map(
-    (label) => [label.toLowerCase(), label],
-  ),
+  [
+    "Voluntary",
+    "Involuntary",
+    "Detained",
+    "Detained awaiting examination",
+    "Referred for exam",
+    "Not recorded",
+    "Informal",
+    "Under a form",
+  ].map((label) => [label.toLowerCase(), label]),
 );
 
 /**

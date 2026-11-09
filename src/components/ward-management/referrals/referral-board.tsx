@@ -425,7 +425,8 @@ export function ReferralBoard({
       {
         sinceReferralOf: (referral) => referralWaitLine(referral, now),
         umrnOf: (referral) => resolveSubjectPatient(referral, resolverState).umrn,
-        tierOf: (referral) => urgencyTierLabel(referral.urgency),
+        // An ASCII separator, so a spreadsheet opened without UTF-8 shows the label cleanly.
+        tierOf: (referral) => urgencyTierLabel(referral.urgency).replace(" · ", " - "),
         priorityOf: (referral) => referralPriorityLabel(getReferralPriority(referral, now)),
         fromOf: (referral) =>
           siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode ?? ORIGIN_NOT_RECORDED,

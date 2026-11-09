@@ -55,7 +55,8 @@ export function ListExportButton({
       >
         Export
       </Button>
-      {note ? <span role="status">{note}</span> : null}
+      {/* Always present, so a screen reader announces the note when it arrives. */}
+      <span role="status">{note}</span>
     </>
   );
 }

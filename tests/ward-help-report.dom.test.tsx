@@ -262,6 +262,24 @@ describe("Report a problem", () => {
     expect(revokeObjectURL).toHaveBeenCalledWith("blob:preview");
   });
 
+  it("says so when the browser refuses to save the picture", async () => {
+    makePicture.mockResolvedValueOnce(new Blob(["png"], { type: "image/png" }));
+    const original = { createObjectURL: URL.createObjectURL, revokeObjectURL: URL.revokeObjectURL };
+    Object.assign(URL, { createObjectURL: vi.fn(() => "blob:preview"), revokeObjectURL: vi.fn() });
+    onTestFinished(() => {
+      Object.assign(URL, original);
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    report();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("checkbox", { name: "Include a picture of this screen" }));
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save picture" }));
+    expect(screen.getByTestId("ward-help-report-picture-status").textContent).toContain("Could not save the picture.");
+  });
+
   it("holds Copy report while the picture is being made, so the report never says no picture by mistake", async () => {
     let finish: (blob: Blob) => void = () => undefined;
     makePicture.mockImplementationOnce(() => new Promise<Blob>((resolve) => (finish = resolve)));
