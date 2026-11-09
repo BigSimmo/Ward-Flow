@@ -21,7 +21,7 @@ import beds from "./statistics-ward-phone-beds.module.css";
 
 export const ROSTER_FIRST_ROWS = 8;
 
-export const ADMISSION_STATE_LABELS: Record<Admission["state"], string> = {
+const ADMISSION_STATE_LABELS: Record<Admission["state"], string> = {
   waitlisted: "On waiting list",
   pulled: "Pulled",
   occupied: "In bed",
