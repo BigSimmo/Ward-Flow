@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  GO_TO_WINDOW_MS,
+  GO_TO_KEY_WAIT,
   goToPageForShortcut,
   resetGoToShortcut,
 } from "@/components/ward-management/shell/ward-goto-shortcuts";
@@ -42,7 +42,7 @@ describe("go-to keys (G then a letter)", () => {
   it("leaves the letter alone when G was too long ago, the page is closed to this login, or shortcuts are off", () => {
     const navigate = vi.fn();
     goToPageForShortcut(key("g"), () => true, navigate, undefined, 0);
-    expect(goToPageForShortcut(key("e"), () => true, navigate, undefined, GO_TO_WINDOW_MS + 1)).toBe(false);
+    expect(goToPageForShortcut(key("e"), () => true, navigate, undefined, GO_TO_KEY_WAIT + 1)).toBe(false);
     goToPageForShortcut(key("g"), () => false, navigate, undefined, 0);
     expect(goToPageForShortcut(key("s"), () => false, navigate, undefined, 5)).toBe(false);
     window.localStorage.setItem("ward-flow-character-shortcuts", "off");

@@ -20,8 +20,8 @@ const GO_TO_PAGES: readonly { key: string; label: string; href: string }[] = [
   { key: "s", label: "Statistics", href: "/ward-flow/statistics" },
 ];
 
-/** How long G waits for its letter. */
-export const GO_TO_WINDOW_MS = 1_500;
+/** How long G waits for its letter, in milliseconds: a keyboard timing, not a clinical time. */
+export const GO_TO_KEY_WAIT = 1_500;
 
 let pendingSince: number | null = null;
 
@@ -50,7 +50,7 @@ export function goToPageForShortcut(
     return false;
   }
   const key = event.key.toLowerCase();
-  if (pendingSince !== null && now - pendingSince <= GO_TO_WINDOW_MS) {
+  if (pendingSince !== null && now - pendingSince <= GO_TO_KEY_WAIT) {
     pendingSince = null;
     const page = GO_TO_PAGES.find((candidate) => candidate.key === key);
     // H opens this desk's own Home, as the menu's Home does.
