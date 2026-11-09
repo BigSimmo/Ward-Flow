@@ -120,10 +120,10 @@ export function WaitingStagesCard({
                   <Name name={row.label} sub={row.span} />
                 </th>
                 <td className={cx(redesign.r, tableClasses.num)}>
-                  <Z v={row.summary.median === undefined ? "–" : splitDuration(row.summary.median)} />
+                  <Z v={row.summary.median === undefined ? "Too few" : splitDuration(row.summary.median)} />
                 </td>
                 <td className={cx(redesign.r, tableClasses.num)}>
-                  <Z v={row.summary.p90 === undefined ? "–" : splitDuration(row.summary.p90)} />
+                  <Z v={row.summary.p90 === undefined ? "Too few" : splitDuration(row.summary.p90)} />
                 </td>
                 <td className={cx(redesign.r, tableClasses.num)}>
                   {countButton(row.id, "recorded", row.recorded.length)}

@@ -365,6 +365,9 @@
 .zero {
   color: var(--wf-ink-3);
 }
+.zeroWord {
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
 .total > * {
   font-weight: 600 !important;
   background: var(--wf-surface-2);
