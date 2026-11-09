@@ -2884,6 +2884,15 @@ button.helpLink {
   font-weight: 650;
   letter-spacing: -0.01em;
 }
+/* Polish pass (9 Nov 2026): "Likely 33 spare that fit" rests on dates that may move, so it reads a
+ * step quieter than Now and Tomorrow and keeps to one line where the tile allows. */
+.fcStrip .fcFigValue.fcFigSoft {
+  font-size: var(--wf-fs-16);
+  line-height: var(--wf-lh-16);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
 .fcSide > .fcFigLabel {
   font-size: var(--wf-fs-13);
   font-weight: 650;

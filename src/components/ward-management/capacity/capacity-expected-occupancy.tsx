@@ -1,6 +1,8 @@
 "use client";
 
-import { useId, useMemo } from "react";
+import { useId, useMemo, useState } from "react";
+
+import { ShowMoreRow, foldHidden, foldLimit } from "@/components/wf";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -15,6 +17,9 @@ import styles from "./capacity-expected-occupancy.module.css";
  * is read out and shown on hover. A plain table, so a phone scrolls it sideways inside the card.
  * Loaded after the page (`capacity-expected-occupancy-lazy.tsx`): the Capacity route has little
  * phone script headroom, and the table sits at the foot of the forecast card.
+ *
+ * Polish pass (9 Nov 2026): the fullest wards at the last horizon lead, eight of them, with a
+ * "Show all" row for the rest; the network total always shows.
  */
 export function ExpectedOccupancyTable({
   units,
@@ -36,14 +41,19 @@ export function ExpectedOccupancyTable({
   // The forecast draws twice (the desk card and the phone sheet), so the heading id is per copy.
   const titleId = useId();
   const hours = occupancy.total.horizons.map((horizon) => horizon.hours);
+  const [showAll, setShowAll] = useState(false);
+  const fullest = useMemo(() => [...occupancy.rows].sort(byLastHorizonFullness), [occupancy.rows]);
+  const tableId = useId();
   if (occupancy.rows.length === 0) return null;
+  const hidden = foldHidden(fullest.length, WARDS_SHOWN);
+  const shown = showAll ? fullest : fullest.slice(0, foldLimit(fullest.length, WARDS_SHOWN));
   return (
     <section className={styles.wrap} aria-labelledby={titleId} data-stacked={stacked || undefined}>
       <h3 id={titleId} className={styles.title}>
         Expected occupancy
       </h3>
       <div className={styles.scroll} role="region" aria-labelledby={titleId} tabIndex={0}>
-        <table className={styles.table}>
+        <table className={styles.table} id={tableId}>
           <thead>
             <tr>
               <th scope="col">Ward</th>
@@ -58,7 +68,7 @@ export function ExpectedOccupancyTable({
             </tr>
           </thead>
           <tbody>
-            {occupancy.rows.map((row) => (
+            {shown.map((row) => (
               <Row key={row.unitId} row={row} />
             ))}
           </tbody>
@@ -67,12 +77,29 @@ export function ExpectedOccupancyTable({
           </tfoot>
         </table>
       </div>
+      {hidden > 0 ? (
+        <ShowMoreRow onClick={() => setShowAll((open) => !open)} expanded={showAll} controls={tableId}>
+          {showAll ? "Show fewer" : `Show all ${fullest.length} wards`}
+        </ShowMoreRow>
+      ) : null}
       <p className={styles.note}>
         Likely beds taken: beds taken now, less recorded discharges, plus booked admissions. People waiting without a
         ward are not counted.
       </p>
     </section>
   );
+}
+
+/** Wards shown before "Show all": the design system's eight rows. */
+const WARDS_SHOWN = 8;
+
+/** Fullest first at the last horizon (likely beds taken over beds), then by name. */
+function byLastHorizonFullness(a: OccupancyRow, b: OccupancyRow): number {
+  const share = (row: OccupancyRow) => {
+    const last = row.horizons[row.horizons.length - 1];
+    return row.beds > 0 && last ? last.likely / row.beds : 0;
+  };
+  return share(b) - share(a) || a.name.localeCompare(b.name);
 }
 
 function Row({ row, total = false }: { row: OccupancyRow; total?: boolean }) {
