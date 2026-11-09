@@ -130,6 +130,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-105](#d-105-optional-clerk-details-on-the-patient-record-8-november-2026)                                                                            | Optional clerk details on the patient record                                         | Active                                           |
 | [D-106](#d-106-clinical-values-from-the-9-november-2026-documentation-audit-9-november-2026)                                                            | Clinical values from the 9 Nov audit                                                 | Active                                           |
 | [D-107](#d-107-working-rules-and-documentation-from-the-9-november-2026-audit-9-november-2026)                                                          | Working rules from the 9 Nov audit                                                   | Active                                           |
+| [D-108](#d-108-six-bed-flow-features-keep-d-93-and-d-72-ed-long-wait-next-steps-9-november-2026)                                                        | Six features: keep D-93 and D-72, ED next steps                                      | Active                                           |
 | [D-109](#d-109-homes-bed-alert-line-tests-the-whole-number-shown-9-november-2026)                                                                       | Home bed alert line tests the shown whole %                                          | Active                                           |
 | [D-114](#d-114-allow-pull_request_target-for-three-workflows-only-9-november-2026)                                                                      | Allow pull_request_target for three workflows only                                   | Active                                           |
 
@@ -1354,6 +1355,15 @@ is inferred.
   7. **A bare D-number in `src/` or `tests/` means this log.** A comment that cites the delegated rulings in [`owner-decisions-2026-09-1x.md`](../history/archive/dated-notes/owner-decisions-2026-09-1x.md) writes "archived D-n".
 - **Also from the audit:** D-96 was reworded so a bed named for a referral is "pulled", matching D-81 and D-85. D-28 and D-30 to D-35 are marked "Source unverified", awaiting Josh's keep or strike pass. Old entries that later ones replace now say so in place.
 - **Why:** fewer PRs and one decision home mean fewer conflicts and fewer rulings lost between threads.
+
+## D-108. Six bed-flow features: keep D-93 and D-72, ED long-wait next steps (9 November 2026)
+
+- **Date:** 9 November 2026, 8:00 PM AWST (12:00 UTC). **Decided by:** Josh, in the Ward Flow project, answering "Go ahead with all your recommendations" on the six features review.
+- **Decision:**
+  1. **Keep D-93 and D-72.** No countdown to legal deadlines (legal times stay as typed), and no offline copy of the board on the device (downtime stays print or PDF only).
+  2. **ED long-wait next steps.** Each ED wait step shows a suggested next step for a person to take: Step 1, ask wards with a free bed; Step 2, call the site bed manager; Step 3, consider an out-of-area bed and add to the bed meeting; Step 4, tell the executive on call. This is prototype wording, not WA Health escalation policy. It suggests no ward and does not change the queue order (D-71).
+  3. **Build only the gaps.** Home shows tomorrow's expected discharges and planned admissions from recorded dates, labelled "Not a prediction". The bed meeting agenda gains a Run meeting mode that steps through each health service and ends on a printable summary. The weekly report, bed meeting print and TV views, ED step badges, expected discharge dates and downtime pack already existed and are not rebuilt.
+- **Boundary:** synthetic data only; approves no merge, release or provider change.
 
 ## D-109. Home's bed alert line tests the whole number shown (9 November 2026)
 
