@@ -142,13 +142,11 @@ export function WardObsLeaveTvView({ rows, footer }: { rows: WardClinicalRow[]; 
   ];
   return (
     <>
+      {/* TV polish (Josh, 9 Nov 2026): each count lives in one place. A lane's own count sits in its
+          heading, so the row above keeps only what no lane shows. */}
       <Summary
         items={[
-          { label: "on the ward", value: onWard.length },
-          { label: "on constant obs", value: lanes[0].cards.length, tone: "warning" },
-          { label: "off the ward", value: away.length },
           { label: "absent without leave", value: rows.filter((row) => row.where === "awol").length, tone: "danger" },
-          { label: "coming in", value: lanes[3].cards.length },
         ]}
       />
       <Lanes lanes={lanes} label="Obs and leave" testId="ward-obs-board" />
@@ -193,14 +191,6 @@ export function WardLegalTvView({ rows, footer }: { rows: WardClinicalRow[]; foo
   ];
   return (
     <>
-      <Summary
-        items={[
-          { label: "act now", value: lanes[0].cards.length, tone: "danger" },
-          { label: "ending soon", value: lanes[1].cards.length, tone: "warning" },
-          { label: "status recorded", value: lanes[2].cards.length },
-          { label: "nothing recorded", value: lanes[3].cards.length },
-        ]}
-      />
       <Lanes lanes={lanes} label="Legal" testId="ward-legal-board" />
       {footer}
     </>
@@ -245,14 +235,6 @@ export function WardTodayTvView({ rows, footer }: { rows: WardClinicalRow[]; foo
   ];
   return (
     <>
-      <Summary
-        items={[
-          { label: "arriving", value: lanes[0].cards.length },
-          { label: "going home", value: lanes[1].cards.length },
-          { label: "held up or past date", value: lanes[2].cards.length, tone: "warning" },
-          { label: "no date set", value: lanes[3].cards.length },
-        ]}
-      />
       <Lanes lanes={lanes} label="Today" testId="ward-today-board" />
       {footer}
     </>
@@ -323,8 +305,6 @@ export function EdBedSearchTvView({
             value: rows.filter((row) => row.band === "over").length,
             tone: "danger",
           },
-          { label: "need a bed", value: lanes[1].cards.length, tone: "warning" },
-          { label: "bed found", value: lanes[2].cards.length + lanes[3].cards.length },
         ]}
       />
       <Lanes lanes={lanes} label="Bed search" testId="ed-beds-board" />
