@@ -475,7 +475,7 @@
 @media (max-width: 46.4375rem) {
   /* Notices clear of the dock (Josh, 31 Oct 2026): the shared toast rests this far above the dock's
      top (--wf-dock-clear) instead of 12px, which put it against the dock's + button. Read by the toast region
-     in src/components/wf/overlay.module.css once its one-line change lands. */
+     in src/components/wf/overlay.module.css. */
   :global(body):has(.dock) {
     --wf-toast-dock-gap: 24px;
   }

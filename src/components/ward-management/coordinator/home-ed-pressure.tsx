@@ -119,7 +119,8 @@ export function HomeEdPressure({
 
         // With a form due the line drops "on" so it stays on one line in a narrow tile.
         const onFormsText = `${onForms} on form${onForms === 1 ? "" : "s"}`;
-        // The worst recorded form state tones the line and outlines the tile (never a side stripe).
+        // The worst recorded form state tones the line's glyph and, off the hero, outlines the tile (never a
+        // side stripe). The hero's strip is divided cells, not tiles, so its glyph carries the tone alone.
         const deadline: { tone: WfTone; text: string; spoken: string } =
           row.breaching > 0
             ? {

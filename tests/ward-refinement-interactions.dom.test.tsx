@@ -9,7 +9,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { PriorityQueue } from "@/components/ward-management/coordinator/priority-queue";
 import { queueOrder } from "@/components/ward-management/ward-priority";
-import { inEdTierOverdue } from "@/components/ward-management/ward-shared-figures";
+import { homeChipFigures } from "@/components/ward-management/ward-shared-figures";
 import { replaceSearchParams } from "@/components/ward-management/ward-url-state";
 import { journeyStages } from "@/components/ward-management/movements/movements-derivations";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
@@ -169,11 +169,12 @@ describe("Q004 refinement interaction regressions", () => {
 
   // Sticky header redesign (Josh, 9 Nov 2026): Home's hero no longer has a Past target chip; the
   // overdue highlight comes from the next step ("N past target in the flow", Show past target), whose
-  // figure is the shared queue count. That step only shows with no Act now or referral, which the seed
-  // always has, so the queue's highlight is driven directly against the same shared definition.
+  // figure is Home's own shared count (homeChipFigures). That step shows only when nothing is queued to
+  // act on or decide, so it is hidden on the seed (which has queued referrals); this test drives the
+  // queue directly against the figure Home would show.
   it("highlights exactly as many queue rows as the shared past-target count says", () => {
     const queue = queueOrder(seedWardFlowState().movements.filter(isOpen), NOW_ANCHOR);
-    const count = queue.filter((movement) => inEdTierOverdue(movement, NOW_ANCHOR)).length;
+    const count = homeChipFigures(queue, NOW_ANCHOR, undefined).overdueInQueue;
     expect(count, "the seed has no overdue movement, so this test proves nothing").toBeGreaterThan(0);
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>

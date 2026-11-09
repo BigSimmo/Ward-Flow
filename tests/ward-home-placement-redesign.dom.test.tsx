@@ -153,7 +153,8 @@ describe("desktop Home Flow: top 5 per stage, then Show all N", () => {
   });
 
   // Sticky header redesign (Josh, 9 Nov 2026): Home's hero no longer carries the Tier 1 and overdue
-  // chips, so the queue's highlight is driven here directly. A highlight still lifts the cap.
+  // chips; the overdue highlight Home can still set (Show past target) is driven here directly, and it
+  // still lifts the cap.
   it("shows every row in each stage while a highlight is on, so no highlighted row is hidden", () => {
     const state = seedWardFlowState();
     const queue = queueOrder(state.movements.filter(isOpen), NOW_ANCHOR);
@@ -184,7 +185,7 @@ describe("desktop Home Flow: top 5 per stage, then Show all N", () => {
 
     rerender(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <PriorityQueue {...props} highlight="tier1" onClearHighlight={() => {}} />
+        <PriorityQueue {...props} highlight="overdue" onClearHighlight={() => {}} />
       </WardFlowProvider>,
     );
     expect(screen.getByText(/highlighted, all rows stay$/u)).toBeInTheDocument();

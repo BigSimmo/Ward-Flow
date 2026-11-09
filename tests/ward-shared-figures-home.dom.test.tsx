@@ -29,7 +29,7 @@ describe("Home and Movements print one Tier 1 count (P002)", () => {
         <CoordinatorScreen />
       </WardFlowProvider>,
     );
-    expect(screen.queryByRole("button", { name: /Tier 1 open movements/u })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Tier 1/u)).not.toBeInTheDocument();
     home.unmount();
 
     const tierOneOpen = seedWardFlowState().movements.filter(isTierOneOpen).length;

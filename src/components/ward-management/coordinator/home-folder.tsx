@@ -59,7 +59,8 @@ export function HomeFolderShape({ navRef, value }: { navRef: RefObject<HTMLEleme
     const back = backRef.current;
     if (!nav || !shape || !back) return;
     let frame = 0;
-    let docked = false;
+    // Read back from the row, so a tab switch while pinned keeps the slate and its 280ms move.
+    let docked = nav.hasAttribute("data-docked");
     const reduce =
       typeof window.matchMedia === "function" ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
 
@@ -122,7 +123,20 @@ export function HomeFolderShape({ navRef, value }: { navRef: RefObject<HTMLEleme
 
     place(shown.current !== null);
     checkDocked();
-    const resize = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => place(false));
+    let sized = false;
+    const resize =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(() => {
+            // The observer reports once as it starts; that first report would cut short the move above.
+            if (!sized) {
+              sized = true;
+              return;
+            }
+            // A resize can unpin the row (say phone to tablet), so docking is checked again first.
+            checkDocked();
+            place(false);
+          });
     resize?.observe(nav);
     document.addEventListener("scroll", checkDocked, { capture: true, passive: true });
     return () => {

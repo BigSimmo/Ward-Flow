@@ -141,7 +141,8 @@ export type HeroProps = {
   next?: HeroNextStep;
   /**
    * Sticky header redesign (Josh, 9 Nov 2026): free content drawn inside the band under the first row
-   * (Home's figures, next step and ED strip). The page styles it; the hero only places it.
+   * (Home's figures, next step and ED strip). The page styles it; the hero only places it. It is not
+   * folded on a phone by `next`: a page that passes both decides what its children show there.
    */
   children?: ReactNode;
   className?: string;

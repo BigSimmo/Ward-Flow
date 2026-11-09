@@ -172,10 +172,10 @@ const REFUSED_MARKER_EXPLANATION = "Actions the app refused to record this sessi
  *   quieter tabs with counts (Needs a bed, Bed agreed, Ready to move, Moving); Later today (was Planned)
  *   is the rest of the shift from times the records already hold (`planned-model.ts`), in the right
  *   column on desktop and a third tab on a phone;
- * - the hero's "new since" count is a changes chip that opens Activity on Changes
- *   (`activity-panel.tsx`), whose review is explicit (`activity-changes.ts`); the desktop
- *   "Since you looked" strip and the phone sheet moved into Activity;
- * - the hero's Checking line folds into one "to check" chip that opens it;
+ * - changes since the last look live in Activity (`activity-panel.tsx`), whose review is explicit
+ *   (`activity-changes.ts`); the hero no longer carries a changes chip (sticky header redesign,
+ *   9 Nov 2026);
+ * - the Checking line sits under the next step, with no "to check" chip;
  * - Beds that fit is a small table that folds to one line while someone is chosen;
  * - Placement still opens only for the person the coordinator chooses (Josh, Home v7, 22 Oct 2026),
  *   but its card names the oldest alert to place;

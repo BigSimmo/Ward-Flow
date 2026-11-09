@@ -3019,8 +3019,8 @@
  * `light`: once the page scrolls past 4px. Solid surface-2, a 1px line and the bar shadow, no
  * blur. The same as the phone bar when it scrolls.
  *
- * Phone (48rem and under) gets `data-band="ink"` only at rest; once it scrolls it drops the band
- * and takes its own solid face (`data-scrolled`). Its ink rules follow this block.
+ * Phone (48rem and under) keeps `data-band="ink"` when it scrolls too (sticky header redesign,
+ * 9 Nov 2026): `data-scrolled` then turns it to frosted slate. Its ink rules follow this block.
  */
 @media (min-width: 46.5rem) {
   .bar[data-band] {

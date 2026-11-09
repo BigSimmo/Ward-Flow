@@ -73,7 +73,8 @@ describe("Home next step is not repeated by a hero chip (Josh, 4 Nov 2026)", () 
     );
     const step = answer();
     const chipFor = (label: RegExp) => screen.queryAllByRole("button", { name: label });
-    // The seeded network opens on Act now, so the Act now chip is the one left out.
+    // The seeded network opens on Act now. Since the sticky header redesign (9 Nov 2026) the hero keeps
+    // no count chips at all, so neither Act now nor To decide has one.
     expect(step).toMatch(/need(s)? a person now/u);
     expect(chipFor(/^\d+\s*Act now/u)).toHaveLength(0);
     expect(chipFor(/^\d+\s*To decide/u)).toHaveLength(0);
