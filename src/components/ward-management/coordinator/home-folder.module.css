@@ -167,9 +167,11 @@
     background-color: var(--wf-hero-2);
   }
 
+  /* Pinned, they carry the frosted slate as it looks over the page (solid, so the eye sees no seam
+     and a contrast check still finds the slate rather than the canvas). */
   .nav[data-docked] .switch.switch.switch > :not([aria-checked="true"]),
   .nav[data-docked] .more.more.more:not(:hover) {
-    background-color: transparent;
+    background-color: color-mix(in srgb, var(--wf-hero-2) 94%, var(--wf-page-canvas, var(--wf-canvas)));
   }
 }
 
