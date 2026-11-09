@@ -40,7 +40,7 @@ type CallBatch = { scope: object; referralIds: string[]; steps: CallStep[] };
 
 /**
  * One referral sent to several wards is counted and listed in full once. Keyed by referral, never by
- * the patient link: D-14 keeps where else a patient has been out of ward screens.
+ * the patient link: archived D-14 keeps where else a patient has been out of ward screens.
  */
 function referralKey(item: CallSheetGroup["items"][number]): string {
   return item.referral.id;

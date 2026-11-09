@@ -33,8 +33,9 @@ check results, limitations and delivery state.
 
 Inspect each script and its hooks before execution. Select checks for the actual
 diff using [public CI policy](../ward-flow/PUBLIC-CI.md) and the declared
-[workflow](../../.github/workflows/ward-flow.yml). The [hosting record](../hosting.md)
-records disabled Actions at setup on 27 September 2026; a read-only GitHub check on 2 October 2026 found Actions enabled and Ward Flow CI active. Current-head results and deployment remain separate evidence.
+[workflow](../../.github/workflows/ward-flow.yml). The workflow declares a Ward Flow CI run for every
+pull request into `main`; that declaration is not an observed result. Current-head results and
+deployment remain separate evidence.
 Known maintained-policy changes use the shared local/CI classifier: installation/parity,
 policy-contract tests, local doc links/commands and changed-file static checks. That scope
 does not itself select the full unit/browser suites. Unknown paths, source or deleted files
@@ -79,16 +80,9 @@ Ward indexes fail on drift; general documentation checks report advisory versus 
 
 ## Continue one task record
 
-Follow the [task/receipt workflow](../task-receipts.md). For a simple uninterrupted
-task, contribute a brief update to its existing receipt; no separate checkpoint is
-needed. Substantial work reuses one canonical checkpoint or handover under the
-original task identity, keeping private evidence in its existing workspace. The
-[local task index](../ward-flow-task-ledger.md) links task detail; the canonical
-source owns current status. Do not create another status ledger.
-
-The compact route requires the receipt workflow's ownership, provider/publication
-and recovery conditions. A pause, blocker, transfer or scope change still needs a
-prompt update; file claims and project gates remain binding.
+Commits and the PR body are the task record; receipts are optional. The compact-receipt rule
+lives only in [task receipts](../task-receipts.md#when-a-receipt-is-used). For substantial work that
+pauses or changes hands, keep one checkpoint under the original task identity; this shape helps:
 
 ```text
 objective/task ID | repo/worktree/branch/base/HEAD | owned files + diff hash
@@ -117,10 +111,3 @@ intervals. Keep token estimates, external cash and local/CI compute separate.
 Collect during ordinary future work only when telemetry is already available;
 no paid replay or account scraping. Document size is only a proxy. These edits
 establish neither global Codex setting changes nor realised credit savings.
-
-For a single uninterrupted scoped reversible task without unresolved ownership, a new provider/
-publication boundary or substantial recovery need, one final compact lifecycle contribution can
-carry start/completion metadata. Update immediately at a genuine pause/blocker/transfer/scope
-change, and at meaningful checkpoints for substantial work. Reuse the original task identity;
-Last verified needs newly checked evidence, such as a new immutable run-evidence location in
-that same record. Timestamp-only refresh is invalid.

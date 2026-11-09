@@ -94,7 +94,7 @@ describe("ward scenarios", () => {
    * `da9931e00`) from a form that passed every Open movement unconditionally, even at a ward with
    * zero free beds, to one that requires `unit.allocatable.value > 0` for an Open movement (see
    * that file's `security` gate for the exact expression); and (2) the locked/open bed-designation
-   * split (Task 3 of `docs/superpowers/plans/2026-09-04-ward-flow-mixed-locked-open-beds.md`)
+   * split (Task 3 of `docs/history/superpowers/plans/2026-09-04-ward-flow-mixed-locked-open-beds.md`)
    * widened three previously wholly-open adult units — `scgh-adult-open`, `fsh-adult-secure` and
    * `fre-adult-open` — into genuinely mixed ones, each now carrying real free locked beds. Which
    * of the two moved this number in which direction is not decomposed here — the figure below is
@@ -189,7 +189,7 @@ describe("ward scenarios", () => {
    *   `gender_designation` was never the deciding gate there either before or after this change.
    *
    * **RE-MEASURED 2026-09-17, sample-data pass** (owner request, "add more sample data";
-   * `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §4, task 3): eleven movements added
+   * `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md` §4, task 3): eleven movements added
    * (WF-021..WF-031), giving WACHS and Private a reachable open movement at every stage a movement
    * can carry service membership through. All eleven are open, so both scenarios' `openMovements`
    * moves by exactly +11.

@@ -1,7 +1,7 @@
 // src/components/ward-management/movements/movements-derivations.ts
 //
 // The computation behind Ward Flow's merged Movements screen (MERGE 03, folding `movements` and
-// `transport`). Design lock: docs/superpowers/specs/2026-09-05-ward-flow-merges-1-3-design-lock.md §5.
+// `transport`). Design lock: docs/history/superpowers/specs/2026-09-05-ward-flow-merges-1-3-design-lock.md §5.
 //
 // The two folded screens showed the same patients at two points of one journey — the stage a
 // patient's placement has reached (`MovementsView`, `ward-management-modes.tsx`), and, once a

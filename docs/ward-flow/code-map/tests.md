@@ -55,7 +55,7 @@ The detailed map below retains its earlier line numbers and baseline counts; thi
 - `ui-ward-discharges.spec.ts` adds one real ward-to-board journey for each of eleven destinations, including the arrangement action or death exclusion, and a planning-link journey.
 - Existing permission, history, referral contract and legal-figure sweeps classify the added event. Bed-accounting/gender fixtures use a hospital transfer rather than bypass an involuntary community-discharge refusal.
 
-Evidence and limits are in the WA report (archived; see [ARCHIVE.md](../../ARCHIVE.md)).
+Evidence and limits are in the WA report (archived; see [the history index](../../history/README.md#deleted-files-kept-in-git-history)).
 
 ## Rules-repair update — 2 October 2026
 

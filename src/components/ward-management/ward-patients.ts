@@ -49,7 +49,7 @@ import { calendarDateOf, perthCalendarDay, type Instant } from "@/components/war
  * render them, the placement rule from the ruling stands: not adjacent to each other, and neither
  * directly above a past-psychiatric-history panel. See `person-screen.tsx`.
  *
- * 🔴 OWNER RULING, 2026-09-09/2026-09-10 (`docs/ward-flow/owner-decisions-2026-09-09.md` §8-§9),
+ * 🔴 OWNER RULING, 2026-09-09/2026-09-10 (`docs/history/archive/dated-notes/owner-decisions-2026-09-09.md` §8-§9),
  * SPLITS THE FIELD ABOVE. What R-2026-09-04-A approved as one merged "sex/gender" fact turned out
  * to hide a real clinical difference: a recorded SEX is one fact about a person, and GENDER — which
  * decides which bed they may go to — is a second, separate one. His words: *"Have sex please and
@@ -79,7 +79,7 @@ import { calendarDateOf, perthCalendarDay, type Instant } from "@/components/war
 export type PatientId = `PT-${string}`;
 
 /**
- * `Patient.gender`'s two values, owner ruling 2026-09-09/2026-09-10 (`docs/ward-flow/owner-decisions-2026-09-09.md`
+ * `Patient.gender`'s two values, owner ruling 2026-09-09/2026-09-10 (`docs/history/archive/dated-notes/owner-decisions-2026-09-09.md`
  * §9): **"Only two genders as it is for beds. I.e. male bed, female bed."** Deliberately the same
  * two literal values as `Sex` in `ward-model.ts` — the two are read by the same bed-designation
  * check (`sexDesignationAccepts` / `genderEligibility` in `ward-eligibility.ts`) — but this is a

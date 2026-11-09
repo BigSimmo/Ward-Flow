@@ -13,7 +13,7 @@ import type { Patient } from "@/components/ward-management/ward-patients";
  * request was raised from it.
  *
  * 🔴 COORDINATOR ONLY (Josh, 19 Oct 2026). A ward must not learn where else a person has been
- * referred (FD-23, D-14), so these rows reach the bed coordinator's task list and nothing on a
+ * referred (FD-23, archived D-14), so these rows reach the bed coordinator's task list and nothing on a
  * ward, ED or team screen. A first version on the ward screen was withdrawn for exactly that.
  *
  * A signal for a person to weigh, never a refusal: a second request can be right.

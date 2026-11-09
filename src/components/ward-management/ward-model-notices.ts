@@ -1,4 +1,4 @@
-// Communication addressees and notices (owner ruling D-2). Moved out of `ward-model.ts` unchanged;
+// Communication addressees and notices (archived owner ruling D-2). Moved out of `ward-model.ts` unchanged;
 // that file re-exports all of it.
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
@@ -7,7 +7,7 @@ import type { PatientId } from "@/components/ward-management/ward-patients";
 
 /**
  * COMMUNICATION — ADDENDUM TO THE THIRD-EDITION MASTER BUILD PLAN
- * (`docs/ward-flow/plans/2026-09-1x-communication-addendum.md`, §0–§1), owner ruling **D-2**,
+ * (`docs/history/plans-2026-09/2026-09-1x-communication-addendum.md`, §0–§1), archived owner ruling **D-2**,
  * 2026-09-10. Read that file's §0 before touching anything below: the system already has a
  * substantial work list (`buildActionInbox`, `ward-derivations.ts`) and this is deliberately NOT a
  * second one. `buildActionInbox` is a pure DERIVATION from `movements`/`units` with no addressee and
@@ -67,7 +67,7 @@ export type Addressee = {
  * carries. Two members added, one per event, both addressed to the ward alone (neither act needs a
  * referrer-facing half: the referrer or the coordinator IS the one acting, so there is nobody on
  * that side left to tell). **The corresponding row in the addendum table itself
- * (`docs/ward-flow/plans/2026-09-1x-communication-addendum.md` §1.3) is OWED, not written** — this
+ * (`docs/history/plans-2026-09/2026-09-1x-communication-addendum.md` §1.3) is OWED, not written** — this
  * build's own constraints forbid editing anything under `docs/`, so the row that keeps this comment
  * and that table in agreement is recorded here as a debt for whoever next has `docs/` access, rather
  * than silently left undone. The rule the union enforces — table and members agree, or the drift is

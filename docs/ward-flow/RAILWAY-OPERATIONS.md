@@ -21,7 +21,7 @@ Compare the live deployment with `live`, not `main`. The 4 October notes below p
 | npm printed five high vulnerabilities.                              | Five affected package nodes traced to one development-only `braces` advisory, not five independent runtime flaws.                                                               | Production-only audit returned zero; no published patched `braces` release was available. The suggested ESLint downgrade was not applied. This remains an upstream development/build-input risk. |
 
 These are observations of named revisions, not promises about future settings.
-The incident report (archived; see [ARCHIVE.md](../ARCHIVE.md)) records the initial
+The incident report (archived; see [the history index](../history/README.md#deleted-files-kept-in-git-history)) records the initial
 evidence. Its pending-CI-setting section is historical: the approved correction
 was subsequently completed. The successful deployment above also incorporated
 the capacity, movements and on-call changes from `59ee806`.

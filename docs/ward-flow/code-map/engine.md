@@ -278,7 +278,7 @@ D-18's stop after typed free text with a scrubbed copy (see the top of this page
 not authentication, an authoritative shared backend or a clinical audit service.
 Arrival-capacity disagreement is recorded rather than inventing a physical vacancy;
 held arrival links are validated against actual admissions and wards. See the
-dated remediation receipt (archived; see [ARCHIVE.md](../../ARCHIVE.md)) for test limits.
+dated remediation receipt (archived; see [the history index](../../history/README.md#deleted-files-kept-in-git-history)) for test limits.
 
 `ward-movement-bed-hold.ts` supplies the same reservation fact to search, profile,
 preview and board consumers. The identity comparison stays inside the existing
@@ -297,7 +297,7 @@ The detailed map below retains its earlier line numbers and baseline counts; thi
 
 ## WA pathway audit update — 3 October 2026
 
-`RECORD_ADMISSION_FOLLOW_UP` records a fixed arrangement state for a uniquely linked occupied/departed admission. It uses the protected role/scope/identity/generation/revision boundary, advances the discharge revision, appends typed before/requested/after audit facts and is classified as a text-safe event. Deaths and unoccupied stays are excluded. Both departure commands validate the shared destination vocabulary and arrival time, and resolve the current admission's movement before considering an unlinked open fallback. Stored admissions now validate destination membership. See the WA comparison and pathway report (archived; see [ARCHIVE.md](../../ARCHIVE.md)).
+`RECORD_ADMISSION_FOLLOW_UP` records a fixed arrangement state for a uniquely linked occupied/departed admission. It uses the protected role/scope/identity/generation/revision boundary, advances the discharge revision, appends typed before/requested/after audit facts and is classified as a text-safe event. Deaths and unoccupied stays are excluded. Both departure commands validate the shared destination vocabulary and arrival time, and resolve the current admission's movement before considering an unlinked open fallback. Stored admissions now validate destination membership. See the WA comparison and pathway report (archived; see [the history index](../../history/README.md#deleted-files-kept-in-git-history)).
 
 Read-only baseline map below, written 25 September 2026 against tip `ace8e9ee8d` on branch
 `ward/extend-ward-flow-code-map` (`D:/Worktrees/Database/ward-code-map`). Covers the thirteen
@@ -1091,9 +1091,9 @@ guard.test.ts` is what proves that check can actually fail.
 - **`RECORD_COUNTRY_EXTENSION` records paper expiry, never an extension calculation.** For an open
   movement with a current Form 1A and recorded country setting, it delegates the typed
   `paperExpiresAt` to `RECORD_LEGAL_FORM_EXPIRY`; missing or ineligible paper facts are refused.
-  The engine never computes or stores a legal time limit. The separate, sourced Legal forms demo
-  allowed by [D-29](../decisions.md#d-29-act-time-limits-shown-as-a-labelled-synthetic-demo-4-october-2026)
-  illustrates periods without writing calculated expiry into the record.
+  The engine never computes or stores a legal time limit. The Legal forms demo once allowed by D-29
+  is gone: [D-70](../decisions.md#d-70-no-computed-mental-health-act-periods-show-only-the-recorded-due-time-20-october-2026) replaced it, `act-periods-demo.ts` is deleted, and no screen
+  computes an Act period.
 - **Three engine files are the only ones with outside imports** at all
   (`@/lib/client-store-factory`, `@/lib/form-register`, `@/components/wf/sheet-focus`) — per the
   overview map. The engine otherwise only imports from itself, so a change here has an unusually

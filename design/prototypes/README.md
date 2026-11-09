@@ -53,7 +53,7 @@ settled here. `DESIGN-LANGUAGE.md` is unchanged and still governs; every rule in
 clinical safety rather than appearance is kept in full by the newer block.
 
 The build plan for these two screens is
-`docs/superpowers/plans/2026-09-05-ward-screens-second-edition.md` (archived; see [ARCHIVE.md](../../docs/ARCHIVE.md)).
+`docs/superpowers/plans/2026-09-05-ward-screens-second-edition.md` (archived; see [the history index](../../docs/history/README.md#deleted-files-kept-in-git-history)).
 
 ## The shared block, measured rather than reported
 

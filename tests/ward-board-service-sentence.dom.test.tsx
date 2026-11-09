@@ -9,7 +9,7 @@ import { resetServiceScopeForTests, setServiceScope } from "@/components/ward-ma
 import { wardSites } from "@/components/ward-management/ward-sites";
 
 /**
- * Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md`, task G2 (item 44 — the
+ * Build plan `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md`, task G2 (item 44 — the
  * service chooser, §2 "Bed board ... a sentence only.", §3 "Bed board" — same-service and
  * other-service branches). After G1 (item 51, same file — the tile/figure structural proof lives
  * in `tests/ward-board-figures-and-tiles-structural.dom.test.tsx`).

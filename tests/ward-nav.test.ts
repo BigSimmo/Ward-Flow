@@ -1981,7 +1981,7 @@ describe("WARD_PRIMARY_ACTIONS — Task 7's one-action-per-route contract", () =
 });
 
 /**
- * `resolveWardPrimaryAction` — the D-16 seam (`docs/ward-flow/owner-decisions-2026-09-1x.md`).
+ * `resolveWardPrimaryAction` — the D-16 seam (`docs/history/archive/dated-notes/owner-decisions-2026-09-1x.md`).
  * `WardBarMount` (`shell/ward-bar.tsx`) is the one caller today, resolving `usePathname()` against
  * this exact list; these tests exercise the pure function directly rather than through a rendered
  * component, so a failure here names the lookup rather than a DOM assertion two layers away from it.

@@ -8,7 +8,7 @@ import { CANCEL_TRANSPORT_REASONS } from "../src/components/ward-management/ward
 describe("2026-09-16 Product Owner Rulings Verification", () => {
   describe("Ruling 1: Form 1A receipt marks the psychiatric examination clock", () => {
     /*
-     * 🔴 **CORRECTED 2026-09-17, T2 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`)
+     * 🔴 **CORRECTED 2026-09-17, T2 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`)
      * — THE THREE COMPUTED-HOURS ASSERTIONS THIS CASE USED TO OPEN WITH ARE GONE, NOT MERELY
      * MOVED.** `FORM_1A_VALIDITY_HOURS`, `FORM_1A_EXAMINATION_WINDOW_HOURS` and
      * `FORM_3D_DETENTION_WINDOW_HOURS` were deleted from `ward-model.ts` by this task, on owner

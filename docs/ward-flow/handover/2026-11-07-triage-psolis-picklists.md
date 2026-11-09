@@ -1,6 +1,6 @@
 # Triage form: webPSOLIS pick-lists, review and handover
 
-Audience: the next Ward Flow chat and Josh. Status: reviewed and decided, not built. Owner: Claude (7 Nov 2026). Synthetic data only.
+Audience: the next Ward Flow chat and Josh. Status: done. The review merged in PR #1502 and the pick-lists were built in PR #1504 (both 8 Nov 2026). Owner: Claude (7 Nov 2026). Synthetic data only.
 
 Original objective: Josh supplied photos of the webPSOLIS SSCD "New Triage" form's dropdowns (7 Nov 2026) to add to Ward Flow's triage and risk form. This note reviews them, records the option lists, recommends how each belongs in the form, and hands the build to a new chat. The triage form was built in #1500 (merged 7 Nov 2026, main `6b1352c93`).
 
@@ -58,6 +58,8 @@ The current form (`src/components/ward-management/triage/triage-risk-data.ts`) h
 
 ### Recommended way to build it
 
+_Historical: this was built in PR #1504 (8 Nov 2026). Remaining gaps are listed in `PSOLIS_LIST_GAPS`._
+
 1. **One list file.** Add `triage-psolis-lists.ts`. Each option holds a stable code, a plain label in sentence case and the exact PSOLIS value: for example `["dsh", "Deliberate self-harm", "DELIBERATE SELF HARM"]`. The screen shows the label. Copy and the summary write the PSOLIS value.
 2. **Long lists: common first, then search.** Show about six tiles or chips, then a "More" button opening a searchable list (`@/components/wf` kit, typing filters). This is one pattern for Venue, Referral, Problems and Actions.
 3. **"Other" needs detail.** Choosing Other opens a short typed box. Typed text stays in React state only, as it does today.
@@ -87,7 +89,9 @@ The current form (`src/components/ward-management/triage/triage-risk-data.ts`) h
 
 ## Handover: starting the new chat
 
-Paste this into a new Ward Flow chat:
+_Historical: the build this paste starts is done (PR #1504). For what is left, see `PSOLIS_LIST_GAPS` in the code._
+
+Paste this into a new Ward Flow chat (kept for the record):
 
 > Continue the triage form's PSOLIS pick-lists. Read `docs/ward-flow/handover/2026-11-07-triage-psolis-picklists.md` first, and AGENTS.md. Work on a new branch from Ward Flow `main`. Build the "Recommended way to build it" section following "Josh's decisions": build with the lists we have and leave the marked gaps; save problems, actions, venue and referral type as codes; plain labels on screen with exact PSOLIS values in Copy; Program from the desk with Change. Synthetic data only: do not ask for or use the original photos.
 

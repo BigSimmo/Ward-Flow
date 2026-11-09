@@ -587,7 +587,7 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
  * one and disagreeing. This list is a CONTRACT: every lane reads it, none may edit it.
  *
  * ⚠️ **THIS IS NOT EVERY WARD FLOW ROUTE.** It covers the routes the third edition
- * redesigns — the ones named in `docs/ward-flow/plans/2026-09-10-third-edition-build-master-plan.md`
+ * redesigns — the ones named in `docs/history/plans-2026-09/2026-09-10-third-edition-build-master-plan.md`
  * and proved built in `design/third-edition-mockups/third-edition-kit/check-output.txt`, plus the service
  * statistics route that follows the same export-action contract. Every other route (Handover, Discharges, the
  * referral board, Out of area, Officer, the ward/community indexes, Governance) draws no primary
@@ -782,7 +782,7 @@ function matchesDynamicRoute(route: string, pathname: string): boolean {
  * button, for two different and equally real reasons this function does not need to tell apart —
  * the caller only ever needs "is there an action to draw", never "why not".
  *
- * D-16 (`docs/ward-flow/owner-decisions-2026-09-1x.md`) is why this function exists at all rather
+ * Archived D-16 (`docs/history/archive/dated-notes/owner-decisions-2026-09-1x.md`) is why this function exists at all rather
  * than a hand-built `{ id, label, href }` lookup: three of the five `WardPrimaryAction` kinds carry
  * no `href`, so a caller resolving one of THOSE would have to invent a destination — exactly what
  * `ward-shell-types.ts`'s own comment forbids. This function returns the whole discriminated

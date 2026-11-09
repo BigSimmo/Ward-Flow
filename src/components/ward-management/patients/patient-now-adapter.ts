@@ -26,7 +26,7 @@ export interface ResolvedPatientNow {
   liveReferral?: Referral;
   liveAdmission?: Admission;
   /** Every ward stay linked to this person, oldest first, for History. Read here because this is
-   *  the one patient file allowed to follow the patient link (D-14). */
+   *  the one patient file allowed to follow the patient link (archived D-14). */
   stays?: Admission[];
   displayName: string;
   preferredName?: string;
@@ -195,7 +195,7 @@ function movementNextSteps(
 
 /**
  * Whether a ward stay is the subject patient's own. The record tabs (Community, Details, Documents)
- * ask this of the one person in focus only, so the patient link stays read here, under D-14.
+ * ask this of the one person in focus only, so the patient link stays read here, under archived D-14.
  */
 export function isOwnStay(stay: { readonly patientId?: string | null }, subjectId: string): boolean {
   return stay.patientId === subjectId;
