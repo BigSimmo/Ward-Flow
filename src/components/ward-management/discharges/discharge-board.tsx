@@ -682,12 +682,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               >
                 Print list
               </Button>
-              <ListExportButton
-                load={exportList}
-                variant="onHero"
-                className={pageStyles.desktopOnly}
-                testId="ward-discharge-export"
-              />
               <span className={pageStyles.copyNote} role="status" aria-live="polite">
                 {copyNote}
               </span>
@@ -918,6 +912,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       ? `${toWorkCount} to work${counts.departed > 0 ? ` · ${counts.departed} discharged` : ""}`
                       : `${shown} shown`}
               </span>
+              {/* Export (feature 44) sits with the list it exports, not in the page top (page-tops v6). */}
+              {isPhone ? null : <ListExportButton load={exportList} variant="ghost" testId="ward-discharge-export" />}
             </header>
             {isPhone ? null : <DischargeFilterCard s={s} bare />}
             <div
