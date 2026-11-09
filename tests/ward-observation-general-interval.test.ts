@@ -8,14 +8,16 @@ import { GENERAL_OBSERVATION, observationSummary } from "../src/components/ward-
 describe("General observation interval from the clinical values file", () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it("is listed as General observation interval, 1 hour, synthetic until Josh approves it", () => {
+  it("is listed as General observation interval, 1 hour, signed by Josh on 9 Nov 2026 (D-106)", () => {
     const entry = CLINICAL_VALUE_LIST.find((candidate) => candidate.id === "observationGeneral");
     expect(entry).toMatchObject({
       name: "General observation interval",
       group: "Observation levels",
       value: 1,
       unit: "hours",
-      status: "synthetic",
+      status: "signed",
+      signedBy: "Josh (product owner)",
+      signedOn: "2026-11-09",
     });
   });
 

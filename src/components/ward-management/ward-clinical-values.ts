@@ -81,6 +81,11 @@ const SIGNED_BY_JOSH_20_OCT = { status: "signed", signedBy: "Josh (product owner
 const SIGNED_BY_JOSH_21_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-21" } as const;
 /** Josh approved the role access plan version 2, with its 12 month role ceiling, on 23 Oct 2026 (D-80). */
 const SIGNED_BY_JOSH_23_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-23" } as const;
+/**
+ * D-106 (Josh, 9 Nov 2026): he kept the medical trip bed review at 24 hours and signed the General
+ * observation interval (D-72 item 5).
+ */
+const SIGNED_BY_JOSH_9_NOV = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-11-09" } as const;
 
 /**
  * The name each observation level is shown under, everywhere Ward Flow shows one (fix plan item 10,
@@ -169,8 +174,9 @@ export const CLINICAL_VALUES = {
     adjustable: true,
   },
   edMedicalBedRelease: {
-    ...SIGNED_BY_JOSH,
-    name: "Psychiatric bed released after a medical trip expected to last",
+    // D-106 (Josh, 9 Nov 2026): 24 hours, signed. The app flags the held bed for review; it never frees it.
+    ...SIGNED_BY_JOSH_9_NOV,
+    name: "Held psychiatric bed flagged for review after a medical trip expected to last",
     group: "Emergency department waits",
     value: ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS,
     unit: "hours",
@@ -290,6 +296,22 @@ export const CLINICAL_VALUES = {
     value: 10,
     unit: "minutes",
   },
+  redRowSnoozeCap: {
+    // Added to the register 9 Nov 2026 (D-106); no clinical decision yet.
+    status: "synthetic",
+    name: "A red (act now) alert or task can be snoozed for at most",
+    group: "Alerts and holds",
+    value: 1 * MINUTES_PER_HOUR,
+    unit: "minutes",
+  },
+  supportNotificationLookback: {
+    // Added to the register 9 Nov 2026 (D-106); no clinical decision yet.
+    status: "synthetic",
+    name: "Carer, PSP and MHAS notification task stays listed, after an involuntary admission, transfer or discharge, for",
+    group: "Alerts and holds",
+    value: 72 * MINUTES_PER_HOUR,
+    unit: "minutes",
+  },
 
   // ---- Arrivals and answers ------------------------------------------------------------------
   lateArrivalGrace: {
@@ -380,6 +402,14 @@ export const CLINICAL_VALUES = {
     group: "Discharge, leave and absence",
     value: 24 * MINUTES_PER_HOUR,
     unit: "minutes",
+  },
+  oldLeavePaper: {
+    // Added to the register 9 Nov 2026 (D-106); no clinical decision yet. Warned, never refused.
+    status: "synthetic",
+    name: "Leave paper warned as possibly not current once written more than",
+    group: "Discharge, leave and absence",
+    value: 3,
+    unit: "days",
   },
   leaveOpenWarning: {
     ...SIGNED_BY_JOSH,
@@ -522,13 +552,21 @@ export const CLINICAL_VALUES = {
     value: 365,
     unit: "days",
   },
+  accessGrantDefault: {
+    // Added to the register 9 Nov 2026 (D-106); no clinical decision yet.
+    status: "synthetic",
+    name: "A request for access answered with Give grants the role for",
+    group: "Access and privacy",
+    value: 90,
+    unit: "days",
+  },
   // ---- Observation levels (fix plan item 10, Josh, 21 Oct 2026) -----------------------------------
   // The level names are in `OBSERVATION_LEVEL_NAMES` above. The staff counts (1:1 counts one, 2:1
   // counts two) are what the level names mean, so they are fixed in `ward-observation.ts` rather
   // than listed here as figures to edit. General's interval is listed (audit F3, Option A).
   observationGeneral: {
-    // Synthetic until Josh approves "General observation interval: hourly" on the PR that added it.
-    status: "synthetic",
+    // Signed: D-72 item 5 and D-106 (Josh, 9 Nov 2026), General observation interval: hourly.
+    ...SIGNED_BY_JOSH_9_NOV,
     name: OBSERVATION_LEVEL_NAMES.general + " observation interval",
     group: "Observation levels",
     value: 1,
