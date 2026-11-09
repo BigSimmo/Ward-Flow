@@ -16,9 +16,14 @@ describe("Quick bar (Josh, 8 Nov 2026)", () => {
     for (const [role, controls] of Object.entries(QUICK_BAR)) {
       const offers = controls.some((control) => control.kind === "referral");
       const screens = ROLE_SCREENS[role as keyof typeof ROLE_SCREENS];
-      const mayRefer = screens["referral-new"] !== undefined;
+      // A desk may start a referral when it holds the screen with more than counts.
+      const mayRefer = screens["referral-new"] === "all" || screens["referral-new"] === "own";
       if (offers) expect(mayRefer, role).toBe(true);
     }
+  });
+
+  it("lets the coordinator start a referral", () => {
+    expect(ROLE_SCREENS.coordinator["referral-new"]).toBe("all");
   });
 
   it("never offers network bed figures to the officer or the access admin", () => {

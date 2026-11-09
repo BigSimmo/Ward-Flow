@@ -16,6 +16,9 @@ function QuickSlotOnHome() {
   return pathname === home ? <WardQuickHeroSlot /> : null;
 }
 
+/** One element for the life of the page, so the hero's context value never changes. */
+const QUICK_SLOT = <QuickSlotOnHome />;
+
 export function WardQuickHeroProvider({ children }: { children: ReactNode }) {
-  return <HeroFootSlotProvider value={<QuickSlotOnHome />}>{children}</HeroFootSlotProvider>;
+  return <HeroFootSlotProvider value={QUICK_SLOT}>{children}</HeroFootSlotProvider>;
 }
