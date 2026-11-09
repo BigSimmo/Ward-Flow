@@ -510,26 +510,30 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
           )
         }
         steps={
-          <>
-            <PatientCareJourneyStrip
-              steps={careSteps}
-              onOpenHistory={onOpenHistory}
-              extra={
-                isLiveBedflow && !isPhone ? (
-                  <button
-                    type="button"
-                    className={journeyToggleClass}
-                    aria-expanded={stagesOpen}
-                    onClick={() => setStagesOpen((open) => !open)}
-                    data-testid="ward-patient-stages-toggle"
-                  >
-                    {stagesOpen ? "Hide placement steps" : "Placement steps"}
-                  </button>
-                ) : undefined
-              }
-            />
-            {isLiveBedflow && !isPhone && stagesOpen ? STEPPER : null}
-          </>
+          // Note 5 (Josh, 9 Nov 2026): on a phone, a strip with no step reached (nothing open) is
+          // three empty dots; it leaves the band to keep it short. Desktop keeps it.
+          isPhone && !careSteps.some((step) => step.state !== "next") ? undefined : (
+            <>
+              <PatientCareJourneyStrip
+                steps={careSteps}
+                onOpenHistory={onOpenHistory}
+                extra={
+                  isLiveBedflow && !isPhone ? (
+                    <button
+                      type="button"
+                      className={journeyToggleClass}
+                      aria-expanded={stagesOpen}
+                      onClick={() => setStagesOpen((open) => !open)}
+                      data-testid="ward-patient-stages-toggle"
+                    >
+                      {stagesOpen ? "Hide placement steps" : "Placement steps"}
+                    </button>
+                  ) : undefined
+                }
+              />
+              {isLiveBedflow && !isPhone && stagesOpen ? STEPPER : null}
+            </>
+          )
         }
         tabs={recordTabs}
         actions={
