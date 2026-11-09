@@ -1141,3 +1141,11 @@ is inferred.
 - **Decision:** the statewide figure at the top of Home, and every bed alert dot and count, reads "at risk" when the whole percentage it shows is at or above the bed alert line, and "beds in use" below it. So 84.5% to 84.9% shows "85% at risk", never "85% beds in use".
 - **How:** `coordinator-screen.tsx` compares `Math.round(statewideOccupancy)` with the bed alert line, and `isBedAlert` (`ward-service-bed-alerts.ts`) rounds the same way, so the rail, phone menu and executive bed alert dots and counts match. Built in PR #1561.
 - **Boundary:** a prototype display rule on synthetic data; approves no merge or release.
+
+## D-111. Phone bottom bar polish (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`). **Decided by:** Josh, in the Ward Flow project, choosing "Yes, push all five" on a decision card after reviewing the built before and after for all seven desks.
+- **Decision:** on the phone bottom bar (dock): (1) the + is a 52 x 38 px navy rounded button seated 5 px below the bar's edge, level with the tab pills, with no glow; (2) count badges sit on the icon's top-right corner and are a softer grey in dark mode; (3) dock badges mean work waiting only, so Capacity's free-bed figure is no longer a badge (screen readers still hear it); (4) a tab answers a press at once with a faint pill, and the current tab's icon is drawn heavier; (5) tapping the tab for the page you are already on scrolls back to the top.
+- **Why:** the old + was the heaviest thing on screen and pressed against the bar's edge; badges hid half their icons; the same badge meant both good news (free beds) and work waiting; taps gave no feedback until the page loaded; and a second tap on the current tab did nothing.
+- **How:** `shell/ward-phone-menu.module.css` and `shell-next/next-phone-menu.tsx`. Which tabs each desk has (C2 and the 31 October to 8 November rulings) is unchanged. Updates the 9 November dock badge and + styling from the sticky header redesign; the badge size and 12 px figures stay.
+- **Boundary:** a prototype display change on synthetic data; no clinical logic changes; approves no merge or release.
