@@ -856,7 +856,7 @@
   position: relative;
   height: 58px;
   align-items: center;
-  padding: 0 5px;
+  padding: 0 4.5px;
   border: 0.5px solid light-dark(rgb(15 25 40 / 10%), rgb(255 255 255 / 10%));
   border-radius: 29px;
   background: color-mix(in srgb, var(--wf-surface) 76%, transparent);
@@ -868,12 +868,17 @@
   backdrop-filter: blur(20px) saturate(1.8);
 }
 
+/* The pill sits exactly 5px inside the capsule on every side (Josh, 9 Nov 2026: "the highlight is
+   slightly off"; it had stretched to the capsule's full height, 1px from the top and bottom but 6px
+   from the end). 47px tall in the 57px inner capsule, with radius 23.5px, concentric with the bar. */
 .dock.dock .dockItem.dockItem {
+  align-self: center;
   justify-content: center;
   gap: 2px;
-  min-height: 48px;
-  padding: 4px 0 3px;
-  border-radius: 24px;
+  height: 47px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 23.5px;
   transition: background-color var(--wf-m-fast, 120ms) var(--wf-ease, ease);
 }
 
