@@ -2,10 +2,10 @@
 
 /**
  * Transport now (Movements M4, 3 Nov 2026). The four figures open the patients behind them, each
- * leg shows its three steps with the time each was recorded. M3 (3 Nov 2026) moved check in to the
- * Transport page, so "Check in" here is a link to that job there, shown to those who can open it.
+ * leg shows its three steps with the time each was recorded. Josh's Note 7 (8 Nov 2026): "Check in"
+ * opens the Check in drawer here (the step and its checks), with a link on to the job on Transport;
+ * it shows to those who can open Transport, as the M3 link did.
  */
-import Link from "next/link";
 import { ArrowRight, ChevronRight, ShieldCheck } from "lucide-react";
 
 import { StatusGlyph, buttonClass, cx, durMinutes, type WfTone } from "@/components/wf";
@@ -123,6 +123,7 @@ export function TransportFeed({
   referrals,
   detailId,
   onOpen,
+  onCheckIn,
   onPicked,
 }: {
   legs: TransportLegRow[];
@@ -132,10 +133,11 @@ export function TransportFeed({
   referrals: Referral[];
   detailId: string | null;
   onOpen: (movementId: string) => void;
+  onCheckIn: (movementId: string) => void;
   onPicked?: () => void;
 }) {
-  // M3 (approved 3 Nov 2026): check in lives on the Transport page only. A coordinator who can
-  // open Transport gets a direct link to that job; everyone else opens the patient as before.
+  // Note 7 (8 Nov 2026): a coordinator who can open Transport gets Check in, which opens the Check
+  // in drawer on this page; everyone else opens the patient as before.
   const canOpen = useCanOpenHref();
   const transportOpen = canOpen(TRANSPORT_HREF);
   return (
@@ -201,14 +203,19 @@ export function TransportFeed({
                     </span>
                   </button>
                   {next && transportOpen ? (
-                    <Link
-                      href={`${TRANSPORT_HREF}?job=${encodeURIComponent(leg.movement.id)}`}
+                    <button
+                      type="button"
                       className={cx(buttonClass({ variant: "sec", size: "sm" }), tr.checkIn)}
-                      aria-label={`Check in ${person.formalName} on Transport, next: ${next}`}
+                      aria-haspopup="dialog"
+                      aria-label={`Check in ${person.formalName}, next: ${next}`}
+                      onClick={() => {
+                        onPicked?.();
+                        onCheckIn(leg.movement.id);
+                      }}
                     >
                       Check in
                       <ArrowRight size={14} strokeWidth={1.75} aria-hidden="true" />
-                    </Link>
+                    </button>
                   ) : (
                     <ChevronRight size={16} aria-hidden="true" className={tr.chev} />
                   )}

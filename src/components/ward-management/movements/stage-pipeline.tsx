@@ -1,5 +1,4 @@
 import { useId } from "react";
-import { ChevronRight } from "lucide-react";
 
 import { StatusGlyph, durMinutes } from "@/components/wf";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -21,6 +20,11 @@ import styles from "./stage-pipeline.module.css";
  *
  * The wait colours use the same lines as the hero's pills: amber from the severe-pressure default
  * ("Over 8h"), red past the configured ED access target ("Past 24h").
+ *
+ * Josh's Note 7 (approved mock-up, 8 Nov 2026; polished 9 Nov): a header sums the day in one line
+ * (open, and which stage holds the longest wait; the hero already counts those past target) beside
+ * the wait key; the stages are numbered columns split by hairlines, each with its share of open
+ * movements, and only a stage with waits past target gets a red chip.
  */
 export function StagePipeline({
   stages,
@@ -45,6 +49,10 @@ export function StagePipeline({
   const worstStageId = worst !== undefined && longest(worst) >= accessTarget ? worst.id : undefined;
   // The persistent highlight is spoken too, not only drawn (it is no longer a pressed toggle).
   const highlightedNoteId = useId();
+  const totalOpen = stages.reduce((sum, stage) => sum + stage.movements.length, 0);
+  const pastOf = (stage: JourneyStage) =>
+    stage.movements.filter((movement) => now - movement.openedAt >= accessTarget).length;
+  const targetLabel = accessTarget % 60 === 0 ? `${accessTarget / 60}h` : durMinutes(accessTarget);
   return (
     <nav className={styles.pipeline} aria-label="Stages">
       {stages.some((stage) => highlight === `stage:${stage.id}`) ? (
@@ -52,30 +60,46 @@ export function StagePipeline({
           Highlighted in worklist
         </span>
       ) : null}
-      <ol>
-        {/* Stress test (3 Nov 2026): at most one act-now triangle a row, so only the stage whose
-            longest wait is the worst past target keeps it. The others still say "N past target". */}
+      <div className={styles.head}>
+        <h2 className={styles.title}>
+          Journey stages
+          <span className={styles.summary}>
+            {totalOpen} open
+            {worst !== undefined && worstStageId !== undefined
+              ? ` · ${STAGE_SHORT[worst.id]} holds the longest wait`
+              : ""}
+          </span>
+        </h2>
+        {/* Note 7 (9 Nov 2026): the how-to sits in the header beside the key, not as a loose line
+            under the strip; each stage's tooltip still gives its count in each wait band. */}
+        <span className={styles.aside}>
+          <span className={styles.hint}>Choose a stage to see its patients</span>
+          <span className={styles.keyBands} aria-label="Wait bands">
+            {WAIT_BANDS.map((band, index) => (
+              <span key={band}>
+                <i className={board[`band${index}`]} aria-hidden="true" />
+                {band}
+              </span>
+            ))}
+          </span>
+        </span>
+      </div>
+      <ol className={styles.flow}>
+        {/* Stress test (3 Nov 2026): at most one act-now mark a stage, so the stage holding the
+            longest wait is named in the header, not given a second red chip. */}
         {stages.map((stage, index) => {
           const oldest = stage.movements[0];
           const waits = stage.movements.map((movement) => Math.max(0, now - movement.openedAt));
           const wait = oldest ? Math.max(0, now - oldest.openedAt) : undefined;
-          const tone =
-            wait === undefined
-              ? undefined
-              : wait >= accessTarget
-                ? stage.id === worstStageId
-                  ? "danger"
-                  : undefined
-                : wait >= ED_SEVERE_PRESSURE_WAIT_MINUTES
-                  ? "warning"
-                  : undefined;
-          // Movements redesign (1 Nov 2026): Waiting's tile, a count, the longest wait and a bar of
-          // the stage's waits by length, so the eye finds where the long waits pile up.
+          const warn = wait !== undefined && wait < accessTarget && wait >= ED_SEVERE_PRESSURE_WAIT_MINUTES;
+          // Movements redesign (1 Nov 2026): a bar of the stage's waits by length, so the eye finds
+          // where the long waits pile up.
           const bands: BandCounts = [0, 0, 0, 0];
           for (const waited of waits) bands[waitBand(waited)] += 1;
-          const pastTarget = waits.filter((waited) => waited >= accessTarget).length;
+          const pastTarget = pastOf(stage);
+          const share = totalOpen === 0 ? 0 : Math.round((stage.movements.length / totalOpen) * 100);
           return (
-            <li key={stage.id}>
+            <li key={stage.id} className={styles.item}>
               <button
                 type="button"
                 className={styles.stage}
@@ -83,45 +107,41 @@ export function StagePipeline({
                 data-highlighted={highlight === `stage:${stage.id}` ? "true" : undefined}
                 aria-describedby={highlight === `stage:${stage.id}` ? highlightedNoteId : undefined}
                 onClick={() => onToggle(stage.id)}
-                title={stage.blurb}
+                title={`${stage.blurb} ${WAIT_BANDS.map((band, bandIndex) => `${band}: ${bands[bandIndex]}`).join(", ")}.`}
               >
+                <span className={styles.stageName}>
+                  <span className={styles.step} aria-hidden="true">
+                    {index + 1}
+                  </span>
+                  {STAGE_SHORT[stage.id]}
+                </span>
                 <span className={styles.stageTop}>
                   <span className={styles.stageCount}>{stage.movements.length}</span>
-                  <span className={styles.stageName}>{STAGE_SHORT[stage.id]}</span>
+                  <span className={styles.share}>{share}% of open</span>
                 </span>
                 <BandBar bands={bands} className={styles.stageBar} />
-                <span className={styles.stageWait}>
-                  {wait === undefined ? (
-                    "none waiting"
-                  ) : (
-                    <>
-                      {tone ? <StatusGlyph tone={tone} size={9} /> : null}
-                      longest <b>{durMinutes(wait)}</b>
-                    </>
-                  )}
-                </span>
-                <span className={styles.stagePast} data-past={pastTarget > 0 ? "true" : undefined}>
-                  {pastTarget > 0 ? `${pastTarget} past target` : "None past target"}
+                <span className={styles.foot}>
+                  <span className={styles.stageWait}>
+                    {wait === undefined ? (
+                      "none waiting"
+                    ) : (
+                      <>
+                        {warn ? <StatusGlyph tone="warning" size={9} /> : null}
+                        longest <b>{durMinutes(wait)}</b>
+                      </>
+                    )}
+                  </span>
+                  <span className={styles.chips}>
+                    <span className={styles.stagePast} data-past={pastTarget > 0 ? "true" : undefined}>
+                      {pastTarget > 0 ? `${pastTarget} past ${targetLabel}` : "On target"}
+                    </span>
+                  </span>
                 </span>
               </button>
-              {index < stages.length - 1 ? (
-                <ChevronRight size={14} aria-hidden="true" className={styles.stageArrow} />
-              ) : null}
             </li>
           );
         })}
       </ol>
-      <p className={styles.key}>
-        <span className={styles.keyBands} aria-hidden="true">
-          {WAIT_BANDS.map((band, index) => (
-            <span key={band}>
-              <i className={board[`band${index}`]} />
-              {band}
-            </span>
-          ))}
-        </span>
-        <span>Each bar is that stage&apos;s waits by length. Choose a stage to highlight its rows.</span>
-      </p>
     </nav>
   );
 }
