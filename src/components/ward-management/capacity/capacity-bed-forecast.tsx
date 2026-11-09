@@ -12,6 +12,7 @@ import type { ForecastLever } from "@/components/ward-management/forecast/foreca
 import type { HorizonDay } from "@/components/ward-management/forecast/forecast-horizon";
 
 import { DayBars, type DayBar } from "./capacity-day-bars";
+import { ExpectedOccupancyTable } from "./capacity-expected-occupancy-lazy";
 import { HowWorkedOut, Legend } from "./capacity-how-worked-out";
 import { gapWords } from "./capacity-range-line";
 import { ShowMoreRow } from "@/components/wf";
@@ -60,7 +61,7 @@ export function BedForecast({
   const { forecast, gapTotals, days, week, forecastModel, sourceSummary, now, networkRows } = model;
   // WF-FIG-018: this view is the one that records "since you looked" when it is left.
   useForecastChange(forecastModel, now, { remember: true });
-  const [tomorrow, twoDays] = forecast.horizons;
+  const [tomorrow, twoDays, threeDays] = forecast.horizons;
   const bars: DayBar[] = days.map((day, index) => ({
     key: day.offset,
     label: day.label,
@@ -147,6 +148,16 @@ export function BedForecast({
             sub={`${gapWords(twoDays.low)} to ${gapWords(twoDays.high)}`}
           />
         ) : null}
+        {/* Feature 21 (Josh, 9 Nov 2026): the third day, 72 hours out, read as softly as the second. */}
+        {threeDays ? (
+          <Kpi
+            label="In 3 days"
+            value={`Likely ${gapWords(threeDays.likely)}`}
+            tone={threeDays.likely}
+            soft
+            sub={`${gapWords(threeDays.low)} to ${gapWords(threeDays.high)}`}
+          />
+        ) : null}
         <Kpi
           label={`Going out, ${bars.length} days`}
           value={`${weekOut} beds`}
@@ -198,6 +209,7 @@ export function BedForecast({
           )}
         </div>
       </div>
+      <ExpectedOccupancyTable units={model.gapUnits} bedReleases={model.bedReleases} now={now} stacked={stacked} />
       <LeverPopup
         item={openItem}
         now={now}

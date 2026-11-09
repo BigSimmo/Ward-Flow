@@ -1,0 +1,89 @@
+/* Feature 21 (9 Nov 2026): Expected occupancy under the bed forecast. Plain, dense, figures in mono. */
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+.wrap[data-stacked] {
+  padding-inline: 0;
+}
+.title {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+.scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.scroll:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.table th,
+.table td {
+  padding: 6px var(--wf-s-2);
+  border-bottom: 1px solid var(--wf-line);
+  text-align: start;
+  white-space: nowrap;
+}
+.table thead th {
+  color: var(--wf-ink-3);
+  font-weight: 500;
+}
+.table tbody th {
+  color: var(--wf-ink-1);
+  font-weight: 500;
+}
+.table .num {
+  text-align: end;
+}
+.cell {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+}
+.figure,
+.percent {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+.figure {
+  color: var(--wf-ink-1);
+}
+.percent {
+  min-width: 3.5ch;
+  color: var(--wf-ink-3);
+  text-align: end;
+}
+.total th,
+.total td {
+  border-bottom: 0;
+  border-top: 1px solid var(--wf-line-strong, var(--wf-line));
+  font-weight: 600;
+}
+.note {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+/* Phone: the percentage sits under the count so four columns fit 400px without scrolling. */
+@media (max-width: 480px) {
+  .table th,
+  .table td {
+    padding-inline: 4px;
+  }
+  .cell {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0;
+  }
+}
