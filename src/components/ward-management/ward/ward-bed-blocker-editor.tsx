@@ -3,6 +3,7 @@
 import type { ReactNode, RefObject } from "react";
 import { Button, cx, useOptionalToast } from "@/components/wf";
 import { savedAtToast } from "@/components/ward-management/ward-saved-at-toast";
+import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
@@ -24,17 +25,20 @@ export function useBlockerSave(
 ) {
   const save = useWardFormSave(`blocker:${stayKey ?? ""}`);
   const toast = useOptionalToast();
+  const now = useWardFlowClock();
   const submit =
     onUpdateBlocker && admissionId
-      ? (blocker: BedReleaseBlocker | null) =>
-          save.submit(
+      ? (blocker: BedReleaseBlocker | null) => {
+          const submittedAt = now;
+          return save.submit(
             () => onUpdateBlocker(admissionId, blocker),
             () => {
               setOpen(false);
               // a clear on-screen confirmation with the time of the save.
-              savedAtToast(toast, blocker ? `Hold-up saved: ${blocker}` : "Hold-up cleared");
+              savedAtToast(toast, blocker ? `Hold-up saved: ${blocker}` : "Hold-up cleared", submittedAt);
             },
-          )
+          );
+        }
       : undefined;
   return {
     submit,

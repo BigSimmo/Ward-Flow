@@ -22,6 +22,7 @@ import {
   STATISTICS_WARDS_HREF,
 } from "./statistics-sections";
 import styles from "./statistics-v6.module.css";
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 
 export type FinderKind = "ward" | "ed" | "service" | "team";
 
@@ -88,9 +89,10 @@ export function StatisticsUnitFinder({ lists }: { lists: Record<FinderKind, Find
 
   const entries = lists[kind];
   const shown = useMemo(() => {
-    const needle = query.trim().toLowerCase();
+    const needle = query.trim();
     if (!needle) return entries;
-    return entries.filter((entry) => `${entry.name} ${entry.code ?? ""}`.toLowerCase().includes(needle));
+    // Search audit, 8 Nov 2026: every word, folded, in any order ("SCGH 6", "gairdner sir").
+    return entries.filter((entry) => fieldsMatchEveryWord(needle, [entry.name, entry.code]));
   }, [entries, query]);
 
   return (
@@ -131,6 +133,7 @@ export function StatisticsUnitFinder({ lists }: { lists: Record<FinderKind, Find
           placeholder={PLACEHOLDER[kind]}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
+          onClear={() => setQuery("")}
         />
       </div>
       {shown.length === 0 ? (

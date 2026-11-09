@@ -41,4 +41,9 @@ describe("weekly receipt clean-up (limits audit, 25 Oct 2026)", () => {
     expect(gated.length).toBeGreaterThan(0);
     for (const step of gated) expect(step[0]).toContain("if: ${{ steps.secrets.outputs.ready == 'true' }}");
   });
+
+  it("fails a scheduled run without the secret, so a green run means receipts were removed (review, 8 Nov 2026)", () => {
+    const check = workflow.match(/^      - name: Check the connection secret is set\n(?:        .+\n)*/mu)?.[0] ?? "";
+    expect(check).toMatch(/elif \[ "\$GITHUB_EVENT_NAME" = "schedule" \]; then\n\s+echo "::error::[^"]+"\n\s+exit 1/u);
+  });
 });

@@ -151,6 +151,8 @@ export function smartSearchGroups(
   answer?: SearchAnswer,
   /** Help's own answers for the query, from the caller (`ward-global-search-help.tsx`). */
   help: readonly SearchResultItem[] = [],
+  /** The desk's role, which only reorders place groups (`searchGroupOrder`). */
+  role?: string,
 ): SearchResultGroup[] {
   const g: SearchResultGroup[] = [];
 
@@ -359,7 +361,7 @@ export function smartSearchGroups(
 
   if (help.length > 0) g.push({ key: "help", heading: "Help", items: [...help] });
 
-  const order = searchGroupOrder(smartResults.intent, trimmed);
+  const order = searchGroupOrder(smartResults.intent, trimmed, role);
   const position = new Map<string, number>(order.map((key, index) => [key, index]));
   g.sort((left, right) => (position.get(left.key) ?? order.length) - (position.get(right.key) ?? order.length));
   if (!answer) return g;

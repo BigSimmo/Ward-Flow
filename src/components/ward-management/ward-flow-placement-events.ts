@@ -104,8 +104,17 @@ export function reducePlacementEvent(
        * Runs before every capacity and eligibility check: nothing is consumed, and those checks
        * would count the patient's own held bed against them.
        */
-      const patientId =
-        movement.patientId ?? state.referrals.find((r) => r.id === movement.referralId)?.patientId ?? event.patientId;
+      /**
+       * D-14 / R4: `resolvedReferral` inlines `referralForMovement`'s resolution (importing
+       * `ward-derivations.ts` would be circular). `undefined` when the movement has no `referralId`
+       * or it does not resolve. Computed once, with `patientId`, so the "already in a bed" check
+       * below and the new stay's fields agree on who the patient is.
+       */
+      const resolvedReferral =
+        movement.referralId === undefined
+          ? undefined
+          : state.referrals.find((referral) => referral.id === movement.referralId);
+      const patientId = resolvedReferral?.patientId ?? movement.patientId ?? event.patientId;
       const source = movementSourceAdmission(state, movement);
       if (
         ((movement.sourceAdmissionId != null || movement.referralSourceAdmissionId !== undefined) && !source) ||
@@ -356,15 +365,7 @@ export function reducePlacementEvent(
        * arrived until the ward says they have arrived. The pull just means the bed is allocated to
        * them."). Only `PATIENT_ARRIVED` writes `arrivedAt`, so `daysInBed` is not inflated by the
        * transport delay. `pulledAt` is `event.now`: this event is the pull.
-       *
-       * D-14 / R4: `resolvedReferral` inlines `referralForMovement`'s resolution (importing
-       * `ward-derivations.ts` would be circular). `undefined` when the movement has no `referralId`
-       * or it does not resolve. Computed once so every field below agrees.
        */
-      const resolvedReferral =
-        movement.referralId === undefined
-          ? undefined
-          : state.referrals.find((referral) => referral.id === movement.referralId);
       const admission: Admission = {
         id: `AD-ARR-${String(state.admissionSequence + 1).padStart(2, "0")}`,
         unitId: unit.id,
@@ -379,7 +380,7 @@ export function reducePlacementEvent(
         highAcuity: movement.highAcuity,
         referralId: resolvedReferral?.id ?? null,
         movementId: movement.id,
-        patientId: resolvedReferral?.patientId ?? movement.patientId ?? event.patientId ?? null,
+        patientId: patientId ?? null,
         sex: movement.sex,
         gender: movement.gender,
         // R4: a home region is a fact about the person, from the resolved referral; never invented

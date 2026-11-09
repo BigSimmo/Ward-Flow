@@ -24,6 +24,7 @@ import type { ActiveTabType } from "./community-screen-helpers";
 import styles from "./community.module.css";
 import v6 from "./community-team-v6.module.css";
 import type { CommunityScreenView } from "./community-screen";
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 
 /**
  * The page's five sections, in the locked design's order (design/community-team-2026-11, Josh
@@ -455,6 +456,11 @@ export function CommunityOtherTeams({ view }: { view: CommunityScreenView }) {
 /** The Switch team drawer, opened from either tree. */
 export function CommunityScreenSwitchDrawer({ view }: { view: CommunityScreenView }) {
   const { team, switchOpen, setSwitchOpen, switchQuery, setSwitchQuery, switchTriggerRef } = view;
+  // Search audit, 8 Nov 2026: every word, folded, in any order; the counts come from one cached table.
+  const switchTeams = switchQuery.trim()
+    ? COMMUNITY_TEAM_PAGES.filter((other) => fieldsMatchEveryWord(switchQuery, [other.name]))
+    : COMMUNITY_TEAM_PAGES;
+  const suburbCounts = communityTeamSuburbCounts();
   return (
     <Drawer
       open={switchOpen}
@@ -479,11 +485,10 @@ export function CommunityScreenSwitchDrawer({ view }: { view: CommunityScreenVie
           autoComplete="off"
           data-sheet-autofocus
         />
+        {switchTeams.length === 0 ? <p className={v6.switchMeta}>No team matches that search.</p> : null}
         <ul className={v6.switchList}>
-          {COMMUNITY_TEAM_PAGES.filter((other) =>
-            other.name.toLowerCase().includes(switchQuery.trim().toLowerCase()),
-          ).map((other) => {
-            const suburbs = communityTeamSuburbCounts().get(other.name);
+          {switchTeams.map((other) => {
+            const suburbs = suburbCounts.get(other.name);
             return (
               <li key={other.id}>
                 <Link

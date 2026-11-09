@@ -53,7 +53,15 @@ function communityTeamKey(name: string): string {
  * `communityTeamOptions()`'s own rule, reproduced rather than assumed: a different choice here
  * would report collisions between names that are not on the screen.
  */
+// Search audit, 8 Nov 2026: the catchment table is fixed, so the counts are worked out once. The
+// Switch team search read them once per team row on every keystroke.
+let suburbCountsCache: ReadonlyMap<string, number> | null = null;
 export function communityTeamSuburbCounts(): ReadonlyMap<string, number> {
+  suburbCountsCache ??= countCommunityTeamSuburbs();
+  return suburbCountsCache;
+}
+
+function countCommunityTeamSuburbs(): ReadonlyMap<string, number> {
   const spellings = new Map<string, Map<string, number>>();
   for (const row of S2015_CATCHMENT_ROWS) {
     for (const clinic of parseFollowUpClinicSet(row.followUpClinicVerbatim)) {

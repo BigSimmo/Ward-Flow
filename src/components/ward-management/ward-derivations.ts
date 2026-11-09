@@ -1232,10 +1232,15 @@ export function searchPatients(
 }
 
 export function isArrivalLate(
-  movement: Pick<Movement, "arrivalDetails" | "stage" | "arrivalLateNotifiedAt">,
+  movement: Pick<Movement, "arrivalDetails" | "stage" | "arrivalLateNotifiedAt" | "closure">,
   now: Instant,
 ): boolean {
-  return isArrivalLateClock(movement.arrivalDetails?.estimatedArrivalAt, movement.stage, now);
+  return isArrivalLateClock(
+    movement.arrivalDetails?.estimatedArrivalAt,
+    movement.stage,
+    now,
+    movement.closure !== undefined,
+  );
 }
 
 export function leaveBedNeedsOpenWarning(leaveBed: LeaveBed, now: Instant): boolean {

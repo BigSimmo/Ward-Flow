@@ -26,6 +26,7 @@ import { Chevron, MenuSearching, type PageRowRender, Section } from "./ward-phon
 import styles from "./ward-phone-menu.module.css";
 import type { RailEntry } from "./ward-rail-entries";
 import { useAccessNavFilter, useCanOpenHref } from "./ward-access";
+import { useEffectiveWardAccess } from "./ward-access-store";
 
 /*
  * The phone menu's search results, split out of `ward-phone-menu.tsx` (16 October 2026) so the
@@ -46,6 +47,8 @@ const MENU_RESULTS_FULL = 40;
 function useMenuSearch(query: string, entries: RailEntry[], findHelp: ReturnType<typeof useHeaderHelp>["findHelp"]) {
   const canOpenHref = useCanOpenHref();
   const accessNav = useAccessNavFilter();
+  // Search audit, 8 Nov 2026: the same role-led place order as the header search.
+  const deskRole = useEffectiveWardAccess().role;
   const { movements, patients, units, referrals, plannedAdmissions, admissions, leaveBeds, dayZero, configuration } =
     useWardFlowSelect(
       "movements",
@@ -123,6 +126,7 @@ function useMenuSearch(query: string, entries: RailEntry[], findHelp: ReturnType
           { patients, referrals, movements, plannedAdmissions },
           answer,
           help.items,
+          deskRole,
         )
           .map((group) =>
             group.key === "views"
@@ -159,6 +163,7 @@ function useMenuSearch(query: string, entries: RailEntry[], findHelp: ReturnType
     canOpenHref,
     accessNav,
     findHelp,
+    deskRole,
   ]);
 }
 

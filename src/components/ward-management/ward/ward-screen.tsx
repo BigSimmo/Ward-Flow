@@ -85,7 +85,7 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { plural } from "@/components/ward-management/ward-plural";
 import { CheckingFoot, durMinutes, Menu, useIsPhone, useOptionalToast } from "@/components/wf";
-import { clockTime, savedAtToast } from "@/components/ward-management/ward-saved-at-toast";
+import { savedAtToast } from "@/components/ward-management/ward-saved-at-toast";
 import { useActionToast } from "@/components/ward-management/use-action-toast";
 import { useWardUnitQueues } from "./use-ward-unit-queues";
 import styles from "./ward.module.css";
@@ -770,10 +770,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // Focus goes back to whichever control opened the modal (the header button or the home tab's),
   // and falls back to the header button only when that control is gone.
   const capacityOpenerRef = useRef<HTMLElement | null>(null);
+  // Concurrent sign-in test, 8 Nov 2026: each opening drafts from the count on screen, not the one
+  // read at page load, so another desk's confirm meanwhile no longer refuses this desk's next one.
+  const currentCapacity = unit?.allocatable.value ?? 0;
+  const currentCapacityRevision = unit?.allocatable.revision ?? 0;
   const openCapacityModal = useCallback(() => {
     capacityOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setCapacityValue(String(currentCapacity));
+    setCapacityRevision(currentCapacityRevision);
     setConfirmNumbersOpen(true);
-  }, []);
+  }, [currentCapacity, currentCapacityRevision]);
   const closeCapacityModal = useCallback(() => {
     setConfirmNumbersOpen(false);
     setTimeout(() => {
@@ -1595,14 +1601,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       warnToast(`Enter a whole number from 0 to ${unit.beds} beds.`);
       return;
     }
-    // say on screen that the beds were saved, and when.
+    const submittedAt = nowRef.current; // the board time the command carries, for "Saved at"
     completeCommand(
       "capacity-rollup",
       () => submitCapacity(),
       (outcome) => {
         const failure = wardCommandFailure(outcome);
         if (failure) warnToast(failure);
-        else savedAtToast(toast, `Beds confirmed: ${parsed} of ${unit.beds}`);
+        else savedAtToast(toast, `Beds confirmed: ${parsed} of ${unit.beds}`, submittedAt);
       },
     );
   }
@@ -1635,7 +1641,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         }
         const confirmed = () =>
           setToastMessage(
-            `Capacity and morning bed numbers confirmed at ${clockTime()} (due ${morningRollupTimeLabel}): ${plural(releasesCountedToday.length, "discharge", "discharges")} planned today.`,
+            `Capacity and morning bed numbers confirmed at ${formatInstant(now)} (due ${morningRollupTimeLabel}): ${plural(releasesCountedToday.length, "discharge", "discharges")} planned today.`,
           );
         if (isRollupConfirmedToday) {
           confirmed();

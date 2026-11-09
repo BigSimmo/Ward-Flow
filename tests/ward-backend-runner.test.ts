@@ -3,7 +3,12 @@ import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { backendTestPlan, parseBackendTestArguments, runBackendTests } from "../scripts/run-backend-tests.mjs";
+import {
+  BACKEND_COVERAGE_FLOORS,
+  backendTestPlan,
+  parseBackendTestArguments,
+  runBackendTests,
+} from "../scripts/run-backend-tests.mjs";
 
 import { removePathSync } from "../scripts/retryable-fs.mjs";
 
@@ -98,7 +103,7 @@ describe("backend test discovery and integration evidence", () => {
     expect(plan.environment.WARD_TEST_DATABASE_URL).toBe("");
     expect(plan.environment.OPENAI_API_KEY).toBe("");
   });
-  it("adds a separately named backend LCOV report without silently setting a coverage floor", () => {
+  it("adds a separately named backend LCOV report, with no coverage floor for a unit-only run", () => {
     const root = fixture();
     const plan = backendTestPlan({ root, environment: {}, coverage: true });
     expect(plan.args).toContain("--experimental-test-coverage");
@@ -107,6 +112,19 @@ describe("backend test discovery and integration evidence", () => {
     expect(plan.args).toContain("--test-coverage-exclude=**/dist/**");
     expect(plan.args).toContain(`--test-reporter-destination=${path.join(root, "coverage/backend/lcov.info")}`);
     expect(plan.args.some((arg: string) => arg.startsWith("--test-coverage-lines="))).toBe(false);
+  });
+  it("holds the real-database coverage run to the backend floors (review, 8 Nov 2026)", () => {
+    const plan = backendTestPlan({
+      root: fixture(),
+      environment: { WARD_TEST_DATABASE_URL: "postgresql://postgres@127.0.0.1:5432/wardflow_test" },
+      coverage: true,
+    });
+    expect(plan.args).toContain(`--test-coverage-lines=${BACKEND_COVERAGE_FLOORS.lines}`);
+    expect(plan.args).toContain(`--test-coverage-branches=${BACKEND_COVERAGE_FLOORS.branches}`);
+    expect(plan.args).toContain(`--test-coverage-functions=${BACKEND_COVERAGE_FLOORS.functions}`);
+    expect(plan.args.indexOf("--")).toBeGreaterThan(
+      plan.args.indexOf(`--test-coverage-lines=${BACKEND_COVERAGE_FLOORS.lines}`),
+    );
   });
   it("writes usable LCOV using the installed Node runner against a synthetic backend", async () => {
     const root = fixture();

@@ -3,15 +3,15 @@
 /**
  * Triage and risk: the slide-outs, on the kit PanelDrawer.
  *
- * - Summary: the record (Summary, Referral, Last triage, Alerts, Profile), opened from the banner
- *   links, the section index and the phone bar. Summary holds "Before you sign" and the document
- *   the form builds as you go, which prints as SMHMR900 and SMHMR905.
+ * - Summary: the record (Summary, Patient and referral, Previous triages, Alerts), opened from the
+ *   banner links, the section index and the phone bar. Summary holds "Before you sign" and the
+ *   document the form builds as you go, which prints as SMHMR900 and SMHMR905.
  * - How to: the steps, Start a new triage and where each PSOLIS field went.
  * - All RAMP factors: every factor by area.
  *
  * Synthetic data only.
  */
-import { ArrowUpRight, Copy, FilePlus2, History, Inbox, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, Copy, History, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useId, useState, type ReactNode } from "react";
 
@@ -20,11 +20,10 @@ import {
   Button,
   ChipGroup,
   DrawerFootRow,
+  Meter,
   PanelDrawer,
   StatusGlyph,
   buttonClass,
-  tableClasses,
-  phoneRows,
   type WfTone,
 } from "@/components/wf";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
@@ -33,12 +32,13 @@ import {
   AREA_NAME,
   AREAS,
   FACTOR_NAME,
-  HOW_TO,
-  PSOLIS_FIELD_MAP,
+  SECTIONS,
+  type PreviousTriage,
   type SectionId,
   type TriagePerson,
 } from "./triage-risk-data";
 import { Choice, type FormApi } from "./triage-risk-parts";
+import { isbarText } from "./triage-risk-isbar";
 import { FactorRow } from "./triage-risk-risk";
 import { allFactors, type Requirement, type Target } from "./triage-risk-state";
 import {
@@ -51,13 +51,20 @@ import {
 } from "./triage-risk-summary";
 import styles from "./triage-risk-form.module.css";
 
-const summaryTabs = (alertCount: number) => [
+/**
+ * The slide-out's tabs (Josh, 9 Nov 2026): four, not five. Patient and referral holds what were the
+ * Referral and Profile tabs; Previous triages lists every earlier signed triage, not only the last.
+ */
+const summaryTabs = (alertCount: number, previousCount: number) => [
   { id: "sum", label: "Summary" },
-  { id: "ref", label: "Referral" },
-  { id: "last", label: "Last triage" },
+  { id: "patient", label: "Patient and referral" },
+  { id: "prev", label: "Previous triages", ...(previousCount ? { count: previousCount } : {}) },
   { id: "alerts", label: "Alerts", ...(alertCount ? { count: alertCount } : {}) },
-  { id: "profile", label: "Profile" },
 ];
+
+/** The person's earlier signed triages, newest first; a fixture that names only `last` gives that one. */
+const previousOf = (person: TriagePerson): readonly PreviousTriage[] =>
+  person.previous ?? (person.last ? [person.last] : []);
 
 /** Who the triage is for, in record words: legal status as typed, never checked. */
 const legalWords = (person: TriagePerson) =>
@@ -107,8 +114,30 @@ function Value({ value }: { value: DocValue }) {
 
 function Block({ block }: { block: DocBlock }) {
   if (block.kind === "facts")
-    return <Facts rows={block.rows.map(([label, value]) => [label, <Value key={label} value={value} />] as const)} />;
-  if (block.kind === "missing") return <p className={styles.missing}>{block.text}</p>;
+    return (
+      <Facts
+        rows={block.rows.map(
+          ([label, value]) =>
+            [
+              label,
+              // A value with nothing recorded is marked so the printed copy can grey the whole line.
+              value.every((bit) => typeof bit !== "string") ? (
+                <span key={label} data-wf-print-blank="">
+                  <Value value={value} />
+                </span>
+              ) : (
+                <Value key={label} value={value} />
+              ),
+            ] as const,
+        )}
+      />
+    );
+  if (block.kind === "missing")
+    return (
+      <p className={styles.missing} data-wf-print-blank="">
+        {block.text}
+      </p>
+    );
   if (block.kind === "tags")
     return (
       <ul className={styles.docTags} aria-label={block.label}>
@@ -192,6 +221,13 @@ export function SummaryDocument({
   const model = summaryModel(state, signed);
   const copy = () =>
     copyText(summaryText(model), "Summary copied.", "Copy not allowed here. Select the summary text instead.", say);
+  const copyIsbar = () =>
+    copyText(
+      isbarText(state, signed),
+      "iSoBAR copied.",
+      "Copy not allowed here. Select the summary text instead.",
+      say,
+    );
 
   return (
     <>
@@ -200,6 +236,8 @@ export function SummaryDocument({
         data-capped={full ? undefined : ""}
         aria-labelledby="triage-doc-title"
         data-testid="triage-summary-document"
+        data-print-output
+        data-wf-print-doc="triage"
       >
         <div className={styles.docTop}>
           <div className={styles.grow}>
@@ -215,9 +253,14 @@ export function SummaryDocument({
             </p>
           </div>
           {signed && !copyWhenSigned ? null : (
-            <Button variant="ghost" size="sm" icon={Copy} onClick={copy} data-testid="triage-copy-summary">
-              Copy
-            </Button>
+            <span className={styles.docCopies}>
+              <Button variant="ghost" size="sm" icon={Copy} onClick={copy} data-testid="triage-copy-summary">
+                Copy
+              </Button>
+              <Button variant="ghost" size="sm" icon={Copy} onClick={copyIsbar} data-testid="triage-copy-isbar">
+                Copy as iSoBAR
+              </Button>
+            </span>
           )}
         </div>
         {model.parts.map((part) => (
@@ -257,59 +300,142 @@ export function SummaryDocument({
   );
 }
 
+/** The names of a section's open items: the first three, then "+N". Items to check read quieter. */
+function OpenNames({ items }: { items: readonly Requirement[] }) {
+  const shown = items.slice(0, 3);
+  return (
+    <span className={styles.signCheckItems}>
+      {shown.map((r, index) => (
+        <span key={`${index}-${r.label}`} className={r.blocks ? undefined : styles.signCheckSoft}>
+          {index ? ", " : ""}
+          {r.label}
+        </span>
+      ))}
+      {items.length > shown.length ? (
+        <span className={styles.signCheckSoft}> +{items.length - shown.length}</span>
+      ) : null}
+    </span>
+  );
+}
+
+/**
+ * "Before you sign" (Josh, 9 Nov 2026): one compact block instead of a chip per item. The head
+ * counts what is needed and what to check and goes to the next needed item; a bar shows how much of
+ * what is needed is done; then one line per section with its open items, each line going to that
+ * section's first. Risk and plan wait behind Show while the triage sections still need answers.
+ */
 function BeforeYouSign({ reqs, jump }: { reqs: readonly Requirement[]; jump: Jump }) {
-  const needed = reqs.filter((r) => r.blocks && !r.ok);
+  const [showLater, setShowLater] = useState(false);
+  const blocking = reqs.filter((r) => r.blocks);
+  const needed = blocking.filter((r) => !r.ok);
   const toCheck = reqs.filter((r) => !r.blocks && !r.ok);
   const counts = [needed.length ? `${needed.length} needed` : "", toCheck.length ? `${toCheck.length} to check` : ""]
     .filter(Boolean)
     .join(" · ");
+  const next = needed[0] ?? toCheck[0];
+  const rows = SECTIONS.map((section) => {
+    const open = reqs.filter((r) => r.section === section.id && !r.ok);
+    // Needed items first, then the ones to check, each in the form's order.
+    return { section, open: [...open.filter((r) => r.blocks), ...open.filter((r) => !r.blocks)] };
+  });
+  const triageLeft = rows.some((row) => row.section.n <= 4 && row.open.some((r) => r.blocks));
+  const folded = triageLeft && !showLater;
+  const laterNeeded = rows
+    .filter((row) => row.section.n >= 5)
+    .reduce((sum, row) => sum + row.open.filter((r) => r.blocks).length, 0);
+
   return (
-    <div className={styles.gaps}>
-      <div className={styles.gapsHead}>
+    <section className={styles.signCheck} aria-labelledby="triage-sign-check-title" data-testid="triage-sign-check">
+      <div className={styles.signCheckHead}>
         <StatusGlyph tone={needed.length ? "neutral" : "success"} size={10} />
-        {needed.length ? "Before you sign" : "Ready to sign"}
+        <h3 className={styles.signCheckTitle} id="triage-sign-check-title">
+          {needed.length ? "Before you sign" : "Ready to sign"}
+        </h3>
         <span className={`${styles.mono} ${styles.pushEnd}`}>{counts}</span>
+        {next ? (
+          <Button size="sm" onClick={() => jump(next.section, next.target)} data-testid="triage-sign-check-next">
+            Go to next
+          </Button>
+        ) : null}
       </div>
-      {needed.length || toCheck.length ? (
-        <ChipGroup label="Go to what is left" className={styles.gapChips}>
-          {[...needed, ...toCheck].map((r, index) => (
-            <Button
-              key={`${index}-${r.label}`}
-              size="sm"
-              className={phoneRows.chip}
-              onClick={() => jump(r.section, r.target)}
-            >
-              <span className={styles.inlineMark}>
-                <StatusGlyph tone={r.blocks ? "neutral" : "warning"} size={8} />
-                {r.label}
-              </span>
-            </Button>
-          ))}
-        </ChipGroup>
+      {blocking.length ? (
+        <Meter
+          value={blocking.length - needed.length}
+          max={blocking.length}
+          fill="success"
+          label="Needed answers done"
+          valueText={`${blocking.length - needed.length} of ${blocking.length} done`}
+          className={styles.signCheckBar}
+        />
       ) : null}
-    </div>
+      <ul className={styles.signCheckList}>
+        {rows
+          .filter((row) => !(folded && row.section.n >= 5))
+          .map(({ section, open }) => {
+            const name = (
+              <span className={styles.signCheckName}>
+                <span className={styles.mono}>{section.n}</span> {section.label}
+              </span>
+            );
+            if (!open.length)
+              return (
+                <li key={section.id} className={styles.signCheckRow} data-done="">
+                  <StatusGlyph tone="success" size={8} />
+                  {name}
+                  <span className={styles.signCheckSoft}>Done</span>
+                </li>
+              );
+            const first = open[0];
+            const neededHere = open.filter((r) => r.blocks).length;
+            return (
+              <li key={section.id}>
+                <button
+                  type="button"
+                  className={styles.signCheckRow}
+                  onClick={() => jump(first.section, first.target)}
+                  aria-label={`${section.label}: ${open.length} open. Go to ${first.label}.`}
+                >
+                  <StatusGlyph tone={neededHere ? "neutral" : "warning"} size={8} />
+                  {name}
+                  <OpenNames items={open} />
+                  <span
+                    className={neededHere ? styles.signCheckCount : `${styles.signCheckCount} ${styles.signCheckSoft}`}
+                  >
+                    {open.length}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+      </ul>
+      {triageLeft ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className={styles.signCheckMore}
+          onClick={() => setShowLater((v) => !v)}
+          aria-expanded={!folded}
+        >
+          {folded ? `Show 5 and 6${laterNeeded ? ` · ${laterNeeded} needed` : ""}` : "Hide 5 and 6"}
+        </Button>
+      ) : null}
+    </section>
   );
 }
 
 /** A record tab: what the synthetic record holds, as one card of label and value rows. */
 function RecordPane({
   title,
-  badge,
   rows,
   note,
 }: {
   title: string;
-  /** A status beside the heading (the last triage's urgency). */
-  badge?: ReactNode;
   rows: readonly (readonly [string, ReactNode])[];
   note?: string;
 }) {
   return (
     <>
-      <h3 className={styles.paneHead}>
-        {title}
-        {badge ? <span className={styles.pushEnd}>{badge}</span> : null}
-      </h3>
+      <h3 className={styles.paneHead}>{title}</h3>
       <Facts rows={rows} className={styles.recordCard} />
       {note ? <p className={styles.quiet}>{note}</p> : null}
     </>
@@ -410,6 +536,55 @@ function EmptyPane({ icon: IconShape, title, text }: { icon: LucideIcon; title: 
   );
 }
 
+/**
+ * Previous triages (Josh, 9 Nov 2026): this person's earlier signed triages, newest first, one row
+ * each from the workspace record. Codes only; nothing typed was kept, so nothing typed is shown.
+ */
+function PreviousPane({ person }: { person: TriagePerson }) {
+  const previous = previousOf(person);
+  if (!previous.length)
+    return (
+      <EmptyPane
+        icon={History}
+        title="No earlier triage for this person."
+        text="Past risk is answered fresh today. Nothing is carried forward."
+      />
+    );
+  const carried = previous[0].pastFlags.map((key) => FACTOR_NAME[key] ?? key);
+  return (
+    <>
+      <h3 className={styles.paneHead}>
+        Signed triages
+        <span className={`${styles.mono} ${styles.pushEnd}`}>{previous.length}</span>
+      </h3>
+      <ul className={styles.prevList} data-testid="triage-previous-list">
+        {previous.map((item, index) => (
+          <li key={`${index}-${item.when}`} className={styles.prevItem}>
+            <span className={styles.prevWhen}>{item.when}</span>
+            <Badge size="sm" className={styles.noShrink}>
+              {item.urgencyText}
+            </Badge>
+            <span className={styles.prevFacts}>
+              {[
+                item.outcome,
+                `${item.legal} (as chosen then)`,
+                `Review by ${item.review}`,
+                `Signed by ${item.by ?? "–"}`,
+              ].join(" · ")}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {carried.length ? (
+        <p className={styles.quiet}>
+          Carry forward in Risk assessment brings past flags from the {previous[0].when} triage only:{" "}
+          {carried.join(", ")}. Typed notes are never kept.
+        </p>
+      ) : null}
+    </>
+  );
+}
+
 export function SummaryDrawer({
   form,
   open,
@@ -445,7 +620,7 @@ export function SummaryDrawer({
           {signed ? "Signed" : left ? `${left} needed` : "Ready to sign"}
         </Badge>
       }
-      tabs={summaryTabs(person.alertCount)}
+      tabs={summaryTabs(person.alertCount, previousOf(person).length)}
       tab={tab}
       onTabChange={onTab}
       tabsLabel="Slide-out"
@@ -475,53 +650,26 @@ export function SummaryDrawer({
             <SummaryDocument form={form} jump={signed ? undefined : jump} signed={signed} copyWhenSigned />
           </>
         ) : null}
-        {tab === "ref" ? (
-          person.referral ? (
-            <RecordPane
-              // D-39: record numbers stay off screens; the referral is named by where it came from.
-              title={`Referral from ${person.referral.from}`}
-              rows={[
-                ["From", person.referral.from],
-                ["Urgency asked", person.referral.urgency ?? "No triage urgency asked"],
-                ["Legal", legalWords(person)],
-                ["Now at", person.nowAt],
-              ]}
-            />
-          ) : (
-            <EmptyPane
-              icon={Inbox}
-              title="No open referral"
-              text="This triage starts without one. Record who asked for it in Review details."
-            />
-          )
-        ) : null}
-        {tab === "last" && !person.last ? (
-          <EmptyPane
-            icon={History}
-            title="No previous triage on record"
-            text="Past risk is answered fresh today. Nothing is carried forward."
-          />
-        ) : null}
-        {tab === "last" && person.last ? (
-          <RecordPane
-            title={person.last.label}
-            badge={<Badge size="sm">{person.last.urgencyText}</Badge>}
-            rows={[
-              ["Outcome", person.last.outcome],
-              ["Legal", `${person.last.legal} (as chosen then). Not legally checked.`],
-              ["Review risk by", person.last.review],
-              [
-                "Flags then",
-                [...person.last.pastFlags, ...person.last.nowFlags].map((k) => FACTOR_NAME[k]).join(" · ") ||
-                  "None marked present",
-              ],
-            ]}
-            note="A signed triage keeps its codes only. Its typed assessment, formulation and plan are not carried."
-          />
-        ) : null}
-        {tab === "alerts" ? <AlertsPane person={person} /> : null}
-        {tab === "profile" ? (
+        {tab === "patient" ? (
           <>
+            {person.referral ? (
+              <RecordPane
+                // D-39: record numbers stay off screens; the referral is named by where it came from.
+                title={`Referral from ${person.referral.from}`}
+                rows={[
+                  ["From", person.referral.from],
+                  ["Urgency asked", person.referral.urgency ?? "No triage urgency asked"],
+                  ...(person.referral.received ? [["Received", person.referral.received] as const] : []),
+                ]}
+              />
+            ) : (
+              <FlagGroup
+                title="Referral"
+                items={[]}
+                tone="neutral"
+                empty="No open referral. Record who asked for it in Review details."
+              />
+            )}
             <RecordPane
               title="Identity"
               rows={[
@@ -546,96 +694,8 @@ export function SummaryDrawer({
             <RecordLink person={person} note="Contacts and care details are on the patient record." />
           </>
         ) : null}
-      </div>
-    </PanelDrawer>
-  );
-}
-
-export function HowToDrawer({
-  open,
-  onClose,
-  onStartNew,
-}: {
-  open: boolean;
-  onClose: () => void;
-  /** Start a triage for someone else: the Start a triage step (7 Nov 2026: moved here from the banner). */
-  onStartNew: () => void;
-}) {
-  return (
-    <PanelDrawer
-      open={open}
-      onClose={onClose}
-      title="How to complete a triage"
-      subtitle="Patient details come from the record. You fill in the assessment only, top to bottom."
-      className={styles.wideDrawer}
-      bodyClassName={styles.sheetBody}
-      testId="triage-how-sheet"
-    >
-      <div className={styles.pane}>
-        <div className={styles.startNew}>
-          <p className={`${styles.quiet} ${styles.grow}`}>
-            <b>Someone else?</b> Choose who the triage is for, and the form opens blank. New, then Triage, in the app
-            bar does the same.
-          </p>
-          <Button size="sm" icon={FilePlus2} onClick={onStartNew} data-testid="triage-start-new">
-            Start a new triage
-          </Button>
-        </div>
-        <ol className={styles.steps}>
-          {HOW_TO.map(([title, text]) => (
-            <li key={title}>
-              <span>
-                <b>{title}.</b> {text}
-              </span>
-            </li>
-          ))}
-        </ol>
-        <p className={styles.quiet}>
-          <b>Saving.</b> Save draft is not wired, so leaving the page drops what you typed. Signing records only the
-          urgency, outcome, legal status, review and risk flags on the patient. The typed assessment, mental state,
-          formulation and plan are not part of that record.
-        </p>
-        <p className={styles.quiet}>
-          <b>Phrases.</b> In the Assessment box type .all; in Formulation and plan type .form, .plan or .all. Each adds
-          only the headings that are missing.
-        </p>
-        <p className={styles.quiet}>
-          <b>Keys.</b> S opens the summary. Y and N answer the focused family violence question and move on.
-        </p>
-        <p className={styles.quiet}>
-          <b>Why it works this way.</b> Nothing clinical is pre-selected, and unmarked risk factors never become a
-          silent No. There is no low, medium or high rating; the formulation and plan carry the judgement. Urgency is
-          always your choice.
-        </p>
-        <h3 className={styles.paneHead}>Where each PSOLIS field went</h3>
-        <div className={styles.tableWrap}>
-          <table className={tableClasses.table}>
-            <thead>
-              <tr>
-                <th className={tableClasses.th} scope="col">
-                  PSOLIS field
-                </th>
-                <th className={tableClasses.th} scope="col">
-                  Here
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {PSOLIS_FIELD_MAP.map(([field, here]) => (
-                <tr key={field}>
-                  <td>{field}</td>
-                  <td>
-                    <b>{here}</b>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className={styles.quiet}>
-          Based on WA MP 0155/21 (standard documentation), MP 0181/24 (safety planning) and NICE NG225. Prototype
-          guidance on synthetic data, not policy.
-        </p>
+        {tab === "prev" ? <PreviousPane person={person} /> : null}
+        {tab === "alerts" ? <AlertsPane person={person} /> : null}
       </div>
     </PanelDrawer>
   );
@@ -687,7 +747,10 @@ export function AllFactorsDrawer({ form, open, onClose }: { form: FormApi; open:
               {(["bg", "now"] as const).map((kind) => (
                 <div key={kind} className={styles.stack}>
                   <span className={styles.miniLabel}>{kind === "bg" ? "Background" : "Now"}</span>
-                  <ChipGroup label={`${area.name}: ${kind === "bg" ? "background" : "now"}`}>
+                  <ChipGroup
+                    label={`${area.name}: ${kind === "bg" ? "background" : "now"}`}
+                    className={styles.factorList}
+                  >
                     {area[kind].map(([id]) => (
                       <FactorRow key={id} form={form} flag={`${area.id}.${kind}.${id}`} />
                     ))}

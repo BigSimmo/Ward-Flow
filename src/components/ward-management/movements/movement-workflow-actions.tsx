@@ -66,7 +66,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
     !lateGate.allowed ||
     !open ||
     !!movement.arrivalLateNotifiedAt ||
-    !isArrivalLate(movement.arrivalDetails?.estimatedArrivalAt, movement.stage, now);
+    !isArrivalLate(movement.arrivalDetails?.estimatedArrivalAt, movement.stage, now, !open);
   const lateArrivalReason = !open
     ? "This movement is closed."
     : movement.arrivalLateNotifiedAt

@@ -12,7 +12,7 @@ A ward and bed-coordination prototype for mental health services: referrals, pat
 
 ## Quick start
 
-You need Node.js 24.19.0 (`.nvmrc`) and npm 11. Any OS works.
+You need Node.js <!-- fact:node-engine -->>=24.22.1 <25<!-- /fact --> (the exact release is pinned in `.nvmrc`) and npm 11. Any OS works.
 
 ```sh
 npm ci            # installs dependencies and the Git hooks

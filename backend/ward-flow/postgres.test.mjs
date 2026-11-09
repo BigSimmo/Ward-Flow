@@ -1836,6 +1836,32 @@ test(
         answers.map((row) => row.action),
         ["ACCESS_COVER", "ACCESS_COVER", "ACCESS_DECLINE"],
       );
+      // Review 8 Nov 2026: open requests are capped per health service, and an unanswered request
+      // stops counting after 14 days, so junk requests cannot block new staff for good.
+      const otherService = ["North Metro", "South Metro", "East Metro", "WACHS", "CAHS", "Private"].find(
+        (name) => !engine.scopeWithin(before, wardA, { kind: "service", service: name }),
+      );
+      const flood = [];
+      for (let index = 0; index < 50; index += 1) {
+        const filed = await store.requestAccess(randomUUID(), { role: "ward", scope: wardA });
+        assert.equal(filed.status, 200);
+        flood.push(filed.body.request.id);
+      }
+      assert.equal((await store.requestAccess(randomUUID(), { role: "ward", scope: wardA })).status, 429);
+      const otherServiceAsk = { role: "coordinator", scope: { kind: "service", service: otherService } };
+      const elsewhereAsker = randomUUID();
+      assert.equal((await store.requestAccess(elsewhereAsker, otherServiceAsk)).status, 200);
+      const savedAt = at;
+      at = new Date(at.getTime() + 15 * 24 * 60 * 60_000);
+      const afterLapse = await store.requestAccess(randomUUID(), { role: "ward", scope: wardA });
+      assert.equal(afterLapse.status, 200);
+      // Lapsed requests stay listed, newest first, for an access admin to answer.
+      const waiting = (await store.listAccess(leadView)).body.requests.map((request) => request.id);
+      assert.equal(waiting[0], afterLapse.body.request.id);
+      assert.ok(flood.every((id) => waiting.includes(id)));
+      for (const id of [...flood, afterLapse.body.request.id])
+        assert.equal((await store.decideRequest(leadView, id, "declined", later)).status, 200);
+      at = savedAt;
 
       // Alerts by role: a coordinator by membership hears the whole network, a nurse in charge
       // only the new act-now rows inside their own ward.

@@ -93,6 +93,23 @@ test("a forged, altered or wrong-audience signed token is refused without asking
   assert.deepEqual(calls, [JWKS]);
 });
 
+test("an anonymous Supabase account is refused, signed here or checked by Supabase", async () => {
+  const { calls, verify } = setup();
+  const anonymous = claims({ is_anonymous: true });
+  for (const token of [signed("ES256", "ec-1", anonymous), legacy(anonymous)])
+    await assert.rejects(
+      verify(token),
+      (/** @type {Error} */ error) => !(error instanceof VerifierUnavailableError) && error.message === "Unauthorised",
+    );
+  assert.deepEqual(calls, [], "the claim is refused before any key read or Supabase call");
+  assert.equal(await verify(signed("ES256", "ec-1", claims({ is_anonymous: false }))), coordinator);
+
+  // A legacy token that omits the claim is still refused when Supabase reports an anonymous user.
+  const remote = setup({ user: { id: coordinator, is_anonymous: true } });
+  await assert.rejects(remote.verify(legacy()), /Unauthorised/);
+  assert.deepEqual(remote.calls, [USER]);
+});
+
 test("a key missing from a list read after the token was issued is refused, without asking Supabase", async () => {
   const { calls, verify } = setup({ keys: { keys: [published.keys[1]] } });
   const issued = claims({ iat: Math.floor(Date.now() / 1000) - 60 });
