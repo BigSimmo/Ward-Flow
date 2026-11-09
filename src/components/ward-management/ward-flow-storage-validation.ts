@@ -79,15 +79,13 @@ import {
 import { isSnoozeReason } from "./ward-inbox-snooze";
 import { scenarioWardNetwork, WARD_SCENARIOS } from "./ward-scenarios";
 import { communityTeamById } from "./community/community-derivations";
-import { syntheticGovernanceAuditEvents, withSeededReviewIds } from "./ward-governance-seed";
+import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
 import { isBreakGlassReviewId } from "./ward-break-glass-review-id";
 import { UNDO_STEP_ACTIONS } from "./ward-undo";
 import { BED_RELEASE_BLOCKERS } from "./ward-change-reasons";
 import { dischargeLogisticsFields } from "./discharges/discharge-dependency-validation";
 import { numberedBedKind } from "./ward-bed-designation";
 import { isObservation, type Observation } from "./ward-observation";
-import { upgradeLegacyDeclineReasons } from "./ward-decline-legacy";
-import { upgradeLegacyObservationRows } from "./ward-observation-legacy";
 import { isTentativeDiagnosisBlock } from "./ward-diagnosis";
 import { isCommunityReferralPurpose } from "./ward-model-referral-parts";
 
@@ -1472,42 +1470,10 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
   return parsed.success && consistent(parsed.data, value) && typedRecordsResolve(value as unknown as WardFlowState);
 }
 
-/**
- * A validated stored state with the stream A inbox records filled in when the save predates them,
- * reviews of seeded governance entries moved to ids that name their subject, and decline reasons
- * saved before the one decline list read as merged ones (D-78, `ward-decline-legacy.ts`).
- * Call after `isValidStoredWardFlowState` on every restore path.
- */
-export function withInboxStreamADefaults<T extends WardFlowState>(state: T): T {
-  const stored = state as T & Partial<Pick<WardFlowState, "inboxOwnership" | "inboxSnoozes">>;
-  return withSeededReviewIds({
-    ...upgradeLegacyDeclineReasons(state),
-    inboxOwnership: stored.inboxOwnership ?? {},
-    inboxSnoozes: stored.inboxSnoozes ?? {},
-  });
-}
-
-/**
- * The stored state version this build writes. A save at an older version restores only through
- * `migrateStoredWardFlowState`; every other mismatch is refused.
- */
-export const WARD_FLOW_STORED_STATE_VERSION = 7;
-
-/**
- * Brings a stored state saved at `fromVersion` up to the current shape, or returns null when no
- * migration exists. The result still goes through `isValidStoredWardFlowState`: a migration adds
- * the newer version's fields, it never repairs or vouches for anything the save already held.
- *
- * v6 -> v7 (Josh, 9 October 2026: "No, fix this."): v7 added planned admissions and their id
- * sequence and nothing else. A v6 save keeps every record it holds and gains an empty booking list
- * and a sequence of nought, the state of a world with no bookings. Fixture bookings are not added:
- * a restored day holds only what was saved. A "v6" save that already carries either field is not
- * a v6 shape and is refused rather than overwritten.
- */
-export function migrateStoredWardFlowState(state: unknown, fromVersion: unknown): unknown {
-  // Fix plan item 10: a save from before observation levels reads its yes/no flag as a level.
-  if (fromVersion === WARD_FLOW_STORED_STATE_VERSION) return upgradeLegacyObservationRows(state);
-  if (fromVersion !== 6 || !object(state)) return null;
-  if ("plannedAdmissions" in state || "plannedAdmissionSequence" in state) return null;
-  return upgradeLegacyObservationRows({ ...state, plannedAdmissions: [], plannedAdmissionSequence: 0 });
-}
+// The restore-path upgrades (stream A inbox defaults, the stored state version and its migration)
+// live in their own module to keep this file under its line cap; re-exported so importers are unchanged.
+export {
+  migrateStoredWardFlowState,
+  WARD_FLOW_STORED_STATE_VERSION,
+  withInboxStreamADefaults,
+} from "./ward-flow-stored-state-migration";

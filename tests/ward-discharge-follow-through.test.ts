@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
  */
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import type { DischargeDeskEvent } from "@/components/ward-management/discharges/discharge-check-events";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
@@ -182,6 +183,13 @@ describe("discharge checklist (feature 37)", () => {
     ] as const) {
       expect(tick(state, fields).admissions).toEqual(state.admissions);
     }
+  });
+});
+
+describe("the discharge desk event union", () => {
+  it("names the checklist and follow-up reply events, so the shared event list carries both", () => {
+    const types: DischargeDeskEvent["type"][] = ["RECORD_DISCHARGE_CHECK", "RECORD_FOLLOW_UP_REPLY"];
+    expect(new Set(types).size).toBe(2);
   });
 });
 

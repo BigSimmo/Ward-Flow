@@ -16,7 +16,7 @@ import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 
 /** Why a minute counts: a recorded hold-up, or past the expected date with none recorded. */
-export type DelayReason = { kind: "held-up"; blocker: string } | { kind: "past-expected" };
+type DelayReason = { kind: "held-up"; blocker: string } | { kind: "past-expected" };
 
 export type DelaySegment = { from: Instant; to: Instant; reason: DelayReason };
 
@@ -78,7 +78,7 @@ export function delaySegments(admission: Admission, releases: readonly BedReleas
   return segments.filter((segment) => segment.to > segment.from).sort((a, b) => a.from - b.from);
 }
 
-export type HeatmapRow = {
+type HeatmapRow = {
   unitId: string;
   name: string;
   /** Bed days lost per day, in the order of `DelayHeatmap.dayStarts`. */

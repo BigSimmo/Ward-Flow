@@ -19,7 +19,7 @@ import { outstandingDependencies } from "./discharge-dependencies";
 const HOLIDAY_DATES: ReadonlySet<string> = new Set(WA_PUBLIC_HOLIDAYS.map((holiday) => holiday.date));
 
 /** One review tick: the weekend it was for (its first day, as an instant), when, and by which desk. */
-export type WeekendDischargeReview = {
+type WeekendDischargeReview = {
   readonly weekendStart: Instant;
   readonly at: Instant;
   readonly by: WardFlowRole;
@@ -96,7 +96,7 @@ export function sameWeekend(a: Instant, b: Instant): boolean {
 }
 
 /** This weekend's review tick on a stay, if any. Ticks for other weekends never count. */
-export function reviewFor(
+function reviewFor(
   reviews: readonly WeekendDischargeReview[] | undefined,
   window: WeekendWindow,
 ): WeekendDischargeReview | null {

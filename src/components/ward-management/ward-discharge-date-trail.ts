@@ -9,7 +9,7 @@ import { MINUTES_PER_DAY, type Instant } from "./ward-clock";
  * latest `DISCHARGE_DATE_TRAIL_LIMIT` moves are kept. `Admission.dischargeDateMoves` still counts
  * every move, so a long trail's count stays right after the oldest moves fall off.
  */
-export type DischargeDateRevision = {
+type DischargeDateRevision = {
   /** When the move was recorded. */
   readonly at: Instant;
   /** The expected date before the move. */
@@ -59,12 +59,6 @@ export function dischargeDateSlipDays(stay: {
   const trail = stay.dischargeDateTrail;
   if (!trail || stay.expectedDischargeAt === null) return null;
   return Math.max(0, Math.round((stay.expectedDischargeAt - trail.firstExpectedAt) / MINUTES_PER_DAY));
-}
-
-/** The dates in order, first then each move, for `deriveEddDriftBadge`'s `eddRevisions`. */
-export function dischargeDateSequence(trail: DischargeDateTrail | undefined): Instant[] {
-  if (!trail) return [];
-  return [trail.firstExpectedAt, ...trail.revisions.map((revision) => revision.expectedAt)];
 }
 
 export type SlippingDischarge = {

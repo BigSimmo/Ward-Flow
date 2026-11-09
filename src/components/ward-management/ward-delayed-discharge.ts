@@ -54,8 +54,8 @@ export function clinicallyReadyText(line: ClinicallyReadyLine, dayZero: Date | n
   return `Ready since ${perthDateLabel(line.since, dayZero, { day: "numeric", month: "short" })} · ${reason} · ${days}`;
 }
 
-export type DelayedReasonRow = { reason: DelayedDischargeReason; bedDays: number; stays: number };
-export type DelayedBedDaysTable = { rows: DelayedReasonRow[]; bedDays: number; stays: number };
+type DelayedReasonRow = { reason: DelayedDischargeReason; bedDays: number; stays: number };
+type DelayedBedDaysTable = { rows: DelayedReasonRow[]; bedDays: number; stays: number };
 export type DelayedBedDaysByReason = {
   network: DelayedBedDaysTable;
   wards: (DelayedBedDaysTable & { unitId: string })[];

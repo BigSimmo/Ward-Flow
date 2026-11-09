@@ -81,9 +81,7 @@ type ExtendableMovement = Pick<
  * with no stage change is read back from its limit as a standard `PULL_HOLD_MINUTES` hold plus any
  * extensions, so the 12-hour cap still applies to it.
  */
-export function latestPulledAt(
-  movement: Omit<ExtendableMovement, "closure" | "transport" | "stage">,
-): Instant | undefined {
+function latestPulledAt(movement: Omit<ExtendableMovement, "closure" | "transport" | "stage">): Instant | undefined {
   for (let index = movement.stageChanges.length - 1; index >= 0; index -= 1) {
     const change = movement.stageChanges[index];
     if (change?.to === "pulled") return change.at;

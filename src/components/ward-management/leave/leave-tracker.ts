@@ -55,7 +55,7 @@ export function leaveStatus(leave: LeaveBed, now: Instant): LeaveStatus {
   return "on_leave";
 }
 
-export const LEAVE_KIND_LABEL: Record<NonNullable<LeaveBed["kind"]>, string> = {
+const LEAVE_KIND_LABEL: Record<NonNullable<LeaveBed["kind"]>, string> = {
   off_ward: "Off-ward leave",
   medical_trip: "Medical trip",
 };

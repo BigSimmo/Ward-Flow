@@ -10,10 +10,10 @@ import type { DischargeDependency } from "./discharges/discharge-dependencies";
  * outstanding shows a warning that lists them and records the departure anyway. Criteria led
  * discharge (`ward-discharge-criteria.ts`) is separate and unchanged.
  */
-export const DISCHARGE_CHECK_ITEMS = ["community_follow_up", "medicines", "carer_told", "gp_letter"] as const;
+const DISCHARGE_CHECK_ITEMS = ["community_follow_up", "medicines", "carer_told", "gp_letter"] as const;
 export type DischargeCheckItem = (typeof DISCHARGE_CHECK_ITEMS)[number];
 
-export const DISCHARGE_CHECK_LABELS: Record<DischargeCheckItem, string> = {
+const DISCHARGE_CHECK_LABELS: Record<DischargeCheckItem, string> = {
   community_follow_up: "Community follow-up booked",
   medicines: "Discharge medicines supplied",
   carer_told: "Carer or family told",
@@ -30,7 +30,7 @@ export const DISCHARGE_CHECK_STATE_LABELS: Record<DischargeCheckState, string> =
 };
 
 /** One ticked item: its state, when, and the role that ticked it (never a name). */
-export type DischargeCheckRecord = {
+type DischargeCheckRecord = {
   readonly state: DischargeCheckState;
   readonly at: Instant;
   readonly by: WardFlowRole;
