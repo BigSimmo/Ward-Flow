@@ -1134,3 +1134,20 @@ is inferred.
   2. **Patient peek:** panel buttons that went to the Patient page (Waiting's Movement, Home's Patient record, Referrals' Patient, Handover's Open patient) open the person's placement deck in a side panel (a bottom sheet on a phone), with "Open full Patient page" one link away. **This changes where Ask wards (D-77 item 4) opens from Movements:** it used to go to the Patient page and now opens in the Patient peek. The 3-ward limit (D-76) is unchanged. A new-tab click still opens the full page.
   3. **Ward peek and pop-ups:** ward buttons in Capacity and Discharges panels show the ward's ready and in-use beds with a link to the ward's board or ward page. Waiting's Coordinator and ED board buttons open pop-ups that do the common job (Wards tab, Find a bed, the ED's waiting and longest wait).
 - **Boundary:** no change to who may see what; each peek is offered only where the desk could open the page it replaces. Synthetic data only.
+
+## D-109. Home's bed alert line tests the whole number shown (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`). **Decided by:** Josh, in the Ward Flow project, choosing "Test the shown whole number" on a decision card.
+- **Decision:** the statewide figure at the top of Home, and every bed alert dot and count, reads "at risk" when the whole percentage it shows is at or above the bed alert line, and "beds in use" below it. So 84.5% to 84.9% shows "85% at risk", never "85% beds in use".
+- **How:** `coordinator-screen.tsx` compares `Math.round(statewideOccupancy)` with the bed alert line, and `isBedAlert` (`ward-service-bed-alerts.ts`) rounds the same way, so the rail, phone menu and executive bed alert dots and counts match. Built in PR #1561.
+- **Boundary:** a prototype display rule on synthetic data; approves no merge or release.
+
+## D-110. ED and referral flow: neutral fit line, clearance timing and alternatives to admission (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`). **Decided by:** Josh, in the Ward Flow project: "Show fit, keep neutral order" on a decision card, then "Yes to all recommendations" for medical clearance and alternatives to admission, then "Yes, one PR".
+- **Decision:**
+  - Smart bed match is a plain fit line on every shortlist ward card (sex, security, age, special care: met, not met, to check). The order stays neutral; there is no ranking or best match, so the never-build rule against best-match suggestions stands.
+  - Medical clearance is still recorded yes or no by a clinician. Ward Flow shows time since arrival or time to clearance, marks it amber after 6 hours with nothing recorded (`edClearanceNotRecorded` in `docs/ward-flow/clinical-values.md`), and adds a median time to clearance in ED Statistics.
+  - Alternatives to admission are an unranked, optional list on ward-bed referrals from ED or community: crisis team home visit, MH Hospital in the Home, step-up/step-down unit, short-stay unit and next-day community follow-up. Each can be marked not suitable, tried or declined by patient. It never blocks Send. Service names are placeholders until checked against local services.
+- **Why:** these cut the work of placing a patient without letting the app rank patients or wards, or make a clinical call.
+- **Boundary:** prototype rules on synthetic data; approves no merge or release.

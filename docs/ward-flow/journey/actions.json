@@ -173,7 +173,7 @@
         {
           "path": "src/components/ward-management/patients/add-patient.tsx",
           "line": 637,
-          "sha256": "1409871d1ec41cff150999c0397b930aa2d3bd713919ea172d36bd9f30acb460"
+          "sha256": "3bee533593deb3bdfdecde073046ffab12a6a80c76fd4c007c322aa944b6c22f"
         },
         {
           "path": "src/components/ward-management/referrals/use-referral-command-completion.ts",
@@ -232,7 +232,7 @@
         {
           "path": "src/components/ward-management/ed/ed-lists-desktop.tsx",
           "line": 185,
-          "sha256": "fcd236e8400e35b98d8c7de074f0a12fb594949bd73e1d33ebd0062d636308ef"
+          "sha256": "d7eade554821dba77dd7a50bd2ebc05aa153534e56213b1133f9c6c6c023403f"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -288,7 +288,7 @@
         {
           "path": "src/components/ward-management/ed/ed-lists-desktop.tsx",
           "line": 357,
-          "sha256": "fcd236e8400e35b98d8c7de074f0a12fb594949bd73e1d33ebd0062d636308ef"
+          "sha256": "d7eade554821dba77dd7a50bd2ebc05aa153534e56213b1133f9c6c6c023403f"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -949,7 +949,7 @@
         {
           "path": "src/components/ward-management/coordinator/shortlist-panel.tsx",
           "line": 840,
-          "sha256": "dd2fadc6ecc40688ddfb8f59d121b0796e6683f109bf3990fbf9a457bd6efc06"
+          "sha256": "915e26ea56d975cca6208ac2510d94bdfef0132adc93719f698aee8ae9eae389"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
@@ -1206,7 +1206,7 @@
         {
           "path": "src/components/ward-management/coordinator/shortlist-panel.tsx",
           "line": 882,
-          "sha256": "dd2fadc6ecc40688ddfb8f59d121b0796e6683f109bf3990fbf9a457bd6efc06"
+          "sha256": "915e26ea56d975cca6208ac2510d94bdfef0132adc93719f698aee8ae9eae389"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
@@ -4276,7 +4276,7 @@
       "control": "Request update"
     },
     "review": {
-      "reviewedOn": "2026-11-08",
+      "reviewedOn": "2026-11-09",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4295,13 +4295,13 @@
         },
         {
           "path": "src/components/ward-management/capacity/capacity-ward-drawer.tsx",
-          "line": 263,
-          "sha256": "65bf541bfc516dad3b2f803fa806e49dad7be4eec5f1f22c21a49745f8b13c7c"
+          "line": 237,
+          "sha256": "c491da820b4c6f942c6a98ef83eef3742c493a612a36e6e9abae92fd892ab554"
         },
         {
           "path": "src/components/ward-management/capacity/capacity-screen.tsx",
-          "line": 171,
-          "sha256": "754572c7a5bd434a7e3ca238a5b0e6842173e34e1f7aabe10d97cd06e9211eff"
+          "line": 185,
+          "sha256": "32c7262e2c82829b8580488a1b2e901ce24dfc7edb2f06cbdf8c9b644d10a227"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
@@ -5126,7 +5126,7 @@
         {
           "path": "src/components/ward-management/settings/settings-screen.tsx",
           "line": 440,
-          "sha256": "41344dbf5e4297b757bdfb09a3ce6c5a9b0fc8feb88221f03bbaf134d1fd8f07"
+          "sha256": "fa52bcd4e5208f810ee6c117bcf3d8a6b4dee06412dc595e94a3e6cb4333a35e"
         }
       ]
     }

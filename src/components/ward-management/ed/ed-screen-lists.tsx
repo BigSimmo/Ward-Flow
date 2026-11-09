@@ -399,7 +399,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
           <h2 className={styles.sectionHeading}>
             Forms &middot; {underFormPatients.length} patient{underFormPatients.length === 1 ? "" : "s"}
           </h2>
-          <p className={styles.unitMeta}>Patients with a recorded involuntary form.</p>
+          <p className={styles.unitMeta}>Patients with a recorded form or held under the Act.</p>
           {underFormPatients.length === 0 ? (
             <p className={styles.none}>No legal form recorded.</p>
           ) : (
@@ -407,8 +407,9 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
               {underFormPatients.map((m) => {
                 const due = m.legalForm?.dueAt;
                 const tone = due === null || due === undefined ? "quiet" : due < now ? "danger" : "good";
-                const stamp =
-                  due === null || due === undefined
+                const stamp = !m.legalForm
+                  ? "form not recorded"
+                  : due === null || due === undefined
                     ? "no deadline"
                     : due < now
                       ? `passed ${formatInstantWithDay(due, now)}`
@@ -438,10 +439,9 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
                       </span>
                       <span className={styles.lstWhy}>
                         {/* Legal times only as typed (31 Oct 2026): never "passed … ago" or "… away". */}
-                        Form {m.legalForm ? m.legalForm.code : ""}.{" "}
-                        {due === null || due === undefined
-                          ? "No deadline is recorded against it."
-                          : `${typedTimeLine(due, now)}.`}
+                        {m.legalForm
+                          ? `Form ${m.legalForm.code}. ${due === null || due === undefined ? "No deadline is recorded against it." : `${typedTimeLine(due, now)}.`}`
+                          : `${m.legalStatus}. Form not recorded.`}
                       </span>
                     </span>
                     <span className={styles.lstEnd}>

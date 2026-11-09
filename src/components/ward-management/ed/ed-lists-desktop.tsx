@@ -404,8 +404,14 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                     <td>{name(m.id, person.formalName, person.umrn)}</td>
                     <td className={handover.listMono}>{patientBay(m.id).replace(/^Bay /, "")}</td>
                     <td>
-                      <span className={handover.listTag}>Form {m.legalForm?.code}</span>{" "}
-                      <span className={handover.listQuiet}>{formTitleForCode(m.legalForm?.code ?? "")}</span>
+                      {m.legalForm ? (
+                        <>
+                          <span className={handover.listTag}>Form {m.legalForm.code}</span>{" "}
+                          <span className={handover.listQuiet}>{formTitleForCode(m.legalForm.code)}</span>
+                        </>
+                      ) : (
+                        <span className={handover.listQuiet}>{m.legalStatus}. Form not recorded.</span>
+                      )}
                     </td>
                     <td>
                       {due === undefined || due === null ? (

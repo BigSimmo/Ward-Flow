@@ -95,9 +95,12 @@ export function occupancyTone(occupancyPercent: number): {
  */
 export const BED_ALERT_THRESHOLD_PERCENT = CLINICAL_VALUES.bedAlertLine.value;
 
-/** True when an occupancy figure is at or over the rail's Bed alerts threshold. */
+/**
+ * True when an occupancy figure is at or over the rail's Bed alerts threshold. D-109 (Josh, 9 Nov
+ * 2026): it tests the whole percent shown, so a dot never sits beside "85%" without the alert.
+ */
 export function isBedAlert(occupancyPercent: number): boolean {
-  return occupancyPercent >= BED_ALERT_THRESHOLD_PERCENT;
+  return Math.round(occupancyPercent) >= BED_ALERT_THRESHOLD_PERCENT;
 }
 
 /** Whole percent, the one rule for every percentage (Josh, 5 Nov 2026, CL-9): `85%`, `78%`. */

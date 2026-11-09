@@ -9,6 +9,7 @@ import {
   ED_STAGE_LABELS,
   edHomeSummaries,
   elapsedOpenMinutes,
+  isUnderAForm,
 } from "@/components/ward-management/ed/ed-home-derivations";
 import { edBayAssignments, movementMedicalClearance } from "@/components/ward-management/ed/ed-screen-model";
 import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
@@ -340,7 +341,7 @@ export function edClinicalRows(input: EdClinicalInputs): EdClinicalRow[] | undef
         band,
         urgency: movement.urgency as 1 | 2 | 3,
         legal: legalFact(movement.legalStatus, movement, now),
-        underForm: movement.legalForm !== undefined,
+        underForm: isUnderAForm(movement),
         reviewed: movement.examination !== undefined,
         noBedYet: accepted === undefined,
         obs: obsFact(movement.observation),
