@@ -111,7 +111,6 @@ function isDeviceCopyDischargeCriteriaRecord(value: unknown): value is Discharge
 // Restore validates nested values, collection shapes, then cross-row consistency in order.
 // `nested` refuses undefined, so optional fields must be absent. Strict identity/care records
 // refuse unknown keys to prevent restoring free text.
-
 type RecordValue = Record<string, unknown>;
 const object = (v: unknown): v is RecordValue => typeof v === "object" && v !== null && !Array.isArray(v);
 const fits = (schema: z.ZodMiniType, value: unknown) => schema.safeParse(value).success;
@@ -273,7 +272,6 @@ const patient = z.catchall(
     registrationScope: z.optional(
       z.strictObject({ kind: z.enum(["ed", "ward", "team", "site", "service"]), placeId: text }),
     ),
-    // Care plans and tribunal dates (Josh, 9 Nov 2026), in their own file.
     ...STORED_PATIENT_CARE_PLAN_FIELDS,
   }),
   // Every other patient field stays plain text.
@@ -527,7 +525,6 @@ const movement = z
     referralAnswerHistory: z.optional(records),
     unwinds: records,
     stageChanges: records,
-    escalations: z.optional(records),
     referredUnitIds: strings,
     transport: z.optional(z.looseObject({ id: text, provider: text, escortRequired: bool })),
     patientId: link,
