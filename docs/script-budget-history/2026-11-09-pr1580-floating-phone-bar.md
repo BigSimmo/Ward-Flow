@@ -18,5 +18,6 @@ Measured locally on the merged branch (node 24, same checkout as main's baseline
 | bed meeting | 572.0 | 572.2   | 572.0     | 572.4     |
 | statistics  | 612.0 | 612.1   | 611.9     | 612.4     |
 
-Each new limit allows the PR's measured size plus the usual 0.2 KB margin. Main's figures match
+Each new limit allows the PR's unrounded measured size plus the usual 0.2 KB margin, rounded up
+to the next 0.1 KB (statistics measured 612.15 KB, so 612.35 rounds up to 612.4). Main's figures match
 main's own hosted CI build (run 42654163717).

@@ -928,6 +928,12 @@
   background: none;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .dock.dock .dockItem.dockItem {
+    transition: none;
+  }
+}
+
 .dock.dock .riseSlot.riseSlot {
   align-items: center;
   min-height: 48px;
