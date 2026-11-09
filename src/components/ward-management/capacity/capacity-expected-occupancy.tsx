@@ -3,6 +3,7 @@
 import { useId, useMemo, useState } from "react";
 
 import { ShowMoreRow, foldHidden, foldLimit } from "@/components/wf";
+import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -105,7 +106,9 @@ function byLastHorizonFullness(a: OccupancyRow, b: OccupancyRow): number {
 function Row({ row, total = false }: { row: OccupancyRow; total?: boolean }) {
   return (
     <tr className={total ? styles.total : undefined}>
-      <th scope="row">{row.name}</th>
+      <th scope="row">
+        <SpelledCodes text={row.name} />
+      </th>
       <td className={styles.num}>
         <Cell taken={row.takenNow} beds={row.beds} />
       </td>

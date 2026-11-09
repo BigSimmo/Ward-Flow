@@ -66,7 +66,7 @@
 .total th,
 .total td {
   border-bottom: 0;
-  border-top: 1px solid var(--wf-line-strong, var(--wf-line));
+  border-top: 1px solid var(--wf-line-2);
   font-weight: 600;
 }
 .note {

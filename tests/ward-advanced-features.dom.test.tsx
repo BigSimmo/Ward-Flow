@@ -198,9 +198,10 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       // Long-stay occupant drawer must show the discharge barrier select
       const barrierSelect = screen.getByLabelText(/Main discharge hold-up/i);
       expect(barrierSelect).toBeDefined();
-      expect(screen.getByText(/Accommodation \/ Housing/i)).toBeDefined();
-      expect(screen.getByText(/NDIS/i)).toBeDefined();
-      expect(screen.getByText(/SAT \/ Public Guardian/i)).toBeDefined();
+      // Within the hold-up select: the clinically ready "Why not gone" list (item 5) offers the same reasons.
+      expect(within(barrierSelect).getByText(/Accommodation \/ Housing/i)).toBeDefined();
+      expect(within(barrierSelect).getByText(/NDIS/i)).toBeDefined();
+      expect(within(barrierSelect).getByText(/SAT \/ Public Guardian/i)).toBeDefined();
 
       // Step-down toggle button must also be present
       const stepDownToggle = screen.getByTestId("ward-board-stepdown-toggle");

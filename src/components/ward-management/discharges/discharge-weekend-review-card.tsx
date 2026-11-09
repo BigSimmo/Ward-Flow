@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { Check } from "lucide-react";
-import { formatInstant, perthDateLabel, perthDayLabel, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstant,
+  formatInstantWithDay,
+  perthDateLabel,
+  perthDayLabel,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import type { DischargeRecord, WardRecordActor } from "@/components/ward-management/ward-discharge-records";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
@@ -92,7 +98,7 @@ export function DischargeWeekendReview({
                     {tick ? (
                       <span className={styles.done}>
                         <Check size={14} aria-hidden="true" />
-                        Reviewed <span className={styles.figure}>{formatInstant(tick.at)}</span>
+                        Reviewed <span className={styles.figure}>{formatInstantWithDay(tick.at, now)}</span>
                         <span className="sr-only"> by {WARD_FLOW_ROLE_LABELS[tick.by]}</span>
                       </span>
                     ) : canTick ? (

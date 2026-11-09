@@ -29,7 +29,10 @@ function stayEnd(admission: Admission, now: Instant): Instant | null {
 }
 
 /** Recorded hold-ups with a known start and end, in time order, never overlapping each other. */
-function heldUpSegments(admission: Admission, releases: readonly BedRelease[], end: Instant): DelaySegment[] {
+/** What a hold-up's end reads from a bed release: whose it is and when its hold-ups were cleared. */
+type ReleaseClearances = Pick<BedRelease, "admissionId" | "clearedBlockHistory">;
+
+function heldUpSegments(admission: Admission, releases: readonly ReleaseClearances[], end: Instant): DelaySegment[] {
   const records = [...(admission.stayBlockRecords ?? [])].filter((r) => finite(r.at)).sort((a, b) => a.at - b.at);
   if (records.length === 0) return [];
   const clearances = [
@@ -55,7 +58,11 @@ function heldUpSegments(admission: Admission, releases: readonly BedRelease[], e
  * One stay's delayed time as non-overlapping segments, each with its reason. Recorded hold-ups first;
  * past the expected date fills the gaps between them.
  */
-export function delaySegments(admission: Admission, releases: readonly BedRelease[], now: Instant): DelaySegment[] {
+export function delaySegments(
+  admission: Admission,
+  releases: readonly ReleaseClearances[],
+  now: Instant,
+): DelaySegment[] {
   const arrived = admission.arrivedAt;
   const end = stayEnd(admission, now);
   if (!finite(arrived) || end === null || end <= arrived) return [];

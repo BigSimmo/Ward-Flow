@@ -478,7 +478,7 @@ export function reducePlacementEvent(
         return reject(
           state,
           event,
-          `EXTEND_PULL would hold the bed past ${PULL_HOLD_MAX_TOTAL_MINUTES / 60} hours from the pull`,
+          `EXTEND_PULL would keep the bed pulled past ${PULL_HOLD_MAX_TOTAL_MINUTES / 60} hours from the pull`,
         );
       }
       return replaceMovement(state, movement.id, {

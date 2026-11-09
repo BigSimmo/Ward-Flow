@@ -55,10 +55,10 @@ describe("delaySegments", () => {
       expectedDischargeAt: 5 * DAY,
       stayBlockRecords: [{ at: -2 * DAY, by: "ward", blocker: "Awaiting transport" }],
     } as Partial<Admission>);
-    const release = {
+    const release: Pick<BedRelease, "admissionId" | "clearedBlockHistory"> = {
       admissionId: "AD-H",
       clearedBlockHistory: [{ at: -2 * DAY + 600, by: "ward" }],
-    } as unknown as BedRelease;
+    };
     expect(delaySegments(cleared, [release], NOW).map((s) => s.to - s.from)).toEqual([600]);
     expect(delaySegments({ ...cleared, blockReason: "Awaiting transport" }, [], NOW).map((s) => s.to)).toEqual([NOW]);
     expect(delaySegments(cleared, [], NOW)).toEqual([]);
