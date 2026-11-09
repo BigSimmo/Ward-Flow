@@ -13,6 +13,8 @@ import type { BedMapWard } from "./bed-map";
 import { Legend } from "./capacity-how-worked-out";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { openBedReleases } from "@/components/ward-management/ward-bed-availability";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { openStaffRequests } from "@/components/ward-management/staffing/staff-requests";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 import type { CapacityModel } from "./capacity-model";
 import { UNCHANGED_SHIFTS_LISTED, type CountedFigure } from "./shift-confirmations";
@@ -58,6 +60,9 @@ export function BedMapCards({
   const bedReleases: readonly BedRelease[] = model.bedReleases ?? [];
   const [layout, setLayout] = useState<"grid" | "rows">("grid");
   const rowOf = new Map(networkRows.map((row) => [row.unit.id, row]));
+  // Feature 10: wards with an open "Staff needed" request carry a quiet worded tag.
+  const staffRequests = useOptionalWardFlowSelect("staffRequests")?.staffRequests;
+  const staffAsked = new Set(openStaffRequests({ staffRequests }, now).map((record) => record.unitId));
   const lit = (unitId: string, id: Highlight | null) => {
     const row = rowOf.get(unitId);
     const rule = HIGHLIGHTS.find((entry) => entry.id === id);
@@ -179,6 +184,7 @@ export function BedMapCards({
                       now={now}
                       layout={layout}
                       parts={releaseParts(bedReleases, ward.unit.id)}
+                      staffRequested={staffAsked.has(ward.unit.id)}
                       dimmed={!matches(ward.unit.id)}
                       selected={ward.unit.id === selectedUnitId}
                       onSelect={() => onSelectWard(ward.unit.id)}
@@ -223,8 +229,10 @@ function WardCard({
   dimmed,
   selected,
   onSelect,
+  staffRequested = false,
 }: {
   ward: BedMapWard;
+  staffRequested?: boolean;
   parts: ReleaseParts;
   row: NetworkWardRow | undefined;
   now: number;
@@ -275,8 +283,13 @@ function WardCard({
         {ward.occupied} of {ward.unit.beds} occupied
       </span>
       <BedCells beds={ward.unit.beds} ready={ward.ready} used={inUse} parts={parts} />
-      {stale || sameCount || notes.length || freeing > 0 ? (
+      {stale || sameCount || notes.length || freeing > 0 || staffRequested ? (
         <span className={styles.wardNote}>
+          {staffRequested ? (
+            <span className={styles.wardNoteItem} data-testid="capacity-staff-requested">
+              Staff&nbsp;requested
+            </span>
+          ) : null}
           {freeing > 0 ? (
             <span className={`${styles.wardNoteItem} ${styles.okInk}`}>+{freeing}&nbsp;freeing&nbsp;today</span>
           ) : null}
