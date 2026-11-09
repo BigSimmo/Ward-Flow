@@ -1,4 +1,3 @@
-import { buildIncoming } from "@/components/ward-management/board/ward-board-model";
 import {
   dailySheetGroups,
   dailySheetPeople,
@@ -30,7 +29,7 @@ import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { isEdInitiatedWithdrawal } from "@/components/ward-management/ed/ed-screen-model";
 import { isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import type { Admission } from "@/components/ward-management/ward-admissions";
+import { type Admission, admissionsForUnit } from "@/components/ward-management/ward-admissions";
 import type { ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { type DueSoonThresholds, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import {
@@ -175,6 +174,17 @@ export type WardTvSheet = {
   away: DailySheetPerson[];
 };
 
+/**
+ * D-115: the ward board's "Coming in" (`buildIncoming` in board/ward-board-model.ts): admissions pulled or
+ * waitlisted for the ward. Kept here rather than imported so the bed meeting bundle does not carry the board's
+ * styles; tests/ward-one-number-across-screens.test.ts holds the two counts equal.
+ */
+function comingIn(admissions: readonly Admission[], unitId: string): Admission[] {
+  return admissionsForUnit(admissions, unitId).filter(
+    (admission) => admission.state === "pulled" || admission.state === "waitlisted",
+  );
+}
+
 export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
   const { unit, movements, bedReleases, admissions, leaveBeds, now, thresholds, nameOf, namedHolds } = input;
   const sheet = bedMeetingSheet({
@@ -202,11 +212,8 @@ export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
     .map((movement) => row(movement, ED_STAGE_LABELS[movement.stage]))
     .sort(byWaitThenId);
   // D-115: the board's own list, so the two screens print one "Coming in".
-  const arriving = buildIncoming(unit, admissions, movements, now);
-  const arrivingKeys = new Set(arriving.map((person) => person.key));
-  const arrivingMovementIds = new Set(
-    admissions.filter((admission) => arrivingKeys.has(admission.id)).map((admission) => admission.movementId),
-  );
+  const arriving = comingIn(admissions, unit.id);
+  const arrivingMovementIds = new Set(arriving.map((admission) => admission.movementId));
   const onTheWay = open.filter(
     (movement) =>
       arrivingMovementIds.has(movement.id) &&
@@ -430,7 +437,7 @@ function serviceWardRows(input: MeetingInputs, scopedUnits: Unit[]): TvWardRow[]
       lockedReady: row.lockedReady,
       asked: open.filter((movement) => waitingOnWard(movement, row.unit.id)).length,
       // D-115: the ward board's "Coming in", beds pulled or waitlisted for an admission.
-      coming: buildIncoming(row.unit, admissions, movements, now).length,
+      coming: comingIn(admissions, row.unit.id).length,
       going: due.filter((release) => release.unitId === row.unit.id).length,
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
