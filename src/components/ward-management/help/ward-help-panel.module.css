@@ -310,6 +310,23 @@
   padding: 14px 16px 12px;
 }
 
+/* The round icon disc beside a Help view's title (What's new). */
+.hereIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--wf-r-md);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.hereIcon svg {
+  width: 16px;
+  height: 16px;
+}
+
 .hereEyebrow {
   margin: 0;
   color: var(--wf-ink-3);

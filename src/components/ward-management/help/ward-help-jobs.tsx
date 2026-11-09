@@ -422,6 +422,8 @@ export function HelpTasks({
       const row = document.querySelector<HTMLElement>(`[data-testid="ward-help-task-answer-${id}"]`);
       let body = row?.parentElement ?? null;
       while (body && !/(auto|scroll)/u.test(window.getComputedStyle(body).overflowY)) body = body.parentElement;
+      // Focus follows the answer, so keyboard and screen reader users land on it too.
+      row?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
       if (!row || !body) return;
       const dock = body.querySelector<HTMLElement>("[data-help-dock]")?.offsetHeight ?? 0;
       const top = row.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - dock - 8;

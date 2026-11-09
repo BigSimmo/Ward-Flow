@@ -60,6 +60,17 @@ describe("search-first Help layout", () => {
     expect((screen.getByRole("combobox") as HTMLInputElement).value).toBe("How do I place a patient from Home?");
   });
 
+  it("keeps the sections when Help places the caret itself, and offers Try asking on the next focus", () => {
+    sheet();
+    const box = screen.getByRole("combobox");
+    fireEvent.focus(box);
+    expect(screen.queryByRole("region", { name: "Try asking" })).toBeNull();
+    expect(screen.getByRole("tablist", { name: "Help sections" })).toBeTruthy();
+    fireEvent.blur(box);
+    fireEvent.focus(box);
+    expect(screen.getByRole("region", { name: "Try asking" })).toBeTruthy();
+  });
+
   it("keeps Try asking open while Tab moves from the box into it, and closes it once focus leaves", () => {
     sheet();
     const box = screen.getByRole("combobox");

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -126,14 +126,16 @@ describe("How do I… task list", () => {
     expect(onShowMe).toHaveBeenCalledWith("sign-off-handover");
   });
 
-  it("lists answers opened recently, newest first, and reopens one in place (9 Nov 2026)", () => {
+  it("lists answers opened recently, newest first, and reopens one in place (9 Nov 2026)", async () => {
     expect(screen.queryByTestId("ward-help-recent")).toBeNull();
     recordHowToUsed("sign-off-handover", HOW_TO_IDS);
     renderTasks();
     const recent = within(screen.getByTestId("ward-help-recent"));
     fireEvent.click(recent.getByRole("button", { name: /Hand over to the next shift/ }));
     const answer = screen.getByTestId("ward-help-task-answer-sign-off-handover");
-    expect(within(answer).getByRole("button", { expanded: true })).toBeTruthy();
+    const head = within(answer).getByRole("button", { expanded: true });
+    // Focus follows the reopened answer (PR #1558 review).
+    await waitFor(() => expect(document.activeElement).toBe(head));
   });
 
   it("keeps this desk's recent answers even after many newer ones from elsewhere", () => {
