@@ -88,3 +88,16 @@ button.row:focus-visible {
   font-family: var(--wf-mono);
   font-variant-numeric: tabular-nums;
 }
+
+/* Features 37 and 13: the checklist and team reply tags wrap inside a narrow cell, never clipped. */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 100%;
+  margin-top: 4px;
+  white-space: normal;
+}
+.tags:empty {
+  display: none;
+}

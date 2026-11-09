@@ -33,10 +33,8 @@ export function WardDischargeChecklistCard({
       <h3 className={drawerStyles.cardTitle}>Discharge checklist</h3>
       <div className={styles.body}>
         <p className={styles.tally} data-testid="ward-drawer-checklist-tally">
-          <span className={styles.figure}>
-            {settled} of {total}
-          </span>{" "}
-          settled. It does not stop the discharge.
+          <span className={styles.figure}>{settled}</span> of <span className={styles.figure}>{total}</span> settled. It
+          does not stop the discharge.
         </p>
         <ul className={styles.list}>
           {rows.map((row) => (

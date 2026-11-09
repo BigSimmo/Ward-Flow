@@ -3617,3 +3617,58 @@ button.searchBox:hover {
   flex: 1 1 12rem;
   max-inline-size: 18rem;
 }
+.followUpReplies {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0 var(--wf-s-4);
+  list-style: none;
+}
+/* One row per person: ward and date on the left, the reply on the right edge; the field names stay
+ * for screen readers (the card title already says what the choices are). */
+.followUpReplies > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--wf-s-3);
+  padding: var(--wf-s-2) 0;
+}
+.followUpReplies > li > p {
+  grid-column: 1;
+  margin: 0;
+}
+.followUpReplies > li > .followUpReply {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  justify-content: flex-end;
+  margin-top: 0;
+}
+.followUpReplies .followUpReply > * {
+  flex: 0 0 13rem;
+}
+.followUpReplies .followUpReply label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (max-width: 46.4375rem) {
+  .followUpReplies > li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .followUpReplies > li > .followUpReply {
+    grid-column: 1;
+    grid-row: auto;
+    justify-content: flex-start;
+    margin-top: var(--wf-s-2);
+  }
+  .followUpReplies .followUpReply > * {
+    flex: 1 1 100%;
+    max-inline-size: none;
+  }
+}
+.followUpReplies > li + li {
+  border-top: 1px solid var(--wf-line);
+}

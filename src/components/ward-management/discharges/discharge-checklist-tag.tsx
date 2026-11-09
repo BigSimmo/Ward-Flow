@@ -24,15 +24,19 @@ export function DischargeChecklistTag({
   const { settled, total } = dischargeChecklistTally(dischargeChecklist({ ...record, dependencies }));
   const reply = followUpReplyWords(record.followUpReply);
   return (
-    <span data-testid={`ward-discharge-checklist-tag-${record.admissionId}`}>
+    <span className={styles.tags} data-testid={`ward-discharge-checklist-tag-${record.admissionId}`}>
       {showChecklist ? (
         <>
           <SrOnly>, discharge checklist </SrOnly>
           <Badge size="sm" tone={settled === total ? "success" : "neutral"}>
             <span aria-hidden="true">Checklist </span>
             <span className={styles.figure}>
-              {settled} of {total}
+              {settled}/{total}
             </span>
+            <SrOnly>
+              {" "}
+              ({settled} of {total} settled)
+            </SrOnly>
           </Badge>
         </>
       ) : null}

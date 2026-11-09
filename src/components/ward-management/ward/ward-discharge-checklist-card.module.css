@@ -18,19 +18,30 @@
 
 .list {
   display: grid;
-  gap: var(--wf-s-2);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+/* Every item the same shape: words on the left (wrapping), the three-way choice on the right edge. */
 .item {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-1) var(--wf-s-2);
+  gap: var(--wf-s-1) var(--wf-s-3);
   min-width: 0;
+  padding: var(--wf-s-2) 0;
+}
+
+.item + .item {
+  border-top: 1px solid var(--wf-line);
+}
+
+/* Phone: the choice drops under the words, full width, so the words keep their line. */
+@media (max-width: 46.4375rem) {
+  .item {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .text {
@@ -41,6 +52,7 @@
 
 .label {
   font-size: var(--wf-fs-13);
+  font-weight: 500;
   color: var(--wf-ink-1);
 }
 
