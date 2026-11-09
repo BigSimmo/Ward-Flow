@@ -4,37 +4,36 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { isTierOneOpen } from "@/components/ward-management/ward-shared-figures";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { showEveryoneWaiting } from "./helpers/ward-home-queue";
 
 /**
- * P002 and P003 (Josh, 27 Oct 2026, "Go ahead with all recommendations"): Home and Movements print
- * one Tier 1 count (every open journey at tier 1, in transit included) and each label says what it
- * counts. Choosing an ED card narrows Home's chips and the labels say so ("Tier 1 open movements · RPH", spoken; "Tier 1 · RPH" shown); Clear
- * also resets the ED card.
+ * P002 and P003 (Josh, 27 Oct 2026, "Go ahead with all recommendations"): the screens print one
+ * Tier 1 count (every open journey at tier 1, in transit included), and choosing an ED card narrows
+ * Home and says so, with Clear also resetting the ED card.
+ *
+ * Sticky header redesign (Josh, 9 Nov 2026): Home's hero no longer has Tier 1 or Past target chips.
+ * Home therefore prints no Tier 1 count to disagree with, Movements' count follows the shared
+ * definition, and the ED card narrows Home's Flow list, which says so and clears.
  */
-function chip(name: RegExp): HTMLElement {
-  return screen.getByRole("button", { name });
-}
-
-function chipValue(button: HTMLElement): number {
-  return Number(/^\s*(\d+)/.exec(button.textContent ?? "")?.[1]);
-}
-
 beforeEach(() => {
   window.sessionStorage.clear();
 });
 
 describe("Home and Movements print one Tier 1 count (P002)", () => {
-  it("Home's Tier 1 chip names its noun and matches Movements' Tier 1 now", () => {
+  it("Home prints no second Tier 1 count, and Movements' Tier 1 now follows the shared definition", () => {
     const home = render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <CoordinatorScreen />
       </WardFlowProvider>,
     );
-    const homeTierOne = chipValue(chip(/^\s*\d+\s*Tier 1 open movements$/));
-    expect(homeTierOne).toBeGreaterThan(0);
+    expect(screen.queryByText(/Tier 1/u)).not.toBeInTheDocument();
     home.unmount();
 
+    const tierOneOpen = seedWardFlowState().movements.filter(isTierOneOpen).length;
+    expect(tierOneOpen).toBeGreaterThan(0);
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <MovementsScreen />
@@ -44,31 +43,27 @@ describe("Home and Movements print one Tier 1 count (P002)", () => {
     const figure = within(screen.getByRole("group", { name: "Highlight movements" })).getByRole("button", {
       name: /Tier 1$/u,
     });
-    expect(Number(/^(\d+)/.exec(figure.textContent ?? "")?.[1])).toBe(homeTierOne);
+    expect(Number(/^(\d+)/.exec(figure.textContent ?? "")?.[1])).toBe(tierOneOpen);
   });
 });
 
-describe("an ED card narrows Home's chips and says so (P003)", () => {
-  it("labels the chips with the chosen site, and Clear also resets the ED card", () => {
+describe("an ED card narrows Home and says so (P003)", () => {
+  it("names the chosen site on Home's Flow list, and Clear also resets the ED card", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <CoordinatorScreen />
       </WardFlowProvider>,
     );
-    expect(chip(/^\s*\d+\s*Past target waits$/)).toBeInTheDocument();
     const edCard = screen.getByTestId("ward-ed-rph-ed");
     fireEvent.click(edCard);
     expect(edCard).toHaveAttribute("aria-pressed", "true");
-    expect(chip(/^\s*\d+\s*Past target waits · RPH$/)).toBeInTheDocument();
-    const tierOne = chip(/^\s*\d+\s*Tier 1 open movements · RPH$/);
-    expect(screen.queryByRole("button", { name: /Tier 1 open movements$/ })).not.toBeInTheDocument();
+    showEveryoneWaiting();
+    expect(screen.getByText("Filtered to RPH")).toBeInTheDocument();
 
-    fireEvent.click(tierOne);
-    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+    fireEvent.click(screen.getByRole("button", { name: "Clear filter" }));
 
     expect(screen.getByTestId("ward-ed-rph-ed")).toHaveAttribute("aria-pressed", "false");
-    expect(chip(/^\s*\d+\s*Past target waits$/)).toBeInTheDocument();
-    expect(chip(/^\s*\d+\s*Tier 1 open movements$/)).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByText("Filtered to RPH")).not.toBeInTheDocument();
     expect(window.sessionStorage.length).toBe(0);
   });
 });

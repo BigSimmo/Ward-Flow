@@ -965,15 +965,9 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
   const barScrolled = useBarScrolled(barRef, isPhone);
   const bandHero = useWfBandActive();
   const bandScrolled = useBandScrolled(barRef, bandHero && !isPhone);
-  const bandState = !bandHero
-    ? undefined
-    : isPhone
-      ? barScrolled
-        ? undefined
-        : "ink"
-      : bandScrolled
-        ? "light"
-        : "ink";
+  // Sticky header redesign (Josh, 9 Nov 2026): a phone bar over a band page stays slate when it
+  // scrolls, so it keeps the band's ink; `data-scrolled` then only deepens it to the band's foot.
+  const bandState = !bandHero ? undefined : isPhone ? "ink" : bandScrolled ? "light" : "ink";
   // Phone only: the condensed bar's live line, the open movements in the current scope.
   const allWaitingCount = waiting.total;
   const scopeWaitingCount = activeService

@@ -264,6 +264,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     file: /^help\/ward-help-account-memory\.tsx$/,
     name: /^SEND_AFTER_MS$/,
   },
+  {
+    id: "home-folder-tab-slide",
+    why: "Home's folder tabs (sticky header redesign, Josh 9 Nov 2026): how long the folder outline takes to slide to the chosen tab; an animation length, never shown, not a limit.",
+    file: /^coordinator\/home-folder\.tsx$/,
+    name: /^MOVE_MS$/,
+  },
 ];
 
 export const BREACH = /\bbreach(?:es|ed|ing)?\b/i;

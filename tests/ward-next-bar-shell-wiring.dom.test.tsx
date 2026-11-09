@@ -88,7 +88,9 @@ afterEach(() => {
   resetWardAccessStoreForTests();
 });
 
-describe("1. Home's changes button opens the shared Activity panel in the master design's bar", () => {
+// Sticky header redesign (Josh, 9 Nov 2026): Home's hero changes chip is gone, so on Home the bar's own
+// Activity button opens the one shared panel.
+describe("1. Home opens the shared Activity panel from the master design's bar", () => {
   it("opens one panel on Changes, publishes it open, and returns focus to the button", async () => {
     renderBar(
       <>
@@ -97,19 +99,20 @@ describe("1. Home's changes button opens the shared Activity panel in the master
       </>,
     );
     expect(screen.getByTestId("panel-open")).toHaveTextContent("closed");
-    const chip = screen.getByRole("button", { name: /· (Review|Activity)$/u });
-    fireEvent.click(chip);
+    expect(screen.queryByRole("button", { name: /· (Review|Activity)$/u })).toBeNull();
+    const trigger = screen.getByTestId("ward-bar-activity-trigger");
+    fireEvent.click(trigger);
 
     const dialog = await screen.findByRole("dialog", { name: "Activity · Statewide" });
     expect(dialog).toHaveAttribute("id", "ward-bar-activity-drawer");
     expect(within(dialog).getByRole("tab", { name: /^Changes/u })).toHaveAttribute("aria-selected", "true");
     expect(screen.getAllByRole("dialog", { name: "Activity · Statewide" })).toHaveLength(1);
-    expect(screen.getByTestId("ward-bar-activity-trigger")).toHaveAttribute("aria-expanded", "true");
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByTestId("panel-open")).toHaveTextContent("open");
 
     fireEvent.keyDown(dialog, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Activity · Statewide" })).toBeNull());
-    await waitFor(() => expect(chip).toHaveFocus());
+    await waitFor(() => expect(trigger).toHaveFocus());
     expect(screen.getByTestId("panel-open")).toHaveTextContent("closed");
   });
 
