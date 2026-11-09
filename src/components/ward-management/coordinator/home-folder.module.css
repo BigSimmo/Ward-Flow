@@ -313,31 +313,30 @@
 }
 
 /*
- * Counts sit up and to the right of their label, like a superscript (Josh, 9 Nov 2026), so each tab
- * is its label's width plus a small tail and the chosen folder stays balanced round the word. Text
- * stays at the 12px floor; the badge shrinks to a 16px circle.
+ * Counts stay in line with their word (Josh, 9 Nov 2026), centred on the label's line with a small
+ * even gap. The Needs you badge is a compact 16px circle (a pill for two digits); text keeps the
+ * 12px floor.
  */
 .switch.switch.switch > *,
 .nav.nav [role="tablist"] [role="tab"] {
-  gap: 2px;
+  gap: 5px;
 }
 
 .switch.switch.switch > * > :last-child,
 .nav.nav [role="tablist"] [role="tab"] > :last-child {
-  position: relative;
-  top: -5px;
   align-self: center;
-  margin-top: 0;
   font-size: var(--wf-fs-12);
-  line-height: 12px;
+  line-height: 16px;
 }
 
 .nav[data-act] .switch.switch.switch > :first-child > :last-child {
+  box-sizing: border-box;
   min-width: 16px;
   height: 16px;
-  top: -4px;
-  margin-left: 2px;
   padding: 0 4px;
   border-radius: 8px;
   line-height: 16px;
+  letter-spacing: -0.03em;
+  /* Optically on the label's x-height centre, not its line box. */
+  transform: translateY(0.5px);
 }
