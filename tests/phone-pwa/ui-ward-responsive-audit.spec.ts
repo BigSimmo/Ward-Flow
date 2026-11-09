@@ -4,10 +4,9 @@ test("@mockup global alert title remains readable on small and large phones", as
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ward-flow/alerts", { waitUntil: "networkidle" });
-  // Alerts redesign (Q153, 1 Nov 2026): on a phone, Broadcast alert sits under "…", and the new
-  // composer sends a directive from Tell areas something.
-  await page.getByRole("button", { name: "More alert actions" }).click();
-  await page.getByRole("menuitem", { name: /^Broadcast alert/u }).click();
+  // Alerts redesign (Q153, 1 Nov 2026): the composer sends a directive from Tell areas something.
+  // Page tops (9 Nov 2026): Broadcast alert is a chip in the hero at every width, no longer under "…".
+  await page.getByRole("button", { name: "Broadcast alert" }).click();
   const composer = page.getByRole("dialog", { name: "New broadcast" });
   await composer.getByRole("radio", { name: /Tell desks something/u }).click();
   await composer.getByRole("button", { name: "HDU full", exact: true }).click();

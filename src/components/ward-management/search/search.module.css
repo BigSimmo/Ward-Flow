@@ -2403,6 +2403,12 @@
 }
 
 @media (max-width: 46.4375rem) {
+  /* Phone: the wrap steps aside so the folder tabs under the hero can pin for the whole page, not
+     only while the hero is on screen (census.module.css .folder). */
+  .v6HeroWrap {
+    display: contents;
+  }
+
   .v6Row {
     grid-template-columns: 2.5rem minmax(0, 1fr) auto;
   }

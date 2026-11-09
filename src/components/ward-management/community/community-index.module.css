@@ -1109,3 +1109,12 @@
   color: var(--wf-hero-ink-2);
   font: 400 var(--wf-fs-13) / 18px var(--wf-font);
 }
+
+/* Phone: the pane tabs pin under the header while the list scrolls, as the old pane switch did. */
+@media (max-width: 46.4375rem) {
+  .paneTabs {
+    position: sticky;
+    top: var(--wf-header-height, 3.5rem);
+    z-index: 6;
+  }
+}

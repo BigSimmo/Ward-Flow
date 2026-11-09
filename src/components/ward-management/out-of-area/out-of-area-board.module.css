@@ -2047,3 +2047,12 @@ fieldset.formRow {
     color: var(--wf-hero-ink);
   }
 }
+
+/* Phone: the folder tabs pin under the header while the list scrolls, as the old phone tabs did. */
+@media (max-width: 46.4375rem) {
+  .phoneFolder {
+    position: sticky;
+    top: var(--wf-header-height, 3.5rem);
+    z-index: 6;
+  }
+}

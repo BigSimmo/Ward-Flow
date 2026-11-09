@@ -994,6 +994,7 @@ export function HandoverPage() {
       <HeroTop
         figures={
           <HeroFigures
+            testId="ward-handover-kpi-strip" // Help's "Start with Act now" lights these.
             // Each figure highlights its rows (all rows stay); the sheet says how many and clears it.
             items={(
               [

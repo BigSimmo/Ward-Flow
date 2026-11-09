@@ -506,6 +506,8 @@ export function HandoverPhone({
         <HeroTop
           figures={
             <HeroFigures
+              // Help's "Start with Act now" lights these figures (the old count strip's id).
+              testId="ward-handover-kpi-strip"
               items={[
                 { id: "act", value: actCount, label: "act now", onClick: () => onPill("act"), pressed: pill === "act" },
                 {

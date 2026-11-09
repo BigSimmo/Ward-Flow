@@ -94,7 +94,7 @@ const UNIT_CARD: TourTarget = { sel: '[data-testid^="ward-unit-card-"]' };
 const CONFIRM: TourTarget = { sel: '[data-testid^="ward-unit-card-"] button', text: "Confirm numbers" };
 const ED_CARD: TourTarget = { sel: '[data-testid^="ward-ed-card-"]' };
 const ED_ROW: TourTarget = { sel: '[data-testid^="ward-ed-patient-"]' };
-const STATS_NAV: TourTarget = { sel: '[data-testid="ward-statistics-nav"]' };
+const STATS_NAV: TourTarget = { sel: '[data-testid="ward-statistics-nav"], [data-testid="ward-statistics-index"]' };
 const TRENDS: TourTarget = { sel: '[data-testid="ward-statistics-session-trends"]' };
 const MISMATCH: TourTarget = { sel: '[data-testid="capacity-mismatch"]' };
 
@@ -294,7 +294,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your desk",
           "checking",
-          { sel: '[data-testid^="ward-unit-card-"] [data-testid="wf-checking-foot"]' },
+          { sel: '[data-testid="ward-hero-checking"]' },
           "What may be out of date",
           "Checking lists what the figures cannot vouch for, such as discharges held up, people past their expected date or a roster not recorded.",
         ),
@@ -556,7 +556,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Finding your way",
           "copy",
-          { sel: '[aria-label="Copy handover"]' },
+          { sel: '[data-testid="ward-officer-copy-handover"]' },
           "Hand over your jobs",
           "Copy handover copies a plain text summary of the open jobs, ready to paste for the next shift.",
         ),

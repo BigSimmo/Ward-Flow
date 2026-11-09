@@ -1444,6 +1444,15 @@ tr:has(+ .moreRow) > td {
 /* Phone: six places do not fit, so the row scrolls sideways to the screen's edge under a soft fade,
    as the other phone folder rows do (QA, 9 Nov 2026). Five classes outrank the shared switch. */
 @media (max-width: 46.4375rem) {
+  /* The tabs pin under the header while the list scrolls, as the old state switch did (PS1). The hero
+     wrap steps aside on a phone (search.module.css), so the page's 12px gap sits above the row. */
+  .folder {
+    --wf-folder-gap: var(--wf-s-3);
+    position: sticky;
+    top: var(--wf-header-height, 3.5rem);
+    z-index: 6;
+  }
+
   .folder.folder.folder.folder.folder > [role="radiogroup"] {
     flex: 1 1 auto;
     min-width: 0;

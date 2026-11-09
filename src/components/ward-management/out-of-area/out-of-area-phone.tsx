@@ -292,7 +292,12 @@ export function OutOfAreaPhone({
     <div className={styles.phone}>
       {hero}
       {/* Page tops (9 Nov 2026): My list, Everyone and Beds as the folder tabs under the hero. */}
-      <FolderTabs label="Out of area views" value={tab} testId="ward-out-of-area-phone-tabs">
+      <FolderTabs
+        label="Out of area views"
+        value={tab}
+        className={styles.phoneFolder}
+        testId="ward-out-of-area-phone-tabs"
+      >
         <Segmented<PhoneTab>
           label="Out of area view"
           className={folderTabClasses.switch}

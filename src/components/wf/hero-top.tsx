@@ -37,9 +37,17 @@ export type HeroFigureItem = Press & {
 };
 
 /** A row of figures on the slate: equal columns on a phone (a long label takes the room it needs). */
-export function HeroFigures({ items, label = "Figures" }: { items: HeroFigureItem[]; label?: string }) {
+export function HeroFigures({
+  items,
+  label = "Figures",
+  testId,
+}: {
+  items: HeroFigureItem[];
+  label?: string;
+  testId?: string;
+}) {
   return (
-    <div className={styles.figs} role="group" aria-label={label}>
+    <div className={styles.figs} role="group" aria-label={label} data-testid={testId}>
       {items.map((item) => (
         <HeroFigure key={item.id} item={item} />
       ))}

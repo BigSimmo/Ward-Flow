@@ -528,7 +528,7 @@ export function CommunityIndex({
     ) : null;
 
   const folderTabs = isPhone ? (
-    <FolderTabs label="Catchment panes" value={phonePane} testId="community-index-panes">
+    <FolderTabs label="Catchment panes" value={phonePane} className={styles.paneTabs} testId="community-index-panes">
       <Segmented
         className={folderTabClasses.switch}
         label="Show"
