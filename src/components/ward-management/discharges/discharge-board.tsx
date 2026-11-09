@@ -394,7 +394,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
       return;
     }
     const rows = visibleReleaseGroups.flatMap((key) =>
-      releaseGroups[key].map((release) => ({
+      shownGroups[key].map((release) => ({
         ...release,
         statusWord: WORK_STATUS_LABELS[key === "discharged-today" ? "departed" : key],
       })),

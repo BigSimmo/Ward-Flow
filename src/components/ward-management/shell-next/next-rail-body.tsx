@@ -6,6 +6,7 @@ import { WardRailFrame } from "@/components/ward-management/shell/ward-chrome-fr
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { goToPageForShortcut } from "@/components/ward-management/shell/ward-goto-shortcuts";
+import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import {
   ArrowRight,
@@ -489,7 +490,8 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
       }
       if (isTypingTarget(event.target)) return;
       if (openDrawerForShortcut(event, canRefer)) return;
-      if (goToPageForShortcut(event, canOpen, (href) => router.push(href), deskHome)) return;
+      if (goToPageForShortcut(event, canOpen, (href) => navigateWithDirtyGuard(() => router.push(href)), deskHome))
+        return;
 
       if (event.key !== "[" || !areCharacterShortcutsEnabled()) return;
       if (event.metaKey || event.ctrlKey || event.altKey) return;

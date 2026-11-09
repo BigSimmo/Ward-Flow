@@ -11,6 +11,7 @@ import { useIsPhone } from "@/components/wf";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { useCanOpenHref, useDeskHomeHref } from "@/components/ward-management/shell/ward-access";
 import { goToPageForShortcut } from "@/components/ward-management/shell/ward-goto-shortcuts";
+import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { closeWardDrawer } from "@/components/ward-management/shell/ward-drawer-bus";
 import {
   isTypingTarget,
@@ -47,7 +48,7 @@ function PhonePreferences() {
       }
       if (isTypingTarget(event.target)) return;
       if (openDrawerForShortcut(event, canRefer)) return;
-      goToPageForShortcut(event, canOpen, (href) => router.push(href), deskHome);
+      goToPageForShortcut(event, canOpen, (href) => navigateWithDirtyGuard(() => router.push(href)), deskHome);
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
