@@ -143,6 +143,15 @@ export function HomeEdPressure({
                   ? { tone: "neutral", text: onFormsText, spoken: onFormsText }
                   : { tone: "neutral", text: "", spoken: "" };
         const outline = deadline.tone === "danger" || deadline.tone === "warning" ? deadline.tone : undefined;
+        // In the hero's narrow strip the forms line keeps its most urgent fact on one line ("1 due",
+        // "2 overdue", after the form glyph); the full count of people on forms stays in the button's spoken name and title.
+        const urgentCount = row.breaching > 0 ? row.breaching : critical > 0 ? critical : due;
+        const shownDeadline =
+          onHero && urgentCount > 0
+            ? row.breaching > 0
+              ? `${row.breaching}\u00a0overdue`
+              : `${urgentCount}\u00a0due`
+            : deadline.text;
 
         const longestTone: WfTone | null = edLongestWaitTone(
           row.waiting,
@@ -152,7 +161,7 @@ export function HomeEdPressure({
 
         const waitText = row.waiting > 0 ? durMinutes(row.longestWaitMinutes) : "No wait";
         const shownService = serviceAcronym && !isPhone ? ` ${serviceAcronym}` : "";
-        const visibleSummary = [`${row.ed.siteCode}${shownService}`, `${row.waiting} waiting`, waitText, deadline.text]
+        const visibleSummary = [`${row.ed.siteCode}${shownService}`, `${row.waiting} waiting`, waitText, shownDeadline]
           .filter(Boolean)
           .join(", ");
         const spoken = [visibleSummary, `${edShortName(row.ed)} (${serviceAcronym || rawService || "Department"})`];
@@ -174,7 +183,7 @@ export function HomeEdPressure({
               data-forms={outline}
               aria-pressed={selected}
               aria-label={spoken.join(", ")}
-              title={`${row.ed.name}${rawService ? ` (${rawService})` : ""}`}
+              title={`${row.ed.name}${rawService ? ` (${rawService})` : ""}${onHero && deadline.spoken ? `: ${deadline.spoken}` : ""}`}
               onClick={() => onSelectEd(selected ? undefined : row.ed.id)}
             >
               <span className={c.edTop} aria-hidden="true">
@@ -206,7 +215,7 @@ export function HomeEdPressure({
               {deadline.text ? (
                 <span className={`${c.edLine} ${c.edDeadline}`} aria-hidden="true">
                   {deadline.tone === "neutral" ? null : <StatusGlyph tone={deadline.tone} size={9} />}
-                  <span className={c.edWord}>{deadline.text}</span>
+                  <span className={c.edWord}>{shownDeadline}</span>
                 </span>
               ) : null}
             </button>
@@ -222,7 +231,7 @@ export function HomeEdPressure({
           {/* Josh, 3 Nov 2026: the folded line names the clear EDs, "KEMH, PCH: no wait". */}
           <p className={c.edClear} title={clearNames}>
             <span className={c.edClearCodes} aria-hidden="true">
-              {clearCodes}:
+              {onHero ? clear.map((row) => row.ed.siteCode).join(" · ") : `${clearCodes}:`}
             </span>{" "}
             <span aria-hidden="true">no wait</span>
             <span className="sr-only">{`${clearNames}: nobody waiting`}</span>

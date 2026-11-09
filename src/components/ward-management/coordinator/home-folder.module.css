@@ -139,13 +139,17 @@
 .nav[data-act] .switch.switch.switch > :first-child > :last-child {
   display: inline-grid;
   place-items: center;
-  min-width: 20px;
+  box-sizing: border-box;
+  /* A true circle for one digit, a pill of the same height for two. */
+  min-width: 18px;
   height: 18px;
-  padding: 0 6px;
+  padding: 0 5px;
   border-radius: 9px;
   background: var(--wf-hero-danger);
   color: var(--wf-hero-2);
   font-weight: 600;
+  line-height: 18px;
+  letter-spacing: -0.02em;
 }
 
 .nav[data-act] .switch.switch.switch > [aria-checked="true"]:first-child > :last-child {

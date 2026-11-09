@@ -4344,3 +4344,28 @@
     box-shadow: none;
   }
 }
+
+/*
+ * Alerts count on the slate band, tablet and desktop (Josh, 9 Nov 2026): a round count beside the
+ * bell, softly filled, rather than a boxed number. 18px tall, the same as Home's Needs you count.
+ */
+@media (min-width: 46.5rem) {
+  .bar.bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .drawerTrigger
+    .badge {
+    min-width: 18px;
+    height: 18px;
+    margin-left: 2px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
+    box-shadow: none;
+    color: var(--wf-hero-ink);
+    font-size: var(--wf-fs-12);
+    line-height: 18px;
+    letter-spacing: -0.02em;
+  }
+}
