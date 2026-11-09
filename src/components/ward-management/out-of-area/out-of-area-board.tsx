@@ -992,16 +992,14 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                         <SrOnly>synthetic records</SrOnly> highlighted, all rows stay
                       </>
                     ) : (
-                      <>
-                        {entries.length} synthetic records
-                        {legalMissing > 0 ? (
-                          <span data-testid="ward-out-of-area-legal-missing">
-                            {" "}
-                            · Legal not recorded for <b className={styles.mono}>{legalMissing}</b>
-                          </span>
-                        ) : null}
-                      </>
+                      <>{entries.length} synthetic records</>
                     )}
+                    {legalMissing > 0 ? (
+                      <span data-testid="ward-out-of-area-legal-missing">
+                        {" "}
+                        · Legal not recorded for <b className={styles.mono}>{legalMissing}</b>
+                      </span>
+                    ) : null}
                   </span>
                   {anyHighlight ? (
                     <Button variant="ghost" size="sm" onClick={clearHighlights}>
