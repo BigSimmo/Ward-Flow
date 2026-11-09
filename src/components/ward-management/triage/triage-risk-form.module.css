@@ -972,22 +972,45 @@
   line-height: var(--wf-lh-13);
 }
 
-/* A phone keeps the four banner actions on one even row: words only, the icons dropped for room. */
+/* A phone keeps the four banner actions on one row with their icons (Josh, 9 Nov 2026): smaller
+ * words and a tighter icon gap make the room, and each button grows to its own width so the longest
+ * ("Contacts 1") never clips. The banner chips tighten too, so the band reads as one compact block. */
 @media (max-width: 46.4375rem) {
   .heroLinks.heroLinks {
-    display: grid;
-    grid-auto-columns: minmax(0, 1fr);
-    grid-auto-flow: column;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 5px;
     width: 100%;
   }
   .heroLinks.heroLinks :is(button, a) {
-    width: 100%;
+    flex: 1 1 auto;
+    gap: 4px;
     min-width: 0;
     padding-inline: 6px;
+    font-size: var(--wf-fs-12);
+    white-space: nowrap;
+  }
+  .heroLinks.heroLinks :is(button, a) > span {
     white-space: nowrap;
   }
   .heroLinks.heroLinks :is(button, a) > svg {
-    display: none;
+    flex: none;
+    width: 14px;
+    height: 14px;
+  }
+  .bannerTags.bannerTags {
+    gap: 6px;
+  }
+  .bannerTags.bannerTags > * {
+    min-height: 26px;
+    padding-block: 2px;
+    padding-inline: 10px;
+    font-size: var(--wf-fs-12);
+    line-height: var(--wf-lh-12);
+  }
+  .bannerTags.bannerTags > * > :first-child {
+    font-size: var(--wf-fs-12);
+    line-height: var(--wf-lh-12);
   }
 }
 
