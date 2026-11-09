@@ -53,7 +53,7 @@ import {
   type PortraitGroup,
 } from "@/components/wf";
 import { type DelayCause, type DelayGroup, type DelayOwnerId } from "./delays-derivations";
-import { BandBar, Glyph } from "./delays-board-parts";
+import { BandBar, Glyph, GroupTrend } from "./delays-board-parts";
 import {
   NO_FILTERS,
   OVER_8H,
@@ -1494,23 +1494,5 @@ export function DelaysBoard({
         </>
       )}
     </>
-  );
-}
-
-/**
- * v10 phone group trend mark: a small bar glyph and "+N", the people in this group whose wait
- * opened recently (the board's own quiet threshold). A count of recorded arrivals, never a forecast.
- */
-function GroupTrend({ rows }: { rows: readonly BoardRow[] }) {
-  const joined = rows.filter((row) => row.waited < SILENT_MINUTES).length;
-  return (
-    <span className={styles.phTrend} title={`${joined} joined recently`}>
-      <svg viewBox="0 0 8 12" width="8" height="12" aria-hidden="true">
-        <rect x="0" y="6" width="3" height="6" fill="currentColor" opacity="0.45" />
-        <rect x="5" y="1" width="3" height="11" fill="currentColor" />
-      </svg>
-      <span aria-hidden="true">+{joined}</span>
-      <span className="sr-only">{joined} joined recently</span>
-    </span>
   );
 }

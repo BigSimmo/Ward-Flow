@@ -963,11 +963,8 @@ export function HandoverPage() {
 
   const shiftClock = formatInstantWithDay(shiftAt, now);
   const checksDone = signChecks.filter((check) => check.done).length;
-  /*
-   * Page tops (Josh, 9 Nov 2026). NA2-01: the title counts every row under Act now, Flagged urgent and
-   * Due by, the sum the phone title uses, so the two never disagree. Sign off stays in the top on every
-   * tab (Josh, 3 Nov 2026) and opens the checklist drawer, where Sign off is the one filled button.
-   */
+  /* Page tops (Josh, 9 Nov 2026). NA2-01: the title counts Act now, Flagged urgent and Due by, as the
+   * phone title does. Sign off stays in the top on every tab (3 Nov) and opens the checklist drawer. */
   const promisesAct = sheetOpen ? undefined : promisesHeroAct(referrals, now, promisesOpen, setPromisesOpen);
   const handoverCount = counts.act + counts.urg + counts.due;
   const hero = (
