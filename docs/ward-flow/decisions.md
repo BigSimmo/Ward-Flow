@@ -1399,4 +1399,5 @@ is inferred.
   5. **Downtime pack:** adds a line naming anyone absent without leave on each ward. The pack stays print or saved file only (D-72).
   6. **Executive statistics:** counts an absence without leave separately from approved leave (D-38).
 - **Also in the same PR:** the Statistics ward rosters show "Absent without leave", not "On leave" (D-38, no new ruling needed).
+- **Built so far (PR #1579):** items 1, 2 and 5. Items 3, 4 and 6 wait until PRs #1581 and #1583 merge, because those PRs hold the ward board and access-scope files the changes need; each is pinned as a to-do test in the audit files.
 - **Boundary:** synthetic data only. Changes display counts and labels; changes no signed clinical value or clinical rule, and approves no merge or release.
