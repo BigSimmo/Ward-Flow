@@ -1,3 +1,4 @@
+import { isAlternativeMarks } from "./referral-alternatives";
 import {
   ATS_CATEGORIES,
   COHORTS,
@@ -75,6 +76,7 @@ export function isRecoverableReferralDraft(value: unknown): value is KeptDraft {
       "notOnWard",
       "needsChartReattachment",
       "communityPurpose",
+      "alternatives",
     ])
   )
     return false;
@@ -96,6 +98,7 @@ export function isRecoverableReferralDraft(value: unknown): value is KeptDraft {
     !optional(value.unidentified, (item) => item === null || string(item)) ||
     !optional(value.needsChartReattachment, boolean) ||
     !optional(value.catchmentNotKnown, boolean) ||
+    !optional(value.alternatives, isAlternativeMarks) ||
     !boolean(value.highAcuity) ||
     !boolean(value.catchmentConfirmed) ||
     !Array.isArray(value.selectedUnitIds) ||

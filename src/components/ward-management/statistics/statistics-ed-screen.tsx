@@ -2,10 +2,15 @@
 
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { edJourneySummaries } from "@/components/ward-management/ed/ed-home-derivations";
+import {
+  CLEARANCE_MEDIAN_MIN_JOURNEYS,
+  edClearanceMedian,
+  type EdClearanceMedian,
+} from "@/components/ward-management/ed/ed-clearance-time";
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Activity, ChevronDown, Clock, Hospital, ListOrdered, Scale, Timer, Users, X } from "lucide-react";
+import { Activity, ChevronDown, Clock, Hospital, ListOrdered, Scale, Stethoscope, Timer, Users, X } from "lucide-react";
 
 import {
   Card,
@@ -105,7 +110,7 @@ function OperationalStatisticsEdScreen({
   // Only operational desks reach this provider-backed branch.
   const { countsOnly, small } = useStatisticsCounts();
   const canOpen = useCanOpenHref();
-  const { movements: liveMovements, units } = live.state;
+  const { movements: liveMovements, units, referrals } = live.state;
   const now = live.now;
   const movements = movementsOverride ?? liveMovements;
   const department = edById(edId);
@@ -145,6 +150,9 @@ function OperationalStatisticsEdScreen({
   const { onTheList, urgent, unplaced, waitingMovements, over24h, over48h, longestWait, allDepartmentMovements } =
     edWaitFigures(movements, department.id, now);
   const bands = edWaitBands(movements, department.id, now);
+  // Medical clearance tracker (Josh sign-off, 9 Nov 2026): every ED-origin journey from here, open
+  // or closed, that recorded "cleared"; the clinician's record, never an inferred clearance.
+  const clearance = edClearanceMedian(allDepartmentMovements, referrals, now);
   const edJourneys = edJourneySummaries(movements, now).find((summary) => summary.ed.id === department.id)!;
 
   // Statistics shows AD- admission numbers only, no names or UMRN (Josh, 13 Oct 2026), and never a
@@ -234,6 +242,7 @@ function OperationalStatisticsEdScreen({
         over24h,
         longestWaitMinutes: longestWait?.waitMinutes ?? null,
         median,
+        clearance,
         stillInEd: edJourneys.stillInEd,
         inTransit: edJourneys.inTransit,
         bands,
@@ -337,6 +346,8 @@ type EdPresentationModel = {
   over24h: StatisticsCount;
   longestWaitMinutes: number | null;
   median: number | null;
+  /** Operational desks only; the executive release carries no clearance figure. */
+  clearance?: EdClearanceMedian;
   stillInEd: StatisticsCount;
   inTransit: StatisticsCount;
   bands: readonly { label: string; count: StatisticsCount }[];
@@ -488,6 +499,33 @@ function EdPresentation({
       </CardBody>
     </StatCard>
   );
+  const clearanceMedianText = (clearance: EdClearanceMedian) =>
+    clearance.medianMinutes === null ? "Too few" : splitDuration(Math.round(clearance.medianMinutes));
+  const clearanceCard = model.clearance ? (
+    <StatCard
+      icon={Stethoscope}
+      title="Medical clearance"
+      aside="Recorded by clinicians"
+      id="ed-clearance"
+      data-testid="ward-statistics-ed-clearance"
+    >
+      <CardBody className={styles.bodyStack}>
+        <div className={styles.tiles}>
+          <div className={styles.tile}>
+            <span className={styles.tileLabel}>Median time to medical clearance</span>
+            <span className={styles.tileValue} data-testid="ward-stat-ed-clearance-median">
+              {clearanceMedianText(model.clearance)}
+            </span>
+          </div>
+        </div>
+        <p className={detail.note} data-testid="ward-stat-ed-clearance-count">
+          Based on {small(model.clearance.count)} {model.clearance.count === 1 ? "journey" : "journeys"} with a recorded
+          clearance, timed from arrival.
+          {model.clearance.medianMinutes === null ? ` A median needs ${CLEARANCE_MEDIAN_MIN_JOURNEYS}.` : ""}
+        </p>
+      </CardBody>
+    </StatCard>
+  ) : null;
   const declinesCard = (
     // Role view (as ED clinician): the decline cross, as on the network page's Declines by reason;
     // the tiles stack in the side column and drop the "Declined" the title already says.
@@ -598,6 +636,9 @@ function EdPresentation({
           ["Flagged urgent", small(urgent)],
           [`Past ${longHours}h`, small(over24h)],
           ["No ward yet", small(unplaced)],
+          ...(model.clearance
+            ? [["Median time to medical clearance", clearanceMedianText(model.clearance)] as [string, string]]
+            : []),
         ],
       }}
       phone={{
@@ -674,18 +715,25 @@ function EdPresentation({
         <PhoneBody testId="ward-statistics-ed-phone">
           {edCountsDesk ? bandsCard : null}
           {edCountsDesk ? declinesCard : null}
+          {edCountsDesk ? clearanceCard : null}
           {/* Role view (as ED clinician): "Counts only" is in the eyebrow, once. */}
           {edCountsDesk ? null : <PeopleNotListed testId="ward-statistics-ed-phone-not-listed" />}
         </PhoneBody>
       ) : isPhone ? (
-        personPhone
+        <>
+          {personPhone}
+          <PhoneBody testId="ward-statistics-ed-phone-clearance">{clearanceCard}</PhoneBody>
+        </>
       ) : edCountsDesk ? (
         <>
           {/* Role view (as ED clinician): the chart leads and Declines is the side column, so the two
               cards end level; "Counts only" moved to the eyebrow. */}
           <FlushRow layout="lead2">
             {bandsCard}
-            {declinesCard}
+            <FlushStack>
+              {declinesCard}
+              {clearanceCard}
+            </FlushStack>
           </FlushRow>
         </>
       ) : (
@@ -710,6 +758,7 @@ function EdPresentation({
               </StatCard>
               {bandsCard}
               {declinesCard}
+              {clearanceCard}
             </FlushStack>
           </FlushRow>
 

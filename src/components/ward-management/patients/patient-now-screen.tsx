@@ -1056,6 +1056,15 @@ export function PatientNowScreen({
       gate={gate}
       goneToEd={goneToEd}
       handleCopySummary={handleCopySummary}
+      handoverRiskFlags={
+        glanceMovement !== liveMovement
+          ? undefined
+          : referralSafety.kind === "not_shared"
+            ? "not_shared"
+            : referralSafety.kind === "shown"
+              ? referralSafety.riskFlags
+              : undefined
+      }
       isLiveBedflow={isLiveBedflow}
       isPhone={isPhone}
       isTransportBooked={isTransportBooked}
@@ -1070,6 +1079,7 @@ export function PatientNowScreen({
       pathname={pathname}
       phoneMovement={phoneMovement}
       phoneStatusFoot={phoneStatusFoot}
+      patientName={displayName}
       record={record}
       recordLeave={recordLeave}
       recordReturn={recordReturn}

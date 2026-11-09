@@ -7,6 +7,8 @@ import { recordedMovementMedicalClearance } from "../ward-medical-clearance";
 import type { WardCommandOutcome } from "../ward-shared-client";
 import { confirmedWardCommand } from "../ward-command-completion";
 import { wardCommandFailure } from "../ward/use-ward-command-completion";
+import { StatusGlyph } from "@/components/wf";
+import { ED_CLEARANCE_FLAG_WORDS, edClearanceTime } from "./ed-clearance-time";
 import styles from "./ed.module.css";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 
@@ -26,15 +28,18 @@ export function EdMedicalPlacementControls({
   movementId: string;
   actingPlaceId: string;
 }) {
-  const { movements, referrals, worldGeneration, shared } = useWardFlowSelect(
+  const { movements, referrals, worldGeneration, shared, now } = useWardFlowSelect(
     "movements",
     "referrals",
     "worldGeneration",
     "shared",
+    "now",
   );
   const raise = useWardRaise("ed");
   const movement = movements.find((record) => record.id === movementId);
   const clearance = movement ? recordedMovementMedicalClearance(movement, referrals) : undefined;
+  // Medical clearance tracker (Josh sign-off, 9 Nov 2026): elapsed from arrival, never a countdown.
+  const clearanceTime = movement ? edClearanceTime(movement.openedAt, clearance, now) : undefined;
   const [choice, setChoice] = useState<Choice | null>(null);
   const [saved, setSaved] = useState<MedicalSave | null>(null);
   const active = useRef<MedicalSave | null>(null);
@@ -163,6 +168,13 @@ export function EdMedicalPlacementControls({
             ? "Recorded medically cleared."
             : "Recorded not medically cleared."}
       </p>
+      {clearanceTime ? (
+        <p className={styles.clearanceTime} data-testid={`ward-ed-clearance-time-${movementId}`}>
+          {clearanceTime.flagged ? <StatusGlyph tone="warning" size={8} /> : null}
+          <span>{clearanceTime.words}</span>
+          {clearanceTime.flagged ? <span className="sr-only">, {ED_CLEARANCE_FLAG_WORDS}</span> : null}
+        </p>
+      ) : null}
       {paused && (
         <p>
           Psychiatric placement paused for medical deterioration. Fresh clearance and a new coordinator placement are

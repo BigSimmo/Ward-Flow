@@ -96,7 +96,7 @@ describe("ED page — clearance and review stay readable on a laptop (overall re
     renderEd();
     for (const row of rows()) {
       const checks = within(row).getByTestId(/^ward-ed-row-checks-/u);
-      expect(checks.textContent).toMatch(/Clearance pending|Med cleared|Not cleared/u);
+      expect(checks.textContent).toMatch(/Not recorded|Not cleared|Cleared in|Cleared on arrival/u);
       expect(checks.textContent).toMatch(/Reviewed|Not reviewed|revoked/iu);
     }
   });
@@ -110,7 +110,8 @@ describe("ED page — clearance and review stay readable on a laptop (overall re
       name: /^Checks for .+: (\d checks? open|Checks done|Exam revoked)$/u,
     });
     expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
-    expect(trigger).toHaveAccessibleDescription(/(Clearance pending|Med cleared|Not cleared)\. /u);
+    // Medical clearance tracker (Josh sign-off, 9 Nov 2026): the clearance line leads.
+    expect(trigger).toHaveAccessibleDescription(/^(Not recorded|Not cleared|Cleared in|Cleared on arrival)[^.]*\. /u);
     fireEvent.click(trigger);
     const panel = within(checks).getByRole("dialog", { name: /^Checks for / });
     expect(within(panel).getAllByRole("listitem")).toHaveLength(2);
