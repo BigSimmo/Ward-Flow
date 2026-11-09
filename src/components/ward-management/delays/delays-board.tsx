@@ -90,7 +90,7 @@ import {
   useReturnToPlace,
 } from "@/components/ward-management/use-return-to-place";
 import { WaitBar, phoneUpdate, updateCell } from "./delays-board-rows";
-import { legalCell, phonePrefix } from "./delays-board-rows";
+import { legalCell, legalTimeAsTypedWords, phonePrefix } from "./delays-board-rows";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import waitingKeys from "./waiting.module.css";
 import polish from "./waiting-polish.module.css";
@@ -296,6 +296,7 @@ export function DelaysBoard({
         serviceName: (row) => catchmentName(row.origin),
         causeTitle: (row) => desk.causeTitle(row.cause),
         ownerName: (row) => desk.ownerName(row.owner),
+        legalTime: (row) => legalTimeAsTypedWords(row.movement, now),
       },
       {
         asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),

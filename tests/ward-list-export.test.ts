@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { csvCell } from "@/components/ward-management/statistics/statistics-csv";
 import { ED_EXPORT_HEADER, edExportLines } from "@/components/ward-management/ed/ed-export";
-import {
-  DELAYS_EXPORT_HEADER,
-  delaysExportLines,
-  legalTimeWords,
-} from "@/components/ward-management/delays/delays-export";
+import { DELAYS_EXPORT_HEADER, delaysExportLines } from "@/components/ward-management/delays/delays-export";
 import {
   DISCHARGE_RECORD_EXPORT_HEADER,
   DISCHARGE_RELEASE_EXPORT_HEADER,
@@ -86,7 +82,6 @@ describe("Waiting export", () => {
     waited: 600,
     sinceReferral: undefined,
     quiet: 30,
-    dueIn: -15,
     locked: true,
     origin: "North Metro" as const,
     name: `${NAME.givenName} ${NAME.familyName}`,
@@ -97,6 +92,7 @@ describe("Waiting export", () => {
     serviceName: () => "North Metro",
     causeTitle: () => "No suitable bed",
     ownerName: () => "Wards",
+    legalTime: () => "Ended Mon 09:15 as typed",
   });
   it("has a header row, waits and legal time, without names", () => {
     expect(lines[0]).toEqual([...DELAYS_EXPORT_HEADER]);
@@ -112,15 +108,11 @@ describe("Waiting export", () => {
       "30m",
       1,
       "Involuntary inpatient",
-      "Past by 15m",
+      "Ended Mon 09:15 as typed",
       "Yes",
     ]);
     expectNoName(lines);
     expect(asCsv(lines)).toContain(`"'+Synthetic ED"`);
-  });
-  it("words the legal time", () => {
-    expect(legalTimeWords(undefined)).toBe("None recorded");
-    expect(legalTimeWords(90)).toBe("Due in 1h 30m");
   });
 });
 

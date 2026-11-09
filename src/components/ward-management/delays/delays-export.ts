@@ -13,7 +13,7 @@ export type ListExportProvenance = NonNullable<Parameters<typeof downloadCsv>[2]
  */
 export type DelaysExportRow = Pick<
   BoardRow,
-  "cause" | "owner" | "waited" | "sinceReferral" | "quiet" | "dueIn" | "locked" | "origin"
+  "cause" | "owner" | "waited" | "sinceReferral" | "quiet" | "locked" | "origin"
 > & { readonly movement: Pick<Movement, "id" | "originEdId" | "legalStatus" | "urgency"> };
 
 export type DelaysExportContext<R extends DelaysExportRow = DelaysExportRow> = {
@@ -22,6 +22,8 @@ export type DelaysExportContext<R extends DelaysExportRow = DelaysExportRow> = {
   readonly serviceName: (row: R) => string;
   readonly causeTitle: (row: R) => string;
   readonly ownerName: (row: R) => string;
+  /** The legal time exactly as typed on the form ("Ends Tue 15:42 as typed"), never a countdown (D-93). */
+  readonly legalTime: (row: R) => string;
 };
 
 export const DELAYS_EXPORT_HEADER = [
@@ -39,12 +41,6 @@ export const DELAYS_EXPORT_HEADER = [
   "Legal time",
   "Locked bed",
 ] as const;
-
-/** The typed legal due time, as the list reads it: due in, past by, or none recorded. */
-export function legalTimeWords(dueIn: number | undefined): string {
-  if (dueIn === undefined) return "None recorded";
-  return dueIn < 0 ? `Past by ${splitDuration(-dueIn)}` : `Due in ${splitDuration(dueIn)}`;
-}
 
 export function delaysExportLines<R extends DelaysExportRow>(
   rows: readonly R[],
@@ -64,7 +60,7 @@ export function delaysExportLines<R extends DelaysExportRow>(
       splitDuration(row.quiet),
       row.movement.urgency,
       row.movement.legalStatus,
-      legalTimeWords(row.dueIn),
+      ctx.legalTime(row),
       row.locked ? "Yes" : "No",
     ]),
   ];
