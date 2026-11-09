@@ -71,3 +71,12 @@
 .link {
   font-size: var(--wf-fs-13);
 }
+
+/* Feature 47: the training switch above the steps, set off by a hairline below, not a coloured edge. */
+.training {
+  display: grid;
+  gap: var(--wf-s-2);
+  justify-items: start;
+  padding-block-end: var(--wf-s-2);
+  border-block-end: 1px solid var(--wf-line);
+}

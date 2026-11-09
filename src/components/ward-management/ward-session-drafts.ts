@@ -149,14 +149,27 @@ export function setDraftAccount(next: string): void {
   }
 }
 
-/** Observed world replacement, including incoming shared or cross-tab resets. */
+/** Feature 47: scopes of the throwaway training world start with this. */
+const TRAINING_SCOPE = "training/";
+
+/**
+ * Observed world replacement, including incoming shared or cross-tab resets. A training world
+ * (feature 47) replaces only other training drafts, so starting training never deletes the real
+ * world's drafts; returning to a real world removes every draft outside its scope, training ones too.
+ */
 export function setDraftScenarioScope(scope: string): void {
   activeScenarioScope = scope;
   if (typeof window === "undefined") return;
+  const encoded = encodeURIComponent(scope);
+  const trainingOnly = scope.startsWith(TRAINING_SCOPE);
+  const trainingPrefix = encodeURIComponent(TRAINING_SCOPE);
   try {
     const storage = window.sessionStorage;
     for (const key of Array.from({ length: storage.length }, (_, i) => storage.key(i))) {
-      if (key?.startsWith(PREFIX) && key.split(":")[4] !== encodeURIComponent(scope)) storage.removeItem(key);
+      if (!key?.startsWith(PREFIX)) continue;
+      const keyScope = key.split(":")[4] ?? "";
+      if (keyScope === encoded || (trainingOnly && !keyScope.startsWith(trainingPrefix))) continue;
+      storage.removeItem(key);
     }
   } catch {
     /* Writes to an outgoing world's scope remain fenced even with blocked storage. */

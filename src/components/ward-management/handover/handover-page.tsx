@@ -567,9 +567,10 @@ export function HandoverPage() {
   });
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.metaKey || event.ctrlKey || event.altKey || isTypingTarget(event.target)) return;
-      // A letter typed in an open menu (Show, Group, Sort) jumps to a choice there, never a shortcut.
-      if (event.target instanceof Element && event.target.closest('[role="menu"]')) return;
+      // A key the shell used (G's letter opened a page) or typed in an open menu is never a shortcut.
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (isTypingTarget(event.target) || (event.target instanceof Element && event.target.closest('[role="menu"]')))
+        return;
       const key = event.key.toLowerCase();
       // J and K keep stepping through the list while the patient flow drawer is open (drawer review,
       // 6 Nov 2026); every other letter waits until the dialog closes.

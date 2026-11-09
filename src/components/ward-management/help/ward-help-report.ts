@@ -13,6 +13,8 @@
  * Pure functions only, so the Help sheet loads this with the report view and nowhere else.
  */
 
+import { pictureLine } from "./ward-help-report-picture";
+
 export type PatientDetailKind =
   "record-number" | "medicare" | "phone" | "email" | "date" | "titled-name" | "surname-first";
 
@@ -134,6 +136,8 @@ export type ReportContext = {
   readonly browser: string;
   readonly viewport?: { readonly width: number; readonly height: number };
   readonly time: string;
+  /** Whether the reporter added a picture of the screen; left out, the report does not say. */
+  readonly picture?: boolean;
 };
 
 /** The report's lines: what happened, then what was added for the reporter. */
@@ -147,6 +151,7 @@ export function reportLines(context: ReportContext): readonly (readonly [string,
       ? [["Window", `${context.viewport.width} × ${context.viewport.height}`] as const]
       : ([] as const)),
     ["Time", context.time],
+    ...(context.picture === undefined ? ([] as const) : [pictureLine(context.picture)]),
   ];
 }
 

@@ -14,7 +14,10 @@ import { EdNeedsYou } from "./ed-needs-you";
 import type { EdScreenContext } from "./ed-screen-context";
 import styles from "./ed.module.css";
 import { recordedEdDeparture } from "@/components/ward-management/ward-ed-presence";
-import { splitDuration } from "@/components/ward-management/ward-clock";
+import { formatSheetMoment, splitDuration } from "@/components/ward-management/ward-clock";
+import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
+import { edStageLabel } from "./ed-referral-status";
+import { ListExportButton } from "../ward-list-export-button";
 import { renderEdBoardRow } from "./ed-screen-board-row";
 import { TierBarsKey } from "./ed-handover-cells";
 import handover from "./ed-handover.module.css";
@@ -85,6 +88,27 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
     },
     { id: "under", title: "Under 8 hours", test: (minutes) => minutes < 480 },
   ];
+
+  // Export (feature 44): everyone on the table (filters only highlight), never names; the builder
+  // loads on the click.
+  const exportList = async () => {
+    const lookup = { patients: ctx.registryPatients, referrals: ctx.referrals, movements: ctx.movements };
+    (await import("./ed-export")).downloadEdList(
+      visiblePatients,
+      {
+        department: ctx.department.name,
+        umrnOf: (movement) => movementUmrn(movement, lookup),
+        bayOf: (movement) => ctx.patientBay(movement.id),
+        stageOf: (movement) => edStageLabel(movement.stage),
+        minutesOf,
+        at: (instant) => formatSheetMoment(instant, ctx.dayZero),
+      },
+      {
+        asAt: formatSheetMoment(now, ctx.dayZero, { includeYearAndZone: true }),
+        scope: `${ctx.department.name} psychiatry list; everyone on the table, regardless of search or highlights`,
+      },
+    );
+  };
 
   /** A2: the open person sheet renders after the table, never inside a table row. */
   let sheet: ReactNode = null;
@@ -186,6 +210,7 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
               <EdNeedsYou items={needsYouItems} framed={false} />
             </PortraitRail>
           ) : null}
+          <ListExportButton load={exportList} disabled={patients.length === 0} testId="ed-handover-export" />
           <Button
             variant={fullscreenBoard ? "pri" : "sec"}
             size="md"

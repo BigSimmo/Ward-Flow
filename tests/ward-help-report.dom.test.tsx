@@ -1,6 +1,6 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { HelpReport } from "@/components/ward-management/help/ward-help-report-view";
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
@@ -9,6 +9,11 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/ward-flow",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
+}));
+const makePicture = vi.hoisted(() => vi.fn<() => Promise<Blob>>());
+vi.mock("@/components/ward-management/help/ward-help-report-picture", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/components/ward-management/help/ward-help-report-picture")>()),
+  makeReportPicture: makePicture,
 }));
 vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
   useTourFacts: () => ({ facts: {}, home: "/ward-flow", deskHome: "/ward-flow" }),
@@ -100,6 +105,7 @@ describe("Report a problem", () => {
       Version: "latest change 8 Nov 2026",
       Browser: "This browser and window size",
       Time: "When you copy it",
+      "Picture attached": "no",
     });
   });
 
@@ -197,5 +203,130 @@ describe("Report a problem", () => {
     const { onBack } = report();
     fireEvent.click(screen.getByRole("button", { name: "Back to Help" }));
     expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it("offers a picture of the screen, off by default, that says the page is blurred", () => {
+    report();
+    const toggle = screen.getByRole("checkbox", { name: "Include a picture of this screen" }) as HTMLInputElement;
+    expect(toggle.checked).toBe(false);
+    expect(screen.getByTestId("ward-help-report-picture-note").textContent).toContain(
+      "Page content is blurred so no patient details are included.",
+    );
+    expect(screen.queryByTestId("ward-help-report-picture-preview")).toBeNull();
+  });
+
+  it("says when the picture cannot be made, and still copies the report saying no picture", async () => {
+    makePicture.mockRejectedValueOnce(new Error("no canvas"));
+    const { box } = report();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("checkbox", { name: "Include a picture of this screen" }));
+    });
+    expect(screen.getByTestId("ward-help-report-picture-status").textContent).toContain("Could not make the picture.");
+    fireEvent.change(box, { target: { value: SAFE } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Copy report" }));
+    });
+    expect(writeText.mock.calls[0]?.[0] as string).toContain("Picture attached: no");
+  });
+
+  it("previews the blurred picture, saves it on request and says it is attached", async () => {
+    makePicture.mockResolvedValueOnce(new Blob(["png"], { type: "image/png" }));
+    const createObjectURL = vi.fn(() => "blob:preview");
+    const revokeObjectURL = vi.fn();
+    const original = { createObjectURL: URL.createObjectURL, revokeObjectURL: URL.revokeObjectURL };
+    Object.assign(URL, { createObjectURL, revokeObjectURL });
+    onTestFinished(() => {
+      Object.assign(URL, original);
+    });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    const { box } = report();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("checkbox", { name: "Include a picture of this screen" }));
+    });
+    const preview = screen.getByRole("img", { name: /page content blurred/iu }) as HTMLImageElement;
+    expect(preview.getAttribute("src")).toBe("blob:preview");
+    fireEvent.click(screen.getByRole("button", { name: "Save picture" }));
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("ward-help-report-picture-status").textContent).toContain("Picture saved.");
+    fireEvent.change(box, { target: { value: SAFE } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Copy report" }));
+    });
+    expect(writeText.mock.calls[0]?.[0] as string).toContain("Picture attached: yes");
+    expect(screen.getByRole("status").textContent).toContain("then add the picture");
+    // Unticking drops the picture and frees its preview address.
+    await act(async () => {
+      fireEvent.click(screen.getByRole("checkbox", { name: "Include a picture of this screen" }));
+    });
+    expect(screen.queryByTestId("ward-help-report-picture-preview")).toBeNull();
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:preview");
+  });
+
+  it("says so when the browser refuses to save the picture", async () => {
+    makePicture.mockResolvedValueOnce(new Blob(["png"], { type: "image/png" }));
+    const original = { createObjectURL: URL.createObjectURL, revokeObjectURL: URL.revokeObjectURL };
+    Object.assign(URL, { createObjectURL: vi.fn(() => "blob:preview"), revokeObjectURL: vi.fn() });
+    onTestFinished(() => {
+      Object.assign(URL, original);
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    report();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("checkbox", { name: "Include a picture of this screen" }));
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save picture" }));
+    expect(screen.getByTestId("ward-help-report-picture-status").textContent).toContain("Could not save the picture.");
+  });
+
+  it("holds Copy report while the picture is being made, so the report never says no picture by mistake", async () => {
+    let finish: (blob: Blob) => void = () => undefined;
+    makePicture.mockImplementationOnce(() => new Promise<Blob>((resolve) => (finish = resolve)));
+    const createObjectURL = vi.fn(() => "blob:preview");
+    const original = { createObjectURL: URL.createObjectURL, revokeObjectURL: URL.revokeObjectURL };
+    Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() });
+    onTestFinished(() => {
+      Object.assign(URL, original);
+    });
+    const { box } = report();
+    fireEvent.change(box, { target: { value: SAFE } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("checkbox", { name: "Include a picture of this screen" }));
+    });
+    const copyButton = screen.getByRole("button", { name: "Copy report" });
+    expect(copyButton).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText("Wait for the picture to finish.")).toBeTruthy();
+    await act(async () => {
+      fireEvent.click(copyButton);
+    });
+    expect(writeText).not.toHaveBeenCalled();
+    await act(async () => {
+      finish(new Blob(["png"], { type: "image/png" }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Copy report" }));
+    });
+    expect(writeText.mock.calls[0]?.[0] as string).toContain("Picture attached: yes");
+  });
+
+  it("makes no preview address for a picture that finishes after Help closed", async () => {
+    let finish: (blob: Blob) => void = () => undefined;
+    makePicture.mockImplementationOnce(() => new Promise<Blob>((resolve) => (finish = resolve)));
+    const createObjectURL = vi.fn(() => "blob:late");
+    const original = { createObjectURL: URL.createObjectURL };
+    Object.assign(URL, { createObjectURL });
+    onTestFinished(() => {
+      Object.assign(URL, original);
+    });
+    report();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("checkbox", { name: "Include a picture of this screen" }));
+    });
+    cleanup();
+    await act(async () => {
+      finish(new Blob(["png"], { type: "image/png" }));
+    });
+    expect(createObjectURL).not.toHaveBeenCalled();
   });
 });
