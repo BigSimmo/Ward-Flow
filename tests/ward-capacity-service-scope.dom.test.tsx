@@ -130,26 +130,17 @@ describe("with South Metro chosen, only the bed map is scoped", () => {
     }
   });
 
-  it("lists only South Metro's wards in Nearest ready beds, and counts only its wards in This shift", () => {
+  // Josh's fifth notes (8 Nov 2026): Nearest ready beds and This shift are gone. Their counts now sit
+  // in the hero strip, which follows the hero's rule: whole network, never the chosen service.
+  it("counts every ward's confirmation in the hero, never only South Metro's", () => {
     setServiceScope(SCOPED_SERVICE);
     renderScreen();
-    // Ward names read with their codes spelled out ("FSH (Fiona Stanley Hospital) ..."), so both
-    // sides drop bracketed text before comparing.
-    const plain = (text: string) => text.replace(/ \([^)]*\)/gu, "");
-    const scopedNames = new Set(scopedRows.map((row) => plain(row.unit.name)));
-    const nearest = within(screen.getByTestId("capacity-road-time")).getByRole("list");
-    const listed = within(nearest).getAllByRole("button");
-    expect(listed.length).toBeGreaterThan(0);
-    for (const row of listed) {
-      const name = [...scopedNames].find((candidate) => plain(row.textContent ?? "").startsWith(candidate));
-      expect(name, row.textContent ?? "").toBeDefined();
-    }
-    const shift = shiftConfirmations(
-      scopedRows.map((row) => row.unit),
+    const network = shiftConfirmations(
+      networkRows.map((row) => row.unit),
       NOW,
     );
-    const thisShift = screen.getByRole("region", { name: "This shift" });
-    expect(thisShift.textContent ?? "").toContain(`${shift.confirmed} of ${shift.total}`);
+    const chip = screen.getByTestId("capacity-hero-confirmed");
+    expect(chip.textContent ?? "").toContain(`${network.confirmed} of ${network.total}`);
   });
 
   it("keeps the hero headline and its ready chips at the whole network, never South Metro's own", () => {
