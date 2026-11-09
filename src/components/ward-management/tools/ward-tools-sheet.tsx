@@ -616,7 +616,7 @@ function ToolsSheetView({
                     title: "Bed summary",
                     body: <ToolMessages onNavigate={onNavigate} />,
                   },
-                  { key: "chase", icon: PhoneCall, name: "Chase wards", detail: "Call sheet", href: root },
+                  { key: "chase", icon: PhoneCall, name: "Chase wards", detail: "Ward calls", href: root },
                   { key: "ask", icon: Send, name: "Ask wards", detail: "For a patient", href: `${root}/waiting` },
                   {
                     key: "broadcast",

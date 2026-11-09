@@ -415,15 +415,15 @@ export function MyListCard({
           onClick={() => setCallSheetOpen(true)}
           data-testid="home-call-sheet-open"
         >
-          Call sheet
+          Ward calls
         </Button>
       </div>
       {callSheetOpen ? (
         <Sheet
           open
           onClose={() => setCallSheetOpen(false)}
-          title="Call sheet"
-          description="Referrals waiting on each ward. Screen and print only."
+          title="Ward calls"
+          description="Wards to ring about waiting referrals, in call order. Screen and print only."
           testId="home-call-sheet"
         >
           <CallSheet />
