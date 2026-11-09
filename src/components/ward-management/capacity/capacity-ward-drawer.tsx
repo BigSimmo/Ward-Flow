@@ -140,10 +140,15 @@ export function CapacityWardSidebar({
   }
   function openOnBehalf(reason: OnBehalfReasonId) {
     if (opened?.handle !== null || !opened) return;
-    setOpened({
-      admissionId: opened.admissionId,
-      handle: openDischargeRecord(recordActor, opened.admissionId, reason),
-    });
+    try {
+      setOpened({
+        admissionId: opened.admissionId,
+        handle: openDischargeRecord(recordActor, opened.admissionId, reason),
+      });
+    } catch {
+      // The same failure handle as the Discharges board: the drawer says the record is unavailable.
+      setOpened({ admissionId: opened.admissionId, handle: { generation: -1, requestId: -1 } });
+    }
   }
   const sortedRecords =
     records.status === "allowed" ? [...records.value].sort((x, y) => recordOrder(x, now) - recordOrder(y, now)) : [];

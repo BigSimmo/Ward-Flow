@@ -27,7 +27,10 @@ Never use real patient details in the check, the notes or the sign-off table.
 Each task is **Pass** or **Not yet**. A task passes when the person:
 
 - uses the right screen and button without being shown,
-- sees the short message saying the action was recorded, and can say where to look if it was not,
+- for a task that records something, sees the short message saying it was recorded, and can say
+  where to look if it was not,
+- for a task that only reads, saves or shows (the executive and TV board tasks), finds the right
+  figure, file or screen and says what it shows,
 - can say one thing the app will not do for that task (for example, it never suggests a ward).
 
 All three tasks must pass. A prompt about where a button is counts as **Not yet**.

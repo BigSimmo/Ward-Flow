@@ -20,7 +20,15 @@ export function OnBehalfReasonForm({
   const [reason, setReason] = useState<OnBehalfReasonId | null>(null);
   const name = useId();
   return (
-    <section className={styles.form} data-testid={testId} aria-label="Reason for opening this record">
+    <form
+      className={styles.form}
+      data-testid={testId}
+      aria-label="Reason for opening this record"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (reason) onOpen(reason);
+      }}
+    >
       <p>This is the ward&apos;s clinical record. Opening it is logged with your reason for Governance to review.</p>
       <fieldset>
         <legend>Why are you opening it on the ward&apos;s behalf?</legend>
@@ -38,16 +46,10 @@ export function OnBehalfReasonForm({
         ))}
       </fieldset>
       <div>
-        <Button
-          variant="pri"
-          size="sm"
-          disabled={reason === null}
-          data-testid={`${testId}-open`}
-          onClick={() => reason && onOpen(reason)}
-        >
+        <Button variant="pri" size="sm" disabled={reason === null} type="submit" data-testid={`${testId}-open`}>
           Open record
         </Button>
       </div>
-    </section>
+    </form>
   );
 }

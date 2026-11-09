@@ -27,7 +27,7 @@ function fixture() {
   return { state, admission, open, ward: { role: "ward", actingUnitId: admission.unitId } as const };
 }
 const handle = { generation: 0, requestId: 4 };
-/** The state as it is saved: plain JSON. */
+/** The state as it is saved: plain JSON. The JSON round trip is deliberate (it drops what JSON drops); not structuredClone. */
 const stored = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
 describe("coordinator on behalf of the ward reason (D-80 item 17)", () => {

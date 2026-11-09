@@ -221,4 +221,6 @@ Source digests were re-reviewed after the coordinator's "on behalf of the ward" 
 
 `handover/handover-page.tsx` (two blank lines removed) is not a cited source.
 
+After review (9 Nov 2026), `capacity-ward-drawer.tsx` catches a failed record opening after the reason is given and shows the same "record is unavailable" line as the Discharges board. `REQUEST_CAPACITY_REFRESH` moved from line 258 to 263, unchanged in role, payload and guard.
+
 After `main` was merged into PR #1543 (9 Nov 2026), `ward-flow-events.ts` holds both sides' edits. From `main`, `ADD_PATIENT` accepts the optional admin detail fields (`Partial<Record<AdminDetailField, string>>`, with one type import widened). From this PR, `OPEN_DISCHARGE_RECORD` has its optional `onBehalfReason`. Neither edit adds or removes lines on the other side, so all 37 citations (36 command models and the state-machine review) keep this PR's line numbers, and `main`'s line numbers map to the same lines. Only the digest was re-recorded. No other cited source differs from its recorded digest after the merge.

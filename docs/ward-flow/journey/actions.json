@@ -4295,8 +4295,8 @@
         },
         {
           "path": "src/components/ward-management/capacity/capacity-ward-drawer.tsx",
-          "line": 258,
-          "sha256": "82b7253c29830c0f1f2431f244a1ebbe2a5dce5c70ca9070018617c5cdf770bc"
+          "line": 263,
+          "sha256": "65bf541bfc516dad3b2f803fa806e49dad7be4eec5f1f22c21a49745f8b13c7c"
         },
         {
           "path": "src/components/ward-management/capacity/capacity-screen.tsx",

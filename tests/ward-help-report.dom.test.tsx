@@ -40,7 +40,12 @@ beforeEach(() => {
   window.localStorage.clear();
   window.sessionStorage.clear();
 });
-afterEach(() => vi.restoreAllMocks());
+const originalExecCommand = Object.getOwnPropertyDescriptor(document, "execCommand");
+afterEach(() => {
+  vi.restoreAllMocks();
+  if (originalExecCommand) Object.defineProperty(document, "execCommand", originalExecCommand);
+  else delete (document as { execCommand?: unknown }).execCommand;
+});
 
 describe("Report a problem", () => {
   it("opens from Help's foot as a view of its own", () => {

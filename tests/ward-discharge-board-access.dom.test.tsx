@@ -43,6 +43,8 @@ import { DischargeBoard } from "@/components/ward-management/discharges/discharg
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+import { giveOnBehalfReason } from "./helpers/ward-on-behalf-reason";
+
 function ResetScenario() {
   const { dispatch, now } = useWardFlow();
   return (
@@ -69,12 +71,6 @@ function openFirstRecord(worklist?: HTMLElement) {
   fireEvent.click(opener);
   giveOnBehalfReason();
   return name;
-}
-// D-80 item 17: the coordinator gives its "on behalf of the ward" reason before the record opens.
-function giveOnBehalfReason() {
-  const form = screen.getByTestId("ward-on-behalf-reason");
-  fireEvent.click(within(form).getByRole("radio", { name: "The ward asked for help" }));
-  fireEvent.click(within(form).getByRole("button", { name: "Open record" }));
 }
 function renderBoard() {
   render(

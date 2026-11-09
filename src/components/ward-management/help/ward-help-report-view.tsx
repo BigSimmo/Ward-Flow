@@ -81,11 +81,8 @@ export function HelpReport({
 
   /** The report to copy, or undefined after saying why not (focus goes back to the box). */
   const checked = (): string | undefined => {
-    const refusal = !text.trim()
-      ? "Say what happened first."
-      : findPatientDetails(text).length
-        ? patientDetailRefusal(findPatientDetails(text))
-        : "";
+    const found = findPatientDetails(text);
+    const refusal = !text.trim() ? "Say what happened first." : found.length ? patientDetailRefusal(found) : "";
     setError(refusal);
     setStatus("");
     setFallback("");
