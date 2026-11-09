@@ -142,7 +142,6 @@ const SEES_EVERYTHING: ReadonlyArray<{ file: string; reason: string }> = [
     file: "coordinator/shortlist-panel.tsx",
     reason: "coordinator panel: it chooses where to refer, so it must see every destination",
   },
-  { file: "coordinator/exception-drawer.tsx", reason: "a panel of the coordinator screen" },
   { file: "coordinator/priority-queue.tsx", reason: "a panel of the coordinator screen" },
   {
     file: "referrals/referral-board.tsx",
@@ -534,7 +533,7 @@ describe("FD-23 at the screen boundary", () => {
     // 17, not 18: ward-management-network.tsx was deleted with the Network screen on 19 Oct 2026.
     // 15, not 17: coordinator/flow-diagram.tsx and coordinator/pressure-strip.tsx were deleted on
     // 20 Oct 2026 (Josh's yes); no route had drawn either since the v6 Home and the Network retirement.
-    expect(SEES_EVERYTHING.length, "the allowed-surface list changed size — re-read section 3 above").toBe(15);
+    expect(SEES_EVERYTHING.length, "the allowed-surface list changed size — re-read section 3 above").toBe(14);
     for (const { file, reason } of SEES_EVERYTHING) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no reason beside it`).toBeGreaterThan(10);

@@ -17,7 +17,7 @@ vi.mock("next/link", () => ({
 
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { CommunityScreen } from "@/components/ward-management/community/community-screen";
-import { ExceptionDrawer } from "@/components/ward-management/coordinator/exception-drawer";
+import { refusalReasonText, refusedActionText } from "@/components/ward-management/ward-refusal-words";
 import { ShortlistPanel } from "@/components/ward-management/coordinator/shortlist-panel";
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
@@ -479,7 +479,7 @@ describe("the coordinator's mode workspaces say pull", () => {
 });
 
 describe("a refused pull says pull in the refusal a coordinator actually reads", () => {
-  it("renders the reducer's own refusal text in the exceptions drawer", () => {
+  it("renders the reducer's own refusal text as Today's review words it", () => {
     // A closed movement can never be pulled to; WF-004 is closed here by recording an arrival
     // first is not available, so the refusal is raised against a movement the reducer refuses on
     // stage instead — the wording under test is the one that names the action, not the closure.
@@ -500,18 +500,16 @@ describe("a refused pull says pull in the refusal a coordinator actually reads",
     });
     expect(state.rejections.length, "the reducer accepted both events, so there is nothing to render").toBe(2);
 
+    // Home notes 4 (9 Nov 2026): the Registers drawer is gone; Today's review reads each refusal
+    // through these same two functions, so their words are what a coordinator reads.
     render(
-      <ExceptionDrawer
-        items={[]}
-        rejections={state.rejections}
-        overrides={[]}
-        declines={[]}
-        units={[]}
-        now={NOW_ANCHOR}
-        open
-        onToggle={() => {}}
-        onSelectMovement={() => {}}
-      />,
+      <ul>
+        {state.rejections.map((rejection) => (
+          <li key={rejection.id}>
+            {refusedActionText(rejection.attempted)} {refusalReasonText(rejection.reason)}
+          </li>
+        ))}
+      </ul>,
     );
 
     const drawer = document.body.textContent ?? "";

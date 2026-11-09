@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
+import { TodaysReviewScreen } from "@/components/ward-management/review/todays-review-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -55,20 +56,6 @@ function RefusalHarness({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Opens the registers panel and switches to Refused actions — same helper shape as
- *  `ward-override-register-render.dom.test.tsx`'s own `openOverridesTab`. */
-function openRefusedTab() {
-  openRegisters();
-  fireEvent.click(screen.getByRole("tab", { name: /Refused/ }));
-}
-
-/** Home flow (Q340, Q345, 3 Nov 2026): Registers is an item in the "More for this list" menu at the
- *  end of Home's list tabs; on desktop it opens the registers strip, as the old Registers button did. */
-function openRegisters() {
-  fireEvent.click(screen.getByRole("button", { name: "More for this list", expanded: false }));
-  fireEvent.click(screen.getByRole("menuitem", { name: "Registers" }));
-}
-
 describe("the persistent refusal marker", () => {
   it("reads '0 refused' before anything has been refused, rather than staying absent", () => {
     render(
@@ -110,22 +97,21 @@ describe("the persistent refusal marker", () => {
       body.contains(marker),
       "the refusal marker is inside the scrollable body — it can be scrolled out of view",
     ).toBe(false);
-    // And the registers panel really is inside `.body`, or the assertion above proves nothing —
-    // a non-vacuity check on the population itself, not just the marker. It opens from Home's
-    // "More for this list" menu.
-    openRegisters();
-    const registers = screen.getByTestId("ward-coordinator-registers");
+    // And the page's lists really are inside `.body`, or the assertion above proves nothing — a
+    // non-vacuity check on the population itself, not just the marker.
     expect(
-      body.contains(registers),
-      "the registers panel is not inside the scrollable body — this test's premise is wrong",
+      body.contains(screen.getByRole("navigation", { name: "Home lists" })),
+      "the Home lists are not inside the scrollable body — this test's premise is wrong",
     ).toBe(true);
   });
 
-  it("never disagrees with the Refused actions tabpanel's own row count — same render, same array", () => {
+  it("never disagrees with Today's review's stopped-by-the-app rows — same provider, same array", () => {
+    // Home notes 4, issue 4 (Josh, 9 Nov 2026): Today's review replaced the Registers' Refused tab.
     render(
       <WardFlowProvider initialNow={NOW}>
         <RefusalHarness>
           <CoordinatorScreen />
+          <TodaysReviewScreen />
         </RefusalHarness>
       </WardFlowProvider>,
     );
@@ -134,17 +120,16 @@ describe("the persistent refusal marker", () => {
     const marker = screen.getByTestId("ward-coordinator-refusal-marker");
     expect(marker).toHaveTextContent("2 refused");
 
-    // Cross-checked against rows actually mounted in the Refused actions tabpanel — hand-counted
-    // from the DOM, never by reading `rejections.length` a second time, so a bug in the count
-    // itself (not merely a display bug) would still be caught here.
-    openRefusedTab();
-    const refusedRows = within(screen.getByTestId("ward-refusals")).getAllByTestId(/^ward-refusal-/);
-    expect(refusedRows).toHaveLength(2);
+    // Cross-checked against rows actually mounted in Today's review — hand-counted from the DOM,
+    // never by reading `rejections.length` a second time, so a bug in the count itself (not merely
+    // a display bug) would still be caught here.
+    const review = screen.getByTestId("review-everything-today");
+    const stoppedRows = review.querySelectorAll('[data-kind="stopped"]');
+    expect(stoppedRows).toHaveLength(2);
 
-    // And the tab strip's own count badge, the third place this same number is shown (Ruling 3,
-    // carried across three render sites — see `exception-drawer.tsx`'s own file comment).
-    const refusedTab = screen.getByRole("tab", { name: /Refused/ });
-    expect(refusedTab).toHaveTextContent("2");
+    // And the filter's own count, the third place this same number is shown.
+    const stoppedTab = within(review).getByRole("tab", { name: /Stopped by the app/ });
+    expect(stoppedTab).toHaveTextContent("2");
   });
 
   it("carries the word 'refused', never a bare number or colour alone", () => {

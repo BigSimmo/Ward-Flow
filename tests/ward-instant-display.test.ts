@@ -55,9 +55,6 @@ const MAY_ASSERT_TODAY = new Map([
   ["leaveBed.expectedReturn", "STILL TO SWEEP - a return from leave is routinely days away"],
   ["latestRefreshRequest.at", "STILL TO SWEEP - a refresh asked for yesterday reads as this morning"],
   ["legalForm.dueAt", "STILL TO SWEEP - needs `now` threaded into legalFormReadinessLine"],
-  // ✅ SWEPT 2026-09-07 (Task 5): `exception-drawer.tsx` now takes a `now` prop (threaded through
-  // for `OverrideRegister`/`DeclineRegister`), so its refusal row renders
-  // `formatInstantWithDay(rejection.at, now)` — the expiry condition this entry itself named.
   ["referral.localBedSought.at", "referral surface, owned by another session"],
   [
     "record.estimatedAt",

@@ -82,8 +82,8 @@ Carried from 3 November. Not re-checked since.
 
 ## What is built
 
-**Route and screen overview.** The <!-- fact:ward-route-count -->58<!-- /fact --> Ward page routes
-form part of the <!-- fact:app-route-count -->62<!-- /fact --> scoped app pages/handlers including
+**Route and screen overview.** The <!-- fact:ward-route-count -->59<!-- /fact --> Ward page routes
+form part of the <!-- fact:app-route-count -->63<!-- /fact --> scoped app pages/handlers including
 sign-in and digest. The separate root redirect is additional. Engine and components are under
 `src/components/ward-management/` and `src/components/wf/`. Redirect routes are retained
 for old links; their presence does not establish an independent screen:
