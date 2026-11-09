@@ -45,7 +45,11 @@ function writeRaw(next: string): void {
 export function recordHowToUsed(id: string, known: ReadonlySet<string>): void {
   if (!known.has(id)) return;
   const used = new Map(parseHelpUsed(readRaw(), known));
-  used.set(id, Math.min((used.get(id) ?? 0) + 1, MAX_COUNT));
+  const count = Math.min((used.get(id) ?? 0) + 1, MAX_COUNT);
+  // The pairs are kept in the order last used (newest at the end), so Help can offer "Recently
+  // opened" from the same ids and counts, with no time or typed words stored (9 Nov 2026).
+  used.delete(id);
+  used.set(id, count);
   writeRaw([...used].map(([key, count]) => `${key}:${count}`).join(","));
 }
 
@@ -72,4 +76,10 @@ export function useHelpUsed(known: ReadonlySet<string>): readonly { id: string; 
   return [...parseHelpUsed(raw, known)]
     .map(([id, count]) => ({ id, count }))
     .sort((left, right) => right.count - left.count);
+}
+
+/** The answers this device opened most recently, newest first: ids only, from the same record. */
+export function useRecentHowTos(known: ReadonlySet<string>, limit = 3): readonly string[] {
+  const raw = useHelpUsedRaw();
+  return [...parseHelpUsed(raw, known).keys()].reverse().slice(0, limit);
 }

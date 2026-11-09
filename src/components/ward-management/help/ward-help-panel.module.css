@@ -261,22 +261,6 @@
   letter-spacing: 0;
 }
 
-.sectionHeadIcon {
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: var(--wf-r-sm);
-  background: var(--wf-surface);
-  box-shadow: inset 0 0 0 1px var(--wf-line);
-  color: var(--wf-ink-2);
-}
-
-.sectionHeadIcon svg {
-  width: 14px;
-  height: 14px;
-}
-
 .note {
   margin: 0;
   color: var(--wf-ink-3);
@@ -1914,4 +1898,24 @@
 .tour > .segments,
 .tour > .tourLink {
   margin-left: 44px;
+}
+
+/* A topic group's heading glyph: the icon alone, in the heading's ink, no tile behind it. */
+.sectionHeadGlyph {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--wf-ink-3);
+}
+
+/* On a computer every topic chip shows at once, wrapping, so none hides past the panel's edge. A
+ * phone keeps the one scrolling row, in thumb reach. */
+@media (min-width: 46.5rem) {
+  .chips {
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    mask-image: none;
+  }
 }

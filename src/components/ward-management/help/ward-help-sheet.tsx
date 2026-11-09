@@ -562,7 +562,7 @@ function WardHelpSheetView({
       }
       footerClassName={barStyles.drawerFooter}
     >
-      <div className={s.dock}>
+      <div className={s.dock} data-help-dock="">
         <div className={s.field}>
           <Search aria-hidden="true" strokeWidth={1.75} />
           <input

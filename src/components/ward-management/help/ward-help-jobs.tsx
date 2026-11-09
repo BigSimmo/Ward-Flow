@@ -13,6 +13,7 @@ import {
   ClipboardList,
   Compass,
   ExternalLink,
+  History,
   Info,
   Link2,
   ListChecks,
@@ -43,7 +44,7 @@ import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { showMeAvailable, tasksForDesk } from "./ward-help-task-list";
 import { helpLinkHref } from "./ward-help-events";
 import { recordHelpFeedback } from "./ward-help-feedback";
-import { recordHowToUsed } from "./ward-help-usage";
+import { recordHowToUsed, useRecentHowTos } from "./ward-help-usage";
 import s from "./ward-help-panel.module.css";
 
 type Topic = (typeof HOW_TO_TOPICS)[number];
@@ -371,6 +372,17 @@ export function HelpTasks({
     return walk && canShowTask(walk, role, home, phone, showMeOn, pathname, access) ? walk : undefined;
   }, [access, home, pathname, phone, role, screen, showMeOn]);
   const aroundSteps = around ? showMeSteps(around, phone ? "phone" : "desk", role).length : 0;
+  // Recently opened (Help overhaul, 9 Nov 2026): this desk's answers last opened on this device,
+  // newest first, from the id-only usage record. Shown only once there is something to pick up.
+  const recentIds = useRecentHowTos(HOW_TO_IDS, 6);
+  const recent = useMemo(
+    () =>
+      recentIds
+        .map((id) => mine.find((task) => task.id === id))
+        .filter((task): task is HowTo => Boolean(task))
+        .slice(0, 3),
+    [mine, recentIds],
+  );
   const hereTiles = here.slice(0, 4);
 
   const counts = HOW_TO_TOPICS.map((name) => ({ name, n: mine.filter((task) => task.topic === name).length })).filter(
@@ -398,6 +410,22 @@ export function HelpTasks({
     setOpen(id);
     setAll(true);
     setTopic("all");
+  };
+  // From Recently opened: open the answer in the list below and bring it into view. Only Help's own
+  // scrolling body moves (scrollIntoView would also shift the sheet itself), and the answer stops
+  // just under the pinned search and tabs.
+  const reopen = (id: string) => {
+    reveal(id);
+    window.requestAnimationFrame(() => {
+      const row = document.querySelector<HTMLElement>(`[data-testid="ward-help-task-answer-${id}"]`);
+      let body = row?.parentElement ?? null;
+      while (body && !/(auto|scroll)/u.test(window.getComputedStyle(body).overflowY)) body = body.parentElement;
+      if (!row || !body) return;
+      const dock = body.querySelector<HTMLElement>("[data-help-dock]")?.offsetHeight ?? 0;
+      const top = row.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - dock - 8;
+      const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      body.scrollTo?.({ top, behavior: still ? "auto" : "smooth" });
+    });
   };
 
   const row = (task: HowTo) => (
@@ -493,6 +521,32 @@ export function HelpTasks({
         </section>
       ) : null}
 
+      {recent.length ? (
+        <section className={s.section} aria-labelledby="ward-help-recent" data-testid="ward-help-recent">
+          <h3 id="ward-help-recent" className={s.sectionHead}>
+            Recently opened
+          </h3>
+          <div className={s.card}>
+            <ul className={s.list}>
+              {recent.map((task) => (
+                <li key={task.id} className={s.task}>
+                  <button
+                    type="button"
+                    className={s.taskHead}
+                    onClick={() => reopen(task.id)}
+                    data-testid={`ward-help-recent-${task.id}`}
+                  >
+                    <History aria-hidden="true" className={s.rowIcon} strokeWidth={1.75} />
+                    <span className={s.taskName}>{task.title}</span>
+                    <ChevronRight aria-hidden="true" className={s.caret} strokeWidth={1.75} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      ) : null}
+
       {/* Learning the app in one place (Help overhaul, 9 Nov 2026): the tour, then practice. */}
       <section className={s.section} aria-labelledby="ward-help-learn" data-testid="ward-help-learn">
         <h3 id="ward-help-learn" className={s.sectionHead}>
@@ -568,9 +622,7 @@ export function HelpTasks({
         return (
           <section key={group.name} className={s.section} aria-labelledby={`ward-help-topic-${index}`}>
             <h4 id={`ward-help-topic-${index}`} className={s.sectionHead}>
-              <span className={s.sectionHeadIcon} aria-hidden="true">
-                <Icon aria-hidden="true" strokeWidth={1.75} />
-              </span>
+              <Icon aria-hidden="true" className={s.sectionHeadGlyph} strokeWidth={1.75} />
               {group.name} <span className={s.n}>{group.n}</span>
             </h4>
             <div className={s.card}>
