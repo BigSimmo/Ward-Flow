@@ -25,7 +25,9 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * explicit. Opening, switching tabs and closing mark nothing; only "Mark these N reviewed" saves
  * the picture taken when the panel opened, and Undo puts the previous review back. Synthetic seed
  * data only. Since Q99 (Josh, 1 Nov 2026) the panel is the app bar's one Activity panel, so Home is
- * drawn under the real bar and its changes button opens the bar's panel.
+ * drawn under the real bar. Sticky header redesign (Josh, 9 Nov 2026): Home's hero changes chip is
+ * gone, so the panel is opened from the bar's Activity button and its own review button carries the
+ * count the chip used to show.
  */
 const NOW = NOW_ANCHOR;
 
@@ -76,14 +78,16 @@ function storeEarlierReview() {
   return stored;
 }
 
-/** The desktop hero's changes chip (jsdom reports a desktop width). */
-const changesChip = () => screen.getByRole("button", { name: /· (Review|Activity)$/u });
+/** The app bar's Activity button, which opens the one Activity panel. */
+const activityTrigger = () => screen.getByTestId("ward-bar-activity-trigger");
 const panel = () => screen.getByTestId("ward-bar-activity-sheet");
 /** The panel's code loads on demand, so the first open waits for it. */
-async function openFromChip() {
-  fireEvent.click(changesChip());
+async function openActivity() {
+  fireEvent.click(activityTrigger());
   return screen.findByTestId("ward-bar-activity-sheet");
 }
+/** The panel's review button, which names how many changes it would mark. */
+const reviewButton = () => within(panel()).getByRole("button", { name: /^Mark these \d+ reviewed$/u });
 const closePanel = () => fireEvent.click(within(panel()).getByRole("button", { name: "Close" }));
 
 describe("Home's Activity panel: explicit review", () => {
@@ -95,8 +99,7 @@ describe("Home's Activity panel: explicit review", () => {
   it("marks nothing when the panel is opened, its tabs switched and it is closed", async () => {
     const stored = storeEarlierReview();
     renderHome();
-    expect(changesChip()).toHaveTextContent(/^2\s*changes since your review at 09:42 · Review$/u);
-    await openFromChip();
+    await openActivity();
     expect(within(panel()).getByRole("button", { name: "Mark these 2 reviewed" })).toBeInTheDocument();
     fireEvent.click(within(panel()).getByRole("tab", { name: /Recent activity/u }));
     fireEvent.click(within(panel()).getByRole("tab", { name: /Notices/u }));
@@ -104,7 +107,12 @@ describe("Home's Activity panel: explicit review", () => {
     closePanel();
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBe(stored);
-    expect(changesChip()).toHaveTextContent(/^2\s*changes since your review at 09:42 · Review$/u);
+    // Reopened, the same two changes still wait for review.
+    await waitFor(() => expect(activityTrigger()).toHaveAttribute("aria-expanded", "false"));
+    await openActivity();
+    await waitFor(() => expect(activityTrigger()).toHaveAttribute("aria-expanded", "true"));
+    expect(panel()).toHaveTextContent("Since your review at 09:42");
+    expect(reviewButton()).toHaveAccessibleName("Mark these 2 reviewed");
   });
 
   it("copies the changes as handover text: synthetic line first, no names or record numbers", async () => {
@@ -112,7 +120,7 @@ describe("Home's Activity panel: explicit review", () => {
     Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
     storeEarlierReview();
     renderHome();
-    await openFromChip();
+    await openActivity();
     fireEvent.click(within(panel()).getByRole("button", { name: "Copy as handover text" }));
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
     const text = writeText.mock.calls[0]![0];
@@ -128,44 +136,43 @@ describe("Home's Activity panel: explicit review", () => {
     expect(await within(panel()).findByText("Copied as handover text.")).toBeInTheDocument();
   });
 
-  it("saves the picture on Mark reviewed, so the hero count drops to 0, and Undo restores it", async () => {
+  it("saves the picture on Mark reviewed, so nothing is left to review, and Undo restores it", async () => {
     const stored = storeEarlierReview();
     renderHome();
-    await openFromChip();
+    await openActivity();
     expect(panel()).toHaveTextContent("Since your review at 09:42");
     fireEvent.click(within(panel()).getByRole("button", { name: "Mark these 2 reviewed" }));
 
     const saved = parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY));
     expect(saved?.at).toBe(NOW);
-    expect(changesChip()).toHaveTextContent(/^No new changes · Activity$/u);
     expect(within(panel()).getByRole("status")).toHaveTextContent("2 changes to synthetic records reviewed at 10:42");
     expect(within(panel()).queryByRole("button", { name: /^Mark these/u })).toBeNull();
 
     fireEvent.click(within(panel()).getByRole("button", { name: "Undo" }));
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBe(stored);
-    expect(changesChip()).toHaveTextContent(/^2\s*changes since your review at 09:42 · Review$/u);
+    expect(panel()).toHaveTextContent("Since your review at 09:42");
     expect(within(panel()).getByRole("button", { name: "Mark these 2 reviewed" })).toBeInTheDocument();
   });
 
   it("Undo of a first review this shift clears it, so lines count from the shift start again", async () => {
     renderHome();
-    const firstLabel = changesChip().textContent;
-    expect(firstLabel).toMatch(/^\d+\s*changes? since 07:00 · Review$/u);
-    await openFromChip();
+    await openActivity();
     expect(panel()).toHaveTextContent("Since 07:00, the start of your shift");
-    fireEvent.click(within(panel()).getByRole("button", { name: /^Mark these \d+ reviewed$/u }));
+    const firstLabel = reviewButton().textContent;
+    fireEvent.click(reviewButton());
     expect(parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY))?.at).toBe(NOW);
-    expect(changesChip()).toHaveTextContent(/^No new changes · Activity$/u);
+    expect(within(panel()).queryByRole("button", { name: /^Mark these/u })).toBeNull();
 
     fireEvent.click(within(panel()).getByRole("button", { name: "Undo" }));
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
-    expect(changesChip().textContent).toBe(firstLabel);
+    expect(panel()).toHaveTextContent("Since 07:00, the start of your shift");
+    expect(reviewButton().textContent).toBe(firstLabel);
   });
 
   it("shows a change that arrives while open as new, and Mark reviewed does not cover it", async () => {
     storeEarlierReview();
     renderHome();
-    await openFromChip();
+    await openActivity();
     const markTwo = within(panel()).getByRole("button", { name: "Mark these 2 reviewed" });
 
     // A synthetic escalation recorded while the panel is open.
@@ -184,12 +191,17 @@ describe("Home's Activity panel: explicit review", () => {
     expect(
       within(panel()).getByText("1 more change to synthetic records arrived since you opened this"),
     ).toBeInTheDocument();
-    // The captured list and its button are unchanged; the hero already counts the arrival.
+    // The captured list and its button are unchanged; the arrival waits behind its own line.
     expect(markTwo).toHaveAccessibleName("Mark these 2 reviewed");
-    expect(changesChip()).toHaveTextContent(/^3\s*changes since your review at 09:42 · Review$/u);
 
     fireEvent.click(markTwo);
-    expect(changesChip()).toHaveTextContent(/^1\s*change since your review at 10:42 · Review$/u);
+    // The review covers only the two it showed: reopened, the arrival is the one change left.
+    closePanel();
+    await waitFor(() => expect(activityTrigger()).toHaveAttribute("aria-expanded", "false"));
+    await openActivity();
+    await waitFor(() => expect(activityTrigger()).toHaveAttribute("aria-expanded", "true"));
+    expect(panel()).toHaveTextContent("Since your review at 10:42");
+    expect(reviewButton()).toHaveAccessibleName("Mark these 1 reviewed");
     const saved = parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY));
     expect(saved?.escalatedMovementIds).not.toContain(target.id);
   });

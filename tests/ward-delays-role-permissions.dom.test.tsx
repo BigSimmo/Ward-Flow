@@ -123,3 +123,58 @@ describe("Delays escalation follows the existing desk permission", () => {
     } else expect(escalations).toHaveLength(0);
   });
 });
+
+/**
+ * Note 8 issue 7 (Josh, 8 Nov 2026): the drawer's Coordinator and ED board buttons open pop-ups that
+ * do the job on Waiting, each with a link to the full page; the ward desk still gets no Coordinator.
+ */
+describe("Waiting drawer footer pop-ups", () => {
+  function renderAs(access: Parameters<typeof setWardAccess>[0]) {
+    installMatchMediaStub(false);
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess(access);
+    });
+    renderAllDelays(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <DelaysScreen />
+      </WardFlowProvider>,
+    );
+  }
+  const fromEd = state.movements.find((row) => isOpen(row) && !row.escalation && row.originEdId)!;
+
+  it("lets the coordinator open the Wards tab in place and keeps Home one link away", () => {
+    renderAs({ role: "coordinator", scope: { kind: "statewide" } });
+    openPerson(fromEd.id);
+    fireEvent.click(screen.getByTestId(`delays-foot-coordinator-${fromEd.id}`));
+    const menu = screen.getByRole("dialog", { name: "Coordinator actions" });
+    expect(within(menu).getByRole("link", { name: /Open on coordinator Home/u })).toHaveAttribute("href", "/ward-flow");
+    expect(within(menu).getByRole("button", { name: /Find a bed/u })).toBeInTheDocument();
+    fireEvent.click(within(menu).getByRole("button", { name: /Wards that could take them/u }));
+    expect(screen.queryByRole("dialog", { name: "Coordinator actions" })).toBeNull();
+    expect(screen.getByRole("tab", { name: /Wards/u })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("shows the person's ED at a glance with a link to its board", () => {
+    renderAs({ role: "coordinator", scope: { kind: "statewide" } });
+    openPerson(fromEd.id);
+    fireEvent.click(screen.getByTestId(`delays-foot-ed-${fromEd.id}`));
+    const peek = screen.getByRole("dialog", { name: /at a glance$/u });
+    expect(within(peek).getByText("Waiting")).toBeInTheDocument();
+    expect(
+      within(peek)
+        .getByRole("link", { name: /Open ED board/u })
+        .getAttribute("href"),
+    ).toContain(fromEd.originEdId!);
+  });
+
+  it("gives the ward desk no Coordinator pop-up", () => {
+    renderAs({ role: "ward", scope: { kind: "ward", unitIds: [state.units[0]!.id] } });
+    const id = screen
+      .getAllByTestId(/^delays-select-/u)[0]!
+      .getAttribute("data-testid")!
+      .replace("delays-select-", "");
+    openPerson(id);
+    expect(screen.queryByTestId(`delays-foot-coordinator-${id}`)).toBeNull();
+  });
+});

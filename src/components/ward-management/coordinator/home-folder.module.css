@@ -1,0 +1,506 @@
+/*
+ * Curved folder tabs (sticky header redesign, option A, Josh 9 Nov 2026). Home's list tabs rise into
+ * the slate hero's foot: the row overlaps the band by --wf-folder-rise (tab inset 6 + tab 40 + sheet
+ * corner 20), and `HomeFolderShape` (home-folder.tsx) paints the page sheet and the chosen tab as one
+ * outline. Tabs off the outline sit on slate in hero ink; the chosen one sits on the sheet in page ink.
+ * Doubled and tripled classes outrank the list switch's own phone rules (home-list.module.css).
+ */
+
+.nav.nav {
+  --wf-bar-frost: color-mix(in srgb, var(--wf-hero-2) 94%, transparent);
+  /* How far the row reaches past the page's side padding; home-folder.tsx measures and sets it. */
+  --wf-folder-bleed: var(--wf-s-4);
+  --wf-folder-rise: 66px;
+  --wf-folder-row: 46px;
+  /* Up by the rise and by Home's column gap (home.module.css .body). */
+  margin-top: calc(-1 * (var(--wf-folder-rise) + var(--wf-s-3)));
+  /* The row ends at the tabs' foot; the sheet's curved edge (20px) runs on below it, so the lists
+     start a little under that edge. */
+  margin-bottom: 8px;
+  padding-top: 6px;
+  padding-bottom: 0;
+  row-gap: var(--wf-s-2);
+  align-items: start;
+}
+
+/* The phone keeps the row sticky (home-flow.module.css); wider screens anchor the shape here. */
+@media (min-width: 46.5rem) {
+  .nav.nav {
+    position: relative;
+  }
+}
+
+/* The tabs' row is 44px and the sheet's edge runs below it; everything after it sits on the sheet. */
+.nav.nav > :not(.shape):not(.back) {
+  position: relative;
+  z-index: 1;
+}
+
+.shape,
+.back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+.shape {
+  height: var(--wf-folder-rise, 70px);
+  background: var(--wf-page-canvas, var(--wf-canvas));
+}
+
+/* Pinned under the header (phone): the row's own slate, edge to edge, then the sheet's canvas for a
+   second row. The list slides under the sheet's 12px edge, which fades into it, so rows never stop
+   at a hard cut. */
+.back {
+  /* Down past the row by the sheet's pinned corner (12px), so the slate shows round its corners. */
+  height: max(100%, calc(var(--wf-folder-row, 46px) + 12px));
+  display: none;
+  /* The same frosted slate as the pinned header (ward-bar.module.css), so the two read as one. */
+  background: linear-gradient(
+    var(--wf-bar-frost, var(--wf-hero-2)) 0 calc(var(--wf-folder-row, 46px) + 12px),
+    var(--wf-page-canvas, var(--wf-canvas)) 0
+  );
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  backdrop-filter: blur(24px) saturate(1.5);
+}
+
+.back::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: max(100%, calc(var(--wf-folder-row, 46px) + 12px));
+  height: 12px;
+  background: linear-gradient(var(--wf-page-canvas, var(--wf-canvas)), transparent);
+}
+
+.nav[data-docked] .back {
+  display: block;
+}
+
+/* The list switch: plain tabs on the slate, 44px tall; the chosen one takes page ink on the sheet. */
+.switch.switch.switch {
+  align-self: start;
+  height: 40px;
+  min-height: 40px;
+  /* Out to the sheet's edge (set by HomeFolderShape), so the first tab's label is centred. */
+  margin: 0 0 0 calc(-1 * var(--wf-folder-bleed));
+  padding: 0;
+  gap: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.switch.switch.switch > * {
+  height: 40px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--wf-hero-ink-2);
+  font: 500 var(--wf-fs-14) / 20px var(--wf-font);
+  letter-spacing: -0.01em;
+  gap: 6px;
+  transition: color var(--wf-m-base, 160ms) var(--wf-ease, ease);
+}
+
+.switch.switch.switch > *:hover {
+  color: var(--wf-hero-ink);
+  background: transparent;
+}
+
+.switch.switch.switch > [aria-checked="true"] {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.switch.switch.switch > * > :last-child {
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--wf-hero-ink-3);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.switch.switch.switch > [aria-checked="true"] > :last-child {
+  color: var(--wf-ink-3);
+}
+
+/* Needs you: while anything needs a person now its count is a small red badge, centred on the label's
+   line, instead of a dot beside a grey number. */
+.nav[data-act] .switch.switch.switch > :first-child > :last-child {
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  /* A true circle for one digit, a pill of the same height for two. */
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--wf-hero-danger);
+  color: var(--wf-hero-2);
+  font-weight: 600;
+  line-height: 18px;
+  letter-spacing: -0.02em;
+}
+
+.nav[data-act] .switch.switch.switch > [aria-checked="true"]:first-child > :last-child {
+  background: var(--wf-danger);
+  /* Pure white on the light theme's red keeps 4.5:1 for 12px text (the surface tint falls just short). */
+  color: light-dark(white, var(--wf-surface));
+}
+
+/* Phone and tablet: the tabs off the folder sit on the slate. The band behind them is a gradient,
+   so they carry the band's foot colour themselves (the same to the eye) and contrast checks measure
+   their text against the slate, not the page canvas. */
+@media (max-width: 63.99rem) {
+  .switch.switch.switch > :not([aria-checked="true"]),
+  .more.more.more:not(:hover) {
+    background-color: var(--wf-hero-2);
+  }
+
+  /* Pinned, they carry the frosted slate as it looks over the page (solid, so the eye sees no seam
+     and a contrast check still finds the slate rather than the canvas). */
+  .nav[data-docked] .switch.switch.switch > :not([aria-checked="true"]),
+  .nav[data-docked] .more.more.more:not(:hover) {
+    background-color: color-mix(in srgb, var(--wf-hero-2) 94%, var(--wf-page-canvas, var(--wf-canvas)));
+  }
+}
+
+.switch.switch.switch > *:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -4px;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.switch.switch.switch > :not([aria-checked="true"]):focus-visible {
+  outline-color: var(--wf-hero-ink);
+}
+
+/* More: on the slate beside the tabs. */
+.nav.nav > :last-child {
+  align-self: start;
+  margin-top: 0;
+  color: var(--wf-hero-ink-2);
+}
+
+.more.more.more {
+  color: var(--wf-hero-ink-2);
+  background: transparent;
+}
+
+.more.more.more:hover {
+  color: var(--wf-hero-ink);
+  background: var(--wf-on-hero-fill);
+}
+
+.more.more.more:focus-visible {
+  --wf-focus-ring: var(--wf-hero-ink);
+}
+
+/* Phone: the row runs edge to edge as before, without its canvas strip, since the folder draws it. */
+@media (max-width: 46.4375rem) {
+  .nav.nav {
+    padding-bottom: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .switch.switch.switch {
+    flex: 0 1 auto;
+  }
+
+  /* Each tab hugs its label with the same space either side, so the chosen folder is symmetrical. */
+  .switch.switch.switch > * {
+    flex: 0 0 auto;
+    padding: 0 12px;
+  }
+
+  /* The visible tab is 40px; an invisible cover keeps each tap area 48px tall. */
+  .switch.switch.switch > *::after {
+    content: "";
+    display: block;
+    position: absolute;
+    inset: -4px 0;
+    background: none;
+  }
+
+  .nav[data-docked] .switch.switch.switch > :not([aria-checked="true"]) {
+    color: var(--wf-hero-ink-2);
+  }
+}
+
+/* The smallest phones (320px): tighter tabs so Later today keeps its line. */
+@media (max-width: 22.5rem) {
+  .switch.switch.switch > * {
+    padding: 0 7px;
+    font-size: var(--wf-fs-13);
+    gap: 4px;
+  }
+
+  .more.more.more {
+    min-width: 36px;
+    width: 36px;
+    margin-right: -10px;
+    padding: 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .shape {
+    background: Canvas;
+  }
+
+  .switch.switch.switch > [aria-checked="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}
+
+@media print {
+  .shape,
+  .back {
+    display: none;
+  }
+
+  .nav.nav {
+    margin-top: 0;
+  }
+}
+
+/* One count style across both tab levels: plain mono numbers, no grey boxes (Josh, 9 Nov 2026). */
+.nav.nav [role="tablist"] [role="tab"] > :last-child {
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 63.99rem) {
+  .nav.nav [role="tablist"] [role="tab"] > :last-child {
+    color: var(--wf-ink-3);
+  }
+
+  .nav.nav [role="tablist"] [role="tab"][aria-selected="true"] {
+    outline: 0;
+    font-weight: 600;
+  }
+
+  .nav.nav [role="tablist"] [role="tab"][aria-selected="true"] > :last-child {
+    color: var(--wf-ink-2);
+  }
+}
+
+/*
+ * Counts stay in line with their word (Josh, 9 Nov 2026), centred on the label's line with a small
+ * even gap. The Needs you badge is a compact 16px circle (a pill for two digits); text keeps the
+ * 12px floor.
+ */
+.switch.switch.switch > *,
+.nav.nav [role="tablist"] [role="tab"] {
+  gap: 5px;
+}
+
+.switch.switch.switch > * > :last-child,
+.nav.nav [role="tablist"] [role="tab"] > :last-child {
+  align-self: center;
+  font-size: var(--wf-fs-12);
+  line-height: 16px;
+}
+
+.nav[data-act] .switch.switch.switch > :first-child > :last-child {
+  box-sizing: border-box;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  line-height: 16px;
+  letter-spacing: -0.03em;
+  /* Optically on the label's x-height centre, not its line box. */
+  transform: translateY(0.5px);
+}
+
+/*
+ * Desktop (Josh, 9 Nov 2026, option C): underline tabs on the light page. The slate ends with its own
+ * curved lip above the tabs, so the folder outline steps aside. Two levels in one line: Needs you and
+ * Flow as plain words, the chosen one in full ink over a slim accent underline on one hairline; after
+ * a short divider the stage filters, quieter, with the chosen stage on a soft track. Phone and tablet
+ * keep the folder.
+ */
+@media (min-width: 64rem) {
+  .nav.nav {
+    /* Up to sit just under the slate's lip (Home's column gap plus a little). */
+    margin-top: calc(-1 * var(--wf-s-3) - 14px);
+    margin-bottom: var(--wf-s-3);
+    min-height: 52px;
+    padding: 0 2px;
+    column-gap: 20px;
+    align-items: center;
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .shape,
+  .back {
+    display: none;
+  }
+
+  .switch.switch.switch {
+    align-self: stretch;
+    height: 52px;
+    min-height: 52px;
+    margin-left: 0;
+    gap: 28px;
+  }
+
+  .switch.switch.switch > * {
+    position: relative;
+    height: 52px;
+    min-height: 52px;
+    padding: 0 1px;
+    color: var(--wf-ink-3);
+    font: 500 var(--wf-fs-15) / 20px var(--wf-font);
+    letter-spacing: -0.012em;
+  }
+
+  .switch.switch.switch > *:hover {
+    color: var(--wf-ink-1);
+  }
+
+  .switch.switch.switch > [aria-checked="true"] {
+    color: var(--wf-ink-1);
+    font-weight: 600;
+  }
+
+  .switch.switch.switch > [aria-checked="true"]::after {
+    content: "";
+    display: block;
+    position: absolute;
+    top: auto;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    height: 2.5px;
+    border-radius: 2px;
+    background: var(--wf-accent);
+  }
+
+  .switch.switch.switch > * > :last-child {
+    color: var(--wf-ink-3);
+  }
+
+  .switch.switch.switch > [aria-checked="true"] > :last-child {
+    color: var(--wf-ink-2);
+  }
+
+  .nav[data-act] .switch.switch.switch > :first-child > :last-child,
+  .nav[data-act] .switch.switch.switch > [aria-checked="true"]:first-child > :last-child {
+    background: var(--wf-danger);
+    color: light-dark(white, var(--wf-surface));
+  }
+
+  .switch.switch.switch > *:focus-visible,
+  .switch.switch.switch > :not([aria-checked="true"]):focus-visible {
+    outline-color: var(--wf-focus-ring);
+  }
+
+  .rule.rule {
+    align-self: center;
+    width: 1px;
+    height: 18px;
+    margin: 0 2px;
+    background: var(--wf-line-2);
+  }
+
+  .nav.nav > :last-child {
+    align-self: center;
+    color: var(--wf-ink-3);
+  }
+
+  .more.more.more {
+    height: 32px;
+    border-radius: 9px;
+    color: var(--wf-ink-3);
+  }
+
+  .more.more.more:hover {
+    color: var(--wf-ink-1);
+    background: var(--wf-track);
+  }
+
+  .more.more.more:focus-visible {
+    --wf-focus-ring: var(--wf-accent);
+  }
+}
+
+/* Every size: the stage filters sit on the light page as quiet words, the chosen stage on a soft
+   track, so the second level reads alike wherever it sits. */
+@media all {
+  .nav.nav [role="tablist"] {
+    align-self: center;
+    margin-top: 0;
+    gap: 2px;
+  }
+
+  .nav.nav [role="tablist"] [role="tab"] {
+    height: 32px;
+    min-height: 32px;
+    padding: 0 11px;
+    border-radius: 9px;
+    background: transparent;
+    outline: 0;
+    color: var(--wf-ink-3);
+    font: 500 var(--wf-fs-14) / 18px var(--wf-font);
+  }
+
+  .nav.nav [role="tablist"] [role="tab"]:hover {
+    color: var(--wf-ink-1);
+    background: var(--wf-track);
+  }
+
+  .nav.nav [role="tablist"] [role="tab"][aria-selected="true"] {
+    color: var(--wf-ink-1);
+    font-weight: 600;
+    background: var(--wf-track);
+    box-shadow: inset 0 0 0 1px var(--wf-line);
+  }
+
+  .nav.nav [role="tablist"] [role="tab"] > :last-child {
+    color: var(--wf-ink-3);
+  }
+
+  .nav.nav [role="tablist"] [role="tab"][aria-selected="true"] > :last-child {
+    color: var(--wf-ink-2);
+  }
+
+  .nav.nav [role="tablist"] [role="tab"]:focus-visible,
+  .nav.nav [role="tablist"] [role="tab"][aria-selected="true"]:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Phone and tablet: the 32px stage filters keep a 48px tap area with an invisible cover. */
+@media (max-width: 63.99rem) {
+  .nav.nav [role="tablist"] [role="tab"] {
+    position: relative;
+  }
+
+  .nav.nav [role="tablist"] [role="tab"]::after {
+    content: "";
+    position: absolute;
+    inset: -8px 0;
+  }
+}

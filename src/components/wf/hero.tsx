@@ -5,6 +5,7 @@ import { useId, useRef, type ElementType, type ReactNode } from "react";
 import { useWfBandBleed } from "./band";
 import { Button } from "./button";
 import { cx } from "./cx";
+import { useHeroFootSlot } from "./hero-foot-slot";
 import { HeroCondensedLine } from "./phone-fold";
 import { SrOnly } from "./primitives";
 import { StatusGlyph, type WfTone } from "./status-glyph";
@@ -138,6 +139,12 @@ export type HeroProps = {
    * title line plus this step: the figures, the second row, the foot and the lead are not drawn.
    */
   next?: HeroNextStep;
+  /**
+   * Sticky header redesign (Josh, 9 Nov 2026): free content drawn inside the band under the first row
+   * (Home's figures, next step and ED strip). The page styles it; the hero only places it. It is not
+   * folded on a phone by `next`: a page that passes both decides what its children show there.
+   */
+  children?: ReactNode;
   className?: string;
 };
 
@@ -168,9 +175,11 @@ export function Hero({
   band = true,
   condensed,
   next,
+  children,
   className,
 }: HeroProps) {
   const titleId = useId();
+  const footSlot = useHeroFootSlot();
   const sectionRef = useRef<HTMLElement>(null);
   useWfBandBleed(sectionRef, band && !quiet);
   const statsRef = useRef<HTMLDivElement>(null);
@@ -215,6 +224,7 @@ export function Hero({
         {aside ? <div className={styles.aside}>{aside}</div> : null}
       </div>
       {next ? <HeroNext next={next} /> : null}
+      {children}
       {bar || barAside ? (
         <div className={cx(styles.row, styles.barRow)}>
           {bar ? <div className={styles.bar}>{bar}</div> : null}
@@ -227,6 +237,7 @@ export function Hero({
           {footAside ? <div className={styles.footAside}>{footAside}</div> : null}
         </div>
       ) : null}
+      {band && !quiet ? footSlot : null}
       {condensed ? <HeroCondensedLine heroRef={sectionRef}>{condensed}</HeroCondensedLine> : null}
     </section>
   );

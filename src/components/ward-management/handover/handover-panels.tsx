@@ -5,6 +5,7 @@
  * for one journey) and the sign-off sheet, which is what the panel shows when no patient is picked
  * (Josh, 9 Oct 2026: "the placeholder on the right is a sign off sheet for the handover").
  */
+import { PatientPeekLink } from "@/components/ward-management/patients/patient-peek-link";
 import Link from "next/link";
 import { movementHref } from "../shell/ward-facade";
 import dynamic from "next/dynamic";
@@ -241,10 +242,14 @@ export function HandoverFlowPanel({
       foot={
         <>
           {openPatientHref ? (
-            <Link href={openPatientHref} className={buttonClass({ variant: "pri" })}>
+            <PatientPeekLink
+              movementId={row.movement.id}
+              href={openPatientHref}
+              className={buttonClass({ variant: "pri" })}
+            >
               <Icon icon={UserRound} size={16} />
               Open patient
-            </Link>
+            </PatientPeekLink>
           ) : (
             <Button variant="pri" disabledReason="UMRN not recorded">
               Open patient

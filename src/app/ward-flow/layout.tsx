@@ -29,6 +29,8 @@ import { WardFeatureFlagLink } from "@/components/ward-management/shell/ward-fea
 import { WardOfflineLinks } from "@/components/ward-management/shell/ward-offline-links";
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
 import { NextRail as WardRail } from "@/components/ward-management/shell-next/next-rail";
+import { WardQuickHeroProvider } from "@/components/ward-management/quick-bar/ward-quick-hero-provider";
+import { PatientPeekHost } from "@/components/ward-management/patients/patient-peek-host";
 import { NextShellBoundary } from "@/components/ward-management/shell-next/next-shell-boundary";
 import { WardMainFocusTarget } from "@/components/ward-management/shell/ward-main-focus-target";
 import { WardSkipToActNow } from "@/components/ward-management/shell/ward-skip-to-act-now";
@@ -302,7 +304,12 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                     }
                   >
                     <WardAccessGate>
-                      <WardGround>{children}</WardGround>
+                      {/* Quick bar (Josh, 8-9 Nov 2026): the desk's most used controls, at the foot of its home's hero. */}
+                      <WardQuickHeroProvider>
+                        <WardGround>{children}</WardGround>
+                      </WardQuickHeroProvider>
+                      {/* Patient peek (Josh, 8 Nov 2026): a person opens over the page, not on the Patient page. */}
+                      <PatientPeekHost />
                     </WardAccessGate>
                   </WardDeskHold>
                   <WardDeskPendingClear />

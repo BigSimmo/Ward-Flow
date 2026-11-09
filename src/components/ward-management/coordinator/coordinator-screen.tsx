@@ -26,8 +26,7 @@ import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-valu
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { activeActNowItems, activeTaskItems } from "@/components/ward-management/ward-act-now-items";
 import { alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
-import { currentShift } from "@/components/ward-management/ward-board-time-features";
-import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstant } from "@/components/ward-management/ward-clock";
 import { type InboxItem, isOpen } from "@/components/ward-management/ward-derivations";
 import {
   useDueSoonThresholds,
@@ -55,33 +54,27 @@ import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import {
   Button,
   buttonClass,
-  CheckingFoot,
   Hero,
-  HeroStat,
   LiveChip,
   Menu,
   PillTabs,
   Segmented,
-  SrOnly,
   StatusGlyph,
   type HeroNextStep,
 } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
-import { useHomeChanges } from "./activity-changes";
 import activity from "./home-activity.module.css";
 import cards from "./home-cards.module.css";
 import styles from "./home.module.css";
 import { HomeEdPressure } from "./home-ed-pressure";
 import { PlannedList } from "./home-activity-lazy";
-import {
-  openActivityPanel,
-  useActivityPanelOpen,
-  type ActivityPanelTab,
-} from "@/components/ward-management/shell/ward-activity-panel-store";
 import { useHomeLayout } from "./home-layout";
 import { BedsGapCard, HomePlacementDrawer, HomeReleaseSheet, MyListCard } from "./home-list-lazy";
 import list from "./home-list.module.css";
 import flowStyles from "./home-flow.module.css";
+import folderStyles from "./home-folder.module.css";
+import { HomeFolderShape } from "./home-folder";
+import heroStyles from "./home-hero.module.css";
 import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 import type { PlacementSubject } from "./home-placement-drawer";
 import { usePlannedRows } from "./planned-rows";
@@ -155,14 +148,12 @@ const REFUSED_MARKER_EXPLANATION = "Actions the app refused to record this sessi
 /**
  * Home: the coordinator's first screen (direction A, owner 10 Oct 2026).
  *
- * One hero band that answers "how many wait for how many beds", with four counts under it (Home
- * v7, Josh 22 Oct 2026): Act now and Referrals to decide narrow My list to that group, Overdue
- * waits and Tier 1 highlight those rows in Everyone waiting. New events sits at the right of that
- * row. Then a compact ED strip, then two columns: the list (My list, or Everyone waiting behind a
+ * One hero band (sticky header redesign, Josh 9 Nov 2026): "Bed flow right now", three figures, the
+ * next step with its one button, and the ED strip, all in the slate. Curved folder tabs then lead
+ * the lists. Then two columns: the list (My list, or Everyone waiting behind a
  * switch) and a right column with Beds that fit and Placement. Nothing is pre-selected: Placement
  * opens only for the patient, alert or referral the coordinator chose (a bottom sheet on a phone).
- * Registers, above the list, opens the registers as a strip under the hero (owner, 8 Oct 2026), or
- * a sheet on a phone. Nothing on this screen changes state except through the shortlist's own
+ * Today's review (Josh, 9 Nov 2026) replaced the Registers strip and sheet. Nothing on this screen changes state except through the shortlist's own
  * reducer actions.
  *
  * Kept from the third edition: the selection survives a role switch while the movement is open
@@ -177,14 +168,14 @@ const REFUSED_MARKER_EXPLANATION = "Actions the app refused to record this sessi
  *   quieter tabs with counts (Needs a bed, Bed agreed, Ready to move, Moving); Later today (was Planned)
  *   is the rest of the shift from times the records already hold (`planned-model.ts`), in the right
  *   column on desktop and a third tab on a phone;
- * - the hero's "new since" count is a changes chip that opens Activity on Changes
- *   (`activity-panel.tsx`), whose review is explicit (`activity-changes.ts`); the desktop
- *   "Since you looked" strip and the phone sheet moved into Activity;
- * - the hero's Checking line folds into one "to check" chip that opens it;
+ * - changes since the last look live in Activity (`activity-panel.tsx`), whose review is explicit
+ *   (`activity-changes.ts`); the hero no longer carries a changes chip (sticky header redesign,
+ *   9 Nov 2026);
+ * - the Checking line sits under the next step, with no "to check" chip;
  * - Beds that fit is a small table that folds to one line while someone is chosen;
  * - Placement still opens only for the person the coordinator chooses (Josh, Home v7, 22 Oct 2026),
  *   but its card names the oldest alert to place;
- * - Registers and Alerts history sit under one "More" menu at the end of the list tabs.
+ * - Today's review and Alerts history sit under one "More" menu at the end of the list tabs.
  */
 /** Today's review and Alerts history under one "More" menu at the end of Home's list tabs. */
 function HomeListMoreMenu() {
@@ -204,7 +195,7 @@ function HomeListMoreMenu() {
         <button
           type="button"
           {...props}
-          className={buttonClass({ variant: "ghost", size: "sm" })}
+          className={`${buttonClass({ variant: "ghost", size: "sm" })} ${folderStyles.more}`}
           data-testid="ward-home-more"
         >
           <Ellipsis size={16} strokeWidth={1.75} aria-hidden="true" />
@@ -305,12 +296,10 @@ export function CoordinatorScreen() {
   // never touches either selection.
   const [selectedReferralId, setSelectedReferralId] = useState<string | undefined>(undefined);
   const queueFocusRef = useRef<HTMLDivElement>(null);
-  const [checksOpen, setChecksOpen] = useState(false);
-  // Overdue and Tier 1 on the hero highlight their rows in the queue; the rest dim, nothing hides.
+  // The list tabs' row, which the curved folder shape measures.
+  const listsNavRef = useRef<HTMLElement>(null);
+  // A highlight (past target, from the next step) marks its rows in the queue; the rest dim, nothing hides.
   const [highlight, setHighlight] = useState<QueueHighlight | undefined>(undefined);
-  function toggleHighlight(next: QueueHighlight) {
-    setHighlight((current) => (current === next ? undefined : next));
-  }
   // Home v7 layouts: two columns (the list, then Beds that fit and Placement) from tablet landscape
   // up, one column on tablet portrait with Placement as a side sheet, phone direction A.
   const layout = useHomeLayout();
@@ -610,30 +599,6 @@ export function CoordinatorScreen() {
   // OD-3: the coordinator's unrestricted reads. Not scoped to open or to the ED filter: an override
   // or a decline that was made does not stop having been made.
 
-  // Activity: Changes since the coordinator's last review (saved only when they press Mark reviewed).
-  const changes = useHomeChanges(now);
-  const changeCount = changes.live.length;
-  // Q99 (Josh, 1 Nov 2026): one Activity panel, the app bar's, on every page. This button opens
-  // that same panel on its tab, with Home's paused clock while Home is paused.
-  const activityOpen = useActivityPanelOpen();
-  const openActivity = (tab: ActivityPanelTab, opener?: EventTarget | null) =>
-    openActivityPanel({
-      tab,
-      now: paused ? now : undefined,
-      opener: opener instanceof HTMLElement ? opener : undefined,
-    });
-  const reviewClock = formatInstantWithDay(changes.reviewedAt ?? changes.shiftStart, now);
-  const changesChipLabel =
-    changeCount === 0
-      ? "No new changes · Activity"
-      : `${changeCount === 1 ? "change" : "changes"} since ${
-          changes.reviewedAt !== undefined ? `your review at ${reviewClock}` : reviewClock
-        } · Review`;
-  // Plan item 2i (proposal): the change feed is the whole network's, so with a service chosen the
-  // chip says so. `service` is read here directly; the shared word is defined further down.
-  const changesChipText = service === null ? changesChipLabel : `${changesChipLabel} · Network-wide`;
-  const changesChipOpen = (event?: { currentTarget: EventTarget | null }) =>
-    openActivity(changeCount > 0 ? "changes" : "recent", event?.currentTarget);
   const plannedRows = usePlannedRows(now);
 
   // Hero counts: every one is read from an existing derivation, never typed.
@@ -661,30 +626,9 @@ export function CoordinatorScreen() {
   // The bed figures (beds ready, occupancy) and the bed-count checks stay network-wide on purpose
   // (a placement may use any ward), so with a service chosen they say so beside the figure.
   const networkWord = service === null ? "" : " network-wide";
-  // The queue may also contain ward/community origins, so its population is broader than ED journeys.
-  const notWaitingMeta = (
-    <span data-testid="ward-home-ed-population">
-      {edJourneys.stillInEd} still in ED · {edJourneys.inTransit} in transit
-    </span>
-  );
   const bedsReady = counts.capacity?.value ?? 0;
   // The highlight chips count the queue they highlight (after the ED and service filters), P002/P003.
   const chips = homeChipFigures(queue, now, selectedEd?.siteCode);
-  // Shortest clear words (Josh, 30 Oct 2026); a chosen ED is still named.
-  // The spoken name keeps the noun (P002: "Tier 1 open movements", as Movements says it; Q262).
-  const edSuffix = selectedEd ? ` · ${selectedEd.siteCode}` : "";
-  const overdueWord = (
-    <>
-      Past target <SrOnly>waits</SrOnly>
-      {edSuffix}
-    </>
-  );
-  const tierOneWord = (
-    <>
-      Tier 1 <SrOnly>open movements</SrOnly>
-      {edSuffix}
-    </>
-  );
 
   // v10 hero: the one ring on the page is statewide occupancy, from the one shared count
   // (`ward-occupancy.ts`) every page and the rail read, against the sidebar's alert line.
@@ -692,52 +636,11 @@ export function CoordinatorScreen() {
     () => wardOccupancy(units, admissions, bedReleases).percent,
     [units, admissions, bedReleases],
   );
-  // Josh, 3 Nov 2026 (appraisal 4): Capacity owns the gauge, so Home says the figure in words
-  // and links there instead of drawing a second ring.
-  const occupancyLink =
-    statewideOccupancy === null ? null : (
-      <>
-        {" · "}
-        <Link href="/ward-flow/capacity" className={styles.heroOccupancyLink} data-testid="ward-home-occupancy-link">
-          {statewideOccupancy >= BED_ALERT_THRESHOLD_PERCENT ? "At risk " : ""}
-          {Math.round(statewideOccupancy)}%{statewideOccupancy >= BED_ALERT_THRESHOLD_PERCENT ? "" : " beds in use"}
-        </Link>
-      </>
-    );
   // Checking foot: what this page watched, as counts. Never "All clear".
   const staleBedCounts = units.filter((unit) => now - unit.allocatable.confirmedAt > BED_COUNT_FRESH_MINUTES).length;
   const wardsNotReporting = units.filter(
     (unit) => now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes,
   ).length;
-  const checkingFoot = (
-    <CheckingFoot
-      items={[
-        {
-          id: "stale-counts",
-          label: `Bed counts older than ${BED_COUNT_FRESH_MINUTES / 60}h`,
-          value: staleBedCounts,
-          tone: staleBedCounts > 0 ? "warning" : "neutral",
-        },
-        {
-          id: "not-reporting",
-          label: "Wards not reporting",
-          value: wardsNotReporting,
-          tone: wardsNotReporting > 0 ? "warning" : "neutral",
-        },
-      ]}
-      notChecked={["CAHS inpatient wards, not modelled", "private hospitals, no live feed"]}
-    />
-  );
-  const shiftWord = currentShift(now)
-    .name.replace(/ Shift$/u, " shift")
-    .toLowerCase();
-  const heroTitle = (
-    <>
-      <span className={styles.heroNum}>{edJourneys.total}</span> open ED movements
-      {service === null ? "" : ` in ${service}`}, <span className={styles.heroNum}>{bedsReady}</span>{" "}
-      {bedsReady === 1 ? "bed" : "beds"} ready{networkWord}
-    </>
-  );
 
   // Not deferred: the placement panel's Offer and Refer act on this movement, so it must always be the one
   // the queue selection and `data-subject-movement` name. A deferred copy could act for the previous patient.
@@ -818,10 +721,10 @@ export function CoordinatorScreen() {
               },
             }
           : { answer: `Nothing needs you now${nextScope}` };
-  // Josh, 4 Nov 2026 (2i question 5): the phone hero folds its foot away, but keeps the Checking line
-  // under the step whenever a bed count is stale or a ward is not reporting.
-  const phoneChecking =
-    isPhone && staleBedCounts + wardsNotReporting > 0 ? (
+  // Josh, 4 Nov 2026 (2i question 5): the Checking line sits under the step whenever a bed count is
+  // stale or a ward is not reporting (every size since the sticky header redesign, 9 Nov 2026).
+  const checkingLine =
+    staleBedCounts + wardsNotReporting > 0 ? (
       <span data-testid="home-next-checking">
         Checking: {staleBedCounts} stale bed {staleBedCounts === 1 ? "count" : "counts"}, {wardsNotReporting}{" "}
         {wardsNotReporting === 1 ? "ward" : "wards"} not reporting
@@ -835,204 +738,99 @@ export function CoordinatorScreen() {
 
         <div className={styles.body} data-testid="ward-coordinator-body">
           <Hero
-            className={styles.homeHero}
-            // Phone direction A (Josh, 10 Oct 2026): queue first. The same answer as the desktop
-            // title, three figures you can tap, then New since and Pause.
-            // The shift is not in the header, so the phone keeps the eyebrow (Q153).
-            phoneEyebrow="show"
-            eyebrow={
-              isPhone ? `Modelled network · ${shiftWord}` : `Modelled network · mental health beds · ${shiftWord}`
-            }
-            title={heroTitle}
-            next={phoneChecking ? { ...heroNext, owner: phoneChecking } : heroNext}
-            // Redesign (Josh, 30 Oct 2026): the synthetic disclosure lives in the app bar and the footer, so
-            // the hero keeps only its facts; on a phone they fold to one line.
-            titleMeta={
-              isPhone ? (
-                <span data-testid="ward-home-ed-population">
-                  {edJourneys.stillInEd} still in ED · {edJourneys.inTransit} in transit
-                  {occupancyLink}
-                  {occupancyLink ? networkWord : null}
-                </span>
-              ) : (
-                <>
-                  {notWaitingMeta}
-                  {occupancyLink}
-                </>
-              )
-            }
-            stats={
-              isPhone ? (
-                <>
-                  <HeroStat
-                    value={heroActNow}
-                    label="Act now"
-                    tone={heroActNow > 0 ? "danger" : undefined}
-                    pressed={shownView === "needs" && needsFocus === "act"}
-                    onToggle={() => toggleFocus("act")}
-                  />
-                  <HeroStat
-                    value={referralQueue.length}
-                    label="To decide"
-                    tone={referralQueue.length > 0 ? "info" : undefined}
-                    pressed={shownView === "needs" && needsFocus === "decide"}
-                    onToggle={() => toggleFocus("decide")}
-                  />
-                  <HeroStat
-                    value={chips.overdueInQueue}
-                    label={overdueWord}
-                    tone={chips.overdueInQueue > 0 ? "warning" : undefined}
-                    pressed={shownView === "queue" && highlight === "overdue"}
-                    onToggle={() => {
-                      showView("queue");
-                      // A hero count covers the whole queue, so it clears any chosen stage.
-                      setFlowStage(undefined);
-                      chooseNeedsFocus("all");
-                      toggleHighlight("overdue");
-                    }}
-                  />
-                </>
-              ) : undefined
-            }
-            bar={
-              isPhone ? (
-                // Redesign: the phone hero's "since you looked" pill becomes the changes chip. It
-                // shows even with nothing new, since it is also the way into Activity.
-                <div className={styles.phoneHeroActs}>
-                  <Button
-                    variant="onHero"
-                    className={`${styles.phoneSince} ${styles.changesChip}`}
-                    aria-haspopup="dialog"
-                    aria-expanded={activityOpen}
-                    aria-controls="ward-bar-activity-drawer"
-                    onClick={changesChipOpen}
-                    data-testid="home-changes-chip"
-                  >
-                    {changeCount > 0 ? <b>{changeCount}</b> : null} {changesChipText}
-                  </Button>
-                </div>
-              ) : (
-                <div className={styles.heroToggles}>
-                  {nextKind === "act" ? null : (
-                    <HeroStat
-                      inline
-                      value={heroActNow}
-                      label="Act now"
-                      tone={heroActNow > 0 ? "danger" : undefined}
-                      pressed={shownView === "needs" && needsFocus === "act"}
-                      onToggle={() => toggleFocus("act")}
-                    />
-                  )}
-                  {nextKind === "decide" ? null : (
-                    <HeroStat
-                      inline
-                      value={referralQueue.length}
-                      label="To decide"
-                      tone={referralQueue.length > 0 ? "info" : undefined}
-                      pressed={shownView === "needs" && needsFocus === "decide"}
-                      onToggle={() => toggleFocus("decide")}
-                    />
-                  )}
-                  {nextKind === "overdue" ? null : (
-                    <HeroStat
-                      inline
-                      value={chips.overdueInQueue}
-                      label={overdueWord}
-                      tone={chips.overdueInQueue > 0 ? "warning" : undefined}
-                      pressed={shownView === "queue" && highlight === "overdue"}
-                      onToggle={() => {
-                        showView("queue");
-                        // A hero count covers the whole queue, so it clears any chosen stage.
-                        setFlowStage(undefined);
-                        chooseNeedsFocus("all");
-                        toggleHighlight("overdue");
-                      }}
-                    />
-                  )}
-                  <HeroStat
-                    inline
-                    value={chips.tierOneInQueue}
-                    // Its own mark (highest tier), so no chip reuses the Act now triangle.
-                    label={
-                      <>
-                        <StatusGlyph tone="neutral" size={10} className={activity.tierGlyph} />
-                        {tierOneWord}
-                      </>
-                    }
-                    pressed={shownView === "queue" && highlight === "tier1"}
-                    onToggle={() => {
-                      showView("queue");
-                      // A hero count covers the whole queue, so it clears any chosen stage.
-                      setFlowStage(undefined);
-                      chooseNeedsFocus("all");
-                      toggleHighlight("tier1");
-                    }}
-                  />
-                  <HeroStat
-                    inline
-                    value={staleBedCounts + wardsNotReporting}
-                    // The chip says how many; opening it says which (it ran off a tablet's edge).
-                    // The kit amber dot (at risk).
-                    label={
-                      <>
-                        {staleBedCounts + wardsNotReporting > 0 ? <StatusGlyph tone="warning" size={10} /> : null}
-                        to check{networkWord}
-                      </>
-                    }
-                    expanded={checksOpen}
-                    onToggle={() => setChecksOpen((open) => !open)}
-                  />
-                </div>
-              )
-            }
-            barAside={
-              isPhone ? undefined : (
-                // The changes chip: opens the redesigned Activity panel on Changes.
-                <HeroStat
-                  inline
-                  command
-                  value={changeCount > 0 ? changeCount : null}
-                  label={changesChipText}
-                  // No glyph: the info glyph reads "to decide" on this page, which a change is not.
-                  onToggle={changesChipOpen}
-                  className={styles.changesChip}
-                />
-              )
+            className={`${styles.homeHero} ${heroStyles.hero}`}
+            // Sticky header redesign (Josh, 9 Nov 2026): one plain title on every size. The header already
+            // names the page and place, so the eyebrow ("Modelled network · day shift") is gone.
+            title={
+              <>
+                Bed flow <span className={heroStyles.titleSoft}>right now</span>
+              </>
             }
             aside={
-              isPhone ? (
-                // Device audit (11 Oct 2026): the pause is folded into the Live pill.
-                <LiveChip
-                  state={paused ? "paused" : "live"}
-                  onHero
-                  age={formatInstant(now)}
-                  onTogglePause={togglePause}
-                />
-              ) : (
-                // A5 (20 Oct 2026): Handover is reached from the rail, not from Home.
-                <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={togglePause} />
-              )
+              // Device audit (11 Oct 2026): the pause is folded into the Live pill.
+              <LiveChip
+                state={paused ? "paused" : "live"}
+                onHero
+                age={formatInstant(now)}
+                onTogglePause={togglePause}
+              />
             }
-            // A phone folds the hero to its title and next step, so the foot is not drawn there; the
-            // stale counts stay visible as the Checking line under the step (2i question 5).
-            foot={!isPhone && checksOpen ? checkingFoot : undefined}
-          />
-
-          <div className={list.edWrap}>
+          >
+            <div className={heroStyles.main}>
+              <div className={heroStyles.figures} role="group" aria-label="Figures">
+                <p className={heroStyles.figure} data-testid="home-figure-ed">
+                  <b>{edJourneys.total}</b>
+                  <small>open ED movements{service === null ? "" : ` in ${service}`}</small>
+                </p>
+                <p className={heroStyles.figure} data-testid="home-figure-beds">
+                  <b>{bedsReady}</b>
+                  <small>
+                    {bedsReady === 1 ? "bed" : "beds"} ready{networkWord}
+                  </small>
+                </p>
+                {statewideOccupancy === null ? null : (
+                  <p className={heroStyles.figure} data-testid="home-figure-occupancy">
+                    <b>{Math.round(statewideOccupancy)}%</b>
+                    <small>
+                      <Link
+                        href="/ward-flow/capacity"
+                        className={heroStyles.figureLink}
+                        data-testid="ward-home-occupancy-link"
+                      >
+                        {statewideOccupancy >= BED_ALERT_THRESHOLD_PERCENT ? "at risk" : "beds in use"}
+                      </Link>
+                    </small>
+                  </p>
+                )}
+              </div>
+              <div className={heroStyles.next} data-wf-hero-next="" data-kind={nextKind ?? "none"}>
+                {nextKind === "act" ? <StatusGlyph tone="danger" size={14} className={heroStyles.nextGlyph} /> : null}
+                <div className={heroStyles.nextText}>
+                  <p className={heroStyles.nextAnswer} data-testid="hero-next-answer">
+                    {heroNext.answer}
+                  </p>
+                  {checkingLine ? <p className={heroStyles.nextChecking}>{checkingLine}</p> : null}
+                </div>
+                {heroNext.action ? (
+                  <Button
+                    variant="light"
+                    className={heroStyles.nextAction}
+                    onClick={heroNext.action.onClick}
+                    aria-pressed={heroNext.action.pressed}
+                    data-testid={heroNext.action.testId}
+                  >
+                    {heroNext.action.label}
+                  </Button>
+                ) : null}
+              </div>
+            </div>
             <HomeEdPressure
+              onHero
               now={now}
               movements={movements}
               selectedEdId={selectedEdId}
               onSelectEd={setSelectedEdId}
               service={service}
+              population={
+                <span data-testid="ward-home-ed-population">
+                  <b>{edJourneys.stillInEd}</b> in ED · <b>{edJourneys.inTransit}</b> in transit
+                </span>
+              }
             />
-          </div>
+          </Hero>
+
 
           {/* Home flow (Q340, Q345, 3 Nov 2026): one row. Needs you and Flow lead as the raised switch; the
               stages follow, after a rule, as quieter tabs with counts (always shown; one opens Flow there). */}
-          <nav className={flowStyles.nav} aria-label="Home lists" data-testid="home-lists">
+          <nav
+            ref={listsNavRef}
+            className={`${flowStyles.nav} ${folderStyles.nav}`}
+            aria-label="Home lists"
+            data-testid="home-lists"
+            data-act={actNowCount > 0 ? "" : undefined}
+          >
             <Segmented
-              className={list.viewSwitch}
+              className={`${list.viewSwitch} ${folderStyles.switch}`}
               label="Home list"
               size="md"
               value={shownView}
@@ -1053,7 +851,8 @@ export function CoordinatorScreen() {
                   : []),
               ]}
             />
-            <span className={flowStyles.navRule} aria-hidden="true" />
+            <HomeFolderShape navRef={listsNavRef} value={shownView} />
+            <span className={`${flowStyles.navRule} ${folderStyles.rule}`} aria-hidden="true" />
             <div className={flowStyles.stageGroup} data-active={shownView === "queue" ? "true" : undefined}>
               <div className={flowStyles.stageTabs}>
                 <PillTabs

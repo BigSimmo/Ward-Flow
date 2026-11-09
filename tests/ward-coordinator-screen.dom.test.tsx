@@ -34,8 +34,11 @@ describe("CoordinatorScreen", () => {
         <CoordinatorScreen />
       </WardFlowProvider>,
     );
-    expect(screen.getByRole("heading", { name: /open ED movements/ })).toBeInTheDocument();
-    expect(screen.getByTestId("ward-home-ed-population")).toHaveTextContent(/\d+ still in ED · \d+ in transit/);
+    // Sticky header redesign (Josh, 9 Nov 2026): the hero title is "Bed flow right now"; open ED
+    // movements are its first figure, and the ED strip says who is in ED and who is in transit.
+    expect(screen.getByRole("heading", { name: "Bed flow right now" })).toBeInTheDocument();
+    expect(screen.getByTestId("home-figure-ed")).toHaveTextContent(/^\d+open ED movements$/);
+    expect(screen.getByTestId("ward-home-ed-population")).toHaveTextContent(/^\d+ in ED · \d+ in transit$/);
   });
   it("renders the prototype footer with coordinator governance disclosure", () => {
     render(

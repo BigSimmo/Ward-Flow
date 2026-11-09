@@ -14,6 +14,7 @@
  * - A referral (H9) shows its facts in the drawer's grid, with Decide pinned.
  * - An alert with no journey (a booking, H10) shows its facts, with its own action pinned.
  */
+import { PatientPeekLink } from "@/components/ward-management/patients/patient-peek-link";
 import { BedSingle, ChevronRight, FileText, Inbox } from "lucide-react";
 import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import Link from "next/link";
@@ -121,10 +122,14 @@ export function HomePlacementDrawer({
       ) : null}
       <DrawerFootRow className={p.links}>
         {recordHref ? (
-          <Link className={buttonClass({ variant: "sec", size: "sm" })} href={recordHref}>
+          <PatientPeekLink
+            movementId={movement?.id}
+            className={buttonClass({ variant: "sec", size: "sm" })}
+            href={recordHref}
+          >
             <FileText size={14} strokeWidth={1.75} aria-hidden="true" />
             Patient record
-          </Link>
+          </PatientPeekLink>
         ) : null}
         {accepted ? (
           <Link

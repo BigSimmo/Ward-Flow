@@ -1,7 +1,8 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { BedSingle, CalendarCheck, FileText, Pencil, X } from "lucide-react";
+import { CalendarCheck, FileText, Pencil, X } from "lucide-react";
 
 import {
   Button,
@@ -33,6 +34,12 @@ import type { StepDownBoardRow } from "@/components/ward-management/ward-step-do
 import type { PlannedListApi } from "./planned-admissions-panel";
 import { StepDownRowDetail, type StepDownReferKit } from "./step-down-board";
 import styles from "./capacity-page.module.css";
+
+// Ward peek (D-98): loaded when a drawer opens, so the Capacity page's first download stays the same.
+const WardPeekButton = dynamic(
+  () => import("@/components/ward-management/board/ward-peek").then((m) => m.WardPeekButton),
+  { ssr: false },
+);
 
 /**
  * Capacity issue 6 (Josh, 3 Nov 2026): a planned move's pop-up, modelled on the Movements one.
@@ -122,12 +129,12 @@ export function PlannedMoveDrawer({
                 Patient record
               </Link>
             ) : null}
-            {canOpen(boardHref) ? (
-              <Link href={boardHref} className={buttonClass({ variant: lead === "board" ? "pri" : "sec" })}>
-                <BedSingle strokeWidth={1.75} size={14} aria-hidden="true" />
-                Ward board
-              </Link>
-            ) : null}
+            <WardPeekButton
+              unitId={planned.unitId}
+              href={boardHref}
+              label="Ward board"
+              variant={lead === "board" ? "pri" : "sec"}
+            />
             {change ? (
               <Button variant="sec" icon={Pencil} onClick={change}>
                 Change booking
@@ -291,15 +298,12 @@ export function StepDownDrawer({
                 Patient record
               </Link>
             ) : null}
-            {canOpen(boardHref) ? (
-              <Link
-                href={boardHref}
-                className={buttonClass({ variant: recordHref && canOpen(recordHref) ? "sec" : "pri" })}
-              >
-                <BedSingle strokeWidth={1.75} size={14} aria-hidden="true" />
-                Ward board
-              </Link>
-            ) : null}
+            <WardPeekButton
+              unitId={row.fromUnit.id}
+              href={boardHref}
+              label="Ward board"
+              variant={recordHref && canOpen(recordHref) ? "sec" : "pri"}
+            />
           </DrawerFootRow>
         </>
       }
