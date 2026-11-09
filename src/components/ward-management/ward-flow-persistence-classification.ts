@@ -97,6 +97,10 @@ export const WARD_FLOW_TYPED_TEXT_EVENT_TYPES: ReadonlySet<WardFlowEvent["type"]
   "BOOK_PLANNED_ADMISSION",
   // 9 Oct 2026: `who` (the person told) and `reason` (why it does not apply) are typed text.
   "RECORD_SUPPORT_NOTIFICATION",
+  // Care plans and tribunal dates (9 Nov 2026): short typed contact, note and typed dates.
+  "RECORD_CARE_PLAN",
+  "RECORD_TRIBUNAL_HEARING",
+  "RECORD_TRIBUNAL_OUTCOME",
 ]);
 
 /**
@@ -247,6 +251,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "RECORD_ABSENCE_STEP",
   "RECORD_COMMUNITY_TREATMENT_ORDER",
   "END_COMMUNITY_TREATMENT_ORDER",
+  // A closed two-value list or null (9 Nov 2026); no typed text.
+  "SET_CULTURAL_SUPPORT_REQUEST",
   // #816: a patient id and a closed `PatientArchiveReason`, offered by radio buttons. No typed text.
   "ARCHIVE_PATIENT",
   "RECORD_LEAVING",

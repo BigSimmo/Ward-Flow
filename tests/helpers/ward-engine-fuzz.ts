@@ -2291,6 +2291,47 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       copyGiven: pick(random, ["yes", "declined", "not_yet"] as const),
     })),
   ],
+  // Care plans and safety flags (Josh, 9 Nov 2026): facts on the person, synthetic values only.
+  // Weight 0 and last in the list: only the coverage sweep sends them, so the weighted draws of
+  // every other builder stay as they were.
+  [
+    0,
+    (state, random) => ({
+      type: "RECORD_CARE_PLAN",
+      patientId: pick(random, state.patients)?.id ?? MISSING_ID,
+      plan: {
+        type: "Crisis/safety plan",
+        agreedBy: "Community team",
+        agreedOn: "2026-11-01",
+        helps: ["Quiet space"],
+        ...(random() < 0.5 ? { attachment: { fileType: "PDF", sizeBytes: 2048 } } : {}),
+      },
+    }),
+  ],
+  [
+    0,
+    (state, random) => ({
+      type: "RECORD_TRIBUNAL_HEARING",
+      patientId: pick(random, state.patients)?.id ?? MISSING_ID,
+      date: random() < 0.5 ? "2026-10-20" : "2027-01-15",
+      ...(random() < 0.5 ? { time: "10:30" } : {}),
+    }),
+  ],
+  [
+    0,
+    (state, random) => {
+      const patient = prefer(random, state.patients, (candidate) => Boolean(candidate.tribunalHearing));
+      return { type: "RECORD_TRIBUNAL_OUTCOME", patientId: patient?.id ?? MISSING_ID, outcome: "Adjourned" };
+    },
+  ],
+  [
+    0,
+    (state, random) => ({
+      type: "SET_CULTURAL_SUPPORT_REQUEST",
+      patientId: pick(random, state.patients)?.id ?? MISSING_ID,
+      request: random() < 0.7 ? "Aboriginal liaison officer" : null,
+    }),
+  ],
 ];
 
 const ALL_BUILDERS = [...BUILDERS, ...MORE_BUILDERS];

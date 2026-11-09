@@ -80,6 +80,13 @@ const DECISIONS = new Map<string, string>([
       "renamed `sex` field (formerly `sexOrGender`) stays covered by R-2026-09-04-A, which approved " +
       "its content first.",
   ],
+  [
+    "CARE-PLANS-SAFETY-FLAGS-2026-11-09",
+    "Josh, 9 Nov 2026, care plans and safety flags thread: defaults approved. Covers `carePlans` " +
+      "(structured plan, short typed contact and one short line, attachment type and size only), " +
+      "`tribunalHearing` (typed date and outcome, never a countdown) and `culturalSupportRequested` " +
+      "(asked for by the person or family, never derived from the Aboriginal status field).",
+  ],
 ]);
 
 /** Fields permitted to match an identity stem, each with the ruling that permitted it. */
@@ -122,6 +129,12 @@ const REGISTRATION_ACCESS_FIELDS = new Map<string, string>([["registrationScope"
 const ADDED_AT_FIELDS = new Map<string, string>([["addedAt", "V10-2026-10-10-ADDED-AT"]]);
 /** Note 3's administrative details, each optional, kept apart for the same provenance reason. */
 const NOTE3_FIELDS = new Map<string, string>(ADMIN_DETAIL_FIELDS.map((field) => [field, "NOTE3-2026-11-08"]));
+/** The three fields the 9 Nov 2026 care plans and safety flags thread adds. */
+const CARE_PLAN_FIELDS = new Map<string, string>([
+  ["carePlans", "CARE-PLANS-SAFETY-FLAGS-2026-11-09"],
+  ["tribunalHearing", "CARE-PLANS-SAFETY-FLAGS-2026-11-09"],
+  ["culturalSupportRequested", "CARE-PLANS-SAFETY-FLAGS-2026-11-09"],
+]);
 
 /** Fields that predate R-2026-09-04-A and are not its concern — PD-1's own five. */
 const PD1_FIELDS = new Set(["id", "umrn", "givenName", "familyName", "dateOfBirth"]);
@@ -188,6 +201,9 @@ function aPatient(): Required<Patient> {
     maritalStatus: "Synthetic",
     advanceHealthDirective: "Synthetic",
     enduringGuardian: "Synthetic",
+    carePlans: [],
+    tribunalHearing: { date: "2026-11-01", recordedAt: 0, recordedBy: "ward" },
+    culturalSupportRequested: "Aboriginal liaison officer",
   };
 }
 
@@ -198,8 +214,10 @@ describe("Patient identity is a ruling, not a drift", () => {
       // v10 pass 2 (Josh, 10 Oct 2026): when Add patient created the record. A record fact.
       "addedAt",
       "address",
+      "carePlans",
       "catchmentCommunityTeam",
       "communityTreatmentOrder",
+      "culturalSupportRequested",
       "dateOfBirth",
       "familyName",
       "gender",
@@ -212,6 +230,7 @@ describe("Patient identity is a ruling, not a drift", () => {
       "registrationScope",
       "sex",
       "suburb",
+      "tribunalHearing",
       "umrn",
       // Note 3 (Josh, 8 Nov 2026): the optional administrative details.
       ...ADMIN_DETAIL_FIELDS,
@@ -272,7 +291,8 @@ describe("Patient identity is a ruling, not a drift", () => {
         !CTO_RULING_FIELDS.has(field) &&
         !ADDED_AT_FIELDS.has(field) &&
         !REGISTRATION_ACCESS_FIELDS.has(field) &&
-        !NOTE3_FIELDS.has(field),
+        !NOTE3_FIELDS.has(field) &&
+        !CARE_PLAN_FIELDS.has(field),
     );
     expect(
       unaccounted,
@@ -316,6 +336,14 @@ describe("Patient identity is a ruling, not a drift", () => {
     for (const [field, decision] of ADDED_AT_FIELDS) {
       expect(DECISIONS.has(decision), `${field} cites "${decision}", which does not resolve`).toBe(true);
       expect([...PATIENT_FIELDS], `${field} is authorised by the v10 brief but not declared`).toContain(field);
+    }
+  });
+
+  it("has the 9 Nov 2026 care plan fields declared, decided, and citing a real decision", () => {
+    expect(CARE_PLAN_FIELDS.size, "the care plans and safety flags thread named exactly three fields").toBe(3);
+    for (const [field, decision] of CARE_PLAN_FIELDS) {
+      expect(DECISIONS.has(decision), `${field} cites "${decision}", which does not resolve`).toBe(true);
+      expect([...PATIENT_FIELDS], `${field} is authorised by the 9 Nov 2026 thread but not declared`).toContain(field);
     }
   });
 

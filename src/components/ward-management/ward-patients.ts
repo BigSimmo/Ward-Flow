@@ -197,6 +197,16 @@ export type Patient = {
    * Absent on every seeded patient and on any patient saved before this field existed.
    */
   addedAt?: Instant;
+  /**
+   * Care plans (Josh, 9 Nov 2026, care plans and safety flags thread: defaults approved). Newest
+   * last; recording a new one marks the previous Current one Superseded, never deleted. An
+   * attachment keeps its file type and size only. See `ward-patient-care-plans.ts`.
+   */
+  carePlans?: import("./ward-patient-care-plans").CarePlan[];
+  /** A Mental Health Tribunal hearing date as typed, and later its outcome. Never a countdown (D-93). */
+  tribunalHearing?: import("./ward-patient-care-plans").TribunalHearing;
+  /** Set only when the person or family asks. NEVER derived from the Aboriginal status field. */
+  culturalSupportRequested?: import("./ward-patient-care-plans").CulturalSupportRequest;
 };
 
 /** Form 5A is the community treatment order form under the Mental Health Act 2014 (WA).
@@ -267,6 +277,9 @@ export const PATIENT_FIELDS = [
   "maritalStatus",
   "advanceHealthDirective",
   "enduringGuardian",
+  "carePlans",
+  "tribunalHearing",
+  "culturalSupportRequested",
 ] as const;
 
 /** Note 3 (Josh, 8 Nov 2026): the optional administrative details, in the order Add patient asks. */

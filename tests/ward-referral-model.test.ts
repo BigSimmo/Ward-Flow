@@ -763,6 +763,11 @@ describe("front-door contract — an ED may close to all admissions, never refus
     UNDO_BED_STEP: false,
     UNDO_RELEASE_STEP: false,
     UNDO_PATIENT_RECORD: false,
+    // Care plans and safety flags (9 Nov 2026): facts on the person, never a refusal of a referral.
+    RECORD_CARE_PLAN: false,
+    RECORD_TRIBUNAL_HEARING: false,
+    RECORD_TRIBUNAL_OUTCOME: false,
+    SET_CULTURAL_SUPPORT_REQUEST: false,
   };
 
   /**

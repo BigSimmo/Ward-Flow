@@ -549,6 +549,11 @@ describe("who may raise which event", () => {
     UNDO_BED_STEP: ["ward", "bed_manager", "coordinator"],
     UNDO_RELEASE_STEP: ["coordinator", "ward", "ed", "community", "bed_manager"],
     UNDO_PATIENT_RECORD: ["community", "coordinator"],
+    // Care plans and safety flags (Josh, 9 Nov 2026, care plans and safety flags thread: defaults approved).
+    RECORD_CARE_PLAN: ["ward", "ed", "community", "coordinator"],
+    RECORD_TRIBUNAL_HEARING: ["ward", "community", "coordinator"],
+    RECORD_TRIBUNAL_OUTCOME: ["ward", "community", "coordinator"],
+    SET_CULTURAL_SUPPORT_REQUEST: ["ward", "ed", "community", "coordinator"],
   };
 
   it("covers every event that exists, so a new event cannot arrive unpermissioned", () => {

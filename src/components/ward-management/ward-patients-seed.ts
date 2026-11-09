@@ -85,6 +85,10 @@ export const wardPatients: Patient[] = [
     legalStatus: "Involuntary inpatient",
     aboriginalOrTorresStraitIslanderStatus: "Not stated",
     interpreterLanguage: "Vietnamese — interpreter required",
+    // Care plans and safety flags (9 Nov 2026), synthetic: a hearing date that has passed with no
+    // outcome recorded, and cultural support the family asked for.
+    tribunalHearing: { date: "2026-11-04", time: "10:00", recordedAt: -2880, recordedBy: "ward" },
+    culturalSupportRequested: "Other cultural support",
   },
   {
     id: "PT-003",
@@ -668,6 +672,35 @@ export const wardPatients: Patient[] = [
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Not stated",
     interpreterLanguage: "English — no interpreter required",
+    // Care plans and safety flags (9 Nov 2026), synthetic: a current plan and the one it replaced.
+    carePlans: [
+      {
+        id: "CP-PT-036-1",
+        type: "Community care plan",
+        agreedBy: "Midland Community Team",
+        agreedOn: "2026-03-12",
+        reviewOn: "2026-09-12",
+        helps: ["Known staff member"],
+        status: "Superseded",
+        recordedAt: -2880,
+        recordedBy: "community",
+      },
+      {
+        id: "CP-PT-036-2",
+        type: "Frequent presenter plan",
+        agreedBy: "Midland Community Team with ED",
+        agreedOn: "2026-10-06",
+        reviewOn: "2027-01-06",
+        contactName: "Case manager, Midland team",
+        contactPhone: "08 5550 0990",
+        helps: ["Quiet space", "Family or carer involved early", "Contact the community team"],
+        helpsExtra: "Prefers to be seen by a known clinician where possible.",
+        status: "Current",
+        attachment: { fileType: "PDF", sizeBytes: 184320, addedAt: -1440, addedBy: "community" },
+        recordedAt: -1440,
+        recordedBy: "community",
+      },
+    ],
   },
   {
     id: "PT-037",

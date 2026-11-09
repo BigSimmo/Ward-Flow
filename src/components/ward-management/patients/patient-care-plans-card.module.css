@@ -1,0 +1,129 @@
+/* Care plan, tribunal hearing, carer told and cultural support on Now (9 Nov 2026). Calm and dense. */
+
+.facts {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+}
+
+.facts + .facts {
+  border-top: 1px solid var(--wf-line-2);
+}
+
+.facts > div {
+  display: grid;
+  grid-template-columns: minmax(96px, 9rem) minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  align-items: baseline;
+}
+
+.facts dt {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+
+.facts dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  min-width: 0;
+  margin: 0;
+  color: var(--wf-ink-1);
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  flex-basis: 100%;
+  color: var(--wf-ink-2);
+}
+
+.quiet {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
+}
+
+.facts .quiet {
+  padding: 0;
+}
+
+.quietInline {
+  color: var(--wf-ink-3);
+}
+
+.moments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-4);
+}
+
+.inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--wf-s-2);
+  flex-basis: 100%;
+}
+
+.problem {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.form {
+  display: grid;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--wf-s-3);
+}
+
+.helps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--wf-s-1) var(--wf-s-3);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.helps legend {
+  margin-bottom: var(--wf-s-1);
+  padding: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+
+.file {
+  max-width: 100%;
+  font-size: var(--wf-fs-13);
+}
+
+.actions {
+  display: flex;
+  gap: var(--wf-s-2);
+}
+
+@media (max-width: 599px) {
+  .facts > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--wf-s-1);
+  }
+}

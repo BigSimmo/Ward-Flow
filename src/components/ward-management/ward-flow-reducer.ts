@@ -1784,6 +1784,12 @@ export function reduceClinicalEvent(
       return reducerSlices().reducePatientRegistration(state, event, reject);
     case "ARCHIVE_PATIENT":
       return reducerSlices().reducePatientArchive(state, event, reject, decision);
+    // Care plans and safety flags (Josh, 9 Nov 2026): facts on the person, in their own slice.
+    case "RECORD_CARE_PLAN":
+    case "RECORD_TRIBUNAL_HEARING":
+    case "RECORD_TRIBUNAL_OUTCOME":
+    case "SET_CULTURAL_SUPPORT_REQUEST":
+      return reducerSlices().reducePatientCarePlanEvent(state, event, reject, decision);
     // A reset re-anchors onto the demo's current now rather than handing back a fixture authored at
     // NOW_ANCHOR, so predictions are not already lapsed. `event.now` includes `clockOffsetMinutes`,
     // which a reset clears; subtracting it keeps the visible clock from jumping.

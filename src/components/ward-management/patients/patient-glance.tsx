@@ -17,7 +17,13 @@ import { observationSummary } from "@/components/ward-management/ward-observatio
 import { riskFlagLabel } from "@/components/ward-management/referrals/referral-risk-flags";
 import type { FormTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
 import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { perthClockTime, perthIsoDay } from "@/components/ward-management/ward-clock";
+import {
+  frequentPresenterTag,
+  tribunalHearingPassedWithoutOutcome,
+} from "@/components/ward-management/ward-patient-care-plans";
 import type { PatientMode } from "./patient-mode";
+import { recordExtrasFor } from "./patient-record-extras";
 import { interpreterRequired } from "./patient-flight-header";
 import styles from "./patient-glance.module.css";
 
@@ -81,6 +87,8 @@ export type PatientGlanceProps = {
   riskNotShared?: boolean;
   /** Health alerts the record holds (allergies and the like), in their own words. */
   healthAlerts?: readonly string[];
+  /** The board's real moment, for the worded record flags (`patientRecordFlags`). */
+  today?: Date;
   onOpenForms?: () => void;
   onOpenDetails?: () => void;
   /** Note 5 (Josh, 9 Nov 2026): Record CTO is a quiet line in Legal, not a button in the header. */
@@ -178,12 +186,42 @@ function riskTile({ riskFlags, riskFlagsWhen, riskNotShared }: PatientGlanceProp
   };
 }
 
-function alertsTile({ mode, patient, leaveBed, healthAlerts, onOpenDetails }: PatientGlanceProps): GlanceTile | null {
+/**
+ * Care plans and safety flags (Josh, 9 Nov 2026): worded flags beside the interpreter. Cultural
+ * support shows only when the person or family asked (never inferred from the Aboriginal status
+ * field); the hearing flag is worded, never a countdown (D-93).
+ */
+export function patientRecordFlags(
+  patient: Patient | undefined,
+  episodes: readonly { kind: string; start: string }[] | undefined,
+  today: Date,
+): { text: string; tone: WfTone }[] {
+  if (!patient) return [];
+  const flags: { text: string; tone: WfTone }[] = [];
+  const todayIso = perthIsoDay(today);
+  if (tribunalHearingPassedWithoutOutcome(patient.tribunalHearing, todayIso, perthClockTime(today)))
+    flags.push({ text: "Hearing date passed, outcome not recorded", tone: "warning" });
+  if (patient.culturalSupportRequested)
+    flags.push({ text: `${patient.culturalSupportRequested} requested`, tone: "info" });
+  const presenter = frequentPresenterTag(episodes, patient.carePlans, todayIso);
+  if (presenter) flags.push({ text: presenter, tone: "neutral" });
+  return flags;
+}
+
+function alertsTile({
+  mode,
+  patient,
+  leaveBed,
+  healthAlerts,
+  today,
+  onOpenDetails,
+}: PatientGlanceProps): GlanceTile | null {
   const alerts: { text: string; tone: WfTone }[] = [];
   if (mode === "awol" && leaveBed?.absentWithoutLeave) alerts.push({ text: "Absent without leave", tone: "danger" });
   for (const alert of healthAlerts ?? []) alerts.push({ text: alert, tone: "warning" });
   const interpreter = interpreterRequired(patient);
   if (interpreter) alerts.push({ text: `${interpreter} interpreter`, tone: "info" });
+  if (today) alerts.push(...patientRecordFlags(patient, recordExtrasFor(patient?.id)?.episodes, today));
   if (patient?.confidential) alerts.push({ text: "Restricted record", tone: "neutral" });
   // Round 2: an empty Alerts tile was noise. It shows only when there is something to know.
   if (alerts.length === 0) return null;

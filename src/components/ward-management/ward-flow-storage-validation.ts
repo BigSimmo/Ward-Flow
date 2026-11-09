@@ -69,6 +69,7 @@ import { HOME_SERVICE_ANSWERS, RETURN_PREREQUISITES } from "./out-of-area/home-s
 import { isDirectoryEntryId } from "./on-call/on-call-checks";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import { PAPER_EXPIRY_CORRECTION_REASONS } from "./ward-model-vocabulary";
+import { STORED_PATIENT_CARE_PLAN_FIELDS } from "./ward-patient-care-plans-storage";
 import {
   SUPPORT_NOTIFICATION_OCCASIONS,
   SUPPORT_NOTIFICATION_OUTCOMES,
@@ -271,6 +272,8 @@ const patient = z.catchall(
     registrationScope: z.optional(
       z.strictObject({ kind: z.enum(["ed", "ward", "team", "site", "service"]), placeId: text }),
     ),
+    // Care plans and tribunal dates (Josh, 9 Nov 2026), in their own file.
+    ...STORED_PATIENT_CARE_PLAN_FIELDS,
   }),
   // Every other patient field stays plain text.
   text,

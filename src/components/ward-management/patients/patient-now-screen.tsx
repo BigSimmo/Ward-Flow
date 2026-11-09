@@ -99,7 +99,13 @@ import { resolvePatientNowRecord } from "./patient-now-adapter";
 import { PATIENT_MODES, patientMode } from "./patient-mode";
 import { dayLabel, type PatientStatusContext } from "./patient-status-card";
 import type { LeaveKind, WardChangeForm } from "./patient-ward-change-card";
-import { calendarDateOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import {
+  calendarDateOf,
+  formatInstantWithDay,
+  perthClockTime,
+  perthIsoDay,
+} from "@/components/ward-management/ward-clock";
+import { PatientCarePlansCard } from "./patient-care-plans-card";
 import type { TransportBookingAnswers } from "@/components/ward-management/ward-transport-checks";
 import {
   BLANK_TRANSPORT_BOOKING,
@@ -1035,6 +1041,7 @@ export function PatientNowScreen({
       riskFlagsWhen={referralWhen}
       riskNotShared={referralSafety.kind === "not_shared"}
       healthAlerts={recordExtrasFor(livePatient?.id)?.alerts}
+      today={displayToday}
       onOpenForms={() => openTab("documents")}
       onOpenDetails={() => openTab("details")}
       recordCto={
@@ -1211,6 +1218,20 @@ export function PatientNowScreen({
               />
               <PatientTriageCard patientId={livePatient?.id} />
               {nowPanel}
+              {/* Care plans and safety flags (Josh, 9 Nov 2026): the plan, hearing date, carer told
+                  and cultural support, on the record's own facts. */}
+              {livePatient ? (
+                <PatientCarePlansCard
+                  patient={livePatient}
+                  role={routeRole}
+                  now={now}
+                  todayIso={perthIsoDay(displayToday)}
+                  nowClock={perthClockTime(displayToday)}
+                  hasCarer={(extras?.supports.length ?? 0) > 0}
+                  gate={gate}
+                  run={(event, success, onRefused) => runStep(event, { success, onRefused })}
+                />
+              ) : null}
             </div>
 
             {/* Tab 2: HISTORY */}
