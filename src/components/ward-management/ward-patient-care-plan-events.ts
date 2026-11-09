@@ -44,3 +44,15 @@ export type PatientCarePlanEvent =
       patientId: PatientId;
       request: CulturalSupportRequest | null;
     };
+
+const PATIENT_CARE_PLAN_EVENT_TYPES: ReadonlySet<string> = new Set<PatientCarePlanEvent["type"]>([
+  "RECORD_CARE_PLAN",
+  "RECORD_TRIBUNAL_HEARING",
+  "RECORD_TRIBUNAL_OUTCOME",
+  "SET_CULTURAL_SUPPORT_REQUEST",
+]);
+
+/** True for the four events above; the reducer routes them to their own slice. */
+export function isPatientCarePlanEvent(event: { type: string }): event is PatientCarePlanEvent {
+  return PATIENT_CARE_PLAN_EVENT_TYPES.has(event.type);
+}
