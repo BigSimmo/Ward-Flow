@@ -1,4 +1,4 @@
-import { ED_HELD_STAGES, type EdSummary } from "@/components/ward-management/ed/ed-home-derivations";
+import { ED_HELD_STAGES, isUnderAForm, type EdSummary } from "@/components/ward-management/ed/ed-home-derivations";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -56,7 +56,7 @@ const HIGHLIGHT_MATCH: Record<Highlight, (person: EdPerson) => boolean> = {
   severe: (person) => person.clock !== "in",
   "no-bed": (person) => edHasNoBedYet(person.movement),
   held: (person) => ED_HELD_STAGES.includes(person.movement.stage),
-  form: (person) => Boolean(person.movement.legalForm),
+  form: (person) => isUnderAForm(person.movement),
 };
 export function personDim(person: EdPerson, highlight: Highlight | null): boolean {
   return highlight !== null && !HIGHLIGHT_MATCH[highlight](person);

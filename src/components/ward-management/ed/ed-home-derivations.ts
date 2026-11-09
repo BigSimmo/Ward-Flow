@@ -62,6 +62,18 @@ export function isDetainedUnderTheAct(legalStatus: LegalStatus): boolean {
 }
 
 /**
+ * The one "under a form" rule for every screen (Home's ED strip, the ED desk and the bed-meeting TV).
+ * A person counts when a legal form is recorded, or when their legal status says they are held under
+ * the Act even though no form has been entered yet. Before this, Home used both tests and the ED desk
+ * used the form alone, so Armadale read 15 on Home and 13 on the desk (the two "Involuntary inpatient"
+ * rows with no form). Voluntary and "Referred for psychiatric examination" people still count only
+ * when a form is on record (P3-2, 17 Sept 2026: a voluntary patient is never "under a form").
+ */
+export function isUnderAForm(movement: Pick<Movement, "legalForm" | "legalStatus">): boolean {
+  return movement.legalForm !== undefined || isDetainedUnderTheAct(movement.legalStatus);
+}
+
+/**
  * ⚠️ THIS SCREEN DELIBERATELY DOES NOT COUNT "NOBODY IS LOOKING FOR A BED" — CORRECTED RULING,
  * 2026-09-04, AND IT IS A FINDING, NOT A STYLE CHOICE.
  *

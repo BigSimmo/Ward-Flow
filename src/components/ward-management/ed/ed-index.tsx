@@ -39,6 +39,7 @@ import {
   ED_STAGE_LABELS,
   edHomeSummaries,
   edWaitingSeries,
+  isUnderAForm,
 } from "@/components/ward-management/ed/ed-home-derivations";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -204,7 +205,7 @@ export function EdIndex() {
         noBed: people.filter((person) => edHasNoBedYet(person.movement)).length,
         held: inStages(HELD),
         leaving: inStages(LEAVING),
-        forms: people.filter((person) => person.movement.legalForm).length,
+        forms: people.filter((person) => isUnderAForm(person.movement)).length,
         trend,
       };
     });
