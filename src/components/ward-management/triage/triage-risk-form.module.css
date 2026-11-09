@@ -927,6 +927,15 @@
   }
 }
 
+/* The banner's actions (Josh, 9 Nov 2026): one row with a real gap between buttons at every width,
+ * wrapping instead of touching or overlapping. */
+.heroLinks.heroLinks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--wf-s-2);
+}
+
 /* The banner chips (allergies, legal status, alert) wrap onto a second line instead of running off
  * the screen edge, and read in the body font: the kit's mono value face is for numbers. */
 .bannerTags.bannerTags {
@@ -1555,13 +1564,37 @@
   }
 }
 
-/* Risk (7 Nov 2026): a flag toggles Present; Not known only in All RAMP factors, beside each factor. */
+/* Risk (7 Nov 2026): a flag toggles Present; Not known only in All RAMP factors, beside each factor.
+ * All RAMP factors (Josh, 9 Nov 2026): one tidy row per factor, the factor filling the row and Not
+ * known in a fixed column at its end, so the Not known buttons line up instead of trailing each
+ * name at a ragged point. Two columns of rows where the drawer is wide enough. */
+.factorList.factorList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  gap: var(--wf-s-2) var(--wf-s-3);
+}
+
 .factorRow {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: var(--wf-s-1);
   min-width: 0;
+}
+
+.factorRow > .flagWrap {
+  display: flex;
+  min-width: 0;
+}
+
+.factorRow > .flagWrap > .flagChip.flagChip {
+  flex: 1 1 auto;
+  justify-content: flex-start;
+  min-width: 0;
+  height: auto;
+  min-height: 2.5rem;
+  white-space: normal;
+  text-align: left;
 }
 
 .notKnownChip {
@@ -1938,4 +1971,198 @@
   :global(html[data-wf-keyboard="open"]) .phoneBar {
     display: none;
   }
+}
+
+/* Summary slide-out (Josh, 9 Nov 2026). Copy and Copy as iSoBAR stacked at the right, so the
+   name and key line keep their width. */
+.docCopies {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+/* "Before you sign": one compact block. A head row, a thin bar, then a line per section. */
+.signCheck {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+.signCheckHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.signCheckTitle {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.signCheckHead .mono {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+
+.signCheckBar.signCheckBar {
+  width: 100%;
+}
+
+.signCheckList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.signCheckRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: 36px;
+  padding: var(--wf-s-1) var(--wf-s-2);
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: none;
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  line-height: 1.35;
+  color: var(--wf-ink-1);
+  text-align: left;
+}
+
+.signCheckRow > svg {
+  flex: none;
+  align-self: center;
+}
+
+button.signCheckRow {
+  cursor: pointer;
+}
+
+button.signCheckRow:hover {
+  background: var(--wf-surface-2);
+}
+
+button.signCheckRow:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: -2px;
+}
+
+.signCheckRow[data-done] {
+  align-items: center;
+  color: var(--wf-ink-3);
+}
+
+.signCheckName {
+  flex: none;
+  font-weight: 600;
+}
+
+.signCheckName .mono {
+  color: var(--wf-ink-3);
+}
+
+.signCheckRow[data-done] .signCheckName {
+  font-weight: 500;
+}
+
+.signCheckItems {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--wf-ink-2);
+}
+
+.signCheckCount {
+  flex: none;
+  margin-left: auto;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.signCheckSoft {
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+
+.signCheckMore.signCheckMore {
+  align-self: flex-start;
+}
+
+/* Phone: the open items drop under the section name and may wrap onto two lines. */
+@media (max-width: 39.9375rem) {
+  .signCheckRow:not([data-done]) {
+    flex-wrap: wrap;
+    row-gap: 0;
+    min-height: 44px;
+  }
+
+  .signCheckItems {
+    display: -webkit-box;
+    order: 3;
+    flex-basis: 100%;
+    padding-left: calc(8px + var(--wf-s-2));
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+}
+
+/* Previous triages: one row per signed triage, newest first. */
+.prevList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+.prevItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  min-height: 48px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  line-height: 1.35;
+}
+
+.prevItem + .prevItem {
+  border-top: 1px solid var(--wf-line);
+}
+
+.prevWhen {
+  flex: none;
+  min-width: 3.5rem;
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.prevFacts {
+  flex: 1 1 16rem;
+  min-width: 0;
+  color: var(--wf-ink-2);
+  overflow-wrap: anywhere;
 }

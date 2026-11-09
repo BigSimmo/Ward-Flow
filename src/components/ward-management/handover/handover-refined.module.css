@@ -205,15 +205,102 @@
   align-items: start;
 }
 
-/* The flow drawer's body: its sections sit on the drawer's own inset. */
+/* The flow drawer's body (Note 12): the drawer's scroll area has no inset of its own, so the body
+   carries the 16px side inset the head and foot use, and each section is a hairline-topped block. */
 .flowDrawerBody {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
+  padding: 12px 16px 16px;
 }
 
 .flowDrawerBody .section {
-  padding-inline: 0;
+  gap: 8px;
+  padding: 14px 0;
+}
+
+.flowDrawerBody .section:last-child {
+  padding-bottom: 4px;
+}
+
+.flowDrawerBody .stepper {
+  padding: 16px 0 14px;
+}
+
+.flowDrawerBody .route {
+  align-items: center;
+  padding: 2px 0;
+}
+
+.flowDrawerBody .pin {
+  align-self: start;
+  margin-top: 5px;
+}
+
+.flowDrawerBody .routeTime {
+  align-self: start;
+  padding: 1px 8px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+}
+
+.flowDrawerBody .facts {
+  gap: 12px 16px;
+}
+
+.flowDrawerBody .facts dd {
+  margin-top: 2px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* ISBAR reads in full: lines wrap instead of cutting off, each under a small letter badge. */
+.flowDrawerBody .isbar {
+  gap: 2px;
+}
+
+.flowDrawerBody .isbar div {
+  grid-template-columns: 22px 1fr;
+  gap: 10px;
+}
+
+.flowDrawerBody .isbar dt {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--wf-surface-2);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.flowDrawerBody .isbar dd {
+  line-height: 20px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.flowHeadTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.flowSteps {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.flowStepCount {
+  min-width: 4.5ch;
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-3);
+  text-align: center;
+  white-space: nowrap;
 }
 
 .tableCard {

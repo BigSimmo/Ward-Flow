@@ -31,9 +31,7 @@ import { useCapacityModel, type CapacityModel } from "./capacity-model";
 import { OtherSitesCounts } from "./capacity-other-sites";
 import { PhoneOverview } from "./capacity-phone-overview";
 import { PlannedCounts } from "./capacity-planned-counts";
-import { RoadTimeCard } from "./capacity-road-time-card";
 import { ScenarioDialog } from "./capacity-scenario-dialog";
-import { ShiftChecks } from "./capacity-shift-checks";
 import { useSiteEdWaiting } from "./capacity-site-ed";
 import { heldUpReleases } from "./capacity-held-up";
 import { shiftConfirmations, unchangedConfirmations } from "./shift-confirmations";
@@ -246,6 +244,7 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
           onHighlight={highlightFromHero}
           onSheet={() => setPopup({ kind: "sheet" })}
           onWard={openWard}
+          onAskWard={askWard}
         />
         {isPhone ? (
           <>
@@ -291,17 +290,10 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
               networkWide={networkWide}
             />
             {/* Capacity issue 6 (Josh, 3 Nov 2026): Planned moves, booked admissions and step downs in
-                one card, takes the full width; the nearest ready beds and this shift sit under it. */}
+                one card, full width. Josh's fifth notes (8 Nov 2026): the row under it (Nearest ready
+                beds, This shift) is gone; drive times are in the Mismatch drawer, the shift figures
+                in the hero strip and an unchanged count on its ward card. */}
             {planned}
-            <div className={styles.lowerRow} data-testid="capacity-lower-row">
-              <RoadTimeCard
-                rows={siteDesk ? [...model.networkRows, ...model.otherSiteRows] : mapModel.networkRows}
-                defaultEdId={model.roadTimeFromEdId}
-                selectedUnitId={selectedRow?.unit.id}
-                onSelectUnit={openWard}
-              />
-              <ShiftChecks model={mapModel} onAskWard={askWard} siteName={model.site?.name} />
-            </div>
           </>
         )}
         <WardPrototypeFooter

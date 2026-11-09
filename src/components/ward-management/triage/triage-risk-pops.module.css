@@ -1,0 +1,116 @@
+/* Triage banner pop-outs (Josh, 9 Nov 2026): Contacts and Community team, opened in place. */
+.popPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  /* The kit overlay caps at 360px, so stay inside it. */
+  box-sizing: border-box;
+  width: min(21rem, calc(100vw - 3rem));
+  padding: var(--wf-s-4);
+}
+
+.popTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-15);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.popList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.popItem,
+.popStack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.popItem b {
+  color: var(--wf-ink-1);
+}
+
+.popPhone {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.popTag {
+  display: inline-block;
+  margin-left: var(--wf-s-2);
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+
+.popQuiet {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+.popFacts {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-13);
+}
+
+.popFacts > div {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: var(--wf-s-2);
+}
+
+.popFacts dt {
+  color: var(--wf-ink-3);
+}
+
+.popFacts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--wf-ink-1);
+}
+
+.popLink {
+  align-self: flex-start;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-accent);
+}
+
+/* The team's name in the banner's id line: reads as the bold value it replaces, underlined to show it opens. */
+.teamLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.teamLink:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 2px;
+}

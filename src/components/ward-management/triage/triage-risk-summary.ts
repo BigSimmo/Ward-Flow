@@ -101,7 +101,7 @@ function restLine(state: TriageState, label: string, kind: "now" | "bg"): string
 /** The list a "Rest of …" answer belongs in: not present, not known or not assessed. */
 function restWord(value: string | null, kind: "now" | "bg"): string {
   if (value === "np") return "not present";
-  if (!value) return "rest not answered";
+  if (!value) return "other risks";
   return kind === "now" ? "not assessed" : "not known";
 }
 
@@ -235,7 +235,7 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
   const actions = state.actions.map((code) => pickText(PSOLIS_ACTIONS, code, t.actionOther));
 
   return {
-    kicker: "Mental health triage and risk · synthetic",
+    kicker: "Mental health triage and risk · SMHMR900 and SMHMR905 · synthetic",
     name: person.name,
     keyLine: [
       state.urgency ? `Urgency ${state.urgency}, ${TIER_LONG[state.urgency].toLowerCase()}` : "Urgency not chosen",
@@ -351,11 +351,17 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
               ["Current: present", nowPresent.length ? [names(nowPresent)] : ["None flagged"]],
               ...[...byArea.entries()].map(([area, list]) => [`  ${areaShortName(area)}`, [list.join(", ")]] as const),
               ...(by("now", "u").length ? [["Current: not known", [names(by("now", "u"))]] as const] : []),
-              [`Current: ${restWord(state.rest, "now")}`, [restLine(state, "Rest of current risk", "now")]],
+              [
+                `Current: ${restWord(state.rest, "now")}`,
+                state.rest ? [restLine(state, "Rest of current risk", "now")] : [{ quiet: "Not answered" }],
+              ],
               ...(otherNow.length ? [["Other current", [otherNow.join(", ")]] as const] : []),
               ["Past: present", pastValue],
               ...(by("bg", "u").length ? [["Past: not known", [names(by("bg", "u"))]] as const] : []),
-              [`Past: ${restWord(state.restPast, "bg")}`, [restLine(state, "Rest of history", "bg")]],
+              [
+                `Past: ${restWord(state.restPast, "bg")}`,
+                state.restPast ? [restLine(state, "Rest of history", "bg")] : [{ quiet: "Not answered" }],
+              ],
               ...(otherPast.length ? [["Other past", [otherPast.join(", ")]] as const] : []),
             ],
           },
@@ -365,9 +371,11 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
             rows: [
               [
                 "FDV screen",
-                [
-                  `${fdv ?? "not done"}${state.fdvAlone ? `; asked alone: ${state.fdvAlone === "yes" ? "yes" : "no, could not ask alone"}` : ""}`,
-                ],
+                !fdv && !state.fdvAlone
+                  ? [{ quiet: "Not done" }]
+                  : [
+                      `${fdv ?? "Not done"}${state.fdvAlone ? `; asked alone: ${state.fdvAlone === "yes" ? "yes" : "no, could not ask alone"}` : ""}`,
+                    ],
               ],
               [
                 "Risk may change quickly",

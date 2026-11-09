@@ -180,10 +180,10 @@ function excludedBeyondTodayCount(): number {
   return line ? Number(line.textContent?.match(/\d+/)?.[0]) : 0;
 }
 
-/** The "This shift" card's held-up release count. */
+/** The hero strip's held-up discharge count (it replaced the "This shift" card, 8 Nov 2026). */
 function heldUpCount(): number {
-  const section = screen.getByRole("region", { name: "Held-up discharges" });
-  return Number(/(\d+)\s*held-up/u.exec(section.textContent ?? "")?.[1]);
+  const chip = screen.getByTestId("capacity-hero-held-up");
+  return Number(/^\s*(\d+)/u.exec(chip.textContent ?? "")?.[1]);
 }
 
 function ConfirmCapacityProbe({ unitId, now }: { unitId: string; now: number }) {

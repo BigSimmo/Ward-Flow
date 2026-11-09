@@ -19,6 +19,7 @@ Planned discharges, held-up discharges first.
 
 - Chase overdue discharge dates. On Discharges, the line under the counts says how many dates have passed on how many wards. Press Ask N wards to send those wards one desk alert asking them to confirm or record a new date. To ask about one person, open them and use Message ward beside the hold-up.
 - Clear a held-up discharge. Open Discharges, where held-up discharges come first. Open one to see what is holding it up and which bed it frees, and update the hold-up once it is sorted.
+- Track the arrangements a discharge needs. On Discharges, open the discharge. Under Discharge arrangements, name the arrangement and who owns it, then Add as outstanding. Mark each one done, Not needed or Reconfirm as it moves. Nothing here frees the bed.
 
 In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
 

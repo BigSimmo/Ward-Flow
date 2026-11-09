@@ -8,12 +8,12 @@
 import { edById } from "@/components/ward-management/ward-sites";
 import { deskPlaceLabel } from "@/components/ward-management/shell/ward-bar-desk-place";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { holdInPlace, returnFocusInPlace, wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { Activity, ChevronDown, ChevronRight, Flag, X } from "lucide-react";
 
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
-import { hasOpenSheet } from "@/components/wf/sheet-focus";
+import { activatedControl, hasOpenSheet } from "@/components/wf/sheet-focus";
 import Link from "next/link";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -290,7 +290,11 @@ export function DelaysBoard({
   const isOpenGroup = (cause: DelayCause) => openGroups[cause] ?? OPEN_BY_DEFAULT.includes(cause);
 
   // The drawer (kit Sheet) moves focus in, traps it and returns it to the row on close.
+  // Note 7 (Josh, 8 Nov 2026): the control that opened the drawer. Closing returns focus there without
+  // scrolling, so a person opened from a graph or register does not throw the page to their table row.
+  const openerRef = useRef<Element | null>(null);
   const select = (id: string) => {
+    openerRef.current = activatedControl();
     rememberReturnRow(WAITING_ROUTE, id);
     setSelectedId((current) => (current === id ? null : id));
   };
@@ -298,14 +302,17 @@ export function DelaysBoard({
     const previous = selectedId;
     setSelectedId(null);
     if (previous !== null)
-      window.requestAnimationFrame(() =>
-        document.querySelector<HTMLButtonElement>(`[data-testid="delays-select-${previous}"]`)?.focus(),
+      returnFocusInPlace(openerRef.current, () =>
+        document.querySelector<HTMLButtonElement>(`[data-testid="delays-select-${previous}"]`),
       );
   }, [selectedId]);
   /** From a graph or the rail: open the person's group, show them, and bring the row into view. */
   const reveal = (id: string) => {
     const row = rows.find((candidate) => candidate.movement.id === id);
     if (row === undefined) return;
+    // Note 7: unfolding the person's group must not move the graph or register that was tapped.
+    openerRef.current = activatedControl();
+    holdInPlace(openerRef.current);
     // Opening someone the filters hide shows everyone first, so their row is there to open.
     if (!shown.some((candidate) => candidate.movement.id === id)) setFilters(NO_FILTERS);
     rememberReturnRow(WAITING_ROUTE, id);
