@@ -60,7 +60,7 @@ describe("ruling guardrail register", () => {
 
   it("does not count commented-out tests (non-vacuity)", () => {
     const code = liveCode(
-      'it("live", () => { expect(1).toBe(1); });\n// it("gone", () => { expect(2).toBe(2); });\n/* it("gone too") */',
+      'it("live", () => { expect(live()).toBe(true); });\n// it("gone", () => { expect(gone()).toBe(false); });\n/* it("gone too") */',
     );
     expect(code.match(/\bit\(/gu)).toHaveLength(1);
     expect(code.match(/\bexpect\(/gu)).toHaveLength(1);
