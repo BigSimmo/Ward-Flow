@@ -1045,7 +1045,7 @@
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
           "line": 469,
-          "sha256": "5e7e31087ede5a2feb70bde08640f288504058776d201aa8e6da90e6549ea57c"
+          "sha256": "bd6305c2734e0c289bc7986a8996cd8444fc3ec9afc0751063262b943adc7a02"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -1137,7 +1137,7 @@
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
           "line": 402,
-          "sha256": "5e7e31087ede5a2feb70bde08640f288504058776d201aa8e6da90e6549ea57c"
+          "sha256": "bd6305c2734e0c289bc7986a8996cd8444fc3ec9afc0751063262b943adc7a02"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
@@ -1859,7 +1859,7 @@
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
           "line": 477,
-          "sha256": "5e7e31087ede5a2feb70bde08640f288504058776d201aa8e6da90e6549ea57c"
+          "sha256": "bd6305c2734e0c289bc7986a8996cd8444fc3ec9afc0751063262b943adc7a02"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -4176,7 +4176,7 @@
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
           "line": 492,
-          "sha256": "5e7e31087ede5a2feb70bde08640f288504058776d201aa8e6da90e6549ea57c"
+          "sha256": "bd6305c2734e0c289bc7986a8996cd8444fc3ec9afc0751063262b943adc7a02"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",

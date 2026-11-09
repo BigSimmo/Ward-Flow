@@ -930,13 +930,15 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             holds no referral records, so a referral-backed request shows "not shared"
                             (nothing); a journey whose referral letter rides on the movement shows the
                             flags this ward's referral detail already shows. */}
-                        <CardSafetyTags
-                          movement={activeMovement}
-                          referrals={[]}
-                          patient={resolvePatientIdentity(activeMovement).patient}
-                          dayZero={dayZero}
-                          testId={`ward-answer-safety-tags-${activeMovement.id}`}
-                        />
+                        <div className={styles.safetyTagsRow}>
+                          <CardSafetyTags
+                            movement={activeMovement}
+                            referrals={[]}
+                            patient={resolvePatientIdentity(activeMovement).patient}
+                            dayZero={dayZero}
+                            testId={`ward-answer-safety-tags-${activeMovement.id}`}
+                          />
+                        </div>
 
                         {/* SBAR Narrative Sections */}
                         {isPhone ? null : sbarSections}
