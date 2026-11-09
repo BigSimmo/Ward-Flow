@@ -4,6 +4,7 @@ import { alertGroupOf, alertKindOf } from "@/components/ward-management/alerts/a
 import { wardClinicalRows } from "@/components/ward-management/bed-meeting/tv-clinical-derivations";
 import { patientMode } from "@/components/ward-management/patients/patient-mode";
 import { buildCensus } from "@/components/ward-management/search/patient-census";
+import { rosterStatus } from "@/components/ward-management/statistics/statistics-ward-phone";
 import { wardBedRoster } from "@/components/ward-management/ward/ward-screen-derivations";
 import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import {
@@ -180,12 +181,24 @@ describe("audit 6: a person marked absent without leave reaches every screen aft
     expect(row?.attention.some((item) => item.group === "missing")).toBe(true);
   });
 
+  it("the statistics ward rosters (desktop and phone) say absent without leave, as the census does", () => {
+    const { after, stay } = markMissing();
+    const status = rosterStatus(
+      after.admissions.find((admission) => admission.id === stay.id)!,
+      after.leaveBeds,
+    );
+    expect(status).toBe("Absent without leave");
+    // Someone on approved leave still reads On leave, so the label tells the two apart.
+    const onLeave = after.leaveBeds.find((bed) => !bed.absentWithoutLeave);
+    if (onLeave) {
+      const admission = after.admissions.find((candidate) => candidate.id === onLeave.admissionId)!;
+      expect(rosterStatus(admission, after.leaveBeds)).toBe("On leave");
+    }
+  });
+
   // Findings: these screens do not show the missing person. Each needs an owner decision before UI work.
   it.todo(
     "ward board (/ward-flow/board/[unitId]): tiles and the person panel (buildTiles, buildOccupants) take no held beds, so the missing person reads as an ordinary occupied bed; capacityBreakdown counts them under On leave",
-  );
-  it.todo(
-    "statistics ward roster (statistics-ward-screen.tsx Roster): a held bed reads On leave, so an absence without leave is shown as approved leave",
   );
   it.todo(
     "downtime pack (/reports/downtime, downtimePack): only bed counts, where the absence is folded into onLeave; no line names a missing person",
