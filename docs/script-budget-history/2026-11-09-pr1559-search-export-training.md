@@ -30,3 +30,7 @@ Main had since raised movement, bed meeting and statistics (#1582) and taken #15
 ## Hosted CI on 2fb3331 (merged with main 4105c7e)
 
 Hosted CI measured three screens over: Referrals 568.7 KB (limit 568.0), secure ward 602.8 KB (602.5) and ARM ED 658.9 KB (657.0). The Referrals queue and ED lists now carry this PR's lazy Export button and the shared go-to and saved-view code. Limits set to the hosted measurement plus 0.2 KB: Referrals 568.9 (+0.9 over main), secure ward 603.0 (+1.7 over main) and ARM ED 659.1 (+2.1 over main). Each stays within the 5 KB per-screen allowance.
+
+## Hosted CI on a67d87a (merged with main c890cda, after #1579)
+
+The secure ward measured 603.0 KB and ARM ED 659.1 KB, both a fraction over limits set to the same rounded value; Referrals measured exactly at its 568.9 limit. Limits now carry 0.2 KB headroom: Referrals 569.1 (+1.1 over main), secure ward 603.2 (+1.9) and ARM ED 659.3 (+2.3). Each stays within the 5 KB per-screen allowance.
