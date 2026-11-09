@@ -65,20 +65,18 @@ export function WaitingOwnerTiles({
                     {pressedHere ? "Showing" : "Show"}
                   </span>
                 )}
-                {/* Note 8, issue 1 (Josh, 8 Nov 2026): the longest wait is the tile's second headline,
-                    toned by its band, so the tile reads in one line instead of an inset box. */}
-                {isPhone || first === undefined ? null : (
-                  <b className={`${board.num} ${styles.ownLongest}`} data-band={waitBand(longest)}>
-                    <span className="sr-only">Longest wait </span>
-                    {splitDuration(longest)}
-                  </b>
-                )}
               </span>
               <BandBar bands={tile.bands} className={isPhone ? undefined : styles.ownBar} />
               {isPhone || first === undefined ? null : (
                 <span className={styles.ownFirst}>
                   <span className={styles.ownFirstLabel}>Longest</span>{" "}
                   <span className={styles.ownFirstName}>{patientOf(first.movement).formalName}</span>
+                  {/* Note 8, issue 1 (Josh, 8-9 Nov 2026): the longest wait sits beside the person it
+                      belongs to, toned by its band, so the tile reads in three short lines. */}
+                  <b className={`${board.num} ${styles.ownLongest}`} data-band={waitBand(longest)}>
+                    <span className="sr-only">waited </span>
+                    {splitDuration(longest)}
+                  </b>
                 </span>
               )}
               {/* Audit 11 Oct 2026, phone: one count per chip; the glyph alone flags the sub fact. */}

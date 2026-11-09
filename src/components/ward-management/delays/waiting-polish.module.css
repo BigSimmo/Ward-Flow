@@ -626,7 +626,7 @@ button.strip:disabled {
   gap: 6px;
 }
 .mxN.mxN {
-  font-size: 17px;
+  font-size: var(--wf-fs-16);
   font-weight: 650;
   line-height: 1.1;
 }
@@ -1123,6 +1123,7 @@ button.strip:disabled {
 }
 .ownLongest.ownLongest {
   margin-left: auto;
+  padding-left: 8px;
   font-size: var(--wf-fs-13);
   line-height: 1.1;
   color: var(--wf-ink-1);
@@ -1185,12 +1186,12 @@ button.strip:disabled {
   background: var(--wf-surface-2);
 }
 .regTabs.regTabs > .regTab {
-  grid-template-columns: auto auto auto;
+  display: inline-flex;
   flex: 1 1 auto;
   justify-content: center;
-  gap: 5px;
-  height: 32px;
-  padding: 0 7px;
+  gap: 6px;
+  height: 30px;
+  padding: 0 8px;
   border-color: transparent;
   background: none;
 }
@@ -1206,9 +1207,17 @@ button.strip:disabled {
   font-size: var(--wf-fs-12);
   white-space: nowrap;
 }
+/* At laptop width the rail is about 320px: icons go so name and count never collide. */
 .regTabs.regTabs .regTabIcon {
-  width: 13px;
-  height: 13px;
+  display: none;
+}
+.regTabs.regTabs .regTabCount {
+  color: var(--wf-ink-3);
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+.regTabs.regTabs > .regTab[aria-selected="true"] .regTabCount {
+  color: var(--wf-ink-1);
 }
 .regNote {
   margin: 0 0 var(--wf-s-2);

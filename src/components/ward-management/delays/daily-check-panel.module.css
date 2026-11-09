@@ -162,6 +162,8 @@
 .for {
   flex: none;
   color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
   font-size: var(--wf-fs-12);
 }
 
