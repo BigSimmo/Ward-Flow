@@ -1778,7 +1778,7 @@ export function ShortlistPanel({
           </section>
 
           {toFoot(
-            <footer className={`${styles.shortlistActions} ${shortlistStyles.actionToolbar}`}>
+            <footer className={`${styles.shortlistActions} ${shortlistStyles.actionToolbar}`} data-wf-foot-bar="">
               {referTargetNames.length === 0 ? null : (
                 <p className={`${styles.shortlistAutoAllocationNote} ${shortlistStyles.tabularNum}`}>
                   <span className={shortlistStyles.toWard} data-testid="ward-shortlist-to">
