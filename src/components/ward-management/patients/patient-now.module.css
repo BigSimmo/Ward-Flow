@@ -3220,7 +3220,20 @@
   }
 
   .v6HeroFacts.v6HeroFacts {
-    padding: 6px 0 2px;
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: var(--wf-s-3);
+    row-gap: 2px;
+    padding: 2px 0 0;
+  }
+
+  .v6HeroFacts .v6HeroFact.v6HeroFact {
+    flex: 0 1 auto;
+    flex-wrap: nowrap;
+  }
+
+  .v6HeroFacts .v6HeroFact.v6HeroFact + .v6HeroFact {
+    padding-left: var(--wf-s-3);
   }
 
   .v6HeroFacts .v6HeroFact.v6HeroFact {
