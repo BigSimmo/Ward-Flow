@@ -8,6 +8,8 @@
 import { useSyncExternalStore, type ReactNode } from "react";
 import { ChartGantt } from "lucide-react";
 
+import { IconTile } from "@/components/wf";
+
 import { Switch } from "@/components/wf";
 import s from "./movements-timeline-switch.module.css";
 
@@ -47,9 +49,8 @@ export function MovementsTimelineSwitch({ summary, children }: { summary: string
   return (
     <>
       <div className={s.bar} data-open={on ? "true" : undefined} data-testid="movements-timeline-switch">
-        <span className={s.icon}>
-          <ChartGantt size={16} strokeWidth={1.75} aria-hidden="true" />
-        </span>
+        {/* Movements audit item 9 (9 Nov 2026): the same icon tile and title as every section. */}
+        <IconTile icon={ChartGantt} />
         <span className={s.title}>Timeline</span>
         <span className={s.summary}>{summary}</span>
         <Switch checked={on} onCheckedChange={change} label="Show timeline" onText="Shown" offText="Hidden" />

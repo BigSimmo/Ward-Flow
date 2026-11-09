@@ -1337,23 +1337,31 @@
   min-width: 0;
 }
 
+/* Audit item 10 (9 Nov 2026): sentence case at body size, like the desktop stage names. */
 .phGroupTitle {
   flex: 1 1 auto;
   min-width: 0;
   margin: 0;
   overflow: hidden;
-  color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  letter-spacing: var(--wf-tr-caps, 0.06em);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
   text-overflow: ellipsis;
-  text-transform: uppercase;
   white-space: nowrap;
+}
+
+.phGroupLongest {
+  flex: none;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .phGroupCount {
   flex: none;
+  min-width: 2ch;
   color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
+  text-align: end;
 }
 
 /* Phone stage header as a toggle (device audit, 11 Oct 2026): the whole header row is the tap

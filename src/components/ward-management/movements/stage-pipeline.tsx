@@ -1,6 +1,8 @@
 import { useId } from "react";
 
-import { StatusGlyph, durMinutes } from "@/components/wf";
+import { Waypoints } from "lucide-react";
+
+import { IconTile, StatusGlyph, durMinutes } from "@/components/wf";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import type { JourneyStage } from "./movements-derivations";
 import { STAGE_SHORT } from "./movements-screen-helpers";
@@ -61,6 +63,8 @@ export function StagePipeline({
         </span>
       ) : null}
       <div className={styles.head}>
+        {/* Movements audit item 9 (9 Nov 2026): the same icon tile and title as every section. */}
+        <IconTile icon={Waypoints} />
         <h2 className={styles.title}>
           Journey stages
           <span className={styles.summary}>
