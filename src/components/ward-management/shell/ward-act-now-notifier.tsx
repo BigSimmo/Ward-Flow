@@ -5,14 +5,20 @@ import { useRouter } from "next/navigation";
 
 import { WARD_SHELL_ROLE, wardTasksAreActionableForRole } from "@/components/ward-management/ward-chrome-role";
 import { useAccessShellRole } from "./ward-access-store";
+import { useCanOpenHref } from "./ward-access";
+import { movementHref, unitHref } from "./ward-facade";
+import { alertsToShow, deskSeesStaffRequests, extraAlertAllowed, useAlertPreferences } from "./ward-alert-preferences";
+import { openStaffRequests } from "@/components/ward-management/staffing/staff-requests";
 
-import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
+import { activeTaskItems } from "@/components/ward-management/ward-act-now-items";
+import { minuteOfDay } from "@/components/ward-management/ward-clock";
+import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 
 import {
-  newActNowItems,
+  notificationSupport,
   setActNowAppBadge,
   showActNowNotification,
   useActNowNotificationPreference,
@@ -28,7 +34,15 @@ import {
 export function WardActNowNotifier() {
   const router = useRouter();
   // Same gate as the Tasks drawer (shell/ward-bar.tsx): the signed-in person's list, on every page.
-  const actionable = wardTasksAreActionableForRole(useAccessShellRole(WARD_SHELL_ROLE));
+  const shellRole = useAccessShellRole(WARD_SHELL_ROLE);
+  const actionable = wardTasksAreActionableForRole(shellRole);
+  // Item 20 (9 Nov 2026): this desk's choices on this device, and where a tap on one alert goes.
+  const [preferences] = useAlertPreferences(shellRole);
+  const {
+    dueSoon: wantsDueSoon,
+    quiet: { on: quietOn, start: quietStart, end: quietEnd },
+  } = preferences;
+  const canOpen = useCanOpenHref();
   const {
     movements,
     units,
@@ -42,6 +56,7 @@ export function WardActNowNotifier() {
     referrals,
     supportNotifications,
     plannedAdmissions,
+    staffRequests,
   } = useWardFlowSelect(
     "movements",
     "units",
@@ -55,6 +70,7 @@ export function WardActNowNotifier() {
     "referrals",
     "supportNotifications",
     "plannedAdmissions",
+    "staffRequests",
   );
   const now = useWardFlowClock();
   const [enabled] = useActNowNotificationPreference();
@@ -62,12 +78,12 @@ export function WardActNowNotifier() {
   // or a world that was reset, must not make every restored alert look new.
   const previous = useRef<{ generation: number; ids: Set<string> } | null>(null);
 
-  const actNow = useMemo(() => {
+  const active = useMemo(() => {
     if (!actionable) return [];
     // Audit A3-1: with the stays and leave beds, so an absence on an order is pushed too. The bar's
     // task source exactly, so this reuses the bar's list rather than building another on every page
     // load (F-11); the extra records add only warning rows, which the act-now filter drops.
-    return activeActNowItems(
+    return activeTaskItems(
       {
         movements,
         units,
@@ -97,6 +113,7 @@ export function WardActNowNotifier() {
     plannedAdmissions,
     now,
   ]);
+  const actNow = useMemo(() => active.filter((item) => item.tone === "danger"), [active]);
 
   useEffect(() => {
     if (!sessionAdopted) {
@@ -104,12 +121,95 @@ export function WardActNowNotifier() {
       return;
     }
     const prior = previous.current;
-    previous.current = { generation: worldGeneration, ids: new Set(actNow.map((item) => item.id)) };
+    const ids = new Set(active.map((item) => item.id));
+    previous.current = { generation: worldGeneration, ids };
     if (prior === null || prior.generation !== worldGeneration || !enabled) return;
-    showActNowNotification(newActNowItems(prior.ids, actNow), () => {
-      navigateWithDirtyGuard(() => router.push(WARD_ALERTS_HREF));
-    });
-  }, [actNow, enabled, router, sessionAdopted, worldGeneration]);
+    const fresh = active.filter((item) => !prior.ids.has(item.id));
+    const quiet = { on: quietOn, start: quietStart, end: quietEnd };
+    const shown = alertsToShow(fresh, { dueSoon: wantsDueSoon, staffRequests: false, quiet }, minuteOfDay(now));
+    // Quiet hours hold due-soon alerts rather than drop them: left unseen, they come through after.
+    if (shown.held > 0) for (const item of fresh) if (item.tone === "warning") ids.delete(item.id);
+    // One tap opens the one alert's own page where this desk may open it; a batch opens Alerts.
+    const open = (only: InboxItem | undefined) => {
+      const target = only?.href ?? (only?.movementId ? movementHref(only.movementId) : undefined);
+      const href = target !== undefined && canOpen(target) ? target : WARD_ALERTS_HREF;
+      navigateWithDirtyGuard(() => router.push(href));
+    };
+    showActNowNotification(shown.actNow, open, "act-now");
+    showActNowNotification(shown.dueSoon, open, "due-soon");
+  }, [
+    active,
+    enabled,
+    router,
+    sessionAdopted,
+    worldGeneration,
+    wantsDueSoon,
+    quietOn,
+    quietStart,
+    quietEnd,
+    canOpen,
+    now,
+  ]);
+
+  // Item 20 (9 Nov 2026): a new staff request from a ward, for desks that chose it. Quiet hours hold it.
+  const wantsStaff = preferences.staffRequests && deskSeesStaffRequests(shellRole);
+  const openStaff = useMemo(() => openStaffRequests({ staffRequests }, now), [staffRequests, now]);
+  const staffSeen = useRef<{ generation: number; ids: Set<string> } | null>(null);
+  useEffect(() => {
+    if (!sessionAdopted) {
+      staffSeen.current = null;
+      return;
+    }
+    const prior = staffSeen.current;
+    const ids = new Set(openStaff.map((record) => record.id));
+    staffSeen.current = { generation: worldGeneration, ids };
+    if (prior === null || prior.generation !== worldGeneration || !enabled || !wantsStaff) return;
+    const fresh = openStaff.filter((record) => !prior.ids.has(record.id));
+    if (
+      !extraAlertAllowed(minuteOfDay(now), {
+        dueSoon: false,
+        staffRequests: true,
+        quiet: { on: quietOn, start: quietStart, end: quietEnd },
+      })
+    ) {
+      // Held, not dropped: still unseen when quiet hours end.
+      for (const record of fresh) ids.delete(record.id);
+      return;
+    }
+    const wards = [...new Set(fresh.map((record) => record.unitId))];
+    const [only] = fresh;
+    if (!only || notificationSupport() !== "granted") return;
+    try {
+      // Ward and count only: never a patient. Tap opens the ward.
+      const ward = units.find((unit) => unit.id === only.unitId)?.name ?? "A ward";
+      const body = wards.length === 1 ? `${ward} asked for more staff` : `${wards.length} wards asked for more staff`;
+      const notification = new window.Notification("Ward Flow: staff requested", {
+        body: `${body}. Synthetic demo data.`,
+        tag: "ward-flow-staff",
+      });
+      notification.onclick = () => {
+        window.focus();
+        const href = wards.length === 1 ? unitHref(only.unitId) : WARD_ALERTS_HREF;
+        navigateWithDirtyGuard(() => router.push(canOpen(href) ? href : WARD_ALERTS_HREF));
+        notification.close();
+      };
+    } catch {
+      // No notification here; the request still shows on the ward and Capacity.
+    }
+  }, [
+    openStaff,
+    enabled,
+    wantsStaff,
+    sessionAdopted,
+    worldGeneration,
+    quietOn,
+    quietStart,
+    quietEnd,
+    now,
+    units,
+    router,
+    canOpen,
+  ]);
 
   // PWA plan item 8: the same act-now count on the Home Screen icon. A count only, never names.
   const actNowCount = actNow.length;

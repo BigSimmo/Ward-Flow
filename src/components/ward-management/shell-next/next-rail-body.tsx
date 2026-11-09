@@ -441,6 +441,8 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   // first ("East Metro 87%, North Metro 86%, ..."), then which places are over the line.
   const capacityCardLabel = `Bed alerts: ${overLine.label}. ${capacityRowsLabel}${metroSpoken}, ${readyBeds} ${readyBeds === 1 ? "bed" : "beds"} ready now, ${cardScopeNote(capacityRows, deskAccess, service)}.${capacityRowsOver(capacityRows)}`;
   const handoverText = shiftProgress.handoverDue ? null : durMinutes(shiftProgress.remainingMinutes);
+  // Feature 15 (9 Nov 2026): within 30 minutes of handover the open rail's card offers the Shift digest.
+  const digestSoon = !shiftProgress.handoverDue && shiftProgress.remainingMinutes <= 30;
 
   const setOpen = useCallback((next: boolean) => {
     setRailOpenPreference(next);
@@ -578,7 +580,9 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const handoverCountdown = (
     <>
       <ClipboardList aria-hidden="true" className={styles.shiftClockIcon} strokeWidth={1.75} />
-      <span className={styles.shiftTimerLabel}>Handover</span>{" "}
+      <span className={styles.shiftTimerLabel}>
+        {digestSoon && handoverCardLinks ? "Read digest" : "Handover"}
+      </span>{" "}
       <span className={styles.shiftTimeBadge}>
         {handoverText === null ? (
           "due now"
@@ -857,13 +861,15 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
             (`ward-bar.tsx`), which opens the demo controls; the rail no longer repeats it. */}
           {!showHandover ? null : handoverCardLinks ? (
             <Link
-              href={handoverHref()}
+              href={digestSoon ? `${handoverHref()}?digest=1` : handoverHref()}
               className={styles.shiftTimerLink}
-              title="Open shift handover board"
+              title={digestSoon ? "Read the shift digest" : "Open shift handover board"}
               aria-label={
                 handoverText === null
                   ? `Handover due now. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
-                  : `Handover in ${handoverText}. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
+                  : digestSoon
+                    ? `Read digest in ${handoverText}. Handover countdown: ${shiftProgress.countdownStr}. Open the shift digest.`
+                    : `Handover in ${handoverText}. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
               }
             >
               {handoverCountdown}

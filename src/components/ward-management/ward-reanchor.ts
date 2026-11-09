@@ -199,6 +199,9 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "lapsesAt",
   // Closing-the-loop (package E): a home service return's request, answer and review day.
   "requestedAt",
+  // Staff needed (feature 10): a request's shift start and when it was closed.
+  "shiftStartAt",
+  "closedAt",
   "answeredAt",
   "nextReviewAt",
   // WS-15: when a closed bed was reopened. The mark keeps it so a stay seated during the closure
