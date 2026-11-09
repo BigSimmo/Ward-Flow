@@ -20,7 +20,9 @@ checklist on top of this one: [`SCREEN-DEFINITION-OF-DONE.md`](SCREEN-DEFINITION
       [Task receipts](../task-receipts.md) are optional.
 - [ ] **Rulings are in the decision log.** If Josh settled a question, add a new D entry to
       [`decisions.md`](decisions.md) in the same PR, quoting his words. Do not start new owner files.
-      Never manufacture clinical approval.
+      Never manufacture clinical approval. When Josh answers a decision card or rules in chat, the
+      thread that asked writes the entry the same day, in its open PR, even if the build comes later
+      (D-107). Memory notes point to the D-number; they are never the only record.
 - [ ] **Staff are told about changes they will see.** If the change alters what staff see or do,
       add one file to `src/components/ward-management/help/whats-new/`, as
       [git-publication.md](../agents/git-publication.md#normal-pushes-and-prs) describes. If it
