@@ -37,7 +37,7 @@ type GitRunner = (args: string[], root: string) => string;
 function createFixture() {
   const root = mkdtempSync(join(tmpdir(), "dead-code-candidate-"));
   fixtureRoots.push(root);
-  for (const directory of ["docs/superpowers/plans", "docs/superpowers/specs", "tests", "src", "scripts"]) {
+  for (const directory of ["docs/ward-flow/plans", "tests", "src", "scripts"]) {
     mkdirSync(join(root, ...directory.split("/")), { recursive: true });
   }
   writeFileSync(join(root, "src", "candidate.ts"), "export const candidate = 1;\n", "utf8");
@@ -65,7 +65,7 @@ describe("dead-code candidate safety classifications", () => {
   it("refuses a symbol named by an unfinished executable plan", () => {
     const root = createFixture();
     writeFileSync(
-      join(root, "docs", "superpowers", "plans", "unfinished.md"),
+      join(root, "docs", "ward-flow", "plans", "unfinished.md"),
       "# Build candidate\n\n- [ ] Add the candidate consumer\n",
       "utf8",
     );
@@ -80,7 +80,7 @@ describe("dead-code candidate safety classifications", () => {
   it("warns but does not independently refuse a completed plan mention", () => {
     const root = createFixture();
     writeFileSync(
-      join(root, "docs", "superpowers", "plans", "complete.md"),
+      join(root, "docs", "ward-flow", "plans", "complete.md"),
       "# Build candidate\n\n- [x] Add the candidate consumer\n",
       "utf8",
     );
@@ -453,8 +453,7 @@ describe("dead-code candidate diff parsing", () => {
     const fileReads = new Map<string, number>();
     const sentinels = [
       "docs/guides/sentinel.md",
-      "docs/superpowers/plans/sentinel.md",
-      "docs/superpowers/specs/sentinel.md",
+      "docs/ward-flow/plans/sentinel.md",
       "tests/sentinel.ts",
       "scripts/sentinel.mjs",
     ];
@@ -526,7 +525,7 @@ describe("dead-code candidate diff parsing", () => {
     for (const searchRoot of ["tests", "src", "scripts"]) {
       expect(directoryReads.get(resolve(root, searchRoot)), searchRoot).toBe(1);
     }
-    for (const nestedPlanRoot of ["docs/superpowers/plans", "docs/superpowers/specs"]) {
+    for (const nestedPlanRoot of ["docs/ward-flow/plans"]) {
       expect(directoryReads.get(resolve(root, nestedPlanRoot)), nestedPlanRoot).toBe(2);
     }
     for (const sentinel of sentinels) {
