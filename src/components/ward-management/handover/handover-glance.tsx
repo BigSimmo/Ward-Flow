@@ -133,7 +133,7 @@ export function HandoverSignOffChip({
       aria-label={signed === null ? `Sign off ${done}/${total}, ${done} of ${total} checks clear` : undefined}
     >
       <Check size={16} strokeWidth={1.75} aria-hidden="true" />
-      {signed === null ? "Sign off" : `Signed ${signed}`}
+      {signed === null ? "Sign off" : `Signed ${signed}`}{" "}
       {signed === null ? <b className={styles.signCount}>{`${done}/${total}`}</b> : null}
     </button>
   );

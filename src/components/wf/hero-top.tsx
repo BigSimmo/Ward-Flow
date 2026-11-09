@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { type ReactNode, useId } from "react";
+import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 
 import { buttonClass } from "./button";
 import { cx } from "./cx";
@@ -40,37 +40,48 @@ export type HeroFigureItem = Press & {
 export function HeroFigures({ items, label = "Figures" }: { items: HeroFigureItem[]; label?: string }) {
   return (
     <div className={styles.figs} role="group" aria-label={label}>
-      {items.map((item) => {
-        const linked = Boolean(item.href || item.onClick);
-        const labelClass = cx(styles.figLabel, (linked || item.underline) && styles.figLink);
-        return (
-          <p key={item.id} className={styles.fig} data-tone={item.tone} data-testid={item.testId}>
-            <b className={styles.figValue}>
-              {item.value}
-              {item.unit ? <small className={styles.figUnit}>{item.unit}</small> : null}
-            </b>{" "}
-            {item.href ? (
-              <Link href={item.href} className={labelClass} data-testid={item.linkTestId} data-wf-fig-label="">
-                {item.label}
-              </Link>
-            ) : item.onClick ? (
-              <button
-                type="button"
-                className={cx(labelClass, styles.figButton)}
-                onClick={item.onClick}
-                aria-pressed={item.pressed}
-                data-testid={item.linkTestId}
-                data-wf-fig-label=""
-              >
-                {item.label}
-              </button>
-            ) : (
-              <span className={labelClass}>{item.label}</span>
-            )}
-          </p>
-        );
-      })}
+      {items.map((item) => (
+        <HeroFigure key={item.id} item={item} />
+      ))}
     </div>
+  );
+}
+
+function HeroFigure({ item }: { item: HeroFigureItem }) {
+  const id = useId();
+  const valueId = `${id}-value`;
+  const labelId = `${id}-label`;
+  const linked = Boolean(item.href || item.onClick);
+  const labelClass = cx(styles.figLabel, (linked || item.underline) && styles.figLink);
+  // Only the label is the link or button, but its name is the value and the label ("2 ready now"),
+  // so a screen reader hears the figure, not only its word.
+  const named = { id: labelId, "aria-labelledby": `${valueId} ${labelId}` };
+  return (
+    <p className={styles.fig} data-tone={item.tone} data-testid={item.testId}>
+      <b className={styles.figValue} id={valueId}>
+        {item.value}
+        {item.unit ? <small className={styles.figUnit}>{item.unit}</small> : null}
+      </b>{" "}
+      {item.href ? (
+        <Link href={item.href} className={labelClass} data-testid={item.linkTestId} data-wf-fig-label="" {...named}>
+          {item.label}
+        </Link>
+      ) : item.onClick ? (
+        <button
+          type="button"
+          className={cx(labelClass, styles.figButton)}
+          onClick={item.onClick}
+          aria-pressed={item.pressed}
+          data-testid={item.linkTestId}
+          data-wf-fig-label=""
+          {...named}
+        >
+          {item.label}
+        </button>
+      ) : (
+        <span className={labelClass}>{item.label}</span>
+      )}
+    </p>
   );
 }
 
@@ -111,7 +122,13 @@ export function HeroAct({ tone, title, sub, action, testId, titleTestId, kind }:
   ) : null;
   const buttonClassName = cx(buttonClass({ variant: "light", size: "sm" }), styles.actButton);
   // With a short phone label both words are in the markup; the full label is the spoken name everywhere.
-  const name = action?.phoneLabel ? action.label : undefined;
+  // When the phone word is not part of it ("All" for "Show everyone"), the name starts with that word,
+  // so the name holds what each width shows (WCAG 2.5.3, label in name).
+  const name = action?.phoneLabel
+    ? action.label.toLowerCase().includes(action.phoneLabel.toLowerCase())
+      ? action.label
+      : `${action.phoneLabel}, ${action.label}`
+    : undefined;
   return (
     <div className={styles.act} data-tone={tone} data-testid={testId} data-kind={kind} data-wf-hero-next="">
       {tone === "calm" ? null : (
@@ -191,7 +208,9 @@ export function HeroQuickChips({ label, items }: { label: string; items: HeroChi
             <span>{item.label}</span>
             {item.count !== undefined ? (
               <b className={styles.chipCount} data-tone={item.countTone ?? "warning"}>
-                <span aria-hidden="true">{item.count}</span>
+                {/* The leading space keeps the label and count apart in the chip's text (not drawn: a
+                    flex item trims it), so a spoken name that repeats them matches it (WCAG 2.5.3). */}
+                <span aria-hidden="true"> {item.count}</span>
                 <span className="sr-only">
                   , {item.count}
                   {item.countLabel ? ` ${item.countLabel}` : ""}
@@ -249,6 +268,25 @@ export type HeroBandCell = Press & {
   testId?: string;
 };
 
+/** True while the list is wider than its box (watched only when `watch` is set). */
+function useScrollsSideways(ref: { current: HTMLElement | null }, watch: boolean): boolean {
+  const [scrolls, setScrolls] = useState(false);
+  useEffect(() => {
+    const list = ref.current;
+    if (!watch || !list) {
+      setScrolls(false);
+      return;
+    }
+    const measure = () => setScrolls(list.scrollWidth > list.clientWidth + 1);
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, [ref, watch]);
+  return scrolls;
+}
+
 export type HeroBandProps = {
   /** The band's small caps label ("Waiting in ED"). */
   title: ReactNode;
@@ -265,6 +303,9 @@ export type HeroBandProps = {
 /** One slim strip of cells on the slate, hairlines between; it scrolls sideways with a fade on a phone. */
 export function HeroBand({ title, aside, asideHref, cells, variant = "inline", testId }: HeroBandProps) {
   const titleId = useId();
+  const listRef = useRef<HTMLUListElement>(null);
+  const pressable = cells.some((cell) => cell.href || cell.onClick);
+  const scrolls = useScrollsSideways(listRef, !pressable);
   return (
     <div className={styles.band} data-testid={testId}>
       <div className={styles.bandHead}>
@@ -282,24 +323,37 @@ export function HeroBand({ title, aside, asideHref, cells, variant = "inline", t
           )
         ) : null}
       </div>
-      <ul className={styles.cells} aria-labelledby={titleId} data-variant={variant}>
+      <ul
+        ref={listRef}
+        className={styles.cells}
+        aria-labelledby={titleId}
+        data-variant={variant}
+        // A phone scrolls the band sideways. With no link or button in it, the list itself takes
+        // focus then, so a keyboard can scroll it too (WCAG 2.1.1).
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+        tabIndex={scrolls ? 0 : undefined}
+      >
         {cells.map((cell) => {
+          // The spaces before each part are not drawn (a flex item trims them), but they keep the words
+          // apart in the cell's text, so a spoken name that repeats them matches it (WCAG 2.5.3).
           const body = (
             <>
               <span className={styles.cellTop}>
-                <span className={styles.cellLabel}>{cell.label}</span>
+                <span className={styles.cellLabel}>{cell.label}</span>{" "}
                 <span className={styles.cellValue} data-tone={cell.tone}>
                   {cell.value}
                 </span>
               </span>
               {cell.sub ? (
                 <span className={styles.cellSub} data-tone={cell.subTone}>
+                  {" "}
                   {cell.subTone === "danger" ? <StatusGlyph tone="danger" size={9} /> : null}
                   {cell.sub}
                 </span>
               ) : null}
               {cell.note ? (
                 <span className={styles.cellNote} data-tone={cell.noteTone}>
+                  {" "}
                   {cell.note}
                 </span>
               ) : null}

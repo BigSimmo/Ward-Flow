@@ -283,7 +283,7 @@ describe("Handover page", () => {
       .getAllByRole("row")
       .filter((row) => row.hasAttribute("data-row-id")).length;
     // Page tops (9 Nov 2026): a top figure highlights its rows.
-    await user.click(within(screen.getByTestId("ward-handover-hero")).getByRole("button", { name: /^act now/ }));
+    await user.click(within(screen.getByTestId("ward-handover-hero")).getByRole("button", { name: /^\d+ act now/ }));
     const after = within(screen.getByTestId("ward-handover-sheet"))
       .getAllByRole("row")
       .filter((row) => row.hasAttribute("data-row-id")).length;

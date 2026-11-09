@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ChartColumn, ChevronDown, Clock, Presentation, Printer, Search } from "lucide-react";
 
 import {
@@ -236,32 +236,34 @@ export function CapacityHero({
           />
         }
         pill={
-          <HeroPill
-            tone={firstToConfirm || oldestStale ? "warning" : undefined}
-            testId="capacity-hero-confirmed"
-            text={
-              <>
-                <b className={styles.pillCount}>
-                  {confirmations.confirmed} of {confirmations.total}
-                </b>{" "}
-                {firstToConfirm
-                  ? `confirmed · ${firstToConfirm.name} ${durMinutes(Math.max(0, now - firstToConfirm.allocatable.confirmedAt))} old`
-                  : "counts confirmed this shift"}
-              </>
-            }
-            action={
-              firstToConfirm && onAskWard
-                ? {
-                    label: "Ask",
-                    ariaLabel: `Ask ${firstToConfirm.name} to confirm its beds`,
-                    onClick: () => onAskWard(firstToConfirm.id),
-                    testId: "capacity-hero-ask",
-                  }
-                : countTarget && (firstToConfirm || oldestStale)
-                  ? { label: "Open", onClick: () => onWard(countTarget), testId: "capacity-hero-open-count" }
-                  : undefined
-            }
-          />
+          <CountsRegion phone={isPhone}>
+            <HeroPill
+              tone={firstToConfirm || oldestStale ? "warning" : undefined}
+              testId="capacity-hero-confirmed"
+              text={
+                <>
+                  <b className={styles.pillCount}>
+                    {confirmations.confirmed} of {confirmations.total}
+                  </b>{" "}
+                  {firstToConfirm
+                    ? `confirmed · ${firstToConfirm.name} ${durMinutes(Math.max(0, now - firstToConfirm.allocatable.confirmedAt))} old`
+                    : "counts confirmed this shift"}
+                </>
+              }
+              action={
+                firstToConfirm && onAskWard
+                  ? {
+                      label: "Ask",
+                      ariaLabel: `Ask ${firstToConfirm.name} to confirm its beds`,
+                      onClick: () => onAskWard(firstToConfirm.id),
+                      testId: "capacity-hero-ask",
+                    }
+                  : countTarget && (firstToConfirm || oldestStale)
+                    ? { label: "Open", onClick: () => onWard(countTarget), testId: "capacity-hero-open-count" }
+                    : undefined
+              }
+            />
+          </CountsRegion>
         }
         // Wider screens: the chips sit right of the figures (Home's act place) with the pill under the
         // figures; a phone stacks figures, pill, then chips (page tops, Josh 9 Nov 2026).
@@ -291,7 +293,9 @@ export function CapacityHero({
                   ),
                   tone: short ? "warning" : "ok",
                   note: `${row.waiting} waiting${tomorrow}`,
-                  ariaLabel: `${title}: ${gapShort(row.gap)} now, ${row.waiting} waiting · ${row.bedsThatFit} ready that fit${tomorrow}. Who is waiting and where`,
+                  // The spoken name starts with the cell's visible words in order (WCAG 2.5.3, label in
+                  // name), then adds the beds that fit and what pressing it opens.
+                  ariaLabel: `${title}: ${gapShort(row.gap)}, ${row.waiting} waiting${tomorrow}. ${row.bedsThatFit} ready that fit. Who is waiting and where`,
                   onClick: () => setOpenKind(row.id),
                   testId: `capacity-mismatch-${row.id}`,
                 };
@@ -314,6 +318,15 @@ export function CapacityHero({
       />
     </Hero>
   );
+}
+
+/**
+ * Wider screens: the counts pill and its Ask are the "Bed counts confirmed" region, as the hero's
+ * shift figure was. A phone leaves the region to the Overview's This shift card, so the name stays
+ * unique on each screen size.
+ */
+function CountsRegion({ phone, children }: { phone: boolean; children: ReactNode }) {
+  return phone ? children : <section aria-label="Bed counts confirmed">{children}</section>;
 }
 
 /** The chip that opened the bed finder gets focus back when it closes. */

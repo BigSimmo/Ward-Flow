@@ -506,7 +506,7 @@ describe("Out of area redesign", () => {
     fireEvent.click(more);
     expect(screen.getByRole("radio", { name: /Everyone/ })).toBeChecked();
     // Page tops: the hero's no return plan figure highlights them.
-    expect(screen.getByRole("button", { name: /^no return plan$/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^\d+ no return plan$/ })).toBeInTheDocument();
   });
 });
 

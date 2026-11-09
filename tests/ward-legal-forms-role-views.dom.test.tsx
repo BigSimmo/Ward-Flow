@@ -43,8 +43,8 @@ describe("Legal forms redesign, coordinator desk", () => {
     renderScreen();
     expect(screen.getByText(TYPED_TIME_KEY)).toBeInTheDocument();
     // Page tops (9 Nov 2026): the top's figures highlight rows; each label names what it counts.
-    expect(screen.getByRole("button", { name: /^within \d+/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "no time written" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^\d+ within \d+/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^\d+ no time written$/u })).toBeInTheDocument();
     // Page tops (9 Nov 2026): the act row names the form to act on first, or says none is close.
     expect(screen.getByTestId("ward-legal-act")).toHaveTextContent(/passed|within|None passed/i);
     expect(screen.getByRole("button", { name: "Record a form" })).toBeInTheDocument();

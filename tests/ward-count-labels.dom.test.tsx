@@ -117,9 +117,9 @@ describe("count labels say what they count", () => {
     // Page tops (9 Nov 2026): the top's figures; "urgent" (flagged urgent) is its own figure.
     const strip = screen.getByTestId("ward-handover-hero");
     // Audit 24-4 decision 5 (Josh): the figure's spoken name gives people and alerts separately.
-    const act = within(strip).getByRole("button", { name: /^act now ?\(\d+ (?:person|people), \d+ alerts?\)$/u });
+    const act = within(strip).getByRole("button", { name: /^\d+ act now ?\(\d+ (?:person|people), \d+ alerts?\)$/u });
     expect(act).toHaveTextContent(new RegExp(`, ${activeActNowItems(state, NOW_ANCHOR).length} alerts?\\)$`, "u"));
-    expect(within(strip).getByRole("button", { name: "urgent" })).toBeInTheDocument();
+    expect(within(strip).getByRole("button", { name: /^\d+ urgent$/u })).toBeInTheDocument();
   });
 
   // NA3-03 (audit 26 Oct 2026): and only people still in an ED, as Waiting counts them.

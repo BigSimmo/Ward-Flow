@@ -677,7 +677,8 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                   value: entry.percent === null ? "—" : `${Math.round(entry.percent)}%`,
                   note: `${entry.ready} ready`,
                   pressed: service === entry.id,
-                  ariaLabel: `${entry.name}: ${entry.percent === null ? "share in use not recorded" : `${Math.round(entry.percent)}% in use`}, ${entry.ready} ready. Highlight its wards`,
+                  // The name starts with the cell's visible words (WCAG 2.5.3, label in name).
+                  ariaLabel: `${serviceShortName(entry.name)} ${entry.percent === null ? "—" : `${Math.round(entry.percent)}%`}, ${entry.ready} ready: ${entry.name}, ${entry.percent === null ? "share in use not recorded" : `${Math.round(entry.percent)}% in use`}. Highlight its wards`,
                   onClick: () => setService(service === entry.id ? "all" : (entry.id as ServiceFilter)),
                 }))}
               />

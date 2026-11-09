@@ -346,7 +346,9 @@ describe("Alerts phone Act now filter (page tops, 9 Nov 2026)", () => {
     );
     try {
       renderScreen();
-      const figure = within(screen.getByTestId("ward-alerts-figure-act")).getByRole("button", { name: "act now" });
+      const figure = within(screen.getByTestId("ward-alerts-figure-act")).getByRole("button", {
+        name: /^\d+ act now$/u,
+      });
       expect(figure).toHaveAttribute("aria-pressed", "false");
       fireEvent.click(figure);
       expect(figure).toHaveAttribute("aria-pressed", "true");

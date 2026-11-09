@@ -87,7 +87,7 @@ export function wardHeroTopParts({
       ]}
     />
   );
-  const action = { label: "Open this shift", phoneLabel: "Show", onClick: openShiftTodo, testId: "ward-hero-act-now" };
+  const action = { label: "Open this shift", phoneLabel: "Open", onClick: openShiftTodo, testId: "ward-hero-act-now" };
   const wardAct =
     actNowCount > 0 ? (
       <HeroAct tone="danger" title={`${actNowCount} ${actNowCount === 1 ? "task" : "tasks"} due now`} action={action} />

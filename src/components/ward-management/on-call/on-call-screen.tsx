@@ -529,7 +529,8 @@ export function OnCallScreen() {
               </>
             ),
             onClick: () => pick(entry.id),
-            ariaLabel: `${keyLineLabel(entry)}, ${number ?? "email only"}${until ? `, ${until}` : ""}`,
+            // The name starts with the cell's visible words (WCAG 2.5.3, label in name).
+            ariaLabel: `${keyName(entry)} ${number ?? "Email only"}${until ? ` ${until}` : ""}, ${keyLineLabel(entry)}`,
             testId: `ward-on-call-key-${entry.id}`,
           };
         })}

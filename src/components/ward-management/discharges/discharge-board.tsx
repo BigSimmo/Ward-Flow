@@ -799,7 +799,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                     }}
                   >
                     {/* Josh, 30 Oct: one word for a release with a blocker, "Held up", at every width. */}
-                    <span>{key === "blocked" ? HELD_UP : kpiCardLabel(key, population)}</span>
+                    <span>{key === "blocked" ? HELD_UP : kpiCardLabel(key, population)}</span>{" "}
                     <span className={pageStyles.filterCount}>{counts[key]}</span>
                   </button>
                 ))}

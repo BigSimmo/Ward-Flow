@@ -63,7 +63,7 @@ describe("Handover title count (NA2-01)", () => {
     // CB-3 (axe 4.14): the name starts with the face's own "n Act now".
     // Page tops (9 Nov 2026): the top's "act now" figure; its value sits beside the label, whose
     // spoken name adds the people and the alerts.
-    const pill = within(screen.getByTestId("ward-handover-hero")).getByRole("button", { name: /^act now ?\(/ });
+    const pill = within(screen.getByTestId("ward-handover-hero")).getByRole("button", { name: /^\d+ act now ?\(/ });
     const match = /^act now \((\d+) (?:person|people), (\d+) alerts?\)$/.exec(pill.textContent ?? "");
     expect(match, pill.textContent ?? "").not.toBeNull();
     const [, people, alerts] = match!.map(Number);

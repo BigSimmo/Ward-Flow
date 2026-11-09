@@ -194,9 +194,11 @@ describe("the Capacity screen", () => {
       const tile = mismatchTile(row);
       // The cell shows who is waiting; its spoken name carries both figures.
       expect(tile, `tile ${row.id}`).toHaveTextContent(`${row.waiting} waiting`);
-      expect(tile.getAttribute("aria-label"), `tile ${row.id}`).toContain(
-        `${row.waiting} waiting · ${row.bedsThatFit} ready that fit`,
-      );
+      const name = tile.getAttribute("aria-label") ?? "";
+      expect(name, `tile ${row.id}`).toContain(`${row.waiting} waiting`);
+      expect(name, `tile ${row.id}`).toContain(`${row.bedsThatFit} ready that fit`);
+      // Label in name (WCAG 2.5.3): the spoken name starts with the cell's visible bed type.
+      expect(name.startsWith(`${shortNeed(row.need)}: `), `tile ${row.id}`).toBe(true);
     }
   });
 

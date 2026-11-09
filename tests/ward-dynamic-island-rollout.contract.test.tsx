@@ -165,8 +165,8 @@ describe("5. Live Target Screen Component Mounts", () => {
 
     // Page tops (Josh, 9 Nov 2026): the slate top's figures are the handover HUD.
     const hud = screen.getByTestId("ward-handover-hero");
-    expect(within(hud).getByRole("button", { name: /^act now/ })).toBeDefined();
-    expect(within(hud).getByRole("button", { name: "urgent" })).toBeDefined();
+    expect(within(hud).getByRole("button", { name: /^\d+ act now/ })).toBeDefined();
+    expect(within(hud).getByRole("button", { name: /^\d+ urgent$/u })).toBeDefined();
   });
 
   it("Mounts DischargeBoard with WardFlowProvider and tests interactive filter clicking", () => {
@@ -204,7 +204,7 @@ describe("5. Live Target Screen Component Mounts", () => {
 
     // Every count names its noun (Josh, 30 Oct 2026). Page tops (9 Nov 2026): the top's "within"
     // figure is the urgency highlight.
-    const actNow = screen.getByRole("button", { name: /^within \d+/u });
+    const actNow = screen.getByRole("button", { name: /^\d+ within \d+/u });
     fireEvent.click(actNow);
     expect(actNow.getAttribute("aria-pressed")).toBe("true");
   });

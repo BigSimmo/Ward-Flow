@@ -310,7 +310,7 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
   it("highlights by dimming the other rows by colour, keeps every row and counts the highlighted rows", () => {
     renderScreen();
     const before = document.querySelectorAll("[data-record-key]").length;
-    fireEvent.click(screen.getByRole("button", { name: "no time written" }));
+    fireEvent.click(screen.getByRole("button", { name: /^\d+ no time written$/u }));
     expect(document.querySelectorAll("[data-record-key]").length).toBe(before);
     const dimmed = document.querySelectorAll('[data-record-key][data-dim="true"]').length;
     expect(dimmed).toBe(before - noDeadline.length);

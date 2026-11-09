@@ -243,7 +243,8 @@ export function EdOverview({
                     sub: department.longest,
                     subTone: department.breaches > 0 ? ("danger" as const) : undefined,
                     href: edLink(department.id),
-                    ariaLabel: `${department.name}: ${department.waiting} waiting, longest ${department.longest}${department.breaches > 0 ? `, ${department.breaches} over target` : ""}${department.id === departmentId ? ", this department" : ""}`,
+                    // The name starts with the cell's visible words (WCAG 2.5.3, label in name).
+                    ariaLabel: `${department.code} ${department.waiting}, ${department.longest}: ${department.name}, ${department.waiting} waiting, longest ${department.longest}${department.breaches > 0 ? `, ${department.breaches} over target` : ""}${department.id === departmentId ? ", this department" : ""}`,
                     testId: `ward-ed-switch-${department.id}`,
                   })),
                   ...(clearEds.length > 0

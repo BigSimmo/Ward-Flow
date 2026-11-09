@@ -915,7 +915,8 @@ export function PatientSearchPage() {
       label,
       value,
       onClick: () => setTab("history"),
-      ariaLabel: `${label} today ${value}, opens history`,
+      // The name starts with the cell's visible words (WCAG 2.5.3, label in name).
+      ariaLabel: `${label} ${value} today, opens history`,
     });
     return (
       <HeroBand

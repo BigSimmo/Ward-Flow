@@ -252,7 +252,7 @@ export function AlertsHero({
               }
               action={{
                 label: "Next alert",
-                phoneLabel: "Open",
+                phoneLabel: "Next",
                 onClick: handleNext,
                 testId: "ward-alerts-next-action",
               }}
