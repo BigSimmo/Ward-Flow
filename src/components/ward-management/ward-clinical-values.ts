@@ -83,7 +83,7 @@ const SIGNED_BY_JOSH_21_OCT = { status: "signed", signedBy: "Josh (product owner
 const SIGNED_BY_JOSH_23_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-23" } as const;
 /**
  * D-106 (Josh, 9 Nov 2026): he kept the medical trip bed review at 24 hours and signed the General
- * observation interval (D-72 item 5).
+ * observation interval (D-72 item 5). He also signed the medical clearance tracker's defaults that day (D-110).
  */
 const SIGNED_BY_JOSH_9_NOV = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-11-09" } as const;
 
@@ -179,6 +179,15 @@ export const CLINICAL_VALUES = {
     name: "Held psychiatric bed flagged for review after a medical trip expected to last",
     group: "Emergency department waits",
     value: ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS,
+    unit: "hours",
+  },
+  edClearanceNotRecorded: {
+    // Josh sign-off 9 Nov 2026: an amber flag, never red; the clinician records clearance, the app
+    // never infers it.
+    ...SIGNED_BY_JOSH_9_NOV,
+    name: "ED patient with no medical clearance recorded flagged amber, from arrival, after",
+    group: "Emergency department waits",
+    value: 6,
     unit: "hours",
   },
 

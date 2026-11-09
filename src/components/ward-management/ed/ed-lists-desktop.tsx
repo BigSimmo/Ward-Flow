@@ -16,6 +16,7 @@ import { recordedEdDeparture } from "@/components/ward-management/ward-ed-presen
 import { formTitleForCode } from "@/lib/form-register";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { ReferralIntakeSummary } from "@/components/ward-management/referrals/referral-intake-summary";
+import { psychReviewStage } from "./ed-psych-review";
 import handover from "./ed-handover.module.css";
 
 type ListKey = "review" | "expected" | "forms";
@@ -238,15 +239,70 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                 const person = who(m);
                 const minutes = minutesHere(m);
                 const tone = minutes >= ctx.accessTarget ? "danger" : minutes >= 480 ? "warning" : undefined;
+                // Psychiatry review tracker (Josh, 9 Nov 2026): the stage as recorded, in the row's
+                // own place. The list keeps its order; the stage never moves a row.
+                const stage = psychReviewStage(m, now, minutes);
+                const reviewButton = (
+                  label: string,
+                  spoken: string,
+                  event: Parameters<typeof recordEdStep>[0],
+                  testId: string,
+                ) => (
+                  <button
+                    key={testId}
+                    type="button"
+                    className={buttonClass({ variant: "sec", size: "sm" })}
+                    data-testid={`${testId}-${m.id}`}
+                    aria-label={`${spoken} for ${person.formalName}`}
+                    onClick={() => recordEdStep(event)}
+                  >
+                    {label}
+                  </button>
+                );
                 return (
-                  <tr key={m.id}>
+                  <tr key={m.id} data-testid={`ward-ed-review-row-${m.id}`}>
                     <td>{name(m.id, person.formalName, person.umrn)}</td>
                     <td className={handover.listMono}>{patientBay(m.id).replace(/^Bay /, "")}</td>
                     <td>
                       {m.cohort} · {m.sex}
                     </td>
                     <td>
-                      <span className={handover.listTag}>{outstandingItem(m).label}</span>
+                      <span className={handover.listReview}>
+                        <span className={handover.listReviewText}>
+                          <span className={handover.listTag}>{outstandingItem(m).label}</span>
+                          <span className={handover.listReviewLine} data-testid={`ward-ed-review-stage-${m.id}`}>
+                            {stage.line}
+                          </span>
+                        </span>
+                        {stage.next[0] === "ask" ? (
+                          reviewButton(
+                            "Ask for review",
+                            "Ask for review",
+                            { type: "REQUEST_PSYCH_REVIEW", role: "ed", now, movementId: m.id },
+                            "ward-ed-review-ask",
+                          )
+                        ) : stage.next.length > 0 ? (
+                          // Either grade can be seen first, so both stay offered until one is recorded.
+                          <span className={handover.listReviewSeen}>
+                            {stage.next.length > 1 ? <span className={handover.listReviewSeenBy}>Seen by</span> : null}
+                            {stage.next.map((grade) => {
+                              const title = grade === "registrar" ? "Registrar" : "Consultant";
+                              return reviewButton(
+                                stage.next.length > 1 ? title : `${title} seen`,
+                                `${title} seen`,
+                                {
+                                  type: "RECORD_PSYCH_REVIEW_SEEN",
+                                  role: "ed",
+                                  now,
+                                  movementId: m.id,
+                                  grade: grade as "registrar" | "consultant",
+                                },
+                                `ward-ed-review-${grade}`,
+                              );
+                            })}
+                          </span>
+                        ) : null}
+                      </span>
                     </td>
                     <td className={handover.alignEnd}>
                       <span className={handover.listTime}>

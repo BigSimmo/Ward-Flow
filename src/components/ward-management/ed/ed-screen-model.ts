@@ -729,7 +729,9 @@ export type EdStepEvent = Extract<
       | "RECORD_LEGAL_FORM_RECEIVED"
       | "RECORD_LEGAL_FORM_CODE"
       | "RECORD_ED_PRESENTATION"
-      | "HANDOVER_READY";
+      | "HANDOVER_READY"
+      | "REQUEST_PSYCH_REVIEW"
+      | "RECORD_PSYCH_REVIEW_SEEN";
   }
 >;
 
@@ -764,5 +766,9 @@ function edStepFact(event: EdStepEvent): string {
       return event.presentations.length ? "Presentation recorded" : "Presentation cleared";
     case "HANDOVER_READY":
       return "Marked handover ready";
+    case "REQUEST_PSYCH_REVIEW":
+      return "Psychiatric review asked";
+    case "RECORD_PSYCH_REVIEW_SEEN":
+      return event.grade === "registrar" ? "Recorded registrar seen" : "Recorded consultant seen";
   }
 }

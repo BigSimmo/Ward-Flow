@@ -36,6 +36,9 @@ import {
   yesNo,
 } from "./ward-referral-drawer-model";
 import { Field, SelectBox, Choice, CardHead } from "./ward-referral-drawer-fields";
+import { CarriedNote } from "./referral-carried-note";
+import { ReferralAlternativesGroup } from "./referral-alternatives-group";
+import { carriedNotesFor } from "./referral-carry-over";
 import { NO_SENDING_WARD, type WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 import { COMMUNITY_REFERRAL_PURPOSES } from "@/components/ward-management/ward-model-referral-parts";
 import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
@@ -50,6 +53,7 @@ const COMMUNITY_PURPOSE_LABELS = {
 /** D-77 short form: what a community referral is for, then when the team should first make contact. */
 function CommunityPurposeAndFollowUp({ s }: { s: WardReferralDrawerState }) {
   const { sectionId, communityPurpose, setCommunityPurpose, communityNeeds, setCommunityNeeds, setFlowError } = s;
+  const carriedNotes = carriedNotesFor(s.carry, s);
   return (
     <>
       <section className={styles.refCard} data-testid="ward-referral-community-purpose">
@@ -98,20 +102,27 @@ function CommunityPurposeAndFollowUp({ s }: { s: WardReferralDrawerState }) {
               value={yesNo(communityNeeds.homeVisit)}
               onChange={(v) => setCommunityNeeds((n) => ({ ...n, homeVisit: v === "Yes" }))}
             />
-            <Choice
-              legend="Interpreter"
-              name={`${sectionId}-interpreter`}
-              options={YES_NO}
-              value={yesNo(communityNeeds.interpreter)}
-              onChange={(v) => setCommunityNeeds((n) => ({ ...n, interpreter: v === "Yes" }))}
-            />
-            <Choice
-              legend="Contact the carer"
-              name={`${sectionId}-carer`}
-              options={YES_NO}
-              value={yesNo(communityNeeds.carerContact)}
-              onChange={(v) => setCommunityNeeds((n) => ({ ...n, carerContact: v === "Yes" }))}
-            />
+            {/* The carried note stays in the same grid cell as its field. */}
+            <div>
+              <Choice
+                legend="Interpreter"
+                name={`${sectionId}-interpreter`}
+                options={YES_NO}
+                value={yesNo(communityNeeds.interpreter)}
+                onChange={(v) => setCommunityNeeds((n) => ({ ...n, interpreter: v === "Yes" }))}
+              />
+              <CarriedNote note={carriedNotes.interpreter} field="interpreter" />
+            </div>
+            <div>
+              <Choice
+                legend="Contact the carer"
+                name={`${sectionId}-carer`}
+                options={YES_NO}
+                value={yesNo(communityNeeds.carerContact)}
+                onChange={(v) => setCommunityNeeds((n) => ({ ...n, carerContact: v === "Yes" }))}
+              />
+              <CarriedNote note={carriedNotes.carerContact} field="carer" />
+            </div>
           </div>
         </div>
       </section>
@@ -174,6 +185,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
     communityNeeds,
     storyError,
   } = s;
+  const carriedNotes = carriedNotesFor(s.carry, s);
   const community = destType === "community";
   // The location and referring service block only when the sending desk could not fill them
   // (`referralError`), so they are asked, marked and named here only then.
@@ -366,6 +378,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                   <option value={LEGAL_STATUS_NOT_YET_RECORDED}>{LEGAL_STATUS_NOT_YET_RECORDED}</option>
                 </select>
               </SelectBox>
+              <CarriedNote note={carriedNotes.legalStatus} field="legal" />
             </Field>
             {community ? null : (
               <fieldset className={styles.radioField}>
@@ -387,6 +400,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                     </label>
                   ))}
                 </div>
+                <CarriedNote note={carriedNotes.security} field="security" />
               </fieldset>
             )}
           </div>
@@ -594,6 +608,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                   />
                   <span aria-hidden="true">{highAcuity ? "On" : "Off"}</span>
                 </span>
+                <CarriedNote note={carriedNotes.highAcuity} field="acuity" />
               </div>
             </div>
             {genderReview ? (
@@ -606,6 +621,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
           </div>
         </section>
       )}
+      <ReferralAlternativesGroup sectionId={sectionId} a={s.alternatives} />
       {destType === "ed" && (
         <section className={styles.refCard} data-testid="ward-referral-needs">
           <CardHead icon={Ambulance} title="ED needs">

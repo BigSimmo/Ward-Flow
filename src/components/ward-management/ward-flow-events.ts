@@ -110,6 +110,7 @@ export type { WardFlowRole } from "@/components/ward-management/ward-flow-roles"
 export { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { ObservationLevelEvent } from "@/components/ward-management/ward-flow-observation-events";
+import type { ReviewReadyWardFlowEvent } from "./ward-flow-review-ready-events";
 import type { RestrictivePracticeWardFlowEvent } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
 // Closing the loop, package D (24 Oct 2026).
 import type { LoopCheckWardFlowEvent } from "@/components/ward-management/loop-checks/ward-loop-checks";
@@ -867,6 +868,8 @@ export type WardFlowEvent =
     }
   // D-72 (21 Oct 2026): seclusion, restraint and incidents, operational only.
   | RestrictivePracticeWardFlowEvent
+  // Psychiatry review tracker and ward ready for next patient (Josh, 9 Nov 2026).
+  | ReviewReadyWardFlowEvent
   // Closing the loop, package D (24 Oct 2026): cancelled-move checks, acceptance conditions,
   // restriction reviews and closure transition marks. Records only.
   | LoopCheckWardFlowEvent
@@ -1530,6 +1533,11 @@ export type WardFlowEvent =
        * Absent means nobody has recorded one.
        */
       tentativeDiagnosis?: TentativeDiagnosisBlock;
+      /**
+       * Feature 26: alternatives to admission marked before a ward bed request. Fixed-list choices
+       * only; see `Referral.alternativesConsidered`. Absent means none marked.
+       */
+      alternativesConsidered?: readonly import("./referrals/referral-alternatives").AlternativeConsidered[];
     }
   | {
       type: "HOLD_REFERRAL_BED";

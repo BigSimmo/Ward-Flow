@@ -71,6 +71,9 @@ const CLINICAL_VALUE_NOTES = {
       "D-106 (Josh, 9 Nov 2026): figure kept and signed; the held bed is flagged for review, never freed by itself. The 14 Oct 2026 ruling that set this figure had no D entry",
     alternatives: [{ value: 48, where: "FD-19, 30 Aug 2026" }],
   },
+  edClearanceNotRecorded: {
+    source: "Josh sign-off 9 Nov 2026, medical clearance tracker defaults",
+  },
   bedAlertLine: {
     source: "Josh, v6 shell boards 02 and 03b, 7 Oct 2026; D-24 had taken the eighty five line off until sourced",
     alternatives: [

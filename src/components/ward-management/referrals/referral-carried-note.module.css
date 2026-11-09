@@ -1,0 +1,8 @@
+/* Feature 39: the small source note beside a carried value. Text only; no colour, no edge. */
+.note {
+  margin: 4px 0 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  line-height: 1.35;
+}

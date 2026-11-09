@@ -132,6 +132,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-107](#d-107-working-rules-and-documentation-from-the-9-november-2026-audit-9-november-2026)                                                          | Working rules from the 9 Nov audit                                                   | Active                                           |
 | [D-108](#d-108-six-bed-flow-features-keep-d-93-and-d-72-ed-long-wait-next-steps-9-november-2026)                                                        | Six features: keep D-93 and D-72, ED next steps                                      | Active                                           |
 | [D-109](#d-109-homes-bed-alert-line-tests-the-whole-number-shown-9-november-2026)                                                                       | Home bed alert line tests the shown whole %                                          | Active                                           |
+| [D-110](#d-110-ed-and-referral-flow-neutral-fit-line-clearance-timing-and-alternatives-to-admission-9-november-2026)                                    | ED and referral fit line, clearance timing, alternatives                             | Active                                           |
 | [D-112](#d-112-phone-bottom-bar-the-floating-bar-9-november-2026)                                                                                       | Phone bottom bar: the floating bar                                                   | Active                                           |
 | [D-114](#d-114-allow-pull_request_target-for-three-workflows-only-9-november-2026)                                                                      | Allow pull_request_target for three workflows only                                   | Active                                           |
 
@@ -1372,6 +1373,16 @@ is inferred.
 - **Decision:** the statewide figure at the top of Home, and every bed alert dot and count, reads "at risk" when the whole percentage it shows is at or above the bed alert line, and "beds in use" below it. So 84.5% to 84.9% shows "85% at risk", never "85% beds in use".
 - **How:** `coordinator-screen.tsx` compares `Math.round(statewideOccupancy)` with the bed alert line, and `isBedAlert` (`ward-service-bed-alerts.ts`) rounds the same way, so the rail, phone menu and executive bed alert dots and counts match. Built in PR #1561.
 - **Boundary:** a prototype display rule on synthetic data; approves no merge or release.
+
+## D-110. ED and referral flow: neutral fit line, clearance timing and alternatives to admission (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`). **Decided by:** Josh, in the Ward Flow project: "Show fit, keep neutral order" on a decision card, then "Yes to all recommendations" for medical clearance and alternatives to admission, then "Yes, one PR".
+- **Decision:**
+  - Smart bed match is a plain fit line on every shortlist ward card (sex, security, age, special care: met, not met, to check). The order stays neutral; there is no ranking or best match, so the never-build rule against best-match suggestions stands.
+  - Medical clearance is still recorded yes or no by a clinician. Ward Flow shows time since arrival or time to clearance, marks it amber after 6 hours with nothing recorded (`edClearanceNotRecorded` in `docs/ward-flow/clinical-values.md`), and adds a median time to clearance in ED Statistics.
+  - Alternatives to admission are an unranked, optional list on ward-bed referrals from ED or community: crisis team home visit, MH Hospital in the Home, step-up/step-down unit, short-stay unit and next-day community follow-up. Each can be marked not suitable, tried or declined by patient. It never blocks Send. Service names are placeholders until checked against local services.
+- **Why:** these cut the work of placing a patient without letting the app rank patients or wards, or make a clinical call.
+- **Boundary:** prototype rules on synthetic data; approves no merge or release.
 
 ## D-112. Phone bottom bar: the floating bar (9 November 2026)
 
