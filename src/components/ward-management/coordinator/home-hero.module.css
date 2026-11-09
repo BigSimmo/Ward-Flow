@@ -392,3 +392,15 @@
     border-color: CanvasText;
   }
 }
+
+/* Desktop (option C): the tabs sit on the light page, so the band keeps its own curved lip. */
+@media (min-width: 64rem) {
+  .hero.hero.hero::after {
+    display: block;
+  }
+
+  .hero.hero.hero[data-band],
+  .hero.hero.hero[data-wf-hero="band"]:not([data-band]) {
+    padding-bottom: calc(var(--wf-s-4) + var(--wf-band-lip, 22px));
+  }
+}

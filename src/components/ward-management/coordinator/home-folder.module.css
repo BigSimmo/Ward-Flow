@@ -189,39 +189,6 @@
   --wf-focus-ring: var(--wf-hero-ink);
 }
 
-/* Desktop: the stage tabs share the first row, so they sit on the slate too. */
-@media (min-width: 64rem) {
-  .nav.nav [role="tablist"] [role="tab"] {
-    color: var(--wf-hero-ink-2);
-  }
-
-  .nav.nav [role="tablist"] [role="tab"]:hover {
-    color: var(--wf-hero-ink);
-    background: var(--wf-on-hero-fill);
-  }
-
-  .nav.nav [role="tablist"] [role="tab"][aria-selected="true"] {
-    color: var(--wf-hero-ink);
-    background: var(--wf-on-hero-hl);
-    outline-color: var(--wf-on-hero-line);
-  }
-
-  .nav.nav [role="tablist"] [role="tab"] > :last-child {
-    background: transparent;
-    color: var(--wf-hero-ink-3);
-  }
-
-  .nav.nav [role="tablist"] {
-    margin-top: 2px;
-  }
-
-  .rule.rule {
-    align-self: start;
-    margin-top: 10px;
-    background: var(--wf-on-hero-div);
-  }
-}
-
 /* Phone: the row runs edge to edge as before, without its canvas strip, since the folder draws it. */
 @media (max-width: 46.4375rem) {
   .nav.nav {
@@ -339,4 +306,157 @@
   letter-spacing: -0.03em;
   /* Optically on the label's x-height centre, not its line box. */
   transform: translateY(0.5px);
+}
+
+/*
+ * Desktop (Josh, 9 Nov 2026, option C): underline tabs on the light page. The slate ends with its own
+ * curved lip above the tabs, so the folder outline steps aside. Two levels in one line: Needs you and
+ * Flow as plain words, the chosen one in full ink over a slim accent underline on one hairline; after
+ * a short divider the stage filters, quieter, with the chosen stage on a soft track. Phone and tablet
+ * keep the folder.
+ */
+@media (min-width: 64rem) {
+  .nav.nav {
+    /* Up to sit just under the slate's lip (Home's column gap plus a little). */
+    margin-top: calc(-1 * var(--wf-s-3) - 14px);
+    margin-bottom: var(--wf-s-3);
+    min-height: 52px;
+    padding: 0 2px;
+    column-gap: 20px;
+    align-items: center;
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .shape,
+  .back {
+    display: none;
+  }
+
+  .switch.switch.switch {
+    align-self: stretch;
+    height: 52px;
+    min-height: 52px;
+    margin-left: 0;
+    gap: 28px;
+  }
+
+  .switch.switch.switch > * {
+    position: relative;
+    height: 52px;
+    min-height: 52px;
+    padding: 0 1px;
+    color: var(--wf-ink-3);
+    font: 500 var(--wf-fs-15) / 20px var(--wf-font);
+    letter-spacing: -0.012em;
+  }
+
+  .switch.switch.switch > *:hover {
+    color: var(--wf-ink-1);
+  }
+
+  .switch.switch.switch > [aria-checked="true"] {
+    color: var(--wf-ink-1);
+    font-weight: 600;
+  }
+
+  .switch.switch.switch > [aria-checked="true"]::after {
+    content: "";
+    display: block;
+    position: absolute;
+    top: auto;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    height: 2.5px;
+    border-radius: 2px;
+    background: var(--wf-accent);
+  }
+
+  .switch.switch.switch > * > :last-child {
+    color: var(--wf-ink-3);
+  }
+
+  .switch.switch.switch > [aria-checked="true"] > :last-child {
+    color: var(--wf-ink-2);
+  }
+
+  .nav[data-act] .switch.switch.switch > :first-child > :last-child,
+  .nav[data-act] .switch.switch.switch > [aria-checked="true"]:first-child > :last-child {
+    background: var(--wf-danger);
+    color: var(--wf-surface);
+  }
+
+  .switch.switch.switch > *:focus-visible,
+  .switch.switch.switch > :not([aria-checked="true"]):focus-visible {
+    outline-color: var(--wf-focus-ring);
+  }
+
+  .rule.rule {
+    align-self: center;
+    width: 1px;
+    height: 18px;
+    margin: 0 2px;
+    background: var(--wf-line-2);
+  }
+
+  .nav.nav > :last-child {
+    align-self: center;
+    color: var(--wf-ink-3);
+  }
+
+  .more.more.more {
+    height: 32px;
+    border-radius: 9px;
+    color: var(--wf-ink-3);
+  }
+
+  .more.more.more:hover {
+    color: var(--wf-ink-1);
+    background: var(--wf-track);
+  }
+
+  .more.more.more:focus-visible {
+    --wf-focus-ring: var(--wf-accent);
+  }
+}
+
+/* Every size: the stage filters sit on the light page as quiet words, the chosen stage on a soft
+   track, so the second level reads alike wherever it sits. */
+@media all {
+  .nav.nav [role="tablist"] {
+    align-self: center;
+    margin-top: 0;
+    gap: 2px;
+  }
+
+  .nav.nav [role="tablist"] [role="tab"] {
+    height: 32px;
+    min-height: 32px;
+    padding: 0 11px;
+    border-radius: 9px;
+    background: transparent;
+    outline: 0;
+    color: var(--wf-ink-3);
+    font: 500 var(--wf-fs-14) / 18px var(--wf-font);
+  }
+
+  .nav.nav [role="tablist"] [role="tab"]:hover {
+    color: var(--wf-ink-1);
+    background: var(--wf-track);
+  }
+
+  .nav.nav [role="tablist"] [role="tab"][aria-selected="true"] {
+    color: var(--wf-ink-1);
+    font-weight: 600;
+    background: var(--wf-track);
+    box-shadow: inset 0 0 0 1px var(--wf-line);
+  }
+
+  .nav.nav [role="tablist"] [role="tab"] > :last-child {
+    color: var(--wf-ink-3);
+  }
+
+  .nav.nav [role="tablist"] [role="tab"][aria-selected="true"] > :last-child {
+    color: var(--wf-ink-2);
+  }
 }
