@@ -24,6 +24,8 @@ import { revealWardOption } from "@/components/ward-management/ward-scroll";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { ageSexLabel, RISK_FLAG_LABELS, formatDob } from "./ward-referral-drawer-model";
 import { Field, SelectBox, CardHead } from "./ward-referral-drawer-fields";
+import { CarriedNote } from "./referral-carried-note";
+import { carriedNotesFor, withCarriedLegal } from "./referral-carry-over";
 import { ReferralCatchmentCard } from "./ward-referral-drawer-catchment";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
@@ -117,6 +119,9 @@ export function ReferralPatientStep({
     setOriginSiteCode,
     setSourceKind,
   } = s;
+  // Feature 39: a carried legal status and expiry show in the summary while the form still holds them.
+  const carriedNotes = carriedNotesFor(s.carry, s);
+  const legalShown = withCarriedLegal(currentPatient, carriedNotes, s.legalStatus);
   // WS-08 (H-0973): this person already has an open ED journey that starts somewhere else.
   const journeyElsewhere = openJourney && openJourney.siteCode !== originSiteCode ? openJourney : undefined;
   const originName = siteDirectory.find((site) => site.code === originSiteCode)?.emergencyDepartment?.name;
@@ -713,6 +718,7 @@ export function ReferralPatientStep({
                     ))}
                   </select>
                 </SelectBox>
+                <CarriedNote note={carriedNotes.ageBand} field="age-band" />
                 {ageBand === "Adult" && ageBandNote ? (
                   <p className={styles.fieldHint} data-testid="ward-referral-age-band-note">
                     {ageBandNote}
@@ -730,8 +736,9 @@ export function ReferralPatientStep({
           >
             <div className={styles.priorityCell}>
               <p className={styles.eyebrow}>Legal order</p>
-              <p className={styles.priorityValue}>{currentPatient.legalStatus}</p>
-              <p className={styles.priorityMeta}>Expiry {currentPatient.recordedExpiry}</p>
+              <p className={styles.priorityValue}>{legalShown.legalStatus}</p>
+              <p className={styles.priorityMeta}>Expiry {legalShown.recordedExpiry}</p>
+              <CarriedNote note={carriedNotes.legalStatus} field="legal-summary" />
               <p className={styles.priorityMeta}>
                 <StatusGlyph tone="neutral" size={9} />
                 <LegalLimitsNotChecked variant="tag" />

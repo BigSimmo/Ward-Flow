@@ -702,6 +702,10 @@ describe("front-door contract — an ED may close to all admissions, never refus
     EVALUATE_ARRIVAL_LATENESS: false,
     RELEASE_AND_REOPEN_SEARCH: false,
     CLEAR_EXPECT_FLAG: false,
+    // Psychiatry review tracker and ward wait list (9 Nov 2026): records times; refuses no one.
+    REQUEST_PSYCH_REVIEW: false,
+    RECORD_PSYCH_REVIEW_SEEN: false,
+    MARK_WARD_READY_FOR_NEXT: false,
     RAISE_EXPECT_FLAG: false,
     FLAG_LEGAL_MISMATCH: false,
     EVALUATE_LEAVE_BED_WARNINGS: false,
@@ -1258,6 +1262,9 @@ describe("Referral privacy — structural", () => {
     // ALLOWED_CONTACT_ENTRY_FIELDS below.
     "ownerHistory",
     "contactLog",
+    // Feature 26 (Josh, 9 Nov 2026): alternatives to admission marked before a bed request. Each
+    // entry is a listed option and a listed outcome only (`alternativesConsideredError`); nothing typed.
+    "alternativesConsidered",
   ].sort();
   const ALLOWED_OWNER_ENTRY_FIELDS = ["at", "by", "owner"];
   const ALLOWED_CONTACT_ENTRY_FIELDS = ["at", "by", "contact", "outcome"];
@@ -1528,8 +1535,11 @@ describe("Referral privacy — structural", () => {
           by: "Bed coordinator",
         },
       ],
+      // Feature 26: a listed option and a listed outcome, nothing else.
+      alternativesConsidered: [{ option: "short_stay_unit", outcome: "tried" }],
     };
     expect(Object.keys(canonical).sort()).toEqual(ALLOWED_REFERRAL_FIELDS);
+    expect(Object.keys(canonical.alternativesConsidered[0]!).sort()).toEqual(["option", "outcome"]);
     // Exact equality on the arm as well: `Required<Referral>` forces every OUTER field to be
     // supplied, but it says nothing about the fields inside `destination`, so without this the
     // exhaustive half of the guard would stop being exhaustive exactly where the union begins.
@@ -1570,6 +1580,13 @@ describe("Referral privacy — structural", () => {
             `${referral.id}'s ${addressing.destination.kind} arm carries "${key}"`,
           ).toContain(key);
         }
+      }
+      // Feature 26: each marked alternative carries its option and outcome and nothing else.
+      for (const entry of referral.alternativesConsidered ?? []) {
+        expect(Object.keys(entry).sort(), `${referral.id}'s alternative carries extra keys`).toEqual([
+          "option",
+          "outcome",
+        ]);
       }
     }
   });

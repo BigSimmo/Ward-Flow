@@ -352,6 +352,8 @@ export function reducePlacementEvent(
         // `releasePulledBedAndAdmission`.
         allocatableLocked: bedKindTaken === "locked" ? unit.allocatableLocked - 1 : unit.allocatableLocked,
       };
+      // Ward wait list (Josh, 9 Nov 2026): a pull into this ward answers its "ready for next patient".
+      delete updatedUnit.readyForNextAt;
       /**
        * The patient becomes a person in a bed, built in the same shape the seed builds so every
        * consumer renders it.

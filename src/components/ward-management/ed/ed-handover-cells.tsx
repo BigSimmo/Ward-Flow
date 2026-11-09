@@ -11,6 +11,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import { formTitleForCode } from "@/lib/form-register";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
+import { edClearanceTime } from "./ed-clearance-time";
 import { ED_PRESENTATION_CHOICES, type EdPresentation } from "./ed-presentation";
 import type { EdStepEvent } from "./ed-screen-model";
 import handover from "./ed-handover.module.css";
@@ -225,6 +226,7 @@ export function ChecksCell({
   movementId,
   patientName,
   clearance,
+  arrivedAt,
   reviewed,
   revokedNotice,
   earlierExaminations,
@@ -235,6 +237,8 @@ export function ChecksCell({
   movementId: string;
   patientName: string;
   clearance: { cleared: boolean; at: Instant } | undefined;
+  /** The movement's `openedAt`: the clearance line counts from arrival (Josh sign-off, 9 Nov 2026). */
+  arrivedAt: Instant;
   reviewed: boolean;
   /** The revoked-while-bed-held notice, word for word, when it applies. */
   revokedNotice: string | undefined;
@@ -243,12 +247,22 @@ export function ChecksCell({
   onOpenRecord: () => void;
   children?: ReactNode;
 }) {
+  // Medical clearance tracker (Josh sign-off, 9 Nov 2026): elapsed since arrival, amber after the
+  // signed six hours with none recorded. The clinician records clearance; nothing here infers it.
+  const clearanceTime = edClearanceTime(arrivedAt, clearance, now);
   const lines: CheckLine[] = [
     {
       id: "clearance",
-      tone: clearance === undefined ? "neutral" : clearance.cleared ? "success" : "danger",
-      words: clearance === undefined ? "Clearance pending" : clearance.cleared ? "Med cleared" : "Not cleared",
-      detail: clearance ? `Recorded ${formatInstantWithDay(clearance.at, now)}` : undefined,
+      tone:
+        clearance === undefined
+          ? clearanceTime.flagged
+            ? "warning"
+            : "neutral"
+          : clearance.cleared
+            ? "success"
+            : "danger",
+      words: clearanceTime.words,
+      detail: clearance?.cleared ? `Recorded ${formatInstantWithDay(clearance.at, now)}` : undefined,
     },
     revokedNotice
       ? { id: "review", tone: "warning", words: revokedNotice, warning: true }
@@ -259,9 +273,11 @@ export function ChecksCell({
     ? "warning"
     : clearance?.cleared === false
       ? "danger"
-      : open === 0
-        ? "success"
-        : "neutral";
+      : clearanceTime.flagged
+        ? "warning"
+        : open === 0
+          ? "success"
+          : "neutral";
   const summary = revokedNotice
     ? "Exam revoked"
     : open === 0

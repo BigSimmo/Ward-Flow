@@ -67,6 +67,8 @@ import { useReferralSectionNavigation } from "./use-referral-section-navigation"
 import { drawerFootStatus } from "./referral-drawer-foot-status";
 import { focusFirstInvalidField, referralInboxSummary } from "./referral-drawer-helpers";
 import * as fromRecord from "./referral-record-prefill";
+import { useReferralCarryOver } from "./use-referral-carry-over";
+import { useReferralAlternatives } from "./use-referral-alternatives";
 import { type ReferralTextInput } from "./referral-letter";
 import { TIME_FIELD_ERROR, useIsPhone, useModalFocus, useOptionalToast } from "@/components/wf";
 import { usePathname } from "next/navigation";
@@ -225,9 +227,10 @@ export function useWardReferralDrawerState({
   );
   const [selectedRecipient, setSelectedRecipient] = useState(kept?.selectedRecipient ?? "");
   const [communityPurpose, setCommunityPurpose] = useState(kept?.communityPurpose ?? ("" as const));
-  const [ageBand, setAgeBand] = useState<Cohort | "">(kept?.ageBand ?? "");
+  const { carry, start, carryFor } = useReferralCarryOver(kept, initialPatientKey); // Feature 39
+  const [ageBand, setAgeBand] = useState<Cohort | "">(start.ageBand ?? "");
   // Finding 36: the soft note for an adult from 18 to 24, set with the prefilled band.
-  const [ageBandNote, setAgeBandNote] = useState<string | null>(null);
+  const [ageBandNote, setAgeBandNote] = useState<string | null>(("ageBandNote" in start && start.ageBandNote) || null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [guardOpen, setGuardOpen] = useState(false);
@@ -329,13 +332,13 @@ export function useWardReferralDrawerState({
   const [known] = useState(() => recordedSexAndGender(patientRecord, liveMovement));
   const [referralSex, setReferralSex] = useState<RecordedSex>(kept?.referralSex ?? known.sex);
   const [referralGender, setReferralGender] = useState<ReferralGenderAnswer>(kept?.referralGender ?? known.gender);
-  const [highAcuity, setHighAcuity] = useState(kept?.highAcuity ?? false);
+  const [highAcuity, setHighAcuity] = useState(start.highAcuity ?? false);
   const [arrivalEta, setArrivalEta] = useState(kept?.arrivalEta ?? "");
   const [destType, setDestType] = useState<DrawerCategory>(initialDestination ?? kept?.destType ?? "ward");
-  // The record's status, or unanswered: never a default (owner rule, 19 Oct 2026; LEGAL-REF).
+  // Kept draft, then the opener's status, then a carried one; never a default (19 Oct 2026; LEGAL-REF).
   const [legalStatus, setLegalStatus] = useState(() =>
     warn.legalStatusAnswer(
-      kept?.legalStatus ??
+      (kept || !urlPrefill?.legal ? start.legalStatus : urlPrefill.legal) ??
         urlPrefill?.legal ??
         (defaultPatient.legalStatus.startsWith("Form")
           ? defaultPatient.legalStatus.split(" ").slice(0, 2).join(" ")
@@ -349,7 +352,7 @@ export function useWardReferralDrawerState({
   );
   const [atsCategory, setAtsCategory] = useState<AtsCategory | undefined>(kept?.atsCategory ?? urlPrefill?.ats);
   const [security, setSecurity] = useState(
-    kept?.security ?? (defaultPatient.security.toLowerCase().includes("secure") ? "Secure" : "Open"),
+    start.security ?? (defaultPatient.security.toLowerCase().includes("secure") ? "Secure" : "Open"),
   );
   const [provisionalDiag, setProvisionalDiag] = useState(
     kept?.provisionalDiag ??
@@ -369,13 +372,14 @@ export function useWardReferralDrawerState({
   const [transitNote, setTransitNote] = useState(kept?.transitNote ?? defaultPatient.transitNote);
   const [riskFlags, setRiskFlags] = useState<Record<string, boolean>>(kept?.riskFlags ?? defaultPatient.riskFlags);
   const [clearanceChecks, setClearanceChecks] = useState<ClearanceChecklist>(kept?.clearanceChecks ?? {});
-  const [communityNeeds, setCommunityNeeds] = useState<CommunityNeeds>(kept?.communityNeeds ?? {});
+  const [communityNeeds, setCommunityNeeds] = useState<CommunityNeeds>(start.communityNeeds ?? {});
   // D-77: a community referral's urgency is its first contact time (Josh, 23 Oct 2026).
   const community = destType === "community";
   const shownUrgency = community ? communityUrgency(communityNeeds.firstContact) : urgency;
   const sectionIds = sectionIdsFor(destType);
   const [edNeeds, setEdNeeds] = useState<EdNeeds>(kept?.edNeeds ?? {});
   const [edArrivalWrong, setEdArrivalWrong] = useState(false);
+  const alternatives = useReferralAlternatives(destType === "ward" && !sendingWard, activePatientKey, kept);
   const draftNow: KeptDraft & { needsChartReattachment: boolean } = {
     submissionId: recoveryId,
     needsChartReattachment: draftNeedsChartReattachment(kept, documentation.charts),
@@ -416,6 +420,7 @@ export function useWardReferralDrawerState({
     edNeeds,
     unidentified,
     notOnWard,
+    ...alternatives.draftField,
   };
   const [openingDraft] = useState(() => (kept ? "" : draftFingerprint(draftNow)));
   const draftJson = draftFingerprint(draftNow);
@@ -509,8 +514,7 @@ export function useWardReferralDrawerState({
       closeRequestRef.current = null;
     };
   }, [closeRequestRef, requestClose]);
-  // Close guard: a modal over the drawer (shared contract). Declared before the drawer's own modal hook
-  // so it leaves the stack first when both close together.
+  // Close guard for a modal over the drawer: declared before the drawer's own modal hook, so it leaves first.
   const guardBoxRef = useRef<HTMLDivElement | null>(null);
   const { rootRef: guardRootRef } = useModalFocus({
     open: guardOpen,
@@ -647,7 +651,8 @@ export function useWardReferralDrawerState({
     // Finding 36 (Josh, 27 Oct 2026): the age band opens on the band the record's date of birth gives
     // on the demo day, still editable. With no usable date of birth it opens blank, as before.
     const band = dayZero instanceof Date ? referralAgeBand(record?.dateOfBirth, calendarDateOf(now, dayZero)) : null;
-    setAgeBand(band?.band ?? "");
+    const nextCarry = carryFor(key, !!band?.band);
+    setAgeBand(band?.band ?? nextCarry.ageBand ?? "");
     setAgeBandNote(band?.note ?? null);
     const region = fromRecord.recordedHomeRegion(record?.id, matchedMovement, recordState);
     setHomeRegion(region ?? "");
@@ -655,19 +660,17 @@ export function useWardReferralDrawerState({
     const identity = recordedSexAndGender(record, matchedMovement);
     setReferralSex(identity.sex);
     setReferralGender(identity.gender);
-    setHighAcuity(false);
+    setHighAcuity(nextCarry.highAcuity ?? false);
     setArrivalEta("");
     setConfirmationOpen(false);
     setFlowError(null);
     setAttempted({});
     setArrivalPlanOpen(false);
-
-    // Synchronize all form fields with selected patient profile
     const baseLegal = p.legalStatus.startsWith("Form") ? p.legalStatus.split(" ").slice(0, 2).join(" ") : p.legalStatus;
-    setLegalStatus(warn.legalStatusAnswer(baseLegal));
+    setLegalStatus(warn.legalStatusAnswer(nextCarry.legalStatus ?? baseLegal));
     setUrgency(p.urgency);
     setAtsCategory(undefined);
-    setSecurity(p.security.toLowerCase().includes("secure") ? "Secure" : "Open");
+    setSecurity(nextCarry.security ?? (p.security.toLowerCase().includes("secure") ? "Secure" : "Open"));
     setProvisionalDiag(p.provisionalDiag);
     setDoctorNote(p.doctorNote);
     setClinicalSummary(p.clinicalSummary);
@@ -675,12 +678,9 @@ export function useWardReferralDrawerState({
     setTransitNote(p.transitNote);
     setRiskFlags(p.riskFlags);
     setClearanceChecks({});
-    setCommunityNeeds({});
+    setCommunityNeeds(nextCarry.communityNeeds ?? {});
     setEdNeeds({});
-
-    if (onSelectPatient) {
-      onSelectPatient(key);
-    }
+    onSelectPatient?.(key);
     announceToWardShell(`Selected patient ${p.name} for clinical referral.`);
     if (addedInForm) activateSection("patient");
   }
@@ -715,8 +715,7 @@ export function useWardReferralDrawerState({
     );
     const readyBedsCount = matchingRecords.reduce((sum, r) => sum + r.readyBeds, 0);
     const pulledBedsCount = matchingRecords.reduce((sum, r) => sum + r.pulledBeds, 0);
-    // Owner ruling, 2026-09-05. `readyBedsCount` deliberately subtracts NOTHING for this: a ward's figure
-    // must not lurch as cleaning starts and stops. The number stays; the sentence beside it was missing.
+    // Owner ruling, 2026-09-05: `readyBedsCount` subtracts NOTHING for this, so a figure never lurches with cleaning.
     const pendingPreparationCount = matchingRecords.reduce((sum, r) => sum + (r.pendingPreparation ?? 0), 0);
     // Audit 1 (decision 6), Josh 20 Oct: a fixed, neutral order (health service, then ward name),
     // never catchment first or most ready beds. Every matching ward stays listed.
@@ -845,8 +844,7 @@ export function useWardReferralDrawerState({
     1;
   // D-77: the community short form has no Documents step, so its checks skip triage and charts.
   const docsError = () => (community ? null : documentationError(documentation));
-  // The saved history carries the unidentified label ahead of the patient story, so the two together
-  // must fit the history limit or the reducer refuses the referral with no visible reason.
+  // The history carries the unidentified label then the story; both must fit its limit or the reducer refuses.
   function storyError() {
     const label = unidentified?.trim();
     const prefix = !patientRecord && label ? UNIDENTIFIED_REFERRAL_PREFIX.length + label.length + 1 : 0;
@@ -990,6 +988,7 @@ export function useWardReferralDrawerState({
       transportNeeded: destType === "ward" && transport !== "carer" && transport !== "Family or carer",
       history: cleanReferralText(unidentifiedHistory),
       tentativeDiagnosis: isTentativeDiagnosisBlock(provisionalDiag) ? provisionalDiag : undefined,
+      ...alternatives.eventField,
       intake,
     });
   }
@@ -1025,8 +1024,7 @@ export function useWardReferralDrawerState({
   const sentDetails = sentReferralId ? referrals.find((referral) => referral.id === sentReferralId)?.intake : undefined;
 
   const destination = DESTINATIONS[destType];
-  // A blank or unlisted suburb is sent as "Suburb not known", so a person of no fixed address can
-  // still be referred. The catchment card says which will be sent.
+  // A blank or unlisted suburb is sent as "Suburb not known" (no fixed address); the catchment card says which.
   const suburbKnown =
     !!catchmentSuburb &&
     suburbOptions().some((suburb) => suburb.toLowerCase() === catchmentSuburb.trim().toLowerCase());
@@ -1235,6 +1233,8 @@ export function useWardReferralDrawerState({
     myProfile,
     gate,
     sendGate,
+    carry,
+    alternatives,
     sendingWard,
     senderMissing,
     notOnSendingWard,

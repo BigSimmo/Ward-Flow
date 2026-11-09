@@ -22,3 +22,7 @@ Main had since raised movement, bed meeting and statistics (#1582) and taken #15
 ## After merging main 3339742 (with #1580), 9 Nov 2026
 
 #1580 raised ED, movement, bed meeting and statistics by 0.2 to 0.3 KB on main. This PR keeps the same increase over main as before (ED, movement, bed meeting and statistics +1.7 KB; secure ward +1.2 KB), so the limits become ED 521.9, secure ward 600.2, movement 595.2, bed meeting 574.1 and statistics 614.1 KB.
+
+## After merging main 4105c7e (with #1563)
+
+#1563 moved main's limits to ED 521.0, secure 601.3, movement 594.8, bed meeting 573.5 and statistics 613.8. This PR keeps the same increments over main as before: +1.7 KB for ED, movement, bed meeting and statistics, and +1.2 KB for the secure ward. New limits: 522.7, 602.5, 596.5, 575.2 and 615.5. Hosted CI decides; each screen stays well within the 5 KB allowance.
