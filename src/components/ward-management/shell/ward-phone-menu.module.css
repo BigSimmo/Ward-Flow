@@ -496,8 +496,8 @@
   }
 
   :global(body):has(.twoLine.twoLine) {
-    --wf-dock-clear: calc(80px + max(8px, env(safe-area-inset-bottom, 0px)));
-    --wf-dock-top: calc(58px + max(8px, env(safe-area-inset-bottom, 0px)));
+    --wf-dock-clear: calc(78px + max(10px, env(safe-area-inset-bottom, 0px)));
+    --wf-dock-top: calc(66px + max(10px, env(safe-area-inset-bottom, 0px)));
   }
 }
 
@@ -823,4 +823,145 @@
   height: 3px;
   border-radius: 50%;
   background: var(--wf-ink-off);
+}
+
+/* ── Floating bar (D-112, Josh, 9 Nov 2026: option A, "compact and beautifully sized") ─────
+ * The dock lifts off the foot as a compact frosted capsule, 58px tall, 14px from each side and 10px
+ * (or the home indicator) above the foot, as the floating tab bars of iOS and Material 3 do. Depth
+ * follows those systems: a hairline edge, a faint light catch along the top, a tight contact shadow
+ * and a soft wide ambient one, kept low so the bar floats without looking heavy. In dark mode,
+ * where shadows barely read, the edge and top catch carry the lift instead. The page fades into the
+ * canvas behind it, so rows never clash with its edge. The page you are on is a soft accent pill
+ * holding its icon and label, concentric with the capsule; the + is a round navy button in the
+ * middle. Doubled classes outrank the flat bar's rules above and the shell-next fork. */
+.foot.foot {
+  padding: 0 14px;
+}
+
+.foot.foot::before {
+  top: -24px;
+  background: linear-gradient(
+    to top,
+    var(--wf-canvas) 0,
+    var(--wf-canvas) 40%,
+    color-mix(in srgb, var(--wf-canvas) 0%, transparent) 100%
+  );
+}
+
+.foot.foot::after {
+  display: none;
+}
+
+.dock.dock {
+  position: relative;
+  height: 58px;
+  align-items: center;
+  padding: 0 5px;
+  border: 0.5px solid light-dark(rgb(15 25 40 / 10%), rgb(255 255 255 / 10%));
+  border-radius: 29px;
+  background: color-mix(in srgb, var(--wf-surface) 76%, transparent);
+  box-shadow:
+    inset 0 0.5px 0 light-dark(rgb(255 255 255 / 70%), rgb(255 255 255 / 8%)),
+    0 1px 2px light-dark(rgb(15 25 40 / 8%), rgb(0 0 0 / 30%)),
+    0 10px 28px -8px light-dark(rgb(15 25 40 / 18%), rgb(0 0 0 / 50%));
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  backdrop-filter: blur(20px) saturate(1.8);
+}
+
+.dock.dock .dockItem.dockItem {
+  justify-content: center;
+  gap: 2px;
+  min-height: 48px;
+  padding: 4px 0 3px;
+  border-radius: 24px;
+  transition: background-color var(--wf-m-fast, 120ms) var(--wf-ease, ease);
+}
+
+/* On a three- or four-tab desk the columns are wide, so the pill keeps the five-tab size instead of
+   stretching into a long blob. */
+.dock.dock > .dockItem.dockItem {
+  justify-self: center;
+  width: 100%;
+  max-width: 84px;
+}
+
+.dock.dock .dockIcon.dockIcon {
+  width: auto;
+  height: 22px;
+  margin: 0;
+  background: none;
+}
+
+.dock.dock .dockIcon.dockIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.dock.dock .dockLabel.dockLabel {
+  letter-spacing: -0.005em;
+}
+
+.dock.dock .dockItem.dockItem[aria-current="page"] {
+  background: var(--wf-accent-tint);
+}
+
+.dock.dock .dockItem.dockItem[aria-current="page"] .dockIcon,
+.dock.dock .dockItem.dockItem[aria-current="page"] .dockLabel {
+  color: var(--wf-accent);
+}
+
+/* A press answers at once: the tab's pill shows faintly. */
+.dock.dock .dockItem.dockItem:active {
+  background: color-mix(in srgb, var(--wf-ink-1) 7%, transparent);
+}
+
+.dock.dock .dockItem.dockItem[aria-current="page"]:active {
+  background: color-mix(in srgb, var(--wf-accent) 22%, var(--wf-accent-tint));
+}
+
+.dock.dock .dockItem.dockItem:active .dockIcon {
+  background: none;
+}
+
+.dock.dock .riseSlot.riseSlot {
+  align-items: center;
+  min-height: 48px;
+}
+
+/* The + : a 44px navy circle with the same quiet depth as the bar, and a 48px target round it. */
+.rise.rise {
+  position: static;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  box-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 18%),
+    0 1px 2px color-mix(in srgb, var(--rise-fill) 30%, transparent),
+    0 4px 10px -4px color-mix(in srgb, var(--rise-fill) 55%, transparent);
+}
+
+.rise.rise::after {
+  inset: -2px;
+}
+
+.rise.rise svg {
+  width: 20px;
+  height: 20px;
+}
+
+.dock.dock .dockCount.dockCount {
+  top: -6px;
+  left: calc(50% + 3px);
+}
+
+@media (forced-colors: active) {
+  .dock.dock {
+    border: 1px solid CanvasText;
+    background: Canvas;
+  }
+
+  .dock.dock .dockItem.dockItem[aria-current="page"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
 }

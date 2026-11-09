@@ -43,7 +43,18 @@
    wider than 743px has no dock (8 Nov 2026), so it takes none of this. */
 @media (max-width: 46.4375rem) {
   :global(body):has(.twoLine.twoLine) {
-    --wf-dock-clear: calc(80px + max(8px, env(safe-area-inset-bottom, 0px)));
-    --wf-dock-top: calc(58px + max(8px, env(safe-area-inset-bottom, 0px)));
+    --wf-dock-clear: calc(86px + max(10px, env(safe-area-inset-bottom, 0px)));
+    --wf-dock-top: calc(74px + max(10px, env(safe-area-inset-bottom, 0px)));
   }
+}
+
+/* Floating bar (D-112): a desk with a two-line label ("Coming and going") gets a 66px capsule, so
+   the second line sits inside the bar with the same 4px breathing room as one-line desks. Tripled
+   so it outranks the capsule's own height in ward-phone-menu.module.css. */
+.dock.dock.twoLine {
+  height: 66px;
+}
+
+.twoLine .item.item.item {
+  min-height: 58px;
 }

@@ -26,19 +26,20 @@
      clear of the home indicator where there is one, not 18px above it as well. The sides follow
      the screen's own insets so a phone on its side keeps the bar clear of the notch. */
   .pageDock.rise {
-    padding-right: max(4px, env(safe-area-inset-right, 0px));
-    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
-    padding-left: max(4px, env(safe-area-inset-left, 0px));
+    /* Floating bar (D-112): 14px either side and 10px below, or clear of the home indicator. */
+    padding-right: max(14px, env(safe-area-inset-right, 0px));
+    padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+    padding-left: max(14px, env(safe-area-inset-left, 0px));
   }
 
   /* The page keeps its last rows clear of the dock, and any pinned phone bar rests on
      var(--wf-dock-clear) instead of bottom: 0. The local class keeps the selector pure for the
      webpack CSS Modules build. */
   :global(body):has(.pageDock) {
-    --wf-dock-clear: calc(72px + max(8px, env(safe-area-inset-bottom, 0px)));
-    /* The dock's flat top edge (2px + 48px row + bottom pad); the + sits inside it. A pinned bar seats
-       its box here so no card shows between the bar and the dock (Josh, 12 Oct 2026, iPhone). */
-    --wf-dock-top: calc(50px + max(8px, env(safe-area-inset-bottom, 0px)));
+    --wf-dock-clear: calc(78px + max(10px, env(safe-area-inset-bottom, 0px)));
+    /* The floating bar's top edge plus an 8px gap (58px bar + bottom pad + 8px, D-112). A pinned bar
+       seats its box here, on the faded foot just above the bar (Josh, 12 Oct 2026, iPhone). */
+    --wf-dock-top: calc(66px + max(10px, env(safe-area-inset-bottom, 0px)));
   }
 
   :global(body):has(.pageDock) :global([data-wf-scroller]) {

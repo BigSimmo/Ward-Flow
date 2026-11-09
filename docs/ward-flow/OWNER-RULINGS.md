@@ -268,7 +268,7 @@ safe global key across 30 files.
 | `D-97` | `decisions.md`:1116 | D-97. Owner answers on seven open items: N21, N25, N26, N29, N40, N41 and WF-B008 (8 November 2026) |
 | `D-98` | `decisions.md`:1129 | D-98. Friction pass: Quick bar, Patient peek and Ward peek (8 November 2026) |
 | `D-109` | `decisions.md`:1138 | D-109. Home's bed alert line tests the whole number shown (9 November 2026) |
-| `D-112` | `decisions.md`:1145 | D-112. Phone bottom bar polish (9 November 2026) |
+| `D-112` | `decisions.md`:1145 | D-112. Phone bottom bar: the floating bar (9 November 2026) |
 | `D9` ⚠️ **9 occurrences — not unique** | | |
 | ↳ | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | ↳ | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
@@ -659,7 +659,7 @@ safe global key across 30 files.
 - `D-97` — line 1116, heading: "D-97. Owner answers on seven open items: N21, N25, N26, N29, N40, N41 and WF-B008 (8 November 2026)"
 - `D-98` — line 1129, heading: "D-98. Friction pass: Quick bar, Patient peek and Ward peek (8 November 2026)"
 - `D-109` — line 1138, heading: "D-109. Home's bed alert line tests the whole number shown (9 November 2026)"
-- `D-112` — line 1145, heading: "D-112. Phone bottom bar polish (9 November 2026)"
+- `D-112` — line 1145, heading: "D-112. Phone bottom bar: the floating bar (9 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 
