@@ -82,12 +82,15 @@ function renderScreen() {
  * above. Traffic still precedes the patient rows, preserving the earlier ordering intent.
  * Engine-backed transport facts sit inside the bounded Transport summary view.
  * Shape of the day shares that side panel and is the region name only after the corner toggle.
+ *
+ * Josh, 9 Nov 2026 (Movements audit item 8, approved on the review page): Transport now, the live
+ * list with Check in, moves up to follow Today's traffic, before the worklist's backlog.
  */
 const EXPECTED_PANELS: readonly RegExp[] = [
   /^The day$/u,
   /^Today’s traffic$/u,
-  /^Movement worklist$/u,
   /^Transport right now$/u,
+  /^Movement worklist$/u,
 ] as const;
 
 describe("the Movements screen's panels, in the order a coordinator meets them", () => {
@@ -111,12 +114,14 @@ describe("the Movements screen's panels, in the order a coordinator meets them",
   });
 
   /**
-   * ⚠️ **THE ONE ORDERING RULE WITH A REASON BEHIND IT, ASSERTED SEPARATELY FROM THE FULL LIST.**
-   * The summary panel must come AFTER the board it summarises. The full-order test above would also
-   * catch a swap, but it would report it as "panel 2 is wrong" — this one says what actually broke,
-   * and it survives panels being added between them.
+   * ⚠️ **THE SIDE PANEL'S PLACE, ASSERTED SEPARATELY FROM THE FULL LIST.** Shape of the day shares
+   * one panel with Transport now (the corner toggle swaps the view), so it sits where that panel
+   * sits. Until 9 Nov 2026 that was after the board; Josh's Movements audit item 8 moved the panel
+   * before the worklist so the live transport list is met first. The stage strip under the hero
+   * already gives the totals before the rows, so this test now pins that the toggle keeps the panel
+   * in one place (the summary does not jump below the board when the view changes).
    */
-  it("keeps the open-day summary beside and after the board it summarises", () => {
+  it("keeps the open-day summary in the side panel's place, before the board", () => {
     renderScreen();
     fireEvent.click(screen.getByRole("button", { name: "Shape of the day" }));
     const titles = panelTitlesInOrder();
@@ -127,9 +132,9 @@ describe("the Movements screen's panels, in the order a coordinator meets them",
     expect(glance, "the at-a-glance summary is not on the screen at all").toBeGreaterThanOrEqual(0);
     expect(
       glance,
-      "the summary of the stages now sits ABOVE the board it summarises, so a coordinator meets the " +
-        "totals before the rows they are totals of",
-    ).toBeGreaterThan(board);
+      "Shape of the day no longer sits in the Transport now panel's place before the board (audit item 8)",
+    ).toBe(2);
+    expect(glance, "the summary moved below the board it shares a place with").toBeLessThan(board);
   });
 
   /**

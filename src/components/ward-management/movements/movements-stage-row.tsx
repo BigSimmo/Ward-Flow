@@ -36,6 +36,7 @@ import {
   Timer,
   buttonClass,
   cx,
+  durMinutes,
   useIsPhone,
   type WfTone,
 } from "@/components/wf";
@@ -103,7 +104,7 @@ export function HighlightStat({
   );
 }
 
-/** v10 phone group heading: the caps title left, a bare count right ("21", not "21 people"). */
+/** Phone group heading: the title left, then the longest wait and a bare count ("21", not "21 people"). */
 /**
  * Device audit, 11 Oct 2026: the phone worklist opens as stage headers with their counts, and one
  * tap on a header shows that stage's rows. A marked, opened or jumped-to row stays visible.
@@ -112,12 +113,15 @@ export function PhoneGroupHeading({
   id,
   title,
   people,
+  longestMinutes,
   open,
   onToggle,
 }: {
   id: string;
   title: string;
   people: number;
+  /** Audit item 10 (9 Nov 2026): the stage's longest wait, so a closed stage still says which needs you. */
+  longestMinutes?: number;
   open: boolean;
   onToggle: () => void;
 }) {
@@ -133,6 +137,9 @@ export function PhoneGroupHeading({
         >
           <ChevronRight size={14} aria-hidden="true" className={flow.phGroupChevron} data-open={open} />
           <span className={flow.phGroupTitleText}>{title}</span>
+          {longestMinutes !== undefined && Number.isFinite(longestMinutes) && longestMinutes > 0 ? (
+            <span className={flow.phGroupLongest}>longest {durMinutes(longestMinutes)}</span>
+          ) : null}
           <span className={flow.phGroupCount}>
             {people}
             <span className="sr-only"> {people === 1 ? "person" : "people"}</span>
