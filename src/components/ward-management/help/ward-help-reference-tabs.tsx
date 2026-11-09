@@ -7,7 +7,6 @@ import {
   Hand,
   Hash,
   Keyboard,
-  MessageCircleQuestion,
   Palette,
   Smartphone,
   UsersRound,
@@ -422,6 +421,3 @@ export function HelpReference({
     </>
   );
 }
-
-/** The Questions tab's icon, kept with its view. */
-export const QUESTIONS_ICON = MessageCircleQuestion;
