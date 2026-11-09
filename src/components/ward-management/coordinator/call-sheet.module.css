@@ -97,3 +97,170 @@
   flex: 1 1 10rem;
   min-inline-size: 0;
 }
+
+/* Josh's notes 4 (9 Nov 2026), "Ward calls": numbered wards in call order, one status tag each,
+   facts on one calm line, and the record form as a tidy row. No coloured side edges. */
+.headText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.summary {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-14) / 20px var(--wf-font);
+}
+
+.summary b {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / 20px var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.wards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.group.group {
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+  border-color: var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+.wardHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+}
+
+.position {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--wf-surface-2);
+  box-shadow: inset 0 0 0 1px var(--wf-line-2);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.ward.ward {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: 600 var(--wf-fs-14) / 20px var(--wf-font);
+}
+
+.state {
+  flex: none;
+  padding: 0 var(--wf-s-2);
+  border-radius: var(--wf-r-tag);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 24px var(--wf-font);
+}
+
+.state[data-tone="warning"] {
+  background: var(--wf-hold-tint);
+  color: var(--wf-warning-ink);
+}
+
+.state[data-tone="info"] {
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.group .facts {
+  gap: var(--wf-s-1) var(--wf-s-4);
+  padding-left: 36px;
+}
+
+.group .facts > div {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.group .items {
+  padding-left: 36px;
+  list-style: none;
+  gap: var(--wf-s-2);
+}
+
+.group .items > li {
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+}
+
+.group .form {
+  padding-top: var(--wf-s-3);
+}
+
+@media (max-width: 46.4375rem) {
+  .group .facts,
+  .group .items {
+    padding-left: 0;
+  }
+}
+
+.repeat,
+.times {
+  min-width: 0;
+}
+
+.repeat {
+  padding-left: 36px;
+}
+
+.repeat > .items {
+  padding-left: 0;
+}
+
+.repeat > summary,
+.times > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  color: var(--wf-accent-ink);
+  gap: 6px;
+  font: 500 var(--wf-fs-13) / 18px var(--wf-font);
+  cursor: pointer;
+}
+
+/* display:inline-flex drops the native marker, so the open or closed state gets its own chevron. */
+.repeat > summary::before,
+.times > summary::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+}
+
+.repeat[open] > summary::before,
+.times[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+.repeat[open] > summary,
+.times[open] > summary {
+  margin-bottom: var(--wf-s-2);
+}
+
+@media (max-width: 46.4375rem) {
+  .repeat {
+    padding-left: 0;
+  }
+}

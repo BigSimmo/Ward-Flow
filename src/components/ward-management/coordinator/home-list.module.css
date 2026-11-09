@@ -733,3 +733,165 @@
   position: absolute;
   inset: -4px 0;
 }
+
+/* Josh's notes 4 polish (9 Nov 2026): the phone row reads top-down like the desktop one. The glyph
+   and the time sit on the name's line instead of floating at the row's middle, the place is calm
+   body text, and the status tag is a quiet hairline label rather than a heavy outlined pill. */
+.compactRow.compactRow {
+  align-items: start;
+  padding: 10px var(--wf-s-3) var(--wf-s-3);
+}
+
+.compactRow.compactRow > span:first-child {
+  align-self: start;
+  padding-top: 5px;
+}
+
+.compactWho.compactWho strong + strong {
+  margin-left: 2px;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / 20px var(--wf-mono);
+}
+
+.compactWhere.compactWhere {
+  order: 2;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+}
+
+.compactTag.compactTag {
+  order: 1;
+  margin-top: var(--wf-s-1);
+  padding: 0 var(--wf-s-2);
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--wf-line-2);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / 24px var(--wf-font);
+}
+
+.compactEnd.compactEnd {
+  align-self: start;
+  min-height: 20px;
+}
+
+.compactEnd.compactEnd > span:first-child {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 20px var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.compactEnd.compactEnd:has(.phoneRowAction) {
+  justify-content: flex-start;
+  gap: var(--wf-s-2);
+}
+
+/* Josh's notes 4 (9 Nov 2026): Home's desktop row reads like the phone row. Glyph, the patient,
+   the issue as a quiet label and the place stack in one wide text column; the time sits top right
+   on the name's line and the one action sits under it. The text no longer wraps into four lines
+   beside two fixed columns. Alerts' accepted-to-pull rows share this row, so both pages match. */
+.hrow.hrowStacked {
+  grid-template-columns: 1rem minmax(0, 1fr) max-content;
+  align-items: start;
+  column-gap: var(--wf-s-3);
+  min-height: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.hrowStacked .hrowGlyph {
+  padding-top: 5px;
+}
+
+.hrowStacked .hrowMain {
+  gap: var(--wf-s-1);
+}
+
+.hrowWho {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / 20px var(--wf-font);
+  overflow-wrap: break-word;
+}
+
+.hrowWho .hrowName {
+  font-weight: 600;
+}
+
+.hrowUmrn {
+  margin-left: 2px;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / 20px var(--wf-mono);
+}
+
+.hrowStacked .hrowTitle {
+  padding: 0 var(--wf-s-2);
+  border-radius: var(--wf-r-tag);
+  box-shadow: inset 0 0 0 1px var(--wf-line-2);
+  background: var(--wf-surface);
+  font: 500 var(--wf-fs-12) / 22px var(--wf-font);
+}
+
+.hrowStacked .hrowTitle:hover {
+  background: var(--wf-hover);
+}
+
+.hrowStacked .hrowLine {
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+}
+
+.hrowEnd {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--wf-s-2);
+}
+
+.hrowStacked .hrowAge {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 6px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.hrowStacked .hrowAge > .mono {
+  font-weight: 600;
+}
+
+@media (max-width: 46.4375rem) {
+  .hrow.hrowStacked {
+    grid-template-columns: 1rem minmax(0, 1fr) auto;
+  }
+
+  /* First paint below the phone line: the time stays top right and the action spans under the text. */
+  .hrowStacked .hrowEnd {
+    display: contents;
+  }
+
+  .hrowStacked .hrowAge {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .hrowStacked .hrowAction {
+    grid-column: 2 / -1;
+    grid-row: 2;
+  }
+}
+
+/* Josh's notes 4 (9 Nov 2026): on a phone the row's one action moves under its lines (as Q180 on
+   Alerts), so the name and place keep the row's full width instead of wrapping beside a button. */
+.compactEnd.compactEnd:has(.phoneRowAction) {
+  display: contents;
+}
+
+.compactRow.compactRow > .compactEnd > span:first-child {
+  grid-column: 3;
+  grid-row: 1;
+  align-self: start;
+}
+
+.compactRow.compactRow .phoneRowAction {
+  grid-column: 2 / -1;
+  grid-row: 2;
+  justify-self: start;
+  margin-top: var(--wf-s-2);
+}

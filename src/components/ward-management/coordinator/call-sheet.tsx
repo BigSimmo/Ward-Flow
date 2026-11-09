@@ -39,21 +39,69 @@ type CallStep = {
 type CallBatch = { scope: object; referralIds: string[]; steps: CallStep[] };
 
 /**
+ * One referral sent to several wards is counted and listed in full once. Keyed by referral, never by
+ * the patient link: D-14 keeps where else a patient has been out of ward screens.
+ */
+function referralKey(item: CallSheetGroup["items"][number]): string {
+  return item.referral.id;
+}
+
+/**
+ * Josh's notes 4 (9 Nov 2026), "Ward calls": wards are listed in call order by time alone (a
+ * callback already due first, then the soonest callback, then the longest-waiting referral), each
+ * numbered, with one status tag saying why it sits where it does. Patients are counted once across
+ * wards. Order is by recorded times only: no score, no clinical judgement.
+ */
+export function callOrder(groups: readonly CallSheetGroup[], now: Instant): CallSheetGroup[] {
+  const oldest = (group: CallSheetGroup) => Math.min(...group.items.map((item) => item.referral.raisedAt));
+  const rank = (group: CallSheetGroup) =>
+    group.nextCallbackAt === undefined ? 2 : group.nextCallbackAt <= now ? 0 : 1;
+  return [...groups].sort(
+    (a, b) => rank(a) - rank(b) || (rank(a) === 1 ? a.nextCallbackAt! - b.nextCallbackAt! : 0) || oldest(a) - oldest(b),
+  );
+}
+
+/**
  * COORDINATED CALL SHEET (closing-the-loop package A, 24 Oct 2026). Every referral still waiting
  * on a ward, grouped by ward: the last call logged, what is still unanswered, promised times and
  * the next callback. One "Record call outcome" per ward logs the same outcome against each linked
  * referral in one go. Screen and print only: nothing is emailed or shared from here, and no link
- * carries patient details. Wards follow the network's own order and referrals keep their recorded
- * order inside each ward. Nothing is ranked or proposed.
+ * carries patient details. Referrals keep their recorded order inside each ward. Nothing is proposed.
+ *
+ * Josh's notes 4 (9 Nov 2026), "Ward calls": the sheet lists wards in call order (see callOrder).
  */
 export function CallSheet() {
   const { referrals, units } = useWardFlowSelect("referrals", "units");
   const now = useWardFlowClock();
-  const groups = callSheetGroups(referrals, units);
+  const groups = callOrder(callSheetGroups(referrals, units), now);
+  const waiting = new Set(groups.flatMap((group) => group.items.map(referralKey))).size;
+  // Each referral is listed in full once, under the first ward in call order; later wards fold them.
+  const firstAt = new Map<string, number>();
+  groups.forEach((group, index) => {
+    for (const item of group.items) if (!firstAt.has(referralKey(item))) firstAt.set(referralKey(item), index + 1);
+  });
+  const late = groups.filter((group) => group.nextCallbackAt !== undefined && group.nextCallbackAt <= now).length;
   return (
     <div className={styles.sheet} data-print-output data-testid="ward-call-sheet">
       <div className={styles.head}>
-        <p className={styles.note}>Prepared {formatInstantWithDay(now, now)}. Synthetic data.</p>
+        <div className={styles.headText}>
+          {groups.length > 0 ? (
+            <p className={styles.summary} data-testid="ward-call-sheet-summary">
+              <b>{waiting}</b> {waiting === 1 ? "referral" : "referrals"} waiting on <b>{groups.length}</b>{" "}
+              {groups.length === 1 ? "ward" : "wards"}
+              {late > 0 ? (
+                <>
+                  {" · "}
+                  <b>{late}</b> {late === 1 ? "ward" : "wards"} late on a callback
+                </>
+              ) : null}
+            </p>
+          ) : null}
+          <p className={styles.note}>
+            In call order: late callbacks, then the next callback, then the longest wait. Prepared{" "}
+            {formatInstantWithDay(now, now)}. Synthetic data.
+          </p>
+        </div>
         <Button size="sm" variant="sec" icon={Printer} onClick={() => window.print()} data-print-hide>
           Print
         </Button>
@@ -61,13 +109,36 @@ export function CallSheet() {
       {groups.length === 0 ? (
         <p className={styles.note}>No referral is waiting on a ward.</p>
       ) : (
-        groups.map((group) => <WardGroup key={group.unitId} group={group} units={units} now={now} />)
+        <ol className={styles.wards}>
+          {groups.map((group, index) => (
+            <WardGroup
+              key={group.unitId}
+              group={group}
+              units={units}
+              now={now}
+              position={index + 1}
+              firstAt={firstAt}
+            />
+          ))}
+        </ol>
       )}
     </div>
   );
 }
 
-function WardGroup({ group, units, now }: { group: CallSheetGroup; units: readonly Unit[]; now: Instant }) {
+function WardGroup({
+  group,
+  units,
+  now,
+  position,
+  firstAt,
+}: {
+  group: CallSheetGroup;
+  units: readonly Unit[];
+  now: Instant;
+  position: number;
+  firstAt: ReadonlyMap<string, number>;
+}) {
   const baseId = useId();
   const patientOf = usePatientOf();
   const nameFor = usePatientNameDisplay();
@@ -217,12 +288,39 @@ function WardGroup({ group, units, now }: { group: CallSheetGroup; units: readon
     (promise !== "" || callback !== "" ? commitGate.reason : undefined) ??
     (outcome === "" ? "Choose what the ward said" : undefined);
   const headingId = `${baseId}-ward`;
+  const fresh = group.items.filter((item) => (firstAt.get(referralKey(item)) ?? position) === position);
+  const repeats = group.items.filter((item) => (firstAt.get(referralKey(item)) ?? position) !== position);
+  const renderItem = (item: CallSheetGroup["items"][number]) => {
+    const who = patientOf(item.referral);
+    return (
+      <li key={item.referral.id}>
+        <Link href={referralBoardHref(item.referral.id)} className={styles.link}>
+          {nameFor(who.formalName, who.umrn)}
+        </Link>{" "}
+        <span className={styles.note}>
+          Tier {item.referral.urgency}, raised {formatInstantWithDay(item.referral.raisedAt, now)}
+        </span>
+        <CommitmentStatusLine
+          status={item.status}
+          now={now}
+          chases={item.chases}
+          testId={`ward-call-sheet-item-${group.unitId}-${item.referral.id}`}
+        />
+      </li>
+    );
+  };
 
   return (
-    <section className={styles.group} aria-labelledby={headingId} data-testid={`ward-call-sheet-${group.unitId}`}>
-      <h3 id={headingId} className={styles.ward}>
-        {ward}
-      </h3>
+    <li className={styles.group} aria-labelledby={headingId} data-testid={`ward-call-sheet-${group.unitId}`}>
+      <div className={styles.wardHead}>
+        <span className={styles.position} aria-hidden="true">
+          {position}
+        </span>
+        <h3 id={headingId} className={styles.ward}>
+          {ward}
+        </h3>
+        <WardState group={group} now={now} />
+      </div>
       <dl className={styles.facts}>
         <div>
           <dt>Last contact</dt>
@@ -246,27 +344,18 @@ function WardGroup({ group, units, now }: { group: CallSheetGroup; units: readon
           <dd>{group.nextCallbackAt !== undefined ? formatInstantWithDay(group.nextCallbackAt, now) : "Not set"}</dd>
         </div>
       </dl>
-      <ol className={styles.items}>
-        {group.items.map((item) => {
-          const who = patientOf(item.referral);
-          return (
-            <li key={item.referral.id}>
-              <Link href={referralBoardHref(item.referral.id)} className={styles.link}>
-                {nameFor(who.formalName, who.umrn)}
-              </Link>{" "}
-              <span className={styles.note}>
-                Tier {item.referral.urgency}, raised {formatInstantWithDay(item.referral.raisedAt, now)}
-              </span>
-              <CommitmentStatusLine
-                status={item.status}
-                now={now}
-                chases={item.chases}
-                testId={`ward-call-sheet-item-${group.unitId}-${item.referral.id}`}
-              />
-            </li>
-          );
-        })}
-      </ol>
+      {fresh.length > 0 ? <ol className={styles.items}>{fresh.map(renderItem)}</ol> : null}
+      {repeats.length > 0 ? (
+        <details className={`${styles.repeat} source-print`}>
+          <summary>
+            {repeats.length} {repeats.length === 1 ? "referral" : "referrals"} also listed under{" "}
+            {wardList(
+              [...new Set(repeats.map((item) => firstAt.get(referralKey(item)) ?? position))].sort((x, y) => x - y),
+            )}
+          </summary>
+          <ol className={styles.items}>{repeats.map(renderItem)}</ol>
+        </details>
+      ) : null}
       <fieldset className={styles.form} data-print-hide>
         <legend className={styles.legend}>Record call outcome</legend>
         <div className={styles.row}>
@@ -285,23 +374,32 @@ function WardGroup({ group, units, now }: { group: CallSheetGroup; units: readon
               ))}
             </Select>
           </Field>
-          <CommitmentTimeSelect
-            label="Answer promised by"
-            value={promise}
-            onChange={setPromise}
-            disabled={pending || retaining}
-            now={now}
-            testId={`ward-call-sheet-promise-${group.unitId}`}
-          />
-          <CommitmentTimeSelect
-            label="Next callback"
-            value={callback}
-            onChange={setCallback}
-            disabled={pending || retaining}
-            now={now}
-            testId={`ward-call-sheet-callback-${group.unitId}`}
-          />
         </div>
+        <details className={styles.times} open={promise !== "" || callback !== "" ? true : undefined}>
+          <summary>
+            {promise !== "" || callback !== ""
+              ? `Promised time or callback set${promise !== "" ? `: answer by ${formatInstantWithDay(now + Number(promise), now)}` : ""}${callback !== "" ? `${promise !== "" ? "," : ":"} callback ${formatInstantWithDay(now + Number(callback), now)}` : ""}`
+              : "Add a promised time or callback"}
+          </summary>
+          <div className={styles.row}>
+            <CommitmentTimeSelect
+              label="Answer promised by"
+              value={promise}
+              onChange={setPromise}
+              disabled={pending || retaining}
+              now={now}
+              testId={`ward-call-sheet-promise-${group.unitId}`}
+            />
+            <CommitmentTimeSelect
+              label="Next callback"
+              value={callback}
+              onChange={setCallback}
+              disabled={pending || retaining}
+              now={now}
+              testId={`ward-call-sheet-callback-${group.unitId}`}
+            />
+          </div>
+        </details>
         <div className={styles.row}>
           <Button
             size="sm"
@@ -343,6 +441,30 @@ function WardGroup({ group, units, now }: { group: CallSheetGroup; units: readon
           </span>
         </div>
       </fieldset>
-    </section>
+    </li>
   );
+}
+
+/** Why this ward sits where it does in the call order, as one small tag. */
+function WardState({ group, now }: { group: CallSheetGroup; now: Instant }) {
+  const callback = group.nextCallbackAt;
+  const [tone, text] =
+    callback !== undefined && callback <= now
+      ? (["warning", `Callback late, due ${formatInstantWithDay(callback, now)}`] as const)
+      : callback !== undefined
+        ? (["info", `Callback ${formatInstantWithDay(callback, now)}`] as const)
+        : group.lastCall
+          ? (["neutral", "No callback set"] as const)
+          : (["neutral", "Not called yet"] as const);
+  return (
+    <span className={styles.state} data-tone={tone}>
+      {text}
+    </span>
+  );
+}
+
+/** "ward 2", "wards 1 and 3", "wards 1, 2 and 4". */
+function wardList(positions: number[]): string {
+  if (positions.length === 1) return `ward ${positions[0]}`;
+  return `wards ${positions.slice(0, -1).join(", ")} and ${positions[positions.length - 1]}`;
 }
