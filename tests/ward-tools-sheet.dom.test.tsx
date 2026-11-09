@@ -77,7 +77,8 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
       expect(screen.queryByRole("button", { name: gone })).toBeNull();
       expect(screen.queryByRole("link", { name: gone })).toBeNull();
     }
-    expect(screen.getByRole("link", { name: /Log a delay/u })).toBeTruthy();
+    // Item 6c (9 Nov 2026): Log a delay is a short form in Tools, not a link to Waiting.
+    expect(screen.getByTestId("ward-tools-toggle-log-delay")).toBeTruthy();
     expect(screen.getByRole("link", { name: /Legal forms/u })).toBeTruthy();
   });
 
@@ -393,7 +394,7 @@ describe("Tools offers each desk only the tools its role may use (audit, 1 Nov 2
   it("gives the coordinator Find a bed, Key figures, Messages and Log a delay", () => {
     renderSheet();
     for (const id of NETWORK_FIGURE_TOOLS) expect(screen.getByTestId(`ward-tools-toggle-${id}`)).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Log a delay/u })).toBeTruthy();
+    expect(screen.getByTestId("ward-tools-toggle-log-delay")).toBeTruthy();
   });
 
   it.each([
@@ -430,14 +431,15 @@ describe("Tools offers each desk only the tools its role may use (audit, 1 Nov 2
       </WardFlowProvider>,
     );
     expect(canOpenWaiting).toBe(true);
-    expect(screen.queryByRole("link", { name: /Log a delay/u })).toBeNull();
+    expect(screen.queryByTestId("ward-tools-toggle-log-delay")).toBeNull();
+    expect(screen.queryByText("Log a delay")).toBeNull();
     expect(screen.getByTestId("ward-tools-toggle-bed-finder")).toBeTruthy();
   });
 
   it("keeps Log a delay for a ward desk, which may record one", () => {
     atDesk({ role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } });
     renderSheet();
-    expect(screen.getByRole("link", { name: /Log a delay/u })).toBeTruthy();
+    expect(screen.getByTestId("ward-tools-toggle-log-delay")).toBeTruthy();
   });
 });
 
