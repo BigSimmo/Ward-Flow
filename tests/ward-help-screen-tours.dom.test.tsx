@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -36,7 +36,7 @@ vi.mock("@/components/wf", async (importOriginal) => ({
 
 import { SCREEN_HELP } from "@/components/ward-management/help/ward-help-content";
 import { askHelp, closestHowTos, HOW_TOS, showMeSteps } from "@/components/ward-management/help/ward-help-howto";
-import { HelpTasks } from "@/components/ward-management/help/ward-help-jobs";
+import { HelpAroundRow } from "@/components/ward-management/help/ward-help-jobs";
 import { SCREEN_TOURS } from "@/components/ward-management/help/ward-help-screen-tours";
 import { tasksForDesk } from "@/components/ward-management/help/ward-help-task-list";
 
@@ -74,16 +74,12 @@ const PAGE_WALKS = Object.keys(PAGE_WALK_PATHS);
 
 function renderCapacity(onShowMe = vi.fn(), showMeOn = true) {
   render(
-    <HelpTasks
+    <HelpAroundRow
       role="coordinator"
       home="/ward-flow"
       pathname="/ward-flow/capacity"
       screen={CAPACITY}
-      onClose={vi.fn()}
       onShowMe={onShowMe}
-      onTour={vi.fn()}
-      onSearch={vi.fn()}
-      screenName={() => "that screen"}
       showMeOn={showMeOn}
     />,
   );
@@ -165,14 +161,14 @@ describe("Show me around: the walk-rounds", () => {
   });
 });
 
-describe("Show me around: in Help's On this screen card", () => {
+describe("Show me around: in Help's slate top", () => {
   it("offers the screen's walk round first and plays it with Show me", () => {
     const onShowMe = renderCapacity();
     const tile = screen.getByTestId("ward-help-show-me-around");
     expect(tile.textContent).toMatch(/Show me around this screen/);
     // Josh's fifth notes (8 Nov 2026): Nearest ready beds is a phone-only step now.
     expect(tile.textContent).toMatch(/5 steps/);
-    fireEvent.click(tile);
+    fireEvent.click(within(tile).getByRole("button", { name: /^Start/ }));
     expect(onShowMe).toHaveBeenCalledWith("around-capacity");
   });
 

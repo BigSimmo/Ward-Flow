@@ -141,49 +141,180 @@
 }
 
 /* Activity panel: one title row, compact segmented tabs, sticky header and foot. */
+/*
+ * The page-top look (Josh, 9 Nov 2026): a slate band with "Activity" and its scope softer beside it,
+ * one calm line on what was sent to this desk, a 36px round close level with the title, then the
+ * tabs: underline tabs on the light body under the slate's curved lip on a computer, curved folder
+ * tabs rising into the body on a phone. Hero tokens, so both themes match the pages' own tops.
+ */
 .panelHeader.panelHeader {
-  padding-top: var(--wf-s-3);
-  padding-bottom: 0;
+  padding: 16px 16px 0;
+  border-bottom: 0;
+  background:
+    radial-gradient(520px 200px at 88% -30%, var(--wf-hero-glow), transparent 70%),
+    linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
 }
+/* The kit's bottom row reaches past the header's padding; this header's padding is 16px on every size. */
+.panelHeader.panelHeader > :last-child {
+  flex-basis: calc(100% + 32px);
+  width: calc(100% + 32px);
+  margin-inline: -16px;
+}
+/* Phone: the grip sits on the slate too. Only the panel's sheet: Home's screen also takes `.glyphScope`. */
+.activitySheet > :first-child:not([data-sheet-header]) {
+  border-radius: 16px 16px 0 0;
+  background: var(--wf-hero-1);
+}
+.activitySheet > :first-child:not([data-sheet-header]) > span {
+  background: var(--wf-on-hero-line);
+}
+/* The heading keeps "Activity · Statewide" for screen readers; the drawn title is beside it. */
 .panelTitle.panelTitle {
-  font-size: var(--wf-fs-16);
-  line-height: var(--wf-lh-16);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
-/* The Sheet's header-bottom slot bleeds left but stops short on the right, so the tabs widen to
- * the header's full width themselves. */
+.panelTitleShown {
+  color: var(--wf-hero-ink);
+  font: 600 19px / 26px var(--wf-font);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.panelTitleShown > span {
+  color: var(--wf-hero-ink-2);
+  font-weight: 400;
+}
+.panelLine {
+  margin: 6px 0 0;
+  color: var(--wf-hero-ink-2);
+  font-size: var(--wf-fs-14);
+  line-height: 20px;
+}
 .panelTabs {
-  width: calc(100% + 2rem);
-  padding: 0 var(--wf-s-4) var(--wf-s-3);
+  margin-top: 4px;
+  padding: 4px 16px 0;
+  border-radius: 22px 22px 0 0;
+  background: var(--wf-surface);
 }
-.panelTabs > * {
-  width: 100%;
+.panelTabs > [role="tablist"] {
+  gap: 28px;
 }
-/* Kept at 40rem on purpose: this tracks the kit Sheet's Tailwind `sm` padding switch (sheet.tsx), not the phone layout. Move it only with the Sheet. */
-@media (min-width: 40rem) {
-  .panelTabs {
-    width: calc(100% + 2.5rem);
-    padding-inline: 20px;
-  }
+.panelTabs [role="tab"] {
+  min-height: 46px;
+  font-size: var(--wf-fs-14);
+}
+.panelTabs [role="tab"][aria-selected="true"] {
+  border-bottom-color: var(--wf-accent);
 }
 .panelClose {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--wf-h-md);
-  height: var(--wf-h-md);
-  margin: -6px -8px -6px 0;
-  border: 1px solid transparent;
-  border-radius: var(--wf-r-md);
-  background: transparent;
-  color: var(--wf-ink-2);
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--wf-on-hero-line);
+  border-radius: 50%;
+  background: var(--wf-on-hero-fill);
+  color: var(--wf-hero-ink);
   cursor: pointer;
 }
+/* A 48px tap area round the 36px face. */
+.panelClose::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
 .panelClose:hover {
-  background: var(--wf-hover);
+  background: var(--wf-on-hero-hl);
 }
 .panelClose:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
+  outline: 2px solid var(--wf-hero-ink-2);
+  outline-offset: 1px;
+}
+/* Phone (the kit Sheet's bottom-sheet size, below 40rem): folder tabs on the slate. */
+@media (max-width: 39.9375rem) {
+  .panelTitleShown {
+    font-size: 18px;
+  }
+  .panelTabs {
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  .panelTabs::after {
+    content: "";
+    display: block;
+    height: 12px;
+    border-radius: 22px 22px 0 0;
+    background: var(--wf-surface);
+  }
+  .panelTabs:has([role="tab"]:first-child[aria-selected="true"])::after {
+    border-top-left-radius: 0;
+  }
+  .panelTabs > [role="tablist"] {
+    gap: 0;
+    padding: 6px 12px 0 0;
+    border-bottom: 0;
+  }
+  .panelTabs [role="tab"] {
+    position: relative;
+    height: 40px;
+    min-height: 40px;
+    margin: 0;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 14px 14px 0 0;
+    color: var(--wf-hero-ink-2);
+    font-size: 15px;
+  }
+  .panelTabs [role="tab"]:first-child {
+    padding-left: 16px;
+    border-top-left-radius: 0;
+  }
+  .panelTabs [role="tab"]:hover {
+    color: var(--wf-hero-ink);
+  }
+  /* Counts on the slate: plain mono numbers, no grey box. */
+  .panelTabs [role="tab"] > :last-child {
+    background: transparent;
+    color: inherit;
+    opacity: 0.8;
+  }
+  .panelTabs [role="tab"][aria-selected="true"] {
+    z-index: 1;
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+  }
+  /* A tab's tap area reaches 48px into the slate above it. */
+  .panelTabs [role="tab"]:not([aria-selected="true"])::after {
+    content: "";
+    position: absolute;
+    inset: -6px 0 0;
+  }
+  /* The chosen tab's concave feet, so it flows into the body. */
+  .panelTabs [role="tab"][aria-selected="true"]::before,
+  .panelTabs [role="tab"][aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    width: 12px;
+    height: 12px;
+  }
+  .panelTabs [role="tab"][aria-selected="true"]::before {
+    left: -12px;
+    background: radial-gradient(circle at 0 0, transparent 11.5px, var(--wf-surface) 12px);
+  }
+  .panelTabs [role="tab"][aria-selected="true"]::after {
+    right: -12px;
+    background: radial-gradient(circle at 100% 0, transparent 11.5px, var(--wf-surface) 12px);
+  }
+  .panelTabs [role="tab"]:first-child[aria-selected="true"]::before {
+    display: none;
+  }
 }
 .panelBody {
   padding: 0;
@@ -587,16 +718,6 @@ a.eventText:hover {
   margin: 4px 0 0;
 }
 
-/* Tabs match Home's list tabs: a 40px track with 30px options at 13px (32px on a phone, 48px hit). */
-.panelTabs.panelTabs [role="tab"] {
-  height: 30px;
-  min-height: 0;
-  padding-inline: 10px;
-  font-size: var(--wf-fs-13);
-}
-.panelTabs.panelTabs > * {
-  padding: 4px;
-}
 /* One Show more row on every list. */
 .moreRow {
   display: flex;
@@ -621,20 +742,6 @@ a.eventText:hover {
   outline-offset: -2px;
 }
 @media (max-width: 46.4375rem) {
-  .panelTabs.panelTabs [role="tab"] {
-    position: relative;
-    height: 32px;
-    padding-inline: 8px;
-    font-weight: 600;
-  }
-  .panelTabs.panelTabs [role="tab"]::after {
-    content: "";
-    position: absolute;
-    inset: -8px 0;
-  }
-  .panelTabs.panelTabs > * {
-    padding: 3px;
-  }
   .moreRow {
     height: 48px;
   }

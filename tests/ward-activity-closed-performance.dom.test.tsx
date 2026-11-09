@@ -192,7 +192,7 @@ describe("Activity lifetime stress", () => {
     expect(newRead).not.toHaveBeenCalled();
     view.rerender(<AuditFixture open account={newAccount} />);
     const dialog = await screen.findByRole("dialog", { name: "Activity · Statewide" });
-    fireEvent.click(within(dialog).getByRole("tab", { name: /^Recent activity/u }));
+    fireEvent.click(within(dialog).getByRole("tab", { name: /^Recent/u }));
     await waitFor(() => expect(within(dialog).getByText("Close unit.")).toBeInTheDocument());
     await act(async () => {
       resolveOld([
