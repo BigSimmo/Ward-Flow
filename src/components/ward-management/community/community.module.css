@@ -3617,6 +3617,13 @@ button.searchBox:hover {
   flex: 1 1 12rem;
   max-inline-size: 18rem;
 }
+.followUpReplyLabel {
+  display: block;
+  margin-bottom: var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
 .followUpReplies {
   display: flex;
   flex-direction: column;
@@ -3646,7 +3653,8 @@ button.searchBox:hover {
 .followUpReplies .followUpReply > * {
   flex: 0 0 13rem;
 }
-.followUpReplies .followUpReply label {
+.followUpReplies .followUpReply label,
+.followUpReplies .followUpReply .followUpReplyLabel {
   position: absolute;
   width: 1px;
   height: 1px;

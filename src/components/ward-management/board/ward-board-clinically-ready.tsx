@@ -2,12 +2,8 @@
 
 import { useState } from "react";
 
-import { Button, DateField, Field, Select } from "@/components/wf";
-import {
-  DELAYED_DISCHARGE_REASONS,
-  isDelayedDischargeReason,
-  type DelayedDischargeReason,
-} from "@/components/ward-management/ward-admissions";
+import { Button, DateField, Field } from "@/components/wf";
+import { DELAYED_DISCHARGE_REASONS, type DelayedDischargeReason } from "@/components/ward-management/ward-admissions";
 import {
   dayOf,
   perthIsoDay,
@@ -18,7 +14,10 @@ import {
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 
+import { ChoiceChips } from "../ward/ward-bed-dossier-bits";
 import styles from "./board.module.css";
+
+const REASON_CHOICES = DELAYED_DISCHARGE_REASONS.map((reason) => ({ id: reason, label: reason }));
 import type { Occupant } from "./ward-board-model";
 
 /** "2026-11-04" as the instant of that Perth midnight on the demo clock; null when not a real day. */
@@ -32,7 +31,8 @@ function dayInstant(iso: string, dayZero: Date): Instant | null {
 /**
  * Item 5 (Josh, 9 Nov 2026): "Clinically ready since [date]" and the one reason they have not gone,
  * beside the long-stay hold-up on the board's detail panel. The day is typed in the kit's date box;
- * the reason is chosen from `DELAYED_DISCHARGE_REASONS`. Clearing removes both.
+ * the reason is chosen from `DELAYED_DISCHARGE_REASONS` as kit chips (Q36). Clearing removes both.
+ * Its fields and save sit in one `<form>`, which the shared board holds from the first touch.
  */
 export function ClinicallyReadyControl({
   occupant,
@@ -85,20 +85,16 @@ export function ClinicallyReadyControl({
       <Field label="Clinically ready since" hint="DD/MM/YYYY" id="ward-board-ready-since" error={error}>
         <DateField data-testid="ward-board-ready-since" value={day} onValueChange={setDay} />
       </Field>
-      <Field label="Why not gone" id="ward-board-ready-reason">
-        <Select
-          data-testid="ward-board-ready-reason"
+      <div>
+        <span className={styles.readyReasonLabel}>Why not gone</span>
+        <ChoiceChips
+          label="Why not gone"
+          items={REASON_CHOICES}
           value={reason}
-          onChange={(event) => setReason(isDelayedDischargeReason(event.target.value) ? event.target.value : "")}
-        >
-          <option value="">Choose a reason</option>
-          {DELAYED_DISCHARGE_REASONS.map((entry) => (
-            <option key={entry} value={entry}>
-              {entry}
-            </option>
-          ))}
-        </Select>
-      </Field>
+          onChange={setReason}
+          testId="ward-board-ready-reason"
+        />
+      </div>
       <Button type="submit" variant="sec" disabled={!canRecord} data-testid="ward-board-ready-record">
         {recorded ? "Update" : "Record ready"}
       </Button>

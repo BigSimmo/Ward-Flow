@@ -22,6 +22,10 @@ const ROOT = path.join(process.cwd(), "src/components/ward-management");
 type Cover = "held" | "page form" | "popup" | "no form" | "follow-up";
 const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> = {
   "alerts/alerts-screen.tsx": { cover: "popup", why: "Broadcast and alert detail open in modals." },
+  "board/ward-board-clinically-ready.tsx": {
+    cover: "page form",
+    why: "Clinically ready since and its reason sit in one form with Record ready (item 5, 9 Nov 2026).",
+  },
   "board/ward-board-detail-panel.tsx": { cover: "page form" },
   "board/ward-board-ward-diagnosis.tsx": { cover: "page form" },
   "capacity/ward-closure-panel.tsx": { cover: "held", why: "Held once a reason or reopening time is chosen." },
@@ -105,6 +109,10 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "referrals/use-ward-referral-drawer-state.ts": { cover: "popup" },
   "settings/settings-screen.tsx": { cover: "popup" },
   "use-hold-open-form.ts": { cover: "held", why: "The hook itself." },
+  "ward-extend-hold.tsx": {
+    cover: "no form",
+    why: "Extend pull only folds open 1 h, 2 h and 4 h chips; each chip saves in one tap, with no fields held open.",
+  },
   "ward-global-search.tsx": { cover: "no form", why: "Search only; it saves nothing to a record." },
   "ward-shared-access.tsx": { cover: "no form", why: "Sign-in, not a shared board save." },
   "ward-tasks-drawer.tsx": { cover: "popup" },
