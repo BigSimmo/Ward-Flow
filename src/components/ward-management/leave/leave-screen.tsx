@@ -7,7 +7,7 @@ import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-managemen
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { unitInScope } from "@/components/ward-management/ward-role-access";
-import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { wardNames } from "@/components/ward-management/tools/ward-tool-remind-store";
@@ -21,6 +21,19 @@ const STATUS_TONE: Record<LeaveStatus, WfTone> = {
   due_today: "info",
   on_leave: "neutral",
 };
+
+/** The clock face in mono, the day words ("yesterday") in the text face. */
+function LeaveTime({ instant, now }: { instant: Instant; now: Instant }) {
+  const text = formatInstantWithDay(instant, now);
+  const space = text.indexOf(" ");
+  if (space < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, space)}
+      <span className={styles.day}>{text.slice(space)}</span>
+    </>
+  );
+}
 
 /**
  * Feature 23 (Josh, 9 Nov 2026): everyone on leave across the desk's wards, with where their bed is,
@@ -91,19 +104,30 @@ export function LeaveScreen() {
                     const name = person?.formalName ?? "Not recorded";
                     const patientId = person?.patient?.id;
                     return (
-                      <tr key={row.id} data-testid={`ward-leave-row-${row.id}`} data-status={row.status}>
+                      <tr
+                        key={row.id}
+                        data-testid={`ward-leave-row-${row.id}`}
+                        data-status={row.status}
+                        className={row.status === "absent" ? tableClasses.actNow : undefined}
+                      >
                         <th scope="row" className={styles.person}>
                           {patientId ? <Link href={patientHref(patientId)}>{name}</Link> : name}
                           {person?.umrn ? <span className={styles.umrn}>{person.umrn}</span> : null}
                         </th>
-                        <td>
+                        <td className={styles.ward}>
                           {row.wardName}
                           <span className={styles.sub}>{row.bedLabel}</span>
                         </td>
-                        <td>{row.kind}</td>
-                        <td className={styles.time}>{formatInstantWithDay(row.leftAt, now)}</td>
-                        <td className={styles.time}>{formatInstantWithDay(row.expectedReturn, now)}</td>
-                        <td>
+                        <td className={styles.kind}>{row.kind}</td>
+                        <td className={styles.time}>
+                          <span className={styles.phoneLabel}>Left </span>
+                          <LeaveTime instant={row.leftAt} now={now} />
+                        </td>
+                        <td className={styles.time}>
+                          <span className={styles.phoneLabel}>Back </span>
+                          <LeaveTime instant={row.expectedReturn} now={now} />
+                        </td>
+                        <td className={styles.statusCell}>
                           <span className={styles.status}>
                             <StatusGlyph tone={STATUS_TONE[row.status]} size={9} />
                             {LEAVE_STATUS_LABEL[row.status]}
