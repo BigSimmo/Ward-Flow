@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, CircleCheck, Copy, Mail, ShieldAlert } from "lucide-react";
+import { ArrowLeft, CircleCheck, Copy, ShieldAlert } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Button, Field, Textarea } from "@/components/wf";
@@ -12,8 +12,6 @@ import {
   patientDetailRefusal,
   REPORT_MAX_LENGTH,
   reportLines,
-  reportMailto,
-  reportSubject,
   reportText,
   reportTime,
   supportEmail,
@@ -21,13 +19,12 @@ import {
 } from "./ward-help-report";
 import s from "./ward-help-panel.module.css";
 
-type Status = "" | "copied" | "copy-failed" | "mail-opened";
+type Status = "" | "copied" | "copy-failed";
 
 const STATUS_WORDS: Readonly<Record<Status, string>> = {
   "": "",
-  copied: "Report copied. Paste it into an email or message to your pilot lead.",
+  copied: "Report copied. Paste it into your email.",
   "copy-failed": "Could not copy. Select the report below and copy it yourself.",
-  "mail-opened": "Your email app should open with the report filled in. Press Send there.",
 };
 
 /** "8 Nov 2026" from the What's new date "2026-11-08", for the preview only (the report keeps the id). */
@@ -39,16 +36,12 @@ function shortDate(isoDate: string): string {
   );
 }
 
-/** Opens the email app; a prop so tests need not navigate. */
-function openMailApp(href: string): void {
-  window.location.assign(href);
-}
-
 /**
  * REPORT A PROBLEM, a view inside Help (Josh, 8 Nov 2026). The reporter types what happened; the
- * screen, desk, version, browser and time are added. Before it is emailed or copied, the words are
- * checked for likely patient details and refused while any is there. The words stay in this view's
- * state: they go only into the email body or the clipboard, and are not logged or put in storage.
+ * screen, desk, version, browser and time are added. Before it is copied, the words are checked for
+ * likely patient details and refused while any is there. The app never composes the email (the
+ * never-build rule): the reporter pastes the report into their own. The words stay in this view's
+ * state: they go only to the clipboard, and are not logged or put in storage.
  */
 export function HelpReport({
   screen,
@@ -57,16 +50,14 @@ export function HelpReport({
   version,
   onBack,
   email = supportEmail(),
-  openMail = openMailApp,
 }: {
   screen?: string;
   path: string;
   desk: string;
   version?: { id: string; date: string };
   onBack: () => void;
-  /** The support address; null shows Copy report only. */
+  /** The support address to paste the report to; null points to the pilot lead. */
   email?: string | null;
-  openMail?: (href: string) => void;
 }) {
   const [text, setText] = useState("");
   const [error, setError] = useState("");
@@ -88,8 +79,8 @@ export function HelpReport({
     time: reportTime(new Date()),
   });
 
-  /** The report to send, or undefined after saying why not (focus goes back to the box). */
-  const checked = (): { body: string; context: ReportContext } | undefined => {
+  /** The report to copy, or undefined after saying why not (focus goes back to the box). */
+  const checked = (): string | undefined => {
     const refusal = !text.trim()
       ? "Say what happened first."
       : findPatientDetails(text).length
@@ -102,25 +93,17 @@ export function HelpReport({
       field.current?.focus();
       return undefined;
     }
-    const now = context();
-    return { body: copiedText(reportText(text, now)), context: now };
-  };
-
-  const send = () => {
-    const report = checked();
-    if (!report || !email) return;
-    openMail(reportMailto(email, reportSubject(report.context), report.body));
-    setStatus("mail-opened");
+    return copiedText(reportText(text, context()));
   };
 
   const copy = async () => {
     const report = checked();
     if (!report) return;
     try {
-      await copyTextToClipboard(report.body);
+      await copyTextToClipboard(report);
       setStatus("copied");
     } catch {
-      setFallback(report.body);
+      setFallback(report);
       setStatus("copy-failed");
     }
   };
@@ -133,11 +116,11 @@ export function HelpReport({
     desk,
     version,
     browser: "This browser and window size",
-    time: "When you send it",
+    time: "When you copy it",
   }).map(([label, value]) =>
     label === "Version" && version ? ([label, `latest change ${shortDate(version.date)}`] as const) : [label, value],
   );
-  const done = status === "copied" || status === "mail-opened";
+  const done = status === "copied";
 
   return (
     <>
@@ -170,24 +153,14 @@ export function HelpReport({
       {/* The actions sit straight under the box, so they show on a phone without scrolling. */}
       <div className={s.reportSend}>
         <div className={s.answerActions}>
-          {email ? (
-            <Button variant="pri" icon={Mail} onClick={send} data-testid="ward-help-report-email">
-              Email report
-            </Button>
-          ) : null}
-          <Button
-            variant={email ? "sec" : "pri"}
-            icon={Copy}
-            onClick={() => void copy()}
-            data-testid="ward-help-report-copy"
-          >
+          <Button variant="pri" icon={Copy} onClick={() => void copy()} data-testid="ward-help-report-copy">
             Copy report
           </Button>
         </div>
         <p className={s.note} data-testid="ward-help-report-destination">
           {email
-            ? `Email goes to ${email}.`
-            : "No support address is set. Copy the report and send it to your pilot lead."}
+            ? `Then paste it into an email to ${email}.`
+            : "Then paste it into an email or message to your pilot lead."}
         </p>
         <p
           className={`${s.footStatus} ${s.reportStatus}`}

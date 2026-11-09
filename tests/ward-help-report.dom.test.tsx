@@ -18,7 +18,6 @@ const SAFE = "The board froze after I pressed Accept.";
 const PATIENT = "Mr Smith would not move to bed 4.";
 
 function report(props: Partial<Parameters<typeof HelpReport>[0]> = {}) {
-  const openMail = vi.fn();
   const onBack = vi.fn();
   render(
     <HelpReport
@@ -27,12 +26,11 @@ function report(props: Partial<Parameters<typeof HelpReport>[0]> = {}) {
       desk="Bed manager"
       version={{ id: "2026-11-08-help-report-a-problem", date: "2026-11-08" }}
       email="pilot@example.invalid"
-      openMail={openMail}
       onBack={onBack}
       {...props}
     />,
   );
-  return { openMail, onBack, box: screen.getByRole("textbox", { name: "What happened?" }) };
+  return { onBack, box: screen.getByRole("textbox", { name: "What happened?" }) };
 }
 
 let writeText: ReturnType<typeof vi.fn>;
@@ -96,57 +94,45 @@ describe("Report a problem", () => {
       Desk: "Bed manager",
       Version: "latest change 8 Nov 2026",
       Browser: "This browser and window size",
-      Time: "When you send it",
+      Time: "When you copy it",
     });
   });
 
-  it("puts Email report and Copy report straight under the box, before what is added", () => {
+  it("puts Copy report straight under the box, before what is added, and never composes an email", () => {
     report();
     const box = screen.getByRole("textbox", { name: "What happened?" });
-    const email = screen.getByRole("button", { name: "Email report" });
+    const copy = screen.getByRole("button", { name: "Copy report" });
     const added = screen.getByTestId("ward-help-report-added");
-    expect(box.compareDocumentPosition(email) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(email.compareDocumentPosition(added) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(box.compareDocumentPosition(copy) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(copy.compareDocumentPosition(added) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // Never-build rule (19 Oct 2026): the app composes no email; the reporter pastes into their own.
+    expect(screen.queryByRole("button", { name: /email/iu })).toBeNull();
+    expect(document.querySelector('a[href^="mailto:"]')).toBeNull();
   });
 
-  it("asks for words first, and puts focus back in the box", () => {
-    const { openMail, box } = report();
-    fireEvent.click(screen.getByRole("button", { name: "Email report" }));
-    expect(openMail).not.toHaveBeenCalled();
+  it("asks for words first, and puts focus back in the box", async () => {
+    const { box } = report();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Copy report" }));
+    });
+    expect(writeText).not.toHaveBeenCalled();
     expect(screen.getByRole("alert").textContent).toContain("Say what happened first.");
     expect(document.activeElement).toBe(box);
   });
 
-  it("refuses patient details for email and copy alike, without repeating them", async () => {
-    const { openMail, box } = report();
+  it("refuses patient details without repeating them", async () => {
+    const { box } = report();
     fireEvent.change(box, { target: { value: PATIENT } });
-    fireEvent.click(screen.getByRole("button", { name: "Email report" }));
-    expect(openMail).not.toHaveBeenCalled();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Copy report" }));
+    });
+    expect(writeText).not.toHaveBeenCalled();
     const alert = screen.getByRole("alert").textContent ?? "";
     expect(alert).toContain("Remove patient details first.");
     expect(alert).toContain("a name with a title");
     expect(alert).not.toContain("Smith would");
     expect(box.getAttribute("aria-invalid")).toBe("true");
     expect(document.activeElement).toBe(box);
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Copy report" }));
-    });
-    expect(writeText).not.toHaveBeenCalled();
-  });
-
-  it("emails a clean report through a mailto with subject and body", () => {
-    const { openMail, box } = report();
-    fireEvent.change(box, { target: { value: SAFE } });
-    fireEvent.click(screen.getByRole("button", { name: "Email report" }));
-    expect(openMail).toHaveBeenCalledTimes(1);
-    const href = openMail.mock.calls[0]?.[0] as string;
-    expect(href.startsWith("mailto:pilot@example.invalid?subject=")).toBe(true);
-    const body = decodeURIComponent(href.split("&body=")[1] ?? "");
-    expect(body.split("\n")[0]).toBe("Synthetic prototype.");
-    expect(body).toContain(SAFE);
-    expect(body).toContain("Screen: Home (/ward-flow)");
-    expect(screen.getByRole("status").textContent).toContain("Press Send there.");
-    expect(screen.getByTestId("ward-help-report-destination").textContent).toBe("Email goes to pilot@example.invalid.");
   });
 
   it("copies the same report, and says so", async () => {
@@ -158,13 +144,17 @@ describe("Report a problem", () => {
     expect(writeText).toHaveBeenCalledTimes(1);
     const copied = writeText.mock.calls[0]?.[0] as string;
     expect(copied).toContain(SAFE);
+    expect(copied.split("\n")[0]).toBe("Synthetic prototype.");
+    expect(copied).toContain("Screen: Home (/ward-flow)");
     expect(copied).toContain("Desk: Bed manager");
     expect(screen.getByRole("status").textContent).toContain("Report copied.");
+    expect(screen.getByTestId("ward-help-report-destination").textContent).toBe(
+      "Then paste it into an email to pilot@example.invalid.",
+    );
   });
 
-  it("offers Copy report only, pointing to the pilot lead, when no address is set", () => {
+  it("points to the pilot lead when no address is set", () => {
     report({ email: null });
-    expect(screen.queryByRole("button", { name: "Email report" })).toBeNull();
     expect(screen.getByRole("button", { name: "Copy report" })).toBeTruthy();
     expect(screen.getByTestId("ward-help-report-destination").textContent).toContain("your pilot lead");
   });
@@ -187,7 +177,6 @@ describe("Report a problem", () => {
     const warn = vi.spyOn(console, "warn");
     const { box } = report();
     fireEvent.change(box, { target: { value: SAFE } });
-    fireEvent.click(screen.getByRole("button", { name: "Email report" }));
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Copy report" }));
     });

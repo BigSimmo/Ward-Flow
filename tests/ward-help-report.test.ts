@@ -4,7 +4,6 @@ import {
   browserSummary,
   findPatientDetails,
   patientDetailRefusal,
-  reportMailto,
   reportText,
   reportTime,
   supportEmail,
@@ -93,7 +92,7 @@ describe("Report a problem: settings and report text", () => {
     expect(reportTime(new Date("2026-11-08T06:05:00.000Z"))).toMatch(/\(2026-11-08T06:05:00\.000Z\)$/u);
   });
 
-  it("builds the report and a mailto whose body carries it, encoded", () => {
+  it("builds the plain-text report", () => {
     const context = {
       screen: "Home",
       path: "/ward-flow",
@@ -119,11 +118,5 @@ describe("Report a problem: settings and report text", () => {
         "Time: now",
       ].join("\n"),
     );
-    const href = reportMailto("pilot@example.invalid", "Ward Flow problem report: Home", text);
-    expect(href.startsWith("mailto:pilot@example.invalid?subject=Ward%20Flow%20problem%20report%3A%20Home&body=")).toBe(
-      true,
-    );
-    expect(decodeURIComponent(href.split("&body=")[1] ?? "")).toBe(text);
-    expect(href).not.toContain("& would");
   });
 });

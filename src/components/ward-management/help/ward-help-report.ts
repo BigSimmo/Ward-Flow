@@ -1,7 +1,8 @@
 /**
  * REPORT A PROBLEM (Josh, 8 Nov 2026): a short pilot report a member of staff sends from Help. There
- * is no feedback backend, so the report goes by the device's email app (a `mailto:` link) to the
- * address in `NEXT_PUBLIC_WARD_SUPPORT_EMAIL`, or is copied for the pilot lead. The screen, desk,
+ * is no feedback backend, and the never-build rule (19 Oct 2026) keeps the app from composing
+ * emails, so the report is copied for the reporter to paste into their own email to the address in
+ * `NEXT_PUBLIC_WARD_SUPPORT_EMAIL`, or to their pilot lead. The screen, desk,
  * version, browser and time are added for the reporter; they type only what happened.
  *
  * Patient details must never be sent. `findPatientDetails` looks for the likely identifiers below
@@ -33,7 +34,7 @@ const CHECKS: readonly (readonly [PatientDetailKind, RegExp])[] = [
   [
     "date",
     new RegExp(
-      `\\b\\d{1,2}[/.-]\\d{1,2}[/.-](?:\\d{4}|\\d{2})\\b|\\b\\d{1,2}(?:st|nd|rd|th)?\\s+${MONTH},?\\s+\\d{4}\\b|\\b${MONTH}\\s+\\d{1,2}(?:st|nd|rd|th)?,?\\s+\\d{4}\\b`,
+      String.raw`\b\d{1,2}[/.-]\d{1,2}[/.-](?:\d{4}|\d{2})\b|\b\d{1,2}(?:st|nd|rd|th)?\s+${MONTH},?\s+\d{4}\b|\b${MONTH}\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}\b`,
       "iu",
     ),
   ],
@@ -70,7 +71,7 @@ export function patientDetailRefusal(kinds: readonly PatientDetailKind[]): strin
   return `Remove patient details first. This looks like it has ${listWords(kinds.map((kind) => KIND_WORDS[kind]))}. The time and screen are added for you.`;
 }
 
-/** Longest "what happened": a mailto body much past this is cut short by some email apps. */
+/** Longest "what happened": enough for a short report, and short enough to paste anywhere. */
 export const REPORT_MAX_LENGTH = 1000;
 
 /**
@@ -159,13 +160,4 @@ export function reportText(whatHappened: string, context: ReportContext): string
     "",
     ...reportLines(context).map(([label, value]) => `${label}: ${value}`),
   ].join("\n");
-}
-
-export function reportSubject(context: Pick<ReportContext, "screen" | "path">): string {
-  return `Ward Flow problem report: ${context.screen ?? context.path}`;
-}
-
-/** The `mailto:` address that opens the email app with the report filled in. */
-export function reportMailto(address: string, subject: string, body: string): string {
-  return `mailto:${address}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
