@@ -147,6 +147,9 @@ describe("MARK_WEEKEND_DISCHARGE_REVIEWED", () => {
       [before, { actingUnitId: "some-other-ward" }],
       [recorded, { weekendStart: weekendStart + 60 }],
       [before, { weekendStart: NOW_ANCHOR + 30 * MINUTES_PER_DAY }],
+      // The weekend after one in progress, a whole week on, cannot be ticked ahead of time.
+      [before, { weekendStart: NOW_ANCHOR + 7 * MINUTES_PER_DAY - 60 }],
+      [before, { now: Number.NaN }],
       [before, { role: "ed" }],
     ];
     for (const [state, fields] of cases) {
@@ -154,5 +157,19 @@ describe("MARK_WEEKEND_DISCHARGE_REVIEWED", () => {
       expect(after.rejections.length).toBe(state.rejections.length + 1);
       expect(after.admissions).toEqual(state.admissions);
     }
+  });
+
+  it("refuses a stay with no expected discharge, which the review never lists", () => {
+    const seeded = seedWardFlowState();
+    const target = stayOf(seeded);
+    const before = {
+      ...seeded,
+      admissions: seeded.admissions.map((admission) =>
+        admission.id === target.id ? { ...admission, expectedDischargeAt: null } : admission,
+      ),
+    };
+    const after = mark(before, {});
+    expect(after.rejections.length).toBe(before.rejections.length + 1);
+    expect(after.admissions).toEqual(before.admissions);
   });
 });

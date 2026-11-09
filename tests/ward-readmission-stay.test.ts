@@ -44,6 +44,29 @@ describe("admissionReadmissionFlag", () => {
     expect(admissionReadmissionFlag(own, state.movements, index)?.admissionId).not.toBe(own.id);
   });
 
+  it("reads a journey joined only by its admissionId, and ignores an ambiguous pair", () => {
+    const stay = flagged[0]!;
+    const flag = admissionReadmissionFlag(stay, state.movements, index)!;
+    const unflagged = {
+      ...stay,
+      movementId: null,
+      pulledAt: flag.dischargedAt + (READMISSION_WINDOW_DAYS + 1) * MINUTES_PER_DAY,
+    };
+    const journey = {
+      ...state.movements[0]!,
+      id: "WF-SYNTH-JOIN" as const,
+      admissionId: stay.id,
+      patientId: stay.patientId ?? undefined,
+      referralId: undefined,
+      openedAt: flag.dischargedAt + MINUTES_PER_DAY,
+    };
+    const others = state.movements.filter((movement) => movement.admissionId !== stay.id);
+    expect(admissionReadmissionFlag(unflagged, others, index)).toBeNull();
+    expect(admissionReadmissionFlag(unflagged, [...others, journey], index)?.admissionId).toBe(flag.admissionId);
+    const twin = { ...journey, id: "WF-SYNTH-TWIN" as const };
+    expect(admissionReadmissionFlag(unflagged, [...others, journey, twin], index)).toBeNull();
+  });
+
   it("gives the ward's copy the discharge time only, and counts arrivals in a period", () => {
     const stay = flagged[0]!;
     expect(Object.keys(stayReadmissionCopy(stay, state.movements, index)!).sort()).toEqual([

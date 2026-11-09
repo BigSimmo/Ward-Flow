@@ -12,6 +12,7 @@ import {
   delayedBedDaysByReason,
 } from "@/components/ward-management/ward-delayed-discharge";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
+import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 
 const DAY = MINUTES_PER_DAY;
 
@@ -142,15 +143,29 @@ describe("SET_CLINICALLY_READY", () => {
     expect(after.delayedDischargeReason).toBeNull();
   });
 
-  it("refuses Clinical / Treatment, a future day, a day before arrival and the wrong role", () => {
+  it("refuses Clinical / Treatment, a future day, a day before arrival, a part minute and the wrong role", () => {
     for (const result of [
       raise({ since: today, reason: "Clinical / Treatment" }),
+      raise({ since: today - DAY + 0.5, reason: "NDIS" }),
       raise({ since: today + DAY, reason: "NDIS" }),
       raise({ since: (admission.arrivedAt as number) - 2 * DAY, reason: "NDIS" }),
       raise({ since: today, reason: "NDIS" }, "ed"),
     ]) {
       expect(result.rejections.length).toBe(base.rejections.length + 1);
       expect(result.admissions.find((row) => row.id === admission.id)!.clinicallyReadySince ?? null).toBeNull();
+    }
+  });
+
+  it("restores the day and its reason only together", () => {
+    const set = raise({ since: today - DAY, reason: "NDIS" });
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(set)))).toBe(true);
+    for (const half of [{ clinicallyReadySince: null }, { delayedDischargeReason: null }]) {
+      const copy = JSON.parse(JSON.stringify(set)) as typeof set;
+      Object.assign(
+        copy.admissions.find((row) => row.id === admission.id)!,
+        half,
+      );
+      expect(isValidStoredWardFlowState(copy)).toBe(false);
     }
   });
 

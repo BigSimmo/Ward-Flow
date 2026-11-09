@@ -4,6 +4,7 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { heldUntilExtendedLabel, pullExtensionChoices } from "@/components/ward-management/ward-bed-hold";
 import { PULL_HOLD_MAX_TOTAL_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
+import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 
 /** Feature 11 (Josh, 9 Nov 2026): Extend pull on a pulled bed. Synthetic journey only. */
 const now = 642;
@@ -56,6 +57,18 @@ describe("EXTEND_PULL", () => {
     expect(f.movement().pullExpiresAt).toBe(before + 120);
     expect(f.movement().pullExtensions).toEqual([{ at: now, by: "ward", minutes: 120 }]);
     expect(heldUntilExtendedLabel(f.movement(), now)).toMatch(/^Pulled until \d\d:\d\d.* · extended$/);
+  });
+
+  it("restores only extensions the event could write: a role, a listed amount, no other field", () => {
+    const f = pulledJourney();
+    f.send({ type: "EXTEND_PULL", role: "ward", actingUnitId: unitId, movementId: f.movementId, minutes: 60 });
+    const saved = JSON.parse(JSON.stringify(f.state)) as WardFlowState;
+    expect(isValidStoredWardFlowState(saved)).toBe(true);
+    for (const tamper of [{ by: "typed words" }, { minutes: 90 }, { minutes: -60 }, { note: "typed words" }]) {
+      const copy = JSON.parse(JSON.stringify(saved)) as WardFlowState;
+      Object.assign(copy.movements.find((m) => m.id === f.movementId)!.pullExtensions![0]!, tamper);
+      expect(isValidStoredWardFlowState(copy)).toBe(false);
+    }
   });
 
   it("extends a lapsed hold from now, not from the time already spent", () => {

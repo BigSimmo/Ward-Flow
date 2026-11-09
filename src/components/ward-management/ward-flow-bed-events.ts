@@ -774,7 +774,7 @@ export function reduceBedEvent(
         }
         // A day, not a moment: from the day they arrived up to today, never a day still to come.
         if (
-          !Number.isFinite(ready.since) ||
+          !Number.isSafeInteger(ready.since) ||
           ready.since < dayOf(admission.arrivedAt) * MINUTES_PER_DAY ||
           dayOf(ready.since) > dayOf(event.now)
         ) {

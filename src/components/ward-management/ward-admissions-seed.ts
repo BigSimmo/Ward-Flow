@@ -1137,13 +1137,15 @@ function withSeedFollowThrough(admission: Admission): Admission {
   if (trail && admission.expectedDischargeAt !== null) {
     const first = admission.expectedDischargeAt - trail.firstDaysEarlier * DAY;
     const dates = [first, ...trail.moves.map((days) => first + days * DAY)];
+    // The last move is when the current date was set, so the trail and `dischargeDateSetAt` agree.
+    const lastMoveAt = admission.dischargeDateSetAt ?? WARD_ADMISSIONS_ANCHOR - DAY;
     next = {
       ...next,
       dischargeDateMoves: trail.moves.length,
       dischargeDateTrail: {
         firstExpectedAt: first,
         revisions: trail.moves.map((_, index) => ({
-          at: WARD_ADMISSIONS_ANCHOR - (trail.moves.length - index) * DAY,
+          at: lastMoveAt - (trail.moves.length - 1 - index) * DAY,
           previousExpectedAt: dates[index]!,
           expectedAt: dates[index + 1]!,
         })),

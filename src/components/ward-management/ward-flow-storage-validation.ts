@@ -70,6 +70,7 @@ import { REPATRIATION_MODES } from "./ward-flow-events";
 import { HOME_SERVICE_ANSWERS, RETURN_PREREQUISITES } from "./out-of-area/home-service-return";
 import { isDirectoryEntryId } from "./on-call/on-call-checks";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
+import { PULL_HOLD_EXTENSION_MINUTES } from "./ward-operational-defaults";
 import { PAPER_EXPIRY_CORRECTION_REASONS } from "./ward-model-vocabulary";
 import {
   SUPPORT_NOTIFICATION_OCCASIONS,
@@ -532,8 +533,16 @@ const movement = z
     referralSourceAdmissionId: z.optional(id),
     acceptedUnitId: link,
     pullExpiresAt: z.optional(finite),
-    // Feature 11: each Extend hold on the current pull.
-    pullExtensions: z.optional(z.array(z.looseObject({ at: finite, by: text, minutes: finite }))),
+    // Feature 11: each Extend hold on the current pull, only as EXTEND_PULL writes it (role, listed amount).
+    pullExtensions: z.optional(
+      z.array(
+        z.strictObject({
+          at: finite,
+          by: z.enum(Object.keys(WARD_FLOW_ROLE_LABELS) as [string, ...string[]]),
+          minutes: z.custom((value) => (PULL_HOLD_EXTENSION_MINUTES as readonly unknown[]).includes(value)),
+        }),
+      ),
+    ),
     extendedHoldAt: z.optional(finite),
     closure: z.optional(closureRule),
     // D-74: the community purpose that closed this record is one of the two listed values, or absent.
@@ -563,72 +572,79 @@ const movement = z
     }),
   );
 
-const admission = z.looseObject({
-  id,
-  unitId: text,
-  meetingActions: z.optional(z.array(meetingAction)),
-  state: z.enum(["waitlisted", "pulled", "occupied", "departed"]),
-  observation: observationRule,
-  observationChanges: z.optional(z.array(observationChangeRule)),
-  highAcuity: bool,
-  sex: text,
-  // R7 / counts follow gender (25 September 2026): optional; absent in older saves, which load as they are.
-  gender: z.optional(z.enum(REFERRAL_GENDERS)),
-  dischargeDateMoves: counter,
-  // v10 pass 2 (Bed board): optional, a whole bed on the stay's own unit when present.
-  bedNumber: z.optional(bed),
-  pulledAt: nullableFinite,
-  arrivedAt: nullableFinite,
-  awayAtEmergencyDepartmentSince: nullableFinite,
-  expectedDischargeAt: nullableFinite,
-  dischargeDateSetAt: nullableFinite,
-  dischargeConfirmedAt: nullableFinite,
-  leftAt: nullableFinite,
-  patientId: nullableText,
-  referralId: nullableText,
-  movementId: nullableText,
-  plannedLegalStatus: z.optional(z.custom(isPlannedAdmissionLegalStatus)),
-  homeRegion: nullableText,
-  dischargeDateSetBy: nullableText,
-  dischargeConfirmedBy: nullableText,
-  blockReason: z.nullable(z.enum(BED_RELEASE_BLOCKERS)),
-  stayBlockRecords: z.optional(z.custom(isStayBlockRecords)), // absent in older saves.
-  // Feature 14 (9 Nov 2026): weekend discharge review ticks; absent in older saves.
-  weekendDischargeReviews: z.optional(
-    z.readonly(
-      z.array(
-        z.strictObject({
-          weekendStart: finite,
-          at: finite,
-          by: z.enum(Object.keys(WARD_FLOW_ROLE_LABELS) as [string, ...string[]]),
-        }),
+const admission = z
+  .looseObject({
+    id,
+    unitId: text,
+    meetingActions: z.optional(z.array(meetingAction)),
+    state: z.enum(["waitlisted", "pulled", "occupied", "departed"]),
+    observation: observationRule,
+    observationChanges: z.optional(z.array(observationChangeRule)),
+    highAcuity: bool,
+    sex: text,
+    // R7 / counts follow gender (25 September 2026): optional; absent in older saves, which load as they are.
+    gender: z.optional(z.enum(REFERRAL_GENDERS)),
+    dischargeDateMoves: counter,
+    // v10 pass 2 (Bed board): optional, a whole bed on the stay's own unit when present.
+    bedNumber: z.optional(bed),
+    pulledAt: nullableFinite,
+    arrivedAt: nullableFinite,
+    awayAtEmergencyDepartmentSince: nullableFinite,
+    expectedDischargeAt: nullableFinite,
+    dischargeDateSetAt: nullableFinite,
+    dischargeConfirmedAt: nullableFinite,
+    leftAt: nullableFinite,
+    patientId: nullableText,
+    referralId: nullableText,
+    movementId: nullableText,
+    plannedLegalStatus: z.optional(z.custom(isPlannedAdmissionLegalStatus)),
+    homeRegion: nullableText,
+    dischargeDateSetBy: nullableText,
+    dischargeConfirmedBy: nullableText,
+    blockReason: z.nullable(z.enum(BED_RELEASE_BLOCKERS)),
+    stayBlockRecords: z.optional(z.custom(isStayBlockRecords)), // absent in older saves.
+    // Feature 14 (9 Nov 2026): weekend discharge review ticks; absent in older saves.
+    weekendDischargeReviews: z.optional(
+      z.readonly(
+        z.array(
+          z.strictObject({
+            weekendStart: finite,
+            at: finite,
+            by: z.enum(Object.keys(WARD_FLOW_ROLE_LABELS) as [string, ...string[]]),
+          }),
+        ),
       ),
     ),
-  ),
-  ...dischargeFollowThroughFields, // Features 6, 37 and 13 (9 Nov 2026); absent in older saves.
-  leavingDestination: z.nullable(z.custom(isLeavingDestination)),
-  // A stored barrier is a list value or absent; free text here would be typed text restored from
-  // storage (review finding A2-2).
-  dischargeBarrier: z.optional(z.nullable(z.custom(isDischargeBarrier))),
-  // Item 5: a day's instant and a listed reason, or absent in older saves.
-  clinicallyReadySince: z.optional(nullableFinite),
-  delayedDischargeReason: z.optional(z.nullable(z.custom(isDelayedDischargeReason))),
-  // FD-10: the ward's own block, a listed block with a finite time, or absent in older saves.
-  wardDiagnosis: z.optional(
-    z.looseObject({
-      block: z.custom((value) => typeof value === "string" && isTentativeDiagnosisBlock(value)),
-      recordedAt: finite,
-      recordedBy: text,
-    }),
-  ),
-  // Browser storage holds fixed-list criteria with finite times. A typed patient specific criterion
-  // is held only as the device copy's stand-in, never its words (D-60, D-65, D-72).
-  dischargeCriteria: z.optional(z.nullable(z.custom(isDeviceCopyDischargeCriteriaRecord))),
-  careJourney: z.optional(z.custom(validCareJourney)),
-  followUp: z.nullable(
-    z.looseObject({ state: z.enum(["arranged", "not_arranged"]), recordedAt: finite, recordedBy: text }),
-  ),
-});
+    ...dischargeFollowThroughFields, // Features 6, 37 and 13 (9 Nov 2026); absent in older saves.
+    leavingDestination: z.nullable(z.custom(isLeavingDestination)),
+    // A stored barrier is a list value or absent; free text here would be typed text restored from
+    // storage (review finding A2-2).
+    dischargeBarrier: z.optional(z.nullable(z.custom(isDischargeBarrier))),
+    // Item 5: a day's instant and a listed reason, or absent in older saves.
+    clinicallyReadySince: z.optional(nullableFinite),
+    delayedDischargeReason: z.optional(z.nullable(z.custom(isDelayedDischargeReason))),
+    // FD-10: the ward's own block, a listed block with a finite time, or absent in older saves.
+    wardDiagnosis: z.optional(
+      z.looseObject({
+        block: z.custom((value) => typeof value === "string" && isTentativeDiagnosisBlock(value)),
+        recordedAt: finite,
+        recordedBy: text,
+      }),
+    ),
+    // Browser storage holds fixed-list criteria with finite times. A typed patient specific criterion
+    // is held only as the device copy's stand-in, never its words (D-60, D-65, D-72).
+    dischargeCriteria: z.optional(z.nullable(z.custom(isDeviceCopyDischargeCriteriaRecord))),
+    careJourney: z.optional(z.custom(validCareJourney)),
+    followUp: z.nullable(
+      z.looseObject({ state: z.enum(["arranged", "not_arranged"]), recordedAt: finite, recordedBy: text }),
+    ),
+  })
+  .check(
+    // Item 5: SET_CLINICALLY_READY sets and clears the day and its reason together, never one alone.
+    z.refine(
+      (stay) => ((stay.clinicallyReadySince ?? null) === null) === ((stay.delayedDischargeReason ?? null) === null),
+    ),
+  );
 
 // A destination is one of three kinds, each holding its own facts; any other kind is refused.
 const referralDestination = z.discriminatedUnion("kind", [

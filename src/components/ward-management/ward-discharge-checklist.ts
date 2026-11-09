@@ -146,8 +146,8 @@ const DEPENDENCY_FOR: Partial<Record<DischargeCheckItem, DischargeDependency["ki
 
 /**
  * The four items, each with its state. A ticked item wins. Otherwise the follow-up and medicines
- * items show what the discharge dependency list or the follow-up record already says, so the ward
- * is not asked twice; anything else is outstanding.
+ * items show what the discharge dependency list says (outstanding included), else what the follow-up
+ * record says, so the ward is not asked twice; anything else is outstanding.
  */
 export function dischargeChecklist(input: DischargeChecklistInput): DischargeChecklistRow[] {
   const reply = followUpReplyWords(input.followUpReply);
@@ -161,7 +161,9 @@ export function dischargeChecklist(input: DischargeChecklistInput): DischargeChe
     }
     const kind = DEPENDENCY_FOR[item];
     const dependency = kind ? input.dependencies?.find((candidate) => candidate.kind === kind) : undefined;
-    if (dependency && dependency.state !== "outstanding") {
+    // A state on the discharge list wins over the follow-up record, an outstanding one included,
+    // so the checklist never settles an item the list still holds open.
+    if (dependency) {
       return {
         item,
         label,

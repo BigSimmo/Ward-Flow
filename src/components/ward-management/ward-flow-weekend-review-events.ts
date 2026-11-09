@@ -35,8 +35,16 @@ export function reduceWeekendDischargeReview(
       `MARK_WEEKEND_DISCHARGE_REVIEWED was raised acting as unit ${event.actingUnitId} but admission ${admission.id} is at ${admission.unitId}`,
     );
   }
-  if (admission.state !== "pulled" && admission.state !== "occupied") {
-    return reject(state, event, "MARK_WEEKEND_DISCHARGE_REVIEWED needs a current inpatient stay");
+  // The review list holds only inpatients with a recorded expected discharge, so a tick needs both.
+  if (
+    (admission.state !== "pulled" && admission.state !== "occupied") ||
+    admission.expectedDischargeAt === null ||
+    !Number.isFinite(admission.expectedDischargeAt)
+  ) {
+    return reject(state, event, "MARK_WEEKEND_DISCHARGE_REVIEWED needs a current inpatient with an expected discharge");
+  }
+  if (!Number.isFinite(event.now)) {
+    return reject(state, event, "MARK_WEEKEND_DISCHARGE_REVIEWED review time is invalid");
   }
   if (
     !Number.isFinite(event.weekendStart) ||

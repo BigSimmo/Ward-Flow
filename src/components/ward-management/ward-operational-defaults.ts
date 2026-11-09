@@ -261,9 +261,12 @@ export const EDD_SLIP_FLAG_DAYS = CLINICAL_VALUES.eddSlipFlag.value;
 
 /**
  * Feature 14 (9 Nov 2026): how far from now a weekend discharge review may name its weekend. The
- * coming weekend is never more than a week away. An input bound on the tick, never a clinical limit.
+ * board's weekend starts at most about five days ahead (from its Monday) and a few days back (a long
+ * weekend in progress), so six days keeps it in reach while the following weekend, a full week after
+ * one in progress, stays out. The reducer holds no calendar, so this is a bound, not the board's own
+ * window. An input bound on the tick, never a clinical limit.
  */
-export const WEEKEND_REVIEW_REACH_MINUTES = 7 * 24 * MINUTES_PER_HOUR;
+export const WEEKEND_REVIEW_REACH_MINUTES = 6 * 24 * MINUTES_PER_HOUR;
 
 /** This group's entries for the settings list; `OPERATIONAL_DEFAULTS` below includes them. */
 const OPERATIONAL_DEFAULTS_FIX: readonly OperationalDefault[] = [

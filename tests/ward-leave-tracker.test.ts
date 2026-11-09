@@ -32,8 +32,13 @@ describe("leaveTrackerRows", () => {
     expect(all.length).toBe(state.leaveBeds.length);
     expect(all.length).toBeGreaterThan(0);
     const order = ["absent", "overdue", "due_today", "on_leave"];
-    const ranks = all.map((row) => order.indexOf(row.status));
-    expect([...ranks].sort((a, b) => a - b)).toEqual(ranks);
+    // Status first, then the soonest expected return within a status.
+    expect(all).toEqual(
+      [...all].sort(
+        (left, right) =>
+          order.indexOf(left.status) - order.indexOf(right.status) || left.expectedReturn - right.expectedReturn,
+      ),
+    );
     const oneWard = all[0]!.unitId;
     const scoped = leaveTrackerRows(state, NOW_ANCHOR, (unitId) => unitId === oneWard);
     expect(scoped.every((row) => row.unitId === oneWard)).toBe(true);

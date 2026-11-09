@@ -126,8 +126,17 @@ describe("discharge date trail (feature 6)", () => {
     );
     expect(rows.length).toBeGreaterThanOrEqual(2);
     for (const admission of state.admissions)
-      if (admission.dischargeDateTrail)
-        expect(admission.dischargeDateTrail.revisions).toHaveLength(admission.dischargeDateMoves);
+      if (admission.dischargeDateTrail) {
+        const revisions = admission.dischargeDateTrail.revisions;
+        expect(revisions).toHaveLength(admission.dischargeDateMoves);
+        // The last move is when the current date was set, after arrival, and the moves are in order.
+        expect(revisions.at(-1)?.at).toBe(admission.dischargeDateSetAt);
+        expect(revisions.at(-1)?.expectedAt).toBe(admission.expectedDischargeAt);
+        for (const [index, revision] of revisions.entries()) {
+          expect(revision.at).toBeGreaterThanOrEqual(admission.arrivedAt ?? -Infinity);
+          if (index > 0) expect(revision.at).toBeGreaterThan(revisions[index - 1]!.at);
+        }
+      }
   });
 });
 
@@ -146,6 +155,18 @@ describe("discharge checklist (feature 37)", () => {
     ]);
     expect(dischargeChecklistTally(rows)).toEqual({ settled: 3, total: 4 });
     expect(outstandingDischargeChecks(rows)).toEqual(["Carer or family told"]);
+  });
+
+  it("keeps an item the discharge list holds outstanding, even with follow-up arranged", () => {
+    const rows = dischargeChecklist({
+      followUp: { state: "arranged" },
+      dependencies: [{ kind: "community_follow_up", owner: "community_team", state: "outstanding", at: 1, by: "Ward" }],
+    });
+    expect([rows[0]?.item, rows[0]?.state, rows[0]?.source]).toEqual([
+      "community_follow_up",
+      "outstanding",
+      "discharge_list",
+    ]);
   });
 
   it("shows the community team's reply on the follow-up item", () => {

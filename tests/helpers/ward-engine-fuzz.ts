@@ -75,7 +75,10 @@ import {
   BED_MEETING_ACTION_OWNERS,
 } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { WARD_CLOSURE_REASON_IDS, WARD_REOPEN_AFTER_HOURS } from "@/components/ward-management/capacity/ward-closure";
-import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
+import {
+  admissionBelongsToTeam,
+  COMMUNITY_TEAM_PAGES,
+} from "@/components/ward-management/community/community-derivations";
 import {
   BED_CALL_ANSWERS,
   BROADCAST_CATEGORIES,
@@ -1229,10 +1232,14 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     (state, random) => {
       const stay = stayFor(state, random, occupied);
       const reply = pick(random, ["awaiting", "accepted", "declined"] as const);
+      // The team the stay was referred to, when it has one, so a community reply can be accepted.
+      const team =
+        (stay && COMMUNITY_TEAM_PAGES.find((page) => admissionBelongsToTeam(stay, page, state.referrals))) ??
+        pick(random, COMMUNITY_TEAM_PAGES);
       return {
         type: "RECORD_FOLLOW_UP_REPLY",
         admissionId: id(stay),
-        actingTeamId: "midland",
+        actingTeamId: team?.id ?? MISSING_ID,
         reply,
         ...(reply === "declined" ? { declineReason: "Outside catchment" as const } : {}),
       };

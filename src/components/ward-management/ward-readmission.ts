@@ -123,8 +123,10 @@ export function movementReadmissionFlag(movement: Movement, index: ReadmissionIn
 
 /**
  * Feature 29 (Josh, 9 Nov 2026): the same flag on an inpatient stay, for the ward board, the patient
- * page and Statistics. The same rule, measured from the same moment: the journey's referral when the
- * stay came through one, otherwise when the bed was taken (pulled, else arrived). The stay itself is
+ * page and Statistics. The same rule, measured from the same moment as its journey's own flag
+ * (`movementReadmissionFlag`: when the journey opened) when the stay came through one, otherwise when
+ * the bed was taken (pulled, else arrived). A seeded stay may be joined to its journey only by
+ * `Movement.admissionId`; more than one such journey is ambiguous and is not used. The stay itself is
  * never its own earlier discharge.
  */
 export function admissionReadmissionFlag(
@@ -132,9 +134,10 @@ export function admissionReadmissionFlag(
   movements: readonly Movement[],
   index: ReadmissionIndex,
 ): ReadmissionFlag | null {
-  const movement = admission.movementId
-    ? movements.find((candidate) => candidate.id === admission.movementId)
-    : undefined;
+  const linked = movements.filter((candidate) =>
+    admission.movementId ? candidate.id === admission.movementId : candidate.admissionId === admission.id,
+  );
+  const movement = linked.length === 1 ? linked[0] : undefined;
   if (movement) return priorDischargeWithinWindow(movement, movement.openedAt, index, admission.id);
   const at = admission.pulledAt ?? admission.arrivedAt;
   if (at === null) return null;
