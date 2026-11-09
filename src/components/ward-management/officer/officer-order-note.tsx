@@ -1,3 +1,4 @@
+import { Button } from "@/components/wf";
 import styles from "./officer.module.css";
 
 /**
@@ -10,4 +11,27 @@ export function OfficerOrderNote({ shown }: { shown: boolean }) {
       Late jobs first, then forms to upload, then furthest along.
     </p>
   ) : null;
+}
+
+/**
+ * Feature 25 (Josh, 9 Nov 2026): the Delayed filter hides jobs, so the list says so and clears in
+ * one press. With none delayed it says that instead of drawing an empty table.
+ */
+export function OfficerDelayedNote({
+  delayed,
+  total,
+  onShowAll,
+}: {
+  delayed: number;
+  total: number;
+  onShowAll: () => void;
+}) {
+  return (
+    <p className={styles.highlightNote} role="status" data-testid="ward-officer-delayed-note">
+      {delayed === 0 ? "No job is delayed." : `Showing ${delayed} delayed of ${total} jobs.`}{" "}
+      <Button variant="ghost" size="sm" onClick={onShowAll}>
+        Show all
+      </Button>
+    </p>
+  );
 }

@@ -551,6 +551,33 @@
   font-weight: 600;
 }
 
+/* Feature 25: the Delayed tag on its own line under the stage. */
+.stageDelayed {
+  display: flex;
+  flex-basis: 100%;
+  margin-top: 2px;
+}
+
+/* The booked time keeps together and wraps under the stage time when the column is narrow. */
+.stageBookedAt {
+  white-space: nowrap;
+}
+
+@media (min-width: 46.5rem) {
+  .stageFor:has(.stageBookedAt) {
+    display: inline-flex;
+    flex-wrap: wrap;
+    column-gap: var(--wf-s-2);
+    white-space: normal;
+  }
+}
+
+/* Words in the stage-time line are in the text face; the figures stay mono. */
+.stageBooked {
+  font-family: var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
 /* ---- History: delivered today, refused and cancelled ---- */
 
 .historyHead {
