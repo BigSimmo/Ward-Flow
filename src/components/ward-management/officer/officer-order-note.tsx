@@ -1,4 +1,4 @@
-import { Button } from "@/components/wf";
+import { Button, SrOnly } from "@/components/wf";
 import styles from "./officer.module.css";
 
 /**
@@ -15,7 +15,8 @@ export function OfficerOrderNote({ shown }: { shown: boolean }) {
 
 /**
  * Feature 25 (Josh, 9 Nov 2026): the Delayed filter hides jobs, so the list says so and clears in
- * one press. With none delayed it says that instead of drawing an empty table.
+ * one press. With none delayed it says that instead of drawing an empty table. The announced count
+ * carries its marker in its own run ("synthetic rows"), read by screen readers only.
  */
 export function OfficerDelayedNote({
   delayed,
@@ -28,7 +29,13 @@ export function OfficerDelayedNote({
 }) {
   return (
     <p className={styles.highlightNote} role="status" data-testid="ward-officer-delayed-note">
-      {delayed === 0 ? "No job is delayed." : `Showing ${delayed} delayed of ${total} jobs.`}{" "}
+      {delayed === 0 ? (
+        "No job is delayed."
+      ) : (
+        <>
+          Showing {delayed} delayed of {total} jobs<SrOnly> (synthetic rows)</SrOnly>.
+        </>
+      )}{" "}
       <Button variant="ghost" size="sm" onClick={onShowAll}>
         Show all
       </Button>

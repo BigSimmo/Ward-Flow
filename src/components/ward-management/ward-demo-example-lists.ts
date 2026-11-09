@@ -20,6 +20,7 @@ import { MINUTES_PER_DAY, type Instant } from "./ward-clock";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { Cohort, ReferralAddressing, ReferralSource, Unit } from "./ward-model";
 import { GENERAL_OBSERVATION } from "./ward-observation";
+import { createPatientResolver } from "./ward-patient-resolver";
 import type { Patient, PatientId } from "./ward-patients";
 import { completeSyntheticReferralIntake } from "./ward-referral-intake-seed";
 import { wardReferralInboxEntries } from "./referrals/referral-inbox";
@@ -270,13 +271,18 @@ export function applyExampleListsOverlay(state: WardFlowState, anchor: Instant):
  * current inpatient with a linked person who arrived after one of the finished example stays ended,
  * inside the readmission window, takes over that finished stay (and its recorded sex), so the 28 day
  * flag shows on the ward board and in Statistics. And the first stay already held up gets a logged
- * hold-up from two days ago, so the weekly delayed discharge grid shows a recorded hold-up.
+ * hold-up from two days ago, so the weekly delayed discharge grid shows a recorded hold-up. The
+ * person is found through the D-14-authorised resolver, as the readmission flag itself does, never
+ * by reading the patient link here.
  */
 function addReadmissionAndHoldUpLog(state: Draft, anchor: Instant) {
   const windowMinutes = READMISSION_WINDOW_DAYS * MINUTES_PER_DAY;
   const finished = state.admissions.filter((admission) => admission.id.startsWith("AD-EX-"));
+  const resolve = createPatientResolver({ patients: state.patients, referrals: state.referrals });
   for (const current of state.admissions) {
-    if (current.state !== "occupied" || !current.patientId || current.arrivedAt === null) continue;
+    if (current.state !== "occupied" || current.arrivedAt === null) continue;
+    const person = resolve(current).patient?.id;
+    if (!person) continue;
     const arrivedAt = current.arrivedAt;
     const earlier = finished.find(
       (stay) =>
@@ -291,7 +297,7 @@ function addReadmissionAndHoldUpLog(state: Draft, anchor: Instant) {
     );
     if (!earlier) continue;
     const index = state.admissions.indexOf(earlier);
-    state.admissions[index] = { ...earlier, patientId: current.patientId, sex: current.sex, gender: current.gender };
+    state.admissions[index] = { ...earlier, patientId: person, sex: current.sex, gender: current.gender };
     break;
   }
   const heldUp = state.admissions.findIndex((admission) => admission.state === "occupied" && admission.blockReason);

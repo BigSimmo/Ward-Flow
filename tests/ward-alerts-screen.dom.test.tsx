@@ -212,6 +212,8 @@ describe("the Alerts screen reports on every condition it watches, firing or not
       countInCategory("transport_awaiting_departure") +
       // Clinical owner ruling (14 Oct 2026): no eligible bed notifies the bed coordinator.
       countInCategory("no_eligible_bed") +
+      // P068: a booked job past its booking estimate (WF-015 since feature 25's Delayed demo, 9 Nov 2026).
+      countInCategory("transport_booking_estimate_passed") +
       // Planned admissions past their expected arrival (stream D) also draw a row.
       buildActionInbox([], NOW, allUnits(), { plannedAdmissions: wardPlannedAdmissions }).length +
       // L1 (site review, 12 Oct 2026): the arrival and discharge notification rows the Tasks badge

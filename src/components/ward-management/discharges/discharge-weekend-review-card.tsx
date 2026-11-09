@@ -11,6 +11,7 @@ import {
 } from "@/components/ward-management/ward-clock";
 import type { DischargeRecord, WardRecordActor } from "@/components/ward-management/ward-discharge-records";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
+import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 import { Button, Card, CardHead, ShowMoreRow, foldHidden, foldLimit } from "@/components/wf";
@@ -106,10 +107,11 @@ export function DischargeWeekendReview({
                         size="sm"
                         aria-label={`Mark ${name} reviewed`}
                         onClick={() =>
-                          dispatch({
-                            type: "MARK_WEEKEND_DISCHARGE_REVIEWED",
-                            role: actor.role,
+                          wardRaise(
+                            dispatch,
+                            actor.role,
                             now,
+                          )("MARK_WEEKEND_DISCHARGE_REVIEWED", {
                             admissionId: stay.admissionId,
                             weekendStart: window.start,
                             ...(actor.role === "ward" ? { actingUnitId: actor.actingUnitId } : {}),
