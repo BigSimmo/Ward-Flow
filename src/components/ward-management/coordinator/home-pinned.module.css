@@ -1,0 +1,131 @@
+/* Home's Pinned card (feature 31): compact rows in Home's own row columns, no tiles. */
+
+.card {
+  min-width: 0;
+  /* The kit card draws its own border and radius; this only keeps its rows inside them. */
+  overflow: hidden;
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content max-content;
+  align-items: center;
+  column-gap: var(--wf-s-3);
+  min-height: 48px;
+  padding: var(--wf-s-1) var(--wf-s-2) var(--wf-s-1) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.row:hover {
+  background: var(--wf-hover);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.name {
+  align-self: flex-start;
+  max-width: 100%;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-decoration: none;
+  overflow-wrap: break-word;
+}
+
+.name:hover {
+  text-decoration: underline;
+}
+
+.name:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+
+.detail {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  overflow-wrap: break-word;
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.mono {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-13);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.quiet {
+  color: var(--wf-ink-3);
+}
+
+.unpin {
+  color: var(--wf-ink-3);
+}
+
+/* Phone: 48px tap rows; the unpin button keeps the kit's phone size. */
+.card[data-phone] .row {
+  min-height: 56px;
+  padding-right: var(--wf-s-1);
+}
+
+/* Home's "since you were last here" line (feature 40): one quiet line, the review button at its end. */
+.bannerSlot {
+  min-width: 0;
+}
+
+.bannerSlot[data-empty] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.bannerSlot .banner {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-2) var(--wf-s-4);
+}
+
+.bannerGlyph {
+  flex: none;
+}
+
+.bannerText {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  overflow-wrap: break-word;
+}
+
+.bannerSlot .bannerAction {
+  flex: none;
+}
