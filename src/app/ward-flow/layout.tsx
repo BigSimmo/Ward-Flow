@@ -51,7 +51,7 @@ import { WardRowDensity } from "@/components/ward-management/settings/row-densit
 import { WardGround } from "@/components/ward-management/ward-shell";
 import { WardDeskHold, WardDeskPendingClear } from "@/components/ward-management/shell/ward-access-hold";
 import { WARD_DESK_EARLY_SCRIPT, WARD_DESK_HELD_COOKIE } from "@/components/ward-management/shell/ward-desk-early";
-import WardFlowLoading from "./loading";
+import { HeldDeskLoading } from "./loading-status";
 
 import styles from "./ward-flow-layout.module.css";
 
@@ -297,7 +297,7 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                     held={deskHeld}
                     placeholder={
                       <WardGround>
-                        <WardFlowLoading />
+                        <HeldDeskLoading />
                       </WardGround>
                     }
                   >
