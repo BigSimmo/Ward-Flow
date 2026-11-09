@@ -1141,3 +1141,17 @@ is inferred.
 - **Decision:** the statewide figure at the top of Home, and every bed alert dot and count, reads "at risk" when the whole percentage it shows is at or above the bed alert line, and "beds in use" below it. So 84.5% to 84.9% shows "85% at risk", never "85% beds in use".
 - **How:** `coordinator-screen.tsx` compares `Math.round(statewideOccupancy)` with the bed alert line, and `isBedAlert` (`ward-service-bed-alerts.ts`) rounds the same way, so the rail, phone menu and executive bed alert dots and counts match. Built in PR #1561.
 - **Boundary:** a prototype display rule on synthetic data; approves no merge or release.
+
+## D-111. Review and audit plan: first guards and four open answers (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`), 11:37 PM AWST (15:37 UTC). **Decided by:** Josh, in the Ward Flow project thread "Plan reviews and audits for Ward Flow", answering "go ahead with all recommendations" and "go ahead with the response you recommend for all the questions".
+- **Decision:**
+  1. **Audit plan:** the 84-item ranked review and audit plan (Claude Doc, 9 Nov 2026) is the working plan. Issues #1564 to #1577 cover its top five and the two items next in line. The other items get issues when Josh names them.
+  2. **First build, ruling guards (#1572):** each of D-93, D-71, D-72 item 2 and R-2026-09-04-A keeps a named guard test, listed in `tests/ward-ruling-guardrails.test.ts`. D-72 item 2 gains its own guard, `tests/ward-downtime-pack-device-storage.dom.test.tsx`. The guards protect the rulings and change none of them.
+  3. **Signed values drift (#1573):** already covered by `tests/ward-clinical-values.test.ts`, which fails when a threshold is typed elsewhere or the table drifts from `ward-clinical-values.ts`. The 24 h versus FD-19 48 h question for `edMedicalBedRelease` is a clinical question and stays with the held clinical PR.
+  4. **Phone size limits:** D-82 stands (up to 5 KB per screen per PR without asking). The trend is tracked as audit item 80.
+  5. **"rph-adult-secure":** this is the secure adult ward's board, not a separate page. No separate secure page is planned.
+  6. **Shift-change load test (audit item 52):** run at the 7:00 am, 3:00 pm and 9:30 pm Perth handovers with 100 concurrent synthetic users. These are defaults, to be confirmed with the pilot site before the test.
+  7. **Overnight alerts (audit item 55):** while Ward Flow holds synthetic data only, the uptime job's backend-down GitHub issue to Josh is enough and nobody is paged at night (Josh owns monitoring, D-97 item 5). Before real data, a named person gets phone alerts.
+  8. **Real patient data:** no date is set. Real data waits until audit items 16 (hazard log), 33 (database rules), 34 (privacy impact assessment), 35 (residency map), 42 (TGA classification), 43 (breach plan) and 44 (penetration test) are done, in addition to the real-data gate (D-87).
+- **Boundary:** synthetic data only. Approves no provider change, spending, merge or release, and changes no signed clinical value or clinical rule.
