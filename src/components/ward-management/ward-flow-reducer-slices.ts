@@ -3,7 +3,7 @@
 // a phone's first load. Only `backend/ward-flow/engine.ts` and the test setup import it directly.
 import { reduceBroadcastAlertEvent } from "./alerts/ward-broadcast-reducer";
 import { reduceDischargeDependencyEvent } from "./discharges/discharge-dependency-events";
-import { reduceDischargeCheckEvent } from "./discharges/discharge-check-events";
+import { type DischargeCheckEvent, reduceDischargeCheckEvent } from "./discharges/discharge-check-events";
 import { reduceBedClosureEvent } from "./ward-flow-bed-closure-events";
 import { reduceBedEvent } from "./ward-flow-bed-events";
 import { reduceBedMeetingEvent } from "./ward-flow-bed-meeting-events";
@@ -23,7 +23,12 @@ import { reduceArrivalCheckEvent, reduceReleaseNoticeEvent } from "./ward-flow-r
 import { reduceRestrictivePracticeEvent } from "./ward-flow-restrictive-practice-events";
 import { reduceTransportEvent } from "./ward-flow-transport-events";
 import { reduceUndoEvent } from "./ward-flow-undo-events";
-import { reduceWeekendDischargeReview } from "./ward-flow-weekend-review-events";
+import {
+  type MarkWeekendDischargeReviewedEvent,
+  reduceWeekendDischargeReview,
+} from "./ward-flow-weekend-review-events";
+import type { WardFlowEvent } from "./ward-flow-events";
+import type { WardFlowState } from "./ward-flow-reducer";
 import { reduceWardClosureEvent } from "./ward-flow-ward-closure-events";
 import { reducePatientArchive } from "./ward-patient-archive-reducer";
 import { reducePatientRegistration } from "./ward-patient-registration-reducer";
@@ -32,6 +37,17 @@ import { reduceTriageSigned } from "./triage/triage-signed-reducer";
 // A local command can seed a demonstration scenario, so its networks load with the slices.
 import "./ward-scenario-networks";
 
+/** Features 14, 37 and 13 (9 Nov 2026): the weekend discharge review, discharge checklist and follow-up reply. */
+function reduceDischargeFollowThroughEvent(
+  state: WardFlowState,
+  event: DischargeCheckEvent | MarkWeekendDischargeReviewedEvent,
+  reject: (state: WardFlowState, event: WardFlowEvent, reason: string) => WardFlowState,
+): WardFlowState {
+  return event.type === "MARK_WEEKEND_DISCHARGE_REVIEWED"
+    ? reduceWeekendDischargeReview(state, event, reject)
+    : reduceDischargeCheckEvent(state, event, reject);
+}
+
 const slices = {
   reduceArrivalCheckEvent,
   reduceBedClosureEvent,
@@ -39,7 +55,7 @@ const slices = {
   reduceBedMeetingEvent,
   reduceBroadcastAlertEvent,
   reduceDischargeDependencyEvent,
-  reduceDischargeCheckEvent,
+  reduceDischargeFollowThroughEvent,
   reduceLoopCheckEvent,
   reducePatientArchive,
   reducePatientRegistration,
@@ -60,7 +76,6 @@ const slices = {
   reduceUndoEvent,
   reduceWardClosureEvent,
   reduceWardDiagnosis,
-  reduceWeekendDischargeReview,
 };
 
 export type WardFlowReducerSlices = typeof slices;
