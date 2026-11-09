@@ -139,6 +139,10 @@ export function PatientCarePlansCard({
   const [draft, setDraft] = useState<Draft>(BLANK);
   const [hearingDate, setHearingDate] = useState("");
   const [hearingTime, setHearingTime] = useState("");
+  // What was typed in the two optional fields, so a date or time that does not parse is refused
+  // rather than saved as blank.
+  const [reviewOnText, setReviewOnText] = useState("");
+  const [hearingTimeText, setHearingTimeText] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
   const plan = currentCarePlan(patient.carePlans);
   const superseded = (patient.carePlans ?? []).filter((item) => item.status === "Superseded").length;
@@ -155,11 +159,14 @@ export function PatientCarePlansCard({
     setDraft(BLANK);
     setHearingDate("");
     setHearingTime("");
+    setReviewOnText("");
+    setHearingTimeText("");
     setForm(next);
   }
 
   function savePlan() {
     if (draft.type === "") return setProblem("Choose the plan type.");
+    if (reviewOnText.trim() && !draft.reviewOn) return setProblem("The review date is not a real date.");
     const input = {
       type: draft.type,
       agreedBy: draft.agreedBy,
@@ -193,6 +200,8 @@ export function PatientCarePlansCard({
 
   function saveHearing() {
     if (!hearingDate) return setProblem("Enter the hearing date.");
+    if (hearingTimeText.trim() && !hearingTime)
+      return setProblem("Enter the hearing time as hours and minutes, HH:MM.");
     setProblem(null);
     setForm("none");
     run(
@@ -298,7 +307,11 @@ export function PatientCarePlansCard({
                 <DateField value={draft.agreedOn} onValueChange={(agreedOn) => setDraft({ ...draft, agreedOn })} />
               </Field>
               <Field label="Review date" hint="DD/MM/YYYY">
-                <DateField value={draft.reviewOn} onValueChange={(reviewOn) => setDraft({ ...draft, reviewOn })} />
+                <DateField
+                  value={draft.reviewOn}
+                  onValueChange={(reviewOn) => setDraft((current) => ({ ...current, reviewOn }))}
+                  onRawTextChange={setReviewOnText}
+                />
               </Field>
             </div>
             <div className={styles.pair}>
@@ -370,50 +383,52 @@ export function PatientCarePlansCard({
             </div>
           </form>
         ) : plan ? (
-          <dl className={styles.facts} data-testid="ward-patient-care-plan-current">
-            <div>
-              <dt>Plan</dt>
-              <dd>
-                {plan.type} <Badge size="sm">Current</Badge>
-              </dd>
-            </div>
-            <div>
-              <dt>Agreed</dt>
-              <dd>
-                {`${plan.agreedBy} · `}
-                <span className={styles.mono}>{typedDay(plan.agreedOn)}</span>
-              </dd>
-            </div>
-            <div>
-              <dt>Review</dt>
-              <dd className={styles.mono}>{typedDay(plan.reviewOn)}</dd>
-            </div>
-            <div>
-              <dt>Key contact</dt>
-              <dd>
-                {plan.contactName ?? "Not recorded"}
-                {plan.contactPhone ? <span className={styles.mono}> · {plan.contactPhone}</span> : null}
-              </dd>
-            </div>
-            <div>
-              <dt>What helps</dt>
-              <dd>
-                {plan.helps.length ? plan.helps.join(", ") : "Not recorded"}
-                {plan.helpsExtra ? <span className={styles.note}>{plan.helpsExtra}</span> : null}
-              </dd>
-            </div>
-            <div>
-              <dt>Attachment</dt>
-              <dd>
-                {plan.attachment ? <span className={styles.mono}>{uploadedFileLabel(plan.attachment)}</span> : "None"}
-              </dd>
-            </div>
+          <>
+            <dl className={styles.facts} data-testid="ward-patient-care-plan-current">
+              <div>
+                <dt>Plan</dt>
+                <dd>
+                  {plan.type} <Badge size="sm">Current</Badge>
+                </dd>
+              </div>
+              <div>
+                <dt>Agreed</dt>
+                <dd>
+                  {`${plan.agreedBy} · `}
+                  <span className={styles.mono}>{typedDay(plan.agreedOn)}</span>
+                </dd>
+              </div>
+              <div>
+                <dt>Review</dt>
+                <dd className={styles.mono}>{typedDay(plan.reviewOn)}</dd>
+              </div>
+              <div>
+                <dt>Key contact</dt>
+                <dd>
+                  {plan.contactName ?? "Not recorded"}
+                  {plan.contactPhone ? <span className={styles.mono}> · {plan.contactPhone}</span> : null}
+                </dd>
+              </div>
+              <div>
+                <dt>What helps</dt>
+                <dd>
+                  {plan.helps.length ? plan.helps.join(", ") : "Not recorded"}
+                  {plan.helpsExtra ? <span className={styles.note}>{plan.helpsExtra}</span> : null}
+                </dd>
+              </div>
+              <div>
+                <dt>Attachment</dt>
+                <dd>
+                  {plan.attachment ? <span className={styles.mono}>{uploadedFileLabel(plan.attachment)}</span> : "None"}
+                </dd>
+              </div>
+            </dl>
             {superseded ? (
               <p className={styles.quiet}>
                 {superseded === 1 ? "1 earlier plan" : `${superseded} earlier plans`} kept as superseded.
               </p>
             ) : null}
-          </dl>
+          </>
         ) : (
           <p className={styles.quiet}>No care plan recorded.</p>
         )}
@@ -451,7 +466,7 @@ export function PatientCarePlansCard({
                     <DateField value={hearingDate} onValueChange={setHearingDate} />
                   </Field>
                   <Field label="Time" hint="HH:MM, optional">
-                    <TimeField value={hearingTime} onValueChange={setHearingTime} />
+                    <TimeField value={hearingTime} onValueChange={setHearingTime} onTextChange={setHearingTimeText} />
                   </Field>
                   <Button size="sm" variant="pri" onClick={saveHearing}>
                     Save date

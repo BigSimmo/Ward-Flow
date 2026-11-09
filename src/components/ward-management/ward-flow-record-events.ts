@@ -1072,7 +1072,11 @@ export function reduceRecordedFactEvent(
       // Item 28: the latest stays on `escalation` for every existing reader; `escalations` keeps
       // each one. A record saved before the list began starts it from its one recorded escalation.
       // Its raising role was not saved then, so it carries none.
-      const earlier = movement.escalations ?? (movement.escalation ? [{ ...movement.escalation }] : []);
+      const earlier = movement.escalations?.length
+        ? movement.escalations
+        : movement.escalation
+          ? [{ ...movement.escalation }]
+          : [];
       const updated: Movement = {
         ...movement,
         escalation,

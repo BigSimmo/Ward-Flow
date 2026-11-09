@@ -89,9 +89,11 @@ export function PersonPanel({
   const thresholds = useDueSoonThresholds();
   const typedStanding = typedTimeStanding(movement, now, thresholds);
   const patient = patientOf(movement);
-  const escalation = movement.escalation;
-  // Item 28: the escalations before the latest, each with what happened next (derived).
-  const earlierEscalations = escalationHistory(movement).slice(0, -1);
+  // Item 28: the latest escalation and those before it, each with what happened next (derived),
+  // all read from one list so the two never disagree.
+  const escalations = escalationHistory(movement);
+  const escalation = escalations.at(-1);
+  const earlierEscalations = escalations.slice(0, -1);
   const triedUnits = (escalation?.triedUnitIds ?? [])
     .map((unitId) => units.find((unit) => unit.id === unitId))
     .filter((unit): unit is Unit => unit !== undefined);

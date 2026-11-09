@@ -66,29 +66,33 @@ export function ReferralDuplicateCheck({
               This person may already be in the system. Check before adding them again.
             </p>
             <ul className={styles.list}>
-              {matches.map(({ patient, kind }) => (
-                <li key={patient.id} className={styles.row} data-testid={`ward-referral-duplicate-${patient.id}`}>
-                  <span className={styles.main}>
-                    <strong>
-                      {patient.familyName}, {patient.givenName}
-                    </strong>
-                    <span className={styles.meta}>
-                      <span className={styles.mono}>{patient.umrn}</span> · born{" "}
-                      <span className={styles.mono}>{patient.dateOfBirth}</span> · {MATCH_LABEL[kind]}
+              {matches.map(({ patient, kind }) => {
+                // A record no longer in the list cannot be chosen, so its button is off, not silent.
+                const key = patientKeyFor(patient.id, { patients, movements, referrals });
+                return (
+                  <li key={patient.id} className={styles.row} data-testid={`ward-referral-duplicate-${patient.id}`}>
+                    <span className={styles.main}>
+                      <strong>
+                        {patient.familyName}, {patient.givenName}
+                      </strong>
+                      <span className={styles.meta}>
+                        <span className={styles.mono}>{patient.umrn}</span> · born{" "}
+                        <span className={styles.mono}>{patient.dateOfBirth}</span> · {MATCH_LABEL[kind]}
+                      </span>
                     </span>
-                  </span>
-                  <button
-                    type="button"
-                    className={buttonClass({ size: "sm" })}
-                    onClick={() => {
-                      const key = patientKeyFor(patient.id, { patients, movements, referrals });
-                      if (key) onUse(key);
-                    }}
-                  >
-                    Use this record
-                  </button>
-                </li>
-              ))}
+                    <button
+                      type="button"
+                      className={buttonClass({ size: "sm" })}
+                      disabled={key === null}
+                      onClick={() => {
+                        if (key) onUse(key);
+                      }}
+                    >
+                      Use this record
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </>
         )}

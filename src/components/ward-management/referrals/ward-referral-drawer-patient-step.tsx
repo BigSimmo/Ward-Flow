@@ -366,7 +366,8 @@ export function ReferralPatientStep({
               <ReferralDuplicateCheck
                 draft={newPatient}
                 onUse={(key) => {
-                  handleSelectPatient(key);
+                  // As a record added in this form: the referral details stay, so no discard question.
+                  handleSelectPatient(key, true);
                   // Selecting the person already chosen returns early, so close the form here too.
                   setNewPatientOpen(false);
                 }}
