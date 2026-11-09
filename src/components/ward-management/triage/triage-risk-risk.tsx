@@ -710,7 +710,7 @@ export function RiskBody({ form, onAllFactors }: { form: FormApi; onAllFactors: 
             <TextInput
               id="triage-other-risk"
               boxClassName={styles.grow}
-              placeholder="Describe the risk, e.g. driving while unwell"
+              placeholder="Describe the risk"
               value={state.text.otherRisk}
               onChange={(event) => form.setText("otherRisk", event.target.value)}
               onKeyDown={(event) => {

@@ -108,6 +108,12 @@
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
 }
 
+/* A banner figure with nothing chosen yet reads quietly in words, not as a loud mono value. */
+.statEmpty {
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-hero-ink-2);
+}
+
 /* Index beside the form. */
 .layout {
   display: grid;
@@ -281,16 +287,15 @@
   display: grid;
   grid-template-columns: 10rem minmax(0, 1fr);
   gap: var(--wf-s-3);
-  align-items: center;
+  /* Polish (9 Nov 2026): every label lines up with its control's first line, so a choice that wraps
+   * (Mental Health Act, Where they were) no longer floats its label to the middle. */
+  align-items: start;
   min-width: 0;
 }
 
-.row[data-top] {
-  align-items: start;
-}
-
-.row[data-top] > .rowLabel {
-  padding-top: var(--wf-s-2);
+.row > .rowLabel {
+  /* Centres a one-line label on a 32px chip or a 40px choice track alike, within 2px. */
+  padding-top: 10px;
 }
 
 .rowLabel {
@@ -953,6 +958,39 @@
   font-variant-numeric: normal;
 }
 
+/* Polish (9 Nov 2026): the chips are facts, not headings, so their names sit at body size and the
+ * row stays one compact line where it fits. */
+.bannerTags.bannerTags > * {
+  min-height: 28px;
+  padding-block: 3px;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.bannerTags.bannerTags > * > :first-child {
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+/* A phone keeps the four banner actions on one even row: words only, the icons dropped for room. */
+@media (max-width: 46.4375rem) {
+  .heroLinks.heroLinks {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    width: 100%;
+  }
+  .heroLinks.heroLinks :is(button, a) {
+    width: 100%;
+    min-width: 0;
+    padding-inline: 6px;
+    white-space: nowrap;
+  }
+  .heroLinks.heroLinks :is(button, a) > svg {
+    display: none;
+  }
+}
+
 /* Record tabs (Referral, Last triage, Profile): one card, a row per fact with a hairline between,
  * label left and value right; on a phone the label sits over its value. */
 .facts.recordCard {
@@ -1463,7 +1501,7 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 6px;
   }
-  .row[data-top] > .rowLabel,
+  .row > .rowLabel,
   .flagGroupLabel {
     padding-top: 0;
   }
