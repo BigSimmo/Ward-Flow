@@ -73,7 +73,9 @@ describe("CoordinatorScreen", () => {
     const homeLists = screen.getByRole("navigation", { name: "Home lists" });
     expect(within(homeLists).queryByRole("button", { name: "Registers" })).not.toBeInTheDocument();
     fireEvent.click(within(homeLists).getByRole("button", { name: "More for this list" }));
-    expect(screen.getByRole("menuitem", { name: "Registers" })).toBeInTheDocument();
+    // Home notes 4, issue 4 (Josh, 9 Nov 2026): Today's review replaced Registers.
+    expect(screen.getByRole("menuitem", { name: "Today's review" })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Registers" })).not.toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Alerts history" })).toBeInTheDocument();
     expect(dueWindowLabel(60)).toBe("1h");
     expect(dueWindowLabel(240)).toBe("4h");

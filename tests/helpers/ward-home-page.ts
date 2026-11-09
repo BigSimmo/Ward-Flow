@@ -3,7 +3,7 @@
 //
 // Home flow (Q340, Q341, Q345, 3 Nov 2026): the lists are "Needs you" and "Flow" (was My List and
 // Open). Flow is one card named "Flow", with a section per stage; each stage shows its oldest 5 rows
-// and its own "Show all N" button. Registers moved under the "More for this list" menu.
+// and its own "Show all N" button. Today's review sits under the "More for this list" menu.
 import { expect, type Locator, type Page } from "playwright/test";
 
 /** Chooses one of Home's lists by its radio, clicking again until a click lands after hydration. */
@@ -56,8 +56,13 @@ export async function showAllFlowRows(queue: Locator): Promise<void> {
   }
 }
 
-/** Opens the registers: the strip under the hero on desktop, a sheet on a phone. */
-export async function openHomeRegisters(page: Page): Promise<void> {
+/** Opens Today's review from Home's "More for this list" menu (Home notes 4: it replaced Registers). */
+export async function openTodaysReview(page: Page): Promise<void> {
   await page.getByRole("button", { name: "More for this list" }).click();
-  await page.getByRole("menu", { name: "More for this list" }).getByRole("menuitem", { name: "Registers" }).click();
+  await page
+    .getByRole("menu", { name: "More for this list" })
+    .getByRole("menuitem", { name: "Today's review" })
+    .click();
+  await page.waitForURL("**/ward-flow/review");
+  await page.getByTestId("ward-todays-review").waitFor();
 }

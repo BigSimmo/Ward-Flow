@@ -150,34 +150,18 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     expect(screen.getByTestId("home-placement-drawer")).toContainElement(shortlist);
   });
 
-  it("keeps the registers closed until Registers opens them, above the columns", () => {
-    // Home v7 (Josh, 22 Oct 2026): the hero's Alerts count became Act now, so the registers open
-    // from Registers above the list, still as the strip under the hero. Home flow (Josh, 3 Nov
-    // 2026): Registers moved into the "More for this list" menu at the end of the Home lists row.
+  it("offers Today's review, not Registers, from the More menu, with no strip above the columns", () => {
+    // Home notes 4, issue 4 (Josh, 9 Nov 2026): Today's review replaced the Registers strip, so the
+    // "More for this list" menu opens that page and nothing is drawn between the hero and the list.
     renderCoordinator();
     const body = screen.getByTestId("ward-coordinator-body");
     expect(within(body).queryByTestId("ward-coordinator-registers")).toBeNull();
 
     const lists = within(body).getByRole("navigation", { name: "Home lists" });
     const more = within(lists).getByRole("button", { name: "More for this list" });
-    const chooseRegisters = () => {
-      expect(more).toHaveAttribute("aria-expanded", "false");
-      fireEvent.click(more);
-      expect(more).toHaveAttribute("aria-expanded", "true");
-      fireEvent.click(screen.getByRole("menuitem", { name: "Registers" }));
-      expect(more, "choosing Registers closes the menu").toHaveAttribute("aria-expanded", "false");
-    };
-
-    chooseRegisters();
-    const registers = within(body).getByTestId("ward-coordinator-registers");
-    const columns = within(body).getByTestId("ward-coordinator-region-grid");
-    expect(
-      registers.compareDocumentPosition(columns) & Node.DOCUMENT_POSITION_FOLLOWING,
-      "the registers strip must sit above the columns",
-    ).toBeTruthy();
-
-    chooseRegisters();
-    expect(within(body).queryByTestId("ward-coordinator-registers")).toBeNull();
+    fireEvent.click(more);
+    expect(screen.getByRole("menuitem", { name: "Today's review" })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Registers" })).toBeNull();
   });
 
   it("keeps the shortlist panel's heading as 'Placement' once a patient is selected", () => {

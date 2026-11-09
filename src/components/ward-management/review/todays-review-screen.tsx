@@ -21,7 +21,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { activeTaskItems } from "@/components/ward-management/ward-act-now-items";
 import type { AuditEvent, AuditReview } from "@/components/ward-management/ward-audit";
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { allDeclines } from "@/components/ward-management/ward-derivations";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { DECLINE_REASON_NOT_SHARED, type Unit } from "@/components/ward-management/ward-model";
@@ -215,7 +215,7 @@ export function TodaysReviewScreen() {
   function todoRow(todo: ReviewTodo) {
     if (todo.kind === "override") {
       const event = todo.event;
-      const at = event.at === null ? "Time not recorded" : formatInstant(event.at);
+      const at = event.at === null ? "Time not recorded" : formatInstantWithDay(event.at, now);
       return (
         <li key={todo.id} className={styles.todo} data-done={todo.done || undefined} data-testid={todo.id}>
           <span className={styles.mark} aria-hidden="true">
@@ -293,7 +293,7 @@ export function TodaysReviewScreen() {
 
   function eventRow(event: ReviewEvent) {
     const tag = TAGS[event.kind];
-    const time = event.at === undefined ? "Open" : formatInstant(event.at);
+    const time = event.at === undefined ? "Open" : formatInstantWithDay(event.at, now);
     let text: string;
     let sub: string | undefined;
     let members: { id: string; time: string; text: string }[] | undefined;
@@ -312,7 +312,7 @@ export function TodaysReviewScreen() {
           }`;
           members = event.members.map((entry, index) => ({
             id: `${event.id}-${index}`,
-            time: formatInstant(entry.decline.at),
+            time: formatInstantWithDay(entry.decline.at, now),
             text: `${patientOf({ movementId: entry.movement.id }).displayName} · ${declineReasonText(entry.decline.reason)}`,
           }));
         }
@@ -432,7 +432,7 @@ export function TodaysReviewScreen() {
             {shown.length === 0 ? (
               <EmptyState
                 title={filter === "all" ? "Nothing off-plan today" : "None today"}
-                meta={`Checked at ${formatInstant(now as Instant)}`}
+                meta={`Checked at ${formatInstantWithDay(now, now)}`}
               />
             ) : (
               <ul className={styles.events}>{shown.map(eventRow)}</ul>

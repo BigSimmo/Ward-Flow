@@ -17,7 +17,6 @@ vi.mock("next/navigation", () => ({
 
 import { Sheet } from "@/components/wf";
 import { RecordPreview } from "@/components/ward-management/search/record-preview";
-import { ExceptionDrawer } from "@/components/ward-management/coordinator/exception-drawer";
 import { HubScreen } from "@/components/ward-management/hub/hub-screen";
 import { useEdEscapeKey } from "@/components/ward-management/ed/use-ed-screen-state";
 import { useDischargeWorkspaceState } from "@/components/ward-management/discharges/use-discharge-workspace-state";
@@ -93,30 +92,6 @@ describe("UISR-01: Search record preview", () => {
     fireEvent.keyDown(document.body, { key: "Escape" });
     expect(onClose).toHaveBeenCalledTimes(1);
     field.remove();
-  });
-});
-
-describe("UISR-01: Home registers bar", () => {
-  it("does not fold the open phone bar when Escape closes a sheet on top", () => {
-    const onToggle = vi.fn();
-    render(
-      <>
-        <ExceptionDrawer
-          items={[]}
-          rejections={[]}
-          overrides={[]}
-          declines={[]}
-          units={allUnits()}
-          now={NOW_ANCHOR}
-          open
-          onToggle={onToggle}
-          onSelectMovement={() => {}}
-        />
-        <OverSheet onClose={() => {}} />
-      </>,
-    );
-    pressEscape();
-    expect(onToggle).not.toHaveBeenCalled();
   });
 });
 
