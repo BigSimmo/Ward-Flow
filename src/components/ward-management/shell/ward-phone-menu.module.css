@@ -857,13 +857,25 @@
   height: 58px;
   align-items: center;
   padding: 0 4.5px;
-  border: 0.5px solid light-dark(rgb(15 25 40 / 10%), rgb(255 255 255 / 10%));
+  border: 0.5px solid color-mix(in srgb, var(--wf-ink-1) 10%, transparent);
   border-radius: 29px;
   background: color-mix(in srgb, var(--wf-surface) 76%, transparent);
   box-shadow:
-    inset 0 0.5px 0 light-dark(rgb(255 255 255 / 70%), rgb(255 255 255 / 8%)),
-    0 1px 2px light-dark(rgb(15 25 40 / 8%), rgb(0 0 0 / 30%)),
-    0 10px 28px -8px light-dark(rgb(15 25 40 / 18%), rgb(0 0 0 / 50%));
+    inset 0 0.5px 0
+      light-dark(
+        color-mix(in srgb, var(--wf-surface) 70%, transparent),
+        color-mix(in srgb, var(--wf-ink-1) 8%, transparent)
+      ),
+    0 1px 2px
+      light-dark(
+        color-mix(in srgb, var(--wf-ink-1) 8%, transparent),
+        color-mix(in srgb, var(--wf-scrim) 75%, transparent)
+      ),
+    0 10px 28px -8px
+      light-dark(
+        color-mix(in srgb, var(--wf-ink-1) 18%, transparent),
+        color-mix(in srgb, var(--wf-scrim-strong) 90%, transparent)
+      );
   -webkit-backdrop-filter: blur(20px) saturate(1.8);
   backdrop-filter: blur(20px) saturate(1.8);
 }
@@ -946,7 +958,7 @@
   height: 44px;
   border-radius: 22px;
   box-shadow:
-    inset 0 0.5px 0 rgb(255 255 255 / 18%),
+    inset 0 0.5px 0 color-mix(in srgb, var(--wf-on-pri) 18%, transparent),
     0 1px 2px color-mix(in srgb, var(--rise-fill) 30%, transparent),
     0 4px 10px -4px color-mix(in srgb, var(--rise-fill) 55%, transparent);
 }
