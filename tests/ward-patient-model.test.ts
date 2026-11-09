@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import {
+  ADMIN_DETAIL_FIELDS,
   PATIENT_FIELDS,
   findPatients,
   patientAgeYears,
@@ -31,6 +32,13 @@ const NOW = 10 * 60 + 42;
  *      by implication — reading "he allowed names" as "he allowed identity".
  */
 const DECISIONS = new Map<string, string>([
+  [
+    "NOTE3-2026-11-08",
+    "Josh's Note 3 (8 Nov 2026): add the details healthcare administrators and clerks record for a " +
+      "patient to Add patient as optional additions, never requirements; and his decision the same " +
+      "day to allow next of kin and nominated person or carer details as optional record-only fields, " +
+      "replacing R-2026-09-04-A's refusal of next of kin. All are record detail, withheld from boards.",
+  ],
   [
     "JOURNEY-AUDIT-2026-10-18",
     "The 18 October journey audit remediation request covers restoring a newly registered patient " +
@@ -112,6 +120,8 @@ const CTO_RULING_FIELDS = new Map<string, string>([["communityTreatmentOrder", "
 /** `addedAt`, the record fact the v10 pass 2 brief adds, kept apart for the same provenance reason. */
 const REGISTRATION_ACCESS_FIELDS = new Map<string, string>([["registrationScope", "JOURNEY-AUDIT-2026-10-18"]]);
 const ADDED_AT_FIELDS = new Map<string, string>([["addedAt", "V10-2026-10-10-ADDED-AT"]]);
+/** Note 3's administrative details, each optional, kept apart for the same provenance reason. */
+const NOTE3_FIELDS = new Map<string, string>(ADMIN_DETAIL_FIELDS.map((field) => [field, "NOTE3-2026-11-08"]));
 
 /** Fields that predate R-2026-09-04-A and are not its concern — PD-1's own five. */
 const PD1_FIELDS = new Set(["id", "umrn", "givenName", "familyName", "dateOfBirth"]);
@@ -156,6 +166,28 @@ function aPatient(): Required<Patient> {
     communityTreatmentOrder: { form: "5A", recordedAt: 0, recordedBy: "Community team" },
     addedAt: 0,
     registrationScope: { kind: "ed", placeId: "rph" },
+    mobilePhone: "Synthetic",
+    otherPhone: "Synthetic",
+    email: "Synthetic",
+    postcode: "Synthetic",
+    nextOfKinName: "Synthetic",
+    nextOfKinRelationship: "Synthetic",
+    nextOfKinPhone: "Synthetic",
+    supportPersonRole: "Synthetic",
+    supportPersonName: "Synthetic",
+    supportPersonPhone: "Synthetic",
+    medicareNumber: "Synthetic",
+    medicareReference: "Synthetic",
+    medicareExpiry: "Synthetic",
+    dvaFileNumber: "Synthetic",
+    healthFund: "Synthetic",
+    concessionCard: "Synthetic",
+    gpPhone: "Synthetic",
+    countryOfBirth: "Synthetic",
+    interpreterRequired: "Synthetic",
+    maritalStatus: "Synthetic",
+    advanceHealthDirective: "Synthetic",
+    enduringGuardian: "Synthetic",
   };
 }
 
@@ -181,7 +213,9 @@ describe("Patient identity is a ruling, not a drift", () => {
       "sex",
       "suburb",
       "umrn",
-    ];
+      // Note 3 (Josh, 8 Nov 2026): the optional administrative details.
+      ...ADMIN_DETAIL_FIELDS,
+    ].sort();
     expect(
       [...PATIENT_FIELDS].sort(),
       "PATIENT_FIELDS no longer matches the authorised field set. A field added here is a widening " +
@@ -237,7 +271,8 @@ describe("Patient identity is a ruling, not a drift", () => {
         !GENDER_RULING_FIELDS.has(field) &&
         !CTO_RULING_FIELDS.has(field) &&
         !ADDED_AT_FIELDS.has(field) &&
-        !REGISTRATION_ACCESS_FIELDS.has(field),
+        !REGISTRATION_ACCESS_FIELDS.has(field) &&
+        !NOTE3_FIELDS.has(field),
     );
     expect(
       unaccounted,
@@ -268,6 +303,14 @@ describe("Patient identity is a ruling, not a drift", () => {
     }
   });
 
+  it("has Note 3's administrative details declared, decided, and citing a real decision", () => {
+    expect(NOTE3_FIELDS.size, "Note 3 named exactly twenty-two administrative details").toBe(22);
+    for (const [field, decision] of NOTE3_FIELDS) {
+      expect(DECISIONS.has(decision), `${field} cites "${decision}", which does not resolve`).toBe(true);
+      expect([...PATIENT_FIELDS], `${field} is authorised by Note 3 but not declared`).toContain(field);
+    }
+  });
+
   it("has the v10 addedAt record field declared, decided, and citing a real decision", () => {
     expect(ADDED_AT_FIELDS.size, "the v10 pass 2 brief named exactly one new patient field").toBe(1);
     for (const [field, decision] of ADDED_AT_FIELDS) {
@@ -286,8 +329,10 @@ describe("Patient identity is a ruling, not a drift", () => {
   });
 
   it("keeps the unruled stems denied OVER the allowlist, so nothing widens by implication", () => {
-    const offenders = [...PATIENT_FIELDS].filter((field) =>
-      NEVER_PERMITTED_STEMS.some((stem) => field.toLowerCase().includes(stem)),
+    // Note 3 (8 Nov 2026): Josh's own later ruling lifts the next-of-kin and carer refusal for its
+    // named fields only; any other "kin" or "carer" field is still caught.
+    const offenders = [...PATIENT_FIELDS].filter(
+      (field) => !NOTE3_FIELDS.has(field) && NEVER_PERMITTED_STEMS.some((stem) => field.toLowerCase().includes(stem)),
     );
     expect(
       offenders,

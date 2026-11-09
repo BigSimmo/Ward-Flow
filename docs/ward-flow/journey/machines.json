@@ -1541,7 +1541,7 @@
       {
         "path": "src/components/ward-management/patients/add-patient.tsx",
         "line": 84,
-        "sha256": "18ffebe0ec5ea264aa64939a4164654175cd9f92c22ca315a99855c5556ea7c2"
+        "sha256": "1409871d1ec41cff150999c0397b930aa2d3bd713919ea172d36bd9f30acb460"
       },
       {
         "path": "src/components/ward-management/patients/patient-now-screen.tsx",
@@ -1606,7 +1606,7 @@
       {
         "path": "src/components/ward-management/ward-flow-events.ts",
         "line": 1,
-        "sha256": "c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689"
+        "sha256": "cd80fc7c44e26f92ad77d37ed1daac5b06d30d48dbb51d02aa2f337b5a09a6c8"
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
@@ -1691,7 +1691,7 @@
       {
         "path": "src/components/ward-management/ward-patient-registration-reducer.ts",
         "line": 77,
-        "sha256": "36297e83737f7e5f2eb1db69fc4e64deac2be5d4793500b11f838dfc34da2629"
+        "sha256": "9e0f9c39d6d4a7f8f406fd438e09cd9ea7b7c6631a7bdd5e059d1f38de3caac4"
       },
       {
         "path": "src/components/ward-management/ward-ready-beds.ts",
