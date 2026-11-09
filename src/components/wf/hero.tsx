@@ -5,6 +5,7 @@ import { useId, useRef, type ElementType, type ReactNode } from "react";
 import { useWfBandBleed } from "./band";
 import { Button } from "./button";
 import { cx } from "./cx";
+import { useHeroFootSlot } from "./hero-foot-slot";
 import { HeroCondensedLine } from "./phone-fold";
 import { SrOnly } from "./primitives";
 import { StatusGlyph, type WfTone } from "./status-glyph";
@@ -177,6 +178,7 @@ export function Hero({
   className,
 }: HeroProps) {
   const titleId = useId();
+  const footSlot = useHeroFootSlot();
   const sectionRef = useRef<HTMLElement>(null);
   useWfBandBleed(sectionRef, band && !quiet);
   const statsRef = useRef<HTMLDivElement>(null);
@@ -234,6 +236,7 @@ export function Hero({
           {footAside ? <div className={styles.footAside}>{footAside}</div> : null}
         </div>
       ) : null}
+      {band && !quiet ? footSlot : null}
       {condensed ? <HeroCondensedLine heroRef={sectionRef}>{condensed}</HeroCondensedLine> : null}
     </section>
   );

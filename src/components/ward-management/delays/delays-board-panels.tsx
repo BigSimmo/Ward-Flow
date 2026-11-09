@@ -8,17 +8,7 @@
 // recorded form time as typed, with no countdown (D-93).
 import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import {
-  Ban,
-  CircleCheck,
-  Flag,
-  Hospital,
-  LayoutDashboard,
-  MoonStar,
-  ChevronRight,
-  Stethoscope,
-  TriangleAlert,
-} from "lucide-react";
+import { Ban, CircleCheck, Flag, MoonStar, ChevronRight, Stethoscope, TriangleAlert } from "lucide-react";
 import { DrawerFootRow, PanelDrawer, ShowMoreRow, buttonClass } from "@/components/wf";
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
@@ -52,6 +42,7 @@ import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { edHref, movementHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import styles from "./delays-board.module.css";
 import { RowTimeline, ago, originLabel } from "./delays-board-rows";
+import { CoordinatorFootMenu, EdBoardFootPeek, MovementRecordLink } from "./delays-board-foot";
 import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import redesign from "./waiting.module.css";
@@ -149,7 +140,6 @@ export function PersonPanel({
         <span className="sr-only"> to State bed coordination desk</span>
       </button>
     );
-  const secondaryClass = buttonClass({ variant: "sec", size: "md" });
   const wardsCount = wardDesk
     ? movement.declines.length === 0
       ? undefined
@@ -197,27 +187,17 @@ export function PersonPanel({
           {primary ? <div className={polish.pPrimary}>{primary}</div> : null}
           {escalation === undefined && !wardDesk ? escalationGate.note : null}
           <DrawerFootRow className={polish.pFootRow}>
-            <Link className={secondaryClass} href={movementHref(movement.id)}>
-              Movement
-            </Link>
-            {/* Role views: the coordinator screen is the coordinator's tool. */}
+            <MovementRecordLink movement={movement} />
+            {/* Role views: the coordinator screen is the coordinator's tool. Note 8: its actions open here first. */}
             {wardDesk || !canOpen("/ward-flow") ? null : (
-              <Link
-                className={secondaryClass}
-                href="/ward-flow"
-                onClick={() => {
-                  setFocusMovementId(movement.id);
-                }}
-              >
-                <LayoutDashboard size={14} aria-hidden="true" />
-                Coordinator
-              </Link>
+              <CoordinatorFootMenu
+                movement={movement}
+                onShowWards={() => setPanelTab("wards")}
+                onOpenHome={() => setFocusMovementId(movement.id)}
+              />
             )}
             {movement.originEdId && canOpen(edHref(movement.originEdId)) ? (
-              <Link className={secondaryClass} href={edHref(movement.originEdId)}>
-                <Hospital size={14} aria-hidden="true" />
-                ED board
-              </Link>
+              <EdBoardFootPeek movement={movement} now={now} />
             ) : null}
             {/* No "Record" link here: D-14 keeps the patient link default-deny, and this panel is not on
                 its allowlist. "Movement" opens the movement, whose drawer names the person (O-16.3). */}
