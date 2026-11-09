@@ -478,8 +478,9 @@ function BedMeetingAgenda() {
               }
               testId="agenda-act"
               action={
-                // The meeting room screen, behind the `bed-meeting-tv` flag as on Capacity.
-                bedMeetingTvOn
+                // The meeting room screen, behind the `bed-meeting-tv` flag as on Capacity; hidden while
+                // a meeting runs, so Stop and Next are the only meeting controls.
+                bedMeetingTvOn && !running
                   ? {
                       label: "Start meeting",
                       phoneLabel: "Start",
