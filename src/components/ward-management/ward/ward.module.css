@@ -777,13 +777,13 @@
  * did not make the two files consistent, it made them identically non-compliant: both counted
  * against `rawLineHeightLiterals` in `check-design-system-contract.mjs`.
  *
- * Owner ruling archive D-24, 2026-09-11: **this rule now uses the canonical `--ward-leading-tight`, which is
+ * Archived owner ruling D-24, 2026-09-11: **this rule now uses the canonical `--ward-leading-tight`, which is
  * 1.15, not 1.2.** The two headings are therefore about one pixel apart in leading at this size —
  * invisible on a single line, and they never appear on the same screen. ⚠️ **`community.module.css`
  * has NOT been migrated and still carries the raw 1.2**; that is logged as an open row rather than
  * changed from here, because it is another lane's file.
  *
- * Nothing here is below 12px (owner ruling archive D-3).
+ * Nothing here is below 12px (archived owner ruling D-3).
  */
 .screenName {
   margin: 0 0 var(--ward-space-4);

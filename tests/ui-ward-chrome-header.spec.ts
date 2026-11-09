@@ -714,7 +714,7 @@ test.describe("@mockup Ward shell bar", () => {
 
 /**
  * ITEM 43 (build plan A1, owner answers 2026-09-17): the three "not wired" primary-action kinds
- * (`record-decision`, `contact-team`, `export-figures` — `ward-bar.tsx`'s archive D-16 comment) open their
+ * (`record-decision`, `contact-team`, `export-figures` — `ward-bar.tsx`'s archived D-16 comment) open their
  * own popover whose body reads exactly "Not wired in this prototype.".
  *
  * ⚠️ **RETARGETED, 11 Oct 2026 (device audit item 6, "keep the shell stable").** No route resolves

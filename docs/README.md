@@ -59,7 +59,7 @@ in [DOCS-SYSTEM.md](DOCS-SYSTEM.md).
 | **Screens, Routes & Code Map**  | [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md) · [`ward-flow/code-map/README.md`](ward-flow/code-map/README.md) · [`codebase-index.md`](codebase-index.md) · [`site-map.md`](site-map.md) · [`ward-flow/organisation/registry.json`](ward-flow/organisation/registry.json) (`ward-flow/ORGANISATION.md`)                                                           |
 | **Reference Data & Sources**    | [`ward-flow/reference-data/PACK_README.md`](ward-flow/reference-data/PACK_README.md) (`ward-flow/reference-data/README.md`) · [`ward-flow/reference-data/PROVENANCE-AUDIT-2026-09-18.md`](ward-flow/reference-data/PROVENANCE-AUDIT-2026-09-18.md) (`ward-flow/reference-data/SOURCES.md`)                                                                               |
 | **Backend, CI & Hosting**       | [`../backend/ward-flow/README.md`](../backend/ward-flow/README.md) · [`ward-flow/PUBLIC-CI.md`](ward-flow/PUBLIC-CI.md) · [`ward-flow/RAILWAY-OPERATIONS.md`](ward-flow/RAILWAY-OPERATIONS.md) · [`hosting.md`](hosting.md)                                                                                                                                              |
-| **Historical Archives**         | [`ARCHIVE.md`](ARCHIVE.md) (the one archive index: removed and moved files, and how to restore them) · [`history/`](history/README.md) (moved history, skipped by search) · [`ward-flow/RULES.md`](ward-flow/RULES.md)                                                                                                                                                   |
+| **Historical Archives**         | [`history/`](history/README.md) (the one archive index: moved and removed files, and how to restore them; skipped by search) · [`ward-flow/RULES.md`](ward-flow/RULES.md)                                                                                                                                                                                                |
 
 ## Architecture
 
@@ -87,7 +87,7 @@ in [DOCS-SYSTEM.md](DOCS-SYSTEM.md).
 - [`testing.md`](testing.md) — local unit commands, run admission, Playwright projects and CI topology
 - [`task-receipts.md`](task-receipts.md) — commits and the PR body are the task record; optional receipts
 - [`agents/`](agents/) — topic rules `AGENTS.md` links to: [`git-publication.md`](agents/git-publication.md), [`checks-and-evidence.md`](agents/checks-and-evidence.md), [`task-efficiency.md`](agents/task-efficiency.md), [`building-ui.md`](agents/building-ui.md), [`wiring-and-bundle-budget.md`](agents/wiring-and-bundle-budget.md), [`cloud-ownership.md`](agents/cloud-ownership.md), [`shortcuts.md`](agents/shortcuts.md), [`shared-context-and-memory.md`](agents/shared-context-and-memory.md), [`dead-code-deletion.md`](agents/dead-code-deletion.md), [`test-deletion-guard.md`](agents/test-deletion-guard.md), [`codex-desktop-worktree-setup.md`](agents/codex-desktop-worktree-setup.md), [`codex-dependency-shortcut.md`](agents/codex-dependency-shortcut.md), [`context7.md`](agents/context7.md), [`figma-sync.md`](agents/figma-sync.md)
-- Historical only, not current instructions: [`development-speed-playbook.md`](development-speed-playbook.md) (former PsychSift workflow, fully fenced as history); `process-hardening.md` was removed on 24 October 2026 (see [`ARCHIVE.md`](ARCHIVE.md))
+- Historical only, not current instructions: [`development-speed-playbook.md`](development-speed-playbook.md) (former PsychSift workflow, fully fenced as history); `process-hardening.md` was removed on 24 October 2026 (see the [archive index](history/README.md))
 
 ## Maintenance rules
 
@@ -100,8 +100,7 @@ in [DOCS-SYSTEM.md](DOCS-SYSTEM.md).
 | Collection                                              | How to use it                                                                                             |
 | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | [Plan navigation](ward-flow/plans/README.md)            | Dated plans and checkpoints from both existing plan roots; the task record establishes commissioned work  |
-| [Archive and restoration record](ARCHIVE.md)            | Archived handovers, reports and other dated material, with the retained Git revision                      |
-| [History folder](history/README.md)                     | Lessons, the old archive and superseded files, moved on 8 November 2026; search skips it by default       |
+| [History folder](history/README.md)                     | The archive index and restore record, lessons and superseded files; search skips it by default            |
 | [Lessons](history/lessons/README.md)                    | Historical repository copy; its index does not turn a lesson into a current rule                          |
 | [Code map](ward-flow/code-map/README.md)                | Maintained navigation to scoped updates and the historical subsystem census                               |
 | [Legacy decision register](history/ward-flow-ledger.md) | Historical decision/identity evidence; new decisions belong in the [decision log](ward-flow/decisions.md) |
@@ -126,7 +125,7 @@ consumers before applying its advice; keep original incident commands/results as
 - [search-chrome-behaviour.md](search-chrome-behaviour.md) — shared search-chrome contract: composer ownership, phone edge-to-edge dock, hide/reveal reserves
 - [history/mockup-retirement-policy.md](history/mockup-retirement-policy.md) — historical mockup retirement policy
 - [history/design-system-psychsift/README.md](history/design-system-psychsift/README.md) — the inherited PsychSift v2 design system (history only). The current Ward Flow design system is [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md)
-- [brand/brand-mark.md](brand/brand-mark.md) — the inherited PsychSift mark (history only; not Ward Flow branding)
+- [brand/brand-mark.md](brand/brand-mark.md) — the mark geometry inherited from PsychSift, still drawn by Ward Flow (`src/lib/brand-mark.ts`); a Ward Flow mark of its own is an owner decision
 
 ### Also catalogued (2026-09-02)
 
@@ -175,7 +174,7 @@ Every remaining tracked document in this category (the Ward Flow developer-gated
 
 Dated status reports, reviews, and operator decisions. They describe the repo
 as it was on that date; supersede with a new dated document rather than editing.
-The dated audits, reports and handovers left the live tree on 18 October 2026; see [`ARCHIVE.md`](ARCHIVE.md).
+The dated audits, reports and handovers left the live tree on 18 October 2026; see the [archive index](history/README.md).
 
 ### Also catalogued (2026-09-02)
 

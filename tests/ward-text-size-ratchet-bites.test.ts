@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 /**
- * 🔴 **THE archive D-3 RATCHET'S PROTECTIONS, PROVEN TO BITE — NOT ASSERTED TO EXIST.**
+ * 🔴 **THE ARCHIVED D-3 RATCHET'S PROTECTIONS, PROVEN TO BITE — NOT ASSERTED TO EXIST.**
  *
  * ⚠️ **This file exists because of a correction, and the correction is worth more than the file.** The
  * three protections were first proven BY HAND and their exit codes written into the script's header.

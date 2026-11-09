@@ -16,7 +16,6 @@ One line per item, with its source. Move an item down the list as it progresses;
 
 Not agreed. Each needs Josh's yes before anyone builds it.
 
-- Run the pilot beside the whiteboard first, or switch straight away. ([product brief](product-brief.md#questions-only-josh-can-answer), question 3)
 - Whether wards and the ED use Ward Flow on day one of a pilot, or the coordinator alone. ([product brief](product-brief.md#questions-only-josh-can-answer), question 2)
 - Move hosting to Sydney (Q370). D-84 says revisit with the health service's IT before real data. ([roadmap](roadmap.md#2-pilot-readiness))
 - Tier 4 items 19–23 and 25: no descriptions yet; on hold until Josh names them (D-97 item 7). ([tier plan](plans/2026-11-04-tier-improvements.md#explicit-exclusions-and-missing-information))
@@ -24,14 +23,19 @@ Not agreed. Each needs Josh's yes before anyone builds it.
 - Tools in two panes on wide desktops (Q311, "not yet"). ([Tools review](../design/reviews/2026-11-02/tools-2-nov/SUGGESTIONS.md))
 - External domain review: deferred until a real need; needs spending authority (D-97 item 4). ([decisions.md](decisions.md#d-97-owner-answers-on-seven-open-items-n21-n25-n26-n29-n40-n41-and-wf-b008-8-november-2026))
 - Regional multi-leg transport (D-35, deferred). ([decisions.md](decisions.md))
-- September "unowned work" and "deferred" leads: unverified since 12 September; check each against source before acting. ([OPEN-QUESTIONS](OPEN-QUESTIONS.md), sections ③ and ④)
-- Late-August remaining-work list: superseded by later decisions; leads only. ([history](../history/ward-flow-remaining-work.md))
+
+## Leads to verify
+
+Old lists that may still hold open work. Check each item against source before acting on it.
+
+- September "unowned work" and "deferred" leads: unverified since 12 September. ([OPEN-QUESTIONS](OPEN-QUESTIONS.md), sections ③ and ④)
+- Late-August remaining-work list: superseded by later decisions. ([history](../history/ward-flow-remaining-work.md))
 
 ## Agreed (not started)
 
 Agreed by Josh or required by a decision, with no build or check yet.
 
-- Legal times decision card: keep D-93 (typed times only, no countdowns) and D-72 (scrubbed offline copy) unless Josh changes them on the pending card. ([D-93](decisions.md#d-93-legal-form-times-show-only-as-typed-never-as-a-countdown-31-october-2026))
+- Legal times decision card: keep D-93 (typed times only, no countdowns) and D-72 item 2 (the outage copy is a print or saved file only) unless Josh changes them on the pending card. ([D-93](decisions.md#d-93-legal-form-times-show-only-as-typed-never-as-a-countdown-31-october-2026))
 - ED next-step wording: Josh to sign off the 3, 8, 24 and 48 hour defaults before the wording is final. (owner thread, 9 November 2026)
 - Clinical values still synthetic (six added since D-63, four more under D-106) need a sourced value and Josh's signature. ([clinical-values.md](clinical-values.md))
 - Review the per-client sign-in limits before any real user signs in (D-97 item 6, WF-B008). ([decisions.md](decisions.md#d-97-owner-answers-on-seven-open-items-n21-n25-n26-n29-n40-n41-and-wf-b008-8-november-2026))

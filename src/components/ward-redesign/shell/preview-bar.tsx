@@ -159,7 +159,7 @@ function deskPlaceLabel(access: WardAccess, units: readonly Unit[]): string | un
  *   Command instead projects timestamped reducer records and shared navigation counts into a
  *   synthetic event feed and tally. Authored notices are read from reducer state and filtered to
  *   the current route-derived role and place; no notice text is reconstructed here.
- * - 🔴 **`primaryAction` (`WARD_PRIMARY_ACTIONS`) IS NOW WIRED — archive D-16.** This component still takes
+ * - 🔴 **`primaryAction` (`WARD_PRIMARY_ACTIONS`) IS NOW WIRED — archived D-16.** This component still takes
  *   one resolved `WardPrimaryAction | undefined` and never performs its own lookup — the
  *   resolution from a pathname lives in `WardBarMount` at the bottom of this file, not here, for
  *   the reason given at that export's own doc comment (this bar is a Server Component's worth of
@@ -239,7 +239,7 @@ type WardBarProps = {
    * never performs its own lookup (`WardBarMount`, at the bottom of this file, is the one caller
    * that resolves it from the route today). Absent, or `{ kind: "none" }`, both render no button;
    * every other kind renders — see this file's own header comment ("primaryAction... IS NOW
-   * WIRED — archive D-16") for what each kind draws.
+   * WIRED — archived D-16") for what each kind draws.
    */
   primaryAction?: WardPrimaryAction;
   /** Fires whenever the Service selector changes, so a future host page can scope its own data. */
@@ -1130,7 +1130,7 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
        * sideways at 375px (`ui-ward-statistics-journey.spec.ts`). As a direct child of `.bar` it
        * keeps its own place in the row and its labels collapse by the bar's container width.
        *
-       * archive D-16, item 43: five kinds, three shapes. "none" and an absent `primaryAction` render nothing.
+       * Archived D-16, item 43: five kinds, three shapes. "none" and an absent `primaryAction` render nothing.
        * "new-referral" opens a menu of its three real destinations. The other three kinds open a
        * popover headed by their own label whose body reads exactly "Not wired in this prototype.",
        * and announce "<label> is not wired in this prototype." on first open. Never an `<a>`.
@@ -1367,7 +1367,7 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
 /**
  * `layout.tsx`'s (`src/app/ward-flow/layout.tsx`) own mount of the bar, wired to
  * `resolveWardPrimaryAction` — the "layout.tsx resolves the current route's action from
- * `WARD_PRIMARY_ACTIONS` and passes it" step archive D-16 calls for.
+ * `WARD_PRIMARY_ACTIONS` and passes it" step archived D-16 calls for.
  *
  * ⚠️ **WHY THIS IS A SEPARATE COMPONENT, NOT A FEW LINES INSIDE `layout.tsx` ITSELF.** Resolving a
  * pathname needs `usePathname()`, a Client Component hook — but `layout.tsx` cannot become one:

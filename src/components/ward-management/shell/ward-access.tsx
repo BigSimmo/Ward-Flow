@@ -151,7 +151,7 @@ export function useIsDatesOnlyStay(): (admissionId: string | undefined) => boole
 
 /**
  * Whether a movement or stay belongs to a person this desk sees only through break glass. The
- * patient link is read here, inside the archive D-14 allowlist, so callers never touch it themselves.
+ * patient link is read here, inside the archived D-14 allowlist, so callers never touch it themselves.
  */
 export function useIsBreakGlassRecord(): (record: { patientId?: string | null } | undefined) => boolean {
   const glass = useBreakGlassPatientIds();

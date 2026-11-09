@@ -87,7 +87,8 @@ Carried from 3 November. On 9 November item 1 was added and the access log mock-
 7. Name the privacy officer and the clinical safety owner.
 8. Turn on Dependabot security updates in GitHub settings.
 9. Arrange the clinician trial.
-10. Before any real data (deferred): the [real-data go/no-go checklist](governance/REAL-DATA-GO-NO-GO.md).
+10. Keep or strike the decision entries marked "Source unverified" (D-28 and D-30 to D-35).
+11. Before any real data (deferred): the [real-data go/no-go checklist](governance/REAL-DATA-GO-NO-GO.md).
 
 ### Keeping this page true
 
@@ -167,7 +168,7 @@ Status of every decision in [decisions.md](decisions.md), D-1 to D-81, read from
 | D-40 | A second CTO keeps the first                  | Built                 | `earlier` in `ward-patients.ts`                                               |
 | D-41 | Delays filters state the hidden count         | Built                 | "Show everyone"; Delays renamed Waiting (#474)                                |
 | D-42 | 12px floor, no uppercase exception            | Built                 | `--wf-fs-11` alias in `ward-flow-v9-tokens.css`                               |
-| D-43 | Colour in glyphs; red is a 1px edge           | Dropped or superseded | The red edge is replaced by D-94 item 2 (no coloured side edges)              |
+| D-43 | Colour in glyphs; red is a 1px edge           | Partly replaced       | The red edge is replaced by D-94 item 2; colour in glyphs still applies       |
 | D-44 | Compact sizing and white cards                | Unverified            | Not re-checked                                                                |
 | D-45 | Phone is its own 390×844 design               | Built                 | `48rem` phone media queries, `phone-fold`; no `--wf-bp-narrow` token          |
 | D-46 | Focal part, own part and hero per page        | Unverified            | Not re-checked                                                                |
@@ -230,7 +231,7 @@ These rows record decisions, not a new assertion that their implementation is co
 
 ## Remaining work
 
-Every open work item is in the [backlog](backlog.md). Dated task detail stays in
+Every open build item is in the [backlog](backlog.md). Actions only Josh can take are listed in [Waiting on Josh](#waiting-on-josh) above. Dated task detail stays in
 [`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md).
 
 ### How device copies and drafts are kept

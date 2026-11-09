@@ -40,9 +40,9 @@ Nothing here describes the app as it is now. For current work start at
 
 Moved here from `docs/ARCHIVE.md` on 9 November 2026; that file now only points here.
 
-Historical documents no longer live in the working tree. Every one is kept in Git history at
+Documents removed in the 18 October 2026 pass, and later ones listed here, are kept in Git history at
 `main` commit `0a469c6` (`0a469c61260a49aaa94733f948ae1d53f4d3f5e6`), the last commit before they
-were removed. That commit is part of `main`, so it stays in every full clone.
+were removed. Earlier passes name their own commits below (`26d0987`, `5afce0b`, `cac245b`). That commit is part of `main`, so it stays in every full clone.
 
 Read or restore a file:
 

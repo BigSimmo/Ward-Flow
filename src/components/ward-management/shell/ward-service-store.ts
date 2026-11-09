@@ -1,7 +1,7 @@
 /**
  * THE SERVICE CHOICE — one module browser store, shared by `WardBar`'s Service selector, `WardRail`
  * (item 52) and every screen a future lane scopes to it (build plan
- * `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2 "Where the choice lives", task S2).
+ * `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md` §2 "Where the choice lives", task S2).
  *
  * Mirrors `ward-bar.tsx`'s own `useAppearanceStore`/`applyAppearance` pair exactly, for the same
  * reason that file's header comment gives for reusing `ward-rail.tsx`'s rail-open store: a
@@ -14,7 +14,7 @@
  * the tab. A demo reset also leaves it alone — it is not part of `WARD_FLOW_DEMO_STORAGE_KEY`'s
  * persisted clinical state, and nothing here reads or writes that key.
  *
- * 🔴 **archive D-11-SAFE BY CONSTRUCTION.** Ward Flow's own rule against typed text in browser storage is
+ * 🔴 **SAFE BY CONSTRUCTION (archived D-11).** Ward Flow's own rule against typed text in browser storage is
  * satisfied not by masking or trimming, but by never accepting anything BUT a fixed id in the
  * first place: `readStoredService` only ever returns a value that is `===` one of `HEALTH_SERVICES`
  * exactly. Free text, a stale id from a build that renamed a service, or storage tampering, all

@@ -59,10 +59,10 @@ describe("the duplicate sentence", () => {
   });
 
   /**
-   * 🔴 archive D-19 CONDITION 1 — THE TWO OPEN STATES GIVE THE SAME SENTENCE, AND THAT IS THE POINT.
+   * 🔴 Archived D-19 CONDITION 1 — THE TWO OPEN STATES GIVE THE SAME SENTENCE, AND THAT IS THE POINT.
    *
    * The first build returned a different sentence for each, because queued and accepted ask the
-   * reader for different things. archive D-19 ruled against it: what is permitted is a BOOLEAN, and naming
+   * reader for different things. Archived D-19 ruled against it: what is permitted is a BOOLEAN, and naming
    * which state reports how far along this person's pathway is. **This case is what goes red if
    * somebody re-adds the distinction as an improvement** — which it would be, for usefulness, and
    * that is exactly the argument the ruling rejects.
@@ -106,7 +106,7 @@ describe("the duplicate sentence", () => {
   });
 
   /**
-   * 🔴 archive D-19 CONDITION 1, THE COUNT HALF. Several open referrals give the SAME sentence as one.
+   * 🔴 Archived D-19 CONDITION 1, THE COUNT HALF. Several open referrals give the SAME sentence as one.
    * "three open" narrows a person's history far more than "one is open", so the number is never
    * computed — `duplicateSentence` uses `.some`, which yields a boolean and never a length.
    */
@@ -163,7 +163,7 @@ describe("FD-23 — the duplicate sentence never says where", () => {
       }
       // The generic shapes a name would arrive wearing, for a unit this seed does not hold.
       expect(sentence).not.toMatch(/\bward\b|\bunit\b|\bteam\b|\bdepartment\b|\bED\b|\bat\s+[A-Z]|\bby\s+[A-Z]/);
-      // 🔴 archive D-19 CONDITION 1, pinned on the STRING as well as on the behaviour above. No digit and
+      // 🔴 Archived D-19 CONDITION 1, pinned on the STRING as well as on the behaviour above. No digit and
       // no plural: each reports HOW MANY, and a count is itself a disclosure — "three open" narrows
       // a person's history far more than "one is open".
       expect(sentence, "a digit is a count").not.toMatch(/\d/);
@@ -241,7 +241,7 @@ describe("FD-23 — the duplicate sentence never says where", () => {
 });
 
 /**
- * 🔴 archive D-19 CONDITION 2 — THE READ IS CONFINED TO THE PERSON ALREADY NAMED ON THE FORM IN PROGRESS.
+ * 🔴 Archived D-19 CONDITION 2 — THE READ IS CONFINED TO THE PERSON ALREADY NAMED ON THE FORM IN PROGRESS.
  *
  * Ward Lead called this *"the condition that matters most and the one I nearly left out"*, and the
  * reason is worth restating where it will be read: **without this bound the feature is a PROBE.**
@@ -260,7 +260,7 @@ describe("D-19 condition 2 — only the referral form may ask this", () => {
   /*
    * The referral form. The full-page intake form (`referrals/referral-intake.tsx`) was this file's
    * only importer until it was retired on 8 Oct 2026; the referral slide-out is now the one place a
-   * referral is written, so it is the only file archive D-19 lets ask. Nothing may import it today; the
+   * referral is written, so it is the only file archived D-19 lets ask. Nothing may import it today; the
    * slide-out may, and nothing else ever.
    */
   const ALLOWED_CALLERS = ["referrals/ward-referral-drawer.tsx"];

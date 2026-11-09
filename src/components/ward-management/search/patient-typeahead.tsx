@@ -361,7 +361,7 @@ export function PatientTypeahead({
         could be mistaken for real"), and never to the person. On a bed board that distinction is
         stylistic; on a patient search it is not, because this is the one figure on the screen that
         is a claim about human beings rather than about beds. "2 invented people found" was the
-        implementer's phrasing and is Ward Lead's to rule on, not theirs — ruled archive D-8.
+        implementer's phrasing and is Ward Lead's to rule on, not theirs — ruled archived D-8.
 
         ⚠️ The page-level markers this screen relies on (the bar's prototype tooltip and the rail
         foot, standard §8.3) are BOTH visual. A screen-reader user reaches neither, which is why

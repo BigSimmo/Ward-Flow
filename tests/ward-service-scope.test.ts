@@ -1,6 +1,6 @@
 // tests/ward-service-scope.test.ts
 //
-// Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2 (item 44): the service
+// Build plan `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md` §2 (item 44): the service
 // chooser's membership rules, as one shared, pure module. This file drives the exported functions
 // of `src/components/ward-management/ward-service-scope.ts` directly rather than re-implementing
 // the join — a test that copies the rule it is checking guards nothing, the same reasoning

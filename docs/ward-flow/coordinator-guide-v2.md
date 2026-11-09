@@ -245,8 +245,8 @@ word "breach".
 Settings also lets you change the two warnings before a recorded legal due time, on the "Form
 warnings" card, which is labelled "Your defaults, not legal limits". **Early warning** comes first,
 3 hours before the typed due time by default ("Shown as due soon"). **Final warning** comes 1 hour
-before it by default ("Before a legal due time"), and can never be set earlier than the early
-warning. They only change when a typed due time is shown as due soon; operational screens still display only the clinician-recorded form number and paper expiry (`form-register.ts`), and no screen calculates a statutory period (`D-70`).
+before it by default ("Before a legal due time"), and always stays at least 15 minutes closer to
+the due time than the early warning. They only change when a typed due time is shown as due soon; operational screens still display only the clinician-recorded form number and paper expiry (`form-register.ts`), and no screen calculates a statutory period (`D-70`).
 
 ---
 

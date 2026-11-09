@@ -113,7 +113,7 @@ export function siteGaps(flow: WardFlowContextValue | null, now: Instant): SiteG
         umrn: subject.umrn,
         detail: SUPPORT_NOTIFICATION_OCCASION_LABELS[subject.occasion],
         missing: subject.missing.map((party) => SUPPORT_NOTIFICATION_PARTY_SHORT[party]),
-        // archive D-14: never read the patient link here, so an admission without a move opens its ward.
+        // Archived D-14: never read the patient link here, so an admission without a move opens its ward.
         href: subject.movementId ? movementHref(subject.movementId) : unitHref(subject.unitId),
       });
     }

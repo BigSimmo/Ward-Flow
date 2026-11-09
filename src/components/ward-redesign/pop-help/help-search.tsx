@@ -47,7 +47,7 @@ function suggested(role: WardTourRole): readonly HelpSearchResult[] {
  *
  * HELP SEARCH (variant A): a field in the Help sheet that opens a centred search box over all of
  * Help. Results come from `searchHelp` only; typed words stay in this component's state and are never
- * written to storage, a URL or a log (archive D-11, D-18).
+ * written to storage, a URL or a log (archived D-11; D-18).
  */
 export function HelpSearch({
   role,

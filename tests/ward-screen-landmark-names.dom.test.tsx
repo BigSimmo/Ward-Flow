@@ -18,7 +18,7 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 /**
  * 🔴 **A PANEL'S LANDMARK NAME AND ITS VISIBLE HEADING ARE ONE STRING, NOT TWO THAT MUST AGREE.**
  *
- * Owner ruling archive D-22. Two panels on this screen carried a hand-written `aria-label` over a heading
+ * Archived owner ruling D-22 (SHAPE 2 in `docs/history/archive/dated-notes/owner-decisions-2026-09-1x.md`; not D-22 in decisions.md). Two panels on this screen carried a hand-written `aria-label` over a heading
  * that interpolated the ward's name — `aria-label="Withdrawn referrals"` above
  * `<h2>Withdrawn from {unit.name}</h2>`, and `aria-label="Overrides recorded against this ward"`
  * above `<h2>Overrides recorded against {unit.name}</h2>`. **A screen-reader user navigating by
@@ -31,13 +31,13 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * leave a stale label behind.** A shape that cannot break beats a check that notices it broke.
  *
  * 🔴 **WHY THIS FILE EXISTS AT ALL, AND IT IS THE REASON THE CHANGE WAS NOT MADE SILENTLY.**
- * Before archive D-22, `grep` across `src/` and `tests/` found **nothing** selecting either landmark name
+ * Before archived D-22, `grep` across `src/` and `tests/` found **nothing** selecting either landmark name
  * and **no test asserting either heading's text**. So there was nothing to re-point — **and nothing
  * that would have noticed the change regressing.** Making an unpinned change to an untested surface
- * would have swapped one silent thing for another. **These assertions are the half of archive D-22 that
+ * would have swapped one silent thing for another. **These assertions are the half of archived D-22 that
  * makes it durable; the attribute edit alone was two lines.**
  *
- * ⚠️ **The safety condition archive D-22 attached, checked before building rather than assumed:** an
+ * ⚠️ **The safety condition archived D-22 attached, checked before building rather than assumed:** an
  * `aria-labelledby` pointing at an element that did not render leaves the landmark with **no name at
  * all**, which is worse than a mismatched one. Both `h2`s are unconditional — direct children of
  * their `<section>`, no ternary, no guard. The conditional content sits *below* each heading.

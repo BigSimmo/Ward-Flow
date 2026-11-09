@@ -66,7 +66,7 @@ import styles from "./ward-flow-layout.module.css";
  *
  * `WardGround` wraps `children` here — the whole of every route's own output, `<main>` included
  * — because this is the only place in the tree that is an ancestor of every route's content
- * (docs/superpowers/plans/2026-09-04-ward-flow-navigation-shell.md, Task 6, ruling
+ * (docs/history/superpowers/plans/2026-09-04-ward-flow-navigation-shell.md, Task 6, ruling
  * 2026-09-04: the ground was originally meant to mount inside `ClinicalRail`, which is a SIBLING
  * of `<main>` at every one of its call sites and could never reach it).
  *
@@ -101,7 +101,7 @@ import styles from "./ward-flow-layout.module.css";
  * identical staleness in `ward-shell-types.ts` and left this one standing, in the file it was
  * editing.** **The rail and the bar read the publication store themselves.**
  *
- * 🔴 **archive D-16, THE PRIMARY-ACTION SEAM: `WardBar` BECAME `WardBarMount` HERE.** The bar's own
+ * 🔴 **Archived D-16, THE PRIMARY-ACTION SEAM: `WardBar` BECAME `WardBarMount` HERE.** The bar's own
  * `primaryAction` prop needs `WARD_PRIMARY_ACTIONS` resolved against the current route
  * (`resolveWardPrimaryAction`, `ward-nav.ts`) — a lookup this layout cannot perform itself despite
  * being the file the brief names for it: this file is a Server Component, so it cannot call

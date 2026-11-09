@@ -29,7 +29,7 @@ describe("seeded admissions — every admission names a patient (T1, 2026-09-25)
   });
 
   /**
-   * archive D-14's own rule (`Admission.patientId`'s doc comment, and `Occupant.patientId` above it): a
+   * Archived D-14's own rule (`Admission.patientId`'s doc comment, and `Occupant.patientId` above it): a
    * patientId is set only alongside a real referralId — never a hand-picked patient with no
    * referral behind it — EXCEPT for the generated/shared-with-movement links this task adds, which
    * are deliberately not referral-backed (they cover a routine bed occupant or a pulled movement's

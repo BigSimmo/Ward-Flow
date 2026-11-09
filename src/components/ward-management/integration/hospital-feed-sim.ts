@@ -13,7 +13,7 @@ import type { FeedMessage } from "./hospital-feed";
  *
  * The messages include one record number that is not synthetic and one message sent twice, so the
  * inbox shows both refusals. Matching is by record number only (`hospital-feed.ts`), and a record's
- * person is read only through the patient resolver (archive D-14), never from the link itself.
+ * person is read only through the patient resolver (archived D-14), never from the link itself.
  */
 
 type FeedSources = {

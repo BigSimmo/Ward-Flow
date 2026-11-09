@@ -786,7 +786,7 @@ export function candidateReason(verdict: EligibilityVerdict) {
  *     two existing sex-based gates (the accepts-shape is identical; only the fact being matched
  *     differs), with a detail sentence that names GENDER, never sex.
  *  2. **Gender NOT recorded → depends on the ward, per owner ruling `WLQ-35`** (2026-09-15,
- *     `docs/ward-flow/owner-decisions-2026-09-15.md`): *"a person with no recorded gender may be
+ *     `docs/history/archive/dated-notes/owner-decisions-2026-09-15.md`): *"a person with no recorded gender may be
  *     placed on a ward that takes either gender, and is refused on a single-gender ward until
  *     gender is recorded."* At an Undesignated ward this now returns `pass: true` — nobody there
  *     is gendered against, so an unrecorded gender is not a reason to refuse it. At a Female-only
@@ -854,7 +854,7 @@ export function genderEligibility(
   const coveredByCoordinatorPlacement =
     Array.isArray(genderPlacements) && genderPlacements.some((record) => record.unitIds.includes(unit.id));
   if (patient.gender === undefined) {
-    // WLQ-35 (owner ruling, 2026-09-15, docs/ward-flow/owner-decisions-2026-09-15.md): "a person
+    // WLQ-35 (owner ruling, 2026-09-15, docs/history/archive/dated-notes/owner-decisions-2026-09-15.md): "a person
     // with no recorded gender may be placed on a ward that takes either gender, and is refused on
     // a single-gender ward until gender is recorded." An Undesignated ward has nobody to be
     // gendered against, so an unrecorded gender is not a reason to refuse it — this is a placement

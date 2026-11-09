@@ -17,8 +17,8 @@ Read before UI changes, mockups, browser evidence or a local app link. [AGENTS.m
 
 Every design task, of any size, follows the
 [design review prompt](../design/design-review-artifact-prompt.md) (Josh, 9 November 2026,
-[D-107](../ward-flow/decisions.md#d-107-working-rules-and-documentation-from-the-9-november-2026-audit-9-november-2026)). It carries forward D-74 (Josh approves before
-build) and D-75 (start from the running app), and replaces the D-91 mock-up viewer. Build in the real app with React, TypeScript, the kit and CSS Modules; never a
+[D-107](../ward-flow/decisions.md#d-107-working-rules-and-documentation-from-the-9-november-2026-audit-9-november-2026)). It carries forward D-74 (nothing is built from a drawn mock-up until Josh approves that
+mock-up; a clear change may be built locally first) and D-75 (start from the running app), and replaces the D-91 mock-up viewer. Build in the real app with React, TypeScript, the kit and CSS Modules; never a
 separate HTML or JavaScript UI that must be rewritten. None of this authorises publication,
 a provider read or deployment.
 

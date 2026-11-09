@@ -79,8 +79,7 @@ journeys that matter most:
    `X` / `not_stated` placements require coordinator review and a nurse unit manager's tick per
    `D-31` / `R2-2`), and `allocatable_bed` (closed/pulled/occupied bed state). By contrast,
    `cohort` (age/specialty) and `security` (open vs secure) can be overridden by a coordinator
-   with a logged clinical reason (`D-16`, `ward-eligibility.ts`; the cited `D-37` posture is now
-   replaced by D-87).
+   with a logged clinical reason (`D-16`, `ward-eligibility.ts`).
 4. **Leaving the ward.** Two tracks run side by side: the person leaves (to the community, another
    ward, a general hospital, residential care, custody, and other endings) and the bed is released
    and prepared. What is holding a discharge up is recorded and shown on the delays board.
@@ -159,7 +158,7 @@ treat them as starting drafts.
 - One coordinator desk, weekday business hours. **(Guess — Josh to confirm.)**
 - Start with the coordinator and a small number of EMHS wards and one ED, then widen. **(Guess —
   Josh to confirm.)**
-- Whether to run it beside the whiteboard first is still open (question 3 below).
+- It runs beside the whiteboard first (D-74 item 8; question 3 below).
 - Success is judged by the measures in the next section.
 
 ## Success measures
@@ -241,9 +240,8 @@ reported weekly and compared.
 2. ~~On day one, is it the coordinator alone, or wards and the ED as well?~~ **Answered: the
    Coordinator is the main user and is built first. Whether wards and the ED also use it on day
    one of the pilot is still to confirm.**
-3. **Still open.** Should the pilot start by running Ward Flow alongside the existing whiteboard
-   (both kept up to date for a few weeks, with the whiteboard still the one relied on), or should
-   the ward team switch to Ward Flow straight away?
+3. ~~Beside the whiteboard first, or switch straight away?~~ **Answered (D-74 item 8): the pilot
+   runs beside the ward whiteboard first, with the whiteboard still the one relied on.**
 4. **Still open.** Who will sponsor it inside the health service, and who will be the clinical
    safety officer and the data custodian? None is named yet (Josh, 25 September).
 5. ~~What result would count as success for the pilot?~~ **Answered: see "Success measures"

@@ -199,7 +199,7 @@ export function PersonPanel({
             {movement.originEdId && canOpen(edHref(movement.originEdId)) ? (
               <EdBoardFootPeek movement={movement} now={now} />
             ) : null}
-            {/* No "Record" link here: archive D-14 keeps the patient link default-deny, and this panel is not on
+            {/* No "Record" link here: archived D-14 keeps the patient link default-deny, and this panel is not on
                 its allowlist. "Movement" opens the movement, whose drawer names the person (O-16.3). */}
           </DrawerFootRow>
         </>

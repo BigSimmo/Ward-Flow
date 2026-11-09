@@ -9,9 +9,9 @@ import { join, relative } from "node:path";
  *
  * Source of truth: the "Status of every entry" table at the top of docs/ward-flow/decisions.md.
  * Only rows marked exactly "Replaced by D-n" count; "Partly replaced" entries still apply in part.
- * A citation is fine when the same line, or the next (prose wraps), says it is history (replaced, removed, withdrawn, once,
+ * A citation is fine when its own sentence says it is history (replaced, removed, withdrawn, once,
  * overruled, superseded, archive) or names the replacing decision, or is a range such as
- * "D-1 to D-81".
+ * "D-1 to D-81". The sentence may wrap onto the next line; a new sentence there does not count.
  */
 const root = join(__dirname, "..");
 const decisionsPath = join(root, "docs/ward-flow/decisions.md");
@@ -42,12 +42,17 @@ function fullyReplaced(markdown: string): Map<string, string[]> {
 function staleCitations(text: string, replaced: Map<string, string[]>): string[] {
   const hits: string[] = [];
   const lines = text.split("\n");
+  const sentenceEnd = /[.!?](?:\s|$)/u;
   lines.forEach((line, index) => {
-    const context = `${line} ${lines[index + 1] ?? ""}`;
-    if (HISTORY_WORDS.test(context)) return;
     const withoutRanges = line.replace(/\bD-\d+\s+to\s+D-\d+\b/gu, "");
     for (const [id, by] of replaced) {
-      if (!new RegExp(`\\b${id}\\b(?!\\.\\d|-)`, "u").test(withoutRanges)) continue;
+      const at = withoutRanges.search(new RegExp(`\\b${id}\\b(?!\\.\\d|-)`, "u"));
+      if (at < 0) continue;
+      // The citing sentence: this line, plus the next line's first sentence when this one runs on.
+      const next = lines[index + 1] ?? "";
+      const runsOn = !sentenceEnd.test(withoutRanges.slice(at));
+      const context = runsOn ? `${line} ${next.split(sentenceEnd)[0]}` : line;
+      if (HISTORY_WORDS.test(context)) continue;
       if (by.some((newer) => new RegExp(`\\b${newer}\\b`, "u").test(context))) continue;
       hits.push(`${index + 1}: cites ${id} (replaced by ${by.join(", ")})`);
     }
@@ -56,7 +61,7 @@ function staleCitations(text: string, replaced: Map<string, string[]>): string[]
 }
 
 function liveDocs(): string[] {
-  const files: string[] = [join(root, "AGENTS.md")];
+  const files: string[] = [join(root, "AGENTS.md"), join(root, "README.md")];
   const walk = (directory: string) => {
     for (const name of readdirSync(directory)) {
       const path = join(directory, name);
@@ -83,6 +88,8 @@ describe("live docs do not cite a replaced decision as current", () => {
     expect(staleCitations("The Act period demo follows D-29.", map)).toHaveLength(1);
     expect(staleCitations("D-70 removed the D-29 demo.", map)).toHaveLength(0);
     expect(staleCitations("Rows D-1 to D-81 were checked.", new Map([["D-1", ["D-27"]]]))).toHaveLength(0);
+    expect(staleCitations("The demo follows D-29, which D-70\nreplaced.", map)).toHaveLength(0);
+    expect(staleCitations("Follow D-29 for legal forms.\nOld content lives in history.", map)).toHaveLength(1);
   });
 
   it("finds no stale citation in a live page", () => {

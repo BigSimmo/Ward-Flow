@@ -53,19 +53,19 @@ import { encodeRecordAddress } from "../shell/ward-record-address";
  *
  * **THE CONCLUSION SURVIVED THE CORRECTION AND THE REASON CHANGED COMPLETELY.** `movements` stays
  * out not because the half cannot be built, but because **it is a different disclosure and nobody
- * has ruled on it.** archive D-19 permits one boolean about open REFERRALS; whether this screen may also
- * say a person is currently in a bed is a question for the owner, and archive D-17 has since closed the
+ * has ruled on it.** Archived D-19 permits one boolean about open REFERRALS; whether this screen may also
+ * say a person is currently in a bed is a question for the owner, and archived D-17 has since closed the
  * neighbouring cross-reference on the Patient screen. Taking a parameter this function must not use
  * would be worse than narrowing: a caller passing it would reasonably believe it was covered.
  */
 
 /**
- * 🔴 ONE SENTENCE, A BOOLEAN, AND I BUILT TWO FIRST — archive D-19 CONDITION 1.
+ * 🔴 ONE SENTENCE, A BOOLEAN, AND I BUILT TWO FIRST — archived D-19 CONDITION 1.
  *
  * The first version distinguished the two states that are not declined, because they ask the reader
  * for different things: *queued* means nobody has answered yet and a second referral may well be
  * reasonable, while *accepted* means a destination has said yes and a second one is a genuine
- * duplicate. I flagged that as an unruled wording change. **archive D-19 ruled it, and against me.**
+ * duplicate. I flagged that as an unruled wording change. **Archived D-19 ruled it, and against me.**
  *
  * The ruling permits *"a place-free, ward-free, time-free **boolean**"*, and its allowlist entry
  * says the sentence reports **that one is open and nothing else**. Two sentences are not a boolean:
@@ -77,7 +77,7 @@ import { encodeRecordAddress } from "../shell/ward-record-address";
  * the argument FD-23's own module predicts will be made against it: *"every instinct says a
  * patient's screen shows everything known about that patient."* The distinction goes.
  *
- * 🔴 **AND NEVER A COUNT.** archive D-19 is explicit that a number is itself a disclosure — *"three open"*
+ * 🔴 **AND NEVER A COUNT.** Archived D-19 is explicit that a number is itself a disclosure — *"three open"*
  * narrows a person's history far more than *"one is open"*. The sentence is indefinite (*"A
  * referral"*), never *"2 referrals"*, never *"another"*, never a plural. `referralState` is
  * consulted only to decide whether ANY qualifies; how many did is discarded and never returned.
@@ -100,7 +100,7 @@ const ALREADY_OPEN = "A referral for this person is already open.";
 /** Exported as a list of ONE so the guard asserts over the sentences this module can emit, whatever
  *  that set becomes, rather than over the single string somebody remembered to check. A property
  *  checked on one of two strings is checked on neither, and that was a live risk here: this module
- *  held two until archive D-19 collapsed them. */
+ *  held two until archived D-19 collapsed them. */
 export const DUPLICATE_SENTENCES = [ALREADY_OPEN] as const;
 
 /**
@@ -121,16 +121,16 @@ export function duplicateSentence(input: { patientId: PatientId; referrals: read
   const theirs = input.referrals.filter((referral) => referral.patientId === input.patientId);
 
   /*
-   * ⚠️ `.some`, NOT `.filter().length` — AND THAT IS archive D-19 CONDITION 1, NOT A STYLE PREFERENCE.
+   * ⚠️ `.some`, NOT `.filter().length` — AND THAT IS archived D-19 CONDITION 1, NOT A STYLE PREFERENCE.
    * `.some` stops at the first match and yields a boolean; a count would exist, in a variable,
-   * one keystroke from being rendered. archive D-19 is explicit that a number is itself a disclosure:
+   * one keystroke from being rendered. Archived D-19 is explicit that a number is itself a disclosure:
    * "three open" narrows a person's history far more than "one is open". The count is never
    * computed, so it cannot be leaked by a later edit that only looks like formatting.
    */
   const open = theirs.some((referral) => {
     const state = referralState(referral);
     // Both non-declined states collapse into one answer. Naming WHICH would report how far along
-    // this person's pathway is, which is more than "one is open" — see the archive D-19 note above.
+    // this person's pathway is, which is more than "one is open" — see the archived D-19 note above.
     return state === "accepted" || state === "queued";
   });
   if (open) return ALREADY_OPEN;

@@ -9,8 +9,8 @@ checklist on top of this one: [`SCREEN-DEFINITION-OF-DONE.md`](SCREEN-DEFINITION
 
 ## The checklist
 
-- [ ] **The checks pass.** Before a push, run `npm run verify:pr-local` once and leave the full
-      suites to hosted CI, as [checks-and-evidence.md](../agents/checks-and-evidence.md) sets out.
+- [ ] **The checks pass.** Before a push, run `npm run verify:pr-local` once and leave the suites hosted CI
+      selects for the change to hosted CI (a docs-only change may run none of them), as [checks-and-evidence.md](../agents/checks-and-evidence.md) sets out.
       Never skip, disable or loosen a test to make it pass. Report any failure honestly, with the
       one line that shows it, and name the gates left to CI as not run.
 - [ ] **It is committed.** Small commits on your own branch in your own worktree. Nothing finished

@@ -12,7 +12,7 @@ the owner can correct it rather than discover it.
 
 ## R-2026-09-04-A — The patient record may hold the placement field set
 
-> **Partly replaced by [D-105](../../../ward-flow/decisions.md) (8 November 2026):** next of kin and a nominated person or carer may now be optional record-only fields. The rest of this ruling stands.
+> **Partly replaced by [D-105](../../../ward-flow/decisions.md) (8 November 2026):** next of kin, a nominated person or carer and the other optional administrative details a clerk records (22 in all) may now be optional record-only fields, beyond this ruling's two-field limit. Risk flags, diagnosis and medication stay off the record.
 
 **Asked:** which facts may the patient record hold? Owner ruling PD-1 of 2026-08-30 permitted name,
 record number, date of birth and age, stated that address and narrative history were **not** ruled

@@ -33,8 +33,9 @@ check results, limitations and delivery state.
 
 Inspect each script and its hooks before execution. Select checks for the actual
 diff using [public CI policy](../ward-flow/PUBLIC-CI.md) and the declared
-[workflow](../../.github/workflows/ward-flow.yml). GitHub Actions runs Ward Flow CI on every pull
-request into `main`. Current-head results and deployment remain separate evidence.
+[workflow](../../.github/workflows/ward-flow.yml). The workflow declares a Ward Flow CI run for every
+pull request into `main`; that declaration is not an observed result. Current-head results and
+deployment remain separate evidence.
 Known maintained-policy changes use the shared local/CI classifier: installation/parity,
 policy-contract tests, local doc links/commands and changed-file static checks. That scope
 does not itself select the full unit/browser suites. Unknown paths, source or deleted files

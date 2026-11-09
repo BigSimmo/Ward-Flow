@@ -3,7 +3,7 @@
 //
 // 1. This file is the one reader. It reads ONE referral: the one the movement in focus names.
 //    `tests/ward-patient-referral-safety.test.ts` keeps every other patient page file from reading
-//    referral risk or diagnosis, the way `ward-patient-link-default-deny.test.ts` guards archive D-14.
+//    referral risk or diagnosis, the way `ward-patient-link-default-deny.test.ts` guards archived D-14.
 // 2. A desk sees the flags only when it can already see that referral. The referral must be in the
 //    desk's scoped workspace (`scopeWorkspace`), so a desk the referral was not shared with gets
 //    "Not shared with this desk" rather than the flags.

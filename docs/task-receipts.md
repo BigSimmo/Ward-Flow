@@ -14,8 +14,9 @@ The optional [Notion task source](https://app.notion.com/p/ba8c768f8b2c49638772b
 
 ## When a receipt is used
 
-Keep one task identity. A retry or a new turn is not a new task. A short uninterrupted task needs
-nothing beyond its commits and PR body; this is the one home of the compact-receipt rule, and other
+Keep one task identity. A retry or a new turn is not a new task. A short, uninterrupted, scoped and reversible task with no unresolved ownership, no new
+provider or publication boundary and no substantial recovery needs nothing beyond its commits and
+PR body; this is the one home of the compact-receipt rule, and other
 pages link here. Substantial work that pauses, is blocked or changes hands records its state,
 blocker, next action and evidence in the PR body or the existing checkpoint, not a new ledger.
 

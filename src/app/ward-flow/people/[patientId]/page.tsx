@@ -11,10 +11,10 @@ import { decodeRecordAddress, querySuffix } from "@/components/ward-management/s
  * retired on 21 Oct 2026 (Josh), so there is one patient record; an old `?view=` is ignored.
  */
 export const metadata: Metadata = {
-  // archive D-1 (owner, 2026-09-10): "But call this page Patient." The screen name is now "Patient";
+  // Archived D-1 (owner, 2026-09-10): "But call this page Patient." The screen name is now "Patient";
   // Patient Now sets the same string client-side, because this route is also reached by
   // client-side navigation that this static export cannot see. The route segment, the file and the
-  // `PatientId` type stay named for the person — archive D-1 does not authorise renaming those.
+  // `PatientId` type stay named for the person — archived D-1 does not authorise renaming those.
   title: "Patient — Ward Flow",
   description: "Synthetic patient record and transport for Ward Flow.",
 };

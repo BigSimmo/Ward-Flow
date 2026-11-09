@@ -978,7 +978,7 @@ is inferred.
 
 ## D-74. Owner answers to the 21 October open questions (21 October 2026)
 
-- **Later status (9 November 2026):** D-79 later let wards see the name and UMRN before they answer. D-79 keeps item 5: no referral number shows on the card.
+- **Later status (9 November 2026):** D-79 later let wards see the name and UMRN before they answer. D-79 keeps item 5: no referral number shows on the card. D-83 replaces item 6: copies keep full names.
 - **Date:** 21 October 2026 (`2026-10-21`). **Decided by:** Josh, in the project chat at 8:02 PM AWST: "please go ahead with all recommendations... EXCEPT... ANYTHING YOU ARE BUILDING A MOCKUP FOR", to the coordinating session's 17 recommendations.
 - **Decision:**
   1. **Shared boards Realtime** is closed. The 3-second refresh is accepted for the prototype. This supersedes D-72 item 3 for live updates; the history table stays as D-72 left it.
@@ -1324,14 +1324,14 @@ is inferred.
 
 - **Date:** 8 November 2026. **Decided by:** Josh, on the decision card in the Note 3 thread. Its id in the tests is `NOTE3-2026-11-08` (`tests/ward-patient-model.test.ts`).
 - **Decision:** next of kin and a nominated person or carer may be recorded as optional, record-only fields. So may the other optional administrative details a clerk records. There are 22 in all, listed in `ADMIN_DETAIL_FIELDS` (`src/components/ward-management/ward-patients.ts`). None is required. All are withheld from boards, lists and transport views through `RECORD_DETAIL_FIELDS` (`src/components/ward-management/ward-shared-record-detail.ts`).
-- **What it replaces:** part of R-2026-09-04-A: its refusal of next of kin only. The rest of that ruling stands.
+- **What it replaces:** part of R-2026-09-04-A. That ruling added only two fields beyond its approved seven and left next of kin and carer contact out. D-105 replaces that limit for these 22 optional, record-only administrative fields. The rest of Ruling A stands: risk flags or alerts, diagnosis and medication are still not on the patient record, and each new field still needs its own entry in the field guard.
 - **Why:** clerks record these details for every admission. Keeping them on the record, and off the boards, makes the record useful without showing more on shared screens.
 
 ## D-106. Clinical values from the 9 November 2026 documentation audit (9 November 2026)
 
 - **Date:** 9 November 2026. **Decided by:** Josh, in the project thread at 11:07 UTC: "Yes to all recommendations".
 - **Decision:**
-  1. **Medical trip bed rule.** `edMedicalBedRelease` stays at 24 hours, and this entry records it as a decision. The 14 October "clinical owner ruling" had no D entry, and FD-19 said 48 hours. The value is renamed "Review the held bed after 24 hours", because the app flags the bed for review and never frees it.
+  1. **Medical trip bed rule.** `edMedicalBedRelease` stays at 24 hours, and this entry records it as a decision. The register changes in items 1 to 3 and 5 are built in the separate held clinical PR (#1556) and apply once it merges; until then the register shows the earlier labels and status. The 14 October "clinical owner ruling" had no D entry, and FD-19 said 48 hours. The value is renamed "Review the held bed after 24 hours", because the app flags the bed for review and never frees it.
   2. **General observations (hourly)** are signed, as D-72 item 5 already approved.
   3. **Four timings** join the clinical values register as synthetic and unsigned: an old Form 5A or 5B leave paper warns after 3 days; an act-now alert can be hidden for at most 60 minutes; the carer, PSP and MHAS notification list looks back 72 hours; and a staff access grant defaults to 90 days.
   4. **R-2026-09-04-G** ("It suggests nothing" withdrawn) is replaced by D-71: no suggested or ranked wards.
@@ -1346,9 +1346,9 @@ is inferred.
   1. **History download before a push** (`git fetch --unshallow` or `--deepen`) is pre-approved. It is read-only; any other network Git still needs a yes.
   2. **Fewest PRs.** One PR per thread. A held clinical change is the only reason to split one off.
   3. **Design work** follows [`docs/design/design-review-artifact-prompt.md`](../design/design-review-artifact-prompt.md), a copy of the standing project prompt. This replaces D-91's rule that all visual design lives in the redesign mock-up viewer.
-  4. **No merge queue is in use.** PRs merge directly once required checks pass. Workflows keep their dormant `merge_group` triggers. This closes D-73 item 5.
+  4. **No merge queue is in use.** PRs merge directly once required checks pass. This changes only the merge mechanism: who may merge, and when Josh's yes is needed, stays as AGENTS.md hard rule 6, D-91 and D-92 set it. Workflows keep their dormant `merge_group` triggers. This closes D-73 item 5.
   5. **Documents are reorganised:** older material moves to history, and the backlog lives on one page, `docs/ward-flow/backlog.md`.
   6. **Every new ruling gets a D-number** in this log, in the same PR that builds it. D-8's "R17 onward" numbering is no longer used.
-  7. **A bare D-number in `src/` or `tests/` means this log.** A comment that cites the delegated rulings in [`owner-decisions-2026-09-1x.md`](../history/archive/dated-notes/owner-decisions-2026-09-1x.md) writes "archive D-n".
+  7. **A bare D-number in `src/` or `tests/` means this log.** A comment that cites the delegated rulings in [`owner-decisions-2026-09-1x.md`](../history/archive/dated-notes/owner-decisions-2026-09-1x.md) writes "archived D-n".
 - **Also from the audit:** D-96 was reworded so a bed named for a referral is "pulled", matching D-81 and D-85. D-28 and D-30 to D-35 are marked "Source unverified", awaiting Josh's keep or strike pass. Old entries that later ones replace now say so in place.
 - **Why:** fewer PRs and one decision home mean fewer conflicts and fewer rulings lost between threads.

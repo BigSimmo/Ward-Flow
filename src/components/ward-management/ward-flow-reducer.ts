@@ -372,7 +372,7 @@ export type WardFlowState = WardAuditState & {
   inboxOwnership: Record<string, InboxOwnershipEntry[]>;
   inboxSnoozes: Record<string, InboxSnoozeEntry[]>;
   /**
-   * Authored notices (owner ruling archive D-2), beside `buildActionInbox`'s derived list. Appended only
+   * Authored notices (archived owner ruling D-2), beside `buildActionInbox`'s derived list. Appended only
    * through `appendNotices`, which refuses a `demo`-addressed notice. Never read or written by
    * `buildActionInbox`, so inbox actions cannot raise a notice and a notice cannot change the
    * derived inbox.
@@ -1092,7 +1092,7 @@ function nextFrontDoorReferralId(sequence: number): string {
   return `RF-9${String(sequence).padStart(2, "0")}`;
 }
 
-// ── Communication addendum (docs/ward-flow/plans/2026-09-1x-communication-addendum.md) ──────────
+// ── Communication addendum (docs/history/plans-2026-09/2026-09-1x-communication-addendum.md) ──────────
 
 /**
  * Like `subjectId`, but reads an already-built `Notice.about` (movement, referral, unit, then

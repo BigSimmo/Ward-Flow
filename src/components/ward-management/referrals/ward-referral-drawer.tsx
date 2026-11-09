@@ -80,7 +80,7 @@ function WardReferralDrawerContent(props: WardReferralDrawerContentProps) {
     phCloseSheet,
     patientRecord,
   } = s;
-  // archive D-19: one place-free, count-free sentence about the person already named on this form.
+  // Archived D-19: one place-free, count-free sentence about the person already named on this form.
   const alreadyOpen = patientRecord ? duplicateSentence({ patientId: patientRecord.id, referrals }) : undefined;
   // L5 / decision 2: the link follows the case's stage to the page that actually lists it.
   const alreadyOpenHref = patientRecord ? duplicateCaseHref({ patientId: patientRecord.id, referrals }) : undefined;

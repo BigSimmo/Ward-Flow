@@ -1385,14 +1385,14 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
    * still a defect; this test's old form forbade overflow outright, which was STRICTER than the
    * standard permits and outlawed the standard's own sanctioned pattern.
    *
-   * ⚠️ **D-9/D-10 (`docs/ward-flow/owner-decisions-2026-09-1x.md`): only ONE overflow exists in the
+   * ⚠️ **D-9/archived D-10 (`docs/history/archive/dated-notes/owner-decisions-2026-09-1x.md`): only ONE overflow exists in the
    * whole 4-width × 2-table matrix this loop covers** — `ward-referral-board-queued-table` at
    * 641px, the "Home region" column (right edge 623 vs a 606px scroller). Nothing overflows at
    * 700/760/820px, and the decided table never overflows at any of the four. Fitting eight columns
    * into 641px would hide a clinical column outright or drop text below the type floor — both worse
    * than honest, signposted scrolling.
    *
-   * **archive D-10 overrides §5.8's own shade for this board**: `--edge-shade` does not resolve in this
+   * **Archived D-10 overrides §5.8's own shade for this board**: `--edge-shade` does not resolve in this
    * stylesheet's (second-edition) token layer at all — it silently paints nothing — and this design
    * language has already rejected a gradient cue twice, in `ward-table.module.css` and
    * `coordinator.module.css`, because it degrades to nothing under `forced-colors: active`. So the

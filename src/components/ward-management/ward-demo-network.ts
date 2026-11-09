@@ -1381,7 +1381,7 @@ function buildNetwork(variant: DemoNetworkVariant): DemoNetwork {
 
   // The step-down referral is for a person already in a high-dependency bed: the first one
   // `fillWard` put there, remembered when the bed was filled rather than read back off the
-  // admission (a ward never reads where else a patient has been, archive D-14).
+  // admission (a ward never reads where else a patient has been, archived D-14).
   REFERRALS.forEach((spec, index) => {
     const patient = spec.source === "psychiatric_ward" ? build.firstHighDependencyPatient : undefined;
     build.referrals.push(buildReferral(build, spec, index, patient));

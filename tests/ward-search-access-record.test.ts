@@ -14,9 +14,9 @@ describe("the access record", () => {
   });
 
   it("says in words that it is kept for this session only", () => {
-    // archive D-4 (Ward Lead, 2026-09-11): the RULED sentence, not the drawing's unqualified header note
+    // Archived D-4 (Ward Lead, 2026-09-11): the RULED sentence, not the drawing's unqualified header note
     // and not the plan's third, unrelated wording — see access-record.ts's own doc comment.
-    // ⚠️ archive D-4 ADDENDUM, 2026-09-11: "What was searched", NOT "Who looked". The first ruling fixed
+    // ⚠️ Archived D-4 ADDENDUM, 2026-09-11: "What was searched", NOT "Who looked". The first ruling fixed
     // the DURABILITY half of the claim and left the ATTRIBUTION half standing. There is no *who*
     // in this system — the role column's value was a source-level constant that named nobody — so
     // the word came out and the column with it. See `AccessEntry`'s own comment.

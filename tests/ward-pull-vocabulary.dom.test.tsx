@@ -118,7 +118,7 @@ describe("the ward screen says pull, never hold, about an incoming patient", () 
 
   /**
    * 🔴 **THE ANCHOR OF THIS FILE IS THE BUTTON AND THE THREE NEGATIVES, NOT THIS HEADING.**
-   * Owner ruling archive D-20-REVISED. The clinical property this suite exists for — *the ward screen says
+   * Archived owner ruling D-20-REVISED. The clinical property this suite exists for — *the ward screen says
    * pull, never hold, about an incoming patient* — is carried by `getByRole("button", { name: "Pull a
    * bed" })` and by the three `not.toMatch(/hold|held/i)` negatives in the cases around this one.
    * **The heading was never the anchor**, which is why it could be renamed to the drawing's without
@@ -167,7 +167,7 @@ describe("the ward screen says pull, never hold, about an incoming patient", () 
   });
 
   /**
-   * 🔴 **THE EMPTY STATE IS COMPOSED, AND NOBODY DREW THESE WORDS.** Owner ruling archive D-20-REVISED,
+   * 🔴 **THE EMPTY STATE IS COMPOSED, AND NOBODY DREW THESE WORDS.** Archived owner ruling D-20-REVISED,
    * logged under the plan's §5.0(2) as wording taken from neither side whole.
    *
    * The drawing renames this panel AND replaces its empty state with *"Nobody has been accepted to

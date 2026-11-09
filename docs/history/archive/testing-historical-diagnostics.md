@@ -269,7 +269,7 @@ evidence-based verdict rather than disguising a public-network failure as a loca
 Before opening a UI PR, confirm:
 
 - **Reuse first.** Check `src/components/ui-primitives.tsx` (class recipes plus `IconButton`, `AsyncButton`, `InlineNotice`, `EmptyState`, `LoadingPanel`, `ToggleSwitch`) and `src/components/ui/sheet.tsx` (the only overlay primitive) before hand-rolling. Icon-only buttons use `IconButton` (its `label` is a required prop).
-- **Tokens only.** No raw hex or Tailwind palette classes, no literal shadows, no `text-[Npx]` — see [`docs/design-system/README.md`](../design-system-psychsift/README.md). `check:design-system-contract`, `check:type-scale`, and `check:icon-scale` enforce this.
+- **Tokens only.** No raw hex or Tailwind palette classes, no literal shadows, no `text-[Npx]` — see [`docs/history/design-system-psychsift/README.md`](../design-system-psychsift/README.md). `check:design-system-contract`, `check:type-scale`, and `check:icon-scale` enforce this.
 - **States.** Handle loading / empty / error / disabled where they apply; async surfaces expose a retry, not a dead end.
 - **Accessibility** ([design-system](../design-system-psychsift/README.md)): keyboard operable, visible focus, accessible names on icon controls, live regions for async status, and reduced motion honoured — scripted `scrollTo`/`scrollIntoView` go through `resolveScrollBehavior` (`src/lib/scroll-behavior.ts`), never a hard-coded `behavior: "smooth"`.
 - **Tests.** Add a `.dom.test.tsx` for changed component behaviour (see "Component tests" above) and update the E2E journeys for changed flows.

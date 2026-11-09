@@ -359,7 +359,7 @@ export function PatientHistoryTab({
    */
   patientId?: string;
   unitName: (id: string) => string | undefined;
-  /** Ward stays linked to this person, from the adapter (archive D-14). Newest shown first. */
+  /** Ward stays linked to this person, from the adapter (archived D-14). Newest shown first. */
   stays?: readonly Admission[];
   /** True while something is open now. Kept for the page's call; the tabs above lead back to Now. */
   open: boolean;

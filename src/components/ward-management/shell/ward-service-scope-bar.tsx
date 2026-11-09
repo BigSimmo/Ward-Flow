@@ -2,7 +2,7 @@
 
 /**
  * THE SCOPE BAR — the one control a scoped screen mounts to say, in the exact words build plan
- * `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §3 "Scope bar" fixes, that its list has
+ * `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md` §3 "Scope bar" fixes, that its list has
  * been narrowed to one health service, plus what that narrowing left out. Task S2 builds this
  * component and wires nothing to it yet — "Don't scope any screen yet... you only provide the
  * store, the wired chooser and the scope bar component" (S2's own brief). Lanes B–H (Command,

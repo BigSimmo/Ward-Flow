@@ -5,9 +5,9 @@ import { basename, extname, join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * archive D-14 — THE PATIENT LINK IS DEFAULT-DENY, AND THIS FILE IS THE ENFORCEMENT.
+ * Archived D-14 — THE PATIENT LINK IS DEFAULT-DENY, AND THIS FILE IS THE ENFORCEMENT.
  *
- * Ruling D-14 (`docs/ward-flow/owner-decisions-2026-09-1x.md`, Ward Lead's ruling under
+ * Archived ruling D-14 (`docs/history/archive/dated-notes/owner-decisions-2026-09-1x.md`, Ward Lead's ruling under
  * delegation, 2026-09-11): *"Admission and Referral carry no `patientId`. Nothing joins a bed's
  * occupant to a person."* Fixing that absence and refusing everywhere the join is not explicitly
  * permitted are ONE change, not two — a guard satisfied only because the data could not reach it
@@ -34,7 +34,7 @@ import { describe, expect, it } from "vitest";
  * shipped, not a new decision: this task populates the first real seed values for `patientId`
  * (`ward-movements.ts`, `ward-admissions-seed.ts`), which is what turns their read from a path that
  * could not resolve into one that sometimes does. **That consequence is named, not hidden — see
- * this task's own enumeration file — and it is exactly why archive D-14 exists: the day the link lands is
+ * this task's own enumeration file — and it is exactly why archived D-14 exists: the day the link lands is
  * the day every existing reader of it becomes load-bearing, whether or not anybody touched that
  * reader today.**
  *
@@ -480,7 +480,7 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 6 → 7 on 2026-09-11 by D-19 (`owner-decisions-2026-09-1x.md`, `f48747bbe4`), which admitted
     // `referrals/referral-duplicate.ts`. ⚠️ That entry is the FIRST one held to a different bound
     // from its neighbours: the six above are bounded by GRANULARITY — one person's own single
-    // linked referral — and archive D-19 moved the bound for this one entry from the READ to the
+    // linked referral — and archived D-19 moved the bound for this one entry from the READ to the
     // DISCLOSURE, because what FD-23 protects is whether a ward learns WHERE ELSE a patient has
     // been, and a place-free, ward-free, time-free, count-free boolean discloses no location. Read
     // that entry's own reason before touching it; it names two conditions that void it if widened.

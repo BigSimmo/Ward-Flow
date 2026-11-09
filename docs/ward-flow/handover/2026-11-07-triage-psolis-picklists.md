@@ -58,6 +58,8 @@ The current form (`src/components/ward-management/triage/triage-risk-data.ts`) h
 
 ### Recommended way to build it
 
+_Historical: this was built in PR #1504 (8 Nov 2026). Remaining gaps are listed in `PSOLIS_LIST_GAPS`._
+
 1. **One list file.** Add `triage-psolis-lists.ts`. Each option holds a stable code, a plain label in sentence case and the exact PSOLIS value: for example `["dsh", "Deliberate self-harm", "DELIBERATE SELF HARM"]`. The screen shows the label. Copy and the summary write the PSOLIS value.
 2. **Long lists: common first, then search.** Show about six tiles or chips, then a "More" button opening a searchable list (`@/components/wf` kit, typing filters). This is one pattern for Venue, Referral, Problems and Actions.
 3. **"Other" needs detail.** Choosing Other opens a short typed box. Typed text stays in React state only, as it does today.
@@ -87,7 +89,9 @@ The current form (`src/components/ward-management/triage/triage-risk-data.ts`) h
 
 ## Handover: starting the new chat
 
-Paste this into a new Ward Flow chat:
+_Historical: the build this paste starts is done (PR #1504). For what is left, see `PSOLIS_LIST_GAPS` in the code._
+
+Paste this into a new Ward Flow chat (kept for the record):
 
 > Continue the triage form's PSOLIS pick-lists. Read `docs/ward-flow/handover/2026-11-07-triage-psolis-picklists.md` first, and AGENTS.md. Work on a new branch from Ward Flow `main`. Build the "Recommended way to build it" section following "Josh's decisions": build with the lists we have and leave the marked gaps; save problems, actions, venue and referral type as codes; plain labels on screen with exact PSOLIS values in Copy; Program from the desk with Change. Synthetic data only: do not ask for or use the original photos.
 

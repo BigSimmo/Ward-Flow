@@ -135,7 +135,7 @@ describe("who may raise which event", () => {
     CLEAR_BED_RELEASE_BLOCK: ["ward", "bed_manager", "coordinator"],
     CONFIRM_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
     CONFIRM_CAPACITY: ["ward", "bed_manager", "coordinator"],
-    // T4 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`), `ed` alone, on
+    // T4 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`), `ed` alone, on
     // `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning: the department physically holding the form is
     // who can say a receipt was recorded in error.
     CORRECT_LEGAL_FORM_RECEIPT: ["ed", "ward", "community", "coordinator"],

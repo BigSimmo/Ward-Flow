@@ -51,7 +51,7 @@ Josh, 9 November 2026 ([D-107](../ward-flow/decisions.md#d-107-working-rules-and
 ## Integration thread and the five-PR cap
 
 - **No merge queue is in use.** PRs merge straight into `main` once the required checks pass. The `merge_group` triggers in the workflows are dormant. If Josh turns a merge queue on later, this section and AGENTS.md hard rule 6 change first.
-- **The integration thread** is the one thread Josh names to own PR integration ("Own Ward Flow PR integration", 5 Nov 2026). It may arm, re-arm and merge any owner's PR, set the merge order and fix merge conflicts on any PR branch. It keeps every other limit in AGENTS.md hard rule 6: required checks, no `hold` PRs, no force-push or history rewrite while armed.
+- **The integration thread** is the one thread Josh names to own PR integration. Its authority is the exception already in [AGENTS.md](../../AGENTS.md) hard rule 6 (not D-107, which only adds the fewest-PRs rule above). It may arm, re-arm and merge any owner's PR, set the merge order and fix merge conflicts on any PR branch. It keeps every other limit in AGENTS.md hard rule 6: required checks, no `hold` PRs, no force-push or history rewrite while armed.
 - **Five open PRs at most.** The integration thread holds the number of open PRs at five or fewer by merging ready ones first. Other threads help by keeping to one PR each.
 
 ## Reviews

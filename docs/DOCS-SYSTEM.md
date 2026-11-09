@@ -22,11 +22,11 @@ _Updated 2026-11-09 - working rules audit (D-107): one Where things live map rep
 | Rules (how we work)   | [`AGENTS.md`](../AGENTS.md), the topic files in [`agents/`](agents/) and [`ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md)                                               |
 | Decisions             | [`ward-flow/decisions.md`](ward-flow/decisions.md), with its status table; no new `owner-*.md` files                                                                          |
 | Clinical values       | [`ward-flow/clinical-values.md`](ward-flow/clinical-values.md), generated; never edit it by hand                                                                              |
-| Backlog               | `ward-flow/backlog.md`                                                                                                                                                        |
+| Backlog               | [`ward-flow/backlog.md`](ward-flow/backlog.md)                                                                                                                                |
 | Status (where we are) | The **Now** section of [`ward-flow/STATUS.md`](ward-flow/STATUS.md), with the plan in [`ward-flow/roadmap.md`](ward-flow/roadmap.md); work in flight is in open pull requests |
 | Plans                 | [`ward-flow/plans/`](ward-flow/plans/README.md), active plans only                                                                                                            |
 | Design                | [`design/DESIGN-SYSTEM.md`](design/DESIGN-SYSTEM.md) and the [design review prompt](design/design-review-artifact-prompt.md)                                                  |
-| History               | [`history/`](history/README.md) and [`ARCHIVE.md`](ARCHIVE.md)                                                                                                                |
+| History               | [`history/`](history/README.md), whose README is the one archive index                                                                                                        |
 
 ## Pipeline
 
@@ -45,7 +45,7 @@ Stage **docs paths only** - never mix unrelated product WIP. A push or pull requ
 | [`ward-flow/LOCAL-FIRST-RUN.md`](ward-flow/LOCAL-FIRST-RUN.md) | UI boot                                    |
 | [`ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md)         | Builder workflow handbook                  |
 | [`task-receipts.md`](task-receipts.md)                         | Task and evidence handoff                  |
-| [`ARCHIVE.md`](ARCHIVE.md)                                     | The one archive index, and how to restore  |
+| [`history/README.md`](history/README.md)                       | The one archive index, and how to restore  |
 
 [`ward-flow-task-ledger.md`](ward-flow-task-ledger.md) keeps dated task detail and evidence; it is not the list of current work.
 
@@ -155,7 +155,7 @@ When retiring or superseding a document (or preserving inherited PsychSift mater
 1. Place a top-of-file `> **SUPERSEDED ...**` or `> **Historical ...**` callout banner naming the current live replacement.
 2. Wrap historical body sections that reference retired `npm run` scripts or removed PsychSift paths in paired HTML comments (`docs-script-refs:historical-start` and `docs-script-refs:historical-end`, each on its own comment line).
    Paired markers exclude historical command and path references from `docs:check-scripts` and `docs:check-links`; a prose banner alone does not exclude text.
-3. Move dated Ward Flow records that something still reads into [`history/`](history/README.md), and remove ones nothing cites, each with the owner's approval. List every move or removal in [`ARCHIVE.md`](ARCHIVE.md), the one archive index, with the Git tag or commit that keeps the earlier state. Search tools skip `docs/history/` through the root `.ignore` file; the checks still cover it.
+3. Move dated Ward Flow records that something still reads into [`history/`](history/README.md), and remove ones nothing cites, each with the owner's approval. List every move or removal in [`history/README.md`](history/README.md), the one archive index, with the Git tag or commit that keeps the earlier state. Search tools skip `docs/history/` through the root `.ignore` file; the checks still cover it.
 
 Use the existing [`ward-flow/organisation/registry.json`](ward-flow/organisation/registry.json)
 `canonicalSources` for reviewed canonical references and this index for navigation. Add metadata

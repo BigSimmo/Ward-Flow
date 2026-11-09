@@ -24,7 +24,7 @@ export interface WardHistoryEntry {
   who: string;
   role: WardFlowRole | "Not recorded";
   reason: string;
-  /** archive D-14: no patient link. History is joined to a record (movement, admission, referral), never
+  /** Archived D-14: no patient link. History is joined to a record (movement, admission, referral), never
    *  to a person, so the patient link is deliberately never copied here. */
   relatedLinks: {
     movementId?: string;
@@ -380,7 +380,7 @@ export const EARLIER_HISTORY_NOT_RECORDED_ENTRY: WardHistoryEntry = {
 
 /**
  * Pure read-only selector returning one patient's record history (by movement, admission or
- * referral id; archive D-14 keeps the patient link out) over a plain array of events.
+ * referral id; archived D-14 keeps the patient link out) over a plain array of events.
  * Agnostic of storage; prepends "Earlier history not recorded".
  */
 export function selectPatientHistory(
@@ -398,7 +398,7 @@ export function selectPatientHistory(
     const config = historyConfig(event.type);
     if (!config || (config.category !== "patient" && config.category !== "both")) continue;
 
-    // archive D-14 (patient link is default-deny): match on the record ids only, never the patient link.
+    // Archived D-14 (patient link is default-deny): match on the record ids only, never the patient link.
     const matchesPatient =
       eventFieldString(event, "movementId") === recordId ||
       eventFieldString(event, "admissionId") === recordId ||

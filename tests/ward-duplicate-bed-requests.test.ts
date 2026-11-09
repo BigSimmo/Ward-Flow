@@ -25,7 +25,7 @@ import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 /**
  * Audit F-19 (19 Oct 2026): one person with two active bed requests at once. Coordinator only
- * (Josh, 19 Oct): a ward must not learn where else a person has been referred (FD-23, archive D-14).
+ * (Josh, 19 Oct): a ward must not learn where else a person has been referred (FD-23, archived D-14).
  */
 const NOW = NOW_ANCHOR;
 const PREFIX = INBOX_CATEGORIES.duplicate_bed_request.idPrefix;

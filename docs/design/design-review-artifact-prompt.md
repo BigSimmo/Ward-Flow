@@ -1,7 +1,12 @@
 # Prompt: design review as a full-page artifact
 
 _Standing rule for every Ward Flow design task (Josh, 9 Nov 2026, [D-107](../ward-flow/decisions.md#d-107-working-rules-and-documentation-from-the-9-november-2026-audit-9-november-2026)). Copied verbatim from the project prompt; [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md) holds the design rules it cites._
-_Section E.4's split means the one allowed split in [fewest PRs](../agents/git-publication.md#fewest-prs): clinical changes go in a held clinical PR; everything else stays in the thread's one PR._
+_Ward Flow notes. Where the prompt below and a recorded decision differ, the decision wins:_
+
+- _**E.4:** the one allowed split is the held clinical PR in [fewest PRs](../agents/git-publication.md#fewest-prs). Non-clinical work stays in the thread's one PR, not a second one._
+- _**A.6 and A.8:** building a clear change locally first is allowed. Nothing is built from a drawn mock-up until Josh approves that mock-up (D-74 standing rule), and signature parts still need an approved mock-up first ([DESIGN-SYSTEM.md §8](DESIGN-SYSTEM.md))._
+- _**Part C, shared screens:** D-83 keeps full names on every screen, copy and TV, with no initials-only mode. Offer other privacy aids, such as the D-102 screenshot blur, not initials._
+- _**A.9 and screenshots:** every name and detail is synthetic, never a real person's ([AGENTS.md](../../AGENTS.md) hard rule 1)._
 
 **Standing rule (9 Nov 2026):** every Ward Flow design task follows this prompt, whether or not it is pasted in. It covers any kind of design work: quick fixes, polish passes, redesigns, new pages or features, whole flows (for example "admit a patient"), pop-ups and panels, tables and charts, and printed, TV or shared-screen layouts. You can still paste it into a new thread with what you want designed.
 

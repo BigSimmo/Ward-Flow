@@ -10,7 +10,7 @@ import { capacityBreakdown } from "@/components/ward-management/ward-bed-availab
 // 🔴 The real leave beds, not `[]`. Both `capacityBreakdown` calls below used to pass an empty
 // array — the SAME empty array the board passed — so this file computed the board's own defect on
 // its own side and the two agreed. `onLeave` was 0 here and 0 there, and the figure a coordinator
-// reads was contradicted by state this page already held (owner ruling archive D-23). A test that
+// reads was contradicted by state this page already held (archived owner ruling D-23). A test that
 // reproduces the bug in its expectation cannot see the bug.
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";

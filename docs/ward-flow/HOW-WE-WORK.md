@@ -59,7 +59,9 @@ It builds in the real app from before screenshots and asks Josh once before anyt
   or `~/ward-flow-logs/sign-out.md` elsewhere. An unreadable log or claims folder blocks. Where a
   group uses one, release a branch with
   `RELEASED <date> | <owner> | <branch> | <reason>; repo=BigSimmo/Ward-Flow`, or add
-  `files=<path>, <path>` before the reason to release only those files. Do not start a new log.
+  `files=<path>, <path>` before the reason to release only those files. Record a taken-over file as
+  `path/to/file (approved takeover by Josh: <scope>)` on its own line, the format the commit hook reads;
+  a folder-wide marker grants nothing. Do not start a new log.
   Cloud threads: [Cloud ownership](../agents/cloud-ownership.md).
 - **Document handoffs.** Josh's standing document permission covers routine exact-file handoffs within
   an authorised task's project, purpose and audience. Prefer task-owned
@@ -269,7 +271,7 @@ would add overhead, and distinguish requested routing from observed execution.
 
 ## 9. Superseding a document
 
-Delete or move a document only with Josh's yes ([AGENTS.md hard rule 8](../../AGENTS.md#hard-rules)), recorded in [ARCHIVE.md](../ARCHIVE.md). Moved history goes to [`docs/history/`](../history/README.md). Otherwise keep it and put this banner at the top:
+Delete or move a document only with Josh's yes ([AGENTS.md hard rule 8](../../AGENTS.md#hard-rules)), recorded in the [archive index](../history/README.md). Moved history goes to [`docs/history/`](../history/README.md). Otherwise keep it and put this banner at the top:
 
 > SUPERSEDED on <date> by <path>. Kept for history; do not follow.
 

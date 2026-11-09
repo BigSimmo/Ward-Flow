@@ -26,7 +26,7 @@ export type ReferralSheetRequest = {
   /**
    * A `Patient.id` from the link's `patientId` parameter, checked against the record by the
    * slide-out before it is used. Named `personId` here so no screen code reads a `.patientId`
-   * property (archive D-14, `tests/ward-patient-link-default-deny.test.ts`).
+   * property (archived D-14, `tests/ward-patient-link-default-deny.test.ts`).
    */
   readonly personId?: string;
   /** A `wardSites` code, resolved from `originEdId`. */

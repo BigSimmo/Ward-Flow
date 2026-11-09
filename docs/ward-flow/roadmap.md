@@ -25,8 +25,8 @@ D-80 PRs 1 to 5 are merged. The 3 November source reading is below; item 17 was 
 Next steps:
 
 1. Walk each desk in the browser on synthetic data and check it sees only what D-80 allows. **Part 1
-   done 8 November** ([desk walk](evidence/desk-walk-2026-11-08.md)); its two findings were fixed.
-   Part 2 (detail pages, break glass, cover, phone, shared server) is in the [backlog](backlog.md).
+   done 8 November** ([desk walk](evidence/desk-walk-2026-11-08.md)); its two findings were fixed on a branch; the
+   first-load case (a first visit or a second tab) is still open in the [backlog](backlog.md). Part 2 (detail pages, break glass, cover, phone, shared server) is in the [backlog](backlog.md).
 2. ~~Correct the D-80 row and the "Waiting on Josh" list in STATUS.md.~~ Done 9 November.
 3. ~~Build item 17.~~ Done 8 November.
 4. **Done when:** every desk's walk passes and Josh has seen it.
