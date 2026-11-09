@@ -7,7 +7,6 @@ import {
   Hand,
   Hash,
   Keyboard,
-  MessageCircleQuestion,
   Palette,
   Smartphone,
   UsersRound,
@@ -82,11 +81,7 @@ function QuestionList({ items, open, onOpen }: { items: readonly QA[]; open?: st
 function SectionHead({ icon: Icon, children, n }: { icon?: LucideIcon; children: string; n?: number }) {
   return (
     <h3 className={s.sectionHead}>
-      {Icon ? (
-        <span className={s.sectionHeadIcon} aria-hidden="true">
-          <Icon aria-hidden="true" strokeWidth={1.75} />
-        </span>
-      ) : null}
+      {Icon ? <Icon aria-hidden="true" className={s.sectionHeadGlyph} strokeWidth={1.75} /> : null}
       {children}
       {n !== undefined ? <span className={s.n}>{n}</span> : null}
     </h3>
@@ -426,6 +421,3 @@ export function HelpReference({
     </>
   );
 }
-
-/** The Questions tab's icon, kept with its view. */
-export const QUESTIONS_ICON = MessageCircleQuestion;

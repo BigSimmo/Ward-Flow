@@ -50,6 +50,8 @@ describe("search-first Help layout", () => {
 
   it("offers questions to try when the box is focused and empty", () => {
     sheet();
+    // Help opens with the caret in the box on a computer; Try asking shows once the person clicks it.
+    fireEvent.pointerDown(screen.getByRole("combobox"));
     fireEvent.focus(screen.getByRole("combobox"));
     const tryAsking = screen.getByRole("region", { name: "Try asking" });
     // Home has its own walk round and questions (5 Nov 2026), which come before the general ones.
@@ -58,9 +60,21 @@ describe("search-first Help layout", () => {
     expect((screen.getByRole("combobox") as HTMLInputElement).value).toBe("How do I place a patient from Home?");
   });
 
+  it("keeps the sections when Help places the caret itself, and offers Try asking on the next focus", () => {
+    sheet();
+    const box = screen.getByRole("combobox");
+    fireEvent.focus(box);
+    expect(screen.queryByRole("region", { name: "Try asking" })).toBeNull();
+    expect(screen.getByRole("tablist", { name: "Help sections" })).toBeTruthy();
+    fireEvent.blur(box);
+    fireEvent.focus(box);
+    expect(screen.getByRole("region", { name: "Try asking" })).toBeTruthy();
+  });
+
   it("keeps Try asking open while Tab moves from the box into it, and closes it once focus leaves", () => {
     sheet();
     const box = screen.getByRole("combobox");
+    fireEvent.pointerDown(box);
     fireEvent.focus(box);
     expect(box.getAttribute("aria-controls")).toBeNull();
     const first = within(screen.getByRole("region", { name: "Try asking" })).getAllByRole("button")[0];
@@ -96,7 +110,7 @@ describe("search-first Help layout", () => {
     fireEvent.click(screen.getByTestId("ward-help-view-tour"));
     expect(onTour).toHaveBeenCalledTimes(1);
     for (const [name, view] of [
-      ["Common questions", "questions"],
+      ["Questions", "questions"],
       ["Reference", "reference"],
       [/What.s new/u, "new"],
     ] as const) {
