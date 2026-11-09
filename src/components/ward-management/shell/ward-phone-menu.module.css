@@ -358,8 +358,12 @@
   background: var(--wf-line-2);
 }
 
+/* Frosted (Josh, 9 Nov 2026): the dock is the surface at 88% over a soft blur, so rows show faintly
+   as they pass under it, as the pinned header does. */
 .foot::after {
-  background: var(--wf-surface);
+  background: color-mix(in srgb, var(--wf-surface) 88%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  backdrop-filter: blur(20px) saturate(1.6);
 }
 
 /* Final round (Josh, 31 Oct 2026): "Coming and going" keeps its full name and wraps to two lines,

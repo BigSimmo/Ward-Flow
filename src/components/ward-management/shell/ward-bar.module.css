@@ -4316,10 +4316,28 @@
     font-size: var(--wf-fs-14);
   }
 
+  /* Frosted slate: 94% of the band's foot colour over a soft blur, so the page shows faintly through. */
+  /* The blur sits on a layer behind the bar, never on the bar: a filter on the bar itself would
+     pin the phone menu's fixed dock to the bar instead of the screen. */
   .bar.bar.bar[data-band="ink"][data-scrolled="true"] {
-    background: var(--wf-hero-2);
-    border-bottom-color: var(--wf-hero-2);
+    background: transparent;
+    border-bottom-color: transparent;
     box-shadow: 0 10px 22px -16px color-mix(in srgb, var(--wf-hero-edge) 90%, black);
+  }
+
+  .bar.bar.bar[data-band="ink"][data-scrolled="true"]::before {
+    content: "";
+    display: block;
+    position: absolute;
+    /* Under the bar's 1px foot edge too, so no line of page shows between the bar and the tabs. */
+    inset: 0 0 -1px;
+    z-index: -1;
+    border: 0;
+    border-radius: 0;
+    background: color-mix(in srgb, var(--wf-hero-2) 94%, transparent);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    backdrop-filter: blur(24px) saturate(1.5);
+    pointer-events: none;
   }
 
   :global(body):has([data-testid="home-lists"][data-docked]) .bar.bar.bar[data-band="ink"][data-scrolled="true"] {

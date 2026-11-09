@@ -1,14 +1,15 @@
 /*
  * Curved folder tabs (sticky header redesign, option A, Josh 9 Nov 2026). Home's list tabs rise into
- * the slate hero's foot: the row overlaps the band by --wf-folder-rise (tab inset 6 + tab 44 + sheet
+ * the slate hero's foot: the row overlaps the band by --wf-folder-rise (tab inset 6 + tab 40 + sheet
  * corner 20), and `HomeFolderShape` (home-folder.tsx) paints the page sheet and the chosen tab as one
  * outline. Tabs off the outline sit on slate in hero ink; the chosen one sits on the sheet in page ink.
  * Doubled and tripled classes outrank the list switch's own phone rules (home-list.module.css).
  */
 
 .nav.nav {
-  --wf-folder-rise: 70px;
-  --wf-folder-row: 50px;
+  --wf-bar-frost: color-mix(in srgb, var(--wf-hero-2) 94%, transparent);
+  --wf-folder-rise: 66px;
+  --wf-folder-row: 46px;
   /* Up by the rise and by Home's column gap (home.module.css .body). */
   margin-top: calc(-1 * (var(--wf-folder-rise) + var(--wf-s-3)));
   /* The row ends at the tabs' foot; the sheet's curved edge (20px) runs on below it, so the lists
@@ -53,12 +54,15 @@
    at a hard cut. */
 .back {
   /* Down past the row by the sheet's pinned corner (12px), so the slate shows round its corners. */
-  height: max(100%, calc(var(--wf-folder-row, 50px) + 12px));
+  height: max(100%, calc(var(--wf-folder-row, 46px) + 12px));
   display: none;
+  /* The same frosted slate as the pinned header (ward-bar.module.css), so the two read as one. */
   background: linear-gradient(
-    var(--wf-hero-2) 0 calc(var(--wf-folder-row, 50px) + 12px),
+    var(--wf-bar-frost, var(--wf-hero-2)) 0 calc(var(--wf-folder-row, 46px) + 12px),
     var(--wf-page-canvas, var(--wf-canvas)) 0
   );
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  backdrop-filter: blur(24px) saturate(1.5);
 }
 
 .back::after {
@@ -66,7 +70,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: max(100%, calc(var(--wf-folder-row, 50px) + 12px));
+  top: max(100%, calc(var(--wf-folder-row, 46px) + 12px));
   height: 12px;
   background: linear-gradient(var(--wf-page-canvas, var(--wf-canvas)), transparent);
 }
@@ -78,9 +82,10 @@
 /* The list switch: plain tabs on the slate, 44px tall; the chosen one takes page ink on the sheet. */
 .switch.switch.switch {
   align-self: start;
-  height: 44px;
-  min-height: 44px;
-  margin: 0;
+  height: 40px;
+  min-height: 40px;
+  /* Out to the sheet's edge (set by HomeFolderShape), so the first tab's label is centred. */
+  margin: 0 0 0 calc(-1 * var(--wf-folder-bleed, var(--wf-s-4)));
   padding: 0;
   gap: 0;
   border: 0;
@@ -91,8 +96,8 @@
 }
 
 .switch.switch.switch > * {
-  height: 44px;
-  min-height: 44px;
+  height: 40px;
+  min-height: 40px;
   padding: 0 16px;
   border: 0;
   border-radius: 0;
@@ -129,23 +134,23 @@
   color: var(--wf-ink-3);
 }
 
-/* Needs you carries a small red dot before its count while anything needs a person now. */
+/* Needs you: while anything needs a person now its count is a small red badge, centred on the label's
+   line, instead of a dot beside a grey number. */
 .nav[data-act] .switch.switch.switch > :first-child > :last-child {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.nav[data-act] .switch.switch.switch > :first-child > :last-child::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 9px;
   background: var(--wf-hero-danger);
+  color: var(--wf-hero-2);
+  font-weight: 600;
 }
 
-.nav[data-act] .switch.switch.switch > [aria-checked="true"]:first-child > :last-child::before {
+.nav[data-act] .switch.switch.switch > [aria-checked="true"]:first-child > :last-child {
   background: var(--wf-danger);
+  color: var(--wf-surface);
 }
 
 .switch.switch.switch > *:focus-visible {
@@ -162,7 +167,7 @@
 /* More: on the slate beside the tabs. */
 .nav.nav > :last-child {
   align-self: start;
-  margin-top: 2px;
+  margin-top: 0;
   color: var(--wf-hero-ink-2);
 }
 
@@ -208,7 +213,7 @@
 
   .rule.rule {
     align-self: start;
-    margin-top: 12px;
+    margin-top: 10px;
     background: var(--wf-on-hero-div);
   }
 }
@@ -222,11 +227,12 @@
   }
 
   .switch.switch.switch {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
   }
 
+  /* Each tab hugs its label with the same space either side, so the chosen folder is symmetrical. */
   .switch.switch.switch > * {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     padding: 0 12px;
   }
 
@@ -242,9 +248,16 @@
 /* The smallest phones (320px): tighter tabs so Later today keeps its line. */
 @media (max-width: 22.5rem) {
   .switch.switch.switch > * {
-    padding: 0 8px;
+    padding: 0 7px;
     font-size: var(--wf-fs-13);
     gap: 4px;
+  }
+
+  .more.more.more {
+    min-width: 36px;
+    width: 36px;
+    margin-right: -10px;
+    padding: 0;
   }
 }
 

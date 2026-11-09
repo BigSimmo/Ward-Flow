@@ -14,7 +14,7 @@ import styles from "./home-folder.module.css";
 
 /** Tab top inset, tab height, tab corner, inner curve and sheet corner (px). Compact (Josh, 9 Nov 2026). */
 const TAB_TOP = 6;
-const TAB_HEIGHT = 44;
+const TAB_HEIGHT = 40;
 const TAB_RADIUS = 12;
 const FILLET = 10;
 const SHEET_RADIUS = 20;
@@ -69,6 +69,8 @@ export function HomeFolderShape({ navRef, value }: { navRef: RefObject<HTMLEleme
       const heroBox = hero?.getBoundingClientRect();
       const left = heroBox ? heroBox.left - navBox.left : 0;
       const width = heroBox ? heroBox.width : navBox.width;
+      // The first tab starts at the sheet's own edge, so its label sits centred in the folder.
+      nav.style.setProperty("--wf-folder-bleed", `${Math.max(0, round(-left))}px`);
       const tab = nav.querySelector<HTMLElement>('[role="radio"][aria-checked="true"]');
       const tabBox = tab?.getBoundingClientRect();
       const x0 = tabBox ? tabBox.left - navBox.left - left : 0;
