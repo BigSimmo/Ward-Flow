@@ -198,6 +198,9 @@ function HomeListMoreMenu({ onRegisters }: { onRegisters: () => void }) {
       label="More for this list"
       align="end"
       items={[
+        // Home notes 4, issue 4 (9 Nov 2026): Today's review is the one page for declines,
+        // overrides, open problems and stopped actions today.
+        { id: "review", label: "Today's review", onSelect: () => router?.push("/ward-flow/review") },
         { id: "registers", label: "Registers", onSelect: onRegisters },
         { id: "alerts", label: "Alerts history", onSelect: () => router?.push("/ward-flow/alerts") },
       ]}

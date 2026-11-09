@@ -271,6 +271,7 @@ Every page file is a server component that renders one client screen (or redirec
 | `/referrals/new`                                                                         | `ReferralBoard` + referral slide-out (referrals)                          |
 | `/reports/chronology`                                                                    | `PatientChronologyScreen` (`reports/patient-chronology-screen.tsx`)       |
 | `/reports/downtime`                                                                      | `DowntimePackScreen` (`reports/downtime-pack-screen.tsx`)                 |
+| `/review`                                                                                | `TodaysReviewScreen` (review)                                             |
 | `/search`                                                                                | `PatientSearchPage` (search)                                              |
 | `/seclusion`                                                                             | `SeclusionScreen` (restrictive-practice), operational view only (D-72)    |
 | `/settings`                                                                              | `SettingsScreen` (settings)                                               |

@@ -148,6 +148,7 @@ export const ROUTE_COMPONENTS = [
   { route: "/referrals/new", folder: "referrals", react: "referrals/referral-board.tsx" },
   { route: "/reports/chronology", folder: "reports", react: "reports/patient-chronology-screen.tsx" },
   { route: "/reports/downtime", folder: "reports", react: "reports/downtime-pack-screen.tsx" },
+  { route: "/review", folder: "review", react: "review/todays-review-screen.tsx" },
   { route: "/search", folder: "search", react: "search/patient-search.tsx" },
   { route: "/seclusion", folder: "restrictive-practice", react: "restrictive-practice/seclusion-screen.tsx" },
   { route: "/settings", folder: "settings", react: "settings/settings-screen.tsx" },
