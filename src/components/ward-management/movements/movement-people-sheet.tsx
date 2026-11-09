@@ -6,8 +6,8 @@
  * longest wait first, rather than marking rows somewhere down the worklist. A row opens that
  * patient's usual movement pop-up; "Show in worklist" keeps the old highlight for anyone who wants it.
  */
+import { PatientPeekLink } from "@/components/ward-management/patients/patient-peek-link";
 import { useId, useState, type ReactNode } from "react";
-import Link from "next/link";
 import { ArrowRight, ChevronRight, Lock, FileBadge, ShieldCheck, X } from "lucide-react";
 
 import { PhoneSheet, StatusGlyph, TierTile, buttonClass, useIsPhone, type WfTone } from "@/components/wf";
@@ -125,14 +125,15 @@ export function MovementPeopleSheet({
     const action =
       list.rowAction?.(movement) ??
       (isCoordinatorStep(step) && !movement.closure ? (
-        <Link
+        <PatientPeekLink
+          movementId={step.kind === "refer" ? movement.id : undefined}
           href={nextStepTarget(step, movement.id).href}
           className={buttonClass({ variant: "sec", size: "sm" })}
           aria-label={`${step.label}, ${person.formalName}`}
         >
           {step.label}
           <ArrowRight size={13} aria-hidden="true" />
-        </Link>
+        </PatientPeekLink>
       ) : undefined);
     return (
       <li key={movement.id} className={ps.row} data-tier={movement.urgency}>

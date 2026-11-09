@@ -1,5 +1,6 @@
 "use client";
 
+import { PatientPeekLink } from "@/components/ward-management/patients/patient-peek-link";
 import { useLocationSearch } from "@/components/ward-management/ward-url-state";
 import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 
@@ -1212,14 +1213,19 @@ export function ReferralBoard({
                           Referral
                         </button>
                         {selectedReferral.patientId ? (
-                          <Link
+                          <PatientPeekLink
+                            movementId={
+                              movements.find(
+                                (movement) => movement.referralId === selectedReferral.id && !movement.closure,
+                              )?.id
+                            }
                             href={patientHref(selectedReferral.patientId)}
                             className={buttonClass({ variant: "sec", size: "md" })}
                             data-testid="ward-referral-open-patient"
                           >
                             <UserRound size={14} aria-hidden="true" />
                             Patient
-                          </Link>
+                          </PatientPeekLink>
                         ) : null}
                       </DrawerFootRow>
                     </>

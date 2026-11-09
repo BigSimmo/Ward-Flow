@@ -3,6 +3,7 @@
 // The Movements worklist row (StageRow) and the small pieces the screen draws beside it: the hero
 // highlight stat, the phone group heading and the tier pill. Split out of movements-screen.tsx to
 // keep that file under the line cap.
+import { PatientPeekLink } from "@/components/ward-management/patients/patient-peek-link";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import Link from "next/link";
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
@@ -496,14 +497,15 @@ export function StageRow({
         ) : step === null ? (
           <span className={flow.nextOwner}>{closure ? formatInstantWithDay(closure.at, now) : ""}</span>
         ) : step.kind !== "wait" ? (
-          <Link
+          <PatientPeekLink
+            movementId={step.kind === "refer" ? movement.id : undefined}
             className={buttonClass({ variant: "sec", size: "sm" })}
             href={nextStepTarget(step, movement.id).href}
             title={`${step.label} on ${nextStepTarget(step, movement.id).where}`}
             onClick={step.kind === "escalate" ? () => onFocusMovement(movement.id) : undefined}
           >
             {step.label}
-          </Link>
+          </PatientPeekLink>
         ) : (
           <>
             <span className={flow.nextLabel}>{step.label}</span>
