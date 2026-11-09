@@ -1237,7 +1237,7 @@
 
 /* Note 14 phone polish: a sheet's first card repeated the sheet's own title (Display in Display).
  * The card keeps its heading for screen readers through aria-labelledby. */
-.phoneSheetBody div:has(> div > :is([id="display-title"], [id="alerts-title"], [id="profile-title"])) {
+.phoneSheetBody [data-wf-card-head]:has(:is([id="display-title"], [id="alerts-title"], [id="profile-title"])) {
   display: none;
 }
 

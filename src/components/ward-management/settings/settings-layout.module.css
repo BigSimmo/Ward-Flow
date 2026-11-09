@@ -473,14 +473,13 @@
 }
 
 /* Role and desk sit under the name, not beside it. */
-.profileHero [class*="titleLine"] {
+.profileHero [data-wf-hero-title-line] {
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
 }
 
-.profileHero [class*="title_"],
-.profileHero [class*="__title"] {
+.profileHero [data-wf-hero-title] {
   font-size: 1.5rem;
   letter-spacing: -0.01em;
 }

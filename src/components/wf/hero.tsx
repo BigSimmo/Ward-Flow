@@ -195,8 +195,8 @@ export function Hero({
         ) : null}
         <div className={styles.titleBlock}>
           {eyebrow ? <span className={styles.eyebrow}>{eyebrow}</span> : null}
-          <div className={styles.titleLine}>
-            <Heading id={titleId} className={styles.title}>
+          <div className={styles.titleLine} data-wf-hero-title-line="">
+            <Heading id={titleId} className={styles.title} data-wf-hero-title="">
               {title}
             </Heading>
             {titleMeta ? <span className={styles.titleMeta}>{titleMeta}</span> : null}
