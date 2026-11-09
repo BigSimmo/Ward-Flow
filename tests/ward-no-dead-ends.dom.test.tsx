@@ -94,6 +94,7 @@ import { SeclusionScreen } from "@/components/ward-management/restrictive-practi
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
+import { TodaysReviewScreen } from "@/components/ward-management/review/todays-review-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
 import { StatisticsServicesIndexScreen } from "@/components/ward-management/statistics/statistics-services-index";
 import { StatisticsWardsIndexScreen } from "@/components/ward-management/statistics/statistics-wards-index";
@@ -191,6 +192,8 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
     },
   ],
   ["/ward-flow/reports/downtime", { concrete: "/ward-flow/reports/downtime", render: () => <DowntimePackScreen /> }],
+  // Today's review (Home notes 4, 9 Nov 2026).
+  ["/ward-flow/review", { concrete: "/ward-flow/review", render: () => <TodaysReviewScreen /> }],
   ["/ward-flow/statistics/weekly", { concrete: "/ward-flow/statistics/weekly", render: () => <WeeklyReportScreen /> }],
   [
     "/ward-flow/statistics/services",
