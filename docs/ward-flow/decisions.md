@@ -132,6 +132,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-107](#d-107-working-rules-and-documentation-from-the-9-november-2026-audit-9-november-2026)                                                          | Working rules from the 9 Nov audit                                                   | Active                                           |
 | [D-109](#d-109-homes-bed-alert-line-tests-the-whole-number-shown-9-november-2026)                                                                       | Home bed alert line tests the shown whole %                                          | Active                                           |
 | [D-111](#d-111-review-and-audit-plan-first-guards-and-four-open-answers-9-november-2026)                                                                | Review and audit plan: first guards and answers                                      | Active                                           |
+| [D-113](#d-113-second-patient-identifier-on-accept-and-mark-done-no-initials-search-9-november-2026)                                                    | Second identifier on accept and Mark done; no initials search                        | Active                                           |
 
 ---
 
@@ -1375,3 +1376,13 @@ is inferred.
   7. **Overnight alerts (audit item 55):** while Ward Flow holds synthetic data only, the uptime job's backend-down GitHub issue to Josh is enough and nobody is paged at night (Josh owns monitoring, D-97 item 5). Before real data, a named person gets phone alerts.
   8. **Real patient data:** no date is set. Real data waits until audit items 16 (hazard log), 33 (database rules), 34 (privacy impact assessment), 35 (residency map), 42 (TGA classification), 43 (breach plan) and 44 (penetration test) are done, in addition to the real-data gate (D-87).
 - **Boundary:** synthetic data only. Approves no provider change, spending, merge or release, and changes no signed clinical value or clinical rule.
+
+## D-113. Second patient identifier on accept and Mark done; no initials search (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`), 12:20 AM AWST on 10 November (16:20 UTC). **Decided by:** Josh, answering "Go ahead with all recommendations I approve" to the three choices raised by audits 1 and 3 (#1564, #1566). D-112 is claimed by PR #1580.
+- **Decision:**
+  1. **Accept in principle:** the Ward home "accept in principle" dialog shows the patient's UMRN beside the name, so a second identifier is visible at the moment of accepting.
+  2. **Bed meeting "Mark done":** the action names the patient it belongs to. No extra confirm step is added, so the action stays one tap.
+  3. **Initials search:** typed initials without full stops (such as "AM") do not match a patient by initials. Loose initials matches would raise the chance of picking the wrong person.
+- **Also in the same PR:** an exact typed name or UMRN now ranks first in the global search People group, so longer look-alike names can no longer push the exact match out of the six shown (audit 3 bug fix; search relevance, not a suggestion, so D-71 holds).
+- **Boundary:** synthetic data only. Display and search wording only; changes no signed clinical value or clinical rule, and approves no merge or release.
