@@ -350,7 +350,7 @@ export function CensusTable(props: CensusTableProps) {
                 load={props.onExportList}
                 variant="ghost"
                 disabled={rows.length === 0}
-                testId="ward-patient-search-export"
+                testId="ward-census-export"
               />
             ) : null}
           </>

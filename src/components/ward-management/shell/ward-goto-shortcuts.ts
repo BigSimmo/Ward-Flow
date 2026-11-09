@@ -1,6 +1,13 @@
 "use client";
 
-import { WARD_HOME_HREF } from "@/components/ward-management/ward-nav";
+import {
+  WARD_CAPACITY_HREF,
+  WARD_ED_HREF,
+  WARD_HOME_HREF,
+  WARD_NAV,
+  WARD_VIEWS,
+  type WardNavId,
+} from "@/components/ward-management/ward-nav";
 
 import { areCharacterShortcutsEnabled } from "./ward-character-shortcuts";
 
@@ -9,15 +16,19 @@ import { areCharacterShortcutsEnabled } from "./ward-character-shortcuts";
  * other single-key shortcuts they stay off while typing and when Settings turns shortcuts off, and a
  * page this login cannot open is skipped, so the key press is left alone.
  */
+// Every address comes from ward-nav, so no route is typed twice (the facade test guards shell/).
+const navHref = (id: WardNavId): string => WARD_NAV.find((item) => item.id === id)?.href ?? WARD_HOME_HREF;
+const WAITING_HREF = WARD_VIEWS.find((view) => view.id === "delays")?.href ?? WARD_HOME_HREF;
+
 const GO_TO_PAGES: readonly { key: string; label: string; href: string }[] = [
   { key: "h", label: "Home", href: WARD_HOME_HREF },
-  { key: "e", label: "ED", href: "/ward-flow/ed" },
-  { key: "w", label: "Waiting", href: "/ward-flow/waiting" },
-  { key: "b", label: "Wards", href: "/ward-flow/wards" },
-  { key: "d", label: "Discharges", href: "/ward-flow/discharges" },
-  { key: "r", label: "Referrals", href: "/ward-flow/referrals" },
-  { key: "c", label: "Capacity", href: "/ward-flow/capacity" },
-  { key: "s", label: "Statistics", href: "/ward-flow/statistics" },
+  { key: "e", label: "ED", href: WARD_ED_HREF },
+  { key: "w", label: "Waiting", href: WAITING_HREF },
+  { key: "b", label: "Wards", href: navHref("wards") },
+  { key: "d", label: "Discharges", href: navHref("discharges") },
+  { key: "r", label: "Referrals", href: navHref("referrals") },
+  { key: "c", label: "Capacity", href: WARD_CAPACITY_HREF },
+  { key: "s", label: "Statistics", href: navHref("statistics") },
 ];
 
 /** How long G waits for its letter, in milliseconds: a keyboard timing, not a clinical time. */

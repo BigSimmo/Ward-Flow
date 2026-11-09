@@ -13,6 +13,8 @@
  * reporter asks for a picture, so no screen's first load grows.
  */
 
+import { copyPngToClipboard } from "@/components/ward-management/ward-clipboard";
+
 /** The menu that stays readable: it names pages, never patients. */
 export const READABLE_SELECTOR = 'nav[aria-label="Ward Flow views"]';
 
@@ -149,5 +151,5 @@ export function canCopyPicture(): boolean {
 }
 
 export async function copyPicture(picture: Blob): Promise<void> {
-  await navigator.clipboard.write([new ClipboardItem({ "image/png": picture })]);
+  await copyPngToClipboard(picture);
 }
