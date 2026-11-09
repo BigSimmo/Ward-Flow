@@ -230,6 +230,11 @@ function typedThresholdsIn(file: string, source: string): string[] {
  */
 const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> = [
   {
+    file: "review/todays-review-derivations.ts",
+    name: "REPEAT_DECLINE_THRESHOLD",
+    why: "how many same-reason declines from one ward in a day Today's review raises for the bed meeting; a review prompt, never a clinical limit",
+  },
+  {
     file: "discharges/discharge-board.tsx",
     name: "RECORDED_DAYS",
     why: "how many days of recorded discharges the Recorded list shows (DC4); a view window, never a clinical limit",

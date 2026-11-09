@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
 
 import { unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
-import { buildActionInbox, eligibleCandidatesAmong, isOpen } from "@/components/ward-management/ward-derivations";
+import { eligibleCandidatesAmong } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { PARALLEL_REFERRAL_CAP } from "@/components/ward-management/ward-model";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -9,7 +9,7 @@ import { HELP_TIPS_OFF_KEY } from "@/components/ward-management/help-content/war
 import { movementById } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
-import { homeFlowCard, openHomeRegisters, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/ward-home-page";
+import { homeFlowCard, openTodaysReview, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
  * Home placement redesign (Josh, 19 Oct 2026), then Home flow (Q340, Q345, 3 Nov 2026): each Flow
@@ -174,14 +174,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await page.locator('[data-testid^="ward-queue-row-"]').first().click();
     await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toBeVisible();
     await closePlacement(page);
-    // Owner, 8 Oct 2026: the four registers start closed and open as a strip under the hero. Home
-    // v7 (Josh, 22 Oct 2026): Registers opens them, under "More for this list" since Q340. Scrolled into
-    // view before the visibility check, as Playwright's `toBeVisible()` needs it in the viewport.
-    await openHomeRegisters(page);
-    const registers = page.getByRole("region", { name: "Declines, overrides and exceptions" });
-    await registers.scrollIntoViewIfNeeded();
-    await expect(registers).toBeVisible();
-    await expect(page.getByRole("tablist", { name: "Today’s answers" })).toBeVisible();
+    // Home notes 4, issue 4 (Josh, 9 Nov 2026): Today's review replaced the Registers strip, so
+    // nothing opens between the hero and the list.
+    await expect(page.getByTestId("ward-coordinator-registers")).toHaveCount(0);
 
     await expectNoRegionGridOverflow(page);
   });
@@ -242,110 +237,31 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
   //      shape ruling 3 guards against) — it is scoped to the panel's own scroll position, not
   //      the page's, which `scrollIntoViewIfNeeded()` plus `toBeInViewport()`'s own containing-
   //      block awareness both already give it.
-  test("keeps exceptions reachable and collapses to a queue-first phone form", async ({ page }) => {
+  test("selects from the queue and collapses to a queue-first phone form", async ({ page }) => {
+    // Home notes 4, issue 4 (Josh, 9 Nov 2026): the Exceptions register left Home for Today's
+    // review; its rows were already in My list, which is what selects a patient now.
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
-
-    // Opens on the Exceptions tab by default. At this width the registers start closed (owner,
-    // 8 Oct 2026).
-    // Home flow (Q340, 3 Nov 2026): Registers, under "More for this list", opens them.
-    await openHomeRegisters(page);
-    const drawer = page.getByRole("tabpanel", { name: "Exceptions" });
-    await drawer.scrollIntoViewIfNeeded();
-    await expect(drawer).toBeVisible();
-    const items = drawer.locator('[data-testid^="ward-exception-"]');
-    await expect(items.first()).toBeVisible();
-
-    // Ruling 3: the Exceptions tab's own count must be the true count — exactly what the panel
-    // renders, computed independently here from the real fixture so a hard-coded number can't
-    // pass by coincidence.
-    // Whole-branch review Minor 6: the register is scoped to OPEN movements, so the independent
-    // count here must be too — computing it over all 48 records would agree with a screen that
-    // wrongly listed a closed patient's breached deadline.
-    // The same call the screen makes (coordinator-screen.tsx): open movements, the seeded planned
-    // admissions (stream D: an overdue booking is a row too), plus the whole record so the advisory
-    // carer/PSP/MHAS notification rows are counted too.
-    const seed = seedWardFlowState();
-    const expectedCount = buildActionInbox(seed.movements.filter(isOpen), NOW_ANCHOR, seed.units, {
-      movements: seed.movements,
-      admissions: seed.admissions,
-      patients: seed.patients,
-      referrals: seed.referrals,
-      supportNotifications: seed.supportNotifications,
-      plannedAdmissions: seed.plannedAdmissions,
-    }).length;
-    expect(expectedCount).toBeGreaterThan(1);
-    await expect(items).toHaveCount(expectedCount);
-    await expect(page.getByRole("tab", { name: "Exceptions" })).toContainText(String(expectedCount));
-
-    // Review Important 2: "the true count" means every row the header claims is actually ON
-    // SCREEN, not merely present in a DOM a nested scroller has clipped — a header reading "8"
-    // over a box showing 4 is the same defect this ruling exists to prevent, just moved one
-    // level down. Assert every row, not just the first, is really in the viewport — each one
-    // scrolled to individually, since the panel's own `min(60vh, 40rem)` cap (re-measured for
-    // Task A, `coordinator.module.css`'s own comment) can still put a later row below the fold of
-    // the panel's OWN internal scroll even once the panel itself is on screen.
-    const itemCount = await items.count();
-    for (let index = 0; index < itemCount; index += 1) {
-      await items.nth(index).scrollIntoViewIfNeeded();
-      await expect(items.nth(index)).toBeInViewport();
-    }
-
-    // Review Critical 1: the shortlist `<aside>` renders unconditionally — it is already visible
-    // before any click — so "is it visible" proves nothing about whether the register actually
-    // drives selection. Click a SPECIFIC, known exception (WF-005) and assert both that the
-    // shortlist names that exact movement and that the underlying queue row shows the same
-    // movement as pressed, proving the register and the queue really are one shared selection.
-    const wf005Item = drawer.locator('[data-testid*="-WF-005"]').first();
-    await expect(wf005Item).toBeVisible();
-    await wf005Item.click();
+    const firstRow = page.locator('[data-testid^="ward-queue-row-"]').first();
+    const firstId = (await firstRow.getAttribute("data-testid"))?.replace("ward-queue-row-", "");
+    await firstRow.click();
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await expect(shortlist).toBeVisible();
-    // D-39: the Placement panel names the patient (and UMRN), never the WF journey number.
-    // Selection is still keyed by the journey id on the panel and the queue row. Simplification A8:
-    // the panel writes the name "Surname, First", as the queue beside it does.
-    await expect(shortlist).toHaveAttribute("data-subject-movement", "WF-005");
-    await expect(shortlist).toContainText("Tremalow, Noor");
-    await expect(page.getByTestId("ward-queue-row-WF-005")).toHaveAttribute("aria-pressed", "true");
+    await expect(shortlist).toHaveAttribute("data-subject-movement", String(firstId));
+    await expect(firstRow).toHaveAttribute("aria-pressed", "true");
 
-    // Phone: queue and the registers toggle survive, the diagram and the pressure strip do not
-    // (Minor 6: the brief required both hidden, not just the diagram), and nothing overflows.
+    // Phone: the queue survives, the diagram does not, and nothing overflows. Below 48rem the
+    // shortlist is a bottom sheet over the page, so it is closed first, as a coordinator would.
     await page.setViewportSize({ width: 390, height: 844 });
-    // Below 48rem the shortlist is a bottom sheet over the page with its own backdrop (81553692fb,
-    // 21 Sept). WF-005, selected above at desktop width, keeps it open across the resize, and it
-    // covers the Registers toggle. A coordinator closes it first; so does this journey. Closing
-    // clears the selection, so the last step below — selecting WF-005 again from the phone drawer
-    // — now proves the drawer itself selects, rather than leaning on the leftover selection.
     await page.getByRole("button", { name: "Close placement and clear selection" }).click();
     await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toHaveCount(0);
     await expect(homeFlowCard(page)).toBeVisible();
-    // Task A: the toggle only exists below 48rem now — restored exactly at the width the diagram
-    // disappears (`@media (max-width: 48rem)`, the same query in both places).
-    // v10 phone Home (Josh, 10 Oct 2026, direction A queue first): the old "Today's answers"
-    // toggle is gone. The hero's Exceptions chip opens the registers as a sheet instead.
     await expect(page.getByRole("region", { name: "State Bedflow", exact: true })).toBeHidden();
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
     expect(overflow).toBeLessThanOrEqual(2);
-
-    // Review Important 3: once a movement is selected from the phone's Exceptions sheet, Confirm
-    // is reachable without a long scroll.
-    // Home v7 (Josh, 22 Oct 2026): Registers opens them, as a sheet on a phone. Home flow (Q340, 3 Nov
-    // 2026): on every width Registers sits under the "More for this list" menu at the end of the list
-    // tabs (`HomeListMoreMenu`), so the phone reaches it there too.
     await expect(page.getByRole("button", { name: "More for this list" })).toBeVisible();
-    await openHomeRegisters(page);
-    await expect(page.getByTestId("ward-home-exceptions-sheet")).toBeVisible();
-    const phoneDrawer = page.getByRole("tabpanel", { name: "Exceptions" });
-    await expect(phoneDrawer).toBeVisible();
-    await phoneDrawer.locator('[data-testid*="-WF-005"]').first().click();
-    // L3: an accepted movement leads with its next step instead of Refer. In the drawer (H7) the
-    // next step is drawn into the pinned foot band, which lays it out (the section itself takes no
-    // box there), so the band is what must be on screen.
-    const foot = page.getByTestId("home-placement-foot");
-    await expect(foot.getByTestId("ward-shortlist-next-step")).toHaveCount(1);
-    await expect(foot).toBeInViewport();
   });
 
   test("orders by longest wait only and shows no score", async ({ page }) => {
@@ -1157,27 +1073,20 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await expect(refusalMarker).toHaveText("1 refused");
 
     // The refusal is visible, with its own real content — not merely the word "refus" surviving
-    // from an empty-state placeholder.
-    //
-    // Task 5: refusals moved out of the Exceptions panel into their own "Refused actions" tab —
-    // see `exception-drawer.tsx`'s own file comment on why the two were split. On desktop the
-    // registers open from the hero's Exceptions count (owner, 8 Oct 2026), so open them first.
-    // Home flow (Q340, 3 Nov 2026): Registers, under "More for this list", opens them, once the
-    // placement drawer over the page is closed (H7).
+    // from an empty-state placeholder. Home notes 4, issue 4 (Josh, 9 Nov 2026): the Registers'
+    // Refused tab became "Stopped by the app" on Today's review, opened from Home's More menu once
+    // the placement drawer over the page is closed (H7).
     await closePlacement(page);
-    await openHomeRegisters(page);
-    const refusedTab = page.getByRole("tab", { name: /Refused/ });
-    await refusedTab.scrollIntoViewIfNeeded();
-    await refusedTab.click();
-    const refused = page.getByRole("tabpanel", { name: "Refused" });
-    await expect(refused).toContainText(/refus/i);
+    await openTodaysReview(page);
+    const today = page.getByTestId("review-everything-today");
+    await today.getByRole("tab", { name: /Stopped by the app/ }).click();
+    const stopped = today.locator('[data-kind="stopped"]');
+    await expect(stopped).toHaveCount(1);
     // H-0839: the refused action is named in words, never by its event code.
-    await expect(refused).toContainText("Refer to units");
-    await expect(refused).not.toContainText("REFER_TO_UNITS");
-    // ⚠️ O-16.8: the refusal now names the stage by its coordinator-facing label rather than
-    // interpolating the raw identifier, so the identifier is deliberately no longer asserted
-    // here — it is no longer on screen, which is the point of the ruling.
-    await expect(refused).toContainText("cannot refer a movement at its current stage");
+    await expect(stopped).toContainText(/refer to units/i);
+    await expect(stopped).not.toContainText("REFER_TO_UNITS");
+    // ⚠️ O-16.8: the refusal names the stage by its coordinator-facing label.
+    await expect(stopped).toContainText("cannot refer a movement at its current stage");
   });
 
   /**

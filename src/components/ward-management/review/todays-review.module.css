@@ -1,0 +1,252 @@
+/* Today's review (Home notes 4, issue 4, 9 Nov 2026). */
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  width: 100%;
+  min-width: 0;
+  padding: var(--wf-s-4) var(--wf-s-6) var(--wf-s-6);
+}
+
+/* Two columns from desktop up: the short to-do card beside the longer list. */
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: var(--wf-s-4);
+  align-items: start;
+}
+
+/* ---------- Before you hand over ---------- */
+.todos,
+.events,
+.members {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.todo {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: var(--wf-s-1) var(--wf-s-3);
+  align-items: start;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.todo:first-child {
+  border-top: 0;
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--wf-warning) 16%, transparent);
+  color: var(--wf-warning-ink);
+  font: 700 var(--wf-fs-14) / 1 var(--wf-font);
+}
+
+.todo[data-done] .mark {
+  background: color-mix(in srgb, var(--wf-success) 16%, transparent);
+  color: var(--wf-success-ink);
+}
+
+.todoText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.todoTitle {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / 20px var(--wf-font);
+}
+
+.todo[data-done] .todoTitle {
+  color: var(--wf-ink-3);
+}
+
+.todoDetail {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+}
+
+.todoAction,
+.doneLabel {
+  grid-column: 2;
+  justify-self: start;
+  margin-top: var(--wf-s-1);
+}
+
+.doneLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-success-ink);
+  font: 600 var(--wf-fs-13) / 18px var(--wf-font);
+}
+
+/* ---------- Everything today ---------- */
+.filterRow {
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+/* The shared header's quiet stage filters (option C, sticky header thread, 9 Nov 2026): no track,
+   a soft rounded fill on the chosen item, counts in mono. */
+.filterRow .quiet {
+  flex-wrap: wrap;
+  overflow: visible;
+  gap: var(--wf-s-1);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.filterRow .quiet [role="tab"] {
+  min-height: 32px;
+  padding: 0 11px;
+  border-radius: 9px;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-14) / 18px var(--wf-font);
+}
+
+.filterRow .quiet [role="tab"]:hover {
+  color: var(--wf-ink-1);
+  background: var(--wf-track);
+}
+
+.filterRow .quiet [role="tab"][aria-selected="true"] {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  background: var(--wf-track);
+  box-shadow: inset 0 0 0 1px var(--wf-line);
+}
+
+.filterRow .quiet [role="tab"] > span {
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--wf-ink-3);
+  font: 500 12px / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.filterRow .quiet [role="tab"][aria-selected="true"] > :last-child:not(:first-child) {
+  color: var(--wf-ink-2);
+}
+
+.event {
+  display: grid;
+  /* The time column grows for an older open problem ("14:05 yesterday") instead of overlapping. */
+  grid-template-columns: minmax(48px, max-content) auto minmax(0, 1fr) auto;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  align-items: start;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.event:first-child {
+  border-top: 0;
+}
+
+.eventTime {
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-13) / 20px var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.eventTag {
+  justify-self: start;
+  margin-top: 1px;
+}
+
+.eventText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-14) / 20px var(--wf-font);
+}
+
+.eventSub {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+}
+
+.eventToggle {
+  justify-self: end;
+}
+
+.members {
+  grid-column: 3 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  padding-top: var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+}
+
+.members li {
+  display: grid;
+  grid-template-columns: minmax(48px, max-content) minmax(0, 1fr);
+  gap: var(--wf-s-3);
+}
+
+.footNote {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+}
+
+@media (max-width: 63.9375rem) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 46.4375rem) {
+  .main {
+    padding-inline: var(--wf-s-3);
+  }
+
+  .filterRow .quiet [role="tab"] {
+    min-height: 40px;
+  }
+
+  /* Phone: time and tag on one line, the words under them, the toggle at the end. */
+  .event {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .eventText {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .eventToggle {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .members {
+    grid-column: 1 / -1;
+  }
+}
+
+@media print {
+  .members[hidden] {
+    display: flex;
+  }
+}

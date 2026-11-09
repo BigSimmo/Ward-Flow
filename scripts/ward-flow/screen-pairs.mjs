@@ -103,7 +103,7 @@ export const PAIRS = [
 export const SUPERSEDED = ["patient-search-console.html", "patient-search-working.html"];
 
 /**
- * Complete 60-route roster mapping every commissioned Ward Flow route (58 under
+ * Complete 61-route roster mapping every commissioned Ward Flow route (59 under
  * `/ward-flow/**` plus `/ward-flow-sign-in` and `/mockups/ward-flow-digest`)
  * to its screen folder and current React component file relative to
  * `src/components/ward-management/` (`null` for server redirect stubs and the HTML digest route handler).
@@ -148,6 +148,7 @@ export const ROUTE_COMPONENTS = [
   { route: "/referrals/new", folder: "referrals", react: "referrals/referral-board.tsx" },
   { route: "/reports/chronology", folder: "reports", react: "reports/patient-chronology-screen.tsx" },
   { route: "/reports/downtime", folder: "reports", react: "reports/downtime-pack-screen.tsx" },
+  { route: "/review", folder: "review", react: "review/todays-review-screen.tsx" },
   { route: "/search", folder: "search", react: "search/patient-search.tsx" },
   { route: "/seclusion", folder: "restrictive-practice", react: "restrictive-practice/seclusion-screen.tsx" },
   { route: "/settings", folder: "settings", react: "settings/settings-screen.tsx" },

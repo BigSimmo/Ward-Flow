@@ -15,7 +15,6 @@ import {
   resolveAlertSubject,
 } from "@/components/ward-management/alerts/alerts-model";
 import type { QueueEntry, QueueHandlers } from "@/components/ward-management/alerts/alerts-queue";
-import { answerSilenceReminder } from "@/components/ward-management/delays/delays-derivations";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
@@ -28,7 +27,7 @@ import { usePrintableDisclosures } from "@/components/ward-management/use-printa
 import { activeActNowItems, activeTaskItems } from "@/components/ward-management/ward-act-now-items";
 import { alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
 import { formatInstant } from "@/components/ward-management/ward-clock";
-import { allDeclines, allOverrides, type InboxItem, isOpen } from "@/components/ward-management/ward-derivations";
+import { type InboxItem, isOpen } from "@/components/ward-management/ward-derivations";
 import {
   useDueSoonThresholds,
   useWardFlowClock,
@@ -60,12 +59,10 @@ import {
   Menu,
   PillTabs,
   Segmented,
-  Sheet,
   StatusGlyph,
   type HeroNextStep,
 } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
-import { ExceptionDrawer, type RegisterTabId } from "./exception-drawer";
 import activity from "./home-activity.module.css";
 import cards from "./home-cards.module.css";
 import styles from "./home.module.css";
@@ -146,7 +143,8 @@ function focusQueue(root: HTMLElement | null): void {
 }
 
 /** P124: what the footer's "N refused" count means, for a hover and for a screen reader. */
-const REFUSED_MARKER_EXPLANATION = "Actions the app refused to record this session. Details are under Refused.";
+const REFUSED_MARKER_EXPLANATION =
+  "Actions the app refused to record this session. Details are in Today's review, under Stopped by the app.";
 
 /**
  * Home: the coordinator's first screen (direction A, owner 10 Oct 2026).
@@ -156,8 +154,7 @@ const REFUSED_MARKER_EXPLANATION = "Actions the app refused to record this sessi
  * the lists. Then two columns: the list (My list, or Everyone waiting behind a
  * switch) and a right column with Beds that fit and Placement. Nothing is pre-selected: Placement
  * opens only for the patient, alert or referral the coordinator chose (a bottom sheet on a phone).
- * Registers, above the list, opens the registers as a strip under the hero (owner, 8 Oct 2026), or
- * a sheet on a phone. Nothing on this screen changes state except through the shortlist's own
+ * Today's review (Josh, 9 Nov 2026) replaced the Registers strip and sheet. Nothing on this screen changes state except through the shortlist's own
  * reducer actions.
  *
  * Kept from the third edition: the selection survives a role switch while the movement is open
@@ -179,10 +176,10 @@ const REFUSED_MARKER_EXPLANATION = "Actions the app refused to record this sessi
  * - Beds that fit is a small table that folds to one line while someone is chosen;
  * - Placement still opens only for the person the coordinator chooses (Josh, Home v7, 22 Oct 2026),
  *   but its card names the oldest alert to place;
- * - Registers and Alerts history sit under one "More" menu at the end of the list tabs.
+ * - Today's review and Alerts history sit under one "More" menu at the end of the list tabs.
  */
-/** Registers and Alerts history under one "More" menu at the end of Home's list tabs. */
-function HomeListMoreMenu({ onRegisters }: { onRegisters: () => void }) {
+/** Today's review and Alerts history under one "More" menu at the end of Home's list tabs. */
+function HomeListMoreMenu() {
   // Optional, so Home still renders where no app router is mounted (the preview and the screen tests).
   const router = useOptionalRouter();
   return (
@@ -190,7 +187,9 @@ function HomeListMoreMenu({ onRegisters }: { onRegisters: () => void }) {
       label="More for this list"
       align="end"
       items={[
-        { id: "registers", label: "Registers", onSelect: onRegisters },
+        // Home notes 4, issue 4 (Josh, 9 Nov 2026): Today's review replaces the four Registers tabs
+        // (Exceptions, Declines, Overrides, Refused) as the one page for what went off-plan today.
+        { id: "review", label: "Today's review", onSelect: () => router?.push("/ward-flow/review") },
         { id: "alerts", label: "Alerts history", onSelect: () => router?.push("/ward-flow/alerts") },
       ]}
       trigger={(props) => (
@@ -298,24 +297,10 @@ export function CoordinatorScreen() {
   // never touches either selection.
   const [selectedReferralId, setSelectedReferralId] = useState<string | undefined>(undefined);
   const queueFocusRef = useRef<HTMLDivElement>(null);
-  const [exceptionsOpen, setExceptionsOpen] = useState(false);
   // The list tabs' row, which the curved folder shape measures.
   const listsNavRef = useRef<HTMLElement>(null);
-  // Desktop: one strip under the hero, opened from its Exceptions, Declines or New events count.
-  // It starts closed. Exceptions and Declines open the registers on their own tab.
-  const [heroPanel, setHeroPanel] = useState<"registers" | undefined>(undefined);
-  const [registerTab, setRegisterTab] = useState<RegisterTabId>("exceptions");
   // A highlight (past target, from the next step) marks its rows in the queue; the rest dim, nothing hides.
   const [highlight, setHighlight] = useState<QueueHighlight | undefined>(undefined);
-  function toggleRegisters(tab: RegisterTabId) {
-    const showing = heroPanel === "registers" && (tab === "declines") === (registerTab === "declines");
-    if (showing) {
-      setHeroPanel(undefined);
-      return;
-    }
-    setRegisterTab(tab);
-    setHeroPanel("registers");
-  }
   // Home v7 layouts: two columns (the list, then Beds that fit and Placement) from tablet landscape
   // up, one column on tablet portrait with Placement as a side sheet, phone direction A.
   const layout = useHomeLayout();
@@ -326,9 +311,6 @@ export function CoordinatorScreen() {
   // Later today is a tab only on a phone or tablet portrait; elsewhere it sits in the right column,
   // so an address left on it (a reload or a rotation) falls back to Needs you.
   const shownView = homeView === "planned" && !sheetPlacement ? "needs" : homeView;
-  // Phone sheet (direction A): the registers. The patient sheet is Placement itself, opened by
-  // picking a queue row. "Since you looked" moved into Activity.
-  const [phoneSheet, setPhoneSheet] = useState<{ kind: "exceptions" } | undefined>(undefined);
 
   // A ward choice belongs to the movement it was made for, so changing movement clears it.
   function selectMovement(movementId: string | undefined) {
@@ -517,14 +499,6 @@ export function CoordinatorScreen() {
       now,
     ],
   );
-  const silenceReminders = useMemo(() => {
-    const notes = new Map<string, string>();
-    for (const movement of openMovements) {
-      const copy = answerSilenceReminder(movement, referrals, now);
-      if (copy !== undefined) notes.set(movement.id, copy);
-    }
-    return notes;
-  }, [openMovements, referrals, now]);
 
   // My list uses the Alerts screen's own rows, built the way `alerts-screen.tsx` builds them, from
   // the same active task list as the header badge.
@@ -625,8 +599,6 @@ export function CoordinatorScreen() {
 
   // OD-3: the coordinator's unrestricted reads. Not scoped to open or to the ED filter: an override
   // or a decline that was made does not stop having been made.
-  const overrideRegister = useMemo(() => allOverrides(movements), [movements]);
-  const declineRegister = useMemo(() => allDeclines(movements), [movements]);
 
   const plannedRows = usePlannedRows(now);
 
@@ -670,46 +642,6 @@ export function CoordinatorScreen() {
   const wardsNotReporting = units.filter(
     (unit) => now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes,
   ).length;
-  // The four registers: a strip under the hero on desktop (opened from its Exceptions count), and
-  // the collapsible "Today's answers" card under the queue on a phone. Only one is ever mounted.
-  function renderRegisters(placement: "band" | "column") {
-    return (
-      <ExceptionDrawer
-        items={actionInbox}
-        silenceReminders={silenceReminders}
-        rejections={rejections}
-        overrides={overrideRegister}
-        declines={declineRegister}
-        units={units}
-        now={now}
-        open={exceptionsOpen}
-        placement={placement}
-        tab={placement === "band" ? registerTab : undefined}
-        onTabChange={placement === "band" ? setRegisterTab : undefined}
-        onToggle={() => setExceptionsOpen((open) => !open)}
-        onClose={
-          placement === "band"
-            ? () => {
-                setHeroPanel(undefined);
-                // The band opened from More, so closing it hands focus back there, not to the page.
-                requestAnimationFrame(() =>
-                  document.querySelector<HTMLButtonElement>('[data-testid="ward-home-more"]')?.focus(),
-                );
-              }
-            : undefined
-        }
-        // On a phone the open registers stand between a coordinator and Confirm, so choosing a
-        // row closes them in the same tap.
-        onSelectMovement={(movementId) => {
-          selectMovement(movementId);
-          setExceptionsOpen(false);
-        }}
-        onSelectDischarge={() => {
-          setExceptionsOpen(false);
-        }}
-      />
-    );
-  }
 
   // Not deferred: the placement panel's Offer and Refer act on this movement, so it must always be the one
   // the queue selection and `data-subject-movement` name. A deferred copy could act for the previous patient.
@@ -888,12 +820,6 @@ export function CoordinatorScreen() {
             />
           </Hero>
 
-          {heroPanel && !isPhone ? (
-            <div id="ward-home-hero-panel" className={styles.registersBand}>
-              {renderRegisters("band")}
-            </div>
-          ) : null}
-
           {/* Home flow (Q340, Q345, 3 Nov 2026): one row. Needs you and Flow lead as the raised switch; the
               stages follow, after a rule, as quieter tabs with counts (always shown; one opens Flow there). */}
           <nav
@@ -950,9 +876,7 @@ export function CoordinatorScreen() {
                 />
               </div>
             </div>
-            <HomeListMoreMenu
-              onRegisters={() => (isPhone ? setPhoneSheet({ kind: "exceptions" }) : toggleRegisters("exceptions"))}
-            />
+            <HomeListMoreMenu />
           </nav>
 
           <div
@@ -1031,34 +955,6 @@ export function CoordinatorScreen() {
           {placementNode}
           {releaseSheetUsed ? (
             <HomeReleaseSheet entry={releaseAlert} onClose={() => setReleaseAlertId(undefined)} />
-          ) : null}
-          {isPhone && phoneSheet?.kind === "exceptions" ? (
-            <Sheet
-              open
-              onClose={() => setPhoneSheet(undefined)}
-              title="Registers"
-              description="Choose one to open its patient"
-              mobilePlacement="bottom"
-              testId="ward-home-exceptions-sheet"
-            >
-              <ExceptionDrawer
-                items={actionInbox}
-                silenceReminders={silenceReminders}
-                rejections={rejections}
-                overrides={overrideRegister}
-                declines={declineRegister}
-                units={units}
-                now={now}
-                open
-                placement="column"
-                onToggle={() => setPhoneSheet(undefined)}
-                onSelectMovement={(movementId) => {
-                  setPhoneSheet(undefined);
-                  selectMovement(movementId);
-                }}
-                onSelectDischarge={() => setPhoneSheet(undefined)}
-              />
-            </Sheet>
           ) : null}
         </div>
         <WardPrototypeFooter

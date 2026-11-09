@@ -4,7 +4,6 @@ import { resolve } from "node:path";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { NO_OVERRIDE_RECORDED_NOTICE } from "@/components/ward-management/override-register";
 import { OVERRIDE_REASONS, type OverrideReason } from "@/components/ward-management/ward-change-reasons";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -115,22 +114,6 @@ function recordOverride() {
   ).toBe("0");
 }
 
-/**
- * Task 5: the register moved from its own full-width row under `.regionGrid` into the "Overrides"
- * tab behind a collapsed toggle. Task A (structured-wobbling-globe) moved that toggle-and-panel
- * again, into a panel under the Statewide flow diagram — all four tabpanels are unconditionally
- * mounted now, at every width (see `exception-drawer.tsx`'s own file comment), and the toggle
- * clicked below only matters visually on a phone (jsdom loads no CSS Module, so this click is
- * harmless here either way — the tab is reachable and clickable regardless).
- */
-function openOverridesTab() {
-  // Home flow (Q340, Q345, 3 Nov 2026): Registers is an item in the "More for this list" menu at
-  // the end of Home's list tabs; on desktop it opens the registers strip.
-  fireEvent.click(screen.getByRole("button", { name: "More for this list", expanded: false }));
-  fireEvent.click(screen.getByRole("menuitem", { name: "Registers" }));
-  fireEvent.click(screen.getByRole("tab", { name: /Overrides/ }));
-}
-
 /*
  * ⚠️ THE PER-TEST BUDGET IS RAISED BECAUSE OF LOAD, NOT BECAUSE THE WORK IS SLOW — and the
  * shape of the evidence is what justifies it, not the number.
@@ -184,48 +167,9 @@ function openOverridesTab() {
  * the measurement above is the justification, not the value.
  */
 vi.setConfig({ testTimeout: 120_000, hookTimeout: 120_000 });
-describe("the coordinator's override register", () => {
-  it("says so plainly when no override has been recorded, rather than rendering an empty box", () => {
-    // The seed ships every movement with `overrides: []`, so this is the state the screen is in
-    // before anybody overrules anything. "No rows" and "this surface was never wired up" look
-    // identical on screen, and only one of them is true.
-    render(
-      <WardFlowProvider initialNow={NOW}>
-        <CoordinatorScreen />
-      </WardFlowProvider>,
-    );
-    openOverridesTab();
-    const region = screen.getByTestId("ward-coordinator-override-register");
-    expect(within(region).getByTestId("ward-override-register-empty")).toHaveTextContent(NO_OVERRIDE_RECORDED_NOTICE);
-    expect(within(region).queryByTestId("ward-override-register")).toBeNull();
-  });
-
-  it("shows an override that was made — when, by which role, why, and against whom", () => {
-    render(
-      <WardFlowProvider initialNow={NOW}>
-        <OverrideHarness unitIds={[UNIT_A.id]} reason={REASON_A}>
-          <CoordinatorScreen />
-        </OverrideHarness>
-      </WardFlowProvider>,
-    );
-    openOverridesTab();
-    expect(screen.getByTestId("ward-override-register-empty")).toBeInTheDocument();
-
-    recordOverride();
-
-    const region = screen.getByTestId("ward-coordinator-override-register");
-    const entry = within(region).getByTestId(`ward-override-entry-${REFERABLE}`);
-    // The reason, verbatim from the owner's list.
-    expect(within(entry).getByTestId(`ward-override-reason-${REFERABLE}`)).toHaveTextContent(REASON_A);
-    // A ROLE, never a person: the reducer writes `WARD_FLOW_ROLE_LABELS[event.role]`.
-    expect(within(entry).getByTestId(`ward-override-by-${REFERABLE}`)).toHaveTextContent("Bed coordinator");
-    // The party overridden, named.
-    expect(within(entry).getByTestId(`ward-override-units-${REFERABLE}`)).toHaveTextContent(UNIT_A.name);
-    // And the empty state is gone — a register showing both would be a register showing neither.
-    expect(within(region).queryByTestId("ward-override-register-empty")).toBeNull();
-  });
-});
-
+// Home notes 4, issue 4 (Josh, 9 Nov 2026): the Registers strip left Home for Today's review. The
+// coordinator's whole register is Governance's Overrides register, whose empty state and live
+// dispatch are covered in `tests/ward-governance-registers.dom.test.tsx`.
 describe("a ward's own override register", () => {
   it("says so plainly when nothing has been recorded against it", () => {
     render(
@@ -312,7 +256,8 @@ describe("a ward's own override register", () => {
 
 const WARD_DIR = resolve(process.cwd(), "src/components/ward-management");
 const WARD_SCREEN = resolve(WARD_DIR, "ward/ward-screen.tsx");
-const COORDINATOR_SCREEN = resolve(WARD_DIR, "coordinator/coordinator-screen.tsx");
+// The coordinator's unrestricted read now lives in Governance's Overrides register (Home notes 4).
+const COORDINATOR_SCREEN = resolve(WARD_DIR, "governance-registers.tsx");
 const SHARED_PRESENTATION = resolve(WARD_DIR, "override-register.tsx");
 /** The module that DEFINES both reads. It necessarily names `allOverrides`, and it is reachable
  *  from the ward screen, so it is subtracted rather than counted as an offender — the same
@@ -496,7 +441,7 @@ describe("the ward screen cannot reach the whole override register", () => {
     // extractor that found the identifier nowhere would make every assertion below vacuous.
     expect(
       identifiersIn(COORDINATOR_SCREEN),
-      "the coordinator screen no longer reads the whole register — the ward scope is then a restriction on nothing",
+      "the Governance Overrides register no longer reads the whole register — the ward scope is then a restriction on nothing",
     ).toContain("allOverrides");
 
     // And the extractor must find an identifier of exactly this shape IN THE FILE UNDER GUARD, so
