@@ -34,7 +34,7 @@ of shared UI pieces) and nothing else. Nothing in PsychSift imports Ward Flow.
 | Area (tracked files, `git ls-files`)                         |  Files | Size                                                                                                                                                                                                         |
 | ------------------------------------------------------------ | -----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Ward Flow engine + screens `src/components/ward-management/` |    315 | ~153,000 lines of `.ts/.tsx` (plus 99 CSS modules and `src/components/wf/` shared v10 primitives)                                                                                                            |
-| Ward Flow routes `src/app/ward-flow/`                        |     57 | **<!-- fact:ward-route-count -->59<!-- /fact --> `page.tsx`** (**<!-- fact:app-route-count -->63<!-- /fact --> total routes** incl. `/ward-flow-sign-in` and `/mockups/ward-flow-digest`, plus `/` redirect) |
+| Ward Flow routes `src/app/ward-flow/`                        |     57 | **<!-- fact:ward-route-count -->60<!-- /fact --> `page.tsx`** (**<!-- fact:app-route-count -->64<!-- /fact --> total routes** incl. `/ward-flow-sign-in` and `/mockups/ward-flow-digest`, plus `/` redirect) |
 | Ward Flow tests `tests/ward-*`, `tests/ui-ward-*`            |    648 | ~188,700 lines (635 unit/DOM + 13 browser)                                                                                                                                                                   |
 | Ward Flow scripts `scripts/ward-flow/`                       |     49 | 45 top-level + `audit/`                                                                                                                                                                                      |
 | Ward Flow docs `docs/ward-flow/`                             |  1,272 | incl. 140 files of design drawings                                                                                                                                                                           |
@@ -236,7 +236,7 @@ bar's Tools drawer. The rail's "clinical persona" popover is cosmetic.
 
 ## 3. Routes, shell and navigation
 
-### 3.1 Routes (<!-- fact:ward-route-count -->59<!-- /fact --> `page.tsx` under `src/app/ward-flow/`, <!-- fact:app-route-count -->63<!-- /fact --> total including sign-in and digest)
+### 3.1 Routes (<!-- fact:ward-route-count -->60<!-- /fact --> `page.tsx` under `src/app/ward-flow/`, <!-- fact:app-route-count -->64<!-- /fact --> total including sign-in and digest)
 
 Every page file is a server component that renders one client screen (or redirects).
 
@@ -259,6 +259,7 @@ Every page file is a server component that renders one client screen (or redirec
 | `/help`                                                                                  | client redirect stub — opens Help sheet then `/ward-flow` (WF-42)         |
 | `/hub`                                                                                   | `HubScreen` (hub) — "Search hub"                                          |
 | `/hub/catchments`                                                                        | `CommunityIndex` (community) — Places Catchments tab                      |
+| `/leave`                                                                                 | `LeaveScreen` (leave), everyone on leave across the desk's wards          |
 | `/legal-forms`                                                                           | `LegalFormsScreen` (legal-forms)                                          |
 | `/movements`                                                                             | `MovementsScreen` (movements) — absorbed the transport tracker            |
 | `/movements/[movementId]`                                                                | `WardPatientWorkspace` (root `ward-management-console.tsx`, 3,287 lines)  |

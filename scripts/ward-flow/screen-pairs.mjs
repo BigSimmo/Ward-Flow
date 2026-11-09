@@ -151,6 +151,7 @@ export const ROUTE_COMPONENTS = [
   { route: "/review", folder: "review", react: "review/todays-review-screen.tsx" },
   { route: "/search", folder: "search", react: "search/patient-search.tsx" },
   { route: "/seclusion", folder: "restrictive-practice", react: "restrictive-practice/seclusion-screen.tsx" },
+  { route: "/leave", folder: "leave", react: "leave/leave-screen.tsx" },
   { route: "/settings", folder: "settings", react: "settings/settings-screen.tsx" },
   { route: "/statistics", folder: "statistics", react: "statistics/statistics-screen.tsx" },
   {

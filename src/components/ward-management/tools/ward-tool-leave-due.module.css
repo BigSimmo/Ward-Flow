@@ -82,3 +82,15 @@
   font-variant-numeric: tabular-nums;
   font-weight: 600;
 }
+
+/* Feature 23: the link on to the full Leave page. */
+.seeAll {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  min-height: var(--wf-target);
+  color: var(--wf-accent-ink);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  text-decoration: none;
+}

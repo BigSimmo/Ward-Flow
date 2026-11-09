@@ -76,6 +76,7 @@ import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
 import { OnCallScreen } from "@/components/ward-management/on-call/on-call-screen";
 import { SeclusionScreen } from "@/components/ward-management/restrictive-practice/seclusion-screen";
+import { LeaveScreen } from "@/components/ward-management/leave/leave-screen";
 import { BedMeetingAgendaScreen } from "@/components/ward-management/bed-meeting/bed-meeting-agenda-screen";
 import { BedMeetingTvScreen } from "@/components/ward-management/bed-meeting/bed-meeting-tv";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
@@ -263,6 +264,8 @@ const RENDERABLE_ROUTES: RouteRender[] = [
    */
   { route: `${ROUTE_PREFIX}/on-call`, render: () => createElement(OnCallScreen) },
   { route: `${ROUTE_PREFIX}/seclusion`, render: () => createElement(SeclusionScreen) },
+  // Feature 23 (9 Nov 2026): everyone on leave across the desk's wards.
+  { route: `${ROUTE_PREFIX}/leave`, render: () => createElement(LeaveScreen) },
   { route: `${ROUTE_PREFIX}/handover`, render: () => createElement(HandoverPage) },
   // 15 Oct 2026: the bed meeting TV view, behind the `bed-meeting-tv` feature flag (on in tests).
   { route: `${ROUTE_PREFIX}/bed-meeting`, render: () => createElement(BedMeetingTvScreen) },

@@ -91,6 +91,7 @@ import { TriageScreen, TriageStartScreen } from "@/components/ward-management/tr
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
 import { SeclusionScreen } from "@/components/ward-management/restrictive-practice/seclusion-screen";
+import { LeaveScreen } from "@/components/ward-management/leave/leave-screen";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
@@ -147,6 +148,7 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
   ["/ward-flow/discharges", { concrete: "/ward-flow/discharges", render: () => <DischargeBoard /> }],
   ["/ward-flow/on-call", { concrete: "/ward-flow/on-call", render: () => <OnCallScreen /> }],
   ["/ward-flow/seclusion", { concrete: "/ward-flow/seclusion", render: () => <SeclusionScreen /> }],
+  ["/ward-flow/leave", { concrete: "/ward-flow/leave", render: () => <LeaveScreen /> }],
   ["/ward-flow/ed", { concrete: "/ward-flow/ed", render: () => <EdIndex /> }],
   ["/ward-flow/ed/[edId]", { concrete: `/ward-flow/ed/${ed.id}`, render: () => <EdScreen edId={ed.id} /> }],
   [

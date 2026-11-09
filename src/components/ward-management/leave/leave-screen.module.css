@@ -1,0 +1,73 @@
+/* Feature 23: the Leave page. */
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-4);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--wf-fs-20);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.summary {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.figure,
+.time {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.scroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+}
+
+.person {
+  font-weight: 600;
+  text-align: left;
+}
+
+.umrn,
+.sub {
+  display: block;
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+
+.umrn {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  white-space: nowrap;
+}
+
+.empty {
+  margin: 0;
+  padding: var(--wf-s-3);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+@media (max-width: 46.4375rem) {
+  .main {
+    padding: var(--wf-s-3);
+  }
+}

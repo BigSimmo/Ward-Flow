@@ -56,6 +56,7 @@ import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
 import { OnCallScreen } from "@/components/ward-management/on-call/on-call-screen";
 import { SeclusionScreen } from "@/components/ward-management/restrictive-practice/seclusion-screen";
+import { LeaveScreen } from "@/components/ward-management/leave/leave-screen";
 import { BedMeetingAgendaScreen } from "@/components/ward-management/bed-meeting/bed-meeting-agenda-screen";
 import { BedMeetingTvScreen } from "@/components/ward-management/bed-meeting/bed-meeting-tv";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
@@ -1329,6 +1330,8 @@ const RENDERABLE_ROUTES: RouteRender[] = [
    */
   { route: `${ROUTE_PREFIX}/on-call`, render: () => createElement(OnCallScreen) },
   { route: `${ROUTE_PREFIX}/seclusion`, render: () => createElement(SeclusionScreen) },
+  // Feature 23 (9 Nov 2026): everyone on leave across the desk's wards.
+  { route: `${ROUTE_PREFIX}/leave`, render: () => createElement(LeaveScreen) },
   { route: `${ROUTE_PREFIX}/handover`, render: () => createElement(HandoverPage) },
   // 15 Oct 2026: the bed meeting TV view, behind the `bed-meeting-tv` feature flag (on in tests).
   { route: `${ROUTE_PREFIX}/bed-meeting`, render: () => createElement(BedMeetingTvScreen) },
@@ -1485,7 +1488,8 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
     // 44: the seclusion, restraint and incident view (`/seclusion`, D-72), 21 Oct 2026.
     // 46: the triage and risk form (`/people/[patientId]/triage`) and Start a triage (`/triage/new`), 7 Nov 2026.
     // 47: Today's review (`/review`, Home notes 4, 9 Nov 2026).
-    expect(RENDERABLE_ROUTES.length).toBe(47);
+    // 48: the Leave page (`/leave`, feature 23), 9 Nov 2026. Moved in both files together.
+    expect(RENDERABLE_ROUTES.length).toBe(48);
   });
 });
 
