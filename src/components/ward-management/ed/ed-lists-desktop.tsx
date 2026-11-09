@@ -73,11 +73,13 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
 
       {list === "review" ? (
         <table className={handover.listTable} aria-label="Awaiting psychiatric review">
+          {/* Table polish (Nov 2026): Person no longer takes half the width, so Bay and Cohort sit
+              beside the name and the spare width goes to Next step. */}
           <colgroup>
-            <col />
+            <col className={handover.colPersonList} />
             <col className={handover.colBay} />
             <col className={handover.colFacts} />
-            <col className={handover.colStep} />
+            <col />
             <col className={handover.colEnd} />
           </colgroup>
           <thead>

@@ -551,6 +551,13 @@
   white-space: nowrap;
 }
 
+/* Table polish (Nov 2026): days away right-aligned so 4 and 61 line up. Scoped to the table: the
+ * shared WardTable `.table th, .table td { text-align: left }` beats a bare class. */
+.table th.daysHead,
+.table td.away {
+  text-align: right;
+}
+
 .footNote {
   display: inline-flex;
   align-items: center;

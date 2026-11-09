@@ -526,6 +526,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   // Audit A3-18 (13 Oct 2026): every card and the return sheet carry the legal status or form.
   const legalOf = (entry: OutOfAreaEntry): string | undefined =>
     stayLegalShort(entry.admission, { movements, patients, referrals });
+  // Josh, 9 Nov 2026: the table says "Legal not recorded" once, with this count, above the rows.
+  const legalMissing = entries.filter((entry) => !legalOf(entry)).length;
 
   const planPatient = (entry: OutOfAreaEntry): PlanPatient => {
     const info = patientOf(entry);
@@ -992,6 +994,12 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                     ) : (
                       <>{entries.length} synthetic records</>
                     )}
+                    {legalMissing > 0 ? (
+                      <span data-testid="ward-out-of-area-legal-missing">
+                        {" "}
+                        · Legal not recorded for <b className={styles.mono}>{legalMissing}</b>
+                      </span>
+                    ) : null}
                   </span>
                   {anyHighlight ? (
                     <Button variant="ghost" size="sm" onClick={clearHighlights}>
@@ -1028,7 +1036,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                         <th scope="col">Placement</th>
                         <th scope="col">Discharge</th>
                         {planVaries ? <th scope="col">Return</th> : null}
-                        <th scope="col" className={tableClasses.num}>
+                        <th scope="col" className={cx(tableClasses.num, styles.daysHead)}>
                           Days away
                         </th>
                       </tr>
@@ -1072,10 +1080,16 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                       so the gap shows before a return trip is planned. Design audit B18
                                       (5 Nov 2026), drawer review (6 Nov 2026): the dot stays with the legal
                                       words, so a wrapped line never starts with a dot. */}
-                                  <span className={styles.umrnPair}>
-                                    {legalOf(entry) ?? "Legal not recorded"}
-                                    <span aria-hidden="true"> ·</span>
-                                  </span>{" "}
+                                  {/* Josh, 9 Nov 2026: "Legal not recorded" is said once above the table
+                                      with its count, not on every row; a recorded status still shows here. */}
+                                  {legalOf(entry) ? (
+                                    <>
+                                      <span className={styles.umrnPair}>
+                                        {legalOf(entry)}
+                                        <span aria-hidden="true"> ·</span>
+                                      </span>{" "}
+                                    </>
+                                  ) : null}
                                   <span className={styles.umrnPair}>
                                     {href ? (
                                       <Link

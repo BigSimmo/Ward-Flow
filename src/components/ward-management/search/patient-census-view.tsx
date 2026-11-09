@@ -35,8 +35,8 @@ import {
   tableClasses,
   cx,
   phoneRows,
+  SrOnly,
   type WfTone,
-  useMediaQuery,
 } from "@/components/wf";
 import {
   dayOf,
@@ -263,10 +263,9 @@ export function CensusTable(props: CensusTableProps) {
   // Device audit 11 Oct 2026: 51 Waiting and 41 Bed found fully open made the page 4,630px; each
   // open group shows its first ten with "Show all N" (On a ward keeps its own wider cap).
   const [shownAll, setShownAll] = useState<ReadonlySet<CensusGroup>>(() => new Set());
-  // Tablets: "Heading to" reads "No ward yet" on every waiting row and took the width Next step
-  // needs, so it goes below 75rem; the side card still shows where the person is heading.
-  const showTo = !useMediaQuery("(max-width: 75rem)");
-  const cols = showTo ? 7 : 6;
+  // Table polish (Josh, 9 Nov 2026): Where and Heading to are one column, "ARM ED → Maali", so no
+  // group repeats "No ward yet" down a column of its own and tablets see where a person is heading.
+  const cols = 6;
   const scrollRef = useRef<HTMLDivElement>(null);
   const { readScrollPosition, recordScrollPosition } = props;
   useLayoutEffect(() => {
@@ -393,7 +392,6 @@ export function CensusTable(props: CensusTableProps) {
               <col className={styles.colTier} />
               <col className={styles.colWho} />
               <col className={styles.colWhere} />
-              {showTo ? <col className={styles.colTo} /> : null}
               <col className={styles.colNext} />
               <col className={styles.colLegal} />
               <col className={styles.colTime} />
@@ -402,11 +400,11 @@ export function CensusTable(props: CensusTableProps) {
               <tr>
                 <th scope="col">Tier</th>
                 <th scope="col">Patient</th>
-                {/* Redesign: one word, so the header stays on one line like the others. */}
+                {/* Redesign: one word, so the header stays on one line like the others. Table polish
+                    (9 Nov 2026): the cell also says where the person is heading. */}
                 <th scope="col" aria-label="Where now">
                   Where
                 </th>
-                {showTo ? <th scope="col">Heading to</th> : null}
                 <th scope="col">Next step</th>
                 <th scope="col">Legal</th>
                 <th scope="col" className={styles.num}>
@@ -466,7 +464,6 @@ export function CensusTable(props: CensusTableProps) {
                             lifted={lifting && lifted(row)}
                             flash={row.key === props.flashKey}
                             onSelect={props.onSelect}
-                            showTo={showTo}
                           />
                         ))
                     : null}
@@ -511,9 +508,7 @@ const CensusTableRow = memo(function CensusTableRow({
   lifted,
   flash,
   onSelect,
-  showTo = true,
 }: {
-  showTo?: boolean;
   row: CensusRow;
   needle: string;
   selected: boolean;
@@ -574,28 +569,22 @@ const CensusTableRow = memo(function CensusTableRow({
           </span>
         </span>
       </td>
-      <td>
+      <td className={styles.whereTo}>
+        {/* "No ward asked yet" rows say only where the person is; the group heading says the rest. */}
         <span className={styles.two}>
-          <b>{row.where}</b>
-          <span>{row.whereSub}</span>
+          <b>
+            {row.where}
+            {row.group === "ask" ? null : (
+              <>
+                <span aria-hidden="true"> → </span>
+                <SrOnly>, heading to </SrOnly>
+                {row.to}
+              </>
+            )}
+          </b>
+          <span>{[row.whereSub, row.group === "ask" ? "" : row.toSub].filter(Boolean).join(" · ")}</span>
         </span>
       </td>
-      {showTo ? (
-        <td>
-          {/* Redesign: inside "No ward asked yet" the group heading already says it; a dash, not "No ward yet". */}
-          {row.group === "ask" ? (
-            <span className={styles.two}>
-              <b aria-hidden="true">—</b>
-              <span className="sr-only">{row.to}</span>
-            </span>
-          ) : (
-            <span className={styles.two}>
-              <b>{row.to}</b>
-              <span>{row.toSub}</span>
-            </span>
-          )}
-        </td>
-      ) : null}
       <td>
         <span className={styles.next}>
           <CensusGlyphMark glyph={row.glyph} />
