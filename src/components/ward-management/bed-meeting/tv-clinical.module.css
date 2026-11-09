@@ -29,6 +29,18 @@
   font-weight: 700;
 }
 
+/* TV polish (Josh, 8 Nov 2026): a zero recedes, so the counts that need someone stand out from
+ * across the room. */
+.summary li[data-zero] {
+  border-style: dashed;
+  background: transparent;
+  color: var(--wf-ink-3);
+}
+
+.summary li[data-zero] b {
+  color: var(--wf-ink-3);
+}
+
 .summary li[data-tone="warning"] {
   border-color: var(--wf-warning);
   background: var(--wf-hold-tint);
