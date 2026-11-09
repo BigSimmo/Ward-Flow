@@ -22,6 +22,7 @@ import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { ListExportButton } from "@/components/ward-management/ward-list-export-button";
 import {
   Button,
   Card,
@@ -361,6 +362,55 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
       () => base.setCopyNote("Copying is not available in this browser."),
     );
   };
+  // Export (feature 44): the list on screen, never names; the builder loads on the click.
+  const exportList = async () => {
+    const exporter = await import("./discharge-export");
+    const wardName = (unitId: string) =>
+      unitLabel(
+        units.find((unit) => unit.id === unitId),
+        unitId,
+      );
+    const at = (instant: number) => formatSheetMoment(instant, dayZero);
+    const what = nowView ? "Discharges, Now" : `Discharges, Recorded in the last ${RECORDED_DAYS} days`;
+    const filters = [service, ward, status, base.blockerCategory, ...(nowView ? [] : [identity, base.destination])];
+    const narrowed = filters.some((value) => value !== "all");
+    // Now exports the release groups the list shows, not every record in scope; the header says so.
+    const shownWords = nowView
+      ? `the discharges by bed ${narrowed ? "the current filters show" : "the list shows"}, by status`
+      : narrowed
+        ? "the recorded discharges the current filters show"
+        : "every recorded discharge in this desk's scope";
+    const provenance = {
+      asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+      scope: `${what}; ${shownWords} (highlights do not narrow it)`,
+    };
+    if (!nowView) {
+      exporter.downloadDischargeRecords(
+        recorded,
+        {
+          wardName,
+          destinationOf: (record) =>
+            LEAVING_DESTINATIONS.find((item) => item.id === record.leavingDestination)?.label ?? "Not recorded",
+          followUpOf: (record) => followUpOf(record).status,
+          at,
+        },
+        provenance,
+      );
+      return;
+    }
+    const rows = visibleReleaseGroups.flatMap((key) =>
+      shownGroups[key].map((release) => ({
+        ...release,
+        statusWord: WORK_STATUS_LABELS[key === "discharged-today" ? "departed" : key],
+      })),
+    );
+    const umrnOf = (release: (typeof rows)[number]) => {
+      const record = records.find((candidate) => candidate.admissionId === release.admissionId);
+      return record?.identity.kind === "linked" ? record.identity.patient.umrn : "UMRN not recorded";
+    };
+    exporter.downloadDischargeReleases(rows, { umrnOf, wardName, statusOf: (row) => row.statusWord, at }, provenance);
+  };
+  const exportCount = nowView ? visibleReleaseGroups.reduce((n, k) => n + shownGroups[k].length, 0) : recorded.length;
   // Now and Recorded: in the hero on desktop and tablet, under it on a phone (v10).
   const populationSwitch = <DischargePopulationSwitch s={s} />;
   const filterCard = <DischargeFilterCard s={s} />;
@@ -868,6 +918,15 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       ? `${toWorkCount} to work${counts.departed > 0 ? ` · ${counts.departed} discharged` : ""}`
                       : `${shown} shown`}
               </span>
+              {/* Export (feature 44) sits with the list it exports, not in the page top (page-tops v6). */}
+              {isPhone ? null : (
+                <ListExportButton
+                  load={exportList}
+                  variant="ghost"
+                  disabled={exportCount === 0}
+                  testId="ward-discharge-export"
+                />
+              )}
             </header>
             {isPhone ? null : <DischargeFilterCard s={s} bare />}
             <div

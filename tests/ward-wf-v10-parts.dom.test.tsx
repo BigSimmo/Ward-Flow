@@ -294,6 +294,51 @@ describe("Hero band under pinned header notes", () => {
   });
 });
 
+// Feature 47: the training banner sits in flow under the header, in its own holder. The band
+// counts it as part of the header, so a hero is pulled up only to the banner's bottom edge.
+describe("Hero band under the training banner", () => {
+  it("counts the training holder as part of the header", () => {
+    const scroller = document.createElement("div");
+    scroller.setAttribute("data-wf-scroller", "");
+    const bar = document.createElement("header");
+    bar.setAttribute("data-wf-bar", "");
+    const training = document.createElement("div");
+    training.setAttribute("data-wf-bar-training", "");
+    const page = document.createElement("div");
+    scroller.append(bar, training, page);
+    document.body.append(scroller);
+    Object.defineProperty(bar, "offsetHeight", { configurable: true, value: 60 });
+    Object.defineProperty(training, "offsetHeight", { configurable: true, value: 44 });
+    // Header 60px, training banner 44px, then the page's own 16px inset: 120px down.
+    const spy = vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
+      const top = this === scroller ? 0 : 120;
+      const height = this === scroller ? 900 : 200;
+      return {
+        top,
+        bottom: top + height,
+        left: 0,
+        right: 1016,
+        width: 1016,
+        height,
+        x: 0,
+        y: top,
+        toJSON: () => ({}),
+      } as DOMRect;
+    });
+    installMatchMediaStub(true);
+    try {
+      render(<Hero title="Under training" testId="training-hero" />, { container: page });
+      const hero = screen.getByTestId("training-hero");
+      expect(hero).toHaveAttribute("data-band", "on");
+      expect(hero.style.getPropertyValue("--wf-band-top")).toBe("16px");
+    } finally {
+      spy.mockRestore();
+      installMatchMediaStub();
+      scroller.remove();
+    }
+  });
+});
+
 // Josh, 27 Oct 2026: the rounded floating card is retired. A hero that does not open the page is
 // still the band, square to the column edges; only the header stays light.
 describe("Hero below other content", () => {

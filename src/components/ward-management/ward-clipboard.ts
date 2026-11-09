@@ -90,3 +90,11 @@ export async function copyTextToClipboard(value: string): Promise<void> {
     returnFocus?.focus({ preventScroll: true });
   }
 }
+
+/**
+ * Puts a PNG on the clipboard: the Report a problem picture (D-102), already blurred and name-free.
+ * It lives here so every clipboard write in Ward Flow goes through this one file.
+ */
+export async function copyPngToClipboard(picture: Blob): Promise<void> {
+  await navigator.clipboard.write([new ClipboardItem({ "image/png": picture })]);
+}

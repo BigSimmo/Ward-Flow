@@ -7,7 +7,7 @@ import type { OnBehalfReasonId } from "./ward-on-behalf-reason";
 import { WardDemoNotSavedContext } from "@/components/ward-management/shell/ward-demo-saving";
 import { WardRecoveryNoticeContext } from "@/components/ward-management/shell/ward-recovery-notice";
 import { ToastDeviceSaveContext } from "@/components/wf";
-import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
+import { clearReferralDraftMemory, clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
 import { seedSafeSenderId, useOpenTabsDay } from "./ward-flow-open-tabs-day";
 import { clearLegacySessionDrafts, setDraftScenarioScope } from "./ward-session-drafts";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
@@ -113,6 +113,8 @@ import { withCurrentRoleWords } from "@/components/ward-management/ward-role-wor
 import { readOwnedScenario, type ScenarioFileLoader } from "./ward-scenario-import-owner";
 import type { ScenarioFileBuild } from "@/components/ward-management/ward-flow-scenario-file";
 import { useWardShared, WardSharedAccess, type WardSharedConnection } from "./ward-shared-access";
+import { TrainingSessionScope, trainingOf, useTrainingRuntime } from "./ward-training-connection";
+import { useWardMinuteTick } from "./use-ward-minute-tick";
 import { WardShellAuthorityProvider, WardShellPublicProvider } from "./shell/ward-shell-public-context";
 import { parseStoredAccess } from "./shell/ward-access-store";
 import { useWardShellValues } from "./ward-flow-shell-values";
@@ -522,6 +524,7 @@ function WardFlowOwnConnection(props: WardFlowProviderProps) {
   return <WardFlowConnection {...props} shared={shared} />;
 }
 function WardFlowConnection({ shared, ...props }: WardFlowProviderProps & { shared: WardSharedConnection }) {
+  const training = useTrainingRuntime(shared); // feature 47: local-only connection, keyed so Stop discards it
   const access = parseStoredAccess(JSON.stringify(shared.access ?? null));
   if (shared.enabled && (!shared.signedIn || !shared.snapshot || !access || access.role === "executive")) {
     return (
@@ -534,7 +537,7 @@ function WardFlowConnection({ shared, ...props }: WardFlowProviderProps & { shar
   const identity = shared.enabled
     ? JSON.stringify([shared.actorId, shared.workingAs, shared.snapshot?.accessContext])
     : "local";
-  const runtime = <WardFlowRuntime key={identity} {...props} shared={shared} />;
+  const runtime = <WardFlowRuntime key={training ? "training" : identity} {...props} shared={training ?? shared} />;
   return shared.enabled && access ? (
     <WardShellAuthorityProvider access={access}>{runtime}</WardShellAuthorityProvider>
   ) : (
@@ -632,6 +635,10 @@ function WardFlowWorld({
   adoptedDayZero: Date | null;
   shared: WardSharedConnection;
 }) {
+  // Feature 47: a training world is memory only, never restored, saved on this device or sent to another tab.
+  const training = trainingOf(shared);
+  const inTraining = training !== undefined;
+  const ownDevice = !shared.enabled && !inTraining;
   /**
    * How far the demo's day sits from the day the fixture was authored on. Read ONCE, at mount, so
    * every instant the app shows moves together; re-reading it per render would let the seed and the
@@ -702,7 +709,12 @@ function WardFlowWorld({
       }
       const world = seedWardFlowStateAt(offset);
       syncWorldGlobals(world);
-      return { world, typedTextSeen: false, restoredElapsed: 0, sessionAdopted: initialNow !== undefined };
+      return {
+        world,
+        typedTextSeen: false,
+        restoredElapsed: 0,
+        sessionAdopted: initialNow !== undefined || inTraining,
+      };
     },
   );
   // Scope changes must be visible in this render, before the adoption effect copies the new desk.
@@ -761,10 +773,12 @@ function WardFlowWorld({
       }
       const before = commandsRef.current.world;
       const next = wardFlowReducer(before, event);
-      if (before.worldGeneration !== next.worldGeneration) clearReferralDraftSession();
+      // Feature 47: a training reset keeps the real world's stored drafts and browser session.
+      if (before.worldGeneration !== next.worldGeneration)
+        (inTraining ? clearReferralDraftMemory : clearReferralDraftSession)();
       commandsRef.current.world = next;
       dispatchContainer(event);
-      broadcastDispatchEvent(event.type, getOrCreateBroadcastInstanceId(broadcastInstanceIdRef));
+      if (!inTraining) broadcastDispatchEvent(event.type, getOrCreateBroadcastInstanceId(broadcastInstanceIdRef));
       return {
         commandId,
         ...localCommandOutcome(
@@ -774,11 +788,12 @@ function WardFlowWorld({
         ),
       };
     },
-    [dispatchContainer, container.sessionAdopted],
+    [dispatchContainer, container.sessionAdopted, inTraining],
   );
+  // THE ROUTING POINT. Training always dispatches locally, even if a shared connection is enabled.
   const dispatch = useSliceGatedDispatch(
     dispatchLocal,
-    sharedEnabled ? dispatchShared : null,
+    sharedEnabled && !inTraining ? dispatchShared : null,
     commandsRef,
     captureCommandLifetime,
   );
@@ -788,8 +803,9 @@ function WardFlowWorld({
     syncWorldGlobals(state);
   }, [state]);
   useLayoutEffect(() => {
-    if (container.sessionAdopted) setDraftScenarioScope(`${state.scenario}/${state.worldGeneration}`);
-  }, [state.scenario, state.worldGeneration, container.sessionAdopted]);
+    if (container.sessionAdopted)
+      setDraftScenarioScope(`${inTraining ? "training/" : ""}${state.scenario}/${state.worldGeneration}`);
+  }, [state.scenario, state.worldGeneration, container.sessionAdopted, inTraining]);
   // Monotonic across reducer resets; remount destroys the allocator and consumer subtree together.
   // Audit finding ISSUE-P1-83, defect 3c: seeded from the restored (or freshly-seeded) state's own
   // audit log rather than always 0 — see `nextOpenRequestSequence`'s own doc comment for why
@@ -864,44 +880,10 @@ function WardFlowWorld({
     });
   }, [shared.enabled, shared.snapshot, anchorOffsetMinutes]);
 
-  useEffect(() => {
-    if (initialNow !== undefined || mountedAtAbsolute === null) return;
-    let timeoutTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const scheduleNextTick = () => {
-      const nowMs = Date.now();
-      const remainder = nowMs % 60_000;
-      // P166: the board clock shows whole minutes, so tick once at each top of the minute.
-      const delay = remainder === 0 ? 60_000 : 60_000 - remainder;
-      timeoutTimer = setTimeout(() => {
-        setTick((tick) => tick + 1);
-        scheduleNextTick();
-      }, delay);
-    };
-
-    scheduleNextTick();
-
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        setTick((tick) => tick + 1);
-        if (timeoutTimer) clearTimeout(timeoutTimer);
-        scheduleNextTick();
-      } else if (timeoutTimer) {
-        // P166: no ticks (and no re-renders) while the tab is hidden; the visible branch catches up.
-        clearTimeout(timeoutTimer);
-        timeoutTimer = null;
-      }
-    };
-    document.addEventListener("visibilitychange", onVisibilityChange);
-
-    return () => {
-      if (timeoutTimer) clearTimeout(timeoutTimer);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-    };
-  }, [initialNow, mountedAtAbsolute]);
+  useWardMinuteTick(initialNow === undefined && mountedAtAbsolute !== null, setTick);
 
   useEffect(() => {
-    if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") return;
+    if (inTraining || typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") return;
     const instanceId = getOrCreateBroadcastInstanceId(broadcastInstanceIdRef);
     // A read settling after cleanup or after a newer broadcast's read must not adopt (stale closure).
     const reads = { live: true, latest: 0 };
@@ -970,7 +952,7 @@ function WardFlowWorld({
     } catch {
       return undefined;
     }
-  }, [dayZero, mountedAtAbsolute, initialNow, shared.enabled]);
+  }, [dayZero, mountedAtAbsolute, initialNow, shared.enabled, inTraining]);
   const [storageUnavailable, setStorageUnavailable] = useState(false);
   // The world generation whose typed-text copy could not be made safely, or "loaded" to re-run the
   // save once the copy's code arrives.
@@ -978,7 +960,7 @@ function WardFlowWorld({
   const typedTextLocked = container.typedTextSeen && deviceCopyCheck === state.worldGeneration;
   // Local saving runs only in the unpinned local demonstration, until storage fails or a typed-text
   // copy cannot be made safely. Shared mode does not save actions on this device.
-  const savingOnDevice = !shared.enabled && initialNow === undefined && !typedTextLocked && !storageUnavailable;
+  const savingOnDevice = ownDevice && initialNow === undefined && !typedTextLocked && !storageUnavailable;
   useOpenTabsDay(savingOnDevice && !!container.sessionAdopted, freshSeedRef, broadcastInstanceIdRef, ownsLocalDayRef);
   const demoControlsAvailable = !shared.enabled || shared.snapshot?.demoControls !== false;
   useEffect(() => {
@@ -987,7 +969,7 @@ function WardFlowWorld({
 
   // Protect accepted local work until its device write, including safe-copy loading or failure.
   useEffect(() => {
-    if (shared.enabled || initialNow !== undefined) return;
+    if (!ownDevice || initialNow !== undefined) return;
     const warn = (event: BeforeUnloadEvent) => {
       if (!ownsLocalDayRef.current || savesOnDeviceRef.current) return;
       event.preventDefault();
@@ -995,7 +977,7 @@ function WardFlowWorld({
     };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [shared.enabled, initialNow]);
+  }, [ownDevice, initialNow]);
 
   /**
    * Restores a saved same-day session once the mount effect in `WardFlowProvider` has supplied
@@ -1004,7 +986,7 @@ function WardFlowWorld({
    * the render below; a first visit or an unchanged reload keeps every node. Runs once per mount;
    * `sessionAdopted` gates the storage write below until it has run. The read loads on demand.
    */
-  const demoRead = useDemoStateRead(!shared.enabled && initialNow === undefined, dayZero, mountedAtAbsolute);
+  const demoRead = useDemoStateRead(ownDevice && initialNow === undefined, dayZero, mountedAtAbsolute);
   // CS3-17: a click or key press before the saved day is adopted may have opened a panel, which the
   // re-key below closes. Noted here so the restore notice can say so (`OPEN_ITEMS_CLOSED_NOTICE`).
   // A layout effect, so it listens from the first commit, before any screen's own effects run.
@@ -1086,7 +1068,7 @@ function WardFlowWorld({
   const lastDeviceSaveRef = useRef<DeviceSaveInputs | undefined>(undefined);
 
   useEffect(() => {
-    if (shared.enabled) return;
+    if (!ownDevice) return;
     if (initialNow !== undefined || mountedAtAbsolute === null || !container.sessionAdopted) return;
     if (storageUnavailable) return;
     // Fresh audit P-1: a refused or empty action would store the same world again, so skip it.
@@ -1141,15 +1123,15 @@ function WardFlowWorld({
     mountedAtAbsolute,
     dayZero,
     storageUnavailable,
-    shared.enabled,
+    ownDevice,
   ]);
 
   // ISSUE-P1-83 3e: stable, as the `value` useMemo below depends on it. Reset also clears Midland decisions (SD-06).
   const resetDemoState = useCallback(() => {
-    if (!shared.enabled) clearWardFlowDemoState();
+    if (ownDevice) clearWardFlowDemoState();
     lastDeviceSaveRef.current = undefined;
     dispatch({ type: "RESET_SCENARIO", role: "demo", now: nowRef.current });
-  }, [dispatch, shared.enabled]);
+  }, [dispatch, ownDevice]);
 
   const saveScenarioFile = useCallback(() => buildScenarioFileLater(state, nowRef.current), [state]);
 
@@ -1191,7 +1173,7 @@ function WardFlowWorld({
       };
       // Continue past every record-request id either world has used (`nextOpenRequestSequence`).
       openRequestSequence.current = Math.max(openRequestSequence.current, nextOpenRequestSequence(world.auditEvents));
-      clearReferralDraftSession();
+      (inTraining ? clearReferralDraftMemory : clearReferralDraftSession)();
       ownsLocalDayRef.current = true;
       savesOnDeviceRef.current = false;
       commandsRef.current.world = world;
@@ -1202,7 +1184,7 @@ function WardFlowWorld({
       });
       return { ok: true };
     },
-    [initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled],
+    [initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled, inTraining],
   );
 
   const reportSnapshotReady = !shared.enabled || container.world === shared.snapshot?.payload.state;
@@ -1345,7 +1327,12 @@ function WardFlowWorld({
       resetDemoState,
       saveScenarioFile,
       loadScenarioFile,
-      savingOnDevice: initialNow !== undefined ? !typedTextLocked && !storageUnavailable : savingOnDevice,
+      // Training is never saved anywhere by design, so Tools gives no device-saving warning for it.
+      savingOnDevice: inTraining
+        ? undefined
+        : initialNow !== undefined
+          ? !typedTextLocked && !storageUnavailable
+          : savingOnDevice,
       shared: sharedStatus,
       demoControlsAvailable,
     }),
@@ -1380,6 +1367,7 @@ function WardFlowWorld({
       savingOnDevice,
       storageUnavailable,
       initialNow,
+      inTraining,
       now,
     ],
   );
@@ -1409,15 +1397,15 @@ function WardFlowWorld({
             }
           >
             <WardDemoNotSavedContext.Provider
-              value={
-                shared.enabled || initialNow !== undefined || !container.typedTextSeen ? undefined : savingOnDevice
-              }
+              value={!ownDevice || initialNow !== undefined || !container.typedTextSeen ? undefined : savingOnDevice}
             >
               <ToastDeviceSaveContext.Provider value={savesOnDevice}>
                 <WardFlowClockContext.Provider value={now}>
                   {/* Replaced access or restored sessions retire forms; ordinary saves retain edits. */}
                   <WardSharedAccess connection={sharedConnection}>
-                    <Fragment key={screenKey}>{previewChildren}</Fragment>
+                    <TrainingSessionScope training={training}>
+                      <Fragment key={screenKey}>{previewChildren}</Fragment>
+                    </TrainingSessionScope>
                   </WardSharedAccess>
                 </WardFlowClockContext.Provider>
               </ToastDeviceSaveContext.Provider>
