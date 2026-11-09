@@ -534,7 +534,7 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
     })),
   ],
   [
-    0.5,
+    1,
     movementEvent("EXTEND_PULL", ["pulled"], (_state, random) => ({
       minutes: pick(random, PULL_HOLD_EXTENSION_MINUTES),
     })),
