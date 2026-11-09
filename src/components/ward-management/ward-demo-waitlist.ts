@@ -31,7 +31,6 @@ export function applyWaitlistDemoOverlay<T extends { movements: Movement[] }>(st
       const at = Math.min(now - 30, movement.openedAt + 90);
       return {
         ...movement,
-        referredUnitIds: [...movement.referredUnitIds, WAITLIST_UNIT_ID],
         waitlistedUnitIds: [...(movement.waitlistedUnitIds ?? []), WAITLIST_UNIT_ID],
         referralAnswerHistory: [
           ...(movement.referralAnswerHistory ?? []),

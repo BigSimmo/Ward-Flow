@@ -116,8 +116,12 @@ export function referralCarryOver(
     !!referral && (!stay || (stayStart !== undefined && stayStart !== null && referral.raisedAt > stayStart));
   const stayNote = carryNote("stay", undefined, record.dayZero);
   const referralNote = referral ? carryNote("referral", referral.raisedAt, record.dayZero) : "";
-  const fromStay = <T>(value: T): CarriedFact<T> => ({ value, from: "stay", note: stayNote });
-  const fromReferral = <T>(value: T): CarriedFact<T> => ({ value, from: "referral", note: referralNote });
+  function fromStay<T>(value: T): CarriedFact<T> {
+    return { value, from: "stay", note: stayNote };
+  }
+  function fromReferral<T>(value: T): CarriedFact<T> {
+    return { value, from: "referral", note: referralNote };
+  }
 
   // What each record holds.
   const stayLegalFacts = stay ? stayLegal(stay, record, now) : undefined;
