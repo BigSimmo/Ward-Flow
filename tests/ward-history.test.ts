@@ -62,8 +62,9 @@ describe("Ward Flow Read-Only Plain History", () => {
       // Triage and risk (7 Nov 2026) adds RECORD_TRIAGE_SIGNED.
       // Feature 11 (Josh, 9 Nov 2026) adds EXTEND_PULL.
       // Feature 14 (9 Nov 2026) adds MARK_WEEKEND_DISCHARGE_REVIEWED.
+      // Feature 5 (9 Nov 2026) adds SET_CLINICALLY_READY.
       // Features 37 and 13 (9 Nov 2026) add RECORD_DISCHARGE_CHECK and RECORD_FOLLOW_UP_REPLY.
-      expect(allEventTypes.length).toBe(183);
+      expect(allEventTypes.length).toBe(184);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];
