@@ -47,10 +47,11 @@ function walk(dir: string): string[] {
  *  keeps its own extraction rather than widen that shared helper's contract for other callers. */
 function formLabelTextsIn(path: string): string[] {
   const raw = readFileSync(path, "utf8");
-  // Both patterns need the literal word "Form", so a file without it cannot offend. Skipping the
-  // parse for those (about three in four files) keeps this guard well inside the test timeout on a
-  // busy CI runner, where parsing every file once ran past 30 seconds (9 Nov 2026).
-  if (!raw.includes("Form")) return [];
+  // Both patterns need "Form", whitespace and a digit in one fragment, so a file whose source has
+  // neither that nor "Form" before an escape (such as \t) cannot offend. Skipping the parse for
+  // those (about nine in ten files) keeps this guard well inside the test timeout on a busy CI
+  // runner, where parsing every file ran past 30 seconds twice on 9 Nov 2026.
+  if (!/\bForm(?:\s+\d|\\)/.test(raw)) return [];
   const source = ts.createSourceFile(
     path,
     raw,
