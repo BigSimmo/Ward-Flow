@@ -1383,7 +1383,7 @@ function routineMovements(count: number, startIndex: number): Movement[] {
  * 🔴 **T2r FIX ROUND, FINDING 5 (2026-09-17) — DROPPED WF-024 (WACHS `pulled`), THE ELEVENTH ROW
  * THIS BLOCK ORIGINALLY ADDED.** `ward-model.test.ts`'s "runs at realistic pressure, not
  * comfortable pressure" caps `wardMovements` at 40–60, pinned straight from the design spec
- * (`docs/superpowers/specs/2026-08-18-ward-flow-metro-patient-flow-design.md` §14: "forty to sixty
+ * (`docs/history/superpowers/specs/2026-08-18-ward-flow-metro-patient-flow-design.md` §14: "forty to sixty
  * movements") — a real ceiling, not a loose guess, so it is fixed by trimming a row rather than by
  * raising it. WACHS's `pulled` stage was never actually missing: `WF-318` and `WF-325`
  * (`routineMovements`' generated `acceptedUnitId`, exactly the "except by chance" this comment's

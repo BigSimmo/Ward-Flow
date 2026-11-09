@@ -4,6 +4,7 @@
 // return, exactly where this code used to run.
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
+import { isUnderAForm } from "@/components/ward-management/ed/ed-home-derivations";
 import { isEdOriginJourney, isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import { stageCopy, deriveNextWardsAfterRefusal } from "@/components/ward-management/ward-derivations";
 import { type Instant, splitDuration } from "@/components/ward-management/ward-clock";
@@ -255,7 +256,7 @@ export function deriveEdScreen({
   // and the filter above stays as it is. It leaves this list when a journey starts from it, when
   // the person is already on the board, or when no ward is still considering it.
   const siteCode = edById(thisEdId)?.siteCode;
-  // D-14: the board's people are matched by the resolver's UMRN, never by reading the patient link.
+  // Archived D-14: the board's people are matched by the resolver's UMRN, never by reading the patient link.
   const resolveState = { patients: registryPatients, referrals, movements };
   const boardUmrns = new Set(
     patients
@@ -311,10 +312,10 @@ export function deriveEdScreen({
   // closed, so "reviewed", "under a form" and "has a destination" are questions about a bed search
   // that no longer exists. It gets its own chip instead.
   const notReviewedCount = patients.filter((m) => !m.examination && !m.edOutcome && !isEdInitiatedWithdrawal(m)).length;
-  // P3-2 (Ward Lead audit, 2026-09-17): `!!m.legalForm` only. `legalStatus` is a clinical
-  // classification (e.g. "Voluntary"), not a form under section — `!!m.legalStatus` counted every
-  // voluntary patient as "under a form", which none of them are.
-  const underFormCount = patients.filter((m) => !!m.legalForm && !isEdInitiatedWithdrawal(m)).length;
+  // P3-2 (Ward Lead audit, 2026-09-17): `!!m.legalStatus` counted every voluntary patient as
+  // "under a form", which none of them are. `isUnderAForm` is the one rule Home also uses: a recorded
+  // form, or a detained/involuntary status whose form is not yet entered (Josh, 9 Nov 2026).
+  const underFormCount = patients.filter((m) => isUnderAForm(m) && !isEdInitiatedWithdrawal(m)).length;
   // S-19 (audit 13 Oct 2026): one rule with the hero's "No bed yet" (`edHasNoBedYet`).
   const noDestCount = patients.filter(edHasNoBedYet).length;
   // F7 (Opus adversarial review, 2026-09-17): this used to count `closure?.outcome ===
@@ -329,7 +330,7 @@ export function deriveEdScreen({
   // v10 rule 5: the board filters and the search highlight and dim. Every person stays on the board.
   const matchesBoardFilter = (m: Movement) => {
     if (boardFilter === "not_reviewed") return !m.examination && !m.edOutcome && !isEdInitiatedWithdrawal(m);
-    if (boardFilter === "under_form") return !!m.legalForm && !isEdInitiatedWithdrawal(m);
+    if (boardFilter === "under_form") return isUnderAForm(m) && !isEdInitiatedWithdrawal(m);
     if (boardFilter === "no_destination") return edHasNoBedYet(m);
     if (boardFilter === "discharge") return m.edOutcome === "for_discharge";
     if (boardFilter === "withdrawn") return isEdInitiatedWithdrawal(m);
@@ -349,7 +350,7 @@ export function deriveEdScreen({
     past: (m) => isWaitingInEd(m) && now - m.openedAt >= accessTarget,
     severe: (m) => isWaitingInEd(m) && now - m.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES,
     no_bed: edHasNoBedYet,
-    under_form: (m) => !!m.legalForm && !isEdInitiatedWithdrawal(m),
+    under_form: (m) => isUnderAForm(m) && !isEdInitiatedWithdrawal(m),
   };
   const boardMatchCount = patients.filter((m) => matchesBoardFilter(m) && matchesPatientQuery(m)).length;
   const isBoardRowDim = (m: Movement) =>
@@ -371,7 +372,7 @@ export function deriveEdScreen({
 
   const awaitingReviewPatients = patients.filter((m) => !m.examination && !m.edOutcome && !isEdInitiatedWithdrawal(m));
   const clearedPatients = patients.filter((m) => movementMedicalClearance(m, referrals)?.cleared === true);
-  const underFormPatients = patients.filter((m) => !!m.legalForm && !isEdInitiatedWithdrawal(m));
+  const underFormPatients = patients.filter((m) => isUnderAForm(m) && !isEdInitiatedWithdrawal(m));
 
   const priorityFlags: PriorityFlag[] = [];
   // Top 25 item 3: how many eligible wards nobody has asked yet. A count only, never names in

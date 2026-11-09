@@ -2,7 +2,7 @@
 
 <!-- last-checked: 2026-10-24 -->
 
-_Updated 2026-11-02 - linked the design system of record and the design folder; Documentation owns._
+_Updated 2026-11-09 - working rules audit (D-107): claims wording, design links point to DESIGN-SYSTEM.md, moved history paths; Documentation owns._
 
 > **Current Ward Flow work belongs in `BigSimmo/Ward-Flow`.** Start with the repository's
 > [`AGENTS.md`](../AGENTS.md) and [`docs/ward-flow/README.md`](ward-flow/README.md). This index
@@ -59,7 +59,7 @@ in [DOCS-SYSTEM.md](DOCS-SYSTEM.md).
 | **Screens, Routes & Code Map**  | [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md) · [`ward-flow/code-map/README.md`](ward-flow/code-map/README.md) · [`codebase-index.md`](codebase-index.md) · [`site-map.md`](site-map.md) · [`ward-flow/organisation/registry.json`](ward-flow/organisation/registry.json) (`ward-flow/ORGANISATION.md`)                                                           |
 | **Reference Data & Sources**    | [`ward-flow/reference-data/PACK_README.md`](ward-flow/reference-data/PACK_README.md) (`ward-flow/reference-data/README.md`) · [`ward-flow/reference-data/PROVENANCE-AUDIT-2026-09-18.md`](ward-flow/reference-data/PROVENANCE-AUDIT-2026-09-18.md) (`ward-flow/reference-data/SOURCES.md`)                                                                               |
 | **Backend, CI & Hosting**       | [`../backend/ward-flow/README.md`](../backend/ward-flow/README.md) · [`ward-flow/PUBLIC-CI.md`](ward-flow/PUBLIC-CI.md) · [`ward-flow/RAILWAY-OPERATIONS.md`](ward-flow/RAILWAY-OPERATIONS.md) · [`hosting.md`](hosting.md)                                                                                                                                              |
-| **Historical Archives**         | [`ARCHIVE.md`](ARCHIVE.md) (the one archive index: removed and moved files, and how to restore them) · [`history/`](history/README.md) (moved history, skipped by search) · [`ward-flow/RULES.md`](ward-flow/RULES.md)                                                                                                                                                   |
+| **Historical Archives**         | [`history/`](history/README.md) (the one archive index: moved and removed files, and how to restore them; skipped by search) · [`ward-flow/RULES.md`](ward-flow/RULES.md)                                                                                                                                                                                                |
 
 ## Architecture
 
@@ -82,26 +82,25 @@ in [DOCS-SYSTEM.md](DOCS-SYSTEM.md).
 
 ## Process and review
 
-- [`ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md) — picking up work, branches and file sign-out, commits, integration, testing and owner rules
+- [`ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md) — picking up work, branches and claims, commits, integration, testing and owner rules
 - [`ward-flow/PUBLIC-CI.md`](ward-flow/PUBLIC-CI.md) — GitHub Actions workflow (`ward-flow.yml`) jobs, shards, and local equivalents
 - [`testing.md`](testing.md) — local unit commands, run admission, Playwright projects and CI topology
-- [`task-receipts.md`](task-receipts.md) — task lifecycle, canonical checkpoints, and sanitised receipt handoff
+- [`task-receipts.md`](task-receipts.md) — commits and the PR body are the task record; optional receipts
 - [`agents/`](agents/) — topic rules `AGENTS.md` links to: [`git-publication.md`](agents/git-publication.md), [`checks-and-evidence.md`](agents/checks-and-evidence.md), [`task-efficiency.md`](agents/task-efficiency.md), [`building-ui.md`](agents/building-ui.md), [`wiring-and-bundle-budget.md`](agents/wiring-and-bundle-budget.md), [`cloud-ownership.md`](agents/cloud-ownership.md), [`shortcuts.md`](agents/shortcuts.md), [`shared-context-and-memory.md`](agents/shared-context-and-memory.md), [`dead-code-deletion.md`](agents/dead-code-deletion.md), [`test-deletion-guard.md`](agents/test-deletion-guard.md), [`codex-desktop-worktree-setup.md`](agents/codex-desktop-worktree-setup.md), [`codex-dependency-shortcut.md`](agents/codex-dependency-shortcut.md), [`context7.md`](agents/context7.md), [`figma-sync.md`](agents/figma-sync.md)
-- Historical only, not current instructions: [`development-speed-playbook.md`](development-speed-playbook.md) (former PsychSift workflow, fully fenced as history); `process-hardening.md` was removed on 24 October 2026 (see [`ARCHIVE.md`](ARCHIVE.md))
+- Historical only, not current instructions: [`development-speed-playbook.md`](development-speed-playbook.md) (former PsychSift workflow, fully fenced as history); `process-hardening.md` was removed on 24 October 2026 (see the [archive index](history/README.md))
 
 ## Maintenance rules
 
 - Generated files ([`site-map.md`](site-map.md), [`scripts-index.md`](scripts-index.md), and the Ward Flow generated indexes listed in [`DOCS-SYSTEM.md`](DOCS-SYSTEM.md)) are updated only via their generator scripts.
 - When adding a maintained doc, link it from the matching section here and follow the naming, lifecycle and evidence conventions in [DOCS-SYSTEM.md](DOCS-SYSTEM.md).
-- When a maintained doc is superseded, mark it with a top `SUPERSEDED` banner, fence retired script/path sections with paired `docs-script-refs:historical-start` / `docs-script-refs:historical-end` HTML comments, or move dated Ward Flow records to `docs/history/archive/` as documented in [`ward-flow/ARCHIVE-NOTE.md`](history/ARCHIVE-NOTE.md). Run `npm run docs:check-links` and `npm run docs:check-scripts` to verify inbound links and script references.
+- When a maintained doc is superseded, mark it with a top `SUPERSEDED` banner, fence retired script/path sections with paired `docs-script-refs:historical-start` / `docs-script-refs:historical-end` HTML comments, or move dated Ward Flow records to `docs/history/archive/` as documented in [`history/ARCHIVE-NOTE.md`](history/ARCHIVE-NOTE.md). Run `npm run docs:check-links` and `npm run docs:check-scripts` to verify inbound links and script references.
 
 ## Historical collections
 
 | Collection                                              | How to use it                                                                                             |
 | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | [Plan navigation](ward-flow/plans/README.md)            | Dated plans and checkpoints from both existing plan roots; the task record establishes commissioned work  |
-| [Archive and restoration record](ARCHIVE.md)            | Archived handovers, reports and other dated material, with the retained Git revision                      |
-| [History folder](history/README.md)                     | Lessons, the old archive and superseded files, moved on 8 November 2026; search skips it by default       |
+| [History folder](history/README.md)                     | The archive index and restore record, lessons and superseded files; search skips it by default            |
 | [Lessons](history/lessons/README.md)                    | Historical repository copy; its index does not turn a lesson into a current rule                          |
 | [Code map](ward-flow/code-map/README.md)                | Maintained navigation to scoped updates and the historical subsystem census                               |
 | [Legacy decision register](history/ward-flow-ledger.md) | Historical decision/identity evidence; new decisions belong in the [decision log](ward-flow/decisions.md) |
@@ -124,21 +123,15 @@ consumers before applying its advice; keep original incident commands/results as
 
 - [wiring-conventions.md](wiring-conventions.md) — page/button wiring conventions and the dead-button / orphan-route gates
 - [search-chrome-behaviour.md](search-chrome-behaviour.md) — shared search-chrome contract: composer ownership, phone edge-to-edge dock, hide/reveal reserves
-- [mockup-retirement-policy.md](mockup-retirement-policy.md) — when a mockup may be deleted, who decides, what evidence is required, and the three tiers that keep developer-gated prototypes out of cleanup scope
-- [design-system/README.md](design-system/README.md) — front door for the v2 design system (tokens, components, gates)
-- [design-system/SPEC.md](design-system/SPEC.md) — the complete v2 design system: roles, rules, rationale (never values)
-- [design-system/TOKENS.md](design-system/TOKENS.md) — reconciled token inventory: every role, winning name, owner, and what it replaces
-- [design-system/COMPONENTS.md](design-system/COMPONENTS.md) — the eight safety-component specifications plus the maturity matrix
-- [brand/brand-mark.md](brand/brand-mark.md) — the PsychSift mark: arc-by-arc construction, colours, file set, and usage rules
-- [design-system/DECISIONS.md](design-system/DECISIONS.md) — conflicts C1–C5 resolved, clinical Q&A record, assumptions, blocked items
-- [design-system/GATES.md](design-system/GATES.md) — every design-system rule paired with its enforcement status
-- [design-system/FIX-GUIDE.md](design-system/FIX-GUIDE.md) — Hazard 1–2 sweep dispositions (Fixed / Documented / Deferred / Out-of-scope)
+- [history/mockup-retirement-policy.md](history/mockup-retirement-policy.md) — historical mockup retirement policy
+- [history/design-system-psychsift/README.md](history/design-system-psychsift/README.md) — the inherited PsychSift v2 design system (history only). The current Ward Flow design system is [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md)
+- [brand/brand-mark.md](brand/brand-mark.md) — the mark geometry inherited from PsychSift, still drawn by Ward Flow (`src/lib/brand-mark.ts`); a Ward Flow mark of its own is an owner decision
 
 ### Also catalogued (2026-09-02)
 
-Every remaining tracked document in this category (architecture and design, plus the `design-system/` and `decisions/` folders), one line each; the description is the document's own title, with its opening sentence where that adds something.
+Every remaining tracked document in this category (architecture and design, plus the historical PsychSift design system and `decisions/` records), one line each; the description is the document's own title, with its opening sentence where that adds something.
 
-- [decisions/ccz4hb-review-coverage.md](decisions/ccz4hb-review-coverage.md) — Decision: restoring automated review coverage (#CCZ4HB) — the row closed — but see the 2026-09-02 correction below, which removes the premise that decision rested on.
+- [history/decisions/ccz4hb-review-coverage.md](history/decisions/ccz4hb-review-coverage.md) — Decision: restoring automated review coverage (#CCZ4HB) — the row closed — but see the 2026-09-02 correction below, which removes the premise that decision rested on.
 
 ### Historical process & review catalogue
 
@@ -158,7 +151,7 @@ Every remaining tracked document in this category (process, plus the `agents/` r
 
 ## Plans and workstreams (living)
 
-- [superpowers/](superpowers/) — agent-authored plans and specs
+- [ward-flow/plans/](ward-flow/plans/README.md) — active plans only; finished agent plans and specs are in [history/superpowers/](history/superpowers/)
 
 ### Also catalogued (2026-09-02)
 
@@ -171,24 +164,24 @@ Every remaining tracked document in this category (the Ward Flow developer-gated
 
 ## Subdirectory map
 
-| Directory                    | What lives there                                                                                                           |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| [ward-flow/](ward-flow/)     | Dedicated Ward Flow product, design, governance, reference-data, code-map, and archive documentation                       |
-| [agents/](agents/)           | Agent-rule reference files `AGENTS.md` delegates to by name — the full text of rules its always-loaded core only points at |
-| [superpowers/](superpowers/) | October 2026 agent-authored plans, plus the older plans and specs that code or tests still cite                            |
+| Directory                     | What lives there                                                                                                           |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| [ward-flow/](ward-flow/)      | Dedicated Ward Flow product, design, governance, reference-data, code-map, and archive documentation                       |
+| [agents/](agents/)            | Agent-rule reference files `AGENTS.md` delegates to by name — the full text of rules its always-loaded core only points at |
+| [history/](history/README.md) | Moved history: old plans, agent plans and specs, the PsychSift design system and superseded files                          |
 
 ## Point-in-time records (historical — do not update)
 
 Dated status reports, reviews, and operator decisions. They describe the repo
 as it was on that date; supersede with a new dated document rather than editing.
-The dated audits, reports and handovers left the live tree on 18 October 2026; see [`ARCHIVE.md`](ARCHIVE.md).
+The dated audits, reports and handovers left the live tree on 18 October 2026; see the [archive index](history/README.md).
 
 ### Also catalogued (2026-09-02)
 
-Every remaining tracked document in this category (dated records and the `superpowers/` folder — historical; do not update; the `ward-flow-phase-3-workspace/` folder and most of `archive/` were removed in the 15 Oct 2026 docs trim, see [`ward-flow/ARCHIVE-NOTE.md`](history/ARCHIVE-NOTE.md)), one line each; the description is the document's own title, with its opening sentence where that adds something.
+Every remaining tracked document in this category (dated records and the `history/superpowers/` folder — historical; do not update; the `ward-flow-phase-3-workspace/` folder and most of `archive/` were removed in the 15 Oct 2026 docs trim, see [`history/ARCHIVE-NOTE.md`](history/ARCHIVE-NOTE.md)), one line each; the description is the document's own title, with its opening sentence where that adds something.
 
-- [superpowers/specs/2026-08-18-ward-flow-metro-patient-flow-design.md](superpowers/specs/2026-08-18-ward-flow-metro-patient-flow-design.md) — Ward Flow — metro psychiatry patient flow, design — Status: Approved design, awaiting implementation plan.
-- [superpowers/specs/2026-08-25-ward-flow-phase-4-specialist-boards-design.md](superpowers/specs/2026-08-25-ward-flow-phase-4-specialist-boards-design.md) — Ward Flow Phase 4 — specialist boards, design — Date: 2026-08-25. Product owner:
+- [history/superpowers/specs/2026-08-18-ward-flow-metro-patient-flow-design.md](history/superpowers/specs/2026-08-18-ward-flow-metro-patient-flow-design.md) — Ward Flow — metro psychiatry patient flow, design — Status: Approved design, awaiting implementation plan.
+- [history/superpowers/specs/2026-08-25-ward-flow-phase-4-specialist-boards-design.md](history/superpowers/specs/2026-08-25-ward-flow-phase-4-specialist-boards-design.md) — Ward Flow Phase 4 — specialist boards, design — Date: 2026-08-25. Product owner:
 
 <!-- docs-script-refs:historical-end -->
 

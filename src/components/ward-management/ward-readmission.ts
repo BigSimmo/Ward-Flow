@@ -9,7 +9,7 @@ import type { Patient } from "./ward-patients";
  * 28 day readmission flag: a referral or admission for a person who was discharged from a ward in
  * the 28 days before it. A prompt to look, not a clinical judgement or a performance measure.
  *
- * Identity goes through the D-14-authorised resolver (`ward-patient-resolver.ts`) only, so an
+ * Identity goes through the archived D-14-authorised resolver (`ward-patient-resolver.ts`) only, so an
  * unlinked or ambiguous record never matches anybody. The flag names one prior discharge, the
  * most recent: its date and ward. Never a list or a count of episodes.
  */

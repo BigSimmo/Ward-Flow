@@ -49,6 +49,8 @@ const MODEL_FILES = [
   "src/components/ward-management/discharges/discharge-dependencies.ts",
   "src/components/ward-management/ward-discharge-date-trail.ts",
   "src/components/ward-management/ward-discharge-checklist.ts",
+  // Staff needed (feature 10, 9 Nov 2026): a request's shift start, asked, updated and closed times.
+  "src/components/ward-management/staffing/staff-requests.ts",
 ];
 
 /**

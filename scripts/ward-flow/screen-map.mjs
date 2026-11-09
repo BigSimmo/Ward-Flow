@@ -120,6 +120,8 @@ const lines = [
   "> 🔴 **GENERATED. DO NOT EDIT BY HAND.** `node scripts/ward-flow/screen-map.mjs`; `--check` fails",
   "> on a stale map or an unmapped item.",
   "",
+  "See also [`site-map.md`](../site-map.md), the full list of app routes.",
+  "",
   `**${mockups.length} mockups · ${routes.length} routes · ${screenDirs.length} screen folders.**`,
   "",
   "⚠️ The PAIRING is hand-authored — no rule derives that `command-third-edition.html` is route `/`.",

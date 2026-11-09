@@ -13,7 +13,124 @@ ruling here. Do not start new `owner-*.md` files; the existing ones stay as date
 decision in one or two sentences, and why. Never rewrite an old entry. If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
 
-_Updated 2026-11-03 - added D-95 (one page scroll on desktop; outside clicks close hand-built drawers; replaces the 9 October set-height Handover table); 2026-11-02 - D-80 later-change note: the site bed manager no longer marks bed meeting actions done (PR #1214, Q97); 2026-10-30 - added D-89 (redesign mock-up copies of large screens may pass the 1,500-line cap through the line-cap list); 2026-10-27 - added D-87 (D-36 and D-37 replaced by the real-data gate; they overstated governance readiness) and D-86 (no second approver for role grants; overrides D-80 item 17); 2026-10-26 - added D-84 (the live app stays on Railway Singapore for now; no server-side TV account yet; both revisited before real data), D-83 (patient names shown in full on every screen and TV; privacy work must not make the app less useful; the locking read-only TV login still goes ahead) and D-82 (phone size limits may rise up to 5 KB per screen per PR without asking); 2026-10-25 - subsequent notes on names that no longer exist in D-20, D-26, D-45, D-51 and the D-72 plan path; 2026-10-24 added D-81 (Pulled and Pull time limit for incoming beds); 2026-10-23 added D-72 to D-80 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes, one decline list, the ward referral detail view and the role access plan); Documentation owns. Historical decision text and dates preserved._
+_Updated 2026-11-09 - added D-99 to D-107, the status table and later-status notes on replaced entries; Documentation owns. Earlier changes are in Git history._
+
+---
+
+## Status of every entry
+
+Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry still applies; the entry itself says which part. "Source unverified" means Josh's own words were not found; the entry stays until he keeps or strikes it.
+
+| ID                                                                                                                                                      | Short title                                                                          | Status                                           |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| [D-1](#d-1-ward-flow-is-local-only-with-no-linked-repository-replaced-by-d-27)                                                                          | Ward Flow is local only, with no linked repository                                   | Replaced by D-27                                 |
+| [D-2](#d-2-railway-is-disconnected)                                                                                                                     | Railway is disconnected                                                              | Partly replaced (hosting record, 27 Sep 2026)    |
+| [D-3](#d-3-the-psychsift-and-database-code-is-being-retired-from-ward-flow)                                                                             | The PsychSift and Database code is being retired from Ward Flow                      | Active                                           |
+| [D-4](#d-4-synthetic-patients-only)                                                                                                                     | Synthetic patients only                                                              | Active                                           |
+| [D-5](#d-5-parallel-threads-in-separate-worktrees-folded-one-at-a-time)                                                                                 | Parallel threads in separate worktrees, folded one at a time                         | Partly replaced by D-26                          |
+| [D-6](#d-6-aboriginal-cultural-safety-review-deferred)                                                                                                  | Aboriginal cultural safety review deferred                                           | Active                                           |
+| [D-7](#d-7-the-first-four-milestones-in-this-order)                                                                                                     | The first four milestones, in this order                                             | Active                                           |
+| [D-8](#d-8-joshs-standing-rulings-numbered-r1-to-r16-for-every-session-and-tool)                                                                        | Standing rulings R1 to R16                                                           | Partly replaced by D-27, D-28, D-107             |
+| [D-9](#d-9-joshs-rulings-of-25-september-1143-to-1200-r17-to-r21)                                                                                       | Rulings R17 to R21                                                                   | Active                                           |
+| [D-10](#d-10-gate-build-type-check-r22)                                                                                                                 | Gate build type check (R22)                                                          | Active                                           |
+| [D-11](#d-11-rulings-of-25-september-1241-r23-to-r25)                                                                                                   | Rulings R23 to R25                                                                   | Partly replaced by D-26                          |
+| [D-12](#d-12-rulings-of-25-september-1243-r26-to-r31)                                                                                                   | Rulings R26 to R31                                                                   | Partly replaced by D-26                          |
+| [D-13](#d-13-tooling-tests-in-batch-gates-r32)                                                                                                          | Tooling tests in batch gates (R32)                                                   | Active                                           |
+| [D-14](#d-14-standing-defaults-decide-small-things-without-asking)                                                                                      | Standing defaults: decide small things without asking                                | Partly replaced by D-28                          |
+| [D-15](#d-15-rulings-of-25-september-1326-r33-to-r35)                                                                                                   | Rulings R33 to R35                                                                   | Active                                           |
+| [D-16](#d-16-legal-overrides-and-form-receipts-25-september-1351-utc)                                                                                   | Legal overrides and form receipts, 25 September 13:51 UTC                            | Active                                           |
+| [D-17](#d-17-morning-roll-up-time-is-joshs-own-default-25-september)                                                                                    | Morning roll-up time is Josh's own default                                           | Active                                           |
+| [D-18](#d-18-the-privacy-lock-stops-saving-only-for-typed-text-25-september)                                                                            | The privacy lock stops saving only for typed text                                    | Active                                           |
+| [D-19](#d-19-rulings-of-25-september-evening-walkthrough-leave-beds-psychsift-gender-display)                                                           | Rulings of 25 September evening                                                      | Active                                           |
+| [D-20](#d-20-one-high-contrast-colour-check-retired-26-september)                                                                                       | One high-contrast colour check retired                                               | Active                                           |
+| [D-21](#d-21-coordinator-bed-board-all-nine-recommended-answers-26-september)                                                                           | Coordinator bed board answers                                                        | Active                                           |
+| [D-22](#d-22-no-legal-limits-in-hour-rules-the-rest-are-labelled-defaults-26-september)                                                                 | No legal limits in hour rules; the rest are labelled defaults                        | Active                                           |
+| [D-23](#d-23-leave-bed-fields-kept-patient-search-stops-matching-by-ward-26-september)                                                                  | Leave-bed fields kept; patient search stops matching by ward                         | Active                                           |
+| [D-24](#d-24-hour-rules-morning-list-all-a-26-september)                                                                                                | Hour-rules morning list: all A                                                       | Active                                           |
+| [D-25](#d-25-the-lone-patient-check-counts-free-beds-on-both-matching-paths-26-september)                                                               | The lone-patient check counts free beds on both matching paths                       | Active                                           |
+| [D-26](#d-26-select-fold-checks-by-changed-risk-27-september)                                                                                           | Select fold checks by changed risk                                                   | Active                                           |
+| [D-27](#d-27-ward-flow-uses-its-dedicated-repository-28-september)                                                                                      | Ward Flow uses its dedicated repository                                              | Active                                           |
+| [D-28](#d-28-design-modernization--anti-box-architecture-30-september-2026)                                                                             | Design modernisation and anti-box rules                                              | Partly replaced by D-42, D-94; Source unverified |
+| [D-29](#d-29-act-time-limits-shown-as-a-labelled-synthetic-demo-4-october-2026)                                                                         | Act time limits shown as a labelled synthetic demo                                   | Replaced by D-70                                 |
+| [D-30](#d-30-central-coordinator-approval-for-inter-ward-bed-transfers-6-october-2026)                                                                  | Coordinator approves inter-ward transfers                                            | Source unverified                                |
+| [D-31](#d-31-gender-diverse-bed-placement-policy--clinical-override-safety-6-october-2026)                                                              | Gender-diverse bed placement needs clinician review                                  | Source unverified                                |
+| [D-32](#d-32-fifo-waiting-time-with-clinical-triage-badging-vs-algorithmic-urgency-sorting-6-october-2026)                                              | Wait order with triage badges                                                        | Source unverified                                |
+| [D-33](#d-33-separation-of-local-ward-shift-notes-from-statewide-coordinator-telemetry-6-october-2026)                                                  | Ward shift notes stay local                                                          | Source unverified                                |
+| [D-34](#d-34-acute-medical-deterioration-bed-release-and-escalation-protocol-6-october-2026)                                                            | Medical deterioration releases the bed                                               | Source unverified                                |
+| [D-35](#d-35-deferral-of-regional-multi-leg-transport--rfds-repatriation-6-october-2026)                                                                | Regional multi-leg transport deferred                                                | Source unverified                                |
+| [D-36](#d-36-affirmation-of-external-governance--clinical-safety-hard-gates-6-october-2026-replaced-by-d-87)                                            | External governance hard gates                                                       | Replaced by D-87                                 |
+| [D-37](#d-37-external-governance-hard-gate-operational-postures--resolution-roadmap-6-october-2026-replaced-by-d-87)                                    | Governance gate postures                                                             | Replaced by D-87                                 |
+| [D-38](#d-38-leave-absent-without-leave-and-cto-on-the-patient-page-9-october-2026)                                                                     | Leave, absent without leave and CTO on the Patient page                              | Active                                           |
+| [D-39](#d-39-patients-are-identified-by-umrn-never-by-a-wf-number-9-october-2026)                                                                       | Patients are identified by UMRN, never by a WF number                                | Active                                           |
+| [D-40](#d-40-a-second-community-treatment-order-keeps-the-first-9-october-2026)                                                                         | A second community treatment order keeps the first                                   | Active                                           |
+| [D-41](#d-41-delays-board-filters-narrow-the-table-and-state-the-hidden-count-9-october-2026)                                                           | Delays board filters narrow the table and state the hidden count                     | Active                                           |
+| [D-42](#d-42-12px-typography-floor-with-no-uppercase-exception-reaffirmed-in-design-system-v9-910-october-2026)                                         | 12px type floor, no uppercase exception                                              | Active                                           |
+| [D-43](#d-43-colour-lives-in-glyphs-and-the-hero-red-means-act-now-with-a-thin-1px-edge-never-a-fill-9-october-2026)                                    | Colour in glyphs; thin act-now edge                                                  | Partly replaced by D-94                          |
+| [D-44](#d-44-compact-sizing-white-cards-and-smaller-text-retained-over-expression-test-card-tints-9-october-2026)                                       | Compact sizing and white cards                                                       | Active                                           |
+| [D-45](#d-45-phone-is-its-own-390844-design-never-a-desktop-reflow-9-october-2026)                                                                      | Phone is its own 390×844 design, never a desktop reflow                              | Active                                           |
+| [D-46](#d-46-every-page-has-a-focal-part-a-part-of-its-own-a-page-specific-hero-and-command-bar-action-rules-9-october-2026)                            | Every page has a focal part                                                          | Active                                           |
+| [D-47](#d-47-glass-stays-about-80-opaque-with-the-top-sheen-kept-10-october-2026)                                                                       | Glass stays about 80% opaque with the top sheen kept                                 | Active                                           |
+| [D-48](#d-48-figures-stay-in-geist-mono-with-tabular-digits-while-chart-axes-use-geist-sans-10-october-2026)                                            | Figures in Geist Mono                                                                | Active                                           |
+| [D-49](#d-49-ward-flow-44px-default-row-target-dense-36px-touch-52px-vs-retired-48px-psychsift-tap-knob-10-october-2026)                                | 44px default row target                                                              | Active                                           |
+| [D-50](#d-50-neutral-t1-urgency-pill-vs-form-1a-amber-statutory-warning-badge-10-october-2026)                                                          | Neutral T1 pill, amber Form 1A badge                                                 | Active                                           |
+| [D-51](#d-51-delays-filters-hide-rows-with-a-stated-hidden-count-while-other-queues-highlight-by-default-10-october-2026)                               | Delays filters state the hidden count                                                | Active                                           |
+| [D-52](#d-52-10-october-page-review-rulings-time-axis-overdue-zone-15px20px-strip-figures-8px-people-pips-and-incremental-shared-parts-10-october-2026) | 10 October page review rulings                                                       | Active                                           |
+| [D-53](#d-53-elevate-design-language-and-glare-mode-adopted-for-design-system-v9-10-october-2026)                                                       | Elevate design language and Glare mode                                               | Active                                           |
+| [D-54](#d-54-tier-time-thresholds-remain-synthetic-demo-values-requiring-clinical-sign-off-10-october-2026)                                             | Tier time thresholds remain synthetic demo values requiring clinical sign-off        | Active                                           |
+| [D-55](#d-55-supabase-is-ward-flows-database-and-sign-in-provider-and-azure-is-retired-15-october-2026)                                                 | Supabase is Ward Flow's database and sign-in provider, and Azure is retired          | Active                                           |
+| [D-56](#d-56-josh-signs-the-clinical-values-that-have-a-recorded-source-for-the-prototype-15-october-2026)                                              | Josh signs the clinical values that have a recorded source, for the prototype        | Active                                           |
+| [D-57](#d-57-twenty-top-25-items-move-from-the-showcase-into-the-real-screens-each-behind-its-own-flag-15-october-2026)                                 | Twenty Top 25 items into real screens                                                | Active                                           |
+| [D-58](#d-58-josh-signs-three-more-clinical-values-that-have-a-national-source-for-the-prototype-15-october-2026)                                       | Josh signs three more clinical values that have a national source, for the prototype | Active                                           |
+| [D-59](#d-59-each-role-sees-only-what-it-needs-from-one-access-table-15-october-2026)                                                                   | Each role sees only what it needs, from one access table                             | Active                                           |
+| [D-60](#d-60-criteria-led-discharge-for-voluntary-patients-only-15-october-2026)                                                                        | Criteria led discharge, for voluntary patients only                                  | Active                                           |
+| [D-61](#d-61-tasks-and-alerts-are-one-queue-called-alerts-16-october-2026)                                                                              | Tasks and Alerts are one queue called Alerts                                         | Active                                           |
+| [D-62](#d-62-the-one-alerts-queue-is-signed-off-and-its-flag-removed-16-october-2026)                                                                   | The one Alerts queue is signed off and its flag removed                              | Active                                           |
+| [D-63](#d-63-josh-signs-the-remaining-clinical-values-and-the-criteria-list-for-the-prototype-16-october-2026)                                          | Josh signs the remaining clinical values and the criteria list, for the prototype    | Active                                           |
+| [D-64](#d-64-criteria-led-discharge-shows-on-the-boards-and-warns-at-departure-16-october-2026)                                                         | Criteria led discharge shows on the boards and warns at departure                    | Active                                           |
+| [D-65](#d-65-criteria-led-discharge-on-in-production-typed-patient-specific-criteria-and-the-awol-bed-hold-review-paused-17-october-2026)               | Criteria led discharge in production                                                 | Active                                           |
+| [D-66](#d-66-granted-roles-work-without-a-second-approval-17-october-2026)                                                                              | Granted roles work without a second approval                                         | Active                                           |
+| [D-67](#d-67-recover-synthetic-form-drafts-within-the-browser-session-17-october-2026)                                                                  | Recover synthetic form drafts within the browser session                             | Active                                           |
+| [D-68](#d-68-bed-meeting-tv-content-and-access-19-october-2026)                                                                                         | Bed meeting TV content and access                                                    | Partly replaced by D-79, D-83                    |
+| [D-69](#d-69-a-referral-with-no-legal-status-needs-an-involuntary-capable-bed-until-status-is-set-20-october-2026)                                      | No legal status needs an involuntary-capable bed                                     | Active                                           |
+| [D-70](#d-70-no-computed-mental-health-act-periods-show-only-the-recorded-due-time-20-october-2026)                                                     | No computed Mental Health Act periods: show only the recorded due time               | Active                                           |
+| [D-71](#d-71-audit-1-clinical-safety-fixes-no-suggested-wards-wait-order-queues-recorded-facts-only-20-october-2026)                                    | Audit 1 clinical safety fixes                                                        | Partly replaced by D-93                          |
+| [D-72](#d-72-seven-product-decisions-for-the-21-october-fix-plan-21-october-2026)                                                                       | Seven product decisions for the 21 October fix plan                                  | Partly replaced by D-74                          |
+| [D-73](#d-73-batch-merge-safeguards-21-october-2026)                                                                                                    | Batch merge safeguards                                                               | Partly replaced by D-107                         |
+| [D-74](#d-74-owner-answers-to-the-21-october-open-questions-21-october-2026)                                                                            | Owner answers to the 21 October open questions                                       | Active                                           |
+| [D-75](#d-75-ux-audit-follow-up-page-caching-community-gaps-and-the-extra-travel-bed-hold-21-october-2026)                                              | UX audit follow-up, page caching, community gaps and the extra-travel bed hold       | Active                                           |
+| [D-76](#d-76-community-referral-gaps-the-full-move-journey-and-asking-more-wards-21-october-2026)                                                       | Community referral gaps: the full move journey and asking more wards                 | Active                                           |
+| [D-77](#d-77-the-ten-bigger-ux-changes-approved-for-build-22-october-2026)                                                                              | The ten bigger UX changes approved for build                                         | Partly replaced by D-98                          |
+| [D-78](#d-78-one-decline-list-for-wards-and-coordinators-22-october-2026)                                                                               | One decline list for wards and coordinators                                          | Active                                           |
+| [D-79](#d-79-wards-see-the-full-referral-with-name-and-umrn-before-they-answer-23-october-2026)                                                         | Wards see the full referral before answering                                         | Active                                           |
+| [D-80](#d-80-role-access-plan-version-2-all-17-recommendations-23-october-2026)                                                                         | Role access plan version 2: all 17 recommendations                                   | Partly replaced by D-86                          |
+| [D-81](#d-81-pulled-with-a-pull-time-limit-for-a-bed-kept-for-an-incoming-patient-24-october-2026)                                                      | Pulled, with a pull time limit, for a bed kept for an incoming patient               | Active                                           |
+| [D-82](#d-82-a-pr-may-raise-a-phone-size-limit-by-up-to-5-kb-per-screen-without-asking-26-october-2026)                                                 | A PR may raise a phone size limit by up to 5 KB per screen without asking            | Active                                           |
+| [D-83](#d-83-patient-names-stay-in-full-on-every-screen-copy-and-tv-privacy-work-must-not-make-the-app-less-useful-26-october-2026)                     | Patient names in full                                                                | Partly replaced by D-102                         |
+| [D-84](#d-84-the-live-app-stays-on-railway-singapore-for-now-and-there-is-no-server-side-tv-account-yet-26-october-2026)                                | Live app stays on Railway Singapore                                                  | Active                                           |
+| [D-85](#d-85-held-only-for-a-bed-kept-for-its-own-patient-pulled-for-an-incoming-bed-held-up-for-a-delay-26-october-2026)                               | Held, pulled and held up                                                             | Active                                           |
+| [D-86](#d-86-no-second-approver-for-role-grants-at-pilot-or-otherwise-27-october-2026)                                                                  | No second approver for role grants, at pilot or otherwise                            | Active                                           |
+| [D-87](#d-87-d-36-and-d-37-are-replaced-by-the-real-data-gate-27-october-2026)                                                                          | D-36 and D-37 replaced by the real-data gate                                         | Active                                           |
+| [D-88](#d-88-the-public-demo-opens-with-a-demo-code-once-the-front-door-is-on-27-october-2026)                                                          | The public demo opens with a demo code once the front door is on                     | Active                                           |
+| [D-89](#d-89-redesign-mock-up-copies-of-large-screens-may-pass-the-1500-line-cap-30-october-2026)                                                       | Mock-up copies may pass the line cap                                                 | Active                                           |
+| [D-90](#d-90-help-gets-how-do-i-show-me-runs-everywhere-and-help-is-built-without-a-separate-mock-up-step-30-october-2026)                              | Help: How do I and Show me                                                           | Partly replaced by D-91                          |
+| [D-91](#d-91-one-design-home-for-the-redesign-and-joshs-answers-on-help-settings-search-and-notifications-31-october-2026)                              | One design home; Help, Settings, search, notices                                     | Partly replaced by D-107                         |
+| [D-92](#d-92-help-goes-live-before-its-mock-up-review-one-search-box-on-capacity-and-referral-rows-on-home-open-the-panel-31-october-2026)              | Help live before mock-up review                                                      | Active                                           |
+| [D-93](#d-93-legal-form-times-show-only-as-typed-never-as-a-countdown-31-october-2026)                                                                  | Legal form times show only as typed, never as a countdown                            | Active                                           |
+| [D-94](#d-94-design-rulings-of-31-october-2026)                                                                                                         | Design rulings of 31 October 2026                                                    | Active                                           |
+| [D-95](#d-95-one-page-scroll-and-a-click-outside-closes-a-drawer-3-november-2026)                                                                       | One page scroll; outside click closes                                                | Active                                           |
+| [D-96](#d-96-a-named-bed-is-pulled-and-its-patient-is-not-also-waiting-8-november-2026)                                                                 | A named bed is pulled, not also waiting                                              | Active                                           |
+| [D-97](#d-97-owner-answers-on-seven-open-items-n21-n25-n26-n29-n40-n41-and-wf-b008-8-november-2026)                                                     | Seven open items answered                                                            | Active                                           |
+| [D-98](#d-98-friction-pass-quick-bar-patient-peek-and-ward-peek-8-november-2026)                                                                        | Quick bar, Patient peek, Ward peek                                                   | Active                                           |
+| [D-99](#d-99-real-details-in-the-referral-drawers-sample-patients-25-september-2026)                                                                    | "Real details" in the referral drawer's sample patients                              | Active                                           |
+| [D-100](#d-100-under-a-form-means-one-rule-everywhere-9-november-2026)                                                                                  | "Under a form" means one rule everywhere                                             | Active (PR #1553 open)                           |
+| [D-101](#d-101-clinically-ready-for-discharge-with-one-delay-reason-9-november-2026)                                                                    | Clinically ready for discharge, with one delay reason                                | Active                                           |
+| [D-102](#d-102-report-a-problem-screenshots-are-blurred-and-patient-table-exports-carry-no-names-9-november-2026)                                       | Blurred screenshots; exports carry no names                                          | Active                                           |
+| [D-103](#d-103-any-coordinator-on-shift-may-mark-a-bed-override-reviewed-9-november-2026)                                                               | Any coordinator on shift may mark a bed override reviewed                            | Active                                           |
+| [D-104](#d-104-care-plans-and-safety-flags-five-defaults-9-november-2026)                                                                               | Care plans and safety flags                                                          | Active                                           |
+| [D-105](#d-105-optional-clerk-details-on-the-patient-record-8-november-2026)                                                                            | Optional clerk details on the patient record                                         | Active                                           |
+| [D-106](#d-106-clinical-values-from-the-9-november-2026-documentation-audit-9-november-2026)                                                            | Clinical values from the 9 Nov audit                                                 | Active                                           |
+| [D-107](#d-107-working-rules-and-documentation-from-the-9-november-2026-audit-9-november-2026)                                                          | Working rules from the 9 Nov audit                                                   | Active                                           |
+| [D-109](#d-109-homes-bed-alert-line-tests-the-whole-number-shown-9-november-2026)                                                                       | Home bed alert line tests the shown whole %                                          | Active                                           |
 
 ---
 
@@ -87,6 +204,7 @@ _Updated 2026-11-03 - added D-95 (one page scroll on desktop; outside clicks clo
 
 ## D-8. Josh's standing rulings, numbered R1 to R16, for every session and tool
 
+- **Later status (9 November 2026):** partly replaced. R1 by D-27; R4 by D-28 item 6. New rulings are numbered D entries in this log, not R17 onward (D-107).
 - **Date:** 25 September 2026. **Decided by:** Josh (collected by the coordinator).
 - **Decision:** Every session and tool reads this list before starting. New rulings are added here as
   R17 onward by the thread the coordinator routes them to, with the date and time.
@@ -141,6 +259,7 @@ _Updated 2026-11-03 - added D-95 (one page scroll on desktop; outside clicks clo
 
 ## D-11. Rulings of 25 September, 12:41 (R23 to R25)
 
+- **Later status (9 November 2026):** partly replaced. R24 and R25 by D-26.
 - **Date:** 25 September 2026, 12:41 UTC. **Decided by:** Josh ("yes to all").
 - **Decision:**
   - **R23** Look-identical checks use about 8 representative screens, one per layout type, not
@@ -156,6 +275,7 @@ _Updated 2026-11-03 - added D-95 (one page scroll on desktop; outside clicks clo
 
 ## D-12. Rulings of 25 September, 12:43 (R26 to R31)
 
+- **Later status (9 November 2026):** partly replaced. R28 and R31 by D-26. R29 (stacked work) no longer applies: AGENTS.md says never stack PRs.
 - **Date:** 25 September 2026, 12:43 UTC. **Decided by:** Josh ("yes 1-4", "also yes to 6-7").
 - **Decision:**
   - **R26** Build memory: gate builds keep and reuse Next's working cache between runs, never the
@@ -184,6 +304,7 @@ _Updated 2026-11-03 - added D-95 (one page scroll on desktop; outside clicks clo
 
 ## D-14. Standing defaults: decide small things without asking
 
+- **Later status (9 November 2026):** the "keep the design exactly (R4)" default was amended by D-28 item 6.
 - **Date:** 25 September 2026. **Decided by:** Josh (approved the coordinator's speed audit).
 - **Decision:** Where one of these covers a small choice, apply it and move on; ask only if none fits.
   - A blank or missing value shows "Not recorded", never a guess.
@@ -391,6 +512,7 @@ is inferred.
 
 ## D-28. Design Modernization & Anti-Box Architecture (30 September 2026)
 
+- **Later status (9 November 2026):** partly replaced. Item 4 by D-42; item 5's 2px left hairlines by D-94 item 2. Source unverified: the approval quoted above has no thread, time or message recorded; awaiting his keep/strike pass (9 Nov 2026 audit).
 - **Date:** 30 September 2026. **Decided by:** Josh ("I approve these 7 recommendations").
 - **Decision:** The 7 rigid design rules that caused repetitive boxy styling, clumsy accordion layout shifts, and artificial UI bloat are modernized:
   1. **Floating Dynamic Island HUD (0 Clicks, 0 Layout Shift):** The Standing Figures rule is modernized. Alarms remain 0-clicks away in a persistent header HUD that dynamically expands and pulses on active alerts, replacing the bulky accordion dropdown panel that shoved page content down.
@@ -419,36 +541,42 @@ is inferred.
 
 ## D-30. Central Coordinator Approval for Inter-Ward Bed Transfers (6 October 2026)
 
+- **Source unverified:** no words of Josh's recorded; awaiting his keep/strike pass (9 Nov 2026 audit).
 - **Date:** 6 October 2026. **Decided by:** Josh (product owner & psychiatrist).
 - **Decision:** Inter-ward patient transfers between hospitals/facilities must receive central bed coordinator approval and visibility; direct uncoordinated ward-to-ward transfers are not permitted in the matching engine. Direct community clinic referrals (e.g. Alma Street, Stirling Clinic) are deferred to Phase 2 (resolving DECISION-03).
 - **Why:** Uncoordinated transfers between hospital wards bypass the statewide acute bed allocation queue, creating blind spots for ED patients awaiting urgent admission. Central coordinator oversight ensures equitable allocation based on statewide clinical acuity.
 
 ## D-31. Gender-Diverse Bed Placement Policy & Clinical Override Safety (6 October 2026)
 
+- **Source unverified:** no words of Josh's recorded; awaiting his keep/strike pass (9 Nov 2026 audit).
 - **Date:** 6 October 2026. **Decided by:** Josh.
 - **Decision:** Automatic algorithmic room placement for gender-diverse or non-binary patients is deferred. The bed-matching engine retains gender eligibility rules in `ward-eligibility.ts` (Female, Male, Non-binary, Different term, Not recorded) and alerts the coordinator when a patient's gender identity requires individual room accommodation (e.g. single room with ensuite vs shared bay). Placement requires explicit clinician review, multi-disciplinary agreement, and documented clinical rationale (resolving DECISION-05).
 - **Why:** Algorithmic assignment of shared multi-bed bays carries clinical, cultural, and psychological safety risks. Human clinical judgment must govern individual bed assignments while honoring patient identity and ward physical layout.
 
 ## D-32. FIFO Waiting Time with Clinical Triage Badging vs Algorithmic Urgency Sorting (6 October 2026)
 
+- **Source unverified:** no words of Josh's recorded; awaiting his keep/strike pass (9 Nov 2026 audit).
 - **Date:** 6 October 2026. **Decided by:** Josh.
 - **Decision:** The emergency referral queue defaults to sorting by waiting time (FIFO) with prominent, standardized ATS Triage Category badges (1–5) and clinical urgency flags displayed on each row. Pure automated algorithmic re-ordering by urgency or predictive wait times is deferred (resolving DECISION-07).
 - **Why:** Pure algorithmic re-sorting creates clinical bias, gaming, and "black box" queue jumping that obscures how long lower-acuity patients have been waiting in emergency departments. Clinicians and bed managers require transparent, chronological visibility with clear acuity visual aids to make defensible allocation decisions.
 
 ## D-33. Separation of Local Ward Shift Notes from Statewide Coordinator Telemetry (6 October 2026)
 
+- **Source unverified:** no words of Josh's recorded; awaiting his keep/strike pass (9 Nov 2026 audit).
 - **Date:** 6 October 2026. **Decided by:** Josh.
 - **Decision:** Local nursing and medical shift notes recorded on the Handover screen remain strictly local to that ward's operational view. Only standardized operational telemetry—patient transfer status, departure/arrival timestamps, clinical alert flags (e.g., falls risk, 1:1 nursing requirement), and statutory MHA form statuses—are published to the central statewide coordinator (resolving DECISION-06).
 - **Why:** Granular nursing observations and shift handovers contain sensitive, point-in-time clinical observations intended for direct bedside care. Publishing raw nursing notes statewide creates privacy exposure and information overload for central coordinators, who need concise operational facts.
 
 ## D-34. Acute Medical Deterioration Bed Release and Escalation Protocol (6 October 2026)
 
+- **Source unverified:** no words of Josh's recorded; awaiting his keep/strike pass (9 Nov 2026 audit).
 - **Date:** 6 October 2026. **Decided by:** Josh.
 - **Decision:** When an emergency department patient accepted for psychiatric admission acutely deteriorates medically prior to transport, the bed allocation must be formally cancelled. The reserved inpatient bed is immediately released back to the statewide pool, tagged with the audit record "Medical Deterioration - ED Resuscitation Required", and the psychiatric referral is paused until medical stabilization and clinical re-clearance.
 - **Why:** An acute medical emergency (e.g. overdose complications, sepsis, respiratory distress) takes absolute precedence over psychiatric transfer. Holding an inpatient psychiatric bed while a patient undergoes medical resuscitation blocks another waiting psychiatric patient from accessing care.
 
 ## D-35. Deferral of Regional Multi-Leg Transport & RFDS Repatriation (6 October 2026)
 
+- **Source unverified:** no words of Josh's recorded; awaiting his keep/strike pass (9 Nov 2026 audit).
 - **Date:** 6 October 2026. **Decided by:** Josh.
 - **Decision:** Regional multi-leg patient journeys (e.g., Kimberley, Pilbara, or Goldfields transport involving Royal Flying Doctor Service flights and secondary road ambulances) are formally deferred to the post-pilot regional expansion phase. The current prototype models metropolitan road transport via St John WA Patient Transfer.
 - **Why:** Regional aeromedical transfers involve complex flight logistics, weather delays, and multi-agency coordination that would add excessive complexity to the core metropolitan prototype demonstration.
@@ -589,6 +717,7 @@ is inferred.
 
 ## D-43. Colour lives in glyphs and the hero; red means act now with a thin 1px edge, never a fill (9 October 2026)
 
+- **Later status (9 November 2026):** partly replaced by D-94 item 2. The thin act-now edge is gone; tone goes in the status glyph or a small tinted tag.
 - **Date:** 9 October 2026 (`2026-10-09`). **Decided by:** Josh (`design/v9/design-system-v9.md` §1, §3 & §14).
 - **Decision:** Semantic tone lives in status glyphs, the hero band, and a thin `1px` edge (`--wf-act-edge` via `.edge-act`) on act-now items. Red (`--wf-danger`) means "act now" and nothing else. Cards, rows and tiles take no tinted fill (except a free or fit bed, which keeps its soft fit tint), and standalone status words use their `-ink` token partner.
 - **Why:** Full-card tinted washes and competing red badges diluted urgency cues and made normal operational rows look like clinical alarms.
@@ -784,6 +913,7 @@ is inferred.
 
 ## D-68. Bed meeting TV content and access (19 October 2026)
 
+- **Later status (9 November 2026):** partly replaced. Item 1 by D-83 (full names on every TV); item 3 by D-79 (name and UMRN before the ward answers).
 - **Date:** 19 October 2026 (`2026-10-19`). **Decided by:** Josh in the project chat, answering the design audit questions: "yes to all recommendations".
 - **Decision:** (1) For synthetic demonstrations the bed meeting TV may keep showing initials, sex and day of stay. (2) Ward desks may open the bed meeting TV view, because they attend the meeting; ED desks may not. (3) The audit also recommended showing the referral number on the ward's accept card. That is not built: it conflicts with D-39 (no record numbers printed on screens, Josh, 15 October 2026), which the recommendation missed. The card stays as it is, with no name, UMRN or record number until the ward accepts (D-14, FD-23), until Josh decides between the two. **Replaced by D-79** for the name and UMRN: the ward sees both before it answers. No record number shows, as before.
 - **Boundary:** Before any real patient data, the TV content needs a privacy review: a wall screen in a shared room shows initials, sex and day of stay to anyone who walks past. This decision does not authorise real data.
@@ -817,6 +947,7 @@ is inferred.
 
 ## D-72. Seven product decisions for the 21 October fix plan (21 October 2026)
 
+- **Later status (9 November 2026):** partly replaced. Items 3 (live updates) and 4 (six core screens) by D-74.
 - **Date:** 21 October 2026 (`2026-10-21`). **Decided by:** Josh, in the "App backlog and recommendations" project thread at 6:59 PM AWST: "Yes to all", to the session's seven recommendations on the fix plan for the 14 big product issues.
 - **Decision:**
   1. **Work lost on refresh.** After a typed-text event the browser keeps saving every change that holds no typed text, and typed fields are saved as "Typed text not kept on this device". The live site moves to shared mode by default later, once shared boards are reliable. D-18's rule that typed text never reaches the device is unchanged.
@@ -832,6 +963,7 @@ is inferred.
 
 ## D-73. Batch merge safeguards (21 October 2026)
 
+- **Later status (9 November 2026):** item 5 is closed by D-107: no merge queue is in use.
 - **Date:** 21 October 2026 (`2026-10-21`). **Decided by:** Josh, in the project's health check thread at 7:46 PM AWST: "yes to all", to that session's seven recommendations.
 - **Decision:**
   1. The Work loss, Observation levels and Phase 0 threads may push their branches and open PRs.
@@ -847,6 +979,7 @@ is inferred.
 
 ## D-74. Owner answers to the 21 October open questions (21 October 2026)
 
+- **Later status (9 November 2026):** D-79 later let wards see the name and UMRN before they answer. D-79 keeps item 5: no referral number shows on the card. D-83 replaces item 6: copies keep full names.
 - **Date:** 21 October 2026 (`2026-10-21`). **Decided by:** Josh, in the project chat at 8:02 PM AWST: "please go ahead with all recommendations... EXCEPT... ANYTHING YOU ARE BUILDING A MOCKUP FOR", to the coordinating session's 17 recommendations.
 - **Decision:**
   1. **Shared boards Realtime** is closed. The 3-second refresh is accepted for the prototype. This supersedes D-72 item 3 for live updates; the history table stays as D-72 left it.
@@ -961,6 +1094,7 @@ is inferred.
 
 ## D-83. Patient names stay in full on every screen, copy and TV; privacy work must not make the app less useful (26 October 2026)
 
+- **Later status (9 November 2026):** partly replaced by D-102 for downloads only. Patient-table exports carry no names. Names stay in full on screens, prints and TV views.
 - **Date:** 26 October 2026 (`2026-10-26`), 4:03 PM AWST (08:03 UTC). **Decided by:** Josh, in the Ward Flow project chat, answering the 26 October list of open decisions. His words: "Go ahead with all your recommendations above please. However... hide names is not required. I prefer names to be shown as it is more useful and clear. Keep names on TV view also. For privacy... dont let it impact anything that makes the app less useful or intuitive."
 - **Decision:** patient names are shown in full wherever the app shows them today, including copies, prints, downloads and every TV view. There is no "Hide names" default and no initials-only mode. Every TV view, and any alert banner shown over a TV view, shows full names; this goes further than D-68 point (1), which allowed initials on the bed meeting TV. Privacy and security work goes ahead only where it does not make the app less useful or less intuitive for the people using it.
 - **Closed as won't fix by this decision:** initials plus UMRN by default and copies following "Hide names" (handover question A10; NB-26-14, GV-11, PR-17, CS-12, PS-11); alert type only on TV broadcast banners (A12, TV-02); no initials on the ED tea-room TV (A13, TV-D4); and counts only on the bed-meeting TV (A14).
@@ -1031,6 +1165,7 @@ is inferred.
 
 ## D-91. One design home for the redesign, and Josh's answers on Help, Settings, search and notifications (31 October 2026)
 
+- **Later status (9 November 2026):** partly replaced by D-107. Design work follows the design review prompt, not the single redesign mock-up viewer.
 - **Date:** 31 October 2026 (`2026-10-31`). **Decided by:** Josh, in the redesign mock-up work (draft PR #1118), answering the 26 questions from the alignment review of #1119, #1122, #1123 and #1124. His words: "Yes to all your recommendations." (D-90 is reserved by draft PR #1119.)
 - **Decision, how the work fits together:**
   - All visual design lives in the redesign mock-up viewer (`/mockups/ward-flow-redesign`, PR #1118). Until Josh approves a page, the real-app pull requests carry only behaviour and accessibility fixes.
@@ -1104,14 +1239,15 @@ is inferred.
 - **How:** a hand-built drawer whose backdrop sits beside its panel marks it `data-sheet-scrim` (`src/components/wf/sheet-focus.ts`), so the shared focus trap leaves that backdrop live.
 - **Boundary:** approves no merge or release.
 
-## D-96. A named bed is held, and its patient is not also waiting (8 November 2026)
+## D-96. A named bed is pulled, and its patient is not also waiting (8 November 2026)
 
 - **Date:** 8 November 2026 (`2026-11-08`), 10:53 AM AWST (02:53 UTC). **Decided by:** Josh, in the Ward Flow project, answering "Go ahead with all recommendations" after being asked to confirm this rule.
 - **Decision:**
-  1. A bed named for a referral or journey (WF-FIG-017, 7 November 2026) counts as held, not free, on every screen that counts beds: Find a bed, the forecast, Mismatch cards, the bed map, the network table, the ward drawer, the TVs, the bed meeting sheet and the shortlist.
-  2. A journey that holds a named bed is not also counted as waiting for a bed, so one patient is never counted twice.
+  1. A bed named for a referral or journey (WF-FIG-017, 7 November 2026) counts as pulled, not free, on every screen that counts beds: Find a bed, the forecast, Mismatch cards, the bed map, the network table, the ward drawer, the TVs, the bed meeting sheet and the shortlist.
+  2. A journey that has pulled a named bed is not also counted as waiting for a bed, so one patient is never counted twice.
 - **How:** `numberedReservationBeds` (`src/components/ward-management/ward-movement-bed-hold.ts`), built in PR #1506.
 - **Boundary:** a prototype rule on synthetic data; approves no merge or release.
+- **Wording:** reworded 9 November 2026 (D-107 audit), meaning unchanged. It said "held"; a bed kept for an incoming patient is "pulled" (D-81, D-85).
 
 ## D-97. Owner answers on seven open items: N21, N25, N26, N29, N40, N41 and WF-B008 (8 November 2026)
 
@@ -1134,3 +1270,93 @@ is inferred.
   2. **Patient peek:** panel buttons that went to the Patient page (Waiting's Movement, Home's Patient record, Referrals' Patient, Handover's Open patient) open the person's placement deck in a side panel (a bottom sheet on a phone), with "Open full Patient page" one link away. **This changes where Ask wards (D-77 item 4) opens from Movements:** it used to go to the Patient page and now opens in the Patient peek. The 3-ward limit (D-76) is unchanged. A new-tab click still opens the full page.
   3. **Ward peek and pop-ups:** ward buttons in Capacity and Discharges panels show the ward's ready and in-use beds with a link to the ward's board or ward page. Waiting's Coordinator and ED board buttons open pop-ups that do the common job (Wards tab, Find a bed, the ED's waiting and longest wait).
 - **Boundary:** no change to who may see what; each peek is offered only where the desk could open the page it replaces. Synthetic data only.
+
+## D-99. "Real details" in the referral drawer's sample patients (25 September 2026)
+
+- **Date:** 25 September 2026, recorded here on 9 November 2026. **Decided by:** Josh, who chose "Real details" after the 25 September 2026 audit (A6). His own words were not found. This entry is recorded from the code comment on `SAMPLE_PATIENTS` in `src/components/ward-management/referrals/ward-referral-drawer-model.ts` and confirmed by Josh on 9 November 2026 ("Yes to all recommendations", project thread).
+- **Decision:** the referral drawer's sample patients show the record's own name, record number, origin, legal status and urgency. Where the record holds none, they show "Not recorded". The free-text fields start empty. No made-up profile is laid over a real record.
+- **Why:** the old typed-in profiles named a different person from the record (WF-009 read "Tobias Wren" where the record says Bao Davenport), and the medical clearance switch wrote to that real movement.
+
+## D-100. "Under a form" means one rule everywhere (9 November 2026)
+
+- **Date:** 9 November 2026. **Decided by:** Josh, choosing option A in the "Fix ED forms count mismatch" thread.
+- **Decision:** a person counts as under a form when a legal form is recorded, or when their legal status is "Detained awaiting examination" or "Involuntary inpatient". "Voluntary" and "Referred for psychiatric examination" count only with a recorded form. A held person with no form shows "Form not recorded". One helper, `isUnderAForm` in `src/components/ward-management/ed/ed-home-derivations.ts`, answers this for every screen.
+- **Status:** being built in PR #1553, open when this was recorded.
+- **Why:** Home said Armadale had 15 people on forms while the ED desk said 13. Two rules gave two counts.
+
+## D-101. Clinically ready for discharge, with one delay reason (9 November 2026)
+
+- **Date:** 9 November 2026. **Decided by:** Josh, on the decision card in the "Build discharge and capacity features" thread.
+- **Decision:**
+  1. A ward records "Clinically ready for discharge since [date]" and one delay reason. The reasons come from `DISCHARGE_BARRIERS` (`src/components/ward-management/ward-admissions.ts`) without "Clinical / Treatment": Accommodation / Housing, NDIS, SAT / Public Guardian, RACF / Aged Care, Social / Family and Several.
+  2. Delayed bed-days count from that date, by reason, in Statistics > Weekly, with a heatmap.
+  3. `BED_RELEASE_BLOCKERS` (`ward-change-reasons.ts`) is a separate list and does not change.
+- **Why:** once a person is clinically ready, the delay is not clinical. Counting bed-days by reason shows where the beds are lost.
+
+## D-102. Report-a-problem screenshots are blurred, and patient-table exports carry no names (9 November 2026)
+
+- **Date:** 9 November 2026. **Decided by:** Josh, on the decision card in the "Build search, export and training tools" thread.
+- **Decision:**
+  1. A Report-a-problem screenshot blurs all page content. Navigation stays readable. It is off by default, shown as a preview before it is copied or saved, and nothing is sent anywhere.
+  2. A patient-table CSV export carries the record id or UMRN, ward, bed, times and status labels. It never carries names, initials or typed notes. This matches the Out of area export.
+- **What it replaces:** the "downloads" part of D-83 only. Names stay in full on screens, prints and TV views. The rest of D-83 stands.
+- **Why:** a file or screenshot leaves the app and can travel anywhere. A screen does not.
+
+## D-103. Any coordinator on shift may mark a bed override reviewed (9 November 2026)
+
+- **Date:** 9 November 2026. **Decided by:** Josh, on the decision card in the Home notes 4 thread.
+- **Decision:** in Home's Today's review, any coordinator on shift may mark a bed override reviewed. The reviewer's name and the time are recorded. The person who made the override is not excluded.
+- **Boundary:** saving the review to the shared database still needs a separate Supabase yes (AGENTS.md rule 3).
+- **Why:** a review that waits for a second coordinator often never happens on a busy shift. The name and time keep it accountable.
+
+## D-104. Care plans and safety flags: five defaults (9 November 2026)
+
+- **Date:** 9 November 2026. **Decided by:** Josh, approving "all five" in the "Build care plans and patient safety flags" thread.
+- **Decision:**
+  1. **Referral risk flags** show as worded tags on ED and bed request cards, with the referral date. Nothing is stored on the patient record, so R-2026-09-04-A still holds for flags. A new flag, "Needs security escort", is added.
+  2. **Care plans** use structured fields. Attachments keep metadata only (name, type and size). No file is stored until hosting and a privacy assessment allow it. A replaced plan is marked Superseded and never deleted. Anyone who can see the patient can see the plan.
+  3. **Frequent presenter** means 4 or more ED presentations in 12 months, tagged "Care plan on file" or "No care plan". The threshold is synthetic and must be checked before any clinical use.
+  4. **Tribunal hearing date** shows as typed. Once it passes with no outcome recorded, it shows "Hearing date passed, outcome not recorded". There is no countdown (D-93). **Carer told** is recorded as Told or Not yet for each admission, transfer and discharge, with who was told and when.
+  5. **Cultural support requested** is recorded only when the person or their family asks. It is never worked out from Aboriginal status.
+- **Boundary:** synthetic data only. No clinical value here is signed.
+- **Why:** the safety information people need already exists in referrals and ward practice. These defaults show it without inventing a risk score or storing more than needed.
+
+## D-105. Optional clerk details on the patient record (8 November 2026)
+
+- **Date:** 8 November 2026. **Decided by:** Josh, on the decision card in the Note 3 thread. Its id in the tests is `NOTE3-2026-11-08` (`tests/ward-patient-model.test.ts`).
+- **Decision:** next of kin and a nominated person or carer may be recorded as optional, record-only fields. So may the other optional administrative details a clerk records. There are 22 in all, listed in `ADMIN_DETAIL_FIELDS` (`src/components/ward-management/ward-patients.ts`). None is required. All are withheld from boards, lists and transport views through `RECORD_DETAIL_FIELDS` (`src/components/ward-management/ward-shared-record-detail.ts`).
+- **What it replaces:** part of R-2026-09-04-A. That ruling added only two fields beyond its approved seven and left next of kin and carer contact out. D-105 replaces that limit for these 22 optional, record-only administrative fields. The rest of Ruling A stands: risk flags or alerts, diagnosis and medication are still not on the patient record, and each new field still needs its own entry in the field guard.
+- **Why:** clerks record these details for every admission. Keeping them on the record, and off the boards, makes the record useful without showing more on shared screens.
+
+## D-106. Clinical values from the 9 November 2026 documentation audit (9 November 2026)
+
+- **Date:** 9 November 2026. **Decided by:** Josh, in the project thread at 11:07 UTC: "Yes to all recommendations".
+- **Decision:**
+  1. **Medical trip bed rule.** `edMedicalBedRelease` stays at 24 hours, and this entry records it as a decision. The register changes in items 1 to 3 and 5 are built in the separate held clinical PR (#1556) and apply once it merges; until then the register shows the earlier labels and status. The 14 October "clinical owner ruling" had no D entry, and FD-19 said 48 hours. The value is renamed "Review the held bed after 24 hours", because the app flags the bed for review and never frees it.
+  2. **General observations (hourly)** are signed, as D-72 item 5 already approved.
+  3. **Four timings** join the clinical values register as synthetic and unsigned: an old Form 5A or 5B leave paper warns after 3 days; an act-now alert can be hidden for at most 60 minutes; the carer, PSP and MHAS notification list looks back 72 hours; and a staff access grant defaults to 90 days.
+  4. **R-2026-09-04-G** ("It suggests nothing" withdrawn) is replaced by D-71: no suggested or ranked wards.
+  5. **Patient history labels** read the readmission window from the register (`readmissionWindow`) instead of typing "28 days".
+- **Boundary:** synthetic data only. Signing a value here is for the prototype, as D-56 and D-63, not clinical governance sign-off (D-54).
+- **Why:** the audit found clinical values quoted in code and documents with no decision behind them, and one value recorded two ways.
+
+## D-107. Working rules and documentation from the 9 November 2026 audit (9 November 2026)
+
+- **Date:** 9 November 2026. **Decided by:** Josh, in the project thread at 11:07 UTC: "Yes to all recommendations".
+- **Decision:**
+  1. **History download before a push** (`git fetch --unshallow` or `--deepen`) is pre-approved. It is read-only; any other network Git still needs a yes.
+  2. **Fewest PRs.** One PR per thread. A held clinical change is the only reason to split one off.
+  3. **Design work** follows [`docs/design/design-review-artifact-prompt.md`](../design/design-review-artifact-prompt.md), a copy of the standing project prompt. This replaces D-91's rule that all visual design lives in the redesign mock-up viewer.
+  4. **No merge queue is in use.** PRs merge directly once required checks pass. This changes only the merge mechanism: who may merge, and when Josh's yes is needed, stays as AGENTS.md hard rule 6, D-91 and D-92 set it. Workflows keep their dormant `merge_group` triggers. This closes D-73 item 5.
+  5. **Documents are reorganised:** older material moves to history, and the backlog lives on one page, `docs/ward-flow/backlog.md`.
+  6. **Every new ruling gets a D-number** in this log, in the same PR that builds it. D-8's "R17 onward" numbering is no longer used.
+  7. **A bare D-number in `src/` or `tests/` means this log.** A comment that cites the delegated rulings in [`owner-decisions-2026-09-1x.md`](../history/archive/dated-notes/owner-decisions-2026-09-1x.md) writes "archived D-n".
+- **Also from the audit:** D-96 was reworded so a bed named for a referral is "pulled", matching D-81 and D-85. D-28 and D-30 to D-35 are marked "Source unverified", awaiting Josh's keep or strike pass. Old entries that later ones replace now say so in place.
+- **Why:** fewer PRs and one decision home mean fewer conflicts and fewer rulings lost between threads.
+
+## D-109. Home's bed alert line tests the whole number shown (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`). **Decided by:** Josh, in the Ward Flow project, choosing "Test the shown whole number" on a decision card.
+- **Decision:** the statewide figure at the top of Home, and every bed alert dot and count, reads "at risk" when the whole percentage it shows is at or above the bed alert line, and "beds in use" below it. So 84.5% to 84.9% shows "85% at risk", never "85% beds in use".
+- **How:** `coordinator-screen.tsx` compares `Math.round(statewideOccupancy)` with the bed alert line, and `isBedAlert` (`ward-service-bed-alerts.ts`) rounds the same way, so the rail, phone menu and executive bed alert dots and counts match. Built in PR #1561.
+- **Boundary:** a prototype display rule on synthetic data; approves no merge or release.

@@ -15,7 +15,7 @@ import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-managemen
  * `data-community-formed` and `data-minutes-legal-clock`. Owner answer 1, 17 September 2026,
  * quoted verbatim in `docs/ward-flow/owner-answers-2026-09-17.md`: *"the timer that starts when a
  * patient arrives is separate to forms. One records time in ED and the other is a forms
- * category."* `docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md` item 1 names that
+ * category."* `docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md` item 1 names that
  * merge as the defect — *"That is the ED clock standing in for a form clock"* — and Task T1
  * deletes both functions and both data attributes rather than repairing the boundary logic they
  * implemented, so nothing here can be "corrected forward": the thing this file asserted about is

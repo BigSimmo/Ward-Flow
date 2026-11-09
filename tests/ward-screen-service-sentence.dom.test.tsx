@@ -19,7 +19,7 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import type { HealthService } from "@/components/ward-management/ward-model";
 
 /**
- * Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md`, task F3 (item 44 — the
+ * Build plan `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md`, task F3 (item 44 — the
  * service chooser, §2 "Bed board, ward page and all seven statistics screens: a sentence only.",
  * §3 "Ward" — "This ward is one unit in {own}, so its own figures below do not change with the
  * service."). The ward page is a page about ONE named place (§2 "Never hidden", S4) — it is never

@@ -454,7 +454,7 @@ export function WardBoard({
    * The seed carries two leave beds — `WL-001` on `rph-adult-secure`, `WL-002` on `scgh-older-adult`
    * — so two real wards printed a figure contradicted by the state this page was already holding.
    * **The absence was in an ARGUMENT rather than on the page**, which is why every wording rule this
-   * project has written was blind to it (owner ruling D-23).
+   * project has written was blind to it (archived owner ruling D-23).
    *
    * The leave beds now come from the provider, the same live state every other screen reads.
    */

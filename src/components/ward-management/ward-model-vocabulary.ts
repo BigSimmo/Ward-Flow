@@ -243,7 +243,7 @@ export const SEX_DESIGNATIONS = ["Undesignated", "Female only", "Male only"] as 
 export type SexDesignation = (typeof SEX_DESIGNATIONS)[number];
 
 /**
- * T10 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`, item 8, owner answer 8,
+ * T10 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`, item 8, owner answer 8,
  * 17 September 2026): **gender is recorded AT REFERRAL, and it is what decides the incoming
  * patient's own designation check — never `Sex`, and never `Patient.gender`.**
  *
@@ -370,7 +370,7 @@ export type LegalFormExpiryCorrectionReason = (typeof PAPER_EXPIRY_CORRECTION_RE
 export type LegalFormExpiryMetadata = {
   /**
    * EVERY TYPED EXPIRY EVER RECORDED AGAINST THIS MOVEMENT'S LEGAL FORM, OLDEST FIRST — added T2
-   * (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`), owner answer 1 and item 5
+   * (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`), owner answer 1 and item 5
    * (regional extensions): *"the clinician records the extension and the new expiry; the app
    * never calculates one."*
    *
@@ -409,7 +409,7 @@ export type LegalFormExpiryMetadata = {
  * requires", `Movement.formedAt`). `dueAt`, when present, is the legal clock — never computed by
  * this prototype, always **typed by the clinician from the paper form in front of them.**
  *
- * 🔴 **CORRECTED 2026-09-17, T2 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`),
+ * 🔴 **CORRECTED 2026-09-17, T2 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`),
  * owner answer 1 — EVERYTHING BELOW ABOUT WHICH FORMS MAY CARRY A `dueAt` IS NOW FALSE.** Struck
  * in place rather than deleted, because the reading that made it true is what a reader will
  * otherwise re-derive. Until this date, neither a Form 1A nor a Form 3B could carry a `dueAt` at
@@ -516,7 +516,7 @@ export type LegalForm = LegalFormDetails & {
   kind?: "examination" | "detention" | "transport" | "transfer";
   dueAt?: Instant;
   /**
-   * 🔴 **DELETED 2026-09-17, T4 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`).**
+   * 🔴 **DELETED 2026-09-17, T4 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`).**
    * This field used to duplicate `Movement.legalFormReceivedAt` (`RECORD_LEGAL_FORM_RECEIVED`
    * wrote both, always to the same instant) — a second copy of one fact with nothing to keep the
    * two in step, and exactly the shape T4's own correction feature needs there to be only one of.

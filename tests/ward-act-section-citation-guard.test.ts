@@ -3,12 +3,12 @@ import { extname, join, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * Owner rule D5, `docs/ward-flow/plans/2026-09-16-fix-plan-clinical-and-legal.md`: Ward Flow shows
+ * Owner rule D5, `docs/history/plans-2026-09/2026-09-16-fix-plan-clinical-and-legal.md`: Ward Flow shows
  * no Mental Health Act section numbers. The owner's own legal questions about these figures are
  * still open, and a correction on 17 September 2026 found citations already written into the model,
  * a test file and the drawings did not survive being checked against the stored copy of the Act in
  * this repository (some existed under a different heading than the one the product gave them; others
- * were not in the stored copy at all — see `docs/ward-flow/owner-decisions-2026-09-16-rulings.md`,
+ * were not in the stored copy at all — see `docs/history/archive/dated-notes/owner-decisions-2026-09-16-rulings.md`,
  * the "Correction (17 September 2026)" paragraph under Ruling 1). So no section number may appear in
  * product code, product comments, test comments or drawings until the owner settles those questions.
  *

@@ -147,16 +147,36 @@ const componentSources = filesUnder(COMPONENTS_DIR, (name) => name.endsWith(".ts
   source: stripComments(readFileSync(path, "utf8")),
 }));
 
+/**
+ * Every exported function name, mapped to the first file (in walk order) that declares it. Built
+ * once: the walk below asks about the same components many times over, and testing a fresh pattern
+ * against every component file per question made this the slowest unit test in the suite (about
+ * 12 s locally, near the 30 s timeout on a busy CI runner). The answer per name is unchanged.
+ */
+const sourceByName = new Map<string, string>();
+for (const { source } of componentSources) {
+  for (const match of source.matchAll(/export\s+(?:default\s+)?function\s+([A-Za-z0-9_$]+)/gu)) {
+    if (!sourceByName.has(match[1])) sourceByName.set(match[1], source);
+  }
+}
+
 /** The file that exports `name`, or null. A component nothing exports cannot be checked. */
 function sourceOf(name: string): string | null {
-  const declaration = new RegExp(`export\\s+(?:default\\s+)?function\\s+${name}\\b`, "u");
-  const found = componentSources.find((candidate) => declaration.test(candidate.source));
-  return found ? found.source : null;
+  return sourceByName.get(name) ?? null;
 }
 
 const DISCLOSURE = /prototypeBadge/u;
 
+let sharedShellAnswer: boolean | undefined;
+
+/** Read once: the shell's two files do not change during a run, and the route loop asks again for
+ *  every screen whose own tree carries no badge. */
 function sharedShellDiscloses(): boolean {
+  sharedShellAnswer ??= readSharedShellDisclosure();
+  return sharedShellAnswer;
+}
+
+function readSharedShellDisclosure(): boolean {
   const layout = stripComments(readFileSync(`${ROUTES_DIR}/layout.tsx`, "utf8"));
   const bar = stripComments(readFileSync(`${COMPONENTS_DIR}/shell-next/next-bar.tsx`, "utf8"));
   if (!layout.includes("<WardBarMount />") || !/<NextBar \{\.\.\.props\}/u.test(bar)) return false;

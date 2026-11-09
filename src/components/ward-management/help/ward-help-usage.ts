@@ -2,7 +2,7 @@
  * HELP USAGE (Josh, 26 Oct 2026): which Ask help answers are used on this device, so the team can
  * see what staff look up before the pilot. An answer counts as used when someone opens it, or
  * presses its Show me or Go there. Only how-to ids and whole counts are stored, each id checked
- * against the known answers on read, so typed words never reach storage (D-11, D-18). The key carries
+ * against the known answers on read, so typed words never reach storage (archived D-11; D-18). The key carries
  * the `ward_flow_choice_` prefix that `ward-browser-data.ts` keeps at sign-out: it holds nothing about
  * a person, and counts that reset at every sign-in would show nothing.
  */
@@ -45,7 +45,11 @@ function writeRaw(next: string): void {
 export function recordHowToUsed(id: string, known: ReadonlySet<string>): void {
   if (!known.has(id)) return;
   const used = new Map(parseHelpUsed(readRaw(), known));
-  used.set(id, Math.min((used.get(id) ?? 0) + 1, MAX_COUNT));
+  const count = Math.min((used.get(id) ?? 0) + 1, MAX_COUNT);
+  // The pairs are kept in the order last used (newest at the end), so Help can offer "Recently
+  // opened" from the same ids and counts, with no time or typed words stored (9 Nov 2026).
+  used.delete(id);
+  used.set(id, count);
   writeRaw([...used].map(([key, count]) => `${key}:${count}`).join(","));
 }
 
@@ -72,4 +76,11 @@ export function useHelpUsed(known: ReadonlySet<string>): readonly { id: string; 
   return [...parseHelpUsed(raw, known)]
     .map(([id, count]) => ({ id, count }))
     .sort((left, right) => right.count - left.count);
+}
+
+/** The answers this device opened most recently, newest first: ids only, from the same record. */
+export function useRecentHowTos(known: ReadonlySet<string>, limit?: number): readonly string[] {
+  const raw = useHelpUsedRaw();
+  const newestFirst = [...parseHelpUsed(raw, known).keys()].reverse();
+  return limit === undefined ? newestFirst : newestFirst.slice(0, limit);
 }

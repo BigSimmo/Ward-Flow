@@ -12,9 +12,9 @@
  * between the browser and the server, on what this repository documents as routinely a SHARED ward
  * computer.
  *
- * Ward Lead's ruling D-11 (`docs/ward-flow/owner-decisions-2026-09-1x.md` ~685-697) — one of five
- * (D-11 to D-15) explicitly made under a delegation, never the owner's own words, and the file's
- * own banner says a later reader must not quote any of them back as "the owner decided". D-11
+ * Ward Lead's archived ruling D-11 (`docs/history/archive/dated-notes/owner-decisions-2026-09-1x.md` ~685-697) — one of five
+ * (archived D-11 to D-15) explicitly made under a delegation, never the owner's own words, and the file's
+ * own banner says a later reader must not quote any of them back as "the owner decided". Archived D-11
  * itself answers a different question — whether a half-written REFERRAL-HISTORY draft should be
  * held so it survives a navigation — and settles it "warn before leaving. Do NOT persist the
  * text," because holding clinical free text in browser STORAGE on a shared ward machine converts

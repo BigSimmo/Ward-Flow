@@ -58,13 +58,13 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
    */
   RECORD_LEGAL_FORM_RECEIVED: ["ed", "ward", "community", "coordinator"],
   /*
-   * T4 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`). `ed` alone, on
+   * T4 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`). `ed` alone, on
    * `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning immediately above: the place physically holding
    * the form is who can say a receipt was recorded in error, with the same D-80 sender check.
    */
   CORRECT_LEGAL_FORM_RECEIPT: ["ed", "ward", "community", "coordinator"],
   /*
-   * T2 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`). `ed`, on
+   * T2 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`). `ed`, on
    * `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning: the department physically holding the form is
    * who reads the expiry off it. `coordinator` joins it here — unlike that event, this one is also
    * how a regional EXTENSION gets recorded, and item 5's own wording ("the clinician records the
@@ -581,6 +581,11 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // same list as RAISE_REFERRAL. Not the bed manager, officer, executive or access admin, which do
   // not open the referral intake either.
   RECORD_TRIAGE_SIGNED: ["ed", "community", "ward", "coordinator"],
+  // Staff needed (feature 10, 9 Nov 2026): the ward, the coordinator or the site bed manager asks; the
+  // coordinator or bed manager records the outcome, and a ward may only withdraw its own (reducer).
+  // Not the executive, which changes nothing (D-80).
+  REQUEST_WARD_STAFF: ["ward", "coordinator", "bed_manager"],
+  CLOSE_WARD_STAFF_REQUEST: ["ward", "coordinator", "bed_manager"],
   // Contacting a team is this record. The team that made the call, or the coordinator logging it.
   // Decision 43 (Josh, 31 Oct 2026): the ED no longer holds it. It was unused: the only place to
   // record a contact is the community team page, which an ED desk cannot open.

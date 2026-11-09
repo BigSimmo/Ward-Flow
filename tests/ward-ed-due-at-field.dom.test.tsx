@@ -20,7 +20,7 @@ import { EdInboxReferralFixture, openRaiseIntoMovementForm, chooseEdChoice } fro
 import { typeDate } from "./helpers/type-date-time";
 
 /**
- * 🔴 **REWRITTEN, T3 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`), owner
+ * 🔴 **REWRITTEN, T3 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`), owner
  * answer 1 — 17 September 2026.** Until this date the field this file guards was asked only for a
  * Form 4A/4C transport or transfer order — the title above used to read "THE DUE-TIME FIELD
  * APPEARS FOR A TRANSPORT OR TRANSFER ORDER AND FOR NOTHING ELSE" and named that as the owner's

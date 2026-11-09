@@ -4,7 +4,7 @@
 // 'Another reason — needs follow-up' means the same from an ED.") confirmed four wording
 // lists, verbatim in docs/ward-flow/owner-wording-page-2026-09-02.md ("A. Lists a clinician
 // picks from", rows #3, #9, #10, #11). This pins each against its source constant and label
-// map exactly as docs/ward-flow/plans/2026-09-17-build-plan-screens.md §1 locates them:
+// map exactly as docs/history/plans-2026-09/2026-09-17-build-plan-screens.md §1 locates them:
 //
 //   #3  a ward declines a referral    — DECLINE_REASON_LABELS (ward-referrals.ts:917-956),
 //                                        keyed by REFERRAL_DECLINE_REASONS (ward-model.ts:1411-1419)

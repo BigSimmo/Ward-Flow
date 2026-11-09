@@ -23,7 +23,7 @@ Before removing any exported symbol, run:
 npm run check:dead-code-candidate -- --diff origin/main
 ```
 
-It fails closed and refuses a candidate that is: named in a `docs/superpowers/plans|specs`
+It fails closed and refuses a candidate that is: named in a `docs/ward-flow/plans`
 file with unchecked tasks; pinned by a committed test; present as a string literal anywhere
 in `src`/`tests`/`scripts` (the PsychSift `worker/` tree was dropped from this search on 26 September 2026);
 introduced within `DEAD_CODE_RECENT_DAYS` (default 30); or assessed on a **shallow clone**,

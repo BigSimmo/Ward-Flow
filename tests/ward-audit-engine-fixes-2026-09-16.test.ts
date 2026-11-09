@@ -470,7 +470,7 @@ describe("Fix 5: RECORD_REFERRER_WITHDRAWAL cascades to every linked open moveme
    * off the SAME referral to build a genuine two-movement fixture and asserts the cascade reaches
    * both.
    *
-   * 🔴 **CORRECTED 2026-09-17, R5 (`docs/ward-flow/plans/2026-09-16-fix-plan-referral-model.md`,
+   * 🔴 **CORRECTED 2026-09-17, R5 (`docs/history/plans-2026-09/2026-09-16-fix-plan-referral-model.md`,
    * audit rule).** This used to build the second movement with a SECOND live `RAISE_REFERRAL` dispatch
    * carrying the same `referralId`, on the reasoning (quoted here until this correction, because
    * the reading that made it true is what a reader would otherwise re-derive) that "nothing here or

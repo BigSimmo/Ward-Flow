@@ -17,6 +17,7 @@ import noticesSheet from "./ward-notices-sheet.module.css";
 import { SinceLastLookPill } from "../since-last-look-pill";
 import { phoneRows as rows } from "@/components/wf";
 import { WardNotificationCenter } from "./ward-screen-lazy";
+import { WardStaffContact } from "../staffing/ward-staff-contact";
 import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction } from "react";
 import type { CapacityRefreshRequest, Movement, Notice, Unit } from "@/components/ward-management/ward-model";
 import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
@@ -208,6 +209,8 @@ export function WardScreenTopBar({
             <>
               <SinceLastLookPill scopeKey={`ward:${unit.id}`} />
               <LiveChip state={online ? "live" : "offline"} onHero age={formatInstant(now)} />
+              {/* Feature 10 and 32 (9 Nov 2026): Staff needed and the ward's contact card. */}
+              <WardStaffContact unit={unit} now={now} isPhone={false} part="buttons" />
               {confirmButton}
             </>
           )
@@ -243,12 +246,20 @@ export function WardScreenTopBar({
                 ) : null}
               </button>
               {wardMoreMenu(styles.phoneHeroIcon, false)}
+              <WardStaffContact unit={unit} now={now} isPhone />
             </span>
           ) : (
             wardHeroFoot
           )
         }
-        footAside={isPhone ? undefined : wardHeroFootAside}
+        footAside={
+          isPhone ? undefined : (
+            // Feature 10: an open staff request sits above the capacity time.
+            <WardStaffContact unit={unit} now={now} isPhone={false} part="tag">
+              {wardHeroFootAside}
+            </WardStaffContact>
+          )
+        }
       />
 
       {isPhone ? (

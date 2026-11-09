@@ -2,35 +2,26 @@
 
 Owning repository: `BigSimmo/Ward-Flow`. These rules cover only this project.
 
-**Where work is tracked (Josh, 7 November 2026):** what is in flight lives in open pull requests and the **Now** section of [the status page](ward-flow/STATUS.md); the plan lives in the [roadmap](ward-flow/roadmap.md). Notion is optional: use it when a task already has a Notion record, never as the only record of current work.
+_Updated 2026-11-09 - commits and the PR body are the record; receipts optional (D-107); Documentation owns._
 
-The optional [Notion task source](https://app.notion.com/p/ba8c768f8b2c49638772b39900cb7ab9) uses data source `collection://ef3ca511-c488-4aba-ba1f-a5e20767a333` and an exclusive Project value `Ward Flow`. The verified [project ledger](https://app.notion.com/p/3ec7889e8a2281538d33eeb82d4e5d5c) uses the exclusive Project and Conversation filters; it is a view of the shared canonical source, not a duplicate database. Existing records are evidence and task detail; the receipt is a reconciliation handoff, not another competing task ledger.
+**The record of a task is its commits and its PR body.** Receipts, the exporter and Notion
+reconciliation are optional in prototype mode (3 October 2026). What is in flight lives in open
+pull requests and the **Now** section of [the status page](ward-flow/STATUS.md); the plan lives in
+the [roadmap](ward-flow/roadmap.md) (Josh, 7 November 2026). Notion is optional: use it when a task
+already has a Notion record, never as the only record of current work.
 
-Reuse [the product task ledger](ward-flow-task-ledger.md) and existing task checkpoint IDs. Do not add Ward tasks to the inherited PsychSift outstanding-issues system.
+The optional [Notion task source](https://app.notion.com/p/ba8c768f8b2c49638772b39900cb7ab9) uses data source `collection://ef3ca511-c488-4aba-ba1f-a5e20767a333` and an exclusive Project value `Ward Flow`. Do not add Ward tasks to the inherited PsychSift outstanding-issues system. [The product task ledger](ward-flow-task-ledger.md) keeps dated task detail.
 
-> **Prototype Mode Note (3 October 2026):** For ordinary interactive pair-programming and development tasks, formal receipt export (`export-task-receipt.py`) and Notion reconciliation are optional and advisory. Standard Git commits and PR summaries provide sufficient task tracking.
+## When a receipt is used
 
-## Update at lifecycle events
+Keep one task identity. A retry or a new turn is not a new task. A short, uninterrupted, scoped and reversible task with no unresolved ownership, no new
+provider or publication boundary and no substantial recovery needs nothing beyond its commits and
+PR body; this is the one home of the compact-receipt rule, and other
+pages link here. Substantial work that pauses, is blocked or changes hands records its state,
+blocker, next action and evidence in the PR body or the existing checkpoint, not a new ledger.
 
-At start, reuse the original objective/task ID. At checkpoint, blocker, resume and completion, update that same record; retries and terminal assistant turns are not new tasks or proof of completion. One project owns each task. Link dependencies as project plus task ID instead of copying them into other project lists. Keep Completed/Cancelled history; open views hide those states.
-
-For one uninterrupted, scoped, reversible task with no unresolved ownership, new provider/publication
-boundary or substantial recovery need, a final compact summary may carry start and completion metadata.
-A separate formal start export and Notion reconciliation are optional for ordinary interactive work.
-Substantial work keeps a recoverable checkpoint under the same task identity. A pause, blocker,
-transfer or scope change requires a prompt checkpoint identifying state, blocker, next action and
-evidence. This route preserves file claims and project gates; a checkpoint is not another ledger.
-
-Status is In progress, Blocked, Needs you, Paused, Completed or Cancelled. Record Task/title, Blocker, Next action, Owner and source/evidence links in the canonical source where authorised. Preserve Last verified unless new evidence actually verifies the state. Completion needs evidence of the task's acceptance; completion, user acceptance, merge, release and deployment remain separate.
-
-When code/config/instructions change, refresh the relevant maintained document and same task receipt as part of the owned diff. Respect file claims; hand conflicting document updates to their owner. Do not regenerate unrelated docs. Changes to these rules need the same reviewed documentation process. Shared master/adapters are maintained separately; do not edit them from this project task.
-
-Complete the requested stage: a delivered audit, evidenced Fast Preview or verified local
-engineering task can complete without publication/deployment. Integration, publication,
-deployment and user acceptance require their own applicable authority and evidence.
-
-Last verified requires newly checked evidence, including a new immutable run-evidence location
-within the same stable task when source/evidence otherwise match. Timestamp-only refresh is invalid.
+Completion, user acceptance, merge, release and deployment are separate states. Only newly checked
+evidence refreshes Last verified; a new timestamp alone does not.
 
 ## Local-only receipt bridge
 

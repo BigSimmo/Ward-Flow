@@ -3,7 +3,7 @@
 // `ward-bar.tsx`'s Activity drawer drew its "Activity" segment count as
 // `changes.length + scopedNotices.length` — a derived fact (recent changes) and an authored,
 // addressed fact (a notice) summed into one unlabelled number. The communication addendum
-// (`docs/ward-flow/plans/2026-09-1x-communication-addendum.md` §1.4) is explicit: "The two lists
+// (`docs/history/plans-2026-09/2026-09-1x-communication-addendum.md` §1.4) is explicit: "The two lists
 // must never be summed into one tally without saying so." The Notices heading already carries its
 // own count (`scopedNotices.length`) right below — this file proves the Activity segment now shows
 // only the activity changes, and that the Notices heading keeps counting notices on its own.
@@ -109,7 +109,7 @@ describe("the Recent activity count and the Notices count are never summed", () 
 
   it("reads the Recent activity count as the feed's events alone, not events plus notices", async () => {
     const { user, sheet } = await openActivityPanel();
-    const recentTab = within(sheet).getByRole("tab", { name: /Recent activity/u });
+    const recentTab = within(sheet).getByRole("tab", { name: /^Recent/u });
     await user.click(recentTab);
     const events = within(within(sheet).getByRole("list", { name: "Recent activity" })).getAllByRole("listitem");
     expect(events.length, "the seeded world records events, or this is vacuous").toBeGreaterThan(0);

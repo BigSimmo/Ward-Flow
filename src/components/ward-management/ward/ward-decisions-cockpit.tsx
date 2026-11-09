@@ -845,7 +845,7 @@ function Queue({
           ) : null}
 
           {showBulk ? (
-            <div className={styles.bulk}>
+            <div className={styles.bulk} data-wf-foot-bar="">
               <span className={styles.bulkMeta}>
                 <b>{signable.length}</b> ready to sign off
               </span>

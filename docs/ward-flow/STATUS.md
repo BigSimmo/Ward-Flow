@@ -1,11 +1,11 @@
 # Ward Flow — status
 
-<!-- last-checked: 2026-11-08 -->
+<!-- last-checked: 2026-11-09 -->
 
 **The one page for where Ward Flow stands now.** Audience: Josh, staff testers and every builder.
-Owner: Documentation. Checked on 8 November 2026 against `main` at `6b1352c9` (PR #1500) by reading
-the merged pull request titles and the 3 November source reading in the [roadmap](roadmap.md). No
-browser, hosted or deployment check was run for this page. Older status is in
+Owner: Documentation. Checked on 9 November 2026 against `main` at `bd16e4adb` (PR #1531) by reading
+the merged pull request titles and searching source. No browser, hosted or deployment check was run
+for this page. Work items live in the [backlog](backlog.md). Older status is in
 [the status history](../history/status-to-2026-11-03.md).
 
 Synthetic data only. Do not enter real patient information. Ward Flow is not approved for clinical
@@ -13,12 +13,27 @@ deployment.
 
 ## Now
 
-### Merged since the last check (3 to 8 November 2026)
+### Merged 8 to 9 November 2026
+
+About 50 pull requests merged, #1502 to #1552. In themes:
+
+- **Triage:** the webPSOLIS pick-lists are built (#1502 review, #1504 build), then a safety plan
+  builder, means safety, a follow-up prompt, a Start a triage queue and phone fixes (#1507, #1539, #1542).
+- **Decisions built:** a named bed counts as pulled, never also waiting (D-96, #1506); the friction pass
+  Quick bar and peek panels (D-98, #1549); D-80 item 17, the "on behalf of the ward" reason (`24e75284`).
+- **Owner notes 3 to 14 on every screen:** Home (#1546, #1551, #1552), Patient page (#1544), Movements
+  (#1527, #1548, #1550), Waiting (#1528, #1535, #1545), Referrals (#1534), Capacity (#1540), Places
+  (#1532), Handover (#1529), TV screens (#1537), Settings (#1512, #1531) and printed documents (#1538).
+- **Fixes:** 14 verified backlog defects (#1506), live audit follow-ups (#1518, #1522), the 8 November
+  repo review (#1523), forgiving page search (#1524) and the desk walk findings (`a7e35bf19`).
+- **Help:** 52 how-to guides and 15 screen questions (#1525); tours updated to the redesign (#1510).
+- **Pilot documents:** shadow pilot breach plan, incident log and known issues (#1543).
+
+### Merged 3 to 8 November 2026
 
 About 125 pull requests merged, #1327 to #1501. In themes:
 
-- **Triage and risk form** in the app, opened from **New → Triage or Referral** (#1500). The webPSOLIS
-  pick-lists are reviewed and the build is handed over (open draft #1502).
+- **Triage and risk form** in the app, opened from **New → Triage or Referral** (#1500).
 - **One right-hand drawer** for Bed board, Referrals, Waiting, Places, Governance, Handover, Ward home,
   Transport, Search, Alerts, Out of area and Discharges (#1495, #1497).
 - **Design and front-end audits:** names in full, one word for each thing, the form rule, icons and
@@ -48,17 +63,20 @@ To list every merge since a date or revision:
 
 ### In progress
 
-- **Role access (D-80):** built in source except item 17, the "on behalf of the ward" reason (source
-  reading of 3 November). The desk-by-desk browser walk in roadmap step 1 is not yet recorded.
-- **Triage pick-lists:** build from the handover in draft PR #1502.
+- **Role access (D-80):** every item is built in source, including item 14 (Governance review and the
+  Access log) and item 17 (`24e75284`). The first automated desk walk ran on 8 November and its two
+  findings were fixed ([desk walk](evidence/desk-walk-2026-11-08.md)). Part 2 of the walk is in the
+  [backlog](backlog.md).
 - **Pilot readiness:** the steps in the [roadmap](roadmap.md#2-pilot-readiness).
-- **Documentation clean-up:** the 7 November audit's fixes (this page is one of them).
+- **Audits of 9 November:** clinical values (D-106) and working rules and documentation (D-107).
 
 ### Waiting on Josh
 
-Carried from 3 November. Not re-checked since.
+Carried from 3 November. On 9 November item 1 was added and the access log mock-up was removed
+(built after Josh's yes of 31 October). The rest is not re-checked.
 
-1. Approve or change the access log mock-up (D-80 item 14).
+1. Answer the open decision cards: legal times (keep D-93 and D-72 unless changed) and the ED
+   next-step wording defaults (3, 8, 24 and 48 hours).
 2. Sign-in renewal test before about 16 November (Q390): sign in with a test account in the morning,
    and make one save after lunch without signing in again.
 3. In Supabase: turn off "Allow new users to sign up", and turn off the organisation's AI SQL, log and
@@ -69,7 +87,8 @@ Carried from 3 November. Not re-checked since.
 7. Name the privacy officer and the clinical safety owner.
 8. Turn on Dependabot security updates in GitHub settings.
 9. Arrange the clinician trial.
-10. Before any real data (deferred): the [real-data go/no-go checklist](governance/REAL-DATA-GO-NO-GO.md).
+10. Keep or strike the decision entries marked "Source unverified" (D-28 and D-30 to D-35).
+11. Before any real data (deferred): the [real-data go/no-go checklist](governance/REAL-DATA-GO-NO-GO.md).
 
 ### Keeping this page true
 
@@ -77,8 +96,8 @@ Carried from 3 November. Not re-checked since.
   merged list, then write the themes by hand.
 - The freshness check warns when this page is more than 7 days old, on every pull request and in a
   weekly reminder issue. Change the `last-checked` date only after checking the page against `main`.
-- Decisions live only in [decisions.md](decisions.md). Work in flight lives in open pull requests and
-  this page.
+- Decisions live only in [decisions.md](decisions.md). Work lives in the [backlog](backlog.md) and open
+  pull requests.
 
 ## What is built
 
@@ -101,7 +120,7 @@ The dated work summary of 27 September to 17 October is in [the status history](
 
 ## Decision status (D-numbers)
 
-**Dated decision-state summary, not the current task backlog.** The 24 October direction below has been reconciled with later recorded answers on 3 November. Current task metadata follows [task-receipts](../task-receipts.md); original answers belong in decisions.md or a dated `owner-answers-*.md` file. Verify implementation and deployment separately. [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) is historical.
+**Dated decision-state summary, not the current task backlog** (that is [backlog.md](backlog.md)). The 24 October direction below has been reconciled with later recorded answers on 3 and 9 November. Original answers belong in decisions.md. Verify implementation and deployment separately. [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) is historical.
 
 Status of every decision in [decisions.md](decisions.md), D-1 to D-81, read from its text, a source search and merge titles at `d1e61c1` on 24 October 2026; D-15, D-21, D-23, D-26, D-30, D-45, D-48, D-50 and D-51 re-checked against source at `899b232e` the same day. No runtime check was run. "Unverified" means the source search could not confirm the state. D-81 was added on 24 October 2026 with #680; the next free number is in [FACTS.md](../FACTS.md) (`next-decision`).
 
@@ -112,7 +131,7 @@ Status of every decision in [decisions.md](decisions.md), D-1 to D-81, read from
 | D-3  | Retire PsychSift and Database code            | Built                 | Dedicated repository; clean-up #412                                           |
 | D-4  | Synthetic patients only                       | Policy only           | `src/lib/synthetic-data-guard.ts`                                             |
 | D-5  | Parallel worktrees, folded one at a time      | Policy only           | Blanket retest replaced by D-26                                               |
-| D-6  | Aboriginal cultural safety review deferred    | Policy only           | See D-36, D-37                                                                |
+| D-6  | Aboriginal cultural safety review deferred    | Policy only           | Deferred by Josh; D-87 keeps the charter as reference, not a gate             |
 | D-7  | First four milestones, in order               | Policy only           | [`roadmap.md`](roadmap.md)                                                    |
 | D-8  | Standing rulings R1 to R16                    | Policy only           | R1 replaced by D-27                                                           |
 | D-9  | Rulings R17 to R21                            | Unverified            | Product items not re-checked one by one                                       |
@@ -142,14 +161,14 @@ Status of every decision in [decisions.md](decisions.md), D-1 to D-81, read from
 | D-33 | Ward shift notes stay local                   | Unverified            | Not re-checked                                                                |
 | D-34 | Medical deterioration releases the bed        | Built                 | `ward-flow-record-events.ts`, `ed-medical-placement-controls.tsx`             |
 | D-35 | Regional multi-leg transport deferred         | Policy only           | Deferred                                                                      |
-| D-36 | External governance hard gates                | Policy only           | Gates stay parked                                                             |
-| D-37 | Governance postures and roadmap               | Policy only           | Azure parts superseded by D-55                                                |
+| D-36 | External governance hard gates                | Dropped or superseded | Replaced by D-87 (the real-data gate)                                         |
+| D-37 | Governance postures and roadmap               | Dropped or superseded | Replaced by D-87; Azure parts by D-55                                         |
 | D-38 | Leave, AWOL and CTO on the Patient page       | Built                 | `RECORD_ABSENT_WITHOUT_LEAVE`, `RECORD_COMMUNITY_TREATMENT_ORDER`             |
 | D-39 | UMRN, never a WF number                       | Built                 | `movementUmrn`, `ward-patient-resolver.ts`                                    |
 | D-40 | A second CTO keeps the first                  | Built                 | `earlier` in `ward-patients.ts`                                               |
 | D-41 | Delays filters state the hidden count         | Built                 | "Show everyone"; Delays renamed Waiting (#474)                                |
 | D-42 | 12px floor, no uppercase exception            | Built                 | `--wf-fs-11` alias in `ward-flow-v9-tokens.css`                               |
-| D-43 | Colour in glyphs; red is a 1px edge           | Built                 | `--wf-act-edge`                                                               |
+| D-43 | Colour in glyphs; red is a 1px edge           | Partly replaced       | The red edge is replaced by D-94 item 2; colour in glyphs still applies       |
 | D-44 | Compact sizing and white cards                | Unverified            | Not re-checked                                                                |
 | D-45 | Phone is its own 390×844 design               | Built                 | `48rem` phone media queries, `phone-fold`; no `--wf-bp-narrow` token          |
 | D-46 | Focal part, own part and hero per page        | Unverified            | Not re-checked                                                                |
@@ -169,7 +188,7 @@ Status of every decision in [decisions.md](decisions.md), D-1 to D-81, read from
 | D-60 | Criteria led discharge, voluntary only        | Built                 | `ward-discharge-criteria.ts`                                                  |
 | D-61 | Tasks and Alerts are one queue                | Built                 | Signed off by D-62                                                            |
 | D-62 | Alerts queue flag removed                     | Built                 | `alerts-one-queue` flag gone                                                  |
-| D-63 | Remaining clinical values signed              | Built                 | `dischargeCriteriaValidity` in `ward-clinical-values.ts`                      |
+| D-63 | Remaining clinical values signed              | Partly built          | Six synthetic values added since, four more under D-106                       |
 | D-64 | Criteria led discharge on boards              | Built                 | CLD chips in `ward-discharge-criteria.ts`                                     |
 | D-65 | CLD on in production; typed criteria          | Built                 | `sessionLimit`; AWOL review back on (#487)                                    |
 | D-66 | Granted roles need no second approval         | Built                 | `/approve` refusal in `backend/ward-flow/shared-http.mjs`                     |
@@ -186,7 +205,7 @@ Status of every decision in [decisions.md](decisions.md), D-1 to D-81, read from
 | D-77 | Ten bigger UX changes                         | Built                 | #557, #558, #560, #561, #566, #568, #587, #599                                |
 | D-78 | One decline list                              | Built                 | #579                                                                          |
 | D-79 | Wards see the full referral first             | Built                 | #588                                                                          |
-| D-80 | Role access plan version 2                    | Partly built          | PRs 1 to 4 merged; PR 5 in part; item 14 mock-ups and item 17 (pilot) pending |
+| D-80 | Role access plan version 2                    | Built                 | PRs 1 to 5; item 14 (31 Oct); item 17 `24e75284`; D-86 drops second approver  |
 | D-81 | Pulled, with a pull time limit                | Built                 | #680 (wording across screens and docs)                                        |
 
 ### Later recorded decisions: source reconciliation, 3 November 2026
@@ -202,40 +221,38 @@ These rows record decisions, not a new assertion that their implementation is co
 | D-88      | Demo-code front door permitted once approved for switching on.                                                | Runtime switch/provider state not checked here.                                              |
 | D-89–D-91 | Scoped mock-up line cap; Help tasks/walkthroughs and expansion decisions.                                     | Read original decision boundaries and relevant current source.                               |
 | D-92–D-94 | Later prototype interface decisions are recorded in [decisions.md](decisions.md).                             | Consult each original ruling; this summary supplies no implementation or deployment verdict. |
-| D-95      | One page scroll on desktop; a click outside closes a hand-built drawer (3 November 2026).                     | Recorded 8 November 2026 from decisions.md; not re-checked against source.                   |
+| D-95      | One page scroll on desktop; a click outside closes a hand-built drawer (3 November 2026).                     | Built (#1322).                                                                               |
+| D-96      | A named bed is pulled, and its patient is not also waiting.                                                   | Built (#1506).                                                                               |
+| D-97      | Owner answers on seven open items (N21 to WF-B008).                                                           | Open items moved to the [backlog](backlog.md).                                               |
+| D-98      | Friction pass: Quick bar, Patient peek and Ward peek.                                                         | Built (#1549).                                                                               |
+| D-99 on   | Recorded 9 November 2026, including D-106 (clinical values audit) and D-107 (rules and docs audit).           | Read each in [decisions.md](decisions.md); work they create is in the [backlog](backlog.md). |
 
-## Remaining work and local remediation
+<a id="remaining-work-and-local-remediation"></a>
 
-The remediation checkpoint (archived; see [ARCHIVE.md](../ARCHIVE.md)) and [`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) (§7.78–§7.82) record actual fixes
-and checks against stable task IDs. Confirmed source defects are fixed locally; publication, deployment and hosted validation remain separate.
+## Remaining work
 
-- **Shared synthetic operation hardening:** while opt-in shared state/event sync (`use-ward-supabase-shared.ts` via the configured backend's `/v1/workspace*` routes) is wired for synthetic demonstration, production-grade staff sign-in, trusted service/role membership, and multi-site clinical governance boundaries remain outside prototype scope.
-- **Persistence privacy:** D-72 item 1 permits automatic saving of a scrubbed
-  submitted-state device copy after a typed-text event, whether accepted or refused.
-  Typed values are replaced with “Typed text not kept on this device”. If a safe,
-  valid copy cannot be made, saving stops. D-18 continues to exclude the original
-  typed values from that copy. D-67 separately permits bounded sessionStorage
-  recovery for opted-in synthetic referral and
-  legal form drafts, scoped to account, session, scenario and form subject.
-  Restored drafts require human review and submission; referral attachments
-  require reattachment. Successful submission clears the relevant draft;
-  sign-out, session termination and reset invalidate drafts and pending writes.
-  Browser session restoration may preserve sessionStorage across a restart, so
-  browser-close deletion is not guaranteed. Explicit JSON scenario exports are
-  separate from draft recovery and automatic shared persistence. They refuse
-  scenarios containing repatriation or support-notification records. Imported
-  scenarios use the same scrubbed device-copy path, subject to its safety and
-  restore-validation checks; refresh recovery is not guaranteed for every import. No real
-  patient information is authorised by any of these paths.
-- **Incomplete secondary controls:** controls that are not wired up are hidden
-  outside local development (#500, #513); referral owner and Assign were built
-  later (#536, #552). A toast is not a saved record.
-- **Infrastructure:** isolated staging, monitoring/alerts, backup/restore,
-  app-plus-data rollback, provider rate limits and account revocation require
-  verified Ward-only configuration and acceptance evidence. Inaccessible provider
-  tools do not prove a service is absent.
-- **Outstanding ownership:** historical Notion holds and unpublished candidates
-  remain with their original owners. Local fixes do not reconcile those records.
+Every open build item is in the [backlog](backlog.md). Actions only Josh can take are listed in [Waiting on Josh](#waiting-on-josh) above. Dated task detail stays in
+[`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md).
+
+### How device copies and drafts are kept
+
+D-72 item 1 permits automatic saving of a scrubbed
+submitted-state device copy after a typed-text event, whether accepted or refused.
+Typed values are replaced with “Typed text not kept on this device”. If a safe,
+valid copy cannot be made, saving stops. D-18 continues to exclude the original
+typed values from that copy. D-67 separately permits bounded sessionStorage
+recovery for opted-in synthetic referral and
+legal form drafts, scoped to account, session, scenario and form subject.
+Restored drafts require human review and submission; referral attachments
+require reattachment. Successful submission clears the relevant draft;
+sign-out, session termination and reset invalidate drafts and pending writes.
+Browser session restoration may preserve sessionStorage across a restart, so
+browser-close deletion is not guaranteed. Explicit JSON scenario exports are
+separate from draft recovery and automatic shared persistence. They refuse
+scenarios containing repatriation or support-notification records. Imported
+scenarios use the same scrubbed device-copy path, subject to its safety and
+restore-validation checks; refresh recovery is not guaranteed for every import. No real
+patient information is authorised by any of these paths.
 
 ## Before any real patient
 
@@ -243,5 +260,5 @@ The [production-readiness register](governance/PRODUCTION-READINESS.md) distingu
 local engineering from required institutional and qualified external decisions:
 clinical safety, WA privacy/information governance, legal forms, cultural safety,
 reference-data verification, intended-purpose/TGA assessment and accountable
-support. Internal D-37 statements record intended standards; they are neither
-external approval nor proof those standards are implemented.
+support. D-87 replaced the internal D-36 and D-37 statements with the real-data gate; nothing in
+this repository is an external approval.

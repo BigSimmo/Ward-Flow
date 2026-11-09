@@ -2371,6 +2371,37 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       copyGiven: pick(random, ["yes", "declined", "not_yet"] as const),
     })),
   ],
+  // Staff needed (feature 10, 9 Nov 2026): one builder, so the sweep's list grows by one only. Closes
+  // an open request half the time, else a ward asks for staff.
+  [
+    0.6,
+    (state, random) => {
+      const open = (state.staffRequests ?? []).filter((record) => record.outcome === undefined);
+      // With no open request it still sends a close, naming a missing one (refused), so a sweep
+      // step always covers the close event whatever the builder list order (re-aimed 9 Nov 2026).
+      if (chance(random, 0.5)) {
+        const request = pick(random, open);
+        const unitId = request?.unitId ?? id(pick(random, state.units));
+        return {
+          type: "CLOSE_WARD_STAFF_REQUEST",
+          requestId: request?.id ?? "SR-none",
+          unitId,
+          actingUnitId: unitId,
+          // A ward may only withdraw, so withdrawing is accepted from every desk that may close.
+          outcome: chance(random, 0.8) ? "withdrawn" : "arranged",
+        };
+      }
+      const unit = pick(random, state.units);
+      return {
+        type: "REQUEST_WARD_STAFF",
+        unitId: id(unit),
+        actingUnitId: id(unit),
+        shift: pick(random, ["this_shift", "next_shift"] as const) ?? "this_shift",
+        count: pick(random, [1, 2, 3, 4] as const) ?? 1,
+        reasons: chance(random, 0.9) ? ["high_acuity"] : [],
+      };
+    },
+  ],
 ];
 
 const ALL_BUILDERS = [...BUILDERS, ...MORE_BUILDERS];
@@ -2457,6 +2488,12 @@ export function nextEvent(
       now: currentNow,
       siteCode: justTold.subjectId.replace(/^site-handover:/, ""),
     } as unknown as WardFlowEvent;
+  }
+  // Aimed on 9 Nov 2026, when adding the staff request builders shifted the random runs: a reset is
+  // counted as accepted only from a state with no refusal yet, so now and then reset at the first step.
+  if (seed !== undefined && step === 0 && seed % 25 === 0) {
+    FUZZED_EVENT_TYPES.add("RESET_SCENARIO");
+    return { type: "RESET_SCENARIO", role: "demo", now: currentNow } as WardFlowEvent;
   }
   for (let attempt = 0; ; attempt += 1) {
     const draft = (attempt === 0 && sweep ? sweep : chooseBuilder(random))(state, random);

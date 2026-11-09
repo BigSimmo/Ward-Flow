@@ -39,6 +39,7 @@ import {
   ED_STAGE_LABELS,
   edHomeSummaries,
   edWaitingSeries,
+  isUnderAForm,
 } from "@/components/ward-management/ed/ed-home-derivations";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -164,7 +165,7 @@ export function EdIndex() {
   // 2026). The header search finds an ED by name or site.
 
   const rows: EdRow[] = useMemo(() => {
-    // D-14: names come through the shared resolver, the same one the ED board uses.
+    // Archived D-14: names come through the shared resolver, the same one the ED board uses.
     const resolve = createPatientResolver({ patients, referrals, movements });
     return edHomeSummaries(movements, now, accessTarget).map((summary) => {
       const people = summary.open
@@ -204,7 +205,7 @@ export function EdIndex() {
         noBed: people.filter((person) => edHasNoBedYet(person.movement)).length,
         held: inStages(HELD),
         leaving: inStages(LEAVING),
-        forms: people.filter((person) => person.movement.legalForm).length,
+        forms: people.filter((person) => isUnderAForm(person.movement)).length,
         trend,
       };
     });

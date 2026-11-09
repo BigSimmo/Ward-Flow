@@ -6,6 +6,7 @@ import {
   type PullHoldExtensionMinutes,
 } from "@/components/ward-management/ward-operational-defaults";
 import type { Movement } from "@/components/ward-management/ward-model";
+import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 
 /**
  * ONE BED-HOLD RULE for every page that shows a pulled bed (audit A4-4, A4-1, A1-3, A1-4, A4-3;
@@ -127,3 +128,19 @@ export function heldUntilExtendedLabel(
   if (!movement.pullExtensions?.length) return null;
   return `Pulled until ${formatInstantWithDay(movement.pullExpiresAt, now)} · extended`;
 }
+
+/** `EXTEND_PULL`, moved unchanged from `ward-flow-events.ts` for its line cap (9 Nov 2026). */
+export type ExtendPullEvent = {
+  /**
+   * Feature 11 (Josh, 9 Nov 2026): adds a chosen amount to a pulled bed's Pull time limit,
+   * never past `PULL_HOLD_MAX_TOTAL_MINUTES` from the pull. Same roles as `PULL_PATIENT`.
+   * Recorded on `Movement.pullExtensions`.
+   */
+  type: "EXTEND_PULL";
+  role: WardFlowRole;
+  now: Instant;
+  movementId: string;
+  minutes: PullHoldExtensionMinutes;
+  /** As `RELEASE_PULL`: the unit a `ward` caller claims to act as. Claim, not proof. */
+  actingUnitId?: string;
+};

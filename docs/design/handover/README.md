@@ -38,18 +38,18 @@ Port the mock-up's components and tokens as they are; don't rebuild them. Compar
 
 ## Screen handover files (1 November 2026, history)
 
-| Screen     | File                                     | 1 November PRs      |
-| ---------- | ---------------------------------------- | ------------------- |
-| Ward       | [ward.md](ward.md)                       | #1212               |
-| Transport  | [transport.md](transport.md)             | #1221               |
-| Movements  | [movements.md](movements.md)             | #1222               |
-| ED         | [ed.md](ed.md)                           | #1223, #1231        |
-| Alerts     | [alerts.md](alerts.md)                   | #1225, #1230, #1233 |
-| Forms      | [forms.md](forms.md)                     | #1228               |
-| Handover   | [handover-screen.md](handover-screen.md) | #1232               |
-| Community  | [community.md](community.md)             | #1227               |
-| Discharges | [discharges.md](discharges.md)           | #1229               |
-| Pop-ups    | [popups.md](popups.md)                   | #1226               |
+| Screen     | File                                                                           | 1 November PRs      |
+| ---------- | ------------------------------------------------------------------------------ | ------------------- |
+| Ward       | [ward.md](../../history/design-2026-11/handover/ward.md)                       | #1212               |
+| Transport  | [transport.md](../../history/design-2026-11/handover/transport.md)             | #1221               |
+| Movements  | [movements.md](../../history/design-2026-11/handover/movements.md)             | #1222               |
+| ED         | [ed.md](../../history/design-2026-11/handover/ed.md)                           | #1223, #1231        |
+| Alerts     | [alerts.md](../../history/design-2026-11/handover/alerts.md)                   | #1225, #1230, #1233 |
+| Forms      | [forms.md](../../history/design-2026-11/handover/forms.md)                     | #1228               |
+| Handover   | [handover-screen.md](../../history/design-2026-11/handover/handover-screen.md) | #1232               |
+| Community  | [community.md](../../history/design-2026-11/handover/community.md)             | #1227               |
+| Discharges | [discharges.md](../../history/design-2026-11/handover/discharges.md)           | #1229               |
+| Pop-ups    | [popups.md](../../history/design-2026-11/handover/popups.md)                   | #1226               |
 
 ## Question log
 

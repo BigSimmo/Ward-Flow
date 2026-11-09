@@ -19,7 +19,7 @@ import { EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE } from "@/components/ward-man
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
- * T8 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`): the movement console's own
+ * T8 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`): the movement console's own
  * copy of the revoked-while-bed-held flag `ward-ed-screen.dom.test.tsx` already proves for the ED
  * screen — same shared `EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE` sentence, same derivation
  * (`examinationRevokedWhileBedHeld`, `ward-derivations.ts`).

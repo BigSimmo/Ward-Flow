@@ -54,13 +54,16 @@ describe("Help sheet search field", () => {
     const outsideKey = vi.fn();
     window.addEventListener("keydown", outsideKey);
     try {
+      // Typing brings the suggestions: the first Esc puts them away, the next clears the words.
+      fireEvent.keyDown(field, { key: "Escape" });
       fireEvent.keyDown(field, { key: "Escape" });
       expect(outsideKey).not.toHaveBeenCalled();
     } finally {
       window.removeEventListener("keydown", outsideKey);
     }
     expect((field as HTMLInputElement).value).toBe("");
-    expect(screen.getByRole("tablist", { name: "Help sections" })).toBeTruthy();
+    // The caret is still in the box, so questions to try show in place of the sections.
+    expect(screen.getByText("Try asking")).toBeTruthy();
     expect(onClose).not.toHaveBeenCalled();
   });
 

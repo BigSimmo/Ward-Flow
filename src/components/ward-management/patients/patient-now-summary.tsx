@@ -40,6 +40,7 @@ import type { LeaveBed, Movement } from "@/components/ward-management/ward-model
 import type { PatientMode } from "./patient-mode";
 import type { ResolvedPatientNow } from "./patient-now-adapter";
 import type { StagePresentationDetail } from "./patient-now-screen-helpers";
+import { PatientPinButton } from "./patient-pin-button";
 import type { WfTone } from "@/components/wf";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
@@ -277,6 +278,21 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
               <Button variant="onHero" icon={Copy} className={phoneRows.heroPill} onClick={handleCopySummary}>
                 {copied ? "Copied" : "Copy handover"}
               </Button>
+              <PatientPinButton
+                patientId={livePatient?.id}
+                name={displayName}
+                className={phoneRows.heroPill}
+                size="md"
+              />
+            </div>
+          ) : livePatient ? (
+            <div className={phoneRows.heroPills}>
+              <PatientPinButton
+                patientId={livePatient.id}
+                name={displayName}
+                className={phoneRows.heroPill}
+                size="md"
+              />
             </div>
           ) : undefined
         }
@@ -540,6 +556,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
               // v10 phone: the movement page reads "Live HH:MM", the patient page a plain "Live".
               <LiveChip state="live" age={phoneMovement ? undefined : null} onHero />
             )}
+            {isPhone ? null : <PatientPinButton patientId={livePatient?.id} name={displayName} />}
             {isPhone ? null : (
               <Button variant="onHero" size="sm" icon={Copy} onClick={handleCopySummary}>
                 {copied

@@ -170,19 +170,21 @@ export const FORECAST_WORSE_ALERT_RANGE_BEDS = { min: 1, max: 10, step: 1 } as c
 
 /**
  * The longest a red (act-now) alert or task may be snoozed. Acknowledging is always allowed;
- * hiding a red row for longer than this is refused by the reducer. A prototype default.
+ * hiding a red row for longer than this is refused by the reducer. A prototype default, read from the
+ * clinical values register (D-106, 9 Nov 2026).
  * Named without the legal token `ACT` so Part 3's incomplete denylist does not trip on it.
  */
-export const RED_ROW_SNOOZE_CAP_MINUTES = 1 * MINUTES_PER_HOUR;
+export const RED_ROW_SNOOZE_CAP_MINUTES = CLINICAL_VALUES.redRowSnoozeCap.value;
 /** Sanity bound on any snooze: a row never disappears for more than a day. */
 export const SNOOZE_MAX_MINUTES = 24 * MINUTES_PER_HOUR;
 
 /**
  * Carer, PSP and MHAS notifications (9 Oct 2026): an involuntary admission, transfer or discharge
  * completed within this many minutes stays on the task list while a party is unrecorded. A service
- * default for keeping the list short, not a legal time limit.
+ * default for keeping the list short, not a legal time limit. Read from the clinical values register
+ * (D-106, 9 Nov 2026).
  */
-export const SUPPORT_NOTIFICATION_TASK_LOOKBACK_MINUTES = 72 * MINUTES_PER_HOUR;
+export const SUPPORT_NOTIFICATION_TASK_LOOKBACK_MINUTES = CLINICAL_VALUES.supportNotificationLookback.value;
 
 /**
  * A leave bed held this long is flagged "consider opening it" (Josh, D-23: the 24 hours stay, as his
