@@ -31,6 +31,12 @@ export type DowntimeWard = {
   counts: BedStateCounts;
   /** Of `counts.ready`: released beds still being made ready (frozen with the pack). */
   pendingPreparation: number;
+  /**
+   * D-115 (audit 6): each person this ward holds a bed for who is absent without leave, named by the
+   * pack's own `identify`, oldest absence first. Their bed stays in `counts.onLeave` (D-38 keeps the
+   * held bed); this line is what stops a printed pack reading them as approved leave.
+   */
+  absentWithoutLeave?: { admissionId: string; person: string; since: Instant }[];
 };
 
 type DowntimeEdLine = {
@@ -99,7 +105,8 @@ export type DowntimePackInput = {
   leaveBeds: readonly LeaveBed[];
   movements: Movement[];
   now: Instant;
-  identify: (movement: Movement) => string;
+  /** One identity line for a journey, or for a ward stay (an absence without leave names a stay). */
+  identify: (subject: Movement | Admission) => string;
 };
 
 /** "Armadale ED", one line in a printed row; the full name only when no short name exists. */
@@ -134,6 +141,14 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
         beds: unit.beds,
         counts,
         pendingPreparation: counts.beingMadeReady,
+        absentWithoutLeave: leaveBeds
+          .filter((bed) => bed.unitId === unit.id && bed.absentWithoutLeave !== undefined)
+          .flatMap((bed) => {
+            const stay = admissions.find((admission) => admission.id === bed.admissionId);
+            if (!stay || stay.state === "departed") return [];
+            return [{ admissionId: stay.id, person: identify(stay), since: bed.absentWithoutLeave!.since }];
+          })
+          .sort((a, b) => a.since - b.since),
       };
     })
     .sort((a, b) => a.service.localeCompare(b.service) || a.name.localeCompare(b.name));
