@@ -31,7 +31,7 @@ export const STAFF_REQUEST_REASONS = [
 ] as const;
 export type StaffRequestReason = (typeof STAFF_REQUEST_REASONS)[number];
 export const STAFF_REQUEST_OUTCOMES = ["arranged", "withdrawn", "not_available"] as const;
-export type StaffRequestOutcome = (typeof STAFF_REQUEST_OUTCOMES)[number];
+type StaffRequestOutcome = (typeof STAFF_REQUEST_OUTCOMES)[number];
 
 export const STAFF_REQUEST_SHIFT_LABELS: Record<StaffRequestShift, string> = {
   this_shift: "This shift",
@@ -43,11 +43,6 @@ export const STAFF_REQUEST_REASON_LABELS: Record<StaffRequestReason, string> = {
   admissions_expected: "Admissions expected",
   staff_short: "Staff short (leave or vacancy)",
   other: "Other",
-};
-export const STAFF_REQUEST_OUTCOME_LABELS: Record<StaffRequestOutcome, string> = {
-  arranged: "Arranged",
-  withdrawn: "Withdrawn",
-  not_available: "Not available",
 };
 export const staffCountLabel = (count: number) => (count >= 4 ? "4 or more" : String(count));
 
@@ -94,8 +89,7 @@ export type StaffRequestEvent =
 type Reject = (state: WardFlowState, event: WardFlowEvent, reason: string) => WardFlowState;
 
 /** When the shift a request is for ends. */
-export const staffRequestEndsAt = (record: Pick<StaffRequestRecord, "shiftStartAt">) =>
-  shiftEndInstant(record.shiftStartAt);
+const staffRequestEndsAt = (record: Pick<StaffRequestRecord, "shiftStartAt">) => shiftEndInstant(record.shiftStartAt);
 
 const isOpen = (record: StaffRequestRecord, now: Instant) =>
   record.outcome === undefined && now < staffRequestEndsAt(record);

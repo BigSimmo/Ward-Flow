@@ -26,7 +26,7 @@ export function sinceBannerParts(changes: ChangesSinceLastLook): string[] {
 }
 
 /** At most this many parts are named; the rest are "N more". Keeps the line one line on desktop. */
-export const SINCE_BANNER_MAX_PARTS = 3;
+const SINCE_BANNER_MAX_PARTS = 3;
 
 /**
  * "Since you were last here, 15:02 yesterday: 4 new referrals · 3 beds freed · 2 new delays". Before

@@ -10,7 +10,7 @@ import { availability, buildOnCallDirectory, hhmm, numberAt, type DirectoryEntry
  * "Not recorded".
  */
 
-export type WardContactRow = {
+type WardContactRow = {
   key: "nurseInCharge" | "pager" | "consultant" | "registrar" | "switchboard";
   label: string;
   /** The directory entry the number came from, when there is one. */

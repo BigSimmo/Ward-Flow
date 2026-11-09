@@ -39,7 +39,7 @@ export type HandoverDigestLine = {
   action?: HandoverDigestAction;
 };
 
-export type HandoverDigestPromise = {
+type HandoverDigestPromise = {
   id: string;
   /** "09:00", or the promised time when overdue. */
   when: string;

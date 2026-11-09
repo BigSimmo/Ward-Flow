@@ -18,7 +18,7 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 
-export const ALERT_PREFERENCES_STORAGE_KEY = "ward-flow-alert-preferences";
+const ALERT_PREFERENCES_STORAGE_KEY = "ward-flow-alert-preferences";
 const CHANGE_EVENT = "ward-flow-alert-preferences-change";
 
 /** Minutes from midnight, Perth time. */
@@ -137,11 +137,7 @@ function readRaw(role: WardChromeRole): string | null {
   return memory.get(role) ?? null;
 }
 
-export function getAlertPreferences(role: WardChromeRole): AlertPreferences {
-  return parseAlertPreferences(readRaw(role), role);
-}
-
-export function setAlertPreferences(role: WardChromeRole, next: AlertPreferences): void {
+function setAlertPreferences(role: WardChromeRole, next: AlertPreferences): void {
   const raw = JSON.stringify({
     dueSoon: next.dueSoon,
     staffRequests: deskSeesStaffRequests(role) ? next.staffRequests : false,
