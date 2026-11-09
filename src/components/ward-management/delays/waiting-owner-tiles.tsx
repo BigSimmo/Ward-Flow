@@ -7,7 +7,7 @@
  * list. No coloured edges: tone is the status glyph by the fact. The phone keeps its sliding chips.
  */
 import { splitDuration } from "@/components/ward-management/ward-clock";
-import { H8, OVER_8H, WAIT_BANDS, type OwnerTile } from "./delays-board-model";
+import { H8, OVER_8H, WAIT_BANDS, waitBand, type OwnerTile } from "./delays-board-model";
 import { BandBar, Glyph } from "./delays-board-parts";
 import type { DelayOwnerId } from "./delays-derivations";
 import { phoneRows } from "@/components/wf";
@@ -69,11 +69,14 @@ export function WaitingOwnerTiles({
               <BandBar bands={tile.bands} className={isPhone ? undefined : styles.ownBar} />
               {isPhone || first === undefined ? null : (
                 <span className={styles.ownFirst}>
-                  <span className={styles.ownFirstName}>
-                    <span className={styles.ownFirstLabel}>Longest </span>
-                    {patientOf(first.movement).formalName}
-                  </span>
-                  <b className={board.num}>{splitDuration(longest)}</b>
+                  <span className={styles.ownFirstLabel}>Longest</span>{" "}
+                  <span className={styles.ownFirstName}>{patientOf(first.movement).formalName}</span>
+                  {/* Note 8, issue 1 (Josh, 8-9 Nov 2026): the longest wait sits beside the person it
+                      belongs to, toned by its band, so the tile reads in three short lines. */}
+                  <b className={`${board.num} ${styles.ownLongest}`} data-band={waitBand(longest)}>
+                    <span className="sr-only">waited </span>
+                    {splitDuration(longest)}
+                  </b>
                 </span>
               )}
               {/* Audit 11 Oct 2026, phone: one count per chip; the glyph alone flags the sub fact. */}

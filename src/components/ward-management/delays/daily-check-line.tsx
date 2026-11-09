@@ -18,7 +18,8 @@ import {
   MISSED_REQUEST_LABELS,
   missedRequestCheck,
 } from "@/components/ward-management/coordinator/missed-requests-check";
-import panel from "./daily-check-list.module.css";
+import panel from "./daily-check-panel.module.css";
+import phonePanel from "./daily-check-list.module.css";
 
 import styles from "./waiting.module.css";
 import polish from "./waiting-polish.module.css";
@@ -129,77 +130,90 @@ export function DailyCheckHeroTile({
   );
 }
 
+/** Note 8, issue 4: the fix each reason asks for, as the row's button names it. */
+const KIND_ACTION: Record<keyof typeof MISSED_REQUEST_LABELS, string> = {
+  no_ward_asked: "Ask a ward",
+  no_bed_request: "Raise request",
+  two_requests: "Review both",
+  bed_held_twice: "Release one",
+};
+
 /**
  * The daily check's opened list, under the header on a laptop (see `DailyCheckHeroTile`).
- * Round 8 (Josh, 31 Oct 2026): no wasted width. A head line with a count by kind and the one
- * action, then the people as a grid of compact cards across the page, first nine then Show more.
- * Each card opens that person. The rule stays: the list is open before it can be marked checked.
+ * Note 8, issue 4 (Josh, 8 Nov 2026): one plain head (what it is, today's status, Hide); each reason
+ * as a short section with what to do; each person as one row whose button names the fix and opens
+ * them in this page's drawer when they are on the list (the Wards tab for "ask a ward"), else their
+ * record; and a foot that says what "Mark all checked" records. Fixed rows drop off by themselves,
+ * because the check recomputes from the records. The list is open before it can be marked checked.
  */
-export function DailyCheckList({ open, listId, onClose }: { open: boolean; listId: string; onClose: () => void }) {
+export function DailyCheckList({
+  open,
+  listId,
+  onClose,
+  onBoardIds,
+  onOpenPerson,
+}: {
+  open: boolean;
+  listId: string;
+  onClose: () => void;
+  /** Movements on this page's list, which open in its drawer instead of navigating away. */
+  onBoardIds?: ReadonlySet<string>;
+  onOpenPerson?: (movementId: string, tab: "summary" | "wards") => void;
+}) {
   const access = useEffectiveWardAccess();
   const { items, checked, now, referrals } = useDailyCheck();
   const raise = useWardRaise("coordinator");
   const patientOf = usePatientOf();
   const [all, setAll] = useState(false);
   if (access.role !== "coordinator" || !open || items.length === 0) return null;
-  const kinds = Object.entries(
-    items.reduce<Record<string, number>>((counts, item) => {
-      counts[item.kind] = (counts[item.kind] ?? 0) + 1;
-      return counts;
-    }, {}),
-  ) as [keyof typeof MISSED_REQUEST_LABELS, number][];
+  const kinds = KIND_ORDER.filter((kind) => items.some((item) => item.kind === kind));
+  const hidden = kinds.reduce(
+    (sum, kind) => sum + Math.max(0, items.filter((item) => item.kind === kind).length - GRID_LIMIT),
+    0,
+  );
   return (
-    <section className={polish.dc} aria-labelledby={`${listId}-title`}>
-      <div className={polish.dcHead}>
-        <ListChecks size={16} aria-hidden="true" className={polish.dcIcon} />
-        <h2 id={`${listId}-title`} className={polish.dcTitle}>
-          Daily check
-        </h2>
-        <span className={polish.dcKinds}>
-          {kinds.map(([kind, count]) => (
-            <span key={kind} className={polish.dcKind}>
-              <StatusGlyph tone="warning" size={8} />
-              <b>{count}</b> {MISSED_REQUEST_LABELS[kind].toLowerCase()}
-            </span>
-          ))}
+    <section className={panel.panel} aria-labelledby={`${listId}-title`}>
+      <div className={panel.head}>
+        <span className={panel.icon} aria-hidden="true">
+          <ListChecks size={18} aria-hidden="true" />
         </span>
-        <span className={polish.dcSpacer} />
+        <div className={panel.headText}>
+          <h2 id={`${listId}-title`} className={panel.title}>
+            Daily check
+          </h2>
+          <p className={panel.sub}>
+            Bed requests across the network that may have been missed or sent twice. Coordinator only.
+          </p>
+        </div>
         {checked ? (
-          <span className={polish.dcDone}>
-            <StatusGlyph tone="success" size={9} />{" "}
+          <span className={panel.status} data-tone="success">
+            <StatusGlyph tone="success" size={9} />
             {`Checked by ${checked.by} at ${formatInstantWithDay(checked.at, now)}`}
           </span>
         ) : (
-          <Button
-            variant="sec"
-            size="sm"
-            icon={CheckCheck}
-            onClick={() => raise("COMPLETE_INBOX_ITEM", { inboxItemId: dailyCheckId(now) })}
-          >
-            {markAllLabel(items.length)}
-          </Button>
+          <span className={panel.status} data-tone="warning">
+            <StatusGlyph tone="warning" size={9} />
+            Not checked today
+          </span>
         )}
         <Button variant="ghost" size="sm" iconEnd={ChevronUp} onClick={onClose}>
           Hide
         </Button>
       </div>
-      <p className={polish.dcAbout}>
-        Bed requests across the network that may have been missed or sent twice. Work through each reason, then mark the
-        list checked. Coordinator only.
-      </p>
-      <div id={listId} className={polish.dcGroups}>
-        {KIND_ORDER.filter((kind) => items.some((item) => item.kind === kind)).map((kind) => {
+      <div id={listId} className={panel.groups}>
+        {kinds.map((kind) => {
           const ofKind = items.filter((item) => item.kind === kind);
           const visible = all ? ofKind : ofKind.slice(0, GRID_LIMIT);
           return (
-            <section key={kind} className={polish.dcGroup} aria-labelledby={`${listId}-${kind}`}>
-              <h3 id={`${listId}-${kind}`} className={polish.dcGroupHead}>
-                <StatusGlyph tone="warning" size={8} />
-                <span className={polish.dcGroupName}>{MISSED_REQUEST_LABELS[kind]}</span>
-                <b className={polish.dcGroupCount}>{ofKind.length}</b>
-              </h3>
-              <p className={polish.dcGroupHelp}>{KIND_HELP[kind]}</p>
-              <ul className={polish.dcGrid}>
+            <section key={kind} className={panel.group} aria-labelledby={`${listId}-${kind}`}>
+              <div className={panel.groupHead}>
+                <h3 id={`${listId}-${kind}`} className={panel.groupName}>
+                  {MISSED_REQUEST_LABELS[kind]}
+                  <b className={`${styles.num} ${panel.count}`}>{ofKind.length}</b>
+                </h3>
+                <p className={panel.help}>{KIND_HELP[kind]}</p>
+              </div>
+              <ul className={panel.rows}>
                 {visible.map((item) => {
                   const referralId = item.referralIds[0];
                   const movementId = item.movementIds[0];
@@ -211,17 +225,39 @@ export function DailyCheckList({ open, listId, onClose }: { open: boolean; listI
                       ? referralBoardHref(referralId)
                       : undefined;
                   const extra = item.referralIds.length + item.movementIds.length - 1;
+                  const here = movementId !== undefined && onOpenPerson !== undefined && onBoardIds?.has(movementId);
+                  const action = (
+                    <>
+                      {KIND_ACTION[kind]}
+                      <ChevronRight size={14} aria-hidden="true" />
+                    </>
+                  );
                   return (
-                    <li key={item.key} data-kind={item.kind}>
-                      {href ? (
-                        <Link href={href} className={polish.dcCard}>
-                          <span className={polish.dcWho}>
-                            <b>{person?.formalName ?? "Referral"}</b>
-                            <small>{person?.umrn}</small>
-                          </span>
-                          {extra > 0 ? <span className={polish.dcWhat}>{`+${extra} more record`}</span> : null}
-                          <span className={polish.dcFor}>{splitDuration(Math.max(0, now - item.since))}</span>
-                          <ChevronRight size={14} aria-hidden="true" className={polish.dcGo} />
+                    <li key={item.key} className={panel.row} data-kind={item.kind}>
+                      <span className={panel.who}>
+                        <b>{person?.formalName ?? "Referral"}</b>
+                        <small className={styles.num}>{person?.umrn}</small>
+                        {extra > 0 ? <small>{`+${extra} more record`}</small> : null}
+                      </span>
+                      <span className={`${styles.num} ${panel.for}`}>
+                        {splitDuration(Math.max(0, now - item.since))}
+                      </span>
+                      {here ? (
+                        <button
+                          type="button"
+                          className={panel.act}
+                          aria-label={`${KIND_ACTION[kind]}: ${person?.formalName ?? "referral"}`}
+                          onClick={() => onOpenPerson(movementId, kind === "no_ward_asked" ? "wards" : "summary")}
+                        >
+                          {action}
+                        </button>
+                      ) : href ? (
+                        <Link
+                          href={href}
+                          className={panel.act}
+                          aria-label={`${KIND_ACTION[kind]}: ${person?.formalName ?? "referral"}`}
+                        >
+                          {action}
                         </Link>
                       ) : null}
                     </li>
@@ -232,13 +268,27 @@ export function DailyCheckList({ open, listId, onClose }: { open: boolean; listI
           );
         })}
       </div>
-      {kinds.some(([, count]) => count > GRID_LIMIT) ? (
+      {hidden > 0 || all ? (
         <ShowMoreRow onClick={() => setAll((current) => !current)} expanded={all} controls={listId}>
-          {all
-            ? "Show fewer"
-            : `Show ${kinds.reduce((sum, [, count]) => sum + Math.max(0, count - GRID_LIMIT), 0)} more`}
+          {all ? "Show fewer" : `Show ${hidden} more`}
         </ShowMoreRow>
       ) : null}
+      {checked ? null : (
+        <div className={panel.foot}>
+          <span className={panel.footText}>
+            <b>Worked through the list?</b>
+            <small>Records your role and the time for today. It closes and hides nothing.</small>
+          </span>
+          <Button
+            variant="pri"
+            size="sm"
+            icon={CheckCheck}
+            onClick={() => raise("COMPLETE_INBOX_ITEM", { inboxItemId: dailyCheckId(now) })}
+          >
+            {markAllLabel(items.length)}
+          </Button>
+        </div>
+      )}
     </section>
   );
 }
@@ -317,15 +367,15 @@ export function DailyCheckLine() {
             Bed requests across the network that may have been missed or sent twice. Open each one, then mark the list
             checked.
           </p>
-          <ul id={listId} className={panel.list}>
+          <ul id={listId} className={phonePanel.list}>
             {shownItems.map((item) => (
-              <li key={item.key} className={panel.item} data-kind={item.kind}>
-                <span className={panel.kind}>
+              <li key={item.key} className={phonePanel.item} data-kind={item.kind}>
+                <span className={phonePanel.kind}>
                   <StatusGlyph tone="warning" size={9} />
                   {MISSED_REQUEST_LABELS[item.kind]}
-                  <span className={panel.since}> · for {splitDuration(Math.max(0, now - item.since))}</span>
+                  <span className={phonePanel.since}> · for {splitDuration(Math.max(0, now - item.since))}</span>
                 </span>
-                <span className={panel.links}>
+                <span className={phonePanel.links}>
                   {item.referralIds.map((referralId) => {
                     const referral = referrals.find((candidate) => candidate.id === referralId);
                     return (
