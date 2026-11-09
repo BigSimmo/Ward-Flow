@@ -65,6 +65,7 @@ import {
 } from "./bed-meeting-actions";
 import { bedMeetingAgenda, meetingActionSummary, type AgendaItem, type MeetingActionRow } from "./bed-meeting-agenda";
 import { AgendaReferralsCopy, agendaReferralsText } from "./agenda-referrals-copy";
+import { actionsRecordedSince, MEETING_STEPS, MeetingRunBar, MeetingSummary, useMeetingRun } from "./bed-meeting-run";
 import styles from "./bed-meeting-agenda.module.css";
 import { AgendaGroupFilterControl, toggleGroup } from "./bed-meeting-group-filter";
 import {
@@ -151,6 +152,8 @@ function BedMeetingAgenda() {
   // B1 extended (Josh, 4 Nov 2026): narrow every list to any group (ward, tier, legal status, age).
   const [groups, setGroups] = useState<AgendaGroupFilter>({});
   const grouped = agendaGroupFilterActive(groups);
+  // Run meeting (six features build, Josh 9 Nov 2026): step through the services, then a summary.
+  const [run, setRun] = useMeetingRun();
 
   const scopedMovements = useMemo(
     () =>
@@ -328,8 +331,47 @@ function BedMeetingAgenda() {
           })
           .slice(0, 8);
 
+  const stepTo = (step: number) => {
+    if (!run) return;
+    setRun({ ...run, step, finished: false });
+    setServiceScope(MEETING_STEPS[step] ?? null);
+  };
+  const startRun = () => {
+    setRun({ startedAt: now, step: 0, finished: false });
+    setServiceScope(MEETING_STEPS[0]);
+  };
+  const recordedThisMeeting = run
+    ? actionsRecordedSince({
+        startedAt: run.startedAt,
+        now,
+        movements,
+        admissions,
+        units,
+        nameOf: (record) => patientOf(record).formalName,
+        ownerText,
+      })
+    : [];
+  const itemsForService = (candidate: HealthService) => {
+    const inService = new Set(units.filter((unit) => unitHealthService(unit) === candidate).map((unit) => unit.id));
+    return bedMeetingAgenda(
+      {
+        movements: movements.filter((movement) => movementBelongsToService(movement, candidate, units)),
+        admissions: admissions.filter((admission) => inService.has(admission.unitId)),
+        bedReleases,
+        units,
+      },
+      now,
+      Number.POSITIVE_INFINITY,
+    ).reduce((total, section) => total + section.total, 0);
+  };
+
   return (
-    <main id="main-content" className={styles.main} data-testid="bed-meeting-agenda">
+    <main
+      id="main-content"
+      className={styles.main}
+      data-testid="bed-meeting-agenda"
+      data-meeting-summary={run?.finished ? "true" : undefined}
+    >
       <Hero
         level={1}
         eyebrow="Bed meeting"
@@ -351,6 +393,16 @@ function BedMeetingAgenda() {
         aside={
           // Phone (Josh, 31 Oct 2026): Home's hero pills, side by side.
           <div className={`${styles.heroPillGroup} ${phoneRows.heroPills}`}>
+            {chairs && !run ? (
+              <button
+                type="button"
+                className={`${buttonClass({ variant: "onHero", size: "sm" })} ${phoneRows.heroPill}`}
+                onClick={startRun}
+                data-testid="bed-meeting-run-start"
+              >
+                Run meeting
+              </button>
+            ) : null}
             {bedMeetingTvOn ? null : (
               <BedMeetingSheetLauncher
                 now={now}
@@ -385,19 +437,45 @@ function BedMeetingAgenda() {
         Synthetic prototype, not for clinical use
       </p>
 
+      {run && !run.finished ? (
+        <MeetingRunBar
+          run={run}
+          recorded={recordedThisMeeting.length}
+          itemsFor={itemsForService}
+          onStep={stepTo}
+          onFinish={() => setRun({ ...run, finished: true })}
+          onStop={() => setRun(null)}
+        />
+      ) : null}
+      {run?.finished ? (
+        <MeetingSummary
+          run={run}
+          now={now}
+          rows={recordedThisMeeting}
+          onBack={() => setRun({ ...run, finished: false })}
+          onClose={() => {
+            setRun(null);
+            setServiceScope(null);
+          }}
+        />
+      ) : null}
+
       {/* B1 (Josh, 3 Nov 2026): one filter bar. Service first, then the lists, then find anyone. */}
       <div className={styles.filters} data-testid="bed-meeting-agenda-filters">
         <div className={styles.filterLine}>
-          <Segmented
-            label="Service"
-            className={styles.serviceTrack}
-            value={service ?? "statewide"}
-            onChange={(next) => setServiceScope(next === "statewide" ? null : (next as HealthService))}
-            items={[
-              { id: "statewide", label: "Statewide" },
-              ...HEALTH_SERVICES.map((candidate) => ({ id: candidate, label: healthServiceAcronym(candidate) })),
-            ]}
-          />
+          {/* While a meeting runs, its step bar picks the service. */}
+          {run && !run.finished ? null : (
+            <Segmented
+              label="Service"
+              className={styles.serviceTrack}
+              value={service ?? "statewide"}
+              onChange={(next) => setServiceScope(next === "statewide" ? null : (next as HealthService))}
+              items={[
+                { id: "statewide", label: "Statewide" },
+                ...HEALTH_SERVICES.map((candidate) => ({ id: candidate, label: healthServiceAcronym(candidate) })),
+              ]}
+            />
+          )}
           <SearchField
             className={styles.search}
             value={query}
