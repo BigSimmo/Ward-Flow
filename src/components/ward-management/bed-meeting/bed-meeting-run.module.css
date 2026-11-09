@@ -159,6 +159,9 @@
   margin-top: var(--wf-s-4);
 }
 @media (max-width: 40rem) {
+  .live {
+    display: none;
+  }
   .steps {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
