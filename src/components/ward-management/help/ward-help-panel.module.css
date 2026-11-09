@@ -20,67 +20,122 @@
   }
 }
 
-.headTile {
-  border-color: transparent;
-  background: var(--wf-accent-tint);
-  box-shadow: none;
-  color: var(--wf-accent-ink);
+/* ── the slate top (page tops, Josh, 9 Nov 2026) ─────────────────────────────────────────────
+ * "Help on <screen>" with the desk, a 36px round close level with the title, the search, Show me
+ * around, quick jumps, then the tabs: folder tabs rising into the body on a phone, underline tabs on
+ * the light body (under the slate's curved lip) on a computer. Hero tokens, so both themes match the
+ * pages' own tops. */
+.head.head {
+  flex-shrink: 0;
+  gap: 12px;
+  padding: 14px 16px 0;
+  border-bottom: 0;
+  background:
+    radial-gradient(520px 200px at 88% -30%, var(--wf-hero-glow), transparent 70%),
+    linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
 }
 
-.context {
-  display: flex;
-  flex-wrap: wrap;
+/* The kit's bottom row reaches past the header's padding; this header's padding is 16px on every size. */
+.head.head > :last-child {
+  flex-basis: calc(100% + 32px);
+  width: calc(100% + 32px);
+  margin-inline: -16px;
+}
+
+/* Phone: the grip sits on the slate too. */
+.sheet > :first-child:not([data-sheet-header]) {
+  border-radius: 16px 16px 0 0;
+  background: var(--wf-hero-1);
+}
+
+.sheet > :first-child:not([data-sheet-header]) > span {
+  background: var(--wf-on-hero-line);
+}
+
+.title.title {
+  color: var(--wf-hero-ink);
+  font: 600 20px / 26px var(--wf-font);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.titleOn {
+  min-width: 0;
+  margin-left: -3px;
+  overflow: hidden;
+  color: var(--wf-hero-ink-2);
+  font: 400 20px / 26px var(--wf-font);
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rolePill {
+  display: inline-flex;
+  flex: none;
   align-items: center;
   gap: 6px;
-  margin: 2px 0 0;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-}
-
-.context b {
-  color: var(--wf-ink-1);
-  font-weight: 600;
-}
-
-.deskTag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 20px;
-  padding: 0 8px;
-  border: 1px solid var(--wf-line-2);
+  height: 26px;
+  margin-left: 4px;
+  padding: 0 10px;
+  border: 1px solid var(--wf-on-hero-line);
   border-radius: var(--wf-r-pill);
-  background: var(--wf-surface);
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  font-weight: 500;
+  color: var(--wf-hero-ink-2);
+  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
 }
 
-.deskTag svg {
-  width: 12px;
-  height: 12px;
+.rolePill svg {
+  width: 13px;
+  height: 13px;
 }
 
-/* ── search and tabs, pinned at the top of the body ─────────────────────────────────────────── */
+/* The smallest phones keep the title whole: the desk pill steps aside (Your desk in the foot names it). */
+@media (max-width: 22.5rem) {
+  .rolePill {
+    display: none;
+  }
+}
+
+.close {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--wf-on-hero-line);
+  border-radius: 50%;
+  background: var(--wf-on-hero-fill);
+  color: var(--wf-hero-ink);
+  cursor: pointer;
+  transition: background-color var(--wf-m-fast) var(--wf-ease);
+}
+
+/* A 48px tap area round the 36px face. */
+.close::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+
+.close:hover {
+  background: var(--wf-on-hero-hl);
+}
+
+.close:focus-visible,
+.actGo:focus-visible,
+.quickChip:focus-visible {
+  outline: 2px solid var(--wf-hero-ink-2);
+  outline-offset: 1px;
+}
+
 .dock {
-  position: sticky;
-  top: -16px;
-  z-index: 2;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 4px;
+  gap: 12px;
   min-width: 0;
-  margin: -14px -16px 0;
-  padding: 16px 16px 8px;
-  background: var(--wf-surface-2);
-}
-
-/* A short window (a phone on its side) keeps the panel for reading: the dock scrolls away. */
-@media (max-height: 30rem) {
-  .dock {
-    position: static;
-  }
+  padding: 0 16px;
 }
 
 .field {
@@ -88,27 +143,26 @@
   display: flex;
   align-items: center;
   min-width: 0;
-  height: 40px;
-  border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-ctl);
-  background: var(--wf-surface);
-  box-shadow: var(--wf-e1);
+  height: 44px;
+  border: 1px solid var(--wf-on-hero-line);
+  border-radius: 12px;
+  background: var(--wf-on-hero-fill);
   transition:
     border-color var(--wf-m-fast) var(--wf-ease),
     box-shadow var(--wf-m-fast) var(--wf-ease);
 }
 
 .field:focus-within {
-  border-color: var(--wf-accent);
-  box-shadow: 0 0 0 3px var(--wf-accent-tint);
+  border-color: var(--wf-hero-ink-3);
+  box-shadow: 0 0 0 3px var(--wf-on-hero-hl);
 }
 
 .field > svg {
   position: absolute;
-  left: 12px;
-  width: 16px;
-  height: 16px;
-  color: var(--wf-ink-3);
+  left: 14px;
+  width: 18px;
+  height: 18px;
+  color: var(--wf-hero-ink-3);
   pointer-events: none;
 }
 
@@ -116,16 +170,16 @@
   flex: 1;
   min-width: 0;
   height: 100%;
-  padding: 0 40px 0 36px;
+  padding: 0 44px 0 42px;
   border: 0;
   outline: 0;
   background: transparent;
-  color: var(--wf-ink-1);
-  font: 400 var(--wf-fs-14) / 1 var(--wf-font);
+  color: var(--wf-hero-ink);
+  font: 400 15px / 1 var(--wf-font);
 }
 
 .field input::placeholder {
-  color: var(--wf-ink-3);
+  color: var(--wf-hero-ink-3);
 }
 
 .field input::-webkit-search-cancel-button {
@@ -134,8 +188,9 @@
 
 /* The rest of the top suggestion, faint after the typed letters: the input's own box and font. */
 .field .ghost {
-  padding: 0 40px 0 36px;
-  font: 400 var(--wf-fs-14) / 1 var(--wf-font);
+  padding: 0 44px 0 42px;
+  color: var(--wf-hero-ink-3);
+  font: 400 15px / 1 var(--wf-font);
   /* The input draws without the body's stylistic sets, so the faint text must too, or it drifts. */
   font-feature-settings: normal;
 }
@@ -149,7 +204,7 @@
   }
 }
 
-/* The suggestions block, between the field and the answers: in the flow, so nothing jumps. */
+/* The suggestions block, at the top of the body: in the flow, so nothing jumps. */
 .suggest {
   min-width: 0;
   margin: 0 0 12px;
@@ -157,7 +212,7 @@
 
 .fieldEnd {
   position: absolute;
-  right: 4px;
+  right: 6px;
   display: grid;
   place-items: center;
   min-width: 32px;
@@ -167,13 +222,13 @@
 .slash {
   display: inline-grid;
   place-items: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 4px;
-  border: 1px solid var(--wf-line-2);
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border: 1px solid var(--wf-on-hero-line);
   border-radius: var(--wf-r-xs);
-  background: var(--wf-surface-2);
-  color: var(--wf-ink-3);
+  background: transparent;
+  color: var(--wf-hero-ink-3);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
 }
 
@@ -185,7 +240,7 @@
   border: 0;
   border-radius: var(--wf-r-sm);
   background: transparent;
-  color: var(--wf-ink-3);
+  color: var(--wf-hero-ink-3);
   cursor: pointer;
   transition:
     background-color var(--wf-t-micro) var(--wf-ease-out),
@@ -193,8 +248,8 @@
 }
 
 .clear:hover {
-  background: var(--wf-hover);
-  color: var(--wf-ink-1);
+  background: var(--wf-on-hero-hl);
+  color: var(--wf-hero-ink);
 }
 
 .clear svg {
@@ -202,24 +257,229 @@
   height: 16px;
 }
 
-.tabs {
-  gap: var(--wf-s-6);
-  margin-top: 4px;
+/* Show me around this screen: one calm row, first thing seen. */
+.act {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 10px 10px 16px;
+  border: 1px solid var(--wf-on-hero-div);
+  border-radius: 16px;
+  background: var(--wf-on-hero-fill);
 }
 
-.tabs > button {
-  gap: 6px;
+.actText {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
 }
 
-.tabs > button svg {
+.actTitle {
+  color: var(--wf-hero-ink);
+  font: 600 15px / 20px var(--wf-font);
+}
+
+.actSub {
+  color: var(--wf-hero-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.actGo {
+  position: relative;
   flex: none;
-  width: 14px;
-  height: 14px;
-  color: var(--wf-ink-3);
+  height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--wf-hero-ink);
+  color: var(--wf-hero-2);
+  font: 600 var(--wf-fs-14) / 1 var(--wf-font);
+  cursor: pointer;
+  transition: opacity var(--wf-m-fast) var(--wf-ease);
 }
 
-.tabs > button[aria-selected="true"] svg {
-  color: var(--wf-accent);
+.actGo:hover {
+  opacity: 0.9;
+}
+
+/* Quick jumps to How to's own lists. */
+.quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.quickChip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 8px 0 14px;
+  border: 1px solid var(--wf-on-hero-line);
+  border-radius: var(--wf-r-pill);
+  background: transparent;
+  color: var(--wf-hero-ink);
+  font: 500 var(--wf-fs-14) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--wf-m-fast) var(--wf-ease);
+}
+
+.quickChip:hover {
+  background: var(--wf-on-hero-fill);
+}
+
+.quickChip svg {
+  width: 16px;
+  height: 16px;
+  color: var(--wf-hero-ink-2);
+}
+
+.quickN {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background: var(--wf-on-hero-hl);
+  font: 600 var(--wf-fs-12) / 22px var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+@media (pointer: coarse) {
+  .actGo::after,
+  .quickChip::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+}
+
+/* Computer: the slate ends in a curved lip, and the tabs sit on the light body below it. */
+.tabsWrap {
+  min-height: 18px;
+  margin: 4px -16px 0;
+  padding: 4px 16px 0;
+  border-radius: 22px 22px 0 0;
+  background: var(--wf-surface-2);
+}
+
+.tabs.tabs {
+  gap: 28px;
+  margin: 0;
+}
+
+.tabs.tabs > button {
+  min-height: 46px;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-14);
+}
+
+.tabs.tabs > button:hover {
+  color: var(--wf-ink-1);
+}
+
+.tabs.tabs > button[aria-selected="true"] {
+  border-bottom-color: var(--wf-accent);
+  color: var(--wf-ink-1);
+}
+
+/* Phone: curved folder tabs on the slate; the chosen tab rises into the body (`--wf-surface-2`). */
+@media (max-width: 46.4375rem) {
+  .tabsWrap {
+    min-height: 0;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  /* The body's own curved top, under the tabs. */
+  .tabsWrap::after {
+    content: "";
+    display: block;
+    height: 16px;
+    border-radius: 22px 22px 0 0;
+    background: var(--wf-surface-2);
+  }
+
+  .tabsWrap:has([role="tab"]:first-child[aria-selected="true"])::after {
+    border-top-left-radius: 0;
+  }
+
+  .tabs.tabs {
+    gap: 0;
+    padding: 8px 12px 0 0;
+    border-bottom: 0;
+    mask-image: none;
+  }
+
+  .tabs.tabs > button {
+    position: relative;
+    height: 40px;
+    min-height: 40px;
+    margin: 0;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 14px 14px 0 0;
+    color: var(--wf-hero-ink-2);
+    font-size: 15px;
+  }
+
+  .tabs.tabs > button:first-child {
+    padding-left: 16px;
+    border-top-left-radius: 0;
+  }
+
+  /* Counts on the slate: plain mono numbers, no grey box. */
+  .tabs.tabs > button > :last-child {
+    background: transparent;
+    color: inherit;
+    font-family: var(--wf-mono);
+    opacity: 0.8;
+  }
+
+  .tabs.tabs > button:hover {
+    color: var(--wf-hero-ink);
+  }
+
+  .tabs.tabs > button[aria-selected="true"] {
+    z-index: 1;
+    background: var(--wf-surface-2);
+    color: var(--wf-ink-1);
+  }
+
+  /* The chosen tab's concave feet, so it flows into the body. */
+  .tabs.tabs > button[aria-selected="true"]::before,
+  .tabs.tabs > button[aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    inset: auto;
+    bottom: 0;
+    width: 12px;
+    height: 12px;
+  }
+
+  .tabs.tabs > button[aria-selected="true"]::before {
+    left: -12px;
+    background: radial-gradient(circle at 0 0, transparent 11.5px, var(--wf-surface-2) 12px);
+  }
+
+  .tabs.tabs > button[aria-selected="true"]::after {
+    right: -12px;
+    background: radial-gradient(circle at 100% 0, transparent 11.5px, var(--wf-surface-2) 12px);
+  }
+
+  .tabs.tabs > button:first-child[aria-selected="true"]::before {
+    display: none;
+  }
+}
+
+.body.body {
+  padding-top: 0;
 }
 
 .panel {
@@ -261,22 +521,6 @@
   letter-spacing: 0;
 }
 
-.sectionHeadIcon {
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: var(--wf-r-sm);
-  background: var(--wf-surface);
-  box-shadow: inset 0 0 0 1px var(--wf-line);
-  color: var(--wf-ink-2);
-}
-
-.sectionHeadIcon svg {
-  width: 14px;
-  height: 14px;
-}
-
 .note {
   margin: 0;
   color: var(--wf-ink-3);
@@ -308,18 +552,25 @@
 }
 
 /* ── How do I: this screen ──────────────────────────────────────────────────────────────────── */
+/*
+ * On this screen (Help overhaul, 9 Nov 2026): the screen's name and purpose, the walk round as the one
+ * accented row, then the screen's own jobs as flush list rows (no tiles inside the card), then the
+ * folded "How this screen works" and the printable guide. Rows run edge to edge under hairlines.
+ */
 .here {
   display: grid;
-  gap: 12px;
-  padding: 14px;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
 }
 
 .hereHead {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  display: grid;
+  gap: 2px;
+  padding: 14px 16px 12px;
 }
 
+/* The round icon disc beside a Help view's title (What's new). */
 .hereIcon {
   display: grid;
   flex: none;
@@ -336,72 +587,69 @@
   height: 16px;
 }
 
+.hereEyebrow {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  line-height: var(--wf-lh-12);
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+}
+
 .hereTitle {
   margin: 0;
   color: var(--wf-ink-1);
-  font-size: var(--wf-fs-14);
+  font-size: var(--wf-fs-16);
   font-weight: 600;
-  line-height: var(--wf-lh-14);
-}
-
-.hereTitle span {
-  color: var(--wf-ink-3);
-  font-weight: 500;
+  line-height: var(--wf-lh-16);
 }
 
 .herePurpose {
-  margin: 2px 0 0;
+  margin: 0;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-13);
   line-height: var(--wf-lh-13);
+  text-wrap: pretty;
 }
 
 .tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 8px;
+  gap: 0;
 }
 
+/* One of the screen's jobs: a list row, name on the left and its action lined up on the right edge. */
 .tile {
   display: grid;
-  align-content: space-between;
-  gap: 10px;
-  min-height: 76px;
-  padding: 10px 12px;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface);
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  border-radius: 0;
+  background: transparent;
   color: var(--wf-ink-1);
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition:
-    border-color var(--wf-m-fast) var(--wf-ease),
-    box-shadow var(--wf-m-fast) var(--wf-ease),
-    transform var(--wf-t-press) var(--wf-ease-out);
-}
-
-.tile[data-wide] {
-  grid-column: 1 / -1;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  min-height: 0;
+  transition: background-color var(--wf-t-micro) var(--wf-ease-out);
 }
 
 .tile:hover {
-  border-color: var(--wf-line-3);
-  box-shadow: var(--wf-e1-hover);
+  background: var(--wf-hover);
 }
 
 .tile:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 
 .tileTitle {
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-  line-height: var(--wf-lh-13);
+  font-size: var(--wf-fs-14);
+  font-weight: 500;
+  line-height: var(--wf-lh-14);
 }
 
 .tileAction {
@@ -411,65 +659,29 @@
   color: var(--wf-accent-ink);
   font-size: var(--wf-fs-12);
   font-weight: 600;
+  white-space: nowrap;
 }
 
-/* The screen's walk round: the card's first action, full width above the screen's own jobs. */
-.aroundTile {
-  grid-column: 1 / -1;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  min-height: 0;
-  padding: 10px 12px;
-  border-color: color-mix(in srgb, var(--wf-accent) 22%, var(--wf-line));
-  background: var(--wf-accent-tint);
+.tileAction .caret {
+  width: 14px;
+  height: 14px;
 }
 
-.aroundTile:hover {
-  border-color: color-mix(in srgb, var(--wf-accent) 40%, var(--wf-line));
+/* Inside the card the folds and the print row sit flush, under the same hairline as the jobs. */
+.here .works,
+.here .printRow {
+  margin: 0;
 }
 
-.aroundDisc {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--wf-accent);
-  box-shadow: var(--wf-e1);
-  color: var(--wf-on-accent);
-}
-
-.aroundDisc svg {
-  width: 12px;
-  height: 12px;
-  margin-left: 2px;
-  fill: currentColor;
-}
-
-.aroundText {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.aroundSub {
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-}
-
-.aroundGo {
-  width: 16px;
-  height: 16px;
-  color: var(--wf-accent-ink);
+.here .works + .printRow {
+  margin-top: 0;
 }
 
 /* ── How do I: the tour row ─────────────────────────────────────────────────────────────────── */
 .tour {
   display: grid;
-  gap: 10px;
-  padding: 12px 14px;
+  gap: 8px;
+  padding: 12px 16px;
 }
 
 .tourTop {
@@ -479,27 +691,24 @@
   min-width: 0;
 }
 
-/* The tour's chapters, in walking order, a tick on each already walked. They wrap, never scroll. */
+/* The tour's chapters, in walking order, a tick on each already walked: one quiet line of words
+ * (Help overhaul, 9 Nov 2026, in place of a row of chips). They wrap, never scroll. */
 .tourChapters {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 2px 14px;
   margin: 0;
   padding: 0;
   list-style: none;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
 }
 
 .tourChapter {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  min-height: 24px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: var(--wf-surface-2);
-  box-shadow: inset 0 0 0 1px var(--wf-line);
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
 }
 
 .tourChapter svg {
@@ -510,6 +719,7 @@
 
 .tourChapterCount {
   color: var(--wf-ink-3);
+  font-family: var(--wf-mono);
   font-variant-numeric: tabular-nums;
 }
 
@@ -579,20 +789,19 @@
   font-size: var(--wf-fs-12);
 }
 
+/* The tour's progress once begun: one slim bar, filled to the step reached. */
 .segments {
-  display: flex;
-  gap: 4px;
+  display: block;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--wf-line);
 }
 
 .segments i {
-  flex: 1;
-  max-width: 22px;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--wf-line-2);
-}
-
-.segments i[data-done] {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
   background: var(--wf-accent);
 }
 
@@ -1570,20 +1779,6 @@
 }
 
 @media (max-width: 640px) {
-  .tiles {
-    grid-template-columns: 1fr;
-  }
-
-  .tile {
-    min-height: 0;
-    grid-template-columns: 1fr auto;
-    align-items: center;
-  }
-
-  .aroundTile {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-  }
-
   .pair,
   .pair[data-size="3"] {
     grid-template-columns: 1fr;
@@ -1632,7 +1827,7 @@
 }
 
 /* Chosen with the arrow keys (Enter opens it): the same ring as keyboard focus, while typing. */
-.dock:has(input:focus) ~ .panel .best[data-active] {
+.sheet:has(.dock input:focus) .panel .best[data-active] {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
 }
@@ -1825,8 +2020,13 @@
 .chip:active,
 .footButton:active,
 .clear:active,
+.actGo:active,
+.quickChip:active {
+  transform: scale(0.98);
+}
+
 .tile:active {
-  transform: scale(0.97);
+  background: var(--wf-selected);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1840,34 +2040,16 @@
   .chip:active,
   .footButton:active,
   .clear:active,
-  .tile:active {
+  .actGo:active,
+  .quickChip:active {
     transform: none;
   }
 }
 
 /* ── phone sizes: 40px faces, 48px tap areas ────────────────────────────────────────────────── */
 @media (max-width: 46.4375rem) {
-  /* All four tabs fit a 390px phone: the icons step aside and the gap closes up, so "What's new" is
-     never cut off. With larger text the row still scrolls sideways and its end fades as the chips
-     do. */
-  .tabs {
-    gap: var(--wf-s-4, 16px);
-    padding-top: var(--wf-phone-pill-hit);
-    padding-right: 24px;
-    mask-image: linear-gradient(90deg, black calc(100% - 24px), transparent);
-  }
-
-  .tabs > button {
-    position: relative;
-    height: var(--wf-phone-pill-h);
-  }
-
-  .tabs > button svg {
-    display: none;
-  }
-
-  /* Upward only: the underline sits on the row's bottom line. */
-  .tabs > button::after {
+  /* Upward only: a tab's tap area reaches 48px into the slate above it (the chosen one needs none). */
+  .tabs > button:not([aria-selected="true"])::after {
     content: "";
     position: absolute;
     inset: calc(-1 * var(--wf-phone-pill-hit)) 0 0;
@@ -1886,11 +2068,10 @@
 
 /* Touch: tiles and the print row reach a 48px tap area without a bigger face. */
 @media (pointer: coarse) {
-  .aroundTile {
-    position: relative;
+  .tile {
+    min-height: 48px;
   }
 
-  .aroundTile::after,
   .printRow::after,
   .tourLink::after {
     content: "";
@@ -1907,4 +2088,31 @@
   width: 14px;
   height: 14px;
   color: var(--wf-ink-3);
+}
+
+/* The tour row's chapters, progress and welcome link line up under its title, not its icon. */
+.tour > .tourChapters,
+.tour > .segments,
+.tour > .tourLink {
+  margin-left: 44px;
+}
+
+/* A topic group's heading glyph: the icon alone, in the heading's ink, no tile behind it. */
+.sectionHeadGlyph {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--wf-ink-3);
+}
+
+/* On a computer every topic chip shows at once, wrapping, so none hides past the panel's edge. A
+ * phone keeps the one scrolling row, in thumb reach. */
+@media (min-width: 46.5rem) {
+  .chips {
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    mask-image: none;
+  }
 }

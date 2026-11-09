@@ -53,7 +53,7 @@ export function CardHead({
 }: CardHeadProps) {
   const Heading = `h${level}` as ElementType;
   return (
-    <div className={cx(styles.head, className)}>
+    <div className={cx(styles.head, className)} data-wf-card-head="">
       {icon ? iconPlain ? <Icon icon={icon} size={16} className={styles.plainIcon} /> : <IconTile icon={icon} /> : null}
       <div className={styles.titleWrap}>
         <Heading id={id} className={cx(styles.title, eyebrow && styles.eyebrowTitle)}>

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -35,12 +35,12 @@ vi.mock("@/components/wf", async (importOriginal) => ({
   useIsPhone: () => phone.on,
 }));
 
-import { HOW_TO_TOPICS, HOW_TOS } from "@/components/ward-management/help/ward-help-howto";
+import { HOW_TO_IDS, HOW_TO_TOPICS, HOW_TOS } from "@/components/ward-management/help/ward-help-howto";
 import { HelpTasks } from "@/components/ward-management/help/ward-help-jobs";
 import { SCREEN_HELP } from "@/components/ward-management/help/ward-help-content";
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
 import { tasksForDesk } from "@/components/ward-management/help/ward-help-task-list";
-import { HELP_USED_STORAGE_KEY } from "@/components/ward-management/help/ward-help-usage";
+import { HELP_USED_STORAGE_KEY, recordHowToUsed } from "@/components/ward-management/help/ward-help-usage";
 
 afterEach(() => {
   route.pathname = "/ward-flow/handover";
@@ -124,6 +124,26 @@ describe("How do I… task list", () => {
     expect(here.getByText(/On this screen:/)).toBeTruthy();
     fireEvent.click(here.getByRole("button", { name: /Hand over to the next shift/ }));
     expect(onShowMe).toHaveBeenCalledWith("sign-off-handover");
+  });
+
+  it("lists answers opened recently, newest first, and reopens one in place (9 Nov 2026)", async () => {
+    expect(screen.queryByTestId("ward-help-recent")).toBeNull();
+    recordHowToUsed("sign-off-handover", HOW_TO_IDS);
+    renderTasks();
+    const recent = within(screen.getByTestId("ward-help-recent"));
+    fireEvent.click(recent.getByRole("button", { name: /Hand over to the next shift/ }));
+    const answer = screen.getByTestId("ward-help-task-answer-sign-off-handover");
+    const head = within(answer).getByRole("button", { expanded: true });
+    // Focus follows the reopened answer (PR #1558 review).
+    await waitFor(() => expect(document.activeElement).toBe(head));
+  });
+
+  it("keeps this desk's recent answers even after many newer ones from elsewhere", () => {
+    recordHowToUsed("sign-off-handover", HOW_TO_IDS);
+    const mine = new Set(tasksForDesk("coordinator").map((task) => task.id));
+    for (const id of [...HOW_TO_IDS].filter((each) => !mine.has(each)).slice(0, 8)) recordHowToUsed(id, HOW_TO_IDS);
+    renderTasks();
+    expect(within(screen.getByTestId("ward-help-recent")).getByText(/Hand over to the next shift/)).toBeTruthy();
   });
 
   it("draws no On this screen card on a page Help has nothing for", () => {
@@ -248,7 +268,7 @@ describe("How do I… in the Help sheet", () => {
     // What's new may carry this device's unread count after its name.
     expect(tabs.map((tab) => tab.textContent?.replace(/\d+$/u, ""))).toEqual([
       "How to",
-      "Common questions",
+      "Questions",
       "Reference",
       "What\u2019s new",
     ]);
@@ -274,11 +294,21 @@ describe("How do I… in the Help sheet", () => {
     expect(onView).toHaveBeenCalledWith("tasks");
   });
 
-  it("names the desk and the screen under the title", () => {
+  it("names the screen beside the title, with the desk, and offers quick jumps", () => {
     sheet();
     const sheetEl = screen.getByTestId("ward-help-sheet");
     expect(sheetEl.textContent).toContain("Bed coordinator");
-    expect(sheetEl.textContent).toMatch(/You are on Handover/);
+    expect(sheetEl.textContent).toMatch(/Helpon Handover/);
+    expect(screen.getByTestId("ward-help-jump-checklists").textContent).toMatch(/Checklists\s*5/);
+    expect(screen.getByTestId("ward-help-jump-jobs").textContent).toMatch(/Your jobs\s*\d+/);
+  });
+
+  it("puts the jumps, Show me around and the tabs aside while searching", () => {
+    sheet({ showMeOn: true });
+    fireEvent.change(screen.getByTestId("ward-help-search"), { target: { value: "release" } });
+    expect(screen.queryByTestId("ward-help-jump-jobs")).toBeNull();
+    expect(screen.queryByTestId("ward-help-show-me-around")).toBeNull();
+    expect(screen.queryByRole("tablist")).toBeNull();
   });
 
   it("opens Your desk and Shortcuts from the foot, each as a view inside Help", () => {

@@ -18,19 +18,13 @@ function shortPhoneBlock(): string {
 }
 
 describe("P040 short phone scroll room", () => {
-  it("unpins the notes holder on a short phone screen", () => {
-    expect(shortPhoneBlock()).toMatch(/\.bannerHolder\s*\{[^}]*position:\s*static/);
-  });
-
   it("keeps clearance for the header and pinned view row on a short phone screen", () => {
     expect(shortPhoneBlock()).toMatch(
       /\.shellContent[^{]*\{[^}]*scroll-padding-top:\s*calc\(var\(--wf-header-height\) \+ 6\.5rem\)\s*;/,
     );
   });
 
-  it("comes after the base pinned notes rule so it wins the cascade", () => {
-    const base = css.search(/\n\.bannerHolder\s*\{[^}]*position:\s*sticky/);
-    expect(base).toBeGreaterThan(-1);
-    expect(css.indexOf("@media screen and (max-width: 46.4375rem) and (max-height: 32rem)")).toBeGreaterThan(base);
+  it("floats the notes at the foot, so a short screen loses no room to them (Note 14)", () => {
+    expect(css).toMatch(/\n\.bannerHolder\s*\{[^}]*position:\s*fixed/);
   });
 });

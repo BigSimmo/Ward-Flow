@@ -14,7 +14,7 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import { patientListName } from "@/components/ward-management/ward-patients";
 import { useCanOpenHref, useWardRecordActors } from "@/components/ward-management/shell/ward-access";
 import { BookUser, ChevronLeft, ChevronRight } from "lucide-react";
-import { Button, buttonClass, DrawerFootRow, StatusGlyph, useIsPhone, type DrawerTab } from "@/components/wf";
+import { Button, buttonClass, DrawerFootRow, StatusGlyph, useIsPhone } from "@/components/wf";
 import { siteLabel } from "@/components/ward-management/ward-absence-labels";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
@@ -37,33 +37,7 @@ import type { OnBehalfReasonId } from "../ward-on-behalf-reason";
 
 const DISCHARGES_HREF = "/ward-flow/discharges";
 
-export type CapacityWardTab = "ward" | "discharges";
-
-/**
- * The ward panel's two tabs, shown by the kit drawer (`PanelDrawer`) that holds the panel, and the
- * selected one. Discharges counts the ward page's own window: releases not yet discharged
- * (`openBedReleases`). Each ward opens on Ward, as when the tabs lived inside the panel.
- */
-export function useCapacityWardTabs(unitId: string | undefined): {
-  tabs: DrawerTab<CapacityWardTab>[];
-  tab: CapacityWardTab;
-  onTabChange: (next: CapacityWardTab) => void;
-} {
-  const { bedReleases } = useWardFlowSelect("bedReleases");
-  const [chosen, setChosen] = useState<{ unitId: string | undefined; tab: CapacityWardTab }>({
-    unitId: undefined,
-    tab: "ward",
-  });
-  if (unitId === undefined && chosen.unitId !== undefined) setChosen({ unitId: undefined, tab: "ward" });
-  return {
-    tabs: [
-      { id: "ward", label: "Ward" },
-      { id: "discharges", label: "Discharges", count: unitId ? openBedReleases(bedReleases, unitId).length : 0 },
-    ],
-    tab: chosen.unitId === unitId ? chosen.tab : "ward",
-    onTabChange: (next) => setChosen({ unitId, tab: next }),
-  };
-}
+import type { CapacityWardTab } from "./capacity-ward-tabs";
 
 /** Keyed by generation, declared actor and ward: stale selection receipts never cross a scope change. */
 /** `now` is the page's clock from `usePageLive()`, so pausing the hero freezes this panel too. */
