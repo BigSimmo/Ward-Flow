@@ -43,7 +43,8 @@ export function PatientHoursBreakdown({ movement, now }: { movement: Movement; n
         value: stage.minutes ?? 0,
         fill: STAGE_FILL[stage.key],
         hatch: stage.status === "running",
-        label: `${stage.label} ${hoursText(stage.minutes ?? 0)}`,
+        // StackBar reads out the minutes after each label, so the label names the unit only.
+        label: `${stage.label}, minutes`,
       })),
     ...(breakdown.otherMinutes
       ? [
@@ -51,7 +52,7 @@ export function PatientHoursBreakdown({ movement, now }: { movement: Movement; n
             id: "other",
             value: breakdown.otherMinutes,
             fill: "track" as const,
-            label: `Not in a named stage ${hoursText(breakdown.otherMinutes)}`,
+            label: "Not in a named stage, minutes",
           },
         ]
       : []),
@@ -75,7 +76,7 @@ export function PatientHoursBreakdown({ movement, now }: { movement: Movement; n
       {segments.length > 0 && breakdown.otherMinutes !== undefined ? (
         <StackBar segments={segments} label="Where the hours went" />
       ) : null}
-      <table className={`${tableClasses.table} ${styles.table}`}>
+      <table className={`${tableClasses.table} ${styles.table}`} aria-labelledby="pn-hours-head">
         <thead>
           <tr>
             <th scope="col" className={tableClasses.th}>

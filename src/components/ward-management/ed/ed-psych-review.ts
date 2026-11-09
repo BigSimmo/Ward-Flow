@@ -17,6 +17,7 @@ export type PsychReviewStage = {
   next: readonly ("ask" | "registrar" | "consultant")[];
 };
 
+/** `minutesInDepartment` is the wait shown only before a review is asked for; once asked, the wait runs from the request. */
 export function psychReviewStage(movement: Movement, now: Instant, minutesInDepartment: number): PsychReviewStage {
   const review = movement.psychReview;
   if (!review)

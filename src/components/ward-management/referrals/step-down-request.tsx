@@ -16,7 +16,6 @@ import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-rol
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { deriveStepDownBoard, type StepDownBoardRow } from "@/components/ward-management/ward-step-down";
 import styles from "./step-down-request.module.css";
 
@@ -42,8 +41,8 @@ function stepDownRequestHref(patientId: string, wardUnitIds: readonly string[], 
 export function useStepDownRequestGate(fromUnitId: string | undefined, admission: Admission | undefined) {
   // The patient's own record decides exceptional-access read-only, as every patient action does.
   // The person comes through the resolver, never the stay's patient link itself (D-14).
-  const { patients, movements } = useWardFlowSelect("patients", "movements");
-  const patientId = admission ? resolveSubjectPatient(admission, { patients, movements }).patient?.id : undefined;
+  const { resolvePatientIdentity } = useWardFlowSelect("resolvePatientIdentity");
+  const patientId = admission ? resolvePatientIdentity(admission).patient?.id : undefined;
   const gate = useRoleGate({ patientId })("RECEIVE_REFERRAL", fromUnitId);
   const routeRole = useRouteRole();
   const access = useEffectiveWardAccess();
@@ -77,10 +76,10 @@ export function StepDownRequestButton({
   /** The board detail panel's full-width button class, so it sits like its neighbours. */
   fullWidthClassName?: string;
 }) {
-  const { configuration, patients, movements } = useWardFlowSelect("configuration", "patients", "movements");
+  const { configuration, resolvePatientIdentity } = useWardFlowSelect("configuration", "resolvePatientIdentity");
   const { gate } = useStepDownRequestGate(row.fromUnit.id, row.admission);
   // The person through the resolver, never the stay's patient link itself (D-14).
-  const patientId = resolveSubjectPatient(row.admission, { patients, movements }).patient?.id;
+  const patientId = resolvePatientIdentity(row.admission).patient?.id;
   const reason = !gate.allowed
     ? gate.reason
     : !patientId

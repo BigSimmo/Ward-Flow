@@ -3,11 +3,12 @@ import { describe, expect, it } from "vitest";
 import { fitLine, fitLineText } from "@/components/ward-management/coordinator/shortlist-fit-line";
 import type { GateResult } from "@/components/ward-management/ward-eligibility";
 
-const gate = (g: GateResult["gate"], pass: boolean, info?: true): GateResult => ({
+const gate = (g: GateResult["gate"], pass: boolean, info?: true, need?: true): GateResult => ({
   gate: g,
   pass,
   detail: "",
   ...(info ? { info } : {}),
+  ...(need ? { need } : {}),
 });
 
 describe("shortlist fit line", () => {
@@ -18,11 +19,16 @@ describe("shortlist fit line", () => {
       gate("security", true),
       gate("legal_status", true),
       gate("age", false),
-      gate("specialling", true, true),
+      gate("specialling", true, true, true),
       gate("allocatable_bed", true),
     ]);
     expect(line).toEqual({ met: ["Sex", "Security"], notMet: ["Age"], toConfirm: ["Special care"] });
     expect(fitLineText(line)).toBe("Fits sex and security · Not met: age · Check special care");
+  });
+
+  it("asks for no special-care check when the patient needs none", () => {
+    const line = fitLine([gate("security", true), gate("acuity", true, true), gate("specialling", true, true)]);
+    expect(line).toEqual({ met: ["Security"], notMet: [], toConfirm: [] });
   });
 
   it("one failing gate makes the whole group not met", () => {

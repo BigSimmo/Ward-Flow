@@ -88,23 +88,27 @@
 }
 
 .swatch[data-fill="data-1"] {
+  --swatch: var(--wf-data-1);
   background: var(--wf-data-1);
 }
 
 .swatch[data-fill="data-2"] {
+  --swatch: var(--wf-data-2);
   background: var(--wf-data-2);
 }
 
 .swatch[data-fill="data-3"] {
+  --swatch: var(--wf-data-3);
   background: var(--wf-data-3);
 }
 
 .swatch[data-fill="neutral"] {
+  --swatch: var(--wf-neutral);
   background: var(--wf-neutral);
 }
 
 .swatch[data-hatch] {
-  background: repeating-linear-gradient(135deg, var(--wf-data-2) 0 2px, var(--wf-track) 2px 4px);
+  background: repeating-linear-gradient(135deg, var(--swatch, var(--wf-data-2)) 0 2px, var(--wf-track) 2px 4px);
 }
 
 .table td.num,

@@ -102,22 +102,27 @@ function CommunityPurposeAndFollowUp({ s }: { s: WardReferralDrawerState }) {
               value={yesNo(communityNeeds.homeVisit)}
               onChange={(v) => setCommunityNeeds((n) => ({ ...n, homeVisit: v === "Yes" }))}
             />
-            <Choice
-              legend="Interpreter"
-              name={`${sectionId}-interpreter`}
-              options={YES_NO}
-              value={yesNo(communityNeeds.interpreter)}
-              onChange={(v) => setCommunityNeeds((n) => ({ ...n, interpreter: v === "Yes" }))}
-            />
-            <CarriedNote note={carriedNotes.interpreter} field="interpreter" />
-            <Choice
-              legend="Contact the carer"
-              name={`${sectionId}-carer`}
-              options={YES_NO}
-              value={yesNo(communityNeeds.carerContact)}
-              onChange={(v) => setCommunityNeeds((n) => ({ ...n, carerContact: v === "Yes" }))}
-            />
-            <CarriedNote note={carriedNotes.carerContact} field="carer" />
+            {/* The carried note stays in the same grid cell as its field. */}
+            <div>
+              <Choice
+                legend="Interpreter"
+                name={`${sectionId}-interpreter`}
+                options={YES_NO}
+                value={yesNo(communityNeeds.interpreter)}
+                onChange={(v) => setCommunityNeeds((n) => ({ ...n, interpreter: v === "Yes" }))}
+              />
+              <CarriedNote note={carriedNotes.interpreter} field="interpreter" />
+            </div>
+            <div>
+              <Choice
+                legend="Contact the carer"
+                name={`${sectionId}-carer`}
+                options={YES_NO}
+                value={yesNo(communityNeeds.carerContact)}
+                onChange={(v) => setCommunityNeeds((n) => ({ ...n, carerContact: v === "Yes" }))}
+              />
+              <CarriedNote note={carriedNotes.carerContact} field="carer" />
+            </div>
           </div>
         </div>
       </section>

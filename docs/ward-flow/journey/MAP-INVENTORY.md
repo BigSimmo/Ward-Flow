@@ -1346,7 +1346,7 @@ Source-contract SHA256: 8f628dc5f53fbc388eef94cada77ce6d423c9cd0efeb1f0feee08edb
   effects: Undone by UNDO_ED_STEP
   tests: tests/ward-psych-review-ready-next.test.ts
   tests: tests/ward-event-permissions.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-review-ready-events.ts:16; SHA256 c8c07485713088517586cb0556d07e0a8ac812413934ba064f12d412b00936f4
+  Reviewed source: src/components/ward-management/ward-flow-review-ready-events.ts:61; SHA256 c8c07485713088517586cb0556d07e0a8ac812413934ba064f12d412b00936f4
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2206; SHA256 275c754b3da52d4c1788f3d470f85aeadc516894f576d3a6a9c104c1fdc973d6
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:555; SHA256 f71224e97cda13778605a57ee1f67f5638b954e26d9d62eee3d53a44e4cb8b75
 - RECORD_PSYCH_REVIEW_SEEN — modelled; event roles: ed, coordinator
@@ -1367,7 +1367,7 @@ Source-contract SHA256: 8f628dc5f53fbc388eef94cada77ce6d423c9cd0efeb1f0feee08edb
   effects: Undone by UNDO_ED_STEP
   tests: tests/ward-psych-review-ready-next.test.ts
   tests: tests/ward-event-permissions.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-review-ready-events.ts:23; SHA256 c8c07485713088517586cb0556d07e0a8ac812413934ba064f12d412b00936f4
+  Reviewed source: src/components/ward-management/ward-flow-review-ready-events.ts:69; SHA256 c8c07485713088517586cb0556d07e0a8ac812413934ba064f12d412b00936f4
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2207; SHA256 275c754b3da52d4c1788f3d470f85aeadc516894f576d3a6a9c104c1fdc973d6
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:556; SHA256 f71224e97cda13778605a57ee1f67f5638b954e26d9d62eee3d53a44e4cb8b75
 - MARK_WARD_READY_FOR_NEXT — modelled; event roles: ward, coordinator
@@ -1388,7 +1388,7 @@ Source-contract SHA256: 8f628dc5f53fbc388eef94cada77ce6d423c9cd0efeb1f0feee08edb
   effects: A PULL_PATIENT into the ward clears the mark
   tests: tests/ward-psych-review-ready-next.test.ts
   tests: tests/ward-event-permissions.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-review-ready-events.ts:31; SHA256 c8c07485713088517586cb0556d07e0a8ac812413934ba064f12d412b00936f4
+  Reviewed source: src/components/ward-management/ward-flow-review-ready-events.ts:84; SHA256 c8c07485713088517586cb0556d07e0a8ac812413934ba064f12d412b00936f4
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2208; SHA256 275c754b3da52d4c1788f3d470f85aeadc516894f576d3a6a9c104c1fdc973d6
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:557; SHA256 f71224e97cda13778605a57ee1f67f5638b954e26d9d62eee3d53a44e4cb8b75
 - RAISE_EXPECT_FLAG — diagram-reviewed; event roles: ward, coordinator, ed, community
@@ -2119,7 +2119,7 @@ Source-contract SHA256: 8f628dc5f53fbc388eef94cada77ce6d423c9cd0efeb1f0feee08edb
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:640
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1757
   Event/dispatch reference: src/components/ward-management/ward-flow-undo-events.ts:269
-  Subject: Latest undoable RECORD_ARRIVED_IN_DEPARTMENT, RECORD_EXAMINATION, RECORD_MEDICAL_CLEARANCE, RECORD_TRANSPORT_NEED, RECORD_ED_PRESENTATION or HANDOVER_READY on the named subject
+  Subject: Latest undoable RECORD_ARRIVED_IN_DEPARTMENT, RECORD_EXAMINATION, RECORD_MEDICAL_CLEARANCE, RECORD_TRANSPORT_NEED, RECORD_ED_PRESENTATION, HANDOVER_READY, REQUEST_PSYCH_REVIEW or RECORD_PSYCH_REVIEW_SEEN on the named subject
   Before: Saved step record and unchanged post-step state
   After: Newest ED board step and all records it changed restored
   Scope: ed, ward, community or coordinator; original acting role or coordinator. Authenticated record/place scope remains required.
@@ -2129,7 +2129,7 @@ Source-contract SHA256: 8f628dc5f53fbc388eef94cada77ce6d423c9cd0efeb1f0feee08edb
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
   guards: The complete proposed inverse must keep every leave attached to an occupied same-ward stay, with only one leave per stay; any restored or changed retained UMRN must have no other current owner. Blank, privacy-placeholder and UMRN not recorded values carry no retained identity claim.
-  effects: Applies only saved before/after patches for RECORD_ARRIVED_IN_DEPARTMENT, RECORD_EXAMINATION, RECORD_MEDICAL_CLEARANCE, RECORD_TRANSPORT_NEED, RECORD_ED_PRESENTATION or HANDOVER_READY; removes newly created rows, restores removed/changed rows and removes appended entries.
+  effects: Applies only saved before/after patches for RECORD_ARRIVED_IN_DEPARTMENT, RECORD_EXAMINATION, RECORD_MEDICAL_CLEARANCE, RECORD_TRANSPORT_NEED, RECORD_ED_PRESENTATION, HANDOVER_READY, REQUEST_PSYCH_REVIEW or RECORD_PSYCH_REVIEW_SEEN; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-ed-examination-save.dom.test.tsx
   tests: tests/ward-ed-handover-events.test.ts

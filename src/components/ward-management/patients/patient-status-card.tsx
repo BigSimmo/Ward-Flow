@@ -34,6 +34,7 @@ import { movementPresentation } from "../ward-partial-view-presenters";
 import type { SenderMovementPartialView } from "../ward-partial-view-contract";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { useRouteRole } from "../ward-role-gate";
+import { usePatientNameDisplay } from "../settings/discreet-names";
 import { canDispatch } from "../ward-role-permissions";
 import { unitInScope } from "../ward-role-access";
 import { wardPlaceLookup } from "../ward-access-places";
@@ -880,6 +881,7 @@ export function PatientStatusCard({
   const sender = useSenderPresentation();
   const access = useEffectiveWardAccess();
   const routeRole = useRouteRole();
+  const nameFor = usePatientNameDisplay();
   const records = useOptionalWardFlowSelect("units");
   const acceptingUnitId = context.movement?.acceptedUnitId;
   // The real accepting unit and the desk's existing permission/scope keep its receiving action.
@@ -1070,7 +1072,11 @@ export function PatientStatusCard({
             movement={context.movement}
             now={context.now}
             canEscalate={records !== null}
-            personName={context.patient ? `${context.patient.familyName}, ${context.patient.givenName}` : "this person"}
+            personName={
+              context.patient
+                ? nameFor(`${context.patient.familyName}, ${context.patient.givenName}`, context.patient.umrn)
+                : "this person"
+            }
           />
         ) : null}
         {progress ? <PatientStayProgress progress={progress} /> : null}

@@ -109,7 +109,7 @@ export function WardWaitList({ unit }: { unit: Unit }) {
       {list.length === 0 ? (
         <p className={styles.empty}>Nobody is on this ward&rsquo;s wait list.</p>
       ) : (
-        <table className={styles.table}>
+        <table className={styles.table} aria-labelledby="ward-wait-list-heading">
           <thead>
             <tr>
               <th scope="col">Patient</th>

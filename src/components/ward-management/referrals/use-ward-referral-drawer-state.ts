@@ -335,10 +335,10 @@ export function useWardReferralDrawerState({
   const [highAcuity, setHighAcuity] = useState(start.highAcuity ?? false);
   const [arrivalEta, setArrivalEta] = useState(kept?.arrivalEta ?? "");
   const [destType, setDestType] = useState<DrawerCategory>(initialDestination ?? kept?.destType ?? "ward");
-  // The record's status, or unanswered: never a default (owner rule, 19 Oct 2026; LEGAL-REF).
+  // Kept draft, then the opener's status, then a carried one; never a default (19 Oct 2026; LEGAL-REF).
   const [legalStatus, setLegalStatus] = useState(() =>
     warn.legalStatusAnswer(
-      start.legalStatus ??
+      (kept || !urlPrefill?.legal ? start.legalStatus : urlPrefill.legal) ??
         urlPrefill?.legal ??
         (defaultPatient.legalStatus.startsWith("Form")
           ? defaultPatient.legalStatus.split(" ").slice(0, 2).join(" ")

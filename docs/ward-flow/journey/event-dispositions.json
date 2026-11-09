@@ -3203,7 +3203,7 @@
     "reason": "Reviewed command model: Newest ED board step and all records it changed restored.",
     "source": "src/components/ward-management/ward-flow-reducer.ts",
     "model": {
-      "subject": "Latest undoable RECORD_ARRIVED_IN_DEPARTMENT, RECORD_EXAMINATION, RECORD_MEDICAL_CLEARANCE, RECORD_TRANSPORT_NEED, RECORD_ED_PRESENTATION or HANDOVER_READY on the named subject",
+      "subject": "Latest undoable RECORD_ARRIVED_IN_DEPARTMENT, RECORD_EXAMINATION, RECORD_MEDICAL_CLEARANCE, RECORD_TRANSPORT_NEED, RECORD_ED_PRESENTATION, HANDOVER_READY, REQUEST_PSYCH_REVIEW or RECORD_PSYCH_REVIEW_SEEN on the named subject",
       "before": "Saved step record and unchanged post-step state",
       "after": "Newest ED board step and all records it changed restored",
       "payload": [
@@ -3218,7 +3218,7 @@
         "The complete proposed inverse must keep every leave attached to an occupied same-ward stay, with only one leave per stay; any restored or changed retained UMRN must have no other current owner. Blank, privacy-placeholder and UMRN not recorded values carry no retained identity claim."
       ],
       "effects": [
-        "Applies only saved before/after patches for RECORD_ARRIVED_IN_DEPARTMENT, RECORD_EXAMINATION, RECORD_MEDICAL_CLEARANCE, RECORD_TRANSPORT_NEED, RECORD_ED_PRESENTATION or HANDOVER_READY; removes newly created rows, restores removed/changed rows and removes appended entries.",
+        "Applies only saved before/after patches for RECORD_ARRIVED_IN_DEPARTMENT, RECORD_EXAMINATION, RECORD_MEDICAL_CLEARANCE, RECORD_TRANSPORT_NEED, RECORD_ED_PRESENTATION, HANDOVER_READY, REQUEST_PSYCH_REVIEW or RECORD_PSYCH_REVIEW_SEEN; removes newly created rows, restores removed/changed rows and removes appended entries.",
         "Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back."
       ],
       "sources": [
@@ -3777,7 +3777,7 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-review-ready-events.ts",
-          "line": 16,
+          "line": 61,
           "sha256": "c8c07485713088517586cb0556d07e0a8ac812413934ba064f12d412b00936f4"
         },
         {
@@ -3814,7 +3814,7 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-review-ready-events.ts",
-          "line": 23,
+          "line": 69,
           "sha256": "c8c07485713088517586cb0556d07e0a8ac812413934ba064f12d412b00936f4"
         },
         {
@@ -3854,7 +3854,7 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-review-ready-events.ts",
-          "line": 31,
+          "line": 84,
           "sha256": "c8c07485713088517586cb0556d07e0a8ac812413934ba064f12d412b00936f4"
         },
         {

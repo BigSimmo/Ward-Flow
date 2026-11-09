@@ -15,6 +15,9 @@ import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard
 import { handoverPackModel, handoverPackText, type HandoverPackInput } from "./patient-handover-pack";
 import styles from "./patient-handover-pack.module.css";
 
+/** Sections whose single row label repeats the heading; others keep it (what is outstanding, whose contact). */
+const HEADING_LABELLED_SECTIONS: ReadonlySet<string> = new Set(["risks", "clearance", "medication"]);
+
 export function PatientHandoverPackButton({ input, dayZero }: { input: HandoverPackInput; dayZero: Date }) {
   const [open, setOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -55,7 +58,7 @@ export function PatientHandoverPackButton({ input, dayZero }: { input: HandoverP
         open={open}
         onClose={() => setOpen(false)}
         title="Handover pack"
-        description={notice ?? "Print it or copy it. Ward Flow does not send it anywhere."}
+        description={<span role="status">{notice ?? "Print it or copy it. Ward Flow does not send it anywhere."}</span>}
         size="lg"
         secondary={[{ label: "Copy", onAction: () => void copy() }]}
         primary={{ label: "Print or save PDF", onAction: () => window.print() }}
@@ -72,8 +75,8 @@ export function PatientHandoverPackButton({ input, dayZero }: { input: HandoverP
           </div>
           <div className={styles.sections}>
             {pack.sections.map((section) => {
-              // A section with one fact needs no second label saying the heading again.
-              const single = section.rows.length === 1;
+              // A one-fact section whose label only repeats the heading drops that label.
+              const single = section.rows.length === 1 && HEADING_LABELLED_SECTIONS.has(section.id);
               return (
                 <section
                   key={section.id}

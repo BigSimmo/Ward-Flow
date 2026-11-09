@@ -22,7 +22,8 @@ export function fitLine(gates: readonly GateResult[]): FitLine {
     if (marks.length === 0) continue;
     if (marks.includes("not_met")) line.notMet.push(group.label);
     else if (marks.includes("met")) line.met.push(group.label);
-    else line.toConfirm.push(group.label);
+    // Information-only groups (special care) ask for a check only when the patient has that need.
+    else if (gates.some((gate) => group.gates.includes(gate.gate) && gate.need)) line.toConfirm.push(group.label);
   }
   return line;
 }

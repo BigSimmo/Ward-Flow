@@ -127,7 +127,35 @@ describe("alternatives to admission: RECEIVE_REFERRAL", () => {
     expect(run(receive({ alternativesConsidered: [{ option: "respite", outcome: "tried" }] as never })).refused).toBe(
       true,
     );
-    expect(run(receive({ role: "ward", alternativesConsidered: MARKED })).refused).toBe(true);
+    // A valid ward-to-ward send, so only the alternatives guard can refuse it.
+    const wardSend = run(
+      receive({
+        role: "ward",
+        source: "psychiatric_ward",
+        originUnitId: "bty-adult-secure",
+        actingUnitId: "bty-adult-secure",
+        originSiteCode: "BTY",
+        sendingTeamName: undefined,
+        alternativesConsidered: MARKED,
+      }),
+    );
+    expect(wardSend.refused).toBe(true);
+    expect(wardSend.after.rejections.at(-1)?.reason).toMatch(
+      /alternatives to admission are recorded by ED or community/,
+    );
+    // The same send with nothing marked is accepted, so the refusal above is the guard's.
+    expect(
+      run(
+        receive({
+          role: "ward",
+          source: "psychiatric_ward",
+          originUnitId: "bty-adult-secure",
+          actingUnitId: "bty-adult-secure",
+          originSiteCode: "BTY",
+          sendingTeamName: undefined,
+        }),
+      ).refused,
+    ).toBe(false);
     expect(
       run(
         receive({
