@@ -1200,15 +1200,13 @@ export function ShortlistPanel({
           {/* "Eligible now" repeats the group heading, so the card no longer shows it; it stays for
           assistive technology. A reason for review is always on screen. */}
           {candidate.verdict.eligible ? (
-            <>
-              <span className={`${shortlistStyles.candidateReason} sr-only`}>{candidateReason(candidate.verdict)}</span>
-              <CandidateFit unitId={candidate.unit.id} gates={candidate.verdict.gates} />
-            </>
+            <span className={`${shortlistStyles.candidateReason} sr-only`}>{candidateReason(candidate.verdict)}</span>
           ) : (
             <span className={`${styles.shortlistCandidateReasonBad} ${shortlistStyles.candidateReason}`}>
               {candidateReason(candidate.verdict)}
             </span>
           )}
+          <CandidateFit unitId={candidate.unit.id} gates={candidate.verdict.gates} />
           {notice ? (
             <span
               className={`${
