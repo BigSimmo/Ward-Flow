@@ -69,6 +69,19 @@
     scrollbar-width: none;
   }
 
+  /* Sweep (Josh, 8 Nov 2026): with the Owner menu at the end, the chips used to stop dead against it
+     and read as tucked underneath. They now fade out before a hairline, so the edge reads as more to
+     scroll rather than an overlap. */
+  .filterRow:has(> .filterEnd) > .filterChips {
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+  }
+
+  .filterRow > .filterEnd {
+    border-left: 1px solid var(--wf-line);
+    padding-left: var(--wf-s-2);
+  }
+
   .filterChips > * {
     flex-shrink: 0;
   }

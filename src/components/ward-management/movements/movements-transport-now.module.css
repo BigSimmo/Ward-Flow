@@ -3,34 +3,34 @@
  * dots (no side stripes, D-94). Names and places wrap in full.
  */
 
+/* Movements audit (9 Nov 2026): the figures read as one quiet strip of links, not four boxes that
+   repeat the group headings below; each still opens its patients. */
 .tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
-  gap: var(--wf-s-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-3);
   padding: var(--wf-s-3) var(--wf-s-4);
 }
 
-/* Each figure is a soft inset card that opens its patients. */
 .tile {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
   min-width: 0;
-  padding: var(--wf-s-3);
+  min-height: 32px;
+  padding: 4px 8px;
   border: 0;
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface-2);
+  border-radius: var(--wf-r-sm);
+  background: transparent;
   color: inherit;
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: box-shadow 120ms ease;
 }
 
 @media (hover: hover) {
   .tile:hover:not(:disabled) {
-    box-shadow: var(--wf-e1-hover);
+    background: var(--wf-hover);
   }
 }
 
@@ -44,7 +44,7 @@
 }
 
 .tileV {
-  font: 650 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
+  font: 650 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
   font-variant-numeric: tabular-nums;
 }
 
@@ -53,7 +53,7 @@
 }
 
 .tileL {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   color: var(--wf-ink-2);
@@ -143,8 +143,9 @@
   cursor: pointer;
 }
 
+/* Note 7 (8 Nov 2026): the hover tint covers the whole row, under "Check in" too. */
 @media (hover: hover) {
-  .rowMain:hover {
+  .row:not([data-selected="true"]):has(> .rowMain:hover) {
     background: var(--wf-hover);
   }
 }

@@ -1,10 +1,9 @@
 "use client";
 
 /**
- * Timeline switch (M3, approved 3 Nov 2026). Movements leads with its worklist, so the day's
- * timeline sits behind one switch on a tablet or laptop, as it already does on a phone. The bar
- * keeps the one fact worth seeing without the chart (how many corridors are active) and remembers
- * the choice on this device only.
+ * Timeline switch (M3, approved 3 Nov 2026). The day's timeline sits behind one switch on a tablet
+ * or laptop. Josh's Note 7 (8 Nov 2026): it is shown by default; hiding it is remembered on this
+ * device only. The bar keeps the one fact worth seeing without the chart (active corridors).
  */
 import { useSyncExternalStore, type ReactNode } from "react";
 import { ChartGantt } from "lucide-react";
@@ -16,9 +15,9 @@ const KEY = "ward-flow-movements-timeline";
 
 function readPref(): boolean {
   try {
-    return window.localStorage.getItem(KEY) === "on";
+    return window.localStorage.getItem(KEY) !== "off";
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -30,9 +29,9 @@ function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
-// The server render and hydration read "hidden", then the stored choice applies.
+// The server render and hydration read "shown", then a stored "off" applies.
 const snapshot = () => memory ?? readPref();
-const serverSnapshot = () => false;
+const serverSnapshot = () => true;
 
 export function MovementsTimelineSwitch({ summary, children }: { summary: string; children: ReactNode }) {
   const on = useSyncExternalStore(subscribe, snapshot, serverSnapshot);

@@ -710,6 +710,8 @@ export type PreviousTriage = {
   /** "07 Nov", for "Carried from 07 Nov". */
   when: string;
   urgencyText: string;
+  /** Who signed it, in words; left out on a fixture that does not say. */
+  by?: string;
   outcome: string;
   legal: string;
   review: string;
@@ -760,40 +762,14 @@ export type TriagePerson = {
   referral: TriageReferral | null;
   /** The last signed triage on record, or null ("No previous triage on record"). */
   last: PreviousTriage | null;
+  /** Every earlier signed triage on record, newest first (`last` is the first); none when left out. */
+  previous?: readonly PreviousTriage[];
   /** The app address of the person's record. */
   recordHref: string;
 };
 
 /** The signed-in clinician in the synthetic world, who reviews and signs. */
 export const SIGNED_IN = "Dr S. Chen";
-
-export const HOW_TO = [
-  [
-    "Check the banner",
-    "Identity, legal status, alerts and the referral come from the record. Contacts are in Patient profile. Fix errors at the source.",
-  ],
-  [
-    "Review details",
-    "When, how and where you reviewed, how they arrived, who was present, the referrer, the purpose and the episode, and the sources you used. Ask Aboriginal status every time.",
-  ],
-  ["Assessment", "Write as you talk in one box. Open What to cover for prompts. Tap the problems."],
-  [
-    "Mental state",
-    "One box: tap a phrase to add it under its domain, or type. Switch to By domain for one row per domain. Look for explains each one. By phone, mark what you could not see.",
-  ],
-  [
-    "Triage decision",
-    "Choose urgency A to G yourself and say why if it differs from the referrer. Set the outcome, actions and legal status.",
-  ],
-  [
-    "Risk assessment",
-    "Tap a flag to mark it present. Unsure about one? Mark it not known in All RAMP factors. Rest of history and Rest of current risk answer everything else. Past risk: carry forward the last RAMP where there is one and confirm each flag today. Current risk: assess today and confirm what Rest of current risk covers. Then record whether you asked alone and ask the three family violence questions word for word.",
-  ],
-  [
-    "Formulation and plan",
-    "Who is at risk, of what, how soon, what keeps them safe, and the plan. Set the review. Preview, then sign.",
-  ],
-] as const;
 
 /** Where each PSOLIS field went on this form. Copy and the summary write the exact PSOLIS value for each pick-list. */
 export const PSOLIS_FIELD_MAP = [
