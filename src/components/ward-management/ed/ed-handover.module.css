@@ -449,7 +449,7 @@
   border-bottom: 0;
 }
 .colPersonList {
-  width: 34%;
+  width: 28%;
 }
 .colBay {
   width: 72px;
@@ -540,6 +540,10 @@
   justify-content: space-between;
   gap: var(--wf-s-3);
   min-width: 0;
+}
+.listReview > button {
+  flex: none;
+  white-space: nowrap;
 }
 .listReviewText {
   display: grid;

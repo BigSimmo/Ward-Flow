@@ -108,17 +108,17 @@ describe("psychiatry review tracker", () => {
   it("says the stage and times from the request, else from arrival", () => {
     const base = openMovement(seedWardFlowState());
     expect(psychReviewStage({ ...base, psychReview: undefined }, 600, 95)).toMatchObject({
-      line: "Review not yet asked for",
+      line: "Review not asked for",
       waitedMinutes: 95,
       from: "arrival",
       next: ["ask"],
     });
     const asked = psychReviewStage({ ...base, psychReview: { requestedAt: 550 } }, 675, 300);
-    expect(asked.line).toBe("Registrar review asked 09:10 · waiting 2h 05m");
+    expect(asked.line).toBe("Review asked 09:10 · 2h\u00a005m");
     expect(asked.waitedMinutes).toBe(125);
     expect(asked.next).toEqual(["registrar", "consultant"]);
     const registrar = psychReviewStage({ ...base, psychReview: { requestedAt: 550, registrarSeenAt: 600 } }, 675, 300);
-    expect(registrar.line).toBe("Registrar seen · consultant pending · waiting 2h 05m");
+    expect(registrar.line).toBe("Consultant pending · 2h\u00a005m");
     expect(registrar.next).toEqual(["consultant"]);
   });
 });

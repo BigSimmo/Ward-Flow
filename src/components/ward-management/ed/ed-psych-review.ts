@@ -7,7 +7,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
  * scores, ranks or re-orders anyone, and the list keeps its own order.
  */
 export type PsychReviewStage = {
-  /** "Registrar review asked 09:10", "Registrar seen · consultant pending", or "Review not yet asked for". */
+  /** "Review asked 09:10 · 2h 05m", "Consultant pending · 2h 05m", or "Review not asked for". */
   line: string;
   /** Minutes since the review was asked for, or since arrival when it has not been. */
   waitedMinutes: number;
@@ -21,7 +21,7 @@ export function psychReviewStage(movement: Movement, now: Instant, minutesInDepa
   const review = movement.psychReview;
   if (!review)
     return {
-      line: "Review not yet asked for",
+      line: "Review not asked for",
       waitedMinutes: minutesInDepartment,
       from: "arrival",
       next: ["ask"],
@@ -36,20 +36,20 @@ export function psychReviewStage(movement: Movement, now: Instant, minutesInDepa
     };
   if (review.registrarSeenAt !== undefined)
     return {
-      line: `Registrar seen · consultant pending${waitText(waitedMinutes)}`,
+      line: `Consultant pending${waitText(waitedMinutes)}`,
       waitedMinutes,
       from: "request",
       next: ["consultant"],
     };
   return {
-    line: `Registrar review asked ${formatInstantWithDay(review.requestedAt, now)}${waitText(waitedMinutes)}`,
+    line: `Review asked ${formatInstantWithDay(review.requestedAt, now)}${waitText(waitedMinutes)}`,
     waitedMinutes,
     from: "request",
     next: ["registrar", "consultant"],
   };
 }
 
-/** " · waiting 2h 05m", or nothing in the first minute, so a fresh request never reads "waiting 0m". */
+/** " · 2h 05m" (kept on one line), or nothing in the first minute, so a fresh request never reads "waiting 0m". */
 function waitText(minutes: number): string {
-  return minutes < 1 ? "" : ` · waiting ${splitDuration(minutes)}`;
+  return minutes < 1 ? "" : ` · ${splitDuration(minutes).replace(" ", "\u00a0")}`;
 }

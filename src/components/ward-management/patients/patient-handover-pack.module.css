@@ -102,6 +102,12 @@
   grid-column: 1 / -1;
 }
 
+/* The head's rule already separates the first section. */
+.sections > .section:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
 .rowSingle dd {
   margin: 0;
 }
@@ -124,7 +130,7 @@
 
 .row {
   display: grid;
-  grid-template-columns: minmax(7rem, 10rem) minmax(0, 1fr);
+  grid-template-columns: minmax(6rem, 8rem) minmax(0, 1fr);
   gap: var(--wf-s-3);
 }
 
