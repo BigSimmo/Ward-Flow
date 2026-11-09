@@ -1606,12 +1606,12 @@
       {
         "path": "src/components/ward-management/ward-flow-events.ts",
         "line": 1,
-        "sha256": "c2bc7fcb61a34f15ba9bb73915b931c3ff9d8a56ded37c85448210ebf4ffc527"
+        "sha256": "b9f809743b68e67d9e80b0733490cf2d9bbf1af4b93ca4c43d085e0984e5cf0c"
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
         "line": 428,
-        "sha256": "7e2ee37c4e168087559909faa3d538feca9d2274ce3c1ee3390e35deb24e7414"
+        "sha256": "53bca971383b6ba92467aac14097c95390d88c1c55fc3e0bc27a930d78e24957"
       },
       {
         "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
