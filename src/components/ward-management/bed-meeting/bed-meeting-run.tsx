@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { Button, Card, CardBody, CardHead } from "@/components/wf";
+import { Button, buttonClass, Card, CardBody, CardHead } from "@/components/wf";
 
 import type { Admission } from "../ward-admissions";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
@@ -97,76 +97,55 @@ export function actionsRecordedSince(input: {
     .map(({ order: _order, at: _at, ...row }) => row);
 }
 
-/** The slim bar that steps the meeting through the services, shown under the agenda's filters. */
-export function MeetingRunBar({
-  run,
-  recorded,
-  itemsFor,
+/** The meeting's controls in the hero, where the agenda's own buttons sit: Previous, Next or Finish, and Stop. */
+export function MeetingRunControls({
+  step,
+  pillClassName,
   onStep,
   onFinish,
   onStop,
 }: {
-  run: MeetingRun;
-  recorded: number;
-  /** How many agenda items a service has, so the chair can see what is ahead. */
-  itemsFor: (service: HealthService) => number;
+  step: number;
+  pillClassName?: string;
   onStep: (step: number) => void;
   onFinish: () => void;
   onStop: () => void;
 }) {
   const last = MEETING_STEPS.length - 1;
-  const current = MEETING_STEPS[run.step] ?? MEETING_STEPS[0];
+  const pill = (variant: "onHero" | "light") =>
+    [buttonClass({ variant, size: "sm" }), pillClassName].filter(Boolean).join(" ");
   return (
-    <section className={styles.bar} aria-label="Meeting in progress" data-testid="bed-meeting-run-bar">
-      <div className={styles.barHead}>
-        <span className={styles.live} aria-hidden="true" />
-        <span className={styles.barTitle}>
-          Meeting running · {current}
-          <span className={styles.barMeta}>
-            {" "}
-            · <span className={styles.figure}>{run.step + 1}</span> of{" "}
-            <span className={styles.figure}>{MEETING_STEPS.length}</span> ·{" "}
-            <span className={styles.figure}>{recorded}</span> {recorded === 1 ? "action" : "actions"} recorded
-          </span>
-        </span>
-        <div className={styles.barActions}>
-          <Button size="sm" variant="ghost" onClick={onStop}>
-            Stop
-          </Button>
-          <Button size="sm" variant="sec" disabled={run.step === 0} onClick={() => onStep(run.step - 1)}>
-            Previous
-          </Button>
-          {run.step < last ? (
-            <Button size="sm" variant="pri" onClick={() => onStep(run.step + 1)} data-testid="bed-meeting-run-next">
-              Next: {healthServiceAcronym(MEETING_STEPS[run.step + 1])}
-            </Button>
-          ) : (
-            <Button size="sm" variant="pri" onClick={onFinish} data-testid="bed-meeting-run-finish">
-              Finish meeting
-            </Button>
-          )}
-        </div>
-      </div>
-      <ol className={styles.steps} aria-label="Services in this meeting">
-        {MEETING_STEPS.map((service, index) => {
-          const count = itemsFor(service);
-          return (
-            <li key={service}>
-              <button
-                type="button"
-                className={styles.step}
-                aria-current={index === run.step ? "step" : undefined}
-                data-done={index < run.step ? "true" : undefined}
-                onClick={() => onStep(index)}
-              >
-                <span>{healthServiceAcronym(service)}</span>
-                <span className={styles.stepCount}>{count}</span>
-              </button>
-            </li>
-          );
-        })}
-      </ol>
-    </section>
+    <>
+      <button type="button" className={pill("onHero")} onClick={onStop} data-testid="bed-meeting-run-stop">
+        Stop
+      </button>
+      {step > 0 ? (
+        <button type="button" className={pill("onHero")} onClick={() => onStep(step - 1)}>
+          Previous
+        </button>
+      ) : null}
+      {step < last ? (
+        <button
+          type="button"
+          className={pill("light")}
+          onClick={() => onStep(step + 1)}
+          data-testid="bed-meeting-run-next"
+          data-primary="true"
+        >
+          Next: {healthServiceAcronym(MEETING_STEPS[step + 1])}
+        </button>
+      ) : (
+        <button
+          type="button"
+          className={pill("light")}
+          onClick={onFinish}
+          data-testid="bed-meeting-run-finish"
+          data-primary="true"
+        >
+          Finish meeting
+        </button>
+      )}
+    </>
   );
 }
 

@@ -65,7 +65,13 @@ import {
 } from "./bed-meeting-actions";
 import { bedMeetingAgenda, meetingActionSummary, type AgendaItem, type MeetingActionRow } from "./bed-meeting-agenda";
 import { AgendaReferralsCopy, agendaReferralsText } from "./agenda-referrals-copy";
-import { actionsRecordedSince, MEETING_STEPS, MeetingRunBar, MeetingSummary, useMeetingRun } from "./bed-meeting-run";
+import {
+  actionsRecordedSince,
+  MEETING_STEPS,
+  MeetingRunControls,
+  MeetingSummary,
+  useMeetingRun,
+} from "./bed-meeting-run";
 import styles from "./bed-meeting-agenda.module.css";
 import { AgendaGroupFilterControl, toggleGroup } from "./bed-meeting-group-filter";
 import {
@@ -154,6 +160,7 @@ function BedMeetingAgenda() {
   const grouped = agendaGroupFilterActive(groups);
   // Run meeting (six features build, Josh 9 Nov 2026): step through the services, then a summary.
   const [run, setRun] = useMeetingRun();
+  const running = run !== null && !run.finished;
 
   const scopedMovements = useMemo(
     () =>
@@ -231,14 +238,15 @@ function BedMeetingAgenda() {
     groupContext,
     serviceQueue,
   );
-  const actionInGroups = (row: MeetingActionRow) => inGroups({ subject: row.subject, record: row.record, detail: "" });
-  const summary = grouped
-    ? {
-        ...fullSummary,
-        overdue: fullSummary.overdue.filter(actionInGroups),
-        open: fullSummary.open.filter(actionInGroups),
-      }
-    : fullSummary;
+  // While a meeting runs or shows its summary, "From earlier meetings" leaves out what it recorded.
+  const earlier = (row: MeetingActionRow) => !run || row.action.recordedAt < run.startedAt;
+  const actionInGroups = (row: MeetingActionRow) =>
+    earlier(row) && inGroups({ subject: row.subject, record: row.record, detail: "" });
+  const summary = {
+    ...fullSummary,
+    overdue: fullSummary.overdue.filter(actionInGroups),
+    open: fullSummary.open.filter(actionInGroups),
+  };
   const unitName = (unitId: string | undefined) => units.find((unit) => unit.id === unitId)?.name;
   // A double click must close one action only. The list shifts up as an action closes, so a second
   // click lands on the next row, often another person's (Audit 7 NB-02). One Done per short pause.
@@ -375,13 +383,18 @@ function BedMeetingAgenda() {
       <Hero
         level={1}
         eyebrow="Bed meeting"
-        title="Agenda"
-        titleMeta={`${service ?? "Statewide"} · as at ${formatInstantWithDay(now, now)}`}
+        title={running ? "Meeting" : "Agenda"}
+        titleMeta={
+          running
+            ? `${service ?? "Statewide"} · ${run.step + 1} of ${MEETING_STEPS.length}`
+            : `${service ?? "Statewide"} · as at ${formatInstantWithDay(now, now)}`
+        }
         stats={
           <>
             {sections.map((section) => (
               <HeroStat key={section.id} value={section.total} label={SHORT_TITLES[section.id] ?? section.title} />
             ))}
+            {running ? <HeroStat value={recordedThisMeeting.length} label="Recorded this meeting" /> : null}
             <HeroStat value={queue.length} label="Referrals" />
             <HeroStat
               value={summary.overdue.length + summary.open.length}
@@ -393,6 +406,18 @@ function BedMeetingAgenda() {
         aside={
           // Phone (Josh, 31 Oct 2026): Home's hero pills, side by side.
           <div className={`${styles.heroPillGroup} ${phoneRows.heroPills}`}>
+            {running ? (
+              <MeetingRunControls
+                step={run.step}
+                pillClassName={phoneRows.heroPill}
+                onStep={stepTo}
+                onFinish={() => {
+                  setRun({ ...run, finished: true });
+                  setServiceScope(null);
+                }}
+                onStop={() => setRun(null)}
+              />
+            ) : null}
             {chairs && !run ? (
               <button
                 type="button"
@@ -437,16 +462,6 @@ function BedMeetingAgenda() {
         Synthetic prototype, not for clinical use
       </p>
 
-      {run && !run.finished ? (
-        <MeetingRunBar
-          run={run}
-          recorded={recordedThisMeeting.length}
-          itemsFor={itemsForService}
-          onStep={stepTo}
-          onFinish={() => setRun({ ...run, finished: true })}
-          onStop={() => setRun(null)}
-        />
-      ) : null}
       {run?.finished ? (
         <MeetingSummary
           run={run}
@@ -463,8 +478,19 @@ function BedMeetingAgenda() {
       {/* B1 (Josh, 3 Nov 2026): one filter bar. Service first, then the lists, then find anyone. */}
       <div className={styles.filters} data-testid="bed-meeting-agenda-filters">
         <div className={styles.filterLine}>
-          {/* While a meeting runs, its step bar picks the service. */}
-          {run && !run.finished ? null : (
+          {/* While a meeting runs, the service switch is its steps, each with its agenda count. */}
+          {running ? (
+            <Segmented
+              label="Meeting step"
+              className={styles.serviceTrack}
+              value={MEETING_STEPS[run.step] ?? MEETING_STEPS[0]}
+              onChange={(next) => stepTo(MEETING_STEPS.indexOf(next as HealthService))}
+              items={MEETING_STEPS.map((candidate) => ({
+                id: candidate,
+                label: `${healthServiceAcronym(candidate)} ${itemsForService(candidate)}`,
+              }))}
+            />
+          ) : (
             <Segmented
               label="Service"
               className={styles.serviceTrack}

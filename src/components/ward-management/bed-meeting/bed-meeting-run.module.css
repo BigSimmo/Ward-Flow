@@ -1,93 +1,7 @@
-/* Run meeting (six features build, 9 Nov 2026): a slim step bar over the agenda, then a summary. */
-.bar {
-  display: grid;
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
-}
-.barHead {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px var(--wf-s-3);
-}
-.live {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--wf-success);
-}
-.barTitle {
-  font-size: var(--wf-fs-14);
-  font-weight: 600;
-  color: var(--wf-ink);
-}
-.barMeta {
-  font-weight: 400;
-  color: var(--wf-ink-3);
-}
+/* Run meeting (six features build, 9 Nov 2026): the summary at the end of a meeting. */
 .figure {
   font-family: var(--wf-mono);
   font-variant-numeric: tabular-nums;
-}
-.steps {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 4px;
-  margin: 0;
-  padding: 3px;
-  list-style: none;
-  border-radius: var(--wf-r-track);
-  background: var(--wf-surface-2);
-}
-.step {
-  display: flex;
-  width: 100%;
-  min-height: 30px;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border: 0;
-  border-radius: var(--wf-r-seg-item);
-  background: transparent;
-  color: var(--wf-ink-2);
-  font: inherit;
-  font-size: var(--wf-fs-13);
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background-color 120ms ease,
-    color 120ms ease;
-}
-.step:hover {
-  color: var(--wf-ink);
-}
-.step:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 1px;
-}
-.step[aria-current="step"] {
-  background: var(--wf-surface);
-  color: var(--wf-ink);
-  font-weight: 600;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
-}
-.step[data-done="true"] {
-  color: var(--wf-ink-3);
-}
-.stepCount {
-  font-family: var(--wf-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-3);
-}
-.barActions {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  margin-left: auto;
 }
 .summaryActions {
   display: flex;
@@ -157,28 +71,6 @@
 }
 .summaryActions {
   margin-top: var(--wf-s-4);
-}
-@media (max-width: 40rem) {
-  .live {
-    display: none;
-  }
-  .steps {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .step {
-    min-height: 40px;
-  }
-  .barActions {
-    width: 100%;
-  }
-  .barActions > :first-child {
-    margin-right: auto;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .step {
-    transition: none;
-  }
 }
 @media print {
   .summaryActions {
