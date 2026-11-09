@@ -54,7 +54,7 @@ export function promiseChaseTimes(
  * How many open ward promises there are, and how many are overdue. Feeds the Handover hero's
  * strip (Josh, Note 12, 8 Nov 2026), which opens the card below it. Same items as the card.
  */
-function openPromiseCounts(referrals: readonly Referral[], now: Instant): { total: number; overdue: number } {
+export function openPromiseCounts(referrals: readonly Referral[], now: Instant): { total: number; overdue: number } {
   const items = commitmentsDueBy(referrals, Number.POSITIVE_INFINITY);
   return {
     total: items.length,

@@ -30,6 +30,7 @@ import noticesSheet from "./ward-notices-sheet.module.css";
 import { useSinceLastLookReview } from "../since-last-look-pill";
 import { WardNotificationCenter } from "./ward-screen-lazy";
 import { WardSwitchPopover } from "./ward-switch-menu";
+import { useWardStaffContact } from "../staffing/ward-staff-contact";
 import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction } from "react";
 import type { CapacityRefreshRequest, Movement, Notice, Unit } from "@/components/ward-management/ward-model";
 import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
@@ -170,6 +171,9 @@ export function WardScreenTopBar({
   const shift = splitShift(heroTitle);
   const { wardFigures, wardAct, wardBand } = wardHeroTopParts(wardHeroTop);
   const updates = useSinceLastLookReview(`ward:${unit.id}`);
+  // Feature 10 and 32 (9 Nov 2026): Staff needed and the ward's contact card, as quick chips; an open
+  // staff request's tag sits under the band.
+  const staffContact = useWardStaffContact({ unit, now, isPhone });
   const [switchOpen, setSwitchOpen] = useState(false);
   // The confirm dialog returns focus to its opener, and to the Confirm numbers chip when the opener
   // is gone. The chip is drawn by the shared hero parts, so it is found by its test id.
@@ -242,6 +246,7 @@ export function WardScreenTopBar({
                   onClick: updates.open,
                   testId: "ward-updates",
                 },
+                ...staffContact.chips,
                 ...(raiseReferralGate.allowed
                   ? [
                       {
@@ -271,6 +276,7 @@ export function WardScreenTopBar({
           band={wardBand}
         >
           {wardHeroMeta}
+          {staffContact.tag}
         </HeroTop>
       </Hero>
       <FolderTabs
@@ -373,6 +379,7 @@ export function WardScreenTopBar({
           {notificationCenterOpen ? <div>{noticesPanel(false)}</div> : null}
         </Sheet>
       )}
+      {staffContact.sheets}
     </section>
   );
 }

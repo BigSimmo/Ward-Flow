@@ -174,7 +174,7 @@ export function EdIndex() {
   // 2026). The header search finds an ED by name or site.
 
   const rows: EdRow[] = useMemo(() => {
-    // D-14: names come through the shared resolver, the same one the ED board uses.
+    // Archived D-14: names come through the shared resolver, the same one the ED board uses.
     const resolve = createPatientResolver({ patients, referrals, movements });
     return edHomeSummaries(movements, now, accessTarget).map((summary) => {
       const people = summary.open

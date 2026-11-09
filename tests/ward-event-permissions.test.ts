@@ -135,7 +135,7 @@ describe("who may raise which event", () => {
     CLEAR_BED_RELEASE_BLOCK: ["ward", "bed_manager", "coordinator"],
     CONFIRM_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
     CONFIRM_CAPACITY: ["ward", "bed_manager", "coordinator"],
-    // T4 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`), `ed` alone, on
+    // T4 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`), `ed` alone, on
     // `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning: the department physically holding the form is
     // who can say a receipt was recorded in error.
     CORRECT_LEGAL_FORM_RECEIPT: ["ed", "ward", "community", "coordinator"],
@@ -499,6 +499,9 @@ describe("who may raise which event", () => {
     // Out of area "Flag early" (Josh, 3 Nov 2026): the coordinator's return plan.
     FLAG_RETURN_EARLY: ["coordinator"],
     RECORD_DIRECTORY_CHECK: ["coordinator", "bed_manager", "ward", "ed", "community", "officer"],
+    // Staff needed (feature 10, 9 Nov 2026).
+    REQUEST_WARD_STAFF: ["ward", "coordinator", "bed_manager"],
+    CLOSE_WARD_STAFF_REQUEST: ["ward", "coordinator", "bed_manager"],
     RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
     RECORD_SITE_HANDOVER_SIGN_OFF: ["bed_manager", "coordinator"],
     // Triage and risk (7 Nov 2026): the desks that raise a referral, never the bed manager, officer,

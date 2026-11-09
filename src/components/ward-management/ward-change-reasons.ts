@@ -24,7 +24,7 @@ export const LEGAL_STATUS_CHANGE_REASONS = ["recorded_by_treating_team", "correc
 export type LegalStatusChangeReason = (typeof LEGAL_STATUS_CHANGE_REASONS)[number];
 
 /**
- * T4 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`): the fixed reason a
+ * T4 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`): the fixed reason a
  * clinician gives when correcting a Form 1A receipt marked in error — the undo
  * `RECORD_LEGAL_FORM_RECEIVED` has never had. Chosen, never typed, same discipline as every list
  * in this file. Kept in its own label map (`legalFormReceiptCorrectionReasonLabels` below) rather
@@ -439,7 +439,7 @@ export const BED_PREPARATION_NOTES = ["Being cleaned", "Awaiting maintenance or 
 export type BedPreparationNote = (typeof BED_PREPARATION_NOTES)[number];
 
 /**
- * ⚠️ PLACEHOLDER VALUES, T12 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`,
+ * ⚠️ PLACEHOLDER VALUES, T12 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`,
  * item 9, owner answer 9, 17 September 2026): *"Non-binary patient: coordinator places with a
  * recorded reason after checking with the ward, preferring a single room."* His words fix the
  * SHAPE — a coordinator, a recorded reason, having checked with the ward — never the wording of
@@ -688,7 +688,7 @@ export const changeReasonLabels: Record<
 /**
  * Owner Answer 18 (second round, 2026-09-17): "Replace the free-text 'Anything limiting who can
  * come in right now' box with a fixed list." The ward screen's old input took typed prose, which
- * `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` (item 49) flagged as exactly the shape
+ * `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md` (item 49) flagged as exactly the shape
  * the persistence default-deny treats as typed text — chosen, never typed, is the same discipline
  * every list above holds to. Order is the owner's own, verbatim; a ward may choose several codes,
  * or none at all when nothing is limiting intake. No "Other" free-text box: "Other — call the

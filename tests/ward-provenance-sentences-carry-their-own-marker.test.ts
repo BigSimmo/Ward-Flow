@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 /**
  * 🔴 **EVERY SENTENCE UNDER A PROVENANCE HEADING MUST DISCLOSE PROVENANCE BY ITSELF.**
  *
- * Owner ruling, 2026-09-09 (`docs/ward-flow/owner-decisions-2026-09-09.md` §2, reading A):
+ * Owner ruling, 2026-09-09 (`docs/history/archive/dated-notes/owner-decisions-2026-09-09.md` §2, reading A):
  * *"the number should always carry that it's invented"*, applied everywhere — **a sentence whose
  * job is to disclose provenance must be true read alone: quoted, screen-read, copied into a
  * message, or reached after the heading has scrolled away. A heading is context, and context does

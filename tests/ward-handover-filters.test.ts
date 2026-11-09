@@ -1,6 +1,6 @@
 // tests/ward-handover-filters.test.ts
 //
-// Owner ruling 2026-09-09 (docs/ward-flow/owner-decisions-2026-09-09.md): the handover page is
+// Owner ruling 2026-09-09 (docs/history/archive/dated-notes/owner-decisions-2026-09-09.md): the handover page is
 // fully filterable by Service, Ward, ED or Community team, and — unlike every other Ward Flow
 // screen — the filter EXCLUDES. Three conditions came with that ruling and each has its own
 // section below: the scope resolves to a real name, the join that decides what is "in scope" is

@@ -8,7 +8,7 @@ import { wardSites } from "@/components/ward-management/ward-sites";
 import { STAY_BANDS } from "@/components/ward-management/ward-admissions";
 
 /**
- * Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md`, task G1 (item 51). The
+ * Build plan `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md`, task G1 (item 51). The
  * plan's own §1 investigation found no CSS in `board.module.css`'s ≤70rem/≤40rem breakpoints
  * dropping a column or a field — read again here, independently, and confirmed: `.triageFigures`
  * and `.beds` both switch to `repeat(2, minmax(0, 1fr))`, a pure column-count reflow with no

@@ -14,6 +14,7 @@ import {
   MonitorPlay,
   Ellipsis,
   Printer,
+  FileText,
 } from "lucide-react";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -29,7 +30,6 @@ import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { useWardPartialDisplay, useWardPartialDisplayHost } from "@/components/ward-management/ward-partial-view";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
   Button,
   Card,
@@ -43,7 +43,6 @@ import {
   HeroQuickChips,
   HeroTop,
   folderTabClasses,
-  type SinceItem,
   Icon,
   Menu,
   Popover,
@@ -135,6 +134,8 @@ import {
   resolveAdmissionPatient,
 } from "./handover-scope-rules";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { HandoverDigestSlot, useHandoverDigestOpen } from "./handover-digest-slot";
+import { handoverSinceItems } from "./handover-since-items";
 
 export {
   handoverScopeLabel,
@@ -208,6 +209,7 @@ export function HandoverPage() {
     rejections,
     configuration,
     inboxSnoozes,
+    staffRequests,
   } = useWardFlowSelect(
     "movements",
     "units",
@@ -221,6 +223,7 @@ export function HandoverPage() {
     "rejections",
     "configuration",
     "inboxSnoozes",
+    "staffRequests",
   );
   const now = useWardFlowClock();
   const partialDisplay = useWardPartialDisplay();
@@ -262,6 +265,8 @@ export function HandoverPage() {
   const [tab, setTab] = useState<HandoverTab>("pts");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [promisesOpen, setPromisesOpen] = useState(false); // Note 12: hero strip opens the promises card
+  // Feature 15: the Shift digest; `?digest=1` (the rail's "Read digest" near handover) opens it.
+  const [digestOpen, setDigestOpen] = useHandoverDigestOpen(searchParams?.get("digest") === "1");
   const [grouping, setGrouping] = useState<HandoverGrouping>("meet");
   const [sort, setSort] = useState<HandoverSort>("wait");
   const [density, setDensity] = useState<HandoverDensity>("std");
@@ -390,58 +395,11 @@ export function HandoverPage() {
   );
   const readyTotal = wards.reduce((sum, ward) => sum + ward.ready, 0);
 
-  // Changes since the preceding handover boundary, not a recorded personal visit.
-  const sinceItems = useMemo((): SinceItem[] => {
-    const inScopeUnit = (unitId: string) => wards.some((ward) => ward.id === unitId);
-    const within = (at: Instant | null | undefined) => at !== null && at !== undefined && at >= newSince && at <= now;
-    const unitWords = (list: Admission[]) => {
-      const byUnit = new Map<string, number>();
-      for (const admission of list) {
-        const name = units.find((unit) => unit.id === admission.unitId)?.name ?? "Ward not recorded";
-        byUnit.set(name, (byUnit.get(name) ?? 0) + 1);
-      }
-      return [...byUnit.entries()].map(([name, n]) => `${n} ${name}`).join(", ") || "None";
-    };
-    // ED/team membership is not recorded for every ward admission. Keep the all-ward counts,
-    // but name their broader population on screen and in copied handover text.
-    const wardPopulation = scope.kind === "ed" || scope.kind === "team" ? " across accessible wards" : "";
-    const admitted = admissions.filter((admission) => inScopeUnit(admission.unitId) && within(admission.arrivedAt));
-    const discharged = admissions.filter((admission) => inScopeUnit(admission.unitId) && within(admission.leftAt));
-    const opened = rows.filter((row) => row.openedAt >= newSince);
-    const newAct = opened.filter((row) => isActNow(row, now));
-    const items: SinceItem[] = [
-      {
-        id: "admitted",
-        value: admitted.length,
-        word: `admitted${wardPopulation}`,
-        detail: unitWords(admitted),
-        tone: "success",
-      },
-      {
-        id: "discharged",
-        value: discharged.length,
-        word: `discharged${wardPopulation}`,
-        detail: unitWords(discharged),
-        tone: "success",
-      },
-      {
-        id: "opened",
-        value: opened.length,
-        word: "new on the sheet",
-        detail: "Referrals and movements opened",
-        tone: "info",
-      },
-      {
-        id: "act",
-        value: newAct.length,
-        word: "new act now",
-        detail: newAct.length ? newAct.map((row) => row.umrn).join(", ") : "None",
-        tone: newAct.length ? "danger" : "neutral",
-      },
-    ];
-    // ROLE BRANCH (ed): an ED desk holds no ward, so ward admissions and discharges are left out.
-    return edDesk ? items.filter((item) => item.id !== "admitted" && item.id !== "discharged") : items;
-  }, [admissions, wards, units, rows, scope.kind, newSince, now, edDesk]);
+  // Changes since the preceding handover boundary (`handover-since-items.ts`).
+  const sinceItems = useMemo(
+    () => handoverSinceItems({ admissions, wards, units, rows, scopeKind: scope.kind, newSince, now, edDesk }),
+    [admissions, wards, units, rows, scope.kind, newSince, now, edDesk],
+  );
   // L1 (site review, 12 Oct 2026): the chip counts each change once. "New act now" rows are already
   // among "new on the sheet", so adding them again made the chip read 35 beside a strip of 0, 1, 32.
   const copySince = useCallback(() => {
@@ -886,6 +844,46 @@ export function HandoverPage() {
     </Popover>
   );
 
+  const longest = rows.reduce<HandoverRow | null>(
+    (best, row) => (best === null || row.openedAt < best.openedAt ? row : best),
+    null,
+  );
+  // Feature 15: the Shift digest reads the hero's own figures, so the two never disagree.
+  const digestSheet = (
+    <HandoverDigestSlot
+      input={
+        digestOpen
+          ? {
+              now,
+              shiftLabel: shiftInfo.label,
+              shiftAt,
+              cutoff,
+              sinceAt: newSince,
+              scopeLabel,
+              sinceItems,
+              counts,
+              referrals,
+              units,
+              admissions,
+              scopedMovements: rows.map((row) => row.movement),
+              staffRequestRecords: staffRequests ?? [],
+              // An ED or team handover covers no ward's staffing, so it counts no staff requests.
+              wardIds: scope.kind === "ed" || scope.kind === "team" ? [] : wards.map((ward) => ward.id),
+              beds: ownWard || edDesk ? null : { ready: readyTotal, needed: counts.bed },
+              longest: longest && { movementId: longest.id, openedAt: longest.openedAt, place: longest.edShort },
+            }
+          : null
+      }
+      onClose={() => setDigestOpen(false)}
+      onAction={(action) => {
+        setSheetOpen(false);
+        setTab("pts");
+        if (action.kind === "pill") setPill(action.pill);
+        else if (action.kind === "patient") pick(action.movementId);
+        else setPromisesOpen(true);
+      }}
+    />
+  );
   const siteSignOff = <HandoverSiteSignOffSlot phone={isPhoneWidth} onScope={setScopeValue} />;
   if (isPhoneWidth) {
     return (
@@ -928,11 +926,13 @@ export function HandoverPage() {
           }))}
           meetingOn={meetingStartedAt !== null}
           onToggleMeeting={toggleMeeting}
+          onOpenDigest={() => setDigestOpen(true)}
           history={<HandoverHistory {...historyProps} />}
           siteSignOff={siteSignOff}
           promisesAct={promisesPhoneAct(referrals, now)}
           onPill={togglePill}
         />
+        {digestSheet}
         <WardPrototypeFooter
           testId="ward-handover-governance"
           note="Synthetic data · Not approved for clinical use · Print copies carry their preparation time"
@@ -1020,6 +1020,15 @@ export function HandoverPage() {
                 id: "meeting",
                 label: "Start meeting",
                 node: <HandoverMeetingChip startedAt={meetingStartedAt} onClick={toggleMeeting} />,
+              },
+              {
+                // Feature 15: the Shift digest, beside Start meeting; `?digest=1` also opens it.
+                id: "digest",
+                label: "Digest",
+                icon: <FileText strokeWidth={1.75} aria-hidden="true" />,
+                expanded: digestOpen,
+                testId: "ward-handover-digest-open",
+                onClick: () => setDigestOpen(true),
               },
               ...(edDesk
                 ? []
@@ -1471,6 +1480,7 @@ export function HandoverPage() {
       {sheetOpen || tab !== "pts" ? null : siteSignOff}
       {body}
       {flowPanel}
+      {digestSheet}
       {!portrait ? (
         <Drawer
           open={drawerOpen && !selected && (departedPanel ?? signOffPanel) !== null}

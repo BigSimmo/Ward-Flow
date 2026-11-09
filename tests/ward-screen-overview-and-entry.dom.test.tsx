@@ -19,7 +19,7 @@ import { WardIndex } from "@/components/ward-management/wards/ward-index";
 import { allUnits, NOW_ANCHOR, unitById } from "@/components/ward-management/ward-sites";
 
 /**
- * Task B of `docs/superpowers/plans/2026-09-04-ward-flow-screens-patient-and-ward.md` — the ward
+ * Task B of `docs/history/superpowers/plans/2026-09-04-ward-flow-screens-patient-and-ward.md` — the ward
  * overview (`wards/ward-index.tsx`) and the ward screen (`ward/ward-screen.tsx`), rebuilt to
  * `mockup-ward-home.html` and `mockup-ward-entry.html`.
  *

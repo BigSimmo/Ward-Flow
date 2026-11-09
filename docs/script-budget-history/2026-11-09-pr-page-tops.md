@@ -1,6 +1,6 @@
 # 9 Nov 2026, the approved page tops (page-tops PR, branch `claude/project-thread-l4s9zr`)
 
-Raised referrals 568.0 to 571.5, ED 519.9 to 522.8, ward 599.0 to 599.9, movement 592.7 to 595.4,
+Raised referrals 568.0 to 571.5, ED 519.9 to 522.8, ward 599.0 to 599.9, movement 593.0 to 595.7 (main raised it from 592.7 to 593.0 in PR #1562),
 one ED 657.0 to 657.5 and bed meeting 572.0 to 577.0. Statistics is not raised here: it needs more
 than the 5 KB a PR may add without asking (see below).
 
@@ -28,7 +28,7 @@ measured about 0.9 KB above local builds; bed meeting is capped at the 5 KB a PR
 | referrals   | 563.5 | 570.5   | 568.0     | 571.5     |
 | ED          | 518.4 | 521.8   | 519.9     | 522.8     |
 | ward        | 595.0 | 598.9   | 599.0     | 599.9     |
-| movement    | 591.1 | 594.4   | 592.7     | 595.4     |
+| movement    | 591.1 | 594.4   | 593.0     | 595.7     |
 | Capacity    | 636.2 | 638.4   | 645.0     | 645.0     |
 | one ED      | 650.7 | 656.5   | 657.0     | 657.5     |
 | bed meeting | 570.9 | 576.3   | 572.0     | 577.0     |

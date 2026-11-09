@@ -17,7 +17,7 @@ import { shiftConfirmations } from "@/components/ward-management/capacity/shift-
 import { bedMapCards, bedMapGroup, bedMapRegion, wardCardName } from "./helpers/capacity-ward-table";
 
 /**
- * Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md`, task C1 (item 44 — the
+ * Build plan `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md`, task C1 (item 44 — the
  * service chooser, Capacity's own scoping), on the October 2026 redesign of Capacity
  * (`capacity-screen.tsx`).
  *

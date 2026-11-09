@@ -516,7 +516,7 @@ export type WardFlowEvent =
     }
   | {
       /**
-       * T4 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`): the undo
+       * T4 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`): the undo
        * `RECORD_LEGAL_FORM_RECEIVED` has never had. Clears `Movement.legalFormReceivedAt` and
        * appends the original instant, who corrected it and the fixed reason
        * (`LegalFormReceiptCorrectionReason`) to `Movement.legalFormReceiptCorrections`, so a
@@ -532,7 +532,7 @@ export type WardFlowEvent =
     }
   | {
       /**
-       * T2 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`), owner answer 1 and
+       * T2 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`), owner answer 1 and
        * item 5 (regional extensions): the clinician types the expiry written on the form they are
        * holding, and — later, for the same movement — a further extension written on a fresh form.
        * One event carries both: the reducer decides which this is from what `movement.legalForm`
@@ -1721,7 +1721,7 @@ export type WardFlowEvent =
        * are kept structurally apart, and `tests/ward-referral-history-immutable.test.ts` for the
        * static proof that this case never touches `history` itself.
        *
-       * 🔴 **D-11 CRITICAL.** `note` is human-typed prose — this event type belongs on
+       * 🔴 **Archived D-11 CRITICAL.** `note` is human-typed prose — this event type belongs on
        * `WARD_FLOW_TYPED_TEXT_EVENT_TYPES` (`ward-flow-persistence-classification.ts`), never the
        * text-safe list, so dispatching it (accepted or refused) locks session persistence for the
        * rest of the session exactly as a typed `history` on `RECEIVE_REFERRAL` already does.
@@ -2548,6 +2548,8 @@ export type WardFlowEvent =
   | import("./out-of-area/return-early").ReturnEarlyEvent
   // Triage and risk (Josh's approved mock-up, built 7 Nov 2026): a signed triage on one person.
   | import("./triage/triage-record").TriageSignedEvent
+  // Staff needed (feature 10, 9 Nov 2026): a ward needs more staff, and the request closed.
+  | import("./staffing/staff-requests").StaffRequestEvent
   /*
    * v10 pass 2 (Josh, 10 Oct 2026): the build guide's "Toast with Undo". Each undo is a proper,
    * role-gated, audited event that restores the state its decision changed EXACTLY, and only within

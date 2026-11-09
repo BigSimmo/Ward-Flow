@@ -525,7 +525,7 @@
   }
 }
 
-/* M6's drawer. Sizes at or above D-3's 12px floor: this is new text written during the screen's
+/* M6's drawer. Sizes at or above archived D-3's 12px floor: this is new text written during the screen's
  * rebuild, which is when the floor applies. Tokens are ones this stylesheet already uses. */
 .drawerSection {
   padding: var(--ward-space-12) 0;

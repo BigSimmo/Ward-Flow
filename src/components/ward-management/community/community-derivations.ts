@@ -28,7 +28,7 @@ function communityArmsOf(referral: TeamReferral): readonly { destination: { kind
  * THE COMMUNITY HUB'S DERIVATIONS — who a community team can see, and, more importantly, who it
  * cannot.
  *
- * The design spec (`docs/superpowers/specs/2026-08-30-ward-flow-community-hub-design.md`) asks for
+ * The design spec (`docs/history/superpowers/specs/2026-08-30-ward-flow-community-hub-design.md`) asks for
  * four lists. **Three of them are buildable from what the model holds and one is not**, and this
  * module's job is to make that difference structural rather than a note somebody has to read: the
  * unbuildable list has no function here at all, so no screen can accidentally render a plausible

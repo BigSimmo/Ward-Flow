@@ -7,7 +7,7 @@
  */
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, ClipboardCopy, Clock, Ellipsis, Users } from "lucide-react";
+import { Check, ChevronDown, ClipboardCopy, Clock, Ellipsis, FileText, Users } from "lucide-react";
 import {
   Button,
   Drawer,
@@ -106,6 +106,8 @@ export type HandoverPhoneProps = {
   /** The meeting timer, as on desktop. */
   meetingOn: boolean;
   onToggleMeeting: () => void;
+  /** Feature 15: opens the Shift digest sheet. */
+  onOpenDigest?: () => void;
   history: ReactNode;
   /** Q61 to Q63: the site bed manager's site sign-off, first on the sheet tab only, so opening a ward lands on its
    * sheet; null for any other desk. */
@@ -450,6 +452,7 @@ export function HandoverPhone({
   chips,
   meetingOn,
   onToggleMeeting,
+  onOpenDigest,
   history,
   siteSignOff,
   promisesAct,
@@ -542,6 +545,18 @@ export function HandoverPhone({
                   testId: "ward-handover-phone-shift",
                   onClick: () => setShiftSheetOpen(true),
                 },
+                // Feature 15: the Shift digest, as on desktop.
+                ...(onOpenDigest
+                  ? [
+                      {
+                        id: "digest",
+                        label: "Digest",
+                        icon: <FileText strokeWidth={1.75} aria-hidden="true" />,
+                        testId: "ward-handover-phone-digest",
+                        onClick: onOpenDigest,
+                      },
+                    ]
+                  : []),
               ]}
             />
           }

@@ -241,7 +241,9 @@ export function planContractHits(symbol, options = {}) {
   const contentIndex =
     options.contentIndex ??
     createContentIndex({ root: options.root ?? process.cwd(), fileSystem: options.fileSystem ?? NODE_FILE_SYSTEM });
-  const hits = rg(symbol, ["docs/superpowers/plans", "docs/superpowers/specs"], {
+  // Live plans live in docs/ward-flow/plans (D-107, 9 Nov 2026). The old docs/superpowers plans and
+  // specs moved to docs/history/superpowers with "do not execute" banners, so none is in flight.
+  const hits = rg(symbol, ["docs/ward-flow/plans"], {
     ...options,
     contentIndex,
   }).filter((file) => !isExcludedDocumentationPath(file));

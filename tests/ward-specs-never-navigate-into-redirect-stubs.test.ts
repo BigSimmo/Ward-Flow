@@ -571,7 +571,7 @@ const findingsIn = (specPaths: readonly string[]): Finding[] =>
  * for `ward-morning-page`, which `CapacityScreen` — the redirect target — does not render. The open
  * question was the owner's ruling on the morning/handover cross-link question, tracked as
  * outstanding issue #ZWJ71W (`docs/outstanding-issues.md`) — never "owner ruling D9"; D9 itself
- * (`docs/superpowers/specs/2026-08-25-ward-flow-phase-4-specialist-boards-design.md:98`) is the
+ * (`docs/history/superpowers/specs/2026-08-25-ward-flow-phase-4-specialist-boards-design.md:98`) is the
  * already-built shift-handover page, a settled decision, unrelated to this one. That ruling landed
  * 2026-09-17 as a repoint (Morning's surviving coverage moved to
  * `tests/ui-ward-capacity-morning-moved.spec.ts`), not a restore, so the entry's own stated

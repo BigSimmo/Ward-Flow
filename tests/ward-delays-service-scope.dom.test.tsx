@@ -37,7 +37,7 @@ function AdvanceClock({ minutes }: { minutes: number }) {
 }
 
 /**
- * Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md`, task D1 (item 44 — the service
+ * Build plan `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md`, task D1 (item 44 — the service
  * chooser, §2 "Delays: scoped, plus S2."). Proves the Delays screen narrows its whole population —
  * the waiting list, its marks and the scope bar — to one chosen health service's own movements,
  * states S2's own "never hidden" urgent-outside-service line, keeps the three mark sources

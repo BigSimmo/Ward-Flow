@@ -1,6 +1,6 @@
 // tests/ward-shell-mounted.dom.test.tsx
 //
-// Task 6 of docs/superpowers/plans/2026-09-04-ward-flow-navigation-shell.md, as re-scoped by
+// Task 6 of docs/history/superpowers/plans/2026-09-04-ward-flow-navigation-shell.md, as re-scoped by
 // the 2026-09-04 ruling: `WardGround` mounts once, in `src/app/ward-flow/layout.tsx`
 // (the only ancestor of every route's `<main>` — `ClinicalRail` is a SIBLING of `<main>` at all
 // of its call sites and could never reach it).

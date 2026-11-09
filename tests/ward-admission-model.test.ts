@@ -556,12 +556,12 @@ describe("Admission privacy — structural", () => {
     "movementId",
     // Workflow audit fix: checked planned-arrival authority must survive conversion and scoped reads.
     "plannedLegalStatus",
-    // WIDENED ON PURPOSE, 2026-09-11 — ruling D-14 (`docs/ward-flow/owner-decisions-2026-09-1x.md`),
+    // WIDENED ON PURPOSE, 2026-09-11 — archived ruling D-14 (`docs/history/archive/dated-notes/owner-decisions-2026-09-1x.md`),
     // the SIXTH widening of this list. A pointer to the existing patient record, id only, never a
     // copy — see `Admission.patientId`'s own doc comment. Added in the same change as
     // `tests/ward-patient-link-default-deny.test.ts`, which actively refuses reading it anywhere
     // this ruling has not explicitly permitted; a field that widened the allowlist without also
-    // widening the refusal would be exactly the "guard satisfied by an absence" D-14 exists to end.
+    // widening the refusal would be exactly the "guard satisfied by an absence" archived D-14 exists to end.
     "patientId",
     "sex",
     // WIDENED ON PURPOSE, 2026-09-25 — owner rulings that a ward's male/female counts follow GENDER,

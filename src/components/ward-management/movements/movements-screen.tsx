@@ -154,7 +154,7 @@ export function MovementsScreen() {
   // Task 6 of the audit-wiring plan, 2026-09-16: StageRow's wait-meter bar and its "of N hours"
   // caption are read against the coordinator-configured ED access target, not a bare 24h literal.
   const accessTarget = configuration.edAccessTargetMinutes;
-  // Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2 "Movements", task D2: the
+  // Build plan `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md` §2 "Movements", task D2: the
   // chosen health service, read from the shared store S2 built. `null` means All services.
   const service = useServiceScope();
   // Community clinician desk (D-76): the team's own journeys only (the desk's scope already narrows
@@ -458,7 +458,7 @@ export function MovementsScreen() {
   }, [movements, now, severeCauseById, thresholds, sender]);
 
   /**
-   * SERVICE SCOPING — build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2
+   * SERVICE SCOPING — build plan `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md` §2
    * "Movements": *"the list is scoped. Figures and the 48-hour chart are not, and a sentence says
    * so."* Every `worklist*` value below is read ONLY by the Movement worklist panel further down
    * this file. Nothing else in this component reads them — the Day panel's headline metrics, the

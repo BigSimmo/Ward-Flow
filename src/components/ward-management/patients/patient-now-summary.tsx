@@ -50,6 +50,7 @@ import type { LeaveBed, Movement } from "@/components/ward-management/ward-model
 import type { PatientMode } from "./patient-mode";
 import type { ResolvedPatientNow } from "./patient-now-adapter";
 import type { StagePresentationDetail } from "./patient-now-screen-helpers";
+import { PatientPinButton, usePatientPinChip } from "./patient-pin-button";
 import type { WfTone } from "@/components/wf";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
@@ -289,6 +290,9 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
         />
       </span>
     ) : undefined;
+  // Feature 31: Pin (to Home) is a quick chip in the top; a record with no live movement shows it
+  // alone on a phone, and beside Copy summary on a desktop.
+  const pinChip = usePatientPinChip(livePatient?.id, displayName);
   const movementChips = movementTop ? (
     <HeroQuickChips
       label="Patient actions"
@@ -300,6 +304,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
           onClick: handleCopySummary,
           testId: "ward-patient-copy-handover",
         },
+        ...(pinChip ? [pinChip] : []),
         ...(onOpenForms
           ? [
               {
@@ -341,7 +346,10 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
         }
         tags={movementTags}
         figures={movementFigures}
-        chips={movementChips}
+        chips={
+          movementChips ??
+          (isPhone && pinChip ? <HeroQuickChips label="Patient actions" items={[pinChip]} /> : undefined)
+        }
         phoneEyebrow={
           phoneMovement ? undefined : (
             <span className={styles.phEyebrow}>
@@ -549,6 +557,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
               // v10 phone: the movement page reads "Live HH:MM", the patient page a plain "Live".
               <LiveChip state="live" age={phoneMovement ? undefined : null} onHero />
             )}
+            {isPhone || movementTop ? null : <PatientPinButton patientId={livePatient?.id} name={displayName} />}
             {isPhone || movementTop ? null : (
               <Button variant="onHero" size="sm" icon={Copy} onClick={handleCopySummary}>
                 {copied

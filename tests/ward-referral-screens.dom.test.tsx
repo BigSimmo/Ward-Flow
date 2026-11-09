@@ -748,7 +748,7 @@ describe("ReferralBoard", () => {
    * reasonably conclude otherwise.
    */
   it("the decided section says plainly that an acceptance holds no bed, moves nobody and arranges no transport", () => {
-    // R3 (`docs/ward-flow/plans/2026-09-16-fix-plan-referral-model.md`) replaced "records the unit
+    // R3 (`docs/history/plans-2026-09/2026-09-16-fix-plan-referral-model.md`) replaced "records the unit
     // only" — false for the ED and community arms, which never name a unit at all — with a
     // sentence naming every consequence acceptance does NOT have: no bed, no patient movement, no
     // transport. Pinned wording, not merely a substring, so the retired phrase cannot sneak back in
