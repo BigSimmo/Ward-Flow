@@ -726,8 +726,10 @@ export class SharedWorkspaceClient {
       const noRole = response.status === 403 && (value?.code === "no-role" || value?.error === NO_ROLE);
       return { response, value, noRole };
     };
+    // Audit 8 (#1571): an ended session or role forgets the downtime pack, as the access deadline does.
     const denied = (error: string) => {
       this.clearRecovery();
+      forgetDowntimePack();
       this.settleForSessionEnd(body, error, true);
       this.cancelAll(saveProblem("sessionEnded"), saveProblem("sessionEndedWhileSaving"));
       this.roleLifetime.abort();
@@ -743,6 +745,7 @@ export class SharedWorkspaceClient {
     };
     const gate = (update: Partial<SharedView>) => {
       this.clearRecovery();
+      forgetDowntimePack();
       settleForRoleGate();
       this.roleLifetime.abort();
       this.roleLifetime = new AbortController();
