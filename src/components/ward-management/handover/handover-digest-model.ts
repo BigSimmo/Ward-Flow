@@ -20,7 +20,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { openStaffRequests, type StaffRequestRecord } from "@/components/ward-management/staffing/staff-requests";
-import { durMinutes } from "@/components/wf/format";
+import { durMinutes } from "@/components/wf";
 
 import { openPromiseCounts, promiseChaseTimes } from "./handover-open-promises";
 import type { HandoverPill } from "./handover-model";

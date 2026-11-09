@@ -1,4 +1,4 @@
-import { durMinutes } from "@/components/wf/format";
+import { durMinutes } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { sourceWardName } from "@/components/ward-management/ward-movement-origin";
 import { readyBedsNow } from "@/components/ward-management/ward-bed-states";

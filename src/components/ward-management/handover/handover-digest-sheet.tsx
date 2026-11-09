@@ -7,8 +7,7 @@ import { ChevronRight, ClipboardCopy } from "lucide-react";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
-import { Button, Icon, Sheet, StatusGlyph } from "@/components/wf";
-import { useOptionalToast } from "@/components/wf/toast-provider";
+import { Button, Icon, Sheet, StatusGlyph, useOptionalToast } from "@/components/wf";
 
 import {
   buildHandoverDigest,
