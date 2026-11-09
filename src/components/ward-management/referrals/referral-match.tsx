@@ -244,7 +244,15 @@ export function ReferralMatchView({
        foot, as the ward sheet does. Decline opens the reasons as radio rows; Accept asks once. */
     return (
       <DecidedBy allowed={answers("ed")} who="the emergency department">
-        {renderNotABedPhoneReview({ s, referral, patientInfo, phone, handleDecline, handleEdAccept })}
+        {renderNotABedPhoneReview({
+          s,
+          referral,
+          patientInfo,
+          phone,
+          handleDecline,
+          handleEdAccept,
+          footSlot: answers("ed") ? footSlot : undefined,
+        })}
       </DecidedBy>
     );
   }
