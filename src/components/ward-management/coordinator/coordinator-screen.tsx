@@ -152,10 +152,9 @@ const REFUSED_MARKER_EXPLANATION = "Actions the app refused to record this sessi
 /**
  * Home: the coordinator's first screen (direction A, owner 10 Oct 2026).
  *
- * One hero band that answers "how many wait for how many beds", with four counts under it (Home
- * v7, Josh 22 Oct 2026): Act now and Referrals to decide narrow My list to that group, Overdue
- * waits and Tier 1 highlight those rows in Everyone waiting. New events sits at the right of that
- * row. Then a compact ED strip, then two columns: the list (My list, or Everyone waiting behind a
+ * One hero band (sticky header redesign, Josh 9 Nov 2026): "Bed flow right now", three figures, the
+ * next step with its one button, and the ED strip, all in the slate. Curved folder tabs then lead
+ * the lists. Then two columns: the list (My list, or Everyone waiting behind a
  * switch) and a right column with Beds that fit and Placement. Nothing is pre-selected: Placement
  * opens only for the patient, alert or referral the coordinator chose (a bottom sheet on a phone).
  * Registers, above the list, opens the registers as a strip under the hero (owner, 8 Oct 2026), or
@@ -307,7 +306,7 @@ export function CoordinatorScreen() {
   // It starts closed. Exceptions and Declines open the registers on their own tab.
   const [heroPanel, setHeroPanel] = useState<"registers" | undefined>(undefined);
   const [registerTab, setRegisterTab] = useState<RegisterTabId>("exceptions");
-  // Overdue and Tier 1 on the hero highlight their rows in the queue; the rest dim, nothing hides.
+  // A highlight (past target, from the next step) marks its rows in the queue; the rest dim, nothing hides.
   const [highlight, setHighlight] = useState<QueueHighlight | undefined>(undefined);
   function toggleRegisters(tab: RegisterTabId) {
     const showing = heroPanel === "registers" && (tab === "declines") === (registerTab === "declines");

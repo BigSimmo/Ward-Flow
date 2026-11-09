@@ -79,20 +79,23 @@ describe("the app bar's Activity button opens the one shared Activity panel", ()
     await waitFor(() => expect(screen.queryByTestId("ward-bar-activity-sheet")).toBeNull());
   });
 
-  it("is the same instance Home's changes button opens, on the tab it asks for", async () => {
+  // Sticky header redesign (Josh, 9 Nov 2026): Home's hero changes chip is gone, so on Home too the
+  // bar's button opens the one panel, and a tab request (as the Activity route makes) still opens there.
+  it("is the one panel on Home too, and a request for a tab opens it there", async () => {
     currentPathname = "/ward-flow";
     renderBar(true);
-    const chip = screen.getByRole("button", { name: /· (Review|Activity)$/u });
-    fireEvent.click(chip);
+    expect(screen.queryByRole("button", { name: /· (Review|Activity)$/u })).toBeNull();
+    const trigger = screen.getByTestId("ward-bar-activity-trigger");
+    fireEvent.click(trigger);
     const dialog = await screen.findByRole("dialog", { name: "Activity · Statewide" });
     expect(within(dialog).getByRole("tab", { name: /^Changes/u })).toHaveAttribute("aria-selected", "true");
     // One panel: Home draws no copy of its own.
     expect(screen.getAllByRole("dialog", { name: "Activity · Statewide" })).toHaveLength(1);
     expect(screen.queryByTestId("home-activity-panel")).toBeNull();
-    expect(screen.getByTestId("ward-bar-activity-trigger")).toHaveAttribute("aria-expanded", "true");
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
 
     fireEvent.keyDown(dialog, { key: "Escape" });
-    await waitFor(() => expect(chip).toHaveFocus());
+    await waitFor(() => expect(trigger).toHaveFocus());
 
     // A request for a tab opens there; the bar's own button then opens plainly again.
     act(() => openActivityPanel({ tab: "notices" }));
