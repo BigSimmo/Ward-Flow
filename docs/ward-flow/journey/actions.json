@@ -3687,7 +3687,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 653,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
@@ -3707,12 +3707,12 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 655,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 660,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         }
       ]
     }
@@ -3761,17 +3761,17 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 369,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 376,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 421,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         }
       ]
     }
@@ -3820,7 +3820,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 463,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
@@ -3830,12 +3830,12 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 472,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 478,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         }
       ]
     }
@@ -3892,22 +3892,22 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 502,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 511,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 517,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 522,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         }
       ]
     }
@@ -3964,7 +3964,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 541,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/board/ward-board-blocker-dialog.tsx",
@@ -3974,17 +3974,17 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 548,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 554,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 561,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         }
       ]
     }
@@ -4033,7 +4033,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 581,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
@@ -4043,17 +4043,17 @@
         {
           "path": "src/components/ward-management/discharges/discharge-board.tsx",
           "line": 511,
-          "sha256": "2020145827a1c559ba40ee4f11100ee3ed0d69f0f45abfb8ff62ad9784ebe7ad"
+          "sha256": "594beda67bf588fb967651df4566760ac3199dc1a1c743845685b34f0a95d2b6"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 588,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 594,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         }
       ]
     }
@@ -4102,7 +4102,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 618,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen-overlays.tsx",
@@ -4112,12 +4112,12 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 628,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 636,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         }
       ]
     }
@@ -4166,7 +4166,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 297,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
@@ -4181,12 +4181,12 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 307,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 328,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         }
       ]
     }
@@ -4286,7 +4286,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 681,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/hub/hub-screen.tsx",
@@ -4306,7 +4306,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 685,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         }
       ]
     }
@@ -5632,7 +5632,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 701,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/board/ward-board-detail-panel.tsx",
@@ -5642,12 +5642,12 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 703,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 709,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         }
       ]
     }
@@ -5696,7 +5696,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 724,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen-overlays.tsx",
@@ -5711,12 +5711,12 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 726,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 731,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         }
       ]
     }
@@ -5789,12 +5789,12 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 756,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/board/ward-board-clinically-ready.tsx",
-          "line": 76,
-          "sha256": "c0d7d5e34cedca1c7055cf0b5182145321da531866934d1e97277fa7a2012156"
+          "line": 95,
+          "sha256": "16fa7116dc542318a253d8a8f7ab3afc213f2f7b97af4a1cceb90a828c8bd88a"
         }
       ]
     }
@@ -5859,7 +5859,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 223,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward/ward-drawer-discharge-date.tsx",
@@ -5884,22 +5884,22 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 226,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 229,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 235,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 239,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         }
       ]
     }
@@ -6149,7 +6149,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 770,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/officer/officer-forms-pack.tsx",
@@ -6164,12 +6164,12 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 772,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 783,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         }
       ]
     }
@@ -6816,7 +6816,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 814,
-          "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+          "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
         },
         {
           "path": "src/components/ward-management/movements/movement-workflow-actions.tsx",

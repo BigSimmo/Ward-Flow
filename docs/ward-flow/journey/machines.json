@@ -1596,7 +1596,7 @@
       {
         "path": "src/components/ward-management/ward-flow-bed-events.ts",
         "line": 618,
-        "sha256": "39fdec36110eb7cc8b49a520f6786b2ecd9c7225039730746bc0395d5488a45c"
+        "sha256": "06eef8e97f98ff096a7a90401d840d75556e13b240bc56e4f8589e0115d0579e"
       },
       {
         "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1606,7 +1606,7 @@
       {
         "path": "src/components/ward-management/ward-flow-events.ts",
         "line": 1,
-        "sha256": "dffadb01127543288dd0cb14984601efcee879036f70133cf9b64f33c4131abc"
+        "sha256": "c2bc7fcb61a34f15ba9bb73915b931c3ff9d8a56ded37c85448210ebf4ffc527"
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
@@ -1650,8 +1650,8 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-storage-validation.ts",
-        "line": 456,
-        "sha256": "1b9f43ca6c284d3869b37ecd7eeee901a660f881d8f02c77339493a71cb4f111"
+        "line": 457,
+        "sha256": "5a7ea7823497f0f76e827f9622f4f893657ec22eed6f327aa2a4597d3fd1ef1b"
       },
       {
         "path": "src/components/ward-management/ward-flow-transport-events.ts",
