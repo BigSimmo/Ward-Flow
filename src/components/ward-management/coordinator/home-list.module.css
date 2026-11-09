@@ -733,3 +733,52 @@
   position: absolute;
   inset: -4px 0;
 }
+
+/* Josh's notes 4 polish (9 Nov 2026): the phone row reads top-down like the desktop one. The glyph
+   and the time sit on the name's line instead of floating at the row's middle, the place is calm
+   body text, and the status tag is a quiet hairline label rather than a heavy outlined pill. */
+.compactRow.compactRow {
+  align-items: start;
+  padding: 10px var(--wf-s-3) var(--wf-s-3);
+}
+
+.compactRow.compactRow > span:first-child {
+  align-self: start;
+  padding-top: 5px;
+}
+
+.compactWho.compactWho strong + strong {
+  margin-left: 2px;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / 20px var(--wf-mono);
+}
+
+.compactWhere.compactWhere {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+}
+
+.compactTag.compactTag {
+  margin-top: var(--wf-s-1);
+  padding: 0 var(--wf-s-2);
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--wf-line-2);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / 24px var(--wf-font);
+}
+
+.compactEnd.compactEnd {
+  align-self: start;
+  min-height: 20px;
+}
+
+.compactEnd.compactEnd > span:first-child {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 20px var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.compactEnd.compactEnd:has(.phoneRowAction) {
+  justify-content: flex-start;
+  gap: var(--wf-s-2);
+}
