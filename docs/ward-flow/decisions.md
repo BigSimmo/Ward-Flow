@@ -131,6 +131,8 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-106](#d-106-clinical-values-from-the-9-november-2026-documentation-audit-9-november-2026)                                                            | Clinical values from the 9 Nov audit                                                 | Active                                           |
 | [D-107](#d-107-working-rules-and-documentation-from-the-9-november-2026-audit-9-november-2026)                                                          | Working rules from the 9 Nov audit                                                   | Active                                           |
 | [D-109](#d-109-homes-bed-alert-line-tests-the-whole-number-shown-9-november-2026)                                                                       | Home bed alert line tests the shown whole %                                          | Active                                           |
+| [D-114](#d-114-allow-pull_request_target-for-three-workflows-only-9-november-2026)                                                                      | Allow pull_request_target for three workflows only                                   | Active                                           |
+| [D-116](#d-116-page-tops-the-pr-1581-recommendations-stand-9-november-2026)                                                                             | Page tops: PR #1581 recommendations stand                                            | Active                                           |
 
 ---
 
@@ -1360,3 +1362,28 @@ is inferred.
 - **Decision:** the statewide figure at the top of Home, and every bed alert dot and count, reads "at risk" when the whole percentage it shows is at or above the bed alert line, and "beds in use" below it. So 84.5% to 84.9% shows "85% at risk", never "85% beds in use".
 - **How:** `coordinator-screen.tsx` compares `Math.round(statewideOccupancy)` with the bed alert line, and `isBedAlert` (`ward-service-bed-alerts.ts`) rounds the same way, so the rail, phone menu and executive bed alert dots and counts match. Built in PR #1561.
 - **Boundary:** a prototype display rule on synthetic data; approves no merge or release.
+
+## D-114. Allow pull_request_target for three workflows only (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`). **Decided by:** Josh, in the Ward Flow project, choosing "Allow just these 3 workflows" on a decision card.
+- **Decision:** from 2 December 2026 GitHub blocks `pull_request_target` in public repositories unless an Actions event policy allows it ([GitHub changelog, 2 Nov 2026](https://github.blog/changelog/2026-11-02-pull_request_target-blocked-by-default-december-2)). Ward Flow keeps the trigger and adds a repository Actions event policy that allows it only for `pr-hold.yml`, `bot-author-policy.yml` and `ward-flow-ci-tidy.yml`. Everything else keeps GitHub's default block.
+- **How:** Josh adds the policy in the repository's Actions settings before the second brownout (16 November 2026, 16:00 to 18:00 UTC). The policy must also allow the other events those three files use (`merge_group`, `schedule`, `workflow_dispatch`). `ward-flow-budget-recheck.yml` is left out while its job stays switched off (`if: false`); turning it back on needs it added. No workflow file changes.
+- **Why:** the hold and bot-author checks must read their rules from `main`, so a pull request cannot edit its own check to pass. All three never check out or run pull-request code, which is the safe use GitHub describes. Switching them to `pull_request` would lose that protection.
+- **Boundary:** a repository setting Josh makes himself; agents do not change it.
+
+## D-116. Page tops: the PR #1581 recommendations stand (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`). **Decided by:** Josh, in the Ward Flow project: "Please work autonomously and complete everything over night including PRs. I give permission" (18:24 UTC), taken as accepting each recommendation listed for him in PR #1581. Earlier the same day he approved the v6 page tops and their per-page rulings, and allowed the Statistics (+8 KB, 16:10 UTC) and bed meeting (+6.6 KB, 17:20 UTC) phone limit raises on decision cards.
+- **Decision:** the built page tops keep these choices:
+  - All wards shows service tabs on a phone, replacing shell-15's "no region chips on a phone".
+  - The New referral chip stays phone-only and never shows on the ED desk.
+  - Capacity's top drops the locked/open ready, pulled and freeing-today figures; the bed map and ward cards still show them.
+  - Transport's act row reads "Most urgent", because its first row is the most urgent job, not always the longest wait.
+  - On the officer's phone, Copy handover sits in the top chip row, reversing the 31 October placement.
+  - The On-call phone keeps "Prototype data, invented numbers", and the TV keeps "Updates in this browser only" on wide screens.
+  - Legal forms phone route lines are one line with an ellipsis, reversing F-05.
+  - The Patient page keeps its mode pill and Placement steps toggle; Settings keeps its Rules / Last save strip; Pin on the patient page is a chip.
+  - An ED desk no longer sees a greyed Broadcast chip on Alerts.
+  - A community team's phone shows three section tabs; Referrals sits under "More team sections", as the approved mock-up shows.
+- **Left as follow-ups, not decided here:** removing now-unused symbols (needs the owner-approved dead-code override), the other community teams' and the Referrals desks' tops, and phone bar title truncation.
+- **Boundary:** layout and wording only on synthetic data; no clinical logic changes. Approves no release.
