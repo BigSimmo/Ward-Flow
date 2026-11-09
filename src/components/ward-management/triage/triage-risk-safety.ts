@@ -163,7 +163,7 @@ function safetyPlanLines(draft: SafetyPlanDraft): [heading: string, line: string
  */
 export function insertUnderHeading(text: string, heading: string, line: string): string {
   const lines = text.split("\n");
-  const headRe = new RegExp(`^${escapeRegExp(heading)}\\s*:(.*)$`, "i");
+  const headRe = new RegExp(String.raw`^${escapeRegExp(heading)}\s*:(.*)$`, "i");
   const already = lines.some((l) => {
     const trimmed = l.trim();
     const head = trimmed.match(headRe);
