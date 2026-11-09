@@ -1,9 +1,18 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { WARD_DESK_PENDING_ATTRIBUTE } from "./ward-desk-early";
 
 const never = () => () => {};
+
+/** False in the server's page and the browser's first pass over it; true from the pass after. */
+function useDeskKnown(): boolean {
+  return useSyncExternalStore(
+    never,
+    () => true,
+    () => false,
+  );
+}
 
 /**
  * H-0111: clears the first-load mark set by `WARD_DESK_EARLY_SCRIPT` once the app has drawn the
@@ -12,13 +21,29 @@ const never = () => () => {};
  * pass is on screen, so the page area is shown with the right desk's page and never the wrong one.
  */
 export function WardDeskPendingClear() {
-  const deskKnown = useSyncExternalStore(
-    never,
-    () => true,
-    () => false,
-  );
+  const deskKnown = useDeskKnown();
   useEffect(() => {
     if (deskKnown) document.documentElement.removeAttribute(WARD_DESK_PENDING_ATTRIBUTE);
   }, [deskKnown]);
   return null;
+}
+
+/**
+ * Desk walk follow-up (9 Nov 2026): when the request carried `WARD_DESK_HELD_COOKIE` (a desk other
+ * than the whole-network coordinator's), the server sends `placeholder` in place of the page, and
+ * the browser's first pass keeps it so the two match. The pass after reads the stored desk, so the
+ * page is first drawn for that desk and the coordinator's figures never reach the page at all.
+ * Without the cookie (a fresh device, the coordinator) the server's page stands, as H-0111 decided.
+ */
+export function WardDeskHold({
+  held,
+  placeholder,
+  children,
+}: {
+  held: boolean;
+  placeholder: ReactNode;
+  children: ReactNode;
+}) {
+  const deskKnown = useDeskKnown();
+  return held && !deskKnown ? placeholder : children;
 }
