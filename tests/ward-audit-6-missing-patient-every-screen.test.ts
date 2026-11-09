@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { alertGroupOf, alertKindOf } from "@/components/ward-management/alerts/alerts-model";
 import { wardClinicalRows } from "@/components/ward-management/bed-meeting/tv-clinical-derivations";
 import { patientMode } from "@/components/ward-management/patients/patient-mode";
+import { downtimePack } from "@/components/ward-management/reports/downtime-pack";
 import { buildCensus } from "@/components/ward-management/search/patient-census";
 import { rosterStatus } from "@/components/ward-management/statistics/statistics-ward-phone";
 import { wardBedRoster } from "@/components/ward-management/ward/ward-screen-derivations";
@@ -196,11 +197,32 @@ describe("audit 6: a person marked absent without leave reaches every screen aft
     }
   });
 
-  // Findings: these screens do not show the missing person. Each needs an owner decision before UI work.
+  it("the downtime pack names the missing person on their ward, as it names everyone else (D-115)", () => {
+    const { after, stay, unit } = markMissing();
+    const pack = downtimePack({
+      units: after.units,
+      bedUnits: [unit],
+      admissions: after.admissions,
+      bedReleases: after.bedReleases,
+      leaveBeds: after.leaveBeds,
+      movements: after.movements,
+      now: NOW,
+      identify: (subject) => `person ${subject.id}`,
+    });
+    const ward = pack.wards.find((candidate) => candidate.unitId === unit.id)!;
+    expect(ward.absentWithoutLeave).toEqual([{ admissionId: stay.id, person: `person ${stay.id}`, since: NOW }]);
+    // The held bed is still a held bed (D-38): the count does not move.
+    expect(ward.counts.onLeave).toBe(after.leaveBeds.filter((bed) => bed.unitId === unit.id).length);
+  });
+
+  // Blocked (D-115 item 3): the executive scope strips `absentWithoutLeave` from every held bed
+  // (`countsOnlyLeaveBed` in ward-access-scope.ts), and an open PR holds that file.
+  it.todo(
+    "executive statistics (projectExecutiveNetworkStatistics): count an absence without leave apart from On leave once countsOnlyLeaveBed keeps the flag",
+  );
+
+  // Blocked (D-115 item 1): the fix needs board files that open PRs hold.
   it.todo(
     "ward board (/ward-flow/board/[unitId]): tiles and the person panel (buildTiles, buildOccupants) take no held beds, so the missing person reads as an ordinary occupied bed; capacityBreakdown counts them under On leave",
-  );
-  it.todo(
-    "downtime pack (/reports/downtime, downtimePack): only bed counts, where the absence is folded into onLeave; no line names a missing person",
   );
 });
