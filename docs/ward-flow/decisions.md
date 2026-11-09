@@ -133,6 +133,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-108](#d-108-six-bed-flow-features-keep-d-93-and-d-72-ed-long-wait-next-steps-9-november-2026)                                                        | Six features: keep D-93 and D-72, ED next steps                                      | Active                                           |
 | [D-109](#d-109-homes-bed-alert-line-tests-the-whole-number-shown-9-november-2026)                                                                       | Home bed alert line tests the shown whole %                                          | Active                                           |
 | [D-110](#d-110-ed-and-referral-flow-neutral-fit-line-clearance-timing-and-alternatives-to-admission-9-november-2026)                                    | ED and referral fit line, clearance timing, alternatives                             | Active                                           |
+| [D-112](#d-112-phone-bottom-bar-the-floating-bar-9-november-2026)                                                                                       | Phone bottom bar: the floating bar                                                   | Active                                           |
 | [D-114](#d-114-allow-pull_request_target-for-three-workflows-only-9-november-2026)                                                                      | Allow pull_request_target for three workflows only                                   | Active                                           |
 
 ---
@@ -1382,6 +1383,15 @@ is inferred.
   - Alternatives to admission are an unranked, optional list on ward-bed referrals from ED or community: crisis team home visit, MH Hospital in the Home, step-up/step-down unit, short-stay unit and next-day community follow-up. Each can be marked not suitable, tried or declined by patient. It never blocks Send. Service names are placeholders until checked against local services.
 - **Why:** these cut the work of placing a patient without letting the app rank patients or wards, or make a clinical call.
 - **Boundary:** prototype rules on synthetic data; approves no merge or release.
+
+## D-112. Phone bottom bar: the floating bar (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`). **Decided by:** Josh, in the Ward Flow project. He rejected a light polish of the flat bar ("You are not polishing it at all"), chose option A, "Floating bar", of three built options on a decision card, and asked for it "compact ... and beautifully sized", following what large companies do for floating bars.
+- **Decision:** the phone bottom bar (dock) is a compact frosted capsule floating above the foot: 59 px tall, 14 px from each side and 10 px (or the home indicator) above the foot, with a hairline edge, a faint top highlight and a tight plus a wide low-opacity shadow (iOS and Material 3 style); the page fades into the canvas behind it. The page you are on is a soft accent pill holding its icon and label; the + is a 44 px round navy button in the middle. Badges sit on the icon corner and mean work waiting only, so Capacity's free-bed figure is not a badge (screen readers still hear it). A tab answers a press at once, and tapping the tab for the page you are on scrolls back to the top. A desk with a two-line label ("Coming and going", 31 October ruling) gets a 67 px capsule.
+- **Why:** the flat bar's + was heavy and pressed against its edge, badges hid their icons and mixed good news with work waiting, taps gave no feedback, and a second tap on the current tab did nothing. Josh wanted a significant, premium redesign.
+- **How:** `shell/ward-phone-menu.module.css` (floating bar block), `shell/ward-phone-page-dock.module.css` and `shell-next/next-phone-dock.module.css` (insets and the `--wf-dock-clear` / `--wf-dock-top` values that pinned bars and notices follow), `shell-next/next-phone-menu.tsx` (badge rule, tap again for top). Which tabs each desk has is unchanged. Replaces the 9 November flat-bar dock styling from the sticky header redesign.
+- **Numbering:** recorded as D-112 because D-111 is claimed by the audit-answers entry in PR #1579.
+- **Boundary:** a prototype display change on synthetic data; no clinical logic changes; approves no merge or release.
 
 ## D-114. Allow pull_request_target for three workflows only (9 November 2026)
 
