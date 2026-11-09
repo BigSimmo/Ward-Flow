@@ -16,6 +16,7 @@ import { legalStatusFull, legalStatusShort } from "@/components/ward-management/
 import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
+import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "@/components/ward-management/ward-legal-clock";
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 import type { WardChipLevel } from "@/components/ward-management/ward-chip";
 import { useEffect, useId, useRef } from "react";
@@ -519,5 +520,19 @@ export function StageRow({
         <ChevronRight size={16} aria-hidden="true" />
       </Link>
     </li>
+  );
+}
+
+/** Note 7 item 11 (9 Nov 2026, held for Josh's wording review): the worklist's Legal column head.
+ *  Where the heads show, the caveat is said once here instead of in every row; rows keep it for
+ *  screen readers, and show it again wherever the heads are hidden (narrow, print). */
+export function LegalColumnHead() {
+  return (
+    <span title={LEGAL_LIMITS_NOT_CHECKED_NOTICE}>
+      Legal
+      <span className={flow.columnNote} data-testid="legal-column-not-checked">
+        Not legally checked
+      </span>
+    </span>
   );
 }
