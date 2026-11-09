@@ -3,6 +3,7 @@
 import { useEffect, useState, useSyncExternalStore, type ReactElement } from "react";
 import { createPortal } from "react-dom";
 import { usePracticeRunning } from "@/components/ward-management/demo-reset/ward-practice-session";
+import { useTrainingMode } from "@/components/ward-management/demo-reset/ward-training-mode";
 import { lastDowntimePack, subscribeDowntimePack } from "@/components/ward-management/reports/downtime-pack";
 import { useDowntimePackOwner } from "@/components/ward-management/reports/downtime-pack-context";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
@@ -51,7 +52,9 @@ function useLastDowntimePackAt(): number | null {
  */
 export function WardPracticeLine() {
   const running = usePracticeRunning();
-  if (!running) return null;
+  // In training (feature 47) the training line already says nothing is saved, so this one stays quiet.
+  const training = useTrainingMode();
+  if (!running || training) return null;
   return (
     <p className={styles.quiet} role="status" data-testid="ward-practice-line">
       Practising: synthetic demo steps are real saves on this device. Stop in Tools.

@@ -90,6 +90,11 @@ function barNotesIn(scroller: HTMLElement): HTMLElement | null {
   return scroller.querySelector<HTMLElement>("[data-wf-bar-notes]");
 }
 
+/** The training banner's holder under the header (feature 47): always present, empty when off. */
+function trainingIn(scroller: HTMLElement): HTMLElement | null {
+  return scroller.querySelector<HTMLElement>("[data-wf-bar-training]");
+}
+
 /**
  * The header sits first in the work column, with its pinned notes under it. Their heights are what
  * the hero pads under. The notes count as part of the header (Josh, 27 Oct 2026): counted as page
@@ -102,7 +107,13 @@ function barHeightIn(scroller: HTMLElement): number {
   // Note 14 (8 Nov 2026): the notes float at the window's foot and take no room under the header,
   // except where a layout still keeps them in flow (TV board, print).
   const notesInFlow = notes !== null && getComputedStyle(notes).position !== "fixed";
-  return (bar ? bar.offsetHeight : 0) + (notes && notesInFlow ? notes.offsetHeight : 0);
+  // Feature 47: the training banner sits in flow under the header too, so it counts the same way.
+  const training = trainingIn(scroller);
+  return (
+    (bar ? bar.offsetHeight : 0) +
+    (notes && notesInFlow ? notes.offsetHeight : 0) +
+    (training ? training.offsetHeight : 0)
+  );
 }
 
 function sameBleed(a: Bleed, b: Bleed) {
@@ -214,6 +225,9 @@ export function useWfBandBleed(ref: RefObject<HTMLElement | null>, enabled: bool
     // A note arriving or leaving moves the hero without resizing either of those.
     const notes = barNotesIn(scroller);
     if (notes) observer?.observe(notes);
+    // The training banner loads after the first measure; its holder resizes when it arrives.
+    const training = trainingIn(scroller);
+    if (training) observer?.observe(training);
     query.addEventListener("change", schedule);
     window.addEventListener("resize", schedule);
     return () => {

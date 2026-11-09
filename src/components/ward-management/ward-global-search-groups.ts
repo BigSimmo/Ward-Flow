@@ -1,3 +1,4 @@
+import { WARD_ADD_PERSON_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 // The global search's result rows and groups: their types, the Discreet names titles and the
 // grouping of the engine's matches. Split out of `ward-global-search.tsx` (18 October 2026) to keep
 // that file under the line cap; the palette and the phone menu's search both build rows here.
@@ -391,3 +392,23 @@ export function recentViewItem(id: string, canOpenHref: (href: string) => boolea
       ]
     : [];
 }
+
+/** The actions search offers before anything is typed. */
+export const START_ACTIONS: readonly SearchResultItem[] = [
+  {
+    kind: "action",
+    kindLabel: "Action",
+    id: "new-referral",
+    title: "New referral",
+    meta: "",
+    href: WARD_REFERRAL_INTAKE_HREF,
+  },
+  {
+    kind: "action",
+    kindLabel: "Action",
+    id: "add-patient",
+    title: "Add patient",
+    meta: "",
+    href: WARD_ADD_PERSON_HREF,
+  },
+];

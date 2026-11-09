@@ -224,3 +224,14 @@ Source digests were re-reviewed after the coordinator's "on behalf of the ward" 
 After review (9 Nov 2026), `capacity-ward-drawer.tsx` catches a failed record opening after the reason is given and shows the same "record is unavailable" line as the Discharges board. `REQUEST_CAPACITY_REFRESH` moved from line 258 to 263, unchanged in role, payload and guard.
 
 After `main` was merged into PR #1543 (9 Nov 2026), `ward-flow-events.ts` holds both sides' edits. From `main`, `ADD_PATIENT` accepts the optional admin detail fields (`Partial<Record<AdminDetailField, string>>`, with one type import widened). From this PR, `OPEN_DISCHARGE_RECORD` has its optional `onBehalfReason`. Neither edit adds or removes lines on the other side, so all 37 citations (36 command models and the state-machine review) keep this PR's line numbers, and `main`'s line numbers map to the same lines. Only the digest was re-recorded. No other cited source differs from its recorded digest after the merge.
+
+## Source review — 9 Nov 2026 (search, export and training tools, PR #1559)
+
+Source digests were re-reviewed after review fixes, file by file:
+
+- `ward-flow-provider.tsx`: training mode (feature 47) gives the tab a private synthetic world; a training reset now clears only the in-memory referral draft, so the real world's stored drafts survive. `RECORD_LEAVING` (1215 to 1218), `RESET_SCENARIO` (1131 to 1133), `RECORD_PATIENT_DISCHARGE` (1234 to 1237) and `OPEN_DISCHARGE_RECORD` (1263 to 1265) moved down; role, payload and guard are unchanged. The `ADVANCE_CLOCK` citation (line 440) is unchanged.
+- `use-ward-minute-tick.ts`: the minute tick starts only while the tab is visible. It only re-renders; it dispatches nothing, and `ADVANCE_CLOCK` is unchanged.
+- `ward-global-search.tsx`: My views (feature 45) rows pass the same access gate as other rows. The demo `ADVANCE_CLOCK` dispatch on line 1275 is unchanged.
+- `discharge-board.tsx`: an Export button (feature 44) sits in the list header and is disabled when the list is empty. `CLEAR_BED_RELEASE_BLOCK` moved from line 533 to 539, unchanged in role, payload and guard.
+
+The G-then-letter go-to keys (`shell/ward-goto-shortcuts.ts`) navigate through `navigateWithDirtyGuard`, so the unsaved-work guard still applies to that path. They dispatch no event.

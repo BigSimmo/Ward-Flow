@@ -16,6 +16,8 @@ export function WardSearchCommands({
   onHandover,
   shortcutsExpanded,
   onToggleShortcuts,
+  savedHere = null,
+  onToggleSaveView,
 }: {
   demoOff: boolean;
   demoOffId: string;
@@ -28,6 +30,9 @@ export function WardSearchCommands({
   onHandover: () => void;
   shortcutsExpanded: boolean;
   onToggleShortcuts: () => void;
+  /** Whether this screen is in My views; null when this screen cannot be saved (feature 45). */
+  savedHere?: boolean | null;
+  onToggleSaveView?: () => void;
 }) {
   return (
     <div
@@ -118,6 +123,21 @@ export function WardSearchCommands({
             <kbd className={styles.hintKbd}>/handover</kbd>
           </button>
         ) : null}
+        {savedHere !== null && onToggleSaveView ? (
+          <button
+            type="button"
+            className={styles.commandBtn}
+            disabled={!resultsCurrent}
+            aria-pressed={savedHere}
+            aria-label="Save this screen and its filters to My views"
+            data-testid="ward-global-search-cmd-save-view"
+            onClick={onToggleSaveView}
+          >
+            {/* One name; aria-pressed says whether it is saved, and pressing again removes it. */}
+            <span className={styles.commandLabel}>Save this screen and its filters to My views</span>
+            <kbd className={styles.hintKbd}>{savedHere ? "Saved" : "Save"}</kbd>
+          </button>
+        ) : null}
         <button
           type="button"
           className={styles.commandBtn}
@@ -160,6 +180,10 @@ export function WardSearchCommands({
           <span className={styles.shortcutRow}>
             <span>Toggle navigation rail</span>
             <kbd className={styles.hintKbd}>[</kbd>
+          </span>
+          <span className={styles.shortcutRow}>
+            <span>Go to a page (Home, ED, Waiting, Wards…)</span>
+            <kbd className={styles.hintKbd}>G, then H, E, W, B</kbd>
           </span>
           <span className={styles.shortcutRow}>
             <span>Dismiss / clear</span>

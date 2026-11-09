@@ -5,6 +5,8 @@
 import { WardRailFrame } from "@/components/ward-management/shell/ward-chrome-frame";
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
+import { goToPageForShortcut, resetGoToShortcut } from "@/components/ward-management/shell/ward-goto-shortcuts";
+import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import {
   ArrowRight,
@@ -18,6 +20,7 @@ import {
   SunMoon,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
@@ -381,6 +384,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const canOpen = useCanOpenHref();
   const canRefer = canOpen(WARD_REFERRAL_INTAKE_HREF);
   const deskHome = useDeskHomeHref();
+  const router = useRouter();
   // B6: the person follows the desk. A non-coordinator desk (role access on) is its own role.
   // #790: an access admin's chrome reads as the executive, but the rail names the admin it is.
   const deskAccess = useEffectiveWardAccess();
@@ -473,6 +477,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        resetGoToShortcut();
         if (openOverlay !== null) {
           // An open sheet sits above this popover, so Escape closes the sheet only. The popover waits
           // for the next press instead of both closing on one.
@@ -486,8 +491,13 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
         closeWardDrawer();
         return;
       }
-      if (isTypingTarget(event.target)) return;
-      if (openDrawerForShortcut(event, canRefer)) return;
+      // Another control used this key, so a G pressed before it no longer starts a go-to.
+      if (isTypingTarget(event.target) || openDrawerForShortcut(event, canRefer)) {
+        resetGoToShortcut();
+        return;
+      }
+      if (goToPageForShortcut(event, canOpen, (href) => navigateWithDirtyGuard(() => router.push(href)), deskHome))
+        return;
 
       if (event.key !== "[" || !areCharacterShortcutsEnabled()) return;
       if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -501,7 +511,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, setOpen, setMoreOpen, openOverlay, isTabletLandscape, canRefer]);
+  }, [open, setOpen, setMoreOpen, openOverlay, isTabletLandscape, canRefer, canOpen, router, deskHome]);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {

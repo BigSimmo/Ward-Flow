@@ -39,7 +39,12 @@ import {
   stageCopy,
   type MovementSearchQuery,
 } from "@/components/ward-management/ward-derivations";
-import { calendarDateOf, formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import {
+  calendarDateOf,
+  formatInstant,
+  formatInstantWithDay,
+  formatSheetMoment,
+} from "@/components/ward-management/ward-clock";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import {
   useDueSoonThresholds,
@@ -908,6 +913,22 @@ export function PatientSearchPage() {
     );
   };
 
+  // Export (feature 44): the rows on screen, never names; the builder loads on the click.
+  const exportList = async () => {
+    const narrowed =
+      searching || legacyNarrowing || [settingFilter, presenceFilter, patientState].some((v) => v !== "all");
+    (await import("./census-export")).downloadPatientList(
+      stateRows,
+      { wardName: (unitId) => units.find((unit) => unit.id === unitId)?.name ?? unitId },
+      {
+        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+        scope: narrowed
+          ? "Patients; the rows on screen, with the current search, filters and state applied"
+          : "Patients; everyone on the list, no search or filter applied",
+      },
+    );
+  };
+
   // While a search runs on the phone, a group with no match gives way to the first one with any.
   const flowLine = (() => {
     const closed = census.closedToday;
@@ -1382,6 +1403,7 @@ export function PatientSearchPage() {
               historyCount={historyCount}
               history={history}
               onCopyList={copyList}
+              onExportList={exportList}
               copyNote={drawerOpen ? null : copyNote}
               empty={refusal ? null : empty}
               notice={refusalNotice}
