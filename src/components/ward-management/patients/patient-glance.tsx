@@ -204,12 +204,7 @@ export function PatientGlance(props: PatientGlanceProps) {
     (tile): tile is GlanceTile => tile !== null,
   );
   return (
-    <dl
-      className={styles.glance}
-      data-testid="ward-patient-glance"
-      aria-label="Safety at a glance"
-      style={{ ["--glance-cols" as string]: tiles.length }}
-    >
+    <dl className={styles.glance} data-testid="ward-patient-glance" aria-label="Safety at a glance">
       {tiles.map((tile) => {
         const Icon = tile.icon;
         return (
