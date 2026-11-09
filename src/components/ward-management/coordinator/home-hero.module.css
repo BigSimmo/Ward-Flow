@@ -255,8 +255,11 @@
   display: none;
 }
 
-/* Only the count shows; " waiting" stays in the spoken name. */
+/* Only the count shows; " waiting" stays in the spoken name. It comes last in the markup (reading
+   order) and is placed top right, beside the code. */
 .edWaiting {
+  grid-row: 1;
+  grid-column: 2;
   font-size: 0;
   line-height: 0;
 }

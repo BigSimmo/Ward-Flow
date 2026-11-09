@@ -160,14 +160,28 @@ export function HomeEdPressure({
         );
 
         const waitText = row.waiting > 0 ? durMinutes(row.longestWaitMinutes) : "No wait";
-        const shownService = serviceAcronym && !isPhone ? ` ${serviceAcronym}` : "";
-        const visibleSummary = [`${row.ed.siteCode}${shownService}`, `${row.waiting} waiting`, waitText, shownDeadline]
+        // The hero strip shows no service, and its count comes last in reading order (it sits top right),
+        // so the name starts with the visible words in the order they are read, even when a phone's
+        // sideways strip cuts the last tile short (axe label-in-name).
+        const shownService = serviceAcronym && !isPhone && !onHero ? ` ${serviceAcronym}` : "";
+        const waitingWords = `${row.waiting} waiting`;
+        const visibleSummary = (
+          onHero
+            ? [row.ed.siteCode, waitText, shownDeadline, waitingWords]
+            : [`${row.ed.siteCode}${shownService}`, waitingWords, waitText, shownDeadline]
+        )
           .filter(Boolean)
           .join(", ");
         const spoken = [visibleSummary, `${edShortName(row.ed)} (${serviceAcronym || rawService || "Department"})`];
         if (row.waiting === 0) spoken.push("no patients waiting");
         else spoken.push(`longest ${splitDuration(row.longestWaitMinutes)}`);
         if (deadline.spoken) spoken.push(deadline.spoken);
+
+        const waitingCount = (
+          <span className={c.edWaiting} aria-hidden="true">
+            <span className={c.edWaitingValue}>{row.waiting}</span> waiting
+          </span>
+        );
 
         return (
           <li key={row.ed.id} className={c.edCell}>
@@ -197,9 +211,7 @@ export function HomeEdPressure({
               </span>
               {/* A space between the lines (collapsed in the flex column) so the visible words read
                     apart for voice control and axe label-in-name, F-19. */}{" "}
-              <span className={c.edWaiting} aria-hidden="true">
-                <span className={c.edWaitingValue}>{row.waiting}</span> waiting
-              </span>{" "}
+              {onHero ? null : <>{waitingCount} </>}
               <span className={c.edLine} aria-hidden="true">
                 {row.waiting > 0 ? (
                   <>
@@ -218,6 +230,7 @@ export function HomeEdPressure({
                   <span className={c.edWord}>{shownDeadline}</span>
                 </span>
               ) : null}
+              {onHero ? <> {waitingCount}</> : null}
             </button>
           </li>
         );

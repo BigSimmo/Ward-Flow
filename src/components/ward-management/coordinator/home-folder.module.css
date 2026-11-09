@@ -154,7 +154,23 @@
 
 .nav[data-act] .switch.switch.switch > [aria-checked="true"]:first-child > :last-child {
   background: var(--wf-danger);
-  color: var(--wf-surface);
+  /* Pure white on the light theme's red keeps 4.5:1 for 12px text (the surface tint falls just short). */
+  color: light-dark(white, var(--wf-surface));
+}
+
+/* Phone and tablet: the tabs off the folder sit on the slate. The band behind them is a gradient,
+   so they carry the band's foot colour themselves (the same to the eye) and contrast checks measure
+   their text against the slate, not the page canvas. */
+@media (max-width: 63.99rem) {
+  .switch.switch.switch > :not([aria-checked="true"]),
+  .more.more.more:not(:hover) {
+    background-color: var(--wf-hero-2);
+  }
+
+  .nav[data-docked] .switch.switch.switch > :not([aria-checked="true"]),
+  .nav[data-docked] .more.more.more:not(:hover) {
+    background-color: transparent;
+  }
 }
 
 .switch.switch.switch > *:focus-visible {
@@ -383,7 +399,7 @@
   .nav[data-act] .switch.switch.switch > :first-child > :last-child,
   .nav[data-act] .switch.switch.switch > [aria-checked="true"]:first-child > :last-child {
     background: var(--wf-danger);
-    color: var(--wf-surface);
+    color: light-dark(white, var(--wf-surface));
   }
 
   .switch.switch.switch > *:focus-visible,
