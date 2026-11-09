@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import {
   BellRing,
@@ -17,6 +19,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { useIsPhone } from "@/components/wf";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { seesNetworkBedFigures } from "@/components/ward-management/ward-role-access";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
@@ -53,6 +56,32 @@ function useUnconfirmedCount(enabled: boolean): number | undefined {
 }
 
 /**
+ * On phone the bar sits at the foot of the home's hero band, under its "need a person now" line, not
+ * above the title (Josh, 9 Nov 2026). The hero may draw after the bar, so watch until it appears.
+ */
+function usePhoneHeroSlot(active: boolean): HTMLElement | null {
+  const isPhone = useIsPhone();
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  const watching = active && isPhone;
+  useEffect(() => {
+    if (!watching) return;
+    const find = () => {
+      const hero = document.querySelector<HTMLElement>('[data-wf-hero="band"]');
+      setSlot((current) => (current === hero ? current : hero));
+    };
+    const frame = requestAnimationFrame(find);
+    const observer = new MutationObserver(find);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [watching]);
+  if (!watching) return null;
+  return slot && slot.isConnected ? slot : null;
+}
+
+/**
  * One row of the desk's most used controls under the top bar, on the desk's home only (Josh, 8 Nov
  * 2026). Each control opens its tool in the Tools side panel on the same page, never a new page.
  */
@@ -67,14 +96,17 @@ export function WardQuickBar() {
       (control.kind === "tool" && (!NETWORK_TOOLS.has(control.tool) || seesNetworkBedFigures(role))),
   );
   const unconfirmed = useUnconfirmedCount(role === "coordinator");
-  if (pathname !== home || controls.length === 0) return null;
+  const onHome = pathname === home && controls.length > 0;
+  const heroSlot = usePhoneHeroSlot(onHome);
+  if (!onHome) return null;
   const press = (control: QuickControl, button: HTMLElement) => {
     if (control.kind === "referral") openWardDrawer("referral");
     else requestToolsTool(control.tool, button);
   };
-  return (
+  const bar = (
     <nav
       className={styles.bar}
+      data-in-hero={heroSlot ? "" : undefined}
       aria-label="Quick controls"
       data-testid="ward-quick-bar"
       data-wf-quick-bar=""
@@ -108,4 +140,5 @@ export function WardQuickBar() {
       </ul>
     </nav>
   );
+  return heroSlot ? createPortal(bar, heroSlot) : bar;
 }
