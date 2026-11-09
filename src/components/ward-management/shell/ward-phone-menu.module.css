@@ -418,6 +418,9 @@
   margin-block: -3px;
   border-radius: 15px;
   color: var(--wf-ink-2);
+  transition:
+    background-color var(--wf-m-fast, 120ms) var(--wf-ease, ease),
+    transform var(--wf-m-fast, 120ms) var(--wf-ease, ease);
 }
 
 .dockIcon svg {
@@ -425,10 +428,15 @@
   height: 21px;
 }
 
-/* The page you are on: its icon in the accent on a tinted pill, its label in full ink and bolder. */
+/* The page you are on: its icon in the accent on a tinted pill, drawn a touch heavier, and its label
+   in full ink and bolder. */
 .dockItem[aria-current="page"] .dockIcon {
   background: var(--wf-accent-tint);
   color: var(--wf-accent);
+}
+
+.dockItem[aria-current="page"] .dockIcon svg {
+  stroke-width: 2.1;
 }
 
 .dockItem[aria-current="page"] .dockLabel {
@@ -436,8 +444,15 @@
   font-weight: 600;
 }
 
+/* Phone navigation polish (9 Nov 2026): a press answers at once, with the pill showing faintly
+   behind the icon, so a tap on a slow page still reads as taken. */
 .dockItem:active .dockIcon {
+  background: color-mix(in srgb, var(--wf-ink-1) 8%, transparent);
   transform: scale(0.94);
+}
+
+.dockItem[aria-current="page"]:active .dockIcon {
+  background: color-mix(in srgb, var(--wf-accent) 22%, transparent);
 }
 
 .dockLabel {
@@ -488,19 +503,22 @@
 
 /* Count badges (Josh, 9 Nov 2026): small dark pills at the icon's top-right, ringed in the dock's
    own surface so they read clear of the icon. Text stays at the 12px floor (owner ruling D-3). */
+/* Phone navigation polish (9 Nov 2026): seated on the icon's top-right corner, so it covers only
+   the corner instead of half the bell or the bed. */
 .dockCount {
   position: absolute;
-  top: -2px;
-  left: calc(50% + 3px);
+  top: -4px;
+  left: calc(50% + 5px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 18px;
   height: 18px;
-  padding: 0 4px;
+  padding: 0 5px;
   border: 0;
   border-radius: var(--wf-r-pill);
-  background: var(--wf-ink-1);
+  /* In dark, a softer light grey than full ink, so a count does not glare off the dark dock. */
+  background: light-dark(var(--wf-ink-1), var(--wf-ink-2));
   box-shadow: 0 0 0 2px var(--wf-surface);
   font-family: var(--wf-mono);
   font-size: var(--wf-fs-12);
@@ -525,24 +543,32 @@
   --rise-fill: light-dark(var(--wf-accent), var(--wf-pri-2));
 
   position: absolute;
-  top: -1px;
+  /* Phone navigation polish (9 Nov 2026): a 52 x 38 rounded button with 5px of air above it, level
+     with the tabs' icon pills, instead of a 46px square pressed against the dock's top edge. It no
+     longer glows: one soft contact shadow, as the dock's other controls. */
+  top: 5px;
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
+  width: 52px;
+  height: 38px;
   border: 0;
-  border-radius: 15px;
+  border-radius: 13px;
   background: var(--rise-fill);
-  box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--rise-fill) 70%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 14%, transparent),
+    0 1px 2px color-mix(in srgb, var(--rise-fill) 40%, transparent);
   color: var(--wf-on-accent);
   cursor: pointer;
-  transition: transform var(--wf-m-fast, 120ms) var(--wf-ease, ease);
+  transition:
+    transform var(--wf-m-fast, 120ms) var(--wf-ease, ease),
+    filter var(--wf-m-fast, 120ms) var(--wf-ease, ease);
 }
 
+/* The full thumb target: 48px tall round the drawn button. */
 .rise::after {
   content: "";
   position: absolute;
-  inset: -1px;
+  inset: -5px -2px;
 }
 
 .rise svg {
@@ -551,7 +577,8 @@
 }
 
 .rise:active {
-  transform: scale(0.95);
+  filter: brightness(0.92);
+  transform: scale(0.96);
 }
 
 .rise:focus-visible {

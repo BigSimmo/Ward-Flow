@@ -13,6 +13,7 @@ import {
   useState,
   type ComponentProps,
   type ComponentType,
+  type MouseEvent,
   type RefObject,
 } from "react";
 import { Activity, BedSingle, Bell, House, Plus, Wrench } from "lucide-react";
@@ -311,6 +312,34 @@ const DOCK_ITEM = `${styles.dockItem} ${dockStyles.item}`;
  */
 const DOCK_ONE_LINE_CHARS = 12;
 
+/**
+ * Phone navigation polish (9 Nov 2026): tapping the tab for the page you are already on takes you
+ * back to the top of that page, as phone apps do, instead of reloading it where you are. A tab on a
+ * page further down its section (a ward under My ward) still goes to the section's own page.
+ * Returns true when it scrolled, so the caller skips its navigation announcement.
+ */
+function backToTopOnRetap(event: MouseEvent<HTMLAnchorElement>): boolean {
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return false;
+  const trim = (path: string) => path.replace(/\/+$/u, "") || "/";
+  const target = new URL(event.currentTarget.href, window.location.href);
+  if (trim(target.pathname) + target.search !== trim(window.location.pathname) + window.location.search) return false;
+  event.preventDefault();
+  const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+  document.querySelectorAll<HTMLElement>("[data-wf-scroller]").forEach((scroller) => {
+    scroller.scrollTo({ top: 0, behavior });
+  });
+  window.scrollTo({ top: 0, behavior });
+  announceToWardShell("Top of the page.");
+  return true;
+}
+
+/**
+ * Phone navigation polish (9 Nov 2026): a dock badge is work waiting on someone. Capacity's figure
+ * is free beds, good news the page's own header already shows, so its tab carries no badge; a
+ * screen reader still hears the figure in the tab's name.
+ */
+const badgeFor = (entryId: string, value: number | undefined) => (entryId === "capacity" ? undefined : value);
+
 function DockFace({
   icon: Icon,
   label,
@@ -375,7 +404,9 @@ function PhoneDock({
       className={DOCK_ITEM}
       aria-current={pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF ? "page" : undefined}
       data-testid="ward-phone-menu-alerts"
-      onClick={() => announceToWardShell("Alerts.")}
+      onClick={(event) => {
+        if (!backToTopOnRetap(event)) announceToWardShell("Alerts.");
+      }}
     >
       <DockFace
         icon={Bell}
@@ -404,7 +435,7 @@ function PhoneDock({
               <DockFace
                 icon={entry.icon}
                 label={label}
-                count={count?.value}
+                count={badgeFor(entry.id, count?.value)}
                 tail={dockTail(label, count?.value, count?.noun ?? "", wardNavCountLabel(label, count))}
               />
             </button>
@@ -418,13 +449,15 @@ function PhoneDock({
             className={DOCK_ITEM}
             aria-current={isActiveRailEntry(pathname, entry) ? "page" : undefined}
             data-testid="ward-phone-dock-link"
-            onClick={() => onGo(entry)}
+            onClick={(event) => {
+              if (!backToTopOnRetap(event)) onGo(entry);
+            }}
           >
             {/* Home is the house in the dock (v10 phone mockup); the rail keeps its own icon. */}
             <DockFace
               icon={entry.id === "command" ? House : entry.icon}
               label={label}
-              count={count?.value}
+              count={badgeFor(entry.id, count?.value)}
               tail={dockTail(label, count?.value, count?.noun ?? "", wardNavCountLabel(label, count))}
             />
           </Link>
