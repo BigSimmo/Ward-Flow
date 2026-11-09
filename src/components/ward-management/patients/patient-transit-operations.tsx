@@ -596,7 +596,9 @@ export function PatientTransitOperations({
                 : `Bed pulled · ${dur(remaining)} remaining · Pull time limit ${clock(movement.pullExpiresAt!)}`}
             </p>
           )}
-          {open && movement.stage === "pulled" && <ExtendHoldControl movement={movement} />}
+          {open && movement.stage === "pulled" && (
+            <ExtendHoldControl movement={movement} dispatch={dispatch} rejections={rejections} now={now} />
+          )}
           {/* The booked provider, CAD number, quoted ETA and escort show once, in the Transport block
               below this workspace (device audit, 11 Oct 2026). */}
           {open && movement.stage === "pulled" && !job && !booking && (

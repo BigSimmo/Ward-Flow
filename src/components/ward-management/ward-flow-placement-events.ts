@@ -474,7 +474,7 @@ export function reducePlacementEvent(
       }
       // The same rule the "Extend hold" chips read (`ward-bed-hold.ts`). A lapsed hold is extended
       // from now, so the added time is never already spent.
-      if (!pullExtensionChoices(movement, event.now).includes(event.minutes)) {
+      if (!pullExtensionChoices(movement, event.now, state.configuration.pullHoldMinutes).includes(event.minutes)) {
         return reject(
           state,
           event,

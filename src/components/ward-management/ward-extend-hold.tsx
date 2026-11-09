@@ -3,9 +3,10 @@
 import { useId, useState } from "react";
 import { buttonClass } from "@/components/wf";
 import type { Movement } from "@/components/ward-management/ward-model";
-import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
-import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+import { useUndoableStep, type UndoableStepOptions } from "@/components/ward-management/use-undoable-step";
 import { heldUntilExtendedLabel, pullExtensionChoices } from "@/components/ward-management/ward-bed-hold";
 import { PULL_HOLD_MAX_TOTAL_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import styles from "./ward-extend-hold.module.css";
@@ -13,11 +14,19 @@ import styles from "./ward-extend-hold.module.css";
 /**
  * Feature 11 (Josh, 9 Nov 2026): "Extend pull" on a pulled bed. Opens 1 h / 2 h / 4 h chips; only
  * the amounts the engine would take (`pullExtensionChoices`) are offered. Records `EXTEND_PULL`.
- * After an extension the line reads "Pulled until 14:30 (extended)".
+ * After an extension the line reads "Pulled until 14:30 (extended)". Takes the screen's `dispatch`,
+ * `rejections` and `now`, like the arrivals card that holds it, so it renders outside a provider
+ * too; the Pull time limit is the configured one, or the default outside a provider.
  */
-export function ExtendHoldControl({ movement }: { movement: Movement }) {
-  const { dispatch, rejections } = useWardFlowSelect("dispatch", "rejections");
-  const now = useWardFlowClock();
+export function ExtendHoldControl({
+  movement,
+  dispatch,
+  rejections,
+  now,
+}: { movement: Movement } & Pick<UndoableStepOptions, "dispatch" | "rejections" | "now">) {
+  const pullHoldMinutes =
+    useOptionalWardFlowSelect("configuration")?.configuration.pullHoldMinutes ??
+    defaultWardConfiguration().pullHoldMinutes;
   const routeRole = useRouteRole();
   const gate = useRoleGate()("EXTEND_PULL", movement.id);
   const { run } = useUndoableStep({ dispatch, rejections, now, routeRole });
@@ -25,7 +34,7 @@ export function ExtendHoldControl({ movement }: { movement: Movement }) {
   const chipsId = useId();
   const heldUntil = heldUntilExtendedLabel(movement, now);
   if (movement.stage !== "pulled" || movement.pullExpiresAt === undefined || movement.closure) return null;
-  const choices = pullExtensionChoices(movement, now);
+  const choices = pullExtensionChoices(movement, now, pullHoldMinutes);
   const atMaximum = choices.length === 0;
   return (
     <div className={styles.extend} data-testid={`extend-hold-${movement.id}`}>

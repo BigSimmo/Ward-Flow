@@ -466,7 +466,9 @@ export function WardArrivalsCorridor({
                   ) : null}
 
                   {/* Feature 11: more time on the hold, beside the hold's countdown. */}
-                  {movement.stage === "pulled" ? <ExtendHoldControl movement={movement} /> : null}
+                  {movement.stage === "pulled" ? (
+                    <ExtendHoldControl movement={movement} dispatch={dispatch} rejections={rejections} now={now} />
+                  ) : null}
 
                   {canRelease ? (
                     <div>

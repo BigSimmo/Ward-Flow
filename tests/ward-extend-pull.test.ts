@@ -74,7 +74,7 @@ describe("EXTEND_PULL", () => {
     f.send({ type: "EXTEND_PULL", role: "coordinator", movementId: f.movementId, minutes: 240 });
     expect(f.state.rejections).toEqual([]);
     expect(f.movement().pullExpiresAt! - now).toBe(PULL_HOLD_MAX_TOTAL_MINUTES);
-    expect(pullExtensionChoices(f.movement(), now)).toEqual([]);
+    expect(pullExtensionChoices(f.movement(), now, f.state.configuration.pullHoldMinutes)).toEqual([]);
     f.send({ type: "EXTEND_PULL", role: "coordinator", movementId: f.movementId, minutes: 60 });
     expect(f.state.rejections).toHaveLength(1);
     expect(f.movement().pullExtensions).toHaveLength(2);
