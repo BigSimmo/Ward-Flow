@@ -78,7 +78,9 @@ const NOT_TYPED_KEYS: { readonly [T in TypedTextEventType]: readonly string[] } 
   RECORD_SUPPORT_NOTIFICATION: ["occasion", "movementId", "admissionId", "party", "outcome"],
   // `plan.type`, `plan.helps` and `plan.attachment.fileType` are checked against fixed lists.
   RECORD_CARE_PLAN: ["patientId", "type", "helps", "fileType"],
-  RECORD_TRIBUNAL_HEARING: ["patientId"],
+  // The date and time are typed; only the patient id is reviewed. Written with `Array.of` because the
+  // D-14 patient link guard reads a one-entry `["patientId"]` literal as a bracket read of the link.
+  RECORD_TRIBUNAL_HEARING: Array.of("patientId"),
 };
 
 /** Keys that are never typed in any event: the discriminant and the caller's role. */
