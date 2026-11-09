@@ -56,38 +56,44 @@ export function SettingsAlertChoices() {
           />
         </SettingRow>
       ) : null}
-      <SettingRow
-        setting="alerts-quiet-hours"
-        title="Quiet hours"
-        sub={
-          quiet.on
-            ? `${quietHoursText(quiet)}. Act now still comes through.`
-            : "Hold other alerts overnight. Act now always comes through."
-        }
-        subTestId="setting-alerts-quiet-sub"
-        testId="setting-alerts-quiet-row"
-      >
-        <Switch
-          checked={quiet.on}
-          onCheckedChange={(next) => setPreferences({ ...preferences, quiet: { ...quiet, on: next } })}
-          label={<SrOnly>Quiet hours</SrOnly>}
-        />
-      </SettingRow>
-      {quiet.on ? (
-        <SettingRow setting="alerts-quiet-window" title="Quiet window" testId="setting-alerts-quiet-window-row">
-          <Segmented
-            label="Quiet hours"
-            value={preset}
-            items={QUIET_HOURS_PRESETS.map((choice) => ({
-              id: choice.id,
-              label: presetLabel(choice.start, choice.end),
-            }))}
-            onChange={(id) => {
-              const choice = QUIET_HOURS_PRESETS.find((item) => item.id === id);
-              if (choice) setPreferences({ ...preferences, quiet: { on: true, start: choice.start, end: choice.end } });
-            }}
-          />
-        </SettingRow>
+      {/* Quiet hours only matter to a desk that gets optional alerts. */}
+      {wardTasksAreActionableForRole(role) || deskSeesStaffRequests(role) ? (
+        <>
+          <SettingRow
+            setting="alerts-quiet-hours"
+            title="Quiet hours"
+            sub={
+              quiet.on
+                ? `${quietHoursText(quiet)}. Act now still comes through.`
+                : "Hold other alerts overnight. Act now always comes through."
+            }
+            subTestId="setting-alerts-quiet-sub"
+            testId="setting-alerts-quiet-row"
+          >
+            <Switch
+              checked={quiet.on}
+              onCheckedChange={(next) => setPreferences({ ...preferences, quiet: { ...quiet, on: next } })}
+              label={<SrOnly>Quiet hours</SrOnly>}
+            />
+          </SettingRow>
+          {quiet.on ? (
+            <SettingRow setting="alerts-quiet-window" title="Quiet window" testId="setting-alerts-quiet-window-row">
+              <Segmented
+                label="Quiet hours"
+                value={preset}
+                items={QUIET_HOURS_PRESETS.map((choice) => ({
+                  id: choice.id,
+                  label: presetLabel(choice.start, choice.end),
+                }))}
+                onChange={(id) => {
+                  const choice = QUIET_HOURS_PRESETS.find((item) => item.id === id);
+                  if (choice)
+                    setPreferences({ ...preferences, quiet: { on: true, start: choice.start, end: choice.end } });
+                }}
+              />
+            </SettingRow>
+          ) : null}
+        </>
       ) : null}
     </>
   );

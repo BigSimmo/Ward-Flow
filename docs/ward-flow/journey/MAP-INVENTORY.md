@@ -1471,7 +1471,7 @@ Source-contract SHA256: 1352d253fea3b40ac277644d1aa0ef5839a4cb727e0d46c3939f99d3
   effects: Does not change beds, placement, movements or any patient stage
   tests: tests/ward-staff-requests.test.ts
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2353; SHA256 e623b67ef6932378fdbd18a17c901a9f39e39103195a12ad55d84cb1464b2431
-  Reviewed source: src/components/ward-management/staffing/staff-requests.ts:132; SHA256 7d156ed633b3977cc87d58314fd7446b0b8737e07b12004ef7bb533b5b24f917
+  Reviewed source: src/components/ward-management/staffing/staff-requests.ts:132; SHA256 d3e51d13faedefa5314d5f128c59473110a61bae075bd5ddb362788d5ae479f3
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:581; SHA256 fc8348b1769cf48a6afc1b765695c74542ed778eb19d6814a113d2f469a3488c
 - CLOSE_WARD_STAFF_REQUEST — modelled; event roles: ward, coordinator, bed_manager
   Source-reviewed command model: an open staff request closed as arranged, not available or withdrawn.
@@ -1489,7 +1489,7 @@ Source-contract SHA256: 1352d253fea3b40ac277644d1aa0ef5839a4cb727e0d46c3939f99d3
   effects: Does not change beds, placement, movements or any patient stage
   tests: tests/ward-staff-requests.test.ts
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2354; SHA256 e623b67ef6932378fdbd18a17c901a9f39e39103195a12ad55d84cb1464b2431
-  Reviewed source: src/components/ward-management/staffing/staff-requests.ts:171; SHA256 7d156ed633b3977cc87d58314fd7446b0b8737e07b12004ef7bb533b5b24f917
+  Reviewed source: src/components/ward-management/staffing/staff-requests.ts:171; SHA256 d3e51d13faedefa5314d5f128c59473110a61bae075bd5ddb362788d5ae479f3
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:582; SHA256 fc8348b1769cf48a6afc1b765695c74542ed778eb19d6814a113d2f469a3488c
 - RECORD_CLINICAL_CONTACT — diagram-reviewed; event roles: community, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.

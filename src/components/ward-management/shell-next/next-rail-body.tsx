@@ -862,7 +862,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 handoverText === null
                   ? `Handover due now. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
                   : digestSoon
-                    ? `Handover in ${handoverText}. Read the shift digest.`
+                    ? `Read digest in ${handoverText}. Handover countdown: ${shiftProgress.countdownStr}. Open the shift digest.`
                     : `Handover in ${handoverText}. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
               }
             >

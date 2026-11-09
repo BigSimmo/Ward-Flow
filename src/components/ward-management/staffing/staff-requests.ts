@@ -158,7 +158,7 @@ export function reduceStaffRequest(state: WardFlowState, event: StaffRequestEven
       return { ...state, staffRequests: records.map((record) => (record === existing ? updated : record)) };
     }
     const record: StaffRequestRecord = {
-      id: `SR-${records.length + 1}`,
+      id: `SR-${records.reduce((max, row) => Math.max(max, Number(/^SR-(\d+)$/u.exec(row.id)?.[1] ?? 0)), 0) + 1}`,
       unitId: event.unitId,
       shiftStartAt,
       count: event.count,
