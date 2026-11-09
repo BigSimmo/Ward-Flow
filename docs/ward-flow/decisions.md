@@ -133,6 +133,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-109](#d-109-homes-bed-alert-line-tests-the-whole-number-shown-9-november-2026)                                                                       | Home bed alert line tests the shown whole %                                          | Active                                           |
 | [D-111](#d-111-review-and-audit-plan-first-guards-and-four-open-answers-9-november-2026)                                                                | Review and audit plan: first guards and answers                                      | Active                                           |
 | [D-113](#d-113-second-patient-identifier-on-accept-and-mark-done-no-initials-search-9-november-2026)                                                    | Second identifier on accept and Mark done; no initials search                        | Active                                           |
+| [D-115](#d-115-one-count-on-every-screen-and-a-missing-patient-shown-everywhere-9-november-2026)                                                        | One count on every screen; missing patient shown everywhere                          | Active                                           |
 
 ---
 
@@ -1386,3 +1387,16 @@ is inferred.
   3. **Initials search:** typed initials without full stops (such as "AM") do not match a patient by initials. Loose initials matches would raise the chance of picking the wrong person.
 - **Also in the same PR:** an exact typed name or UMRN now ranks first in the global search People group, so longer look-alike names can no longer push the exact match out of the six shown (audit 3 bug fix; search relevance, not a suggestion, so D-71 holds).
 - **Boundary:** synthetic data only. Display and search wording only; changes no signed clinical value or clinical rule, and approves no merge or release.
+
+## D-115. One count on every screen, and a missing patient shown everywhere (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`), 1:20 AM AWST on 10 November (17:20 UTC). **Decided by:** Josh, answering "All of your recommendations" to six choices raised by audits 4 and 6 (#1567, #1569). D-114 is claimed by PR #1582.
+- **Decision:**
+  1. **"Coming in":** the ward board and the ward TV count the same thing: beds pulled or waitlisted for an admission.
+  2. **"Going out today and tomorrow":** every screen counts confirmed discharges only. An unconfirmed discharge is not counted.
+  3. **Beds ready after a referral is accepted into a named bed:** that bed is no longer ready on any screen (Home, ward board, Statistics, TV and print), because it is spoken for.
+  4. **Ward board tiles:** a patient absent without leave shows "Absent without leave" in red on their bed tile, as the ward screen already does.
+  5. **Downtime pack:** adds a line naming anyone absent without leave on each ward. The pack stays print or saved file only (D-72).
+  6. **Executive statistics:** counts an absence without leave separately from approved leave (D-38).
+- **Also in the same PR:** the Statistics ward rosters show "Absent without leave", not "On leave" (D-38, no new ruling needed).
+- **Boundary:** synthetic data only. Changes display counts and labels; changes no signed clinical value or clinical rule, and approves no merge or release.
