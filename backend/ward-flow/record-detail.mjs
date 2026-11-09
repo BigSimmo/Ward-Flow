@@ -3,7 +3,33 @@
  * Every desk's board is sent without them, so a desk only holds them for a record the server has
  * logged it opening (`logView`). Kept in step with `src/components/ward-management/ward-shared-record-detail.ts`.
  */
-export const RECORD_DETAIL_FIELDS = Object.freeze(["address", "interpreterLanguage"]);
+// Note 3 (Josh, 8 Nov 2026): the clerk's administrative details are record detail too.
+export const RECORD_DETAIL_FIELDS = Object.freeze([
+  "address",
+  "interpreterLanguage",
+  "mobilePhone",
+  "otherPhone",
+  "email",
+  "postcode",
+  "nextOfKinName",
+  "nextOfKinRelationship",
+  "nextOfKinPhone",
+  "supportPersonRole",
+  "supportPersonName",
+  "supportPersonPhone",
+  "medicareNumber",
+  "medicareReference",
+  "medicareExpiry",
+  "dvaFileNumber",
+  "healthFund",
+  "concessionCard",
+  "gpPhone",
+  "countryOfBirth",
+  "interpreterRequired",
+  "maritalStatus",
+  "advanceHealthDirective",
+  "enduringGuardian",
+]);
 
 /**
  * The world as a desk is sent it: the same object when no patient holds a detail field, otherwise

@@ -60,7 +60,6 @@ import {
   SrOnly,
   AppliedFilter,
 } from "@/components/wf";
-
 import {
   DENSITY_COLUMNS,
   DENSITY_LABEL,

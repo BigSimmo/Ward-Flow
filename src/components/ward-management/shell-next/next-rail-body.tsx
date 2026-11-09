@@ -83,9 +83,10 @@ import {
   capacityRowsOver,
   capacityRowsSpoken,
   cardScopeNote,
-  compactPipText,
+  compactPipPlace,
   overLineLabel,
   RailLiveClock,
+  RailOccupancyRing,
   RailReadyLine,
   usePinnedPages,
 } from "@/components/ward-management/shell-next/next-rail-parts";
@@ -809,33 +810,6 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
           <Menu aria-hidden="true" size={18} strokeWidth={1.75} />
           Menu
         </button>
-        <button
-          type="button"
-          ref={toggleRef}
-          className={styles.railToggle}
-          // UX audit (21 Oct 2026): "Close" alone named no object for a screen reader.
-          aria-label={open ? "Collapse menu" : "Expand menu"}
-          data-testid="ward-rail-toggle"
-          onClick={() => setOpen(!open)}
-          title={
-            open
-              ? "Collapse the menu to icons. The bracket key [ does the same."
-              : "Expand the menu. The bracket key [ does the same."
-          }
-        >
-          {open ? (
-            <ChevronLeft aria-hidden="true" className={styles.toggleIcon} strokeWidth={1.75} />
-          ) : (
-            <PanelLeftOpen aria-hidden="true" className={styles.toggleIcon} strokeWidth={1.75} />
-          )}
-          <span className={styles.toggleText}>
-            {open ? "Collapse" : "Expand"}
-            <span aria-hidden="true"> menu</span>
-          </span>
-          <kbd aria-hidden="true" className={styles.toggleKey}>
-            [
-          </kbd>
-        </button>
       </div>
 
       {service ? (
@@ -928,8 +902,10 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 if (nextOpen) announceToWardShell(`Bed alerts: ${overLine.label}.`);
               }}
             >
-              {overLine.over > 0 ? <Dot tone="warning" /> : null}
-              <span className={styles.compactAlertVal}>{compactPipText(firstRow)}</span>
+              {/* Note 3 (Josh, 8 Nov 2026): a small ring with the figure inside, never cut-off words.
+                  It fills to the occupancy and turns amber at or over the line; the place sits underneath. */}
+              <RailOccupancyRing percent={firstRow?.percent ?? null} />
+              <span className={railParts.compactAlertCaption}>{compactPipPlace(firstRow)}</span>
             </button>
           </Tooltip>
 
@@ -1206,6 +1182,35 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
 
           {/* Josh, 3 Nov 2026 (DK1, "yes to all"): Settings lives in the account menu only. */}
         </div>
+        {/* Note 3 (Josh, 8 Nov 2026): the toggle sits in the foot so the collapsed strip ends on the
+            person; the open rail draws it in the brand row's corner (ward-rail.module.css). */}
+        <button
+          type="button"
+          ref={toggleRef}
+          className={styles.railToggle}
+          // UX audit (21 Oct 2026): "Close" alone named no object for a screen reader.
+          aria-label={open ? "Collapse menu" : "Expand menu"}
+          data-testid="ward-rail-toggle"
+          onClick={() => setOpen(!open)}
+          title={
+            open
+              ? "Collapse the menu to icons. The bracket key [ does the same."
+              : "Expand the menu. The bracket key [ does the same."
+          }
+        >
+          {open ? (
+            <ChevronLeft aria-hidden="true" className={styles.toggleIcon} strokeWidth={1.75} />
+          ) : (
+            <PanelLeftOpen aria-hidden="true" className={styles.toggleIcon} strokeWidth={1.75} />
+          )}
+          <span className={styles.toggleText}>
+            {open ? "Collapse" : "Expand"}
+            <span aria-hidden="true"> menu</span>
+          </span>
+          <kbd aria-hidden="true" className={styles.toggleKey}>
+            [
+          </kbd>
+        </button>
         <div className={styles.userCardWrap}>
           {/* DK1 (Josh, 3 Nov 2026): the person opens the account menu. Sign out and Switch desk
               moved into it from their own rows; the demo's desk drawer is "Try another desk (demo)". */}

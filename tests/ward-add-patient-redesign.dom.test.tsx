@@ -89,8 +89,9 @@ describe("Add a patient redesign", () => {
       expect(fold.tagName).toBe("DETAILS");
       expect(fold).not.toHaveAttribute("open");
     }
+    // Note 3 (Josh, 8 Nov 2026): each closed fold names what it holds; the card says it is optional.
     expect(within(folds).getByTestId("ward-add-patient-fold-contact-summary")).toHaveTextContent(
-      "Optional · preferred name, street address",
+      "Phones, email, address",
     );
     expect(container.querySelector("select, input[type='date']")).toBeNull();
   });
