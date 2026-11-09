@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { heldUntilExtendedLabel, pullExtensionChoices } from "@/components/ward-management/ward-bed-hold";
+import { heldUntilExtendedLabel, pullExtensionChoices } from "@/components/ward-management/ward-bed-hold-extension";
 import { PULL_HOLD_MAX_TOTAL_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";

@@ -1,6 +1,6 @@
 import type { BedMeetingActionKind, BedMeetingActionOwner, BedMeetingSubject } from "./bed-meeting/bed-meeting-actions";
 import type { CareChange } from "./ward-care-journey";
-import type { ExtendPullEvent } from "./ward-bed-hold";
+import type { ExtendPullEvent } from "./ward-bed-hold-extension";
 import type { OnBehalfReasonId } from "./ward-on-behalf-reason";
 import type {
   LeavingDestination,

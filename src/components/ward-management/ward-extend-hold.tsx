@@ -7,7 +7,7 @@ import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flo
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useUndoableStep, type UndoableStepOptions } from "@/components/ward-management/use-undoable-step";
-import { heldUntilExtendedLabel, pullExtensionChoices } from "@/components/ward-management/ward-bed-hold";
+import { heldUntilExtendedLabel, pullExtensionChoices } from "@/components/ward-management/ward-bed-hold-extension";
 import { PULL_HOLD_MAX_TOTAL_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import styles from "./ward-extend-hold.module.css";
 

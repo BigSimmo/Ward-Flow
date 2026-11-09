@@ -21,7 +21,8 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { withdrawalReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { formatInstantWithDay, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { currentShiftStartInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
-import { bedHold, heldUntilExtendedLabel } from "@/components/ward-management/ward-bed-hold";
+import { bedHold } from "@/components/ward-management/ward-bed-hold";
+import { heldUntilExtendedLabel } from "@/components/ward-management/ward-bed-hold-extension";
 import { deliveredAwaitingWard, movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 import type { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import {

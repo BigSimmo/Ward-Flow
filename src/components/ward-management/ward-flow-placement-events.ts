@@ -25,7 +25,7 @@ import {
   PULL_HOLD_EXTENSION_MINUTES,
   PULL_HOLD_MAX_TOTAL_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
-import { extendedPullExpiry, pullExtensionChoices } from "@/components/ward-management/ward-bed-hold";
+import { extendedPullExpiry, pullExtensionChoices } from "@/components/ward-management/ward-bed-hold-extension";
 import { movementBedReservation, pendingNumberedReservations } from "./ward-movement-bed-hold";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import type { PlacementEventHelpers, WardFlowState } from "./ward-flow-reducer";
@@ -472,7 +472,7 @@ export function reducePlacementEvent(
       if (!(PULL_HOLD_EXTENSION_MINUTES as readonly number[]).includes(event.minutes)) {
         return reject(state, event, "EXTEND_PULL minutes must be chosen from PULL_HOLD_EXTENSION_MINUTES");
       }
-      // The same rule the "Extend hold" chips read (`ward-bed-hold.ts`). A lapsed hold is extended
+      // The same rule the "Extend hold" chips read (`ward-bed-hold-extension.ts`). A lapsed hold is extended
       // from now, so the added time is never already spent.
       if (!pullExtensionChoices(movement, event.now, state.configuration.pullHoldMinutes).includes(event.minutes)) {
         return reject(

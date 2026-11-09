@@ -15,8 +15,10 @@
  * `live-build/ward-no-demo-data.ts`, so a production-like build gains no invented record.
  */
 import type { Admission } from "./ward-admissions";
-import { READMISSION_WINDOW_DAYS } from "./ward-readmission";
 import { MINUTES_PER_DAY, type Instant } from "./ward-clock";
+// The readmission window itself (`READMISSION_WINDOW_DAYS` in `ward-readmission.ts` reads the same value),
+// read here directly so the readmission flag code stays out of every screen's shared first load.
+import { CLINICAL_VALUES } from "./ward-clinical-values";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { Cohort, ReferralAddressing, ReferralSource, Unit } from "./ward-model";
 import { GENERAL_OBSERVATION } from "./ward-observation";
@@ -293,7 +295,7 @@ function seededStaffRequest(state: WardFlowState, anchor: Instant): Pick<WardFlo
  * by reading the patient link here.
  */
 function addReadmissionAndHoldUpLog(state: Draft, anchor: Instant) {
-  const windowMinutes = READMISSION_WINDOW_DAYS * MINUTES_PER_DAY;
+  const windowMinutes = CLINICAL_VALUES.readmissionWindow.value * MINUTES_PER_DAY;
   const finished = state.admissions.filter((admission) => admission.id.startsWith("AD-EX-"));
   const resolve = createPatientResolver({ patients: state.patients, referrals: state.referrals });
   for (const current of state.admissions) {
