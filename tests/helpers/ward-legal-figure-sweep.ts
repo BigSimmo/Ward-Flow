@@ -1700,6 +1700,28 @@ function candidatesForMovements(
       return state.admissions
         .filter((admission) => admission.state !== "departed")
         .map((admission) => ({ type, role, now, admissionId: admission.id, homeHospital: "RPH" }));
+    // Staff needed (feature 10, 9 Nov 2026): a ward, a shift, a count and a reason; no legal figure.
+    case "REQUEST_WARD_STAFF":
+      return state.units.slice(0, 2).map((unit) => ({
+        type,
+        role,
+        now,
+        unitId: unit.id,
+        actingUnitId: unit.id,
+        shift: "this_shift",
+        count: 2,
+        reasons: ["high_acuity"],
+      }));
+    case "CLOSE_WARD_STAFF_REQUEST":
+      return (state.staffRequests ?? []).map((record) => ({
+        type,
+        role,
+        now,
+        requestId: record.id,
+        unitId: record.unitId,
+        actingUnitId: record.unitId,
+        outcome: "withdrawn",
+      }));
     case "RECORD_DIRECTORY_CHECK":
       return buildOnCallDirectory()
         .slice(0, 3)

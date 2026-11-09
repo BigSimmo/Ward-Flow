@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/his
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**617 rulings/items extracted, across 38 of 44 files.**
+**618 rulings/items extracted, across 38 of 44 files.**
 **6 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -30,7 +30,7 @@ instance is the one you mean before citing it.
 
 ---
 
-## ID index — 360 distinct IDs
+## ID index — 361 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -268,6 +268,7 @@ safe global key across 30 files.
 | `D-97` | `decisions.md`:1116 | D-97. Owner answers on seven open items: N21, N25, N26, N29, N40, N41 and WF-B008 (8 November 2026) |
 | `D-98` | `decisions.md`:1129 | D-98. Friction pass: Quick bar, Patient peek and Ward peek (8 November 2026) |
 | `D-108` | `decisions.md`:1138 | D-108. Six bed-flow features: keep D-93 and D-72, ED long-wait next steps (9 November 2026) |
+| `D-109` | `decisions.md`:1147 | D-109. Home's bed alert line tests the whole number shown (9 November 2026) |
 | `D9` ⚠️ **9 occurrences — not unique** | | |
 | ↳ | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | ↳ | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
@@ -557,7 +558,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-99 item(s):
+100 item(s):
 
 - `D-1` — line 20, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 30, heading: "D-2. Railway is disconnected"
@@ -658,6 +659,7 @@ safe global key across 30 files.
 - `D-97` — line 1116, heading: "D-97. Owner answers on seven open items: N21, N25, N26, N29, N40, N41 and WF-B008 (8 November 2026)"
 - `D-98` — line 1129, heading: "D-98. Friction pass: Quick bar, Patient peek and Ward peek (8 November 2026)"
 - `D-108` — line 1138, heading: "D-108. Six bed-flow features: keep D-93 and D-72, ED long-wait next steps (9 November 2026)"
+- `D-109` — line 1147, heading: "D-109. Home's bed alert line tests the whole number shown (9 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 

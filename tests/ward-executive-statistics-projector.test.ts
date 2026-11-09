@@ -69,6 +69,15 @@ function reporting(state = seedWardFlowState(), service?: HealthService) {
   );
 }
 
+/** The statewide projection of the untouched seed takes about 4 s, and eight tests below only read
+ *  it. Build it once and hand each test its own copy, so a test that edits its copy cannot change
+ *  another's. The release-profile test still calls `reporting()` itself, because it times that call. */
+let seedProjection: ReturnType<typeof reporting> | undefined;
+function seedReporting(): ReturnType<typeof reporting> {
+  seedProjection ??= reporting();
+  return structuredClone(seedProjection);
+}
+
 /** Previous complete-pass traversal retained solely as an optimisation-equivalence reference.
  * Independent privacy assertions remain the brute-force tag/matrix tests in the companion file. */
 function previousReportingRanges(
@@ -165,7 +174,7 @@ function previousReportingWitness(
 describe("the inactive full reporting bundle", () => {
   it("accepts only the transport's positive revision and lowercase context-hash shape", () => {
     const binding = { actorId: "synthetic-actor", accessContext: "a".repeat(64), epoch: 0, revision: 1 };
-    const dto = reporting();
+    const dto = seedReporting();
     const snapshot = { binding, receivedAt: 100, expiresAt: 200, data: dto };
     expect(selectExecutiveReportingSnapshot(binding, snapshot, 150)).toBe(dto);
     for (const invalid of [
@@ -180,7 +189,7 @@ describe("the inactive full reporting bundle", () => {
   });
 
   it("validates a positive bundle with every route family and no operational fallback", () => {
-    const dto = reporting();
+    const dto = seedReporting();
     expect(isExecutiveReportingFoundation(dto)).toBe(true);
     expect(dto.coverage).toBe("private-bundle");
     expect(dto).not.toHaveProperty("omittedFamilies");
@@ -300,7 +309,7 @@ describe("the inactive full reporting bundle", () => {
   });
 
   it("keeps all nine report weeks, genuine missing durations, and protected coverage counts", () => {
-    const dto = reporting();
+    const dto = seedReporting();
     expect(dto.weeks.map((week) => week.week.offset)).toEqual([-1, 0, 1, 2, 3, 4, 5, 6, 7]);
     expect(dto.weeks[0]!.pilot.steps.map((step) => step.id)).toEqual(["ask", "answer", "hold", "leave", "travel"]);
     expect(dto.weeks[0]!.report.delayedDischarge).toHaveProperty("recordedFrom");
@@ -378,19 +387,19 @@ describe("the inactive full reporting bundle", () => {
   });
 
   it.each(["patientId", "narrative", "rawCount", "rows"])("rejects an added %s at any reporting boundary", (key) => {
-    const dto = reporting();
+    const dto = seedReporting();
     expect(isExecutiveReportingFoundation({ ...dto, [key]: "synthetic private marker" })).toBe(false);
     expect(isExecutiveReportingFoundation({ ...dto, wards: [{ ...dto.wards[0], [key]: "private" }] })).toBe(false);
   });
 
   it("rejects a positive exact reporting count below the existing small-number floor", () => {
-    const dto = reporting();
+    const dto = seedReporting();
     Object.assign(dto.weeks[0]!.pilot.requests, { raised: { kind: "exact", value: 4 } });
     expect(isExecutiveReportingFoundation(dto)).toBe(false);
   });
 
   it("rejects invented band labels and a report period that differs from the actual calendar selector", () => {
-    const dto = reporting();
+    const dto = seedReporting();
     const changedLabel = structuredClone(dto);
     changedLabel.emergencyDepartments[0]!.bands[0]!.label = "Synthetic private narrative";
     expect(isExecutiveReportingFoundation(changedLabel)).toBe(false);
@@ -528,7 +537,7 @@ describe("the inactive full reporting bundle", () => {
   });
 
   it("provides fixed matrix coordinates and matching service-detail decisions", () => {
-    const dto = reporting();
+    const dto = seedReporting();
     expect(dto.referralMatrix).toHaveLength(HEALTH_SERVICES.length ** 2);
     for (const service of dto.services)
       for (const destination of service.referrals.placedElsewhereByService) {
@@ -610,7 +619,7 @@ describe("the inactive full reporting bundle", () => {
 
   it("takes role, pause and missing-data state from the current host without a row fallback", () => {
     const binding = { actorId: "synthetic-report-actor", accessContext: "a".repeat(64), epoch: 0, revision: 1 };
-    const snapshot = { binding, receivedAt: 100, expiresAt: 200, data: reporting() };
+    const snapshot = { binding, receivedAt: 100, expiresAt: 200, data: seedReporting() };
     const togglePause = vi.fn();
     function Probe() {
       const data = useExecutiveStatistics();

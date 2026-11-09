@@ -13,8 +13,8 @@ import {
   ClipboardList,
   Compass,
   ExternalLink,
+  History,
   Info,
-  LayoutDashboard,
   Link2,
   ListChecks,
   Play,
@@ -44,7 +44,7 @@ import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { showMeAvailable, tasksForDesk } from "./ward-help-task-list";
 import { helpLinkHref } from "./ward-help-events";
 import { recordHelpFeedback } from "./ward-help-feedback";
-import { recordHowToUsed } from "./ward-help-usage";
+import { recordHowToUsed, useRecentHowTos } from "./ward-help-usage";
 import s from "./ward-help-panel.module.css";
 
 type Topic = (typeof HOW_TO_TOPICS)[number];
@@ -323,6 +323,52 @@ function PracticeWhenLive({
 }
 
 /**
+ * Show me around this screen (page tops, Josh, 9 Nov 2026): one calm row in Help's slate top, first
+ * thing seen, in place of the old tile in the On this screen card. Only when Show me can play this
+ * screen's walk round (`ward-help-screen-tours.ts`) here; the step count is this size's own.
+ */
+export function HelpAroundRow({
+  role,
+  home,
+  pathname,
+  screen,
+  showMeOn,
+  onShowMe,
+}: {
+  role: WardTourRole;
+  home: string | undefined;
+  pathname: string;
+  screen: (ScreenHelp & { id: string }) | undefined;
+  showMeOn: boolean;
+  onShowMe: (id: string) => void;
+}) {
+  const phone = useIsPhone();
+  const access = useEffectiveWardAccess();
+  const walk = screen ? HOW_TOS.find((each) => each.id === aroundId(screen.id)) : undefined;
+  if (!walk || !canShowTask(walk, role, home, phone, showMeOn, pathname, access)) return null;
+  const steps = showMeSteps(walk, phone ? "phone" : "desk", role).length;
+  return (
+    <div className={s.act} data-testid="ward-help-show-me-around">
+      <span className={s.actText}>
+        <span className={s.actTitle}>Show me around this screen</span>
+        <span className={s.actSub}>{steps} steps · this screen only</span>
+      </span>
+      <button
+        type="button"
+        className={s.actGo}
+        aria-label="Start showing me around this screen"
+        onClick={() => {
+          recordHowToUsed(walk.id, HOW_TO_IDS);
+          onShowMe(walk.id);
+        }}
+      >
+        Start
+      </button>
+    </div>
+  );
+}
+
+/**
  * HOW DO I…: this screen first, as a card of its own jobs, then the tour, then the desk's jobs by
  * topic. Topic chips narrow the list; grouping only, never ranking. One answer is open at a time;
  * `openTask` opens one on arrival (Show me's Back to Help returns here with its task open).
@@ -366,12 +412,19 @@ export function HelpTasks({
     const isHere = (task: HowTo) => howToHref(task.go, role, home)?.split("#")[0] === pathname;
     return { here: desk.filter(isHere), mine: desk };
   }, [access, home, pathname, role]);
-  // This screen's walk round (`ward-help-screen-tours.ts`), when Show me can play it here.
-  const around = useMemo(() => {
-    const walk = screen ? HOW_TOS.find((each) => each.id === aroundId(screen.id)) : undefined;
-    return walk && canShowTask(walk, role, home, phone, showMeOn, pathname, access) ? walk : undefined;
-  }, [access, home, pathname, phone, role, screen, showMeOn]);
-  const aroundSteps = around ? showMeSteps(around, phone ? "phone" : "desk", role).length : 0;
+  // Recently opened (Help overhaul, 9 Nov 2026): this desk's answers last opened on this device,
+  // newest first, from the id-only usage record. Shown only once there is something to pick up.
+  // The whole device history is filtered to this desk first, so another desk's (or a walk round's)
+  // newer answers never push this desk's out of the three shown (PR #1558 review).
+  const recentIds = useRecentHowTos(HOW_TO_IDS);
+  const recent = useMemo(
+    () =>
+      recentIds
+        .map((id) => mine.find((task) => task.id === id))
+        .filter((task): task is HowTo => Boolean(task))
+        .slice(0, 3),
+    [mine, recentIds],
+  );
   const hereTiles = here.slice(0, 4);
 
   const counts = HOW_TO_TOPICS.map((name) => ({ name, n: mine.filter((task) => task.topic === name).length })).filter(
@@ -400,6 +453,23 @@ export function HelpTasks({
     setAll(true);
     setTopic("all");
   };
+  // From Recently opened: open the answer in the list below and bring it into view. Only Help's own
+  // scrolling body moves (scrollIntoView would also shift the sheet itself), and the answer stops
+  // just under its top edge (search and tabs sit in the header above it).
+  const reopen = (id: string) => {
+    reveal(id);
+    window.requestAnimationFrame(() => {
+      const row = document.querySelector<HTMLElement>(`[data-testid="ward-help-task-answer-${id}"]`);
+      let body = row?.parentElement ?? null;
+      while (body && !/(auto|scroll)/u.test(window.getComputedStyle(body).overflowY)) body = body.parentElement;
+      // Focus follows the answer, so keyboard and screen reader users land on it too.
+      row?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
+      if (!row || !body) return;
+      const top = row.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - 8;
+      const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      body.scrollTo?.({ top, behavior: still ? "auto" : "smooth" });
+    });
+  };
 
   const row = (task: HowTo) => (
     <TaskRow
@@ -422,44 +492,22 @@ export function HelpTasks({
       {screen ? (
         <section className={`${s.card} ${s.here}`} aria-labelledby="ward-help-here" data-testid="ward-help-tasks-here">
           <div className={s.hereHead}>
-            <span className={s.hereIcon} aria-hidden="true">
-              <LayoutDashboard aria-hidden="true" strokeWidth={1.75} />
-            </span>
-            <div>
-              <h3 id="ward-help-here" className={s.hereTitle}>
-                <span>On this screen:</span> {screen.title}
-              </h3>
-              <p className={s.herePurpose}>{screen.purpose}</p>
-            </div>
+            <p className={s.hereEyebrow}>On this screen</p>
+            <h3 id="ward-help-here" className={s.hereTitle}>
+              <span className="sr-only">On this screen: </span>
+              {screen.title}
+            </h3>
+            <p className={s.herePurpose}>{screen.purpose}</p>
           </div>
-          {here.length || around ? (
+          {here.length ? (
             <div className={s.tiles}>
-              {around ? (
-                <button
-                  type="button"
-                  className={`${s.tile} ${s.aroundTile}`}
-                  onClick={() => showMe(around.id)}
-                  data-testid="ward-help-show-me-around"
-                >
-                  <span className={s.aroundDisc} aria-hidden="true">
-                    <Play aria-hidden="true" strokeWidth={0} />
-                  </span>
-                  <span className={s.aroundText}>
-                    <span className={s.tileTitle}>Show me around this screen</span>
-                    <span className={s.aroundSub}>{aroundSteps} steps · this screen only</span>
-                  </span>
-                  <ArrowRight aria-hidden="true" className={s.aroundGo} strokeWidth={1.75} />
-                </button>
-              ) : null}
-              {hereTiles.map((task, index) => {
+              {hereTiles.map((task) => {
                 const can = canShowTask(task, role, home, phone, showMeOn, pathname, access);
                 return (
                   <button
                     key={task.id}
                     type="button"
                     className={s.tile}
-                    // A lone tile at the end of an odd count takes the whole row.
-                    data-wide={hereTiles.length % 2 === 1 && index === hereTiles.length - 1 ? "" : undefined}
                     onClick={() => (can ? showMe(task.id) : reveal(task.id))}
                   >
                     <span className={s.tileTitle}>{task.title}</span>
@@ -470,7 +518,10 @@ export function HelpTasks({
                           Show me
                         </>
                       ) : (
-                        "Read how"
+                        <>
+                          Read how
+                          <ChevronRight aria-hidden="true" className={s.caret} strokeWidth={1.75} />
+                        </>
                       )}
                     </span>
                   </button>
@@ -496,7 +547,41 @@ export function HelpTasks({
         </section>
       ) : null}
 
-      <TourRow role={role} onTour={onTour} />
+      {recent.length ? (
+        <section className={s.section} aria-labelledby="ward-help-recent" data-testid="ward-help-recent">
+          <h3 id="ward-help-recent" className={s.sectionHead}>
+            Recently opened
+          </h3>
+          <div className={s.card}>
+            <ul className={s.list}>
+              {recent.map((task) => (
+                <li key={task.id} className={s.task}>
+                  <button
+                    type="button"
+                    className={s.taskHead}
+                    onClick={() => reopen(task.id)}
+                    data-testid={`ward-help-recent-${task.id}`}
+                  >
+                    <History aria-hidden="true" className={s.rowIcon} strokeWidth={1.75} />
+                    <span className={s.taskName}>{task.title}</span>
+                    <ChevronRight aria-hidden="true" className={s.caret} strokeWidth={1.75} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      ) : null}
+
+      {/* Learning the app in one place (Help overhaul, 9 Nov 2026): the tour, then practice. */}
+      <section className={s.section} aria-labelledby="ward-help-learn" data-testid="ward-help-learn">
+        <h3 id="ward-help-learn" className={s.sectionHead}>
+          Learn Ward Flow
+        </h3>
+        <TourRow role={role} onTour={onTour} />
+        {/* The access admin records no ward work, so there is nothing to practise. */}
+        {role === "admin" ? null : <PracticeWhenLive role={role} onShowMe={onShowMe} showMeOn={showMeOn} />}
+      </section>
 
       {checklists.length && onOpenChecklist ? (
         <section className={s.section} aria-labelledby="ward-help-checklists" data-testid="ward-help-checklists">
@@ -524,9 +609,6 @@ export function HelpTasks({
           </div>
         </section>
       ) : null}
-
-      {/* The access admin records no ward work, so there is nothing to practise. */}
-      {role === "admin" ? null : <PracticeWhenLive role={role} onShowMe={onShowMe} showMeOn={showMeOn} />}
 
       <section className={s.section} aria-labelledby="ward-help-jobs" data-testid="ward-help-tasks">
         <h3 id="ward-help-jobs" className={s.sectionHead}>
@@ -566,9 +648,7 @@ export function HelpTasks({
         return (
           <section key={group.name} className={s.section} aria-labelledby={`ward-help-topic-${index}`}>
             <h4 id={`ward-help-topic-${index}`} className={s.sectionHead}>
-              <span className={s.sectionHeadIcon} aria-hidden="true">
-                <Icon aria-hidden="true" strokeWidth={1.75} />
-              </span>
+              <Icon aria-hidden="true" className={s.sectionHeadGlyph} strokeWidth={1.75} />
               {group.name} <span className={s.n}>{group.n}</span>
             </h4>
             <div className={s.card}>

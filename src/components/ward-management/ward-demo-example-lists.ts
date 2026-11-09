@@ -21,6 +21,8 @@ import { GENERAL_OBSERVATION } from "./ward-observation";
 import type { Patient, PatientId } from "./ward-patients";
 import { completeSyntheticReferralIntake } from "./ward-referral-intake-seed";
 import { wardReferralInboxEntries } from "./referrals/referral-inbox";
+import { currentShiftStartInstant } from "./ward-board-time-features";
+import type { StaffRequestRecord } from "./staffing/staff-requests";
 import type { WardIncident, WardIncidentCategory } from "./restrictive-practice/ward-restrictive-practice";
 
 const FAMILY = [
@@ -259,5 +261,20 @@ export function applyExampleListsOverlay(state: WardFlowState, anchor: Instant):
   addInboxReferrals(draft, people, anchor);
   addRestrictivePractice(draft, anchor);
   addFinishedStays(draft, people, anchor);
-  return { ...state, ...draft };
+  return { ...state, ...draft, ...seededStaffRequest(state, anchor) };
+}
+
+/** Staff needed (feature 10): one synthetic open request, so the tag shows in the demo. */
+function seededStaffRequest(state: WardFlowState, anchor: Instant): Pick<WardFlowState, "staffRequests"> {
+  if (!state.units.some((unit) => unit.id === "scgh-adult-open")) return {};
+  const request: StaffRequestRecord = {
+    id: "SR-1",
+    unitId: "scgh-adult-open",
+    shiftStartAt: currentShiftStartInstant(anchor),
+    count: 2,
+    reasons: ["constant_observation", "staff_short"],
+    requestedAt: anchor - 35,
+    requestedBy: "ward",
+  };
+  return { staffRequests: [request] };
 }

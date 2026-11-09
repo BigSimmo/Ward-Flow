@@ -52,7 +52,7 @@ describe("the app bar's Activity button opens the one shared Activity panel", ()
     expect(dialog).toHaveAttribute("id", "ward-bar-activity-drawer");
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     // Home's design: three tabs, the review, the feed and this desk's notices.
-    for (const tab of [/^Changes/u, /^Recent activity/u, /^Notices/u])
+    for (const tab of [/^Changes/u, /^Recent/u, /^Notices/u])
       expect(within(dialog).getByRole("tab", { name: tab })).toBeInTheDocument();
     expect(window.history.state).toEqual(expect.objectContaining({ wardDrawer: "activity" }));
     // The retired drawer's parts are gone.
