@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Circle, Clock, Copy, ListChecks, Lock, MapPin, Plus, Search, ShieldCheck, X } from "lucide-react";
 
 import {
+  Badge,
   Button,
   Card,
   CardBody,
@@ -45,6 +46,7 @@ import {
   type WfTone,
 } from "@/components/wf";
 import { transportLeg } from "@/components/ward-management/ward-derivations";
+import { TRANSPORT_DELAY_LABEL, transportDelay } from "@/components/ward-management/transport/transport-delay";
 import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { formatDateOfBirth } from "@/components/ward-management/ward-patients";
 import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
@@ -233,6 +235,9 @@ export function OfficerScreen() {
   const [sortKey, setSortKey] = useState<SortKey>("next");
   const [jobsTab, setJobsTab] = useState<JobsTab>("jobs");
   const [historyTab, setHistoryTab] = useState<HistoryTab>("delivered");
+  // Feature 25 (Josh, 9 Nov 2026): the one filter on this list. Unlike the highlights it hides jobs,
+  // so it says so beside the list and clears in one press.
+  const [delayedOnly, setDelayedOnly] = useState(false);
 
   const late = (movement: Movement) => pastWardEta(movement, now);
   // Audit round 2, S-14: "To accept" holds only jobs the officer can accept now. A job whose bed is
@@ -295,7 +300,9 @@ export function OfficerScreen() {
     const leg = movement.transport ? officerLeg(movement.transport) : undefined;
     return 2 + (3 - (leg ? OFFICER_LEG_STEPS.indexOf(leg) : 0));
   };
-  const sortedJobs = [...jobs].sort((a, b) => {
+  const delayedCount = jobs.filter((movement) => transportDelay(movement, now) !== null).length;
+  const filteredJobs = delayedOnly ? jobs.filter((movement) => transportDelay(movement, now) !== null) : jobs;
+  const sortedJobs = [...filteredJobs].sort((a, b) => {
     if (sortKey === "wait") return stageSince(a) - stageSince(b);
     if (sortKey === "eta") {
       return (
@@ -1077,6 +1084,9 @@ export function OfficerScreen() {
                     onClear={() => setSearchQuery("")}
                     trailing={searchQuery ? undefined : <Kbd>/</Kbd>}
                   />
+                  <FilterChip pressed={delayedOnly} onPressedChange={setDelayedOnly} count={delayedCount}>
+                    Delayed
+                  </FilterChip>
                   <FilterChip
                     pressed={escortHighlight}
                     onPressedChange={setEscortHighlight}
@@ -1121,9 +1131,21 @@ export function OfficerScreen() {
 
                 {/* Audit 24-1 decision 5: the next-action order is said on screen (not on the officer's phone). */}
                 <OfficerOrderNote shown={jobs.length > 0 && sortKey === "next" && !(officerDesk && isPhone)} />
+                {delayedOnly ? (
+                  <p className={styles.highlightNote} role="status" data-testid="ward-officer-delayed-note">
+                    Showing {delayedCount} delayed of {jobs.length} jobs.{" "}
+                    <Button variant="ghost" size="sm" onClick={() => setDelayedOnly(false)}>
+                      Show all
+                    </Button>
+                  </p>
+                ) : null}
                 {jobs.length === 0 ? (
                   <p className={styles.placeholder} data-testid="ward-officer-empty">
                     No outstanding jobs: each has arrived or its movement has closed.
+                  </p>
+                ) : delayedOnly && filteredJobs.length === 0 ? (
+                  <p className={styles.placeholder} data-testid="ward-officer-no-delayed">
+                    No job is delayed.
                   </p>
                 ) : (
                   <div className={styles.tableScroll}>
@@ -1167,6 +1189,7 @@ export function OfficerScreen() {
                           const expected = expectedArrival(movement);
                           const isLate = late(movement);
                           const forms = packCount(movement);
+                          const delay = transportDelay(movement, now);
                           return (
                             <tr
                               key={movement.id}
@@ -1249,6 +1272,23 @@ export function OfficerScreen() {
                                     </p>
                                     {since !== undefined ? (
                                       <span className={styles.stageFor}>{durMinutes(Math.max(0, now - since))}</span>
+                                    ) : null}
+                                    {/* Feature 25: when it was booked, and a Delayed tag with why. */}
+                                    <span
+                                      className={styles.stageFor}
+                                      data-testid={`ward-officer-booked-${movement.id}`}
+                                    >
+                                      {transport.bookedAt !== undefined
+                                        ? `Booked ${formatInstantWithDay(transport.bookedAt, now)}`
+                                        : "Booked time not recorded"}
+                                    </span>
+                                    {delay ? (
+                                      <span data-testid={`ward-officer-delayed-${movement.id}`}>
+                                        <Badge tone="warning" size="sm" title={TRANSPORT_DELAY_LABEL[delay]}>
+                                          Delayed
+                                        </Badge>
+                                        <SrOnly>: {TRANSPORT_DELAY_LABEL[delay]}</SrOnly>
+                                      </span>
                                     ) : null}
                                     {/* With the job panel open, the Forms column folds in here. */}
                                     {panelOpen && !isPhone && packRequired(movement) ? formsMissingNote(forms) : null}

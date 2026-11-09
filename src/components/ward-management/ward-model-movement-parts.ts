@@ -260,6 +260,11 @@ export type TransportJob = {
    */
   estimatedAt?: Instant;
   /**
+   * Feature 25 (Josh, 9 Nov 2026): when `BOOK_TRANSPORT` recorded this job, so the transport list
+   * can show the booked time and a job not accepted in time. Absent on seeded jobs that predate it.
+   */
+  bookedAt?: Instant;
+  /**
    * The form this transfer requires. **STILL A BARE STRING, and that is a known gap rather than an
    * oversight** — `TR-D2` asks for it to draw from `SELECTABLE_LEGAL_FORMS`, and it should.
    *
