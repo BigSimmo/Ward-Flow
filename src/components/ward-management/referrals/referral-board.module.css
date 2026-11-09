@@ -872,14 +872,21 @@ button.runwayCardRow:focus-visible {
   color: var(--wf-ink-2);
 }
 
-.none::before {
-  content: "";
-  display: inline-block;
-  width: 0.75rem;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--wf-ink-off);
-  vertical-align: middle;
+/* Polish (Josh, 9 Nov 2026): an empty cell says "None" in quiet ink instead of drawing a dash. */
+.none {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+/* Times and counts line up on the right edge of their column. */
+.numHead.numHead,
+.numCell.numCell {
+  text-align: end;
+}
+
+.numCell .fit {
+  justify-content: flex-end;
 }
 
 .fit {
@@ -2149,6 +2156,17 @@ button.runwayCardRow:focus-visible {
 .decidedItem > button:first-child {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/* Polish: when any decided row has a next step, every row keeps that slot, so a declined row's
+   time lines up with the accepted rows' times instead of sliding to the edge. */
+ul:has(.decidedActions) > .decidedItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 7.5rem;
+}
+
+ul:has(.decidedActions) > .decidedItem > .decidedActions {
+  justify-content: flex-end;
 }
 
 .decidedActions {

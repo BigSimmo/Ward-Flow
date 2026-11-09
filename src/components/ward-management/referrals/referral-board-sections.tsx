@@ -216,11 +216,15 @@ export function QueuedSection({
               <tr>
                 <th scope="col">Tier</th>
                 <th scope="col">Patient</th>
-                <th scope="col">Since referral</th>
+                <th scope="col" className={a.numHead}>
+                  Since referral
+                </th>
                 <th scope="col">From</th>
                 <th scope="col">Asking for</th>
                 <th scope="col">Needs</th>
-                <th scope="col">Fit</th>
+                <th scope="col" className={a.numHead}>
+                  Fit
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -312,7 +316,7 @@ export function QueuedSection({
                         testId={`ward-referral-board-no-reply-${referral.id}`}
                       />
                     </td>
-                    <td data-testid={`ward-referral-board-wait-${referral.id}`}>
+                    <td className={a.numCell} data-testid={`ward-referral-board-wait-${referral.id}`}>
                       <span className="sr-only">{referralWaitLine(referral, now)}</span>
                       <span aria-hidden="true">
                         <WaitCell referral={referral} now={now} />
@@ -338,7 +342,8 @@ export function QueuedSection({
                           : [{ words: "Awaiting answer", refused: false, titles: [] }]
                         ).map(({ words, refused, titles }) => (
                           <span key={words} className={cx(a.arm, refused && a.armNo)} title={titles.join("\n")}>
-                            <StatusGlyph tone={refused ? "closed" : "neutral"} size={9} />
+                            {/* Polish: an open destination is a worded tag; only a refused one keeps its glyph. */}
+                            {refused ? <StatusGlyph tone="closed" size={9} /> : null}
                             {words}
                           </span>
                         ))}
@@ -360,20 +365,17 @@ export function QueuedSection({
                           ))}
                         </span>
                       ) : (
-                        <span className={a.none}>
-                          <span className="sr-only">None recorded</span>
-                        </span>
+                        // Polish (Josh, 9 Nov 2026): empty cells say so in words, not a dash.
+                        <span className={a.none}>None</span>
                       )}
                     </td>
-                    <td>
+                    <td className={a.numCell}>
                       {ready === undefined ? (
                         <span
                           className={a.none}
                           title={summary === undefined ? "No ward bed asked for" : "Destination details are restricted"}
                         >
-                          <span className="sr-only">
-                            {summary === undefined ? "No ward bed asked for" : "Destination details are restricted"}
-                          </span>
+                          {summary === undefined ? "Not a bed" : "Restricted"}
                         </span>
                       ) : (
                         <span className={a.fit} data-zero={ready === 0 ? "true" : undefined}>
