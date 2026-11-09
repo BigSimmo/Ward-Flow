@@ -1134,3 +1134,10 @@ is inferred.
   2. **Patient peek:** panel buttons that went to the Patient page (Waiting's Movement, Home's Patient record, Referrals' Patient, Handover's Open patient) open the person's placement deck in a side panel (a bottom sheet on a phone), with "Open full Patient page" one link away. **This changes where Ask wards (D-77 item 4) opens from Movements:** it used to go to the Patient page and now opens in the Patient peek. The 3-ward limit (D-76) is unchanged. A new-tab click still opens the full page.
   3. **Ward peek and pop-ups:** ward buttons in Capacity and Discharges panels show the ward's ready and in-use beds with a link to the ward's board or ward page. Waiting's Coordinator and ED board buttons open pop-ups that do the common job (Wards tab, Find a bed, the ED's waiting and longest wait).
 - **Boundary:** no change to who may see what; each peek is offered only where the desk could open the page it replaces. Synthetic data only.
+
+## D-109. Home's bed alert line tests the whole number shown (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`). **Decided by:** Josh, in the Ward Flow project, choosing "Test the shown whole number" on a decision card.
+- **Decision:** the statewide figure at the top of Home reads "at risk" when the whole percentage it shows is at or above the bed alert line, and "beds in use" below it. So 84.5% to 84.9% shows "85% at risk", never "85% beds in use".
+- **How:** `coordinator-screen.tsx` compares `Math.round(statewideOccupancy)` with the bed alert line, built in PR #1561. Other bed alert markers (the rail dots) still use the unrounded value.
+- **Boundary:** a prototype display rule on synthetic data; approves no merge or release.
