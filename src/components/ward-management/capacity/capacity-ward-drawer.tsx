@@ -32,6 +32,8 @@ import { WardClosuresDialog } from "./capacity-ward-closures-dialog";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import { bedKindsServed, isConfirmationFresh } from "./capacity-gap-words";
 import { capacityRequestIsOpen } from "@/components/ward-management/ward/ward-buzz-keys";
+import { OnBehalfReasonForm } from "../on-behalf-reason-form-lazy";
+import type { OnBehalfReasonId } from "../ward-on-behalf-reason";
 
 const DISCHARGES_HREF = "/ward-flow/discharges";
 
@@ -102,7 +104,7 @@ export function CapacityWardSidebar({
   const recordActors = useWardRecordActors();
   const recordActor =
     recordActors.find((actor) => actor.role === "ward" && actor.actingUnitId === row.unit.id) ?? recordActors[0]!;
-  const [opened, setOpened] = useState<{ admissionId: string; handle: DischargeOpenHandle } | null>(null);
+  const [opened, setOpened] = useState<{ admissionId: string; handle: DischargeOpenHandle | null } | null>(null);
   // A tab change closes an opened discharge record, as before the tabs moved into the kit drawer.
   const [shownTab, setShownTab] = useState(tab);
   if (shownTab !== tab) {
@@ -132,8 +134,21 @@ export function CapacityWardSidebar({
     });
   }
   function openRecord(record: DischargeRecord) {
-    const handle = openDischargeRecord(recordActor, record.admissionId);
+    // D-80 item 17: a coordinator's opening waits for its "on behalf of the ward" reason (null handle).
+    const handle = recordActor.role === "coordinator" ? null : openDischargeRecord(recordActor, record.admissionId);
     setOpened({ admissionId: record.admissionId, handle });
+  }
+  function openOnBehalf(reason: OnBehalfReasonId) {
+    if (opened?.handle !== null || !opened) return;
+    try {
+      setOpened({
+        admissionId: opened.admissionId,
+        handle: openDischargeRecord(recordActor, opened.admissionId, reason),
+      });
+    } catch {
+      // The same failure handle as the Discharges board: the drawer says the record is unavailable.
+      setOpened({ admissionId: opened.admissionId, handle: { generation: -1, requestId: -1 } });
+    }
   }
   const sortedRecords =
     records.status === "allowed" ? [...records.value].sort((x, y) => recordOrder(x, now) - recordOrder(y, now)) : [];
@@ -345,6 +360,9 @@ export function CapacityWardSidebar({
                   </div>
                 ) : null}
               </>
+            ) : opened.handle === null ? (
+              // D-80 item 17: the coordinator says why before the ward's record opens.
+              <OnBehalfReasonForm key={opened.admissionId} onOpen={openOnBehalf} />
             ) : (
               <p role="status">This discharge record is unavailable. Return to the list and open it again.</p>
             )}

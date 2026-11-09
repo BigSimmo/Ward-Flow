@@ -322,7 +322,7 @@ export function GroupHead({
   return (
     <h2 className={styles.groupHead}>
       {icon || tone ? (
-        <span className={styles.groupGlyph}>{icon ?? <StatusGlyph tone={tone ?? "neutral"} size={9} />}</span>
+        <span className={styles.groupGlyph}>{icon ?? <StatusGlyph tone={tone ?? "neutral"} />}</span>
       ) : null}
       <span>{label}</span>
       <Count n={count} />

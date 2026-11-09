@@ -20,18 +20,6 @@ import { useBedMeetingRecord } from "@/components/ward-management/bed-meeting/us
 
 import styles from "./referral-page.module.css";
 
-/** What the wards have said so far: nothing yet, or how many declined and how many are left. */
-function offerStatus(movement: Movement): { text: string; tone: "warning" | "neutral" } {
-  const asked = movement.referredUnitIds.length;
-  const declined = movement.declines.filter((decline) => movement.referredUnitIds.includes(decline.unitId)).length;
-  if (declined === 0) return { text: asked === 1 ? "Awaiting answer" : `Awaiting ${asked} answers`, tone: "neutral" };
-  const left = asked - declined;
-  return {
-    text: left > 0 ? `${declined} declined · ${left} to answer` : `All ${declined} declined`,
-    tone: "warning",
-  };
-}
-
 /**
  * The ward offers sent straight from Home, as a table instead of loose lines: patient, the ward
  * asked, how long it has waited and what the wards have answered. Each row opens the movement,
@@ -69,19 +57,45 @@ export function WardOffersTable({
   const chasedFocus = useRef<string | null>(null);
   if (offers.length === 0) return null;
   const wardName = (unitId: string) => placeDisplayName(unitId, units).split(" — ")[0];
+  // Note 11 (Josh, 9 Nov 2026): the list's state before its rows. Offers are oldest first, so the
+  // first one is the longest wait; the bar on each row compares against it (no threshold, no colour).
+  const sentAt = (movement: Movement) => movement.referredAt ?? movement.openedAt;
+  const longest = Math.max(1, now - sentAt(offers[0]));
+  const declinedTotal = offers.reduce(
+    (sum, movement) =>
+      sum + movement.declines.filter((decline) => movement.referredUnitIds.includes(decline.unitId)).length,
+    0,
+  );
+  const chasedTotal = offers.filter((movement) => openMeetingAction(movement.meetingActions, "chase_ward")).length;
   return (
     <section className={styles.offers} data-testid="ward-referral-board-ward-offers" aria-labelledby={titleId}>
       <h2 id={titleId} className={styles.offersTitle}>
         {wardDesk ? "Offered to your ward" : "Offered to wards"} <Count n={offers.length} />
-        <span className={styles.offersNote}>{wardDesk ? "Waiting on your answer" : "Waiting on a ward"}</span>
+        <span className={styles.offersSummary} data-testid="ward-referral-board-ward-offers-summary">
+          <span>
+            Longest <b className={styles.mono}>{durMinutes(now - sentAt(offers[0]))}</b>
+          </span>
+          {declinedTotal > 0 ? (
+            <span>
+              Declined so far <b className={styles.mono}>{declinedTotal}</b>
+            </span>
+          ) : null}
+          {coordinatorDesk && chasedTotal > 0 ? (
+            <span>
+              Chased <b className={styles.mono}>{chasedTotal}</b>
+            </span>
+          ) : null}
+          <span className={styles.offersNote}>{wardDesk ? "Waiting on your answer" : "Waiting on a ward"}</span>
+        </span>
       </h2>
       <table className={styles.offersTable}>
         <thead>
           <tr>
             <th scope="col">Patient</th>
-            <th scope="col">Offered to</th>
-            <th scope="col">Waiting</th>
-            <th scope="col">Answer</th>
+            <th scope="col">Wards asked and their answer</th>
+            <th scope="col" className={styles.offerWaitHead}>
+              Waiting
+            </th>
             {coordinatorDesk ? (
               <th scope="col" className={styles.offerActionsHead}>
                 <span className="sr-only">Actions</span>
@@ -92,32 +106,41 @@ export function WardOffersTable({
         <tbody>
           {offers.map((movement) => {
             const who = resolveSubjectPatient(movement, resolverState);
-            const status = offerStatus(movement);
-            const wards = movement.referredUnitIds.map(wardName);
             const declined = new Set(movement.declines.map((decline) => decline.unitId));
             const toAnswer = movement.referredUnitIds.find((unitId) => !declined.has(unitId));
             const chased = openMeetingAction(movement.meetingActions, "chase_ward");
+            const waited = now - sentAt(movement);
             return (
               <tr key={movement.id} data-testid={`ward-referral-board-ward-offer-${movement.id}`}>
                 <th scope="row" className={styles.offerName}>
                   <Link href={movementHref(movement.id)} className={styles.offerLink}>
                     {nameFor(who.formalName, who.umrn)}
                   </Link>
+                  <span className={styles.offerSub}>
+                    <span className={styles.mono}>{who.umrn}</span>
+                  </span>
                 </th>
                 <td className={styles.offerWards}>
-                  {wards.join(", ")}
-                  {/* Phone (Josh, 30 Oct 2026): two lines, the answer after the ward on the second. */}
-                  <span className={styles.offerPhoneAnswer}>
-                    {" · "}
-                    {status.tone === "warning" ? <StatusGlyph tone="warning" size={8} /> : null}
-                    {status.text}
+                  {/* Note 11: one chip per ward asked, carrying that ward's own answer. */}
+                  <span className={styles.offerChips}>
+                    {movement.referredUnitIds.map((unitId) => {
+                      const no = declined.has(unitId);
+                      return (
+                        <span key={unitId} className={cx(styles.offerChip, no && styles.offerChipNo)}>
+                          <StatusGlyph tone={no ? "closed" : "neutral"} size={8} />
+                          {wardName(unitId)}
+                          <span className="sr-only">{no ? ", declined" : ", awaiting answer"}</span>
+                        </span>
+                      );
+                    })}
                   </span>
                 </td>
-                <td className={cx(styles.mono, styles.offerWait)}>
-                  {durMinutes(now - (movement.referredAt ?? movement.openedAt))}
-                </td>
-                <td className={styles.offerAnswer}>
-                  <StatusGlyph tone={status.tone} size={8} /> {status.text}
+                <td className={styles.offerWait}>
+                  <span className={styles.mono}>{durMinutes(waited)}</span>
+                  <span className={styles.offerBar} aria-hidden="true">
+                    <span style={{ width: `${Math.min(100, Math.round((waited / longest) * 100))}%` }} />
+                  </span>
+                  <span className={styles.offerSent}>sent {formatInstantWithDay(sentAt(movement), now)}</span>
                 </td>
                 {coordinatorDesk ? (
                   <td className={styles.offerActions}>
@@ -139,7 +162,7 @@ export function WardOffersTable({
                         </span>
                       ) : (
                         <Button
-                          variant="ghost"
+                          variant="sec"
                           size="sm"
                           className={styles.offerAction}
                           aria-disabled={toAnswer === undefined ? "true" : undefined}
@@ -159,6 +182,7 @@ export function WardOffersTable({
                           data-testid={`ward-offer-chase-${movement.id}`}
                         >
                           Chase
+                          {toAnswer ? <span className={styles.offerChaseWard}> {wardName(toAnswer)}</span> : null}
                         </Button>
                       )}
                       <ChevronRight className={styles.offerChevron} size={16} aria-hidden="true" />

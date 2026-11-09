@@ -1,5 +1,6 @@
 import type { BedMeetingActionKind, BedMeetingActionOwner, BedMeetingSubject } from "./bed-meeting/bed-meeting-actions";
 import type { CareChange } from "./ward-care-journey";
+import type { OnBehalfReasonId } from "./ward-on-behalf-reason";
 import type {
   DischargeBarrier,
   LeavingDestination,
@@ -7,7 +8,7 @@ import type {
   PlannedAdmissionCancelReason,
   PlannedAdmissionReason,
 } from "@/components/ward-management/ward-admissions";
-import type { Gender, PatientId } from "@/components/ward-management/ward-patients";
+import type { AdminDetailField, Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { ArchivePatientEvent } from "./ward-patient-archive";
 import type { InboxWardFlowEvent } from "./ward-inbox-events";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -184,6 +185,8 @@ export type WardFlowEvent =
       expectedGeneration: number;
       requestId: number;
       requestNamespace?: string;
+      /** D-80 item 17: the coordinator's "on behalf of the ward" reason, required for that role only. */
+      onBehalfReason?: OnBehalfReasonId;
     }
   | {
       type: "REVIEW_AUDIT_EVENT";
@@ -660,7 +663,7 @@ export type WardFlowEvent =
    * catchment-lookup key held as a string on `Patient` (see that field's own comment) — not a
    * `ReferralSuburb` union, and not validated against the catchment table here.
    */
-  | {
+  | ({
       type: "ADD_PATIENT";
       registrationScope?: import("./ward-patient-registration").PatientRegistrationScope;
       role: WardFlowRole;
@@ -680,7 +683,7 @@ export type WardFlowEvent =
       generalPractitioner?: string;
       catchmentCommunityTeam?: string;
       interpreterLanguage?: string;
-    }
+    } & Partial<Record<AdminDetailField, string>>)
   | {
       type: "FLAG_MOVEMENT_TURNAROUND_PRIORITY";
       role: WardFlowRole;

@@ -567,8 +567,10 @@ test.describe("@mockup Movements — transport panel", () => {
       await expect(row).toHaveAccessibleName(/, (Accepted|En route|Collected|Arrived|Cancelled) via /);
       // Movements redesign (1 Nov 2026): the row reads its leg and time since booked ("Collected 53m ago").
       // Movements M4 (3 Nov 2026): it reads "Collected, booked 53m ago".
+      // 9 Nov 2026 (WCAG 2.5.3): the spoken name is now the row's own text plus a spoken tail,
+      // "…, Collected via Patient transport service, booked 53m ago".
       await expect(row).toContainText(
-        /(Accepted|En route|Collected|Arrived|Cancelled), booked \d+(d|h|m)( \d+(h|m))? ago/,
+        /(Accepted|En route|Collected|Arrived|Cancelled) via .+, booked \d+(d|h|m)( \d+(h|m))? ago/,
       );
     }
   });

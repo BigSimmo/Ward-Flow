@@ -1,13 +1,14 @@
 "use client";
 
 /**
- * Timeline switch (M3, approved 3 Nov 2026). Movements leads with its worklist, so the day's
- * timeline sits behind one switch on a tablet or laptop, as it already does on a phone. The bar
- * keeps the one fact worth seeing without the chart (how many corridors are active) and remembers
- * the choice on this device only.
+ * Timeline switch (M3, approved 3 Nov 2026). The day's timeline sits behind one switch on a tablet
+ * or laptop. Josh's Note 7 (8 Nov 2026): it is shown by default; hiding it is remembered on this
+ * device only. The bar keeps the one fact worth seeing without the chart (active corridors).
  */
 import { useSyncExternalStore, type ReactNode } from "react";
 import { ChartGantt } from "lucide-react";
+
+import { IconTile } from "@/components/wf";
 
 import { Switch } from "@/components/wf";
 import s from "./movements-timeline-switch.module.css";
@@ -16,9 +17,9 @@ const KEY = "ward-flow-movements-timeline";
 
 function readPref(): boolean {
   try {
-    return window.localStorage.getItem(KEY) === "on";
+    return window.localStorage.getItem(KEY) !== "off";
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -30,9 +31,9 @@ function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
-// The server render and hydration read "hidden", then the stored choice applies.
+// The server render and hydration read "shown", then a stored "off" applies.
 const snapshot = () => memory ?? readPref();
-const serverSnapshot = () => false;
+const serverSnapshot = () => true;
 
 export function MovementsTimelineSwitch({ summary, children }: { summary: string; children: ReactNode }) {
   const on = useSyncExternalStore(subscribe, snapshot, serverSnapshot);
@@ -48,9 +49,8 @@ export function MovementsTimelineSwitch({ summary, children }: { summary: string
   return (
     <>
       <div className={s.bar} data-open={on ? "true" : undefined} data-testid="movements-timeline-switch">
-        <span className={s.icon}>
-          <ChartGantt size={16} strokeWidth={1.75} aria-hidden="true" />
-        </span>
+        {/* Movements audit item 9 (9 Nov 2026): the same icon tile and title as every section. */}
+        <IconTile icon={ChartGantt} />
         <span className={s.title}>Timeline</span>
         <span className={s.summary}>{summary}</span>
         <Switch checked={on} onCheckedChange={change} label="Show timeline" onText="Shown" offText="Hidden" />

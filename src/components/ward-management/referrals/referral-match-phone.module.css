@@ -325,11 +325,14 @@
   min-width: 0;
 }
 
-.foot[data-in-drawer] > :last-child {
+/* Note 11 (Josh, 9 Nov 2026): the main button is always the band's second child. `:last-child` missed
+   it when a reason waiting on the button added a screen-reader line after it, so a ward referral's
+   "Choose a ward first" squeezed into the quiet row. */
+.foot[data-in-drawer] > :nth-child(2) {
   order: -1;
   flex: 1 1 100%;
 }
 
-.foot[data-in-drawer] > :last-child > button {
+.foot[data-in-drawer] > :nth-child(2) > button {
   width: 100%;
 }

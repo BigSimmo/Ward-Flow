@@ -9,6 +9,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { bedReleases } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import { bedMapCards, wardCardName } from "./helpers/capacity-ward-table";
+import { giveOnBehalfReason } from "./helpers/ward-on-behalf-reason";
 
 /**
  * Recorded (DC4, Josh, 3 Nov 2026) lists only departed stays whose leftAt falls in the last 7 days,
@@ -54,6 +55,7 @@ function openFarahRecord() {
     name: "Davenporton, Farah",
   });
   fireEvent.click(opener);
+  giveOnBehalfReason();
   return opener;
 }
 
@@ -87,6 +89,7 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
 
     const opener = drawer.getByRole("button", { name: /Marrowby, Ines/u });
     fireEvent.click(opener);
+    giveOnBehalfReason();
 
     const detail = screen.getByRole("region", { name: "Discharge record detail" });
     expect(within(detail).getByRole("heading", { name: "Marrowby, Ines" })).toHaveFocus();

@@ -1,0 +1,37 @@
+/* D-80 item 17: the coordinator's "on behalf of the ward" reason, asked before a ward's record opens. */
+.form {
+  display: grid;
+  gap: var(--wf-s-3);
+}
+
+.form p {
+  margin: 0;
+  font-size: var(--wf-fs-14);
+}
+
+.form fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.form legend {
+  margin-bottom: var(--wf-s-2);
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+}
+
+.reason {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-target, 28px);
+  font-size: var(--wf-fs-14);
+}
+
+/* Phone: full thumb targets, as the break glass reasons have. */
+@media (max-width: 46.4375rem) {
+  .reason {
+    min-height: var(--ward-tap, 3rem);
+  }
+}

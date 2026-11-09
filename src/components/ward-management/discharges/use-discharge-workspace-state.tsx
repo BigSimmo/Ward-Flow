@@ -39,6 +39,7 @@ import {
 } from "./discharge-board-model";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace } from "../use-return-to-place";
+import type { OnBehalfReasonId } from "../ward-on-behalf-reason";
 
 const DISCHARGES_ROUTE = "/ward-flow/discharges";
 /**
@@ -109,7 +110,9 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
   const [destination, setDestination] = useState<string>(returned?.destination ?? "all");
   const [blockerCategory, setBlockerCategory] = useState<string>(returned?.blockerCategory ?? "all");
   const [sortMode, setSortMode] = useState<DueSortMode>(returned?.sortMode ?? "default");
-  const [selected, setSelected] = useState<{ admissionId: string; handle: DischargeOpenHandle } | null>(null);
+  // D-80 item 17: a null handle is a coordinator's choice still waiting for its "on behalf of the
+  // ward" reason; nothing is opened or logged until the reason is given (`openOnBehalf`).
+  const [selected, setSelected] = useState<{ admissionId: string; handle: DischargeOpenHandle | null } | null>(null);
   const [releaseId, setReleaseId] = useState<string | null>(null);
   const [showUpdateDate, setShowUpdateDate] = useState(false);
   const [newTimeDraft, setNewTimeDraft] = useState<string>("");
@@ -185,16 +188,15 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
     openedFromLinkRef.current = true;
     // Opening is a guarded, audited receipt (an external write), so it cannot run during render;
     // the selection shows its outcome, once.
-    let handle: DischargeOpenHandle;
+    const actor =
+      recordActors.find(
+        (candidate) =>
+          candidate.role === "ward" &&
+          candidate.actingUnitId === records.find((record) => record.admissionId === initialAdmissionId)?.unitId,
+      ) ?? recordActors[0]!;
+    let handle: DischargeOpenHandle | null;
     try {
-      handle = openDischargeRecord(
-        recordActors.find(
-          (actor) =>
-            actor.role === "ward" &&
-            actor.actingUnitId === records.find((record) => record.admissionId === initialAdmissionId)?.unitId,
-        ) ?? recordActors[0]!,
-        initialAdmissionId,
-      );
+      handle = actor.role === "coordinator" ? null : openDischargeRecord(actor, initialAdmissionId);
     } catch {
       handle = { generation: -1, requestId: -1 };
     }
@@ -408,14 +410,29 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
     setReleaseId(null);
     setOpenError(false);
     setShowUpdateDate(false);
+    const actor = recordActorFor(record.unitId);
     try {
       setSelected({
         admissionId: record.admissionId,
-        handle: openDischargeRecord(recordActorFor(record.unitId), record.admissionId),
+        handle: actor.role === "coordinator" ? null : openDischargeRecord(actor, record.admissionId),
       });
     } catch {
       setSelected({ admissionId: record.admissionId, handle: { generation: -1, requestId: -1 } });
       setOpenError(false);
+    }
+    focusDetail();
+  };
+  /** D-80 item 17: the coordinator gave its reason, so the chosen record opens and is logged with it. */
+  const openOnBehalf = (reason: OnBehalfReasonId) => {
+    if (!selected || selected.handle !== null) return;
+    const actor = recordActorFor(records.find((record) => record.admissionId === selected.admissionId)?.unitId);
+    try {
+      setSelected({
+        admissionId: selected.admissionId,
+        handle: openDischargeRecord(actor, selected.admissionId, reason),
+      });
+    } catch {
+      setSelected({ admissionId: selected.admissionId, handle: { generation: -1, requestId: -1 } });
     }
     focusDetail();
   };
@@ -607,6 +624,7 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
     setSortMode,
     selected,
     setSelected,
+    openOnBehalf,
     releaseId,
     setReleaseId,
     showUpdateDate,

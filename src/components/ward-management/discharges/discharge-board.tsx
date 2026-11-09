@@ -93,6 +93,7 @@ import { useDischargeWorkspaceState } from "./use-discharge-workspace-state";
 import { DischargeWeekendPrep } from "./discharge-weekend-prep";
 import { followUpWithinWindowCheck } from "./discharge-follow-up-check";
 import { DischargeAskOverdueWards } from "./discharge-message-ward";
+import { OnBehalfReasonForm } from "../on-behalf-reason-form-lazy";
 
 /**
  * Task 6, spec D9: the discharge and egress board. A coordinator's whole reason to open this
@@ -1404,6 +1405,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 openOn={openOn?.releaseId === detailRelease.id ? openOn.part : null}
                 departure={departureField}
               />
+            ) : selected?.handle === null ? (
+              // D-80 item 17: the coordinator says why before the ward's record opens.
+              <OnBehalfReasonForm key={selected.admissionId} onOpen={s.openOnBehalf} />
             ) : (
               <p className={pageStyles.emptyState}>This record could not be opened. Select it again to retry.</p>
             )}

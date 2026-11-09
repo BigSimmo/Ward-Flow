@@ -41,6 +41,7 @@ import {
   Glyph,
   Grid,
   redesignStyles as redesign,
+  Z,
 } from "@/components/ward-management/statistics/redesign/statistics-redesign-parts";
 import {
   ExecutiveStatisticsUnavailable,
@@ -68,6 +69,8 @@ const median = (values: readonly number[]): number | null => {
 
 /** A wait as "7d 1h" or "4h 17m", or "none" when nobody is waiting. */
 const waitText = (minutes: number | null) => (minutes === null ? "none" : durMinutes(Math.round(minutes)));
+/** The same wait in a table cell: an empty cell reads "None", like the other tables (table polish, Nov 2026). */
+const waitCell = (minutes: number | null) => (minutes === null ? "None" : waitText(minutes));
 
 /** The long-wait lines in whole hours, from the named defaults rather than typed here. */
 const LONG_HOURS = LONG_WAIT_MINUTES / 60;
@@ -587,8 +590,12 @@ function EdsIndexView({
                               {shown(row.over48)}
                             </span>
                           </td>
-                          <td className={num(row.longest === null)}>{waitText(row.longest)}</td>
-                          <td className={num(row.median === null)}>{waitText(row.median)}</td>
+                          <td className={num(row.longest === null)}>
+                            <Z v={waitCell(row.longest)} />
+                          </td>
+                          <td className={num(row.median === null)}>
+                            <Z v={waitCell(row.median)} />
+                          </td>
                         </tr>
                       );
                     })}
@@ -600,8 +607,12 @@ function EdsIndexView({
                       <td className={cx(redesign.r, tableClasses.num)}>{shown(unplaced)}</td>
                       <td className={cx(redesign.r, tableClasses.num)}>{shown(over24)}</td>
                       <td className={cx(redesign.r, tableClasses.num)}>{shown(over48)}</td>
-                      <td className={cx(redesign.r, tableClasses.num)}>{waitText(longestRow?.longest ?? null)}</td>
-                      <td className={cx(redesign.r, tableClasses.num)}>{waitText(networkMedian)}</td>
+                      <td className={cx(redesign.r, tableClasses.num)}>
+                        <Z v={waitCell(longestRow?.longest ?? null)} />
+                      </td>
+                      <td className={cx(redesign.r, tableClasses.num)}>
+                        <Z v={waitCell(networkMedian)} />
+                      </td>
                     </tr>
                   </tfoot>
                 </table>

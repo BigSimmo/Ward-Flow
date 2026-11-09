@@ -83,8 +83,9 @@ const DOCK: TourTarget = { sel: '[data-testid="ward-phone-dock"]' };
 const PLUS: TourTarget = { sel: '[data-testid="ward-phone-create"]' };
 const PHONE_MENU: TourTarget = { sel: '[data-testid="ward-bar-phone-menu"]' };
 const ED_PRESSURE: TourTarget = { sel: '[data-testid="ward-home-ed-pressure"]' };
-/** Placement before anyone is chosen (the prompt card), or once someone is (the side panel). */
-const PLACEMENT: TourTarget = { sel: '[data-testid="home-placement-prompt"], [data-testid="ward-home-placement"]' };
+// Josh's notes 4 (9 Nov 2026): Placement opens only once someone is chosen, so its step points at
+// the Needs you list it opens from.
+const PLACEMENT: TourTarget = { sel: '[data-testid="home-my-list"]' };
 /** Home's next step: one line on what needs the coordinator first, with a button that shows just those. */
 const HERO_NEXT: TourTarget = { sel: "#main-content [data-wf-hero-next]" };
 /** Home's list row: Needs you, Flow and, on a phone, Later today. */

@@ -9,9 +9,31 @@
  * until `WardDeskPendingClear` clears the mark once the app has drawn that desk's page. A first load
  * is never held for anyone else, and pages opened inside the app are never held.
  *
+ * Desk walk follow-up (9 Nov 2026): hiding is not enough, because the coordinator's figures were
+ * still in the server's page and showed while the page's own part caught up. So a stored desk other
+ * than the coordinator's also sets `WARD_DESK_HELD_COOKIE`, a bare "1" with no role or place in it.
+ * When the server sees it, the ward layout sends a neutral loading page in place of the page
+ * (`WardDeskHold`), and the browser draws the desk's own page once it knows the desk. Only this tab
+ * choosing the coordinator's desk clears it; a fresh tab leaves it, so the safe side wins.
+ *
  * Reads only the role and place kind, never shown or sent. A blocked storage read changes nothing.
  * The key must match `WARD_ACCESS_STORAGE_KEY` in `ward-access-store.ts`.
  */
 export const WARD_DESK_PENDING_ATTRIBUTE = "data-wf-desk-pending";
 
-export const WARD_DESK_EARLY_SCRIPT = `(function(){try{var d=JSON.parse(sessionStorage.getItem("wardflow:access-desk-v1")||"null");if(d&&typeof d==="object"&&!(d.role==="coordinator"&&d.scope&&d.scope.kind==="statewide"))document.documentElement.setAttribute("${WARD_DESK_PENDING_ATTRIBUTE}","");}catch(e){/* storage blocked - the server's page stands */}})();`;
+/** Set while this browser's desk is not the whole-network coordinator's. Its value is only ever "1". */
+export const WARD_DESK_HELD_COOKIE = "wardflow-desk-held";
+
+const HELD_COOKIE = `${WARD_DESK_HELD_COOKIE}=1;path=/ward-flow;SameSite=Strict`;
+const CLEARED_COOKIE = `${WARD_DESK_HELD_COOKIE}=;path=/ward-flow;SameSite=Strict;max-age=0`;
+
+export const WARD_DESK_EARLY_SCRIPT = `(function(){try{var d=JSON.parse(sessionStorage.getItem("wardflow:access-desk-v1")||"null");if(d&&typeof d==="object"){if(d.role==="coordinator"&&d.scope&&d.scope.kind==="statewide"){document.cookie="${CLEARED_COOKIE}";}else{document.documentElement.setAttribute("${WARD_DESK_PENDING_ATTRIBUTE}","");document.cookie="${HELD_COOKIE}";}}}catch(e){/* storage blocked - the server's page stands */}})();`;
+
+/** Keeps the cookie in step with the desk this tab has just stored (`ward-access-store.ts`). */
+export function syncWardDeskHeldCookie(wholeNetwork: boolean): void {
+  try {
+    document.cookie = wholeNetwork ? CLEARED_COOKIE : HELD_COOKIE;
+  } catch {
+    // Cookies blocked: the first-load hide above still applies.
+  }
+}

@@ -163,7 +163,7 @@ describe("SV-5 discharge follow-up and care journey", () => {
     const read = readDischargeRecord(actor, admission.id, handle);
     return (
       <>
-        <button onClick={() => setHandle(openDischargeRecord(actor, admission.id))}>Open record</button>
+        <button onClick={() => setHandle(openDischargeRecord(actor, admission.id, "ward-asked"))}>Open record</button>
         {read.status === "allowed" &&
           (part === "care" ? (
             <DischargeCareJourney record={read.value} actor={actor} />

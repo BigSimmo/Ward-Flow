@@ -14,6 +14,7 @@ vi.mock("next/link", () => ({
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { giveOnBehalfReason } from "./helpers/ward-on-behalf-reason";
 
 function renderBoard() {
   return render(
@@ -42,6 +43,7 @@ describe("discharges board patient detail and navigation bridge", () => {
     const leftCell = within(firstRow).getByText(/\d{1,2}:\d{2}/);
     expect(leftCell.closest("button")).toBeNull();
     fireEvent.click(leftCell);
+    giveOnBehalfReason();
 
     // Detail drawer should now be open with that patient's record (drawer review, 6 Nov 2026: the
     // kit drawer's head names the person).
@@ -74,6 +76,7 @@ describe("discharges board patient detail and navigation bridge", () => {
 
     // Click the bridge button to navigate to the full admission record
     fireEvent.click(bridgeButton);
+    giveOnBehalfReason();
 
     // Population should now have switched to Admission records and rendered full record
     expect(screen.getByRole("button", { name: /^Recorded/ })).toHaveAttribute("aria-pressed", "true");
@@ -96,6 +99,7 @@ describe("discharges board patient detail and navigation bridge", () => {
     ] as const) {
       const name = within(row).getByRole("button").textContent ?? "";
       fireEvent.keyDown(row, { key });
+      giveOnBehalfReason();
       const details = screen.getByTestId("ward-discharge-detail");
       expect(within(details).getByRole("heading", { level: 2 })).toHaveTextContent(name);
       expect(within(details).getByText(/UMRN UM\d+/)).toBeInTheDocument();

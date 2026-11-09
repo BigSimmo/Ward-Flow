@@ -48,6 +48,9 @@ function openTomorrowDepartureEditor() {
   const row = within(worklist).getByText(screen.getByTestId("target-umrn").textContent!).closest("tr")!;
   fireEvent.click(within(row).getAllByRole("button")[0]!);
   fireEvent.click(screen.getByRole("button", { name: "Discharge record" }));
+  // D-80 item 17: the coordinator gives its "on behalf of the ward" reason first.
+  fireEvent.click(screen.getByRole("radio", { name: "The ward asked for help" }));
+  fireEvent.click(screen.getByRole("button", { name: "Open record" }));
   fireEvent.click(screen.getByTestId("ward-discharge-update-date-btn"));
 }
 

@@ -447,14 +447,14 @@
 .listTable tbody:last-child tr:last-child > td {
   border-bottom: 0;
 }
+.colPersonList {
+  width: 34%;
+}
 .colBay {
   width: 72px;
 }
 .colFacts {
   width: 170px;
-}
-.colStep {
-  width: 200px;
 }
 .colEnd {
   width: 150px;

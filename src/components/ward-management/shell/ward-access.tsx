@@ -478,8 +478,10 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
             ? { status: "allowed", value: read.value.filter((record) => admissionIds.has(record.admissionId)) }
             : read;
         },
-        openDischargeRecord: (actor, admissionId) =>
-          admissionIds.has(admissionId) ? context.openDischargeRecord(actor, admissionId) : outsideHandle,
+        openDischargeRecord: (actor, admissionId, onBehalfReason) =>
+          admissionIds.has(admissionId)
+            ? context.openDischargeRecord(actor, admissionId, onBehalfReason)
+            : outsideHandle,
         readDischargeRecord: (actor, admissionId, handle) =>
           admissionIds.has(admissionId) ? context.readDischargeRecord(actor, admissionId, handle) : denied,
         readAuditEvents: (actor) => auditRead(context.readAuditEvents(actor), scope.auditEvents),

@@ -1039,7 +1039,7 @@ function useScreenWakeLock(active: boolean) {
 }
 
 /** Which screen to show: plain links, so a TV can be pointed at one service, ward or ED for good. */
-function ScreenPicker({ current }: { current: string }) {
+function ScreenPicker({ current, label }: { current: string; label: string }) {
   const { units } = useWardFlowSelect("units");
   const wards = [...units].sort((a, b) => a.name.localeCompare(b.name));
   const eds = [...allEmergencyDepartments()].sort((a, b) => a.name.localeCompare(b.name));
@@ -1052,8 +1052,9 @@ function ScreenPicker({ current }: { current: string }) {
   const close = () => pickerRef.current?.removeAttribute("open");
   return (
     <details ref={pickerRef} className={styles.picker} data-testid="bed-meeting-tv-picker">
-      <summary className={styles.action}>
-        Change screen
+      {/* Note 13 (Josh, 8 Nov 2026): the button names the screen on show, beside a "Screen" label. */}
+      <summary className={styles.action} aria-label={`Change screen. Now showing ${label}`}>
+        <span className={styles.pickerCurrent}>{label}</span>
         <ChevronDown aria-hidden="true" />
       </summary>
       <nav className={styles.pickerMenu} aria-label="TV screens">
@@ -1396,17 +1397,10 @@ export function BedMeetingTvScreen({
             )}
           </p>
         </div>
+        {/* Note 13 (Josh, 8 Nov 2026): the screen controls stay top right, in the same order, on every
+            TV screen, and moving around has its own row below, so changing screen or view never
+            shifts a button. */}
         <div className={styles.actions}>
-          {ward !== undefined || ed !== undefined ? (
-            <BoardSwitch
-              current={board}
-              kind={ward !== undefined ? "ward" : "ed"}
-              hrefOf={(next) =>
-                ward !== undefined ? bedMeetingTvHref({ ward, board: next }) : bedMeetingTvHref({ ed, board: next })
-              }
-            />
-          ) : null}
-          <ScreenPicker current={current} />
           {fullscreen.supported ? (
             <button
               type="button"
@@ -1420,6 +1414,30 @@ export function BedMeetingTvScreen({
           ) : null}
           <TvLockControl href={selfHref} className={styles.action} shared={shared?.enabled === true} />
           {tvLocked ? null : <TvLeaveLink className={styles.action} />}
+        </div>
+        <div className={styles.navBar} data-testid="bed-meeting-tv-nav">
+          <div className={styles.navGroup}>
+            <span className={styles.navLabel} aria-hidden="true">
+              Screen
+            </span>
+            <ScreenPicker current={current} label={title} />
+          </div>
+          <div className={styles.navGroup}>
+            <span className={styles.navLabel} aria-hidden="true">
+              View
+            </span>
+            {ward !== undefined || ed !== undefined ? (
+              <BoardSwitch
+                current={board}
+                kind={ward !== undefined ? "ward" : "ed"}
+                hrefOf={(next) =>
+                  ward !== undefined ? bedMeetingTvHref({ ward, board: next }) : bedMeetingTvHref({ ed, board: next })
+                }
+              />
+            ) : (
+              <BoardSwitch current="flow" kind="meeting" hrefOf={() => selfHref} />
+            )}
+          </div>
         </div>
       </header>
       {view.kind === "network" ? (

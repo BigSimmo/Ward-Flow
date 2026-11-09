@@ -43,6 +43,8 @@ import { DischargeBoard } from "@/components/ward-management/discharges/discharg
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+import { giveOnBehalfReason } from "./helpers/ward-on-behalf-reason";
+
 function ResetScenario() {
   const { dispatch, now } = useWardFlow();
   return (
@@ -67,6 +69,7 @@ function openFirstRecord(worklist?: HTMLElement) {
   const name = opener.textContent ?? "";
   expect(name.length).toBeGreaterThan(0);
   fireEvent.click(opener);
+  giveOnBehalfReason();
   return name;
 }
 function renderBoard() {
@@ -108,7 +111,24 @@ describe("DischargeBoard guarded detail access", () => {
     access.mode = "normal";
     expect(worklist).toBeInTheDocument();
     fireEvent.click(within(worklist).getByRole("button", { name }));
+    giveOnBehalfReason();
     expect(within(screen.getByTestId("ward-discharge-detail")).getByRole("heading", { name })).toBeInTheDocument();
+  });
+
+  it("asks the coordinator why before the ward's record opens, and opens nothing until then", () => {
+    renderBoard();
+    fireEvent.click(screen.getByRole("button", { name: /^Recorded/ }));
+    const row = within(screen.getByRole("region", { name: "Discharge worklist" }))
+      .getAllByRole("row")
+      .find((candidate) => within(candidate).queryAllByRole("button").length > 0)!;
+    const opener = within(row).getAllByRole("button")[0]!;
+    const name = opener.textContent ?? "";
+    fireEvent.click(opener);
+    const detail = screen.getByTestId("ward-discharge-detail");
+    expect(within(detail).queryByRole("heading", { name })).not.toBeInTheDocument();
+    expect(within(detail).getByRole("button", { name: "Open record" })).toBeDisabled();
+    giveOnBehalfReason();
+    expect(within(detail).getByRole("heading", { name })).toBeInTheDocument();
   });
 
   it("removes opened details when a scenario reset invalidates the receipt", () => {

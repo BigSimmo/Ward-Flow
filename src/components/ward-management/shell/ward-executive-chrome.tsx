@@ -71,6 +71,7 @@ import { useRevealFocusedInRow } from "./use-reveal-focused-in-row";
 import { useOnlineStatus } from "../use-online-status";
 import { useServiceScope, setServiceScope } from "./ward-service-store";
 import { BedAlertMeter, capacityRowsSpoken, overLineLabel, type CapacityRow } from "./ward-rail-parts";
+import { compactPipPlace, RailOccupancyRing } from "../shell-next/next-rail-parts";
 import { useBarScrolled, useBandScrolled } from "./ward-bar-scroll";
 import {
   BED_ALERT_THRESHOLD_PERCENT,
@@ -308,10 +309,8 @@ function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }
         aria-haspopup="dialog"
         onClick={() => setOpen(!open)}
       >
-        {overLine.over > 0 ? <Dot tone="warning" /> : null}
-        <span className={rail.compactAlertVal}>
-          {firstRow?.percent == null ? "—" : `${Math.round(firstRow.percent)}%`}
-        </span>
+        <RailOccupancyRing percent={firstRow?.percent ?? null} />
+        <span className={railParts.compactAlertCaption}>{compactPipPlace(firstRow)}</span>
       </button>
       <button
         type="button"
@@ -599,16 +598,6 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
               )}
               <button
                 type="button"
-                className={rail.railToggle}
-                onClick={() => setRailOpenPreference(!preferences.open)}
-                aria-label={preferences.open ? "Collapse menu" : "Expand menu"}
-                data-testid="ward-rail-toggle"
-              >
-                {preferences.open ? <ChevronLeft aria-hidden="true" /> : <PanelLeftOpen aria-hidden="true" />}
-                <span className={rail.toggleText}>{preferences.open ? "Collapse" : "Expand"} menu</span>
-              </button>
-              <button
-                type="button"
                 className={`${rail.moreTrigger} ${rail.mobileMenu}`}
                 onClick={(event) => {
                   menuReturnFocus.current = event.currentTarget;
@@ -654,6 +643,18 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
             </div>
             <div className={rail.railFoot}>
               <div className={rail.utilityLinks}>{utility("appearance")}</div>
+              {/* Note 3 (Josh, 8 Nov 2026): the toggle sits in the foot so the collapsed strip ends on the
+            person; the open rail draws it in the brand row's corner (ward-rail.module.css). */}
+              <button
+                type="button"
+                className={rail.railToggle}
+                onClick={() => setRailOpenPreference(!preferences.open)}
+                aria-label={preferences.open ? "Collapse menu" : "Expand menu"}
+                data-testid="ward-rail-toggle"
+              >
+                {preferences.open ? <ChevronLeft aria-hidden="true" /> : <PanelLeftOpen aria-hidden="true" />}
+                <span className={rail.toggleText}>{preferences.open ? "Collapse" : "Expand"} menu</span>
+              </button>
               <div className={rail.userCardWrap}>
                 {/* DK1 (Josh, 3 Nov 2026): the person opens the account menu, which holds Switch desk
                     and Sign out; they no longer have rows of their own. */}

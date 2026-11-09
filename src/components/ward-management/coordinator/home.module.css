@@ -200,15 +200,8 @@
   background: var(--wf-hover);
 }
 
-/* H1 (Josh, 3 Nov 2026): a tile whose forms are due or overdue is outlined in that tone all round
-   (a full ring, never a coloured side edge, D-94). */
-.edButton[data-forms="warning"] {
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--wf-warning) 70%, transparent);
-}
-
-.edButton[data-forms="danger"] {
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--wf-danger) 75%, transparent);
-}
+/* Josh's notes 4 (9 Nov 2026): no tone-coloured outline on a tile (design system principle 4).
+   The forms line's own glyph already carries the tone. */
 
 /* Appraisal (Josh Q8, 3 Nov 2026): the departments with nobody waiting fold into one quiet tile. */
 .edClear {

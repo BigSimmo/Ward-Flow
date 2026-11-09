@@ -121,6 +121,11 @@ export type DelaysBoardProps = {
   banner?: ReactNode;
   /** Round 4: the daily check's tile in the header (laptop, coordinator). */
   heroCheck?: ReactNode;
+  /**
+   * Note 8, issue 4 (Josh, 8 Nov 2026): another part of the page (the daily check) asks to open a
+   * person here, on a given drawer tab. `n` changes on every ask, so the same person can reopen.
+   */
+  openRequest?: { id: string; tab: "summary" | "wards"; n: number };
   /** Shown in place of the board's body when nobody is waiting. */
   empty?: ReactNode;
 };
@@ -152,6 +157,7 @@ export function DelaysBoard({
   banner,
   heroCheck,
   empty,
+  openRequest,
 }: DelaysBoardProps) {
   const thresholds = useDueSoonThresholds();
   const patientOf = usePatientOf();
@@ -321,6 +327,17 @@ export function DelaysBoard({
     }
     // The person opens in the drawer, which takes focus; the list behind keeps their row unfolded.
   };
+
+  // Note 8, issue 4: the daily check opens its person here, on the tab that holds the fix.
+  const [requestedTab, setRequestedTab] = useState<{ id: string; tab: "summary" | "wards" } | null>(null);
+  const handledRequest = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (openRequest === undefined || handledRequest.current === openRequest.n) return;
+    handledRequest.current = openRequest.n;
+    setRequestedTab({ id: openRequest.id, tab: openRequest.tab });
+    reveal(openRequest.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once per ask; reveal reads current state
+  }, [openRequest]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -1287,7 +1304,14 @@ export function DelaysBoard({
 
           {/* Drawer review (6 Nov 2026): the person opens in the kit drawer, over the full-width list. */}
           {selected !== null ? (
-            <PersonPanel row={selected} units={units} now={now} onClose={close} onEscalate={onEscalate} />
+            <PersonPanel
+              row={selected}
+              units={units}
+              now={now}
+              onClose={close}
+              onEscalate={onEscalate}
+              initialTab={requestedTab?.id === selected.movement.id ? requestedTab.tab : undefined}
+            />
           ) : null}
 
           {/* Role view (nurse in charge): registers, quiet list, graphs and network delays are the coordinator's. */}

@@ -107,7 +107,13 @@ describe("Site bed manager's site sign-off on Handover", () => {
     });
     const wards = within(screen.getByTestId("ward-handover-site-wards")).getAllByRole("listitem");
     expect(wards[0]).toHaveTextContent(/Signed .* by Nurse in charge/);
-    fireEvent.click(within(wards[1]!).getByRole("button", { name: `Open ${rph[1]!.name} handover` }));
+    // WCAG 2.5.3 label in name (accessibility check, 8 Nov 2026): each button's name starts with the
+    // words it shows, so a voice user can say what they see.
+    for (const row of wards) {
+      const button = within(row).getByRole("button");
+      expect(button.getAttribute("aria-label")).toMatch(new RegExp(`^${button.textContent}\\b`));
+    }
+    fireEvent.click(within(wards[1]!).getByRole("button", { name: `Open handover for ${rph[1]!.name}` }));
     expect(screen.getByTestId("ward-handover-hero")).toHaveTextContent(rph[1]!.name);
   });
 

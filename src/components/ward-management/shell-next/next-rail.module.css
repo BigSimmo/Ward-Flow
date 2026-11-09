@@ -283,3 +283,51 @@
   color: var(--wf-ink-2);
   white-space: nowrap;
 }
+
+/* Note 3 (Josh, 8 Nov 2026): the closed rail's Bed alerts. A ring holds the occupancy figure and
+   fills to it, amber at or over the line; the short place name sits underneath, so nothing in the
+   64px strip is cut off. */
+.occupancyRing {
+  display: block;
+  width: 2.125rem;
+  height: 2.125rem;
+  flex: none;
+}
+
+.occupancyTrack,
+.occupancyFill {
+  fill: none;
+  stroke-width: 4;
+}
+
+.occupancyTrack {
+  stroke: var(--wf-line);
+}
+
+.occupancyFill {
+  stroke: var(--wf-ink-3);
+  stroke-linecap: round;
+}
+
+.occupancyRing[data-alert] .occupancyFill {
+  stroke: var(--wf-warning);
+}
+
+.occupancyFigure {
+  fill: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.compactAlertCaption {
+  max-width: 2.75rem;
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  line-height: 1.2;
+  text-overflow: clip;
+  white-space: nowrap;
+}

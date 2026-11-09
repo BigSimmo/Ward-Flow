@@ -131,13 +131,37 @@ export function capacityRowsOver(rows: readonly CapacityRow[]): string {
 }
 
 /**
- * WF-44: the closed rail's tile names its place before the percent ("East 74%", "RPH 81%"), so
- * it never shows a bare "74%". "East Metro" shortens to "East" to fit the tile; "Metro" stays.
+ * WF-44: the closed rail names its place beside the figure, so it never shows a bare "74%". Note 3
+ * (Josh, 8 Nov 2026): the words "• E…" were cut off in the 64px strip, so the place now sits under
+ * a small ring that holds the figure. "East Metro" shortens to "East"; "Metro" stays.
  */
-export function compactPipText(row: Pick<CapacityRow, "name" | "percent"> | undefined): string {
-  if (row?.percent == null) return "—";
-  const place = row.name.replace(/\s+Metro$/u, "").trim() || "Beds";
-  return `${place} ${Math.round(row.percent)}%`;
+export function compactPipPlace(row: Pick<CapacityRow, "name"> | undefined): string {
+  // A name too long for the 44px strip (a full ward name) reads "Beds"; the button's title names it.
+  const place = row?.name.replace(/\s+Metro$/u, "").trim() ?? "";
+  return place && place.length <= 6 ? place : "Beds";
+}
+
+/** The closed rail's occupancy ring: it fills to the figure, amber when that figure is at or over the line. */
+export function RailOccupancyRing({ percent }: { percent: number | null }) {
+  const alert = percent !== null && isBedAlert(percent);
+  const circumference = 2 * Math.PI * 15;
+  const filled = percent === null ? 0 : (Math.min(Math.max(percent, 0), 100) / 100) * circumference;
+  return (
+    <svg className={parts.occupancyRing} viewBox="0 0 36 36" aria-hidden="true" data-alert={alert || undefined}>
+      <circle className={parts.occupancyTrack} cx="18" cy="18" r="15" />
+      <circle
+        className={parts.occupancyFill}
+        cx="18"
+        cy="18"
+        r="15"
+        strokeDasharray={`${filled.toFixed(1)} ${circumference.toFixed(1)}`}
+        transform="rotate(-90 18 18)"
+      />
+      <text className={parts.occupancyFigure} x="18" y="18" textAnchor="middle" dominantBaseline="central">
+        {percent === null ? "—" : Math.round(percent)}
+      </text>
+    </svg>
+  );
 }
 
 /**
