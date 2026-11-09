@@ -8,7 +8,7 @@ import { LEGAL_FORM_RECEIPT_CORRECTION_REASONS } from "@/components/ward-managem
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
- * T4 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`): `RECORD_LEGAL_FORM_RECEIVED`
+ * T4 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`): `RECORD_LEGAL_FORM_RECEIVED`
  * has never had an undo. A clinician who marks a Form 1A received in error, or against the wrong
  * movement, has been stuck with it — there is no way to record that the receipt was wrong and try
  * again. `CORRECT_LEGAL_FORM_RECEIPT` is that undo.

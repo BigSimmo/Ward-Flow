@@ -2,7 +2,7 @@
 
 _Updated 2026-10-21 - recovery checklist scope clarified without provider execution; Documentation owns._
 
-This record supports the existing [audit receipt](../superpowers/plans/2026-10-16-audit-resolution-results.md)
+This record supports the existing [audit receipt](../history/superpowers/plans/2026-10-16-audit-resolution-results.md)
 and [task ledger](../ward-flow-task-ledger.md). It records acceptance evidence and recovery steps,
 not a second issue tracker. The [database page](DATABASE.md) identifies the approved synthetic-only
 project; [hosting](../hosting.md#shared-backend-and-signed-in-site--16-october-2026) identifies the

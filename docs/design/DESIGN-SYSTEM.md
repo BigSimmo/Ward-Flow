@@ -1,5 +1,7 @@
 # Ward Flow design system
 
+_Updated 2026-11-09 - live-scope headers and real-app mock-ups added to the principles; the design review prompt is the standing process (D-107); Documentation owns._
+
 The one design standard for every Ward Flow screen, mock-up and build, written on 2 Nov 2026 from everything the screen builds and reviews taught us. It is drawn from the [master design](https://claude.ai/artifact/91BETDiimnJVbyeCb2sxcK), not from the running app on `main`. The master also shows this page as its **Design system** tab.
 
 Ward Flow is a prototype that uses synthetic data only. Nothing here is validated clinical decision support.
@@ -14,6 +16,8 @@ Ward Flow is a prototype that uses synthetic data only. Nothing here is validate
 
 Screens move to `--wf-*` as they are rebuilt, and each old file is deleted once nothing reads it.
 
+**How to run a design task.** Every design task follows the [design review prompt](design-review-artifact-prompt.md), the standing rule (Josh, 9 Nov 2026, D-107).
+
 The lessons behind each rule are in [lessons/2026-11-02-design-lessons.md](lessons/2026-11-02-design-lessons.md).
 
 ## 1. Principles
@@ -26,6 +30,9 @@ The lessons behind each rule are in [lessons/2026-11-02-design-lessons.md](lesso
 6. **Short, warm words.** Labels of one to three words. Plain Australian English. Sentence case.
 7. **Honest and live.** Values show their age, counts agree everywhere, nothing claims more than it shows.
 8. **Everyone can use it.** Keyboard first, a visible ring, text that grows to 200% without cutting, and motion that follows the user's settings.
+9. **Headers show the live scope.** A page header says what the page is filtered to right now (Josh's standing design rule, carried in the [design review prompt](design-review-artifact-prompt.md) that D-107 item 3 adopts).
+10. **Mock-ups are real pages.** Full-page and high-fidelity, built in the real app and screenshotted before and after. Never board or canvas layouts. Components look refined, not cartoonish (same source as principle 9).
+11. **No clinical choice pre-selected.** A clinical choice (ward, legal status, day) starts empty so a person makes it on purpose (Josh, 31 Oct 2026). Tabs, filters, sort order and view switches may keep a default.
 
 ## 2. Tokens
 

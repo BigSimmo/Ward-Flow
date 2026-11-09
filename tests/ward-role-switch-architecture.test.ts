@@ -7,7 +7,7 @@ import { referrals as seededReferrals } from "../src/components/ward-management/
 import { wardScopedReferral } from "../src/components/ward-management/ward-referral-visibility";
 
 /**
- * Ward Flow navigation-shell plan, Task 4 (`docs/superpowers/plans/2026-09-04-ward-flow-navigation-shell.md`).
+ * Ward Flow navigation-shell plan, Task 4 (`docs/history/superpowers/plans/2026-09-04-ward-flow-navigation-shell.md`).
  *
  * Decision 2: switching role in Ward Flow navigates to that role's own home; it cannot keep you on
  * the referral you were looking at. That is not a UX simplification — it is forced by FD-23, which

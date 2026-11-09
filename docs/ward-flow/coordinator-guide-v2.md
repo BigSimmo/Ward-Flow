@@ -21,9 +21,7 @@ owner's rulings and are confirmed by the next screen check.
 
 </details>
 
-_Updated 2026-10-19 - corrected urgency, identifier and persistence guidance from source; Documentation owns. The screen-check dates above are unchanged._
-
-_Updated 2026-10-21 - current coordinator menu checked from source; Documentation owns. No new screen-check claim._
+_Updated 2026-11-09 - legal due time warnings corrected from source (early warning 3 hours, final warning 1 hour); Documentation owns. The screen-check dates above are unchanged._
 
 ---
 
@@ -244,10 +242,11 @@ your default, not a legal limit. The same goes for every other hour rule the app
 setting your service chose, labelled that way, and none is a legal limit. The app does not use the
 word "breach".
 
-Settings also lets you change the two warnings before a recorded legal due time: "First warning
-before a legal due time" (1 hour by default) and "Second warning before a legal due time" (3 hours
-by default). Each is labelled "Your default, not a legal limit." They only change when a typed due
-time is shown as due soon; operational screens still display only the clinician-recorded form number and paper expiry (`form-register.ts`), and no screen calculates a statutory period (`D-70`).
+Settings also lets you change the two warnings before a recorded legal due time, on the "Form
+warnings" card, which is labelled "Your defaults, not legal limits". **Early warning** comes first,
+3 hours before the typed due time by default ("Shown as due soon"). **Final warning** comes 1 hour
+before it by default ("Before a legal due time"), and always stays at least 15 minutes closer to
+the due time than the early warning. They only change when a typed due time is shown as due soon; operational screens still display only the clinician-recorded form number and paper expiry (`form-register.ts`), and no screen calculates a statutory period (`D-70`).
 
 ---
 

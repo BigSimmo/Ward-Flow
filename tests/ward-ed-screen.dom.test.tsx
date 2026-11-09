@@ -171,7 +171,7 @@ function raiseReferralWithForm(code: string) {
 }
 
 /**
- * T8 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`): `REFER_TO_UNITS`
+ * T8 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`): `REFER_TO_UNITS`
  * (coordinator), `ACCEPT_IN_PRINCIPLE` and `PULL_PATIENT` (ward) are none of them ED-screen
  * actions, so there is no control on `EdScreen` itself to reach `pulled` — the precondition the
  * revoked-at-handover flag sentence needs. Same "expose the real event, not a fixture" discipline
@@ -1055,7 +1055,7 @@ describe("medical clearance is shown beside the access clock, as its own separat
 
 describe("Form 1A receipt handling (T2r fix round, finding 10: renamed — the statutory clocks this described are deleted, not tested here)", () => {
   /**
-   * 🔴 **RE-POINTED, Task T1 (docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md item 1,
+   * 🔴 **RE-POINTED, Task T1 (docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md item 1,
    * owner answer 1) — NOT DELETED.** This test's whole reason for a "72h validity"/"24h exam
    * clock" pair was the computed countdown the owner rejected: *"the timer that starts when a
    * patient arrives is separate to forms... the app works out no limits itself."* That countdown
@@ -1203,7 +1203,7 @@ describe("direct CMHT referral pathway from ED screen", () => {
 });
 
 /**
- * T8 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`): owner item 7's repeat
+ * T8 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`): owner item 7's repeat
  * examination reaches the ED screen — the new outcome option, the history of earlier
  * examinations, and the flag sentence for a bed still held after a revoked examination.
  */

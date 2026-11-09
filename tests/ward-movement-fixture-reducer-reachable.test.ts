@@ -60,7 +60,7 @@ describe("destination_review is reducer-reachable — a live referral OR a decli
     // 5 -> 7 (2026-09-17 sample-data pass): WF-022 and WF-027 added, giving WACHS and Private each
     // an open movement referred to a unit and awaiting a ward answer — a service neither could
     // reach before, since a movement can only ever OPEN at an emergency department and neither
-    // service has one (`docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §4, task 3).
+    // service has one (`docs/history/plans-2026-09/2026-09-17-build-plan-screens.md` §4, task 3).
     expect(
       atDestinationReview.length,
       `expected exactly 7 movements at destination_review, found ${atDestinationReview.length}: ` +
@@ -135,7 +135,7 @@ describe("pulled is reducer-reachable — admissionId resolving to a real, match
     // journey-coverage block explains the measurement) — and `ward-model.test.ts`'s "runs at
     // realistic pressure, not comfortable pressure" caps `wardMovements` at 60, pinned from the
     // design spec's "forty to sixty movements"
-    // (docs/superpowers/specs/2026-08-18-ward-flow-metro-patient-flow-design.md §14). WACHS's own
+    // (docs/history/superpowers/specs/2026-08-18-ward-flow-metro-patient-flow-design.md §14). WACHS's own
     // `pulled` coverage survives through WF-318/WF-325, unaffected by the drop.
     expect(
       atPulled.length,
@@ -273,7 +273,7 @@ describe("accepted_awaiting_bed is reducer-reachable — acceptedUnitId set (tes
 describe("the full per-stage distribution matches the plan's post-sweep table (test 34)", () => {
   it("counts exactly 18/7/8/8/5/8/6 across the seven stages, totalling 60", () => {
     // 18/5/6/7/2/6/6 (total 50) -> 18/7/8/9/5/8/6 (total 61), 2026-09-17 sample-data pass
-    // (`docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §4, task 3): eleven movements added
+    // (`docs/history/plans-2026-09/2026-09-17-build-plan-screens.md` §4, task 3): eleven movements added
     // (WF-021..WF-031) so every `HealthService` — WACHS and Private included, neither of which
     // carries an emergency department at all — has at least one OPEN movement referred to a unit,
     // accepted, pulled, at handover with transport booked, and in transit. `placement_requested`

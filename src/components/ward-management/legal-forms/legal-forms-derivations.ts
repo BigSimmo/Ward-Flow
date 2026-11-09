@@ -22,7 +22,7 @@ import { typedTimePhrase } from "./legal-time-as-typed";
  * wording of its own, the same discipline `movements-screen.tsx`'s own header comment asks of
  * itself ("THE SCREEN COMPUTES NOTHING BEYOND PRESENTATION").
  *
- * 🔴 **CORRECTED 2026-09-17, T2 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`)
+ * 🔴 **CORRECTED 2026-09-17, T2 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`)
  * — THE CLAIM THAT 1A, 3B AND 3D "NEVER" CARRY A `dueAt` IS NOW FALSE.** Struck in place rather
  * than deleted, because the reading that made it true is what a reader will otherwise re-derive.
  * Until this date `ward-model.ts`'s `LegalForm.dueAt` really was permanently absent on a Form 1A
