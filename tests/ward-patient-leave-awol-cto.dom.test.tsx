@@ -140,7 +140,7 @@ describe("leave, absent without leave and CTO modes (D-38)", () => {
     expect(root).toHaveAttribute("data-patient-mode", "idle");
     // Not active still names the recorded GP under Who to call.
     expect(within(screen.getByTestId("ward-patient-who-to-call")).getByText("GP")).toBeVisible();
-    // PT1 round 2 (3 Nov 2026): Record CTO sits in the band beside New referral.
+    // Note 5 (Josh, 9 Nov 2026): Record CTO is a quiet line in the Legal fact.
     fireEvent.click(screen.getByTestId("ward-person-record-cto"));
     expect(root).toHaveAttribute("data-patient-mode", "cto");
     expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Not currently active, on a CTO");

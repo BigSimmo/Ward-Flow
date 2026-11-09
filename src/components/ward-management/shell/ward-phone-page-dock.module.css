@@ -1,6 +1,6 @@
 /*
  * The phone dock on every page (device audit option A, Josh, 11 Oct 2026): the v10 Menu foot moved
- * onto the page, with the + rising out of its curved edge. Phone only: above 46.4375rem (743px) it
+ * onto the page, its edge flat with the + inside it (sticky header redesign, 9 Nov 2026). Phone only: above 46.4375rem (743px) it
  * is never drawn, so tablet and desktop are unchanged. A phone on its side wider than that (844 to
  * 932px) also goes without it (Josh, 8 Nov 2026, replacing Q289's dock there): it already shows the
  * full top bar with search, alerts and +, and the two bars together left about half of a 390px-tall
@@ -36,7 +36,7 @@
      webpack CSS Modules build. */
   :global(body):has(.pageDock) {
     --wf-dock-clear: calc(72px + max(8px, env(safe-area-inset-bottom, 0px)));
-    /* The dock's flat top edge (2px + 48px row + bottom pad), below the + hump. A pinned bar seats
+    /* The dock's flat top edge (2px + 48px row + bottom pad); the + sits inside it. A pinned bar seats
        its box here so no card shows between the bar and the dock (Josh, 12 Oct 2026, iPhone). */
     --wf-dock-top: calc(50px + max(8px, env(safe-area-inset-bottom, 0px)));
   }
@@ -46,7 +46,7 @@
   }
 
   /* R7-23 / R2-22 (device sweep, 24 Oct 2026): plus a small gap, so the page's last line ends clear
-     of the + hump rather than touching it. LEGAL-01 (layout sweep, 25 Oct 2026): the gap is content
+     of the dock and its + rather than touching them. LEGAL-01 (layout sweep, 25 Oct 2026): the gap is content
      at the scroller's end, not padding, because a pinned bar stops above the scroller's padding and
      12px more padding lifted every bar seated on the dock off its edge, with rows showing between. */
   :global(body):has(.pageDock) :global([data-wf-scroller])::after {
@@ -99,18 +99,6 @@
 /* rise: the Menu's own foot shape, fixed to the page. */
 .rise {
   composes: foot from "./ward-phone-menu.module.css";
-}
-
-/* A desk with nothing to start (executive, access admin) has no +, so the bar's top edge runs
-   straight across instead of rising round an empty hump (Help thread, 26 Oct 2026). */
-.rise[data-wf-create="none"]::before,
-.rise[data-wf-create="none"]::after {
-  -webkit-mask: none;
-  mask: none;
-}
-
-.rise[data-wf-create="none"]::before {
-  inset: -1px 0 0;
 }
 
 .rise[data-wf-create="none"]::after {

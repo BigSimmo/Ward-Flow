@@ -42,10 +42,9 @@ describe("Home next step follows the service scope", () => {
       act(() => setServiceScope(service));
       const scoped = answer();
       expect(scoped, `the step for ${service}`).toContain(`in ${service}`);
-      // The hero title follows too: the service's movements, and the bed figure says it is network-wide.
-      const title = screen.getByRole("heading", { level: 2, name: /open ED movements/u }).textContent ?? "";
-      expect(title).toContain(`in ${service}`);
-      expect(title).toMatch(/ready network-wide$/u);
+      // The hero figures follow too: the service's movements, and the bed figure says it is network-wide.
+      expect(screen.getByTestId("home-figure-ed")).toHaveTextContent(`open ED movements in ${service}`);
+      expect(screen.getByTestId("home-figure-beds").textContent).toMatch(/ready network-wide$/u);
       // Only the same kind of step can be compared by count: Act now statewide stays Act now or
       // falls back to a later step under a service, which then names its own figure.
       if (/need(s)? a person now/u.test(statewide) && /need(s)? a person now/u.test(scoped)) {
@@ -64,7 +63,9 @@ describe("Home next step follows the service scope", () => {
 });
 
 describe("Home next step is not repeated by a hero chip (Josh, 4 Nov 2026)", () => {
-  it("leaves out the hero chip that says the step's own figure on tablet and desktop", () => {
+  // Sticky header redesign (Josh, 9 Nov 2026): the hero keeps no count chips at all; the step's own
+  // button is the one toggle, on every size.
+  it("leaves no hero chip repeating the step's figure; the step's button does the toggle", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <CoordinatorScreen />
@@ -72,11 +73,11 @@ describe("Home next step is not repeated by a hero chip (Josh, 4 Nov 2026)", () 
     );
     const step = answer();
     const chipFor = (label: RegExp) => screen.queryAllByRole("button", { name: label });
-    // The seeded network opens on Act now, so the Act now chip is the one left out.
+    // The seeded network opens on Act now. Since the sticky header redesign (9 Nov 2026) the hero keeps
+    // no count chips at all, so neither Act now nor To decide has one.
     expect(step).toMatch(/need(s)? a person now/u);
-    expect(chipFor(/^\d+\s*To decide/u)).toHaveLength(1);
-    if (/need(s)? a person now/u.test(step)) expect(chipFor(/^\d+\s*Act now/u)).toHaveLength(0);
-    else if (/to decide/u.test(step)) expect(chipFor(/^\d+\s*To decide/u)).toHaveLength(0);
+    expect(chipFor(/^\d+\s*Act now/u)).toHaveLength(0);
+    expect(chipFor(/^\d+\s*To decide/u)).toHaveLength(0);
     // The step's own button still does the toggle the chip did.
     expect(screen.getByTestId("home-next-action")).toBeInTheDocument();
   });

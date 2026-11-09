@@ -208,7 +208,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const firstRow = rows.first();
     const firstId = (await firstRow.getAttribute("data-testid"))?.replace("ward-queue-row-", "");
     await expect(shortlist).toHaveCount(0);
-    await expect(page.getByTestId("home-placement-prompt")).toBeVisible();
+    await expect(page.getByTestId("home-placement-prompt")).toHaveCount(0); // notes 4: no at-rest prompt
     await expect(firstRow).toHaveAttribute("aria-pressed", "false");
     await firstRow.click();
     await expect(firstRow).toHaveAttribute("aria-pressed", "true");

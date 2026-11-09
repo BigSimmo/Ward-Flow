@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import Link from "next/link";
 import { BedSingle, ChevronDown, ChevronRight } from "lucide-react";
 
 import { Card, CardHead, StatusGlyph } from "@/components/wf";
 import { bedKindGaps, bedKindTotals } from "@/components/ward-management/capacity/capacity-derivations";
 import { gapRangeWord, gapWord } from "@/components/ward-management/capacity/capacity-gap-words";
-import { forecastByKind } from "@/components/ward-management/forecast/forecast-by-kind";
+import { forecastByKind, type KindForecast } from "@/components/ward-management/forecast/forecast-by-kind";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Instant } from "@/components/ward-management/ward-clock";
 
@@ -15,6 +15,20 @@ import styles from "./home-cards.module.css";
 
 /** Beds that fit's Forecast link opens the forecast panel on Capacity itself. */
 export const HOME_FORECAST_HREF = "/ward-flow/capacity#capacity-forecast";
+
+/**
+ * Josh's notes 4 (9 Nov 2026): a bed type opens to the discharges behind tomorrow's figure, so the
+ * shortfall becomes a list of discharges to chase. Counts only, from the forecast; nothing is proposed.
+ */
+function waysToFree(kind: KindForecast): { count: number; text: string }[] {
+  return [
+    { count: kind.confirmed, text: kind.confirmed === 1 ? "discharge confirmed" : "discharges confirmed" },
+    { count: kind.expected, text: kind.expected === 1 ? "discharge expected" : "discharges expected" },
+    { count: kind.overdue, text: "past the planned time" },
+    { count: kind.heldUp, text: "held up by a blocker" },
+    { count: kind.plannedNotFlagged, text: "planned but not confirmed by the ward" },
+  ].filter((way) => way.count > 0);
+}
 
 /** "A locked adult bed" reads "Locked adult" in a row heading. */
 function shortNeed(need: string): string {
@@ -49,6 +63,7 @@ export function BedsGapCard({ now, bedsReady, condensed }: { now: Instant; bedsR
   );
   const tomorrowById = new Map(tomorrow.kinds.map((kind) => [kind.id, kind]));
   const [open, setOpen] = useState(false);
+  const [lever, setLever] = useState<string | undefined>(undefined);
   const folded = condensed && !open;
   const capacityLink = (
     <Link href="/ward-flow/capacity" className={styles.headLink}>
@@ -103,23 +118,58 @@ export function BedsGapCard({ now, bedsReady, condensed }: { now: Instant; bedsR
                 const nowWord = gapWord(row.gap);
                 const next = tomorrowById.get(row.id);
                 const nextWord = next ? gapWord(next.likely) : undefined;
+                const ways = next ? waysToFree(next) : [];
+                const expanded = lever === row.id && ways.length > 0;
                 return (
-                  <tr key={row.id}>
-                    <th scope="row">
-                      {shortNeed(row.need)}
-                      <span>
-                        {row.waiting} waiting · {row.bedsThatFit} fit
-                      </span>
-                    </th>
-                    <td>
-                      <StatusGlyph tone={nowWord.tone} size={9} /> <b>{Math.abs(row.gap) || "Enough"}</b>{" "}
-                      {row.gap ? nowWord.text : ""}
-                    </td>
-                    <td className={next && next.likely < 0 ? styles.warnInk : styles.okInk}>
-                      {next ? gapRangeWord(next.likely) : "Not known"}
-                      {nextWord ? <span className={styles.srOnly}> ({nextWord.text})</span> : null}
-                    </td>
-                  </tr>
+                  <Fragment key={row.id}>
+                    <tr data-expanded={expanded ? "true" : undefined}>
+                      <th scope="row">
+                        {ways.length > 0 ? (
+                          <button
+                            type="button"
+                            className={styles.leverToggle}
+                            aria-expanded={expanded}
+                            aria-controls={`home-beds-ways-${row.id}`}
+                            onClick={() => setLever(expanded ? undefined : row.id)}
+                          >
+                            {shortNeed(row.need)}
+                            <ChevronDown size={14} aria-hidden="true" className={styles.leverChevron} />
+                          </button>
+                        ) : (
+                          shortNeed(row.need)
+                        )}
+                        <span>
+                          {row.waiting} waiting · {row.bedsThatFit} fit
+                        </span>
+                      </th>
+                      <td>
+                        <StatusGlyph tone={nowWord.tone} size={9} /> <b>{Math.abs(row.gap) || "Enough"}</b>{" "}
+                        {row.gap ? nowWord.text : ""}
+                      </td>
+                      <td className={next && next.likely < 0 ? styles.warnInk : styles.okInk}>
+                        {next ? gapRangeWord(next.likely) : "Not known"}
+                        {nextWord ? <span className={styles.srOnly}> ({nextWord.text})</span> : null}
+                      </td>
+                    </tr>
+                    {expanded ? (
+                      <tr className={styles.waysRow}>
+                        <td colSpan={3} id={`home-beds-ways-${row.id}`}>
+                          <span className={styles.waysHead}>Beds that could free by tomorrow</span>
+                          <ul className={styles.ways}>
+                            {ways.map((way) => (
+                              <li key={way.text}>
+                                <b>{way.count}</b> {way.text}
+                              </li>
+                            ))}
+                          </ul>
+                          <Link href="/ward-flow/capacity" className={styles.headLink}>
+                            Chase on Capacity
+                            <ChevronRight size={14} aria-hidden="true" />
+                          </Link>
+                        </td>
+                      </tr>
+                    ) : null}
+                  </Fragment>
                 );
               })}
             </tbody>

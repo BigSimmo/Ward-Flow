@@ -62,7 +62,7 @@ export function HomeRow({
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route
     <li
-      className={styles.hrow}
+      className={`${styles.hrow} ${styles.hrowStacked}`}
       data-act={act ? "true" : undefined}
       data-selected={selected ? "true" : undefined}
       onClick={(event) => {
@@ -75,7 +75,12 @@ export function HomeRow({
       <span className={styles.hrowGlyph}>
         <StatusGlyph tone={tone} />
       </span>
+      {/* Josh's notes 4 (9 Nov 2026): who first, then what is wrong as a quiet label, then where; the
+          time and the one action share the end column, so the text keeps the row's width. */}
       <span className={styles.hrowMain}>
+        <span className={styles.hrowWho}>
+          <strong className={styles.hrowName}>{name}</strong> <span className={styles.hrowUmrn}>{umrn}</span>
+        </span>
         {href ? (
           <Link ref={linkRef} href={href} className={styles.hrowTitle} aria-label={rowOpenName(openLabel, title)}>
             {title}
@@ -92,19 +97,17 @@ export function HomeRow({
           </button>
         )}
         <span className={styles.hrowLine}>
-          <strong className={styles.hrowName}>{name}</strong> <span className={styles.mono}>{umrn}</span>
-          <span className={styles.hrowWhere}>
-            {" · "}
-            <SpelledCodes text={where} />
-          </span>
+          <SpelledCodes text={where} />
         </span>
         {extra ? <span className={styles.hrowExtra}>{extra}</span> : null}
       </span>
-      <span className={styles.hrowAge}>
-        {age === undefined ? null : <span className={styles.mono}>{age}</span>}
-        <span>{ageNote}</span>
+      <span className={styles.hrowEnd}>
+        <span className={styles.hrowAge}>
+          {age === undefined ? null : <span className={styles.mono}>{age}</span>}
+          <span>{ageNote}</span>
+        </span>
+        <span className={styles.hrowAction}>{action}</span>
       </span>
-      <span className={styles.hrowAction}>{action}</span>
     </li>
   );
 }

@@ -2163,7 +2163,7 @@
   }
 
   .stageBlock.stageBlock {
-    margin: 0 0 var(--wf-s-3);
+    margin: 0 0 var(--wf-s-2);
     overflow: hidden;
     border: 1px solid var(--wf-line);
     border-radius: var(--wf-r-lg);
@@ -2171,11 +2171,14 @@
     box-shadow: var(--wf-e1);
   }
 
+  /* Audit item 10 (9 Nov 2026): a closed stage is one 48px row; an open one keeps its band. */
   .movementListBody .stageBlock > [data-ward-primitive="group-heading"] {
-    padding: var(--wf-s-3) var(--wf-s-4);
+    padding: 0 var(--wf-s-4);
+  }
+
+  .movementListBody .stageBlock > [data-ward-primitive="group-heading"]:has([aria-expanded="true"]) {
     border-bottom: 1px solid var(--wf-line);
     background: var(--wf-surface-2);
-    text-transform: uppercase;
   }
 
   .wlFoot.wlFoot {

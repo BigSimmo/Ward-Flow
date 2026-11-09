@@ -2,7 +2,7 @@
 
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 
-import { BookOpen, CircleHelp, Keyboard, Library, Search, Sparkles, UserRound, X } from "lucide-react";
+import { BookOpen, CircleHelp, Flag, Keyboard, Library, Search, Sparkles, UserRound, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
@@ -35,6 +35,7 @@ import { useTourRole, type WardTourRole } from "./ward-help-store";
 import { tasksForDesk } from "./ward-help-task-list";
 import { useTourFacts } from "./ward-tour-facts";
 import { HelpDesk, HelpKeys, HelpNews } from "./ward-help-views";
+import { HelpReport } from "./ward-help-report-view";
 import { WardHelpChecklistView } from "./ward-help-checklist-view";
 import { markWhatsNewSeen, unseenWhatsNew, WHATS_NEW, WHATS_NEW_STORAGE_KEY } from "./ward-whats-new";
 
@@ -155,7 +156,7 @@ function OperationalHelpSheet(props: WardHelpSheetProps) {
  *   open in full with Show me, and the rest grouped; questions to try before anything is typed;
  * - four tabs: How do I… (this screen, the tour, the desk's jobs), Questions (common questions by
  *   screen), Reference (glossary, codes, colours, desks, display and keys) and What's new;
- * - a foot with Your desk and Shortcuts, each a view inside Help.
+ * - a foot with Your desk, Shortcuts and Report a problem (8 Nov 2026), each a view inside Help.
  * Typed words stay in this component's state and are never saved, put in a URL or logged.
  */
 function WardHelpSheetView({
@@ -454,7 +455,8 @@ function WardHelpSheetView({
 
   const searching = query.trim().length > 0;
   const suggesting = !searching && focused;
-  const inView = view === "desk" || view === "keys" || (view === "checklist" && Boolean(checklist));
+  const inView =
+    view === "desk" || view === "keys" || view === "report" || (view === "checklist" && Boolean(checklist));
   // A checklist opens as a view inside Help, from the job list or a search with no answer; the
   // search words are cleared so the checklist, not the results, shows.
   const openChecklist = (id: string) => {
@@ -526,6 +528,25 @@ function WardHelpSheetView({
               {pointer.touchOnly ? null : <kbd aria-hidden="true">?</kbd>}
             </button>
           ) : null}
+          <button
+            type="button"
+            className={s.footButton}
+            aria-current={view === "report" ? "true" : undefined}
+            onClick={() => {
+              // Clear any search so the report form, not the results, shows.
+              setQuery("");
+              setFocused(false);
+              onView(view === "report" ? "tasks" : "report");
+            }}
+            // One short word on every size: at the desktop sheet's width "Report a problem" beside
+            // Your desk, Shortcuts and the synthetic note wrapped every label onto two lines. The
+            // spoken name starts with the visible word.
+            aria-label="Report a problem"
+            data-testid="ward-help-report-open"
+          >
+            <Flag aria-hidden="true" strokeWidth={1.75} />
+            Report
+          </button>
           <span className={s.footNote} data-testid="ward-help-synthetic">
             Synthetic prototype
           </span>
@@ -652,6 +673,14 @@ function WardHelpSheetView({
         <div className={s.panel}>
           {view === "keys" ? (
             <HelpKeys role={role} onBack={() => onView("tasks")} />
+          ) : view === "report" ? (
+            <HelpReport
+              screen={screen?.title}
+              path={pathname}
+              desk={deskLabel(role)}
+              version={NEWS.at(-1)}
+              onBack={() => onView("tasks")}
+            />
           ) : view === "checklist" && checklist ? (
             <WardHelpChecklistView
               id={checklist}

@@ -816,7 +816,8 @@ export function MovementHorizonGantt({
                                       <button
                                         type="button"
                                         className={styles.routePeople}
-                                        aria-label={`Patients from ${ed ? `${ed.siteCode} ED` : group.originEdId} to ${to}`}
+                                        // Note 7: the timeline now shows by default, and axe needs the visible count in the name.
+                                        aria-label={`${dots.length} ${dots.length === 1 ? "patient" : "patients"} from ${ed ? `${ed.siteCode} ED` : group.originEdId} to ${to}`}
                                         title="See these patients"
                                         onClick={() =>
                                           onShowCorridor({

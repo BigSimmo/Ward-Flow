@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { WardPeekButton } from "@/components/ward-management/board/ward-peek";
 import { useRef, useState } from "react";
 import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
 import {
@@ -35,7 +35,6 @@ import {
   ShowMoreRow,
   SrOnly,
   StatusGlyph,
-  buttonClass,
   type HeroNextStep,
 } from "@/components/wf";
 import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
@@ -93,6 +92,7 @@ import { useDischargeWorkspaceState } from "./use-discharge-workspace-state";
 import { DischargeWeekendPrep } from "./discharge-weekend-prep";
 import { followUpWithinWindowCheck } from "./discharge-follow-up-check";
 import { DischargeAskOverdueWards } from "./discharge-message-ward";
+import { OnBehalfReasonForm } from "../on-behalf-reason-form-lazy";
 
 /**
  * Task 6, spec D9: the discharge and egress board. A coordinator's whole reason to open this
@@ -509,10 +509,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
         {releaseAction}
       </Button>
     ) : null;
+  // Ward peek (8 Nov 2026): the ward's beds in a pop-up, the ward page one link further.
   const openWard = selectedUnitId ? (
-    <Link href={`/ward-flow/ward/${selectedUnitId}`} className={buttonClass({ variant: "sec" })}>
-      Open ward
-    </Link>
+    <WardPeekButton unitId={selectedUnitId} href={`/ward-flow/ward/${selectedUnitId}`} label="Open ward" />
   ) : null;
   const recordLink =
     detailRelease && linkedReleaseRecord ? (
@@ -1404,6 +1403,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 openOn={openOn?.releaseId === detailRelease.id ? openOn.part : null}
                 departure={departureField}
               />
+            ) : selected?.handle === null ? (
+              // D-80 item 17: the coordinator says why before the ward's record opens.
+              <OnBehalfReasonForm key={selected.admissionId} onOpen={s.openOnBehalf} />
             ) : (
               <p className={pageStyles.emptyState}>This record could not be opened. Select it again to retry.</p>
             )}

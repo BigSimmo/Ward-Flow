@@ -3,10 +3,12 @@ import { afterEach, describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
-import { FLOW_STAGES, TIER_TARGETS_NOTE } from "@/components/ward-management/coordinator/priority-queue";
+import { FLOW_STAGES, PriorityQueue, TIER_TARGETS_NOTE } from "@/components/ward-management/coordinator/priority-queue";
 import { ShortlistPanel } from "@/components/ward-management/coordinator/shortlist-panel";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { splitDuration } from "@/components/ward-management/ward-clock";
+import { isOpen } from "@/components/ward-management/ward-derivations";
+import { queueOrder } from "@/components/ward-management/ward-priority";
 import { formTimeAsTyped } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -150,15 +152,44 @@ describe("desktop Home Flow: top 5 per stage, then Show all N", () => {
     expect(screen.getByTestId(chosenId!)).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("shows every row in each stage while a hero count highlights, so no highlighted row is hidden", () => {
-    render(
+  // Sticky header redesign (Josh, 9 Nov 2026): Home's hero no longer carries the Tier 1 and overdue
+  // chips; the overdue highlight Home can still set (Show past target) is driven here directly, and it
+  // still lifts the cap.
+  it("shows every row in each stage while a highlight is on, so no highlighted row is hidden", () => {
+    const state = seedWardFlowState();
+    const queue = queueOrder(state.movements.filter(isOpen), NOW_ANCHOR);
+    const props = {
+      movements: queue,
+      units: state.units,
+      now: NOW_ANCHOR,
+      selectedId: undefined,
+      onSelect: () => {},
+      filterEdId: undefined,
+      onClearFilter: () => {},
+    };
+    const { rerender } = render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <CoordinatorScreen />
+        <PriorityQueue {...props} />
       </WardFlowProvider>,
     );
-    const { section, total } = cappedStage();
-    fireEvent.click(screen.getAllByRole("button", { name: /Tier 1 open movements/u })[0]!);
+    const capped = ROW_STAGES.flatMap((stage) => {
+      const section = screen.queryByRole("region", { name: stage.label });
+      const showAll = section ? within(section).queryByRole("button", { name: /^Show all \d+$/u }) : null;
+      return section && showAll
+        ? [{ label: stage.label, total: Number(/\d+/u.exec(showAll.textContent ?? "")![0]) }]
+        : [];
+    });
+    expect(capped.length, "the fixture must hold a Flow stage over the cap").toBeGreaterThan(0);
+    const { label, total } = capped[0]!;
+    expect(total).toBeGreaterThan(FLOW_STAGE_CAP);
+
+    rerender(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <PriorityQueue {...props} highlight="overdue" onClearHighlight={() => {}} />
+      </WardFlowProvider>,
+    );
     expect(screen.getByText(/highlighted, all rows stay$/u)).toBeInTheDocument();
+    const section = screen.getByRole("region", { name: label });
     expect(within(section).getAllByTestId(/^ward-queue-row-/)).toHaveLength(total);
     expect(within(section).queryByRole("button", { name: /^Show (all|top) \d+$/u })).toBeNull();
   });

@@ -257,7 +257,9 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     triage: "own",
     // D-80: the team books transport for its own journeys (D-76), so it follows them here.
     movements: "own",
-    delays: "own",
+    // Waiting is closed to the community desk (desk walk, 8 Nov 2026; Josh approved closing it on
+    // 9 Nov 2026). It has no community view: the ward and ED desks have their own Waiting views,
+    // while a team's people waiting for its answer are on My team, so the page only showed zeros.
     "legal-forms": "own",
     search: "own",
     // D-80: its own team's statistics only, as counts.

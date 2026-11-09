@@ -123,7 +123,7 @@ describe("the coordinator screen never keeps a closed movement selected", () => 
     // The shortlist no longer names the movement: Placement goes back to its prompt (Home v7, Josh
     // 22 Oct 2026: nobody is pre-selected), and nothing anywhere still carries TARGET's own
     // shortlist body.
-    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
+    expect(screen.queryByTestId("home-placement-prompt")).toBeNull(); // notes 4: no at-rest prompt
     expect(screen.queryByTestId(`ward-shortlist-${TARGET!.id}`)).not.toBeInTheDocument();
 
     // No other movement is silently selected — the queue must show no row claiming selection.

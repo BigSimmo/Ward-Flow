@@ -324,12 +324,6 @@ function Matrix({
         severe: SEVERE_CAUSES.includes(cause),
         match: (row: BoardRow) => row.cause === cause,
       }));
-  const max = Math.max(
-    1,
-    ...catchments.flatMap((origin) =>
-      columns.map((column) => rows.filter((row) => row.origin === origin && column.match(row)).length),
-    ),
-  );
   const isOn = (origin: CatchmentOrigin, id: string) =>
     filters.origin === origin && (byOwner ? filters.owner === id && filters.cause === null : filters.cause === id);
   const press = (origin: CatchmentOrigin, id: string) => {
@@ -365,7 +359,7 @@ function Matrix({
               const n = cell.length;
               const over8 = cell.filter((row) => row.waited >= OVER_8H).length;
               const on = isOn(origin, column.id);
-              const strength = n ? Math.round(8 + (n / max) * 40) : 0;
+              const over24 = cell.filter((row) => row.waited >= OVER_24H).length;
               return (
                 <button
                   key={`${origin}-${column.id}`}
@@ -374,11 +368,6 @@ function Matrix({
                   aria-pressed={on}
                   aria-label={`${catchmentName(origin)}, ${column.label}: ${n} waiting, ${over8} over ${H8}`}
                   disabled={n === 0 && !on}
-                  style={
-                    n
-                      ? { background: `color-mix(in srgb, var(--wf-accent) ${strength}%, var(--wf-surface))` }
-                      : undefined
-                  }
                   onClick={() => {
                     press(origin, column.id);
                   }}
@@ -402,14 +391,24 @@ function Matrix({
                     onTip(null);
                   }}
                 >
-                  <span className={`${styles.mxN} ${styles.num} ${polish.mxN}`}>{n === 0 ? "–" : n}</span>
-                  {over8 > 0 ? (
-                    <span className={polish.mxO}>
-                      <StatusGlyph tone="warning" size={9} />
-                      <span className={styles.num}>{over8}</span>
-                      {` over ${H8}`}
-                    </span>
-                  ) : null}
+                  {/* Note 8, issue 6 (Josh, 8 Nov 2026): plain boxes, no shading. Each says its count,
+                      a tag for how many are over 8h (red when anyone is over 24h) and its wait bands. */}
+                  {n === 0 ? (
+                    <span className={polish.mxNone}>None</span>
+                  ) : (
+                    <>
+                      <span className={polish.mxTop}>
+                        <span className={`${styles.mxN} ${styles.num} ${polish.mxN}`}>{n}</span>
+                        {over8 > 0 ? (
+                          <span className={polish.mxO} data-tone={over24 > 0 ? "danger" : "warning"}>
+                            <span className={styles.num}>{over8}</span>
+                            {` over ${H8}`}
+                          </span>
+                        ) : null}
+                      </span>
+                      <BandBar bands={bandCounts(cell)} className={polish.mxBar} />
+                    </>
+                  )}
                 </button>
               );
             }),
@@ -523,21 +522,13 @@ export function DelaysBoardGraphs(props: Props) {
       </>
     ) : (
       <>
-        <span className={styles.lg}>
-          Fewer
-          <i className={polish.mxKey} />
-          More waiting
-        </span>
-        <span className={styles.lg}>
-          <StatusGlyph tone="warning" size={9} />
-          {`Over ${H8} in that cell`}
-        </span>
-        <span className={styles.lg}>
-          {WAIT_BANDS.map((band, index) => (
-            <i key={band} className={styles[`band${index}`]} title={band} />
-          ))}
-          Wait bands in the totals
-        </span>
+        <span className={styles.lg}>Waited so far</span>
+        {WAIT_BANDS.map((band, index) => (
+          <span key={band} className={styles.lg}>
+            <i className={styles[`band${index}`]} />
+            {band}
+          </span>
+        ))}
       </>
     );
 

@@ -1355,6 +1355,64 @@
   line-height: var(--wf-lh-15);
 }
 
+/* A view's heading takes focus on arrival only so a screen reader says where it is; it is not a
+   control, so it draws no ring. */
+.viewTitle[tabindex="-1"]:focus {
+  outline: none;
+}
+
+/* ── Report a problem ───────────────────────────────────────────────────────────────────────── */
+.reportSend {
+  display: grid;
+  gap: 8px;
+}
+
+.reportStatus {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.reportStatus[data-done] {
+  color: var(--wf-ink-1);
+}
+
+.reportStatus svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--wf-success);
+}
+
+/* What is added: label and value pairs on hairlines, not a second card inside the panel. */
+.reportAdded {
+  margin: 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.reportAdded > div {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.reportAdded dt {
+  color: var(--wf-ink-3);
+}
+
+.reportAdded dd {
+  margin: 0;
+  color: var(--wf-ink-2);
+  overflow-wrap: anywhere;
+}
+
 .keyRow {
   display: flex;
   min-height: 44px;
@@ -1454,6 +1512,7 @@
 /* ── foot ───────────────────────────────────────────────────────────────────────────────────── */
 .foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 4px;
   margin: 0 -6px;
@@ -1470,6 +1529,7 @@
   background: transparent;
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
   cursor: pointer;
   transition:
     background-color var(--wf-t-micro) var(--wf-ease-out),

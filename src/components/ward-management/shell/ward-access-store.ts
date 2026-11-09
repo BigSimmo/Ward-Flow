@@ -24,6 +24,7 @@ import {
   STATEWIDE_COORDINATOR,
   WARD_ACCESS_ROLES,
   accessIsValid,
+  accessIsWholeNetwork,
   type BreakGlassReasonId,
   type WardAccess,
   type WardAccessScope,
@@ -34,6 +35,7 @@ import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 import { useWardFeatureFlag } from "./ward-feature-flag-store";
+import { syncWardDeskHeldCookie } from "./ward-desk-early";
 
 const WARD_ACCESS_STORAGE_KEY = "wardflow:access-desk-v1";
 
@@ -202,6 +204,8 @@ function persist(access: WardAccess): void {
   } catch {
     // Storage blocked: keep the desk in memory.
   }
+  // Desk walk follow-up (9 Nov 2026): the server sends no page before it knows the desk (`ward-desk-early.ts`).
+  syncWardDeskHeldCookie(accessIsWholeNetwork(access));
 }
 
 function clearPersonalKeys(): void {

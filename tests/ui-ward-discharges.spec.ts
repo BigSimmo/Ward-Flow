@@ -178,6 +178,13 @@ async function goBackToWard(page: Page) {
  * proof the Confirmed count gave, made on the one record this journey moves rather than on a total.
  */
 
+/** D-80 item 17: the coordinator says why before a ward's discharge record opens. */
+async function giveOnBehalfReason(page: Page) {
+  const form = page.getByTestId("ward-on-behalf-reason");
+  await form.getByRole("radio", { name: "The ward asked for help" }).check();
+  await form.getByRole("button", { name: "Open record" }).click();
+}
+
 /** Ready beds for this ward, off its card on the coordinator's bed map. */
 async function boardReady(page: Page): Promise<number> {
   return capacityReady(page, UNIT_ID, UNIT_NAME);
@@ -192,6 +199,8 @@ async function boardReleaseStatus(page: Page, admissionId: string): Promise<stri
   await expect(panel).toBeVisible();
   await panel.getByRole("tab", { name: /^Discharges/u }).click();
   await panel.locator(`[id="capacity-discharge-discharge-${admissionId}"]`).click();
+  // D-80 item 17: the coordinator opens a ward's record only after giving a reason.
+  await giveOnBehalfReason(page);
   const status = panel.locator("dt", { hasText: /^Status$/u }).locator("xpath=following-sibling::dd[1]");
   await expect(status).toBeVisible();
   const text = ((await status.textContent()) ?? "").trim();
@@ -469,6 +478,7 @@ test.describe("@mockup WA disposition pathways", () => {
       await page.getByRole("menuitemradio", { name: destination.label, exact: true }).click();
       await expect(page.getByRole("button", { name: `Going to: ${destination.label}` })).toBeVisible();
       await page.getByRole("button", { name, exact: true }).click();
+      await giveOnBehalfReason(page);
       // Drawer review (6 Nov 2026): the record opens in the kit drawer; its tabs sit in the fixed
       // head, outside the scroll body that carries the region name.
       const dischargeDrawer = page.getByTestId("ward-discharge-detail");
@@ -502,6 +512,7 @@ test.describe("@mockup complete care dossier", () => {
     await page.goto(`/ward-flow/discharges?admissionId=${a.id}`);
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("region", { name: "Ward Flow data mode" })).toHaveCount(0);
+    await giveOnBehalfReason(page);
     // Drawer review (6 Nov 2026): the drawer's tabs sit in its fixed head, outside the body region.
     const detail = page.getByRole("region", { name: "Selected discharge details" });
     await page.getByTestId("ward-discharge-detail").getByRole("tab", { name: "Record", exact: true }).click();

@@ -361,6 +361,9 @@ test.describe("@mockup Ward scroll geometry", () => {
 
   // Movements redesign (1 Nov 2026): on a wide screen the worklist and Transport now stack at full
   // width and the page scrolls as one, so the transport feed no longer scrolls inside its card.
+  // Josh's Movements audit item 8 (9 Nov 2026) moved Transport now above the worklist, so at the
+  // page end the panel is above the viewport; the bottom-edge check still holds and the inner-scroll
+  // check is the one that matters.
   test("the Movements transport panel ends on screen at the end of the page, with no inner scroll", async ({
     page,
   }) => {

@@ -22,7 +22,13 @@ function Workspace({ role = "coordinator", unlinked = false }: { role?: "coordin
   const local = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}T${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
   return (
     <>
-      <button onClick={() => setHandle(openDischargeRecord(actor, admission.id))}>Open care record</button>
+      <button
+        onClick={() =>
+          setHandle(openDischargeRecord(actor, admission.id, actor.role === "coordinator" ? "ward-asked" : undefined))
+        }
+      >
+        Open care record
+      </button>
       <button
         onClick={() =>
           dispatch({ type: "CLEAR_EXPECT_FLAG", role: "coordinator", now: NOW_ANCHOR, movementId: "missing" })
@@ -185,7 +191,9 @@ describe("coding review handoff download (H-0356)", () => {
     } as unknown as NonNullable<CareJourney["coding"]>;
     return (
       <>
-        <button onClick={() => setHandle(openDischargeRecord(actor, admission.id))}>Open care record</button>
+        <button onClick={() => setHandle(openDischargeRecord(actor, admission.id, "ward-asked"))}>
+          Open care record
+        </button>
         {read.status === "allowed" && (
           <DischargeCareJourney
             record={{

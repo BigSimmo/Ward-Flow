@@ -1037,6 +1037,11 @@ export function PatientNowScreen({
       healthAlerts={recordExtrasFor(livePatient?.id)?.alerts}
       onOpenForms={() => openTab("documents")}
       onOpenDetails={() => openTab("details")}
+      recordCto={
+        livePatient
+          ? { onClick: statusContext.onRecordCto, reason: gate("RECORD_COMMUNITY_TREATMENT_ORDER").reason }
+          : undefined
+      }
     />
   );
   const nowPanel = (
@@ -1174,14 +1179,6 @@ export function PatientNowScreen({
           stateTag={stateTag}
           careSteps={careSteps}
           onOpenHistory={() => openTab("history")}
-          recordCto={
-            livePatient
-              ? {
-                  onClick: statusContext.onRecordCto,
-                  reason: gate("RECORD_COMMUNITY_TREATMENT_ORDER").reason,
-                }
-              : undefined
-          }
         />
         {/* Restricted record (27 Oct 2026): the notice sits under the hero, so the hero stays the first
             thing under the header and keeps its band join (wf/band.ts). */}

@@ -156,7 +156,7 @@ describe("polished patient dossier tabs", () => {
   });
   it("lists a CTO recorded on the Community tab in the forms register, with no lapse column (D5, D-38)", () => {
     setup("PT-005");
-    // PT1 round 2 (3 Nov 2026): Record CTO sits in the band beside New referral.
+    // Note 5 (Josh, 9 Nov 2026): Record CTO is a quiet line in the Legal fact.
     fireEvent.click(screen.getByTestId("ward-person-record-cto"));
     // A CTO is community engagement, so the Community tab now appears and states it.
     const community = tab("Community");
@@ -171,7 +171,7 @@ describe("polished patient dossier tabs", () => {
   });
   it("lists an ended CTO as Closed beside a second one, never erasing it (D-40)", () => {
     setup("PT-005");
-    // PT1 round 2 (3 Nov 2026): Record CTO sits in the band beside New referral.
+    // Note 5 (Josh, 9 Nov 2026): Record CTO is a quiet line in the Legal fact.
     fireEvent.click(screen.getByTestId("ward-person-record-cto"));
     const community = tab("Community");
     fireEvent.click(community.getByRole("button", { name: "Record ended" }));

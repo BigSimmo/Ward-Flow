@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import {
   OverlayScope,
@@ -29,6 +29,8 @@ import { WardFeatureFlagLink } from "@/components/ward-management/shell/ward-fea
 import { WardOfflineLinks } from "@/components/ward-management/shell/ward-offline-links";
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
 import { NextRail as WardRail } from "@/components/ward-management/shell-next/next-rail";
+import { WardQuickHeroProvider } from "@/components/ward-management/quick-bar/ward-quick-hero-provider";
+import { PatientPeekHost } from "@/components/ward-management/patients/patient-peek-host";
 import { NextShellBoundary } from "@/components/ward-management/shell-next/next-shell-boundary";
 import { WardMainFocusTarget } from "@/components/ward-management/shell/ward-main-focus-target";
 import { WardSkipToActNow } from "@/components/ward-management/shell/ward-skip-to-act-now";
@@ -49,8 +51,9 @@ import {
 } from "@/components/ward-management/shell/ward-access";
 import { WardRowDensity } from "@/components/ward-management/settings/row-density";
 import { WardGround } from "@/components/ward-management/ward-shell";
-import { WardDeskPendingClear } from "@/components/ward-management/shell/ward-access-hold";
-import { WARD_DESK_EARLY_SCRIPT } from "@/components/ward-management/shell/ward-desk-early";
+import { WardDeskHold, WardDeskPendingClear } from "@/components/ward-management/shell/ward-access-hold";
+import { WARD_DESK_EARLY_SCRIPT, WARD_DESK_HELD_COOKIE } from "@/components/ward-management/shell/ward-desk-early";
+import { HeldDeskLoading } from "./loading-status";
 
 import styles from "./ward-flow-layout.module.css";
 
@@ -146,6 +149,9 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
   // The strict script-src needs the per-request nonce (src/proxy.ts) on our own inline script.
   const requestHeaders = await headers();
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
+  // Desk walk follow-up (9 Nov 2026): this browser's desk is not the whole-network coordinator's, so
+  // the server sends a loading page, not the coordinator's page, until the browser knows the desk.
+  const deskHeld = (await cookies()).get(WARD_DESK_HELD_COOKIE)?.value === "1";
   // A1-17 (audit 13 Oct 2026): draw the phone layout first on a phone, so slow signal does not show
   // a different, desktop-shaped page for many seconds before the code loads.
   const userAgent = requestHeaders.get("user-agent");
@@ -228,9 +234,13 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
               a light boundary (next-shell-boundary.tsx). A broken one shows a short line with Reload page
               and the rest of the ward keeps working. */}
               <div className={styles.shellRow}>
-                <NextShellBoundary label="The sidebar">
-                  <WardRail />
-                </NextShellBoundary>
+                {/* Desk walk follow-up (9 Nov 2026): the coordinator's rail and top bar carry network
+                figures, so a held first load draws them once the desk is known (WardDeskHold). */}
+                <WardDeskHold held={deskHeld} placeholder={null}>
+                  <NextShellBoundary label="The sidebar">
+                    <WardRail />
+                  </NextShellBoundary>
+                </WardDeskHold>
                 {/* Gives the rail its stored or tablet shape before the first paint (ward-rail-early.ts),
               so the sidebar does not fold and slide the page once the app loads. */}
                 <WardFirstDocumentOnly>
@@ -241,9 +251,11 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                   />
                 </WardFirstDocumentOnly>
                 <div className={styles.shellContent} data-wf-scroller="">
-                  <NextShellBoundary label="The top bar">
-                    <WardBarMount />
-                  </NextShellBoundary>
+                  <WardDeskHold held={deskHeld} placeholder={null}>
+                    <NextShellBoundary label="The top bar">
+                      <WardBarMount />
+                    </NextShellBoundary>
+                  </WardDeskHold>
                   {/* A1-17: until the page's code is running, taps do nothing; say so rather than look
                 ready. Hidden once the header is ready (`data-wf-bar-ready`, ward-early-tap.ts). */}
                   <p className={styles.loadingNote} role="status" data-testid="ward-loading-note" data-print-hide>
@@ -281,10 +293,25 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                   <WardPhoneDesktopOnly />
                   {/* A closed screen replaces the whole ground, which it draws itself (shell/ward-access.tsx).
                 H-0111: a stored desk other than the coordinator's keeps the page area hidden on first
-                load until it is drawn for that desk (shell/ward-desk-early.ts). */}
-                  <WardAccessGate>
-                    <WardGround>{children}</WardGround>
-                  </WardAccessGate>
+                load until it is drawn for that desk (shell/ward-desk-early.ts). When the request said so,
+                the server sent a loading page instead of the coordinator's (WardDeskHold). */}
+                  <WardDeskHold
+                    held={deskHeld}
+                    placeholder={
+                      <WardGround>
+                        <HeldDeskLoading />
+                      </WardGround>
+                    }
+                  >
+                    <WardAccessGate>
+                      {/* Quick bar (Josh, 8-9 Nov 2026): the desk's most used controls, at the foot of its home's hero. */}
+                      <WardQuickHeroProvider>
+                        <WardGround>{children}</WardGround>
+                      </WardQuickHeroProvider>
+                      {/* Patient peek (Josh, 8 Nov 2026): a person opens over the page, not on the Patient page. */}
+                      <PatientPeekHost />
+                    </WardAccessGate>
+                  </WardDeskHold>
                   <WardDeskPendingClear />
                   <WardPrintFooter />
                   <WardIdleLock />

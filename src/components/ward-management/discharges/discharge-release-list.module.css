@@ -13,6 +13,11 @@
   text-align: end;
   vertical-align: middle;
 }
+/* Table polish (Nov 2026): the row buttons line up on the right edge. Scoped to the list, because the
+   shared WardTable `.table td { text-align: left }` beats the bare class above. */
+.list td.actionCell {
+  text-align: end;
+}
 
 /* Wide screens: the barrier panel, and the day chart under it, in a column beside the list. */
 .barrierSide {

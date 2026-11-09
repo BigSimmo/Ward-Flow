@@ -8,6 +8,7 @@ import {
 import { PARALLEL_REFERRAL_CAP } from "../../src/components/ward-management/ward-model";
 import { REFERRAL_INFORMATION_NEED_IDS } from "../../src/components/ward-management/referrals/referral-information-needs";
 import { PATIENT_ARCHIVE_REASONS } from "../../src/components/ward-management/ward-patient-archive";
+import { ON_BEHALF_REASON_IDS } from "../../src/components/ward-management/ward-on-behalf-reason";
 
 /**
  * Shape checks for commands sent to the shared workspace, before the reducer sees them.
@@ -80,6 +81,8 @@ const SCHEMAS: Partial<Record<WardFlowEvent["type"], z.ZodType>> = {
       .string()
       .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
       .optional(),
+    // D-80 item 17: a closed-list reason, nothing typed. The reducer requires it of a coordinator.
+    onBehalfReason: z.enum(ON_BEHALF_REASON_IDS).optional(),
   }),
   RECEIVE_REFERRAL: z.looseObject({
     submissionId: z

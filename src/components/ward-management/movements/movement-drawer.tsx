@@ -1,5 +1,6 @@
 "use client";
 
+import { PatientPeekLink } from "@/components/ward-management/patients/patient-peek-link";
 import { useId, useRef, useState } from "react";
 import Link from "next/link";
 import { movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
@@ -311,14 +312,15 @@ export function MovementDrawer({
     if (step.kind !== "wait") {
       const target = nextStepTarget(step, movement.id);
       nextAction = (
-        <Link
+        <PatientPeekLink
+          movementId={step.kind === "refer" ? movement.id : undefined}
           className={buttonClass({ variant: "pri", className: d.wide })}
           href={target.href}
           onClick={step.kind === "escalate" ? () => onFocusMovement?.(movement.id) : undefined}
         >
-          {step.label} on {target.where}
+          {step.kind === "refer" ? step.label : `${step.label} on ${target.where}`}
           <ChevronRight size={14} aria-hidden="true" />
-        </Link>
+        </PatientPeekLink>
       );
     } else {
       nextAction = (

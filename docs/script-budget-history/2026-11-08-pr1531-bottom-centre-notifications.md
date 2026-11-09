@@ -14,3 +14,7 @@ measured 593.8 KB merged with main (just over the limit) and 593.4 KB for main a
 about 0.4 KB gzipped to the ward route: the same shared notes code plus the stable `data-wf-*` hooks
 on the shared Hero and card heading. The route had no headroom left on main, so the limit is raised by
 0.7 KB, within the 5 KB a PR may raise without asking.
+
+9 November 2026, merge with main. Main had since raised its own limits (Referrals 565.0 KB, ward route
+598.3 KB) for its own growth. This PR's two raises are carried on top of main's values unchanged in
+size: Referrals 565.0 → 568.0 KB (+3.0) and the ward route 598.3 → 599.0 KB (+0.7).

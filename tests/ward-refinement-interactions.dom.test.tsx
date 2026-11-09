@@ -7,6 +7,10 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { isOpen } from "@/components/ward-management/ward-derivations";
+import { PriorityQueue } from "@/components/ward-management/coordinator/priority-queue";
+import { queueOrder } from "@/components/ward-management/ward-priority";
+import { homeChipFigures } from "@/components/ward-management/ward-shared-figures";
+import { replaceSearchParams } from "@/components/ward-management/ward-url-state";
 import { journeyStages } from "@/components/ward-management/movements/movements-derivations";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 
@@ -117,7 +121,7 @@ describe("Q004 refinement interaction regressions", () => {
 
     // Home v7 (Josh, 22 Oct 2026): nobody is pre-selected. At rest Placement is a prompt with
     // nothing to act on, and no queue row is pressed until a coordinator picks one.
-    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
+    expect(screen.queryByTestId("home-placement-prompt")).toBeNull(); // notes 4: no at-rest prompt
     expect(document.querySelector('aside[aria-label="Placement"]')).toBeNull();
     expect(screen.queryByLabelText("Referral placement")).toBeNull();
     expect(row).toHaveAttribute("aria-pressed", "false");
@@ -128,7 +132,7 @@ describe("Q004 refinement interaction regressions", () => {
     const shortlist = screen.getByRole("complementary", { name: "Placement" });
     fireEvent.click(within(shortlist).getByRole("button", { name: "Close placement and clear selection" }));
 
-    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
+    expect(screen.queryByTestId("home-placement-prompt")).toBeNull(); // notes 4: no at-rest prompt
     expect(document.querySelector('aside[aria-label="Placement"]')).toBeNull();
     expect(row).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByTestId("ward-refinement-domain-state").textContent).toBe(before);
@@ -146,7 +150,7 @@ describe("Q004 refinement interaction regressions", () => {
     showFlow();
     expect(screen.queryByRole("button", { name: /^Offer /u })).toBeNull();
     expect(screen.queryByTestId("ward-placement-top-of-queue")).toBeNull();
-    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
+    expect(screen.queryByTestId("home-placement-prompt")).toBeNull(); // notes 4: no at-rest prompt
     expect(screen.getByTestId("ward-refinement-domain-state").textContent).toBe(before);
   });
 
@@ -160,38 +164,48 @@ describe("Q004 refinement interaction regressions", () => {
 
     fireEvent.click(screen.getByRole("radio", { name: /^Needs you/u }));
     expect(document.querySelector('aside[aria-label="Placement"]')).toBeNull();
-    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
+    expect(screen.queryByTestId("home-placement-prompt")).toBeNull(); // notes 4: no at-rest prompt
   });
 
-  it("highlights exactly as many queue rows as the hero's Overdue count says", () => {
-    renderCoordinator();
-    const hero = screen.getByRole("region", { name: /^\d+ open ED movements, \d+ beds? ready$/u });
-    const chip = within(hero).getByRole("button", { name: /Past target/u });
-    const count = Number(chip.textContent!.match(/\d+/u)![0]);
+  // Sticky header redesign (Josh, 9 Nov 2026): Home's hero no longer has a Past target chip; the
+  // overdue highlight comes from the next step ("N past target in the flow", Show past target), whose
+  // figure is Home's own shared count (homeChipFigures). That step shows only when nothing is queued to
+  // act on or decide, so it is hidden on the seed (which has queued referrals); this test drives the
+  // queue directly against the figure Home would show.
+  it("highlights exactly as many queue rows as the shared past-target count says", () => {
+    const queue = queueOrder(seedWardFlowState().movements.filter(isOpen), NOW_ANCHOR);
+    const count = homeChipFigures(queue, NOW_ANCHOR, undefined).overdueInQueue;
     expect(count, "the seed has no overdue movement, so this test proves nothing").toBeGreaterThan(0);
-
-    fireEvent.click(chip);
-
-    expect(chip).toHaveAttribute("aria-pressed", "true");
-    // The chip opens Flow; each stage shows 5 rows at rest, so open them all before counting.
-    expect(screen.getByRole("radio", { name: /^Flow/u })).toHaveAttribute("aria-checked", "true");
-    const queue = screen.getByRole("region", { name: "Flow" });
-    showEveryFlowRow(queue);
-    const rows = within(queue).getAllByTestId(/^ward-queue-row-/u);
-    const flowCount = Number(screen.getByRole("radio", { name: /^Flow/u }).textContent!.match(/\d+/u)![0]);
-    expect(rows, "every Flow row is listed once its stages are opened").toHaveLength(flowCount);
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <PriorityQueue
+          movements={queue}
+          now={NOW_ANCHOR}
+          selectedId={undefined}
+          onSelect={() => {}}
+          filterEdId={undefined}
+          onClearFilter={() => {}}
+          highlight="overdue"
+          onClearHighlight={() => {}}
+        />
+      </WardFlowProvider>,
+    );
+    const flow = screen.getByRole("region", { name: "Flow" });
+    showEveryFlowRow(flow);
+    const rows = within(flow).getAllByTestId(/^ward-queue-row-/u);
+    expect(rows, "every Flow row is listed while a highlight is on").toHaveLength(queue.length);
     expect(rows.filter((row) => row.getAttribute("data-dim") !== "true")).toHaveLength(count);
-    expect(queue).toHaveTextContent(`${count} overdue highlighted, all rows stay`);
+    expect(flow).toHaveTextContent(`${count} overdue highlighted, all rows stay`);
   });
 
   it("retains an explicitly selected referral as the shortlist subject across Needs you focus switches", () => {
     // Home flow (Q340, 3 Nov 2026): the Patients/Referrals queue tabs went; referrals are listed
-    // only under Needs you. Its nearest equivalent is the hero's "To decide" focus, which narrows
-    // Needs you to referrals and back without leaving the list, so the selection must survive it.
+    // only under Needs you. Its nearest equivalent is the "To decide" focus, which narrows Needs you
+    // to referrals and back without leaving the list, so the selection must survive it. Sticky header
+    // redesign (Josh, 9 Nov 2026): the hero's To decide chip went; the focus is the page address's
+    // `focus=decide` (the next step sets it when referrals lead), and the list's Show all clears it.
     renderCoordinator();
     expect(screen.getByRole("radio", { name: /^Needs you/u })).toHaveAttribute("aria-checked", "true");
-    const hero = screen.getByRole("region", { name: /^\d+ open ED movements, \d+ beds? ready$/u });
-    const decideChip = within(hero).getByRole("button", { name: /To decide/u });
 
     // Accepted pulls carry a referral id too; the referral to decide is the row that opens one.
     const openReferral = screen.getAllByRole("button", { name: /^Open referral for /u })[0];
@@ -200,11 +214,11 @@ describe("Q004 refinement interaction regressions", () => {
     fireEvent.click(openReferral!);
 
     expect(screen.getByTestId(`ward-referral-placement-${referralId}`)).toBeInTheDocument();
-    fireEvent.click(decideChip);
-    expect(decideChip).toHaveAttribute("aria-pressed", "true");
+    act(() => replaceSearchParams({ focus: "decide" }));
+    const showAll = screen.getByTestId("home-list-show-all");
     expect(screen.getByTestId(`ward-referral-placement-${referralId}`)).toBeInTheDocument();
-    fireEvent.click(decideChip);
-    expect(decideChip).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(showAll);
+    expect(screen.queryByTestId("home-list-show-all")).toBeNull();
     expect(screen.getByTestId(`ward-referral-placement-${referralId}`)).toBeInTheDocument();
   });
 });

@@ -90,20 +90,25 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     // ED strip (heading for screen readers) and the queue. Home v7 (Josh, 22 Oct 2026): State
     // bedflow moved to Capacity, Beds that fit takes its place, and Placement previews nobody.
     const atRest = screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent);
-    expect(atRest[0]).toMatch(/^\d+ open ED movements, \d+ beds? ready$/u);
+    // Sticky header redesign (Josh, 9 Nov 2026): one plain hero title; the counts are its figures,
+    // and the ED strip sits inside the hero under its own level-3 "Waiting in ED" heading.
+    expect(atRest[0]).toBe("Bed flow right now");
+    expect(screen.getByTestId("home-figure-ed")).toHaveTextContent(/^\d+open ED movements$/u);
+    expect(screen.getByTestId("home-figure-beds")).toHaveTextContent(/^\d+beds? ready$/u);
     // Open ED journeys retain accountability through transit; the queue can also contain ward/community origins.
     // Home and Activity (Josh, 31 Oct 2026): "in transit" as the phone says it, and the demo
     // coverage disclosure lives in the app bar and the footer, so the hero keeps only its facts.
-    expect(screen.getByTestId("ward-home-ed-population")).toHaveTextContent(
-      /^\d+ still in ED · \d+ in transit( · (At risk )?\d+%( beds in use)?)?$/u,
-    );
+    expect(screen.getByTestId("ward-home-ed-population")).toHaveTextContent(/^\d+ in ED · \d+ in transit$/u);
+    const edPressure = screen.getByTestId("ward-home-ed-pressure");
+    expect(within(edPressure).getByRole("heading", { level: 3, name: "Waiting in ED" })).toBeInTheDocument();
+    const heroTitle = screen.getByRole("heading", { level: 2, name: "Bed flow right now" });
+    expect(heroTitle.compareDocumentPosition(edPressure) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // Home flow (Josh, 3 Nov 2026): the queue is the Flow card, a named region with one section per
     // stage and no heading of its own; Later today sits at the foot of the right column on desktop.
-    expect(atRest.slice(1)).toEqual(["ED pressure", "Beds that fit", "Placement", "Later today"]);
+    expect(atRest.slice(1)).toEqual(["Beds that fit", "Later today"]);
     // The queue panel itself, pinned by its accessible name and DOM place: after ED pressure and
     // before Beds that fit, with its stages in the order a person moves through them.
     const flow = flowCard();
-    const edPressure = screen.getByRole("heading", { level: 2, name: "ED pressure" });
     const bedsThatFit = screen.getByRole("heading", { level: 2, name: "Beds that fit" });
     expect(edPressure.compareDocumentPosition(flow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(flow.compareDocumentPosition(bedsThatFit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -114,7 +119,7 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     ).toEqual(["Needs a bed", "Bed agreed", "Ready to move", "Moving"]);
     expect(within(flow).getByText("Oldest first in each stage")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-placement-top-of-queue")).not.toBeInTheDocument();
-    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
+    expect(screen.queryByTestId("home-placement-prompt")).toBeNull(); // notes 4: no at-rest prompt
     fireEvent.click(screen.getByTestId("ward-queue-row-WF-001"));
     // The exceptions drawer's default tab ("Exceptions") carries no `<h2>`, and its other three
     // tabs are `hidden` (not merely visually hidden — the native `hidden` attribute, which
@@ -124,13 +129,8 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     // tabpanel to manufacture that count.
     const headings = screen.getAllByRole("heading", { level: 2 });
     // Later today steps aside while Placement is open, so Placement keeps the whole right column.
-    expect(headings.length, "expected the hero and the three headed top-level panels, found a different count").toBe(4);
-    expect(headings.map((heading) => heading.textContent)).toEqual([
-      atRest[0],
-      "ED pressure",
-      "Beds that fit",
-      "Placement",
-    ]);
+    expect(headings.length, "expected the hero and the two headed top-level panels, found a different count").toBe(3);
+    expect(headings.map((heading) => heading.textContent)).toEqual([atRest[0], "Beds that fit", "Placement"]);
     expect(screen.queryByTestId("home-placement-prompt")).not.toBeInTheDocument();
   });
 
@@ -408,7 +408,7 @@ describe("Command's Home lists carry Needs you and Flow, the successor to the Pa
     // (At rest the Placement card is the prompt, so the shortlist itself is checked by its test id.)
     fireEvent.click(homeListRadio(/^Needs you/u));
     expect(screen.queryByTestId(`ward-shortlist-${movementId}`)).not.toBeInTheDocument();
-    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
+    expect(screen.queryByTestId("home-placement-prompt")).toBeNull(); // notes 4: no at-rest prompt
     expect(screen.queryByLabelText("Referral placement")).not.toBeInTheDocument();
 
     // Selecting a referral (under Needs you) sets the shortlist's subject to that referral and
@@ -431,7 +431,7 @@ describe("Command's Home lists carry Needs you and Flow, the successor to the Pa
     ).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Referral placement")).not.toBeInTheDocument();
     expect(screen.queryByTestId(`ward-referral-placement-${referralId}`)).not.toBeInTheDocument();
-    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
+    expect(screen.queryByTestId("home-placement-prompt")).toBeNull(); // notes 4: no at-rest prompt
 
     // Selecting a movement is what hands the shortlist back — proven, not assumed.
     showWholeFlow();

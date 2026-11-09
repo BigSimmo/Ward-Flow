@@ -40,6 +40,7 @@ import {
   type StreamCode,
 } from "./triage-psolis-lists";
 import { parseHeadedText } from "./triage-risk-text";
+import { followUpText, meansSummary } from "./triage-risk-safety";
 
 /** A run of text; a quiet one is drawn muted (a gap, or how a flag was recorded). */
 type Bit = string | { quiet: string };
@@ -180,6 +181,8 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
   const otherPast = state.xr.filter((x) => x.k === "bg").map((x) => x.t);
   const since = sinceLastText(state);
   const fdv = fdvOutcome(state);
+  const means = meansSummary(state);
+  const followUp = followUpText(state);
 
   const pastPresent = by("bg", "y");
   const pastValue: DocValue = pastPresent.length
@@ -334,6 +337,7 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
               ["Outcome", value(state.outcome)],
               ["Legal", legal ? [legal] : gap],
               ...(whoTold ? [["Who was told", [whoTold]] as const] : []),
+              ...(followUp ? [["Follow-up", [followUp]] as const] : []),
             ],
           },
           ...(actions.length ? [{ kind: "tags", label: "Actions", items: actions } as const] : []),
@@ -356,6 +360,7 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
                 state.rest ? [restLine(state, "Rest of current risk", "now")] : [{ quiet: "Not answered" }],
               ],
               ...(otherNow.length ? [["Other current", [otherNow.join(", ")]] as const] : []),
+              ...(means ? [["Means safety", [means]] as const] : []),
               ["Past: present", pastValue],
               ...(by("bg", "u").length ? [["Past: not known", [names(by("bg", "u"))]] as const] : []),
               [

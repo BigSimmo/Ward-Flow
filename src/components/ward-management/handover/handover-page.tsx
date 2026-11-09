@@ -1,5 +1,4 @@
 "use client";
-
 import { useCharacterShortcutsPreference } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";

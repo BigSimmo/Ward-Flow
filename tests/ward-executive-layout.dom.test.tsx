@@ -11,6 +11,7 @@ const guard = vi.hoisted(() => ({
   replace: vi.fn(),
 }));
 vi.mock("next/headers", () => ({
+  cookies: async () => ({ get: () => undefined }),
   headers: async () =>
     new Headers({
       "user-agent": guard.phone ? "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Mobile" : "desktop",

@@ -404,7 +404,7 @@ export function MyListCard({
       {body}
       {pull.sheet}
       <div className={styles.needsFoot}>
-        <StatusGlyph tone="neutral" size={9} />
+        <StatusGlyph tone="neutral" />
         <span>Oldest first within each group. Snoozed items return by themselves.</span>
         {/* Design audit A26 (5 Nov 2026): the kit small button, so it keeps the 40px phone size. */}
         <Button
@@ -415,15 +415,15 @@ export function MyListCard({
           onClick={() => setCallSheetOpen(true)}
           data-testid="home-call-sheet-open"
         >
-          Call sheet
+          Ward calls
         </Button>
       </div>
       {callSheetOpen ? (
         <Sheet
           open
           onClose={() => setCallSheetOpen(false)}
-          title="Call sheet"
-          description="Referrals waiting on each ward. Screen and print only."
+          title="Ward calls"
+          description="Wards to ring about waiting referrals, in call order. Screen and print only."
           testId="home-call-sheet"
         >
           <CallSheet />

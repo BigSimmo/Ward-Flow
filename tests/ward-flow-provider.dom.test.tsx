@@ -573,10 +573,10 @@ describe("WardFlowProvider", () => {
       // Two requests against recordA before the restore, so the restored audit log's requestIds
       // are 0 and 1 — the exact range a reset-to-0 counter would collide back into.
       act(() => {
-        current!.openDischargeRecord(coordinator, recordA.admissionId);
+        current!.openDischargeRecord(coordinator, recordA.admissionId, "ward-asked");
       });
       act(() => {
-        current!.openDischargeRecord(coordinator, recordA.admissionId);
+        current!.openDischargeRecord(coordinator, recordA.admissionId, "ward-asked");
       });
       first.unmount();
 
@@ -587,7 +587,7 @@ describe("WardFlowProvider", () => {
       );
       let handleForB: DischargeOpenHandle | null = null;
       act(() => {
-        handleForB = current!.openDischargeRecord(coordinator, recordB.admissionId);
+        handleForB = current!.openDischargeRecord(coordinator, recordB.admissionId, "ward-asked");
       });
       const read = current!.readDischargeRecord(coordinator, recordB.admissionId, handleForB!);
       // A reset-to-0 counter reuses requestId 0, which the restored log already ties to recordA —

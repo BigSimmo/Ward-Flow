@@ -8,17 +8,7 @@
 // recorded form time as typed, with no countdown (D-93).
 import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import {
-  Ban,
-  CircleCheck,
-  Flag,
-  Hospital,
-  LayoutDashboard,
-  MoonStar,
-  ChevronRight,
-  Stethoscope,
-  TriangleAlert,
-} from "lucide-react";
+import { Ban, CircleCheck, Flag, MoonStar, ChevronRight, Stethoscope, TriangleAlert } from "lucide-react";
 import { DrawerFootRow, PanelDrawer, ShowMoreRow, buttonClass } from "@/components/wf";
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
@@ -52,6 +42,7 @@ import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { edHref, movementHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import styles from "./delays-board.module.css";
 import { RowTimeline, ago, originLabel } from "./delays-board-rows";
+import { CoordinatorFootMenu, EdBoardFootPeek, MovementRecordLink } from "./delays-board-foot";
 import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import redesign from "./waiting.module.css";
@@ -66,12 +57,15 @@ export function PersonPanel({
   now,
   onClose,
   onEscalate,
+  initialTab,
 }: {
   row: BoardRow;
   units: Unit[];
   now: Instant;
   onClose: () => void;
   onEscalate: (movement: Movement) => void;
+  /** Note 8, issue 4: the tab a person opens on when another part of the page asks (default Summary). */
+  initialTab?: "summary" | "wards";
 }) {
   const { referrals, setFocusMovementId } = useWardFlowSelect("referrals", "setFocusMovementId");
   const patientOf = usePatientOf();
@@ -108,9 +102,9 @@ export function PersonPanel({
   // lists sit behind a Wards tab. A new person always opens on Summary.
   const [tabState, setTabState] = useState<{ id: string; tab: "summary" | "wards" }>({
     id: movement.id,
-    tab: "summary",
+    tab: initialTab ?? "summary",
   });
-  const panelTab = tabState.id === movement.id ? tabState.tab : "summary";
+  const panelTab = tabState.id === movement.id ? tabState.tab : (initialTab ?? "summary");
   const setPanelTab = (tab: "summary" | "wards") => setTabState({ id: movement.id, tab });
   // v10 phone: a journey bar from arrival to now leads the person sheet.
   const isPhonePanel = useIsPhone();
@@ -146,7 +140,6 @@ export function PersonPanel({
         <span className="sr-only"> to State bed coordination desk</span>
       </button>
     );
-  const secondaryClass = buttonClass({ variant: "sec", size: "md" });
   const wardsCount = wardDesk
     ? movement.declines.length === 0
       ? undefined
@@ -194,27 +187,17 @@ export function PersonPanel({
           {primary ? <div className={polish.pPrimary}>{primary}</div> : null}
           {escalation === undefined && !wardDesk ? escalationGate.note : null}
           <DrawerFootRow className={polish.pFootRow}>
-            <Link className={secondaryClass} href={movementHref(movement.id)}>
-              Movement
-            </Link>
-            {/* Role views: the coordinator screen is the coordinator's tool. */}
+            <MovementRecordLink movement={movement} />
+            {/* Role views: the coordinator screen is the coordinator's tool. Note 8: its actions open here first. */}
             {wardDesk || !canOpen("/ward-flow") ? null : (
-              <Link
-                className={secondaryClass}
-                href="/ward-flow"
-                onClick={() => {
-                  setFocusMovementId(movement.id);
-                }}
-              >
-                <LayoutDashboard size={14} aria-hidden="true" />
-                Coordinator
-              </Link>
+              <CoordinatorFootMenu
+                movement={movement}
+                onShowWards={() => setPanelTab("wards")}
+                onOpenHome={() => setFocusMovementId(movement.id)}
+              />
             )}
             {movement.originEdId && canOpen(edHref(movement.originEdId)) ? (
-              <Link className={secondaryClass} href={edHref(movement.originEdId)}>
-                <Hospital size={14} aria-hidden="true" />
-                ED board
-              </Link>
+              <EdBoardFootPeek movement={movement} now={now} />
             ) : null}
             {/* No "Record" link here: D-14 keeps the patient link default-deny, and this panel is not on
                 its allowlist. "Movement" opens the movement, whose drawer names the person (O-16.3). */}
@@ -622,8 +605,10 @@ export function Registers({
   // rail, so Longest quiet names the quiet people under every other blocker instead of repeating them.
   // "Show all" still filters the table to everyone quiet, and says so.
   const allQuietRows = rows.filter((row) => row.silent);
+  // Note 8, issue 3: nor does it repeat anyone already listed under Attention.
+  const attentionIds = new Set(attention.map(({ movement }) => movement.id));
   const quietRows = allQuietRows
-    .filter((row) => row.cause !== "awaiting_coordinator")
+    .filter((row) => row.cause !== "awaiting_coordinator" && !attentionIds.has(row.movement.id))
     .sort((a, b) => b.quiet - a.quiet);
   const placedCount = closedToday.filter((movement) => movement.closure?.outcome === "arrived").length;
   const notProceededCount = closedToday.filter((movement) => movement.closure?.outcome === "did_not_proceed").length;
@@ -682,7 +667,9 @@ export function Registers({
             </button>
           ))}
         </div>
-        <p className={polish.regNote}>{tabs.find((entry) => entry.id === tab)?.note}</p>
+        {/* Note 8, issue 3 (Josh, 8 Nov 2026): the tab's one-line note is read out, not shown, so the
+            rail opens straight on the people. */}
+        <p className="sr-only">{tabs.find((entry) => entry.id === tab)?.note}</p>
         <div
           role="tabpanel"
           id="delays-pane-escalated"
@@ -805,10 +792,6 @@ export function Registers({
             </>
           )}
         </div>
-        {/* W3: the old System tab was nearly always 0, so it is one quiet line under the lists. */}
-        <section aria-label="Delays with no named person" className={polish.regSystem}>
-          <NoStatewideDelays />
-        </section>
       </div>
       <div className={`${styles.sideB} ${styles.sideSplit} ${polish.regBody}`} hidden={part === "registers"}>
         <div className={styles.sec}>
@@ -853,6 +836,12 @@ export function Registers({
           </button>
         ) : null}
       </div>
+      {/* W3: the old System tab was nearly always 0. Note 8, issue 3: it is the card's quiet foot line. */}
+      {part === "quiet" ? null : (
+        <section aria-label="Delays with no named person" className={polish.regSystem}>
+          <NoStatewideDelays />
+        </section>
+      )}
     </section>
   );
 }

@@ -22,6 +22,9 @@ import { hoursLabel } from "./statistics-bands";
 import { SortTh, waitText, type EdSortKey } from "./statistics-screen-parts";
 import styles from "./statistics-v6.module.css";
 
+/** A wait in a table cell: "None" when nobody waits, like every other table (table polish, Nov 2026). */
+const waitCell = (minutes: number | null) => (minutes === null ? "None" : waitText(minutes));
+
 export function StatisticsEdJourneysCard({
   siteName,
   longestEd,
@@ -158,7 +161,7 @@ export function StatisticsEdJourneysCard({
                 <td className={cx(redesign.r, tableClasses.num)}>
                   <span className={redesign.gv}>
                     {mark(d.longest)}
-                    <Z v={waitText(d.longest)} />
+                    <Z v={waitCell(d.longest)} />
                   </span>
                 </td>
                 <td className={cx(redesign.r, tableClasses.num)}>
@@ -168,7 +171,7 @@ export function StatisticsEdJourneysCard({
                   <Z v={zero(d.over24)} />
                 </td>
                 <td className={cx(redesign.r, tableClasses.num)}>
-                  <Z v={waitText(d.median)} />
+                  <Z v={waitCell(d.median)} />
                 </td>
               </tr>
             ))}

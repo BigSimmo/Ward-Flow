@@ -299,11 +299,12 @@
 
 .grid {
   display: grid;
-  /* Movements redesign (1 Nov 2026): Barrier and Legal are separate columns with fixed widths at
+  /* Movements audit (9 Nov 2026): Route takes the widest share so a ward name sits on one line and
+     rows stop growing to four lines. Movements redesign (1 Nov 2026): Barrier and Legal are separate columns with fixed widths at
      the ends, so no cell is ever squeezed to a letter wide; text that does not fit
      wraps onto a second line instead. */
   grid-template-columns:
-    2rem minmax(6rem, 1.1fr) minmax(6rem, 1fr) minmax(6.5rem, 1.3fr)
+    2rem minmax(8.5rem, 1fr) minmax(8rem, 1.25fr) minmax(7rem, 1.1fr)
     8.5rem 5rem 9rem 1.5rem;
   align-items: center;
   column-gap: var(--wf-s-3);
@@ -320,6 +321,15 @@
 
 .columnEnd {
   text-align: right;
+}
+
+/* Note 7 item 11: the Legal head's one-off caveat, a quiet second line in sentence case. */
+.columnNote {
+  display: block;
+  color: var(--wf-ink-3);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .row {
@@ -1336,23 +1346,31 @@
   min-width: 0;
 }
 
+/* Audit item 10 (9 Nov 2026): sentence case at body size, like the desktop stage names. */
 .phGroupTitle {
   flex: 1 1 auto;
   min-width: 0;
   margin: 0;
   overflow: hidden;
-  color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  letter-spacing: var(--wf-tr-caps, 0.06em);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
   text-overflow: ellipsis;
-  text-transform: uppercase;
   white-space: nowrap;
+}
+
+.phGroupLongest {
+  flex: none;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .phGroupCount {
   flex: none;
+  min-width: 2ch;
   color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
+  text-align: end;
 }
 
 /* Phone stage header as a toggle (device audit, 11 Oct 2026): the whole header row is the tap

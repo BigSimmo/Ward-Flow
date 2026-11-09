@@ -92,7 +92,7 @@ function CareWorkspace({ recordCare }: { recordCare: WardCommandDispatch }) {
   const read = value.readDischargeRecord(actor, admission.id, handle);
   return (
     <>
-      <button onClick={() => setHandle(value.openDischargeRecord(actor, admission.id))}>Open care</button>
+      <button onClick={() => setHandle(value.openDischargeRecord(actor, admission.id, "ward-asked"))}>Open care</button>
       <WardFlowOverride
         value={{
           ...value,
