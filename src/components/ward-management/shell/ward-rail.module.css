@@ -62,6 +62,11 @@
   backdrop-filter: blur(24px) saturate(1.9);
 }
 
+/* Note 3 (Josh, 8 Nov 2026): the collapsed strip is one surface, with no blue tint under the mark. */
+.rail[data-rail="closed"]::before {
+  background: var(--wf-glass);
+}
+
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .rail::before {
     background: var(--wf-surface);
@@ -158,7 +163,8 @@
  * The brand corner joins the header's navy band (Josh, 7 Nov 2026). On desktop the brand row sits
  * level with the header, so while the header is navy (`data-band="ink"`, at rest over a page hero)
  * the corner takes the same navy and hero ink rather than staying a light notch at the top left.
- * The collapse control takes hero ink only on the open rail; a closed rail moves it to the foot,
+ * Note 3 (Josh, 8 Nov 2026): only the open rail joins the band; the collapsed strip stays one light
+ * surface top to bottom. The collapse control takes hero ink only on the open rail; a closed rail moves it to the foot,
  * over the light rail, where it keeps its normal ink.
  * Once the page scrolls and the header turns light, the corner turns light with it. The second
  * selector mirrors the header's own pre-hydration arm (ward-bar.module.css, band header block).
@@ -170,28 +176,31 @@
       border-color var(--wf-t-enter) var(--wf-ease-out);
   }
 
-  :global(:root:has([data-wf-bar][data-band="ink"])) .brand,
+  :global(:root:has([data-wf-bar][data-band="ink"])) .rail:not([data-rail="closed"]) .brand,
   :global(
       :root:has([data-wf-scroller] [data-wf-hero="band"]:not([data-band="off"])):not(:has([data-wf-bar][data-band]))
     )
+    .rail:not([data-rail="closed"])
     .brand {
     --wf-focus-ring: var(--wf-hero-ink);
     background: var(--wf-hero-1);
     border-bottom-color: var(--wf-hero-1);
   }
 
-  :global(:root:has([data-wf-bar][data-band="ink"])) .brandLink,
+  :global(:root:has([data-wf-bar][data-band="ink"])) .rail:not([data-rail="closed"]) .brandLink,
   :global(
       :root:has([data-wf-scroller] [data-wf-hero="band"]:not([data-band="off"])):not(:has([data-wf-bar][data-band]))
     )
+    .rail:not([data-rail="closed"])
     .brandLink {
     color: var(--wf-hero-ink);
   }
 
-  :global(:root:has([data-wf-bar][data-band="ink"])) .brandStateText,
+  :global(:root:has([data-wf-bar][data-band="ink"])) .rail:not([data-rail="closed"]) .brandStateText,
   :global(
       :root:has([data-wf-scroller] [data-wf-hero="band"]:not([data-band="off"])):not(:has([data-wf-bar][data-band]))
     )
+    .rail:not([data-rail="closed"])
     .brandStateText {
     border-color: var(--wf-on-hero-line);
     color: var(--wf-hero-ink-2);
@@ -1946,7 +1955,16 @@
 
   .rail[data-rail="closed"] {
     align-items: center;
-    padding: 0 0.5rem 3.5rem;
+    padding: 0 0.5rem 0.5rem;
+  }
+
+  /* The toggle lives in the foot (so the collapsed strip can end on the person); the open rail
+     draws it back in the brand row's right-hand corner, where it has always been. */
+  .rail[data-rail="open"] .railToggle {
+    position: absolute;
+    top: 0.375rem;
+    right: 0.1875rem;
+    margin: 0;
   }
 
   .rail[data-rail="closed"] .brandTitle,
@@ -2001,13 +2019,19 @@
     height: 1.25rem;
   }
 
-  /* The expand control sits at the foot of the strip, as on the collapsed rail board. */
+  /* Note 3 (Josh, 8 Nov 2026): the expand control is a 44px square in the foot, on the strip's centre
+     line above the person, who closes the strip. */
   .rail[data-rail="closed"] .railToggle {
-    position: absolute;
-    right: 0;
-    bottom: 0.25rem;
-    left: 0;
-    margin: 0 auto;
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    margin: 0;
+  }
+
+  .rail[data-rail="closed"] .railToggle::before {
+    inset: 0;
+    border-radius: var(--wf-r-md);
   }
 
   .rail[data-rail="closed"] .serviceLine {
@@ -2027,8 +2051,13 @@
    * shows it is still the control that opens the list. */
   .rail[data-rail="closed"] .compactAlertPip {
     display: inline-flex;
-    width: 2.75rem;
-    min-height: 2.75rem;
+    flex-direction: column;
+    gap: 0.125rem;
+    width: 3rem;
+    max-width: none;
+    height: auto;
+    min-height: 3.5rem;
+    padding: 0.25rem 0;
     border-color: transparent;
     background: transparent;
     box-shadow: none;
@@ -2097,23 +2126,28 @@
     min-height: 2.75rem;
   }
 
+  /* Note 3 (Josh, 8 Nov 2026): a count is a small soft pill tucked into the same top-right corner
+     of every icon, ringed in the strip's colour, with no outline to fight the glyph. */
   .rail[data-rail="closed"] .tag {
     position: absolute;
-    top: 0;
-    left: calc(50% + 0.125rem);
+    top: 0.125rem;
+    right: -0.125rem;
+    left: auto;
     min-width: 1.125rem;
-    height: 1.125rem;
+    height: 1rem;
     margin: 0;
     padding: 0 0.25rem;
-    border: 1px solid var(--wf-line-2);
-    background: var(--wf-surface);
+    border: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--wf-accent) 14%, var(--wf-surface));
     box-shadow: 0 0 0 2px var(--wf-surface-2);
-    color: var(--wf-ink-2);
+    color: var(--wf-accent-ink);
+    font-size: var(--wf-fs-12);
+    line-height: 1rem;
   }
 
   .rail[data-rail="closed"] .tag[data-tone="warning"] {
-    border-color: var(--wf-warning);
-    background: var(--wf-surface);
+    background: color-mix(in srgb, var(--wf-warning) 22%, var(--wf-surface));
     color: var(--wf-ink-1);
   }
 
@@ -2149,22 +2183,33 @@
     padding: 0;
   }
 
-  .rail[data-rail="closed"] .userCardWrap {
+  .rail[data-rail="closed"] .userCardWrap,
+  .rail[data-rail="closed"] .userCardWrap > * {
     display: flex;
     justify-content: center;
   }
 
+  /* Note 3: the person is a plain 44px square like its neighbours, not a raised white disc that
+     sat off the strip's centre line. */
   .rail[data-rail="closed"] .userProfileCard {
     justify-content: center;
     width: 2.75rem;
     min-height: 2.75rem;
     padding: 0;
-    border-radius: 50%;
+    border-color: transparent;
+    border-radius: var(--wf-r-md);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .rail[data-rail="closed"] .userProfileCard:hover {
+    border-color: transparent;
+    background: var(--wf-hover);
   }
 
   .rail[data-rail="closed"] .userAvatar {
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 2rem;
+    height: 2rem;
   }
 
   .rail[data-rail="closed"] .appearancePopover {

@@ -144,7 +144,7 @@
     "nodes": ["raised", "rkDuplicate", "rkIntakeLost"],
     "roles": ["ed", "community", "ward", "coordinator"],
     "does": "Registers somebody with no referral, movement or bed record yet — the “searched, nobody came up, so add them” record.",
-    "needs": "A unique nonblank UMRN, given and family names, a real date of birth from 1900 through the applicable Perth day, and valid optional sex, gender, Indigenous-status and source-desk values. Optional preferred name, address, general practitioner, catchment community team and interpreter language are trimmed; blank means not recorded.",
+    "needs": "A unique nonblank UMRN, given and family names, a real date of birth from 1900 through the applicable Perth day, and valid optional sex, gender, Indigenous-status and source-desk values. Optional preferred name, address, general practitioner, catchment community team, interpreter language and the 22 optional administrative details (ADMIN_DETAIL_FIELDS: contacts, next of kin and support person, Medicare and funding, planning) are trimmed; blank means not recorded.",
     "changes": "Creates a new patient record, including any optional typed details given.",
     "reasons": ["GENDERS"],
     "refuses": [
@@ -168,12 +168,12 @@
         {
           "path": "src/components/ward-management/ward-patient-registration-reducer.ts",
           "line": 37,
-          "sha256": "36297e83737f7e5f2eb1db69fc4e64deac2be5d4793500b11f838dfc34da2629"
+          "sha256": "9e0f9c39d6d4a7f8f406fd438e09cd9ea7b7c6631a7bdd5e059d1f38de3caac4"
         },
         {
           "path": "src/components/ward-management/patients/add-patient.tsx",
           "line": 637,
-          "sha256": "18ffebe0ec5ea264aa64939a4164654175cd9f92c22ca315a99855c5556ea7c2"
+          "sha256": "1409871d1ec41cff150999c0397b930aa2d3bd713919ea172d36bd9f30acb460"
         },
         {
           "path": "src/components/ward-management/referrals/use-referral-command-completion.ts",
