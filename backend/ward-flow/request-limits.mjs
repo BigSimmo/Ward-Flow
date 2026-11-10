@@ -11,6 +11,13 @@
 
 /** Phone alert sign-ups: a person turns alerts on by hand, so 30 in 10 minutes is far above use. */
 export const PUSH_SUBSCRIBE_LIMIT = Object.freeze({ limit: 30, windowMs: 10 * 60_000 });
+/**
+ * Saves (/v1/workspace/commands) per account. A busy desk saves a few times a minute and a queued
+ * burst sends one after another, so 600 in 5 minutes (two a second, sustained) is far above a
+ * shift's use while still stopping a loop. The browser keeps a refused save and sends it again
+ * after Retry-After (ward-shared-client.ts), so a refusal never drops accepted work.
+ */
+export const COMMAND_LIMIT = Object.freeze({ limit: 600, windowMs: 5 * 60_000 });
 const MAX_KEYS = 5_000;
 
 /**

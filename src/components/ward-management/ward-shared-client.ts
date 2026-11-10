@@ -62,24 +62,13 @@ import {
   type SheetSeen,
 } from "./ward-shared-pending-command";
 export type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
-
-// Lazy schema keeps the phone budget; adopt refuses snapshots until validation has loaded.
-let isValidSharedState: ((value: unknown) => boolean) | undefined;
-let bindSharedPartialView: typeof import("./ward-partial-view-contract").bindWardPartialView | undefined;
-let mergeSharedPartialView: typeof import("./ward-partial-view-contract").mergeArchivedWardPartialView | undefined;
-function loadSharedStateCheck(): Promise<void> {
-  if (isValidSharedState && bindSharedPartialView && mergeSharedPartialView) return Promise.resolve();
-  // A shared world may be a demonstration scenario, whose wards its check and screens read.
-  return Promise.all([
-    import("./ward-shared-state-validation"),
-    import("./ward-partial-view-contract"),
-    import("./ward-scenario-networks"),
-  ]).then(([state, partialView]) => {
-    isValidSharedState = state.isValidSharedWardFlowState;
-    bindSharedPartialView = partialView.bindWardPartialView;
-    mergeSharedPartialView = partialView.mergeArchivedWardPartialView;
-  });
-}
+import {
+  bindSharedPartialView,
+  isValidSharedState,
+  loadSharedStateCheck,
+  mergeSharedPartialView,
+} from "./ward-shared-state-check";
+import { SharedPacing } from "./ward-shared-pacing";
 
 import type { SharedSnapshot, SharedView, SharedChangeResult, WardCommandOutcome } from "./ward-shared-client-types";
 export type {
@@ -297,10 +286,9 @@ export class SharedWorkspaceClient {
   /** When this desk last read the whole workspace (its own part of it), for `FULL_READ_EVERY_MS`. */
   private fullReadAt = 0;
   private readonly lifetime = new AbortController();
-  /** Back online: read the board, which sends any held saves (`offlineHold`). */
-  private readonly watchOnline = globalThis.window?.addEventListener("online", () => void this.refresh(), {
-    signal: this.lifetime.signal,
-  });
+  private readonly pacing = new SharedPacing(() => (this.options.random ?? Math.random)());
+  /** Back online: read the board, which sends any held saves (`offlineHold`), spread across desks. */
+  private readonly watchOnline = this.pacing.onOnline(() => void this.refresh(), this.lifetime.signal);
   /** Refused, or waiting on the person: no polling or saving until they act. */
   private gated() {
     return ["not-authorised", "choose-role", "no-role"].includes(this.view.status);
@@ -333,6 +321,7 @@ export class SharedWorkspaceClient {
       workingAs?: { get: () => string | null; set: (id: string | null) => void };
       /** Actual current Auth identity; required before an executive report may be adopted. */
       authenticatedActorId?: () => string | null;
+      random?: () => number; // In [0, 1), for spreading reads (ward-shared-pacing.ts); tests fix it.
     },
   ) {}
   private held() {
@@ -1039,7 +1028,7 @@ export class SharedWorkspaceClient {
     return completion;
   }
   private async drain() {
-    if (this.busy || this.disposed) return;
+    if (this.busy || this.disposed || this.pacing.limited) return;
     this.busy = true;
     const generation = this.viewGeneration;
     try {
@@ -1073,6 +1062,15 @@ export class SharedWorkspaceClient {
         // An ended role is this command's own definitive answer, though it also bumps the generation.
         if (generation !== this.viewGeneration && value?.code !== "role-ended") return;
         if (response.status >= 500) throw new Error("Save not confirmed");
+        if (response.status === 429) {
+          // M53: refused before any work, so every save is kept and sent again after Retry-After.
+          this.sentCommandId = null;
+          this.pacing.holdFor(response, () => void this.drain());
+          for (const kept of [...(this.pending ? [this.pending] : []), ...this.queue])
+            this.settle(kept.commandId, "failed", saveProblem("busy"));
+          this.publish({ status: "ready", error: saveProblem("busy") });
+          break;
+        }
         if (value.responseBindingChanged) {
           this.sentCommandId = null;
           this.clearRecovery(command.commandId);
@@ -1195,8 +1193,8 @@ export class SharedWorkspaceClient {
                       : response.status === 422 && typeof value?.error === "string" && value.error.trim()
                         ? // Audit F-08: the workflow's own reason, as the local board shows it.
                           `${sentence(value.error)} Nothing was changed.`
-                        : response.status === 429
-                          ? saveProblem("busy")
+                        : response.status === 413 && value?.code === "workspace-full"
+                          ? saveProblem("boardFull")
                           : saveProblem("refused"),
           });
           this.settle(command.commandId, "refused", this.view.error ?? "The action was not applied.");
@@ -1492,6 +1490,7 @@ export class SharedWorkspaceClient {
     // Detached sign-out cleanup belongs to the outgoing account, never the replacement desk.
     if (this.options.manageDrafts !== false) forgetDowntimePack();
     clearTimeout(this.accessTimer);
+    this.pacing.stop();
     this.syncUnloadWarning();
     this.lifetime.abort();
     this.cancelAll(saveProblem("connectionClosed"));

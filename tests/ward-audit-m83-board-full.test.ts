@@ -2,7 +2,7 @@
 // (8,388,608 characters accepted, one more refused with no revision change, and HTTP 413
 // "workspace-full") is tested in backend/ward-flow/performance.test.mjs and shared-http.test.mjs.
 // This is the browser half: a 413 is settled as refused, never queued for Retry or sent again, and
-// the board stays usable. Synthetic board; fetch is faked.
+// the board stays usable, and the message says the board is full and what to do. Synthetic board; fetch is faked.
 import { expect, it } from "vitest";
 import { SharedWorkspaceClient, type SharedView } from "../src/components/ward-management/ward-shared-client";
 import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow-reducer";
@@ -48,11 +48,13 @@ it("a 413 workspace-full answer is a definite refusal: sent once, not retried, b
     expect(posts).toHaveLength(1);
     expect(view?.status).toBe("ready");
     expect(view?.snapshot?.revision).toBe(7);
-    expect(view?.error).toBe(saveProblem("refused"));
+    // M83 (fixed 10 Nov 2026): says the board is full and what to do, never "try again".
+    expect(view?.error).toBe(saveProblem("boardFull"));
+    expect(view?.error).toMatch(/^The shared board is full, so this change was not saved\. /u);
+    expect(view?.error).not.toMatch(/try again/iu);
     await client.refresh();
     expect(posts).toHaveLength(1);
   } finally {
     client.dispose();
   }
 });
-it.todo("M83 (Josh): say 'The shared board is full' for a 413 workspace-full, rather than the generic refusal text");

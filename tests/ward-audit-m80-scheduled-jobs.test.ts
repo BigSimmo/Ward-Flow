@@ -46,13 +46,12 @@ const scheduled = readdirSync(workflowDir)
   .filter((name) => /^ {2}schedule:$/mu.test(read(name)));
 
 const directories: string[] = [];
-afterEach(() =>
-  directories.splice(0).forEach((dir) => rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })),
-);
+afterEach(() => directories.splice(0).forEach((dir) => rmSync(dir, { recursive: true, force: true })));
 
 /**
- * A bin folder whose `gh` logs every call, answers `issue list` with $OPEN_ISSUE and a workflow's
- * state with $WORKFLOW_STATE, and fails a call whose words match $GH_FAIL. `sleep` returns at once.
+ * A bin folder whose `gh` logs every call, answers `issue list` with $OPEN_ISSUE, `label list` with
+ * $LABEL_DESCRIPTION and a workflow's state with $WORKFLOW_STATE, and fails a call whose words match
+ * $GH_FAIL. `sleep` returns at once.
  */
 function stubBin() {
   const bin = mkdtempSync(path.join(tmpdir(), "ward-m80-bin-"));
@@ -65,6 +64,7 @@ function stubBin() {
       'printf \'%s\\n\' "$*" >> "$GH_LOG"',
       'if [ -n "$GH_FAIL" ]; then case "$*" in *"$GH_FAIL"*) echo "synthetic gh failure" >&2; exit 1 ;; esac; fi',
       'if [ "$1 $2" = "issue list" ]; then printf \'%s\' "$OPEN_ISSUE"; fi',
+      'if [ "$1 $2" = "label list" ]; then printf \'%s\' "$LABEL_DESCRIPTION"; fi',
       'case "$*" in *"--jq .state"*) printf \'%s\\n\' "${WORKFLOW_STATE:-active}" ;; esac',
       "exit 0",
     ].join("\n"),
@@ -117,6 +117,7 @@ async function runStep(script: string, env: Record<string, string>, cwd = root):
 const uptime = read("backend-uptime.yml");
 const HEALTH_STEP = stepScript(uptime, "Ask the backend whether it is up and can reach its database");
 const RAISE_STEP = stepScript(uptime, "Raise or close the backend-down issue");
+const GAP_STEP = stepScript(uptime, "Raise or close the monitor-not-set-up issue");
 
 // Local stand-in for the backend's /healthz: each request takes the next planned answer.
 let healthPlan: { status: number; body: unknown }[] = [];
@@ -182,12 +183,103 @@ describe("M72: the 10-minute uptime check, each failure injected offline", () =>
     expect(result.log).toMatch(/::warning::Database not checked: WARD_FLOW_UPTIME_TOKEN is missing/u);
   });
 
-  // Gap recorded for Josh, not fixed: a hidden database check or an unset monitor account leaves the
-  // run green, so the only sign is a warning on a run nobody opens. See the M72 inventory.
-  it("leaves a run with a hidden database green and silent: the visibility gap", async () => {
+  // M72, fixed 10 Nov 2026: a hidden database check or an unset monitor account still leaves the
+  // backend-down issue alone, but after about a day (144 runs) raises its own issue.
+  it("leaves the backend-down issue alone when the database check is hidden", async () => {
     const result = await runStep(RAISE_STEP, { HEALTH: "unknown", WORKSPACE: "skipped", OPEN_ISSUE: "" });
     expect(result.code).toBe(0);
     expect(result.gh).not.toMatch(/issue create/u);
+  });
+
+  const gapRun = (env: Record<string, string>) =>
+    runStep(GAP_STEP, {
+      OPEN_ISSUE: "",
+      LABEL_DESCRIPTION: "",
+      GAP_LABEL: "monitor-not-set-up",
+      GAP_RUNS: "144",
+      ...env,
+    });
+  const since500 = "Uptime monitor not fully set up; since run 500";
+
+  it("marks the run a gap began at and raises nothing yet", async () => {
+    const result = await gapRun({ HEALTH: "unknown", WORKSPACE: "up", GITHUB_RUN_NUMBER: "500" });
+    expect(result.code).toBe(0);
+    expect(result.gh).toMatch(/label create monitor-not-set-up .*since run 500/u);
+    expect(result.gh).not.toMatch(/issue create/u);
+  });
+
+  it("raises one monitor-not-set-up issue that @mentions the owner after about a day of gaps", async () => {
+    const early = await gapRun({
+      HEALTH: "up",
+      WORKSPACE: "skipped",
+      GITHUB_RUN_NUMBER: "643",
+      LABEL_DESCRIPTION: since500,
+    });
+    expect(early.gh).not.toMatch(/issue create|label create/u);
+    const due = await gapRun({
+      HEALTH: "unknown",
+      WORKSPACE: "skipped",
+      GITHUB_RUN_NUMBER: "644",
+      LABEL_DESCRIPTION: since500,
+    });
+    expect(due.code).toBe(0);
+    expect(due.gh.match(/issue create/gu)).toHaveLength(1);
+    expect(due.gh).toMatch(/--title Uptime monitor not set up/u);
+    expect(due.gh).toMatch(/@BigSimmo For about a day/u);
+    expect(due.gh).toMatch(/WARD_FLOW_UPTIME_TOKEN/u);
+    expect(due.gh).toMatch(/monitor account secrets are not set/u);
+    const again = await gapRun({
+      HEALTH: "unknown",
+      WORKSPACE: "skipped",
+      GITHUB_RUN_NUMBER: "645",
+      OPEN_ISSUE: "21",
+      LABEL_DESCRIPTION: since500,
+    });
+    expect(again.gh).not.toMatch(/issue create/u);
+  });
+
+  it("counts a monitor account that cannot read as a gap, but not a rate limit or an outage", async () => {
+    const since = { LABEL_DESCRIPTION: "Uptime monitor not fully set up; since run 1", GITHUB_RUN_NUMBER: "200" };
+    const account = await gapRun({
+      HEALTH: "up",
+      WORKSPACE: "unknown",
+      WORKSPACE_DETAIL: "account not set up, HTTP 403 no-role",
+      ...since,
+    });
+    expect(account.gh).toMatch(/issue create .*cannot sign in or read: account not set up/u);
+    for (const env of [
+      { HEALTH: "up", WORKSPACE: "unknown", WORKSPACE_DETAIL: "backend rate limited" },
+      { HEALTH: "down", WORKSPACE: "workspace", WORKSPACE_DETAIL: "HTTP 503" },
+    ]) {
+      const result = await gapRun({ ...env, ...since });
+      expect(result.code).toBe(0);
+      expect(result.gh).toBe("");
+    }
+  });
+
+  it("clears the count and closes the issue once the whole check answers again", async () => {
+    const result = await gapRun({
+      HEALTH: "up",
+      WORKSPACE: "up",
+      GITHUB_RUN_NUMBER: "700",
+      OPEN_ISSUE: "21",
+      LABEL_DESCRIPTION: since500,
+    });
+    expect(result.code).toBe(0);
+    expect(result.gh).toMatch(/label create monitor-not-set-up .*; clear/u);
+    expect(result.gh).toMatch(/issue close 21/u);
+    const next = await gapRun({
+      HEALTH: "unknown",
+      WORKSPACE: "up",
+      GITHUB_RUN_NUMBER: "701",
+      LABEL_DESCRIPTION: "Uptime monitor not fully set up; clear",
+    });
+    expect(next.gh).toMatch(/since run 701/u);
+    expect(next.gh).not.toMatch(/issue create/u);
+  });
+
+  it("monitor coverage: a late run uses no clock", () => {
+    expect(GAP_STEP).not.toMatch(/\bdate\b/u);
   });
 
   it("raises one issue that @mentions the owner and fails the run when the backend is down", async () => {

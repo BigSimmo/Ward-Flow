@@ -5,7 +5,8 @@ import { bootstrapCoordinators } from "./auth.mjs";
 import { jsonResponse } from "./reply-cache.mjs";
 import { forecastHistoryInput, forecastReasonRole } from "./forecast-history.mjs";
 import { accountPreferencesInput } from "./account-preferences.mjs";
-import { PUSH_SUBSCRIBE_LIMIT, createWindowLimiter } from "./request-limits.mjs";
+import { COMMAND_LIMIT, PUSH_SUBSCRIBE_LIMIT, createWindowLimiter } from "./request-limits.mjs";
+import { reportFailure } from "./error-report.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Each shared path and the closed route name it is logged under. */
@@ -162,14 +163,34 @@ export function createSharedHandler({
   log = (event) => console.info(JSON.stringify(event)),
   // Audit M53: phone alert sign-ups per account, checked before anything is stored.
   pushSubscribeLimiter = createWindowLimiter(PUSH_SUBSCRIBE_LIMIT),
+  // Audit M53: saves per account, checked before the body is read or anything is stored.
+  commandLimiter = createWindowLimiter(COMMAND_LIMIT),
+  // Audit M74: a handled 500 is sent to Sentry too (off unless SENTRY_DSN is set, error-report.mjs).
+  report = reportFailure,
 }) {
   return async (request, meta = {}) => {
     const requestId = randomUUID();
     const startedAt = performance.now();
     const path = new URL(request.url).pathname;
-    /** @type {{ outcome?: string, failure?: Record<string, unknown> }} */
+    /** @type {{ outcome?: string, failure?: Record<string, unknown>, role?: string }} */
     const note = {};
     const response = await handle(request, path, requestId, note, meta);
+    if (note.outcome === "server_error")
+      try {
+        // Closed fields only (error-report.mjs checks each again): the same request ID as the reply
+        // header and log line, the desk role, the route and the screen. Never a name or payload.
+        report({
+          event: "ward_backend_server_error",
+          requestId,
+          route: ROUTES.get(path) ?? "unknown",
+          ...(note.role ? { role: note.role } : {}),
+          ...(request.headers.get(SCREEN) === "tv" ? { screen: "tv" } : {}),
+          ...(typeof note.failure?.errorName === "string" ? { errorName: note.failure.errorName } : {}),
+          ...(typeof note.failure?.errorCode === "string" ? { errorCode: note.failure.errorCode } : {}),
+        });
+      } catch {
+        // Monitoring must not alter the API result.
+      }
     try {
       // Closed metadata vocabulary only: never log tokens, actor IDs, query strings or payloads.
       log({
@@ -395,6 +416,7 @@ export function createSharedHandler({
           },
           "auth_denied",
         );
+      note.role = view.access.role;
       // A recent sign-in for the powerful steps. The window comes from the clinical values module
       // through the store; a store that names none asks every time.
       if (STEP_UP_PATHS.has(path) && request.method === "POST") {
@@ -725,6 +747,15 @@ export function createSharedHandler({
       }
       if (path !== "/v1/workspace/commands" || request.method !== "POST")
         return reply(405, { error: "Method not allowed" });
+      const limited = commandLimiter(actorId);
+      if (!limited.allowed) {
+        headers["retry-after"] = String(limited.retryAfterSeconds);
+        return reply(
+          429,
+          { code: "rate-limited", error: "Too many saves; this change was not saved yet" },
+          "rate_limited",
+        );
+      }
       if (request.headers.get("content-type")?.split(";")[0].trim() !== "application/json")
         return reply(415, { error: "JSON required" });
       let body;
