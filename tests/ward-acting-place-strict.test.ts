@@ -208,7 +208,8 @@ describe("M4 on the shared server: a referral answer that names no ward", () => 
   );
 
   it.each(["ACCEPT_REFERRAL", "DECLINE_REFERRAL"] as const)("the app refuses %s from a ward naming no ward", (type) => {
-    const { actingUnitId: _omitted, ...unnamed } = answer(type, unitB!.id);
+    const unnamed: Record<string, unknown> = { ...answer(type, unitB!.id) };
+    delete unnamed.actingUnitId;
     const next = wardFlowReducer(state, { ...unnamed, unitId: unitB!.id, now: NOW_ANCHOR } as WardFlowEvent);
     expect(next.rejections.at(-1)?.reason).toBe(
       `${type} from a ward must name the acting ward; a ward answers only its own referrals`,

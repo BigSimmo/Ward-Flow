@@ -2115,10 +2115,8 @@ export type WardFlowEvent =
       met: string[];
       /** The ward records that the treating psychiatrist set this list. Needed to set or change it. */
       setByTreatingPsychiatrist: boolean;
-      /**
-       * D-65: typed patient specific criteria the treating psychiatrist set, added after the fixed
-       * ones. A dispatch carrying typed criteria locks browser storage (`eventCarriesTypedTextPayload`).
-       */
+      /** D-65: typed patient specific criteria the treating psychiatrist set, added after the fixed
+       * ones. A dispatch carrying typed criteria locks browser storage (`eventCarriesTypedTextPayload`). */
       patientSpecific?: string[];
       /** One criterion ticked or unticked, applied to the stored list rather than replacing it. */
       tick?: { criterion: string; met: boolean };
@@ -2137,7 +2135,7 @@ export type WardFlowEvent =
       now: Instant;
       movementId: string;
       cleared: boolean;
-      /** An ED names itself, and must be the journey's origin ED (M2). The coordinator sends none. */
+      /** M2: an ED names itself and must be the journey's origin ED. The coordinator sends none. */
       actingPlaceId?: string;
     }
   | {

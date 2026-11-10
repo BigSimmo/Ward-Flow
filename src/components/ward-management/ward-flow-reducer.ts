@@ -867,8 +867,7 @@ export function heldUnitGenderRefusal(
  * minus `SUITABILITY_GATES`); do not transcribe it here.
  *
  * B1: a ward answering a referral names itself with `actingUnitId` and is refused when that ward is
- * not its own, or when it names none (M4, strict: Josh, 10 Nov 2026). The coordinator acts for any
- * ward and sends none.
+ * not its own, or names none (M4, strict, D-124). The coordinator acts for any ward and sends none.
  */
 function wardActingUnitRefusal(
   event: Extract<WardFlowEvent, { type: "ACCEPT_REFERRAL" | "DECLINE_REFERRAL" }>,
