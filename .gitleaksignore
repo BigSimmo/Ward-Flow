@@ -55,3 +55,7 @@ e28ff6baad4713590f736e5da5fec9413f50d726:tests/front-door-pass.test.ts:generic-a
 # tests/api-session-shapes.test.ts stubs WARD_PASS_SECRET with a made-up synthetic value that
 # only exists in that test (5 Nov 2026, #1452). The line now carries inline gitleaks:allow.
 2c9b9a66c50416bd6431bafdcf3a8f3829867b40:tests/api-session-shapes.test.ts:generic-api-key:13
+
+# tests/ward-audit-m50-session-lifetime.test.ts signs a pass with a made-up synthetic secret that
+# only exists in that test (10 Nov 2026, #1598). The line now carries inline gitleaks:allow.
+72443dd92387964e3a7d6ba3fcc3e569448d0ceb:tests/ward-audit-m50-session-lifetime.test.ts:generic-api-key:75

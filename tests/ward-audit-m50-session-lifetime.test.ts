@@ -72,7 +72,7 @@ describe("M50: the values the inventory quotes", () => {
   });
 
   it("ends a demo pass at 8 hours, not the account's 12", async () => {
-    const secret = "m50-synthetic-signing-secret-0123456789abcdef";
+    const secret = "m50-synthetic-signing-secret-0123456789abcdef"; // gitleaks:allow (synthetic test value)
     const now = Date.parse("2026-11-10T00:00:00Z");
     const { value: pass, maxAge } = await issuePass(secret, { kind: "demo", hours: DEMO_PASS_HOURS }, now);
     expect(maxAge).toBe(8 * 3600);
