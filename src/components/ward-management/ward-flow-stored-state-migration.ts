@@ -1,0 +1,48 @@
+// Restore-path upgrades for a stored Ward Flow state, split from `ward-flow-storage-validation.ts`
+// (its line cap). Validation stays there; these only fill in or migrate fields after or before it.
+import type { WardFlowState } from "./ward-flow-reducer";
+import { withSeededReviewIds } from "./ward-governance-seed";
+import { upgradeLegacyDeclineReasons } from "./ward-decline-legacy";
+import { upgradeLegacyObservationRows } from "./ward-observation-legacy";
+
+const object = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+
+/**
+ * A validated stored state with the stream A inbox records filled in when the save predates them,
+ * reviews of seeded governance entries moved to ids that name their subject, and decline reasons
+ * saved before the one decline list read as merged ones (D-78, `ward-decline-legacy.ts`).
+ * Call after `isValidStoredWardFlowState` on every restore path.
+ */
+export function withInboxStreamADefaults<T extends WardFlowState>(state: T): T {
+  const stored = state as T & Partial<Pick<WardFlowState, "inboxOwnership" | "inboxSnoozes">>;
+  return withSeededReviewIds({
+    ...upgradeLegacyDeclineReasons(state),
+    inboxOwnership: stored.inboxOwnership ?? {},
+    inboxSnoozes: stored.inboxSnoozes ?? {},
+  });
+}
+
+/**
+ * The stored state version this build writes. A save at an older version restores only through
+ * `migrateStoredWardFlowState`; every other mismatch is refused.
+ */
+export const WARD_FLOW_STORED_STATE_VERSION = 7;
+
+/**
+ * Brings a stored state saved at `fromVersion` up to the current shape, or returns null when no
+ * migration exists. The result still goes through `isValidStoredWardFlowState`: a migration adds
+ * the newer version's fields, it never repairs or vouches for anything the save already held.
+ *
+ * v6 -> v7 (Josh, 9 October 2026: "No, fix this."): v7 added planned admissions and their id
+ * sequence and nothing else. A v6 save keeps every record it holds and gains an empty booking list
+ * and a sequence of nought, the state of a world with no bookings. Fixture bookings are not added:
+ * a restored day holds only what was saved. A "v6" save that already carries either field is not
+ * a v6 shape and is refused rather than overwritten.
+ */
+export function migrateStoredWardFlowState(state: unknown, fromVersion: unknown): unknown {
+  // Fix plan item 10: a save from before observation levels reads its yes/no flag as a level.
+  if (fromVersion === WARD_FLOW_STORED_STATE_VERSION) return upgradeLegacyObservationRows(state);
+  if (fromVersion !== 6 || !object(state)) return null;
+  if ("plannedAdmissions" in state || "plannedAdmissionSequence" in state) return null;
+  return upgradeLegacyObservationRows({ ...state, plannedAdmissions: [], plannedAdmissionSequence: 0 });
+}

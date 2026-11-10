@@ -145,6 +145,7 @@ function areBedCardPropsEqual(prev: WardBedCardProps, next: WardBedCardProps): b
     p.isPlannedAdmission === n.isPlannedAdmission &&
     p.isLeave === n.isLeave &&
     p.dischargeDateMoves === n.dischargeDateMoves &&
+    p.eddDriftDays === n.eddDriftDays &&
     p.dischargeConfirmed === n.dischargeConfirmed &&
     p.expectedDischargeLabel === n.expectedDischargeLabel &&
     p.dischargeBarrier === n.dischargeBarrier &&
@@ -180,7 +181,7 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect 
   const isPulled = bed.status === "incoming" || bed.isPulled === true;
   const isAwayAtEd = bed.awayAtEdHours !== null && bed.awayAtEdHours !== undefined;
   const signal = bed.patientAlias || isAwayAtEd ? cardSignal(bed, isPastDate, isAwayAtEd) : null;
-  const eddMoved = bed.patientAlias && !isReady ? eddMovedBadge(bed.dischargeDateMoves) : null;
+  const eddMoved = bed.patientAlias && !isReady ? eddMovedBadge(bed.dischargeDateMoves, bed.eddDriftDays) : null;
   const criteriaLed = bed.patientAlias && !isReady && !isPulled ? (bed.criteriaLedChip ?? null) : null;
   const tone: WfTone | null = bedGlyphTone(bed);
   const leaving = leavingCell(bed);

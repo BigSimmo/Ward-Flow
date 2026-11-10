@@ -1,5 +1,7 @@
 import type { BedMeetingAction } from "./bed-meeting/bed-meeting-actions";
 import type { CareJourney } from "./ward-care-journey";
+import type { DischargeDateTrail } from "./ward-discharge-date-trail";
+import type { DischargeChecks, FollowUpReply } from "./ward-discharge-checklist";
 import {
   BED_RELEASE_BLOCKERS,
   type BedReleaseBlocker,
@@ -281,6 +283,40 @@ export type DischargeBarrier = (typeof DISCHARGE_BARRIERS)[number];
 export function isDischargeBarrier(value: unknown): value is DischargeBarrier {
   return typeof value === "string" && (DISCHARGE_BARRIERS as readonly string[]).includes(value);
 }
+
+/**
+ * WHY A PATIENT WHO IS CLINICALLY READY HAS NOT GONE (item 5, delayed discharge reasons).
+ *
+ * OWNER-APPROVED ruling, Josh, 9 Nov 2026 ("Approve as proposed"): the ward may record "Clinically
+ * ready for discharge since [date]" on an inpatient's stay. Once that date is set, the ward picks ONE
+ * reason from the long-stay list `DISCHARGE_BARRIERS` EXCLUDING "Clinical / Treatment" (a patient
+ * held for clinical reasons is not clinically ready). Delayed bed days count from the ready-since
+ * date and are broken down by this reason. Chosen, never typed; `tests/ward-delayed-discharge.test.ts`
+ * pins this list to `DISCHARGE_BARRIERS` less that one entry.
+ */
+export const DELAYED_DISCHARGE_REASONS = [
+  "Accommodation / Housing",
+  "NDIS",
+  "SAT / Public Guardian",
+  "RACF / Aged Care",
+  "Social / Family",
+  "Several",
+] as const satisfies readonly Exclude<DischargeBarrier, "Clinical / Treatment">[];
+export type DelayedDischargeReason = (typeof DELAYED_DISCHARGE_REASONS)[number];
+
+export function isDelayedDischargeReason(value: unknown): value is DelayedDischargeReason {
+  return typeof value === "string" && (DELAYED_DISCHARGE_REASONS as readonly string[]).includes(value);
+}
+
+/** The short word for a board line or a table row: "Ready since 4 Nov · Housing · 5 days". */
+export const DELAYED_DISCHARGE_REASON_SHORT: Record<DelayedDischargeReason, string> = {
+  "Accommodation / Housing": "Housing",
+  NDIS: "NDIS",
+  "SAT / Public Guardian": "SAT / Guardian",
+  "RACF / Aged Care": "Aged care",
+  "Social / Family": "Social / family",
+  Several: "Several",
+};
 
 /**
  * Why a pull was released — the bed given back before the person ever reached it.
@@ -628,6 +664,12 @@ export type Admission = {
   /** How many times the expected date has been moved. A count of revisions to the WARD'S plan,
    *  never a measure of a person — it says the plan kept changing, not that anybody was slow. */
   dischargeDateMoves: number;
+  /**
+   * Feature 6 (9 Nov 2026): the first expected date and each later move, append-only and bounded
+   * (`ward-discharge-date-trail.ts`). Absent on stays saved before it existed and on stays with no
+   * date; never inferred. A record of the ward's plan, never a measure of the person.
+   */
+  dischargeDateTrail?: DischargeDateTrail;
   /** When the current expected date was set. `null` when there is none. */
   dischargeDateSetAt: Instant | null;
   /** WHO set it, as a ROLE drawn from `DISCHARGE_ROLE_LABELS` — and NEVER a personal name. Same
@@ -694,6 +736,16 @@ export type Admission = {
     readonly by: WardFlowRole;
     readonly blocker: BedReleaseBlocker;
   }>;
+  /**
+   * Feature 14 (Josh, 9 Nov 2026): the weekend discharge review ticks, append-only. Each keys to the
+   * weekend it was for (`weekendStart`, that weekend's first midnight), so a new week starts unticked.
+   * Records that a desk looked; never that the person may or should leave. Absent until the first.
+   */
+  weekendDischargeReviews?: ReadonlyArray<{
+    readonly weekendStart: Instant;
+    readonly at: Instant;
+    readonly by: WardFlowRole;
+  }>;
   /** Where this person went, once they have gone. `null` until then. */
   leavingDestination: LeavingDestination | null;
   /** When they went. `null` until then. */
@@ -718,11 +770,23 @@ export type Admission = {
   followUp: FollowUpRecord | null;
   /** Closed workflow facts; absent on legacy saves, never inferred during restoration. */
   careJourney?: CareJourney;
+  /** Feature 37 (9 Nov 2026): the ticked discharge checklist items (`RECORD_DISCHARGE_CHECK`). Absent until one is ticked. */
+  dischargeChecks?: DischargeChecks;
+  /** Feature 13 (9 Nov 2026): the community team's reply to follow-up (`RECORD_FOLLOW_UP_REPLY`). Absent until it replies. */
+  followUpReply?: FollowUpReply;
   /**
    * Primary discharge barrier for long-stay patients (length of stay >= 7 days).
    * Chosen from DISCHARGE_BARRIERS fixed vocabulary, never typed or free text.
    */
   dischargeBarrier?: DischargeBarrier | null;
+  /**
+   * Item 5 (Josh, 9 Nov 2026): the Perth midnight of the day the ward recorded this person as
+   * clinically ready for discharge. Set and cleared together with `delayedDischargeReason` by
+   * `SET_CLINICALLY_READY`; absent or null when not recorded.
+   */
+  clinicallyReadySince?: Instant | null;
+  /** Why a clinically ready person has not gone, from `DELAYED_DISCHARGE_REASONS`. */
+  delayedDischargeReason?: DelayedDischargeReason | null;
   /** Criteria led discharge (D-60): set by the treating psychiatrist for a voluntary patient only. */
   dischargeCriteria?: DischargeCriteriaRecord | null;
   /**
@@ -760,6 +824,8 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   bedKind: true,
   bedNumber: true,
   dischargeBarrier: true,
+  clinicallyReadySince: true,
+  delayedDischargeReason: true,
   dischargeCriteria: true,
   stepDownCandidate: true,
   state: true,
@@ -768,6 +834,7 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   awayAtEmergencyDepartmentSince: true,
   expectedDischargeAt: true,
   dischargeDateMoves: true,
+  dischargeDateTrail: true,
   dischargeDateSetAt: true,
   dischargeDateSetBy: true,
   dischargeConfirmedAt: true,
@@ -775,10 +842,13 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   blockReason: true,
   stayBlockClearances: true,
   stayBlockRecords: true,
+  weekendDischargeReviews: true,
   leavingDestination: true,
   leftAt: true,
   followUp: true,
   careJourney: true,
+  dischargeChecks: true,
+  followUpReply: true,
   meetingActions: true,
 };
 

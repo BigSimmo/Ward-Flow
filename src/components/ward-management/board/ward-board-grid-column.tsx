@@ -30,6 +30,7 @@ import {
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { Segmented, Select, ShowMoreRow, StatusGlyph } from "@/components/wf";
 import redesign from "./ward-board-panels.module.css";
+import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 
 /** Redesign (Josh, 30 Oct): a phone opens on this many beds, then Show more (owner rule: long lists fold). */
 const PHONE_TILE_CAP = 8;
@@ -44,6 +45,7 @@ export function WardBoardGridColumn({
   cardNameByKey,
   isPhone,
   occupantByKey,
+  readmissionByAdmission,
   occupants,
   orderedTiles,
   selectedKey,
@@ -66,6 +68,8 @@ export function WardBoardGridColumn({
   /** Phone: the filters and order fold into one row of two controls (D-77 change 10, option B). */
   isPhone: boolean;
   occupantByKey: Map<string, Occupant>;
+  /** Feature 29: the ward's copy of the 28 day readmission flag, by stay. Absent when none. */
+  readmissionByAdmission?: ReadonlyMap<string, { dischargedAt: number; daysBefore: number }>;
   occupants: Occupant[];
   orderedTiles: Tile[];
   selectedKey: string | null;
@@ -318,6 +322,16 @@ export function WardBoardGridColumn({
                             above, and the same direction.** The tile is 80px on a phone, not 390px.
                             **Two comments in one component carried the same wrong width**, which is
                             how a number gets believed: it was consistent with itself. */}
+                    {/* Feature 29 (Josh, 9 Nov 2026): the ward's copy of the readmission flag. The
+                        tile is itself a button, so the detail is hover and screen-reader text. */}
+                    {tileOccupant && readmissionByAdmission?.has(tileOccupant.admissionId) ? (
+                      <ReadmissionFlag
+                        flag={readmissionByAdmission.get(tileOccupant.admissionId) ?? null}
+                        expandable={false}
+                        wardCopy
+                        testId={`ward-board-bed-${index + 1}-readmission`}
+                      />
+                    ) : null}
                     {tile.awayAtEd && (
                       <span className={styles.awayMark} data-testid={`ward-board-bed-${index + 1}-away`}>
                         <StatusGlyph tone="info" size={10} className={styles.statusGlyph} /> <span>At ED</span>

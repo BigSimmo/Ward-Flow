@@ -1,0 +1,201 @@
+/* Feature 23: the Leave page. */
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-4);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--wf-fs-20);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.summary {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.figure,
+.time {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.scroll {
+  overflow-x: auto;
+}
+
+/* Two-line cells (name over UMRN, ward over bed) get vertical room; nothing is cut short. */
+.table {
+  width: 100%;
+  --wf-cell-pad-y: var(--wf-s-2);
+}
+
+/* The kit's cells truncate at max-width 0; here the short facts size to their content instead. */
+.table td.kind,
+.table td.time,
+.table td.statusCell {
+  width: 1%;
+  max-width: none;
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.table td.ward {
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+/* The row header is the person, so it reads as a name, not as a column heading. */
+.table th.person {
+  height: var(--wf-row);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--wf-ink-1);
+  white-space: normal;
+  text-align: left;
+}
+
+.person a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.person a:hover {
+  text-decoration: underline;
+}
+
+.umrn,
+.sub {
+  display: block;
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+
+.umrn {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  white-space: nowrap;
+}
+
+.phoneLabel {
+  display: none;
+}
+
+.empty {
+  margin: 0;
+  padding: var(--wf-s-3);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+/* Phone: each person becomes a two-column list row (name and status, then ward, leave and times)
+ * instead of a squashed table. The table stays a table for assistive technology. */
+@media (max-width: 46.4375rem) {
+  .main {
+    padding: var(--wf-s-3);
+  }
+
+  .table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .table tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: var(--wf-s-3);
+    row-gap: 2px;
+    padding: var(--wf-s-3);
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .table tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .table tbody th,
+  .table tbody td {
+    display: block;
+    height: auto;
+    padding: 0;
+    border-bottom: 0;
+    max-width: none;
+  }
+
+  .table tbody th:first-child,
+  .table tbody td:first-child,
+  .table tbody td:last-child {
+    padding: 0;
+  }
+
+  .table th.person {
+    flex: 1 1 0;
+    min-width: 0;
+    height: auto;
+  }
+
+  .table td.statusCell {
+    order: -1;
+    flex: 0 0 auto;
+    width: auto;
+    font-size: var(--wf-fs-12);
+  }
+
+  .table th.person {
+    order: -2;
+  }
+
+  .table td.ward {
+    flex: 0 0 100%;
+    margin-top: var(--wf-s-1);
+    color: var(--wf-ink-2);
+  }
+
+  .table td.ward .sub {
+    display: inline;
+    font-size: inherit;
+    color: inherit;
+  }
+
+  .table td.ward .sub::before {
+    content: " · ";
+  }
+
+  .table td.kind,
+  .table td.time {
+    width: auto;
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-3);
+  }
+
+  .phoneLabel {
+    display: inline;
+    font-family: var(--wf-font);
+  }
+}
+
+.day {
+  font-family: var(--wf-font);
+  color: var(--wf-ink-3);
+}

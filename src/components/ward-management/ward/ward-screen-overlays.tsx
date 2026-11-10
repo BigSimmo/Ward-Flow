@@ -15,7 +15,7 @@ import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction }
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import type { RoleGate } from "@/components/ward-management/ward-role-gate";
+import { useRoleGate, type RoleGate } from "@/components/ward-management/ward-role-gate";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
@@ -104,6 +104,8 @@ export function WardScreenBedDrawer({
   const legalRecords = useWardFlowSelect("movements", "patients", "plannedAdmissions");
   const completeCommand = useWardCommandCompletion();
   const { rejections } = useWardFlowSelect("rejections");
+  // Feature 37 (9 Nov 2026): the discharge checklist is ticked by whoever may record the discharge.
+  const dischargeCheckGate = useRoleGate()("RECORD_DISCHARGE_CHECK");
   const { run: runBedStep } = useUndoableStep({
     dispatch,
     rejections,
@@ -330,6 +332,22 @@ export function WardScreenBedDrawer({
             criteriaEligibility={
               criteriaLedOn && selectedAdmission
                 ? admissionCriteriaEligibility(legalRecords, selectedAdmission)
+                : undefined
+            }
+            onRecordDischargeCheck={
+              dischargeCheckGate.allowed
+                ? (admissionId, item, state) => {
+                    recordFeedback(
+                      () =>
+                        raiseAsRouteRole("RECORD_DISCHARGE_CHECK", {
+                          actingUnitId: unitId,
+                          admissionId,
+                          item,
+                          state,
+                        }),
+                      "Discharge checklist updated.",
+                    );
+                  }
                 : undefined
             }
             onSetCriteria={

@@ -1,0 +1,127 @@
+/* Feature 21 (9 Nov 2026): Expected occupancy under the bed forecast. Plain, dense, figures in mono. */
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+.wrap[data-stacked] {
+  padding-inline: 0;
+}
+.title {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+.scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.scroll:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.table th,
+.table td {
+  padding: 6px var(--wf-s-2);
+  border-bottom: 1px solid var(--wf-line);
+  text-align: start;
+  white-space: nowrap;
+}
+.table thead th {
+  color: var(--wf-ink-3);
+  font-weight: 500;
+}
+.table tbody th {
+  color: var(--wf-ink-1);
+  font-weight: 500;
+}
+.table .num {
+  text-align: end;
+}
+.cell {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+}
+.figure,
+.percent {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+.figure {
+  color: var(--wf-ink-1);
+}
+.percent {
+  min-width: 3.5ch;
+  color: var(--wf-ink-3);
+  text-align: end;
+}
+.total th,
+.total td {
+  border-bottom: 0;
+  border-top: 1px solid var(--wf-line-2);
+  font-weight: 600;
+}
+.note {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+/* Phone (polish, 9 Nov 2026): each ward is a stacked block, its name on its own line and the four
+ * times as equal columns under it, so the 72 h column never runs past the sheet's edge. */
+@media (max-width: 480px) {
+  .table,
+  .table thead,
+  .table tbody,
+  .table tfoot {
+    display: block;
+  }
+  .table tr {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border-bottom: 1px solid var(--wf-line);
+  }
+  .table th,
+  .table td {
+    padding: 2px 4px;
+    border: 0;
+  }
+  .table tbody tr,
+  .table tfoot tr {
+    padding-block: 6px;
+  }
+  .table thead th:first-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .table tr > th[scope="row"] {
+    grid-column: 1 / -1;
+    white-space: normal;
+  }
+  .total {
+    border-top: 1px solid var(--wf-line-2);
+  }
+  .total th,
+  .total td {
+    border-top: 0;
+  }
+  .table tfoot tr {
+    border-bottom: 0;
+  }
+  .cell {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0;
+  }
+}

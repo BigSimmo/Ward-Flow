@@ -142,6 +142,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-117](#d-117-care-plans-follow-up-frequent-presenter-count-tribunal-date-and-ward-flags-10-november-2026)                                             | Care plans follow-up: frequent presenter count, tribunal date, ward flags            | Active                                           |
 | [D-118](#d-118-page-tops-referrals-and-ward-phone-limits-up-to-8-kb-above-main-10-november-2026)                                                        | Page tops: Referrals and Ward phone limits up to 8 KB above main                     | Active                                           |
 | [D-119](#d-119-page-tops-phone-limits-raised-to-measured-sizes-trim-after-merge-10-november-2026)                                                       | Page tops: phone limits at measured sizes, trim after merge                          | Active                                           |
+| [D-120](#d-120-discharge-and-capacity-values-pull-limit-transport-delay-and-discharge-date-slip-9-november-2026)                                        | Discharge and capacity values: pull limit, transport delay, date slip                | Active                                           |
 | [D-121](#d-121-working-rules-guards-and-your-pc-from-the-10-november-2026-audit-10-november-2026)                                                       | Working rules, guards and PC tidy from the 10 Nov audit                              | Active                                           |
 | [D-122](#d-122-clinical-and-privacy-answers-from-the-10-november-2026-audit-10-november-2026)                                                           | Clinical and privacy answers from the 10 Nov audit                                   | Active                                           |
 
@@ -1487,9 +1488,18 @@ is inferred.
 - **Why:** after #1578 merged, webpack began copying the shared `next/link` and `next/dynamic` code into page chunks on Referrals, Capacity and one ED (about 9 KB loaded twice). The follow-up adds a named shared chunk for that code and lowers the limits.
 - **Boundary:** this PR only; layout and download size only, no clinical change. Approves no release.
 
+## D-120. Discharge and capacity values: pull limit, transport delay and discharge date slip (9 November 2026)
+
+- **Date:** 9 November 2026. **Decided by:** Josh, on the decision card on the discharge and capacity review page (PR #1583). Numbered D-120 because D-116 to D-119 landed first.
+- **Decision:** three values join the clinical values register as signed:
+  1. **Extend pull limit:** a pulled bed can be held for at most 12 hours in total (feature 11, `pullHoldMaxTotal`).
+  2. **Transport delay:** a transport job not accepted within 30 minutes shows as delayed (feature 25, `transportAcceptDelay`).
+  3. **Discharge date slip:** a stay whose expected discharge date has moved more than 3 days is flagged as slipping (feature 6, `eddSlipFlag`).
+- **Boundary:** synthetic data only. Sets these three values; approves no merge or release.
+
 ## D-121. Working rules, guards and your PC from the 10 November 2026 audit (10 November 2026)
 
-- **Date:** 10 November 2026, 1:14 PM AWST (05:14 UTC). **Decided by:** Josh, answering "Yes to all recommendations" to the 16-item decision list of the second rules and docs audit ("Ward Flow rules and docs audit: final", 10 November 2026). D-120 is claimed by open PR #1583. Clinical and privacy answers are D-122.
+- **Date:** 10 November 2026, 1:14 PM AWST (05:14 UTC). **Decided by:** Josh, answering "Yes to all recommendations" to the 16-item decision list of the second rules and docs audit ("Ward Flow rules and docs audit: final", 10 November 2026). D-120 is the discharge and capacity values ruling (PR #1583). Clinical and privacy answers are D-122.
 - **Decision:**
   1. **`live` branch:** Josh protects `live` in GitHub so only the release workflow can update it, with no force-push or deletion. The local push guard also refuses a push to `live`.
   2. **Shared rules block:** approved as "replace the copied block with a pointer", but not applied, because the audit finding behind it was wrong. The block is a managed copy of `ai-rules/public/shared-working-rules.md`, which ai-rules generates from `global-rules.md`, writes between the block's markers and checks (`repository_rule_targets.py --check`, run by `sync-and-sign.ps1`). On 10 November 2026 the block on main matched that source exactly, and the source matched `global-rules.md`. A pointer would break that sync. The block stays; `AGENTS.md` now names its real source, and states the Ward Flow lines that differ (item 3).

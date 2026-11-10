@@ -62,6 +62,13 @@ function journeyEvents(movement: Movement, unitName: (id: string) => string | un
       tone: "info",
       text: `${STAGES.find((s) => s.id === change.to)?.label ?? change.to}, by ${change.by}`,
     });
+  // Feature 11: each extension of the current pull's hold, as the History tab lists it.
+  for (const extension of movement.pullExtensions ?? [])
+    events.push({
+      at: extension.at,
+      tone: "info",
+      text: `Bed pull extended by ${extension.minutes / 60} h, by ${extension.by}`,
+    });
   for (const unwind of movement.unwinds) {
     if (unwind.kind !== "pull_released" && unwind.kind !== "acceptance_withdrawn") continue;
     const ward = unwind.unitId === undefined ? undefined : (unitName(unwind.unitId) ?? unwind.unitId);

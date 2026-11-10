@@ -5,10 +5,9 @@ import { useRef, useState } from "react";
 import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
 import { ChevronDown, ChevronRight, Copy, FileText, Filter, Printer, Send, TrendingUp, Ambulance } from "lucide-react";
 import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
-import { dayOf, formatInstant, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY, formatInstant, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -39,7 +38,7 @@ import {
 import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { CriteriaLedTag } from "@/components/ward-management/ward/ward-criteria-led-tag";
-import { DischargeDayChart, type DischargeDay } from "./discharge-flow-charts";
+import { DischargeDayChart } from "./discharge-flow-charts";
 import styles from "./discharges.module.css";
 import releaseList from "./discharge-release-list.module.css";
 import {
@@ -67,12 +66,10 @@ import {
   WORK_ORDER,
   kpiCardLabel,
   recordStage,
-  recordStatus,
   recordName,
   recordedMoment,
   recordedDate,
   matchesHighlight,
-  perthDay,
 } from "./discharge-board-model";
 import { DischargePopulationSwitch, DischargeFilterCard } from "./discharge-board-filters";
 import {
@@ -84,10 +81,15 @@ import {
 } from "./discharge-detail-panes";
 import { useDischargeDeskView } from "./discharge-desk-view";
 import { useDischargeWorkspaceState } from "./use-discharge-workspace-state";
+import { dischargeChartDays } from "./discharge-chart-days";
 // Closing-the-loop package B (24 Oct 2026): the weekend and holiday list. Since the redesign (approved
 // 31 Oct 2026) it is a compact notice ABOVE the list, so it loads with the board: loaded lazily, the
 // server's copy vanished on hydration and came back, and the whole list jumped (layout shift 0.21).
 import { DischargeWeekendPrep } from "./discharge-weekend-prep";
+import { DischargeWeekendReview } from "./discharge-weekend-review-card";
+import { weekendReviewLeads } from "./discharge-weekend-review";
+import { DischargeSlippingList } from "./discharge-slipping-list";
+import { DischargeChecklistTag } from "./discharge-checklist-tag";
 import { followUpWithinWindowCheck } from "./discharge-follow-up-check";
 import { useAskOverdueWards } from "./discharge-message-ward";
 import { OnBehalfReasonForm } from "../on-behalf-reason-form-lazy";
@@ -107,9 +109,6 @@ import { OnBehalfReasonForm } from "../on-behalf-reason-form-lazy";
  * read it; the opposite is true, a discharge board that lagged reality would be actively
  * misleading about which bed is actually free to chase next.
  */
-
-/** Days the chart covers after today; the column before them gathers every date already passed. */
-const CHART_DAYS_AHEAD = 14;
 
 /** Recorded (DC4): the days of recorded discharges it lists. */
 const RECORDED_DAYS = 7;
@@ -262,52 +261,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const canChangeDate = siteName === undefined;
   const placeLine = (unit: (typeof units)[number] | undefined, unitId: string) =>
     siteName ? unitLabel(unit, unitId) : `${unitLabel(unit, unitId)} · ${healthServiceLabel(unit)}`;
-  const today = dayOf(now);
-  const chartDays: DischargeDay[] = [
-    {
-      key: "past",
-      // DC5 (Josh, 3 Nov 2026): the expected dates already gone by read "Overdue", not "Passed".
-      label: "Overdue",
-      name: "Overdue, expected date already passed",
-      expected: 0,
-      blocked: 0,
-      weekend: false,
-    },
-    ...Array.from({ length: CHART_DAYS_AHEAD }, (_, index): DischargeDay => {
-      const noon = (today + index) * MINUTES_PER_DAY + 12 * 60;
-      const weekday = perthDay(noon, dayZero, { weekday: "short" });
-      return {
-        key: index,
-        label: index === 0 ? "Today" : `${weekday} ${perthDay(noon, dayZero, { day: "numeric" })}`,
-        name: perthDay(noon, dayZero, { weekday: "long", day: "numeric", month: "long" }),
-        expected: 0,
-        blocked: 0,
-        weekend: weekday === "Sat" || weekday === "Sun",
-      };
-    }),
-  ];
-  const dayOfChart = (at: number | null) =>
-    chartDays.find((candidate) => matchesHighlight({ kind: "day", day: candidate.key }, at, null, now));
-  if (nowView) {
-    // Now: every open bed release in scope by its expected day, as Capacity's forecast counts
-    // recorded discharges; the red part is the held-up ones, as the list says. Closed wards are left
-    // out, as Capacity's forecast leaves them out (Josh, 30 Oct 2026), so the two pages agree.
-    const closedUnitIds = new Set(units.filter((unit) => unit.isClosed).map((unit) => unit.id));
-    for (const release of openReleases) {
-      if (closedUnitIds.has(release.unitId)) continue;
-      const day = dayOfChart(release.expectedAt);
-      if (!day) continue;
-      if (release.blocker !== null) day.blocked += 1;
-      else day.expected += 1;
-    }
-  } else {
-    for (const record of openScopedRecords) {
-      const day = dayOfChart(record.expectedDischargeAt);
-      if (!day) continue;
-      if (recordStatus(record) === "blocked") day.blocked += 1;
-      else day.expected += 1;
-    }
-  }
+  const chartDays = dischargeChartDays({ now, dayZero, nowView, units, openReleases, openScopedRecords });
   // The phone's Per day chip shows the overdue count, as the old Per day card did; its name adds today.
   const phoneOverdue = chartDays[0] ? chartDays[0].expected + chartDays[0].blocked : 0;
   const phoneTodayDay = chartDays.find((candidate) => candidate.key === 0);
@@ -520,6 +474,23 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     detailRelease && detailRelease.state !== "discharged" && !canRecordDeparture
       ? releaseActionLabel(detailRelease, canChangeDate)
       : null;
+  // Feature 14 (Josh, 9 Nov 2026): Weekend discharges leads on Thu and Fri, else sits under the list; filtered too.
+  const weekendReview =
+    guarded.status === "allowed" && population === "releases" ? (
+      <DischargeWeekendReview
+        records={records.filter(
+          (record) =>
+            s.scopedUnits.some((unit) => unit.id === record.unitId) && (ward === "all" || record.unitId === ward),
+        )}
+        releases={s.bedReleases}
+        units={units}
+        now={now}
+        dayZero={dayZero}
+        actorFor={s.recordActorFor}
+        dispatch={dispatch}
+      />
+    ) : null;
+  const weekendReviewFirst = weekendReviewLeads(now, dayZero);
   const drawerPrimary =
     phoneClearBlocker && detailRelease ? (
       <Button
@@ -864,6 +835,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
         ) : null}
         {/* Josh, 30 Oct: the weekend and holiday cut-offs are a compact notice above the list, not a
             panel under about 60 rows. */}
+        {weekendReviewFirst ? weekendReview : null}
         {guarded.status === "allowed" && population === "releases" ? (
           <DischargeWeekendPrep
             // DC3 (Josh, 3 Nov 2026): the card follows the Service and Ward filters, as the list does.
@@ -884,6 +856,25 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             dayZero={dayZero}
             onOpen={(id, opener) => openReleaseOn(id, opener, "barriers")}
             foldable={isPhone}
+          />
+        ) : null}
+        {/* Feature 6 (9 Nov 2026): stays whose expected date has slipped past the flag, most slipped first.
+            A row with no bed release flagged yet still opens, on the stay's discharge record. */}
+        {guarded.status === "allowed" && population === "releases" ? (
+          <DischargeSlippingList
+            records={visibleRecords}
+            units={units}
+            dayZero={dayZero}
+            onOpen={(admissionId, opener) => {
+              const release = s.bedReleases.find(
+                (candidate) => candidate.admissionId === admissionId && candidate.state !== "discharged",
+              );
+              if (release) openReleaseOn(release.id, opener, "milestones");
+              else {
+                const record = visibleRecords.find((candidate) => candidate.admissionId === admissionId);
+                if (record) openRecord(record, opener);
+              }
+            }}
           />
         ) : null}
         <div
@@ -1069,6 +1060,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                       ? "No time yet"
                                       : "Not arranged"}
                               </span>
+                              <DischargeChecklistTag record={record} showChecklist={false} />
                             </td>
                           </tr>
                         );
@@ -1148,6 +1140,11 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                 <SrOnly>{criteriaChip.phrase}</SrOnly>
                               </span>
                             ) : null;
+                            // Features 37 and 13 (9 Nov 2026): the checklist tally and the team's follow-up reply.
+                            const checklistTag =
+                              linked && release.state !== "discharged" ? (
+                                <DischargeChecklistTag record={linked} dependencies={release.dependencies} />
+                              ) : null;
                             return (
                               <tr
                                 key={release.id}
@@ -1244,6 +1241,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                         <span className="sr-only">Not held up</span>
                                       )}
                                       {criteriaTag}
+                                      {checklistTag}
                                     </td>
                                   </>
                                 )}
@@ -1353,6 +1351,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                           </>
                                         )}
                                         {criteriaTag}
+                                        {checklistTag}
                                       </div>
                                     </td>
                                   </>
@@ -1490,6 +1489,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             />
           </div>
         ) : null}
+        {weekendReviewFirst ? null : weekendReview}
         <WardPrototypeFooter
           testId="ward-discharge-governance"
           note="This board shows only what a ward has recorded — a release expected, confirmed or discharged, and whether it is currently blocked — and it never adds an expected or unreleased bed into the Ready figure · Not approved for clinical use"

@@ -242,6 +242,7 @@ const seededMovements: Movement[] = [
       provider: "Patient transport service",
       escortRequired: true,
       formRequired: SEEDED_TRANSPORT_FORM_REQUIRED,
+      bookedAt: NOW_ANCHOR - 55,
       acceptedAt: NOW_ANCHOR - 30,
     },
     blocker: "Transport escort confirming departure time",
@@ -284,6 +285,7 @@ const seededMovements: Movement[] = [
       id: "TR-1006",
       provider: "Patient transport service",
       escortRequired: true,
+      bookedAt: NOW_ANCHOR - 70,
       acceptedAt: NOW_ANCHOR - 50,
       enRouteAt: NOW_ANCHOR - 15,
       // Collected 8 minutes after going en route (a short RGH-to-RGH-Adult-Secure hop), so at
@@ -766,6 +768,10 @@ const seededMovements: Movement[] = [
       id: "TR-1015",
       provider: "Patient transport service",
       escortRequired: true,
+      // Feature 25 demo: booked two hours ago, accepted late, and the provider's estimate has passed,
+      // so the transport list shows it as Delayed.
+      bookedAt: NOW_ANCHOR - 120,
+      estimatedAt: NOW_ANCHOR - 75,
       acceptedAt: NOW_ANCHOR - 15,
     },
     blocker: "Awaiting transport escort",
@@ -802,6 +808,8 @@ const seededMovements: Movement[] = [
     unwinds: [],
     stageChanges: [],
     pullExpiresAt: NOW_ANCHOR + 45,
+    // Feature 11 demo: the ward extended this hold by an hour while the bed was cleaned.
+    pullExtensions: [{ at: NOW_ANCHOR - 30, by: "ward", minutes: 60 }],
   },
   {
     id: "WF-017",
@@ -1461,6 +1469,7 @@ const journeyCoverageMovements: Movement[] = [
       id: "TR-1021",
       provider: "Patient transport service",
       escortRequired: false,
+      bookedAt: NOW_ANCHOR - 35,
       acceptedAt: NOW_ANCHOR - 20,
     },
     blocker: "Transport booked, ward preparing the bed",

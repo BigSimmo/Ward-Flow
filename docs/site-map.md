@@ -31,6 +31,7 @@ See also [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md), which pairs each 
 - `/ward-flow/help` - Route discovered from app directory Source: `src/app/ward-flow/help/page.tsx`.
 - `/ward-flow/hub` - Route discovered from app directory Source: `src/app/ward-flow/hub/page.tsx`.
 - `/ward-flow/hub/catchments` - Route discovered from app directory Source: `src/app/ward-flow/hub/catchments/page.tsx`.
+- `/ward-flow/leave` - Route discovered from app directory Source: `src/app/ward-flow/leave/page.tsx`.
 - `/ward-flow/legal-forms` - Route discovered from app directory Source: `src/app/ward-flow/legal-forms/page.tsx`.
 - `/ward-flow/movements` - Route discovered from app directory Source: `src/app/ward-flow/movements/page.tsx`.
 - `/ward-flow/movements/[movementId]` - Route discovered from app directory Source: `src/app/ward-flow/movements/[movementId]/page.tsx`.

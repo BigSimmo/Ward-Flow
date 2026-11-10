@@ -560,19 +560,6 @@
     "other_call_the_ward"
    ]
   },
-  "DISCHARGE_DELAY_REASONS": {
-   "file": "ward-change-reasons.ts",
-   "members": [
-    "accommodation",
-    "ndis_support",
-    "community_follow_up",
-    "medication_supply",
-    "transport",
-    "family_carer",
-    "sat_hearing",
-    "public_guardian"
-   ]
-  },
   "DISCHARGE_DELAY_CLEAR_REASONS": {
    "file": "ward-change-reasons.ts",
    "members": [
@@ -611,15 +598,6 @@
     "Clinical / Treatment",
     "Social / Family",
     "Several"
-   ]
-  },
-  "PULL_RELEASE_REASONS": {
-   "file": "ward-admissions.ts",
-   "members": [
-    "Clinical condition changed",
-    "Transport unavailable",
-    "Admission declined",
-    "Pulled in error"
    ]
   },
   "DISCHARGE_ROLE_LABELS": {

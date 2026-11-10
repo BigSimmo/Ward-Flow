@@ -12,6 +12,7 @@ import { ClipboardList, Printer, ShieldAlert } from "lucide-react";
 import { Badge, Button, Meter, Segmented } from "@/components/wf";
 import type { PilotFigures } from "@/components/ward-management/reports/pilot-measures-section";
 import { PeopleNotListed } from "@/components/ward-management/statistics/statistics-small-numbers";
+import { READMISSION_WINDOW_DAYS } from "@/components/ward-management/ward-readmission";
 
 import {
   Bars,
@@ -75,6 +76,12 @@ export type WeeklyBodyProps = {
   onPrint: () => void;
   /** Print-only lines: the exact period and when the report was made. */
   printLines: ReactNode;
+  /** Feature 29: arrivals in the week carrying the 28 day readmission flag. Operational desks only. */
+  readmissions?: { arrivals: number; readmitted: number };
+  /** Feature 42: the delayed discharge grid, under the week's pressure figures. Operational desks only. */
+  heatmap?: ReactNode;
+  /** Item 5: the "Delayed bed days by reason" card, operational view only. */
+  delayedReasons?: ReactNode;
 };
 
 function total(value: Decisions): number | undefined {
@@ -158,6 +165,17 @@ export function WeeklyBody(props: WeeklyBodyProps) {
       flag: pilot.transport.late.positive,
       testId: "ward-pilot-transport-late",
     },
+    ...(props.readmissions
+      ? [
+          {
+            name: `Readmitted within ${READMISSION_WINDOW_DAYS} days`,
+            // "Stays", not "arrivals": measure 1 counts arrivals from a Ward Flow request, a smaller group.
+            sub: `of ${plural(props.readmissions.arrivals, "stay", "stays")} started in the week`,
+            value: props.readmissions.readmitted,
+            testId: "ward-weekly-readmitted",
+          },
+        ]
+      : []),
     {
       name: "Records complete",
       sub: "every step timed",
@@ -413,6 +431,10 @@ export function WeeklyBody(props: WeeklyBodyProps) {
           </Tile>
         </Strip>
       </StatCardR>
+
+      {props.heatmap}
+
+      {props.delayedReasons}
 
       <Grid layout="wide">
         <StatCardR

@@ -48,6 +48,7 @@ describe("Ward Flow Read-Only Plain History", () => {
       // RECORD_ACCEPTANCE_CONDITION, MARK_ACCEPTANCE_CONDITION_MET, RECORD_RESTRICTION_REVIEW and
       // MARK_CLOSURE_TRANSITION_ITEM. Package A adds RECORD_REFERRAL_COMMITMENT; package E adds two.
       // Package B adds RECORD_DISCHARGE_DEPENDENCY and RECORD_DISCHARGE_PLAN_CHANGE.
+      // Features 37 and 13 (9 Nov 2026) add RECORD_DISCHARGE_CHECK and RECORD_FOLLOW_UP_REPLY.
       // Audit 24-1 decision 4 (24 Oct 2026) removes RELEASE_BED; old records keep their wording.
       // H-0150 adds UNDO_BED_MEETING_ACTION.
       // H-0978 / WS-15 (26 Oct 2026) adds SET_BED_CLOSED.
@@ -59,12 +60,16 @@ describe("Ward Flow Read-Only Plain History", () => {
       // Gap list (Josh, 4 Nov 2026) adds RECORD_LEGAL_FORM_DETAILS and RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP.
       // Tier 1 item 6 (4 Nov 2026) adds UNDO_BED_STEP, UNDO_RELEASE_STEP and UNDO_PATIENT_RECORD.
       // Triage and risk (7 Nov 2026) adds RECORD_TRIAGE_SIGNED.
+      // Feature 11 (Josh, 9 Nov 2026) adds EXTEND_PULL.
+      // Feature 14 (9 Nov 2026) adds MARK_WEEKEND_DISCHARGE_REVIEWED.
+      // Feature 5 (9 Nov 2026) adds SET_CLINICALLY_READY.
+      // Features 37 and 13 (9 Nov 2026) add RECORD_DISCHARGE_CHECK and RECORD_FOLLOW_UP_REPLY.
       // Care plans and safety flags (D-104, 9 Nov 2026) adds RECORD_CARE_PLAN, RECORD_TRIBUNAL_HEARING,
       // RECORD_TRIBUNAL_OUTCOME and SET_CULTURAL_SUPPORT_REQUEST.
       // Review tracker and wait list (9 Nov 2026) add REQUEST_PSYCH_REVIEW, RECORD_PSYCH_REVIEW_SEEN
       // and MARK_WARD_READY_FOR_NEXT. Staff needed (9 Nov 2026) adds REQUEST_WARD_STAFF and
       // CLOSE_WARD_STAFF_REQUEST.
-      expect(allEventTypes.length).toBe(188);
+      expect(allEventTypes.length).toBe(193);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

@@ -1,0 +1,94 @@
+/* Feature 14 (9 Nov 2026): Weekend discharges. One quiet card, a row per person, no coloured edge. */
+.card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-bottom: var(--wf-s-4);
+}
+.empty {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0 var(--wf-s-4);
+  list-style: none;
+}
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 48px;
+  padding: var(--wf-s-2) 0;
+}
+.row + .row {
+  border-top: 1px solid var(--wf-line);
+}
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+/* Long names wrap in full. */
+.name {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+.meta {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.figure,
+.when {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+.when {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+.action {
+  display: flex;
+  justify-content: flex-end;
+  min-width: 7.5rem;
+}
+.done {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+.pending {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+/* Phone: the time drops under the name and the tick stays on the right. */
+@media (max-width: 46.4375rem) {
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "main action"
+      "when action";
+    row-gap: 2px;
+  }
+  .main {
+    grid-area: main;
+  }
+  .when {
+    grid-area: when;
+  }
+  .action {
+    grid-area: action;
+    min-width: 0;
+  }
+}

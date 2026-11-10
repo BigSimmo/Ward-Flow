@@ -81,15 +81,22 @@ function anAdmission(overrides: Partial<Admission> = {}): Admission {
     blockReason: null,
     stayBlockClearances: [],
     stayBlockRecords: [],
+    weekendDischargeReviews: [],
     leavingDestination: null,
     leftAt: null,
     followUp: null,
     careJourney: { contacts: [], plan: {}, documents: {}, episodes: [] },
     dischargeBarrier: null,
+    clinicallyReadySince: null,
+    delayedDischargeReason: null,
     dischargeCriteria: null,
     stepDownCandidate: false,
     // Smart features idea 5 (19 Oct 2026): bed meeting actions, so the built fixture carries every field.
     meetingActions: [],
+    // Features 6, 37 and 13 (9 Nov 2026), so the built fixture carries every field.
+    dischargeDateTrail: { firstExpectedAt: DAY_ZERO, revisions: [] },
+    dischargeChecks: {},
+    followUpReply: { state: "awaiting", at: DAY_ZERO, by: "community" },
     ...overrides,
   };
 }
@@ -588,6 +595,10 @@ describe("Admission privacy — structural", () => {
     // put this stay in. Never a fact about the person; no `AUTHORISED_PERSON_FACTS` entry.
     "bedNumber",
     "dischargeBarrier",
+    // WIDENED ON PURPOSE, 9 Nov 2026 — Josh, item 5: the ward's clinically ready day and the one
+    // listed reason the stay has not ended. Chosen, never typed.
+    "clinicallyReadySince",
+    "delayedDischargeReason",
     "dischargeCriteria",
     "stepDownCandidate",
     "state",
@@ -604,6 +615,8 @@ describe("Admission privacy — structural", () => {
     "awayAtEmergencyDepartmentSince",
     "expectedDischargeAt",
     "dischargeDateMoves",
+    // Feature 6 (9 Nov 2026): the first expected date and each move. Times only, no free text.
+    "dischargeDateTrail",
     "dischargeDateSetAt",
     "dischargeDateSetBy",
     // WIDENED ON PURPOSE, 2026-08-29 — see this describe block's own doc comment. Two fields, and
@@ -615,10 +628,15 @@ describe("Admission privacy — structural", () => {
     "stayBlockClearances",
     // WF-23 (5 Nov 2026): recorded hold-ups. A time, a role and a fixed-list value, no free text.
     "stayBlockRecords",
+    // Feature 14 (9 Nov 2026): weekend discharge review ticks. Two times and a role, no free text.
+    "weekendDischargeReviews",
     "leavingDestination",
     "leftAt",
     "followUp",
     "careJourney",
+    // Features 37 and 13 (9 Nov 2026): listed checklist states and a listed reply, each with a time and role.
+    "dischargeChecks",
+    "followUpReply",
     // Smart features idea 5: chosen actions, owners and instants only.
     "meetingActions",
   ].sort();
@@ -670,6 +688,7 @@ describe("Admission privacy — structural", () => {
       blockReason: "Awaiting transport",
       stayBlockClearances: [],
       stayBlockRecords: [],
+      weekendDischargeReviews: [],
       leavingDestination: "discharged-to-the-community",
       leftAt: DAY_ZERO + 30 * MINUTES_PER_DAY,
       // Populated for the same reason the ED timestamp above is: a null here would make the new
@@ -678,9 +697,28 @@ describe("Admission privacy — structural", () => {
       followUp: { state: "arranged", recordedAt: 10 * 60, recordedBy: "Ward manager" },
       careJourney: { contacts: [], plan: {}, documents: {}, episodes: [] },
       dischargeBarrier: "Accommodation / Housing",
+      clinicallyReadySince: DAY_ZERO + 25 * MINUTES_PER_DAY,
+      delayedDischargeReason: "Accommodation / Housing",
       dischargeCriteria: { setAt: DAY_ZERO, items: [{ criterion: "Accommodation confirmed", metAt: null }] },
       stepDownCandidate: true,
       meetingActions: [{ kind: "review_step_down", owner: "coordinator", dueAt: 600, recordedAt: 360 }],
+      dischargeDateTrail: {
+        firstExpectedAt: DAY_ZERO + 18 * MINUTES_PER_DAY,
+        revisions: [
+          {
+            at: DAY_ZERO + 5 * MINUTES_PER_DAY,
+            previousExpectedAt: DAY_ZERO + 18 * MINUTES_PER_DAY,
+            expectedAt: DAY_ZERO + 20 * MINUTES_PER_DAY,
+          },
+        ],
+      },
+      dischargeChecks: { gp_letter: { state: "done", at: DAY_ZERO + 29 * MINUTES_PER_DAY, by: "ward" } },
+      followUpReply: {
+        state: "declined",
+        reason: "GP follow-up instead",
+        at: DAY_ZERO + 4 * MINUTES_PER_DAY,
+        by: "community",
+      },
     };
     expect(Object.keys(canonical).sort()).toEqual(ALLOWED_ADMISSION_FIELDS);
   });

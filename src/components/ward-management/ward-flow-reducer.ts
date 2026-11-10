@@ -1779,6 +1779,7 @@ export function reduceClinicalEvent(
     case "REQUEST_CAPACITY_REFRESH":
     case "SET_STEP_DOWN_CANDIDATE":
     case "SET_DISCHARGE_BARRIER":
+    case "SET_CLINICALLY_READY":
     case "SET_DISCHARGE_CRITERIA":
     case "UPLOAD_PATIENT_FORM":
     case "EVALUATE_LEAVE_BED_WARNINGS":
@@ -1981,6 +1982,7 @@ export function reduceClinicalEvent(
       });
 
     case "PULL_PATIENT":
+    case "EXTEND_PULL":
     case "RELEASE_PULL":
     case "RELEASE_HELD_BED":
     case "RELEASE_DIVERTED_BED":
@@ -2351,6 +2353,10 @@ export function reduceClinicalEvent(
     }
     case "RECORD_WARD_DIAGNOSIS":
       return reducerSlices().reduceWardDiagnosis(state, event, reject);
+    case "MARK_WEEKEND_DISCHARGE_REVIEWED":
+    case "RECORD_DISCHARGE_CHECK":
+    case "RECORD_FOLLOW_UP_REPLY":
+      return reducerSlices().reduceDischargeFollowThroughEvent(state, event, reject);
     // Closing-the-loop (package E).
     case "RECORD_HOME_SERVICE_RETURN":
       return reduceHomeServiceReturn(state, event, reject);
