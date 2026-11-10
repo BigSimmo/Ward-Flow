@@ -82,6 +82,10 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "plannedMoveAt",
   "cancelledAt",
   "collectedAt",
+  // Item 9 (10 Nov 2026): a police or ambulance crew's typed times (`Movement.crew*At`).
+  "crewArrivedAt",
+  "crewHandedOverAt",
+  "crewReleasedAt",
   /**
    * A notice's read-time. ⚠️ **NOTHING WRITES IT TODAY** — `Notice.readAt` is `undefined` until an
    * addressed viewer reads the notice, and the phase that raised notices deliberately built no read

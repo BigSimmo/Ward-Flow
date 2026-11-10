@@ -121,7 +121,6 @@ import type { RecordWardDiagnosisEvent } from "@/components/ward-management/ward
 import type { MarkWeekendDischargeReviewedEvent } from "@/components/ward-management/ward-flow-weekend-review-events";
 // The role table lives in its own file (line cap, 18 Oct 2026), re-exported here.
 export { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
-
 // The ED's intake form type lives in its own file (line cap, 22 Oct 2026), re-exported here.
 import type { ReferralDraft } from "@/components/ward-management/ward-referral-draft";
 export type { ReferralDraft };
@@ -2543,6 +2542,7 @@ export type WardFlowEvent =
   // Package B (24 Oct 2026) dependencies and plan changes; features 37 and 13 (9 Nov 2026) checklist and reply.
   | import("./discharges/discharge-check-events").DischargeDeskEvent
   | ObservationLevelEvent
+  | import("./ward-crew-handover").RecordCrewTimesEvent
   | RecordWardDiagnosisEvent
   // Feature 14 (Josh, 9 Nov 2026): the weekend discharge review tick.
   | MarkWeekendDischargeReviewedEvent

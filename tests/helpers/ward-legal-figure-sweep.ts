@@ -1383,6 +1383,12 @@ function candidatesForMovements(
       }));
     case "RECORD_LEFT_DEPARTMENT":
       return movementIds.map((movementId) => ({ type, role, now, movementId }));
+    // Item 9 (10 Nov 2026): a police or ambulance crew's typed arrival time. It writes no legal
+    // figure; unscoped, so any police or ambulance arrival in the swept state may take it.
+    case "RECORD_CREW_TIMES":
+      return state.movements
+        .filter((m) => m.arrivalMode === "police" || m.arrivalMode === "ambulance")
+        .map((m) => ({ type, role, now, movementId: m.id, crewArrivedAt: now - 30 }));
     case "WITHDRAW_WARD_REQUEST":
       return state.movements.flatMap((m) =>
         (m.referredUnitIds ?? []).map((unitId) => ({

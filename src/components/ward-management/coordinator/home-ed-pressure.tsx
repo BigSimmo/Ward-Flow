@@ -14,6 +14,7 @@ import { edLongestWaitTone, edPressure } from "@/components/ward-management/ward
 import { edHealthService, healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 import { edShortName, siteByCode } from "@/components/ward-management/ward-sites";
 import { WARD_ED_HREF } from "@/components/ward-management/ward-nav";
+import { EdCrewsWaitingLine } from "@/components/ward-management/ed/ed-crews-waiting-line";
 
 import heroStyles from "./home-hero.module.css";
 import styles from "./home.module.css";
@@ -250,6 +251,18 @@ export function HomeEdPressure({
       ) : null}
     </ul>
   );
+  // Item 9 (10 Nov 2026): police and ambulance crews still recorded as waiting, across the
+  // departments shown. Nothing when none is.
+  const shownEdIds = new Set(scoped.map((row) => row.ed.id));
+  const crewsLine = (
+    <EdCrewsWaitingLine
+      movements={movements.filter(
+        (movement) => movement.originEdId !== undefined && shownEdIds.has(movement.originEdId),
+      )}
+      now={now}
+      className={c.cardNote}
+    />
+  );
   const serviceFoot = service ? (
     <p className={c.cardNote} data-testid="ward-pressure-strip-service-foot">
       {`${hiddenByService} departments outside ${service} are not shown.`}
@@ -274,6 +287,7 @@ export function HomeEdPressure({
           ) : null}
         </header>
         {list}
+        {crewsLine}
         {serviceFoot}
       </section>
     );
@@ -287,6 +301,7 @@ export function HomeEdPressure({
     >
       <h2 className="sr-only">ED pressure</h2>
       {list}
+      {crewsLine}
       {/* The ED access forecast heads Planned now (Home and Activity design, 31 Oct 2026). */}
       {serviceFoot}
     </Card>

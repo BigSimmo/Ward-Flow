@@ -465,6 +465,8 @@ describe("who may raise which event", () => {
     // RB3, item 19: the department holding the patient records the outcome — same reasoning as
     // RECORD_LEFT_DEPARTMENT above.
     RECORD_ED_OUTCOME: ["ed", "coordinator"],
+    // Item 9 (10 Nov 2026): the department holding the patient types its police or ambulance crew times.
+    RECORD_CREW_TIMES: ["ed", "coordinator"],
     SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward", "community"],
     SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
     RECORD_WARD_DIAGNOSIS: ["ward", "coordinator"],

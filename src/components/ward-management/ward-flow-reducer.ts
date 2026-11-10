@@ -1895,6 +1895,7 @@ export function reduceClinicalEvent(
     case "RECORD_REPATRIATION":
     case "RECORD_CLINICAL_CONTACT":
     case "RECORD_SUPPORT_NOTIFICATION":
+    case "RECORD_CREW_TIMES":
       return reducerSlices().reduceRecordedFactEvent(state, event, decision, RECORDED_FACT_EVENT_HELPERS);
     case "RECORD_OBSERVATION_LEVEL":
       return reduceObservationLevelEvent(state, event, RECORDED_FACT_EVENT_HELPERS, decision);
@@ -1983,7 +1984,6 @@ export function reduceClinicalEvent(
         replaceAdmission,
         replaceMovement,
       });
-
     case "PULL_PATIENT":
     case "EXTEND_PULL":
     case "RELEASE_PULL":

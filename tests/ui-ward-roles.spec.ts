@@ -960,11 +960,12 @@ test.describe("@mockup Emergency department screen", () => {
         has: page.getByRole("button", { name: "Close patient details" }),
       });
       await expect(record).toBeVisible();
-      await expect(record.getByText("Police presence", { exact: true })).toHaveCount(
+      // Item 9 (10 Nov 2026): the police crew's typed times replace "Police in attendance".
+      await expect(record.getByText("Police crew", { exact: true })).toHaveCount(
         id === "ward-ed-patient-WF-009" ? 1 : 0,
       );
       if (id === "ward-ed-patient-WF-009")
-        await expect(record.getByText("Police in attendance", { exact: true })).toBeVisible();
+        await expect(record.getByTestId("ward-ed-crew-crewArrivedAt")).toContainText("Not recorded");
       await record.getByRole("button", { name: "Close patient details" }).click();
       await expect(record).toBeHidden();
     }

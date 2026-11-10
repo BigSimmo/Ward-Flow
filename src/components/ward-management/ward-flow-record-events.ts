@@ -33,6 +33,7 @@ import type {
 } from "./ward-flow-reducer";
 import { reduceRecordedLegalEvent } from "./ward-flow-record-legal-events";
 import { reduceRecordedStayEvent } from "./ward-flow-record-stay-events";
+import { reduceCrewTimesEvent } from "./ward-crew-handover";
 import { movementPatientIdentityMatchesRecord } from "./ward-patient-resolver";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import {
@@ -99,7 +100,8 @@ export type RecordedFactEvent = Extract<
       | "RECORD_HANDOVER_SIGN_OFF"
       | "RECORD_REPATRIATION"
       | "RECORD_CLINICAL_CONTACT"
-      | "RECORD_SUPPORT_NOTIFICATION";
+      | "RECORD_SUPPORT_NOTIFICATION"
+      | "RECORD_CREW_TIMES";
   }
 >;
 
@@ -1364,6 +1366,9 @@ export function reduceRecordedFactEvent(
     case "RECORD_COUNTRY_EXTENSION":
     case "RECORD_LEGAL_FORM_CONTINUATION":
       return reduceRecordedLegalEvent(state, event, decision, helpers);
+    // Item 9: a police or ambulance crew's typed times, declared beside its rule.
+    case "RECORD_CREW_TIMES":
+      return reduceCrewTimesEvent(state, event, helpers);
   }
   return state;
 }

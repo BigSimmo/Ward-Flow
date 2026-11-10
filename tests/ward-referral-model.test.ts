@@ -461,6 +461,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     RECORD_PATIENT_DISCHARGE: false,
     RECORD_LEAVING: false,
     RECORD_LEFT_DEPARTMENT: false,
+    // Item 9: a police or ambulance crew's typed times. Records when a crew waited; refuses nobody.
+    RECORD_CREW_TIMES: false,
     // RB3, item 19: the department recording that a patient no longer needs a bed search (going
     // home, or needing community follow-up instead). Not a refusal by a RECEIVING unit — no unit
     // is declining a placement, the department is stating its own disposition of the patient, the

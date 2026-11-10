@@ -266,6 +266,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "ARCHIVE_PATIENT",
   "RECORD_LEAVING",
   "RECORD_LEFT_DEPARTMENT",
+  // Item 9 (10 Nov 2026): a movement id and up to three typed clock times. No typed text.
+  "RECORD_CREW_TIMES",
   "RECORD_LEGAL_FORM_EXPIRY",
   "RECORD_LEGAL_FORM_RECEIVED",
   "RECORD_LOCAL_BED_SOUGHT",

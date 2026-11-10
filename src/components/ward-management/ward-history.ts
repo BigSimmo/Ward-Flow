@@ -104,6 +104,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   EXTEND_PULL: { category: "both", plainWording: "Pull time limit extended" },
   REFER_TO_COMMUNITY_TEAM: { category: "patient", plainWording: "Patient diverted to Community Mental Health" },
   RECORD_LEFT_DEPARTMENT: { category: "patient", plainWording: "Patient departed Emergency Department" },
+  RECORD_CREW_TIMES: { category: "patient", plainWording: "Police or ambulance crew times recorded" },
   STEP_BACK_STAGE: { category: "patient", plainWording: "Movement stepped back to earlier stage" },
   WITHDRAW_ACCEPTANCE: { category: "patient", plainWording: "Ward acceptance withdrawn" },
   WITHDRAW_WARD_REQUEST: { category: "patient", plainWording: "Ward shortlist request withdrawn" },

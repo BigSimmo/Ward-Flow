@@ -21,6 +21,7 @@ import { ListExportButton } from "../ward-list-export-button";
 import { renderEdBoardRow } from "./ed-screen-board-row";
 import { TierBarsKey } from "./ed-handover-cells";
 import handover from "./ed-handover.module.css";
+import { EdCrewsWaitingLine } from "./ed-crews-waiting-line";
 
 const COLUMNS = ["Patient", "In ED", "Bay", "Presentation", "Form", "Checks", "Referral", "Next"] as const;
 
@@ -179,6 +180,7 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
             </span>
           </h2>
           <p>{orderWords}</p>
+          <EdCrewsWaitingLine movements={patients} now={now} />
         </div>
         <div className={handover.handoverTools}>
           {/* D-91: the one page search field. */}

@@ -879,6 +879,14 @@ export type Movement = MovementBase & {
   }[];
   /** How the patient reached the department. Police attendance is a real and invisible pressure. */
   arrivalMode?: "self" | "ambulance" | "police";
+  /**
+   * Item 9 (police and ambulance handover times, D-93): the crew's times as typed from the paper by
+   * `RECORD_CREW_TIMES`, only for a police or ambulance arrival. Each is absent until typed and is
+   * never filled in or worked out. A record saved before item 9 has none of them.
+   */
+  crewArrivedAt?: Instant;
+  crewHandedOverAt?: Instant;
+  crewReleasedAt?: Instant;
   /** When a pulled bed lapses. A pull cannot expire without a time to expire at. */
   pullExpiresAt?: Instant;
   /**
