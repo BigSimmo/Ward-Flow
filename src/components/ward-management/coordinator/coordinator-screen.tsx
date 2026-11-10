@@ -873,7 +873,9 @@ export function CoordinatorScreen() {
             <span className={`${flowStyles.navRule} ${folderTabClasses.rule}`} aria-hidden="true" />
             <div className={flowStyles.stageGroup} data-active={shownView === "queue" ? "true" : undefined}>
               <div className={flowStyles.stageTabs}>
+                {/* The stages filter Flow rather than switch panels, so they are pressed buttons, not tabs. */}
                 <PillTabs
+                  toggles
                   label="Flow stages"
                   className={flowStyles.stagePills}
                   value={shownView === "queue" ? (flowStage ?? "all") : "none"}

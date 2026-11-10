@@ -34,11 +34,16 @@
 }
 
 .actWords {
-  min-inline-size: 0;
+  flex: none;
+  max-inline-size: 100%;
 }
 
+/* The longest wait gives way first: it truncates rather than squeezing the words onto one word per line. */
 .actRight {
-  flex: none;
+  flex: 0 1 auto;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   margin-inline-start: auto;
   padding-inline-end: var(--wf-s-1);
   font: 500 var(--wf-fs-13) / 18px var(--wf-mono);
@@ -81,12 +86,26 @@
 }
 
 /* The screen chip: a TV icon, the screen's name and a chevron, opening the screen picker. */
-.screenIcon {
-  display: inline-flex;
-}
 
 .chipChevron {
   opacity: 0.75;
+}
+
+/* Below desktop the act card sits beside the figures and is too narrow for one line: the place goes
+   as on phone, and the longest wait drops under the words rather than truncating. */
+@media (max-width: 63.9375rem) {
+  .actLine {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+
+  .actRight {
+    margin-inline-start: 0;
+  }
+
+  .wideOnly {
+    display: none;
+  }
 }
 
 @media (max-width: 46.4375rem) {

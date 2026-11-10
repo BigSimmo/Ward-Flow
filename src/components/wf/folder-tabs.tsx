@@ -101,11 +101,14 @@ function FolderShape({ navRef, value }: { navRef: RefObject<HTMLElement | null>;
         node.style.width = `${round(width)}px`;
       }
       shape.style.clipPath = `path("${path}")`;
+      nav.setAttribute("data-folder-painted", "");
       shown.current = { x0, x1 };
     };
 
     const place = (animate: boolean) => {
       cancelAnimationFrame(frame);
+      // A move cut short never reaches its last frame, so it is marked over here.
+      moving = false;
       const { left, width, x0, x1 } = target();
       const from = shown.current;
       if (!animate || !from || reduce?.matches || (from.x0 === x0 && from.x1 === x1)) {
@@ -184,8 +187,21 @@ function FolderShape({ navRef, value }: { navRef: RefObject<HTMLElement | null>;
     nav.addEventListener("transitionend", settled);
     // The hero above can settle after mount (its gutter bleed or a phone layout swap), so it is watched too,
     // and the chosen tab is measured again once the web fonts have loaded.
-    const hero = nav.parentElement?.querySelector<HTMLElement>("[data-wf-hero]");
+    let hero: HTMLElement | null = null;
+    const watchHero = () => {
+      const next = nav.parentElement?.querySelector<HTMLElement>("[data-wf-hero]") ?? null;
+      if (next === hero) return;
+      if (hero) resize?.unobserve(hero);
+      hero = next;
+      if (next) resize?.observe(next);
+      place(false);
+    };
+    hero = nav.parentElement?.querySelector<HTMLElement>("[data-wf-hero]") ?? null;
     if (hero) resize?.observe(hero);
+    // A page can swap its hero (a phone or wide layout) while the tabs stay, so the new one is watched.
+    const heroSwap =
+      typeof MutationObserver === "undefined" || !nav.parentElement ? null : new MutationObserver(watchHero);
+    if (nav.parentElement) heroSwap?.observe(nav.parentElement, { childList: true });
     let live = true;
     void document.fonts?.ready.then(() => {
       if (live && !moving) place(false);
@@ -196,6 +212,7 @@ function FolderShape({ navRef, value }: { navRef: RefObject<HTMLElement | null>;
       cancelAnimationFrame(frame);
       resize?.disconnect();
       mutations?.disconnect();
+      heroSwap?.disconnect();
       nav.removeEventListener("transitionend", settled);
       tabSwitch?.removeEventListener("scroll", follow);
       document.removeEventListener("scroll", checkDocked, { capture: true });

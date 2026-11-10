@@ -15,6 +15,7 @@ import { useMidlandDay, useMidlandDemo } from "./use-midland-demo";
 import { perthClockTime } from "@/components/ward-management/ward-clock";
 import { openReferrals, recordMidlandContact, todaysMidlandContacts, useMidlandDecisions } from "./midland-decisions";
 import { Initials } from "./parts";
+import { MIDLAND_ACT_NOW_ATTR } from "./midland-top";
 import t from "./team-2026.module.css";
 
 export type TeamGo = (
@@ -56,12 +57,19 @@ function ListRow(props: {
   );
 }
 
-function ListGroup(props: { tone: WfTone; title: string; hint: string; children: React.ReactNode[] }) {
+function ListGroup(props: {
+  tone: WfTone;
+  title: string;
+  hint: string;
+  /** The act-now group: Show act now scrolls to and focuses its heading. */
+  actNow?: boolean;
+  children: React.ReactNode[];
+}) {
   return (
     <section className={t.lg}>
       <div className={t.lgHead}>
         <StatusGlyph tone={props.tone} size={12} />
-        <h3>{props.title}</h3>
+        <h3 {...(props.actNow ? { [MIDLAND_ACT_NOW_ATTR]: "", tabIndex: -1 } : {})}>{props.title}</h3>
         <Count n={props.children.length} />
         <span className={t.lgHint}>{props.hint}</span>
       </div>
@@ -167,7 +175,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
             />
             {list === "todo" ? (
               <div>
-                <ListGroup tone="danger" title="Act now" hint="needs someone today">
+                <ListGroup tone="danger" title="Act now" hint="needs someone today" actNow>
                   {[
                     <ListRow
                       key="a"

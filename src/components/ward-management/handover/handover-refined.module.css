@@ -104,29 +104,6 @@
   font-family: var(--wf-mono);
 }
 
-.gapBar {
-  display: flex;
-  gap: 2px;
-  height: 5px;
-  min-width: 150px;
-}
-
-.gapBar i {
-  display: block;
-  height: 100%;
-  border-radius: var(--wf-r-pill);
-}
-
-.gapReady {
-  background: var(--wf-hero-success);
-}
-
-.gapWaiting {
-  background: transparent;
-  border: 1px solid var(--wf-hero-neutral);
-  box-sizing: border-box;
-}
-
 .meeting {
   font-family: var(--wf-mono);
 }
@@ -149,13 +126,6 @@
 
 .banner > span {
   flex: 1;
-  min-width: 0;
-}
-
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   min-width: 0;
 }
 
@@ -1085,14 +1055,6 @@
 
 /* v10 tablet portrait: the tab row and the table controls wrap instead of running off the card. */
 @media (max-width: 62.5rem) {
-  .toolbar {
-    flex-wrap: wrap;
-  }
-
-  .toolbar > :first-child {
-    flex: 1 1 100%;
-  }
-
   .toolbarNote {
     margin-left: 0;
     flex: 1 1 auto;
@@ -1250,7 +1212,6 @@
 /* ---------------------------------------------------------------- 1 Nov 2026 mock-up pass */
 
 /* One toolbar line: 40px controls (D-94 desktop rule for this page's tools). */
-.toolbar :is(button, a)[class*="button"],
 .bar :is(button[class*="button"], select) {
   height: 40px;
   font-size: var(--wf-fs-13);
@@ -1505,146 +1466,14 @@
 .portraitRailHost > [data-testid="wf-portrait-rail-trigger"] {
   display: none;
 }
-
-/* ---------- 1 Nov 2026, round 5: header counts and the at-a-glance line (Waiting's pattern) ---------- */
-.hStats {
-  display: flex;
-  flex-wrap: wrap;
-  min-width: 0;
-}
-.hStat {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin: -4px 0;
-  padding: 4px 16px;
-  border: 0;
-  border-left: 1px solid var(--wf-hero-edge);
-  border-radius: 0;
-  background: none;
-  color: var(--wf-hero-ink);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-.hStat:first-child {
-  border-left: 0;
-}
-.hStat[aria-pressed="true"] {
-  border-left-color: transparent;
-  border-radius: var(--wf-r-lg);
-  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
-}
-.hStat[aria-pressed="true"] + .hStat {
-  border-left-color: transparent;
-}
-.hStat:hover .hStatV {
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
-}
-.hStatV {
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-20);
-  line-height: var(--wf-lh-20);
-  font-weight: 600;
-}
-.hStatL {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--wf-hero-ink-2);
-  font-size: var(--wf-fs-12);
-  white-space: nowrap;
-}
 /* Visual review (5 Nov 2026): when the line wraps, no divider starts or ends a line. Each divider
    sits in the gap before its item, and the line's clip hides the ones left of the first column
    while keeping room for a focus ring on every side. */
-.glance {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 28px;
-  width: 100%;
-  clip-path: inset(-16px -16px -16px -8px);
-}
-.gl {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  min-height: 28px;
-  padding: 2px 0;
-  border: 0;
-  border-radius: 0;
-  background: none;
-  color: var(--wf-hero-ink);
-  font: inherit;
-  font-size: var(--wf-fs-13);
-  text-align: left;
-  white-space: nowrap;
-}
-.gl + .gl::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: -15px;
-  width: 1px;
-  background: var(--wf-on-hero-div);
-}
-button.gl {
-  cursor: pointer;
-}
-button.gl:hover .glValue {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.glIcon {
-  flex: none;
-  color: var(--wf-hero-info);
-}
-.glIcon[data-tone="warning"] {
-  color: var(--wf-hero-warning);
-}
-.glIcon[data-tone="danger"] {
-  color: var(--wf-hero-danger);
-}
-.glIcon[data-tone="success"] {
-  color: var(--wf-hero-success);
-}
-.glLabel {
-  color: var(--wf-hero-ink-2);
-  font-size: var(--wf-fs-12);
-}
-.glValue {
-  color: var(--wf-hero-ink);
-  font-weight: 600;
-}
-.glNum {
-  font-family: var(--wf-mono);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-}
-.glChevron {
-  flex: none;
-  color: var(--wf-hero-ink-3);
-}
-.glance .gapBar {
-  width: 72px;
-  min-width: 72px;
-}
 .dueSub {
   display: flex;
   align-items: center;
   gap: 5px;
   min-width: 0;
-}
-@media (max-width: 85rem) {
-  .glance .gapBar {
-    display: none;
-  }
 }
 
 /* The choice menus (Show, Group, Sort) replaced the browser drop-downs (Josh, 3 Nov 2026): one
@@ -1666,15 +1495,6 @@ button.gl:hover .glValue {
   text-overflow: ellipsis;
   vertical-align: bottom;
   white-space: nowrap;
-}
-
-/* The hero Sign off carries its check count ("1/5") as quiet meta behind a hairline. */
-.heroSignCount {
-  margin-inline-start: 2px;
-  background: color-mix(in srgb, var(--wf-hero-2) 10%, transparent);
-  color: var(--wf-hero-2);
-  font-family: var(--wf-mono);
-  font-variant-numeric: tabular-nums;
 }
 
 /* Page tops (Josh, 9 Nov 2026): the handover picker is the hero's pill ("15:00 Day to evening"), the

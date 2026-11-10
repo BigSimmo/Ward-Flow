@@ -27,13 +27,6 @@
 }
 
 /* Queue overhaul (9 Nov 2026): the search fills the banner's second row. */
-.heroSearch {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: var(--wf-s-1);
-  min-width: 0;
-}
 
 .searchRow {
   display: flex;
@@ -46,31 +39,8 @@
   flex: 1 1 auto;
 }
 
-.glance {
-  margin: 0;
-  font-size: var(--wf-fs-13);
-  line-height: var(--wf-lh-13);
-  font-weight: 500;
-  color: var(--wf-hero-ink);
-  font-variant-numeric: tabular-nums;
-}
-
 .drawerBody {
   padding: var(--wf-s-3) var(--wf-s-4);
-}
-
-/* Source chips on the left, the sort on the right; they wrap on a narrow screen. */
-.tools {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-2) var(--wf-s-3);
-  min-width: 0;
-}
-
-.chips {
-  min-width: 0;
 }
 
 /* One referral per row: who, the referral facts, then Referral and Start triage. */
@@ -309,7 +279,9 @@
 @media (max-width: 46.4375rem) {
   .main {
     gap: var(--wf-s-3);
-    padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-8);
+    padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-8); /* The shared phone server band (wf/hero.module.css) takes these 16px sides, so the hero
+       paints at its measured place on the first frame (phone load audit, 10 Nov 2026). */
+    --wf-band-phone-x: var(--wf-s-4);
   }
   /* A phone stacks each referral: who, the facts, then Referral and Start triage side by side. */
   .row {
@@ -328,10 +300,6 @@
     content: "";
     position: absolute;
     inset: -4px 0;
-  }
-  .tools {
-    flex-direction: column;
-    align-items: stretch;
   }
   .searchRow {
     flex-direction: column;

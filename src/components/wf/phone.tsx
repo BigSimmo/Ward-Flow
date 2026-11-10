@@ -526,6 +526,13 @@ export type PhoneHeroProps = {
   condensed?: ReactNode;
   /** Heading level of the title. Defaults to 2. */
   level?: 1 | 2;
+  /**
+   * The hero opens its page in a 12px phone gutter (`--wf-band-phone-x`/`-top` where a page pads
+   * differently). Its server render is then already the phone band, so it does not paint as an
+   * inset card and jump when the band is measured (phone load audit, 10 Nov 2026). Leave it out
+   * for a hero lower on the page or inside a card.
+   */
+  opensPage?: boolean;
   className?: string;
   "data-testid"?: string;
 };
@@ -547,6 +554,7 @@ export function PhoneHero({
   actions,
   condensed,
   level = 2,
+  opensPage = false,
   className,
   "data-testid": testId,
 }: PhoneHeroProps) {
@@ -561,7 +569,13 @@ export function PhoneHero({
   const figuresRef = useRef<HTMLUListElement>(null);
   useScrollRegionFocus(figuresRef, shown.length);
   return (
-    <section ref={sectionRef} className={cx(styles.hero, className)} aria-labelledby={titleId} data-testid={testId}>
+    <section
+      ref={sectionRef}
+      className={cx(styles.hero, className)}
+      aria-labelledby={titleId}
+      data-testid={testId}
+      data-wf-hero={opensPage ? "band" : undefined}
+    >
       <div className={styles.heroTitleBlock}>
         {present(chip) ? (
           <div className={styles.heroEyebrowRow}>

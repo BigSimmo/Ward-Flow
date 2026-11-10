@@ -409,3 +409,11 @@
   color: var(--wf-hero-ink-3);
   font-weight: 500;
 }
+
+/* Phone: the overview steps aside so its folder tabs pin under the header for the whole page
+   (a sticky row only pins inside its parent). The page column keeps the same 12px gap. */
+@media (max-width: 46.4375rem) {
+  .overview {
+    display: contents;
+  }
+}

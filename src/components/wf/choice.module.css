@@ -90,7 +90,8 @@
   color: var(--wf-ink-1);
 }
 
-.ptItem[aria-selected="true"] {
+.ptItem[aria-selected="true"],
+.ptItem[aria-pressed="true"] {
   background: var(--wf-raised, var(--wf-surface));
   color: var(--wf-ink-1);
   font-weight: 600;
@@ -493,6 +494,7 @@
   .segOn,
   .trk .segOn,
   .ptItem[aria-selected="true"],
+  .ptItem[aria-pressed="true"],
   .chip[aria-pressed="true"] {
     forced-color-adjust: none;
     border-color: Highlight;
@@ -503,6 +505,7 @@
   .segOn .k,
   .trk .segOn .k,
   .ptItem[aria-selected="true"] .k,
+  .ptItem[aria-pressed="true"] .k,
   .chip[aria-pressed="true"] .k {
     border: 1px solid HighlightText;
     background: Highlight;

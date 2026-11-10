@@ -165,18 +165,6 @@
   font-size: var(--text-xs);
 }
 
-.countPill {
-  font-family: var(--mono);
-  font-size: var(--t-1);
-  font-weight: 600;
-  color: var(--accent-ink);
-  background: var(--accent-soft);
-  padding: 2px 8px;
-  border-radius: var(--wf-r-tag);
-  box-shadow: inset 0 0 0 1px var(--accent);
-  line-height: 1.2;
-}
-
 .btnGhost {
   display: inline-flex;
   align-items: center;
@@ -237,16 +225,6 @@
  * shared global shell composer at all, so this is the only composer on the page by construction,
  * not by a rule this file has to enforce itself.
  */
-.filters {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ward-space-12);
-  border: 1px solid var(--ward-border);
-  border-radius: var(--r1);
-  background: var(--surface);
-  box-shadow: var(--lift);
-  padding: var(--ward-space-16) var(--ward-space-20);
-}
 
 .activeChip {
   background: var(--accent-soft);
@@ -1026,11 +1004,6 @@
   font-weight: 600;
 }
 
-.screen[data-ward-design="third-edition"] .filters {
-  grid-template-columns: minmax(0, 1fr) minmax(11rem, 0.55fr);
-  padding: 1rem;
-}
-
 .screen[data-ward-design="third-edition"] .summary {
   margin: 0 1rem 1rem;
   border-color: var(--line);
@@ -1102,14 +1075,6 @@
   .screen[data-ward-design="third-edition"] .main {
     padding: 0.75rem;
   }
-
-  .screen[data-ward-design="third-edition"] .filters {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .screen[data-ward-design="third-edition"] .filters > * {
-    grid-column: 1;
-  }
 }
 
 @media print {
@@ -1149,11 +1114,6 @@
   order: 0;
   height: auto;
   overflow: visible;
-}
-.screen[data-ward-design="third-edition"] .filters {
-  border: 1px solid var(--ward-border);
-  background: var(--surface);
-  padding: 0.75rem 1rem;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1283,13 +1243,6 @@
   padding: 9px 14px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--line);
-}
-
-.panelTitle {
-  font-size: var(--t-4);
-  font-weight: 600;
-  color: var(--ink);
-  margin: 0;
 }
 
 .patientList {
@@ -1451,29 +1404,6 @@
   background: transparent;
   color: var(--muted);
   border: 1px solid var(--line);
-}
-
-.serviceDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.serviceDot.east {
-  background: var(--svc-east);
-}
-
-.serviceDot.north {
-  background: var(--svc-north);
-}
-
-.serviceDot.south {
-  background: var(--svc-south);
-}
-
-.serviceDot.wachs {
-  background: var(--svc-wachs);
 }
 
 .statusPill {
@@ -2133,13 +2063,6 @@
 }
 
 /* Health Service Color Allocation */
-.serviceDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  display: inline-block;
-  flex-shrink: 0;
-}
 
 .svcEast {
   background: var(--svc-east);
@@ -2331,14 +2254,6 @@
   min-width: 0;
 }
 
-.v6HeroBar {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: var(--wf-s-2);
-  min-width: 0;
-}
-
 .v6Refusal {
   margin: 0;
   color: var(--wf-ink-2);
@@ -2397,14 +2312,9 @@
   box-shadow: inset 0 0 0 1px var(--wf-line);
 }
 
-.v6Mono {
-  font-family: var(--wf-mono);
-  font-variant-numeric: tabular-nums;
-}
-
 @media (max-width: 46.4375rem) {
   /* Phone: the wrap steps aside so the folder tabs under the hero can pin for the whole page, not
-     only while the hero is on screen (census.module.css .folder). */
+     only while the hero is on screen (census-top.module.css .folder). */
   .v6HeroWrap {
     display: contents;
   }
