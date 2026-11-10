@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/his
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**690 rulings/items extracted, across 43 of 44 files.**
+**691 rulings/items extracted, across 43 of 44 files.**
 **0 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 **1 file(s) recorded as holding no ruling of their own**, each with its reason. See below.
 
@@ -32,7 +32,7 @@ line, in the order discovered — confirm which instance you mean before citing 
 
 ---
 
-## ID index — 440 distinct IDs
+## ID index — 441 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -299,6 +299,7 @@ safe global key across 30 files.
 | `D-126` | `decisions.md`:1566 | D-126. Ranked lists: neutral orders approved (10 November 2026) |
 | `D-127` | `decisions.md`:1585 | D-127. Neutral wording for a community treatment order at arrival (10 November 2026) |
 | `D-128` | `decisions.md`:1592 | D-128. Final master audit: nine answers (10 November 2026) |
+| `D-137` | `decisions.md`:1607 | D-137. Feature build batch 5: count leak first, TV change mark and QR library (10 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -607,7 +608,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-128 item(s):
+129 item(s):
 
 - `D-1` — line 157, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 167, heading: "D-2. Railway is disconnected"
@@ -737,6 +738,7 @@ safe global key across 30 files.
 - `D-126` — line 1566, heading: "D-126. Ranked lists: neutral orders approved (10 November 2026)"
 - `D-127` — line 1585, heading: "D-127. Neutral wording for a community treatment order at arrival (10 November 2026)"
 - `D-128` — line 1592, heading: "D-128. Final master audit: nine answers (10 November 2026)"
+- `D-137` — line 1607, heading: "D-137. Feature build batch 5: count leak first, TV change mark and QR library (10 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 
