@@ -7,7 +7,7 @@
 //   node scripts/ward-ci-public/identifier-scan.mjs --base origin/main   (locally)
 import { execFileSync } from "node:child_process";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseAddedLines, scanAddedLines } from "../pre-commit-checks.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -40,7 +40,7 @@ function rangeDiff(base) {
   );
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const argBase = process.argv.includes("--base") ? process.argv[process.argv.indexOf("--base") + 1] : undefined;
   const base = argBase ?? process.env.WARD_BASE_SHA;
   if (!base) {

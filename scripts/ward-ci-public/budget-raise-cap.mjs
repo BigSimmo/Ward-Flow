@@ -3,7 +3,7 @@
 // A PR may raise a screen's limit in script-budget.json by up to 5 KB in total, added up across the
 // whole PR, without asking Josh. Above that it needs Josh's explicit yes, which the PR records in its
 // own docs/script-budget-history/ file (HOW-WE-WORK section 6, step 4) with words such as "Josh
-// approved". This compares the PR's script-budget.json with the PR base and fails a raise above
+// approved" or "approved by Josh". This compares the PR's script-budget.json with the PR base and fails a raise above
 // 5 KB unless a history file the PR adds or changes records that approval. It reads local git objects
 // only: the full-history checkout already holds the base commit, so it needs no network.
 //
@@ -12,28 +12,47 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 export const RAISE_CAP_KB = 5;
 const HISTORY_DIR = "docs/script-budget-history/";
-const APPROVAL = /\bJosh\b[^.\n]{0,60}\bapprov(?:ed|al)\b|\bapproved by Josh\b|\bJosh'?s (?:explicit )?yes\b/iu;
+// Only an explicit affirmative counts: "Josh approved", "Josh has approved", "approved by Josh",
+// "Josh's yes" or "Josh's explicit yes". A nearby negation or pending word ("Josh has not approved",
+// "awaiting Josh's yes", "approved by Josh is pending") voids that mention.
+const APPROVAL =
+  /\bJosh (?:has |had )?(?:explicitly )?approved\b|\bapproved by Josh\b|\bJosh[’']s (?:explicit )?yes\b/giu;
+const NEGATION_BEFORE =
+  /\b(?:not|never|no|without|awaiting|await|pending|needs?|needed|requires?|required|until|before|asks?|asking|if|once|when|unless)\b[^.\n]{0,24}$/iu;
+const NEGATION_AFTER = /^[^.\n]{0,24}\b(?:pending|awaited|needed|required|outstanding|not yet|to come)\b/iu;
 
-/** Routes whose limit rose by more than the cap, as { route, from, to, raise } (KB, one decimal). */
+function affirmsApproval(text) {
+  for (const match of text.matchAll(APPROVAL)) {
+    const before = text.slice(Math.max(0, match.index - 40), match.index);
+    const after = text.slice(match.index + match[0].length, match.index + match[0].length + 40);
+    if (!NEGATION_BEFORE.test(before) && !NEGATION_AFTER.test(after)) return true;
+  }
+  return false;
+}
+
+/**
+ * Routes whose limit rose by more than the cap, as { route, from, to, raise }. The comparison uses
+ * the exact delta (with a tiny float tolerance), so 5.04 KB fails; only the reported raise is rounded.
+ */
 export function raisesOverCap(baseBudgets, headBudgets, cap = RAISE_CAP_KB) {
   const over = [];
   for (const [route, to] of Object.entries(headBudgets ?? {})) {
     const from = baseBudgets?.[route];
     if (typeof from !== "number" || typeof to !== "number") continue; // a new screen has no raise to judge
-    const raise = Math.round((to - from) * 10) / 10;
-    if (raise > cap) over.push({ route, from, to, raise });
+    const delta = to - from;
+    if (delta > cap + 1e-9) over.push({ route, from, to, raise: Math.round(delta * 100) / 100 });
   }
   return over;
 }
 
 /** Whether any of the PR's own history entries records Josh's approval. */
 export function recordsApproval(historyTexts) {
-  return historyTexts.some((text) => APPROVAL.test(text));
+  return historyTexts.some((text) => affirmsApproval(text));
 }
 
 /** The verdict: { ok, over, approved }. */
@@ -47,7 +66,7 @@ function git(args) {
   return execFileSync("git", args, { cwd: root, encoding: "utf8", timeout: 30_000 });
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const argBase = process.argv.includes("--base") ? process.argv[process.argv.indexOf("--base") + 1] : undefined;
   const base = argBase ?? process.env.WARD_BASE_SHA;
   if (!base) {
@@ -62,6 +81,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     console.log("The base has no script-budget.json: no raise to judge.");
     process.exit(0);
   }
+  // On a merge_group run the base is the queue base, so this diff holds every queued PR's history
+  // files and one PR's approval could cover another's raise. Ward Flow uses no merge queue (AGENTS.md
+  // rule 6), so the workflow's merge_group trigger is dormant here; revisit this before enabling one.
   const headBudgets = JSON.parse(readFileSync(path.join(root, "script-budget.json"), "utf8")).budgets ?? {};
   const historyTexts = git(["diff", "--name-only", "--diff-filter=AM", `${mergeBase}...HEAD`, "--", HISTORY_DIR])
     .split(/\r?\n/u)

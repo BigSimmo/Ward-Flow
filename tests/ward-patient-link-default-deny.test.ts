@@ -82,7 +82,8 @@ function withoutComments(source: string): string {
  *  4. An unannotated destructured arrow-callback parameter — `({ patientId }) => …`.
  *  5. An unannotated destructured `function` parameter, named or not — `function ({ patientId })
  *     { … }` / `function f({ patientId }) { … }`.
- *  6. A reflective read — `Reflect.get(record, "patientId")` (audit F-08, D-122 item 7: patient
+ *  6. A reflective read — `Reflect.get(record, "patientId")`, where the first argument may hold
+ *     one level of parentheses (`Reflect.get(resolveRecord(), "patientId")`) (audit F-08, D-122 item 7: patient
  *     search once read the link this way, out of this guard's sight).
  *  Shapes 4 and 5 stop at the TYPE ANNOTATION, not at "parameter vs declaration": `({ patientId }:
  *  Props) =>` and `function f({ patientId }: Props)` are excluded because an annotation sits
@@ -95,7 +96,7 @@ function withoutComments(source: string): string {
  *  unrelated same-named URL parameter is handled by naming it in the allowlist with its own
  *  reason, not by narrowing this pattern. */
 const PATIENT_LINK_READ =
-  /\.patientId\b|(?<!\b[A-Z][A-Za-z0-9_]*)\[\s*["']patientId["']\s*\]|\b(?:const|let|var)\b\s*\{[^}]*\bpatientId\b[^}]*\}\s*=|\b(?:const|let|var)\b\s*\{[^{}]*\{[^{}]*\bpatientId\b[^{}]*\}[^{}]*\}\s*=|\(\s*\{[^}]*\bpatientId\b[^}]*\}\s*\)\s*=>|\bfunction\b\s*\w*\s*\(\s*\{[^}]*\bpatientId\b[^}]*\}\s*\)|\bReflect\s*\.\s*get\s*\([^,()]*,\s*["'`]patientId["'`]/;
+  /\.patientId\b|(?<!\b[A-Z][A-Za-z0-9_]*)\[\s*["']patientId["']\s*\]|\b(?:const|let|var)\b\s*\{[^}]*\bpatientId\b[^}]*\}\s*=|\b(?:const|let|var)\b\s*\{[^{}]*\{[^{}]*\bpatientId\b[^{}]*\}[^{}]*\}\s*=|\(\s*\{[^}]*\bpatientId\b[^}]*\}\s*\)\s*=>|\bfunction\b\s*\w*\s*\(\s*\{[^}]*\bpatientId\b[^}]*\}\s*\)|\bReflect\s*\.\s*get\s*\((?:[^,()]|\([^()]*\))*,\s*["'`]patientId["'`]/;
 
 /**
  * Every file permitted to contain a read of `.patientId`, and why. See this file's own header for
@@ -546,6 +547,10 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     expect(PATIENT_LINK_READ.test('return Reflect.get(item, "patientId") === id;')).toBe(true);
     expect(PATIENT_LINK_READ.test("Reflect.get(item, 'patientId')")).toBe(true);
     expect(PATIENT_LINK_READ.test('Reflect.get(item, "id")')).toBe(false);
+    // The record may come from a call, with its own parentheses and commas (one level of nesting).
+    expect(PATIENT_LINK_READ.test('Reflect.get(resolveRecord(), "patientId")')).toBe(true);
+    expect(PATIENT_LINK_READ.test('Reflect.get(pick(list, 0), "patientId")')).toBe(true);
+    expect(PATIENT_LINK_READ.test('Reflect.get(resolveRecord(), "id")')).toBe(false);
     // DESTRUCTURING POSITIVE CONTROLS. `const { patientId } = r` and `let { patientId: id } = r`
     // both read the field off `r` without ever writing a dot or a bracket, so the two alternatives
     // above alone would miss them — this is the gap this task closes.

@@ -17,8 +17,8 @@ checklist on top of this one: [`SCREEN-DEFINITION-OF-DONE.md`](SCREEN-DEFINITION
       is left uncommitted. Publication is a separately authorised stage. A read-only task (a
       review, audit, question or plan that changes no file) ticks this box with no commit: its
       report is the record.
-- [ ] **The record is written.** Commits and the PR body say what changed, which checks ran and
-      their results. Only results actually observed go in; anything not run is written as "not run".
+- [ ] **The record is written.** Commits and the PR body (for a read-only task, its report) say
+      what changed or was found, which checks ran and their results. Only results actually observed go in; anything not run is written as "not run".
       [Task receipts](../task-receipts.md) are optional.
 - [ ] **Rulings are in the decision log.** If Josh settled a question, add a new D entry to
       [`decisions.md`](decisions.md) in the same PR, quoting his words. Do not start new owner files.

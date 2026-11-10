@@ -9,7 +9,8 @@ _Ward Flow is a prototype on synthetic data. Not for real patients._
 
 ## Source changes since 24 October 2026
 
-These describe implemented source behaviour checked on 3 November. Check the live release before
+These describe implemented source behaviour checked on 3 November (the Report a problem entry
+was checked against source on 10 November). Check the live release before
 assuming a change is available on the hosted board.
 
 - The coordinator menu includes **Home**, **Waiting** and **All EDs**.

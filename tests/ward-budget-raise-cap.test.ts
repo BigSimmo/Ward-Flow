@@ -14,6 +14,14 @@ describe("phone limit raise cap (D-82, D-121 item 5)", () => {
   it("allows a raise up to 5 KB per screen, and any lowering", () => {
     expect(RAISE_CAP_KB).toBe(5);
     expect(raisesOverCap(base, { "/ward-flow": 565.0, "/ward-flow/ed": 500.0 })).toEqual([]);
+    // The allowance is per screen: two screens each raised by the full 5 KB still pass.
+    expect(raisesOverCap(base, { "/ward-flow": 565.0, "/ward-flow/ed": 525.0 })).toEqual([]);
+  });
+
+  it("compares the exact raise, so a fraction above 5 KB fails", () => {
+    expect(raisesOverCap(base, { "/ward-flow": 565.04 })).toEqual([
+      { route: "/ward-flow", from: 560.0, to: 565.04, raise: 5.04 },
+    ]);
   });
 
   it("flags a screen raised by more than 5 KB, and ignores a new screen", () => {
@@ -38,10 +46,34 @@ describe("phone limit raise cap (D-82, D-121 item 5)", () => {
     ).toBe(true);
   });
 
+  it.each([
+    "Approved by Josh, 9 Nov 2026.",
+    "Josh has approved the 7 KB raise.",
+    "Recorded with Josh's explicit yes on 9 Nov 2026.",
+    "Josh’s yes came on the decision card.",
+  ])("accepts the affirmative approval form %j", (text) => {
+    expect(judgeRaiseCap({ baseBudgets: base, headBudgets: { "/ward-flow": 567.0 }, historyTexts: [text] }).ok).toBe(
+      true,
+    );
+  });
+
+  it.each([
+    "Josh has not approved this raise.",
+    "Josh approval pending.",
+    "Awaiting Josh's yes before merge.",
+    "This needs Josh's explicit yes.",
+    "Not approved by Josh yet.",
+    "Josh approved is still pending for this raise.",
+  ])("rejects the negative or pending text %j", (text) => {
+    expect(judgeRaiseCap({ baseBudgets: base, headBudgets: { "/ward-flow": 567.0 }, historyTexts: [text] }).ok).toBe(
+      false,
+    );
+  });
+
   it("runs in the main Ward Flow workflow against the PR base", () => {
     const workflow = readFileSync(path.join(root, ".github/workflows/ward-flow.yml"), "utf8");
     expect(workflow).toMatch(
-      /- name: Check the 5 KB phone limit raise cap\n\s+env:\n\s+WARD_BASE_SHA: .+\n\s+run: node scripts\/ward-ci-public\/budget-raise-cap\.mjs/u,
+      /- name: Check the 5 KB phone limit raise cap\n\s+env:\n\s+WARD_BASE_SHA: \$\{\{ github\.event\.pull_request\.base\.sha \|\| github\.event\.merge_group\.base_sha \}\}\n\s+run: node scripts\/ward-ci-public\/budget-raise-cap\.mjs/u,
     );
   });
 });

@@ -138,8 +138,10 @@ describe("Ward-Flow push destination", () => {
     expect(liveVerdict.ok).toBe(false);
     expect(liveVerdict.message).toMatch(/refs\/heads\/live/);
     expect(run("https://github.com/BigSimmo/Ward-Flow.git", liveInput).status).toBe(1);
+    // Real git pre-push input for a deletion: "(delete) <all-zero sha> <remote ref> <remote sha>".
     const liveDeletion = `(delete) ${"0".repeat(40)} refs/heads/live ${head}\n`;
     expect(directMainPushVerdict(liveDeletion, {} as unknown as NodeJS.ProcessEnv).ok).toBe(false);
+    expect(run("https://github.com/BigSimmo/Ward-Flow.git", liveDeletion).status).toBe(1);
     expect(
       directMainPushVerdict(
         `refs/heads/live-notes ${head} refs/heads/live-notes ${head}\n`,

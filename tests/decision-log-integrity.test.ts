@@ -23,9 +23,13 @@ function tableNumbers(markdown: string): number[] {
   return [...markdown.matchAll(/^\|\s*\[D-(\d+)\]\(#/gmu)].map((match) => Number(match[1]));
 }
 
-/** A skipped number is allowed only when the log says a PR has claimed or reserved it. */
+/**
+ * A skipped number is allowed only when one sentence of the log says it is claimed or reserved and
+ * names the PR ("D-120 is claimed by open PR #1583"). Wording alone, with no PR, does not count.
+ */
 function isClaimed(markdown: string, id: number): boolean {
-  return new RegExp(`\\bD-${id}\\b[^.\\n]{0,40}?\\b(?:is|was|are)\\s+(?:claimed|reserved)\\b`, "u").test(markdown);
+  const claim = new RegExp(`\\bD-${id}\\b[^.\\n]{0,40}?\\b(?:is|was|are)\\s+(?:claimed|reserved)\\b`, "u");
+  return markdown.split(/(?<=[.!?])\s+|\n/u).some((sentence) => claim.test(sentence) && /\bPR\s*#\d+/u.test(sentence));
 }
 
 function numberingProblems(markdown: string): string[] {
@@ -35,8 +39,8 @@ function numberingProblems(markdown: string): string[] {
   headings.forEach((id, index) => {
     if (seen.has(id)) problems.push(`D-${id} is used twice`);
     seen.add(id);
-    const previous = headings[index - 1];
-    if (previous === undefined) return;
+    // The first heading is checked against D-0, so a missing D-1 (or more) is reported too.
+    const previous = index === 0 ? 0 : headings[index - 1];
     if (id <= previous) problems.push(`D-${id} comes after D-${previous}`);
     for (let gap = previous + 1; gap < id; gap += 1)
       if (!isClaimed(markdown, gap)) problems.push(`D-${gap} is missing and not marked as claimed by a PR`);
@@ -55,6 +59,16 @@ describe("decision log numbering (D-121 item 5)", () => {
     expect(numberingProblems("## D-1. a\n## D-3. b\n")).toEqual(["D-2 is missing and not marked as claimed by a PR"]);
     expect(numberingProblems("## D-1. a\nD-2 is claimed by open PR #9.\n## D-3. b\n")).toEqual([]);
     expect(numberingProblems("## D-1. a\nRecorded as D-3 because D-2 is reserved by PR #9.\n## D-3. b\n")).toEqual([]);
+    expect(numberingProblems("## D-1. a\nD-2 is claimed by another thread.\n## D-3. b\n")).toEqual([
+      "D-2 is missing and not marked as claimed by a PR",
+    ]);
+    expect(numberingProblems("## D-1. a\nD-2 is claimed. See PR #9.\n## D-3. b\n")).toEqual([
+      "D-2 is missing and not marked as claimed by a PR",
+    ]);
+  });
+
+  it("reports a missing D-1 when the log starts later", () => {
+    expect(numberingProblems("## D-2. a\n## D-3. b\n")).toEqual(["D-1 is missing and not marked as claimed by a PR"]);
   });
 
   it("numbers every entry in order, once, with gaps only where a PR has claimed the number", () => {

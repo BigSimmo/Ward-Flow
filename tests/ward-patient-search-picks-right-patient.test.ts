@@ -83,6 +83,8 @@ describe("a partial or initials query never puts a non-matching name above a mat
     );
     expect(byInitialsOnly.length).toBeGreaterThan(0);
     for (const id of ids(byInitialsOnly)) expect(ids(found)).not.toContain(id);
+    // Not vacuous: the one look-alike whose name holds "am" as letters (Sam Alexander) is still found.
+    expect(ids(found)).toContain("PT-LA-11");
     for (const patient of found) {
       expect(`${patient.givenName} ${patient.familyName}`.toLowerCase()).toContain("am");
     }

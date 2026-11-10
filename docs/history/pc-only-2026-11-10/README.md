@@ -20,3 +20,5 @@ not run. For current work start at [`docs/README.md`](../../README.md).
 
 Not copied: screenshots, raw sweep and auditor JSON, probe scripts and their raw output, run logs, a
 `.tgz` archive and the uncommitted test files. They are raw tool output or code, not lasting notes.
+Where a copied report says "this directory" or names a raw file, that file stayed on the PC under
+the original path in the table.

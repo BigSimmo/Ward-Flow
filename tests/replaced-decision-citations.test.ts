@@ -25,7 +25,7 @@ const SKIP = [
   "docs/ward-flow/RULES.md",
 ];
 const HISTORY_WORDS =
-  /\b(replac\w*|removed|withdr[ae]wn?|once|overruled|supersed\w*|archiv\w*|retired|former(ly)?|old)\b/iu;
+  /\b(replac\w*|removed|withdr[ae]wn?|once|overruled|supersed\w*|archiv(?:e|ed|es|ing|al)|retired|former(ly)?|old)\b/iu;
 
 function fullyReplaced(markdown: string): Map<string, string[]> {
   const out = new Map<string, string[]>();
@@ -107,7 +107,7 @@ function codeFiles(): string[] {
       if (name === "node_modules") continue;
       const path = join(directory, name);
       if (statSync(path).isDirectory()) walk(path);
-      else if (/\.(?:[cm]?[jt]sx?|json|css|sh)$/u.test(name)) files.push(path);
+      else if (/\.(?:[cm]?[jt]sx?|json|css|sh|ps1)$/u.test(name)) files.push(path);
     }
   };
   for (const tree of ["src", "tests", "scripts"]) walk(join(root, tree));

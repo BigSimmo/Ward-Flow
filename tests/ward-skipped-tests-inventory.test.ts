@@ -32,8 +32,41 @@ describe("skipped-tests inventory (audit F-54)", () => {
     expect(found.map((entry) => `${entry.kind}|${entry.title}|${entry.reason}`)).toEqual([
       "it.todo|a to-do|",
       'it.skipIf|a gate|skipped when `process.platform === "win32"`',
-      "test.skip at run time||when `isPhone(page)`: phone differs",
+      "test.skip at run time|x|when `isPhone(page)`: phone differs",
       "test.describe.skip|retired suite|",
     ]);
+  });
+
+  it("names the real suite, the enclosing test and indirect registrations", () => {
+    const source = [
+      "function gated(name: string, body: () => void) {",
+      '  describe.SKIPIf(process.platform === "win32")(name, body);',
+      "}",
+      'gated("hook suite", () => {});',
+      'test("light", async ({ page }) => { test.SKIP(isPhone(page), "phone differs"); });',
+      'test("dark", async ({ page }) => { test.SKIP(isPhone(page), "phone differs"); });',
+      '(slow ? it.SKIP : it)("a slow case", () => {});',
+      "function helper(name: string, options: { SKIP?: boolean }) {",
+      "  (options.SKIP ? it.SKIP : it)(name, () => {});",
+      "}",
+      'helper("one", {});',
+      'helper("two", { SKIP: true });',
+    ]
+      .join("\n")
+      .replaceAll("SKIP", "skip");
+    const found = findSkips("tests/example.test.ts", source) as Skip[];
+    expect(found.map((entry) => `${entry.kind}|${entry.title}|${entry.reason}`)).toEqual([
+      'describe.skipIf|hook suite (via gated)|skipped when `process.platform === "win32"`',
+      "test.skip at run time|light|when `isPhone(page)`: phone differs",
+      "test.skip at run time|dark|when `isPhone(page)`: phone differs",
+      "it.skip by condition|a slow case|when `slow`",
+      "it.skip by condition|`name` of each helper(…) call (2 in this file)|when `options.skip`",
+    ]);
+  });
+
+  it("parses a .ts file as TypeScript, not TSX, so an angle-bracket cast does not hide a skip", () => {
+    const source = ["const value = <string>raw;", 'it.todo("after a cast");'].join("\n");
+    const found = findSkips("tests/example.test.ts", source) as Skip[];
+    expect(found.map((entry) => `${entry.kind}|${entry.title}`)).toEqual(["it.todo|after a cast"]);
   });
 });

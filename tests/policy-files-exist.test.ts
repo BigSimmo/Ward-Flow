@@ -38,6 +38,9 @@ function namedPaths(file: string, text: string): string[] {
   }
   for (const match of prose.matchAll(/`((?:docs|scripts|tests|\.github)\/[^`\s*<>]+\.md)(?:#[^`]*)?`/gu))
     out.add(match[1]);
+  // Root-level policy files named bare, such as `CLAUDE.md` and `GEMINI.md` in AGENTS.md. Upper-case
+  // names only: a lower-case bare name such as `global-rules.md` lives in another repository.
+  for (const match of prose.matchAll(/`([A-Z][A-Z0-9_-]*\.md)(?:#[^`]*)?`/gu)) out.add(match[1]);
   return [...out];
 }
 
@@ -47,6 +50,14 @@ describe("policy files exist (D-121 item 5)", () => {
     expect(
       namedPaths(file, "[a](../ward-flow/HOW-WE-WORK.md#2-x) [b](https://example.com) `docs/DOCS-SYSTEM.md#where`"),
     ).toEqual(["docs/ward-flow/HOW-WE-WORK.md", "docs/DOCS-SYSTEM.md"]);
+  });
+
+  it("reads bare root-level policy files and leaves lower-case external names alone", () => {
+    const file = join(root, "AGENTS.md");
+    expect(namedPaths(file, "`CLAUDE.md`, `GEMINI.md#top` and Josh's `global-rules.md`")).toEqual([
+      "CLAUDE.md",
+      "GEMINI.md",
+    ]);
   });
 
   it("names only files that exist, from AGENTS.md and docs/agents", () => {
