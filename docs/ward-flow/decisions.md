@@ -151,6 +151,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-126](#d-126-ranked-lists-neutral-orders-approved-10-november-2026)                                                                                   | Ranked lists: neutral orders on 11 lists, lists 9 and 12 kept                          | Active                                           |
 | [D-127](#d-127-neutral-wording-for-a-community-treatment-order-at-arrival-10-november-2026)                                                             | Neutral wording for a community treatment order at arrival                             | Active                                           |
 | [D-128](#d-128-final-master-audit-nine-answers-10-november-2026)                                                                                        | Final master audit: nine answers                                                       | Active                                           |
+| [D-137](#d-137-feature-build-batch-5-count-leak-first-tv-change-mark-and-qr-library-10-november-2026)                                                   | Feature build batch 5: count leak first, TV change mark 15 minutes, QR library         | Active                                           |
 
 ---
 
@@ -1606,7 +1607,7 @@ is inferred.
 
 ## D-137. Feature build batch 5: count leak first, TV change mark and QR library (10 November 2026)
 
-- **Date:** 10 November 2026, 1:05 AM AWST on 11 November (17:05 UTC on 10 November). **Decided by:** Josh, choosing the recommended option on three decision cards in the "Build counts, screens and print" project thread, and writing "Go ahead with all your recommendations and disregard anything you cannot do" in the feature list thread (17:04 UTC) for the build plan's twelve questions. Numbered D-137 because D-129 to D-136 are claimed by other open PRs and batch threads.
+- **Date:** 10 November 2026, 1:05 AM AWST on 11 November (17:05 UTC on 10 November). **Decided by:** Josh, choosing the recommended option on three decision cards in the "Build counts, screens and print" project thread, and writing "Go ahead with all your recommendations and disregard anything you cannot do" in the feature list thread (17:04 UTC) for the build plan's twelve questions. Numbered D-137 because the numbers before it were taken first. D-129, D-130 and D-131 are claimed by PR #1598. D-132 is claimed by PR #1601. D-135 is claimed by PR #1603. D-133 is claimed by a feature batch PR, as are D-134 (claimed the same way) and D-136, which is claimed by a third batch PR.
 - **Decision:**
   1. **Count leak (plan question 1, item 1):** fixed first, before item 5. The server holds the page whenever it cannot be sure of the desk: only a browser that has said its desk is the whole-network coordinator's (cookie value `0`) gets the server's page. This changes H-0111 for a fresh device, which now sees a short loading page before its first page.
   2. **TV change mark (plan question 9, item 43):** "Changed 14:32" shows on a ward or bed meeting TV tile for 15 minutes after its figure changes. Signed for the prototype by Josh as `tvChangeMark` in clinical-values.md.

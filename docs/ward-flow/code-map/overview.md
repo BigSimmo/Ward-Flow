@@ -34,7 +34,7 @@ of shared UI pieces) and nothing else. Nothing in PsychSift imports Ward Flow.
 | Area (tracked files, `git ls-files`)                         |  Files | Size                                                                                                                                                                                                         |
 | ------------------------------------------------------------ | -----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Ward Flow engine + screens `src/components/ward-management/` |    315 | ~153,000 lines of `.ts/.tsx` (plus 99 CSS modules and `src/components/wf/` shared v10 primitives)                                                                                                            |
-| Ward Flow routes `src/app/ward-flow/`                        |     76 | **<!-- fact:ward-route-count -->60<!-- /fact --> `page.tsx`** (**<!-- fact:app-route-count -->64<!-- /fact --> total routes** incl. `/ward-flow-sign-in` and `/mockups/ward-flow-digest`, plus `/` redirect) |
+| Ward Flow routes `src/app/ward-flow/`                        |     76 | **<!-- fact:ward-route-count -->61<!-- /fact --> `page.tsx`** (**<!-- fact:app-route-count -->65<!-- /fact --> total routes** incl. `/ward-flow-sign-in` and `/mockups/ward-flow-digest`, plus `/` redirect) |
 | Ward Flow tests `tests/ward-*`, `tests/ui-ward-*`            |    648 | ~188,700 lines (635 unit/DOM + 13 browser)                                                                                                                                                                   |
 | Ward Flow scripts `scripts/ward-flow/`                       |     49 | 45 top-level + `audit/`                                                                                                                                                                                      |
 | Ward Flow docs `docs/ward-flow/`                             |  1,272 | incl. 140 files of design drawings                                                                                                                                                                           |
@@ -236,7 +236,7 @@ bar's Tools drawer. The rail's "clinical persona" popover is cosmetic.
 
 ## 3. Routes, shell and navigation
 
-### 3.1 Routes (<!-- fact:ward-route-count -->60<!-- /fact --> `page.tsx` under `src/app/ward-flow/`, <!-- fact:app-route-count -->64<!-- /fact --> total including sign-in and digest)
+### 3.1 Routes (<!-- fact:ward-route-count -->61<!-- /fact --> `page.tsx` under `src/app/ward-flow/`, <!-- fact:app-route-count -->65<!-- /fact --> total including sign-in and digest)
 
 Every page file is a server component that renders one client screen (or redirects).
 
@@ -272,6 +272,7 @@ Every page file is a server component that renders one client screen (or redirec
 | `/referrals/new`                                                                         | `ReferralBoard` + referral slide-out (referrals)                          |
 | `/reports/chronology`                                                                    | `PatientChronologyScreen` (`reports/patient-chronology-screen.tsx`)       |
 | `/reports/downtime`                                                                      | `DowntimePackScreen` (`reports/downtime-pack-screen.tsx`)                 |
+| `/night`                                                                                 | `NightViewScreen` (night)                                                 |
 | `/review`                                                                                | `TodaysReviewScreen` (review)                                             |
 | `/search`                                                                                | `PatientSearchPage` (search)                                              |
 | `/seclusion`                                                                             | `SeclusionScreen` (restrictive-practice), operational view only (D-72)    |

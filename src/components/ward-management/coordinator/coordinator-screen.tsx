@@ -40,6 +40,7 @@ import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { CountBreakdown } from "@/components/ward-management/count-breakdown/count-breakdown";
+import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import {
   movementBreakdownRows,
   wardReadyBreakdownRows,
@@ -454,7 +455,7 @@ export function CoordinatorScreen() {
   const breakdownPerson = (movement: Movement) => {
     const resolved = patientOf(movement);
     return resolved.patient
-      ? { name: resolved.formalName, patientId: resolved.patient.id }
+      ? { name: resolved.formalName, href: patientHref(resolved.patient.id) }
       : { name: "Name not recorded" };
   };
 

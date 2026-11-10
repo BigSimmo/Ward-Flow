@@ -69,7 +69,7 @@ export const MORE_PAGES: readonly Around[] = [
       {
         target: id("night-ed-steps"),
         title: "ED waits by Step",
-        body: "How many people are at each Step, by time in the department, with the suggested next step. A Step is a prompt, never a breach.",
+        body: "How many people are at each Step, by time in the department, with the suggested next step. A Step is a prompt for a person to act.",
       },
       {
         target: id("night-on-the-way"),

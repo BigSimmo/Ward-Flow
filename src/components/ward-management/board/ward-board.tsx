@@ -24,6 +24,7 @@ import {
   releaseStays,
   stayBreakdownRows,
 } from "@/components/ward-management/count-breakdown/count-breakdown-rows";
+import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import {
   arrowTargets,
   constraintSentence,
@@ -744,7 +745,7 @@ export function WardBoard({
       ? resolvePatientIdentity(subject)
       : resolveSubjectPatient(subject, { patients, movements });
     return resolved.patient
-      ? { name: resolved.formalName, patientId: resolved.patient.id }
+      ? { name: resolved.formalName, href: patientHref(resolved.patient.id) }
       : { name: "Name not recorded" };
   };
   const stayRows = (stays: readonly { key: string; admissionId: string }[]) => () =>

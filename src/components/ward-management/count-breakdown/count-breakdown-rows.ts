@@ -3,18 +3,18 @@
  * Each builder keeps every item it is given, in the order given, so the rows add up to the figure;
  * nothing here filters, ranks or reorders anybody (D-71).
  */
-import { durMinutes } from "@/components/wf/format";
+import { durMinutes } from "@/components/wf";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
 import { minutesInEd } from "@/components/ward-management/ward-shared-figures";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { movementHref, wardBoardHref } from "@/components/ward-management/shell/ward-facade";
-import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 
 import type { BreakdownRow } from "./count-breakdown-model";
 
 /** A person's name as a list shows it (D-83: formal name), and their patient id when linked. */
-export type BreakdownPerson = { name: string; patientId?: string };
+/** The person a row names, and the address of their page when the caller may link to it. */
+export type BreakdownPerson = { name: string; href?: string };
 
 /** One row per movement, opening the movement's record. */
 export function movementBreakdownRows(
@@ -66,7 +66,7 @@ export function stayBreakdownRows(
 ): BreakdownRow[] {
   return stays.map((stay) => {
     const person = personOf(stay.admissionId);
-    const href = person.patientId ? patientHref(person.patientId) : undefined;
+    const href = person.href;
     return {
       id: stay.key,
       label: person.name,

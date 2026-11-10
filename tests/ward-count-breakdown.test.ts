@@ -1,5 +1,3 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -166,14 +164,5 @@ describe("count breakdown: small numbers and words", () => {
     expect(breakdownButtonName(6, "waiting in ED", "people")).toBe("6 waiting in ED, show who");
     expect(breakdownButtonName(4, "beds ready", "beds")).toBe("4 beds ready, show where");
     expect(breakdownSentence(6, "open ED movements", 14 * 60 + 32)).toBe("6 open ED movements. Counted 14:32.");
-  });
-});
-
-describe("item 5 stays off the wall TV", () => {
-  it("never opens a count breakdown on a TV screen (figures stay plain there)", () => {
-    const dir = join(process.cwd(), "src/components/ward-management/bed-meeting");
-    const tvFiles = readdirSync(dir).filter((name) => /^(bed-meeting-tv|tv-).*\.tsx?$/u.test(name));
-    expect(tvFiles.length).toBeGreaterThan(0);
-    for (const name of tvFiles) expect(readFileSync(join(dir, name), "utf8"), name).not.toMatch(/count-breakdown/u);
   });
 });

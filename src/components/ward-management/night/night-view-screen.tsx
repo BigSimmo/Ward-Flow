@@ -1,6 +1,6 @@
 "use client";
 
-import { BedDouble, CalendarClock, Clock, Phone, Truck } from "lucide-react";
+import { Ambulance, BedSingle, CalendarClock, Clock, Phone } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 
@@ -101,7 +101,7 @@ export function NightViewScreen() {
         <Card aria-labelledby="night-beds-title" data-testid="night-beds">
           <CardHead
             title={<span id="night-beds-title">Beds ready now</span>}
-            icon={BedDouble}
+            icon={BedSingle}
             iconPlain
             meta={`${beds.total} ready`}
             action={
@@ -174,15 +174,14 @@ export function NightViewScreen() {
             </li>
           </ul>
           <p className={styles.cardFoot}>
-            {atStep} at a Step. Time in the department, as on the ED board. A Step is a prompt for a person, never a
-            breach.
+            {atStep} at a Step. Time in the department, as on the ED board. A Step is a prompt for a person to act.
           </p>
         </Card>
 
         <Card aria-labelledby="night-moving-title" data-testid="night-on-the-way">
           <CardHead
             title={<span id="night-moving-title">On the way</span>}
-            icon={Truck}
+            icon={Ambulance}
             iconPlain
             meta={`${onTheWay.length} moving`}
             action={
@@ -250,7 +249,7 @@ export function NightViewScreen() {
                     {contactNowText(contact)}
                   </span>
                 </span>
-                <span className={styles.number}>{contact.number ?? "Not held"}</span>
+                <span className={styles.number}>{contact.number ?? "Not recorded"}</span>
               </li>
             ))}
           </ul>
