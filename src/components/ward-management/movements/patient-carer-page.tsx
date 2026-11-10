@@ -179,5 +179,6 @@ const PRINT_CSS = `@page { size: A4 portrait; margin: 18mm; }
   body *:not(:has([data-wf-print-carer])):not([data-wf-print-carer]):not([data-wf-print-carer] *) { display: none !important; }
   body *:has([data-wf-print-carer]) { position: static !important; transform: none !important; overflow: visible !important; height: auto !important; max-height: none !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; border: 0 !important; box-shadow: none !important; contain: none !important; background: none !important; visibility: visible !important; display: block !important; }
   [data-wf-print-carer], [data-wf-print-carer] * { visibility: visible !important; }
+  [data-wf-print-carer], [data-wf-print-carer] *, body *:has([data-wf-print-carer]) { opacity: 1 !important; animation: none !important; transition: none !important; }
   [data-wf-print-carer] { display: grid !important; position: static !important; width: 100% !important; color: #000 !important; background: #fff !important; }
 }`;
