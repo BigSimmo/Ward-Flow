@@ -1,7 +1,7 @@
 // D-123 item 3 / audit M131: a removed or loosened assertion in a protected safety test fails CI
 // unless the pull request carries Josh's approval line.
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
@@ -13,6 +13,7 @@ import {
   assessProtectedFile,
   evaluate,
   findApproval,
+  isAbsentOnBase,
   measureTestSource,
   parseProtectedList,
 } from "../scripts/ward-flow/check-protected-safety-tests.mjs";
@@ -161,5 +162,44 @@ describe("evaluate against a real git history", () => {
     const result = evaluate({ base, root, extraTexts: [`Why:\n${APPROVAL_PREFIX} replaced by ward-guard`] });
     expect(result.problems).toEqual(["tests/ward-other.test.ts: protected test file deleted or renamed away"]);
     expect(result.approval).toBe("replaced by ward-guard");
+  });
+
+  it("fails a protected path replaced by a symlink or a directory", () => {
+    const base = seed();
+    write("tests/ward-copy.test.ts", SAFETY_SPEC);
+    rmSync(path.join(root, "tests/ward-guard.test.ts"));
+    symlinkSync("ward-copy.test.ts", path.join(root, "tests/ward-guard.test.ts"));
+    rmSync(path.join(root, "tests/ward-other.test.ts"));
+    mkdirSync(path.join(root, "tests/ward-other.test.ts"));
+
+    expect(evaluate({ base, root }).problems).toEqual([
+      "tests/ward-guard.test.ts: protected path is not a regular file",
+      "tests/ward-other.test.ts: protected path is not a regular file",
+    ]);
+  });
+
+  it("treats a file absent on the base as newly protected", () => {
+    const base = seed();
+    write(LIST_PATH, list("tests/ward-guard.test.ts", "tests/ward-other.test.ts", "tests/ward-new.test.ts"));
+    write("tests/ward-new.test.ts", SAFETY_SPEC);
+    expect(evaluate({ base, root }).problems).toEqual([]);
+  });
+
+  it("fails closed when the base cannot be read for another reason", () => {
+    const base = seed();
+    const broken = (args: string[]) => {
+      if (args[0] === "show") throw Object.assign(new Error("fatal: bad object"), { stderr: "fatal: bad object" });
+      return "";
+    };
+    expect(() => evaluate({ base, root, git: broken })).toThrow(/cannot read .* at /u);
+  });
+});
+
+describe("isAbsentOnBase", () => {
+  it("recognises only git's path-not-in-revision errors", () => {
+    expect(isAbsentOnBase({ stderr: "fatal: path 'tests/a.test.ts' does not exist in 'abc123'" })).toBe(true);
+    expect(isAbsentOnBase({ stderr: "fatal: path 'tests/a.test.ts' exists on disk, but not in 'abc123'" })).toBe(true);
+    expect(isAbsentOnBase({ stderr: "fatal: invalid object name 'abc123'." })).toBe(false);
+    expect(isAbsentOnBase(new Error("spawn git ENOENT"))).toBe(false);
   });
 });

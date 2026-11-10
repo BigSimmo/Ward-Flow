@@ -20,7 +20,7 @@
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import process from "node:process";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { ALLOW_MARKER, isFixturePath, parseAddedLines, scanPatientIdentifierLine } from "../pre-commit-checks.mjs";
 
@@ -71,6 +71,10 @@ export function pullRequestDiff(base, root = ROOT) {
 
 export function main(argv = process.argv.slice(2), env = process.env) {
   const index = argv.indexOf("--base");
+  if (index >= 0 && (!argv[index + 1] || argv[index + 1].startsWith("-"))) {
+    console.error("[patient-identifiers] FAIL — --base needs a revision, e.g. --base origin/main.");
+    return 1;
+  }
   const base = index >= 0 ? argv[index + 1] : env.WARD_BASE_SHA;
   if (!base) {
     console.log("[patient-identifiers] No pull-request base (push or manual run): nothing to compare.");
@@ -97,4 +101,4 @@ export function main(argv = process.argv.slice(2), env = process.env) {
   return 1;
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exit(main());
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) process.exit(main());

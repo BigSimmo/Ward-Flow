@@ -23,6 +23,7 @@ Not agreed. Each needs Josh's yes before anyone builds it.
 - Tools in two panes on wide desktops (Q311, "not yet"). ([Tools review](../design/reviews/2026-11-02/tools-2-nov/SUGGESTIONS.md))
 - External domain review: deferred until a real need; needs spending authority (D-97 item 4). ([decisions.md](decisions.md#d-97-owner-answers-on-seven-open-items-n21-n25-n26-n29-n40-n41-and-wf-b008-8-november-2026))
 - Regional multi-leg transport (D-35, deferred). ([decisions.md](decisions.md))
+- Silent data loss gaps A to C: say how many waiting saves the session limit dropped, wait or ask before sign-out inside an Undo window, and a frozen hidden tab (audit M8). ([evidence](evidence/2026-11-10-silent-data-loss-paths.md#gaps-left-for-josh))
 
 ## Leads to verify
 

@@ -376,8 +376,10 @@ Drafted 10 November 2026 for issue #1574 from file names and test titles on main
 tests were not re-run for this table, and a listed test guards part of a hazard, not the whole of
 it. Ratings above are unchanged. Nothing here is signed: the clinical safety owner's review and
 acceptance (go/no-go row S2) stays open. **Gap** means no test was found for the named control.
-Files marked † are protected safety tests: removing or loosening one fails CI without Josh's
-approval (D-123 item 3; list in `scripts/ward-flow/protected-safety-tests.json`). All paths are
+Files marked † are protected safety tests: without Josh's approval, CI blocks removing one,
+dropping its test-case or assertion count, adding a skip and changing the list (D-123 item 3;
+list in `scripts/ward-flow/protected-safety-tests.json`). A weakened matcher keeps the counts,
+so it remains a review control. All paths are
 under `tests/`.
 
 | Hazard | Control (from section 7.2)                                                                               | Guarding tests                                                                                                                                                                     |

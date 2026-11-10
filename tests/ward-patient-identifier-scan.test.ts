@@ -6,10 +6,14 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { isLuhnValid, isValidMedicare } from "../scripts/pre-commit-checks.mjs";
-import { pullRequestDiff, scanDiffForPatientIdentifiers } from "../scripts/ward-flow/check-patient-identifiers.mjs";
+import {
+  main,
+  pullRequestDiff,
+  scanDiffForPatientIdentifiers,
+} from "../scripts/ward-flow/check-patient-identifiers.mjs";
 
 /** A checksum-valid Medicare number built from the synthetic stem 2111 1111, issue 1. */
 function syntheticValidMedicare(): string {
@@ -87,5 +91,19 @@ describe("pullRequestDiff on a real git history", () => {
     expect(findings).toEqual([
       { file: "src/patient.ts", line: 2, why: "checksum-valid Medicare number (real-looking patient identifier)" },
     ]);
+  });
+});
+
+describe("main", () => {
+  it("refuses a bare --base instead of silently passing", () => {
+    const errors: string[] = [];
+    const spy = vi.spyOn(console, "error").mockImplementation((message: string) => void errors.push(message));
+    try {
+      expect(main(["--base"], { NODE_ENV: "test" })).toBe(1);
+      expect(main(["--base", "--verbose"], { NODE_ENV: "test" })).toBe(1);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(errors.join("\n")).toMatch(/--base needs a revision/u);
   });
 });

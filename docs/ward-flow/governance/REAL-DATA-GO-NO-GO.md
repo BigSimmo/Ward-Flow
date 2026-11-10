@@ -9,7 +9,8 @@ until every row below is ticked with evidence, and the named owners in section 5
 This is the **one tracker** for the real-data gate. Do not keep a second list elsewhere; link
 here. The wider evidence register is [PRODUCTION-READINESS.md](PRODUCTION-READINESS.md). The
 database of record is in [DATABASE.md](../DATABASE.md). The rulings are in
-[decisions.md](../decisions.md) (D-84, D-87, D-111 item 8, D-123 item 6).
+[decisions.md](../decisions.md) (D-84, D-87, D-111 item 8, D-123 item 6). D-123 is recorded in
+PR #1591, pending merge.
 
 ## 0. Gate conditions (D-87 and D-111 item 8)
 

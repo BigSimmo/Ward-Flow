@@ -7,6 +7,7 @@
  * fails when a pull request, against its base,
  *
  *   - deletes a protected file or renames it away,
+ *   - replaces a protected file with a symlink, directory or other non-regular path,
  *   - lowers its test-case count,
  *   - lowers its assertion count (`expect…` / `assert…` calls, counted from the AST, so a
  *     commented-out assertion counts as removed),
@@ -27,7 +28,7 @@
  * Exit 1 = an unapproved loosening, or the base could not be read (fails closed).
  */
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -137,6 +138,20 @@ export function parseProtectedList(raw) {
   });
 }
 
+const NOT_REGULAR = Symbol("not a regular file");
+
+/**
+ * True when `git show <base>:<path>` failed only because the path is not on the base.
+ *
+ * @param {unknown} error
+ */
+export function isAbsentOnBase(error) {
+  const text = `${/** @type {{ stderr?: unknown }} */ (error)?.stderr ?? ""}\n${
+    /** @type {{ message?: unknown }} */ (error)?.message ?? ""
+  }`;
+  return /does not exist in '|exists on disk, but not in '/u.test(text);
+}
+
 /**
  * @param {{ base: string, root?: string, git?: (args: string[]) => string, extraTexts?: string[] }} input
  * @returns {{ problems: string[], checked: string[], approval: string | null }}
@@ -151,20 +166,32 @@ export function evaluate({ base, root = ROOT, git, extraTexts = [] }) {
         maxBuffer: 256 * 1024 * 1024,
         stdio: ["ignore", "pipe", "pipe"],
       }));
+  // Only "this path is not on the base" means newly added; any other read error fails closed.
   const show = (file) => {
     try {
       return run(["show", `${base}:${file}`]);
-    } catch {
-      return null;
+    } catch (error) {
+      if (isAbsentOnBase(error)) return null;
+      throw new Error(`cannot read ${file} at ${base}: ${String(error?.message ?? error).split("\n")[0]}`);
     }
   };
+  // null = absent; a symlink, directory or other non-regular path is reported, never followed.
   const readAfter = (file) => {
     const absolute = path.join(root, file);
-    return existsSync(absolute) ? readFileSync(absolute, "utf8") : null;
+    let stats;
+    try {
+      stats = lstatSync(absolute);
+    } catch (error) {
+      if (error?.code === "ENOENT") return null;
+      throw error;
+    }
+    if (!stats.isFile()) return NOT_REGULAR;
+    return readFileSync(absolute, "utf8");
   };
 
   const afterListRaw = readAfter(LIST_PATH);
   if (afterListRaw === null) throw new Error(`${LIST_PATH} is missing`);
+  if (afterListRaw === NOT_REGULAR) throw new Error(`${LIST_PATH} is not a regular file`);
   const afterList = parseProtectedList(afterListRaw);
   const beforeListRaw = show(LIST_PATH);
   const beforeList = beforeListRaw === null ? [] : parseProtectedList(beforeListRaw);
@@ -179,6 +206,10 @@ export function evaluate({ base, root = ROOT, git, extraTexts = [] }) {
     // Not on the base yet: newly protected, nothing to loosen.
     if (beforeSource === null) continue;
     const afterSource = readAfter(file);
+    if (afterSource === NOT_REGULAR) {
+      problems.push(`${file}: protected path is not a regular file`);
+      continue;
+    }
     problems.push(
       ...assessProtectedFile(
         file,
