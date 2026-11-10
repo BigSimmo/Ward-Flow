@@ -8,6 +8,7 @@ import { readyNotYetGone } from "./statistics-ward-ready";
 import { wardReferralTally } from "./statistics-ward-referrals";
 import { ED_WAIT_BANDS, edJourneyWaitBands, edJourneyWaitFigures, edWaitFigures } from "./statistics-ed-waits";
 import { declinesByReason } from "./statistics-derivations";
+import { occupancyText } from "./statistics-occupancy";
 import { pilotMeasures, type DurationSummary } from "../reports/pilot-measures";
 import { reportWeek, weeklyOperationsReport, type WeeklyReportInput } from "../reports/weekly-report";
 import { ExecutiveCountRelease, type ReportingCount } from "./executive-statistics-release";
@@ -936,7 +937,8 @@ export function executiveJourney(
           label: "Of beds",
           figure: {
             kind: "text" as const,
-            text: `${beds.total ? Math.round((beds.occupied / beds.total) * 100) : 0}%`,
+            // M121 (L1 ruling, D-125): in use (Occupied + Pulled), or "No beds".
+            text: occupancyText({ beds: beds.total, inUse: beds.inUse }),
           },
         },
         { label: "On leave", figure: { kind: "bed" as const, value: beds.onLeave } },

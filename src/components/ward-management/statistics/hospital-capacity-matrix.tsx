@@ -13,7 +13,7 @@ import { wardStatisticsHref } from "@/components/ward-management/shell/ward-faca
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 
-import { occupancyPercent } from "./statistics-occupancy";
+import { occupancyPercent, occupancyText } from "./statistics-occupancy";
 import { StatCard } from "./statistics-hero";
 import styles from "./statistics-v6.module.css";
 
@@ -244,7 +244,9 @@ export function HospitalCapacityMatrix({
                         <span className={styles.occFill} style={{ width: `${Math.min(100, r.occRate)}%` }} />
                         <span className={styles.occTick} style={{ left: `${BED_ALERT_THRESHOLD_PERCENT}%` }} />
                       </span>
-                      <span className={styles.occValue}>{r.occRate}%</span>
+                      <span className={styles.occValue}>
+                        {occupancyText({ beds: r.beds, inUse: r.occupied + r.pulled })}
+                      </span>
                     </span>
                   </td>
                   <td className={`${styles.num} ${r.ready === 0 ? styles.zero : ""}`}>{r.ready}</td>

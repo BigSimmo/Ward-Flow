@@ -29,6 +29,7 @@ import {
   observationSummary,
   type Observation,
 } from "@/components/ward-management/ward-observation";
+import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { wardStaySeats } from "@/components/ward-management/ward/ward-bed-layout";
 
@@ -321,7 +322,11 @@ export function edClinicalRows(input: EdClinicalInputs): EdClinicalRow[] | undef
         { text: movement.examination ? "Psychiatry reviewed" : "Not yet reviewed" },
       ];
       const band: EdClinicalRow["band"] =
-        waitMinutes >= accessTargetMinutes ? "over" : waitMinutes >= 480 ? "eight" : "under";
+        waitMinutes >= accessTargetMinutes
+          ? "over"
+          : waitMinutes >= ED_SEVERE_PRESSURE_WAIT_MINUTES
+            ? "eight"
+            : "under";
       const accepted = unitName(movement.acceptedUnitId);
       const stage = ED_STAGE_LABELS[movement.stage];
       const referral: ClinicalFact = accepted

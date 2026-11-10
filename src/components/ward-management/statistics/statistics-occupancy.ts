@@ -41,6 +41,17 @@ export function occupancyPercent(figure: { beds: number; inUse: number }): numbe
   return figure.beds > 0 ? Math.round((figure.inUse / figure.beds) * 100) : 0;
 }
 
+/** What a screen prints for a ward or group with no beds, in place of a percentage (M121, D-125). */
+export const NO_BEDS_TEXT = "No beds";
+
+/**
+ * The occupancy a screen prints: "85%" from the one count (Occupied + Pulled), or "No beds" when
+ * there are none (M121, Josh approved D-125, 10 Nov 2026). A ward with no beds is never "0%".
+ */
+export function occupancyText(figure: { beds: number; inUse: number }): string {
+  return figure.beds > 0 ? `${occupancyPercent(figure)}%` : NO_BEDS_TEXT;
+}
+
 /** Whole hours as "13h", or "7d 1h" once a wait passes a day, so long waits read at a glance. */
 export function hoursText(hours: number): string {
   if (hours < 24) return `${hours}h`;

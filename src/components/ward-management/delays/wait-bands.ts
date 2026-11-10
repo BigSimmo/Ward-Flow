@@ -5,6 +5,10 @@ import type { BoardRow } from "./delays-board-model";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, edShortName } from "@/components/ward-management/ward-sites";
 import { notWaitingParts, waitingSplit } from "@/components/ward-management/ward-shared-figures";
+import {
+  ED_SEVERE_PRESSURE_WAIT_MINUTES,
+  LONG_WAIT_MINUTES,
+} from "@/components/ward-management/ward-operational-defaults";
 
 export type WaitBandId = "over24" | "over8" | "under8";
 /**
@@ -30,19 +34,19 @@ export const WAIT_BANDS: readonly {
   },
   {
     id: "over8",
-    title: "8 to 24 hours",
+    title: `${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60} to ${LONG_WAIT_MINUTES / 60} hours`,
     note: "longest first",
     tone: "warning",
     limit: 4,
-    test: (row) => row.waited >= 8 * 60 && row.waited < 24 * 60,
+    test: (row) => row.waited >= ED_SEVERE_PRESSURE_WAIT_MINUTES && row.waited < LONG_WAIT_MINUTES,
   },
   {
     id: "under8",
-    title: "Under 8 hours",
+    title: `Under ${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60} hours`,
     note: "longest first",
     tone: undefined,
     limit: 0,
-    test: (row) => row.waited < 8 * 60,
+    test: (row) => row.waited < ED_SEVERE_PRESSURE_WAIT_MINUTES,
   },
 ];
 

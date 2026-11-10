@@ -7,6 +7,7 @@
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { kindRangeWord } from "./forecast-by-kind";
 import { forecastBrief } from "./forecast-brief";
+import { FORECAST_METHOD_LINE } from "./forecast-method";
 import { forecastEdName, useForecastHistory, useForecastModel } from "./use-forecast-model";
 import styles from "./forecast.module.css";
 
@@ -25,6 +26,9 @@ export function ForecastBriefPanel({ now }: { now: Instant }) {
           </div>
         ))}
       </dl>
+      <p className={styles.caption} data-testid="forecast-brief-method">
+        {FORECAST_METHOD_LINE}
+      </p>
       {latest ? (
         <p className={styles.caption}>
           {`Forecast recorded ${formatInstantWithDay(latest.forecastAt, now)}: ${kindRangeWord(latest.forecast.likely)} for the next day. Result recorded ${formatInstantWithDay(latest.actualAt, now)}: ${kindRangeWord(latest.actual)}.`}

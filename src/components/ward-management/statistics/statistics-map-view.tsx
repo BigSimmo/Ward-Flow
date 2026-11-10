@@ -54,7 +54,7 @@ import {
 import { StatisticsEdSwarm } from "./statistics-ed-swarm";
 import { StatCard, useStatisticsLive } from "./statistics-hero";
 import { FlushRow, Follow } from "./statistics-layout";
-import { occupiedBeds } from "./statistics-occupancy";
+import { NO_BEDS_TEXT, occupancyPercent, occupancyText, occupiedBeds } from "./statistics-occupancy";
 import { StatisticsWaMap, type WaMapNode } from "./statistics-wa-map";
 import styles from "./statistics-map-view.module.css";
 import { useViewSwitchAction } from "./statistics-view-switch-slot";
@@ -97,6 +97,8 @@ type WardFigures<Count = number> = {
   /** Beds in use: Occupied + Pulled (`ward-occupancy.ts`). */
   occupied: number;
   pct: number;
+  /** What is printed: "85%", or "No beds" (M121). */
+  pctText: string;
   dischargedToday: Count;
   dueToday: Count;
   meanStay: number | null;
@@ -113,6 +115,8 @@ type SiteFigureData<Count> = {
   /** Beds in use: Occupied + Pulled (`ward-occupancy.ts`). */
   occupied: number;
   pct: number;
+  /** What is printed: "85%", or "No beds" (M121). */
+  pctText: string;
   ready: number;
   wardsOverLine: number;
   edWaiting: Count;
@@ -133,6 +137,7 @@ type MapNetwork = Pick<
   | "beds"
   | "occupied"
   | "pct"
+  | "pctText"
   | "ready"
   | "wardsOverLine"
   | "edWaiting"
@@ -203,7 +208,8 @@ export function siteFigures({
         unit,
         ready: readyBedsNow(unit, admissions, bedReleases),
         occupied,
-        pct: unit.beds > 0 ? Math.round((occupied / unit.beds) * 100) : 0,
+        pct: occupancyPercent({ beds: unit.beds, inUse: occupied }),
+        pctText: occupancyText({ beds: unit.beds, inUse: occupied }),
         dischargedToday: onWard.filter((admission) => leftToday(admission, now)).length,
         dueToday: onWard.filter((admission) => dueLaterToday(admission, now)).length,
         meanStay: wardStatistics(unit.id, [...admissions], now).averageLengthOfStayDays,
@@ -225,7 +231,8 @@ export function siteFigures({
         ed,
         beds,
         occupied,
-        pct: beds > 0 ? Math.round((occupied / beds) * 100) : 0,
+        pct: occupancyPercent({ beds, inUse: occupied }),
+        pctText: occupancyText({ beds, inUse: occupied }),
         ready: wards.reduce((sum, ward) => sum + ward.ready, 0),
         wardsOverLine: wards.filter((ward) => ward.pct >= BED_ALERT_THRESHOLD_PERCENT).length,
         edWaiting: edFigures?.onTheList ?? 0,
@@ -280,7 +287,7 @@ const lensDisplay = (site: PresentedSiteFigures, lens: MapLens): string =>
     : String(statisticsCountText(displayedLensValue(site, lens)));
 
 const lensSub = (site: PresentedSiteFigures, lens: MapLens): string => {
-  if (lens === "beds") return `${site.pct}% · ${site.ready} ready`;
+  if (lens === "beds") return `${site.pctText} · ${site.ready} ready`;
   if (lens === "ed")
     return site.edLongest === null ? "none waiting" : `${durMinutes(Math.round(site.edLongest))} longest`;
   if (lens === "dis")
@@ -316,7 +323,7 @@ const lensStatus = (site: PresentedSiteFigures, lens: MapLens): WaMapNode["statu
 const lensAria = (site: PresentedSiteFigures, lens: MapLens): string => {
   if (!applies(site, lens)) return `${site.name}, ${lens === "ed" ? "no ED" : "no ward"}`;
   if (lens === "beds")
-    return `${site.name}: ${site.ready} ready beds, ${site.pct}% in use${site.wardsOverLine ? `, ${site.wardsOverLine} ${site.wardsOverLine === 1 ? "ward" : "wards"} at or over ${BED_ALERT_THRESHOLD_PERCENT}%` : ""}`;
+    return `${site.name}: ${site.ready} ready beds, ${site.beds > 0 ? `${site.pctText} in use` : site.pctText.toLowerCase()}${site.wardsOverLine ? `, ${site.wardsOverLine} ${site.wardsOverLine === 1 ? "ward" : "wards"} at or over ${BED_ALERT_THRESHOLD_PERCENT}%` : ""}`;
   if (lens === "ed") {
     // WF-17: times stay exact, but do not pair an exact longest wait with a withheld people count.
     const waitingExact = exactStatisticsCount(site.edWaiting) !== null;
@@ -422,7 +429,8 @@ function OperationalMapView({
     return {
       beds,
       occupied,
-      pct: beds > 0 ? Math.round((occupied / beds) * 100) : 0,
+      pct: occupancyPercent({ beds, inUse: occupied }),
+      pctText: occupancyText({ beds, inUse: occupied }),
       ready: sites.reduce((sum, site) => sum + site.ready, 0),
       preparing: units.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0),
       wardsOverLine: sites.reduce((sum, site) => sum + site.wardsOverLine, 0),
@@ -452,7 +460,8 @@ function ExecutiveMapView({ data }: { data: ExecutiveReportingFoundation }) {
         unit: { id: ward.id, name: ward.name },
         ready: ward.beds.ready,
         occupied: ward.beds.inUse,
-        pct: ward.beds.total > 0 ? Math.round((ward.beds.inUse / ward.beds.total) * 100) : 0,
+        pct: occupancyPercent({ beds: ward.beds.total, inUse: ward.beds.inUse }),
+        pctText: occupancyText({ beds: ward.beds.total, inUse: ward.beds.inUse }),
         dischargedToday: ward.dischargedToday,
         dueToday: ward.dueToday,
         meanStay: ward.statistics.averageLengthOfStayDays,
@@ -460,7 +469,8 @@ function ExecutiveMapView({ data }: { data: ExecutiveReportingFoundation }) {
     ed: site.edId ? { id: site.edId, openable: data.openableEmergencyDepartmentIds.includes(site.edId) } : undefined,
     beds: site.beds.total,
     occupied: site.beds.inUse,
-    pct: site.beds.total > 0 ? Math.round((site.beds.inUse / site.beds.total) * 100) : 0,
+    pct: occupancyPercent({ beds: site.beds.total, inUse: site.beds.inUse }),
+    pctText: occupancyText({ beds: site.beds.total, inUse: site.beds.inUse }),
     ready: site.beds.ready,
     wardsOverLine: site.wardsOverLine,
     edWaiting: site.edWaiting,
@@ -480,7 +490,8 @@ function ExecutiveMapView({ data }: { data: ExecutiveReportingFoundation }) {
   const network: MapNetwork = {
     beds: beds.total,
     occupied: beds.inUse,
-    pct: beds.total > 0 ? Math.round((beds.inUse / beds.total) * 100) : 0,
+    pct: occupancyPercent({ beds: beds.total, inUse: beds.inUse }),
+    pctText: occupancyText({ beds: beds.total, inUse: beds.inUse }),
     ready: beds.ready,
     preparing: beds.beingMadeReady,
     wardsOverLine: sites.reduce((sum, site) => sum + site.wardsOverLine, 0),
@@ -546,7 +557,7 @@ function MapPresentation({
             value: String(network.ready),
             label: network.preparing > 0 ? `Ready beds, ${network.preparing} being made ready` : "Ready beds",
           },
-          { value: `${network.pct}%`, label: IN_USE_NOUN },
+          { value: network.pctText, label: IN_USE_NOUN },
           {
             value: String(network.wardsOverLine),
             label: `Wards at or over ${BED_ALERT_THRESHOLD_PERCENT}%`,
@@ -787,7 +798,7 @@ function SiteCard({ site, lens, onClose }: { site: PresentedSiteFigures; lens: M
                   <span className={styles.siteName}>{ward.unit.name}</span>
                   <span className={styles.siteFig}>
                     {ward.pct >= BED_ALERT_THRESHOLD_PERCENT ? <StatusGlyph tone="warning" size={9} /> : null}
-                    {ward.pct}% · {ward.ready} ready
+                    {ward.pctText} · {ward.ready} ready
                   </span>
                 </>
               );
@@ -1027,7 +1038,8 @@ function BelowMap({
       return {
         service,
         ready: own.reduce((sum, site) => sum + site.ready, 0),
-        pct: beds > 0 ? Math.round((occupied / beds) * 100) : 0,
+        pct: occupancyPercent({ beds, inUse: occupied }),
+        pctText: occupancyText({ beds, inUse: occupied }),
         wards: own.reduce((sum, site) => sum + site.wards.length, 0),
       };
     },
@@ -1054,7 +1066,7 @@ function BelowMap({
                 row.service
               ),
               labelText: row.service,
-              sub: `${row.pct}% in use · ${row.wards} ${row.wards === 1 ? "ward" : "wards"}`,
+              sub: `${row.pctText === NO_BEDS_TEXT ? NO_BEDS_TEXT : `${row.pctText} in use`} · ${row.wards} ${row.wards === 1 ? "ward" : "wards"}`,
               value: row.ready,
               fill: "ready",
             }))}

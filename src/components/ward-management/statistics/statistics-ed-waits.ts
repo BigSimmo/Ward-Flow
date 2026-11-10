@@ -1,7 +1,11 @@
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { isEdOriginJourney, isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import { isOpen } from "@/components/ward-management/ward-derivations";
-import { LONG_WAIT_MINUTES, VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import {
+  ED_SEVERE_PRESSURE_WAIT_MINUTES,
+  LONG_WAIT_MINUTES,
+  VERY_LONG_WAIT_MINUTES,
+} from "@/components/ward-management/ward-operational-defaults";
 import type { Movement } from "@/components/ward-management/ward-model";
 
 /**
@@ -141,11 +145,19 @@ function edPopulationFigures(
  * **Edges are lower-inclusive: a wait of exactly four hours is in *4 to 8 hours*, not *Under 4
  * hours*.** Both sides of all four boundaries are pinned.
  */
+/** A middle band, its label built from its own edges so the words and the numbers cannot differ. */
+const middleBand = (fromMinutes: number, toMinutes: number) => ({
+  label: `${fromMinutes / 60} to ${toMinutes / 60} hours`,
+  fromMinutes,
+});
+
+// The 8 h edge reads the signed edSeverePressure (M16, D-125). The 4 h and 12 h edges have no signed
+// value; they stay typed and are on the M16 todo list for Josh.
 export const ED_WAIT_BANDS = [
   { label: "Under 4 hours", fromMinutes: 0 },
-  { label: "4 to 8 hours", fromMinutes: 4 * 60 },
-  { label: "8 to 12 hours", fromMinutes: 8 * 60 },
-  { label: "12 to 24 hours", fromMinutes: 12 * 60 },
+  middleBand(4 * 60, ED_SEVERE_PRESSURE_WAIT_MINUTES),
+  middleBand(ED_SEVERE_PRESSURE_WAIT_MINUTES, 12 * 60),
+  middleBand(12 * 60, MINUTES_PER_DAY),
   { label: "Past 24 hours", fromMinutes: MINUTES_PER_DAY },
 ] as const;
 

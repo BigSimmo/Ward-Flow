@@ -21,6 +21,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import {
+  ED_SEVERE_PRESSURE_WAIT_MINUTES,
   LONG_WAIT_MINUTES,
   OPERATIONAL_DEFAULT_LABEL,
   REMINDER_MORNING_SHIFT_END_MINUTE,
@@ -509,17 +510,23 @@ export function waitingSplit(movements: Movement[], now: Instant): WardBarSegmen
   const open = movements.filter(isOpen);
   const waited = (movement: Movement) => now - movement.openedAt;
   return [
-    { label: "Under 8 hours", value: open.filter((movement) => waited(movement) < 8 * 60).length, tone: "good" },
     {
-      label: "8 to 24 hours",
-      value: open.filter((movement) => waited(movement) >= 8 * 60 && waited(movement) < LONG_WAIT_MINUTES).length,
+      label: `Under ${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60} hours`,
+      value: open.filter((movement) => waited(movement) < ED_SEVERE_PRESSURE_WAIT_MINUTES).length,
+      tone: "good",
+    },
+    {
+      label: `${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60} to ${LONG_WAIT_MINUTES / 60} hours`,
+      value: open.filter(
+        (movement) => waited(movement) >= ED_SEVERE_PRESSURE_WAIT_MINUTES && waited(movement) < LONG_WAIT_MINUTES,
+      ).length,
       tone: "warning",
     },
     // Neutral: plain grey (Josh's card choice, D-24 item 5). Whether a 24-hour wait is a limit is for
     // Josh to rule, not this bucket — it only describes recorded waits, so it carries no
     // danger/warning colour of its own.
     {
-      label: "Past 24 hours",
+      label: `Past ${LONG_WAIT_MINUTES / 60} hours`,
       value: open.filter((movement) => waited(movement) >= LONG_WAIT_MINUTES).length,
       tone: "rest",
     },
