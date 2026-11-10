@@ -658,25 +658,6 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
   ],
   [
     1,
-    (state, random) => {
-      // Item 9: a police or ambulance crew's typed times, sometimes out of order or in the future.
-      const movement = prefer(
-        random,
-        state.movements,
-        (m) => m.arrivalMode === "police" || m.arrivalMode === "ambulance",
-      );
-      const arrived = currentNow - int(random, 0, 240);
-      return {
-        type: "RECORD_CREW_TIMES",
-        movementId: id(movement),
-        ...(chance(random, 0.8) ? { crewArrivedAt: arrived } : {}),
-        ...(chance(random, 0.5) ? { crewHandedOverAt: arrived + int(random, -10, 60) } : {}),
-        ...(chance(random, 0.4) ? { crewReleasedAt: arrived + int(random, 0, 90) } : {}),
-      };
-    },
-  ],
-  [
-    1,
     movementEvent("RECORD_ED_OUTCOME", ["placement_requested"], (_state, random) => ({
       outcome: pick(random, ["for_discharge", "for_community_follow_up"]),
     })),
@@ -2553,6 +2534,27 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         role: record.role,
         ...undoSubjectField(state, record.subjectId),
         ...(record.unitId ? { actingUnitId: record.unitId } : {}),
+      };
+    },
+  ],
+  // Item 9 (10 Nov 2026): weight 0 and last, so only the coverage sweep sends it and the weighted
+  // draws of every other builder stay as they were.
+  [
+    0,
+    (state, random) => {
+      // Item 9: a police or ambulance crew's typed times, sometimes out of order or in the future.
+      const movement = prefer(
+        random,
+        state.movements,
+        (m) => m.arrivalMode === "police" || m.arrivalMode === "ambulance",
+      );
+      const arrived = currentNow - int(random, 0, 240);
+      return {
+        type: "RECORD_CREW_TIMES",
+        movementId: id(movement),
+        ...(chance(random, 0.8) ? { crewArrivedAt: arrived } : {}),
+        ...(chance(random, 0.5) ? { crewHandedOverAt: arrived + int(random, -10, 60) } : {}),
+        ...(chance(random, 0.4) ? { crewReleasedAt: arrived + int(random, 0, 90) } : {}),
       };
     },
   ],

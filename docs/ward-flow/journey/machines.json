@@ -1521,7 +1521,7 @@
   ],
   "review": {
     "reviewedOn": "2026-11-05",
-    "basis": "Source comparison of eleven machines, route nodes, gates, resources and current gap notes; not runtime or clinical acceptance. 5 November follow-up: explicit handler, payload, authority and caller review reconciled the consolidated audit repairs. Accepted observation sequence and legacy-tie fallback, current place/Undo provenance, safe world reset/import identity, return retry, meeting occurrence metadata and UI draft/completion ownership qualify existing transitions; they add no clinical decision or new physical transport stage. See CURRENT-REVIEW.md for the source-by-source review scope and reused versus fresh evidence. Main29f61/domain1430 reconciliation: accepted observation order is max(retained history,0)+1 with positive-safe restore metadata and sequence preserved through arrival; legacy ties retain compatibility fallback. Import and archive Undo share normalized retained identity, excluding explicit missing/privacy sentinels. Complete inverses preserve occupied-stay/leave consistency. No transition geometry or clinical rule changed; see CURRENT-REVIEW.md. #1447 consolidation, 5 November: other journeys' pending numbered bed reservations come off Ready and the free locked/open counts in the pull and planned-arrival gates; a pull release clears its held bed number and refuses a release matching no reservation; a coordinator transfer recorded as arrived needs a Ready bed; restore refuses a save whose live absences, active stays or numbered beds have more than one owner and names the broken rule. No transition geometry or clinical rule changed.",
+    "basis": "Source comparison of eleven machines, route nodes, gates, resources and current gap notes; not runtime or clinical acceptance. 5 November follow-up: explicit handler, payload, authority and caller review reconciled the consolidated audit repairs. Accepted observation sequence and legacy-tie fallback, current place/Undo provenance, safe world reset/import identity, return retry, meeting occurrence metadata and UI draft/completion ownership qualify existing transitions; they add no clinical decision or new physical transport stage. See CURRENT-REVIEW.md for the source-by-source review scope and reused versus fresh evidence. Main29f61/domain1430 reconciliation: accepted observation order is max(retained history,0)+1 with positive-safe restore metadata and sequence preserved through arrival; legacy ties retain compatibility fallback. Import and archive Undo share normalized retained identity, excluding explicit missing/privacy sentinels. Complete inverses preserve occupied-stay/leave consistency. No transition geometry or clinical rule changed; see CURRENT-REVIEW.md. #1447 consolidation, 5 November: other journeys' pending numbered bed reservations come off Ready and the free locked/open counts in the pull and planned-arrival gates; a pull release clears its held bed number and refuses a release matching no reservation; a coordinator transfer recorded as arrived needs a Ready bed; restore refuses a save whose live absences, active stays or numbered beds have more than one owner and names the broken rule. No transition geometry or clinical rule changed. 10 November (items 3, 9, 10/16/27, 26/46): escalation calls and police or ambulance crew times add record-only movement fields and events; the ward card fit lines, home team heads-up and transfer notes copy are screen reads. Cited sources compared line by line; no transition geometry or clinical rule changed.",
     "sources": [
       {
         "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
@@ -1546,7 +1546,7 @@
       {
         "path": "src/components/ward-management/patients/patient-now-screen.tsx",
         "line": 1,
-        "sha256": "dfb17d155ac70a24ed4bb602838067ce4b93753a8cdba1d9a89b24092aba2e44"
+        "sha256": "1219918c48ded48fec82dc55c746e3d88fd4f60fec49893a8be53f7016f17495"
       },
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner-body.tsx",
@@ -1601,12 +1601,12 @@
       {
         "path": "src/components/ward-management/ward-flow-event-roles.ts",
         "line": 1,
-        "sha256": "79ebb770ae7ce7bfa16b66f255c85cc181280c4664c0b72125a8ab051f277a33"
+        "sha256": "de6b1fbc86d27a339a986958c0b75f4ccecbc90b1e01faf406041429d02e0ccf"
       },
       {
         "path": "src/components/ward-management/ward-flow-events.ts",
         "line": 1,
-        "sha256": "378044cce3b2c98c2c24f4e5bb6ab27f7c361f02a7fa8ab59fa36a77388c84bf"
+        "sha256": "4d559295666894285133e1d9ec76b15490a3ab84849f14595e7a10e6a1a24ca8"
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
@@ -1620,8 +1620,8 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-record-events.ts",
-        "line": 601,
-        "sha256": "901a830650fc830bfa41e4351b15fcea7e71bf475cc389ac2ece99fe698c4e06"
+        "line": 603,
+        "sha256": "702f4ea25aabfcc5ca012ce362bbc56f4453c8cf6abab46bf1728b14803c107e"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
@@ -1636,7 +1636,7 @@
       {
         "path": "src/components/ward-management/ward-flow-reducer.ts",
         "line": 1168,
-        "sha256": "5976dec19e94d27da69ac2b53c2e82825f1d05c3b7f1f520f769eff9c60cc8af"
+        "sha256": "c0470fe114062f9e2a6f5cd1539b3b08acdd828a63468f5441f048b3cdb38844"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
@@ -1686,7 +1686,7 @@
       {
         "path": "src/components/ward-management/ward-model.ts",
         "line": 1,
-        "sha256": "cdc771941466a5e9b459b939f0946f1484598c93d4259aac4b9afa210c8a6a95"
+        "sha256": "ee21eb3126d0c951d27c10bc2a4068649fde7692e84deee3d6090efca06d90f5"
       },
       {
         "path": "src/components/ward-management/ward-patient-registration-reducer.ts",
