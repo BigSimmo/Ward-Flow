@@ -375,7 +375,9 @@ jobs:
     needs: [plan, reuse, static, build]
     if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.unit == 'true' && needs.reuse.outputs.unit_verified != 'true' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true'))) }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    # 30, not 20 (10 Nov 2026): shards now take 15-20 minutes, and runs near the old limit were
+    # cancelled with 0 failures. A fifth shard would rename required checks and coverage blobs.
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
