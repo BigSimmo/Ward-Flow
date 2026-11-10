@@ -36,6 +36,7 @@ export {
   type HeroActProps,
   type HeroChipItem,
   type HeroBandCell,
+  type HeroRenderPress,
 } from "./hero-top";
 export { FolderTabs, folderTabClasses } from "./folder-tabs";
 export { useWfBandActive, useWfBandBleed, registerWfBandHero, WF_BAND_SCROLLED_PX } from "./band";

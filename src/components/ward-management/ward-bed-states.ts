@@ -103,6 +103,21 @@ export function readyBedsNow(
   return bedStates(unit, admissions, [...bedReleases], [], referrals).ready;
 }
 
+/**
+ * Item 5 (count breakdown): the wards holding a ready bed now, each with its `readyBedsNow`, in the
+ * order given. `totalReadyBedsNow` is their sum, so a list of these wards always adds up to the figure.
+ */
+export function readyBedsByWard(
+  units: readonly Unit[],
+  admissions: readonly Admission[],
+  bedReleases: readonly BedRelease[],
+  referrals: readonly ReservationReferral[] = [],
+): { unit: Unit; ready: number }[] {
+  return units
+    .map((unit) => ({ unit, ready: readyBedsNow(unit, admissions, bedReleases, referrals) }))
+    .filter((ward) => ward.ready > 0);
+}
+
 /** `readyBedsNow` summed over a set of wards. */
 export function totalReadyBedsNow(
   units: readonly Unit[],
@@ -110,7 +125,7 @@ export function totalReadyBedsNow(
   bedReleases: readonly BedRelease[],
   referrals: readonly ReservationReferral[] = [],
 ): number {
-  return units.reduce((sum, unit) => sum + readyBedsNow(unit, admissions, bedReleases, referrals), 0);
+  return readyBedsByWard(units, admissions, bedReleases, referrals).reduce((sum, ward) => sum + ward.ready, 0);
 }
 
 /** The ruled words, spelled once. */
