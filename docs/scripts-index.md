@@ -90,8 +90,9 @@ production patterns carry `!` in `knip.json`; front-end audit CB-13).
 | `node scripts/ward-flow/sign-out-check.mjs <file>` | `ward-flow/sign-out-check.mjs`, `ward-flow/claim-files.mjs`, `ward-flow/logs-root.mjs` | Sign-out log clashes before editing.                                                      |
 
 The dependency audit is the `npm audit` step in `.github/workflows/dependency-audit.yml`, and the
-secret history scan is the gitleaks job in `.github/workflows/ward-flow.yml`. Neither needs a
-script here.
+secret history scan is the gitleaks job in `.github/workflows/ward-flow.yml`. CodeQL code scanning
+is `.github/workflows/codeql.yml`, which blocks a pull request only on findings it introduces (D-124).
+None of these needs a script here.
 
 ## Documents and generated indexes
 
