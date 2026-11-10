@@ -71,8 +71,60 @@ describe("M13/M37: Sign off N with the middle save refused", () => {
   });
 });
 
+describe("M37: Sign off N offers Undo through the step undo", () => {
+  const undo = (releaseId: string, recordSeq?: number): WardFlowEvent =>
+    ({
+      type: "UNDO_RELEASE_STEP",
+      role: "ward",
+      now: NOW,
+      releaseId,
+      actingUnitId: UNIT,
+      ...(recordSeq === undefined ? {} : { recordSeq }),
+    }) as WardFlowEvent;
+
+  it("puts each signed-off release back exactly, one at a time", () => {
+    const seed = seedWardFlowState();
+    const [first, second] = expectedReleases(seed, 2);
+    const signed = [first!, second!].reduce((state, id) => wardFlowReducer(state, signOff(id)), seed);
+    const undone = wardFlowReducer(signed, undo(first!));
+    expect(undone.rejections).toEqual(signed.rejections);
+    expect(undone.bedReleases.find((release) => release.id === first)).toEqual(
+      seed.bedReleases.find((release) => release.id === first),
+    );
+    // The other sign-off is its own record and stays signed off.
+    expect(undone.bedReleases.find((release) => release.id === second)?.state).toBe("confirmed");
+    const audit = undone.auditEvents.at(-1)!;
+    expect([audit.action, audit.outcome, (audit.details as { undoneAction?: string }).undoneAction]).toEqual([
+      "UNDO_RELEASE_STEP",
+      "accepted",
+      "CONFIRM_BED_RELEASE",
+    ]);
+  });
+
+  it("refuses the Undo when a colleague changed the release since", () => {
+    const seed = seedWardFlowState();
+    const [first] = expectedReleases(seed, 1);
+    const signed = wardFlowReducer(seed, signOff(first!));
+    const changed = wardFlowReducer(signed, {
+      type: "BLOCK_BED_RELEASE",
+      role: "ward",
+      now: NOW,
+      releaseId: first!,
+      actingUnitId: UNIT,
+      blocker: "Awaiting pharmacy",
+    } as WardFlowEvent);
+    // A colleague on the same ward recorded a hold-up on this release after the sign-off.
+    expect(changed.rejections).toEqual(signed.rejections);
+    const before = changed.bedReleases.find((release) => release.id === first);
+    const after = wardFlowReducer(changed, undo(first!));
+    expect(after.rejections.length - changed.rejections.length).toBe(1);
+    expect(after.rejections.at(-1)?.reason).toMatch(/changed since/);
+    expect(after.bedReleases.find((release) => release.id === first)).toEqual(before);
+  });
+});
+
 describe("M13/M37: Acknowledge visible with the middle save refused", () => {
-  it("records the first and last and nothing for the middle (and, today, no audit rows)", () => {
+  it("records the first and last, nothing for the middle, and audits one row per alert", () => {
     const seed = seedWardFlowState();
     const real = buildActionInbox(seed.movements, NOW, seed.units)
       .filter((item) => item.kind === "fact")
@@ -91,12 +143,14 @@ describe("M13/M37: Acknowledge visible with the middle save refused", () => {
     );
     expect(after.inboxAcknowledgements[ids[1]!]).toBeUndefined();
     expect(after.rejections.length - seed.rejections.length).toBe(1);
-    // DEFECT for Josh (M37): ACKNOWLEDGE_INBOX_ITEM writes no audit row at all (ward-audit.ts has no
-    // category for it), so a bulk acknowledge leaves no per-item audit trail. Pinned here so a fix shows.
-    expect(after.auditEvents.slice(auditFrom)).toEqual([]);
+    // M37 (D-125): one audit row per alert, with its own outcome.
+    const rows = after.auditEvents.slice(auditFrom);
+    expect(
+      rows.map((row) => [row.category, row.action, (row.details as { inboxItemId?: string }).inboxItemId, row.outcome]),
+    ).toEqual([
+      ["inbox", "ACKNOWLEDGE_INBOX_ITEM", ids[0], "accepted"],
+      ["inbox", "ACKNOWLEDGE_INBOX_ITEM", ids[1], "denied"],
+      ["inbox", "ACKNOWLEDGE_INBOX_ITEM", ids[2], "accepted"],
+    ]);
   });
-
-  it.todo(
-    "DEFECT M37: Acknowledge visible writes one audit row per alert (accepted, denied, accepted) — ACKNOWLEDGE_INBOX_ITEM has no audit category today",
-  );
 });

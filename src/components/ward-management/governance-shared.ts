@@ -100,6 +100,7 @@ export const actionLabels: Record<AuditEvent["action"], string> = {
   BREAK_GLASS: "Break glass",
   REVIEW_AUDIT_EVENT: "Review event",
   SET_CONFIGURATION: "Change configuration",
+  ACKNOWLEDGE_INBOX_ITEM: "Acknowledge action item",
   TAKE_INBOX_ITEM_OWNERSHIP: "Take action item",
   RELEASE_INBOX_ITEM_OWNERSHIP: "Release action item",
   SNOOZE_INBOX_ITEM: "Snooze action item",
@@ -151,6 +152,7 @@ export const UNDONE_STEP_LABELS: Partial<Record<string, string>> = {
   TRANSPORT_EN_ROUTE: "Transport en route",
   PATIENT_COLLECTED: "Patient collected",
   PATIENT_ARRIVED: "Patient arrived",
+  CONFIRM_BED_RELEASE: "Discharge sign-off",
 };
 export const reviewLabels = { reviewed: "Reviewed", "follow-up-required": "Follow-up required" } as const;
 export const display = (value: string | number | boolean | null | undefined) =>

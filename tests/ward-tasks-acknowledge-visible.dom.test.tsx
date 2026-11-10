@@ -117,7 +117,11 @@ describe("Acknowledge visible says one alert in the singular (CL-7, 5 Nov 2026)"
   it("asks 'Acknowledge 1 alert?' and confirms '1 alert acknowledged.'", () => {
     render(
       <ToastProvider>
-        <AcknowledgeVisibleButton ids={["synthetic-alert-1"]} onAcknowledge={vi.fn()} classes={{}} />
+        <AcknowledgeVisibleButton
+          rows={[{ id: "synthetic-alert-1", what: "Synthetic alert" }]}
+          onAcknowledge={vi.fn()}
+          classes={{}}
+        />
       </ToastProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: /^Acknowledge visible/ }));

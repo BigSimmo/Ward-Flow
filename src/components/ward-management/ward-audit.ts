@@ -287,9 +287,14 @@ export type AuditEvent = AuditBase &
       }
     | {
         // Stream A, 9 Oct 2026: who took, snoozed or returned an action item. The reason is a closed list.
+        // M37 (D-125, 10 Nov 2026): an acknowledgement too, so "Acknowledge visible" leaves one row per alert.
         category: "inbox";
         action:
-          "TAKE_INBOX_ITEM_OWNERSHIP" | "RELEASE_INBOX_ITEM_OWNERSHIP" | "SNOOZE_INBOX_ITEM" | "UNSNOOZE_INBOX_ITEM";
+          | "ACKNOWLEDGE_INBOX_ITEM"
+          | "TAKE_INBOX_ITEM_OWNERSHIP"
+          | "RELEASE_INBOX_ITEM_OWNERSHIP"
+          | "SNOOZE_INBOX_ITEM"
+          | "UNSNOOZE_INBOX_ITEM";
         details: { inboxItemId: string; reason: InboxSnoozeReason | null; until: Instant | null };
       }
     | {
@@ -397,6 +402,7 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "ARCHIVE_PATIENT":
     case "RECORD_OBSERVATION_LEVEL":
       return "patient-record";
+    case "ACKNOWLEDGE_INBOX_ITEM":
     case "TAKE_INBOX_ITEM_OWNERSHIP":
     case "RELEASE_INBOX_ITEM_OWNERSHIP":
     case "SNOOZE_INBOX_ITEM":
@@ -520,6 +526,7 @@ export function auditSubject(state: WardFlowState, event: WardFlowEvent): AuditS
   } else if (event.type === "SET_CONFIGURATION") {
     return { kind: "configuration" };
   } else if (
+    event.type === "ACKNOWLEDGE_INBOX_ITEM" ||
     event.type === "TAKE_INBOX_ITEM_OWNERSHIP" ||
     event.type === "RELEASE_INBOX_ITEM_OWNERSHIP" ||
     event.type === "SNOOZE_INBOX_ITEM" ||
@@ -754,6 +761,7 @@ export function captureAuditEvent(
         captured.details = { ...captured.details, openBedReason };
       break;
     }
+    case "ACKNOWLEDGE_INBOX_ITEM":
     case "TAKE_INBOX_ITEM_OWNERSHIP":
     case "RELEASE_INBOX_ITEM_OWNERSHIP":
     case "SNOOZE_INBOX_ITEM":
