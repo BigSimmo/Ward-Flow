@@ -457,29 +457,33 @@ export function WardHomeTab({
     const days = typeof bed.stayDays === "number" ? `${bed.stayDays}d` : "";
     // Audit A1-3: every pulled bed shows its hold time, from the one bed-hold rule.
     const hold = bed.status === "incoming" ? (bed.bedHold ?? null) : null;
-    const note = hold
-      ? hold.label
-      : delivered
-        ? `Arrived at ward ${formatInstantWithDay(bed.deliveredAt as Instant, now)}, confirm arrival`
-        : awayAtEd
-          ? `Away at an ED ${bed.awayAtEdHours}h`
-          : bed.blockReason
-            ? `Held up, ${String(bed.blockReason)}`
-            : bed.pastDate
-              ? "Past expected date"
-              : bed.dischargeBarrier
-                ? String(bed.dischargeBarrier)
-                : leaving
-                  ? bed.dischargeConfirmed
-                    ? "Discharge confirmed"
-                    : "Expected out today"
-                  : bed.isSpecialling && bed.observation
-                    ? observationSummary(bed.observation)
-                    : bed.criteriaLedChip && bed.status === "occupied"
-                      ? bed.criteriaLedChip.label
-                      : free
-                        ? "Ready"
-                        : stateWord;
+    // Item 6: a closed bed with a review time says it on the tile ("Review 14:00", "Review overdue").
+    const note =
+      bed.status === "closed" && bed.closedReview
+        ? bed.closedReview
+        : hold
+          ? hold.label
+          : delivered
+            ? `Arrived at ward ${formatInstantWithDay(bed.deliveredAt as Instant, now)}, confirm arrival`
+            : awayAtEd
+              ? `Away at an ED ${bed.awayAtEdHours}h`
+              : bed.blockReason
+                ? `Held up, ${String(bed.blockReason)}`
+                : bed.pastDate
+                  ? "Past expected date"
+                  : bed.dischargeBarrier
+                    ? String(bed.dischargeBarrier)
+                    : leaving
+                      ? bed.dischargeConfirmed
+                        ? "Discharge confirmed"
+                        : "Expected out today"
+                      : bed.isSpecialling && bed.observation
+                        ? observationSummary(bed.observation)
+                        : bed.criteriaLedChip && bed.status === "occupied"
+                          ? bed.criteriaLedChip.label
+                          : free
+                            ? "Ready"
+                            : stateWord;
     // U1 (site review, 12 Oct 2026): the tile's status word is short so it never truncates
     // ("Discharge confir…", "Held up, Awaiti…"). The full note stays in the accessible name, the
     // list view and the bed panel.
