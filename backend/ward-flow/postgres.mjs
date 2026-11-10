@@ -505,6 +505,14 @@ export function createWorkspaceStore(
   // A role reads as ended 12 months after it was given, whatever end date it was stored with, so a
   // grant made before the ceiling was checked stops there too (RA-06). A whole number, so safe inline.
   const MAX_TERM = `interval '${Math.trunc(Number(engine.ACCESS_MAX_TERM_MINUTES))} minutes'`;
+  // A2-02: the app sends a role's length in whole minutes and the server sets the end on its own
+  // clock, so a double tap or retry of one grant lands a few milliseconds or seconds later. A
+  // repeat whose end is within this of a live grant's end is that grant. It is under a minute, so
+  // two deliberately different lengths (at least a minute apart) are never merged.
+  const GRANT_END_TOLERANCE = "interval '30 seconds'";
+  // A2-01/A2-03: an opening or cover sent without a request key (an older tab) that repeats one
+  // made this recently, and still in force, is a retry of it rather than a second one.
+  const UNKEYED_RETRY_MS = 60_000;
   /**
    * The place each desk (a membership a phone was turned on from) works across, as the viewer
    * builds it: a nurse in charge's own ward plus any ward cover that account holds, so night cover
@@ -1854,7 +1862,7 @@ export function createWorkspaceStore(
   async function insertGrant(client, row, view, { actorId, access, expiresAt, kind = "role" }, at, action) {
     if (kind === "role") {
       const { rows: existing } = await client.query(
-        `SELECT * FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND role=$3 AND scope=$4::jsonb AND granted_by=$5 AND expires_at=$6 AND revoked_at IS NULL${view.version >= ACCESS_COVER_MIGRATION ? " AND kind='role'" : ""} AND granted_at > $7::timestamptz - ${MAX_TERM}${view.version >= ACCESS_COVER_MIGRATION ? " AND coalesce(last_used_at, granted_at) > $8" : ""} ORDER BY granted_at, id LIMIT 1`,
+        `SELECT * FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND role=$3 AND scope=$4::jsonb AND granted_by=$5 AND expires_at BETWEEN $6::timestamptz - ${GRANT_END_TOLERANCE} AND $6::timestamptz + ${GRANT_END_TOLERANCE} AND expires_at > $7 AND revoked_at IS NULL${view.version >= ACCESS_COVER_MIGRATION ? " AND kind='role'" : ""} AND granted_at > $7::timestamptz - ${MAX_TERM}${view.version >= ACCESS_COVER_MIGRATION ? " AND coalesce(last_used_at, granted_at) > $8" : ""} ORDER BY granted_at, id LIMIT 1`,
         [
           workspaceId,
           actorId,
@@ -2398,6 +2406,23 @@ export function createWorkspaceStore(
           held.map((membership) => membership.role),
         );
         if (refusal) return refused(422, refusal);
+        if (request.intentKey === undefined) {
+          // A2-03: with no key, the same cover from this giver given in the last minute is a retry.
+          const { rows: recent } = await client.query(
+            "SELECT * FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND role=$3 AND scope=$4::jsonb AND granted_by=$5 AND kind='cover' AND revoked_at IS NULL AND granted_at > $6 AND expires_at > $7 AND expires_at - granted_at = make_interval(mins => $8) ORDER BY granted_at, id LIMIT 1",
+            [
+              workspaceId,
+              request.actorId,
+              cover.role,
+              JSON.stringify(cover.scope),
+              view.actorId,
+              new Date(at.getTime() - UNKEYED_RETRY_MS),
+              at,
+              request.minutes,
+            ],
+          );
+          if (recent.length) return { status: 200, body: { membership: presentMembership(recent[0], at) } };
+        }
         const expiresAt = new Date(at.getTime() + request.minutes * 60_000);
         const given = await insertGrant(
           client,
@@ -2867,8 +2892,44 @@ export function createWorkspaceStore(
         if (refusal || !view.membershipId)
           return refused(422, refusal ?? "Opening a record outside your care is not part of your role.");
         // M58: a retry of the same opening answers as the first did, with no second row or audit line.
-        const earlier = await earlierAnswer(client, view.actorId, intentKey, fingerprint);
+        let earlier = await earlierAnswer(client, view.actorId, intentKey, fingerprint);
         if (earlier?.refusal) return earlier.refusal;
+        // A2-01: with no key, the same opening (desk, patient, reason) made in the last minute, still
+        // open and in this world generation (a reset starts afresh) is a retry. It answers with that
+        // opening's end and the pattern flag as it was then, counting no new row.
+        if (intentKey === undefined) {
+          const { rows: recent } = await client.query(
+            `SELECT opened_at, until FROM ward_flow.break_glass b WHERE workspace_id=$1 AND actor_id=$2 AND membership_id=$3 AND patient_id=$4 AND reason=$5 AND opened_at > $6 AND until > $7 AND EXISTS (SELECT 1 FROM ward_flow.audit a WHERE a.workspace_id=b.workspace_id AND a.actor_id=b.actor_id AND a.action='BREAK_GLASS' AND a.outcome='accepted' AND a.changes->>'membershipId'=b.membership_id::text AND a.changes->>'patientId'=b.patient_id AND a.changes->>'until'=to_char(b.until AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AND coalesce(a.changes->'worldGeneration', '0'::jsonb)=$8::jsonb) ORDER BY opened_at, id LIMIT 1`,
+            [
+              workspaceId,
+              view.actorId,
+              view.membershipId,
+              patientId,
+              reason,
+              new Date(at.getTime() - UNKEYED_RETRY_MS),
+              at,
+              JSON.stringify(row.payload.state.worldGeneration ?? 0),
+            ],
+          );
+          if (recent.length) {
+            const openedAt = new Date(recent[0].opened_at);
+            const { rows: counted } = await client.query(
+              "SELECT count(*)::int AS count FROM ward_flow.break_glass WHERE workspace_id=$1 AND actor_id=$2 AND opened_at > $3 AND opened_at <= $4",
+              [
+                workspaceId,
+                view.actorId,
+                new Date(openedAt.getTime() - engine.BREAK_GLASS_SHIFT_HOURS * 3_600_000),
+                openedAt,
+              ],
+            );
+            earlier = {
+              result: {
+                until: new Date(recent[0].until).toISOString(),
+                pattern: counted[0].count > engine.BREAK_GLASS_PER_SHIFT,
+              },
+            };
+          }
+        }
         if (earlier) {
           const kept = new Date(earlier.result.until);
           if (!(kept > at)) return refused(409, "That opening has ended. Open the record again.");
