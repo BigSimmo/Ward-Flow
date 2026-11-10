@@ -1467,7 +1467,7 @@ a.askChip {
 /*
  * ── Phone search start screen polish (Josh, 10 Nov 2026, "Polish the phone search screen") ────────
  * Before anything is typed. One 14px edge for every section (the capsule's own edge), sections
- * 24px apart, one heading style. Go to is one glass strip of four equal cells that always fits the
+ * 20px apart, one heading style. Go to is one glass strip of four equal cells that always fits the
  * width, so it never scrolls sideways. Alerts and Do sit in inset glass groups with hairlines that
  * start at the text, and each alert's glyph sits on its own tone, not on action blue. Full patient
  * search is a solid glass bar, so the page never shows through behind it.
@@ -1480,7 +1480,7 @@ a.askChip {
   .popup[data-start] .list {
     display: flex;
     flex-direction: column;
-    gap: 22px;
+    gap: 20px;
   }
 
   .popup[data-start] .groupItem:not(:first-child) {
@@ -1514,14 +1514,14 @@ a.askChip {
   }
 
   .popup[data-start] .askChips {
-    gap: 8px;
+    gap: 6px;
     padding: 0;
   }
 
   .popup[data-start] .askChip {
-    height: 32px;
-    gap: 8px;
-    padding: 0 6px 0 12px;
+    height: 30px;
+    gap: 6px;
+    padding: 0 5px 0 11px;
     border: 0;
     background: color-mix(in srgb, var(--wf-surface) 70%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-ink-1) 9%, transparent);
@@ -1543,9 +1543,9 @@ a.askChip {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 22px;
+    min-width: 20px;
     height: 20px;
-    padding: 0 6px;
+    padding: 0 5px;
     border-radius: 999px;
     background: color-mix(in srgb, var(--wf-ink-1) 5%, transparent);
     color: var(--wf-ink-2);
@@ -1577,8 +1577,8 @@ a.askChip {
 
   .popup[data-start] .groupItem[data-goto] .option {
     gap: 6px;
-    min-height: 68px;
-    padding: 12px 4px 10px;
+    min-height: 62px;
+    padding: 10px 4px 8px;
     border-radius: 0;
     background: transparent;
     box-shadow: none;
@@ -1617,8 +1617,8 @@ a.askChip {
 
   .popup[data-start] .groupItem:not([data-goto]) .option {
     gap: 12px;
-    min-height: 60px;
-    padding: 10px 14px;
+    min-height: 56px;
+    padding: 8px 14px;
     border-radius: 0;
   }
 
@@ -1716,7 +1716,7 @@ a.askChip {
 
   /* Quick commands (demo): on the same edge, the same chips as Try asking. */
   .popup[data-start] .quickCommands {
-    margin-top: 22px;
+    margin-top: 20px;
     padding: 0;
   }
 
