@@ -10,6 +10,8 @@
  * most two minutes), then sends them again with the same command IDs.
  */
 export const ONLINE_SPREAD_MS = 5_000;
+/** M53: how long a due resend waits for a read or save in flight to finish before trying again. */
+const BUSY_RETRY_MS = 250;
 const LIMIT_WAIT_DEFAULT_S = 10;
 const LIMIT_WAIT_MAX_S = 120;
 
@@ -41,15 +43,20 @@ export class SharedPacing {
       { signal },
     );
   }
-  /** M53: no save goes until the wait a 429 asked for has passed; then `run` sends them. */
-  holdFor(response: Response, run: () => void) {
+  /**
+   * M53: no save goes until the wait a 429 asked for has passed; then `run` sends them. While
+   * `busy` (a read or save in flight) the send waits briefly and tries again, so it is never lost.
+   */
+  holdFor(response: Response, run: () => void, busy: () => boolean = () => false) {
     const waitMs = retryAfterMs(response);
     this.limitedUntil = Date.now() + waitMs;
     clearTimeout(this.limitTimer);
-    this.limitTimer = setTimeout(() => {
+    const fire = () => {
       this.limitedUntil = 0;
-      run();
-    }, waitMs);
+      if (busy()) this.limitTimer = setTimeout(fire, BUSY_RETRY_MS);
+      else run();
+    };
+    this.limitTimer = setTimeout(fire, waitMs);
   }
   get limited() {
     return Date.now() < this.limitedUntil;

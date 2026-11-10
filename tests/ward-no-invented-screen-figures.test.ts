@@ -235,6 +235,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^ONLINE_SPREAD_MS$/,
   },
   {
+    id: "limited-resend-busy-retry",
+    why: "A save resend that falls due after a 429 while a read is in flight waits this long and tries again (master audit M53 review fix, D-129); network pacing, never shown, not a limit.",
+    file: /^ward-shared-pacing\.ts$/,
+    name: /^BUSY_RETRY_MS$/,
+  },
+  {
     id: "shared-full-read-pace",
     why: "Shared mode (audit F-04, 19 Oct 2026): how often a desk re-reads its whole part of the workspace between lean polls; network pacing, never shown, not a limit.",
     file: /^ward-shared-client\.ts$/,

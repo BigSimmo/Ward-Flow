@@ -1067,7 +1067,11 @@ export class SharedWorkspaceClient {
         if (response.status === 429) {
           // M53: refused before any work, so every save is kept and sent again after Retry-After.
           this.sentCommandId = null;
-          this.pacing.holdFor(response, () => void this.drain());
+          this.pacing.holdFor(
+            response,
+            () => void this.drain(),
+            () => this.busy,
+          );
           for (const kept of [...(this.pending ? [this.pending] : []), ...this.queue])
             this.settle(kept.commandId, "failed", saveProblem("busy"));
           this.publish({ status: "ready", error: saveProblem("busy") });
