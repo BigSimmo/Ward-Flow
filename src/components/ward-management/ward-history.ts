@@ -139,6 +139,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   // 2.5 Capacity and bed release
   CONFIRM_CAPACITY: { category: "bed", plainWording: "Ward bed capacity confirmed" },
   RECORD_WARD_INTAKE_CONSTRAINTS: { category: "bed", plainWording: "Ward intake constraints updated" },
+  SET_INTAKE_WINDOW: { category: "bed", plainWording: "Tonight's intake hours updated" },
   FLAG_BED_RELEASE: { category: "bed", plainWording: "Upcoming bed release flagged" },
   CONFIRM_BED_RELEASE: { category: "bed", plainWording: "Bed release confirmed" },
   REVERT_BED_RELEASE: { category: "bed", plainWording: "Bed release reverted to expected" },

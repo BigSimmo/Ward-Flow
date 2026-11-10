@@ -559,6 +559,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // A ward restating what is currently limiting its own intake, from a fixed list. Not a
     // refusal of any named referral or placement — it carries no subject at all.
     RECORD_WARD_INTAKE_CONSTRAINTS: false,
+    // Feature item 13: tonight's intake hours, information only, never a refusal of anyone.
+    SET_INTAKE_WINDOW: false,
     // Smart features idea 7: closes a whole ward to everyone, never one named patient.
     CLOSE_WARD_TO_ADMISSIONS: false,
     REOPEN_WARD_TO_ADMISSIONS: false,

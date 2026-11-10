@@ -63,6 +63,7 @@ export function subjectId(event: WardFlowEvent): string {
       return event.edId ?? event.acceptedUnitId ?? "none";
     case "CONFIRM_CAPACITY":
     case "RECORD_WARD_INTAKE_CONSTRAINTS":
+    case "SET_INTAKE_WINDOW":
     case "CLOSE_WARD_TO_ADMISSIONS":
     case "REOPEN_WARD_TO_ADMISSIONS":
     case "MARK_WARD_READY_FOR_NEXT":

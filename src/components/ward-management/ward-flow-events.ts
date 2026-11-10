@@ -598,6 +598,21 @@ export type WardFlowEvent =
       codes: readonly WardIntakeConstraint[];
     }
   | {
+      /**
+       * Feature item 13 (10 Nov 2026): the hours tonight a ward can take an admission, or `null` to
+       * clear it. Two typed clock times already read to instants (D-72), no typed text. Information
+       * only: it never blocks a referral or orders wards. The ward for itself, or the coordinator.
+       * See ward-flow-intake-window-events.ts.
+       */
+      type: "SET_INTAKE_WINDOW";
+      role: WardFlowRole;
+      now: Instant;
+      unitId: string;
+      /** The ward's own claim, refused when it is not `unitId`. Absent for the coordinator. */
+      actingUnitId?: string;
+      intake: { from: Instant; to: Instant } | null;
+    }
+  | {
       type: "CONFIRM_CAPACITY";
       role: WardFlowRole;
       now: Instant;

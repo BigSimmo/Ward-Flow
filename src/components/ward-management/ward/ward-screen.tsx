@@ -87,6 +87,7 @@ import { CheckingFoot, durMinutes, Menu, type MenuItem, useIsPhone, useOptionalT
 import { savedAtToast } from "@/components/ward-management/ward-saved-at-toast";
 import { useActionToast } from "@/components/ward-management/use-action-toast";
 import { useWardUnitQueues } from "./use-ward-unit-queues";
+import { WardIntakeWindowControl } from "./ward-intake-window-control";
 import styles from "./ward.module.css";
 import { wardAlerts } from "./ward-alert-counts";
 import type { WaitingReferral } from "./ward-bed-board";
@@ -1988,6 +1989,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         {" · "}
         {wardMeta} · {staffedSpecialling} staff on constant observation
       </span>
+      {/* Feature item 13: tonight's intake hours, information only. */}
+      <WardIntakeWindowControl unit={unit} now={now} role={routeRole} />
       <CheckingFoot
         items={[
           {

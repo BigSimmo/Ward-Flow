@@ -1,0 +1,59 @@
+/* Feature item 13: tonight's intake windows on the Capacity Overview. */
+
+.list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  align-items: center;
+  justify-content: space-between;
+  min-height: 40px;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.ward {
+  min-height: 40px;
+  padding: 0;
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  text-align: start;
+  cursor: pointer;
+  background: none;
+  border: 0;
+}
+
+.ward:hover {
+  text-decoration: underline;
+}
+
+.ward:focus-visible {
+  outline: 2px solid var(--wf-ink-1);
+  outline-offset: 2px;
+}
+
+.wardText {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.hours {
+  font-size: var(--wf-fs-13);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+}
+
+.muted {
+  margin: var(--wf-s-2) 0 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}

@@ -38,6 +38,7 @@ import { CapacityHero } from "./capacity-hero";
 import { useCapacityModel, type CapacityModel } from "./capacity-model";
 import { OtherSitesCounts } from "./capacity-other-sites";
 import { PhoneOverview } from "./capacity-phone-overview";
+import { CapacityIntakeWindowsCard } from "./capacity-intake-windows-card";
 import { PlannedCounts } from "./capacity-planned-counts";
 import { useSiteEdWaiting } from "./capacity-site-ed";
 import { heldUpReleases } from "./capacity-held-up";
@@ -329,6 +330,7 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
                 one card, full width. Josh's fifth notes (8 Nov 2026): the row under it is gone; the
                 shift figures are in the hero and an unchanged count on its ward card. */}
             {planned}
+            <CapacityIntakeWindowsCard units={mapModel.networkRows.map((row) => row.unit)} now={now} onWard={openWard} />
           </>
         )}
         <WardPrototypeFooter

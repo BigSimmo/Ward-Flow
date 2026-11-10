@@ -101,6 +101,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // Owner Answer 18, second round, 2026-09-17: the ward's own answer to what is currently
   // limiting its intake, same role as CONFIRM_CAPACITY above.
   RECORD_WARD_INTAKE_CONSTRAINTS: ["ward", "coordinator"],
+  // Feature item 13: tonight's intake hours, the ward for itself (reducer checks) or the coordinator.
+  SET_INTAKE_WINDOW: ["ward", "coordinator"],
   RECORD_ESCALATION: ["coordinator"],
   ADVANCE_CLOCK: ["demo"],
   RESET_SCENARIO: ["demo"],
