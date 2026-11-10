@@ -2,6 +2,8 @@
 
 _Created 2026-11-03 - Q378 (Josh, 3 Nov 2026); checked against main `cd66be7a` and the Ward Flow Supabase project; Documentation owns._
 
+_Updated 2026-11-10 - section 4 rechecked against repository records and the Sentry row corrected (audit item M61); drafts linked under sections 2 and 3; Documentation owns._
+
 Ward Flow runs on synthetic data only. This page lists everything that must be true before the
 first real patient record is entered. It is a checklist, not an approval. The answer is **no-go**
 until every row below is ticked with evidence, and the named owners in section 5 have signed.
@@ -37,6 +39,10 @@ messages carry fixed text with counts and a place name only.
 | P5  | Access control: who can grant administrator access, break glass review and the record access log reviewed on a schedule.                         | Written rule, named reviewer, first review done.           |
 | P6  | Bed meeting TV privacy review (screens visible to passers-by).                                                                                   | Review signed; TV view changes made if needed.             |
 
+Drafts toward these rows (none ticks a row): [PIA draft](PRIVACY-IMPACT-ASSESSMENT.md) (P1, P2),
+[field list](DATA-MINIMISATION-FIELD-LIST.md) (P3), [retention plan](../RETENTION-AND-BACKUP.md) (P4),
+[access review](ACCESS-REVIEW.md) (P5).
+
 ## 3. Breach plan
 
 | #   | Item                                                                                                                                                                                                      | Done when                             |
@@ -46,18 +52,27 @@ messages carry fixed text with counts and a place name only.
 | B3  | Evidence kept: record access log, Supabase auth and API logs, Railway logs, with how long each provider keeps them.                                                                                       | Retention of each log confirmed.      |
 | B4  | A synthetic breach drill run end to end.                                                                                                                                                                  | Drill record with times and lessons.  |
 
+Draft toward these rows (it ticks none): [breach plan](../pilot/breach-plan.md).
+
 ## 4. Subprocessors and regions
 
-Checked 3 Nov 2026 unless marked.
+Rechecked 10 Nov 2026 against repository records only (audit item M61). **No provider dashboard
+was opened**, so every "Region now" is as last recorded, with its source. A live recheck of each
+row is a read-only provider look and needs Josh's yes. Write the date in "Live check" when done.
 
-| Service                                               | Holds                                       | Region now                                                       | Needed before real data                                                                                                                                                       |
-| ----------------------------------------------------- | ------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Supabase (database, sign-in)                          | All records, accounts, access log           | Sydney (`ap-southeast-2`), checked                               | Paid plan with point-in-time backup (now **free**). Turn off the organisation's AI SQL, log and data opt-ins (now **on**). Invite-only sign-up. Data processing terms signed. |
-| Railway (app and backend)                             | Every request and response in transit, logs | Singapore (from the 3 Nov repo review, Q370; not rechecked here) | Move to an Australian region, or the PIA accepts offshore processing. Data processing terms signed.                                                                           |
-| Sentry (server errors)                                | Scrubbed error events                       | Not set up (organisation not chosen)                             | Choose the data region; keep it off, or keep scrubbing tested (C7).                                                                                                           |
-| Web push services (Google, Apple, Mozilla, Microsoft) | Fixed alert text: counts and a place name   | Global                                                           | Confirm the PIA accepts this, or turn push off for live workspaces.                                                                                                           |
-| GitHub                                                | Code and synthetic fixtures only            | United States                                                    | Never real data, screenshots or logs with real data. No change needed.                                                                                                        |
-| AI coding tools                                       | Code and synthetic data only                | Varies                                                           | Never real data. Written rule for every agent and contributor.                                                                                                                |
+| Service                                               | Holds                                                               | Region now (source)                                                                                                                                                                                                                                   | Live check | Needed before real data                                                                                                                              |
+| ----------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Supabase (database, sign-in)                          | All records, accounts, access log                                   | Sydney (`ap-southeast-2`), checked 3 Nov 2026                                                                                                                                                                                                         | Not yet    | Paid plan with point-in-time backup (now **free**). Invite-only sign-up (open sign-up **on** at 19 Oct 2026). Data processing terms signed.          |
+| Supabase organisation options                         | AI assistant SQL, log and data-sharing opt-ins                      | Organisation-wide; **on** at 3 Nov 2026 (Q391)                                                                                                                                                                                                        | Not yet    | Turned off ([hardening H1, H2](PROVIDER-ACCOUNT-HARDENING.md)).                                                                                      |
+| Railway (app and backend)                             | Every request and response in transit, logs                         | Singapore (D-84, 26 Oct 2026; runbook)                                                                                                                                                                                                                | Not yet    | Move to an Australian host chosen with the health service's IT (D-84 revisit), or the PIA accepts offshore processing. Data processing terms signed. |
+| Sentry (server errors)                                | Scrubbed error events: types, stack frames, fixed failure names     | **US region**, organisation `clinibase-xz`, switched on 26 Oct 2026 per project notes ([operations-readiness](../operations-readiness.md#server-error-reporting-sentry)). Which services carry `SENTRY_DSN` is not re-read and no event has been seen | Not yet    | Josh chooses (STATUS item 4): keep, move or remove. Before real data, off or onshore unless the PIA accepts scrubbing; keep scrubbing tested (C7).   |
+| Web push services (Google, Apple, Mozilla, Microsoft) | Fixed alert text: counts and a place name                           | Global                                                                                                                                                                                                                                                | n/a        | Confirm the PIA accepts this, or turn push off for live workspaces.                                                                                  |
+| GitHub (code, Actions, uptime issues)                 | Code, synthetic fixtures, CI logs, `backend-down` issues            | United States                                                                                                                                                                                                                                         | Not yet    | Never real data, screenshots or logs with real data. Private repository (D-87).                                                                      |
+| AI coding tools and agent memory                      | Code, synthetic data, project notes (Supermemory `wardflow_design`) | Varies; United States for most                                                                                                                                                                                                                        | n/a        | Never real data. Written rule for every agent and contributor (AGENTS.md hard rule 1).                                                               |
+
+Earlier wording said Sentry was "not set up". That was wrong against the runbook and
+operations-readiness, which record it switched on in a US-region organisation. The open question
+is which organisation to keep (STATUS item 4), not whether one exists.
 
 ## 5. Sign-off
 

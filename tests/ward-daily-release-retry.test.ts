@@ -454,6 +454,21 @@ describe("daily release record and live-ref recovery", () => {
     expect(h.read().calls).toEqual([]);
   });
 
+  // Audit M80 (10 Nov 2026): GitHub can start the 6 am schedule twice, or a "release now" can follow
+  // it. The second run must find live already released and change nothing.
+  it("changes nothing when a second run follows a finished release", () => {
+    const h = harness({ current: previous, target });
+    expect(h.run().status).toBe(0);
+    const after = h.read();
+    expect(after.current).toBe(target);
+    h.change({ calls: [] });
+    const again = h.run();
+    expect(again.status).toBe(0);
+    expect(again.stdout).toContain(`Live and its published record are already at ${target}.`);
+    expect(h.read().records).toEqual(after.records);
+    expect(h.read().calls.filter((call) => !call.startsWith("GET "))).toEqual([]);
+  });
+
   // CB-2 (front-end audit, 5 Nov 2026): after a rollback live sits behind main, and main still holds
   // the bad commit. While WARD_RELEASE_PAUSED is set, no run may move live forward again.
   it("holds a rolled-back live while releases are paused, on the schedule and by hand", () => {

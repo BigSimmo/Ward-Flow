@@ -1494,3 +1494,53 @@ is inferred.
   2. **Transport delay:** a transport job not accepted within 30 minutes shows as delayed (feature 25, `transportAcceptDelay`).
   3. **Discharge date slip:** a stay whose expected discharge date has moved more than 3 days is flagged as slipping (feature 6, `eddSlipFlag`).
 - **Boundary:** synthetic data only. Sets these three values; approves no merge or release.
+
+## D-125. Master audit findings: every recommendation approved (10 November 2026)
+
+- **Date:** 10 November 2026. **Decided by:** Josh, in the "Run the remaining master list audits" thread: "Approve all recommendations" (07:38Z), after the audit swarm's findings. Numbered D-125 because D-121 to D-124 are in other open PRs.
+- **Decision:** the audit swarm's recommendations are approved. The fixes follow:
+  1. **Clinical, in a held PR:**
+     - The triage "Reviewed time" uses Perth time.
+     - The Tools bed finder leaves out forensic wards and names the rules it skips.
+     - An ended legal form reads the same on the TV, the downtime pack and print, with its full name on the TV (D-93).
+     - Typed 8-hour waits read the signed value.
+     - The ED "May pass" card drops names, UMRN and "Find a bed", and forecasts carry "From recorded waits and releases. Not a prediction."
+     - Occupancy percentages use in-use beds (L1), and a ward with no beds shows "No beds".
+  2. **Non-clinical, in this thread's PR:**
+     - **Restore:** a restore tells open tabs to reload, and the runbook warns that phone alerts may repeat.
+     - **Acknowledge visible:**
+       - Its confirm lists each patient with UMRN.
+       - It names any refusals.
+       - It writes one audit row per alert.
+     - **Sign off N** gets a short Undo.
+     - **Handover:**
+       - For 30 minutes after each handover, the Handover page opens on the handover just held.
+       - Printed handover and shift brief say "Not updating since HH:MM" while reads are frozen.
+     - **Cover** asks for a reason and appears on the review list.
+     - **Error events** carry the request ID, role and screen, and handled server errors are sent.
+     - **Migrations** get a 5-second lock timeout.
+     - **Uptime check:** it raises a "monitor not set up" issue.
+     - **Saves and reconnects:**
+       - Queued saves are held and resent on a 429.
+       - Saves get a per-account limit.
+       - Reconnect reads are spread.
+     - **Phone toasts** sit above the floating bar.
+     - **Show me** says it's offline instead of leaving the app.
+     - **Report-a-problem picture** carries a synthetic marker.
+     - **Shared views** say when a non-default threshold is in use.
+     - **Chronology CSV** drops the name.
+     - **Glossary:** the Help glossary gains 18 abbreviations.
+     - **Referrer phone:** the server checks its format.
+     - **Seed and tests:**
+       - The seed gains the hard cases.
+       - Four surviving mutants get tests.
+       - The movement diagram follows the engine.
+  3. **Other approvals:**
+     - **Phone alerts** stay a prompt only (M20 option A).
+     - **Handover** has no acceptance step (M19 option A).
+     - **Old open tabs** are supported one release back (M33).
+     - **Idle lock** stays at 15 minutes until the pilot site's policy is known (M50).
+     - **Surge beds and ward renaming** are not prototype features (M36).
+     - **Sign-in front door:** switch it on for both sites.
+     - **Tier 7:** the plan is approved, starting with change hotspots (M142), the import map (M139) and the mockup check (M149).
+- **Boundary:** synthetic data only. Hosted, billable and provider steps still need their own yes: the Railway variable rename, the receipt clean-up secret, Dependabot security updates, the hosted database check, live post-release runs, the penetration test and the TGA adviser. Approves no merge of the held clinical PR and no release.

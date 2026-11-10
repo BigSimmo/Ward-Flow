@@ -71,9 +71,18 @@ describe("a partial or initials query never puts a non-matching name above a mat
     expect(ids(people("a. morgan"))).toEqual(["PT-LA-09"]);
   });
 
-  // Finding, not fixed here: initials typed without a stop ("AM") are matched as letters inside a
-  // name, so they find Sam Alexander and not Alex Morgan. Matching initials is a product decision.
-  it.todo("AM finds Alex Morgan by initials (needs Josh's ruling on initials search)");
+  // D-113 item 3 (Josh, 9 Nov 2026): initials typed without full stops do not match by initials,
+  // so "AM" never finds an Alex Morgan. Letters inside a name (Sam Alexander) still match as text.
+  it.each(["AM", "am", "aM"])("%s does not find anyone by initials", (query) => {
+    const found = people(query);
+    for (const id of EXACT_ALEX_MORGAN_IDS) expect(ids(found)).not.toContain(id);
+    // Every row still found holds the typed letters together, as text (Sam Alexander), never as the
+    // first letters of two names.
+    const holdsLetters = (patient: Patient) =>
+      `${patient.givenName} ${patient.familyName} ${patient.umrn}`.toLowerCase().includes(query.toLowerCase());
+    expect(found.filter((patient) => !holdsLetters(patient))).toEqual([]);
+    expect(ids(found)).toEqual(["PT-LA-11"]);
+  });
 });
 
 describe("every People row carries a second identifier and opens its own record", () => {

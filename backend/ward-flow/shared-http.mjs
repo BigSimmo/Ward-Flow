@@ -5,6 +5,7 @@ import { bootstrapCoordinators } from "./auth.mjs";
 import { jsonResponse } from "./reply-cache.mjs";
 import { forecastHistoryInput, forecastReasonRole } from "./forecast-history.mjs";
 import { accountPreferencesInput } from "./account-preferences.mjs";
+import { PUSH_SUBSCRIBE_LIMIT, createWindowLimiter } from "./request-limits.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Each shared path and the closed route name it is logged under. */
@@ -159,6 +160,8 @@ export function createSharedHandler({
   // Part B item 49 groundwork: off until the health service's sign-in or Supabase factors are set up.
   requireSecondStep = false,
   log = (event) => console.info(JSON.stringify(event)),
+  // Audit M53: phone alert sign-ups per account, checked before anything is stored.
+  pushSubscribeLimiter = createWindowLimiter(PUSH_SUBSCRIBE_LIMIT),
 }) {
   return async (request, meta = {}) => {
     const requestId = randomUUID();
@@ -679,6 +682,15 @@ export function createSharedHandler({
           return reply(messageOf(error) === "too_large" ? 413 : 400, { error: "Invalid subscription" });
         }
         if (path === "/v1/workspace/push-subscribe") {
+          const limited = pushSubscribeLimiter(actorId);
+          if (!limited.allowed) {
+            headers["retry-after"] = String(limited.retryAfterSeconds);
+            return reply(
+              429,
+              { code: "rate-limited", error: "Too many phone alert requests; try again shortly" },
+              "rate_limited",
+            );
+          }
           const subscription = parseSubscription(body?.subscription);
           if (!subscription) return reply(400, { error: "A browser push subscription is required" });
           const outcome = await store.subscribe(actorId, subscription, view.membershipId ?? null);

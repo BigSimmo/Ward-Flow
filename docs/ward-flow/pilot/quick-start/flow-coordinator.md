@@ -46,8 +46,9 @@ New here? Open **Help** and choose **Take the tour**.
 
 - Pilot lead: to be named.
 - Access admin (accounts, roles, removing access): to be named.
-- Something looks wrong or unsafe: tell the pilot lead the same shift, and keep working from the
-  whiteboard and phone.
+- Something unsafe, or a near miss: log it in the [incident log](../incident-log.md) now, tell
+  Josh for Urgent and High, and keep working from the whiteboard and phone
+  ([safety incident route](../safety-incident-route.md)).
 
 Full guide: [Bed coordinator desk guide](../../desk-guides/flow-coordinator.md).
 

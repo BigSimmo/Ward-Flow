@@ -16,7 +16,7 @@ into tiles of at most 2000px so Figma keeps full resolution). The editable phone
 
 - Map: `design/figma/figma-sync.json` (file key, collections, naming rule, component and screen map).
 - Tokens: `node scripts/figma-tokens.mjs --export | --diff <file> | --apply <file>`.
-- Source CSS: [`src/app/ward-flow-v9-tokens.css`](../../src/app/ward-flow-v9-tokens.css) (the one `--wf-*` token sheet and the Figma sync script target; the v6 baseline was folded into it on 15 October 2026; spec in [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md)). Shared components: [`src/components/wf/`](../../src/components/wf/) and [`src/components/ward-management/`](../../src/components/ward-management/).
+- Source CSS: [`src/app/ward-flow-v9-tokens.css`](../../src/app/ward-flow-v9-tokens.css) (the one `--wf-*` token sheet and the Figma sync script target; the v6 baseline was folded into it on 15 October 2026; spec in [`docs/design/DESIGN-SYSTEM.md`](../design/DESIGN-SYSTEM.md); the v9 file is superseded). Shared components: [`src/components/wf/`](../../src/components/wf/) and [`src/components/ward-management/`](../../src/components/ward-management/).
 - Load the `figma-use` skill before any `use_figma` call. Synthetic data only.
 
 Figma variables: collection **Colour** (modes Day, Night) and **Size**. Each variable's WEB code

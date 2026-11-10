@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/his
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**638 rulings/items extracted, across 38 of 44 files.**
+**639 rulings/items extracted, across 38 of 44 files.**
 **6 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -30,7 +30,7 @@ instance is the one you mean before citing it.
 
 ---
 
-## ID index — 381 distinct IDs
+## ID index — 382 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -289,6 +289,7 @@ safe global key across 30 files.
 | `D-118` | `decisions.md`:1476 | D-118. Page tops: Referrals and Ward phone limits up to 8 KB above main (10 November 2026) |
 | `D-119` | `decisions.md`:1482 | D-119. Page tops: phone limits raised to measured sizes, trim after merge (10 November 2026) |
 | `D-120` | `decisions.md`:1489 | D-120. Discharge and capacity values: pull limit, transport delay and discharge date slip (9 November 2026) |
+| `D-125` | `decisions.md`:1498 | D-125. Master audit findings: every recommendation approved (10 November 2026) |
 | `D9` ⚠️ **9 occurrences — not unique** | | |
 | ↳ | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | ↳ | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
@@ -578,7 +579,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-120 item(s):
+121 item(s):
 
 - `D-1` — line 149, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 159, heading: "D-2. Railway is disconnected"
@@ -700,6 +701,7 @@ safe global key across 30 files.
 - `D-118` — line 1476, heading: "D-118. Page tops: Referrals and Ward phone limits up to 8 KB above main (10 November 2026)"
 - `D-119` — line 1482, heading: "D-119. Page tops: phone limits raised to measured sizes, trim after merge (10 November 2026)"
 - `D-120` — line 1489, heading: "D-120. Discharge and capacity values: pull limit, transport delay and discharge date slip (9 November 2026)"
+- `D-125` — line 1498, heading: "D-125. Master audit findings: every recommendation approved (10 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 
