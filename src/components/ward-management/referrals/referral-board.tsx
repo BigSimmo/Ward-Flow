@@ -725,7 +725,6 @@ export function ReferralBoard({
   // Page tops (Josh, 9 Nov 2026): the coordinator's top is the shared page top (`referral-board-top`);
   // the ward, ED, community and site desks keep their own tops below.
   const coordinatorTop = !community && !wardDesk && !edDesk && !siteManager;
-  const heroIsTitle = coordinatorTop && heading === "Referrals";
   const phoneSheetNode = (
     <Sheet
       open={phoneSheet !== null}
@@ -760,14 +759,13 @@ export function ReferralBoard({
       data-referral-layout="queue-panel"
     >
       <main id="main-content" className={cx(styles.main, redesign.page)}>
-        {/* The desk hero's title opens "Referrals", so it is the h1 there; any other top keeps this one. */}
-        {heroIsTitle ? null : <h1 className="sr-only">{heading}</h1>}
+        <h1 className="sr-only">{heading}</h1>
         {linkedReferralUnavailable && chosenReferralId === undefined ? (
           <p role="status">The requested referral is unavailable. Choose a referral from the queue to continue.</p>
         ) : null}
         {coordinatorTop ? (
           <ReferralCoordinatorTop
-            level={heroIsTitle ? 1 : 2}
+            level={2}
             testId={phoneLayout ? undefined : "ward-referral-kpis"}
             isPhone={phoneLayout}
             className={a.heroA}
