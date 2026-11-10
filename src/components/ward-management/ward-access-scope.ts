@@ -648,6 +648,8 @@ function countsOnlyAdmission(admission: Admission): Admission {
       "leavingDestination",
       "leftAt",
       "dischargeBarrier",
+      "clinicallyReadySince",
+      "delayedDischargeReason",
       "stepDownCandidate",
       // Redacted to counts and tick times below, after grant expansion (#403).
       "dischargeCriteria",

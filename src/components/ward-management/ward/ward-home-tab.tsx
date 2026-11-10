@@ -22,6 +22,7 @@ import { withdrawalReasonLabels } from "@/components/ward-management/ward-change
 import { formatInstantWithDay, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { currentShiftStartInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
+import { heldUntilExtendedLabel } from "@/components/ward-management/ward-bed-hold-extension";
 import { deliveredAwaitingWard, movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 import type { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import {
@@ -658,7 +659,13 @@ export function WardHomeTab({
       // outranks a late ETA (the coral overdue); the ETA stays in `when` as "Due".
       detail:
         blocked ??
-        (hold?.state === "lapsed" ? hold.label : late ? "Late" : hold ? hold.label : movementStatusLabel(movement)),
+        (hold?.state === "lapsed"
+          ? hold.label
+          : late
+            ? "Late"
+            : hold
+              ? (heldUntilExtendedLabel(movement, now) ?? hold.label)
+              : movementStatusLabel(movement)),
       tone: hold?.state === "lapsed" ? "danger" : late ? "warning" : hold?.state === "at-risk" ? "warning" : "info",
       action: canPull ? "Pull the bed" : "Open",
       placement: canPull,

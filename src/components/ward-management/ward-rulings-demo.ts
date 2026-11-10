@@ -370,13 +370,17 @@ export function rulingsDemoOverlay(now: Instant): RulingsDemoOverlay {
     confirmedBy: "NUM Armadale Adult Open",
     kind: "off_ward",
     openWarningAt: now - 40,
+    // Polish pass (9 Nov 2026): the ward recorded her absent without leave this morning, so the Leave
+    // page shows one "Absent without leave" row. Steps are fixed choices with times, never typed text.
+    absentWithoutLeave: { since: now - 35, steps: [{ step: "searched", at: now - 20 }] },
   };
 
   const leaveMedical: LeaveBed = {
     id: "WL-RD08",
     unitId: UNIT_ARM_ADULT_OPEN,
     admissionId: "AD-ARMA-08",
-    expectedReturn: now + 90,
+    // Polish pass (9 Nov 2026): due back 40 minutes ago, so the Leave page shows one Overdue row.
+    expectedReturn: now - 40,
     confirmedAt: now - (LEAVE_BED_OPEN_WARNING_MINUTES + 90),
     confirmedBy: "NUM Armadale Adult Open",
     kind: "medical_trip",

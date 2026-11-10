@@ -41,6 +41,7 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import type { WardReferralInboxEntry } from "@/components/ward-management/referrals/referral-inbox";
 import type { DueSoonThresholds } from "@/components/ward-management/ward-clock";
 import { isConstantObservation } from "@/components/ward-management/ward-observation";
+import { dischargeDateSlipDays } from "@/components/ward-management/ward-discharge-date-trail";
 
 /** The bed roster the Bed board and bed list draw, derived from this ward's records. */
 type WardBedRosterInputs = {
@@ -300,6 +301,7 @@ export function wardBedRoster({
       catchmentCommunityTeam: patient?.catchmentCommunityTeam,
       highAcuity: admission?.highAcuity === true,
       dischargeDateMoves: admission ? admission.dischargeDateMoves : null,
+      eddDriftDays: admission ? dischargeDateSlipDays(admission) : null,
       dischargeConfirmed: admission ? admission.dischargeConfirmedAt != null : null,
       dischargeConfirmedBy: admission?.dischargeConfirmedBy ?? null,
       expectedDischargeLabel,

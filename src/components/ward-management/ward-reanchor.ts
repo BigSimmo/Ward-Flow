@@ -95,6 +95,8 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
    * it. Adding it now costs nothing and closes that before it can open.
    */
   "readAt",
+  // Item 5 (9 Nov 2026): the day a stay was recorded clinically ready for discharge.
+  "clinicallyReadySince",
   "confirmedAt",
   "decidedAt",
   "dueAt",
@@ -103,6 +105,8 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "expectedAt",
   // Closing-the-loop package B (24 Oct 2026): the time a discharge plan change moved away from.
   "previousExpectedAt",
+  // Feature 6 (9 Nov 2026): the first expected discharge date on a stay's date trail.
+  "firstExpectedAt",
   "expectedReturn",
   "formedAt",
   "formWrittenAt",
@@ -132,6 +136,8 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "dischargeDateSetAt",
   "dischargeConfirmedAt",
   "leftAt",
+  // Feature 14 (9 Nov 2026): the weekend a discharge review tick belongs to moves with the clock.
+  "weekendStart",
   // Nested one level down, inside `Admission.followUp`. `shift` recurses, so a name is still all
   // it takes — but a nested instant is exactly the kind this set loses track of, which is why it is
   // named here rather than left for the reader to notice.

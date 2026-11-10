@@ -1,4 +1,5 @@
 // Closing the loop, package D (24 Oct 2026).
+import { PULL_HOLD_EXTENSION_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { buildOnCallDirectory } from "@/components/ward-management/on-call/on-call-directory";
 import { defaultHandoverShift, handoverAt } from "@/components/ward-management/handover/handover-model";
 import {
@@ -601,6 +602,15 @@ function candidatesForMovements(
         actingUnitId: admission.unitId,
         block: "F20–F29",
       }));
+    case "MARK_WEEKEND_DISCHARGE_REVIEWED":
+      return state.admissions.map((admission) => ({
+        type,
+        role,
+        now,
+        admissionId: admission.id,
+        actingUnitId: admission.unitId,
+        weekendStart: now,
+      }));
     case "SET_DISCHARGE_BARRIER":
       return state.admissions.map((admission) => ({
         type,
@@ -609,6 +619,15 @@ function candidatesForMovements(
         admissionId: admission.id,
         actingUnitId: admission.unitId,
         barrier: "Accommodation / Housing",
+      }));
+    case "SET_CLINICALLY_READY":
+      return state.admissions.map((admission) => ({
+        type,
+        role,
+        now,
+        admissionId: admission.id,
+        actingUnitId: admission.unitId,
+        ready: { since: admission.arrivedAt ?? now, reason: "Accommodation / Housing" },
       }));
     case "SET_DISCHARGE_CRITERIA":
       return state.admissions.map((admission) => ({
@@ -961,6 +980,10 @@ function candidatesForMovements(
       // Both scenarios, like RAISE_REFERRAL's real domain values above — not one hard-coded
       // choice that would leave the other half of `WARD_SCENARIOS` untested.
       return WARD_SCENARIOS.map((scenario) => ({ type, role, now, scenario }));
+    case "EXTEND_PULL":
+      return movementIds.flatMap((movementId) =>
+        PULL_HOLD_EXTENSION_MINUTES.map((minutes) => ({ type, role, now, movementId, minutes })),
+      );
     case "RELEASE_PULL":
       // One candidate per reason, same precedent as CHANGE_URGENCY/CHANGE_LEGAL_STATUS above —
       // `role` is the first permitted role (coordinator), so `actingUnitId` is never needed here.
@@ -1103,6 +1126,29 @@ function candidatesForMovements(
         kind: "pharmacy" as const,
         owner: "pharmacy" as const,
         state: "outstanding" as const,
+      }));
+    case "RECORD_DISCHARGE_CHECK":
+      // Feature 37 (9 Nov 2026): one ticked item per stay, against its own unit. No legal figure.
+      return state.admissions.map((admission) => ({
+        type,
+        role,
+        now,
+        admissionId: admission.id,
+        actingUnitId: admission.unitId,
+        item: "gp_letter" as const,
+        state: "done" as const,
+      }));
+    case "RECORD_FOLLOW_UP_REPLY":
+      // Feature 13 (9 Nov 2026): one accepted reply per stay; no legal figure. Raised as the
+      // coordinator (also permitted): a community desk must name a team the stay was referred to,
+      // and the sweep's states hold no such stay. Team scoping is pinned in
+      // tests/ward-discharge-follow-through.test.ts.
+      return state.admissions.map((admission) => ({
+        type,
+        role: "coordinator" as const,
+        now,
+        admissionId: admission.id,
+        reply: "accepted" as const,
       }));
     case "RECORD_DISCHARGE_PLAN_CHANGE":
       // Closing-the-loop package B: one destination per release, against its own unit.
@@ -1832,6 +1878,7 @@ export const MOVEMENT_TARGETED_EVENTS: ReadonlySet<WardFlowEvent["type"]> = new 
   "CHANGE_URGENCY",
   "CHANGE_LEGAL_STATUS",
   "RELEASE_PULL",
+  "EXTEND_PULL",
   "CANCEL_TRANSPORT",
   // WLQ-38 (owner, 2026-09-15). Same shape as CANCEL_TRANSPORT immediately above — a real
   // movement-targeted event, forced per code in the same block for the same reason (see that
@@ -2723,6 +2770,26 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
     offenders.push(...offendingFormsIn(deteriorated, `RECORD_ED_MEDICAL_DETERIORATION(${code})`));
 
     const forRelease = buildHeldMovementFor(code, NOW_ANCHOR);
+    // Feature 11 (9 Nov 2026): EXTEND_PULL has RELEASE_PULL's narrow precondition (a bed pulled now),
+    // which the round-robin cannot reliably reach for every code, so it is driven here the same way,
+    // on a throwaway copy of the same pulled movement. It moves only the pull's time limit.
+    const extended = wardFlowReducer(forRelease.state, {
+      type: "EXTEND_PULL",
+      role: EVENT_ROLE.EXTEND_PULL[0],
+      now: NOW_ANCHOR,
+      movementId: forRelease.movementId,
+      minutes: PULL_HOLD_EXTENSION_MINUTES[0],
+    });
+    expect(
+      extended.rejections,
+      `EXTEND_PULL for Form ${code} was refused: ${extended.rejections.at(-1)?.reason}`,
+    ).toEqual(forRelease.state.rejections);
+    expect(extended.movements.find((movement) => movement.id === forRelease.movementId)!.legalForm).toEqual(
+      forRelease.state.movements.find((movement) => movement.id === forRelease.movementId)!.legalForm,
+    );
+    accepted.add("EXTEND_PULL");
+    offenders.push(...offendingFormsIn(extended, `EXTEND_PULL(${code})`));
+
     const released = wardFlowReducer(forRelease.state, {
       type: "RELEASE_PULL",
       role: EVENT_ROLE.RELEASE_PULL[0],

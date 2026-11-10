@@ -4598,6 +4598,14 @@
   gap: 0.375rem;
 }
 
+.readyReasonLabel {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+
 .barrierSelectGroup .leavingSelect {
   width: 100%;
 }

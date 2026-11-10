@@ -26,6 +26,10 @@ const WARD_DIR = "src/components/ward-management";
  */
 const MAY_ASSERT_TODAY = new Map([
   [
+    "expectedAt",
+    "Weekend discharges (feature 14, 9 Nov 2026): the clock face follows perthDayLabel(expectedAt), which names the day.",
+  ],
+  [
     "byLane.tomorrow[0].expectedArrivalAt",
     "Capacity Planned moves (3 Nov 2026): the note sits inside the lane headed Tomorrow, and the lane only holds bookings due tomorrow.",
   ],

@@ -11,6 +11,7 @@ import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
 import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { currentCareContact } from "../ward-care-journey";
 import { CommunityFollowUp } from "./community-follow-up";
+import { CommunityFollowUpReply } from "./community-follow-up-reply";
 import { FileText, Phone, Users } from "lucide-react";
 import { Badge, Button, PhoneSheet, Radio, SrOnly } from "@/components/wf";
 import { referralWaitLine } from "@/components/ward-management/referrals/referral-wait";
@@ -125,6 +126,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
     phoneDeparture,
     phoneDeparturePerson,
     closePhoneReferral,
+    setToastMessage,
   } = view;
   const sinceElement = communitySinceElement(view);
   const noticesSection = communityNoticesSection(view);
@@ -550,6 +552,8 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
                 },
               ]}
             />
+            {/* Feature 13 (9 Nov 2026): the team's follow-up reply, as on the desk's departure card. */}
+            <CommunityFollowUpReply admission={phoneDeparture} teamId={team.id} onMessage={setToastMessage} />
             <CommunityFollowUp admissionId={phoneDeparture.id} teamId={team.id} />
           </div>
         ) : null}

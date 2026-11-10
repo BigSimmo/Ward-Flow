@@ -125,6 +125,14 @@ const CLINICAL_VALUE_NOTES = {
   bookingEstimatePassed: {
     source: "Josh, 27 Oct 2026, 10:02 PM AWST, chat approval of 10 minutes (P068); synthetic until signed",
   },
+  pullHoldMaxTotal: {
+    source:
+      "D-120 (Josh, 9 Nov 2026, decision card on the discharge and capacity review page): signed the proposed pull limit (feature 11)",
+  },
+  transportAcceptDelay: {
+    source:
+      "D-120 (Josh, 9 Nov 2026, decision card on the discharge and capacity review page): signed 30 minutes (feature 25)",
+  },
   redRowSnoozeCap: { source: ADDED_9_NOV_SOURCE },
   supportNotificationLookback: { source: ADDED_9_NOV_SOURCE },
   lateArrivalGrace: {
@@ -186,6 +194,10 @@ const CLINICAL_VALUE_NOTES = {
   },
   readmissionWindow: {
     source: "D-58 (15 Oct 2026), national mental health KPI for readmission within 28 days (AIHW); a prompt to look",
+  },
+  eddSlipFlag: {
+    source:
+      "D-120 (Josh, 9 Nov 2026, decision card on the discharge and capacity review page): signed 3 days (feature 6)",
   },
   breakGlassWindow: {
     source: "D-63 (16 Oct 2026), local privacy choice under MP 0015/16 need to know and audit",
