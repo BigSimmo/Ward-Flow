@@ -1639,11 +1639,12 @@ a.askChip {
     opacity: 1;
   }
 
-  /* Compact square tiles on the same left edge as every other section, even 20px gaps; labels centred under them. */
+  /* Five compact square tiles on the same left edge as every other section; the gap is 20px and
+     narrows on small phones so all five always fit. Labels sit centred under them. */
   .popup[data-start] .groupItem[data-group="goto"] .groupList {
-    grid-template-columns: repeat(4, 54px);
+    grid-template-columns: repeat(5, 54px);
     justify-content: start;
-    gap: 20px;
+    gap: 0 min(20px, calc((100% - 270px) / 4));
   }
 
   .popup[data-start] .groupItem[data-group="goto"] .option {
@@ -1747,6 +1748,23 @@ a.askChip {
     background: color-mix(in srgb, var(--wf-accent) 10%, transparent);
   }
 
+  @media (max-width: 22.4375rem) {
+    .popup[data-start] .groupItem[data-group="goto"] .groupList {
+      grid-template-columns: repeat(5, 48px);
+      gap: 0 min(20px, calc((100% - 240px) / 4));
+    }
+
+    .popup[data-start] .groupItem[data-group="goto"] .itemIconBox {
+      width: 48px;
+      height: 48px;
+    }
+
+    .popup[data-start] .groupItem[data-group="goto"] .resultTitle {
+      font-size: 11px;
+      letter-spacing: -0.01em;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .popup[data-start] .groupItem[data-group="goto"] .itemIconBox {
       transition: none;
@@ -1763,4 +1781,26 @@ a.askChip {
   .popup[data-start] [data-testid="ward-global-search-cmd-shortcuts"] {
     display: none;
   }
+}
+
+/* Go to and screen results carry their screen's count on the icon's corner, as the phone dock does. */
+.itemIconBox:has(.viewCount) {
+  position: relative;
+  overflow: visible;
+}
+
+.viewCount {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--wf-accent);
+  box-shadow: 0 0 0 2px var(--wf-canvas);
+  color: var(--wf-on-accent);
+  font: 600 11px / 20px var(--wf-font);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
 }

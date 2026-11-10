@@ -4971,7 +4971,7 @@
         {
           "path": "src/components/ward-management/ward-global-search.tsx",
           "line": 1275,
-          "sha256": "7208f2b3f3e0592b0779dd2b2c6fed29266b5b9fd50d779c045910f0cd72cfad"
+          "sha256": "b7c651d7a0a3110b10e5d46aeb7ab769359393240cf55bb4024fc570504185ac"
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
