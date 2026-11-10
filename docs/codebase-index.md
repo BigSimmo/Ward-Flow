@@ -48,6 +48,7 @@ governs appearance; current engine/source/tests govern behaviour. Start with the
 - `/api/health`: liveness only, returning `{status:"ok"}`; no backend readiness assertion.
 - `/api/local-project-id`: local checkout/runtime identity before attaching to a preview server.
 - `/api/session`: sets and ends the front door's pass under `src/app/api/session/`; does nothing while the switch is off.
+- `/api/client-error`: name-free browser error counts (TE-04) under `src/app/api/client-error/`: error type, route template, release and desk role only, logged as `ward.client_error`.
 
 ## Ward library modules
 
