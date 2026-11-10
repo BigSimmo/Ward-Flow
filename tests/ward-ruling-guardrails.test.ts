@@ -6,11 +6,11 @@ import { describe, expect, it } from "vitest";
 import {
   WARD_FEATURE_FLAGS,
   type WardFeatureFlagDefinition,
-} from "../src/components/ward-management/ward-feature-flags";
+} from "@/components/ward-management/ward-feature-flags";
 import {
   SITE_PROTECTED_FEATURES,
   SITE_SWITCHABLE_FEATURES,
-} from "../src/components/ward-management/ward-site-feature-switches";
+} from "@/components/ward-management/ward-site-feature-switches";
 
 /*
  * Ruling guardrail register (audit plan item 9, issue #1572; recorded in D-111).
