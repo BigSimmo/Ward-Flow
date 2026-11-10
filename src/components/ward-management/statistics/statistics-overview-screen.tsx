@@ -282,6 +282,7 @@ export function StatisticsOverviewScreen() {
                 bedReleases={bedReleases}
                 admissions={admissions}
                 leaveBeds={leaveBeds}
+                holds={namedHolds}
                 service={serviceFilter}
               />
             </Follow>

@@ -445,7 +445,9 @@ function OperationalStatisticsScreen({
         paused: live.paused,
         togglePause: live.togglePause,
         scopeLabel: siteName ?? "whole network",
-        services: networkServiceRows(networkUnitRows(units, sourceAdmissions, sourceBedReleases, leaveBeds)),
+        services: networkServiceRows(
+          networkUnitRows(units, sourceAdmissions, sourceBedReleases, leaveBeds, namedHolds),
+        ),
         refused,
         preparingCount,
         arrivals,

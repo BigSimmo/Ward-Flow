@@ -112,6 +112,7 @@ export function networkServiceRows(unitRows: UnitRow[]) {
     return {
       ...entry,
       beds,
+      inUse,
       occupied: sum((row) => row.states.occupied),
       ready,
       pulled: sum((row) => row.states.pulled),
@@ -297,7 +298,7 @@ export function ServiceOccupancyCard({
                 }
                 fig={`${percent}%`}
                 slimFig
-                unit={`${entry.occupied + entry.pulled} of ${entry.beds} beds`}
+                unit={`${entry.inUse} of ${entry.beds} beds`}
               >
                 <BedStack
                   label={`${entry.name} beds`}
@@ -637,6 +638,7 @@ export function ExecutiveNetworkOverviewCards({
       {
         ...entry,
         beds: beds.total,
+        inUse: beds.inUse,
         occupied: beds.occupied,
         ready: beds.ready,
         pulled: beds.pulled,

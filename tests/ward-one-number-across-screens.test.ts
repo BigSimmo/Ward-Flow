@@ -1,3 +1,5 @@
+import { bedMapCells } from "@/components/ward-management/statistics/statistics-bed-map";
+import { networkUnitRows } from "@/components/ward-management/statistics/statistics-network-cards";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -411,5 +413,19 @@ describe("one number, one answer across Home, the board, the TV, Statistics and 
         { screen: "ward TV", value: wardTv.capacity.ready },
       ]),
     ).toEqual([]);
+    // Statistics' ward bed map and the network rows (Overview, phone band, ward matrix) agree too,
+    // while the occupancy rate stays the beds taken by a stay.
+    const allHolds = [...accepted.movements, ...accepted.referrals];
+    const map = bedMapCells(unit, accepted.admissions, accepted.bedReleases, accepted.leaveBeds, now, allHolds);
+    const row = networkUnitRows([unit], accepted.admissions, accepted.bedReleases, accepted.leaveBeds, allHolds)[0]!;
+    const unheld = networkUnitRows([unit], accepted.admissions, accepted.bedReleases, accepted.leaveBeds)[0]!;
+    expect(
+      mismatches([
+        { screen: "board headline", value: board.readyNow },
+        { screen: "Statistics bed map Ready and preparing", value: map.counts.ready + map.counts.prep },
+        { screen: "Statistics network row", value: row.states.ready },
+      ]),
+    ).toEqual([]);
+    expect(row.inUse, "occupancy ignores the named bed").toBe(unheld.inUse);
   });
 });
