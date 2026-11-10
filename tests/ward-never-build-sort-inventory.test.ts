@@ -293,7 +293,6 @@ describe("never-build sort inventory (D-71, audit M116)", () => {
     const needsJosh = SORT_INVENTORY.filter((entry) => entry.order === "NEEDS JOSH").map((entry) => entry.file);
     expect(needsJosh).toEqual(
       expect.arrayContaining([
-        "bed-meeting/tv-derivations.ts",
         "handover/handover-beds.tsx",
         "handover/handover-phone.tsx",
         "wards/ward-index.tsx",
@@ -301,6 +300,13 @@ describe("never-build sort inventory (D-71, audit M116)", () => {
         "movements/movement-horizon-gantt.tsx",
       ]),
     );
+  });
+
+  it("the ED wall TV's ready wards are A to Z once Josh ruled (D-126)", () => {
+    const tv = SORT_INVENTORY.filter(
+      (entry) => entry.file === "bed-meeting/tv-derivations.ts" && entry.list === "wards",
+    );
+    expect(tv.map((entry) => entry.order)).toEqual(["fixed order"]);
   });
 
   it("catches a planted comparator on free beds, read through a helper, and passes a wait order", () => {

@@ -42,15 +42,6 @@ export type SortInventoryEntry = {
 export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
   // ---------------------------------------------------------------- NEEDS JOSH
   {
-    file: "bed-meeting/tv-derivations.ts",
-    match: "b.ready - a.ready || a.unit.name.localeCompare(b.unit.name)",
-    list: "wards",
-    key: "ready beds, most first; then ward name",
-    order: "NEEDS JOSH",
-    reason:
-      "The ED wall TV's 'Beds ready in <service>' panel lists wards most beds first, cut to the first rows with '+N more', beside the ED's waiting list.",
-  },
-  {
     file: "handover/handover-beds.tsx",
     match: "b.ready - a.ready || a.name.localeCompare(b.name)",
     list: "wards",
@@ -335,6 +326,15 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
   },
 
   // ---------------------------------------------------------------- fixed order
+  {
+    file: "bed-meeting/tv-derivations.ts",
+    match: "a.unit.name.localeCompare(b.unit.name)",
+    list: "wards",
+    key: "ward name A to Z (wards with a ready bed only)",
+    order: "fixed order",
+    reason:
+      "D-126 (10 Nov 2026): the ED wall TV's 'Beds ready in <service>' panel lists wards A to Z, not most beds first, so the row cut beside the waiting list favours no ward.",
+  },
   {
     file: "ward-derivations-shortlist.ts",
     match: "rankOf(a.availability) - rankOf(b.availability) || byServiceThenName(a.unit, b.unit)",
