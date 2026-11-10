@@ -1,8 +1,9 @@
 # 9 Nov 2026, discharge and capacity features (PR #1583)
 
-Raised (against main c890cda6a, after PRs #1563 and #1579 merged) referrals 568.0 to 569.9, ED 521.0
-to 523.1, ward 601.3 to 604.4, movement 594.8 to 597.0, bed meeting 573.5 to 575.7 and statistics
-613.8 to 615.3 (1.5 to 3.1 KB each). Every other route fits its existing limit.
+Raised (against main 4e5163a1f, after PRs #1563, #1579 and #1559 merged) referrals 569.1 to 571.0,
+ED 522.7 to 524.8, ward 603.2 to 606.2, movement 596.5 to 598.7, capacity 645.0 to 645.7, bed
+meeting 575.2 to 577.3 and statistics 615.5 to 617.1 (0.7 to 3.0 KB each). Every other route fits
+its existing limit.
 
 Why: the PR's new engine records (clinically ready date and reason, Extend pull, weekend discharge
 review, discharge checklist, follow-up reply and the discharge date trail) join the shared engine
@@ -13,17 +14,20 @@ every route. To trim it, the Extend pull rule and its wording moved out of `ward
 `ward-bed-hold-extension.ts`, so they load only with the ward screen and the engine slice, and the
 demo overlay reads the readmission window from `ward-clinical-values.ts` instead of importing
 `ward-readmission.ts` into the shared chunk. That saved about 0.3 KB per route; what is left is
-state every screen restores and validates on first load.
+state every screen restores and validates on first load. Capacity was 2.5 KB under its limit on
+main, so its raise is only the 0.7 KB the shared engine growth pushes past it.
 
-Measured locally with the webpack production build (`npm run build`) on the branch after merging main c890cda6a (94b6dfc3a), KB gzipped:
+Measured locally with the webpack production build (`npm run build`) on the branch after merging
+main 4e5163a1f (5bde9c84d), both built at their own checkout paths, KB gzipped:
 
-| Route       | Main c890cda6a | This PR | Limit | New limit |
+| Route       | Main 4e5163a1f | This PR | Limit | New limit |
 | ----------- | -------------- | ------- | ----- | --------- |
-| referrals   | 567.8          | 569.7   | 568.0 | 569.9     |
-| ED          | 520.9          | 522.9   | 521.0 | 523.1     |
-| ward        | 601.2          | 604.2   | 601.3 | 604.4     |
-| movement    | 594.7          | 596.8   | 594.8 | 597.0     |
-| bed meeting | 573.4          | 575.5   | 573.5 | 575.7     |
-| statistics  | 613.7          | 615.1   | 613.8 | 615.3     |
+| referrals   | 568.9          | 570.8   | 569.1 | 571.0     |
+| ED          | 522.5          | 524.6   | 522.7 | 524.8     |
+| ward        | 603.0          | 606.0   | 603.2 | 606.2     |
+| movement    | 596.3          | 598.5   | 596.5 | 598.7     |
+| capacity    | 642.5          | 645.5   | 645.0 | 645.7     |
+| bed meeting | 575.0          | 577.1   | 575.2 | 577.3     |
+| statistics  | 615.4          | 616.9   | 615.5 | 617.1     |
 
 Each new limit allows the measured size plus 0.2 KB (HOW-WE-WORK §6), within the 5 KB a PR may raise without asking.
