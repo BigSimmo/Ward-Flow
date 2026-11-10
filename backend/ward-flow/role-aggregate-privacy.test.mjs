@@ -6,7 +6,7 @@ import { createWorkspaceStore } from "./postgres.mjs";
 import { withoutRecordDetail } from "./record-detail.mjs";
 
 // Production store and reporting engine; the double only schedules the locked SQL reads.
-/** @param {{ archived?: any[], count?: number, deadline?: number, project?: (...args: any[]) => any }} [options] */
+/** @param {{ archived?: any[], count?: number, deadline?: number, project?: (...args: any[]) => any, service?: string }} [options] */
 function executiveBoundary({
   archived = [],
   count = archived.length,
