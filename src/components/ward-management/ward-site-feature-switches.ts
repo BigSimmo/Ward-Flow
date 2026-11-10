@@ -49,13 +49,13 @@ export const SITE_PROTECTED_FEATURES = {
   "demo-reset": "The demonstration reset is not a site setting",
 } as const;
 
-export type SiteProtectedFeature = keyof typeof SITE_PROTECTED_FEATURES;
+type SiteProtectedFeature = keyof typeof SITE_PROTECTED_FEATURES;
 
 export function isSiteSwitchableFeature(value: unknown): value is SiteSwitchableFeature {
   return typeof value === "string" && (SITE_SWITCHABLE_FEATURES as readonly string[]).includes(value);
 }
 
-export function isSiteProtectedFeature(value: unknown): value is SiteProtectedFeature {
+function isSiteProtectedFeature(value: unknown): value is SiteProtectedFeature {
   return typeof value === "string" && Object.hasOwn(SITE_PROTECTED_FEATURES, value);
 }
 

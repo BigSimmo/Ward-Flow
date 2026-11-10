@@ -93,7 +93,7 @@ type CatchUpUnit = { id: string; beds: number; allocatable: CapacityFigure };
  * by the bed manager or the coordinator is not the ward's confirmation. A figure recorded before
  * `confirmedBy` existed was the ward's own (`CapacityFigure.confirmedBy`).
  */
-export function wardOwnConfirmationAt(unit: CatchUpUnit): Instant | null {
+function wardOwnConfirmationAt(unit: CatchUpUnit): Instant | null {
   const figure = unit.allocatable;
   if (figure.source !== "ward" || (figure.confirmedBy ?? "ward") !== "ward") return null;
   return figure.confirmedAt;
