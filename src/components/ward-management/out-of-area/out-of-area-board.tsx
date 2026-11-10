@@ -948,7 +948,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             onChange={setTab}
             items={[
               { id: "now", label: "Away now", count: entries.length },
-              { id: "history", label: "History", count: repatriations.length },
+              // Page tops: History shows no 0, as Governance's Audit trail.
+              { id: "history", label: "History", count: repatriations.length || undefined },
             ]}
           />
           {tab === "now" ? (

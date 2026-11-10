@@ -56,7 +56,7 @@ import { useDemoMenuFromSheet } from "@/components/ward-management/tools/ward-de
 import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-tools-sheet";
 
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
-import { WARD_BAR_PAGE_TOOLS_ID } from "@/components/ward-management/shell/ward-bar-page-tools";
+import { WARD_BAR_PAGE_TOOLS_ID, useWardBarPageTitleFor } from "@/components/ward-management/shell/ward-bar-page-tools";
 import { WardHelpHost } from "@/components/ward-management/help/ward-help-host";
 import { subscribeWardDrawer, subscribeWardDrawerClose } from "@/components/ward-management/shell/ward-drawer-bus";
 import { dischargeHref, movementHref, patientSearchHref } from "@/components/ward-management/shell/ward-facade";
@@ -414,7 +414,9 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
   }, []);
 
   const place = wardPlaceFor(pathname, units);
-  const appRouteTitle = wardBarRouteTitle(pathname, place, isPhone);
+  // A page may name the bar for its open view (Legal forms' Seclusion tab reads "Seclusion").
+  const pageTitle = useWardBarPageTitleFor(pathname);
+  const appRouteTitle = pageTitle ?? wardBarRouteTitle(pathname, place, isPhone);
   // Back (Josh, 20 Oct 2026): drill-down screens lead with Back; rail and dock pages keep Menu.
   const deskHomeHref = useDeskHomeHref();
   const backHref = wardBackParent(pathname, deskHomeHref);
