@@ -2837,7 +2837,9 @@ export function createWorkspaceStore(
     /**
      * Opens one patient's record, read only, outside this desk's care for a set time, with a
      * reason. Each opening is kept as the "who looked" record and audited. More than the set
-     * number in one shift is marked as a pattern for the coordinator.
+     * number in one shift is marked as a pattern for the coordinator. `intentKey`: the browser's
+     * key for this one opening (M58), so a retry of it is not a second opening.
+     * @param {any} view @param {string} patientId @param {string} reason @param {string} [intentKey]
      */
     async breakGlass(view, patientId, reason, intentKey = undefined) {
       if (!engine.BREAK_GLASS_REASON_IDS.includes(reason)) return refused(400, "A reason from the list is required.");
