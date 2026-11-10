@@ -244,5 +244,6 @@ Source digests were re-reviewed file by file before being re-recorded:
 - `ward-flow-reducer.ts`: the four new events route to `reducePatientCarePlanEvent` from the default branch. No existing case changed.
 - `ward-flow-record-events.ts`: `RECORD_ESCALATION` now also appends to `Movement.escalations` (seeded from the older single `escalation` when the list is empty). Its guards, role and the `escalation` field every existing reader uses are unchanged. The `RECORD_ESCALATION` action note says so and its `reviewedOn` is 10 Nov 2026.
 - `ward-movements.ts`: seed data only (a second synthetic escalation on one journey).
+- `patients/add-patient.tsx`: the duplicate check's tier order, wording and input rule moved to shared helpers in `ward-patients.ts` with the same behaviour. `ADD_PATIENT`'s dispatch, role and payload are unchanged.
 
 The other command models citing these files had only their digests re-recorded, because none of their handlers, guards, roles or payloads changed.
