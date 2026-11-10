@@ -78,6 +78,7 @@
   border-bottom: 1px solid var(--wf-line);
   background: var(--wf-surface);
   overflow-x: auto;
+  overflow-y: hidden;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
 }

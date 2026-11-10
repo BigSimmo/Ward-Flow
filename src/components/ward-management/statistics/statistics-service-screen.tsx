@@ -290,14 +290,19 @@ function OperationalServiceScreen({ serviceId }: { serviceId: string }) {
     [service, serviceSiteCodes, sites],
   );
 
+  // D-115: a bed named for an open journey or an accepted referral is not Ready here either.
+  const namedHolds = useMemo(() => [...movements, ...referrals], [movements, referrals]);
   // Display Ready follows the shared bed states, including live pulls beyond a reduced observation.
   const readyRows = useMemo(
     () =>
       serviceUnits.map((unit) => ({
         unit,
-        capacity: { ...unitCapacity(unit, bedReleases), available: readyBedsNow(unit, admissions, bedReleases) },
+        capacity: {
+          ...unitCapacity(unit, bedReleases),
+          available: readyBedsNow(unit, admissions, bedReleases, namedHolds),
+        },
       })),
-    [serviceUnits, admissions, bedReleases],
+    [serviceUnits, admissions, bedReleases, namedHolds],
   );
   const totalReady = useMemo(() => readyRows.reduce((sum, row) => sum + row.capacity.available, 0), [readyRows]);
   const totalBedBase = useMemo(() => serviceUnits.reduce((sum, unit) => sum + unit.beds, 0), [serviceUnits]);
@@ -448,7 +453,14 @@ function OperationalServiceScreen({ serviceId }: { serviceId: string }) {
       slots={{
         phone: (
           <ServicePhone
-            states={serviceUnits.map((unit) => ({ unit, states: bedStates(unit, admissions, bedReleases, leaveBeds) }))}
+            states={serviceUnits.map((unit) => {
+              const unheld = bedStates(unit, admissions, bedReleases, leaveBeds);
+              return {
+                unit,
+                states: bedStates(unit, admissions, bedReleases, leaveBeds, namedHolds),
+                inUse: unheld.occupied + unheld.pulled,
+              };
+            })}
             pendingPreparation={pendingPreparation}
             eds={serviceEds.map((department) => ({
               id: department.id,
@@ -797,6 +809,8 @@ function ServicePhone({
   states: {
     unit: Pick<Unit, "id" | "name" | "beds">;
     states: Pick<ReturnType<typeof bedStates>, "occupied" | "pulled" | "closed" | "ready">;
+    /** Beds taken by a stay, without named holds (D-115): the occupancy rate's count. */
+    inUse?: number;
   }[];
   pendingPreparation: number;
   eds: {
@@ -828,7 +842,9 @@ function ServicePhone({
       ...entry,
       // In use (Occupied + Pulled), the one occupancy count every page prints (ward-occupancy.ts).
       rate:
-        entry.unit.beds > 0 ? Math.round(((entry.states.occupied + entry.states.pulled) / entry.unit.beds) * 100) : 0,
+        entry.unit.beds > 0
+          ? Math.round(((entry.inUse ?? entry.states.occupied + entry.states.pulled) / entry.unit.beds) * 100)
+          : 0,
     }))
     .sort((a, b) => b.rate - a.rate || a.unit.name.localeCompare(b.unit.name));
   // On the executive desk a department worded as fewer than 5 sorts as nought, so the order cannot

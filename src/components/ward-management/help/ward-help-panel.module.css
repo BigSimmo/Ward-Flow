@@ -813,6 +813,7 @@
   margin: -4px -16px;
   padding: 4px 16px 6px;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
   mask-image: linear-gradient(90deg, black calc(100% - 28px), transparent);
 }

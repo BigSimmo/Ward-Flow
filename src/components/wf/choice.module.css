@@ -7,6 +7,7 @@
   min-width: 0;
   border-bottom: 1px solid var(--wf-line);
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -57,6 +58,7 @@
   border: 1px solid var(--wf-line);
   box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -440,6 +442,7 @@
     display: flex;
     max-width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
     overscroll-behavior-x: contain;
     scrollbar-width: none;
   }
@@ -711,6 +714,7 @@
     gap: var(--wf-phone-pill-gap);
     padding-block: var(--wf-phone-pill-hit);
     overflow-x: auto;
+    overflow-y: hidden;
     overscroll-behavior-x: contain;
     scrollbar-width: none;
   }
