@@ -1590,14 +1590,15 @@ a.askChip {
 
   /* ── Option A, "Glass rows": the original's soft tiles, refined and aligned. ── */
   .popup[data-start] .group {
-    height: 28px;
+    height: 24px;
+    margin-bottom: 4px;
     padding: 0 2px;
     font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
     color: var(--wf-ink-3);
   }
 
   .popup[data-start] .group .showAll {
-    min-height: 28px;
+    min-height: 24px;
     padding: 0 2px;
     font-size: var(--wf-fs-13);
   }
@@ -1625,8 +1626,11 @@ a.askChip {
     opacity: 1;
   }
 
+  /* Icon columns sit on the page edges, like a home screen row, labels centred under them. */
   .popup[data-start] .groupItem[data-goto] .groupList {
-    gap: 8px;
+    grid-template-columns: repeat(4, minmax(0, 3.5rem));
+    justify-content: space-between;
+    gap: 4px;
   }
 
   .popup[data-start] .groupItem[data-goto] .option {
@@ -1635,10 +1639,10 @@ a.askChip {
   }
 
   .popup[data-start] .groupItem[data-goto] .itemIconBox {
-    flex-basis: 52px;
-    width: 52px;
-    height: 52px;
-    border-radius: 16px;
+    flex-basis: 54px;
+    width: 54px;
+    height: 54px;
+    border-radius: 17px;
     background: color-mix(in srgb, var(--wf-accent-tint) 78%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-accent) 9%, transparent);
     color: var(--wf-accent);
@@ -1650,7 +1654,12 @@ a.askChip {
     height: 22px;
   }
 
+  .popup[data-start] .groupItem[data-goto] .resultContent {
+    overflow: visible;
+  }
+
   .popup[data-start] .groupItem[data-goto] .resultTitle {
+    overflow: visible;
     font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
     color: var(--wf-ink-2);
   }
@@ -1676,10 +1685,58 @@ a.askChip {
     width: 36px;
     height: 36px;
     border-radius: 11px;
+    background: color-mix(in srgb, var(--wf-accent-tint) 78%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-accent) 9%, transparent);
+  }
+
+  .popup[data-start] .groupItem:not([data-goto]) .itemIconBox:has([data-wf-glyph="danger"]) {
+    background: color-mix(in srgb, var(--wf-danger) 12%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-danger) 14%, transparent);
+  }
+
+  .popup[data-start] .groupItem:not([data-goto]) .itemIconBox:has([data-wf-glyph="warning"]) {
+    background: color-mix(in srgb, var(--wf-warning) 14%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-warning) 16%, transparent);
+  }
+
+  .popup[data-start] .groupItem:not([data-goto]) .itemIconBox svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .popup[data-start] .groupItem:not([data-goto]) .itemIconBox:has([data-wf-glyph]) svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  .popup[data-start] .groupItem:not([data-goto]) .resultContent {
+    gap: 1px;
   }
 
   .popup[data-start] .groupItem:not([data-goto]) .resultTitle {
     font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+    letter-spacing: -0.006em;
+  }
+
+  /* Pressed and keyboard states: a soft wash, and the system focus ring. */
+  .popup[data-start] .groupItem:not([data-goto]) .option:active {
+    background: color-mix(in srgb, var(--wf-ink-1) 5%, transparent);
+  }
+
+  .popup[data-start] .option:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: -2px;
+  }
+
+  .popup[data-start] .askChip:active,
+  .popup[data-start] .commandBtn:active {
+    background: color-mix(in srgb, var(--wf-accent) 10%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .popup[data-start] .groupItem[data-goto] .itemIconBox {
+      transition: none;
+    }
   }
 
   .popup[data-start] .groupItem[data-group="do"] .option {
