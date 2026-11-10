@@ -9,8 +9,20 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { ChevronLeft, Printer } from "lucide-react";
-import { Button, Card, Segmented, StatusGlyph, Switch, cx, type WfTone } from "@/components/wf";
+import {
+  Button,
+  Card,
+  Segmented,
+  StatusGlyph,
+  Switch,
+  cx,
+  isNotUpdating,
+  notUpdatingWords,
+  useLiveFreshness,
+  type WfTone,
+} from "@/components/wf";
 import { WardPrintAttribution } from "@/components/ward-management/shell/ward-access";
+import { LocalSettingsNote } from "@/components/ward-management/shell/local-settings-note";
 import {
   formatInstant,
   formatInstantWithDay,
@@ -187,6 +199,8 @@ export function HandoverPrintSheet({
   now,
 }: HandoverPrintSheetProps) {
   const baseId = useId();
+  // Master audit M7: while the shared reads are frozen, every printed page says since when.
+  const freshness = useLiveFreshness();
   const landscape = options.orientation === "landscape";
   const paper = PAPER[options.orientation];
 
@@ -281,6 +295,13 @@ export function HandoverPrintSheet({
         <span>
           Page {pageNumber} of {totalPages} · Synthetic data, not a medical record
         </span>
+        {isNotUpdating(freshness) ? (
+          <strong data-testid="handover-print-not-updating">
+            {notUpdatingWords(freshness.since)}. Figures may be out of date.
+          </strong>
+        ) : null}
+        {/* M123: the print isolation hides the shell's footer, so each page carries the line itself. */}
+        <LocalSettingsNote as="span" testId="handover-print-local-settings" />
         <WardPrintAttribution
           at={preparedAt ?? now}
           className={styles.attribution}

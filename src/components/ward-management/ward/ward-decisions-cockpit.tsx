@@ -7,14 +7,16 @@ import { CountBubble, Dialog, Icon, StatusGlyph, buttonClass, cx, useIsPhone, ty
 import bulkStyles from "./ward-decisions-bulk-confirm.module.css";
 import styles from "./ward-decisions-cockpit.module.css";
 import { openDecisionCount } from "./ward-decision-count";
+import { UNDO_TOAST_MS } from "../ward-operational-defaults";
 
 export { openDecisionCount };
 
 /**
  * Called once the screen's command has its answer: true recorded, false not recorded. Called with
  * nothing when there is no command answer (the local engine), so the cockpit reads the rows instead.
+ * M37 (D-129): a sign-off the screen can take back passes `undo`, which sends the Undo and reports it.
  */
-export type DecisionReport = (recorded?: boolean) => void;
+export type DecisionReport = (recorded?: boolean, undo?: (report: DecisionReport) => void) => void;
 
 export interface DepartureDecision {
   id: string;
@@ -70,7 +72,8 @@ export interface WardDecisionsCockpitProps {
 
 type WindowId = "staffing" | "intake" | "departures" | "leave";
 type Group = "act" | "wait" | "ready" | "done";
-type ActionKind = "sign" | "clear" | "accept";
+/** "unsign" is a sign-off taken back with Undo (M37). */
+type ActionKind = "sign" | "clear" | "accept" | "unsign";
 
 interface DecisionItem {
   id: string;
@@ -230,6 +233,9 @@ function Queue({
   const [sent, setSent] = useState<SentAction | null>(null);
   // The command's own answer for each row of the latest action, when the screen has one.
   const [answers, setAnswers] = useState<{ seq: number; id: string; recorded: boolean }[]>([]);
+  // M37 (D-129): each signed-off row's Undo, offered for UNDO_TOAST_MS after the sign-off.
+  const [undos, setUndos] = useState<{ seq: number; id: string; run: (report: DecisionReport) => void }[]>([]);
+  const [undoSeq, setUndoSeq] = useState(0);
   const seqRef = useRef(0);
   const [history, setHistory] = useState<{ id: string; kind: ActionKind; title: string }[]>([]);
   const [dismissedSeq, setDismissedSeq] = useState(0);
@@ -243,6 +249,7 @@ function Queue({
   function recorded(kind: ActionKind, id: string): boolean {
     if (kind === "sign") return !departures.some((row) => row.id === id && row.onConfirm && row.badge !== "Done");
     if (kind === "clear") return !departures.some((row) => row.id === id && row.badge === "Blocked");
+    if (kind === "unsign") return departures.some((row) => row.id === id && row.onConfirm && row.badge === "Ready");
     return !intakes.some((row) => row.id === id);
   }
 
@@ -253,6 +260,9 @@ function Queue({
     const titles = new Map(rows.map((row) => [row.id, splitTitle(row.title).name]));
     setSent({ seq, kind, ids: rows.map((row) => row.id), titles });
     setAnswers([]);
+    setUndos([]);
+    setUndoSeq(kind === "sign" ? seq : 0);
+    if (kind === "unsign") return seq;
     setHistory((current) => [
       ...current.filter((entry) => !rows.some((row) => row.id === entry.id && entry.kind === kind)),
       ...rows.map((row) => ({ id: row.id, kind, title: splitTitle(row.title).name })),
@@ -260,7 +270,8 @@ function Queue({
     return seq;
   }
 
-  function answer(seq: number, id: string, recordedHere?: boolean) {
+  function answer(seq: number, id: string, recordedHere?: boolean, undo?: (report: DecisionReport) => void) {
+    if (undo && recordedHere !== false) setUndos((current) => [...current, { seq, id, run: undo }]);
     if (recordedHere === undefined) return;
     setAnswers((current) => [
       ...current.filter((entry) => !(entry.seq === seq && entry.id === id)),
@@ -272,8 +283,8 @@ function Queue({
     if (rows.length === 0) return;
     const seq = begin(kind, rows);
     for (const row of rows) {
-      row.run((recordedHere) => {
-        answer(seq, row.id, recordedHere);
+      row.run((recordedHere, undo) => {
+        answer(seq, row.id, recordedHere, undo);
       });
     }
   }
@@ -523,6 +534,11 @@ function Queue({
 
   // The notice belongs to the window the action was taken in, so another window never shows it.
   const sentWindow: WindowId | null = sent ? (sent.kind === "accept" ? "intake" : "departures") : null;
+  // M37: Undo is offered only for the sign-offs this action recorded, inside the Undo window.
+  const undoable =
+    sent?.kind === "sign" && sent.seq === undoSeq
+      ? undos.filter((entry) => entry.seq === sent.seq && settled(sent, entry.id))
+      : [];
   let outcome: { tone: WfTone; text: string } | null = null;
   if (sent && sent.seq !== dismissedSeq) {
     const n = sent.ids.length;
@@ -550,6 +566,20 @@ function Queue({
                 tone: "closed",
                 text: `${done.length} of ${n} signed off: ${nameList(done.map(nameOf))}. Not recorded, nothing changed for ${nameList(notDone.map(nameOf))}.`,
               };
+    } else if (sent.kind === "unsign") {
+      // M37: an Undo names who is back to sign off, and who was not taken back.
+      outcome =
+        done.length === n
+          ? { tone: "success", text: `Sign off undone for ${nameList(done.map(nameOf))}` }
+          : done.length === 0
+            ? {
+                tone: "closed",
+                text: `Undo not recorded for ${nameList(notDone.map(nameOf))}. Nothing was changed.`,
+              }
+            : {
+                tone: "closed",
+                text: `Sign off undone for ${nameList(done.map(nameOf))}. Not undone, nothing changed for ${nameList(notDone.map(nameOf))}.`,
+              };
     } else if (sent.kind === "clear") {
       outcome =
         done.length === n
@@ -564,23 +594,57 @@ function Queue({
   }
   // CT-09: a refusal stays until it is closed or replaced; only a recorded step clears itself.
   const clearingSeq = outcome?.tone === "success" ? sent?.seq : undefined;
+  // Keyed to `undos` (cleared only by `begin`), not to the Undo window, so the window closing
+  // does not restart this timer and keep the notice past UNDO_TOAST_MS.
+  const offeredUndo = sent?.kind === "sign" && undos.some((entry) => entry.seq === sent.seq);
   useEffect(() => {
     if (clearingSeq === undefined) return;
-    const timer = window.setTimeout(() => {
-      setDismissedSeq(clearingSeq);
-    }, 6000);
+    const timer = window.setTimeout(
+      () => {
+        setDismissedSeq(clearingSeq);
+      },
+      offeredUndo ? UNDO_TOAST_MS : 6000,
+    );
     return () => {
       window.clearTimeout(timer);
     };
-  }, [clearingSeq]);
+  }, [clearingSeq, offeredUndo]);
+  // The Undo window closes on its own, as a toast's does; a refusal message stays without it.
+  useEffect(() => {
+    if (undoSeq === 0) return;
+    const timer = window.setTimeout(() => {
+      setUndoSeq(0);
+    }, UNDO_TOAST_MS);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [undoSeq]);
   // Phone shows every window in one list, so the notice shows whichever window the action came from.
   const notice = outcome && (isPhone || chosen === sentWindow) ? outcome : null;
   const noticeBody = notice ? (
     <>
       <StatusGlyph tone={notice.tone} />
-      <span className={sent?.kind === "sign" ? bulkStyles.result : undefined} title={notice.text}>
+      <span
+        className={sent?.kind === "sign" || sent?.kind === "unsign" ? bulkStyles.result : undefined}
+        title={notice.text}
+      >
         {notice.text}
       </span>
+      {sent && undoable.length > 0 ? (
+        <button
+          type="button"
+          className={cx(buttonClass({ variant: "ghost", size: "sm" }), styles.pill)}
+          aria-label={`Undo sign off for ${nameList(undoable.map((entry) => sent.titles.get(entry.id) ?? ""))}`}
+          onClick={() => {
+            send(
+              "unsign",
+              undoable.map((entry) => ({ id: entry.id, title: sent.titles.get(entry.id) ?? "", run: entry.run })),
+            );
+          }}
+        >
+          Undo
+        </button>
+      ) : null}
       {notice.tone === "success" || !sent ? null : (
         <button
           type="button"

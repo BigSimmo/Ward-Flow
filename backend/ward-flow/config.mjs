@@ -58,6 +58,11 @@ export function readConfig(env = process.env, dependencies = {}) {
   const shared = env.WARD_SHARED_ENABLED === "true";
   // The demonstration controls (advance clock, reset or set scenario) on the shared workspace.
   const sharedDemoEvents = env.WARD_SHARED_DEMO_EVENTS === "true";
+  // Drill 4: a new value after each database restore, sent with every workspace read, so open tabs
+  // drop the board they hold and read the restored one. Not a secret; unset sends none.
+  const restoreMarker = env.WARD_RESTORE_MARKER?.trim() || null;
+  if (restoreMarker !== null && !/^[A-Za-z0-9._-]{1,64}$/.test(restoreMarker))
+    throw new Error("Invalid restore marker configuration");
   const dataMode = env.WARD_DATA_MODE || "prototype";
   if (dataMode !== "prototype") throw new Error("Live data mode is not commissioned in this release");
   const coordinatorIds = (env.WARD_COORDINATOR_USER_IDS || "").split(",").map((id) => id.trim().toLowerCase());
@@ -102,6 +107,7 @@ export function readConfig(env = process.env, dependencies = {}) {
     coordinatorIds,
     coordinatorUntil,
     workspaceId: env.WARD_WORKSPACE_ID?.toLowerCase(),
+    restoreMarker,
     postgres,
     // Sign-in settings sit under the provider's own name, for example `config.supabase`.
     [authProvider]: AUTH_PROVIDERS[authProvider](env),
