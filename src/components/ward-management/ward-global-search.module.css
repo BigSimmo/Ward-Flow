@@ -1797,9 +1797,9 @@ a.askChip {
   height: 20px;
   padding: 0 6px;
   border-radius: 10px;
-  background: var(--wf-accent);
+  background: var(--wf-accent-ink);
   box-shadow: 0 0 0 2px var(--wf-canvas);
-  color: var(--wf-on-accent);
+  color: var(--wf-surface);
   font: 600 11px / 20px var(--wf-font);
   font-variant-numeric: tabular-nums;
   text-align: center;
