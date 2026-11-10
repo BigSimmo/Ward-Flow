@@ -147,6 +147,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-122](#d-122-clinical-and-privacy-answers-from-the-10-november-2026-audit-10-november-2026)                                                           | Clinical and privacy answers from the 10 Nov audit                                     | Active                                           |
 | [D-124](#d-124-offline-saves-whose-record-changed-are-refused-and-shown-10-november-2026)                                                               | Offline saves whose record changed: refuse and show                                    | Active                                           |
 | [D-125](#d-125-top-10-audit-follow-ups-approved-10-november-2026)                                                                                       | Top 10 audit follow-ups: refusal toast, sign-out waits, executive report, ranked lists | Active                                           |
+| [D-126](#d-126-ranked-lists-neutral-orders-approved-10-november-2026)                                                                                   | Ranked lists: neutral orders on 11 lists, lists 9 and 12 kept                          | Active                                           |
 
 ---
 
@@ -1544,3 +1545,22 @@ is inferred.
   5. **Service executive report (M113):** the report that stops after the demo's first day is diagnosed and fixed, without widening what any desk can read.
 - **Why:** these were the open findings of the Top 10 audits; each recommendation closes a silent-loss or wording gap, or keeps D-71 under owner control.
 - **Boundary:** synthetic data only. A shared-board reason still never names the patient (27 October 2026 rule). D-71, D-72 and D-93 are unchanged. Approves no release.
+
+## D-126. Ranked lists: neutral orders approved (10 November 2026)
+
+- **Date:** 10 November 2026, about 5:01 PM AWST (09:01 UTC). **Decided by:** Josh, in the project chat and the Ward Flow project thread "Perfect the master audit list": "Go ahead with all recommendations", answering the ranked-lists review that D-125 item 1 asked for, with lists 9 and 12 kept as they are.
+- **Decision:** the lists in the review (numbered as there) that ordered wards by free or ready beds take a neutral order. Every figure stays on screen.
+  - List 1: ED wall TV, "Beds ready in" panel: wards with a ready bed, A to Z by ward name.
+  - List 2: Handover desktop, Beds by ward: A to Z by ward name within each health service.
+  - List 3: Handover phone, Beds tab: the same order as the desktop table.
+  - List 4: All wards, Order choice: keep "Service" (the default) and replace "Most ready" and "Fullest" with "A to Z".
+  - List 5: All wards, the single "top ward" chip is removed; a "Has ready" filter with the count of wards with a ready bed may take its place.
+  - List 6: Statistics map, Beds lens: sites by health service then site name, no rank numbers, and a neutral title.
+  - List 7: Statistics map, the site's open link: opens the site's first ward A to Z, or the site's ward list.
+  - List 8: Statistics, "Open a unit" finder: A to Z by ward name.
+  - List 10: Capacity, Mismatch pop-up: health service then ward name, the fixed order D-71 item 6 and D-110 use for fit lists.
+  - List 11: Destination kinds: the fixed order Ward, Community, ED, with no "suggested" flag.
+  - List 13: Movements timeline side rail: EDs by health service then name, labelled "Corridors".
+- **Kept:** list 9 (Statistics ED finder and phone ED list, already A to Z or a user-chosen column sort) and list 12 (New referral, Community team step, catchment team first, because teams are not wards).
+- **Why:** a list beside a waiting list that puts the most free beds first reads as "send them here". A fixed order keeps the same information without a ranking.
+- **Boundary:** D-71 stands: Ward Flow does not rank or recommend a bed. Synthetic data only. Approves no release.
