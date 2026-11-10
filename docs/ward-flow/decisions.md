@@ -139,6 +139,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-114](#d-114-allow-pull_request_target-for-three-workflows-only-9-november-2026)                                                                      | Allow pull_request_target for three workflows only                                   | Active                                           |
 | [D-115](#d-115-one-count-on-every-screen-and-a-missing-patient-shown-everywhere-9-november-2026)                                                        | One count on every screen; missing patient shown everywhere                          | Active                                           |
 | [D-116](#d-116-page-tops-the-pr-1581-recommendations-stand-9-november-2026)                                                                             | Page tops: PR #1581 recommendations stand                                            | Active                                           |
+| [D-117](#d-117-page-tops-referrals-and-ward-phone-limits-up-to-8-kb-above-main-10-november-2026)                                                        | Page tops: Referrals and Ward phone limits up to 8 KB above main                     | Active                                           |
 
 ---
 
@@ -1459,3 +1460,9 @@ is inferred.
   - A community team's phone shows three section tabs; Referrals sits under "More team sections", as the approved mock-up shows.
 - **Left as follow-ups, not decided here:** removing now-unused symbols (needs the owner-approved dead-code override), the other community teams' and the Referrals desks' tops, and phone bar title truncation.
 - **Boundary:** layout and wording only on synthetic data; no clinical logic changes. Approves no release.
+
+## D-117. Page tops: Referrals and Ward phone limits up to 8 KB above main (10 November 2026)
+
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, on a decision card in the Ward Flow project (02:18 UTC), choosing "Allow up to 8 KB" on "Allow Referrals and Ward phone limits up to 8 KB above main?".
+- **Decision:** PR #1581 may set the phone first-load limits (`script-budget.json`) for `/ward-flow/referrals` and `/ward-flow/ward/rph-adult-secure` up to 8 KB above main alone's measured size, as D-116's approvals already allow for Statistics (8 KB) and bed meeting (6.6 KB). Every other route keeps the 5 KB rule.
+- **Boundary:** applies to this PR only, after a trim has been tried; it approves no other raise and no release.
