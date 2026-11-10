@@ -1,0 +1,170 @@
+/* Feature 42 (9 Nov 2026): one sequential scale, neutral to amber, figures always printed. */
+.empty {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+/* The card has no body padding of its own; the grid and legend sit on the card's 16px inset. */
+.scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: var(--wf-s-2) calc(var(--wf-s-4) - 10px) 0;
+}
+.scroll:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.grid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 2px;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.grid th {
+  padding: 4px var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font-weight: 500;
+  text-align: start;
+  white-space: nowrap;
+}
+.grid tbody th,
+.grid tfoot th {
+  color: var(--wf-ink-1);
+}
+.num,
+.cell {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+.grid th.num {
+  font-family: var(--wf-font);
+  text-align: end;
+}
+.cell {
+  min-width: 3.25rem;
+  padding: 6px var(--wf-s-2);
+  border-radius: var(--wf-r-xs);
+  color: var(--wf-ink-1);
+}
+.total {
+  padding: 6px var(--wf-s-2);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+.total[data-zero="true"] {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+.cell[data-step="0"],
+.swatch[data-step="0"] {
+  background: var(--wf-surface);
+  color: var(--wf-ink-3);
+}
+.cell[data-step="1"],
+.swatch[data-step="1"] {
+  background: color-mix(in srgb, var(--wf-warning) 10%, var(--wf-surface));
+}
+.cell[data-step="2"],
+.swatch[data-step="2"] {
+  background: color-mix(in srgb, var(--wf-warning) 22%, var(--wf-surface));
+}
+.cell[data-step="3"],
+.swatch[data-step="3"] {
+  background: color-mix(in srgb, var(--wf-warning) 36%, var(--wf-surface));
+}
+.cell[data-step="4"],
+.swatch[data-step="4"] {
+  background: color-mix(in srgb, var(--wf-warning) 52%, var(--wf-surface));
+}
+.legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.legend span:first-child {
+  margin-inline-end: 4px;
+}
+.legend span:last-child {
+  margin-inline-start: 4px;
+}
+.swatch {
+  display: inline-block;
+  width: 18px;
+  height: 12px;
+  border: 1px solid var(--wf-line);
+  border-radius: 2px;
+}
+/* Phone (polish, 9 Nov 2026): the page's 12px phone inset, so rows line up with the card foot. */
+.phone {
+  display: flex;
+  flex-direction: column;
+  padding: var(--wf-s-2) 12px 0;
+}
+.phone .legend {
+  padding-inline: 0;
+}
+.phoneDays,
+.strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+.phoneDays {
+  padding-bottom: 4px;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  text-align: center;
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px var(--wf-s-3);
+  padding: var(--wf-s-2) 0;
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+.list li + li {
+  border-top: 1px solid var(--wf-line);
+}
+.list li[data-total="true"] {
+  border-top-color: var(--wf-line-2);
+  font-weight: 600;
+}
+.phoneName {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.strip {
+  grid-column: 1 / -1;
+}
+.strip .cell {
+  min-width: 0;
+  min-height: 22px;
+  padding: 3px 2px;
+  font-size: var(--wf-fs-11);
+  line-height: var(--wf-lh-11);
+  text-align: center;
+}
+.list li:not([data-total]) .strip .cell[data-step="0"] {
+  box-shadow: inset 0 0 0 1px var(--wf-line);
+}
+.list li[data-total="true"] .cell {
+  color: var(--wf-ink-1);
+}
+.figure {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}

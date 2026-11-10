@@ -17,6 +17,7 @@ import { NOW_ANCHOR as now } from "@/components/ward-management/ward-sites";
 
 const copy = () => JSON.parse(JSON.stringify(seedWardFlowState())) as ReturnType<typeof seedWardFlowState>;
 
+/** The absence this file records last; the seed may already hold one of its own (WL-RD07). */
 function onOrderAbsenceState() {
   const state = copy();
   const admission = state.admissions.find(
@@ -132,7 +133,7 @@ describe("audit domain boundary regressions, 16 October 2026", () => {
 
   it("R44 acknowledges an admission-backed absence and refuses a missing absence row", () => {
     const state = onOrderAbsenceState();
-    const bed = state.leaveBeds.find((row) => row.absentWithoutLeave !== undefined)!;
+    const bed = state.leaveBeds.findLast((row) => row.absentWithoutLeave !== undefined)!;
     const inboxItemId = INBOX_CATEGORIES.absent_without_leave.idPrefix + bed.admissionId;
     expect(isValidStoredWardFlowState(state)).toBe(true);
     expect(absenceInboxItems(state, now).some((row) => row.id === inboxItemId)).toBe(true);
@@ -185,7 +186,7 @@ describe("audit domain boundary regressions, 16 October 2026", () => {
 
   it.each(["departed", "missing admission", "returned"])("R44 refuses an absent-stay row after %s", (lifecycle) => {
     const state = onOrderAbsenceState();
-    const bed = state.leaveBeds.find((row) => row.absentWithoutLeave !== undefined)!;
+    const bed = state.leaveBeds.findLast((row) => row.absentWithoutLeave !== undefined)!;
     const admission = state.admissions.find((stay) => stay.id === bed.admissionId)!;
     const inboxItemId = INBOX_CATEGORIES.absent_without_leave.idPrefix + admission.id;
     expect(absenceInboxItems(state, now).some((row) => row.id === inboxItemId)).toBe(true);

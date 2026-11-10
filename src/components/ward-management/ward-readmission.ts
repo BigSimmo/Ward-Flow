@@ -62,9 +62,13 @@ function endedInDischarge(admission: Admission): admission is DischargedStay {
 /**
  * The index for one set of records. Pass the full referral list, not a filtered queue: a prior
  * stay is often linked to its person only through a referral that has since left the queue.
+ * A screen that may not read referrals passes `resolve`, the provider's identity projection, so a
+ * stay linked through a referral still resolves without the referral list reaching the screen.
  */
-export function createReadmissionIndex(records: ReadmissionRecords): ReadmissionIndex {
-  const resolve = createPatientResolver(records);
+export function createReadmissionIndex(
+  records: ReadmissionRecords,
+  resolve: ReadmissionIndex["resolve"] = createPatientResolver(records),
+): ReadmissionIndex {
   const dischargesByPerson = new Map<string, DischargedStay[]>();
   for (const admission of records.admissions) {
     if (!endedInDischarge(admission)) continue;
@@ -119,4 +123,49 @@ export function referralReadmissionFlag(referral: Referral, index: ReadmissionIn
 /** The flag for an ED or ward movement, measured from when it was opened. */
 export function movementReadmissionFlag(movement: Movement, index: ReadmissionIndex): ReadmissionFlag | null {
   return priorDischargeWithinWindow(movement, movement.openedAt, index, movement.admissionId);
+}
+
+/**
+ * Feature 29 (Josh, 9 Nov 2026): the same flag on an inpatient stay, for the ward board, the patient
+ * page and Statistics. The same rule, measured from the same moment as its journey's own flag
+ * (`movementReadmissionFlag`: when the journey opened) when the stay came through one, otherwise when
+ * the bed was taken (pulled, else arrived). A seeded stay may be joined to its journey only by
+ * `Movement.admissionId`; more than one such journey is ambiguous and is not used. The stay itself is
+ * never its own earlier discharge.
+ */
+export function admissionReadmissionFlag(
+  admission: Admission,
+  movements: readonly Movement[],
+  index: ReadmissionIndex,
+): ReadmissionFlag | null {
+  const linked = movements.filter((candidate) =>
+    admission.movementId ? candidate.id === admission.movementId : candidate.admissionId === admission.id,
+  );
+  const movement = linked.length === 1 ? linked[0] : undefined;
+  if (movement) return priorDischargeWithinWindow(movement, movement.openedAt, index, admission.id);
+  const at = admission.pulledAt ?? admission.arrivedAt;
+  if (at === null) return null;
+  return priorDischargeWithinWindow(admission, at, index, admission.id);
+}
+
+/**
+ * Feature 29: stays that reached a bed in `[from, to)`, and how many of them carry the flag, for the
+ * weekly Statistics count "Readmitted within 28 days". Counts stays, one per arrival.
+ */
+export function readmissionsArrivedIn(
+  admissions: readonly Admission[],
+  movements: readonly Movement[],
+  index: ReadmissionIndex,
+  from: Instant,
+  to: Instant,
+): { arrivals: number; readmitted: number } {
+  let arrivals = 0;
+  let readmitted = 0;
+  for (const admission of admissions) {
+    const at = admission.arrivedAt;
+    if (at === null || !Number.isFinite(at) || at < from || at >= to) continue;
+    arrivals += 1;
+    if (admissionReadmissionFlag(admission, movements, index)) readmitted += 1;
+  }
+  return { arrivals, readmitted };
 }

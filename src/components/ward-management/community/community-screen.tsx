@@ -94,6 +94,7 @@ import {
 import { CommunityScreenWaitingTab } from "./community-screen-waiting-tab";
 import { CommunityScreenInBedTab } from "./community-screen-in-bed-tab";
 import { CommunityScreenBackTab } from "./community-screen-back-tab";
+import { CommunityFollowUpReplies } from "./community-follow-up-replies";
 import { CommunityScreenCaseloadTab } from "./community-screen-caseload-tab";
 import { MIDLAND_DEMO_TEAM, REFERRALS as MIDLAND_REFERRALS } from "./team-2026/midland-demo";
 import { openReferrals, recordMidlandContact, useMidlandDecisions } from "./team-2026/midland-decisions";
@@ -1208,6 +1209,16 @@ export function CommunityScreen(props: CommunityScreenProps) {
             onSwitchTeam={view.ownTeamOnly ? undefined : view.setSwitchOpen}
           />
         ) : null}
+        {isPhone && view.midlandDemo && teamSection === "hospital" ? (
+          <CommunityFollowUpReplies
+            admissions={view.lists.expectedBack}
+            teamId={view.team.id}
+            units={view.units}
+            now={view.now}
+            umrnLookup={view.umrnLookup}
+            onMessage={view.setToastMessage}
+          />
+        ) : null}
         {isPhone && !view.midlandDemo ? <CommunityScreenPhone view={view} /> : null}
 
         <CommunityScreenSwitchDrawer view={view} />
@@ -1217,7 +1228,19 @@ export function CommunityScreen(props: CommunityScreenProps) {
         {isPhone ? null : (
           <div className={`${styles.contentWorkspace} ${v6.sections}`} data-community-section={teamSection}>
             {view.midlandDemo ? (
-              <MidlandTeamSections panel={sectionPanel} open={view.openTeamSection} now={view.now} find={find} />
+              <>
+                <MidlandTeamSections panel={sectionPanel} open={view.openTeamSection} now={view.now} find={find} />
+                {teamSection === "hospital" ? (
+                  <CommunityFollowUpReplies
+                    admissions={view.lists.expectedBack}
+                    teamId={view.team.id}
+                    units={view.units}
+                    now={view.now}
+                    umrnLookup={view.umrnLookup}
+                    onMessage={view.setToastMessage}
+                  />
+                ) : null}
+              </>
             ) : (
               <>
                 {/* ── Referrals: To answer (the waiting list) and Sent by team (D-77 group A) ── */}

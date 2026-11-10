@@ -142,6 +142,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-117](#d-117-care-plans-follow-up-frequent-presenter-count-tribunal-date-and-ward-flags-10-november-2026)                                             | Care plans follow-up: frequent presenter count, tribunal date, ward flags            | Active                                           |
 | [D-118](#d-118-page-tops-referrals-and-ward-phone-limits-up-to-8-kb-above-main-10-november-2026)                                                        | Page tops: Referrals and Ward phone limits up to 8 KB above main                     | Active                                           |
 | [D-119](#d-119-page-tops-phone-limits-raised-to-measured-sizes-trim-after-merge-10-november-2026)                                                       | Page tops: phone limits at measured sizes, trim after merge                          | Active                                           |
+| [D-120](#d-120-discharge-and-capacity-values-pull-limit-transport-delay-and-discharge-date-slip-9-november-2026)                                        | Discharge and capacity values: pull limit, transport delay, date slip                | Active                                           |
 | [D-123](#d-123-master-audit-list-answers-two-clinical-fixes-and-five-working-rules-10-november-2026)                                                    | Master audit list answers: two clinical fixes and five working rules                 | Active                                           |
 
 ---
@@ -1485,6 +1486,15 @@ is inferred.
 - **Decision:** PR #1581 sets each phone first-load limit to hosted CI's measured size plus about 0.2 KB, so it can merge without waiting for a trim. That puts Referrals about 10 KB and Capacity about 6.5 KB over main alone, beyond D-118's 8 KB and the 5 KB rule. A follow-up PR trims them back.
 - **Why:** after #1578 merged, webpack began copying the shared `next/link` and `next/dynamic` code into page chunks on Referrals, Capacity and one ED (about 9 KB loaded twice). The follow-up adds a named shared chunk for that code and lowers the limits.
 - **Boundary:** this PR only; layout and download size only, no clinical change. Approves no release.
+
+## D-120. Discharge and capacity values: pull limit, transport delay and discharge date slip (9 November 2026)
+
+- **Date:** 9 November 2026. **Decided by:** Josh, on the decision card on the discharge and capacity review page (PR #1583). Numbered D-120 because D-116 to D-119 landed first.
+- **Decision:** three values join the clinical values register as signed:
+  1. **Extend pull limit:** a pulled bed can be held for at most 12 hours in total (feature 11, `pullHoldMaxTotal`).
+  2. **Transport delay:** a transport job not accepted within 30 minutes shows as delayed (feature 25, `transportAcceptDelay`).
+  3. **Discharge date slip:** a stay whose expected discharge date has moved more than 3 days is flagged as slipping (feature 6, `eddSlipFlag`).
+- **Boundary:** synthetic data only. Sets these three values; approves no merge or release.
 
 ## D-123. Master audit list answers: two clinical fixes and five working rules (10 November 2026)
 

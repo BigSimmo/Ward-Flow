@@ -1942,7 +1942,7 @@ a.popRow:focus-visible {
 /* ── Capacity issue 3 (Josh, 3 Nov 2026): the forecast's figures as one strip, two columns below ── */
 .fcStrip {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   margin: 0;
   border-top: 1px solid var(--wf-line);
 }
@@ -1964,8 +1964,7 @@ a.popRow:focus-visible {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .fcStacked .fcStrip .fcFig {
-  padding-inline: 0 var(--wf-s-3);
-  border-inline-start: 0;
+  padding-inline: var(--wf-s-3);
 }
 button.helpLink {
   width: calc(100% + 2 * var(--wf-s-2));
@@ -2857,6 +2856,25 @@ button.helpLink {
   line-height: 26px;
   font-weight: 650;
   letter-spacing: -0.01em;
+}
+/* Polish pass (9 Nov 2026): 48 and 72 hours rest on dates that may move, muted only in colour.
+ * All five figures share one size and weight and hold one line: the 16 px figure (Josh, 31 Oct)
+ * until the strip has room for five 20 px figures side by side. */
+.fcStrip .fcFigValue.fcFigValue {
+  font-size: var(--wf-fs-16);
+  line-height: var(--wf-lh-16);
+  font-weight: 650;
+  white-space: nowrap;
+}
+@container page (min-width: 1200px) {
+  .fcStrip .fcFigValue.fcFigValue {
+    font-size: var(--wf-fs-20);
+    line-height: 26px;
+  }
+}
+/* The phone sheet's two-column strip: an odd last tile takes the full row, not half of it. */
+.fcStacked .fcStrip .fcFig:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
 }
 .fcSide > .fcFigLabel {
   font-size: var(--wf-fs-13);

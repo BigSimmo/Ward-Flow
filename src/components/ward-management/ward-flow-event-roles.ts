@@ -112,6 +112,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   CHANGE_URGENCY: ["coordinator", "ed", "ward", "community"],
   CHANGE_LEGAL_STATUS: ["coordinator", "ed", "ward", "community"],
   RELEASE_PULL: ["coordinator", "ward"],
+  // Feature 11 (Josh, 9 Nov 2026): whoever may pull a bed may extend its hold.
+  EXTEND_PULL: ["coordinator", "ward"],
   // TR-D6 (owner, 2026-08-30): the team that BOOKED it, and the coordinator. The sending team
   // owns the job (TR-D5) and every movement originates at an emergency department
   // (`Movement.originEdId` is required), so the booking team is `ed`. ⚠️ `ward` is the
@@ -533,7 +535,11 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
   // FD-10: the ward's own assessment. The coordinator may act for a ward (Josh, 10 Oct 2026).
   RECORD_WARD_DIAGNOSIS: ["ward", "coordinator"],
+  // Feature 14 (Josh, 9 Nov 2026): the ward or coordinator ticks a weekend discharge as reviewed.
+  MARK_WEEKEND_DISCHARGE_REVIEWED: ["ward", "coordinator"],
   SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
+  // Item 5 (Josh, 9 Nov 2026): the same roles that record a discharge hold-up.
+  SET_CLINICALLY_READY: ["ward", "coordinator"],
   SET_DISCHARGE_CRITERIA: ["ward", "coordinator"],
   RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
   RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator"],
@@ -615,6 +621,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // Closing-the-loop package B (24 Oct 2026): discharge logistics, recorded by the ward or the coordinator.
   RECORD_DISCHARGE_DEPENDENCY: ["ward", "coordinator"],
   RECORD_DISCHARGE_PLAN_CHANGE: ["ward", "coordinator"],
+  // Feature 37 (9 Nov 2026): the discharge checklist, ticked by whoever may record the discharge.
+  RECORD_DISCHARGE_CHECK: ["ward", "coordinator"],
+  // Feature 13 (9 Nov 2026): the community team answers follow-up; the coordinator may act for it.
+  RECORD_FOLLOW_UP_REPLY: ["community", "coordinator"],
   RECORD_ARRIVAL_CHECK: ["ed", "coordinator"],
   // v10 pass 2 (Josh, 10 Oct 2026): Undo. Every role that may answer a referral may take back its
   // OWN answer; the reducer refuses another role's decision (with a reason) unless the caller is the

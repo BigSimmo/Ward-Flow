@@ -1,6 +1,7 @@
 import type { WfTone } from "@/components/wf";
 import type { BedHold } from "@/components/ward-management/ward-bed-hold";
 import { deriveEddDriftBadge } from "@/components/ward-management/ward-discharge-dates";
+import { EDD_SLIP_FLAG_DAYS } from "@/components/ward-management/ward-operational-defaults";
 import type { CriteriaLedChip } from "@/components/ward-management/ward-discharge-criteria";
 import type { Observation } from "@/components/ward-management/ward-observation";
 
@@ -13,12 +14,19 @@ import type { Observation } from "@/components/ward-management/ward-observation"
 /**
  * Top 25 item 21: the badge for a discharge date the ward has moved several times (two or more).
  * Counts the ward's own date moves (`dischargeDateMoves`), never a measure of the person.
+ * Feature 6 (9 Nov 2026): with the date trail, it also says how many days later than first set,
+ * and shows for a single move once that slip passes `EDD_SLIP_FLAG_DAYS`.
  */
-export function eddMovedBadge(moves: number | null | undefined): string | null {
+export function eddMovedBadge(moves: number | null | undefined, driftDays?: number | null | undefined): string | null {
   if (typeof moves !== "number") return null;
-  return deriveEddDriftBadge({ dischargeDateMoves: moves }).requiresConsultantReview
-    ? `Date moved ${moves} times`
-    : null;
+  const badge = deriveEddDriftBadge({
+    dischargeDateMoves: moves,
+    ...(typeof driftDays === "number" ? { driftDays } : {}),
+  });
+  if (!badge.requiresConsultantReview && !(badge.revisionCount > 0 && badge.driftDays > EDD_SLIP_FLAG_DAYS))
+    return null;
+  const moved = `Date moved ${moves} ${moves === 1 ? "time" : "times"}`;
+  return badge.driftDays > 0 ? `${moved}, ${badge.driftDays} ${badge.driftDays === 1 ? "day" : "days"} later` : moved;
 }
 
 export interface BedItem {
@@ -80,6 +88,8 @@ export interface BedItem {
   catchmentCommunityTeam?: string;
   highAcuity?: boolean;
   dischargeDateMoves?: number | null;
+  /** Feature 6: whole days the expected date sits after the first one set, or null with no trail. */
+  eddDriftDays?: number | null;
   /** True only when the ward has confirmed the discharge. Absent means not this person's bed. */
   dischargeConfirmed?: boolean | null;
   dischargeConfirmedBy?: string | null;

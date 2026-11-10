@@ -375,8 +375,17 @@ export function reduceProtectedRecordEvent(
         allocatableLocked: receiving.allocatableLocked - (bedKind === "locked" ? 1 : 0),
         sexMix: adjustSexMix(receiving.sexMix, mixSexOf(admission.gender, admission.sex), 1),
       });
-      const { bedNumber: _sendingBedNumber, ...admissionWithoutBedNumber } = admission;
+      // The receiving stay starts its own discharge date plan: the date, its trail and the weekend
+      // review ticks all belong to the sending ward's plan.
+      const {
+        bedNumber: _sendingBedNumber,
+        dischargeDateTrail: _sendingDateTrail,
+        weekendDischargeReviews: _sendingWeekendReviews,
+        ...admissionWithoutBedNumber
+      } = admission;
       void _sendingBedNumber;
+      void _sendingDateTrail;
+      void _sendingWeekendReviews;
       next = {
         ...next,
         admissions: [
