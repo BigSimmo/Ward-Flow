@@ -32,7 +32,7 @@ const OBSERVATION_LEVEL_SOURCE = "Fix plan item 10 (21 Oct 2026)";
 const ADDED_9_NOV_SOURCE = "Added to the register 9 Nov 2026 (D-106); no clinical decision yet";
 /** The forecast alert rules in Settings, moved into the register unsigned (D-122, Josh, 10 Nov 2026). */
 const FORECAST_ALERT_SOURCE =
-  "Forecasting build, Josh approved the Settings mock-up 23 Oct 2026, labelled default; added to the register 10 Nov 2026 (D-122)";
+  "Forecasting build (Josh, 23 Oct 2026, per the forecast source comments; no decision entry), labelled default; added to the register 10 Nov 2026 (D-122)";
 /** The triage form's urgency windows (Josh, 7 Nov 2026: list them here, synthetic until signed). */
 const TRIAGE_URGENCY_SOURCE =
   "WA mental health triage scale urgency categories, as on the triage form (SMHMR900); listed 7 Nov 2026, awaiting Josh's sign-off";
