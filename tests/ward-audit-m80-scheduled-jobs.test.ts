@@ -46,7 +46,9 @@ const scheduled = readdirSync(workflowDir)
   .filter((name) => /^ {2}schedule:$/mu.test(read(name)));
 
 const directories: string[] = [];
-afterEach(() => directories.splice(0).forEach((dir) => rmSync(dir, { recursive: true, force: true })));
+afterEach(() =>
+  directories.splice(0).forEach((dir) => rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })),
+);
 
 /**
  * A bin folder whose `gh` logs every call, answers `issue list` with $OPEN_ISSUE, `label list` with

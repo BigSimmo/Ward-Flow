@@ -258,6 +258,8 @@ describe("the Access tab", () => {
     // Nothing is chosen for the nurse in charge: the place, the colleague and the length start empty.
     expect(screen.getByTestId("ward-access-cover-submit")).toHaveAttribute("aria-disabled", "true");
     choose(screen.getByTestId("ward-access-cover"));
+    // M58 (D-125): the reason is a radio choice (Q36), so it is chosen by pressing one.
+    fireEvent.click(within(screen.getByTestId("ward-access-cover-reason")).getAllByRole("radio")[0]!);
     fireEvent.click(screen.getByTestId("ward-access-cover-submit"));
     await act(async () => confirmStepUp());
     expect(screen.getByTestId("ward-access-result")).toHaveTextContent("Cover given");

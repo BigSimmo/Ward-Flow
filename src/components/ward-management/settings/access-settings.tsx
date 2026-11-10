@@ -26,6 +26,7 @@ import {
   CardBody,
   CardHead,
   Field,
+  Radio,
   Select,
   TextInput,
   requestConfirm,
@@ -609,22 +610,20 @@ function CoverPanel() {
                   ))}
                 </Select>
               </Field>
-              <Field label="Why">
-                <Select
-                  value={reason}
-                  onChange={(event) => setReason(event.target.value as CoverReasonId)}
-                  data-testid="ward-access-cover-reason"
-                >
-                  <option value="" disabled>
-                    Choose why
-                  </option>
-                  {COVER_REASONS.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.label}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
+              {/* Q36: a kit radio choice, never the browser's own drop-down. */}
+              <fieldset className={styles.choices} data-testid="ward-access-cover-reason">
+                <legend className={styles.choicesLegend}>Why</legend>
+                {COVER_REASONS.map((option) => (
+                  <Radio
+                    key={option.id}
+                    name="ward-access-cover-reason"
+                    value={option.id}
+                    checked={reason === option.id}
+                    onChange={() => setReason(option.id)}
+                    label={option.label}
+                  />
+                ))}
+              </fieldset>
             </div>
             <div className={styles.formFoot}>
               <Button
