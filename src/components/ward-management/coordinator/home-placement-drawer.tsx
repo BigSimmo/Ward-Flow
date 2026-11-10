@@ -18,6 +18,7 @@ import { PatientPeekLink } from "@/components/ward-management/patients/patient-p
 import { BedSingle, ChevronRight, FileText, Inbox } from "lucide-react";
 import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import Link from "next/link";
+import { BookingsPeekLink } from "@/components/ward-management/alerts/bookings-peek";
 import { useId, useState } from "react";
 
 import { ownerShort, type QueueEntry } from "@/components/ward-management/alerts/alerts-queue";
@@ -114,7 +115,16 @@ export function HomePlacementDrawer({
     <>
       <div ref={setSlot} className={p.slot} data-testid="home-placement-foot" />
       {/* An alert with no patient journey acts on its own page, its one primary in the band. */}
-      {entry && !movement && entry.action.kind === "link" ? (
+      {entry && !movement && entry.action.kind === "link" && entry.action.bookingsUnitId !== undefined ? (
+        <BookingsPeekLink
+          unitId={entry.action.bookingsUnitId}
+          href={entry.action.href}
+          className={buttonClass({ variant: "pri", className: d.wide })}
+        >
+          {entry.action.label}
+          <ChevronRight size={14} strokeWidth={1.75} aria-hidden="true" />
+        </BookingsPeekLink>
+      ) : entry && !movement && entry.action.kind === "link" ? (
         <Link href={entry.action.href} className={buttonClass({ variant: "pri", className: d.wide })}>
           {entry.action.label}
           <ChevronRight size={14} strokeWidth={1.75} aria-hidden="true" />

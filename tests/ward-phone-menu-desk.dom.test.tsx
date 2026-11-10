@@ -93,7 +93,8 @@ describe("Create sheet items match the + button's name (shell-5)", () => {
     fireEvent.click(plus);
     const sheet = screen.getByTestId("ward-phone-create-sheet");
     expect(within(sheet).getByRole("button", { name: /New referral/u })).toBeInTheDocument();
-    expect(within(sheet).getByRole("link", { name: /Log a delay/u })).toHaveTextContent("Patient and reason");
+    // Item 6c (9 Nov 2026): Log a delay opens its short form in Tools, so it is a button.
+    expect(within(sheet).getByRole("button", { name: /Log a delay/u })).toHaveTextContent("Patient and reason");
     expect(within(sheet).queryByRole("link", { name: /Book transport/u })).toBeNull();
     // Pop-ups build (Create, 1 Nov 2026): no subtitle; "Or record" heads the three secondary rows.
     expect(within(sheet).queryByText("Start something new")).toBeNull();

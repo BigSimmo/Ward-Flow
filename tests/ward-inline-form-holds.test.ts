@@ -35,6 +35,10 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "coordinator/activity-panel.tsx": { cover: "popup", why: "Mark read is one tap inside the Activity drawer." },
   "coordinator/call-sheet.tsx": { cover: "held", why: "Held while a call batch save is in flight." },
   "coordinator/shortlist-panel.tsx": { cover: "held" },
+  "coordinator/home-referral-decision.tsx": {
+    cover: "popup",
+    why: "The decision view renders only inside Home's placement drawer (item 6a).",
+  },
   "delays/daily-check-line.tsx": {
     cover: "no form",
     why: "The daily check moved from the coordinator panel: a fold and a one-tap Mark checked, no fields.",

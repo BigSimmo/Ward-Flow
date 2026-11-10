@@ -3,6 +3,7 @@
 import { useState, type Ref } from "react";
 import { DECLINE_REASON_NOT_SHARED } from "@/components/ward-management/ward-model";
 import Link from "next/link";
+import { BookingsPeekLink } from "./bookings-peek";
 import { ArrowUpRight, Check, ChevronRight, UserRound } from "lucide-react";
 
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
@@ -497,7 +498,16 @@ export function AlertDetail({
     ) : null
   ) : (
     <>
-      {action.kind === "link" ? (
+      {action.kind === "link" && action.bookingsUnitId !== undefined ? (
+        <BookingsPeekLink
+          unitId={action.bookingsUnitId}
+          href={action.href}
+          className={buttonClass({ variant: "pri", className: `${styles.wide} ${rd.primary}` })}
+        >
+          {/* Safety rule 5: every main button names the person. */}
+          {officerDesk ? action.label : `${action.label} for ${subject.displayName}`}
+        </BookingsPeekLink>
+      ) : action.kind === "link" ? (
         <Link className={buttonClass({ variant: "pri", className: `${styles.wide} ${rd.primary}` })} href={action.href}>
           {/* Safety rule 5: every main button names the person. */}
           {officerDesk ? action.label : `${action.label} for ${subject.displayName}`}

@@ -392,6 +392,24 @@ function CreateSheet({
   const rows = CREATE_LINKS.flatMap((item) => {
     if (!ids.includes(item.id)) return [];
     const entry = item.href !== undefined ? { href: item.href } : byId.get(item.id);
+    // Friction pass item 6c (Josh, 9 Nov 2026): Log a delay opens its short form in Tools, on this page.
+    if (entry && item.id === "delays")
+      return [
+        <li key={item.id}>
+          <button
+            type="button"
+            className={styles.row}
+            data-testid="ward-phone-create-log-delay"
+            onClick={() => {
+              onClose();
+              requestToolsTool("log-delay");
+            }}
+          >
+            <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
+            <Chevron />
+          </button>
+        </li>,
+      ];
     return entry
       ? [
           <li key={item.id}>
