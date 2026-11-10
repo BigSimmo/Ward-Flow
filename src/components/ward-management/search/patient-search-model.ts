@@ -4,6 +4,7 @@ import type { Movement, Referral } from "@/components/ward-management/ward-model
 import { isOpen, type PatientSearchResult } from "@/components/ward-management/ward-derivations";
 import { type Patient } from "@/components/ward-management/ward-patients";
 import { LONG_WAIT_MINUTES, WAIT_FILTER_SHORT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { recordLinksPatient } from "@/components/ward-management/ward-patient-resolver";
 import { referralState } from "@/components/ward-management/ward-referrals";
 import { CENSUS_HIGHLIGHTS, type CensusGroup, type CensusHighlight, type CensusRow } from "./patient-census";
 import { isCommunityReferral } from "./community-referral";
@@ -90,21 +91,14 @@ export function matchesTier(result: PatientSearchResult, tier: string): boolean 
   return `Tier ${urgency}` === tier;
 }
 
-function matchesPatient(item: unknown, patientId: string): boolean {
-  if (typeof item === "object" && item !== null) {
-    return Reflect.get(item, "patientId") === patientId;
-  }
-  return false;
-}
-
 export function getPatientPresence(
   patient: Patient,
   referrals: readonly Referral[],
   movements: readonly Movement[],
 ): { key: "live" | "community" | "scheduled" | "past"; label: string } {
-  const movement = movements.find((m) => matchesPatient(m, patient.id) && isOpen(m));
+  const movement = movements.find((m) => recordLinksPatient(m, patient.id) && isOpen(m));
   if (movement) return { key: "live", label: "On this board" };
-  const referral = referrals.find((r) => matchesPatient(r, patient.id) && referralState(r) === "queued");
+  const referral = referrals.find((r) => recordLinksPatient(r, patient.id) && referralState(r) === "queued");
   if (referral) {
     // The same community test the rows use, so a community referral sent without its location is
     // still "Community / Home" here (source "community"), not "On this board".

@@ -5,7 +5,7 @@ import { isAbsolute, relative } from "node:path";
  *
  * - `src/components/ward-redesign/` holds "fork" copies of today's screens. Each is a copy of a real
  *   screen with the design change applied, so the difference between the two files is the work to
- *   build. A page build deletes its own copy (`docs/mockup-retirement-policy.md`).
+ *   build. A page build deletes its own copy (`docs/history/mockup-retirement-policy.md`).
  * - `src/app/mockups/ward-flow-redesign/` is the viewer that draws them inside the real shell and
  *   synthetic world. Like every `/mockups` route it is blocked in production, by the proxy and by its
  *   own layout (`shouldBlockProductionMockups`).

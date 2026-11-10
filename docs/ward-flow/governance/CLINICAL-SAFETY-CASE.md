@@ -10,11 +10,7 @@
 
 _Updated 2026-11-10 - audit M65: section 7.3 links each hazard to its control and guarding tests, marks gaps and lists candidate new hazards; drafting only, no rating changed and nothing signed; Documentation owns._
 
-_Updated 2026-10-26 - A-01 Find a bed marked fixed by `b9a6f598` (never-build audit NB-26-10); 2026-10-24 - merged the 24 Oct shared-folder safety case and hazard log drafts; this repository copy is canonical (Josh, 24 Oct 2026); Documentation owns._
-
-_Updated 2026-10-24 - HAZ-05 control (c) now describes the D-72 scrubbed device copy; Documentation owns. No clinical review, residual-risk acceptance or sign-off refreshed._
-
-_Updated 2026-10-23 - HAZ-03 now records the CAD number plausibility check (#430), applied to repatriation logs too, awaiting owner re-rating; Documentation owns._
+_Updated 2026-10-26 (late) - H-01 and H-08 status traced to fix commits on main at `0aaabf38` plus #830, with a proposed residual of 3 for each awaiting the clinical safety owner; tests not re-run and no browser replay for this update; DCB0129 title corrected. Earlier: A-01 Find a bed marked fixed by `b9a6f598` (never-build audit NB-26-10, 26 October); the 24 Oct shared-folder safety case and hazard log drafts merged, and this repository copy is canonical (Josh, 24 Oct 2026); HAZ-05 control (c) describes the D-72 scrubbed device copy (24 October); HAZ-03 records the CAD number plausibility check (#430), applied to repatriation logs too, awaiting owner re-rating (23 October). No clinical review, residual-risk acceptance or sign-off was refreshed by these updates. Documentation owns._
 
 > [!IMPORTANT]
 > **What the 24 October merge is, and is not.** Sections 2 to 4 and 6 to 11 come from an AI-prepared draft written on 24 October 2026 from the code and the audit reports. It follows the structure of the NHS England standard **DCB0129** (clinical risk management for manufacturers of health IT). DCB0129 is not mandated in Western Australia. It is used here as a recognised template. Every rating is a **drafter's proposal**, rated for use with **real patients**. No clinician has reviewed any rating. No clinical safety owner has been named. Nothing in this document says Ward Flow is safe for clinical use. The sign-off table in section 12 is blank on purpose, and under the Prototype Operating Mode no simulated sign-off may be added.

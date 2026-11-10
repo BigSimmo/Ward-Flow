@@ -190,6 +190,8 @@ function requireWorkflow(source) {
       "node scripts/ward-flow/check-clinical-governance-gate.mjs",
     ],
     ["Check added lines for patient identifiers", "node scripts/ward-flow/check-patient-identifiers.mjs"],
+    ["Scan added lines for secrets and patient identifiers", "node scripts/ward-ci-public/identifier-scan.mjs"],
+    ["Check the 5 KB phone limit raise cap", "node scripts/ward-ci-public/budget-raise-cap.mjs"],
     ["Check document links and anchors", "npm run docs:check-links"],
     ["Check reference-pack integrity", "node scripts/ward-flow/maintain-docs-and-organisation.mjs --pack-only --check"],
     ["Check maintained document commands", "npm run docs:check-scripts"],
@@ -623,7 +625,12 @@ function requireWorkflow(source) {
     jobs.get("required"),
     /^ {4}needs: \[plan, reuse, static, backend, unit, browser-build, browser, release-gate, build, coverage\]$/mu,
   );
-  for (const name of ["Check doc facts and retired terms", "Check added lines for patient identifiers"])
+  for (const name of [
+    "Check doc facts and retired terms",
+    "Check added lines for patient identifiers",
+    "Scan added lines for secrets and patient identifiers",
+    "Check the 5 KB phone limit raise cap",
+  ])
     assert.match(
       step("static", name).text,
       /^ {10}WARD_BASE_SHA: \$\{\{ github.event.pull_request.base.sha \|\| github.event.merge_group.base_sha \}\}$/mu,

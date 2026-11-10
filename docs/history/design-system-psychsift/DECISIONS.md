@@ -193,7 +193,7 @@ declined conversions rather than left as an open question for the next reader to
   `DesktopComposerPortalSlot` render immediately after it). `PageHeader` is a left-aligned
   title stack. Converting the hero would be a visual redesign of all thirteen mode homes
   (`src/lib/app-modes.ts`) and risks colliding with the "one composer per page" contract in
-  `docs/search-chrome-behaviour.md` — out of proportion to a header-vocabulary convergence.
+  `docs/history/search-chrome-behaviour.md` — out of proportion to a header-vocabulary convergence.
 - `search-results-header-band.tsx` is a results spine carrying live status
   (`role="status"`), result counts, and applied-filter chips — not a page-title stack.
   `tests/search-results-header-band.dom.test.tsx` pins its current shape and stays

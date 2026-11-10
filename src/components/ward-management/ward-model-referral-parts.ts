@@ -43,7 +43,7 @@ import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles"
  * **`gp` — owner answer 25, 2026-09-17, verbatim:** *"GP referrals: the GP is told by phone or
  * letter for now; add 'GP' as a referral source."* This supersedes his earlier 2026-09-11 answer
  * ("NO. They come through ED or community.") that kept `gp` out of this list — see
- * `docs/ward-flow/owner-answers-2026-09-17.md` item 25 and `shell/ward-facade.ts`'s own comment on
+ * `docs/history/archive/dated-notes/owner-answers-2026-09-17.md` item 25 and `shell/ward-facade.ts`'s own comment on
  * the answer it replaces. Recorded so a GP referral can be attributed honestly; the app itself
  * still contacts nobody on its behalf. `referralReferrer` (`ward-flow-reducer.ts`) resolves no
  * addressee for `gp`, exactly like `community`/`crisis_service`/`ambulance`/
