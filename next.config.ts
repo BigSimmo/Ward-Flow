@@ -29,6 +29,12 @@ async function withOptionalBundleAnalyzer(config: NextConfig): Promise<NextConfi
   return bundleAnalyzer({ enabled: true })(config);
 }
 
+/** TE-04: the release browser error reports carry (src/instrumentation-client.ts). A plain label only. */
+function wardRelease(): string {
+  const release = (process.env.SENTRY_RELEASE || process.env.RAILWAY_GIT_COMMIT_SHA || "").trim().slice(0, 40);
+  return /^[A-Za-z0-9_.-]+$/.test(release) ? release : "dev";
+}
+
 /** The demo data modules a live shared build replaces (`webpack` below). */
 export const LIVE_BUILD_DEMO_DATA =
   /^@\/components\/ward-management\/(ward-movements|ward-patients-seed|ward-admissions-seed|ward-rulings-demo|ward-demo-planned-moves|ward-demo-example-lists)$/;
@@ -63,7 +69,7 @@ const nextConfig: NextConfig = {
   // What's new: one file per change, combined here (scripts/ward-flow/whats-new-list.mjs) and read as
   // `__WARD_WHATS_NEW__` by ward-whats-new.tsx. Next writes each value as a string literal.
   compiler: {
-    define: { __WARD_WHATS_NEW__: JSON.stringify(readWhatsNewEntries(projectRoot)) },
+    define: { __WARD_WHATS_NEW__: JSON.stringify(readWhatsNewEntries(projectRoot)), __WARD_RELEASE__: wardRelease() },
   },
   // Narrow the shell's server imports without changing the design-system API or other chunks.
   modularizeImports: {
