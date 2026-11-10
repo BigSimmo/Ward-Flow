@@ -56,7 +56,7 @@ vi.mock("@/components/ward-management/forecast/use-forecast-model", () => ({
 import { EdAccessRiskCard } from "@/components/ward-management/forecast/ed-access-risk-card";
 import { ForecastAlertsGroup } from "@/components/ward-management/forecast/forecast-alerts-group";
 import { ForecastBriefPanel } from "@/components/ward-management/forecast/forecast-brief-panel";
-import { FORECAST_METHOD_LINE } from "@/components/ward-management/forecast/forecast-method";
+import { FORECAST_METHOD_LINE } from "@/components/ward-management/ward-forecast-method";
 
 const METHOD = "From recorded waits and releases. Not a prediction.";
 

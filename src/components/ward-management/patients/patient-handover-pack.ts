@@ -11,10 +11,7 @@
  */
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { SYNTHETIC_COPY_LINE } from "@/components/ward-management/ward-clipboard";
-import {
-  FORM_RECORDED_ENDED,
-  formRecordedEnded,
-} from "@/components/ward-management/legal-forms/legal-form-progression";
+import { FORM_RECORDED_ENDED, formRecordedEnded } from "@/components/ward-management/ward-legal-form-ended";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { legalStatusFull } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";

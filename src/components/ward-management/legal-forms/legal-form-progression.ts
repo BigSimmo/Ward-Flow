@@ -57,16 +57,8 @@ export function formProgression(movement: Movement | undefined): FormProgression
   return undefined;
 }
 
-/**
- * The words in place of the expiry once a person records a form as ended (M17, 10 Nov 2026). The TV
- * wall, downtime pack and printed handover all show it, read from `legalForm.endedBy`.
- */
-export const FORM_RECORDED_ENDED = "Recorded as ended";
-
-/** A person recorded this form as ended (revoked, discharged and so on). */
-export function formRecordedEnded(movement: Pick<Movement, "legalForm">): boolean {
-  return movement.legalForm?.endedBy !== undefined;
-}
+// The ended-form words live at the ward root so screens share them without importing each other.
+export { FORM_RECORDED_ENDED, formRecordedEnded } from "@/components/ward-management/ward-legal-form-ended";
 
 /** The finite recorded expiry still in force; ended forms retain their expiry only as history. */
 export function currentLegalDueAt(movement: Movement): Instant | undefined {

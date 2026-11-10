@@ -56,7 +56,7 @@ import {
 } from "./tv-derivations";
 import { ForecastBriefPanel } from "@/components/ward-management/forecast/forecast-brief-panel";
 import type { KindForecast } from "@/components/ward-management/forecast/forecast-by-kind";
-import { FORECAST_METHOD_LINE } from "@/components/ward-management/forecast/forecast-method";
+import { FORECAST_METHOD_LINE } from "@/components/ward-management/ward-forecast-method";
 import { useForecastModel } from "@/components/ward-management/forecast/use-forecast-model";
 import { TvLockControl, useTvLock } from "./tv-lock";
 import { TvFooterText, TvLeaveLink } from "./tv-leave-link";

@@ -9,7 +9,7 @@ import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-man
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
-import { formRecordedEnded } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { formRecordedEnded } from "@/components/ward-management/ward-legal-form-ended";
 import { legalFormOrdered } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 import { observationSummary } from "@/components/ward-management/ward-observation";

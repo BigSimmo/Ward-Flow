@@ -7,7 +7,7 @@
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { kindRangeWord } from "./forecast-by-kind";
 import { forecastBrief } from "./forecast-brief";
-import { FORECAST_METHOD_LINE } from "./forecast-method";
+import { FORECAST_METHOD_LINE } from "@/components/ward-management/ward-forecast-method";
 import { forecastEdName, useForecastHistory, useForecastModel } from "./use-forecast-model";
 import styles from "./forecast.module.css";
 

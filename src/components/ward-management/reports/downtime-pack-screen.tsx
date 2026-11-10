@@ -65,7 +65,7 @@ import { useDowntimePackAccess } from "./downtime-pack-context";
 import { nextDowntimePackAt } from "./downtime-pack-schedule";
 import { useTakeDowntimePack } from "./use-take-downtime-pack";
 import { reportDay, reportMoment } from "./report-parts";
-import { FORM_RECORDED_ENDED } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { FORM_RECORDED_ENDED } from "@/components/ward-management/ward-legal-form-ended";
 import topTitle from "../shell/page-top-title.module.css";
 import styles from "./reports.module.css";
 import tabsStyles from "./downtime-pack-tabs.module.css";

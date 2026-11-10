@@ -15,7 +15,7 @@ import { edHref, settingsHref } from "@/components/ward-management/shell/ward-fa
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { BED_KIND_LABEL, kindRangeWord } from "./forecast-by-kind";
 import type { ForecastAlert } from "./forecast-alerts";
-import { FORECAST_METHOD_LINE } from "./forecast-method";
+import { FORECAST_METHOD_LINE } from "@/components/ward-management/ward-forecast-method";
 import { forecastEdName, useForecastAlerts } from "./use-forecast-model";
 import styles from "./forecast.module.css";
 import group from "./forecast-alerts-group.module.css";

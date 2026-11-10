@@ -20,7 +20,7 @@ import { formatInstantWithDay, splitDuration, type Instant } from "@/components/
 import { RELEASE_LOOKAHEAD_DAYS, targetText, type EdAccessRiskRow } from "./ed-access-risk";
 import { BED_KIND_LABEL } from "./forecast-by-kind";
 import { shortBlocker } from "./forecast-levers";
-import { FORECAST_METHOD_LINE } from "./forecast-method";
+import { FORECAST_METHOD_LINE } from "@/components/ward-management/ward-forecast-method";
 import { useForecastModel } from "./use-forecast-model";
 import styles from "./forecast.module.css";
 import handover from "../ed/ed-handover.module.css";

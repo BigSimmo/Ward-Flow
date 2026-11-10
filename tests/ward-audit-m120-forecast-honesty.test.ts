@@ -79,7 +79,7 @@ describe("M120 forecast wording read-through", () => {
   // tests/ward-audit-m120-forecast-card.dom.test.tsx; these pin the source so a copy cannot drift.
   const METHOD = "From recorded waits and releases. Not a prediction.";
   it("M120 fixed: one method line, in plain words", () => {
-    expect(read("src/components/ward-management/forecast/forecast-method.ts")).toContain(`"${METHOD}"`);
+    expect(read("src/components/ward-management/ward-forecast-method.ts")).toContain(`"${METHOD}"`);
   });
   it("M120 fixed: the ED 'May pass' card names nobody, has no Find a bed button and carries the method line", () => {
     // Code only: the header comment explains what was taken out.
