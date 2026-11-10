@@ -159,7 +159,7 @@ describe("live docs do not cite a replaced decision as current", () => {
       const hits = staleCitations(readFileSync(join(root, "src", held), "utf8"), replaced);
       expect(
         hits.some((hit) => hit.includes(`cites ${id} `)),
-        `src/${held} no longer cites ${id}; remove it from HELD_CLINICAL_FIXES`,
+        `${held} no longer cites ${id}; remove it from HELD_CLINICAL_FIXES`,
       ).toBe(true);
     }
   });
