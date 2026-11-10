@@ -88,41 +88,6 @@
   padding: var(--ward-space-16) var(--ward-space-20) var(--ward-space-24);
 }
 
-.governanceBanner {
-  display: flex;
-  min-height: var(--ward-tap);
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ward-space-12);
-  border-bottom: 0.0625rem solid var(--line);
-  background: var(--surface-2);
-  padding: var(--ward-space-8) var(--ward-space-12);
-}
-
-.governanceBanner p {
-  min-width: 0;
-  flex: 1 1 12rem;
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-relaxed);
-}
-
-.prototypeBadge {
-  display: inline-block;
-  flex-shrink: 0;
-  margin-inline-end: var(--ward-space-6);
-  border: 0.0625rem solid var(--line-strong);
-  border-radius: var(--radius-sm);
-  padding: 0.05rem 0.4rem;
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  vertical-align: 0.05rem;
-}
-
 .pageHeader {
   display: flex;
   flex-wrap: wrap;
@@ -144,15 +109,6 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-}
-
-.pageTitle {
-  margin: 0;
-  color: var(--ink);
-  font-size: var(--t-5);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
 }
 
 .pageSubtitle {
@@ -637,28 +593,6 @@
   color: var(--ink);
 }
 
-.notFoundHeading {
-  margin: 0;
-  color: var(--ink);
-  font-size: var(--t-4);
-  font-weight: 700;
-}
-
-/* Warning treatment, matching `statistics-sections.module.css`'s `.notFoundBody`: the one state on
-   this screen where what the reader asked for genuinely does not exist, and the page must not look
-   as though it answered anyway. `--warning-text` on `--warning-bg` is the same pair `.notice` and
-   `.absenceNotice` already use — 6.52:1 light, 7.94:1 dark, computed above. */
-.notFoundBody {
-  margin: 0;
-  border: 0.0625rem solid var(--line-strong);
-  border-radius: var(--radius-lg);
-  background: var(--surface-2);
-  padding: var(--ward-space-10) var(--ward-space-12);
-  color: var(--warn);
-  font-size: var(--t-1);
-  line-height: var(--ward-leading-relaxed);
-}
-
 /* The rail's own panels are `WardPanel`s like every other panel on this page — this only supplies
    the gap between them and the column's own width once there is room for two columns. */
 .rail {
@@ -948,19 +882,9 @@
   white-space: nowrap;
 }
 
-.pageTitle {
-  font-size: var(--t-2);
-  line-height: 1.4;
-  letter-spacing: 0;
-  font-weight: 600;
-}
-
 .pageSubtitle {
   font-size: var(--t-1);
   line-height: 1.5;
-}
-.prototypeBadge {
-  font-size: var(--t-0);
 }
 
 .rail {
@@ -1388,13 +1312,6 @@
   background: var(--surface-2);
 }
 
-.modalTitle {
-  margin: 0;
-  color: var(--ink);
-  font-size: var(--t-2);
-  font-weight: 700;
-}
-
 .modalCloseBtn {
   min-height: var(--ward-tap, 3rem);
   min-width: var(--ward-tap, 3rem);
@@ -1414,15 +1331,6 @@
   background: var(--surface);
   color: var(--ink);
   border-color: var(--line);
-}
-
-.modalBody {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ward-space-12);
-  padding: var(--ward-space-16);
-  color: var(--ink);
-  font-size: var(--t-1);
 }
 
 .modalDetailsList {
@@ -1755,23 +1663,6 @@ button.searchBox:hover {
 }
 
 /* ── Top Action Bar & Team Selector ─────────────────────────────────────── */
-.topActionBarWrap {
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  padding: var(--ward-space-12) var(--ward-space-20);
-  display: flex;
-  flex-direction: column;
-  gap: var(--ward-space-12);
-}
-
-.actionBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding-bottom: 4px;
-}
 
 .actionLeftGroup {
   display: flex;
@@ -1784,13 +1675,6 @@ button.searchBox:hover {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
-}
-
-.actionBtnsLeft {
-  display: flex;
-  align-items: center;
-  gap: var(--ward-space-8);
   flex-wrap: wrap;
 }
 
@@ -1815,33 +1699,6 @@ button.searchBox:hover {
 .moreActions[open] > summary {
   background: var(--surface-2);
   border-color: var(--accent);
-}
-
-.btnActionSec {
-  background: var(--surface);
-  color: var(--ink);
-  border: 1px solid var(--line-strong);
-  padding: 0.5rem 0.875rem;
-  font-weight: 500;
-  font-size: var(--t-1, 13px);
-  border-radius: var(--r2);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4375rem;
-  transition:
-    background-color 0.15s,
-    border-color 0.15s,
-    color 0.15s,
-    box-shadow 0.15s,
-    transform 0.15s,
-    opacity 0.15s;
-  white-space: nowrap;
-}
-
-.btnActionSec:hover {
-  background: var(--sunk);
-  border-color: var(--line-strong);
 }
 
 /* Precision Medical Status Pills — ZERO EGG / CIRCLE DISTORTION GUARANTEED */
@@ -1923,25 +1780,6 @@ button.searchBox:hover {
 
 .tabPanelHidden {
   display: none;
-}
-
-.glanceCard {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
-  padding: 0.625rem 0.875rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
-  min-width: 0;
-}
-
-.glanceCard:hover {
-  border-color: var(--line-strong);
-  box-shadow: var(--lift);
 }
 
 /* ── Operational Tab Bar ────────────────────────────────────────────────── */
@@ -2445,15 +2283,6 @@ button.searchBox:hover {
 }
 
 /* ── Drawers & Modals ───────────────────────────────────────────────────── */
-.drawerScrim {
-  position: fixed;
-  inset: 0;
-  background: var(--scrim);
-  backdrop-filter: blur(2px);
-  z-index: 90;
-  display: flex;
-  justify-content: flex-end;
-}
 
 .drawerPanel {
   width: min(32rem, 100vw);
@@ -2473,22 +2302,6 @@ button.searchBox:hover {
   to {
     transform: translateX(0);
   }
-}
-
-.drawerHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface-2);
-}
-
-.drawerTitle {
-  font-size: var(--t-3);
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
 }
 
 .drawerClose {
@@ -2514,15 +2327,6 @@ button.searchBox:hover {
 .drawerClose:hover {
   background: var(--sunk);
   color: var(--ink);
-}
-
-.drawerBody {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
 }
 
 .clinicalToast {
@@ -2592,22 +2396,6 @@ button.searchBox:hover {
   }
 }
 
-.modalHead {
-  padding: 0.875rem 1.125rem;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.modalTitle {
-  font-size: var(--t-3);
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
-}
-
 .modalCloseBtn {
   background: transparent;
   border: 1px solid var(--line);
@@ -2635,23 +2423,6 @@ button.searchBox:hover {
   color: var(--ink);
 }
 
-.modalBody {
-  padding: 1.125rem 1.25rem;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.modalFoot {
-  padding: 0.75rem 1.125rem;
-  background: var(--surface-2);
-  border-top: 1px solid var(--line);
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.625rem;
-}
-
 /* ── Responsive Adaptations ─────────────────────────────────────────────── */
 
 @media (max-width: 46.4375rem) {
@@ -2671,16 +2442,10 @@ button.searchBox:hover {
     max-width: 100%;
     width: 100%;
   }
-  .topActionBarWrap {
-    padding: var(--ward-space-8) var(--ward-space-12);
-  }
-  .actionBtnsLeft,
-  .actionBtnsLeft > button,
   .moreActions,
   .moreActions > summary {
     width: 100%;
   }
-  .actionBtnsLeft > button,
   .moreActions > summary {
     justify-content: flex-start;
   }
@@ -2750,16 +2515,6 @@ button.searchBox:hover {
   font-variant-numeric: tabular-nums;
 }
 
-.drawerFoot {
-  padding: 1rem 1.25rem;
-  border-top: 1px solid var(--line);
-  background: var(--surface-2);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
 .cardPanel {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -2800,14 +2555,6 @@ button.searchBox:hover {
   }
 
   /* Compact Single-Row Action Bar on Mobile */
-  .actionBar {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    flex-wrap: nowrap;
-  }
 
   .actionLeftGroup {
     display: flex;
@@ -2819,10 +2566,6 @@ button.searchBox:hover {
 
   .actionRightGroup {
     flex: 0 0 auto;
-  }
-
-  .actionRightGroup .btnActionSec {
-    display: none;
   }
 
   .tabBtn {
@@ -2906,10 +2649,6 @@ button.searchBox:hover {
   }
 }
 
-.tabPanel {
-  width: 100%;
-}
-
 .governanceSection {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -2947,18 +2686,6 @@ button.searchBox:hover {
   flex-direction: column;
   gap: 16px;
   background: var(--surface);
-}
-
-.visuallyHidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
 }
 
 /*
@@ -3223,12 +2950,6 @@ button.searchBox:hover {
   line-height: 1.45;
 }
 
-.factGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-}
-
 .factGridLoose {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -3382,26 +3103,6 @@ button.searchBox:hover {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
-}
-
-.dutyCard {
-  padding: 0.625rem;
-  background: var(--sunk, var(--surface-2));
-  border-radius: var(--r2);
-}
-
-.dutyRole {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  font-weight: 700;
-  color: var(--muted);
-}
-
-.dutyName {
-  font-size: var(--t-2);
-  font-weight: 600;
-  color: var(--ink);
-  margin-top: 2px;
 }
 
 .deploymentNote {

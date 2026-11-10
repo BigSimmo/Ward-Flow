@@ -1,7 +1,8 @@
 # 10 Nov 2026, master audit non-clinical fixes (PR #1598)
 
 Raised every phone route by 2.0 to 4.5 KB on top of `main` at `f5323252b`. Each is within the 5 KB
-per-screen allowance in HOW-WE-WORK section 6.
+per-screen allowance in HOW-WE-WORK section 6. After `main` moved to `8f3b07282` (#1595 set new
+limits), the same increase per route was re-applied on top of main's new limits.
 
 Measured on hosted CI (merged branch against main alone, KB gzipped): Home 573.4 / 570.1, Referrals
 586.9 / 584.3, ED 532.8 / 530.1, Ward 612.0 / 608.9, Movement detail 607.5 / 605.5, Capacity

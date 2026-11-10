@@ -94,11 +94,6 @@
   font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
 }
 
-.heroMeta {
-  color: var(--wf-hero-ink-2);
-  white-space: nowrap;
-}
-
 /* In the sheet the conditions read on the page surface, one per line. */
 .phoneChecks .checking {
   flex-direction: column;
@@ -124,14 +119,6 @@
 
 .phoneChecks .checkList > [data-zero] .mono {
   color: var(--wf-ink-3);
-}
-
-.heroTools {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: var(--wf-s-2);
 }
 
 .heroBroadcast {
@@ -306,10 +293,6 @@ button.check[aria-pressed="true"] {
 .queueCard {
   min-width: 0;
   overflow: hidden;
-}
-
-.tabsBar {
-  padding: var(--wf-s-1) var(--wf-s-4) 0;
 }
 
 .toolbar {
@@ -1381,11 +1364,6 @@ button.check[aria-pressed="true"] {
     padding: var(--wf-s-3);
   }
 
-  .heroTools {
-    justify-content: flex-start;
-    width: 100%;
-  }
-
   .deskOnly,
   .toolbar,
   .todayCard {
@@ -1407,10 +1385,6 @@ button.check[aria-pressed="true"] {
   .checkList {
     -webkit-mask-image: linear-gradient(90deg, var(--wf-ink-1) calc(100% - var(--wf-s-4) * 2), transparent 100%);
     mask-image: linear-gradient(90deg, var(--wf-ink-1) calc(100% - var(--wf-s-4) * 2), transparent 100%);
-  }
-
-  .tabsBar {
-    padding: var(--wf-s-1) var(--wf-s-3) 0;
   }
 
   .queueCard {
@@ -1481,8 +1455,7 @@ button.check[aria-pressed="true"] {
 @media print {
   .modalOverlay,
   .rowAction,
-  .toolbar,
-  .heroTools {
+  .toolbar {
     display: none !important;
   }
 }
@@ -1525,7 +1498,6 @@ button.check[aria-pressed="true"] {
 }
 
 /* The directive line and the one-tap cards: a light row with a chevron. */
-.phoneDirective,
 .phoneCard {
   display: flex;
   align-items: center;
@@ -1548,12 +1520,10 @@ button.check[aria-pressed="true"] {
   color: var(--wf-ink-2);
 }
 
-.phoneDirective > svg:last-child,
 .phoneCard > svg:last-child {
   color: var(--wf-ink-3);
 }
 
-.phoneDirective:focus-visible,
 .phoneCard:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
@@ -1736,14 +1706,6 @@ button.check[aria-pressed="true"] {
 
 @media (max-width: 46.4375rem) {
   /* The views stay under the header while the list scrolls. */
-  .tabsBar {
-    position: sticky;
-    top: var(--wf-header-height, 3.5rem);
-    z-index: 3;
-    margin: 0 calc(-1 * var(--wf-s-3)) var(--wf-s-1);
-    padding: var(--wf-s-2) var(--wf-s-3);
-    background: var(--wf-canvas);
-  }
 
   .phoneList .group + .group .groupHead,
   .phoneList .groupHead {
@@ -1988,10 +1950,6 @@ button.check[aria-pressed="true"] {
 }
 
 @media (min-width: 46.5rem) and (max-width: 64rem) {
-  .checkingFootWide {
-    display: none;
-  }
-
   .checkingCardPortrait {
     display: flex;
   }

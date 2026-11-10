@@ -1,11 +1,14 @@
 import styles from "./loading.module.css";
 
-/** The "Loading page" line and its 15 s reload note, shared by `loading.tsx` and `HeldDeskLoading`. */
-export function WardLoadingStatus() {
+/**
+ * The "Loading page" line and its 15 s reload note, shared by `loading.tsx` and `HeldDeskLoading`.
+ * `label` names a hand-over in words (phone load audit, 10 Nov 2026: "Opening Help").
+ */
+export function WardLoadingStatus({ label = "Loading page" }: { label?: string }) {
   return (
     <p className={styles.status} role="status">
       <span className={styles.spin} aria-hidden="true" />
-      Loading page
+      {label}
       {/* Q275 (pre-launch review E3, 2 Nov 2026): a page change that never finished showed this
         forever. After 15 s this line shows (a CSS delay, so the boundary ships no extra code); its
         Reload button is handled by the layout's inline script (ward-loading-note-early.ts),
@@ -24,13 +27,14 @@ export function WardLoadingStatus() {
 
 /**
  * Desk walk follow-up (9 Nov 2026): what the server sends while a held desk is not yet known
- * (`WardDeskHold` in layout.tsx). Server-only, so unlike `loading.tsx` it adds no page-shape code
- * to every screen's phone download.
+ * (`WardDeskHold` in layout.tsx). It draws no page shape, so unlike `loading.tsx` it adds no
+ * page-shape code to a screen's phone download. Phone load audit (10 Nov 2026): the client
+ * hand-overs (old Seclusion address, Activity and Help addresses) show it too, never a blank body.
  */
-export function HeldDeskLoading() {
+export function HeldDeskLoading({ label }: { label?: string }) {
   return (
     <main id="main-content" className={styles.main} aria-busy="true" data-testid="ward-flow-loading">
-      <WardLoadingStatus />
+      <WardLoadingStatus label={label} />
     </main>
   );
 }

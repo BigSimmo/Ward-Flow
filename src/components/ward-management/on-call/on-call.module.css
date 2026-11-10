@@ -107,95 +107,6 @@
   white-space: nowrap;
 }
 
-/* ---------- hero ---------- */
-.heroClock {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: var(--wf-h-sm);
-  padding: 0 var(--wf-s-3);
-  box-sizing: border-box;
-  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
-  border-radius: var(--wf-r-tag);
-  color: var(--wf-hero-ink-2);
-  font: 400 var(--wf-fs-12) / 1 var(--wf-font);
-  white-space: nowrap;
-}
-
-.heroClockTime {
-  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
-  color: var(--wf-hero-ink);
-}
-
-.heroClockZone {
-  font-family: var(--wf-mono);
-  color: var(--wf-hero-ink-3);
-}
-
-.heroLabel {
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--wf-hero-ink-3);
-  white-space: nowrap;
-}
-
-.trackWrap {
-  display: inline-flex;
-  flex: 0 0 auto;
-}
-
-.changes {
-  flex: 1 1 auto;
-  overflow: hidden;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  margin-left: var(--wf-s-2);
-  padding-left: var(--wf-s-3);
-  border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
-}
-
-.change {
-  display: inline-flex;
-  flex: 0 1 auto;
-  align-items: center;
-  gap: 8px;
-  min-width: 4.5rem;
-  max-width: 24rem;
-  height: var(--wf-h-sm);
-  padding: 0 12px;
-  box-sizing: border-box;
-  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
-  border-radius: var(--wf-r-ctl);
-  background: transparent;
-  color: var(--wf-hero-ink-2);
-  font: 400 var(--wf-fs-12) / 1 var(--wf-font);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.change:hover {
-  background: color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
-}
-
-.change:focus-visible {
-  outline: 2px solid var(--wf-hero-ink);
-  outline-offset: 2px;
-}
-
-.change b {
-  color: var(--wf-hero-ink);
-  font-weight: 600;
-}
-
-.changeText {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* OC3 mock-up (4 Nov 2026): key lines grouped by job, each group labelled, each card with a copy
    button so a number never needs the card opened. */
 .keys {
@@ -241,75 +152,6 @@
   }
 }
 
-.keyGroup {
-  display: flex;
-  flex: 1 0 auto;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.keyGroup + .keyGroup {
-  padding-left: var(--wf-s-3);
-  border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
-}
-
-.keyGroupLabel {
-  font-size: var(--wf-fs-11, 11px);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--wf-hero-ink-3);
-}
-
-.keyRow {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(8rem, 1fr);
-  gap: var(--wf-s-1);
-}
-
-.keyCard {
-  position: relative;
-  display: flex;
-  min-width: 0;
-}
-
-.keyCard > .key {
-  flex: 1 1 auto;
-}
-
-.keyCard > .key .keyLabel {
-  padding-right: 22px;
-}
-
-.keyCopy {
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border: 0;
-  border-radius: var(--wf-r-sm);
-  background: transparent;
-  color: var(--wf-hero-ink-2);
-  cursor: pointer;
-  opacity: 0.7;
-}
-
-.keyCopy:hover,
-.keyCopy:focus-visible {
-  opacity: 1;
-  background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
-  color: var(--wf-hero-ink);
-}
-
-.keyCopy:focus-visible {
-  outline: 2px solid var(--wf-hero-ink);
-  outline-offset: -2px;
-}
-
 .key {
   display: flex;
   flex-direction: column;
@@ -343,40 +185,6 @@
   border-color: var(--wf-hero-ink);
   background: color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
   box-shadow: inset 0 0 0 1px var(--wf-hero-ink);
-}
-
-.keyLabel {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-  color: var(--wf-hero-ink-2);
-}
-
-.keyNumber {
-  font: 600 var(--wf-fs-14) / 20px var(--wf-mono);
-  font-feature-settings:
-    "zero" 1,
-    "tnum" 1;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Redesign: "Until 20:00" repeated on every card shows only on the chosen line; the directory rows
-   already give every line's time. */
-.keyUntil {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  min-width: 0;
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-  color: var(--wf-hero-ink-2);
-  white-space: nowrap;
 }
 
 /* ---------- layout ---------- */
@@ -1770,14 +1578,6 @@
 }
 
 /* The directory tabs stay under the header while the list scrolls (v10 phone). */
-.phoneSeg {
-  position: sticky;
-  top: var(--wf-header-height, 3.5rem);
-  z-index: 3;
-  margin: 0 calc(-1 * var(--wf-s-3));
-  padding: 8px var(--wf-s-3);
-  background: var(--wf-canvas);
-}
 
 .phoneHits {
   display: flex;
@@ -2082,17 +1882,11 @@
 
 /* The Next chip needs room for its whole sentence; below 1440px it was cut to a time and one
    letter beside the hero buttons, so it is left out until it fits. */
-@media (max-width: 89.9375rem) {
-  .changes {
-    display: none;
-  }
-}
 
 @media (max-width: 46.4375rem) {
   /* Before hydration the server paints the desktop hero; keep its desktop-only parts out at phone
      width so it does not overlap until the phone hero arrives. */
-  .keys,
-  .previewButton {
+  .keys {
     display: none;
   }
   .main {
@@ -2113,21 +1907,6 @@
     height: 44px;
   }
   /* Cover at (v10 phone): a pill track that fills the row, pill options. */
-  .trackWrap {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-  .coverTrack {
-    width: 100%;
-    border-radius: var(--wf-r-track);
-    padding: 3px;
-  }
-  .coverTrack > * {
-    flex: 1 1 0;
-    justify-content: center;
-    min-height: 44px;
-    border-radius: var(--wf-r-seg-item);
-  }
   .lineLabel span {
     white-space: nowrap;
   }
@@ -2161,45 +1940,6 @@
   }
 }
 
-/* Phone hero figures on one line (device audit 11 Oct 2026). Each press target stays 48px tall. */
-.phoneStatLine {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-3);
-  color: var(--wf-hero-ink-2);
-  font-size: var(--wf-fs-13);
-  white-space: nowrap;
-}
-
-.phoneStatLine b {
-  color: var(--wf-hero-ink);
-  font-family: var(--wf-mono);
-  font-weight: 600;
-}
-
-.phoneStatLine > button {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-height: 48px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
-.phoneStatLine > button[aria-pressed="true"] {
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-
-.phoneStatLine > button:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-}
-
 /* H-0438 (26 Oct 2026): on an iPad and a laptop the directory's narrow columns cut the role name
    ("Mental Health Emergency Telehealth…") and the line that says who answers next ("then on-call…"),
    which is the fact a caller needs. Above the phone these take a second line instead. */
@@ -2221,17 +1961,6 @@
  * caps label (the track names itself), and the focal card puts the number and its Copy and
  * Details on one line, so the first directory line sits higher. */
 @media (max-width: 46.4375rem) {
-  [data-testid="ward-on-call-hud-island"] .heroLabel {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-  .coverTrack > * {
-    min-height: 34px;
-  }
   .focalSeg button {
     height: 40px;
   }

@@ -8,6 +8,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+import { HeldDeskLoading } from "@/app/ward-flow/loading-status";
 import { useDeskHomeHref } from "@/components/ward-management/shell/ward-access";
 
 /**
@@ -45,9 +46,6 @@ export function WardPanelAddress({ label, open }: { label: string; open: () => v
     router.replace(home);
     requestPanelAfterRoute(open);
   }, [home, open, router]);
-  return (
-    <main>
-      <p role="status">Opening {label}</p>
-    </main>
-  );
+  // Phone load audit (10 Nov 2026): the shell's own placeholder, not an unstyled line at the edge.
+  return <HeldDeskLoading label={`Opening ${label}`} />;
 }

@@ -57,11 +57,23 @@ function shown(element: HTMLElement): boolean {
   return element.checkVisibility?.({ visibilityProperty: true }) ?? true;
 }
 
+/**
+ * A wrapper that steps aside on a phone (`display: contents`, so its folder tabs can pin) has no box
+ * of its own; its first child with one stands in for it, such as the ED overview's hero.
+ */
+function boxed(element: HTMLElement): HTMLElement {
+  if (window.getComputedStyle(element).display !== "contents") return element;
+  return (
+    Array.from(element.children).find((child): child is HTMLElement => child instanceof HTMLElement && shown(child)) ??
+    element
+  );
+}
+
 /** The step's control on screen now, or null. See `TourTarget`. */
 export function findTourTarget(target: TourTarget): HTMLElement | null {
-  const match = Array.from(document.querySelectorAll<HTMLElement>(target.sel)).find(
-    (element) => shown(element) && (!target.text || (element.textContent ?? "").includes(target.text)),
-  );
+  const match = Array.from(document.querySelectorAll<HTMLElement>(target.sel))
+    .map(boxed)
+    .find((element) => shown(element) && (!target.text || (element.textContent ?? "").includes(target.text)));
   let element: HTMLElement | null = match ?? null;
   for (let level = 0; element && level < (target.up ?? 0); level++) element = element.parentElement;
   return element;

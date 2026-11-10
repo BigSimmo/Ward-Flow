@@ -19,7 +19,7 @@ import { ReferralPage, useAnswer } from "./team-referrals";
 import { openReferrals, useMidlandDecisions } from "./midland-decisions";
 import { useRegisterWardBarPlaceSwitch } from "@/components/ward-management/shell/ward-bar-place-switch";
 import p from "./midland-phone.module.css";
-import { MidlandTop } from "./midland-top";
+import { MIDLAND_ACT_NOW_ATTR, MidlandTop } from "./midland-top";
 
 const f = DEMO_FIGURES;
 const SHOWN = 8;
@@ -40,9 +40,20 @@ function Card({ title, aside, children }: { title?: string; aside?: ReactNode; c
   );
 }
 
-function GroupHead({ title, hint, danger }: { title: string; hint?: string; danger?: boolean }) {
+function GroupHead({
+  title,
+  hint,
+  danger,
+  actNow,
+}: {
+  title: string;
+  hint?: string;
+  danger?: boolean;
+  /** The act-now group: Show act now scrolls to and focuses it. */
+  actNow?: boolean;
+}) {
   return (
-    <p className={p.groupHead}>
+    <p className={p.groupHead} {...(actNow ? { [MIDLAND_ACT_NOW_ATTR]: "", tabIndex: -1 } : {})}>
       {danger ? <StatusGlyph tone="danger" size={12} /> : null}
       <span>{title}</span>
       {hint ? <span className={p.hint}>{hint}</span> : null}
@@ -175,7 +186,7 @@ function HomeSection({
   return (
     <>
       <Card title="Team list" aside={<span className={p.tag}>To do {actNow.length + thisWeek.length}</span>}>
-        <GroupHead title={`Act now ${actNow.length}`} hint="needs someone today" danger />
+        <GroupHead title={`Act now ${actNow.length}`} hint="needs someone today" danger actNow />
         <ul className={p.rows}>
           {actNow.map((r) => (
             <PhoneListRow

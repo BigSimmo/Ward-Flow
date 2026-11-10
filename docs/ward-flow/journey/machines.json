@@ -1744,7 +1744,7 @@
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
         "line": 1,
-        "sha256": "929ff1aa633496596c4101ec57028c9296fd9cb8bc46d1cccd1ad579235d26d3"
+        "sha256": "6b9c32af15d569ddb7bcffdd4202bc0def13f74465b211163a1bd706293a4721"
       },
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-sheets.tsx",
@@ -1759,7 +1759,7 @@
       {
         "path": "src/components/ward-management/patients/patient-now-screen.tsx",
         "line": 1,
-        "sha256": "6d62b6682074b1afd6488dfb383b04881842fcb9c8738ffb2ff18c8f45e01725"
+        "sha256": "e488343d5adbfb039d620f96f12e4b01aa19682fc22172908dfa8d7b5f91ef33"
       },
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner-body.tsx",

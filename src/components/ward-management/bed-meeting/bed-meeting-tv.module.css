@@ -991,17 +991,6 @@
   }
 }
 
-/* Core pages redesign (31 Oct 2026): the line under the tiles that carries what each tile used to say in small print. */
-.checking {
-  margin: 0;
-  font-size: var(--tv-row);
-  color: var(--wf-ink-2);
-}
-
-.checking:empty {
-  display: none;
-}
-
 /* Core pages redesign (31 Oct 2026): the all-services meeting reads as three equal tables (By health service, Beds that fit,
  * Longest ED waits), then Waiting by cause beside a Brief in larger type, at every width wide enough
  * for three columns and narrower than a TV. The service table no longer runs the full width with an
@@ -1069,15 +1058,6 @@
 }
 
 @container (min-width: 90rem) {
-  .checking {
-    position: absolute;
-    inset-block-start: calc(var(--tv-gap) * 4.6);
-    inset-inline-end: var(--tv-gap);
-    max-inline-size: 45%;
-    font-size: var(--tv-least);
-    text-align: end;
-  }
-
   /* The panel is titled Longest ED waits, so the word after each time can go and the name and
    * time share a line, as today. */
   .panel[data-area="waits"] .waitWord {

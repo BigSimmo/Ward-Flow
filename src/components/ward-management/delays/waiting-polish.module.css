@@ -74,11 +74,6 @@ button.strip:disabled {
   font-weight: 600;
   overflow-wrap: anywhere;
 }
-.stripSub {
-  color: var(--wf-hero-ink-3);
-  font-size: var(--wf-fs-12);
-  white-space: nowrap;
-}
 .stripAct {
   display: inline-flex;
   align-items: center;
@@ -102,13 +97,6 @@ button.strip:disabled {
   font-family: var(--wf-mono);
   font-variant-numeric: tabular-nums;
   font-weight: 700;
-}
-.heroName {
-  font-weight: 600;
-}
-.heroChevron {
-  flex: none;
-  color: var(--wf-hero-ink-3);
 }
 
 /* ---------- Whose move tiles (round 5) ---------- */
