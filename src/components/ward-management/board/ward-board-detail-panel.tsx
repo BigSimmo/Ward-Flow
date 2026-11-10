@@ -669,3 +669,35 @@ export function LeavingDestinationField({
     </>
   );
 }
+
+/** Item 18: asked only while transport is pending; never defaulted, so the ward chooses each time. */
+export function TransportWaitField({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: boolean | undefined;
+  onChange: (awaitingTransport: boolean) => void;
+}) {
+  return (
+    <>
+      <label className={cx(styles.leavingLabel, redesign.fieldLabel)} htmlFor={id}>
+        Has their transport come?
+      </label>
+      <Select
+        id={id}
+        data-testid={id}
+        value={value === undefined ? "" : value ? "waiting" : "collected"}
+        required
+        onChange={(changed) => onChange(changed.target.value === "waiting")}
+      >
+        <option value="" disabled>
+          Choose
+        </option>
+        <option value="waiting">No, still waiting for transport</option>
+        <option value="collected">Yes, gone with transport</option>
+      </Select>
+    </>
+  );
+}

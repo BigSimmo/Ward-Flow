@@ -5,7 +5,7 @@ import { useUndoableStep } from "@/components/ward-management/use-undoable-step"
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { Select, useIsPhone, useModalFocus } from "@/components/wf";
+import { useIsPhone, useModalFocus } from "@/components/wf";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import {
@@ -66,7 +66,7 @@ import hero from "./ward-board-hero.module.css";
 import panels from "./ward-board-panels.module.css";
 import { WardBoardFlowColumn } from "./ward-board-flow-column";
 import { WardBoardGridColumn } from "./ward-board-grid-column";
-import { LeavingDestinationField, WardBoardDetailPanel } from "./ward-board-detail-panel";
+import { LeavingDestinationField, TransportWaitField, WardBoardDetailPanel } from "./ward-board-detail-panel";
 import { WardBoardWorkBand } from "./ward-board-work-band";
 import { WardBoardTransportWait } from "./ward-board-transport-wait";
 import { transportPendingFor, waitingForTransport } from "@/components/ward-management/ward-left-ward";
@@ -1415,32 +1415,11 @@ export function WardBoard({
               ) : null}
 
               {pendingConfirm.offerTransport ? (
-                <>
-                  <label className={styles.leavingLabel} htmlFor="ward-board-confirm-transport">
-                    Transport
-                  </label>
-                  <Select
-                    id="ward-board-confirm-transport"
-                    data-testid="ward-board-confirm-transport"
-                    required
-                    value={
-                      pendingConfirm.awaitingTransport === undefined
-                        ? ""
-                        : pendingConfirm.awaitingTransport
-                          ? "waiting"
-                          : "collected"
-                    }
-                    onChange={(changed) =>
-                      setPendingConfirm({ ...pendingConfirm, awaitingTransport: changed.target.value === "waiting" })
-                    }
-                  >
-                    <option value="" disabled>
-                      Choose
-                    </option>
-                    <option value="waiting">Still waiting for transport</option>
-                    <option value="collected">Gone with transport</option>
-                  </Select>
-                </>
+                <TransportWaitField
+                  id="ward-board-confirm-transport"
+                  value={pendingConfirm.awaitingTransport}
+                  onChange={(awaitingTransport) => setPendingConfirm({ ...pendingConfirm, awaitingTransport })}
+                />
               ) : null}
 
               <div className={styles.modalActions}>
