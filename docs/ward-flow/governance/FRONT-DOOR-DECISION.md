@@ -2,18 +2,20 @@
 
 _Created 2026-11-10 - audit item M128; drafted on branch `claude/project-thread-bnphlk` (from `main` `29352cd0`); Documentation owns._
 
-**Status:** open question for Josh. **Not decided.** When he rules, it goes into
-[decisions.md](../decisions.md) as the next D entry, and the setting is confirmed on both sites.
+**Status:** settled. Josh approved switching it on (D-125). On 10 November 2026 Josh saw the
+public demo asking for the demo code, so the front door is on there, and he asked for no Railway
+change (D-126). The signed-in site was not checked from the cloud, which cannot reach the live sites.
 
 ## Where things stand
 
 - Both hosted sites can require a pass before any page or API answers
-  ([front door switch](../OPERATIONS-RUNBOOK.md#front-door-switch)). It is **off** on both.
+  ([front door switch](../OPERATIONS-RUNBOOK.md#front-door-switch)). On Railway a blank or
+  mistyped `WARD_FRONT_DOOR` keeps it shut; only `off` opens it. The public demo showed the
+  demo-code page on 10 November 2026.
 - D-88 approved a demo code for the public demo once the front door is on, but left switching it
   on undecided.
-- So anyone with either address sees the whole synthetic network. No real data is at risk, but
-  the demo is found by chance rather than shared on purpose, and the signed-in site's pages load
-  before sign-in.
+- When it is off, anyone with the address sees the whole synthetic network, and the signed-in
+  site's pages load before sign-in. No real data is at risk.
 - Turning it on is a Railway setting: `WARD_FRONT_DOOR=required`, `WARD_PASS_SECRET` (32 or more
   random characters) and, on the public demo, `WARD_DEMO_CODE`; then a restart. It costs nothing.
   It needs Josh's yes to set (AGENTS.md rule 3). Turning it off again is the same change.

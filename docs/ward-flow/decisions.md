@@ -1544,3 +1544,19 @@ is inferred.
      - **Sign-in front door:** switch it on for both sites.
      - **Tier 7:** the plan is approved, starting with change hotspots (M142), the import map (M139) and the mockup check (M149).
 - **Boundary:** synthetic data only. Hosted, billable and provider steps still need their own yes: the Railway variable rename, the receipt clean-up secret, Dependabot security updates, the hosted database check, live post-release runs, the penetration test and the TGA adviser. Approves no merge of the held clinical PR and no release.
+
+## D-126. Audit follow-ups: every remaining recommendation approved (10 November 2026)
+
+- **Date:** 10 November 2026. **Decided by:** Josh, in the "Run the remaining master list audits" thread: "Go ahead with all recommendations for things you are able to do" (12:53Z).
+- **Decision:**
+  1. **Held clinical PR** (labelled `hold`, Josh reviews before merge):
+     - The Call sheet and the bed and capacity meeting sheets show initials and UMRN only.
+     - The Map counts a ward transfer out as a move, not a discharge.
+     - Referral declines and arrivals write an audit row.
+     - The unsigned time numbers are signed as they stand today: leave due back within 12 hours, "Referred and not yet seen" after 60 minutes, the 4 and 12 hour statistics bands, the 4 hour bed board referral chip, and the under 18 and 65+ age bands.
+     - "Of beds" is renamed "In use", now that it counts pulled beds.
+  2. **No change:** the save limit stays at 600 per 5 minutes per account. Toasts already lead with what happened.
+  3. **Machine-test mismatches (M26):** listed on one page for Josh to rule on; nothing changes yet.
+  4. **Front door:** seen on the public demo on 10 November (demo-code page). No Railway change needed (Josh, 12:07Z).
+- **Open:** the glossary meanings of MHERT and SMHMR wait on Josh.
+- **Boundary:** approves no merge of the held clinical PR, no hosted step and no release.
