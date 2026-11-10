@@ -12,8 +12,9 @@
 //    rest on the keyboard instead, and the phone sheet's footer rises above it.
 // 3. Both bars' clearance includes the home indicator (`env(safe-area-inset-bottom)`).
 // 4. A phone bar or toast pinned to the foot follows the clearance, or is listed in FIXED_FOOT with
-//    why. The 92px toasts are a DEFECT for Josh: the floating bar's clearance is 79px plus the larger of
-//    10px and the home indicator (113px on an iPhone with one), so a toast 92px up sits on the bar.
+//    why. Fixed 10 Nov 2026 (D-125): the officer, ward answer and ready-to-leave toasts sat 92px up, on
+//    the floating bar where the home indicator is (113px clearance), and now take the shared toast
+//    region's sum above --wf-dock-clear; the four unused 92px toast classes were deleted.
 //
 // Not covered here: 200% text against the bar needs a browser at that zoom (manual script M97).
 // Reads files with `readFileSync`; run it by name.
@@ -79,19 +80,10 @@ describe("M100: the keyboard and the floating bar never hide the field or the su
 });
 
 /**
- * Phone toasts and bars pinned to the foot by a fixed distance, not the bar's clearance, 10 Nov 2026.
- * Exact: a fixed one moved onto `--wf-dock-clear` or `--wf-dock-top` comes off the list.
+ * Phone toasts and bars pinned to the foot by a fixed distance, not the bar's clearance. Empty since
+ * 10 Nov 2026; a new one must follow `--wf-dock-clear` or `--wf-dock-top`, or be listed here with why.
  */
-const FIXED_FOOT: Readonly<Record<string, string>> = {
-  "board/board.module.css .toast 92px": "No screen uses this class today (unused CSS); fix or delete it",
-  "community/community.module.css .actionToast 92px": "No screen uses this class today (unused CSS); fix or delete it",
-  "delays/delays.module.css .toastNotice 92px": "No screen uses this class today (unused CSS); fix or delete it",
-  "discharges/discharge-ready-to-leave.module.css .toast 92px":
-    "DEFECT: sits on the floating bar where the home indicator is",
-  "officer/officer.module.css .toast 92px": "DEFECT: sits on the floating bar where the home indicator is",
-  "ward/ward-answer-view.module.css .toast 92px": "DEFECT: sits on the floating bar where the home indicator is",
-  "ward/ward.module.css .actionToast 92px": "No screen uses this class today (unused CSS); fix or delete it",
-};
+const FIXED_FOOT: Readonly<Record<string, string>> = {};
 
 const PHONE = /max-width:\s*46\.4375rem/;
 const FOLLOWS = /--wf-dock-(?:clear|top)|--keyboard-height|safe-area-inset-bottom|--wf-foot-bar-lift/;

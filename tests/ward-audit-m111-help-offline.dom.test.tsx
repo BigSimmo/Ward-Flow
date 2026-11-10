@@ -11,12 +11,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * screen calls the router; offline, a router fetch for a page it does not hold falls back to a full
  * load, which leaves the running app for the browser's "No internet" page, or for the static offline
  * page where the service worker is installed (the A1-18 finding that `shell/ward-offline-links.tsx`
- * fixed for links). Show me does not go through that guard, so today it neither stops nor says it
- * needs a connection.
+ * fixed for links). Show me did not go through that guard.
  *
- * DEFECT (non-clinical, reported to Josh 10 Nov 2026): the "opens another screen" cases are written as
- * `it.fails`, so they pass while the defect stands and turn red once Show me says it needs a
- * connection. Then flip them to `it`. Synthetic data only.
+ * Fixed 10 Nov 2026 (D-125): offline, a run that opens another screen stays put and shows the offline
+ * link notice ("You're offline. Tap again once you're back online."). Synthetic data only.
  */
 
 const route = vi.hoisted(() => ({ pathname: "/ward-flow" }));
@@ -86,8 +84,8 @@ describe("M111: each desk's Show me, offline", () => {
     expect(screen.getByTestId("ward-show-me-card")).toBeInTheDocument();
   });
 
-  it.fails.each(EVERY_LOGIN)(
-    "%s: DEFECT M111, a run that opens another screen says it needs a connection instead of leaving the app",
+  it.each(EVERY_LOGIN)(
+    "%s: a run that opens another screen says it needs a connection instead of leaving the app",
     (role) => {
       login.role = role;
       const task = taskThatOpensAScreen(role)!;

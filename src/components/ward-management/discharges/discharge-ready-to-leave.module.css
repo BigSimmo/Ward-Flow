@@ -141,13 +141,16 @@
 }
 
 /* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
-   with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
-   tablet keep the toast above. */
+   with the tooltip's tip colours, 12px from each side and 12px above the floating bar, text may
+   wrap. M100 (10 Nov 2026): the shared toast region's sum, as --wf-dock-clear counts the home
+   indicator; a fixed 92px sat on the bar. Desktop and tablet keep the toast above. */
 @media (max-width: 46.4375rem) {
   .toast {
     position: fixed;
     right: 12px;
-    bottom: 92px;
+    bottom: calc(
+      var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + var(--wf-toast-dock-gap, 12px)
+    );
     left: 12px;
     z-index: var(--z-toast);
     width: fit-content;

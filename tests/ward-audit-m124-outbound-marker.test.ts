@@ -20,6 +20,10 @@ function sourceFiles(dir: string): string[] {
   }
   return out;
 }
+const PICTURE_SOURCE = readFileSync(
+  path.join(ROOT, "src/components/ward-management/help/ward-help-report-picture.ts"),
+  "utf8",
+);
 const rel = (file: string) => path.relative(ROOT, file).split(path.sep).join("/");
 
 /** The text of each call to `name(` in a file, up to its matching close bracket. */
@@ -74,9 +78,6 @@ describe("M124 downloads carry the marker", () => {
         "src/components/ward-management/settings/settings-screen.tsx",
         "the saved rules file: settings only, no records",
       ],
-      // DEFECT for Josh (M124): the Report-a-problem picture carries no synthetic marker in its
-      // pixels or its name. Remove this entry when the picture is marked.
-      ["src/components/ward-management/help/ward-help-report-view.tsx", "Report-a-problem picture, PICTURE_FILENAME"],
       ["src/components/ward-management/tools/ward-demo-panel.tsx", "scenario file: its JSON carries the notice"],
       ["src/components/ward-redesign/pop-demo/demo-panel.tsx", "scenario file: its JSON carries the notice"],
       // The CSV helper itself: its callers name every file (checked above).
@@ -88,6 +89,9 @@ describe("M124 downloads carry the marker", () => {
       for (const call of calls(text, "downloadBlob")) {
         if (/^downloadBlob\(blob: Blob/.test(call)) continue;
         if (/ward-flow-synthetic-/.test(call)) continue;
+        // The Report-a-problem picture's name is a constant, itself named synthetic (checked below).
+        if (/\bPICTURE_FILENAME\b/.test(call) && /PICTURE_FILENAME = "ward-flow-synthetic-/.test(PICTURE_SOURCE))
+          continue;
         if (!reviewed.has(rel(file))) unmarked.push(`${rel(file)}: ${call.slice(0, 80)}`);
       }
     }
@@ -156,7 +160,16 @@ describe("M124 each other outbound item keeps its marker test", () => {
     expect(readFileSync(full, "utf8")).toMatch(mustContain);
   });
 
-  it.todo("Report-a-problem picture preview carries the synthetic marker (DEFECT, see register above)");
+  // Fixed 10 Nov 2026 (D-125): the picture is drawn with "Synthetic prototype" and named synthetic.
+  it("Report-a-problem picture carries the synthetic marker in its pixels and its name", () => {
+    const pictureTest = readFileSync(path.join(ROOT, "tests/ward-help-report-picture.test.ts"), "utf8");
+    expect(pictureTest).toMatch(/fillText\)\.toHaveBeenCalledWith\("Synthetic prototype"/);
+    const picture = readFileSync(
+      path.join(ROOT, "src/components/ward-management/help/ward-help-report-picture.ts"),
+      "utf8",
+    );
+    expect(picture).toMatch(/PICTURE_FILENAME = "ward-flow-synthetic-/);
+  });
 });
 
 describe("M124 word read-through on outbound builders (Manual, reviewed hits only)", () => {

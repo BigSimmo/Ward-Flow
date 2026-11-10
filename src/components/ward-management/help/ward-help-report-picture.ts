@@ -21,7 +21,14 @@ export const READABLE_SELECTOR = 'nav[aria-label="Ward Flow views"]';
 /** Each block of the pixelated page, in CSS pixels: far coarser than any heading's letters. */
 const PICTURE_BLOCK_PX = 14;
 
-export const PICTURE_FILENAME = "ward-flow-report-screen.png";
+/** M124 (10 Nov 2026): the file is named synthetic, like every other download. */
+export const PICTURE_FILENAME = "ward-flow-synthetic-report-screen.png";
+
+/** M124: drawn across the foot of the picture, so it stays marked wherever it is pasted. */
+export const PICTURE_MARKER = "Synthetic prototype";
+
+/** The marker's band, in CSS pixels; its words are 13px, above the 12px floor. */
+const MARKER_BAND_PX = 24;
 
 export type Box = { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
 
@@ -100,6 +107,17 @@ export function visibleBoxOf(element: Element, root: Element): Box {
   return box;
 }
 
+/** The synthetic line on a band across the picture's foot, in the theme's ink and surface. */
+function drawMarker(context: CanvasRenderingContext2D, width: number, height: number, style: CSSStyleDeclaration) {
+  const band = Math.min(MARKER_BAND_PX, height);
+  context.fillStyle = style.getPropertyValue("--wf-ink-1").trim() || "#1a1a1a";
+  context.fillRect(0, height - band, width, band);
+  context.fillStyle = style.getPropertyValue("--wf-surface").trim() || "#ffffff";
+  context.font = `600 13px ${style.getPropertyValue("--wf-font").trim() || "system-ui, sans-serif"}`;
+  context.textBaseline = "middle";
+  context.fillText(PICTURE_MARKER, 8, height - band / 2);
+}
+
 function canvasBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) =>
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("no picture"))), "image/png"),
@@ -156,6 +174,7 @@ export async function makeReportPicture(doc: Document = document): Promise<Blob>
   for (const box of keep) {
     outContext.drawImage(sharp, box.x, box.y, box.width, box.height, box.x, box.y, box.width, box.height);
   }
+  drawMarker(outContext, width, height, view.getComputedStyle(doc.documentElement));
   // Clear the sharp drawing straight away; only the pixelated copy leaves this function.
   sharp.getContext("2d")?.clearRect(0, 0, sharp.width, sharp.height);
   sharp.width = 0;
