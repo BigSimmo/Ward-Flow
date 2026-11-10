@@ -294,7 +294,7 @@ function WardGroup({
     return (
       <li key={item.referral.id}>
         <Link href={referralBoardHref(item.referral.id)} className={styles.link}>
-          {/* M103 (Josh, 10 Nov 2026): a printed sheet shows initials and UMRN only. */}
+          {/* M103 (Josh, 10 Nov 2026): the call sheet shows initials and UMRN only. */}
           {sheetPatientLabel(who)}
         </Link>{" "}
         <span className={styles.note}>
