@@ -575,7 +575,7 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
 
         const auditedState = wardFlowReducer(with5A, {
           type: "RECORD_LEGAL_FORM_CONTINUATION",
-          role: "ward",
+          role: "coordinator", // D-124: a ward needs to have accepted the person
           now: NOW,
           movementId,
           formCode,

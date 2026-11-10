@@ -2215,6 +2215,8 @@ export type WardFlowEvent =
       role: WardFlowRole;
       now: Instant;
       movementId: string;
+      /** D-124: a ward claims the ward that accepted the person; the server checks its membership. */
+      actingUnitId?: string;
       formCode: string;
       startedAt: Instant;
       region?: "metro" | "country";
@@ -2342,9 +2344,7 @@ export type WardFlowEvent =
       teamId: string;
     }
   | {
-      /**
-       * Dispatch a statewide network broadcast directive across inpatient units and ED desks.
-       */
+      /** Dispatch a statewide network broadcast directive across inpatient units and ED desks. */
       type: "DISPATCH_BROADCAST_ALERT";
       role: WardFlowRole;
       now: Instant;

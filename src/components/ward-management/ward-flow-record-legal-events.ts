@@ -416,6 +416,13 @@ export function reduceRecordedLegalEvent(
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
       if (movement.closure) return reject(state, event, "This record is closed, so no continuation can be added.");
+      // D-124: on a ward desk only the ward that accepted the person records a continuation, not a
+      // ward that was only referred them.
+      if (
+        event.role === "ward" &&
+        (movement.acceptedUnitId === undefined || event.actingUnitId !== movement.acceptedUnitId)
+      )
+        return reject(state, event, "Only the ward that accepted this person can record a continuation.");
       if (
         (event.region !== undefined && !["metro", "country"].includes(event.region)) ||
         !Number.isFinite(event.startedAt) ||
