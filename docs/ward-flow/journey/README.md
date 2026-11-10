@@ -290,3 +290,5 @@ Source digests were re-reviewed file by file against `main` before being re-reco
 - `ward-flow-storage-validation.ts`: the three stored records are checked on restore. The cited locked-bed invariant moved from line 460 to 461, unchanged.
 
 Each cited line was found again by its text. The three new events have command models in `event-dispositions.json`; no screen dispatches `SET_SITE_FEATURE_SWITCH` or `RECORD_OUTAGE_WINDOW` yet (screens wait for the Batch 4 design review, D-74).
+
+After review the same day, `ward-site-feature-switches.ts` and `ward-outage-catch-up.ts` made three helpers private (`isSiteProtectedFeature`, `SiteProtectedFeature`, `wardOwnConfirmationAt`) for the unused-export check. Only the `export` keyword changed; behaviour and cited lines are the same, so only their digests were re-recorded.
