@@ -1612,7 +1612,7 @@ Source-contract SHA256: daf289ea44be0f732905b42c7e75f1c576f196130f19424e66d63cfb
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/ward-flow-pilot-control-events.ts:51; SHA256 685450bbbd7e8762811145df0914ec8c86dca69dd04d6e5b267d79b096ed1d48
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2380; SHA256 5862eab5ec1e88f45374c07fe8d09f531b449b03d7e1774f664dfdfc52909416
-  Reviewed source: src/components/ward-management/ward-site-feature-switches.ts:91; SHA256 028914b38017aeda84953b98e9b64c9f816d1180071c4c08d17d5f4a19fb166d
+  Reviewed source: src/components/ward-management/ward-site-feature-switches.ts:91; SHA256 28809724579326d48db4509ca0f76d0b09b8e85ccd4b6108fb8850c31c6e76df
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:597; SHA256 14f89822f58618765e2db7e7b2747ca4829fc39d6e05e485a93db9c38e562f8d
 - RECORD_DOWNTIME_PACK_PRINTED — modelled; event roles: coordinator, bed_manager, ward, ed
   Source-reviewed command model: when each ward's downtime pack was printed or saved as a PDF, never the pack itself (Batch 4 item 24, D-135).
@@ -1655,7 +1655,7 @@ Source-contract SHA256: daf289ea44be0f732905b42c7e75f1c576f196130f19424e66d63cfb
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/ward-flow-pilot-control-events.ts:55; SHA256 685450bbbd7e8762811145df0914ec8c86dca69dd04d6e5b267d79b096ed1d48
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2382; SHA256 5862eab5ec1e88f45374c07fe8d09f531b449b03d7e1774f664dfdfc52909416
-  Reviewed source: src/components/ward-management/ward-outage-catch-up.ts:50; SHA256 462e5ba4a6fceb32977992c2c654f9e95cb634e7b425484b83ed91503448f5de
+  Reviewed source: src/components/ward-management/ward-outage-catch-up.ts:50; SHA256 55dc616488fbf87ea599e410f85580f572d4d8fdf2103269be5171430c01eea9
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:601; SHA256 14f89822f58618765e2db7e7b2747ca4829fc39d6e05e485a93db9c38e562f8d
 - RECORD_CLINICAL_CONTACT — diagram-reviewed; event roles: community, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
