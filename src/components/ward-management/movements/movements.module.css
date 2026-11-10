@@ -2014,12 +2014,12 @@
   }
 
   /* Worklist head: the title on its own line, the two tabs as one segmented row under it. */
-  .wlCard > :first-child {
+  .wlCard > [data-wf-card-head] {
     flex-wrap: wrap;
     row-gap: var(--wf-s-2);
   }
 
-  .wlCard > :first-child > :has(> .boardTabs) {
+  .wlCard > [data-wf-card-head] > :has(> .boardTabs) {
     flex: 1 1 100%;
     margin-left: 0;
   }
@@ -2120,16 +2120,17 @@
     box-shadow: none;
   }
 
-  .wlCard > :first-child {
+  .wlCard > [data-wf-card-head] {
     padding: 0;
     border: 0;
   }
 
-  .wlCard > :first-child > :not(:last-child) {
+  /* The head only (page tops, 9 Nov 2026: a phone drops it, and the toolbar must keep its Filter). */
+  .wlCard > [data-wf-card-head] > :not(:last-child) {
     display: none;
   }
 
-  .wlCard > :first-child > :last-child {
+  .wlCard > [data-wf-card-head] > :last-child {
     flex: 1 1 100%;
     margin: 0;
   }
@@ -2245,7 +2246,7 @@
  * pinned switch class, as Home's queue switch does. Desktop and tablet are unchanged: everything here sits under 48rem. */
 @media (max-width: 46.4375rem) {
   /* The head pins through the shared `pinnedSwitch` (ward-pinned-switch.module.css); this sets its band. */
-  .wlCard > :first-child {
+  .wlCard > [data-wf-card-head] {
     padding: var(--wf-s-2) 0;
   }
 
@@ -2395,4 +2396,10 @@
 .wlWrapRows [data-record-key] {
   min-height: 3rem;
   padding-block: 6px;
+}
+
+/* Page tops (9 Nov 2026): the worklist tabs under the hero (wf FolderTabs styles the tabs). */
+.folderSwitch {
+  display: flex;
+  align-items: stretch;
 }

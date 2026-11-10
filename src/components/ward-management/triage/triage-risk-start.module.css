@@ -383,3 +383,97 @@
   font-weight: 500;
   overflow-wrap: anywhere;
 }
+
+/* ---------- Page tops (Josh, 9 Nov 2026): the slate top and the source tabs ---------- */
+.heroTop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  min-width: 0;
+}
+
+.heroTop .searchRow.searchRow {
+  flex-direction: row;
+  align-items: stretch;
+}
+
+/* The queue is the card's first thing now (its head moved into the tabs), so no rule above it. */
+.body > .queue:first-child {
+  border-top: 0;
+}
+
+.add.add {
+  flex: none;
+  min-height: 44px;
+}
+
+/* The forms named under the headline, on a tablet or desktop. */
+.hero.hero.hero [data-wf-hero-title-line] {
+  flex-wrap: wrap;
+}
+
+.forms {
+  display: block;
+  flex-basis: 100%;
+  color: var(--wf-hero-ink-2);
+}
+
+.hero.hero.hero [data-wf-hero-title-line] > [data-wf-hero-title] + span {
+  flex-basis: 100%;
+  margin: 2px 0 0;
+}
+
+.sort.sort {
+  gap: var(--wf-s-2);
+  white-space: nowrap;
+}
+
+@media (max-width: 46.4375rem) {
+  .hero.hero.hero [data-wf-hero-title-line] > [data-wf-hero-title] + span {
+    display: none;
+  }
+
+  /* Phone: Add patient is an icon beside the search; its name stays for a screen reader. */
+  .add.add {
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .addWords,
+  .sortWords {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* The source tabs scroll sideways; ⋯ (sort) rides at the end. */
+  .tabs.tabs {
+    flex-wrap: nowrap;
+  }
+
+  /* Five classes outrank the shared switch's `overflow: visible`, so the row scrolls under a soft
+     fade and never runs under ⋯ (QA, 9 Nov 2026). */
+  .tabs.tabs.tabs.tabs.tabs > [role="tablist"] {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    /* 4px of room above and below, taken back by the margins, so the scroll box does not clip each
+       tab's 48px tap cover. */
+    height: 48px;
+    min-height: 48px;
+    margin-block: -4px;
+    padding-block: 4px;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, black calc(100% - 28px), transparent);
+    mask-image: linear-gradient(90deg, black calc(100% - 28px), transparent);
+  }
+
+  .tabs.tabs.tabs.tabs.tabs > [role="tablist"]::-webkit-scrollbar {
+    display: none;
+  }
+}

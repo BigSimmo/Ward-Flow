@@ -726,8 +726,9 @@ test("@mockup the Delays hidden-count note keeps Show everyone reachable at ever
     const count = page.getByTestId("delays-shown-count");
     const everyone = await count.textContent();
     // Plan item 2i: a phone's hero folds its figures away and keeps the next step, which narrows the
-    // table to the desk's own people. Desktop still narrows by the Over 8h figure.
-    const narrow = width < 744 ? page.getByTestId("delays-next-action") : page.getByTestId("delays-stat-over8");
+    // table to the desk's own people. Desktop still narrows by the Over 8h figure, whose label is its
+    // button since the shared hero (page tops, 9 Nov 2026).
+    const narrow = width < 744 ? page.getByTestId("delays-next-action") : page.getByTestId("delays-stat-over8-filter");
     await narrow.click();
     await expect(count, `${width}px: narrowing did not narrow the table`).not.toHaveText(everyone ?? "");
     const note = page.getByTestId("delays-hidden-note");

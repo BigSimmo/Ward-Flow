@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { Phone, UserPlus } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 
-import { Button } from "@/components/wf";
+import type { HeroChipItem } from "@/components/wf";
 import { useEffectiveWardAccess, useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -65,24 +65,18 @@ function StaffRequestTag({
 }
 
 /**
- * The ward hero's Staff needed (feature 10) and Contact (feature 32) actions, and the open staff
- * request's tag. A ward asks as itself; the coordinator or site bed manager records it arranged.
+ * The ward hero's Staff needed (feature 10) and Contact (feature 32) actions, as quick chips in the
+ * page top, and the open staff request's tag. A ward asks as itself; the coordinator or site bed
+ * manager records it arranged. Nothing here changes a bed figure.
  */
-export function WardStaffContact({
-  unit,
-  now,
-  isPhone,
-  part = "all",
-  children,
-}: {
-  unit: Unit;
-  now: Instant;
-  isPhone: boolean;
-  /** The desktop hero shows the buttons beside Confirm numbers and the tag under the ward's facts. */
-  part?: "all" | "buttons" | "tag";
-  /** With `part="tag"`: what sits under the tag (the hero's capacity time). */
-  children?: ReactNode;
-}) {
+export function useWardStaffContact({ unit, now, isPhone }: { unit: Unit; now: Instant; isPhone: boolean }): {
+  /** Contact, then Staff needed when this desk may ask: `HeroQuickChips` items. */
+  chips: HeroChipItem[];
+  /** The open request's tag, or null. */
+  tag: ReactNode;
+  /** The sheets, loaded on first open. */
+  sheets: ReactNode;
+} {
   const flow = useOptionalWardFlowSelect("staffRequests", "dispatch");
   const routeRole = useRouteRole();
   const accessRole = useEffectiveWardAccess().role;
@@ -94,104 +88,70 @@ export function WardStaffContact({
   const raise = useWardRaise(asker);
   const raiseClose = useWardRaise(closer ?? asker);
   const [sheet, setSheet] = useState<"staff" | "contact" | null>(null);
-  const staffRef = useRef<HTMLButtonElement | null>(null);
-  const contactRef = useRef<HTMLButtonElement | null>(null);
+  // The chips are drawn by the shared hero parts, so the sheet returns focus to the chip that opened it.
+  const openerRef = useRef<HTMLButtonElement | null>(null);
+  const openSheet = (which: "staff" | "contact") => {
+    const active = document.activeElement;
+    openerRef.current = active instanceof HTMLButtonElement ? active : null;
+    setSheet(which);
+  };
   const records = flow?.staffRequests ?? NONE;
   const open = openStaffRequestFor(records, unit.id, now);
   // Only the ward desk (or the site bed manager on its own ward) asks from here; never the executive.
   const canAsk = flow !== null && !previewing && (routeRole === "ward" || routeRole === "bed_manager");
   const acting = asker === "ward" ? { actingUnitId: unit.id } : {};
   const tag = open ? (
-    <StaffRequestTag
-      record={open}
-      now={now}
-      compact={isPhone}
-      arrange={
-        closer
-          ? () =>
-              void raiseClose("CLOSE_WARD_STAFF_REQUEST", { requestId: open.id, unitId: unit.id, outcome: "arranged" })
-          : null
-      }
-      withdraw={
-        canAsk
-          ? () =>
-              void raise("CLOSE_WARD_STAFF_REQUEST", {
-                requestId: open.id,
-                unitId: unit.id,
-                ...acting,
-                outcome: "withdrawn",
-              })
-          : null
-      }
-    />
+    <span className={isPhone ? styles.phoneRow : styles.tagRow}>
+      <StaffRequestTag
+        record={open}
+        now={now}
+        compact={isPhone}
+        arrange={
+          closer
+            ? () =>
+                void raiseClose("CLOSE_WARD_STAFF_REQUEST", {
+                  requestId: open.id,
+                  unitId: unit.id,
+                  outcome: "arranged",
+                })
+            : null
+        }
+        withdraw={
+          canAsk
+            ? () =>
+                void raise("CLOSE_WARD_STAFF_REQUEST", {
+                  requestId: open.id,
+                  unitId: unit.id,
+                  ...acting,
+                  outcome: "withdrawn",
+                })
+            : null
+        }
+      />
+    </span>
   ) : null;
-  const staffLabel = "Staff needed";
-  const buttons = isPhone ? (
+  const chips: HeroChipItem[] = [
+    {
+      id: "contact",
+      label: "Contact",
+      icon: <Phone strokeWidth={1.75} aria-hidden="true" />,
+      onClick: () => openSheet("contact"),
+      testId: "ward-contact-open",
+    },
+    ...(canAsk
+      ? [
+          {
+            id: "staff-needed",
+            label: "Staff needed",
+            icon: <UserPlus strokeWidth={1.75} aria-hidden="true" />,
+            onClick: () => openSheet("staff"),
+            testId: "ward-staff-needed-open",
+          },
+        ]
+      : []),
+  ];
+  const sheets = (
     <>
-      <button
-        ref={contactRef}
-        type="button"
-        className={styles.phoneAction}
-        onClick={() => setSheet("contact")}
-        data-testid="ward-contact-open"
-      >
-        <Phone size={16} strokeWidth={1.75} aria-hidden="true" />
-        Contact
-      </button>
-      {canAsk ? (
-        <button
-          ref={staffRef}
-          type="button"
-          className={styles.phoneAction}
-          onClick={() => setSheet("staff")}
-          data-testid="ward-staff-needed-open"
-        >
-          <UserPlus size={16} strokeWidth={1.75} aria-hidden="true" />
-          {staffLabel}
-        </button>
-      ) : null}
-    </>
-  ) : (
-    <>
-      <Button
-        ref={contactRef}
-        variant="onHero"
-        size="sm"
-        icon={Phone}
-        onClick={() => setSheet("contact")}
-        data-testid="ward-contact-open"
-      >
-        Contact
-      </Button>
-      {canAsk ? (
-        <Button
-          ref={staffRef}
-          variant="onHero"
-          size="sm"
-          icon={UserPlus}
-          onClick={() => setSheet("staff")}
-          data-testid="ward-staff-needed-open"
-        >
-          {staffLabel}
-        </Button>
-      ) : null}
-    </>
-  );
-  if (part === "tag")
-    return tag ? (
-      <span className={styles.footStack}>
-        {tag}
-        {children}
-      </span>
-    ) : (
-      <>{children}</>
-    );
-  return (
-    <>
-      <span className={isPhone ? styles.phoneRow : styles.actions}>
-        {buttons}
-        {part === "all" ? tag : null}
-      </span>
       {sheet === "staff" ? (
         <StaffNeededSheet
           open
@@ -202,12 +162,13 @@ export function WardStaffContact({
           records={records}
           raise={raise}
           actingUnitId={asker === "ward" ? unit.id : undefined}
-          returnFocusRef={staffRef}
+          returnFocusRef={openerRef}
         />
       ) : null}
       {sheet === "contact" ? (
-        <WardContactSheet open onClose={() => setSheet(null)} unitId={unit.id} now={now} returnFocusRef={contactRef} />
+        <WardContactSheet open onClose={() => setSheet(null)} unitId={unit.id} now={now} returnFocusRef={openerRef} />
       ) : null}
     </>
   );
+  return { chips, tag, sheets };
 }

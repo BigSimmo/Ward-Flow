@@ -327,7 +327,7 @@ const lensAria = (site: PresentedSiteFigures, lens: MapLens): string => {
       waitingExact && site.edLongest !== null ? `, longest ${durMinutes(Math.round(site.edLongest))}` : "";
     const over =
       exactStatisticsCount(site.edOver24) !== 0
-        ? `, ${statisticsCountText(site.edOver24)} over ${LONG_WAIT_HOURS} hours`
+        ? `, ${statisticsCountText(site.edOver24)} past ${LONG_WAIT_HOURS} hours`
         : "";
     return `${site.name} ED: ${statisticsCountText(site.edWaiting)} open ED movements${longest}${over}`;
   }
@@ -347,7 +347,7 @@ const LENSES: ReadonlyArray<{ id: MapLens; label: string; rankTitle: string; key
     id: "ed",
     label: "Open ED movements",
     rankTitle: "Most open ED movements",
-    key: `Ring: longest time since opening, to ${VERY_LONG_WAIT_HOURS}h. Centre: open ED movements. Amber dot: over ${LONG_WAIT_HOURS}h. Triangle: over ${VERY_LONG_WAIT_HOURS}h.`,
+    key: `Ring: longest time since opening, to ${VERY_LONG_WAIT_HOURS}h. Centre: open ED movements. Amber dot: past ${LONG_WAIT_HOURS}h. Triangle: over ${VERY_LONG_WAIT_HOURS}h.`,
   },
   {
     id: "dis",
@@ -572,7 +572,7 @@ function MapPresentation({
             },
             {
               value: String(statisticsCountText(network.edOver24)),
-              label: `Over ${LONG_WAIT_HOURS}h`,
+              label: `Past ${LONG_WAIT_HOURS}h`,
               tone: (exactStatisticsCount(network.edOver24) ?? 0) > 0 ? "warning" : undefined,
             },
           ]

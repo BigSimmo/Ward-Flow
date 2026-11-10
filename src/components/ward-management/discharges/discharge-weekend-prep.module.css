@@ -39,6 +39,20 @@
   color: var(--wf-ink-3);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
+
+/* Page tops (9 Nov 2026): one fact a line; the separator is kept in the text but not drawn. */
+.summaryPart {
+  display: block;
+}
+
+.summarySep {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .foldHeading {
   flex: 1 1 100%;
   min-width: 0;

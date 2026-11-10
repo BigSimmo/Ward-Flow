@@ -3,13 +3,21 @@
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Fragment, type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { ChevronDown, Clock, Copy, Mail, MapPin, Ellipsis, Printer, Users } from "lucide-react";
-import { MINUTES_PER_DAY, dayOf, minuteOfDay } from "@/components/ward-management/ward-clock";
 import {
-  useOptionalWardFlowSelect,
-  useWardFlowClock,
-  useWardNetwork,
-} from "@/components/ward-management/ward-flow-provider";
+  ChevronDown,
+  ChevronRight,
+  ClipboardList,
+  Clock,
+  Copy,
+  Mail,
+  MapPin,
+  Ellipsis,
+  Printer,
+  Users,
+} from "lucide-react";
+import { MINUTES_PER_DAY, dayOf, formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
+import { usePageLive } from "@/components/ward-management/ward-page-live";
+import { useOptionalWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import { withRecordedChecks } from "./on-call-checks";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -19,8 +27,15 @@ import {
   Card,
   CardFoot,
   FilterChip,
+  FolderTabs,
+  folderTabClasses,
   Hero,
-  HeroTrack,
+  HeroAct,
+  HeroBand,
+  HeroFigures,
+  heroChipClassName,
+  HeroQuickChips,
+  HeroTop,
   Icon,
   LiveChip,
   Menu,
@@ -30,7 +45,6 @@ import {
   Sheet,
   SrOnly,
   StatusGlyph,
-  Tabs,
   cx,
   Drawer,
   tableClasses,
@@ -48,7 +62,6 @@ import {
   isAnswering,
   keyLineLabel,
   numberAt,
-  upcomingChanges,
   windowText,
   groupRows,
   type DirectoryEntry,
@@ -66,9 +79,10 @@ import {
   placeOf,
   type ContactActions,
 } from "./on-call-parts";
-import { PhoneDirectory, PhoneFocal, PhoneSheet } from "./on-call-phone";
+import { PhoneDirectory, PhoneSheet } from "./on-call-phone";
 
 import { readFavourites, saveFavourites, subscribeFavourites } from "./on-call-favourites";
+import titles from "@/components/ward-management/page-top-title.module.css";
 import styles from "./on-call.module.css";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { useActionToast } from "@/components/ward-management/use-action-toast";
@@ -130,7 +144,9 @@ function rowsForTab(entries: readonly DirectoryEntry[], tab: DirectoryTab, favou
  * ends at the governance lead, the statewide Tier 3 desk.
  */
 export function OnCallScreen() {
-  const boardNow = useWardFlowClock();
+  // Page tops (9 Nov 2026): the Demo pill pauses the board, as on Alerts and Places.
+  const live = usePageLive();
+  const boardNow = live.now;
   const boardMinute = minuteOfDay(boardNow);
   const isPhone = useIsPhone();
   // Tablet portrait (v10): the directory takes the width and a line opens as a slide-over card.
@@ -195,6 +211,7 @@ export function OnCallScreen() {
   const [favourites, setFavourites] = useState<string[]>([]);
   const [notice, setNotice] = useState("");
   const [downtimeOpen, setDowntimeOpen] = useState(false);
+  const [allLines, setAllLines] = useState(false);
   const [sheetId, setSheetId] = useState<string | null>(null);
   const searchId = useId();
   const panelHeadingId = useId();
@@ -306,50 +323,11 @@ export function OnCallScreen() {
   };
 
   const answering = entries.filter((entry) => isAnswering(entry, minute));
-  const endingSoon = entries.filter((entry) => HIGHLIGHTS[1]!.test(entry, minute));
   const closed = entries.filter((entry) => availability(entry, minute).kind === "off");
   const checkDue = entries.filter((entry) => entry.checkedDaysAgo > CHECK_DUE_DAYS);
-  const changes = upcomingChanges(entries, minute, 360);
   const keyLines = KEY_LINE_IDS.map((id) => entries.find((entry) => entry.id === id)).filter(
     (entry): entry is DirectoryEntry => entry !== undefined,
   );
-  // OC3 mock-up (4 Nov 2026): the top strip is grouped by job. Statewide escalation first, then bed
-  // flow for the chosen service (or every service), then up to two starred lines from My list.
-  const scopeKey = scope ? SERVICE_META[scope].short.toLowerCase() : null;
-  const byIds = (ids: readonly string[]) =>
-    ids.map((id) => entries.find((entry) => entry.id === id)).filter((entry): entry is DirectoryEntry => !!entry);
-  const keyGroupsBase = [
-    { id: "state", label: "Statewide", rows: byIds(["sw-bfc", "sw-gov", "sw-mherl"]) },
-    {
-      id: "service",
-      label: scope ? `${SERVICE_META[scope].short} service` : "Bed flow",
-      rows: byIds(
-        scopeKey
-          ? [`${scopeKey}-bfc`, `${scopeKey}-scon`, `${scopeKey}-exec`]
-          : ["nmhs-bfc", "emhs-bfc", "smhs-bfc", "cahs-bfc", "wachs-bfc"],
-      ),
-    },
-  ];
-  const shownKeyIds = new Set(keyGroupsBase.flatMap((group) => group.rows.map((entry) => entry.id)));
-  const keyGroups = [
-    ...keyGroupsBase,
-    { id: "mine", label: "My list", rows: byIds(favourites.filter((id) => !shownKeyIds.has(id))).slice(0, 2) },
-  ].filter((group) => group.rows.length > 0);
-  const keyName = (entry: DirectoryEntry) =>
-    entry.id === "sw-gov"
-      ? "Governance"
-      : entry.id === "sw-mherl"
-        ? "MHERL"
-        : (KEY_LINE_IDS as readonly string[]).includes(entry.id)
-          ? entry.kind === "bedFlow" && entry.service !== "Statewide"
-            ? scope
-              ? "Bed coordinator"
-              : SERVICE_META[entry.service].short
-            : keyLineLabel(entry)
-          : entry.kind === "serviceConsultant"
-            ? "Service consultant"
-            : entry.name;
-
   function copyWhoIsOn() {
     const on = entries.filter((entry) => entry.rostered && isAnswering(entry, minute));
     // Each row names the line answering, so an office line in hours is never passed off as on call.
@@ -397,193 +375,180 @@ export function OnCallScreen() {
     }))
     .filter((item) => item.count > 0);
 
-  const clock = (
-    <span className={styles.heroClock}>
-      <Icon icon={Clock} size={14} />
-      <span className={styles.heroClockTime}>{hhmm(boardMinute)}</span>
-      <span className={styles.heroClockZone}>AWST</span>
-    </span>
-  );
+  // Page tops (Josh, 9 Nov 2026): one slate top as on Home. Three figures over every list this desk
+  // holds, the State bed desk as the act row, Cover at, Copy who is on and Downtime card as chips,
+  // and on a desktop one slim row of bed flow key lines.
+  const stateDesk = entries.find((entry) => entry.id === "sw-bfc");
+  const untilText = (entry: DirectoryEntry) => {
+    const now = availability(entry, minute);
+    if (now.kind === "on") return now.allDay ? "24 hours" : `until ${hhmm(now.until)}`;
+    if (now.kind === "off") return `opens ${hhmm(now.opens)}`;
+    return undefined;
+  };
+  const stateDeskNumber = stateDesk ? numberAt(stateDesk, minute) : undefined;
+  const stateDeskUntil = stateDesk ? untilText(stateDesk) : undefined;
+  const act = stateDesk ? (
+    <HeroAct
+      tone="calm"
+      testId="ward-on-call-act"
+      title={
+        <span className={styles.actLine}>
+          <span className={styles.actKey}>{keyLineLabel(stateDesk)}</span>
+          <span className={styles.actNumber}>{stateDeskNumber ?? "Not recorded"}</span>
+          {!isPhone && stateDeskUntil ? <span className={styles.actSoft}>{stateDeskUntil}</span> : null}
+        </span>
+      }
+      action={
+        stateDeskNumber
+          ? {
+              label: "Copy number",
+              phoneLabel: "Copy",
+              testId: "ward-on-call-act-copy",
+              onClick: () => void copy(stateDeskNumber, "Number copied"),
+            }
+          : undefined
+      }
+    />
+  ) : undefined;
 
-  const coverTrack = (
-    <HeroTrack
-      label="Show cover at"
-      items={isPhone ? COVER_AT.slice(0, 4) : COVER_AT}
-      value={coverAt}
-      onChange={setCoverAt}
-      size="sm"
-      className={isPhone ? styles.coverTrack : undefined}
+  const coverLabel = COVER_AT.find((item) => item.id === coverAt)?.label ?? "Now";
+  const chips = (
+    <HeroQuickChips
+      label="On-call actions"
+      items={[
+        {
+          id: "cover",
+          label: "Cover at",
+          node: (
+            <Menu
+              label="Show cover at"
+              items={COVER_AT.map((item) => ({
+                id: item.id,
+                label: item.label,
+                checked: coverAt === item.id,
+                checkable: "radio" as const,
+                onSelect: () => setCoverAt(item.id),
+              }))}
+              trigger={(props) => (
+                <button
+                  {...props}
+                  type="button"
+                  className={heroChipClassName}
+                  data-testid="ward-on-call-cover"
+                  aria-label={`Cover at ${coverLabel}`}
+                >
+                  <Icon icon={Clock} size={16} />
+                  <span>
+                    Cover at <b className={styles.coverValue}>{coverLabel}</b>
+                  </span>
+                  <Icon icon={ChevronDown} size={14} />
+                </button>
+              )}
+            />
+          ),
+        },
+        {
+          id: "copy",
+          label: "Copy who is on",
+          icon: <ClipboardList size={16} strokeWidth={1.75} aria-hidden="true" />,
+          onClick: copyWhoIsOn,
+          testId: "ward-on-call-copy-who",
+        },
+        {
+          id: "downtime",
+          label: "Downtime card",
+          node: (
+            <button
+              type="button"
+              className={heroChipClassName}
+              title="Preview until the Downtime page exists"
+              data-testid="ward-on-call-downtime-open"
+              onClick={() => setDowntimeOpen(true)}
+            >
+              <Icon icon={Printer} size={16} />
+              <span>Downtime card</span>
+            </button>
+          ),
+        },
+      ]}
     />
   );
 
-  const hero = (
-    <div data-testid="ward-on-call-hud-island">
-      <Hero
-        level={1}
-        eyebrow={
-          atLater ? `Who answers at ${hhmm(minute)}${minute < boardMinute ? " tomorrow" : ""}` : "Who to call now"
+  // Desktop key lines: the bed flow lines and the crisis line (the State bed desk is the act row).
+  // Three show; "All 6 lines" opens the rest in place.
+  // OC3 (4 Nov 2026): a chosen service shows its own bed flow, consultant and executive lines.
+  const scopeKey = scope ? SERVICE_META[scope].short.toLowerCase() : null;
+  const bandLines = (
+    scopeKey
+      ? [`${scopeKey}-bfc`, `${scopeKey}-scon`, `${scopeKey}-exec`, "sw-mherl"]
+      : KEY_LINE_IDS.filter((id) => id !== "sw-bfc")
+  )
+    .map((id) => entries.find((entry) => entry.id === id))
+    .filter((entry): entry is DirectoryEntry => entry !== undefined);
+  const bandShown = allLines ? bandLines : bandLines.slice(0, 3);
+  const keyName = (entry: DirectoryEntry) =>
+    entry.id === "sw-mherl"
+      ? "MHERL"
+      : entry.kind === "serviceConsultant"
+        ? "Consultant"
+        : entry.kind === "bedFlow"
+          ? scope
+            ? "Bed flow"
+            : SERVICE_META[entry.service].short
+          : entry.name;
+  const band =
+    isPhone || bandLines.length === 0 ? undefined : (
+      <HeroBand
+        title="Key lines"
+        variant="inline"
+        testId="ward-on-call-key-lines"
+        aside={
+          bandLines.length > 3 ? (
+            <button
+              type="button"
+              className={styles.allLines}
+              aria-expanded={allLines}
+              onClick={() => setAllLines((open) => !open)}
+            >
+              {allLines ? "Fewer lines" : `All ${bandLines.length} lines`}
+              <Icon icon={allLines ? ChevronDown : ChevronRight} size={14} />
+            </button>
+          ) : undefined
         }
-        // H-0887: the page heading names the page, not only the count.
-        title={
-          <>
-            <SrOnly>On-call:</SrOnly> {answering.length} {answering.length === 1 ? "line" : "lines"} answering
-          </>
-        }
-        // F-08 (phone review, Oct 2026): the phone hero carries the Demo pill and says the numbers are invented.
-        // WF-45: on desktop, scope sits in the meta so the heading name stays "On-call: N lines answering".
-        titleMeta={
-          isPhone
-            ? "Prototype data, invented numbers"
-            : access.role === "officer"
-              ? "Transport lines"
-              : access.role === "bed_manager" && siteCode
-                ? // #1471 review: a saved service other than the site's leaves only statewide lines.
-                  scope && scope !== siteService
-                  ? `${SERVICE_META[scope].short} selected: statewide only`
-                  : `${siteCode}${siteService ? ` + ${SERVICE_META[siteService].short}` : ""} + statewide`
-                : scope
-                  ? `${SERVICE_META[scope].short} + statewide`
-                  : "All services"
-        }
-        stats={
-          isPhone ? (
-            // Device audit 11 Oct 2026: the three figures sit on one short line so the number comes sooner.
-            <span className={styles.phoneStatLine} role="group" aria-label="Lines by state, press to highlight">
-              <span>
-                <b>{closed.length}</b> closed
-              </span>
-              <button type="button" aria-pressed={highlight === "soon"} onClick={() => toggleHighlight("soon")}>
-                <StatusGlyph tone="warning" size={8} />
-                <b>{endingSoon.length}</b> ending soon
-              </button>
-              <button type="button" aria-pressed={highlight === "due"} onClick={() => toggleHighlight("due")}>
-                <StatusGlyph tone="warning" size={8} />
-                <b>{checkDue.length}</b> check due
-              </button>
-            </span>
-          ) : // Post-merge audit (Josh, 4 Nov 2026): a lighter desktop hero. The title is its one figure;
-          // the Show chips under the tabs already count and filter answering, ending soon and check due.
-          undefined
-        }
-        aside={isPhone ? <LiveChip state="live" onHero /> : clock}
-        bar={
-          <>
-            <span className={styles.heroLabel}>Cover at</span>
-            <span className={styles.trackWrap}>{coverTrack}</span>
-            {!isPhone && changes.length ? (
-              <span className={styles.changes}>
-                <span className={styles.heroLabel}>Next</span>
-                {changes.slice(0, 1).map((change) => (
-                  <button
-                    key={`${change.minute}-${change.text}`}
-                    type="button"
-                    className={styles.change}
-                    title={`Show cover at ${hhmm(change.minute)}`}
-                    onClick={() => setCoverAt(String(change.minute))}
-                  >
-                    <b className={styles.mono}>{hhmm(change.minute)}</b>
-                    <span className={styles.changeText}>{change.text}</span>
-                  </button>
-                ))}
-              </span>
-            ) : null}
-          </>
-        }
-        barAside={
-          isPhone ? undefined : (
-            <>
-              <Button variant="light" size="sm" icon={Copy} onClick={copyWhoIsOn}>
-                Copy who is on
-              </Button>
-              <Button
-                variant="onHero"
-                size="sm"
-                icon={Printer}
-                className={styles.previewButton}
-                title="Preview until the Downtime page exists"
-                onClick={() => setDowntimeOpen(true)}
-              >
-                Downtime card
-              </Button>
-            </>
-          )
-        }
-        foot={
-          isPhone ? (
-            <PhoneFocal entries={entries} actions={actions} onOpen={(id) => setSheetId(id)} />
-          ) : (
-            <div className={styles.keys} role="group" aria-label="Key lines">
-              {keyGroups.map((group) => (
-                <div
-                  key={group.id}
-                  className={styles.keyGroup}
-                  role="group"
-                  aria-label={group.label}
-                  style={{ flexGrow: group.rows.length }}
-                >
-                  <span className={styles.keyGroupLabel}>{group.label}</span>
-                  <div className={styles.keyRow}>
-                    {group.rows.map((entry) => {
-                      const now = availability(entry, minute);
-                      const number = numberAt(entry, minute);
-                      return (
-                        <div key={entry.id} className={styles.keyCard}>
-                          <button
-                            id={entry.id === "sw-bfc" ? "ward-reach-bed" : undefined}
-                            type="button"
-                            className={styles.key}
-                            aria-pressed={selected.id === entry.id}
-                            data-testid={`ward-on-call-key-${entry.id}`}
-                            onClick={() => pick(entry.id)}
-                          >
-                            <span className={styles.keyLabel}>
-                              <ServiceTag service={entry.service} label="" />
-                              <span className={styles.truncate}>{keyName(entry)}</span>
-                            </span>
-                            <span className={styles.keyNumber}>{number ?? "Email only"}</span>
-                            <span className={styles.keyUntil}>
-                              {now.kind === "on" ? (
-                                now.allDay ? (
-                                  <>
-                                    <StatusGlyph tone="success" size={9} />
-                                    24 hours
-                                  </>
-                                ) : (
-                                  <>
-                                    <StatusGlyph tone={now.soon ? "warning" : "success"} size={9} />
-                                    Until <span className={styles.mono}>{hhmm(now.until)}</span>
-                                  </>
-                                )
-                              ) : now.kind === "off" ? (
-                                <>
-                                  <StatusGlyph tone="neutral" size={9} />
-                                  Opens <span className={styles.mono}>{hhmm(now.opens)}</span>
-                                </>
-                              ) : null}
-                            </span>
-                          </button>
-                          {number ? (
-                            <button
-                              type="button"
-                              className={styles.keyCopy}
-                              aria-label={`Copy ${keyName(entry)} number`}
-                              onClick={() => void copy(number, "Number copied")}
-                            >
-                              <Icon icon={Copy} size={14} />
-                            </button>
-                          ) : null}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )
-        }
+        cells={bandShown.map((entry) => {
+          const number = numberAt(entry, minute);
+          const until = untilText(entry);
+          return {
+            id: entry.id,
+            label: keyName(entry),
+            // The time sits on the number's line in quiet sans, as the act row's does.
+            value: (
+              <>
+                <span className={styles.keyLineNumber}>{number ?? "Email only"}</span>
+                {until ? <span className={styles.keyLineUntil}> {until}</span> : null}
+              </>
+            ),
+            onClick: () => pick(entry.id),
+            // The name starts with the cell's visible words (WCAG 2.5.3, label in name).
+            ariaLabel: `${keyName(entry)} ${number ?? "Email only"}${until ? ` ${until}` : ""}, ${keyLineLabel(entry)}`,
+            testId: `ward-on-call-key-${entry.id}`,
+          };
+        })}
       />
-    </div>
-  );
+    );
+
+  // WF-45: a narrowed desk still says whose lines these are.
+  const scopeNote =
+    access.role === "officer"
+      ? "Transport lines"
+      : access.role === "bed_manager" && siteCode
+        ? // #1471 review: a saved service other than the site's leaves only statewide lines.
+          scope && scope !== siteService
+          ? `${SERVICE_META[scope].short} selected: statewide only`
+          : `${siteCode}${siteService ? ` + ${SERVICE_META[siteService].short}` : ""} + statewide`
+        : scope
+          ? `${SERVICE_META[scope].short} + statewide`
+          : undefined;
 
   const tabItems = [
     // One set of tab names on every device (device audit 11 Oct 2026; the guide uses the short ones).
@@ -592,6 +557,68 @@ export function OnCallScreen() {
     { id: "statewide" as const, label: "State", count: tabCounts.statewide },
     { id: "mine" as const, label: "Mine", count: tabCounts.mine },
   ];
+
+  const hero = (
+    <div data-testid="ward-on-call-hud-island" className={styles.hudIsland}>
+      <Hero
+        level={1}
+        className={cx(titles.hero, folderTabClasses.hero)}
+        // H-0887: the page heading names the page, not only the time.
+        title={
+          <>
+            <SrOnly>On-call:</SrOnly> {atLater ? `Who answers at ${hhmm(minute)}` : "Who to call"}{" "}
+            <span className={titles.soft}>{atLater ? (minute < boardMinute ? "tomorrow" : "") : "now"}</span>
+          </>
+        }
+        // F-08 (phone review, Oct 2026): the phone top says the numbers are invented.
+        titleMeta={isPhone ? "Prototype data, invented numbers" : scopeNote}
+        aside={
+          <LiveChip
+            state={live.paused ? "paused" : "live"}
+            onHero
+            age={formatInstant(boardNow)}
+            onTogglePause={live.togglePause}
+          />
+        }
+      >
+        <HeroTop
+          testId="ward-on-call-top"
+          figures={
+            <HeroFigures
+              items={[
+                {
+                  id: "answering",
+                  value: answering.length,
+                  label: "answering, all lists",
+                  testId: "ward-on-call-figure-answering",
+                },
+                { id: "closed", value: closed.length, label: "closed", testId: "ward-on-call-figure-closed" },
+                {
+                  id: "due",
+                  value: checkDue.length,
+                  label: "check due, all lists",
+                  testId: "ward-on-call-figure-due",
+                },
+              ]}
+            />
+          }
+          act={act}
+          chips={chips}
+          band={band}
+        />
+      </Hero>
+      {/* Page tops (9 Nov 2026): the directory's tabs are the folder tabs under the top. */}
+      <FolderTabs label="Directory views" value={tab} testId="ward-on-call-tabs">
+        <PillTabs
+          className={folderTabClasses.switch}
+          label="Directory"
+          items={tabItems}
+          value={tab}
+          onChange={setTab}
+        />
+      </FolderTabs>
+    </div>
+  );
 
   // D-91: the one page search field. Its spoken name is the full hint; the placeholder names what
   // is searched in words that never cut off. The Matches panel and the hit count say how many match.
@@ -602,7 +629,8 @@ export function OnCallScreen() {
       placeholder="Role, place or number"
       value={query}
       onValueChange={setQuery}
-      shortcut={!isPhone}
+      // Page tops (9 Nov 2026): the header search already shows "/", so this field shows no second
+      // hint. The "/" key still lands here on a desktop.
       className={styles.search}
     />
   );
@@ -624,15 +652,20 @@ export function OnCallScreen() {
     </FilterChip>
   ));
 
-  // Phone: Ending soon and Check due are the hero figures, so the chips are the other two, uncounted.
-  const phoneHighlightChips = HIGHLIGHTS.filter((item) => item.id === "now" || item.id === "email").map((item) => (
+  // Phone: every Show highlight sits in the Filter fold, uncounted (page tops, 9 Nov 2026: the hero
+  // figures no longer press to highlight).
+  const phoneHighlightChips = HIGHLIGHTS.map((item) => (
     <FilterChip
       key={item.id}
       pressed={highlight === item.id}
       onPressedChange={() => toggleHighlight(item.id)}
       className={styles.chip}
     >
-      {item.id === "email" ? <Icon icon={Mail} size={16} /> : <StatusGlyph tone="success" size={9} />}
+      {item.id === "email" ? (
+        <Icon icon={Mail} size={16} />
+      ) : (
+        <StatusGlyph tone={item.id === "now" ? "success" : "warning"} size={9} />
+      )}
       {item.label}
     </FilterChip>
   ));
@@ -715,10 +748,7 @@ export function OnCallScreen() {
               {/* Josh review (4 Nov 2026): By role, Answering and Has email fold into one Filter
                   button on the search line, so the directory starts a row higher. */}
               <PhoneFilterFold
-                count={
-                  (groupBy === "role" && tab === "hospitals" ? 1 : 0) +
-                  (highlight === "now" || highlight === "email" ? 1 : 0)
-                }
+                count={(groupBy === "role" && tab === "hospitals" ? 1 : 0) + (highlight !== null ? 1 : 0)}
                 title="Show"
                 description="Highlights never hide a line."
                 data-testid="ward-on-call-filter-fold"
@@ -746,15 +776,6 @@ export function OnCallScreen() {
                     <Icon icon={Ellipsis} size={20} />
                   </button>
                 )}
-              />
-            </div>
-            <div className={styles.phoneSeg}>
-              <PillTabs
-                label="Directory"
-                items={tabItems.map((item) => (item.id === "mine" ? item : { ...item, count: undefined }))}
-                value={tab}
-                onChange={setTab}
-                fill
               />
             </div>
           </div>
@@ -798,7 +819,6 @@ export function OnCallScreen() {
             className={styles.directory}
           >
             <div className={styles.dirHead}>
-              <Tabs label="Directory" items={tabItems} value={tab} onChange={setTab} />
               <span className={styles.spacer} />
               {search}
             </div>

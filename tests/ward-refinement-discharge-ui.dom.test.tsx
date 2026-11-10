@@ -40,7 +40,7 @@ function renderDischarges({ controls = false }: { controls?: boolean } = {}) {
 }
 
 function showRecorded() {
-  fireEvent.click(screen.getByRole("button", { name: "Recorded, discharges in the last 7 days" }));
+  fireEvent.click(screen.getByRole("tab", { name: "Recorded, discharges in the last 7 days" }));
 }
 
 /** A kit Menu radio picker: open its pill, then choose the option. */
@@ -108,7 +108,7 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
       within(screen.getByRole("dialog", { name: "Reset the demo?" })).getByRole("button", { name: "Reset demo" }),
     );
 
-    expect(screen.getByRole("button", { name: /^Now, \d+ to work now$/u })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("tab", { name: /^Now, \d+ to work now$/u })).toHaveAttribute("aria-selected", "true");
     // Drawer review (6 Nov 2026): clearing the identity closes the detail drawer.
     expect(screen.queryByTestId("ward-discharge-detail")).toBeNull();
 
@@ -121,27 +121,29 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     renderDischarges();
     // Discharges redesign (approved 31 Oct 2026): Now names the hero's figure, the releases listed to
     // work now. DC4 (3 Nov 2026): Recorded is the last 7 days of discharges and carries no count.
-    const releases = screen.getByRole("button", { name: /^Now, \d+ to work now$/u });
-    const recorded = screen.getByRole("button", { name: "Recorded, discharges in the last 7 days" });
+    const releases = screen.getByRole("tab", { name: /^Now, \d+ to work now$/u });
+    const recorded = screen.getByRole("tab", { name: "Recorded, discharges in the last 7 days" });
     const groups = groupDischarges(bedReleases, NOW_ANCHOR, { heldUpAnyDate: true });
     const toWork = groups.blocked.length + groups.confirmed.length + groups.expected.length;
     expect(toWork).toBeGreaterThan(0);
     expect(releases).toHaveAccessibleName(`Now, ${toWork} to work now`);
     // The headline counts the rows listed; "open" beside it is every release not yet discharged.
     const open = bedReleases.filter((release) => release.state !== "discharged").length;
-    expect(screen.getByRole("heading", { name: new RegExp(`^${toWork} to work now`, "u") })).toBeInTheDocument();
-    expect(screen.getByTestId("ward-discharge-bed-days-past")).toHaveTextContent(new RegExp(`of ${open} open`, "u"));
+    // Page tops (9 Nov 2026): the figure leads the hero's figures, with the open total beside it.
+    expect(screen.getByTestId("ward-discharge-figure-work")).toHaveTextContent(
+      new RegExp(`^${toWork}\\s*/\\s*of\\s*${open}\\s*open,\\s*to work now$`, "u"),
+    );
     // DC2 (3 Nov 2026): the in-list status chip row is gone in both populations.
     expect(screen.queryByRole("group", { name: "Status" })).toBeNull();
 
     fireEvent.click(recorded);
-    expect(recorded).toHaveAttribute("aria-pressed", "true");
+    expect(recorded).toHaveAttribute("aria-selected", "true");
     expect(screen.queryByRole("group", { name: "Status" })).toBeNull();
     const recent = seededRecentDepartureCount();
     expect(recent, "the seed has no discharge in the last 7 days").toBeGreaterThan(0);
-    expect(
-      screen.getByRole("heading", { name: new RegExp(`^${recent} discharges? recorded`, "u") }),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("ward-discharge-figure-recorded")).toHaveTextContent(
+      new RegExp(`^${recent}\\s*recorded$`, "u"),
+    );
     const worklist = screen.getByRole("region", { name: "Discharge worklist" });
     expect(within(worklist).getAllByRole("button")).toHaveLength(recent);
     // An open admission record (Ines Marrowby, held up or expected) stays on Now only.
@@ -180,7 +182,7 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     pick("Going to", "All");
     openFarahRecord();
     expect(screen.getByTestId("ward-discharge-detail")).toHaveTextContent("UMRN UM100010");
-    fireEvent.click(screen.getByRole("button", { name: /^Now, \d+ to work now$/u }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Now, \d+ to work now$/u }));
     // Drawer review (6 Nov 2026): clearing the identity closes the detail drawer.
     expect(screen.queryByTestId("ward-discharge-detail")).toBeNull();
   });

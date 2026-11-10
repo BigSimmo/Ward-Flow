@@ -1,0 +1,69 @@
+/*
+ * Referrals coordinator top (page tops, Josh 9 Nov 2026): the oldest and median line on its own line
+ * under the headline, the since-referral runway (desktop) and the phone's quiet due-times line.
+ * Tokens only.
+ */
+
+/* The title's meta line sits under the headline, as the live layout reads. */
+.hero.hero.hero [data-wf-hero-title-line] {
+  flex-wrap: wrap;
+}
+
+.hero.hero.hero [data-wf-hero-title-line] > [data-wf-hero-title] + span {
+  flex-basis: 100%;
+  margin: 2px 0 0;
+}
+
+.runway {
+  min-width: 0;
+}
+
+/* Phone: "Due T1 1h · T2 4h · T3 24h ›", one quiet line that opens the waiting-time sheet. */
+.dueLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: 44px;
+  margin: -6px 0 -6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wf-hero-ink-2);
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.dueLine b {
+  color: var(--wf-hero-ink);
+  font: 600 var(--wf-fs-13) / 18px var(--wf-mono);
+}
+
+.dueLine svg {
+  flex: none;
+  color: var(--wf-hero-ink-3);
+}
+
+.dueLine:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* The tab row follows the hero with no column gap inside .wrap, so the folder rises by the rise alone. */
+.tabs {
+  --wf-folder-gap: 0px;
+}
+
+/* The median stays on a phone too (the live phone top showed it). */
+.hero.hero.hero [data-wf-hero-title-line] > [data-wf-hero-title] + span span {
+  display: inline;
+}

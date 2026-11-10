@@ -3,7 +3,7 @@
 import { SlidersHorizontal } from "lucide-react";
 import { useRef, useState } from "react";
 
-import { Button, ChipGroup, FilterChip, Popover, Sheet, ShowMoreRow, useIsPhone } from "@/components/wf";
+import { Button, ChipGroup, FilterChip, Popover, Sheet, ShowMoreRow, cx, useIsPhone } from "@/components/wf";
 
 import {
   AGENDA_GROUP_FACETS,
@@ -34,10 +34,13 @@ export function AgendaGroupFilterControl({
   options,
   value,
   onChange,
+  onHero = false,
 }: {
   options: Record<AgendaGroupFacet, AgendaGroupOption[]>;
   value: AgendaGroupFilter;
   onChange: (next: AgendaGroupFilter) => void;
+  /** Page tops (Josh, 9 Nov 2026): drawn as one of the slate's quick chips. */
+  onHero?: boolean;
 }) {
   const [allWards, setAllWards] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -90,23 +93,30 @@ export function AgendaGroupFilterControl({
       </div>
     </div>
   );
-  const trigger = (props: Record<string, unknown>) => (
-    <Button
-      {...props}
-      size="sm"
-      variant="ghost"
-      icon={SlidersHorizontal}
-      count={chosen > 0 ? chosen : undefined}
-      className={styles.groupTrigger}
-      data-testid="bed-meeting-agenda-groups"
-    >
-      Filter
-    </Button>
-  );
+  const trigger = (props: Record<string, unknown>) =>
+    onHero ? (
+      <button {...props} type="button" className={styles.heroChip} data-testid="bed-meeting-agenda-groups">
+        <SlidersHorizontal size={16} strokeWidth={1.75} aria-hidden="true" />
+        Filter
+        {chosen > 0 ? <b className={styles.heroChipCount}>{chosen}</b> : null}
+      </button>
+    ) : (
+      <Button
+        {...props}
+        size="sm"
+        variant="ghost"
+        icon={SlidersHorizontal}
+        count={chosen > 0 ? chosen : undefined}
+        className={styles.groupTrigger}
+        data-testid="bed-meeting-agenda-groups"
+      >
+        Filter
+      </Button>
+    );
   // Josh (4 Nov 2026): a bottom sheet on a phone, easy with one thumb, as the kit's long-list picker.
   if (phone) {
     return (
-      <span className={styles.groupFilter}>
+      <span className={cx(styles.groupFilter, onHero && styles.groupFilterOnHero)}>
         {trigger({
           ref: phoneTrigger,
           "aria-haspopup": "dialog",
@@ -129,7 +139,7 @@ export function AgendaGroupFilterControl({
     <Popover
       label="Filter the agenda by group"
       align="end"
-      className={styles.groupFilter}
+      className={cx(styles.groupFilter, onHero && styles.groupFilterOnHero)}
       panelClassName={styles.groupPanel}
       trigger={trigger}
     >

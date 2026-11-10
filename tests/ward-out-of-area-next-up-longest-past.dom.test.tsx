@@ -47,11 +47,12 @@ describe("out-of-area: Plan next return opens the unplanned patient longest past
         <OutOfAreaBoard admissions={admissions} />
       </WardFlowProvider>,
     );
-    const button = screen.getByRole("button", { name: /Plan next return/i });
-    const opens = /^Opens (.+), the longest past discharge with no plan$/.exec(button.getAttribute("title") ?? "");
+    // Page tops (Josh approved, 9 Nov 2026): the hero's next step names the patient in its title,
+    // beside the Plan next return button.
+    expect(screen.getByRole("button", { name: /Plan next return/i })).toBeInTheDocument();
+    const opens = /^Next return: (.+)$/.exec(screen.getByTestId("ward-out-of-area-next-return").textContent ?? "");
     expect(opens).not.toBeNull();
     const name = opens![1]!;
     expect(screen.getByTestId(`ward-out-of-area-row-${earliest.admission.id}`).textContent).toContain(name);
-    expect(button.textContent).toBe(`Plan next return ${name}`);
   });
 });

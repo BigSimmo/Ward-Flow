@@ -11,7 +11,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import { ChevronDown, Maximize2, Minimize2 } from "lucide-react";
+import { ChevronDown, Maximize2, Minimize2, Tv } from "lucide-react";
 
 import { bedMeetingSheet, type BedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
 import type { BedKindGap, BedKindId } from "@/components/ward-management/capacity/capacity-derivations";
@@ -30,7 +30,6 @@ import {
   ED_TREND_SPAN_MINUTES,
   ED_TREND_STEP_MINUTES,
   LONG_WAIT_MINUTES,
-  LONG_WAIT_TEXT,
 } from "@/components/ward-management/ward-operational-defaults";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
@@ -38,7 +37,7 @@ import { WARD_BED_MEETING_TV_HREF, WARD_CAPACITY_HREF, bedMeetingTvHref } from "
 import { currentShift } from "@/components/ward-management/ward-board-time-features";
 import { scenarioLabels } from "@/components/ward-management/ward-scenarios";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
-import { StatusGlyph, cx, useSharedRefreshLate } from "@/components/wf";
+import { StatusGlyph, cx, heroChipClassName, useSharedRefreshLate } from "@/components/wf";
 import { healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 import { allEmergencyDepartments, edById } from "@/components/ward-management/ward-sites";
 
@@ -65,6 +64,8 @@ import { edClinicalRows, wardClinicalRows } from "./tv-clinical-derivations";
 import { EdClinicalTvView, WardClinicalTvView, WardHandoverTvView } from "./tv-clinical-views";
 import { BoardSwitch, LivePulse, tvBoardOf, tvBoardTitle, type TvBoard } from "./tv-board-switch";
 import { EdBedSearchTvView, WardLegalTvView, WardObsLeaveTvView, WardTodayTvView } from "./tv-function-views";
+import { MeetingTvTop } from "./bed-meeting-tv-top";
+import topStyles from "./bed-meeting-tv-top.module.css";
 import styles from "./bed-meeting-tv.module.css";
 
 const TREND_SPAN_HOURS = ED_TREND_SPAN_MINUTES / 60;
@@ -490,6 +491,25 @@ function WardTable({ rows }: { rows: MeetingTvExtras["wards"] }) {
   );
 }
 
+/** Core pages redesign (31 Oct 2026): what the figures leave out, in one line at reading size. */
+function meetingCheckingText(sheet: BedMeetingSheet, extras: MeetingTvExtras, now: number): string {
+  // TV-12: the printed sheet's stuck referrals, as one count here. Its rows hold places, never people.
+  const stuck = sheet.stuckReferrals ? sheet.stuckReferrals.places.length + sheet.stuckReferrals.morePlaces : 0;
+  return [
+    upperFirst(bedCountText(extras.bedCount, now)),
+    extras.pendingPreparation > 0
+      ? upperFirst(preparingSentence(extras.pendingPreparation).replace(/^[.,]\s*/, ""))
+      : null,
+    // NA3-02: the discharges figure counts those held up, so the line says how many (page tops, 9 Nov 2026).
+    sheet.discharges.heldUp > 0 ? releasesHeldUpText(sheet.discharges.heldUp) : null,
+    sheet.stuckReferrals && stuck > 0
+      ? `${stuck} ${stuck === 1 ? "place" : "places"} with no referral reply after ${splitDuration(sheet.stuckReferrals.limitMinutes)}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 function BedMeetingTvView({
   sheet,
   extras,
@@ -501,100 +521,12 @@ function BedMeetingTvView({
   now: number;
   scenario: string;
 }) {
-  const { capacity, discharges, ed, delays } = sheet;
+  const { ed, delays } = sheet;
   const scope = sheet.service === null ? "All services" : sheet.service;
-  // Held up discharges are due too: the panel lists them, so the figure counts them.
-  const dischargingToday = discharges.heldUp + discharges.confirmed + discharges.expected;
-  const longest = ed.longestWaits[0];
-  const shortKinds = extras.gaps.filter((row) => row.gap < 0);
   const forecast = useForecastModel(now);
-  // TV-12: the printed sheet's stuck referrals, as one count here. Its rows hold places, never people.
-  const stuck = sheet.stuckReferrals
-    ? {
-        limitMinutes: sheet.stuckReferrals.limitMinutes,
-        places: sheet.stuckReferrals.places.length + sheet.stuckReferrals.morePlaces,
-      }
-    : undefined;
 
   return (
     <>
-      <TvTiles
-        tiles={[
-          {
-            label: "Waiting in ED",
-            value: ed.waiting,
-            detail: `${ed.overLongWait} waiting ${LONG_WAIT_TEXT}`,
-            tone: ed.overLongWait > 0 ? "danger" : ed.waiting > 0 ? "warning" : undefined,
-            meter: { value: ed.overLongWait, max: ed.waiting },
-            testId: "bed-meeting-tv-ed",
-          },
-          {
-            label: "Longest ED wait",
-            value: longest ? splitDuration(longest.waitMinutes) : 0,
-            detail: longest ? `At ${edName(longest.department)}` : "Nobody waiting",
-            tone: longest && longest.waitMinutes >= LONG_WAIT_MINUTES ? "danger" : undefined,
-            // Final polish (31 Oct 2026): every tile has its bar. Here, the wait against the long-wait
-            // line (full once past it), the same line the tile's Act now uses.
-            meter: { value: longest?.waitMinutes ?? 0, max: LONG_WAIT_MINUTES },
-            testId: "bed-meeting-tv-longest",
-          },
-          {
-            label: "Beds ready now",
-            value: capacity.ready,
-            // Core pages redesign: one short line the room can read; being made ready and the count's age move
-            // to the checking line under the tiles.
-            detail: shortKinds.length
-              ? `${capacity.lockedReady} locked ready · ${shortKinds.length} bed ${shortKinds.length === 1 ? "type" : "types"} short`
-              : `Of ${capacity.beds} beds · ${capacity.lockedReady} locked ready`,
-            tone:
-              capacity.ready === 0
-                ? "danger"
-                : shortKinds.length > 0 || extras.bedCount.notConfirmed > 0
-                  ? "warning"
-                  : undefined,
-            meter: { value: capacity.ready, max: capacity.beds },
-            testId: "bed-meeting-tv-ready",
-          },
-          {
-            // Audit 6 (Josh, 20 Oct 2026): these count tomorrow's discharges too, so the label says so.
-            label: "Discharges due today and tomorrow",
-            value: dischargingToday,
-            detail: `${discharges.confirmed} confirmed · ${releasesHeldUpText(discharges.heldUp)}`,
-            tone: discharges.heldUp > 0 ? "warning" : undefined,
-            meter: { value: discharges.confirmed, max: dischargingToday },
-            testId: "bed-meeting-tv-discharges",
-          },
-          {
-            // PR #489 review: this counts every open journey (waiting and in transit), the same
-            // figure as the Movements badge, so it carries that badge's words rather than "Delayed".
-            // Core pages redesign: the count names its noun, in the Movements page's own words ("Open movements").
-            // Causes keep the fixed cause order (form times first), so the first is the most urgent.
-            label: "Open movements",
-            value: delays.total,
-            detail: delays.groups[0] ? `Most urgent: ${delays.groups[0].title.toLowerCase()}` : "None open",
-            tone: delays.total > 0 ? "warning" : undefined,
-            // Final polish: the share of open movements held by the most urgent cause the detail names.
-            meter: { value: delays.groups[0]?.count ?? 0, max: delays.total },
-            testId: "bed-meeting-tv-delays",
-          },
-        ]}
-      />
-      {/* Core pages redesign (31 Oct 2026): what the tiles leave out, in one line at reading size, so no tile holds four lines. */}
-      <p className={styles.checking} data-testid="bed-meeting-tv-checking">
-        {[
-          upperFirst(bedCountText(extras.bedCount, now)),
-          extras.pendingPreparation > 0
-            ? upperFirst(preparingSentence(extras.pendingPreparation).replace(/^[.,]\s*/, ""))
-            : null,
-          // TV-12: the printed sheet's stuck referrals, counted here where there is room on every TV.
-          stuck && stuck.places > 0
-            ? `${stuck.places} ${stuck.places === 1 ? "place" : "places"} with no referral reply after ${splitDuration(stuck.limitMinutes)}`
-            : null,
-        ]
-          .filter(Boolean)
-          .join(" · ")}
-      </p>
-
       <div className={styles.panels} data-layout="meeting">
         {sheet.service === null ? (
           <Panel title="By health service" testId="bed-meeting-tv-services-panel" wide area="main">
@@ -1039,7 +971,8 @@ function useScreenWakeLock(active: boolean) {
 }
 
 /** Which screen to show: plain links, so a TV can be pointed at one service, ward or ED for good. */
-function ScreenPicker({ current, label }: { current: string; label: string }) {
+/** `chip`: drawn as a slate quick chip naming the screen in short ("All services"), as the meeting's top. */
+function ScreenPicker({ current, label, chip }: { current: string; label: string; chip?: string }) {
   const { units } = useWardFlowSelect("units");
   const wards = [...units].sort((a, b) => a.name.localeCompare(b.name));
   const eds = [...allEmergencyDepartments()].sort((a, b) => a.name.localeCompare(b.name));
@@ -1053,10 +986,18 @@ function ScreenPicker({ current, label }: { current: string; label: string }) {
   return (
     <details ref={pickerRef} className={styles.picker} data-testid="bed-meeting-tv-picker">
       {/* Note 13 (Josh, 8 Nov 2026): the button names the screen on show, beside a "Screen" label. */}
-      <summary className={styles.action} aria-label={`Change screen. Now showing ${label}`}>
-        <span className={styles.pickerCurrent}>{label}</span>
-        <ChevronDown aria-hidden="true" />
-      </summary>
+      {chip === undefined ? (
+        <summary className={styles.action} aria-label={`Change screen. Now showing ${label}`}>
+          <span className={styles.pickerCurrent}>{label}</span>
+          <ChevronDown aria-hidden="true" />
+        </summary>
+      ) : (
+        <summary className={heroChipClassName} aria-label={`Change screen. Now showing ${label}`}>
+          <Tv size={16} strokeWidth={1.75} aria-hidden="true" />
+          <span className={styles.pickerCurrent}>{chip}</span>
+          <ChevronDown size={14} strokeWidth={2} className={topStyles.chipChevron} aria-hidden="true" />
+        </summary>
+      )}
       <nav className={styles.pickerMenu} aria-label="TV screens">
         <div>
           <h2 className={styles.pickerHeading}>Bed meetings</h2>
@@ -1336,6 +1277,14 @@ export function BedMeetingTvScreen({
             ? "State"
             : "Health service"
           : "Bed meeting";
+  // TV-06: a frozen screen warns in red at once, with no invented wait; from the first minute it
+  // also says how old the figures are, and the time now.
+  const staleWarning = (
+    <strong className={styles.stale} data-testid="bed-meeting-tv-stale" data-level="danger">
+      {!online ? "offline, not updating" : "connection unavailable, not updating"}
+      {staleMinutes >= 1 ? `. Figures are ${splitDuration(staleMinutes)} old. Now ${asAtStamp(now).time ?? ""}` : ""}
+    </strong>
+  );
   const current = unit
     ? `ward:${unit.id}`
     : department
@@ -1358,88 +1307,133 @@ export function BedMeetingTvScreen({
       data-wf-tv-clean=""
       aria-labelledby="bed-meeting-tv-title"
     >
-      <header className={styles.header}>
-        <div>
-          {/* TV-08: the prototype mark sits in the header, so a 1080p screen never loses it below. */}
-          <p className={styles.eyebrow}>
-            {eyebrow} TV <span data-testid="bed-meeting-tv-mark">· Synthetic prototype, not for clinical use</span>
-          </p>
-          <h1 id="bed-meeting-tv-title" className={styles.title}>
-            {title}
-          </h1>
-          <p className={styles.sub} data-testid="bed-meeting-tv-as-at">
-            {live && stamp.time !== null ? <LivePulse /> : null}
-            {stamp.time === null
-              ? "Time not recorded"
-              : live
-                ? `As at ${stamp.time}`
-                : `Last updated ${stamp.time}`} ·{" "}
-            {live ? (
-              // TV-07: the local demo shares nothing, so "updates on its own" must not hide that.
-              shared?.enabled === true ? (
-                "updates on its own"
-              ) : (
-                "updates on its own, this browser only"
-              )
-            ) : (
-              <strong
-                className={styles.stale}
-                data-testid="bed-meeting-tv-stale"
-                // TV-06: a frozen screen warns in red at once, with no invented wait; from the first
-                // minute it also says how old the figures are, and the time now.
-                data-level="danger"
+      {view.kind === "network" ? (
+        <MeetingTvTop
+          sheet={view.sheet}
+          scope={view.sheet.service === null ? "All services" : view.sheet.service}
+          longestPlace={view.sheet.ed.longestWaits[0] ? edName(view.sheet.ed.longestWaits[0].department) : undefined}
+          checking={meetingCheckingText(view.sheet, view.extras, shownNow)}
+          live={live}
+          local={shared?.enabled !== true}
+          asAt={stamp.time}
+          stale={staleWarning}
+          chips={[
+            {
+              id: "screen",
+              label: "Change screen",
+              node: (
+                <ScreenPicker
+                  current={current}
+                  label={title}
+                  chip={view.sheet.service === null ? "All services" : view.sheet.service}
+                />
+              ),
+            },
+            ...(fullscreen.supported
+              ? [
+                  {
+                    id: "fullscreen",
+                    label: "Full screen",
+                    node: (
+                      <button
+                        type="button"
+                        className={cx(heroChipClassName, topStyles.wallOnly)}
+                        onClick={fullscreen.toggle}
+                        data-testid="bed-meeting-tv-fullscreen"
+                      >
+                        {fullscreen.active ? <Minimize2 aria-hidden="true" /> : <Maximize2 aria-hidden="true" />}
+                        {fullscreen.active ? "Leave full screen" : "Full screen"}
+                      </button>
+                    ),
+                  },
+                ]
+              : []),
+            {
+              id: "lock",
+              label: "Lock as TV",
+              node: (
+                <TvLockControl
+                  href={selfHref}
+                  className={cx(heroChipClassName, topStyles.wallOnly)}
+                  shared={shared?.enabled === true}
+                />
+              ),
+            },
+            ...(tvLocked
+              ? []
+              : [{ id: "leave", label: "Leave TV view", node: <TvLeaveLink className={heroChipClassName} /> }]),
+          ]}
+        />
+      ) : (
+        <header className={styles.header}>
+          <div>
+            {/* TV-08: the prototype mark sits in the header, so a 1080p screen never loses it below. */}
+            <p className={styles.eyebrow}>
+              {eyebrow} TV <span data-testid="bed-meeting-tv-mark">· Synthetic prototype, not for clinical use</span>
+            </p>
+            <h1 id="bed-meeting-tv-title" className={styles.title}>
+              {title}
+            </h1>
+            <p className={styles.sub} data-testid="bed-meeting-tv-as-at">
+              {live && stamp.time !== null ? <LivePulse /> : null}
+              {stamp.time === null
+                ? "Time not recorded"
+                : live
+                  ? `As at ${stamp.time}`
+                  : `Last updated ${stamp.time}`}{" "}
+              ·{" "}
+              {live
+                ? // TV-07: the local demo shares nothing, so "updates on its own" must not hide that.
+                  shared?.enabled === true
+                  ? "updates on its own"
+                  : "updates on its own, this browser only"
+                : staleWarning}
+            </p>
+          </div>
+          {/* Note 13 (Josh, 8 Nov 2026): the screen controls stay top right, in the same order, on every
+              TV screen, and moving around has its own row below, so changing screen or view never
+              shifts a button. */}
+          <div className={styles.actions}>
+            {fullscreen.supported ? (
+              <button
+                type="button"
+                className={styles.action}
+                onClick={fullscreen.toggle}
+                data-testid="bed-meeting-tv-fullscreen"
               >
-                {!online ? "offline, not updating" : "connection unavailable, not updating"}
-                {staleMinutes >= 1
-                  ? `. Figures are ${splitDuration(staleMinutes)} old. Now ${asAtStamp(now).time ?? ""}`
-                  : ""}
-              </strong>
-            )}
-          </p>
-        </div>
-        {/* Note 13 (Josh, 8 Nov 2026): the screen controls stay top right, in the same order, on every
-            TV screen, and moving around has its own row below, so changing screen or view never
-            shifts a button. */}
-        <div className={styles.actions}>
-          {fullscreen.supported ? (
-            <button
-              type="button"
-              className={styles.action}
-              onClick={fullscreen.toggle}
-              data-testid="bed-meeting-tv-fullscreen"
-            >
-              {fullscreen.active ? <Minimize2 aria-hidden="true" /> : <Maximize2 aria-hidden="true" />}
-              {fullscreen.active ? "Leave full screen" : "Full screen"}
-            </button>
-          ) : null}
-          <TvLockControl href={selfHref} className={styles.action} shared={shared?.enabled === true} />
-          {tvLocked ? null : <TvLeaveLink className={styles.action} />}
-        </div>
-        <div className={styles.navBar} data-testid="bed-meeting-tv-nav">
-          <div className={styles.navGroup}>
-            <span className={styles.navLabel} aria-hidden="true">
-              Screen
-            </span>
-            <ScreenPicker current={current} label={title} />
+                {fullscreen.active ? <Minimize2 aria-hidden="true" /> : <Maximize2 aria-hidden="true" />}
+                {fullscreen.active ? "Leave full screen" : "Full screen"}
+              </button>
+            ) : null}
+            <TvLockControl href={selfHref} className={styles.action} shared={shared?.enabled === true} />
+            {tvLocked ? null : <TvLeaveLink className={styles.action} />}
           </div>
-          <div className={styles.navGroup}>
-            <span className={styles.navLabel} aria-hidden="true">
-              View
-            </span>
-            {ward !== undefined || ed !== undefined ? (
-              <BoardSwitch
-                current={board}
-                kind={ward !== undefined ? "ward" : "ed"}
-                hrefOf={(next) =>
-                  ward !== undefined ? bedMeetingTvHref({ ward, board: next }) : bedMeetingTvHref({ ed, board: next })
-                }
-              />
-            ) : (
-              <BoardSwitch current="flow" kind="meeting" hrefOf={() => selfHref} />
-            )}
+          <div className={styles.navBar} data-testid="bed-meeting-tv-nav">
+            <div className={styles.navGroup}>
+              <span className={styles.navLabel} aria-hidden="true">
+                Screen
+              </span>
+              <ScreenPicker current={current} label={title} />
+            </div>
+            <div className={styles.navGroup}>
+              <span className={styles.navLabel} aria-hidden="true">
+                View
+              </span>
+              {ward !== undefined || ed !== undefined ? (
+                <BoardSwitch
+                  current={board}
+                  kind={ward !== undefined ? "ward" : "ed"}
+                  hrefOf={(next) =>
+                    ward !== undefined ? bedMeetingTvHref({ ward, board: next }) : bedMeetingTvHref({ ed, board: next })
+                  }
+                />
+              ) : (
+                <BoardSwitch current="flow" kind="meeting" hrefOf={() => selfHref} />
+              )}
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
       {view.kind === "network" ? (
         <BedMeetingTvView sheet={view.sheet} extras={view.extras} now={shownNow} scenario={scenarioLabel} />
       ) : view.kind === "ward" ? (

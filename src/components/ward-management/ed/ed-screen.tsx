@@ -37,7 +37,7 @@ import { EdListsCard } from "./ed-lists-desktop";
 import { edStepSaid, edStepUndone, instantFromDateAndTimeInputs, waitLine, type EdStepEvent } from "./ed-screen-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { EdPatientDialog } from "./ed-screen-patient-dialog";
-import { EdPhonePanes } from "./ed-screen-phone";
+import { EdBoardTabs } from "./ed-screen-phone";
 import { EdRaiseIntoMovementSection } from "./ed-screen-raise-section";
 import { useEdInboxDecline } from "./use-ed-screen-decline";
 import { useEdReferralSave } from "./use-ed-referral-save";
@@ -422,7 +422,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         id="main-content"
         className={styles.main}
         data-phone-pane={isPhone ? phonePane : undefined}
-        data-layout={boardTable && !needsRailSlides && !fullscreenBoard ? "rail" : undefined}
+        data-layout={boardTable && !needsRailSlides && !fullscreenBoard && phonePane !== "needs" ? "rail" : undefined}
         data-handover-view={boardTable && fullscreenBoard ? "true" : undefined}
       >
         <EdOverview
@@ -440,6 +440,9 @@ export function EdScreen({ edId }: EdScreenProps) {
               code: candidateSite?.code ?? candidate.siteCode,
               service: candidateSite?.service ?? "Service not identified",
               waiting: candidateMovements.length,
+              longestMinutes: candidateMovements.length
+                ? Math.max(...candidateMovements.map((movement) => Math.max(now - movement.openedAt, 0)))
+                : 0,
               longest: candidateMovements.length
                 ? splitDuration(Math.max(...candidateMovements.map((movement) => Math.max(now - movement.openedAt, 0))))
                 : "—",
@@ -448,11 +451,10 @@ export function EdScreen({ edId }: EdScreenProps) {
             };
           })}
           onBoard={patients.length}
-          // Overall review, 20 Oct 2026: the board holds people still in transit and recorded
-          // outcomes as well, so the title says how its count splits ("5 waiting, 1 in transit") and
-          // the "waiting" part is this department's tile figure in the strip below.
           onBoardParts={[`${boardSplit.waiting} waiting`, ...notWaitingParts(boardSplit)]}
           chips={heroChips}
+          // Page tops (Josh, 9 Nov 2026): Board, My list (and Lists on a phone) are the page tabs.
+          tabs={<EdBoardTabs ctx={ctx} />}
           highlight={heroHighlight}
           onHighlight={setHeroHighlight}
           highlightNote={
@@ -484,18 +486,25 @@ export function EdScreen({ edId }: EdScreenProps) {
 
         <EdRaiseIntoMovementSection ctx={ctx} />
 
-        {isPhone ? <EdPhonePanes ctx={ctx} /> : null}
+        {/* Forecasting build (Josh, 23 Oct 2026, screen 4), loaded lazily for the phone budget. It stays a
+            direct child here, outside the My list switch below, so hydration never remounts it and the
+            board does not jump as the page loads (release gate layout shift, 9 Nov 2026). */}
+        {edDesk || (!isPhone && phonePane === "needs") ? null : <EdAccessRiskCard edId={thisEdId} now={now} />}
 
-        {/* Forecasting build (Josh, 23 Oct 2026, screen 4), loaded lazily for the phone budget. */}
-        {edDesk ? null : <EdAccessRiskCard edId={thisEdId} now={now} />}
-
-        <EdBoardSection ctx={ctx} />
-
-        {isPhone ? (
+        {/* Wider screens: My list shows the list in the board's place (page tops, 9 Nov 2026). */}
+        {!isPhone && phonePane === "needs" ? (
           <EdNeedsYou items={needsYouItems} data-pane="needs" />
-        ) : !needsRailSlides && !fullscreenBoard ? (
-          <EdNeedsYou items={needsYouItems} data-pane="needs" data-rail="" />
-        ) : null}
+        ) : (
+          <>
+            <EdBoardSection ctx={ctx} />
+
+            {isPhone ? (
+              <EdNeedsYou items={needsYouItems} data-pane="needs" />
+            ) : !needsRailSlides && !fullscreenBoard ? (
+              <EdNeedsYou items={needsYouItems} data-pane="needs" data-rail="" />
+            ) : null}
+          </>
+        )}
         {/* Device audit 11 Oct 2026: the Statewide capacity table and the 24 hour timeline left the
             page; each is one link to the page that owns it. */}
         {fullscreenBoard || elsewhereLinks.length === 0 ? null : <EdElsewhereLinks links={elsewhereLinks} />}

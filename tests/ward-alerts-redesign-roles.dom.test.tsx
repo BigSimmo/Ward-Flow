@@ -72,13 +72,12 @@ function renderAs(access: Parameters<typeof setWardAccess>[0], { quiet = false }
 const panel = () => screen.getByRole("complementary", { name: "Selected alert" });
 
 describe("Alerts redesign: the coordinator's page", () => {
-  it("folds the Checking strip into one chip that opens the full list in place", () => {
+  // Page tops (Josh, 9 Nov 2026): Checking is a cell of the Today band; it opens the Checking sheet.
+  it("folds the Checking strip into one band cell that opens the full list", () => {
     renderAs({ role: "coordinator", scope: { kind: "statewide" } });
     expect(screen.queryByRole("list", { name: "Conditions checked" })).not.toBeInTheDocument();
     const chip = screen.getByRole("button", { name: /^Checking \d+ flagged · \d+ clear$/u });
-    expect(chip).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(chip);
-    expect(chip).toHaveAttribute("aria-expanded", "true");
     const list = screen.getByRole("list", { name: "Conditions checked" });
     expect(within(list).getByRole("listitem", { name: "Not checked: handover sheets" })).toBeInTheDocument();
   });
@@ -127,7 +126,8 @@ describe("Alerts redesign: nurse in charge (ROLE BRANCH ward)", () => {
 
   it("names a quiet ward, says so in one line and lists the checks in the side panel", () => {
     renderAs({ role: "ward", scope: { kind: "ward", unitIds: [ward.id] } }, { quiet: true });
-    expect(screen.getByRole("heading", { level: 1, name: `No alert for ${ward.name}` })).toBeInTheDocument();
+    // Page tops (Josh, 9 Nov 2026): the calm act row says it under the title.
+    expect(screen.getByTestId("ward-alerts-calm")).toHaveTextContent(`No alert for ${ward.name}`);
     // Q184: one calm empty state in place of the two empty groups.
     expect(screen.getByTestId("ward-alerts-nothing")).toHaveTextContent(
       `No late or blocked network alerts for ${ward.name}.`,
@@ -146,7 +146,7 @@ describe("Alerts redesign: nurse in charge (ROLE BRANCH ward)", () => {
 
   it("keeps the queue and Today for a ward with alerts, without the arrange-by lens", () => {
     renderAs({ role: "ward", scope: { kind: "ward", unitIds: [ward.id] } });
-    expect(screen.queryByRole("heading", { level: 1, name: /^No alert for/u })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-alerts-calm")).not.toBeInTheDocument();
     expect(screen.queryByRole("radiogroup", { name: "Arrange by" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Today" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Checking \d+ flagged/u })).toBeInTheDocument();
@@ -154,7 +154,7 @@ describe("Alerts redesign: nurse in charge (ROLE BRANCH ward)", () => {
 
   it("leaves the coordinator's quiet page as it was", () => {
     renderAs({ role: "coordinator", scope: { kind: "statewide" } }, { quiet: true });
-    expect(screen.getByRole("heading", { level: 1, name: "No alert needs you" })).toBeInTheDocument();
+    expect(screen.getByTestId("ward-alerts-calm")).toHaveTextContent("No alert needs you");
     expect(screen.getByTestId("ward-alerts-nothing")).toHaveTextContent("Nothing is late or blocked for Statewide.");
     // Drawer review (6 Nov 2026): no side rail, so no "Pick an alert" placeholder beside the queue.
     expect(screen.queryByText("Pick an alert to see it here")).not.toBeInTheDocument();

@@ -145,11 +145,12 @@ describe("Statistics phone polish (batch 4)", () => {
     expect(body.textContent).not.toMatch(/Emergency Department/u);
   });
 
-  it("labels the ward hero figure In use and moves the % to the sub line (stats-15)", () => {
+  // Page-top redesign (9 Nov 2026): "18 / 20" over "in use, 90%", which fits the phone figure.
+  it("labels the ward hero figure In use with its % and the ward's beds (stats-15)", () => {
     asPhone();
     renderInProvider(<StatisticsWardScreen unitId="rph-adult-secure" />);
-    expect(screen.getAllByText("In use").length).toBeGreaterThan(0);
-    expect(screen.getByText(/\d+% of \d+ beds in use/u)).toBeInTheDocument();
+    const label = screen.getByText(/^in use, \d+%$/u);
+    expect(label.closest("p")?.textContent).toMatch(/^\d+\s*\/\s*\d+ in use, \d+%$/u);
   });
 
   it("draws no trend line on the EDs phone rows (stats-19)", () => {
@@ -161,8 +162,8 @@ describe("Statistics phone polish (batch 4)", () => {
   it("prints the network figure to one decimal place on the hub (stats-20)", () => {
     asPhone();
     renderInProvider(<StatisticsScreen />);
-    // Phone review F-26: the figure's label names it ("Beds in use, 85%").
-    expect(screen.getByText(/^Beds in use, \d+%$/u)).toBeInTheDocument();
+    // Page-top redesign (9 Nov 2026): "259 / 304" over "in use, 85%".
+    expect(screen.getByText(/^in use, \d+%$/u)).toBeInTheDocument();
   });
 
   it("writes a nought as 0, never none, on the Services phone list (stats-21)", () => {

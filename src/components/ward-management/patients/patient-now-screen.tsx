@@ -18,7 +18,6 @@ import {
 
 import { hasCommunityEngagement, recordExtrasFor } from "./patient-record-extras";
 import { PatientRecordTabsRow } from "./patient-flight-header";
-import pinnedStyles from "@/components/ward-management/ward-pinned-switch.module.css";
 import {
   useDueSoonThresholds,
   useWardFlowClock,
@@ -135,7 +134,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meeting-actions-due";
 import { useCanOpenHref, useIsDatesOnlyStay } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { Dialog, PhoneSheet, useIsPhone } from "@/components/wf";
+import { Dialog, PhoneSheet, cx, folderTabClasses, useIsPhone } from "@/components/wf";
 import { PatientClearanceDialog, type ClearanceDraft } from "./patient-clearance-dialog";
 import { isOnOrder } from "../ward-stay-legal";
 import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
@@ -1112,11 +1111,15 @@ export function PatientNowScreen({
   /* The record tabs. On a phone they render beside the record (below), pinned under the header. */
   const recordTabs = (
     // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item
-    <div className={styles.v6Tabs} role="tablist" aria-label="The record" onKeyDown={handleTabKeyDown}>
+    <div
+      className={cx(styles.v6FolderSwitch, folderTabClasses.switch)}
+      role="tablist"
+      aria-label="The record"
+      onKeyDown={handleTabKeyDown}
+    >
       {(isPhone ? phoneTabs : tabs).map((tab) => (
         <button
           key={tab.key}
-          className={styles.v6Tab}
           type="button"
           role="tab"
           id={`pntab-${tab.key}`}
@@ -1197,6 +1200,8 @@ export function PatientNowScreen({
           stateTag={stateTag}
           careSteps={careSteps}
           onOpenHistory={() => openTab("history")}
+          onOpenForms={() => openTab("documents")}
+          tabValue={activeTab}
         />
         {/* Restricted record (27 Oct 2026): the notice sits under the hero, so the hero stays the first
             thing under the header and keeps its band join (wf/band.ts). */}
@@ -1209,7 +1214,7 @@ export function PatientNowScreen({
 
         {/* Phone (Josh, 12 Oct 2026): the record tabs pin under the phone header, as Home's queue
             switch does. They sit in the page column beside the record they pin over. */}
-        {isPhone ? <PatientRecordTabsRow tabs={recordTabs} className={pinnedStyles.pinnedSwitch} /> : null}
+        {isPhone ? <PatientRecordTabsRow tabs={recordTabs} value={activeTab} /> : null}
 
         <section className={styles.v6Main} id="pnTabs" aria-label="The record">
           <div className={styles.v6TabBody} id="pnBody">

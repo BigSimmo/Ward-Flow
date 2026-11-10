@@ -137,7 +137,7 @@ describe("Summary's executive aggregate view", () => {
     expect(count).toHaveTextContent("fewer than 5");
     expect(count.parentElement!.parentElement!.querySelector('[style*="width:"]')).toBeNull();
     expect(screen.queryByRole("img", { name: /^Referrals raised today:/ })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Export the figures" }));
+    fireEvent.click(screen.getByRole("button", { name: "Export" }));
     expect(downloadCsv).toHaveBeenCalledWith(
       "ward-flow-synthetic-network-figures.csv",
       expect.arrayContaining([expect.arrayContaining(["fewer than 5"])]),
@@ -215,7 +215,7 @@ describe("Summary's executive aggregate view", () => {
       options,
     );
     summary(data);
-    expect(screen.getByText(/Statistics · North Metro · as at/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^Statistics: North Metro right now$/u);
     // D-91: the one unit finder opens from "Open a unit" on the statistics tab row.
     fireEvent.click(screen.getByTestId("ward-statistics-tool-open-unit"));
     const finder = screen.getByTestId("ward-statistics-unit-finder");

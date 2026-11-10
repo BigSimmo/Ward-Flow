@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, MessageSquare, Send } from "lucide-react";
+import { Check, MessageSquare } from "lucide-react";
 import { Button, Menu, requestConfirm, useOptionalToast } from "@/components/wf";
 import type { BroadcastAlert } from "@/components/ward-management/alerts/ward-broadcast-model";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -164,7 +164,22 @@ export function DischargeMessageWard({
  * set ask, in a single alert to just those wards. Wards already asked in the ask window are
  * left out, so the button never nags twice. Confirmed first, because it reaches several desks.
  */
-export function DischargeAskOverdueWards({
+export type AskOverdueWards = {
+  /** "Ask 21 wards", "Ask the ward", "Sending" or "Asked". */
+  label: string;
+  /** Every ward with an overdue date was asked in the window, or a send is in flight. */
+  disabled: boolean;
+  /** Every ward already asked (the label then reads "Asked"). */
+  allAsked: boolean;
+  ariaLabel: string;
+  ask: () => Promise<void>;
+};
+
+/**
+ * The ask's state and send, shared by the board's hero chip (page tops, 9 Nov 2026) and the button
+ * below. `null` when no ward has an overdue date.
+ */
+export function useAskOverdueWards({
   overdue,
   wardName,
   now,
@@ -174,7 +189,7 @@ export function DischargeAskOverdueWards({
   wardName: (unitId: string) => string;
   now: Instant;
   dispatch: Dispatch;
-}) {
+}): AskOverdueWards | null {
   const toast = useOptionalToast();
   const { broadcastAlerts } = useWardFlowSelect("broadcastAlerts");
   const [sending, setSending] = useState(false);
@@ -218,21 +233,19 @@ export function DischargeAskOverdueWards({
         : { tone: "warning", title: "Not sent", body: result.message ?? "Try again in a moment." },
     );
   };
-  return (
-    <Button
-      size="sm"
-      variant="sec"
-      icon={allAsked ? Check : Send}
-      disabled={sending || allAsked}
-      onClick={() => void ask()}
-      data-testid="ward-discharge-ask-overdue"
-      aria-label={
-        allAsked
-          ? `Every ward with an overdue date has been asked in the last ${ASK_WARDS_WINDOW_TEXT}`
-          : `Ask ${pending.length} ${pending.length === 1 ? "ward" : "wards"} to confirm their overdue discharge dates`
-      }
-    >
-      {sending ? "Sending" : allAsked ? "Asked" : pending.length === 1 ? "Ask the ward" : `Ask ${pending.length} wards`}
-    </Button>
-  );
+  return {
+    label: sending
+      ? "Sending"
+      : allAsked
+        ? "Asked"
+        : pending.length === 1
+          ? "Ask the ward"
+          : `Ask ${pending.length} wards`,
+    disabled: sending || allAsked,
+    allAsked,
+    ariaLabel: allAsked
+      ? `Every ward with an overdue date has been asked in the last ${ASK_WARDS_WINDOW_TEXT}`
+      : `Ask ${pending.length} ${pending.length === 1 ? "ward" : "wards"} to confirm their overdue discharge dates`,
+    ask,
+  };
 }

@@ -60,26 +60,26 @@ describe("capacity review corrections", () => {
     scope.service = null;
   });
 
-  it("Space and Enter activate the hero's ready shortcuts and keep every ward on the bed map", async () => {
+  // Page tops (Josh, 9 Nov 2026): the hero's Locked / Open ready shortcuts went with the old top; the
+  // bed map's own "Open ready" highlight is the control, held to the same keyboard and never-hide rule.
+  it("Space and Enter activate the 'Open ready' highlight and keep every ward on the bed map", async () => {
     const user = userEvent.setup();
     renderCapacity();
     const before = wardCards().length;
     expect(before).toBe(networkRows.length);
-    const hero = within(screen.getByRole("group", { name: "Network beds" }));
 
-    const open = hero.getByRole("button", { name: /Open ready/u });
+    const open = highlightChip("Open ready");
     expect(open.tagName).toBe("BUTTON");
     open.focus();
     await user.keyboard(" ");
-    expect(open).toHaveAttribute("aria-pressed", "true");
     expect(highlightChip("Open ready")).toHaveAttribute("aria-pressed", "true");
     expect(wardCards().filter((card) => /dimmed/u.test(card.className)).length).toBeGreaterThan(0);
     expect(wardCards()).toHaveLength(before);
 
-    // Pressing the same hero figure a second time clears the highlight.
-    open.focus();
+    // Pressing the same highlight a second time clears it.
+    highlightChip("Open ready").focus();
     await user.keyboard("{Enter}");
-    expect(open).toHaveAttribute("aria-pressed", "false");
+    expect(highlightChip("Open ready")).toHaveAttribute("aria-pressed", "false");
     expect(wardCards().filter((card) => /dimmed/u.test(card.className))).toHaveLength(0);
     expect(wardCards()).toHaveLength(before);
   });

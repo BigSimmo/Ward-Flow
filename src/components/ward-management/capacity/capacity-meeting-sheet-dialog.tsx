@@ -36,7 +36,7 @@ export function BedMeetingSheetDialog({
     {
       label: "Waiting in ED",
       value: ed.waiting,
-      sub: `${ed.overLongWait} waiting over 24 hours · ${ed.detained} detained`,
+      sub: `${ed.overLongWait} waiting past 24 hours · ${ed.detained} detained`,
     },
     {
       label: "Beds freeing today",

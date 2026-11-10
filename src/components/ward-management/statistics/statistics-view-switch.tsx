@@ -56,23 +56,6 @@ export function useUnitFinder() {
   return { open, toggle: () => setToggled(!open) };
 }
 
-/** "Open a unit" on the statistics tab row: shows the finder in place under the hero. */
-export function FindUnitTool({ open, onToggle }: { open: boolean; onToggle: () => void }) {
-  return (
-    <button
-      type="button"
-      className={styles.findTool}
-      aria-expanded={open}
-      aria-controls={STATISTICS_UNIT_CHOOSER_ID}
-      onClick={onToggle}
-      data-testid="ward-statistics-tool-open-unit"
-    >
-      <Search size={14} aria-hidden="true" />
-      Open a unit
-    </button>
-  );
-}
-
 /** The same place on another Statistics page's tab row: a link to the one finder, opened. */
 export function FindUnitLink({ testId }: { testId?: string }) {
   return (

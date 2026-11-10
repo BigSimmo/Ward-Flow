@@ -1627,7 +1627,7 @@ Source-contract SHA256: 7065f243c19943ea3a762cbac95439322d4f34a7467f20402f1175d4
   effects: Recipients are accepting ward, else real referred wards. Does not itself pull a bed, move the patient or change movement stage.
   tests: tests/ward-global-alerts.test.ts
   Reviewed source: src/components/ward-management/alerts/ward-broadcast-reducer.ts:293; SHA256 cd46a2fc3599a4dbc092b05eda177f7da454de1cd8642597fa17bf3281a11907
-  Reviewed source: src/components/ward-management/alerts/ward-broadcast-model.ts:317; SHA256 0e5f3b91bc8eaa35959313c446cd9cfd8a986fea2b3b6d0f6b37aa23edd7a316
+  Reviewed source: src/components/ward-management/alerts/ward-broadcast-model.ts:317; SHA256 b27896e799de72fbb71c7782bc2a571627809762c61a40dcecb86b07007ca647
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2409; SHA256 3cd1e61076866a461a99edcc5dac5394bb086f01a5cbeb6a0102329f729a9ed2
   Reviewed source: src/components/ward-management/ward-access-state.ts:728; SHA256 b7e5bfa41c1d5f1a5d9574379ab37c7278b1f9f1b4f2f2fc32d14a78ad7aa21c
 - REPLY_BROADCAST_ALERT — modelled; event roles: ward, bed_manager, coordinator

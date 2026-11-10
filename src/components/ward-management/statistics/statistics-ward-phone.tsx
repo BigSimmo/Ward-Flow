@@ -2,17 +2,15 @@
 // One ward on a phone, split out of statistics-ward-screen.tsx to keep that file under the line cap.
 
 import { useState, type CSSProperties, type ReactNode } from "react";
-import { Building2 } from "lucide-react";
 
 import { PhoneListRow, Segmented, ShowMoreRow, StatusGlyph, cx } from "@/components/wf";
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { MINUTES_PER_DAY, dayOf } from "@/components/ward-management/ward-clock";
 import { heldBedLabel, type LeaveBed, type Unit } from "@/components/ward-management/ward-model";
 import { BED_MAP_LABELS, type BedMap } from "./statistics-bed-map";
-import { PhoneBody, PhoneList, PhonePinnedAction, phoneBodyStyles as phone } from "./statistics-phone-parts";
+import { PhoneBody, PhoneList, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import { dateOf, isPastDate } from "./statistics-dates";
 import { PeopleNotListed } from "./statistics-small-numbers";
 import { BED_LEGEND, StayKey, bandIndexOf, bedColumns } from "./statistics-ward-compact-bed-map";
@@ -49,7 +47,7 @@ export function stayDaysOf(admission: Admission, now: number): number | null {
 /**
  * One ward on a phone (v10 phone): the beds as a strip of boxes grouped by state (the model has no
  * bed numbers), then the roster, the discharges due in seven days and the blocked discharges as
- * one list behind a segmented control, the Length of stay card, and "Open the ward" pinned at the foot.
+ * one list behind a segmented control, the Length of stay card (Open the ward is in the page top).
  */
 export function WardPhone({
   unit,
@@ -177,9 +175,6 @@ export function WardPhone({
         </>
       )}
       {stay}
-      <PhonePinnedAction icon={Building2} href={unitHref(unit.id)} testId="ward-statistics-ward-phone-open">
-        Open the ward
-      </PhonePinnedAction>
     </PhoneBody>
   );
 }

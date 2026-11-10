@@ -129,20 +129,20 @@ describe("the Delays board's data views", () => {
         <DelaysScreen />
       </WardFlowProvider>,
     );
-    expect(screen.getByRole("button", { name: "Longest wait" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("tab", { name: "Longest wait" })).toHaveAttribute("aria-selected", "true");
     expect(within(waiting()).getByRole("heading", { level: 2 })).toHaveTextContent(/^Waiting$/u);
-    fireEvent.click(screen.getByRole("button", { name: "By hold-up" }));
+    fireEvent.click(screen.getByRole("tab", { name: "By hold-up" }));
     // #1476 review: the grouped heading says reason, not blocker (word list, DESIGN-SYSTEM §6).
     expect(within(waiting()).getByRole("heading", { level: 2 })).toHaveTextContent(/^Waiting by reason$/u);
     first.unmount();
     renderDelays();
-    expect(screen.getByRole("button", { name: "By hold-up" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("tab", { name: "By hold-up" })).toHaveAttribute("aria-selected", "true");
   });
 
   // Audit 1, Josh 20 Oct (CS-04, NB-6b): a recorded form time due soon is marked, never pinned.
   it("Longest wait lists everyone longest first and marks, but does not move, a form time due soon", () => {
     renderDelays();
-    fireEvent.click(screen.getByRole("button", { name: "Longest wait" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Longest wait" }));
     // Longest wait groups people in wait bands (over 24h, 8 to 24h, under 8h folded); open them all.
     showEveryRow();
     const ids = listed();
@@ -200,7 +200,7 @@ describe("the Delays board's data views", () => {
   it("keeps the table's column headers and cell roles, which the phone card layout relies on", () => {
     renderDelays();
     // The grouped view names its fourth column Wards; Longest wait (the default) names it Blocker.
-    fireEvent.click(screen.getByRole("button", { name: "By hold-up" }));
+    fireEvent.click(screen.getByRole("tab", { name: "By hold-up" }));
     const table = within(waiting()).getByRole("table");
     expect(
       within(table)
@@ -256,7 +256,7 @@ describe("the Delays board's data views", () => {
   it("a dot on the spread graph opens that person's row and panel", () => {
     renderDelays();
     // Groups fold only in the By blocker view; Longest wait (the default) is one flat list.
-    fireEvent.click(screen.getByRole("button", { name: "By hold-up" }));
+    fireEvent.click(screen.getByRole("tab", { name: "By hold-up" }));
     const target = ROWS.find((row) => row.cause === "awaiting_transport")!;
     expect(target, "nobody is awaiting transport").toBeDefined();
     openGraph("Wait spread");

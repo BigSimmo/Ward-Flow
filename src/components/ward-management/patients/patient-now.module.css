@@ -2865,15 +2865,31 @@
 }
 
 .phIdSub {
-  /* F-05: the place at the end of the identity line wraps to a second line, not an ellipsis. */
-  display: -webkit-box;
+  /* Page tops (approved mock-up, 9 Nov 2026; was F-05's two lines): one line under the name. A long
+     place ends in an ellipsis (its full words stay in the text); the tags keep their size. */
+  display: flex;
+  flex: 0 1 100%;
+  align-items: center;
   min-width: 0;
   max-width: calc(100vw - 2 * var(--wf-s-4));
   overflow: hidden;
   font-size: var(--wf-fs-12);
-  white-space: normal;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  white-space: pre;
+}
+
+.phIdSub > * {
+  flex: none;
+}
+
+.phIdSub > .phIdPlace {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.phIdSub > .ptTag {
+  margin-left: var(--wf-s-2);
 }
 
 .phMoreRow {
@@ -3262,4 +3278,172 @@
   background: color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
   box-shadow: none;
   color: var(--wf-hero-ink);
+}
+
+/* ── Page tops (Josh, 9 Nov 2026) ──
+   The record tabs are the shared folder tabs (wf/folder-tabs); this lays the switch out as a row.
+   A live movement's band: identity line with small tags, then the glance facts and the movement's
+   figures in one row of divider cells (value over label), the chips, then the journey. */
+.v6FolderSwitch {
+  display: flex;
+  align-items: stretch;
+}
+
+.v6FolderSwitch.v6FolderSwitch > * > .v6TabCount {
+  margin-left: 6px;
+}
+
+.ptTag {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-hero-edge);
+  border-radius: var(--wf-r-xs);
+  color: var(--wf-hero-ink);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.ptGrid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--wf-s-3) 0;
+  margin-top: var(--wf-s-2);
+}
+
+.ptGrid.ptGrid > :first-child:not(.ptFigures) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2) 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.ptGrid.ptGrid > :first-child:not(.ptFigures) > * {
+  flex-direction: column-reverse;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 0 24px 0 18px;
+  border: 0;
+  border-left: 1px solid var(--wf-on-hero-div);
+  border-radius: 0;
+  background: transparent;
+}
+
+.ptGrid > :first-child:not(.ptFigures) > :first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.ptGrid.ptGrid > :first-child:not(.ptFigures) > * > :first-child {
+  align-self: flex-start;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-16);
+}
+
+.ptGrid.ptGrid > :first-child:not(.ptFigures) > * > :nth-child(2) {
+  font-size: var(--wf-fs-15, var(--wf-fs-14));
+  line-height: 26px;
+}
+
+.ptGrid > .ptFigures {
+  padding-left: 18px;
+  border-left: 1px solid var(--wf-on-hero-div);
+}
+
+.ptFigures {
+  display: block;
+  min-width: 0;
+}
+
+@media (max-width: 46.49rem) {
+  .ptGrid {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--wf-s-3);
+  }
+
+  .ptGrid > .ptFigures {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .ptGrid.ptGrid > :first-child:not(.ptFigures) > * {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--wf-s-2);
+    padding: 7px 14px;
+  }
+
+  .ptGrid > :first-child:not(.ptFigures) > :first-child {
+    flex: 1 0 100%;
+    padding: 0 0 7px;
+    border-bottom: 1px solid var(--wf-on-hero-div);
+  }
+
+  .ptGrid > :first-child:not(.ptFigures) > :nth-child(2) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  /* Approved mock-up: Legal, Obs and Risk are small caps band labels before the value, no icons. */
+  .ptGrid.ptGrid.ptGrid > :first-child:not(.ptFigures) > * > :first-child {
+    align-self: baseline;
+    color: var(--wf-hero-ink-3);
+    font: 500 var(--wf-fs-12) / 16px var(--wf-font);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .ptGrid.ptGrid.ptGrid > :first-child:not(.ptFigures) > * > :first-child svg {
+    display: none;
+  }
+
+  .ptGrid.ptGrid.ptGrid > :first-child:not(.ptFigures) > * > :nth-child(2) {
+    font-size: var(--wf-fs-14);
+    line-height: 20px;
+  }
+
+  .ptGrid.ptGrid.ptGrid > :first-child:not(.ptFigures) > * {
+    gap: var(--wf-s-3);
+    padding-block: 6px;
+  }
+
+  .ptGrid.ptGrid.ptGrid > :first-child:not(.ptFigures) > :first-child {
+    padding-top: 0;
+  }
+
+  /* No eyebrow: the title shares its line with the Live pill, as on the other page tops. */
+  .v6Hero.v6Hero.v6Hero.v6Hero.v6Hero:not([data-phone-eyebrow]) div:has(> [data-wf-hero-title-line]) {
+    padding-top: 6px;
+  }
+
+  /* The title line already keeps 72px clear; with this the name stops short of the pill. */
+  .v6Hero.v6Hero.v6Hero:not([data-phone-eyebrow]):has([data-wf-live]) [data-wf-hero-title] {
+    padding-right: 56px;
+  }
+
+  /* The aside holds only the pinned Live pill here, so its row leaves no gap under the identity. */
+  .v6Hero.v6Hero.v6Hero div:has(> div > [data-wf-hero-title-line]) {
+    row-gap: 0;
+  }
+
+  .ptGrid.ptGrid {
+    margin-top: 0;
+  }
+}
+
+/* Phone: the record's folder tabs pin under the header while the record scrolls (Josh, 12 Oct
+   2026); the folder row paints its own slate once docked (wf/folder-tabs). */
+@media (max-width: 46.4375rem) {
+  .ptTabs.ptTabs {
+    position: sticky;
+    top: var(--wf-header-height, 3.5rem);
+    z-index: 6;
+  }
 }

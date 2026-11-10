@@ -806,8 +806,9 @@ describe("no ward spec navigates into a redirect stub and then waits for the scr
     /*
      * 🔴 **THE ARM THAT WOULD HAVE CAUGHT THE VERY REPAIR THIS GUARD WAS WRITTEN ABOUT.** `origin/main`
      * re-pointed its Movements tests by the panel's accessible NAME, deliberately, so a test-id-only
-     * guard could not have told those from broken ones. Both names below are real: "Next expected
-     * arrival" is a `title=` on the officer screen `/transport` now lands on (shell-19); the other is not.
+     * guard could not have told those from broken ones. Both names below are real: "Job stages" is a
+     * `title=` on the officer screen `/transport` now lands on (shell-19; "Next expected arrival" until the
+     * page tops of 9 Nov 2026); the other is not.
      */
     const spec = (name: string) =>
       [
@@ -824,7 +825,7 @@ describe("no ward spec navigates into a redirect stub and then waits for the scr
     ).toHaveLength(1);
 
     expect(
-      analyse([{ path: "synthetic.spec.ts", source: spec("Next expected arrival") }]).map(describeFinding),
+      analyse([{ path: "synthetic.spec.ts", source: spec("Job stages") }]).map(describeFinding),
       "a wait on a panel name the redirect target really renders was reported as a defect — `title=` literals " +
         "are not reaching the renderable-name set, so every panel-scoped assertion is now accused",
     ).toEqual([]);

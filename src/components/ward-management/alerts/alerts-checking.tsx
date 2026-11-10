@@ -3,8 +3,8 @@
 // The Alerts screen's Checking list, its chip and one-tap card, and the nurse in charge's quiet side
 // panel (Alerts redesign, approved by Josh 31 Oct 2026). Split from `alerts-screen.tsx` for the line cap.
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
-import { Activity, Bell, CircleCheck, ChevronDown, ChevronRight, X } from "lucide-react";
+import { type ReactNode } from "react";
+import { Activity, Bell, CircleCheck, ChevronRight, X } from "lucide-react";
 
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -78,26 +78,6 @@ export function CheckingList({
           <SrOnly>Handover sheets. Nothing in this system records when a shift hands over.</SrOnly>
         </li>
       </ul>
-    </div>
-  );
-}
-
-/**
- * The Checking strip as one dashed chip ("6 flagged · 7 clear") that opens the full list in place.
- * Every check is still there, one press away; thirteen counters, most of them 0, no longer take two
- * lines of the header.
- */
-export function ChecksChip({ checks, children }: { checks: readonly { n: number }[]; children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  const flagged = checks.filter((check) => check.n > 0).length;
-  return (
-    <div className={parts.checks}>
-      <button type="button" className={parts.checksChip} aria-expanded={open} onClick={() => setOpen((on) => !on)}>
-        <span className={parts.checksLabel}>Checking</span> <b>{flagged}</b> flagged · <b>{checks.length - flagged}</b>{" "}
-        clear
-        <ChevronDown size={14} aria-hidden="true" className={open ? parts.flip : undefined} />
-      </button>
-      {open ? <div className={parts.checksList}>{children}</div> : null}
     </div>
   );
 }

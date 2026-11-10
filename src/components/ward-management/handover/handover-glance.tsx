@@ -1,165 +1,81 @@
 "use client";
 
-import { BedSingle, ChevronDown, ChevronRight, Clock, Hourglass, Lock, Sparkles } from "lucide-react";
+import { Check, ChevronDown, Users } from "lucide-react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { Button, Icon, Menu, StatusGlyph, durMinutes, type WfTone } from "@/components/wf";
+import { Icon, Menu, SrOnly, heroChipClassName, type SinceItem } from "@/components/wf";
 
-import {
-  HANDOVER_SHIFTS,
-  handoverAt,
-  type HandoverPill,
-  type HandoverRow,
-  type HandoverShiftId,
-} from "./handover-model";
+import { HANDOVER_SHIFTS, handoverAt, type HandoverShiftId } from "./handover-model";
+import { HandoverMeetingTimer } from "./handover-sheet-parts";
 import styles from "./handover-refined.module.css";
 
 /**
- * Handover redesign (Josh, 1 Nov 2026): the header's one slim at-a-glance line, Waiting's pattern.
- * When the handover starts, beds ready against people finding a ward (coordinator only), the
- * longest wait (opens that person) and what changed since the previous handover.
+ * The Act now figure's words. Audit 24-4 decision 5 (Josh, 24 Oct 2026): Act now counts people (one
+ * row per journey), Alerts counts alerts; one person can carry two, and some alerts have no journey.
+ * The spoken name gives both, so the two screens are never read as disagreeing (NA2-01). An alert
+ * with no journey counts only on the whole network, where nothing is scoped out.
  */
-export function HandoverGlance({
-  now,
-  passed,
-  shiftAt,
-  beds,
-  longest,
-  onOpen,
-  sinceAt,
-  sinceLine,
-  signOffNote,
-}: {
-  now: Instant;
-  passed: boolean;
-  shiftAt: Instant;
-  /** Null on a ward or ED desk: the network's bed gap is the coordinator's. */
-  beds: { ready: number; needed: number } | null;
-  longest: HandoverRow | null;
-  onOpen: (id: string) => void;
-  sinceAt: Instant;
-  sinceLine: string;
-  /** ED desk only: who signs off. */
-  signOffNote: string | null;
-}) {
+export function actNowLabel(
+  people: number,
+  items: readonly { movementId?: string }[],
+  rows: readonly { movement: { id: string } }[],
+  network: boolean,
+) {
+  const inScope = new Set(rows.map((row) => row.movement.id));
+  const alerts = items.filter((item) => (item.movementId ? inScope.has(item.movementId) : network)).length;
   return (
-    <div className={styles.glance} role="group" aria-label="At a glance">
-      <span className={styles.gl} data-testid="ward-handover-countdown">
-        <Icon icon={Clock} size={14} className={styles.glIcon} />
-        <span className={styles.glLabel}>{passed ? "Passed" : "Starts in"}</span>
-        <b className={styles.glNum}>{durMinutes(passed ? now - shiftAt : shiftAt - now)}</b>
-        {passed ? <span className={styles.glLabel}>ago</span> : null}
-      </span>
-      {beds ? (
-        <span className={styles.gl}>
-          <Icon
-            icon={BedSingle}
-            size={14}
-            className={styles.glIcon}
-            data-tone={beds.ready >= beds.needed ? "success" : "warning"}
-          />
-          <span className={styles.glLabel}>Beds</span>
-          <span className={styles.glValue}>
-            <b className={styles.glNum}>{beds.ready}</b> ready for <b className={styles.glNum}>{beds.needed}</b>
-          </span>
-          <span className={styles.gapBar} aria-hidden="true">
-            {beds.ready > 0 ? <i className={styles.gapReady} style={{ flex: beds.ready }} /> : null}
-            {beds.needed > beds.ready ? (
-              <i className={styles.gapWaiting} style={{ flex: beds.needed - beds.ready }} />
-            ) : null}
-          </span>
-        </span>
-      ) : null}
-      {longest ? (
-        <button
-          type="button"
-          className={styles.gl}
-          onClick={() => onOpen(longest.id)}
-          data-testid="ward-handover-longest"
-        >
-          <Icon icon={Hourglass} size={14} className={styles.glIcon} data-tone="danger" />
-          <span className={styles.glLabel}>Longest wait</span>
-          <b className={styles.glNum}>{durMinutes(now - longest.openedAt)}</b>
-          <span className={styles.glValue}>{longest.name}</span>
-          <Icon icon={ChevronRight} size={14} className={styles.glChevron} />
-        </button>
-      ) : null}
-      <span className={styles.gl} data-testid="ward-handover-since-line">
-        <Icon icon={Sparkles} size={14} className={styles.glIcon} />
-        <span className={styles.glLabel}>Since {formatInstantWithDay(sinceAt, now)}</span>
-        <span className={styles.glValue}>{sinceLine || "No changes"}</span>
-      </span>
-      {signOffNote ? (
-        <span className={styles.gl} data-testid="ward-handover-sign-off-note">
-          <Icon icon={Lock} size={14} className={styles.glIcon} />
-          <span className={styles.glValue}>{signOffNote}</span>
-        </span>
-      ) : null}
-    </div>
+    <>
+      act now
+      <SrOnly>{` (${people} ${people === 1 ? "person" : "people"}, ${alerts} ${alerts === 1 ? "alert" : "alerts"})`}</SrOnly>
+    </>
   );
 }
-
-type CountPill = Exclude<HandoverPill, "new">;
 
 /**
- * The header's one row of counts (Waiting's pattern). Each count highlights its rows in the table;
- * pressing it again clears the highlight.
+ * Page tops (Josh, 9 Nov 2026): the handover's one quiet "Since 07:00" line at the foot of the top,
+ * the admitted and discharged figures the phone shows. An ED desk holds no ward, so it reads who
+ * signs off instead. Replaces the at-a-glance strip and the five count pills (round 5, 1 Nov 2026).
  */
-export function HandoverHeroCounts({
-  pills,
-  counts,
-  pressed,
-  actNowAlerts,
-  dueLabel,
-  tones,
-  onPress,
+export function HandoverSinceLine({
+  since,
+  items,
+  signOffNote,
+  onOpen,
 }: {
-  pills: readonly CountPill[];
-  counts: Record<CountPill, number>;
-  pressed: HandoverPill | null;
-  actNowAlerts: number;
-  dueLabel: string;
-  tones: Record<CountPill, WfTone>;
-  onPress: (pill: CountPill) => void;
+  /** The previous handover's clock ("07:00"). */
+  since: string;
+  items: readonly SinceItem[];
+  /** For a desk that does not sign off, who does (or when it was signed). */
+  signOffNote?: string | null;
+  /** Phone: the line opens everything that changed since, in a sheet. */
+  onOpen?: () => void;
 }) {
-  const label = (id: CountPill) =>
-    id === "act"
-      ? "Act now"
-      : id === "urg"
-        ? "Flagged urgent"
-        : id === "due"
-          ? dueLabel
-          : id === "bed"
-            ? "Finding a ward"
-            : "Moving";
+  const shown = items.filter((item) => item.id === "admitted" || item.id === "discharged");
+  if (shown.length === 0 && !signOffNote) return null;
+  const Tag = onOpen ? "button" : "p";
   return (
-    <div className={styles.hStats} data-testid="ward-handover-kpi-strip" role="group" aria-label="Highlight by count">
-      {pills.map((id) => (
-        <button
-          key={id}
-          type="button"
-          className={styles.hStat}
-          aria-pressed={pressed === id}
-          aria-label={
-            id === "act"
-              ? // CB-3: the visible count and words lead the name (axe label-content-name-mismatch).
-                `${counts.act} Act now (${counts.act} ${counts.act === 1 ? "person" : "people"}, ${actNowAlerts} ${actNowAlerts === 1 ? "alert" : "alerts"})`
-              : undefined
-          }
-          onClick={() => onPress(id)}
-        >
-          <span className={styles.hStatV}>{counts[id]}</span>{" "}
-          <span className={styles.hStatL}>
-            <StatusGlyph tone={counts[id] > 0 ? tones[id] : "neutral"} size={9} />
-            {label(id)}
-          </span>
-        </button>
-      ))}
-    </div>
+    <Tag
+      className={styles.sinceLine}
+      data-testid={onOpen ? "ward-handover-phone-since" : "ward-handover-since-line"}
+      {...(onOpen ? { type: "button" as const, "aria-haspopup": "dialog" as const, onClick: onOpen } : {})}
+    >
+      {shown.length > 0 ? (
+        <>
+          Since {since}:{" "}
+          {shown.map((item, index) => (
+            <span key={item.id}>
+              {index ? " · " : ""}
+              <b>{item.value}</b> {item.word}
+            </span>
+          ))}
+        </>
+      ) : (
+        <span data-testid="ward-handover-sign-off-note">{signOffNote}</span>
+      )}
+    </Tag>
   );
 }
 
-/** The handover being prepared, chosen from one menu (it replaced the three-way switch). */
 export function HandoverShiftMenu({
   shift,
   now,
@@ -168,7 +84,8 @@ export function HandoverShiftMenu({
 }: {
   shift: HandoverShiftId;
   now: Instant;
-  label: string;
+  /** The handover's clock and words ("15:00", "Day to evening"): the clock in mono, the words in sans. */
+  label: { clock: string; words: string };
   onChange: (shift: HandoverShiftId) => void;
 }) {
   return (
@@ -183,11 +100,57 @@ export function HandoverShiftMenu({
         onSelect: () => onChange(option.id),
       }))}
       trigger={(props) => (
-        <Button {...props} variant="onHero" size="sm" icon={Clock} data-testid="ward-handover-shift">
-          {label}
+        // Page tops (Josh, 9 Nov 2026): the hero's pill, as the Live pill sits on other pages.
+        <button {...props} type="button" className={styles.shiftPill} data-testid="ward-handover-shift">
+          <span className={styles.shiftClock}>{label.clock}</span>
+          <span>{label.words}</span>
           <Icon icon={ChevronDown} size={14} />
-        </Button>
+        </button>
       )}
     />
+  );
+}
+
+/** The top's Sign off chip. CB-3: the spoken name starts with the face ("Sign off 1/5") and says what it counts. */
+export function HandoverSignOffChip({
+  done,
+  total,
+  signed,
+  onClick,
+}: {
+  done: number;
+  total: number;
+  /** "10:42" once signed, or null. */
+  signed: string | null;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={heroChipClassName}
+      onClick={onClick}
+      data-testid="ward-handover-hero-sign-off"
+      aria-label={signed === null ? `Sign off ${done}/${total}, ${done} of ${total} checks clear` : undefined}
+    >
+      <Check size={16} strokeWidth={1.75} aria-hidden="true" />
+      {signed === null ? "Sign off" : `Signed ${signed}`}{" "}
+      {signed === null ? <b className={styles.signCount}>{`${done}/${total}`}</b> : null}
+    </button>
+  );
+}
+
+/** The top's meeting chip. The running timer ("Stop 00:05") ticks in its own leaf, so the page does not re-render. */
+export function HandoverMeetingChip({ startedAt, onClick }: { startedAt: number | null; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      className={heroChipClassName}
+      aria-pressed={startedAt !== null}
+      onClick={onClick}
+      data-testid="ward-handover-meeting"
+    >
+      <Users size={16} strokeWidth={1.75} aria-hidden="true" />
+      {startedAt !== null ? <HandoverMeetingTimer startedAt={startedAt} /> : "Start meeting"}
+    </button>
   );
 }

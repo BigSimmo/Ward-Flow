@@ -98,7 +98,9 @@ describe("the ward screen's word for min(allocatable, empty)", () => {
     const unit = discriminating[0];
     renderWard(unit.id);
 
-    const label = document.getElementById("ward-hero-title");
+    // Page tops (9 Nov 2026): the ready figure is one shared hero figure; its element holds only the
+    // figure and its label, never the call to action.
+    const label = screen.getByTestId("ward-hero");
     expect(label, "the headline label is the element the figure is read with").not.toBeNull();
     expect(
       label?.textContent?.toLowerCase(),

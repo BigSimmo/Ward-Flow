@@ -13,17 +13,7 @@ describe("Today band rows", () => {
       shape: "act" as const,
       title: `Synthetic alert ${id}`,
     }));
-    render(
-      <TodayBand
-        raised={raised}
-        acted={[]}
-        broadcasts={[]}
-        now={now}
-        onPick={() => {}}
-        noTimeCount={0}
-        onOpenBroadcast={() => {}}
-      />,
-    );
+    render(<TodayBand raised={raised} acted={[]} broadcasts={[]} now={now} onPick={() => {}} noTimeCount={0} />);
     const bottoms = raised.map((point) => screen.getByRole("button", { name: point.title }).style.bottom);
     expect(new Set(bottoms).size).toBe(raised.length);
     const track = screen.getByRole("group", { name: "Alerts raised and acted on today" });
@@ -39,15 +29,7 @@ describe("Today band rows", () => {
       title: `Synthetic early alert ${index}`,
     }));
     render(
-      <TodayBand
-        raised={raised}
-        acted={[]}
-        broadcasts={[]}
-        now={600 as Instant}
-        onPick={() => {}}
-        noTimeCount={0}
-        onOpenBroadcast={() => {}}
-      />,
+      <TodayBand raised={raised} acted={[]} broadcasts={[]} now={600 as Instant} onPick={() => {}} noTimeCount={0} />,
     );
     const bottoms = raised.map((point) => screen.getByRole("button", { name: point.title }).style.bottom);
     expect(new Set(bottoms).size).toBe(raised.length);
@@ -66,27 +48,21 @@ describe("Today band rows", () => {
       expect(markGapMinutes(320)).toBe(30);
     });
 
-    it("puts marks 12 minutes apart on separate rows when the track is 500px wide", () => {
+    // Page tops (9 Nov 2026): the window now runs 08:00 to 10:30 here (150 minutes, now near 80%), so
+    // at 500px a mark's 26px is about 8 minutes and the 10-minute floor applies.
+    it("puts marks 6 minutes apart on separate rows when the track is 500px wide", () => {
       vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(500);
-      const raised = [540, 552, 564, 576].map((at, index) => ({
+      const raised = [540, 546, 552, 558].map((at, index) => ({
         id: `T${index}`,
         at: at as Instant,
         shape: "wait" as const,
         title: `Synthetic transport alert ${index}`,
       }));
       render(
-        <TodayBand
-          raised={raised}
-          acted={[]}
-          broadcasts={[]}
-          now={600 as Instant}
-          onPick={() => {}}
-          noTimeCount={0}
-          onOpenBroadcast={() => {}}
-        />,
+        <TodayBand raised={raised} acted={[]} broadcasts={[]} now={600 as Instant} onPick={() => {}} noTimeCount={0} />,
       );
       const bottoms = raised.map((point) => screen.getByRole("button", { name: point.title }).style.bottom);
-      // At 10 minutes they would share one row and overlap; at 19 they alternate between two.
+      // Six minutes is 20px on this track, so one row would overlap; they alternate between two.
       expect(new Set(bottoms).size).toBe(2);
       expect(bottoms[0]).toBe(bottoms[2]);
       expect(bottoms[1]).toBe(bottoms[3]);

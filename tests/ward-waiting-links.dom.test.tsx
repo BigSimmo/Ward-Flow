@@ -49,10 +49,13 @@ describe("the Delays board's saved views", () => {
     expect(new URLSearchParams(window.location.search).get("view")).toBeNull();
   });
 
-  it("names the 1 hour chip's noun", () => {
+  it("names the next-hour chip's noun", () => {
+    // Page tops (Josh, 9 Nov 2026): the Form due figure left the top; the hour chip names what it counts.
     window.history.replaceState(null, "", "/ward-flow/waiting");
     withProvider(<DelaysScreen />);
-    expect(screen.getByTestId("delays-stat-due")).toHaveTextContent("Form due within 1h");
+    expect(screen.queryByTestId("delays-stat-due")).toBeNull();
+    const next = screen.queryByTestId("delays-hero-next8");
+    if (next) expect(next).toHaveTextContent(/^Next past 8h/u);
   });
 
   it("counts the referrals not yet on the list, with a link to Referrals", () => {

@@ -49,12 +49,12 @@ describe("Discharges charts under the table (direction A)", () => {
     const due = Number(/: (\d+) due/u.exec(day!.getAttribute("aria-label") ?? "")?.[1]);
     const before = worklistRows().length;
     // The Now switch's name carries the rows to work: "Now, N to work now".
-    const nowSwitch = screen.getByRole("button", { name: /^Now, \d+ to work now$/u });
+    const nowSwitch = screen.getByRole("tab", { name: /^Now, \d+ to work now$/u });
     const toWork = Number(/(\d+) to work now/u.exec(nowSwitch.textContent ?? "")?.[1]);
     expect(toWork).toBeGreaterThan(0);
     fireEvent.click(day!);
     // On Now a click stays on Now.
-    expect(screen.getByRole("button", { name: /^Now,/u })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("tab", { name: /^Now,/u })).toHaveAttribute("aria-selected", "true");
     const extra = Number(/^\+(\d+) that day$/u.exec(screen.getByText(/^\+\d+ that day$/u).textContent ?? "")?.[1]);
     expect(extra).toBeGreaterThan(0);
     const rows = worklistRows();
@@ -95,8 +95,8 @@ describe("Discharges charts under the table (direction A)", () => {
     expect(day).toBeDefined();
     const due = Number(/: (\d+) due/u.exec(day!.getAttribute("aria-label") ?? "")?.[1]);
     fireEvent.click(day!);
-    expect(screen.getByRole("button", { name: /^Now,/u })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: /^Recorded/u })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("tab", { name: /^Now,/u })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /^Recorded/u })).toHaveAttribute("aria-selected", "false");
     const note = screen.getByTestId("ward-discharge-highlight-note").textContent ?? "";
     const listed = Number(/^(\d+) of \d+ highlighted, all rows stay/u.exec(note)?.[1]);
     // The chart leaves closed wards out (as Capacity's forecast does); the list keeps every row, and
@@ -108,12 +108,13 @@ describe("Discharges charts under the table (direction A)", () => {
   it("counts held-up releases by barrier and highlights the barrier picked, within Now", () => {
     renderBoard();
     const bars = barrierBars();
-    expect(within(bars).getByText(/^\d+ releases?$/u)).toBeInTheDocument();
+    // Page tops (9 Nov 2026): the reasons are one slim band in the hero, each reason a button.
+    expect(within(bars).getByText("Held up by reason")).toBeInTheDocument();
     const first = within(bars).getAllByRole("button")[0]!;
     const count = Number(/: (\d+) held up/u.exec(first.getAttribute("aria-label") ?? "")?.[1]);
     expect(count).toBeGreaterThan(0);
     fireEvent.click(first);
-    expect(screen.getByRole("button", { name: /^Now,/u })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("tab", { name: /^Now,/u })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByTestId("ward-discharge-highlight-note")).toHaveTextContent(
       new RegExp(`^${count} of \\d+ highlighted, all rows stay`),
     );
@@ -131,13 +132,13 @@ describe("Discharges charts under the table (direction A)", () => {
     expect(worklistRows().filter((row) => row.getAttribute("data-highlighted") === "true")).toHaveLength(count);
     // DC4 (Josh, 3 Nov 2026): Recorded lists the last 7 days of discharges with no barrier side,
     // charts or KPI bar, and a Now highlight never carries over.
-    fireEvent.click(screen.getByRole("button", { name: /^Recorded/u }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Recorded/u }));
     expect(screen.queryByTestId("ward-discharge-highlight-note")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-discharge-day-chart")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-discharge-barrier-bars")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-discharge-kpi-strip")).not.toBeInTheDocument();
     expect(worklistRows().some((row) => row.getAttribute("data-highlighted") === "true")).toBe(false);
-    fireEvent.click(screen.getByRole("button", { name: /^Now,/u }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Now,/u }));
     expect(screen.queryByTestId("ward-discharge-highlight-note")).not.toBeInTheDocument();
     expect(screen.getAllByTestId("ward-discharge-day-chart").length).toBeGreaterThan(0);
   });

@@ -132,7 +132,19 @@ export function DischargeWeekendPrep({
   ).size;
   const holidays = [...new Set(groups.flatMap((group) => group.closure.closedFor))].filter((day) => day !== "Weekend");
   const title = holidays.length > 0 ? `Closed for ${holidays.join(" and ")}` : "Closed this weekend";
-  const summary = `${groups.length} ${groups.length === 1 ? "service" : "services"} closed · ${beforeReopen} ${beforeReopen === 1 ? "discharge" : "discharges"} before ${groups.length === 1 ? "it reopens" : "they reopen"}`;
+  // Page tops (Josh approved, 9 Nov 2026): the two facts on their own lines, so no word is left alone
+  // on the second line. The " · " stays in the text for copying and screen readers.
+  const summary = (
+    <>
+      <span
+        className={styles.summaryPart}
+      >{`${groups.length} ${groups.length === 1 ? "service" : "services"} closed`}</span>
+      <span className={styles.summarySep}> · </span>
+      <span className={styles.summaryPart}>
+        {`${beforeReopen} ${beforeReopen === 1 ? "discharge" : "discharges"} before ${groups.length === 1 ? "it reopens" : "they reopen"}`}
+      </span>
+    </>
+  );
   const open = foldable ? phoneOpen : true;
   const toggle = () => setPhoneOpen((was) => !was);
   const rowsFor = (group: WeekendPrepGroup, close?: () => void) => (

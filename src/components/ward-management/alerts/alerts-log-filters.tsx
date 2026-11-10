@@ -8,7 +8,17 @@
 import { ChevronRight, Clock, X } from "lucide-react";
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 
-import { Button, ChipGroup, Count, FilterChip, PillTabs, SrOnly, StatusGlyph, Tabs } from "@/components/wf";
+import {
+  Button,
+  ChipGroup,
+  Count,
+  FilterChip,
+  FolderTabs,
+  folderTabClasses,
+  PillTabs,
+  SrOnly,
+  StatusGlyph,
+} from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 
 import type { AlertsTab as HeroAlertsTab } from "./alerts-hero";
@@ -16,7 +26,6 @@ import { copiedAge } from "./alerts-model";
 import type { QueueEntry } from "./alerts-queue";
 import type { BroadcastAlert } from "./ward-broadcast-model";
 import styles from "./alerts.module.css";
-import parts from "./alerts-screen-parts.module.css";
 import log from "./alerts-log.module.css";
 
 /**
@@ -148,21 +157,41 @@ export function useOpenFilter(quiet: boolean, figures: OpenFilterFigures) {
 
 type OpenFilterLens = ReturnType<typeof useOpenFilter>;
 
-/** The row of filter chips over the Open view: one pressed at a time, All when none is. */
-/** `end` sits at the row's end, after the chips (the phone's owner menu). */
-export function OpenFilters({ lens, end }: { lens: OpenFilterLens; end?: ReactNode }) {
-  const ids = ["all" as const, ...(Object.keys(FILTER_LABEL) as OpenFilter[]).filter((id) => id !== "all")].filter(
+/** The filters this desk has, All first. */
+function openFilterIds(lens: OpenFilterLens): OpenFilter[] {
+  return ["all" as const, ...(Object.keys(FILTER_LABEL) as OpenFilter[]).filter((id) => id !== "all")].filter(
     (id) => id === "all" || lens.counts[id] !== undefined,
   );
+}
+
+/** The row of filter chips over the Open view: one pressed at a time, All when none is. */
+/** `end` sits at the row's end, after the chips (the phone's owner menu). */
+export function OpenFilters({
+  lens,
+  end,
+  omit = [],
+  allCount,
+  inTabs = false,
+}: {
+  lens: OpenFilterLens;
+  end?: ReactNode;
+  /** Page tops (9 Nov 2026): chips the top already offers (Yours, and Act now on a phone). */
+  omit?: readonly OpenFilter[];
+  /** All's count, the Open view's own, when the chips sit in the tab row. */
+  allCount?: number;
+  /** Drawn as the tab row's quieter second level (desktop) rather than a row over the list. */
+  inTabs?: boolean;
+}) {
+  const ids = openFilterIds(lens).filter((id) => !omit.includes(id));
   return (
-    <div className={log.filterRow} data-testid="ward-alerts-filters">
+    <div className={inTabs ? log.filterTabs : log.filterRow} data-testid="ward-alerts-filters">
       <ChipGroup label="Show open alerts" className={log.filterChips}>
         {ids.map((id) => (
           <FilterChip
             key={id}
             pressed={lens.filter === id}
             onPressedChange={(pressed) => lens.setFilter(pressed ? id : "all")}
-            count={id === "all" ? undefined : lens.counts[id]}
+            count={id === "all" ? allCount : lens.counts[id]}
           >
             {FILTER_LABEL[id]}
           </FilterChip>
@@ -235,36 +264,50 @@ export function TodayPhoneCard({
  * The view tabs over the queue. Phone (v10): pill tabs that stay under the header. Desktop: tabs
  * with the Arrange by switch sharing the row (Alerts redesign). A count shows only above zero.
  */
+/**
+ * Page tops (Josh, 9 Nov 2026): the three views as the shared folder tabs (curved on a phone and
+ * tablet, underlined on a desktop), right under the hero. On a desktop the Open view's filters
+ * follow as quieter tabs (Yours is the hero's chip) and the Urgency, Lanes and Owner switch sits at
+ * the row's end; a phone keeps its filter chips in the list.
+ */
 export function AlertsViewTabs({
   isPhone,
   tabs,
   value,
   onChange,
-  arrange,
+  lens,
+  end,
 }: {
   isPhone: boolean;
   tabs: { id: AlertsTab; label: string; count: number }[];
   value: AlertsTab;
   onChange: (tab: AlertsTab) => void;
-  arrange: ReactNode;
+  /** The Open view's filters, shown in the row on a desktop. Absent for a quiet ward. */
+  lens?: OpenFilterLens;
+  /** The row's end: the arrange switch on a desktop, then the alert tools menu. */
+  end: ReactNode;
 }) {
   const items = tabs.map((item) => (item.count ? item : { ...item, count: undefined }));
-  return isPhone ? (
-    <div className={styles.tabsBar}>
+  const showFilters = lens !== undefined && !isPhone && value === "now";
+  return (
+    <FolderTabs label="Alerts views" value={value} more={end} testId="ward-alerts-tabs">
       <PillTabs<AlertsTab>
+        className={folderTabClasses.switch}
         items={items}
         value={value}
         onChange={onChange}
         label="Alerts views"
         idPrefix="alerts"
-        fill
       />
-    </div>
-  ) : (
-    <div className={`${styles.tabsBar} ${parts.tabsRow}`}>
-      <Tabs items={items} value={value} onChange={onChange} label="Alerts views" idPrefix="alerts" />
-      {arrange}
-    </div>
+      {showFilters ? (
+        <>
+          <span className={folderTabClasses.rule} aria-hidden="true" />
+          <div className={folderTabClasses.filters}>
+            <OpenFilters lens={lens} omit={["yours"]} allCount={tabs.find((tab) => tab.id === "now")?.count} inTabs />
+          </div>
+        </>
+      ) : null}
+    </FolderTabs>
   );
 }
 

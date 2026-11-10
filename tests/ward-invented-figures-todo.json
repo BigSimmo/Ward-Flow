@@ -8,7 +8,7 @@
   {
     "file": "alerts/ward-broadcast-model.ts",
     "rule": "hour window",
-    "text": "Demo: ED waits over 24 hours",
+    "text": "Demo: ED waits past 24 hours",
     "owner": "Remove invented data"
   },
   {

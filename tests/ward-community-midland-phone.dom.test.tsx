@@ -44,34 +44,41 @@ function renderTeam(teamId = "midland") {
   );
 }
 
+/** Referrals and Clinicians sit under the folder row's More on a phone (page-top redesign, 9 Nov 2026). */
+function openMoreSection(name: RegExp) {
+  fireEvent.click(screen.getByTestId("community-top-more"));
+  fireEvent.click(screen.getByRole("menuitem", { name }));
+}
+
 describe("Midland community team on a phone (approved design)", () => {
   it("shows the hero, the section track and the team list", () => {
     renderTeam();
+    // Page-top redesign (Josh, 9 Nov 2026): three folder tabs, the other sections under More.
     const hero = screen.getByTestId("ward-community-phone-hero");
-    expect(hero).toHaveTextContent("142 on the caseload");
-    expect(hero).toHaveTextContent("Act now");
+    expect(hero).toHaveTextContent(/142\s*on the caseload/u);
+    expect(hero).toHaveTextContent("3 need someone today");
     const track = screen.getByRole("radiogroup", { name: "Team sections" });
     expect(
       within(track)
         .getAllByRole("radio")
         .map((radio) => radio.textContent?.replace(/\d+$/u, "").trim()),
-    ).toEqual(["Home", "Caseload", "In hospital", "Referrals", "Clinicians"]);
+    ).toEqual(["Team home", "Caseload", "In hospital"]);
     expect(screen.getByText("7-day follow-up due today")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Show 4 for this week" }));
     expect(screen.getByText("Waiting for a case manager")).toBeInTheDocument();
   });
 
-  it("changes the hero figures with the section and filters the caseload", () => {
+  it("keeps the team's figures in the top on every section and filters the caseload", () => {
     renderTeam();
     fireEvent.click(screen.getByRole("radio", { name: /^Caseload/u }));
-    expect(screen.getByTestId("ward-community-phone-hero")).toHaveTextContent("On a CTO");
+    expect(screen.getByTestId("ward-community-phone-hero")).toHaveTextContent(/142\s*on the caseload/u);
     fireEvent.click(screen.getByRole("button", { name: /No case manager/u }));
     expect(screen.getByRole("button", { name: /No case manager/u })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("opens a referral as a sheet and the full referral from it", () => {
     renderTeam();
-    fireEvent.click(screen.getByRole("radio", { name: /^Referrals/u }));
+    openMoreSection(/^Referrals/u);
     fireEvent.click(screen.getAllByRole("button", { name: /^Open/u })[0]!);
     const sheet = screen.getByTestId("ward-community-phone-demo-referral");
     expect(within(sheet).getByRole("button", { name: "Accept for Midland" })).toBeInTheDocument();
@@ -79,12 +86,12 @@ describe("Midland community team on a phone (approved design)", () => {
     expect(screen.queryByTestId("ward-community-phone-hero")).not.toBeInTheDocument();
   });
 
-  it("offers Refer from team on Referrals and says unconnected actions are not wired", () => {
+  it("offers Refer from team in the top on every section and says unconnected actions are not wired", () => {
     renderTeam();
-    expect(screen.queryByRole("button", { name: "Refer from team" })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("radio", { name: /^Referrals/u }));
     expect(screen.getByRole("button", { name: "Refer from team" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("radio", { name: /^Clinicians/u }));
+    openMoreSection(/^Referrals/u);
+    expect(screen.getByRole("button", { name: "Refer from team" })).toBeInTheDocument();
+    openMoreSection(/^Clinicians/u);
     fireEvent.click(screen.getAllByRole("button", { name: /^Call/u })[0]!);
     expect(screen.getByText("Not wired in this prototype.")).toBeInTheDocument();
   });

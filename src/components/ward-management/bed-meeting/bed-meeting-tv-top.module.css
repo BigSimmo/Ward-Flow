@@ -1,0 +1,109 @@
+/* Page tops (Josh, 9 Nov 2026): the bed meeting TV's slate top (bed-meeting-tv-top.tsx). Tokens only. */
+
+.header {
+  display: contents;
+}
+
+/* The prototype mark sits on its own line under the title. */
+.hero [data-wf-hero-title-line] {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.mark {
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+  color: var(--wf-hero-ink-3);
+}
+
+.liveDot {
+  display: inline-block;
+  inline-size: 7px;
+  block-size: 7px;
+  margin-inline-end: 8px;
+  border-radius: 50%;
+  background: var(--wf-success);
+}
+
+/* The act row's words on the left, the longest wait on the right. */
+.actLine {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-inline-size: 0;
+}
+
+.actWords {
+  min-inline-size: 0;
+}
+
+.actRight {
+  flex: none;
+  margin-inline-start: auto;
+  padding-inline-end: var(--wf-s-1);
+  font: 500 var(--wf-fs-13) / 18px var(--wf-mono);
+  color: var(--wf-hero-ink-2);
+  white-space: nowrap;
+}
+
+.staleLine {
+  margin: 0;
+  font: 500 var(--wf-fs-13) / 18px var(--wf-font);
+  color: var(--wf-hero-ink-2);
+}
+
+/* The screen's controls on the left, what the figures leave out on the right. */
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  min-inline-size: 0;
+}
+
+.foot > ul {
+  flex: none;
+}
+
+/* The TV's own controls (Lock as TV, Full screen) draw their icons at the chips' size. */
+.foot li svg {
+  flex: none;
+  inline-size: 16px;
+  block-size: 16px;
+  stroke-width: 1.75;
+}
+
+.checking {
+  margin: 0;
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+  color: var(--wf-hero-ink-3);
+}
+
+/* The screen chip: a TV icon, the screen's name and a chevron, opening the screen picker. */
+.screenIcon {
+  display: inline-flex;
+}
+
+.chipChevron {
+  opacity: 0.75;
+}
+
+@media (max-width: 46.4375rem) {
+  /* A phone shows three figures, the place goes from the act row, and Full screen and Lock as TV
+     stay on the wall screen. */
+  .hero [data-testid="bed-meeting-tv-delays"],
+  .wideOnly,
+  .local,
+  .foot li:has(> .wallOnly) {
+    display: none;
+  }
+
+  .foot {
+    display: block;
+  }
+
+  .checking {
+    margin-block-start: var(--wf-s-2);
+  }
+}

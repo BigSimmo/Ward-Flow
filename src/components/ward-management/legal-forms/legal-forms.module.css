@@ -1360,10 +1360,10 @@ button.taskLabel[aria-pressed="true"] {
 
 .phoneNote {
   margin: 0;
-  padding: var(--wf-s-2) var(--wf-s-4);
+  padding: 10px var(--wf-s-4);
   border-bottom: 1px solid var(--wf-line);
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / 16px var(--wf-font);
 }
 
 .phoneList {
@@ -1376,14 +1376,18 @@ button.taskLabel[aria-pressed="true"] {
   min-height: 64px;
 }
 
+/* Page tops (Josh, 9 Nov 2026): the typed time is 14px semi-bold; "as typed" stays on every time, smaller
+   and quiet, because it is the page's legal-safety wording (times are never presented as checked). */
 .phoneRow .leftLine {
   gap: 6px;
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
 }
 
-/* The word after the phone row's time ("left", "passed", "in ED"), on the same line as it. */
+/* The word after the phone row's time ("as typed", "in ED"), on the same line as it. */
 .phoneTimeWord {
-  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-3);
   white-space: nowrap;
 }
 
@@ -1402,12 +1406,8 @@ button.taskLabel[aria-pressed="true"] {
 }
 
 @media (max-width: 46.4375rem) {
-  /* F-05 (phone review, Oct 2026), D-77 change 5: form names and routes wrap rather than losing the
-     destination ward ("Rockingham ED to RGH Adult Se…"). */
-  .phoneMetaLine {
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
+  /* Page tops (Josh, 9 Nov 2026, approved mock-up) replace F-05: each route stays on one line with an
+     ellipsis, so no row wraps to an orphan word; the full route is in the row's sheet. */
 
   /* v10 phone: the group head names its order at the right ("least time left"). */
   .groupHead > .groupOrder {

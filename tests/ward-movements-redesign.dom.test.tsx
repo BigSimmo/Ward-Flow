@@ -68,14 +68,16 @@ describe("Movements: the phone eyebrow names a placed desk's own place (Q84)", (
     desk.access = { role: "bed_manager", scope: { kind: "site", siteCode: "FSH" } as never };
     desk.phone = true;
     renderScreen();
-    expect(screen.getByText(`Movements · ${siteByCode("FSH")?.name}`)).toBeInTheDocument();
+    // Page tops (Josh, 9 Nov 2026): the slate drops the eyebrow; the header's place chip names the
+    // desk's place, so the hero never claims Statewide for a placed desk.
+    expect(screen.queryByText(`Movements · ${siteByCode("FSH")?.name}`)).not.toBeInTheDocument();
     expect(screen.queryByText("Movements · Statewide")).not.toBeInTheDocument();
   });
 
   it("keeps Statewide for the coordinator", () => {
     desk.phone = true;
     renderScreen();
-    expect(screen.getByText("Movements · Statewide")).toBeInTheDocument();
+    expect(screen.queryByText("Movements · Statewide")).not.toBeInTheDocument();
   });
 });
 
@@ -121,11 +123,11 @@ describe("Movements redesign: the coordinator's board", () => {
     const tierOne = within(figures).getByRole("button", { name: /Tier 1$/u });
     fireEvent.click(tierOne);
     // M1 (3 Nov 2026): the figure opens its patients rather than marking rows.
-    expect(tierOne).toHaveAttribute("aria-haspopup", "dialog");
     expect(
       within(screen.getByTestId("movement-people-sheet")).getByRole("heading", { name: "Urgency tier 1" }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/resolved today · \d+ active corridors/).textContent).not.toMatch(/moving/);
+    // Page tops (Josh, 9 Nov 2026): the title names the page, not who is moving.
+    expect(screen.getByText(/^Journeys/u).textContent).not.toMatch(/moving/);
   });
 
   it("offers the officers' Transport board and the coordinator's queue on the coordinator desk", () => {

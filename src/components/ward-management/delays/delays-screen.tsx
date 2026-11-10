@@ -27,6 +27,8 @@ import {
   noRecordedServiceMovementCount,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
+import { dailyCheckRecord } from "@/components/ward-management/coordinator/daily-check";
+import { missedRequestCheck } from "@/components/ward-management/coordinator/missed-requests-check";
 import { SEVERE_CAUSES, delayGroups } from "./delays-derivations";
 import { DelaysBoard } from "./delays-board";
 import { retitledGroups } from "./wait-bands";
@@ -36,7 +38,6 @@ import styles from "./delays.module.css";
 // Coordinators only: the daily check is loaded on demand so other screens that include Waiting stay small.
 const DailyCheckLine = dynamic(() => import("./daily-check-line").then((m) => m.DailyCheckLine));
 const DailyCheckList = dynamic(() => import("./daily-check-line").then((m) => m.DailyCheckList));
-const DailyCheckHeroTile = dynamic(() => import("./daily-check-line").then((m) => m.DailyCheckHeroTile));
 
 const ESCALATION_CONTACT = ESCALATION_CONTACTS[0];
 
@@ -65,12 +66,24 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
   const [checkOpen, setCheckOpen] = useState(false);
   const checkListId = useId();
 
-  const { movements: liveMovements, units, configuration } = useWardFlowSelect("movements", "units", "configuration");
+  const {
+    movements: liveMovements,
+    units,
+    configuration,
+    referrals,
+    patients,
+    inboxCompletions,
+  } = useWardFlowSelect("movements", "units", "configuration", "referrals", "patients", "inboxCompletions");
   const service = useServiceScope();
   // Role views (nurse in charge, ED clinician): the coordinator's own group named from the desk's side.
   const desk = useWaitingDeskWords(units);
   const now = useWardFlowClock();
   const raise = useWardRaise("coordinator");
+  // The daily check's count for the hero chip (coordinator only), over the whole network as its list.
+  const dailyCheckItems = useMemo(
+    () => (showMissedRequests ? missedRequestCheck({ movements: liveMovements, referrals, patients, now }) : []),
+    [showMissedRequests, liveMovements, referrals, patients, now],
+  );
   const escalationGate = useRoleGate()("RECORD_ESCALATION");
 
   const allMovements = movementsOverride ?? liveMovements;
@@ -195,7 +208,10 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
       )}
       {showMissedRequests ? (
         isPhone ? (
-          <DailyCheckLine />
+          // Page tops (9 Nov 2026): the hero's Daily check chip opens the phone's check, list open.
+          checkOpen ? (
+            <DailyCheckLine initiallyOpen />
+          ) : null
         ) : (
           <DailyCheckList
             open={checkOpen}
@@ -224,14 +240,15 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
           onEscalate={escalate}
           banner={banner}
           openRequest={openRequest}
-          heroCheck={
-            showMissedRequests && !isPhone ? (
-              <DailyCheckHeroTile
-                open={checkOpen}
-                onToggle={() => setCheckOpen((current) => !current)}
-                listId={checkListId}
-              />
-            ) : null
+          dailyCheck={
+            showMissedRequests
+              ? {
+                  count: dailyCheckItems.length,
+                  done: dailyCheckRecord(inboxCompletions, now) !== undefined,
+                  open: checkOpen,
+                  onToggle: () => setCheckOpen((current) => !current),
+                }
+              : undefined
           }
           empty={
             open.length === 0 ? (

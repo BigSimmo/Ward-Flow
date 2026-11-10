@@ -43,7 +43,7 @@ describe("Home and Movements print one Tier 1 count (P002)", () => {
     const figure = within(screen.getByRole("group", { name: "Highlight movements" })).getByRole("button", {
       name: /Tier 1$/u,
     });
-    expect(Number(/^(\d+)/.exec(figure.textContent ?? "")?.[1])).toBe(tierOneOpen);
+    expect(Number(/^(\d+)/.exec(figure.closest("p")?.textContent ?? "")?.[1])).toBe(tierOneOpen);
   });
 });
 

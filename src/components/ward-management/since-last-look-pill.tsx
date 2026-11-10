@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useContext, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useContext, useMemo, useRef, useState } from "react";
 import { Button, Sheet } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "./ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "./ward-flow-provider";
@@ -121,4 +121,57 @@ function ScopedReview({
       </Sheet>
     </span>
   );
+}
+
+/**
+ * Page tops (Josh approved, 9 Nov 2026): the same review as `SinceLastLookPill`, for a page that shows
+ * it as a hero chip ("Updates 1"). The page draws the chip from `count` and `open`, and renders
+ * `sheet` once. The review resets when the scope, user, world or scenario changes, as the pill's does.
+ */
+export function useSinceLastLookReview(scopeKey: string): {
+  count: number;
+  since: Instant;
+  open: () => void;
+  sheet: ReactNode;
+} {
+  // Opted out of the React Compiler, as the ward's top bar that calls it is (ward-screen-top-bar.tsx);
+  // `world` keeps its own useMemo, so the review sees the same changes.
+  "use no memo";
+  const { scenario, referrals, movements, units, bedReleases, worldGeneration } = useWardFlowSelect(
+    "scenario",
+    "referrals",
+    "movements",
+    "units",
+    "bedReleases",
+    "worldGeneration",
+  );
+  const userId = useContext(SharedAccessContext)?.actorId ?? "local-demo";
+  const now = useWardFlowClock();
+  const world = useMemo(
+    () => ({ scenario, referrals, movements, units, bedReleases, worldGeneration }),
+    [scenario, referrals, movements, units, bedReleases, worldGeneration],
+  );
+  const { changes, markSeen } = useSinceLastLook(world, now, { scopeKey, windowMinutes: 15 });
+  const boundary = `${scopeKey}:${userId}:${worldGeneration}:${scenario}`;
+  const [opened, setOpened] = useState<{ boundary: string; review: ChangesSinceLastLook } | null>(null);
+  const review = opened?.boundary === boundary ? opened.review : null;
+  return {
+    count: sinceLastLookCount(changes),
+    since: changes.since,
+    open: () => {
+      // Capture before acknowledgement. Updates after this click remain unread.
+      setOpened({ boundary, review: changes });
+      markSeen();
+    },
+    sheet: (
+      <Sheet
+        open={review !== null}
+        onClose={() => setOpened(null)}
+        title="Since you last looked"
+        description={`Updates since ${formatInstantWithDay(review?.since ?? changes.since, now)} · 15-minute window`}
+      >
+        <SinceLastLookSheetBody changes={review ?? undefined} />
+      </Sheet>
+    ),
+  };
 }

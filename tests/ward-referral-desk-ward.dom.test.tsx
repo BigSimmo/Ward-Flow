@@ -98,8 +98,8 @@ describe("Referrals as the nurse in charge", () => {
     renderBoardAs("coordinator");
     expect(within(hero()).getByText(/\d+ awaiting decision/)).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Highlight referrals" })).toBeInTheDocument();
-    // MU1 (Josh, 5 Nov 2026): the bed meeting agenda sits under the hero's "..." menu.
-    expect(within(hero()).getByRole("button", { name: "More referral actions" })).toBeInTheDocument();
+    // Page tops (Josh, 9 Nov 2026): the bed meeting agenda is the slate's first quick chip.
+    expect(within(hero()).getByTestId("ward-referral-meeting")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-referral-board-own-ward-empty")).not.toBeInTheDocument();
   });
 

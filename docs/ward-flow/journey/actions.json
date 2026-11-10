@@ -391,13 +391,13 @@
         },
         {
           "path": "src/components/ward-management/community/community-screen.tsx",
-          "line": 587,
-          "sha256": "63193a8d7f65c30727f15f4f45f935f18facd42b35c99b695ca34af01ddafb1f"
+          "line": 588,
+          "sha256": "6f8ba37c1598002e8b3678d0e68fd2f68c8cdcd7db31b4ad7361ab132b84d7e6"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1346,
-          "sha256": "21f2c6eb96ed801f293b78b980e2aeb420814b68a9dbd5840cc33fc29bee1357"
+          "line": 1343,
+          "sha256": "e9b2adc7cead898e51e2c358cafa7dc623499d45c6845b5635d2718f8edf49ec"
         },
         {
           "path": "src/components/ward-management/referrals/referral-match.tsx",
@@ -493,8 +493,8 @@
         },
         {
           "path": "src/components/ward-management/community/community-screen.tsx",
-          "line": 527,
-          "sha256": "63193a8d7f65c30727f15f4f45f935f18facd42b35c99b695ca34af01ddafb1f"
+          "line": 528,
+          "sha256": "6f8ba37c1598002e8b3678d0e68fd2f68c8cdcd7db31b4ad7361ab132b84d7e6"
         },
         {
           "path": "src/components/ward-management/ed/use-ed-screen-decline.ts",
@@ -838,7 +838,7 @@
         {
           "path": "src/components/ward-management/ed/ed-screen.tsx",
           "line": 334,
-          "sha256": "e151b9d68da91127e7abc837052fce5e3d5b242a5f972faff2eb6cc1aa40ca32"
+          "sha256": "cc96bbee0d218895726b99101e9a5287bb69de3386ed6ba7c08eb0f069c356a6"
         },
         {
           "path": "src/components/ward-management/referrals/pull-accepted-referral.tsx",
@@ -1039,8 +1039,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1310,
-          "sha256": "21f2c6eb96ed801f293b78b980e2aeb420814b68a9dbd5840cc33fc29bee1357"
+          "line": 1307,
+          "sha256": "e9b2adc7cead898e51e2c358cafa7dc623499d45c6845b5635d2718f8edf49ec"
         },
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
@@ -1131,8 +1131,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1399,
-          "sha256": "21f2c6eb96ed801f293b78b980e2aeb420814b68a9dbd5840cc33fc29bee1357"
+          "line": 1396,
+          "sha256": "e9b2adc7cead898e51e2c358cafa7dc623499d45c6845b5635d2718f8edf49ec"
         },
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
@@ -1682,13 +1682,13 @@
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
-          "line": 739,
-          "sha256": "2896fb56b60b90364f4e0395a5a009b0c8b58e1d6996d62e6ebabc10c507cefb"
+          "line": 738,
+          "sha256": "f6c8553c1f95d0d24d39598f85249f0988d98668dc7e9bbc951fd80bce56ab72"
         },
         {
           "path": "src/components/ward-management/delays/delays-screen.tsx",
-          "line": 157,
-          "sha256": "ff118945050010915593bff46849ca73bbc34a36461368590cba8d29d4e200d8"
+          "line": 170,
+          "sha256": "da99c0834991445b845454355401c6a6a5fa156c5e433f242c08d24ef23e9297"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -1853,8 +1853,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1444,
-          "sha256": "21f2c6eb96ed801f293b78b980e2aeb420814b68a9dbd5840cc33fc29bee1357"
+          "line": 1441,
+          "sha256": "e9b2adc7cead898e51e2c358cafa7dc623499d45c6845b5635d2718f8edf49ec"
         },
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
@@ -1963,13 +1963,13 @@
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
-          "line": 724,
-          "sha256": "2896fb56b60b90364f4e0395a5a009b0c8b58e1d6996d62e6ebabc10c507cefb"
+          "line": 723,
+          "sha256": "f6c8553c1f95d0d24d39598f85249f0988d98668dc7e9bbc951fd80bce56ab72"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1840,
-          "sha256": "21f2c6eb96ed801f293b78b980e2aeb420814b68a9dbd5840cc33fc29bee1357"
+          "line": 1837,
+          "sha256": "e9b2adc7cead898e51e2c358cafa7dc623499d45c6845b5635d2718f8edf49ec"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2221,7 +2221,7 @@
         {
           "path": "src/components/ward-management/officer/officer-needs-transport.tsx",
           "line": 349,
-          "sha256": "50c998a1d411de3ce21ee5dceb76831390ae3912f63e1383b37709357d2cbf0d"
+          "sha256": "a10acca50b2c048546f9b0018a94030b1f6534d508d75c456787087a8aab4b1e"
         },
         {
           "path": "src/components/ward-management/community/use-community-screen-overlays.ts",
@@ -2240,8 +2240,8 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
-          "line": 508,
-          "sha256": "d86f77bec811203f9382b0369e8ec3c7c39ed497d14213db5470e8918c9338a0"
+          "line": 507,
+          "sha256": "a528aa57c699f58f7f4888985b5c7bcd3ce7b50bd4e8bd0c49ef80098a7e8627"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
@@ -2388,8 +2388,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 497,
-          "sha256": "1ff9a94a64ef2ff0823eec7a366171c040d41c83954ba995b90ef8f01df43d2d"
+          "line": 516,
+          "sha256": "4d78feb0755b7c3991d53c53d4236a50f60809973c1c2c45243539b3664d5c70"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2457,8 +2457,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 504,
-          "sha256": "1ff9a94a64ef2ff0823eec7a366171c040d41c83954ba995b90ef8f01df43d2d"
+          "line": 523,
+          "sha256": "4d78feb0755b7c3991d53c53d4236a50f60809973c1c2c45243539b3664d5c70"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2534,8 +2534,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 520,
-          "sha256": "1ff9a94a64ef2ff0823eec7a366171c040d41c83954ba995b90ef8f01df43d2d"
+          "line": 539,
+          "sha256": "4d78feb0755b7c3991d53c53d4236a50f60809973c1c2c45243539b3664d5c70"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2611,8 +2611,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 539,
-          "sha256": "1ff9a94a64ef2ff0823eec7a366171c040d41c83954ba995b90ef8f01df43d2d"
+          "line": 558,
+          "sha256": "4d78feb0755b7c3991d53c53d4236a50f60809973c1c2c45243539b3664d5c70"
         },
         {
           "path": "src/components/ward-management/tools/ward-tool-feed.tsx",
@@ -2621,8 +2621,8 @@
         },
         {
           "path": "src/components/ward-management/board/ward-board.tsx",
-          "line": 347,
-          "sha256": "2599f954872ef87633efb6894298675116f0b5f21beb1d429a539fe49f5037f0"
+          "line": 350,
+          "sha256": "7b0f6a34fb37ba5d6d4ab1d9fe2ab4196a187b5bee216680ee1a2194a55e2bd3"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -3093,8 +3093,8 @@
         },
         {
           "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
-          "line": 343,
-          "sha256": "05e526300dfd34952da0bd0fb7924d8d4941fd0dc52216ad42e884ccd2a784cb"
+          "line": 354,
+          "sha256": "fec8dbc0742e040ad2b32f4ff3d221f83c208492c214b8b172c6bc3649440958"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -3239,8 +3239,8 @@
         },
         {
           "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
-          "line": 1260,
-          "sha256": "05e526300dfd34952da0bd0fb7924d8d4941fd0dc52216ad42e884ccd2a784cb"
+          "line": 1273,
+          "sha256": "fec8dbc0742e040ad2b32f4ff3d221f83c208492c214b8b172c6bc3649440958"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
@@ -3385,8 +3385,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1738,
-          "sha256": "21f2c6eb96ed801f293b78b980e2aeb420814b68a9dbd5840cc33fc29bee1357"
+          "line": 1735,
+          "sha256": "e9b2adc7cead898e51e2c358cafa7dc623499d45c6845b5635d2718f8edf49ec"
         },
         {
           "path": "src/components/ward-management/tools/ward-tool-feed.tsx",
@@ -3400,8 +3400,8 @@
         },
         {
           "path": "src/components/ward-management/board/ward-board.tsx",
-          "line": 848,
-          "sha256": "2599f954872ef87633efb6894298675116f0b5f21beb1d429a539fe49f5037f0"
+          "line": 861,
+          "sha256": "7b0f6a34fb37ba5d6d4ab1d9fe2ab4196a187b5bee216680ee1a2194a55e2bd3"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
@@ -3479,13 +3479,13 @@
         },
         {
           "path": "src/components/ward-management/board/ward-board.tsx",
-          "line": 866,
-          "sha256": "2599f954872ef87633efb6894298675116f0b5f21beb1d429a539fe49f5037f0"
+          "line": 879,
+          "sha256": "7b0f6a34fb37ba5d6d4ab1d9fe2ab4196a187b5bee216680ee1a2194a55e2bd3"
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
-          "line": 693,
-          "sha256": "d86f77bec811203f9382b0369e8ec3c7c39ed497d14213db5470e8918c9338a0"
+          "line": 692,
+          "sha256": "a528aa57c699f58f7f4888985b5c7bcd3ce7b50bd4e8bd0c49ef80098a7e8627"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
@@ -3558,13 +3558,13 @@
         },
         {
           "path": "src/components/ward-management/board/ward-board.tsx",
-          "line": 948,
-          "sha256": "2599f954872ef87633efb6894298675116f0b5f21beb1d429a539fe49f5037f0"
+          "line": 961,
+          "sha256": "7b0f6a34fb37ba5d6d4ab1d9fe2ab4196a187b5bee216680ee1a2194a55e2bd3"
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
-          "line": 709,
-          "sha256": "d86f77bec811203f9382b0369e8ec3c7c39ed497d14213db5470e8918c9338a0"
+          "line": 708,
+          "sha256": "a528aa57c699f58f7f4888985b5c7bcd3ce7b50bd4e8bd0c49ef80098a7e8627"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
@@ -3627,8 +3627,8 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
-          "line": 672,
-          "sha256": "d86f77bec811203f9382b0369e8ec3c7c39ed497d14213db5470e8918c9338a0"
+          "line": 671,
+          "sha256": "a528aa57c699f58f7f4888985b5c7bcd3ce7b50bd4e8bd0c49ef80098a7e8627"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
@@ -3691,18 +3691,18 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1763,
-          "sha256": "21f2c6eb96ed801f293b78b980e2aeb420814b68a9dbd5840cc33fc29bee1357"
+          "line": 1760,
+          "sha256": "e9b2adc7cead898e51e2c358cafa7dc623499d45c6845b5635d2718f8edf49ec"
         },
         {
           "path": "src/components/ward-management/board/ward-board.tsx",
-          "line": 940,
-          "sha256": "2599f954872ef87633efb6894298675116f0b5f21beb1d429a539fe49f5037f0"
+          "line": 953,
+          "sha256": "7b0f6a34fb37ba5d6d4ab1d9fe2ab4196a187b5bee216680ee1a2194a55e2bd3"
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
-          "line": 615,
-          "sha256": "d86f77bec811203f9382b0369e8ec3c7c39ed497d14213db5470e8918c9338a0"
+          "line": 614,
+          "sha256": "a528aa57c699f58f7f4888985b5c7bcd3ce7b50bd4e8bd0c49ef80098a7e8627"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
@@ -3824,8 +3824,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1678,
-          "sha256": "21f2c6eb96ed801f293b78b980e2aeb420814b68a9dbd5840cc33fc29bee1357"
+          "line": 1675,
+          "sha256": "e9b2adc7cead898e51e2c358cafa7dc623499d45c6845b5635d2718f8edf49ec"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
@@ -4037,13 +4037,13 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1695,
-          "sha256": "21f2c6eb96ed801f293b78b980e2aeb420814b68a9dbd5840cc33fc29bee1357"
+          "line": 1692,
+          "sha256": "e9b2adc7cead898e51e2c358cafa7dc623499d45c6845b5635d2718f8edf49ec"
         },
         {
           "path": "src/components/ward-management/discharges/discharge-board.tsx",
-          "line": 539,
-          "sha256": "abf68205c7d442f9d15ec00ac47ca0fbbad7d01cdf30d7e1dcc605833a1e57d0"
+          "line": 531,
+          "sha256": "df9ee4a094f0fb77724772372e2fa9492377d618b5aebbf14291fc2ddd775be9"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
@@ -4170,8 +4170,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1586,
-          "sha256": "21f2c6eb96ed801f293b78b980e2aeb420814b68a9dbd5840cc33fc29bee1357"
+          "line": 1583,
+          "sha256": "e9b2adc7cead898e51e2c358cafa7dc623499d45c6845b5635d2718f8edf49ec"
         },
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
@@ -4290,8 +4290,8 @@
         },
         {
           "path": "src/components/ward-management/hub/hub-screen.tsx",
-          "line": 718,
-          "sha256": "71cb9d7213299be9c2eea5b8340a5634e384df9ceb4b79a76118c0ecb9e502c1"
+          "line": 725,
+          "sha256": "48bf478fbb659cdfe32bf9915e52a2e396c9fde1f33e09c3c2fa4c82f27f20c8"
         },
         {
           "path": "src/components/ward-management/capacity/capacity-ward-drawer.tsx",
@@ -4300,8 +4300,8 @@
         },
         {
           "path": "src/components/ward-management/capacity/capacity-screen.tsx",
-          "line": 185,
-          "sha256": "32c7262e2c82829b8580488a1b2e901ce24dfc7edb2f06cbdf8c9b644d10a227"
+          "line": 193,
+          "sha256": "77c33c00da841470c786d14ced350a85cc348061246b3ae858eb971caa168cd2"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
@@ -4694,13 +4694,13 @@
         },
         {
           "path": "src/components/ward-management/community/community-screen.tsx",
-          "line": 830,
-          "sha256": "63193a8d7f65c30727f15f4f45f935f18facd42b35c99b695ca34af01ddafb1f"
+          "line": 831,
+          "sha256": "6f8ba37c1598002e8b3678d0e68fd2f68c8cdcd7db31b4ad7361ab132b84d7e6"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1098,
-          "sha256": "21f2c6eb96ed801f293b78b980e2aeb420814b68a9dbd5840cc33fc29bee1357"
+          "line": 1095,
+          "sha256": "e9b2adc7cead898e51e2c358cafa7dc623499d45c6845b5635d2718f8edf49ec"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
@@ -4768,8 +4768,8 @@
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
-          "line": 671,
-          "sha256": "2896fb56b60b90364f4e0395a5a009b0c8b58e1d6996d62e6ebabc10c507cefb"
+          "line": 670,
+          "sha256": "f6c8553c1f95d0d24d39598f85249f0988d98668dc7e9bbc951fd80bce56ab72"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
@@ -4846,7 +4846,7 @@
         {
           "path": "src/components/ward-management/delays/daily-check-line.tsx",
           "line": 286,
-          "sha256": "adb4f53dc558bb4eea16e4045431beb86e7e1c34e0b788b434e4a0dc0cc47f48"
+          "sha256": "488ea1f4f5286bbff224f264bfd40e405af78caae5ac7fe88f197679394d43f0"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
@@ -5125,8 +5125,8 @@
         },
         {
           "path": "src/components/ward-management/settings/settings-screen.tsx",
-          "line": 440,
-          "sha256": "fa52bcd4e5208f810ee6c117bcf3d8a6b4dee06412dc595e94a3e6cb4333a35e"
+          "line": 443,
+          "sha256": "c20329e6328c1096159489e55bfaf69e514a355f44109018239043bb87a549ae"
         }
       ]
     }
@@ -5259,8 +5259,8 @@
         },
         {
           "path": "src/components/ward-management/governance-registers.tsx",
-          "line": 537,
-          "sha256": "582c8c808fd86648b80f5918355e959513a28ff8f978fb44d08c46f3b8dad0f4"
+          "line": 543,
+          "sha256": "b22478bdfae95a143febf28b1ebd8b2ca9e8e3d7fc64a7cf8858f7fee9060f64"
         }
       ]
     }
@@ -5795,8 +5795,8 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
-          "line": 726,
-          "sha256": "d86f77bec811203f9382b0369e8ec3c7c39ed497d14213db5470e8918c9338a0"
+          "line": 725,
+          "sha256": "a528aa57c699f58f7f4888985b5c7bcd3ce7b50bd4e8bd0c49ef80098a7e8627"
         },
         {
           "path": "src/components/ward-management/discharges/discharge-detail-panes.tsx",
@@ -6011,8 +6011,8 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
-          "line": 1402,
-          "sha256": "d86f77bec811203f9382b0369e8ec3c7c39ed497d14213db5470e8918c9338a0"
+          "line": 1407,
+          "sha256": "a528aa57c699f58f7f4888985b5c7bcd3ce7b50bd4e8bd0c49ef80098a7e8627"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -6152,8 +6152,8 @@
         },
         {
           "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
-          "line": 516,
-          "sha256": "05e526300dfd34952da0bd0fb7924d8d4941fd0dc52216ad42e884ccd2a784cb"
+          "line": 520,
+          "sha256": "fec8dbc0742e040ad2b32f4ff3d221f83c208492c214b8b172c6bc3649440958"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
@@ -6631,8 +6631,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1078,
-          "sha256": "21f2c6eb96ed801f293b78b980e2aeb420814b68a9dbd5840cc33fc29bee1357"
+          "line": 1075,
+          "sha256": "e9b2adc7cead898e51e2c358cafa7dc623499d45c6845b5635d2718f8edf49ec"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
@@ -6828,8 +6828,8 @@
         },
         {
           "path": "src/components/ward-management/out-of-area/out-of-area-board.tsx",
-          "line": 411,
-          "sha256": "fce203054f8f04f9d808443b5c42664a3d09125b701972eecf486ca23bfde618"
+          "line": 418,
+          "sha256": "558f68b9347fde53a573765ae766396eeb0dd71acec76a7e1ad96de10aad2d34"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
@@ -7027,8 +7027,8 @@
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
-          "line": 828,
-          "sha256": "2896fb56b60b90364f4e0395a5a009b0c8b58e1d6996d62e6ebabc10c507cefb"
+          "line": 827,
+          "sha256": "f6c8553c1f95d0d24d39598f85249f0988d98668dc7e9bbc951fd80bce56ab72"
         },
         {
           "path": "src/components/ward-management/alerts/ward-broadcast-reducer.ts",
@@ -7155,8 +7155,8 @@
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
-          "line": 862,
-          "sha256": "2896fb56b60b90364f4e0395a5a009b0c8b58e1d6996d62e6ebabc10c507cefb"
+          "line": 861,
+          "sha256": "f6c8553c1f95d0d24d39598f85249f0988d98668dc7e9bbc951fd80bce56ab72"
         },
         {
           "path": "src/components/ward-management/shell/ward-broadcast-banner.tsx",

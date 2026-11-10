@@ -1906,9 +1906,10 @@ label.todoMain:has(.todoTick:focus-visible) {
 
 .todayFigure b {
   color: var(--wf-ink-1);
-  font-size: var(--wf-fs-28);
+  /* Page tops (9 Nov 2026): 20px, so a body figure never sits above the hero's own figures. */
+  font-size: var(--wf-fs-20);
   font-weight: 650;
-  line-height: 1.1;
+  line-height: 1.2;
   font-variant-numeric: tabular-nums;
 }
 

@@ -1,0 +1,12 @@
+/* The ward stepper in the page-top chip row: previous and next are 36px round chips either side of Change ward. */
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.square.square {
+  justify-content: center;
+  width: 36px;
+  padding: 0;
+}

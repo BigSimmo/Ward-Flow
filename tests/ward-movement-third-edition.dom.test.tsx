@@ -158,9 +158,10 @@ describe("the Movements screen's panels, in the order a coordinator meets them",
 
     renderScreen();
     fireEvent.click(screen.getByRole("button", { name: "Shape of the day" }));
-    const board = screen.getByRole("region", { name: "Movement worklist" });
+    // Page tops (9 Nov 2026): the worklist's tabs are the folder tabs above the board.
+    const tabs = screen.getByTestId("movements-tabs");
     expect(
-      within(board).getByRole("tab", { name: new RegExp(`Resolved today ${closed.length}`, "u") }),
+      within(tabs).getByRole("tab", { name: new RegExp(`Resolved today ${closed.length}`, "u") }),
     ).toBeInTheDocument();
     const shape = screen.getByRole("region", { name: "Shape of the day" });
     expect(shape).toHaveTextContent(

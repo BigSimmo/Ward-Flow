@@ -24,11 +24,16 @@ function renderEd() {
 const rows = () => screen.getAllByTestId(/^ward-ed-patient-/u).filter((row) => row.tagName === "TR");
 
 describe("ED page — hero chips and board filters highlight, never hide", () => {
-  it("has three hero chips, each a pressed toggle", () => {
+  it("has three hero chips at most, each a pressed toggle", () => {
     renderEd();
-    const chips = within(screen.getByRole("group", { name: "Highlight people on the board" })).getAllByRole("button");
-    // Three figures, as on the phone: the "severe" chip left the hero (simplification A1, 19 Oct 2026).
-    expect(chips).toHaveLength(3);
+    // The "severe" chip left the hero (simplification A1, 19 Oct 2026). Page tops (Josh, 9 Nov 2026):
+    // no bed yet and under a form are pressable figures, and past 24h is the act row's Show, drawn
+    // only while someone here is past 24 hours.
+    const figures = within(screen.getByRole("group", { name: "Highlight people on the board" })).getAllByRole("button");
+    expect(figures).toHaveLength(2);
+    const show = screen.queryByTestId("ward-ed-act-show");
+    const chips = show ? [...figures, show] : figures;
+    expect(chips.length).toBeLessThanOrEqual(3);
     for (const chip of chips) expect(chip).toHaveAttribute("aria-pressed", "false");
   });
 
@@ -59,7 +64,7 @@ describe("ED page — hero chips and board filters highlight, never hide", () =>
     renderEd();
     const total = rows().length;
     const chip = within(screen.getByRole("group", { name: "Highlight people on the board" })).getByRole("button", {
-      name: /Under a form/u,
+      name: /under a form/iu,
     });
     fireEvent.click(chip);
     expect(chip).toHaveAttribute("aria-pressed", "true");

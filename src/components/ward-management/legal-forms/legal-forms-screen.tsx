@@ -6,7 +6,7 @@ import { useWardRaise } from "../ward-flow-raise";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useLegalFormsCopy } from "./use-legal-forms-copy";
-import { BookOpen, ChevronRight, ClipboardCopy, ClipboardList, Plus } from "lucide-react";
+import { BookOpen, ClipboardCopy, ClipboardList, Ellipsis, Plus } from "lucide-react";
 import {
   Button,
   Card,
@@ -14,11 +14,14 @@ import {
   CardHead,
   DataRow,
   Drawer,
+  FolderTabs,
   Hero,
-  HeroStat,
-  HeroTrack,
+  HeroAct,
+  HeroFigures,
+  HeroQuickChips,
+  HeroTop,
   LiveChip,
-  PhoneHero,
+  Menu,
   PhoneListRow,
   PhoneSheet,
   Segmented,
@@ -26,7 +29,7 @@ import {
   SrOnly,
   StatusGlyph,
   cx,
-  phoneRows,
+  folderTabClasses,
   tableClasses,
   type StackSegment,
   type WfFill,
@@ -44,6 +47,9 @@ import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-rol
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { ROLE_SCREENS } from "@/components/ward-management/ward-role-access";
 import { SeclusionFormsView } from "@/components/ward-management/restrictive-practice/seclusion-forms-view-lazy";
+import type { SeclusionAsk } from "@/components/ward-management/restrictive-practice/seclusion-forms-view";
+import { SeclusionTop } from "@/components/ward-management/restrictive-practice/seclusion-top";
+import pageTopStyles from "@/components/ward-management/page-top-title.module.css";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
 import { journeySentByDesk } from "@/components/ward-management/ward-referral-sender";
@@ -85,7 +91,6 @@ import {
 } from "./legal-forms-sheets";
 import {
   CATALOGUE,
-  STANDING_TONE,
   clockStanding,
   formTitle,
   handoverLines,
@@ -94,9 +99,6 @@ import {
   isOwnedLegalFormCode,
   receiptEventAccepts,
   recentTellSubjects,
-  standingSuffix,
-  typedTimeStanding,
-  typedTimeText,
   type RecordGap,
 } from "./legal-forms-view";
 import { TYPED_TIME_KEY } from "./legal-time-as-typed";
@@ -104,7 +106,6 @@ import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
 import { PhoneChecklist } from "./legal-forms-phone-checklist";
 import type { LegalFormDetailsSave } from "./legal-form-details";
 import styles from "./legal-forms.module.css";
-import wardPin from "../ward-pinned-switch.module.css";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 
 /**
@@ -220,6 +221,16 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const [tell, setTell] = useState<{ party: SupportNotificationParty | null; key: string | null } | null>(null);
   const { copied, copyNotice, copyText } = useLegalFormsCopy();
   const [tasksOpen, setTasksOpen] = useState(false);
+  // Page tops: Start, Record incident and Change a room in the top open the seclusion view's dialogs.
+  // `seen` drops the ask once the view has acted on it, so a remounted view does not reopen it.
+  const [seclusionAsk, setSeclusionAsk] = useState<(SeclusionAsk & { seen?: boolean }) | undefined>(undefined);
+  const seclusionView = (
+    <SeclusionFormsView
+      startFor={startFor}
+      ask={seclusionAsk?.seen ? undefined : seclusionAsk}
+      onAskSeen={() => setSeclusionAsk((ask) => ask && { ...ask, seen: true })}
+    />
+  );
   const isPhone = useIsPhone();
   // Forms in force (v10): the three most common types as chips on one line, the rest behind "+N".
   const [allCodes, setAllCodes] = useState(false);
@@ -369,20 +380,13 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     fill: entry.fill,
     label: `Form ${entry.code}`,
   }));
-  // Ward role (nurse in charge): a ward's few rows already lead with the next to end, so no hero card.
-  const next = routeRole === "ward" ? undefined : withDeadline[0];
-  const nextStanding = next ? clockStanding(next, now, thresholds) : "none";
-  const nextTyped = next ? typedTimeStanding(next, now, thresholds) : undefined;
   // Ward role: with nobody admitted on a form the ward cannot record here. The Admitted on a form
   // group says so, so the greyed Record a form is left out rather than repeated.
   const recordOffered = !(routeRole === "ward" && admitted.length === 0);
   // Ward role: the ward's own place, named in the title.
   const ownUnitIds = access.scope.kind === "ward" ? access.scope.unitIds : [];
   const ownWardName = units.find((unit) => ownUnitIds.includes(unit.id))?.name;
-  const movesTitle =
-    routeRole === "ward" && ownWardName
-      ? `${rows.length} ${rows.length === 1 ? "form" : "forms"} on moves to ${ownWardName}`
-      : `${rows.length} forms on open movements`;
+  const onFormLabel = routeRole === "ward" && ownWardName ? `on moves to ${ownWardName}` : "on a form";
   // Every count names its noun ("1 form to act on", not "1 Act now"; Josh, 30 Oct 2026).
   const forms = (count: number) => (count === 1 ? "form" : "forms");
   const closedWithForms = movements
@@ -756,6 +760,188 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     </div>
   );
 
+  /*
+   * Page tops (Josh, 9 Nov 2026): one top on every size, matched to Home. Forms: what is on a form and
+   * what ends first, as typed (times are never presented as checked). Seclusion: what is in use now,
+   * the rooms and the last day's incidents, from the view's own counts.
+   */
+  const urgentWords = formatReminderHours(reminders.urgentHours);
+  const firstActNow = withDeadline.find((movement) => isActNow(clockStanding(movement, now, thresholds)));
+  const actUrgent = actNow - passed;
+  const actTitle =
+    passed === 0
+      ? `${actNow} ${forms(actNow)} ${actNow === 1 ? "ends" : "end"} within ${urgentWords}`
+      : actUrgent === 0
+        ? `${passed} ${forms(passed)} passed, as typed`
+        : `${passed} passed · ${actUrgent} within ${urgentWords}, as typed`;
+  const formsTop = (
+    <HeroTop
+      figures={
+        <HeroFigures
+          items={[
+            { id: "on", value: rows.length, label: onFormLabel, testId: "ward-legal-figure-on" },
+            {
+              id: "soon",
+              value: reminders.withinSoon,
+              label: `within ${formatReminderHours(reminders.soonHours)}`,
+              // Highlights those rows (all rows stay); the list head says how many and clears it.
+              onClick: () => toggleHighlight({ kind: "soon" }),
+              pressed: highlight?.kind === "soon",
+              testId: "ward-legal-figure-soon",
+            },
+            {
+              id: "none",
+              value: noDeadline.length,
+              label: "no time written",
+              onClick: () => toggleHighlight({ kind: "none" }),
+              pressed: highlight?.kind === "none",
+              testId: "ward-legal-figure-none",
+            },
+            ...(isPhone
+              ? []
+              : [
+                  { id: "no-form", value: withoutForm, label: "no form recorded", testId: "ward-legal-figure-no-form" },
+                ]),
+          ]}
+        />
+      }
+      act={
+        actNow > 0 ? (
+          <HeroAct
+            tone="danger"
+            title={isPhone || !firstActNow || routeRole === "ward" ? actTitle : `${actTitle} · ${nameOf(firstActNow)}`}
+            testId="ward-legal-act"
+            action={
+              firstActNow
+                ? { label: "Open", testId: "ward-legal-act-open", onClick: () => select(firstActNow) }
+                : undefined
+            }
+          />
+        ) : (
+          <HeroAct tone="calm" title={`None passed or within ${urgentWords}, as typed`} testId="ward-legal-act" />
+        )
+      }
+      chips={
+        <HeroQuickChips
+          label="Form actions"
+          items={[
+            ...(recordOffered && !sheetReason
+              ? [
+                  {
+                    id: "record",
+                    label: "Record a form",
+                    icon: <Plus strokeWidth={1.75} aria-hidden="true" />,
+                    testId: "ward-legal-record-chip",
+                    onClick: () => openRecord(),
+                  },
+                ]
+              : []),
+            // Ward role: with nothing to record or tell, the ward skips it.
+            ...(routeRole === "ward" && phoneTaskCount === 0
+              ? []
+              : [
+                  {
+                    id: "tasks",
+                    label: "Record and tell",
+                    icon: <ClipboardList strokeWidth={1.75} aria-hidden="true" />,
+                    count: phoneTaskCount,
+                    countTone: "quiet" as const,
+                    countLabel: `items to record across ${phoneTaskForms} forms`,
+                    testId: "ward-legal-tasks-chip",
+                    onClick: () => setTasksOpen(true),
+                  },
+                ]),
+            ...(handover.length === 0
+              ? []
+              : [
+                  {
+                    id: "handover",
+                    label: copied === "handover" ? "Copied" : "Copy for handover",
+                    icon: <ClipboardCopy strokeWidth={1.75} aria-hidden="true" />,
+                    count: handover.length,
+                    countTone: "quiet" as const,
+                    testId: "ward-legal-copy-chip",
+                    onClick: () => copyText("handover", handover.join("\n")),
+                  },
+                ]),
+          ]}
+        />
+      }
+    />
+  );
+  const pageTop = (
+    <Hero
+      testId="ward-legal-hud-island"
+      className={cx(pageTopStyles.hero, folderTabClasses.hero)}
+      title={
+        shownView === "seclusion" ? (
+          <>
+            Seclusion <span className={pageTopStyles.soft}>and restraint</span>
+          </>
+        ) : (
+          <>
+            <SrOnly>Legal forms, </SrOnly>
+            Form deadlines <span className={pageTopStyles.soft}>as typed</span>
+          </>
+        )
+      }
+      aside={<LiveChip state="live" onHero age={formatInstant(now)} />}
+    >
+      {shownView === "seclusion" ? (
+        <SeclusionTop phone={isPhone} onAsk={(kind) => setSeclusionAsk((ask) => ({ kind, n: (ask?.n ?? 0) + 1 }))} />
+      ) : (
+        formsTop
+      )}
+    </Hero>
+  );
+  const viewTabs = (
+    <FolderTabs
+      // A phone shows three tabs, a wider screen four: remount so the folder measures the row it shows.
+      key={isPhone ? "phone" : "wide"}
+      label="Legal forms views"
+      value={shownView}
+      testId="ward-legal-tabs"
+      more={
+        // Phone: three tabs and More, as on Home (History moves behind More).
+        isPhone && shownView !== "history" ? (
+          <Menu
+            label="More legal forms views"
+            align="end"
+            items={[
+              { id: "history", label: `History (${closedWithForms.length})`, onSelect: () => setView("history") },
+            ]}
+            trigger={(props) => (
+              <Button
+                {...props}
+                variant="ghost"
+                size="sm"
+                iconOnly
+                icon={Ellipsis}
+                className={folderTabClasses.more}
+                aria-label="More legal forms views"
+              />
+            )}
+          />
+        ) : undefined
+      }
+    >
+      <Segmented<View>
+        className={folderTabClasses.switch}
+        label="View"
+        value={shownView}
+        onChange={setView}
+        items={[
+          { id: "clocks", label: "On a form" },
+          { id: "checklist", label: "Checklist" },
+          ...(isPhone && shownView !== "history"
+            ? []
+            : [{ id: "history" as const, label: "History", count: closedWithForms.length }]),
+          ...seclusionItem.map((item) => ({ ...item, label: "Seclusion" })),
+        ]}
+      />
+    </FolderTabs>
+  );
+
   return (
     <div className={styles.screen} data-testid="ward-legal-forms-page" data-ward-design="v8">
       <main id="main-content" className={styles.main}>
@@ -789,83 +975,9 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
 
         {isPhone ? (
           <>
-            <PhoneHero
-              data-testid="ward-legal-hud-island"
-              className={styles.phoneHero}
-              eyebrow="Mental Health Act forms"
-              chip={<LiveChip state="live" onHero age={formatInstant(now)} />}
-              title={movesTitle}
-              sub={`${withoutForm} no form recorded · warnings at ${formatReminderHours(reminders.soonHours)} and ${formatReminderHours(reminders.urgentHours)}`}
-              figures={[
-                { id: "act", value: actNow, label: `${forms(actNow)} to act on`, tone: "danger" },
-                {
-                  id: "soon",
-                  value: reminders.withinSoon,
-                  label: `${forms(reminders.withinSoon)} within ${formatReminderHours(reminders.soonHours)}`,
-                  tone: "warning",
-                },
-                {
-                  id: "none",
-                  value: noDeadline.length,
-                  label: `${forms(noDeadline.length)}, time not written`,
-                  // Design audit 4 (B21): a time not written is a gap (the ring), not declined or closed.
-                  tone: "neutral",
-                },
-              ]}
-              actions={
-                <>
-                  {recordOffered ? (
-                    <Button
-                      variant="onHero"
-                      icon={Plus}
-                      className={phoneRows.heroPill}
-                      disabledReason={sheetReason}
-                      reasonDisplay="tooltip"
-                      onClick={() => openRecord()}
-                    >
-                      Record a form
-                    </Button>
-                  ) : null}
-                  <Button
-                    variant="onHero"
-                    icon={ClipboardCopy}
-                    className={phoneRows.heroPill}
-                    disabledReason={handover.length === 0 ? "No passed or upcoming typed expiry" : undefined}
-                    reasonDisplay="tooltip"
-                    onClick={() => copyText("handover", handover.join("\n"))}
-                  >
-                    {copied === "handover" ? "Copied" : `Copy for handover ${handover.length}`}
-                  </Button>
-                </>
-              }
-            />
-            {/* Ward role: with nothing to record or tell, the ward's phone skips the card. */}
-            {routeRole === "ward" && phoneTaskCount === 0 ? null : (
-              <button type="button" className={styles.phoneTasks} onClick={() => setTasksOpen(true)}>
-                <ClipboardList size={16} aria-hidden="true" />
-                <span className={styles.cellStack}>
-                  <span className={styles.name}>Record and tell</span>
-                  <span className={styles.sub}>
-                    <strong className={styles.mono}>{phoneTaskCount}</strong> items to record across {phoneTaskForms}{" "}
-                    forms
-                  </span>
-                </span>
-                <ChevronRight size={16} aria-hidden="true" />
-              </button>
-            )}
-            <Segmented<View>
-              className={`${styles.phoneViews} ${wardPin.pinnedSwitch}`}
-              label="View"
-              value={shownView}
-              onChange={setView}
-              items={[
-                { id: "clocks", label: "On a form" },
-                { id: "checklist", label: "Checklist" },
-                { id: "history", label: "History", count: closedWithForms.length },
-                ...seclusionItem.map((item) => ({ ...item, label: "Seclusion" })),
-              ]}
-            />
-            {shownView === "seclusion" ? <SeclusionFormsView startFor={startFor} /> : null}
+            {pageTop}
+            {viewTabs}
+            {shownView === "seclusion" ? seclusionView : null}
             <Card className={styles.listCard} aria-label="Everyone on a form" hidden={shownView === "seclusion"}>
               {highlight ? (
                 <p className={styles.phoneNote}>
@@ -947,94 +1059,10 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
           </>
         ) : (
           <>
-            <div data-testid="ward-legal-hud-island">
-              <Hero
-                className={styles.heroBand}
-                eyebrow="Mental Health Act forms"
-                title={
-                  <>
-                    <SrOnly>Legal forms, </SrOnly>
-                    {movesTitle}
-                  </>
-                }
-                titleMeta={
-                  withoutForm > 0 ? <span className={styles.heroMeta}>{withoutForm} no form recorded</span> : undefined
-                }
-                aside={
-                  <div className={styles.heroAside}>
-                    {next ? (
-                      <button type="button" className={styles.nextCard} onClick={() => select(next)}>
-                        <span className={styles.nextEyebrow}>
-                          <StatusGlyph tone={STANDING_TONE[nextStanding]} size={9} />
-                          {/* The colour's words beside its glyph ("Next to end · within 1h"). */}
-                          {nextStanding === "passed"
-                            ? "Passed"
-                            : `Next to end${nextTyped ? standingSuffix(nextTyped) : ""}`}
-                        </span>
-                        <span className={styles.nextName}>
-                          {nameOf(next)} <span className={styles.heroCode}>{next.legalForm?.code}</span>
-                        </span>
-                        <span className={styles.nextTime}>{typedTimeText(next, now)}</span>
-                      </button>
-                    ) : null}
-                    {recordOffered ? (
-                      <Button
-                        variant="light"
-                        icon={Plus}
-                        disabledReason={sheetReason}
-                        reasonDisplay="tooltip"
-                        onClick={() => openRecord()}
-                      >
-                        Record a form
-                      </Button>
-                    ) : null}
-                  </div>
-                }
-                bar={
-                  <div className={styles.heroFilters}>
-                    <HeroStat
-                      inline
-                      value={actNow}
-                      label={`${forms(actNow)} to act on`}
-                      tone="danger"
-                      pressed={highlight?.kind === "act"}
-                      onToggle={() => toggleHighlight({ kind: "act" })}
-                    />
-                    <HeroStat
-                      inline
-                      value={reminders.withinSoon}
-                      label={`${forms(reminders.withinSoon)} within ${formatReminderHours(reminders.soonHours)}`}
-                      tone="warning"
-                      pressed={highlight?.kind === "soon"}
-                      onToggle={() => toggleHighlight({ kind: "soon" })}
-                    />
-                    <HeroStat
-                      inline
-                      value={noDeadline.length}
-                      label={`${forms(noDeadline.length)}, time not written`}
-                      tone="neutral"
-                      pressed={highlight?.kind === "none"}
-                      onToggle={() => toggleHighlight({ kind: "none" })}
-                    />
-                  </div>
-                }
-                barAside={
-                  <HeroTrack<View>
-                    label="View"
-                    value={shownView}
-                    onChange={setView}
-                    items={[
-                      { id: "clocks", label: "On a form", count: rows.length },
-                      { id: "checklist", label: "Checklist" },
-                      { id: "history", label: "History", count: closedWithForms.length },
-                      ...seclusionItem,
-                    ]}
-                  />
-                }
-              />
-            </div>
+            {pageTop}
+            {viewTabs}
 
-            {shownView === "seclusion" ? <SeclusionFormsView startFor={startFor} /> : breakdownNote}
+            {shownView === "seclusion" ? seclusionView : breakdownNote}
 
             <div className={styles.work} hidden={shownView === "seclusion"}>
               <Card className={styles.listCard} aria-label="Everyone on a form">
@@ -1052,28 +1080,13 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                     </span>
                   }
                   action={
-                    // FS1 (Josh, 3 Nov 2026): the list's own tools sit on the list, so the hero keeps one
-                    // job, Record a form, and its filters.
-                    <span className={styles.listTools}>
-                      {highlight ? (
-                        <Button variant="ghost" size="sm" onClick={() => setHighlight(null)}>
-                          Clear highlight
-                        </Button>
-                      ) : null}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={ClipboardCopy}
-                        disabledReason={handover.length === 0 ? "No passed or upcoming typed expiry" : undefined}
-                        reasonDisplay="tooltip"
-                        onClick={() => copyText("handover", handover.join("\n"))}
-                      >
-                        {copied === "handover" ? "Copied" : `Copy for handover (${handover.length})`}
+                    // Page tops (Josh, 9 Nov 2026): Record a form, Record and tell and Copy for handover are
+                    // the top's chips; the list keeps its own Clear highlight.
+                    highlight ? (
+                      <Button variant="ghost" size="sm" onClick={() => setHighlight(null)}>
+                        Clear highlight
                       </Button>
-                      <Button variant="sec" size="sm" icon={ClipboardList} onClick={() => setTasksOpen(true)}>
-                        {`Record and tell (${phoneTaskCount})`}
-                      </Button>
-                    </span>
+                    ) : undefined
                   }
                 />
 

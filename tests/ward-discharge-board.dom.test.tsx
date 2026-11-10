@@ -52,10 +52,11 @@ it("names identified release rows and distinguishes aggregate copying from print
   try {
     renderBoard();
     // Discharges redesign (approved 31 Oct 2026): Now names the hero's figure, and "held up" is the word.
-    expect(screen.getByRole("button", { name: /^Now, \d+ to work now$/ })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /^Now, \d+ to work now$/ })).toBeInTheDocument();
     expect(screen.getByText(/Discharges by bed, held up first/)).toBeInTheDocument();
     expect(screen.getByText(/Discharges by bed · Identifiers may be included/)).toBeInTheDocument();
     expect(screen.getByTestId("ward-discharge-copy")).toHaveTextContent("Copy counts");
+    // Page tops (9 Nov 2026): Print list is a hero chip whose spoken name keeps the privacy cue.
     expect(screen.getByTestId("ward-discharge-print")).toHaveAccessibleName("Print list (may include identifiers)");
     expect(screen.queryByText(/anonymous releases|Bed frees \(no name\)/i)).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ward-discharge-copy"));
@@ -75,10 +76,9 @@ it("copies Recorded's own seven-day figures, matching its headline (Codex review
   try {
     renderBoard();
     fireEvent.click(screen.getByTestId("ward-discharge-history"));
+    // Page tops (9 Nov 2026): the count is the hero's first figure, "12 recorded".
     const recorded = Number(
-      /^(\d+) discharges? recorded$/u.exec(
-        screen.getByRole("heading", { name: /discharges? recorded$/u }).textContent ?? "",
-      )?.[1],
+      /^(\d+)\s*recorded$/u.exec(screen.getByTestId("ward-discharge-figure-recorded").textContent ?? "")?.[1],
     );
     fireEvent.click(screen.getByTestId("ward-discharge-copy"));
     await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
