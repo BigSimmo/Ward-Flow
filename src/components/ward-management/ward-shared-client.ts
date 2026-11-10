@@ -82,6 +82,7 @@ function loadSharedStateCheck(): Promise<void> {
 }
 
 import type { SharedSnapshot, SharedView, SharedChangeResult, WardCommandOutcome } from "./ward-shared-client-types";
+import { SharedIntentKeys } from "./shared-intent-keys";
 export type {
   SharedSnapshot,
   SharedRoleChoice,
@@ -277,8 +278,7 @@ export class SharedWorkspaceClient {
   private pollAbort: AbortController | null = null;
   /** Requests stay with the desk that started them, even while waiting for a token. */
   private viewGeneration = 0;
-  /** M58: one key per opening or cover intent, kept until the server answers for certain. */
-  private intentKeys = new Map<string, string>();
+  private intentKeys = new SharedIntentKeys();
   /** Polls started before a grant must not replace the newly opened view. */
   private grantGeneration = 0;
   private needsRefresh = false;
@@ -1356,29 +1356,14 @@ export class SharedWorkspaceClient {
     if (requestingRole && this.view.status === "no-role") return true;
     return !!this.view.snapshot && ["ready", "saving"].includes(this.view.status);
   }
+  private keyedRequest(path: string, d: Record<string, unknown>) {
+    return this.intentKeys.send([this.viewGeneration, path], d, this.options.commandId, (b) => this.request(path, b));
+  }
   /** A change on an access route: done, a fresh sign-in first, or the server's reason. */
-  /** The same intent (a double tap, or trying again after no answer) reuses its key, so it is done once. */
-  private intentKey(path: string, body: Record<string, unknown>) {
-    const intent = JSON.stringify([this.viewGeneration, path, body]);
-    let key = this.intentKeys.get(intent);
-    if (!key) {
-      key = (this.options.commandId ?? (() => crypto.randomUUID()))();
-      if (this.intentKeys.size >= 50) this.intentKeys.clear();
-      this.intentKeys.set(intent, key);
-    }
-    return { intent, body: { ...body, intentKey: key } };
-  }
-  /** A clear answer ends the intent; no answer, a server failure or a second step keeps its key. */
-  private settleIntent(intent: string, response: Response, value: { code?: unknown } | null | undefined) {
-    if (response.status < 500 && !(response.status === 401 && value?.code === "step-up"))
-      this.intentKeys.delete(intent);
-  }
   private async change(path: string, body: Record<string, unknown>, keyed = false): Promise<SharedChangeResult> {
     if (!this.accessChangeAllowed(path === "/v1/workspace/access/request"))
       return "Shared access changes are unavailable. Reconnect and finish checking any uncertain save first.";
-    const sent = keyed ? this.intentKey(path, body) : null;
-    const { response, value } = await this.request(path, sent?.body ?? body);
-    if (sent) this.settleIntent(sent.intent, response, value);
+    const { response, value } = await (keyed ? this.keyedRequest(path, body) : this.request(path, body));
     if (response.ok) return null;
     if (response.status === 401 && value?.code === "step-up") return "step-up";
     if (response.status >= 500) throw new Error("Change not confirmed");
@@ -1418,12 +1403,8 @@ export class SharedWorkspaceClient {
     return Array.isArray(value.covers) ? value.covers : [];
   }
   grantAccess(input: { actorId: string; role: string; scope: unknown; expiresInMinutes: number }) {
-    return this.change("/v1/workspace/access/grant", {
-      actorId: input.actorId,
-      role: input.role,
-      scope: input.scope,
-      expiresInMinutes: input.expiresInMinutes,
-    });
+    const { actorId, role, scope, expiresInMinutes } = input;
+    return this.change("/v1/workspace/access/grant", { actorId, role, scope, expiresInMinutes });
   }
   /** Removes a role, or ends cover early (its giver may too). */
   revokeAccess(membershipId: string) {
@@ -1442,9 +1423,7 @@ export class SharedWorkspaceClient {
       return "Opening records is unavailable. Reconnect and finish checking any uncertain save first.";
     const generation = this.viewGeneration;
     const grantGeneration = this.grantGeneration;
-    const { intent, body } = this.intentKey("/v1/workspace/break-glass", { patientId, reason });
-    const { response, value } = await this.request("/v1/workspace/break-glass", body);
-    this.settleIntent(intent, response, value);
+    const { response, value } = await this.keyedRequest("/v1/workspace/break-glass", { patientId, reason });
     if (generation !== this.viewGeneration) return "The working view changed; open the record again.";
     if (response.ok) {
       this.grantGeneration += 1;
