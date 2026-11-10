@@ -1,6 +1,7 @@
 "use client";
 
 import { ReturnEarlyAlerts } from "@/components/ward-management/out-of-area/return-early-alerts";
+import { HomeTeamHeadsUp } from "./home-team-heads-up-lazy";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
@@ -1224,6 +1225,8 @@ export function CommunityScreen(props: CommunityScreenProps) {
         <CommunityScreenSwitchDrawer view={view} />
         {/* Out of area "Flag early" (3 Nov 2026): the home team hears it in the app. */}
         <ReturnEarlyAlerts desk={{ role: "community" }} now={view.now} />
+        {/* Home team heads-up (item 46, D-133): open-episode patients now in an ED. */}
+        <HomeTeamHeadsUp team={view.team} now={view.now} />
 
         {isPhone ? null : (
           <div className={`${styles.contentWorkspace} ${v6.sections}`} data-community-section={teamSection}>

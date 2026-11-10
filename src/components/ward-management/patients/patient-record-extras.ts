@@ -229,7 +229,8 @@ const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
     ],
   },
 
-  // Bed accepted. No community engagement.
+  // Bed accepted, still in ED. An open Midland Community Team episode, so that team's page shows the
+  // home team heads-up (item 46, D-133).
   "PT-001": {
     phone: "0491 570 157",
     alerts: ["Penicillin allergy"],
@@ -237,6 +238,17 @@ const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
       { name: "Halloway, Ben", role: "Nominated person", relationship: "Partner", phone: "0491 570 158", notify: true },
     ],
     episodes: [],
+    community: [
+      {
+        status: "active",
+        team: "Midland Community Team",
+        program: "Case management",
+        since: "Jun 2026",
+        caseManager: { name: "Okafor, Lin", role: "Nurse, case manager", phone: "08 0000 3124" },
+        lastContact: "30 Oct 2026, clinic",
+        documentIds: [],
+      },
+    ],
     documents: [
       {
         id: "D-001-1",

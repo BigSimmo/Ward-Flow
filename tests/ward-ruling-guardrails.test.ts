@@ -3,6 +3,9 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { fitDetails } from "@/components/ward-management/coordinator/shortlist-fit-line";
+import type { GateResult } from "@/components/ward-management/ward-eligibility";
+
 /*
  * Ruling guardrail register (audit plan item 9, issue #1572; recorded in D-111).
  *
@@ -33,7 +36,11 @@ const GUARDS: Guard[] = [
     ruling: "D-71",
     source: "docs/ward-flow/decisions.md",
     entry: /^## D-71\. /mu,
-    guards: ["tests/ward-never-build-drift-guard.test.ts", "tests/ward-never-build-sort-inventory.test.ts"],
+    guards: [
+      "tests/ward-never-build-drift-guard.test.ts",
+      "tests/ward-never-build-sort-inventory.test.ts",
+      "tests/ward-shortlist-fit-more.dom.test.tsx",
+    ],
   },
   {
     ruling: "D-72",
@@ -86,5 +93,39 @@ describe("ruling guardrail register", () => {
         tests.length,
       );
     }
+  });
+});
+
+/*
+ * D-71 and item 26 (More fit details). The More list under a ward card explains gates already
+ * checked. Its order is fixed by the gate, never by the result, and it carries no ranking words.
+ * The rendered ward order is proved in tests/ward-shortlist-fit-more.dom.test.tsx.
+ */
+describe("More fit details stays explain-only (D-71)", () => {
+  const gates: GateResult[] = [
+    { gate: "specialling", pass: true, info: true, need: true, detail: "" },
+    { gate: "allocatable_bed", pass: false, detail: "" },
+    { gate: "prior_decline", pass: true, detail: "" },
+    { gate: "acuity", pass: true, info: true, detail: "" },
+    { gate: "capacity_freshness", pass: true, detail: "" },
+  ];
+
+  it("lists gates in one fixed order whatever the results or their input order", () => {
+    const order = fitDetails(gates).map((detail) => detail.gate);
+    expect(order).toEqual(["prior_decline", "allocatable_bed", "capacity_freshness", "specialling"]);
+    expect(fitDetails([...gates].reverse()).map((detail) => detail.gate)).toEqual(order);
+    const flipped = gates.map((gate) => (gate.info ? gate : { ...gate, pass: !gate.pass }));
+    expect(fitDetails(flipped).map((detail) => detail.gate)).toEqual(order);
+  });
+
+  it("says only Met, Not met or To check, with no ranking words", () => {
+    for (const detail of fitDetails(gates)) {
+      expect(["Met", "Not met", "To check"]).toContain(detail.status);
+      expect(`${detail.label} ${detail.status}`).not.toMatch(
+        /\b(best|top|rank\w*|score\w*|recommend\w*|suggest\w*)\b/iu,
+      );
+    }
+    const source = liveCode(read("src/components/ward-management/coordinator/shortlist-candidate-fit.tsx"));
+    expect(source).not.toMatch(/\.sort\(|toSorted\(/u);
   });
 });

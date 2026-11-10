@@ -411,6 +411,12 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
       "It reads the sender projection only and is rendered only by the community team screen.",
   },
   {
+    file: "community/home-team-heads-up.ts",
+    reason:
+      "D-133 (Josh, 10 Nov 2026): the home team heads-up links a person's open ED stay to their own open " +
+      "community team episode, for that one team's page only, and shows the ED name and time, nothing else.",
+  },
+  {
     file: "patients/patient-now-adapter.ts",
     reason:
       "Patient-Now adapter: resolves live episode trajectory, active bed/admission, legal documents, " +
@@ -511,7 +517,8 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 49 → 51 on 2026-10-24: Josh as Ward Lead allowed two synthetic seed builders (PR #657).
     // 51 → 52 on 2026-10-26: F-17 moved the seeded referrals out of ward-movements.ts unchanged. No new reader.
     // 53 → 58 on 2026-11-07: Josh as Ward Lead allowed the five triage and risk files (PR #1500).
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(58);
+    // 58 → 59 on 2026-11-10: D-133, the home team heads-up (open episodes only, ED name and time only).
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(59);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);
