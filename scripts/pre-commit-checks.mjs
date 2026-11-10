@@ -59,7 +59,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const LINT_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/i;
 const TYPECHECK_EXTENSIONS = /\.(?:[cm]?tsx?)$/i;
 const MAX_FILES_FOR_CODE_CHECKS = 200;
-const ALLOW_MARKER = "precommit-scan: allow";
+export const ALLOW_MARKER = "precommit-scan: allow";
 
 // ---------------------------------------------------------------------------
 // Pure helpers (exported for tests)
@@ -747,6 +747,39 @@ const LABELLED_URN_RE = /\b(?:UMRN|URN|MRN)\b["']?\s*(?:[:=#]|no\.?|number)?\s*[
 const SYNTHETIC_URN_RE = /^(?:UM\d{6}|(?:TEST|SYN|DEMO|FAKE|X+)\w*)$/i;
 
 /**
+ * Patient-identifier rules for one added line: checksum-valid Medicare numbers and IHIs, and
+ * labelled URN/UMRN/MRN values outside the synthetic format. Callers skip fixture paths and
+ * lines carrying the allow marker. CI reuses this on the pull-request diff
+ * (scripts/ward-flow/check-patient-identifiers.mjs), so both gates apply one rule set.
+ */
+export function scanPatientIdentifierLine(file, line, text) {
+  const findings = [];
+  for (const match of text.matchAll(MEDICARE_FORMATTED_RE)) {
+    const digits = match[1] + match[2] + match[3];
+    const spaced = /[ -]/.test(match[0]);
+    // A bare 10-digit run is only suspicious beside the word Medicare.
+    if ((spaced || /medicare/i.test(text)) && isValidMedicare(digits)) {
+      findings.push({ file, line, why: "checksum-valid Medicare number (real-looking patient identifier)" });
+    }
+  }
+  for (const match of text.matchAll(IHI_RE)) {
+    if (isValidIhi(match[1].replace(/\s/g, ""))) {
+      findings.push({ file, line, why: "checksum-valid IHI (real-looking patient identifier)" });
+    }
+  }
+  for (const match of text.matchAll(LABELLED_URN_RE)) {
+    if (!SYNTHETIC_URN_RE.test(match[1])) {
+      findings.push({
+        file,
+        line,
+        why: `URN/UMRN "${match[1]}" is not in the synthetic UMnnnnnn format (real-looking patient identifier)`,
+      });
+    }
+  }
+  return findings;
+}
+
+/**
  * Scan added lines. Returns [{ file, line, why }]. `fileNames` covers files
  * staged with no added text lines (a new empty .env still counts).
  */
@@ -778,28 +811,7 @@ export function scanAddedLines(addedByFile, fileNames = [...addedByFile.keys()])
         if (generic && !isPlaceholderValue(generic[1])) {
           findings.push({ file, line, why: "hard-coded password, secret or token" });
         }
-        for (const match of text.matchAll(MEDICARE_FORMATTED_RE)) {
-          const digits = match[1] + match[2] + match[3];
-          const spaced = /[ -]/.test(match[0]);
-          // A bare 10-digit run is only suspicious beside the word Medicare.
-          if ((spaced || /medicare/i.test(text)) && isValidMedicare(digits)) {
-            findings.push({ file, line, why: "checksum-valid Medicare number (real-looking patient identifier)" });
-          }
-        }
-        for (const match of text.matchAll(IHI_RE)) {
-          if (isValidIhi(match[1].replace(/\s/g, ""))) {
-            findings.push({ file, line, why: "checksum-valid IHI (real-looking patient identifier)" });
-          }
-        }
-        for (const match of text.matchAll(LABELLED_URN_RE)) {
-          if (!SYNTHETIC_URN_RE.test(match[1])) {
-            findings.push({
-              file,
-              line,
-              why: `URN/UMRN "${match[1]}" is not in the synthetic UMnnnnnn format (real-looking patient identifier)`,
-            });
-          }
-        }
+        findings.push(...scanPatientIdentifierLine(file, line, text));
       }
     }
   }

@@ -2,7 +2,7 @@
 
 _Updated 2026-10-24 - CI section names every workflow and the two unlisted `ward-ci-public` scripts; Documentation owns._
 
-Curated map of `scripts/` (161 files) and the `package.json` script surface (87 entries),
+Curated map of `scripts/` (164 files) and the `package.json` script surface (87 entries),
 grouped by what each part protects. `package.json` is the command surface; this page says why
 each group exists. `npm run docs:check-inventory` compares the two counts above exactly,
 and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs
@@ -53,7 +53,7 @@ The unit shards use `ward-flow/unit-durations.mjs`, `ward-flow/test-module-depen
 
 `scripts/ward-ci-public/` holds what `.github/workflows/ward-flow.yml` runs: `plan.mjs` and
 `verify-plan.mjs` (which jobs a change needs), `main-reuse.mjs` (reuse a pull request's proven
-result on main), `changed-checks.mjs` (format, lint and the test-deletion guard on changed files),
+result on main), `changed-checks.mjs` (format, lint, the test-deletion guard and the protected safety tests on changed files),
 `check-contracts.mjs` and `check-policy-contracts.mjs` (the workflow's own contracts),
 `install-chromium.mjs`, `apt-archive-cache.mjs` (the release gate's cached WebKit system packages), and
 `bot-author-policy.mjs` for the bot author workflow, `merge-latest-main.mjs` (merges current main
@@ -86,6 +86,8 @@ production patterns carry `!` in `knip.json`; front-end audit CB-13).
 | `npm run check:ward-source-control-chars`          | `ward-flow/check-source-control-chars.mjs`                                             | Hidden or bidirectional control characters in source.                                     |
 | `npm run check:installed-lock-parity`              | `check-installed-lock-parity.mjs`, `check-node-engine.cjs`                             | Installed packages and Node match the lockfile and engine range.                          |
 | `npm run check:diff-integrity`                     | `check-diff-integrity.mjs`, `diff-integrity.json`                                      | A change cannot silently delete test cases or write a truncation banner.                  |
+| CI changed-file checks                             | `ward-flow/check-protected-safety-tests.mjs`, `ward-flow/protected-safety-tests.json`  | Named safety tests cannot lose cases or assertions without Josh's approval line (D-123).  |
+| CI static job                                      | `ward-flow/check-patient-identifiers.mjs`                                              | The pre-commit patient-identifier rules, run on every line a pull request adds.           |
 | `npm run check:dead-code-candidate`                | `check-dead-code-candidate.mjs`                                                        | Refuses an unsafe dead-code removal unless the owner approves that run.                   |
 | `node scripts/ward-flow/sign-out-check.mjs <file>` | `ward-flow/sign-out-check.mjs`, `ward-flow/claim-files.mjs`, `ward-flow/logs-root.mjs` | Sign-out log clashes before editing.                                                      |
 

@@ -189,6 +189,7 @@ function requireWorkflow(source) {
       "Check synthetic fixture identifiers and disclaimer source",
       "node scripts/ward-flow/check-clinical-governance-gate.mjs",
     ],
+    ["Check added lines for patient identifiers", "node scripts/ward-flow/check-patient-identifiers.mjs"],
     ["Check document links and anchors", "npm run docs:check-links"],
     ["Check reference-pack integrity", "node scripts/ward-flow/maintain-docs-and-organisation.mjs --pack-only --check"],
     ["Check maintained document commands", "npm run docs:check-scripts"],
