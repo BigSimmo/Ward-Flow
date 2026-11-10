@@ -509,10 +509,12 @@ a.cellBody {
 
   .chips,
   .cells {
-    margin-inline: -16px;
-    padding: 0 24px 0 16px;
+    /* Sideways only. The 4px top and bottom padding holds the chips' 48px tap band inside the row
+       (the negative margin takes it back), so nothing is taller than the row: iPhone Safari still
+       lets a row drag up and down when anything overflows it, even with overflow-y hidden. */
+    margin: -4px -16px;
+    padding: 4px 24px 4px 16px;
     overflow-x: auto;
-    /* Sideways only: the chips' taller tap band must not let the row drag up and down. */
     overflow-y: hidden;
     overscroll-behavior-x: contain;
     scroll-padding-left: 16px;

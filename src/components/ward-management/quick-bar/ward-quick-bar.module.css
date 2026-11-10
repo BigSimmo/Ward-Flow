@@ -111,8 +111,10 @@
   }
 
   .list {
-    margin-inline: -16px;
-    padding: 0 24px 0 16px;
+    /* The 4px top and bottom padding holds the 48px tap band inside the row (the negative margin
+       takes it back), so the row has nothing to drag up and down on iPhone Safari. */
+    margin: -4px -16px;
+    padding: 4px 24px 4px 16px;
     scroll-padding-left: 16px;
     /* A control focused from the keyboard scrolls clear of the right-hand fade. */
     scroll-padding-right: 48px;
