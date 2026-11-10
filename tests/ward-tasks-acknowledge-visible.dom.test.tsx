@@ -6,6 +6,8 @@ import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer"
 import { AcknowledgeVisibleButton } from "@/components/ward-management/tasks-acknowledge-visible";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { heldActionsWaiting, sendHeldActions } from "@/components/ward-management/ward-held-actions";
+import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client-types";
 import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -17,8 +19,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 const seed = seedWardFlowState();
 const items = buildActionInbox(seed.movements.filter(isOpen), NOW_ANCHOR, seed.units);
 
-function renderDrawer() {
-  const dispatch = vi.fn();
+function renderDrawer(dispatch: ReturnType<typeof vi.fn> = vi.fn()) {
   render(
     <ToastProvider>
       <WardTasksDrawer
@@ -28,7 +29,7 @@ function renderDrawer() {
         completions={{}}
         role="coordinator"
         now={NOW_ANCHOR}
-        dispatch={dispatch}
+        dispatch={dispatch as WardCommandDispatch}
         onClose={vi.fn()}
         onSelectMovement={vi.fn()}
       />
@@ -136,12 +137,13 @@ describe("Acknowledge visible records a held batch when the page is left inside 
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
-  function confirmBatch() {
-    const { dispatch, button, n } = renderDrawer();
+  function confirmBatch(dispatch?: ReturnType<typeof vi.fn>) {
+    const { dispatch: sent, button, n } = renderDrawer(dispatch);
+    const dispatchUsed = sent;
     fireEvent.click(button);
     fireEvent.click(screen.getByRole("button", { name: `Acknowledge ${n}` }));
-    expect(acks(dispatch)).toHaveLength(0);
-    return { dispatch, n };
+    expect(acks(dispatchUsed)).toHaveLength(0);
+    return { dispatch: dispatchUsed, n };
   }
 
   it("a tab close or reload records the batch at once and asks the browser to warn", () => {
@@ -180,10 +182,72 @@ describe("Acknowledge visible records a held batch when the page is left inside 
   });
 
   /*
-   * Sign-out and role switch inside the window still drop the batch: `isCurrent()` turns false and
-   * the shared client disconnects in the same click, so a flush there would only queue a save the
-   * sign-out then clears. Recording it needs sign-out to wait for that save (or ask, as it does for
-   * other waiting changes): a sequencing change in `use-ward-supabase-shared.ts`, left for Josh.
+   * D-125 (Josh, 10 Nov 2026; gap B): Sign out and Switch role inside the window send the batch first
+   * and wait for it to be confirmed (`sendHeldActions`, which `use-ward-supabase-shared.ts` awaits).
+   * A refused or failed acknowledgement keeps the person signed in, or on the same desk, and says so.
    */
-  it.todo("M8: Sign out or Switch role inside the Undo window records the held batch first, or asks");
+  it("sign-out inside the Undo window sends the held batch at once and waits for it to be confirmed", async () => {
+    let answer: (outcome: { commandId: string; status: "accepted" }) => void = () => {};
+    const answered = new Promise<{ commandId: string; status: "accepted" }>((resolve) => (answer = resolve));
+    const { dispatch, n } = confirmBatch(vi.fn(() => answered));
+    expect(heldActionsWaiting()).toBe(true);
+    let sent: boolean | undefined;
+    act(() => {
+      void sendHeldActions("sign-out").then((ok) => (sent = ok));
+    });
+    expect(acks(dispatch)).toHaveLength(n);
+    expect(screen.queryByText(`${n} alerts acknowledged.`)).toBeNull();
+    expect(heldActionsWaiting()).toBe(false);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    // Not confirmed yet: the sign-out still waits.
+    expect(sent).toBeUndefined();
+    await act(async () => {
+      answer({ commandId: "synthetic", status: "accepted" });
+      await answered;
+    });
+    await vi.waitFor(() => expect(sent).toBe(true));
+    // The window ending later records nothing twice.
+    act(() => vi.advanceTimersByTime(UNDO_TOAST_MS * 2));
+    expect(acks(dispatch)).toHaveLength(n);
+  });
+
+  it.each([
+    ["sign-out", "You are still signed in.", "sign out again"],
+    ["switch-role", "Your role was not switched.", "switch role again"],
+  ] as const)("a refused acknowledgement stops %s and says why", async (purpose, title, next) => {
+    const refused = vi.fn(async () => ({ commandId: "synthetic", status: "refused", message: "Refused." }));
+    const { n } = confirmBatch(refused);
+    let sent: boolean | undefined;
+    await act(async () => {
+      sent = await sendHeldActions(purpose);
+    });
+    expect(sent).toBe(false);
+    expect(refused).toHaveBeenCalledTimes(n);
+    expect(screen.getByText(title)).toBeTruthy();
+    expect(screen.getByText(new RegExp(`${n} alerts could not be confirmed as acknowledged.*${next}`))).toBeTruthy();
+  });
+
+  it("a failed (uncertain) acknowledgement also stops sign-out", async () => {
+    confirmBatch(vi.fn(() => ({ commandId: "synthetic", status: "failed", message: "Not confirmed." })));
+    let sent: boolean | undefined;
+    await act(async () => {
+      sent = await sendHeldActions("sign-out");
+    });
+    expect(sent).toBe(false);
+    expect(screen.getByText("You are still signed in.")).toBeTruthy();
+  });
+
+  it("after Undo nothing is held, so sign-out sends nothing and does not wait", async () => {
+    const { dispatch } = confirmBatch();
+    fireEvent.click(screen.getByRole("button", { name: /^Undo/ }));
+    expect(heldActionsWaiting()).toBe(false);
+    let sent: boolean | undefined;
+    await act(async () => {
+      sent = await sendHeldActions("sign-out");
+    });
+    expect(sent).toBe(true);
+    expect(acks(dispatch)).toHaveLength(0);
+  });
 });

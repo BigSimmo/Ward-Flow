@@ -1677,8 +1677,8 @@
         },
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
-          "line": 671,
-          "sha256": "9d4b610532249f59a679c4c4c80083b6062d38560ecbc1e077c36ed3d7a370d1"
+          "line": 672,
+          "sha256": "76ceea0cc1c8228e96608242fcc24d66451a77e0c640e1eba7971f81ef2d4341"
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
@@ -4764,7 +4764,7 @@
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
           "line": 428,
-          "sha256": "9d4b610532249f59a679c4c4c80083b6062d38560ecbc1e077c36ed3d7a370d1"
+          "sha256": "76ceea0cc1c8228e96608242fcc24d66451a77e0c640e1eba7971f81ef2d4341"
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
@@ -4841,7 +4841,7 @@
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
           "line": 432,
-          "sha256": "9d4b610532249f59a679c4c4c80083b6062d38560ecbc1e077c36ed3d7a370d1"
+          "sha256": "76ceea0cc1c8228e96608242fcc24d66451a77e0c640e1eba7971f81ef2d4341"
         },
         {
           "path": "src/components/ward-management/delays/daily-check-line.tsx",
@@ -4915,7 +4915,7 @@
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
           "line": 436,
-          "sha256": "9d4b610532249f59a679c4c4c80083b6062d38560ecbc1e077c36ed3d7a370d1"
+          "sha256": "76ceea0cc1c8228e96608242fcc24d66451a77e0c640e1eba7971f81ef2d4341"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
