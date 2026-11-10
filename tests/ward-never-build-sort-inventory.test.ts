@@ -131,14 +131,92 @@ function words(text: string): string[] {
   );
 }
 
-/** Every sort call in the sources, skipping comment lines and calls inside a string. */
+/**
+ * Which characters of `source` are code: not inside a comment or a "…", '…' or `…` string (the
+ * `${…}` inside a template is code again). A simple tokeniser: a quote or a slash in a regular
+ * expression literal is skipped, and a "…" or '…' string ends at its line, so a stray quote cannot
+ * hide the rest of a file from the guard.
+ */
+function codeMask(source: string): boolean[] {
+  const code = new Array<boolean>(source.length).fill(true);
+  /** `}` closes a template's `${…}` when this holds the brace depth it opened at. */
+  const templates: number[] = [];
+  let depth = 0;
+  let previous = "";
+  const skip = (from: number, to: number) => {
+    for (let at = from; at < to; at++) code[at] = false;
+  };
+  /** The end of a template's text part from `at`, stopping at "`" or `${`. */
+  const templateText = (at: number): number => {
+    while (at < source.length && source[at] !== "`" && !(source[at] === "$" && source[at + 1] === "{"))
+      at += source[at] === "\\" ? 2 : 1;
+    return at;
+  };
+  for (let at = 0; at < source.length; at++) {
+    const char = source[at];
+    const next = source[at + 1];
+    if (/\s/u.test(char)) continue;
+    if (char === "/" && next === "/") {
+      const end = source.indexOf("\n", at);
+      skip(at, end < 0 ? source.length : end);
+      at = end < 0 ? source.length : end;
+      continue;
+    }
+    if (char === "/" && next === "*") {
+      const end = source.indexOf("*/", at + 2);
+      skip(at, end < 0 ? source.length : end + 2);
+      at = end < 0 ? source.length : end + 1;
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      let end = at + 1;
+      while (end < source.length && source[end] !== char && source[end] !== "\n") end += source[end] === "\\" ? 2 : 1;
+      skip(at, end + 1);
+      at = end;
+      previous = char;
+      continue;
+    }
+    if (char === "/" && (previous === "" || /[(,=:[!&|?{};+\-*%<>~^]/u.test(previous))) {
+      // A regular expression literal: to its closing slash, outside any [class], on this line.
+      let end = at + 1;
+      let inClass = false;
+      while (end < source.length && source[end] !== "\n" && (inClass || source[end] !== "/")) {
+        if (source[end] === "[") inClass = true;
+        else if (source[end] === "]") inClass = false;
+        end += source[end] === "\\" ? 2 : 1;
+      }
+      skip(at, end + 1);
+      at = end;
+      previous = "/";
+      continue;
+    }
+    if (char === "`" || (char === "}" && templates.at(-1) === depth)) {
+      if (char === "}") {
+        templates.pop();
+        depth--;
+      }
+      const end = templateText(at + 1);
+      skip(at, end < source.length && source[end] === "$" ? end + 2 : end + 1);
+      if (source[end] === "$") {
+        templates.push(++depth);
+        at = end + 1;
+      } else at = end;
+      previous = "`";
+      continue;
+    }
+    if (char === "{" || char === "(" || char === "[") depth++;
+    else if (char === "}" || char === ")" || char === "]") depth--;
+    previous = char;
+  }
+  return code;
+}
+
+/** Every sort call in the sources, skipping calls inside a comment or any kind of string. */
 function sortCalls(sources: readonly Source[]): SortCall[] {
-  return sources.flatMap(({ file, source }) =>
-    [...source.matchAll(/\.(?:sort|toSorted)\(/gu)].flatMap((call) => {
-      const lineStart = source.lastIndexOf("\n", call.index) + 1;
-      const lineEnd = source.indexOf("\n", call.index);
-      if (/^\s*(\/\/|\*|\/\*)/u.test(source.slice(lineStart, lineEnd))) return [];
-      if ((source.slice(lineStart, call.index).match(/"/gu) ?? []).length % 2 === 1) return [];
+  return sources.flatMap(({ file, source }) => {
+    const code = codeMask(source);
+    return [...source.matchAll(/\.(?:sort|toSorted)\(/gu)].flatMap((call) => {
+      if (!code[call.index]) return [];
       const open = call.index + call[0].length - 1;
       const comparator = source.slice(open + 1, closing(source, open)).trim();
       const capacityWords = [...new Set(words(withHelpers(source, comparator)).filter((w) => CAPACITY_WORDS.has(w)))];
@@ -151,8 +229,8 @@ function sortCalls(sources: readonly Source[]): SortCall[] {
           source,
         },
       ];
-    }),
-  );
+    });
+  });
 }
 
 const capacityWordsOf = (source: string, text: string) =>
@@ -236,11 +314,16 @@ describe("never-build sort inventory (D-71, audit M116)", () => {
           "export const queue = (rows: Row[]) => rows.sort((a, b) => a.openedAt - b.openedAt);",
           "// rows.sort((a, b) => b.ready - a.ready) in a comment is not code",
           'const words = "rows.sort((a, b) => b.ready - a.ready)";',
+          "const single = 'rows.sort((a, b) => b.ready - a.ready)';",
+          "const template = `rows.sort((a, b) => b.ready - a.ready) ${rows.length}`;",
+          "/* rows.sort((a, b) => b.free - a.free) in a block comment */",
+          "const quoted = /[\"']/u; export const after = (rows: Row[]) => rows.sort((a, b) => a.name.localeCompare(b.name));",
         ].join("\n"),
       },
     ];
     const calls = sortCalls(planted);
-    expect(calls).toHaveLength(3);
+    // The three code calls and the one after a regular expression holding quotes; none in a string.
+    expect(calls).toHaveLength(4);
     expect(undeclared(calls, [])).toEqual([
       "planted/pick-list.tsx:2 [free, beds] (byFreeBeds)",
       "planted/pick-list.tsx:3 [fit, score] ((a, b) => fitScore(b) - fitScore(a))",

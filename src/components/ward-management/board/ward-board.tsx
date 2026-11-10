@@ -901,6 +901,7 @@ export function WardBoard({
             actingUnitId: unit.id,
           }),
         `Recorded: ${pendingConfirm.who} is currently away at an emergency department. Their bed is still held.`,
+        pendingConfirm.who,
       );
     }
     closeConfirmDialog();
@@ -1010,6 +1011,7 @@ export function WardBoard({
           return summarize(completed);
         },
         `Returned to ward: ${who} marked back${isAwayAtEd && !matchingLeave ? " from the emergency department" : " from leave"}.`,
+        who,
       );
       return;
     }

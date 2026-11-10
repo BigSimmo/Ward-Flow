@@ -32,11 +32,15 @@ function conflictRecordKey(event: WardFlowEvent): string | null {
   return null;
 }
 
-/** A queued action is on the conflicting record when it names the same one, or either names none. */
-export function sameConflictRecord(conflicting: WardFlowEvent, queued: WardFlowEvent): boolean {
+/**
+ * A queued action is on the conflicting record when it names the same one, or either names none.
+ * `exact` (a workflow 422): only an action naming the same record counts. A refused action that
+ * names no record stops nothing else, because the server checks each queued save on its own.
+ */
+export function sameConflictRecord(conflicting: WardFlowEvent, queued: WardFlowEvent, exact = false): boolean {
   const a = conflictRecordKey(conflicting);
   const b = conflictRecordKey(queued);
-  return a === null || b === null || a === b;
+  return exact ? a !== null && a === b : a === null || b === null || a === b;
 }
 
 /** The record type the server named, or "record". */

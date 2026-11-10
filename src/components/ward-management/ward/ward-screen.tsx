@@ -282,8 +282,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [capacityValue, setCapacityValue] = useState<string>(() => String(unit?.allocatable.value ?? 0));
 
   // Task 3: the undo the prototype has never had. Keyed by movementId, same pattern as
-  // `declineOpenFor`/`declineReason` above — at most one release form and one cancel form open
-  // at a time.
+  // `declineOpenFor`/`declineReason` above — at most one release form and one cancel form open at once.
   const [releaseOpenFor, setReleaseOpenFor] = useState<string | undefined>(undefined);
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | undefined>(undefined);
   // Q93: the Decisions cockpit's Accept opens the same named accept dialog as the answer view, with
@@ -662,6 +661,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                       bed: check.bed,
                       key: wardCommandKey("undo-board", check.bed),
                       success: "Undone. The bed and the person are back where they were.",
+                      who: check.who,
                     },
                   );
                 },

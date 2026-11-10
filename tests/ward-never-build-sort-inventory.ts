@@ -590,6 +590,15 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
     reason: "Help search results; not wards or patients.",
   },
 
+  {
+    file: "triage/triage-risk-start.tsx",
+    match: "urgencyRank(a.referral.urgency) - urgencyRank(b.referral.urgency)",
+    list: "patients",
+    key: "default longest waiting; opt-in 'Urgency asked' tier as the referrer typed it, then wait",
+    order: "fixed order",
+    reason:
+      "The matched comparator is the opt-in urgency view: a fixed table of the referrer's recorded tiers (A first, none asked last), longest waiting within a tier, no score. The default view is wait order (D-71 item 3).",
+  },
   // ---------------------------------------------------------------- wait order
   {
     file: "capacity/shift-confirmations.ts",
@@ -623,15 +632,6 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
     key: "callback due, then soonest callback, then oldest referral",
     order: "wait order",
     reason: "Ward call sheet in call order by recorded times only (Josh's notes 4, 9 Nov 2026).",
-  },
-  {
-    file: "triage/triage-risk-start.tsx",
-    match: "urgencyRank(a.referral.urgency) - urgencyRank(b.referral.urgency)",
-    list: "patients",
-    key: "default longest waiting; opt-in 'Urgency asked' tier as the referrer typed it, then wait",
-    order: "wait order",
-    reason:
-      "Triage queue defaults to wait order (D-71 item 3); the urgency view uses the referrer's recorded tier, no score.",
   },
   {
     file: "search/patient-search.tsx",

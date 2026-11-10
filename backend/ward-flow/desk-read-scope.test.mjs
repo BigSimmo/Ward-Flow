@@ -34,8 +34,19 @@ const CANARY_JOURNEY = "WF-314";
 /** The twin workspace's ward B desk works on this admission instead, so both run the same steps. */
 const TWIN_ADMISSION = "AD-FSHS-05";
 const CANARY = Object.freeze({ givenName: "Canaryzq", familyName: "Syntheticzq", umrn: "UM999913" });
-/** Anything that would show the canary reached a desk. */
-const CANARY_TRACES = [CANARY.givenName, CANARY.familyName, CANARY.umrn, CANARY_PATIENT, CANARY_ADMISSION];
+/**
+ * Anything that would show the canary reached a desk. The closed FSH journey is ward B's side in both
+ * workspaces (the twin holds it too, under its seed patient), so no ward A side desk is sent its id
+ * in either; in the canary workspace it is the canary's, and its archived row must not reach them.
+ */
+const CANARY_TRACES = [
+  CANARY.givenName,
+  CANARY.familyName,
+  CANARY.umrn,
+  CANARY_PATIENT,
+  CANARY_ADMISSION,
+  CANARY_JOURNEY,
+];
 
 const lead = "a0000000-0000-4000-8000-000000000001";
 const wardBActor = "a0000000-0000-4000-8000-000000000002";
@@ -298,6 +309,8 @@ const READ_PATHS = Object.freeze({
 const snapshotFor = () => 200;
 const recordsFor = (desk) => (desk.role === "executive" ? 403 : 200);
 const accessLogFor = (desk) => (["coordinator", "admin"].includes(desk.role) ? 200 : 403);
+/** The access directory is the access admin's; a place's coordinator is refused it like any other desk. */
+const directoryFor = (desk) => (desk.role === "admin" ? 200 : 403);
 const EXPECTED_STATUS = Object.freeze({
   "workspace snapshot": snapshotFor,
   "TV board snapshot": snapshotFor,
@@ -307,7 +320,11 @@ const EXPECTED_STATUS = Object.freeze({
   "record access log": accessLogFor,
   "record access log for the canary": accessLogFor,
   "archive (History)": recordsFor,
+  // Every desk keeps its own forecast history (migration 16), and is told which cover it holds or granted.
+  "forecast history": snapshotFor,
   "command receipt for ward B's change": snapshotFor,
+  "access directory": directoryFor,
+  "cover list": snapshotFor,
 });
 
 /** Values that differ between any two workspaces whatever they hold: ids, clocks and hashes. */

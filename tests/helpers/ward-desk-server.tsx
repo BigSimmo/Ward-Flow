@@ -28,7 +28,8 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 // The backend's own 409 sentence. Loaded through a path the root type check does not follow, so
 // it does not take in the backend's plain JavaScript (checked separately by typecheck:backend).
 const RECORDS_MODULE = "../../backend/ward-flow/records.mjs";
-const { staleReason } = (await import(/* @vite-ignore */ RECORDS_MODULE)) as {
+const { conflictRecordType, staleReason } = (await import(/* @vite-ignore */ RECORDS_MODULE)) as {
+  conflictRecordType: (collection: string) => string;
   staleReason: (collection: string) => string;
 };
 
@@ -116,7 +117,12 @@ export function createDeskServer({
         typeof event[field] === "string" &&
         (revisions.get(`${collection}:${String(event[field])}`) ?? 0) > body.expectedRevision,
     )?.[1];
-    if (clash) return { status: 409, body: { outcome: "conflict", error: staleReason(clash) } };
+    // As postgres.mjs answers a clash: the record type, never a patient or record id (P058).
+    if (clash)
+      return {
+        status: 409,
+        body: { outcome: "stale", code: "stale", recordType: conflictRecordType(clash), error: staleReason(clash) },
+      };
     const result = apply(event);
     if (result.outcome !== "accepted") return { status: 422, body: { outcome: "denied", error: result.reason } };
     server.applied.add(body.commandId);

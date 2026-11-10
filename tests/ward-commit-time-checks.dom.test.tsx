@@ -286,8 +286,15 @@ describe("accept in principle is checked when it is saved (M2)", () => {
 
     await waitFor(() => expect(server.sent).toHaveLength(1));
     // Said in the shared status bar only, and without the patient's name: see the to-do below.
-    await waitFor(() => expect(statusBar()).toMatch(/This record changed while you were looking/u));
+    // The stand-in answers a clash as postgres.mjs does (code "stale", the record type), so the
+    // client names the record type it changed, never the person.
+    await waitFor(() =>
+      expect(statusBar()).toMatch(
+        /Another desk changed this movement while you were looking\. Your action was not applied\./u,
+      ),
+    );
     expect(name).not.toBe("");
+    expect(statusBar()).not.toContain(name);
     expect(worldOf(server)).toBe(before);
     expect(screen.queryByTestId("ward-accept-dialog")).toBeNull();
   });

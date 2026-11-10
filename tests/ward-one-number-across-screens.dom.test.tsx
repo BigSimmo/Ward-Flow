@@ -104,7 +104,10 @@ describe("Home and Statistics print the same figures as the bed meeting sheet (A
  */
 describe("a missing ward source reads as unknown, never 0% in use (audit M6)", () => {
   afterEach(() => {
-    act(() => resetWardAccessStoreForTests());
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", null);
+      resetWardAccessStoreForTests();
+    });
   });
 
   it("Statistics' hero shows a dash, not 0%, when no ward was counted", () => {

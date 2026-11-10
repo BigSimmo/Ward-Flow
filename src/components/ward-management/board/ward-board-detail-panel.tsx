@@ -129,7 +129,7 @@ export function WardBoardDetailPanel({
   dateEdit: { admissionId: string; time: string; day: "recorded" | "today" | "tomorrow" } | null;
   dayZero: Date;
   dialogTriggerRef: RefObject<HTMLElement | null>;
-  dispatchAndReport: (record: () => ReturnType<WardCommandDispatch>, success: string) => void;
+  dispatchAndReport: (record: () => ReturnType<WardCommandDispatch>, success: string, who?: string) => void;
   emptyTileCount: number;
   leavingDestination: LeavingDestination | "";
   movements: Movement[];
@@ -380,6 +380,7 @@ export function WardBoardDetailPanel({
                               expectedDischargeAt,
                             }),
                           "Expected discharge updated.",
+                          nameFor(admission.id),
                         );
                         setDateEdit(null);
                       }}
@@ -438,6 +439,7 @@ export function WardBoardDetailPanel({
                                   actingUnitId: unit.id,
                                 }),
                               `Recorded: ${nameFor(selectedTile.key)} is currently away at an emergency department. Their bed is still held.`,
+                              nameFor(selectedTile.key),
                             );
                           };
 
@@ -469,6 +471,7 @@ export function WardBoardDetailPanel({
                                 actingUnitId: unit.id,
                               }),
                             `Returned to ward: ${nameFor(selectedTile.key)} marked back from the emergency department.`,
+                            nameFor(selectedTile.key),
                           )
                         }
                       >
@@ -482,7 +485,7 @@ export function WardBoardDetailPanel({
                     occupant={occupied}
                     unitId={unit.id}
                     raise={raise}
-                    dispatchAndReport={dispatchAndReport}
+                    dispatchAndReport={(record, success) => dispatchAndReport(record, success, nameFor(occupied.key))}
                   />
                   <div data-testid="ward-board-stepdown-container" className={styles.fullRowSpaced}>
                     <button
@@ -502,6 +505,7 @@ export function WardBoardDetailPanel({
                           nextStepDown
                             ? `Marked ${nameFor(occupied.key)} as step-down candidate for subacute care.`
                             : `Removed step-down candidate flag for ${nameFor(occupied.key)}.`,
+                          nameFor(occupied.key),
                         );
                       }}
                     >
@@ -544,6 +548,7 @@ export function WardBoardDetailPanel({
                                 barrier: val === "None" ? null : (val as DischargeBarrier),
                               }),
                             `Long-stay barrier for ${nameFor(occupied.key)}: ${val}`,
+                            nameFor(occupied.key),
                           );
                         }}
                       >

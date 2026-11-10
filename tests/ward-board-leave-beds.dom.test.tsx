@@ -245,9 +245,13 @@ it.each(["refused", "failed", "cancelled"] as const)(
       );
     });
     expect(dispatch).toHaveBeenCalledTimes(2);
-    expect(screen.getByTestId("ward-board-toast").textContent).toBe(
-      status === "refused" ? `Action refused: ${message}` : message,
-    );
+    const said = screen.getByTestId("ward-board-toast").textContent ?? "";
+    if (status === "refused") {
+      // Audit M2: a refusal is led by the person it was for (a shared-board reason never names them).
+      const who = said.slice("Action refused: ".length, -`: ${message}`.length);
+      expect(said).toBe(`Action refused: ${who}: ${message}`);
+      expect(who).toMatch(/^[A-Z][a-z]+, [A-Z][a-z]+$/u);
+    } else expect(said).toBe(message);
     expect(screen.getByTestId("ward-board-toast")).not.toHaveTextContent("Part of this return was saved");
   },
 );
@@ -291,4 +295,38 @@ it("labels a real local arrival refusal explicitly and announces it once", () =>
   // Read once, by the shared toast region; the shell region no longer repeats it (notifications pass).
   expect(screen.getByTestId("toast-region")).toContainElement(screen.getByTestId("ward-board-toast"));
   expect(screen.getByTestId("ward-live-region").textContent?.replace(/\u200B/g, "")).not.toBe(expected);
+});
+
+import { tileDomId } from "@/components/ward-management/board/ward-board-model";
+function RefusingBoard({ dispatch }: { dispatch: (event: WardFlowEvent) => Promise<WardCommandOutcome> }) {
+  const flow = useWardFlow();
+  return (
+    <WardFlowOverride value={{ ...flow, dispatch }}>
+      <WardBoard unitId="rph-adult-secure" />
+    </WardFlowOverride>
+  );
+}
+it.each([
+  ["ward-board-stepdown-toggle", "SET_STEP_DOWN_CANDIDATE"],
+  ["ward-board-record-away-submit", "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT"],
+])("a refused %s step from the detail panel names the person (audit M2)", async (testId, type) => {
+  const message = "This action is outside your working scope. Nothing was changed.";
+  const dispatch = vi.fn<(event: WardFlowEvent) => Promise<WardCommandOutcome>>(async () => ({
+    commandId: "refused",
+    status: "refused",
+    message,
+  }));
+  render(
+    <WardFlowProvider initialNow={WARD_ADMISSIONS_ANCHOR}>
+      <RefusingBoard dispatch={dispatch} />
+    </WardFlowProvider>,
+  );
+  const tile = document.getElementById(tileDomId("AD-RPHS-11"))!;
+  const who = tile.querySelector("span")!.textContent!;
+  fireEvent.click(tile);
+  await act(async () => {
+    fireEvent.click(screen.getByTestId(testId));
+  });
+  expect(dispatch.mock.calls.map(([event]) => event.type)).toEqual([type]);
+  expect(screen.getByTestId("ward-board-toast").textContent).toBe(`Action refused: ${who}: ${message}`);
 });
