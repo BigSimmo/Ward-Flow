@@ -531,6 +531,7 @@ button.stat:hover .statV {
   --side-fade: 40px;
 
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 /* DA-26 (design audit): when the table is wider than its card, fade the edge that still hides
@@ -1406,6 +1407,7 @@ button.stat:hover .statV {
 
 .gScroll {
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .gDots {
@@ -1908,6 +1910,7 @@ button.gLaneL:hover {
   .fRow {
     flex-wrap: nowrap;
     overflow-x: auto;
+    overflow-y: hidden;
   }
 
   .tbl {
@@ -2107,6 +2110,7 @@ button.gLaneL:hover {
     gap: var(--wf-s-2);
     padding: 0;
     overflow-x: auto;
+    overflow-y: hidden;
     border: 0;
     background: none;
     box-shadow: none;
@@ -2249,6 +2253,7 @@ button.gLaneL:hover {
     gap: var(--wf-s-2);
     margin-bottom: var(--wf-s-3);
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
   }
 
@@ -2979,6 +2984,7 @@ button.legalChip {
      `overflow: visible` above is for the table card; on the chips it cut off the last chip. */
   .owners.owners.owners[data-ward-primitive] {
     overflow-x: auto;
+    overflow-y: hidden;
   }
 }
 

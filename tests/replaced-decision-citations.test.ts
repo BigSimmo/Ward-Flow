@@ -94,11 +94,8 @@ const CODE_FIXTURE_FILES = [
  * not break this test.
  */
 // Paths are relative to the src tree.
-const HELD_CLINICAL_FIXES: ReadonlyArray<readonly [string, string]> = [
-  ["components/ward-management/reports/patient-chronology-screen.tsx", "D-37"], // fixed in held clinical PR
-  ["components/ward-management/reports/patient-chronology.ts", "D-37"], // fixed in held clinical PR
-  ["components/ward-management/ward-nav.ts", "D-37"], // fixed in held clinical PR
-];
+// Empty since the held clinical PR (#1590) fixed the three D-37 citations it held.
+const HELD_CLINICAL_FIXES: ReadonlyArray<readonly [string, string]> = [];
 
 function codeFiles(): string[] {
   const files: string[] = [];

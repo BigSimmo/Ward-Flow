@@ -1171,6 +1171,7 @@ button.taskLabel[aria-pressed="true"] {
     flex-direction: row;
     flex-wrap: nowrap;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
   }
 

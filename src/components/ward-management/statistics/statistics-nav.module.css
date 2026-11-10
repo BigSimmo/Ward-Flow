@@ -8,6 +8,7 @@
 
 .track {
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -77,6 +78,7 @@
   margin-inline: calc(var(--wf-s-3) * -1);
   padding: 2px var(--wf-s-3);
   overflow-x: auto;
+  overflow-y: hidden;
   overscroll-behavior-inline: contain;
   scrollbar-width: none;
 }

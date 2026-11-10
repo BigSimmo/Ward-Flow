@@ -1687,6 +1687,7 @@
   align-items: center;
   gap: 2px;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
   margin: 0;
   padding: 0;
@@ -3136,6 +3137,7 @@
     flex-wrap: nowrap;
     width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
     padding-inline-end: var(--wf-s-4);
     scrollbar-width: none;
     border-top: 1px solid var(--wf-line);

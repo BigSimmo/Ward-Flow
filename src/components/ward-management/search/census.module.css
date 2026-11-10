@@ -200,6 +200,7 @@
   min-width: 0;
   margin-left: auto;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -379,6 +380,7 @@
   /* Drawer review (6 Nov 2026): no height cap, so the rows scroll with the page (one scroll). Only
      a table wider than the page scrolls sideways here. */
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 /* Device sweep (24 Oct 2026): on a narrow page the census scrolls sideways with Time out of sight. The right edge is drawn while there is more to the right, the
@@ -1426,6 +1428,7 @@ tr:has(+ .moreRow) > td {
   top: var(--wf-header-height, 3.5rem);
   z-index: 3;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
   margin: 0 calc(-1 * var(--wf-s-3));
   padding: var(--wf-s-2) var(--wf-s-3);

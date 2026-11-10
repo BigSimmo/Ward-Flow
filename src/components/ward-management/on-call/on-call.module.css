@@ -116,6 +116,7 @@
   min-width: 0;
   white-space: normal;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: thin;
 }
 
@@ -321,6 +322,7 @@
    rows pin under the top bar. */
 .tableScroll {
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: thin;
   scrollbar-color: var(--wf-line-2) transparent;
 }

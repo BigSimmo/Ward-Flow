@@ -636,6 +636,7 @@
 
 .tableScroll {
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 /* "Worth your attention" — a duration or an id leads each item, never a colour: this list's only
@@ -1842,6 +1843,7 @@ button.searchBox:hover {
   padding: 0;
   list-style: none;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -2626,6 +2628,7 @@ button.searchBox:hover {
     gap: var(--wf-phone-pill-gap);
     flex-wrap: nowrap;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
     padding: var(--wf-phone-pill-hit) 0;

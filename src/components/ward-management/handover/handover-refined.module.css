@@ -308,6 +308,7 @@
   gap: 6px;
   min-width: 0;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -342,6 +343,7 @@
    sideways, when its columns are wider than the card. */
 .tableScroll {
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: thin;
   scrollbar-color: var(--wf-line-3) transparent;
 }
@@ -483,6 +485,7 @@
   color: var(--wf-ink-3);
   white-space: nowrap;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 

@@ -19,6 +19,7 @@
     padding-block: 7px;
     margin-block: -7px;
     overflow-x: auto;
+    overflow-y: hidden;
     overscroll-behavior-x: contain;
     scrollbar-width: none;
     -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);

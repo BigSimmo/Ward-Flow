@@ -87,6 +87,7 @@
 
 .tableScroll {
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .govTable {
@@ -446,6 +447,7 @@
 .capturedList {
   min-width: 0;
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 /* Device sweep (24 Oct 2026): at 1024 and 1280 px the register sits beside the review panel and

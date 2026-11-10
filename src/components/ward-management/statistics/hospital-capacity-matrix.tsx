@@ -7,7 +7,12 @@ import { BedSingle, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { Icon, Segmented, StatusGlyph, rowDim, tableClasses } from "@/components/wf";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
+import {
+  BED_STATE_DETAILS,
+  BED_STATE_LABELS,
+  bedStates,
+  type ReservationReferral,
+} from "@/components/ward-management/ward-bed-states";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
@@ -66,12 +71,15 @@ export function HospitalCapacityMatrix({
   bedReleases,
   admissions = [],
   leaveBeds = [],
+  holds = [],
   service = null,
 }: {
   units: Unit[];
   bedReleases: BedRelease[];
   admissions?: readonly Admission[];
   leaveBeds?: readonly LeaveBed[];
+  /** D-115: open journeys and accepted referrals; a bed named for one is Pulled, not Ready. */
+  holds?: readonly ReservationReferral[];
   service?: string | null;
 }) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -81,9 +89,11 @@ export function HospitalCapacityMatrix({
   const rows: UnitCapacityRow[] = useMemo(() => {
     return units.map((u) => {
       const site = siteByCode(u.siteCode);
-      const states = bedStates(u, admissions, bedReleases, leaveBeds);
+      const states = bedStates(u, admissions, bedReleases, leaveBeds, holds);
       // W-12 (fresh audit 26 Oct 2026): the one occupancy rule, Occupied + Pulled, as every page prints it.
-      const occRate = occupancyPercent({ beds: u.beds, inUse: states.occupied + states.pulled });
+      // D-115: occupancy stays the beds taken by a stay, so it is read without the named holds.
+      const unheld = holds.length === 0 ? states : bedStates(u, admissions, bedReleases, leaveBeds);
+      const occRate = occupancyPercent({ beds: u.beds, inUse: unheld.occupied + unheld.pulled });
       const status: StatusKey = states.ready <= 0 ? "none" : occRate >= BED_ALERT_THRESHOLD_PERCENT ? "near" : "has";
       return {
         id: u.id,
@@ -102,7 +112,7 @@ export function HospitalCapacityMatrix({
         status,
       };
     });
-  }, [units, bedReleases, admissions, leaveBeds]);
+  }, [units, bedReleases, admissions, leaveBeds, holds]);
 
   const inService = (r: UnitCapacityRow) => !service || r.service === service;
   const counts = {

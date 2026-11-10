@@ -88,6 +88,20 @@ describe("OccupancyRing", () => {
     expect(ring).toHaveAccessibleName("Statewide 90% of beds occupied. Alert line 90%. At risk, over 90%.");
   });
 
+  it("tests the whole percent it shows, so 84.6% reads 85% and at risk (D-122, extending D-109)", () => {
+    render(<OccupancyRing percent={84.6} alertAt={85} scope="Statewide" />);
+    expect(screen.getByTestId("wf-occupancy-ring")).toHaveAccessibleName(
+      "Statewide 85% of beds occupied. Alert line 85%. At risk, over 85%.",
+    );
+  });
+
+  it("stays under the line when the whole percent shown is under it", () => {
+    render(<OccupancyRing percent={84.4} alertAt={85} scope="Statewide" />);
+    expect(screen.getByTestId("wf-occupancy-ring")).toHaveAccessibleName(
+      "Statewide 84% of beds occupied. Alert line 85%. Under the 85% line.",
+    );
+  });
+
   it("says Not recorded rather than drawing a value it does not hold", () => {
     render(<OccupancyRing percent={null} alertAt={85} scope="East Metro" />);
     expect(screen.getByTestId("wf-occupancy-ring")).toHaveAccessibleName(

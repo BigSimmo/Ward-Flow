@@ -426,6 +426,7 @@
   min-width: 0;
   max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
 }
 .heatTable {
   width: 100%;
@@ -1210,6 +1211,7 @@
   list-style: none;
   border-top: 1px solid var(--wf-line);
   overflow-x: auto;
+  overflow-y: hidden;
   scroll-snap-type: x mandatory;
   scrollbar-width: thin;
 }

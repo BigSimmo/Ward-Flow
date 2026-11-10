@@ -169,6 +169,7 @@
 .tableScroll {
   min-width: 0;
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .jobsTable {

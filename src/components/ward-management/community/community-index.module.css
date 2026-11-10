@@ -419,6 +419,7 @@
 
 .sideTableWrap {
   overflow-x: auto;
+  overflow-y: hidden;
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-md);
 }
@@ -718,6 +719,7 @@
     min-width: 0;
     max-width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
   }
 

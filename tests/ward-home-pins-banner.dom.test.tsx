@@ -85,6 +85,7 @@ const world = {
   admissions: seed.admissions,
   bedReleases: seed.bedReleases,
   movements: seed.movements,
+  referrals: seed.referrals,
   patientIdOf: (record: Parameters<typeof resolvePatient>[0]) => resolvePatient(record).patient?.id,
   patientIds: new Set(seed.patients.map((patient) => patient.id)),
   eds: allEmergencyDepartments(),

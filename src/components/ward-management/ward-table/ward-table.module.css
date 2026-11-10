@@ -23,6 +23,7 @@
 .tableScroll {
   composes: wardTokens from "../ward-tokens.module.css";
   overflow-x: auto;
+  overflow-y: hidden;
   /*
    * 🔴 `overflow-x: auto` DOES NOT CONTAIN AN ABSOLUTELY POSITIONED DESCENDANT, AND THAT LEAKED A
    * WHOLE PAGE SIDEWAYS ON A PHONE.
