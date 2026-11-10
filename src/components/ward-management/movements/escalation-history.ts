@@ -13,7 +13,7 @@ export function escalationRecords(movement: Pick<Movement, "escalation" | "escal
 }
 
 export type EscalationNext =
-  | { kind: "accepted"; at: Instant; unitId: string }
+  | { kind: "accepted"; at: Instant; unitId?: string }
   | { kind: "arrived"; at: Instant }
   | { kind: "did_not_proceed"; at: Instant }
   | { kind: "escalated_again"; at: Instant }
@@ -33,13 +33,14 @@ export function escalationHistory(
     const following = records[index + 1];
     const until = following?.at ?? Number.POSITIVE_INFINITY;
     const candidates: Exclude<EscalationNext, { kind: "none" }>[] = [];
-    if (
-      movement.acceptedAt !== undefined &&
-      movement.acceptedUnitId !== undefined &&
-      movement.acceptedAt >= record.at &&
-      movement.acceptedAt < until
-    )
-      candidates.push({ kind: "accepted", at: movement.acceptedAt, unitId: movement.acceptedUnitId });
+    // Scoping strips `acceptedUnitId` for a ward the desk cannot see, but `acceptedAt` stays, so the
+    // acceptance still counts and reads without a ward name.
+    if (movement.acceptedAt !== undefined && movement.acceptedAt >= record.at && movement.acceptedAt < until)
+      candidates.push({
+        kind: "accepted",
+        at: movement.acceptedAt,
+        ...(movement.acceptedUnitId === undefined ? {} : { unitId: movement.acceptedUnitId }),
+      });
     const closure = movement.closure;
     if (closure && closure.at >= record.at && closure.at < until)
       candidates.push({ kind: closure.outcome === "arrived" ? "arrived" : "did_not_proceed", at: closure.at });
@@ -49,9 +50,14 @@ export function escalationHistory(
   });
 }
 
-/** The raising role in words; an escalation carried over from an older save has none recorded. */
-export function escalationByLabel(record: Pick<EscalationRecord, "by">): string {
-  return record.by ? WARD_FLOW_ROLE_LABELS[record.by] : "Role not recorded";
+/**
+ * Who escalated and to whom, as one sentence. An escalation carried over from an older save has no
+ * raising role recorded, so it reads "Escalated to …".
+ */
+export function escalationSentence(record: Pick<EscalationRecord, "by" | "contact">): string {
+  return record.by
+    ? `${WARD_FLOW_ROLE_LABELS[record.by]} escalated to ${record.contact}`
+    : `Escalated to ${record.contact}`;
 }
 
 /** What happened next, in words. `unitName` resolves a ward the desk can see. */
@@ -62,11 +68,13 @@ export function escalationNextLabel(
 ): string {
   switch (next.kind) {
     case "accepted":
-      return `Accepted by ${unitName(next.unitId)}, ${when(next.at)}`;
+      return next.unitId === undefined
+        ? `Accepted by a ward outside your view, ${when(next.at)}`
+        : `Accepted by ${unitName(next.unitId)}, ${when(next.at)}`;
     case "arrived":
       return `Arrived, ${when(next.at)}`;
     case "did_not_proceed":
-      return `Withdrawn, did not proceed, ${when(next.at)}`;
+      return `Closed, did not proceed, ${when(next.at)}`;
     case "escalated_again":
       return `Escalated again, ${when(next.at)}`;
     case "none":

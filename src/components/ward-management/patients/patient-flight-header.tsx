@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { interpreterLanguageRequired } from "./patient-interpreter";
 import { Hero, useIsPhone } from "@/components/wf";
 import { patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
 import styles from "./patient-now.module.css";
@@ -181,7 +182,5 @@ export function PatientRecordTabsRow({ tabs, className }: { tabs: ReactNode; cla
 
 /** The language when the record says an interpreter is required ("Italian — interpreter required"). */
 export function interpreterRequired(patient: Patient | undefined): string | undefined {
-  const value = patient?.interpreterLanguage?.trim();
-  if (!value || /no interpreter/i.test(value) || !/interpreter required/i.test(value)) return undefined;
-  return value.split(/\s+[—-]\s+/)[0]?.trim() || undefined;
+  return interpreterLanguageRequired(patient);
 }

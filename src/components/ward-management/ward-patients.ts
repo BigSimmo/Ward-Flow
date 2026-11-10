@@ -740,6 +740,45 @@ export function duplicateCandidates(patients: readonly Patient[], draft: Patient
   };
 }
 
+export type DuplicateMatchKind = "record-number" | "same-name-same-dob" | "same-name" | "near";
+
+/** One wording for each tier, shared by Add a patient and the referral drawer's new-patient form. */
+export const DUPLICATE_MATCH_LABEL: Record<DuplicateMatchKind, string> = {
+  "record-number": "Record number collision",
+  "same-name-same-dob": "Same name & DOB",
+  "same-name": "Same name",
+  near: "Similar spelling",
+};
+
+/** Every candidate once, strongest reason first: the exact tiers, then near spellings. */
+export function orderedDuplicateMatches(
+  candidates: DuplicateCandidates,
+): { patient: Patient; kind: DuplicateMatchKind }[] {
+  const out: { patient: Patient; kind: DuplicateMatchKind }[] = [];
+  const add = (list: readonly Patient[], kind: DuplicateMatchKind) => {
+    for (const patient of list) if (!out.some((entry) => entry.patient.id === patient.id)) out.push({ patient, kind });
+  };
+  add(candidates.recordNumberCollision, "record-number");
+  add(candidates.sameNameSameBirthDate, "same-name-same-dob");
+  add(candidates.sameNameBirthDateNotMatched, "same-name");
+  add(candidates.nearSpelling, "near");
+  return out;
+}
+
+export const NEAR_MATCH_MINIMUM_TERM_LENGTH = 4;
+
+/**
+ * Whether enough is typed for "no match" to mean something: a record number, both names, or one
+ * name long enough to near-match.
+ */
+export function duplicateCheckHasInput(draft: PatientIdentityDraft): boolean {
+  return (
+    draft.umrn.trim().length > 0 ||
+    (draft.givenName.trim().length > 0 && draft.familyName.trim().length > 0) ||
+    [draft.givenName, draft.familyName].some((term) => term.trim().length >= NEAR_MATCH_MINIMUM_TERM_LENGTH)
+  );
+}
+
 /**
  * Whether two record numbers (UMRNs) name the same person: surrounding spaces and letter case do
  * not count, the rule ADD_PATIENT's uniqueness check uses. Shared so every record-number match agrees.

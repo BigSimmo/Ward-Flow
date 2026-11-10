@@ -4,8 +4,8 @@
  *
  * Synthetic prototype only. Dates are held as typed ("YYYY-MM-DD", optional "HH:MM") and shown as
  * typed: nothing here computes a countdown or an "in N days" (D-93). A care plan attachment keeps
- * its document label, file type and size only, never the file and never its name (the H-0049
- * uploaded-forms precedent).
+ * its file type and size only, never the file and never its name (the H-0049 uploaded-forms
+ * precedent).
  */
 import type { Instant } from "./ward-clock";
 import type { WardFlowRole } from "./ward-flow-roles";
@@ -151,7 +151,9 @@ export function tribunalHearingPassedWithoutOutcome(
   todayIso: string,
   nowClock?: string,
 ): boolean {
-  if (!hearing || hearing.outcome) return false;
+  // A device copy replaces the typed date with the not-kept placeholder (typed text is not kept on
+  // the device), so only a real ISO day can be compared.
+  if (!hearing || hearing.outcome || !/^\d{4}-\d{2}-\d{2}$/u.test(hearing.date)) return false;
   if (hearing.date < todayIso) return true;
   if (hearing.date > todayIso) return false;
   return Boolean(hearing.time && nowClock && hearing.time < nowClock);

@@ -21,6 +21,8 @@ const files = [
   "ward-bed-availability.ts",
   "ward-patients.ts",
   "ward-eligibility.ts",
+  // D-104 (9 Nov 2026): care plan, tribunal and cultural support word lists.
+  "ward-patient-care-plans.ts",
 ];
 
 const out = {};

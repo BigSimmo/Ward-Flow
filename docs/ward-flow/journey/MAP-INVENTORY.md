@@ -2311,7 +2311,7 @@ Source-contract SHA256: 7065f243c19943ea3a762cbac95439322d4f34a7467f20402f1175d4
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/ward-patient-care-plan-reducer.ts:44; SHA256 ebd947f4ec177d0acb998b35f3ebd66d0ac58b777c9a874e20ed3e67203caa1d
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:653; SHA256 ba7b7e6584be0fa1202e6b40b41f93e211d9c118f03b961451844a53256202d1
-  Reviewed source: src/components/ward-management/ward-patient-care-plans.ts:98; SHA256 822af3f066e803a1e55eac1fe655d9d854ce922fd75e4b46c6efc99cdc525d06
+  Reviewed source: src/components/ward-management/ward-patient-care-plans.ts:98; SHA256 20f25414be8b4ae5eb1b9cc9eee189ba1ba08b0466b00ee6f7139876b963752f
 - RECORD_TRIBUNAL_HEARING — modelled; event roles: ward, community, coordinator
   Source-reviewed command model: a Mental Health Tribunal hearing date held on the patient as typed.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:654
@@ -2328,7 +2328,7 @@ Source-contract SHA256: 7065f243c19943ea3a762cbac95439322d4f34a7467f20402f1175d4
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/ward-patient-care-plan-reducer.ts:81; SHA256 ebd947f4ec177d0acb998b35f3ebd66d0ac58b777c9a874e20ed3e67203caa1d
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:654; SHA256 ba7b7e6584be0fa1202e6b40b41f93e211d9c118f03b961451844a53256202d1
-  Reviewed source: src/components/ward-management/ward-patient-care-plans.ts:149; SHA256 822af3f066e803a1e55eac1fe655d9d854ce922fd75e4b46c6efc99cdc525d06
+  Reviewed source: src/components/ward-management/ward-patient-care-plans.ts:149; SHA256 20f25414be8b4ae5eb1b9cc9eee189ba1ba08b0466b00ee6f7139876b963752f
 - RECORD_TRIBUNAL_OUTCOME — modelled; event roles: ward, community, coordinator
   Source-reviewed command model: the outcome of the recorded tribunal hearing, held beside its date.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:655
@@ -2361,7 +2361,7 @@ Source-contract SHA256: 7065f243c19943ea3a762cbac95439322d4f34a7467f20402f1175d4
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/ward-patient-care-plan-reducer.ts:107; SHA256 ebd947f4ec177d0acb998b35f3ebd66d0ac58b777c9a874e20ed3e67203caa1d
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:656; SHA256 ba7b7e6584be0fa1202e6b40b41f93e211d9c118f03b961451844a53256202d1
-  Reviewed source: src/components/ward-management/ward-patient-care-plans.ts:166; SHA256 822af3f066e803a1e55eac1fe655d9d854ce922fd75e4b46c6efc99cdc525d06
+  Reviewed source: src/components/ward-management/ward-patient-care-plans.ts:168; SHA256 20f25414be8b4ae5eb1b9cc9eee189ba1ba08b0466b00ee6f7139876b963752f
 
 ## 111 BOXES ON THE ROUTE MAP  (lane = how it is coloured)
 - [expected] A community team
@@ -2588,7 +2588,7 @@ Source-contract SHA256: 7065f243c19943ea3a762cbac95439322d4f34a7467f20402f1175d4
 - A row in the coordinator's inbox: states = Not showing | Showing | Acknowledged | Commitment completed
 - A legal form's receipt: states = Not recorded as received | Recorded as received | An expiry, typed by a clinician
 
-## 75 WORD LISTS the map names
+## 79 WORD LISTS the map names
 - DECLINE_REASONS
 - SUPPORT_SERVICE_TYPES
 - ARRIVAL_CHECKS
@@ -2664,3 +2664,7 @@ Source-contract SHA256: 7065f243c19943ea3a762cbac95439322d4f34a7467f20402f1175d4
 - GENDERS
 - PATIENT_FIELDS
 - ELIGIBILITY_GATES
+- CARE_PLAN_TYPES
+- CARE_PLAN_HELPS
+- TRIBUNAL_OUTCOMES
+- CULTURAL_SUPPORT_REQUESTS

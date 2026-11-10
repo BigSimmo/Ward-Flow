@@ -7,6 +7,7 @@
  * sent under a role the event does not permit, or with a stale or invented id, so the refusal
  * paths are exercised as well as the success paths. Synthetic seeded worlds only.
  */
+import { TRIBUNAL_OUTCOMES } from "@/components/ward-management/ward-patient-care-plans";
 import {
   CANCEL_TRANSPORT_REASONS,
   DIVERSION_REASONS,
@@ -2392,7 +2393,11 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     0,
     (state, random) => {
       const patient = prefer(random, state.patients, (candidate) => Boolean(candidate.tribunalHearing));
-      return { type: "RECORD_TRIBUNAL_OUTCOME", patientId: patient?.id ?? MISSING_ID, outcome: "Adjourned" };
+      return {
+        type: "RECORD_TRIBUNAL_OUTCOME",
+        patientId: patient?.id ?? MISSING_ID,
+        outcome: pick(random, TRIBUNAL_OUTCOMES) ?? "Adjourned",
+      };
     },
   ],
   [

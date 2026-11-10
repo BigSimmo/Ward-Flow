@@ -117,7 +117,7 @@ import {
 } from "@/components/ward-management/movements/movement-workspace-derivations";
 
 import styles from "./movement-workspace-cockpit.module.css";
-import { escalationByLabel, escalationHistory, escalationNextLabel } from "./escalation-history";
+import { escalationHistory, escalationNextLabel, escalationSentence } from "./escalation-history";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
 const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent first.";
@@ -1031,7 +1031,7 @@ export function MovementWorkspaceCockpit({
                       <li key={`${entry.at}-${index}`} className={styles.timelineItem}>
                         <time className={styles.timelineWhen}>{formatInstantWithDay(entry.at, now)}</time>
                         <span className={styles.timelineWhat}>
-                          {escalationByLabel(entry)} escalated to {entry.contact} · wards tried:{" "}
+                          {escalationSentence(entry)} · wards tried:{" "}
                           {entry.triedUnitIds.length > 0
                             ? entry.triedUnitIds.map((unitId) => unitName(unitId)).join(", ")
                             : "none recorded"}{" "}

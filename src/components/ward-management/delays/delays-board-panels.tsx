@@ -48,9 +48,9 @@ import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-
 import redesign from "./waiting.module.css";
 import polish from "./waiting-polish.module.css";
 import {
-  escalationByLabel,
   escalationHistory,
   escalationNextLabel,
+  escalationSentence,
   escalationRecords,
 } from "@/components/ward-management/movements/escalation-history";
 
@@ -94,6 +94,7 @@ export function PersonPanel({
   const escalations = escalationHistory(movement);
   const escalation = escalations.at(-1);
   const earlierEscalations = escalations.slice(0, -1);
+  const unitNameFor = (unitId: string) => units.find((unit) => unit.id === unitId)?.name ?? "a ward";
   const triedUnits = (escalation?.triedUnitIds ?? [])
     .map((unitId) => units.find((unit) => unit.id === unitId))
     .filter((unit): unit is Unit => unit !== undefined);
@@ -342,10 +343,12 @@ export function PersonPanel({
                         {earlierEscalations
                           .map(
                             (entry) =>
-                              `${formatInstantWithDay(entry.at, now)} to ${entry.contact} by ${escalationByLabel(entry)}, then ${escalationNextLabel(
-                                entry.next,
-                                (unitId) => units.find((unit) => unit.id === unitId)?.name ?? "a ward",
-                                (at) => formatInstantWithDay(at, now),
+                              `${formatInstantWithDay(entry.at, now)}, ${escalationSentence(entry).replace(/^\w/u, (first) => first.toLowerCase())}, tried ${
+                                entry.triedUnitIds.length > 0
+                                  ? entry.triedUnitIds.map((unitId) => unitNameFor(unitId)).join(", ")
+                                  : "no units recorded"
+                              }, then ${escalationNextLabel(entry.next, unitNameFor, (at) =>
+                                formatInstantWithDay(at, now),
                               ).replace(/^\w/u, (first) => first.toLowerCase())}`,
                           )
                           .join("; ")}

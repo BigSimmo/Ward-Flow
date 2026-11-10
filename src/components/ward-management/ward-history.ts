@@ -151,7 +151,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   RECORD_CARE_PLAN: { category: "patient", plainWording: "Care plan recorded" },
   RECORD_TRIBUNAL_HEARING: { category: "patient", plainWording: "Tribunal hearing date recorded" },
   RECORD_TRIBUNAL_OUTCOME: { category: "patient", plainWording: "Tribunal hearing outcome recorded" },
-  SET_CULTURAL_SUPPORT_REQUEST: { category: "patient", plainWording: "Cultural support request recorded" },
+  SET_CULTURAL_SUPPORT_REQUEST: { category: "patient", plainWording: "Cultural support request set or cleared" },
   REQUEST_CAPACITY_REFRESH: { category: "neither", plainWording: "Ward capacity update requested" },
   EVALUATE_LEAVE_BED_WARNINGS: { category: "bed", plainWording: "Leave bed warning thresholds evaluated" },
   CONFIRM_MORNING_ROLLUP: { category: "bed", plainWording: "Morning bed numbers confirmed" },

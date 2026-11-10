@@ -509,7 +509,8 @@ export function PatientCarePlansCard({
           <div data-testid="ward-patient-carer-told">
             <dt>Carer told</dt>
             <dd>
-              {hasCarer ? (
+              {hasCarer ||
+              carerTold.some((moment) => moment.status === "told" || moment.status === "not-applicable") ? (
                 <span className={styles.moments}>
                   {carerTold.map((moment) => (
                     <span key={moment.occasion}>

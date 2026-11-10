@@ -1540,8 +1540,8 @@
       },
       {
         "path": "src/components/ward-management/patients/add-patient.tsx",
-        "line": 84,
-        "sha256": "3bee533593deb3bdfdecde073046ffab12a6a80c76fd4c007c322aa944b6c22f"
+        "line": 88,
+        "sha256": "60b37fe15258f91672019198953eb4dd2bf111e5c7f63c24d85e27de9fa50ddc"
       },
       {
         "path": "src/components/ward-management/patients/patient-now-screen.tsx",
@@ -1650,8 +1650,8 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-storage-validation.ts",
-        "line": 451,
-        "sha256": "c96106106862567ef2a99315f5498f3bbc2971dc0fca4749d7302d5a3a70d009"
+        "line": 459,
+        "sha256": "ad1bce4a1c384819837d926a78ae0874f4e3ddfeb0ba0cb273076ce4632c83a7"
       },
       {
         "path": "src/components/ward-management/ward-flow-transport-events.ts",

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  escalationByLabel,
   escalationHistory,
   escalationNextLabel,
   escalationRecords,
+  escalationSentence,
 } from "@/components/ward-management/movements/escalation-history";
 import { scopeWorkspace } from "@/components/ward-management/ward-access-scope";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
@@ -69,7 +69,8 @@ describe("escalation history", () => {
       ["Old desk", undefined],
       ["New desk", "coordinator"],
     ]);
-    expect(escalationByLabel(saved.escalations![0]!)).toBe("Role not recorded");
+    expect(escalationSentence(saved.escalations![0]!)).toBe("Escalated to Old desk");
+    expect(escalationSentence(saved.escalations![1]!)).toBe("Bed coordinator escalated to New desk");
   });
 
   it("reads an older save with only `escalation` as a one-entry history", () => {
@@ -116,7 +117,17 @@ describe("escalation history", () => {
     expect(escalationNextLabel(open[0]!.next, String, String)).toBe("No answer recorded yet");
   });
 
-  it("loads a saved state whose movements have no `escalations` and one that has them", () => {
+  it("counts an acceptance by a ward outside the desk's view", () => {
+    const history = escalationHistory(
+      movement({ escalations: [{ at: 10, by: "coordinator", triedUnitIds: [], contact: "A" }], acceptedAt: 12 }),
+    );
+    expect(history[0]!.next).toEqual({ kind: "accepted", at: 12 });
+    expect(escalationNextLabel(history[0]!.next, String, (at) => `t${at}`)).toBe(
+      "Accepted by a ward outside your view, t12",
+    );
+  });
+
+  it("accepts the saved shape of movements with and without `escalations`", () => {
     const seeded = seedWardFlowState();
     const withHistory = JSON.parse(JSON.stringify(seeded));
     const withoutHistory = JSON.parse(JSON.stringify(seeded));

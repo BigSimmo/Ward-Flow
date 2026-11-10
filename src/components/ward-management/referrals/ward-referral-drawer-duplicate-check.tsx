@@ -5,19 +5,13 @@ import { Badge, buttonClass, SrOnly, StatusGlyph } from "@/components/wf";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import {
   duplicateCandidates,
-  type Patient,
+  duplicateCheckHasInput,
+  DUPLICATE_MATCH_LABEL,
+  orderedDuplicateMatches,
   type PatientIdentityDraft,
 } from "@/components/ward-management/ward-patients";
 import { patientKeyFor } from "./ward-referral-drawer-model";
 import styles from "./ward-referral-drawer-duplicate-check.module.css";
-
-type MatchKind = "umrn" | "same" | "name" | "near";
-const MATCH_LABEL: Record<MatchKind, string> = {
-  umrn: "Same UMRN",
-  same: "Same name and date of birth",
-  name: "Same name",
-  near: "Similar name",
-};
 
 /**
  * Item 38 (Josh, 9 Nov 2026, care plans and safety flags thread: defaults approved): a person added
@@ -36,14 +30,12 @@ export function ReferralDuplicateCheck({
 }) {
   const { patients, movements, referrals } = useWardFlowSelect("patients", "movements", "referrals");
   const candidates = useMemo(() => duplicateCandidates(patients, draft), [patients, draft]);
-  const matches: { patient: Patient; kind: MatchKind }[] = [
-    ...candidates.recordNumberCollision.map((patient) => ({ patient, kind: "umrn" as const })),
-    ...candidates.sameNameSameBirthDate.map((patient) => ({ patient, kind: "same" as const })),
-    ...candidates.sameNameBirthDateNotMatched.map((patient) => ({ patient, kind: "name" as const })),
-    ...candidates.nearSpelling.map((patient) => ({ patient, kind: "near" as const })),
-  ].filter((match, index, all) => all.findIndex((other) => other.patient.id === match.patient.id) === index);
+  const matches = orderedDuplicateMatches(candidates);
   const typed = draft.umrn.trim() !== "" || draft.familyName.trim() !== "" || draft.givenName.trim() !== "";
   if (!typed) return null;
+  // "No match" is said only once enough is typed for it to mean something (as on Add a patient);
+  // a near match found earlier still shows.
+  if (matches.length === 0 && !duplicateCheckHasInput(draft)) return null;
   return (
     <section
       className={styles.check}
@@ -77,7 +69,7 @@ export function ReferralDuplicateCheck({
                       </strong>
                       <span className={styles.meta}>
                         <span className={styles.mono}>{patient.umrn}</span> · born{" "}
-                        <span className={styles.mono}>{patient.dateOfBirth}</span> · {MATCH_LABEL[kind]}
+                        <span className={styles.mono}>{patient.dateOfBirth}</span> · {DUPLICATE_MATCH_LABEL[kind]}
                       </span>
                     </span>
                     <button

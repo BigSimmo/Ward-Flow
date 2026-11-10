@@ -160,7 +160,15 @@ const NESTED_KEY_RULES = new Map<string, z.ZodMiniType>([
   ["referralAnswerHistory", history({ unitId: text, answer: z.enum(["waitlisted", "declined", "withdrawn"]) })],
   ["unwinds", history({ kind: text, by: text, reason: text })],
   ["stageChanges", history({ to: text, by: text })],
-  ["escalations", history({ by: z.optional(text), contact: text, triedUnitIds: strings })],
+  // `by` is a role key: an arbitrary string such as "__proto__" would reach the role label lookup.
+  [
+    "escalations",
+    history({
+      by: z.optional(z.enum(Object.keys(WARD_FLOW_ROLE_LABELS) as [string, ...string[]])),
+      contact: text,
+      triedUnitIds: strings,
+    }),
+  ],
   ["legalFormExpiryHistory", history({ by: text, basis: text })],
   ["legalFormExpiryCorrections", z.array(legalFormExpiryCorrection)],
   ["legalFormReceiptCorrections", history({ by: text, reason: text })],

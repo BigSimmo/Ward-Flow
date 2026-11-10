@@ -496,7 +496,7 @@ const seededMovements: Movement[] = [
         at: NOW_ANCHOR - 240,
         by: "coordinator",
         triedUnitIds: ["rph-adult-secure", "gry-adult-secure"],
-        contact: "Site bed manager on call",
+        contact: "Bed management",
       },
       {
         at: NOW_ANCHOR - 3,

@@ -2,9 +2,9 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 
 /**
  * The language when the record says an interpreter is required ("Italian — interpreter required").
- * The same reading as `interpreterRequired` in `patient-flight-header.tsx`, kept in a module with no
- * styles so the ED board and a ward's bed request can show it without loading the patient page's
- * stylesheet. `tests/ward-card-safety-tags.dom.test.tsx` keeps the two readings the same.
+ * The one reading: `interpreterRequired` in `patient-flight-header.tsx` calls this. It lives in a
+ * module with no styles so the ED board and a ward's bed request can show it without loading the
+ * patient page's stylesheet.
  */
 export function interpreterLanguageRequired(
   patient: Pick<Patient, "interpreterLanguage"> | undefined,

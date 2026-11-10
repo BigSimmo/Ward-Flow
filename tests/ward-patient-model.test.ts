@@ -81,8 +81,8 @@ const DECISIONS = new Map<string, string>([
       "its content first.",
   ],
   [
-    "CARE-PLANS-SAFETY-FLAGS-2026-11-09",
-    "Josh, 9 Nov 2026, care plans and safety flags thread: defaults approved. Covers `carePlans` " +
+    "D-104",
+    "Josh, 9 Nov 2026 (docs/ward-flow/decisions.md D-104): care plans and safety flags defaults. Covers `carePlans` " +
       "(structured plan, short typed contact and one short line, attachment type and size only), " +
       "`tribunalHearing` (typed date and outcome, never a countdown) and `culturalSupportRequested` " +
       "(asked for by the person or family, never derived from the Aboriginal status field).",
@@ -131,9 +131,9 @@ const ADDED_AT_FIELDS = new Map<string, string>([["addedAt", "V10-2026-10-10-ADD
 const NOTE3_FIELDS = new Map<string, string>(ADMIN_DETAIL_FIELDS.map((field) => [field, "NOTE3-2026-11-08"]));
 /** The three fields the 9 Nov 2026 care plans and safety flags thread adds. */
 const CARE_PLAN_FIELDS = new Map<string, string>([
-  ["carePlans", "CARE-PLANS-SAFETY-FLAGS-2026-11-09"],
-  ["tribunalHearing", "CARE-PLANS-SAFETY-FLAGS-2026-11-09"],
-  ["culturalSupportRequested", "CARE-PLANS-SAFETY-FLAGS-2026-11-09"],
+  ["carePlans", "D-104"],
+  ["tribunalHearing", "D-104"],
+  ["culturalSupportRequested", "D-104"],
 ]);
 
 /** Fields that predate R-2026-09-04-A and are not its concern — PD-1's own five. */

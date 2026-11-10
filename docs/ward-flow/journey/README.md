@@ -235,3 +235,14 @@ Source digests were re-reviewed after review fixes, file by file:
 - `discharge-board.tsx`: an Export button (feature 44) sits in the list header and is disabled when the list is empty. `CLEAR_BED_RELEASE_BLOCK` moved from line 533 to 539, unchanged in role, payload and guard.
 
 The G-then-letter go-to keys (`shell/ward-goto-shortcuts.ts`) navigate through `navigateWithDirtyGuard`, so the unsaved-work guard still applies to that path. They dispatch no event.
+
+## Source review — 10 Nov 2026 (care plans and safety flags, PR #1578, D-104)
+
+Source digests were re-reviewed file by file before being re-recorded:
+
+- `ward-flow-events.ts`, `ward-flow-event-roles.ts`: four new events (`RECORD_CARE_PLAN`, `RECORD_TRIBUNAL_HEARING`, `RECORD_TRIBUNAL_OUTCOME`, `SET_CULTURAL_SUPPORT_REQUEST`) and their roles were added. No existing event's payload or role changed; cited lines below the additions moved down only.
+- `ward-flow-reducer.ts`: the four new events route to `reducePatientCarePlanEvent` from the default branch. No existing case changed.
+- `ward-flow-record-events.ts`: `RECORD_ESCALATION` now also appends to `Movement.escalations` (seeded from the older single `escalation` when the list is empty). Its guards, role and the `escalation` field every existing reader uses are unchanged. The `RECORD_ESCALATION` action note says so and its `reviewedOn` is 10 Nov 2026.
+- `ward-movements.ts`: seed data only (a second synthetic escalation on one journey).
+
+The other command models citing these files had only their digests re-recorded, because none of their handlers, guards, roles or payloads changed.

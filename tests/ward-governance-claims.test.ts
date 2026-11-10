@@ -139,9 +139,10 @@ const FIELD_CLASS: Record<string, "identity" | "operational" | "clinical"> = {
   advanceHealthDirective: "operational",
   enduringGuardian: "operational",
   // D-104 (Josh, 9 Nov 2026, care plans and safety flags). A care plan is recorded as its type, who
-  // agreed it, its dates, a key contact and a fixed pick list of what helps, with one short line;
-  // the plan's own content is never held (an attachment keeps only its file type and size), so it
-  // is operational. The tribunal hearing date and outcome are legal process, the same class as
+  // agreed it, its dates, a key contact and a fixed pick list of what helps. One typed line
+  // (`helpsExtra`, up to 120 characters) is held beside the pick list; it is typed text, so a device
+  // copy replaces it with the not-kept placeholder. The plan document itself is never held (an
+  // attachment keeps only its file type and size), so the record stays operational. The tribunal hearing date and outcome are legal process, the same class as
   // `legalStatus`. A cultural support request is a service to arrange, asked for by the person or
   // family and never derived from identity.
   carePlans: "operational",

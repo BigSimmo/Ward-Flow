@@ -46,6 +46,19 @@ describe("card risk flag tags", () => {
     expect(referralCardFlags(movement({ referralId: "RF-SYNTH-1" }), [none])).toBeUndefined();
   });
 
+  it("hides the flags when the referral date cannot be shown (no day zero yet)", () => {
+    render(
+      <CardSafetyTags
+        movement={movement({ referralId: "RF-SYNTH-1" })}
+        referrals={[referral()]}
+        patient={undefined}
+        dayZero={undefined}
+        testId="tags"
+      />,
+    );
+    expect(screen.queryByText(/Aggression|Needs security escort/u)).toBeNull();
+  });
+
   it("renders the referral date beside the tags, and the interpreter language", () => {
     render(
       <CardSafetyTags

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import { ReferralDuplicateCheck } from "@/components/ward-management/referrals/ward-referral-drawer-duplicate-check";
+import { patientKeyFor } from "@/components/ward-management/referrals/ward-referral-drawer-model";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -22,10 +23,10 @@ describe("referral drawer duplicate check", () => {
       </WardFlowProvider>,
     );
     const row = screen.getByTestId(`ward-referral-duplicate-${existing.id}`);
-    expect(row).toHaveTextContent("Same UMRN");
+    expect(row).toHaveTextContent("Record number collision");
     fireEvent.click(screen.getByRole("button", { name: "Use this record" }));
     expect(onUse).toHaveBeenCalledTimes(1);
-    expect(String(onUse.mock.calls[0]![0])).toMatch(/.+/u);
+    expect(onUse).toHaveBeenCalledWith(patientKeyFor(existing.id, seedWardFlowState()));
   });
 
   it("says no record matches for a new UMRN and name, and stays silent before anything is typed", () => {
@@ -44,5 +45,11 @@ describe("referral drawer duplicate check", () => {
       </WardFlowProvider>,
     );
     expect(screen.getByTestId("ward-referral-duplicate-none")).toBeInTheDocument();
+    rerender(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ReferralDuplicateCheck draft={{ ...blank, givenName: "Q" }} onUse={() => undefined} />
+      </WardFlowProvider>,
+    );
+    expect(screen.queryByTestId("ward-referral-duplicate-none")).toBeNull();
   });
 });
