@@ -91,12 +91,9 @@ function findings(sites: Site[]): Finding[] {
 }
 
 // Stale on 10 Nov 2026 (M135 audit). Each needs its to-do replaced by a real test; remove the entry
-// in the same change. D-115 items 3, 4 and 6 waited for #1581 and #1583, which have both merged.
-const KNOWN_STALE = [
-  "tests/ward-audit-6-missing-patient-every-screen.test.ts :: executive statistics (projectExecutiveNetworkStatistics): co",
-  "tests/ward-audit-6-missing-patient-every-screen.test.ts :: ward board (/ward-flow/board/[unitId]): tiles and the person",
-  "tests/ward-one-number-across-screens.test.ts :: Beds ready now (D-115): Home, the board and Statistics subtr",
-];
+// in the same change. The three D-115 to-dos (items 3, 4 and 6, which waited for #1581 and #1583)
+// were closed in this change, so the list is empty.
+const KNOWN_STALE: string[] = [];
 
 describe("M135 audit to-dos are tracked to closure", () => {
   const { sites } = collect() as { sites: Site[] };

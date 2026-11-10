@@ -62,7 +62,8 @@ const stayObservationStaff = (state: State, admission: Admission) => {
   );
 };
 
-const today = new Date();
+// The demo day the other audit files use, so the age and tribunal cases do not drift with the wall clock.
+const today = new Date(Date.UTC(2026, 10, 10, 2, 42)); // 10:42 AWST, 10 Nov 2026
 const todayIso = today.toISOString().slice(0, 10);
 
 /** Each hard case and how many seed records hold it. */

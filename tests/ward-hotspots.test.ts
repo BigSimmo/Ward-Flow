@@ -22,7 +22,17 @@ for (const key of ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR
 const git = (cwd: string, ...args: string[]) =>
   execFileSync(
     "git",
-    ["-c", "core.hooksPath=/dev/null", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", ...args],
+    [
+      "-c",
+      "core.hooksPath=/dev/null",
+      "-c",
+      "commit.gpgsign=false",
+      "-c",
+      "user.name=Fixture",
+      "-c",
+      "user.email=fixture@example.invalid",
+      ...args,
+    ],
     { cwd, env: environment, encoding: "utf8", stdio: "pipe" },
   );
 const lines = (count: number, tag: string) =>

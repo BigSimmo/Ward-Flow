@@ -32,9 +32,11 @@ seeded referral, `RF-015`, waiting for an answer for 4,500 minutes (75 hours). N
 1. **No scheduled stuck-work check runs yet.** The check is offline. Running it on a schedule
    against the hosted workspace needs a read of hosted data, so it needs Josh's yes (provider
    rule). Until then it is a manual support step.
-2. **Bulk acknowledge refusals are silent.** "Acknowledge visible" ignores each save's answer, so a
-   refused acknowledgement after the Undo window is not said. See M13 and M37.
-3. **Acknowledgements write no audit row.** A support person cannot find them in the audit log.
+2. **Fixed 10 November 2026 (D-129): bulk acknowledge refusals were silent.** "Acknowledge
+   visible" now waits for each save's answer and names each alert not acknowledged. Test:
+   `tests/ward-audit-m13-m37-bulk-screens.dom.test.tsx`.
+3. **Fixed 10 November 2026 (D-129): acknowledgements wrote no audit row.** Each acknowledgement
+   now writes one audit row per alert. Test: `tests/ward-audit-m13-m37-multi-save-flows.test.ts`.
 4. The runbook row names no step for "the referral has sat in one state for a day". The stuck-work
    check is the proposed step; add it to the runbook once Josh agrees.
 

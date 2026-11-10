@@ -594,19 +594,21 @@ function Queue({
   }
   // CT-09: a refusal stays until it is closed or replaced; only a recorded step clears itself.
   const clearingSeq = outcome?.tone === "success" ? sent?.seq : undefined;
-  const offeringUndo = undoable.length > 0;
+  // Keyed to `undos` (cleared only by `begin`), not to the Undo window, so the window closing
+  // does not restart this timer and keep the notice past UNDO_TOAST_MS.
+  const offeredUndo = sent?.kind === "sign" && undos.some((entry) => entry.seq === sent.seq);
   useEffect(() => {
     if (clearingSeq === undefined) return;
     const timer = window.setTimeout(
       () => {
         setDismissedSeq(clearingSeq);
       },
-      offeringUndo ? UNDO_TOAST_MS : 6000,
+      offeredUndo ? UNDO_TOAST_MS : 6000,
     );
     return () => {
       window.clearTimeout(timer);
     };
-  }, [clearingSeq, offeringUndo]);
+  }, [clearingSeq, offeredUndo]);
   // The Undo window closes on its own, as a toast's does; a refusal message stays without it.
   useEffect(() => {
     if (undoSeq === 0) return;

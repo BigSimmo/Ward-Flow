@@ -70,7 +70,8 @@ export function compareSecurityHeaders(headers) {
       else if (!pattern.test(map.get(name))) problems.push(`content-security-policy: ${name} is "${map.get(name)}"`);
     }
   }
-  // A page that sets a cookie on an anonymous visit must set it Secure, HttpOnly and SameSite.
+  // A page that sets a cookie on an anonymous visit must set it Secure and SameSite. HttpOnly is not
+  // required here, because a cookie the page's own script reads cannot carry it.
   const cookies = typeof headers.getSetCookie === "function" ? headers.getSetCookie() : [];
   for (const cookie of cookies) {
     const name = cookie.split("=")[0]?.trim() || "(unnamed)";

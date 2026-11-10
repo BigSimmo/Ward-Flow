@@ -65,7 +65,11 @@ it("keeps a limited save and the save behind it, then sends both after Retry-Aft
   expect(view()?.error).toBe(saveProblem("busy"));
   expect(view()?.pendingCount).toBe(2);
   // Polls and Retry inside the wait do not resend early.
-  await vi.advanceTimersByTimeAsync(6_999);
+  await vi.advanceTimersByTimeAsync(3_000);
+  await client.refresh();
+  expect(view()?.status).toBe("ready");
+  expect(view()?.error).toBe(saveProblem("busy"));
+  await vi.advanceTimersByTimeAsync(3_999);
   await client.retry();
   expect(posts).toHaveLength(1);
   await vi.advanceTimersByTimeAsync(1);

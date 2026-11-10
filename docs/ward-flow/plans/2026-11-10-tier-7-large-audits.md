@@ -87,7 +87,15 @@ until no other open PR holds them.
 **Today (measured).** 1,835 non-test source files in `src` and `backend`, with 9,570 runtime
 imports between them (type-only imports left out).
 
-- **One import cycle**, seven files: `ward-clock.ts`, `ward-operational-defaults.ts`,
+> **Recount, 10 November 2026 (M139 PR 1, review).** The survey below also counted TypeScript type
+> queries (`import("./x").T`) as imports, and covered `backend` too. The checked-in tool,
+> `scripts/ward-flow/import-map.ts`, walks `src` only and leaves out type-only imports and type
+> queries. On this branch it finds 1,809 files, 9,430 imports, **no cycle** and **564**
+> screen-to-screen imports across 235 folder pairs, and `scripts/ward-flow/import-map-baseline.json`
+> freezes those figures. The seven-file cycle is not found once type queries are left out, so it is
+> not a runtime cycle, and PR 2 below has nothing to break. The 659 and 257 figures are the survey's.
+
+- **One import cycle** (survey count; see the recount above), seven files: `ward-clock.ts`, `ward-operational-defaults.ts`,
   `ward-clinical-values.ts`, `ward-model.ts`, `ward-model-movement-parts.ts`,
   `referrals/referral-submission.ts`, `ward-referral-seed-time.ts`.
 - **Most-depended-on modules:** the kit `wf/index.ts` (604 importers), `ward-clock.ts` (471),
@@ -110,11 +118,11 @@ check (a small Node script over the TypeScript import graph, no new dependency) 
 new cycle or a new layer breach, with today's breaches as a frozen baseline that may only shrink,
 like the line-cap and raw-colour ratchets.
 
-**PRs.** (1) Map and baseline check, plus the map page in the code map. (2) Break the one cycle,
-probably by moving the time helpers `ward-referral-seed-time.ts` needs out of `ward-model.ts`.
+**PRs.** (1) Map and baseline check, plus the map page in the code map (built). (2) Dropped: the
+runtime graph has no cycle (see the recount above), and the baseline fails on any new one.
 (3 onwards) Shrink the baseline as M141 splits land.
 
-**Risk.** Low. The map is read-only; breaking the cycle moves code without changing it.
+**Risk.** Low. The map is read-only.
 **Effort.** Medium: about 2 days of agent time for PRs 1 and 2. **Needs Josh:** approve the
 layer list (question 1).
 

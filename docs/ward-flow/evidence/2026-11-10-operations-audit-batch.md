@@ -84,7 +84,10 @@ Run fresh on 10 November 2026. The full drill table, one row per service, is in
 - **Gap found:** the Sentry event never carries the request ID, role or screen
   (`failureEvent` in `error-report.mjs` keeps only `errorName` and `errorCode`), and a handled 500
   (`server_error`) is logged but not sent to Sentry; only unhandled failures are. Pinned by
-  `backend/ward-flow/trace-drill.test.mjs` (1 passed, 3 todo).
+  `backend/ward-flow/trace-drill.test.mjs` (1 passed, 3 todo, at the time of the audit run).
+- **Fixed 10 November 2026 (D-129):** `failureEvent` now keeps the request ID, role, screen and
+  route, and `createSharedHandler` in `shared-http.mjs` sends handled `server_error` outcomes to
+  Sentry. `backend/ward-flow/trace-drill.test.mjs` now has four passing tests.
 - **Needs Josh:** the hosted drill (one synthetic error traced to a real Sentry event). No Sentry
   event has ever been seen arriving. Browser error reporting (TE-04) is another thread's.
 

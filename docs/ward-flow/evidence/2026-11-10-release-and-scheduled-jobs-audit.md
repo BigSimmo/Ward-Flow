@@ -6,16 +6,16 @@ hosted service or live site was called. What a person still has to do is marked 
 
 ## M80: scheduled jobs, late, doubled or overlapping
 
-| Job (workflow)                                           | Overlap                       | Doubled run                                         | Late run                                      | Setting missing                                                                             |
-| -------------------------------------------------------- | ----------------------------- | --------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Daily release (`daily-release.yml`, 22:00 UTC)           | Queued, never cancelled       | Second run changes nothing (new test)               | Clock used only to name the record            | Pause switch unset means release as normal (tested)                                         |
-| Receipt clean-up (`prune-receipts.yml`, Mon 03:00 Perth) | Queued                        | Second run removes 0 and succeeds                   | Cutoff is the database's `now()`, not the run | Scheduled run fails loudly; manual run notes it. **Fails weekly until the secret is added** |
-| Backend uptime (`backend-uptime.yml`, every 10 minutes)  | Queued                        | Keeps one issue; closes once                        | No clock; checks what is true when it runs    | Token or monitor account missing: warning only, run green (gap, see M72)                    |
-| Dependency audit (`dependency-audit.yml`, nightly)       | No group; read-only, harmless | Report name carries the run id, so none overwritten | Reads advisories when it runs                 | No settings                                                                                 |
-| Nightly browsers (`ward-flow-nightly-browsers.yml`)      | Queued                        | Refreshes the one open issue (existing test)        | Local server only                             | No settings                                                                                 |
-| Keep-alive (`workflow-keepalive.yml`, Sundays)           | Queued                        | Same enables both times                             | No clock                                      | A refused enable fails the run                                                              |
-| Living-page reminder (`docs-freshness.yml`, Mondays)     | Queued                        | Updates the one open issue (read, not tested)       | Uses today's date by design                   | No settings                                                                                 |
-| CI tidy (`ward-flow-ci-tidy.yml`, hourly)                | Queued                        | Cancels only active runs (read, not tested)         | No clock                                      | No settings                                                                                 |
+| Job (workflow)                                           | Overlap                       | Doubled run                                         | Late run                                      | Setting missing                                                                                                       |
+| -------------------------------------------------------- | ----------------------------- | --------------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Daily release (`daily-release.yml`, 22:00 UTC)           | Queued, never cancelled       | Second run changes nothing (new test)               | Clock used only to name the record            | Pause switch unset means release as normal (tested)                                                                   |
+| Receipt clean-up (`prune-receipts.yml`, Mon 03:00 Perth) | Queued                        | Second run removes 0 and succeeds                   | Cutoff is the database's `now()`, not the run | Scheduled run fails loudly; manual run notes it. **Fails weekly until the secret is added**                           |
+| Backend uptime (`backend-uptime.yml`, every 10 minutes)  | Queued                        | Keeps one issue; closes once                        | No clock; checks what is true when it runs    | Token or monitor account missing: warning, then one "Uptime monitor not set up" issue after 144 runs (fixed, see M72) |
+| Dependency audit (`dependency-audit.yml`, nightly)       | No group; read-only, harmless | Report name carries the run id, so none overwritten | Reads advisories when it runs                 | No settings                                                                                                           |
+| Nightly browsers (`ward-flow-nightly-browsers.yml`)      | Queued                        | Refreshes the one open issue (existing test)        | Local server only                             | No settings                                                                                                           |
+| Keep-alive (`workflow-keepalive.yml`, Sundays)           | Queued                        | Same enables both times                             | No clock                                      | A refused enable fails the run                                                                                        |
+| Living-page reminder (`docs-freshness.yml`, Mondays)     | Queued                        | Updates the one open issue (read, not tested)       | Uses today's date by design                   | No settings                                                                                                           |
+| CI tidy (`ward-flow-ci-tidy.yml`, hourly)                | Queued                        | Cancels only active runs (read, not tested)         | No clock                                      | No settings                                                                                                           |
 
 A test also fails if a new scheduled workflow appears without being added to this table.
 
@@ -40,11 +40,13 @@ Failures injected offline (`tests/ward-audit-m80-scheduled-jobs.test.ts`, M72 bl
 unavailable, recovery on a later try, hidden database (token missing or misspelt), alert issue cannot
 be created, open issues cannot be listed, workspace 503, sign-in refused, sign-in not answering.
 
-Gaps found, not fixed (operational choices for Josh):
+Gaps found (operational choices for Josh):
 
-1. A hidden database check or an unset monitor account leaves the run green with only a warning.
-   Nobody opens a green run, so the database check can be off for weeks unseen. Option: raise a
-   separate "monitor not set up" issue after, say, a day of warnings.
+1. **Fixed 10 November 2026 (D-129).** A hidden database check or an unset monitor account left the
+   run green with only a warning, so the database check could be off for weeks unseen. The
+   `backend-uptime.yml` coverage step now opens one "Uptime monitor not set up" issue, @mentioning
+   the owner, after 144 runs (about a day) of gaps, and closes it once the whole check answers
+   again. Test: the M72 block in `tests/ward-audit-m80-scheduled-jobs.test.ts`.
 2. When the alert issue cannot be created the run fails, but GitHub emails a failed scheduled run
    only to whoever last edited the schedule, which may not be Josh.
 

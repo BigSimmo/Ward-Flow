@@ -100,7 +100,9 @@ function readFlag(args: string[], name: string): number | undefined {
 }
 
 function main(args: string[]) {
-  const file = args.find((arg) => !arg.startsWith("--") && !/^-?\d/.test(arg));
+  // Skip the value after each value flag, so a dated state file such as 2026-11-10-state.json is kept.
+  const valueFlags = new Set(["--now", "--max-age-hours", "--window-hours"]);
+  const file = args.find((arg, index) => !arg.startsWith("--") && !valueFlags.has(args[index - 1] ?? ""));
   if (!file) {
     console.error("Usage: stuck-work-check.ts <state.json> [--now <minutes>] [--max-age-hours 24] [--window-hours 6]");
     process.exit(2);

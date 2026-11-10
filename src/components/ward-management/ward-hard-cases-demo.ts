@@ -145,8 +145,14 @@ export function applyHardCasesOverlay(state: WardFlowState, now: Instant): WardF
     admissions = [
       ...admissions,
       {
-        ...template,
+        // Built from the journey and explicit defaults: no other stay's region, diagnosis, bed or
+        // history is copied in (only its ward, which is the journey's accepted ward).
         id: HARD_CASE_IDS.form5aAdmission,
+        unitId: template.unitId,
+        state: "occupied",
+        homeRegion: state.referrals.find((referral) => referral.id === arrived.referralId)?.homeRegion ?? null,
+        tentativeDiagnosis: null,
+        awayAtEmergencyDepartmentSince: null,
         movementId: arrived.id,
         referralId: arrived.referralId ?? null,
         patientId: arrived.patientId,

@@ -106,9 +106,11 @@ spending approval.
 ## M74. Trace one error end to end
 
 **Aim:** one synthetic error traced from the tap to the backend log line and the Sentry event by one
-request ID. **Blocked** offline: the Sentry event does not carry the request ID, role or screen, and
-handled 500s are not sent (see the evidence page). Once those gaps are closed and Josh says yes:
-trigger one synthetic server error, note the `x-request-id` the browser got, find the log line with
+request ID. The offline gaps were fixed on 10 November 2026 (D-129): the Sentry event now carries
+the request ID, role, screen and route (`failureEvent` in `backend/ward-flow/error-report.mjs`), and
+handled 500s are sent (`createSharedHandler` in `shared-http.mjs`); `backend/ward-flow/trace-drill.test.mjs`
+pins both. **Blocked** only on the hosted part: Josh's yes and a Sentry project that receives events.
+Then: trigger one synthetic server error, note the `x-request-id` the browser got, find the log line with
 it, find the Sentry event with it, and record the times. **Not run.**
 
 ## M75. Responder tabletop with Josh absent

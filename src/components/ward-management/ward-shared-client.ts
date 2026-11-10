@@ -914,7 +914,7 @@ export class SharedWorkspaceClient {
         /* Storage unavailable. */
       }
       this.publish({
-        ...(this.pending
+        ...(this.pending && !this.pacing.limited // M53: in a 429's wait the save sends itself; stay ready.
           ? {
               status: "unavailable" as const,
               boardCurrent: true,
