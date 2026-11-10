@@ -48,6 +48,13 @@ export const DEFAULT_BED_FINDER_FILTERS: BedFinderFilters = {
 };
 
 /**
+ * The finder's note: what the quick filter leaves out, so nobody reads its list as a fit list (M118,
+ * 10 Nov 2026). It checks cohort, authorisation and sex only, and drops forensic wards (D7).
+ */
+export const BED_FINDER_NOTE =
+  "A to Z, not ranked. Forensic wards are left out. This quick filter does not check security, bay mix or a gender-diverse designation. The referral checks every rule before a bed is offered.";
+
+/**
  * Tools, Find a bed (Tools review item 19, 15 Oct 2026; rewritten for audit 24-1 decision 1,
  * 24 Oct 2026). A quick filter over the shared units, not the eligibility engine: it narrows the
  * list for a phone call, and the referral's own gates still decide. Every open ward the filters
@@ -66,6 +73,8 @@ export function findBeds(
   return (
     units
       .filter((unit) => !unit.isClosed)
+      // A forensic ward is never offered (D7), so the quick filter leaves it out as every engine path does (M118).
+      .filter((unit) => !unit.forensic)
       .filter((unit) => unit.cohort === filters.cohort)
       .filter((unit) => !involuntary || unit.authorised)
       .filter((unit) => filters.sex === "any" || sexDesignationAccepts(unit.sexDesignation, filters.sex))
@@ -247,7 +256,7 @@ function ExecutiveBedFinder({ onNavigate }: { onNavigate: () => void }) {
           Choose a legal status to list wards.
         </p>
       )}
-      <p className={styles.note}>A to Z, not ranked. The referral still checks every rule before a bed is offered.</p>
+      <p className={styles.note}>{BED_FINDER_NOTE}</p>
     </div>
   );
 }
@@ -363,7 +372,7 @@ function OperationalBedFinder({ onNavigate }: { onNavigate: () => void }) {
           Choose Voluntary or Involuntary under Legal status to list wards. Involuntary lists only authorised wards.
         </p>
       )}
-      <p className={styles.note}>A to Z, not ranked. The referral still checks every rule before a bed is offered.</p>
+      <p className={styles.note}>{BED_FINDER_NOTE}</p>
     </div>
   );
 }

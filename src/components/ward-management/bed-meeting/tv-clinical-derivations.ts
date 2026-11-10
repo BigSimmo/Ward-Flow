@@ -12,7 +12,13 @@ import {
   isUnderAForm,
 } from "@/components/ward-management/ed/ed-home-derivations";
 import { edBayAssignments, movementMedicalClearance } from "@/components/ward-management/ed/ed-screen-model";
-import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
+import {
+  currentLegalDueAt,
+  FORM_RECORDED_ENDED,
+  formProgression,
+  formRecordedEnded,
+} from "@/components/ward-management/legal-forms/legal-form-progression";
+import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { riskFlagLabel } from "@/components/ward-management/referrals/referral-risk-flags";
 import { dayOf, formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
@@ -103,11 +109,14 @@ function legalFact(status: string | undefined, movement: Movement | undefined, n
   const progression = formProgression(movement);
   if (progression)
     return { text: `Form ${progression.nextCode} to record, Form ${progression.endedCode} ended`, tone: "danger" };
-  const head = `Form ${form.code}${status ? `, ${status.toLowerCase()}` : ""}`;
-  if (form.dueAt === undefined) return { text: head };
-  const left = form.dueAt - now;
+  // D-93: the form by its full name, as every other output names it (M17, 10 Nov 2026).
+  const head = `${legalFormName(form)}${status ? `, ${status.toLowerCase()}` : ""}`;
+  if (formRecordedEnded(movement)) return { text: `${head}. ${FORM_RECORDED_ENDED}` };
+  const dueAt = currentLegalDueAt(movement);
+  if (dueAt === undefined) return { text: head };
+  const left = dueAt - now;
   return {
-    text: `${head}. ${typedTimeLine(form.dueAt, now)}`,
+    text: `${head}. ${typedTimeLine(dueAt, now)}`,
     tone: left <= 0 ? "danger" : left <= HOURS_24 ? "warning" : undefined,
   };
 }

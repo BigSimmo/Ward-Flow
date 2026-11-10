@@ -4,7 +4,13 @@ import { ArrowRight, Car, ChevronRight, Clock, Map as MapIcon, Plane } from "luc
 
 import { Card, CardHead, Icon, SrOnly, StatusGlyph, cx } from "@/components/wf";
 
-import { TRAVEL_SHORT, confirmedAgeText, shortSiteName, type HomeRegionBeds } from "./out-of-area-model";
+import {
+  HOME_REGION_BEDS_NOTE,
+  TRAVEL_SHORT,
+  confirmedAgeText,
+  shortSiteName,
+  type HomeRegionBeds,
+} from "./out-of-area-model";
 import styles from "./out-of-area-board.module.css";
 
 /**
@@ -176,6 +182,7 @@ export function HomeBedsCard({
           </div>
         ))
       )}
+      {rows.length === 0 ? null : <p className={styles.emptyLine}>{HOME_REGION_BEDS_NOTE}</p>}
       {notBanded === undefined ? null : (
         <p className={styles.gapRow}>
           <StatusGlyph tone="neutral" size={9} />

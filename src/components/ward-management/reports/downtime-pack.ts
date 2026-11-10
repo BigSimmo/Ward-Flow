@@ -9,6 +9,7 @@ import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-man
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
+import { formRecordedEnded } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { legalFormOrdered } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 import { observationSummary } from "@/components/ward-management/ward-observation";
@@ -71,6 +72,8 @@ type DowntimeLegalLine = {
   madeAt: Instant | null;
   receivedAt: Instant | null;
   typedExpiryAt: Instant | null;
+  /** A person recorded the form as ended: the pack shows FORM_RECORDED_ENDED for its expiry. */
+  formEnded?: true;
 };
 
 export type DowntimePack = {
@@ -214,7 +217,9 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
     legalStatus: movement.legalStatus,
     madeAt: finiteOrNull(movement.formedAt),
     receivedAt: finiteOrNull(movement.legalFormReceivedAt),
-    typedExpiryAt: finiteOrNull(movement.legalForm?.dueAt),
+    // M17 (10 Nov 2026): a form recorded as ended shows "Recorded as ended", never its old typed end.
+    typedExpiryAt: formRecordedEnded(movement) ? null : finiteOrNull(movement.legalForm?.dueAt),
+    ...(formRecordedEnded(movement) ? { formEnded: true as const } : {}),
   }));
 
   return {

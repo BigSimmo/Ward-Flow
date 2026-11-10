@@ -16,7 +16,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { COHORTS, type Cohort } from "@/components/ward-management/ward-model";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
-import { findBeds, type BedFinderFilters } from "@/components/ward-management/tools/ward-bed-finder";
+import { BED_FINDER_NOTE, findBeds, type BedFinderFilters } from "@/components/ward-management/tools/ward-bed-finder";
 import {
   useExecutiveStatistics,
   useExecutiveStatisticsControl,
@@ -150,7 +150,7 @@ export function ToolFindBed({ onNavigate }: { onNavigate: () => void }) {
           Choose a legal status to list wards.
         </p>
       )}
-      <p className={styles.note}>A to Z, not ranked. The referral still checks every rule.</p>
+      <p className={styles.note}>{BED_FINDER_NOTE}</p>
     </div>
   );
 }
