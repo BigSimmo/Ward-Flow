@@ -153,6 +153,18 @@ jobs:
         run: node scripts/ward-ci-public/check-contracts.mjs
       - name: Check synthetic fixture identifiers and disclaimer source
         run: node scripts/ward-flow/check-clinical-governance-gate.mjs
+      - name: Check added lines for patient identifiers
+        env:
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: node scripts/ward-flow/check-patient-identifiers.mjs
+      - name: Scan added lines for secrets and patient identifiers
+        env:
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: node scripts/ward-ci-public/identifier-scan.mjs
+      - name: Check the 5 KB phone limit raise cap
+        env:
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: node scripts/ward-ci-public/budget-raise-cap.mjs
       - name: Check document links and anchors
         run: npm run docs:check-links
       - name: Check reference-pack integrity

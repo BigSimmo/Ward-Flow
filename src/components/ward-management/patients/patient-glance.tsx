@@ -16,7 +16,10 @@ import { activeCommunityTreatmentOrder, type Patient } from "@/components/ward-m
 import { observationSummary } from "@/components/ward-management/ward-observation";
 import { riskFlagLabel } from "@/components/ward-management/referrals/referral-risk-flags";
 import type { FormTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
-import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
+import {
+  formProgression,
+  formProgressionPhrase,
+} from "@/components/ward-management/legal-forms/legal-form-progression";
 import type { PatientMode } from "./patient-mode";
 import { interpreterRequired } from "./patient-flight-header";
 import styles from "./patient-glance.module.css";
@@ -126,7 +129,7 @@ function legalTile({ patient, movement, formTimeLeft, mode, onOpenForms, recordC
       ...base,
       value: status ?? "Not recorded",
       quiet: status === undefined,
-      sub: `Form ${progression.endedCode} ended ${progression.endedWhen} · Form ${progression.nextCode} to record`,
+      sub: `${formProgressionPhrase(progression)} · Form ${progression.nextCode} to record`,
       tone: "warning",
     };
   const form = movement?.legalForm ? `Form ${movement.legalForm.code}` : cto ? `Form ${cto.form}` : undefined;

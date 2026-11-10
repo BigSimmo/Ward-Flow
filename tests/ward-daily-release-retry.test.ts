@@ -31,6 +31,10 @@ type State = {
   acceptanceAnswers?: string[];
   acceptanceFailures: number;
   publishTagCollision?: string;
+  // Staff "What's new" lookups: an error for every contents read, or entry ids listed at the target.
+  contentsError?: string;
+  staffIds?: string[];
+  staffEntryError?: string;
 };
 const directories: string[] = [];
 afterEach(() =>
@@ -93,7 +97,15 @@ else if (route.startsWith('compare/')) {
   }
 }
 else if (route === 'pulls/42') finish('fix: Synthetic release entry');
-else if (route.startsWith('contents/')) finish('[]');
+else if (route.startsWith('contents/')) {
+  if (state.contentsError) fail(state.contentsError);
+  const entry = /whats-new\\/([^/?]+)\\.json\\?ref=/.exec(route);
+  if (entry) {
+    if (state.staffEntryError) fail(state.staffEntryError);
+    finish({ line: 'Synthetic staff line ' + entry[1] });
+  } else if (route.includes('whats-new?ref=' + state.target) && state.staffIds) finish(state.staffIds.join('\\n'));
+  else finish('[]');
+}
 else if (route.startsWith('git/ref/tags/')) {
   inject('tagLookupFailures');
   const sha = state.tags[route.slice('git/ref/tags/'.length)];
@@ -454,6 +466,21 @@ describe("daily release record and live-ref recovery", () => {
     expect(h.read().calls).toEqual([]);
   });
 
+  // Audit M80 (10 Nov 2026): GitHub can start the 6 am schedule twice, or a "release now" can follow
+  // it. The second run must find live already released and change nothing.
+  it("changes nothing when a second run follows a finished release", () => {
+    const h = harness({ current: previous, target });
+    expect(h.run().status).toBe(0);
+    const after = h.read();
+    expect(after.current).toBe(target);
+    h.change({ calls: [] });
+    const again = h.run();
+    expect(again.status).toBe(0);
+    expect(again.stdout).toContain(`Live and its published record are already at ${target}.`);
+    expect(h.read().records).toEqual(after.records);
+    expect(h.read().calls.filter((call) => !call.startsWith("GET "))).toEqual([]);
+  });
+
   // CB-2 (front-end audit, 5 Nov 2026): after a rollback live sits behind main, and main still holds
   // the bad commit. While WARD_RELEASE_PAUSED is set, no run may move live forward again.
   it("holds a rolled-back live while releases are paused, on the schedule and by hand", () => {
@@ -506,6 +533,35 @@ describe("daily release record and live-ref recovery", () => {
     expect(result.stdout).not.toContain("::warning::#42");
     expect(h.read().current).toBe(target);
     expect(h.read().records.at(-1)?.body).toContain("(#42)");
+  });
+
+  // F-50 (D-121): the staff "What's new" lookups treat only a 404 as absence.
+  it("releases quietly when the staff entries folder is absent (HTTP 404)", () => {
+    const h = harness({ contentsError: "gh: Not Found (HTTP 404)" });
+    const result = h.run();
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).not.toContain("::warning::");
+    expect(h.read().current).toBe(target);
+  });
+
+  it("fails before moving live when a staff entries lookup hits a real GitHub error", () => {
+    const h = harness({ contentsError: "gh: Server Error (HTTP 502)" });
+    const result = h.run();
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("HTTP 502");
+    expect(h.read().current).toBe(previous);
+  });
+
+  it("adds new staff lines, and fails before moving live when one cannot be read", () => {
+    const ok = harness({ staffIds: ["entry-a"] });
+    const okResult = ok.run();
+    expect(okResult.status, okResult.stderr).toBe(0);
+    expect(ok.read().records.at(-1)?.body).toContain("- Synthetic staff line entry-a");
+
+    const h = harness({ staffIds: ["entry-a"], staffEntryError: "gh: Server Error (HTTP 500)" });
+    const result = h.run();
+    expect(result.status).not.toBe(0);
+    expect(h.read().current).toBe(previous);
   });
 
   it("warns when the commit list cannot be read, and still releases", () => {

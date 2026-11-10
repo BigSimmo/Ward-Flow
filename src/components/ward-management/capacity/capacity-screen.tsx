@@ -96,6 +96,14 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
     generation: null,
   }));
   const [tab, setTab] = useState<PageTab>("overview");
+  // The folder tabs show the choice at once (an urgent update); the page below follows in a
+  // transition, as before. One state for both let the folder's outline see the new tab before its
+  // move began, so the outline jumped instead of making its 280ms move (interaction audit, 10 Nov 2026).
+  const [chosenTab, setChosenTab] = useState<PageTab>("overview");
+  const chooseTab = (next: PageTab) => {
+    setChosenTab(next);
+    startTransition(() => setTab(next));
+  };
   const [highlight, setHighlight] = useState<Highlight | null>(null);
   // Site bed manager: another site's ward has no drawer here (its ward page and Discharge board are
   // not this desk's to open), so choosing one shows its row in Other sites instead.
@@ -201,7 +209,7 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
   const openWard = (unitId: string) => {
     if (siteDesk && !model.networkRows.some((row) => row.unit.id === unitId)) {
       setFocusUnitId(unitId);
-      startTransition(() => setTab("wards"));
+      chooseTab("wards");
       window.setTimeout(
         () =>
           document
@@ -267,7 +275,7 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
         />
         {/* Page tops (Josh, 9 Nov 2026): Overview, Wards and Planned on every size. The Mismatch card
             is gone: its gap by bed type is the hero's band, and each band cell opens its pop-up. */}
-        <FolderTabs label="Capacity view" value={tab} testId="capacity-tabs" className={styles.pageTabs}>
+        <FolderTabs label="Capacity view" value={chosenTab} testId="capacity-tabs" className={styles.pageTabs}>
           <Segmented
             label="Capacity view"
             size="md"
@@ -277,10 +285,10 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
               { id: "wards" as const, label: "Wards", count: mapModel.networkRows.length },
               { id: "planned" as const, label: "Planned", count: model.plannedBooked },
             ]}
-            value={tab}
-            onChange={(next) => startTransition(() => setTab(next))}
+            value={chosenTab}
+            onChange={chooseTab}
           />
-          {isPhone || tab === "planned" ? null : (
+          {isPhone || chosenTab === "planned" ? null : (
             <>
               <span className={folderTabClasses.rule} aria-hidden="true" />
               <BedMapHighlights

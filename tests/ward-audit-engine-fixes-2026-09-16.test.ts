@@ -81,8 +81,8 @@ function pulledMovement(movementId = CAPACITY_MOVEMENT, unitId = CAPACITY_UNIT) 
       genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
       genderPlacementChecked: true,
     },
-    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId },
-    { type: "PULL_PATIENT", role: "ward", unitId },
+    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId, actingUnitId: unitId },
+    { type: "PULL_PATIENT", role: "ward", unitId, actingUnitId: unitId },
   ] as const) {
     state = wardFlowReducer(state, { ...step, now: NOW, movementId } as never);
   }
@@ -384,9 +384,10 @@ describe("Fix 5: RECORD_REFERRER_WITHDRAWAL cascades to every linked open moveme
         type: "ACCEPT_IN_PRINCIPLE",
         role: "ward",
         unitId,
+        actingUnitId: unitId,
         overrideReason: "The bed information is known to be out of date",
       },
-      { type: "PULL_PATIENT", role: "ward", unitId },
+      { type: "PULL_PATIENT", role: "ward", unitId, actingUnitId: unitId },
       {
         type: "BOOK_TRANSPORT",
         role: "ed",
@@ -545,9 +546,10 @@ describe("Fix 5: RECORD_REFERRER_WITHDRAWAL cascades to every linked open moveme
           type: "ACCEPT_IN_PRINCIPLE",
           role: "ward",
           unitId,
+          actingUnitId: unitId,
           overrideReason: "The bed information is known to be out of date",
         },
-        { type: "PULL_PATIENT", role: "ward", unitId },
+        { type: "PULL_PATIENT", role: "ward", unitId, actingUnitId: unitId },
         {
           type: "BOOK_TRANSPORT",
           role: "ed",
@@ -675,8 +677,8 @@ describe("Fix 7: CANCEL_TRANSPORT copies bookedBy onto the replacement job", () 
     const movementId = "WF-001";
     const events = [
       { type: "REFER_TO_UNITS", role: "coordinator", unitIds: [ACCEPTING_UNIT] },
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: ACCEPTING_UNIT },
-      { type: "PULL_PATIENT", role: "ward", unitId: ACCEPTING_UNIT },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: ACCEPTING_UNIT, actingUnitId: ACCEPTING_UNIT },
+      { type: "PULL_PATIENT", role: "ward", unitId: ACCEPTING_UNIT, actingUnitId: ACCEPTING_UNIT },
       {
         type: "BOOK_TRANSPORT",
         role: "ward",

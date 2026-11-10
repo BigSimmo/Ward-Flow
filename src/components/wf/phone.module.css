@@ -867,6 +867,17 @@
  * under the lean bar, which joins it at rest, with the same 22px lip as the shared Hero. The
  * eyebrow is caps, as on the Hero band. `data-band` is only set on phone (`useWfBandBleed`). */
 @media (max-width: 46.4375rem) {
+  /* First paint (phone load audit, 10 Nov 2026): a hero marked `opensPage` is the band before the
+     measure lands, with the usual 12px phone insets, as the shared Hero's server band is
+     (hero.module.css). The measure then finds it already in place. The :where() keeps these at the
+     weight of the data-band rules, so a page's own hero rule wins over both alike. */
+  :where(:global([data-wf-scroller])) .hero[data-wf-hero="band"]:where(:not([data-band])) {
+    --wf-band-top: var(--wf-band-phone-top, var(--wf-s-3));
+    --wf-band-left: var(--wf-band-phone-x, var(--wf-s-3));
+    --wf-band-right: var(--wf-band-phone-x, var(--wf-s-3));
+  }
+
+  :where(:global([data-wf-scroller])) .hero[data-wf-hero="band"]:where(:not([data-band])),
   .hero[data-band="on"],
   .hero[data-band="off"] {
     position: relative;
@@ -890,6 +901,7 @@
     background-repeat: no-repeat;
   }
 
+  :where(:global([data-wf-scroller])) .hero[data-wf-hero="band"]:where(:not([data-band]))::after,
   .hero[data-band="on"]::after,
   .hero[data-band="off"]::after {
     content: "";
@@ -968,6 +980,7 @@
 .heroFigures {
   display: flex;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 .heroFigure {

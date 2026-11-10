@@ -16,7 +16,7 @@ import { deskRoleLabel } from "./settings/workstation-desks";
 import { Badge } from "@/components/wf";
 import thirdEdition from "./governance-third-edition.module.css";
 import { ACCESS_ROLE_LABELS } from "./ward-role-access";
-import { PATTERN_HOURS, PATTERN_LIMIT, reasonLabel } from "./governance-access-review";
+import { PATTERN_HOURS, PATTERN_LIMIT, coverReasonLabel, reasonLabel } from "./governance-access-review";
 import { onBehalfReasonLabel } from "./ward-on-behalf-reason";
 import { COMMUNITY_DECLINE_REASON_LABELS, DECLINE_REASON_LABELS } from "./ward-referrals";
 import {
@@ -67,6 +67,25 @@ function BreakGlassFacts({ event, now }: { event: AuditEvent & { action: "BREAK_
             : `${formatInstantWithDay(event.at, now)} to ${formatInstantWithDay(details.until, now)}, read only`,
         ],
         ["Pattern", count > PATTERN_LIMIT ? <Badge tone="warning">{pattern}</Badge> : pattern],
+      ]}
+    />
+  );
+}
+/** Master audit M58 (D-129): a cover given, with the desk that gave it, why and until when. */
+function CoverFacts({ event, now }: { event: AuditEvent & { action: "ACCESS_COVER" }; now: Instant }) {
+  const details = event.details;
+  return (
+    <FactList
+      facts={[
+        ["Given by", details.desk ? `${ACCESS_ROLE_LABELS[details.desk]}, ${details.place}` : "Not recorded"],
+        ["Cover of", details.cover || "Not recorded"],
+        ["Reason", coverReasonLabel(details.reason)],
+        [
+          "Held",
+          event.at === null || details.until === null
+            ? "Not recorded"
+            : `${formatInstantWithDay(event.at, now)} to ${formatInstantWithDay(details.until, now)}`,
+        ],
       ]}
     />
   );
@@ -229,6 +248,7 @@ export function EventFacts({ event, units, now }: { event: AuditEvent; units: Un
       );
     case "record-access":
       if (event.action === "BREAK_GLASS") return <BreakGlassFacts event={event} now={now} />;
+      if (event.action === "ACCESS_COVER") return <CoverFacts event={event} now={now} />;
       return (
         <>
           <FactList
@@ -364,13 +384,15 @@ export function EventFacts({ event, units, now }: { event: AuditEvent; units: Un
           facts={[
             [
               "Action",
-              event.action === "TAKE_INBOX_ITEM_OWNERSHIP"
-                ? "Ownership taken"
-                : event.action === "RELEASE_INBOX_ITEM_OWNERSHIP"
-                  ? "Ownership released"
-                  : event.action === "SNOOZE_INBOX_ITEM"
-                    ? "Snoozed"
-                    : "Returned from snooze",
+              event.action === "ACKNOWLEDGE_INBOX_ITEM"
+                ? "Acknowledged"
+                : event.action === "TAKE_INBOX_ITEM_OWNERSHIP"
+                  ? "Ownership taken"
+                  : event.action === "RELEASE_INBOX_ITEM_OWNERSHIP"
+                    ? "Ownership released"
+                    : event.action === "SNOOZE_INBOX_ITEM"
+                      ? "Snoozed"
+                      : "Returned from snooze",
             ],
             ["Reason", event.details.reason === null ? "Not recorded" : snoozeReasonLabel(event.details.reason)],
             ["Back at", event.details.until === null ? "Not recorded" : formatInstantWithDay(event.details.until, now)],

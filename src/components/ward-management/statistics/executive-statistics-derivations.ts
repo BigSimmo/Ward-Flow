@@ -197,7 +197,8 @@ export function executiveWardSummary(ward: PublicWard, input: ExecutivePrivateIn
   const pulledWaits = currentRows
     .filter((row) => row.state === "pulled" && row.pulledAt !== null && row.pulledAt <= now)
     .map((row) => now - row.pulledAt!);
-  const finderReady = readyBedsNow(unit, input.admissions, input.bedReleases);
+  // D-115: a bed named for an accepted referral is not ready.
+  const finderReady = readyBedsNow(unit, input.admissions, input.bedReleases, [...input.movements, ...input.referrals]);
   return {
     ...ward,
     cohort: unit.cohort,
@@ -211,7 +212,7 @@ export function executiveWardSummary(ward: PublicWard, input: ExecutivePrivateIn
     lockedReady: Math.min(lockedBedsFree(unit), finderReady),
     openReady: Math.min(openBedsFree(unit), finderReady),
     openNow: openBedsNow(unit, input.bedReleases),
-    capacityReady: readyBedsNow(unit, input.admissions, input.bedReleases),
+    capacityReady: finderReady,
     empty: unit.empty.value,
     allocatable: unit.allocatable.value,
     pendingPreparation: bedsPendingPreparation(unit.id, input.bedReleases),
@@ -891,6 +892,27 @@ export function executiveJourney(
     openTotal,
     upstream.map((stage) => stage.figure.count),
   );
+  // D-115 item 6: held beds split into approved leave and absent without leave (D-38). Absences
+  // are people, so they follow the small-number line; the held total is already printed exactly as
+  // a bed figure, so the two parts are released as one partition of it and a small absent count
+  // hides the approved count too, never one alone. With nobody absent, On leave stays the exact
+  // held-bed figure it always was.
+  const scopedUnitIds = new Set(input.units.map((unit) => unit.id));
+  const absentHeld = Math.min(
+    beds.onLeave,
+    input.leaveBeds.filter((bed) => bed.absentWithoutLeave && scopedUnitIds.has(bed.unitId)).length,
+  );
+  let leaveRows: { label: string; figure: { kind: "bed"; value: number } | ReturnType<typeof countFigure> }[] = [
+    { label: "On leave", figure: { kind: "bed" as const, value: beds.onLeave } },
+    { label: "Absent without leave", figure: { kind: "bed" as const, value: 0 } },
+  ];
+  if (absentHeld > 0) {
+    const heldTotal = c("held", beds.onLeave);
+    const heldApproved = c("held:approved", beds.onLeave - absentHeld);
+    const heldAbsent = c("held:absent-without-leave", absentHeld);
+    release.partition(heldTotal, [heldApproved, heldAbsent]);
+    leaveRows = [breakdown("On leave", heldApproved), breakdown("Absent without leave", heldAbsent)];
+  }
   const planned = input.admissions.filter(
     (row) =>
       row.state !== "departed" &&
@@ -948,7 +970,7 @@ export function executiveJourney(
             text: occupancyText({ beds: beds.total, inUse: beds.inUse }),
           },
         },
-        { label: "On leave", figure: { kind: "bed" as const, value: beds.onLeave } },
+        ...leaveRows,
         { label: "Ready beds", figure: { kind: "bed" as const, value: beds.ready } },
       ],
     },

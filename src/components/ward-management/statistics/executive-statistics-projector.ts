@@ -99,7 +99,13 @@ export function projectExecutiveNetworkStatistics(
   // this executive's wards, rather than counting global beds beside service-scoped admissions.
   const units = scoped.units.filter((unit) => unitInScope(access.scope, unit.id, places));
   const wards = units.map((unit) => {
-    const states = bedStates(unit, scoped.admissions, scoped.bedReleases, scoped.leaveBeds);
+    // D-115: a bed named for an open journey or an accepted referral is not ready.
+    const states = bedStates(unit, scoped.admissions, scoped.bedReleases, scoped.leaveBeds, [
+      ...scoped.movements,
+      ...scoped.referrals,
+    ]);
+    // Occupancy stays hold-free ("beds taken by a stay"), as every other Statistics screen counts it.
+    const unheld = bedStates(unit, scoped.admissions, scoped.bedReleases, scoped.leaveBeds);
     return {
       id: unit.id,
       name: unit.name,
@@ -112,7 +118,7 @@ export function projectExecutiveNetworkStatistics(
         closed: states.closed,
         // WF-16: Occupied and In use from the same bedStates boxes (wardBedUseFigures).
         occupied: states.occupied,
-        inUse: states.occupied + states.pulled,
+        inUse: unheld.occupied + unheld.pulled,
         beingMadeReady: states.beingMadeReady,
         onLeave: states.onLeave,
       },
@@ -751,7 +757,12 @@ export function projectExecutiveReportingFoundation(
     },
     settings: { pullHoldMinutes: input.pullHoldMinutes, parallelReferralCap: state.configuration.parallelReferralCap },
     capacity: {
-      ready: units.reduce((sum, unit) => sum + readyBedsNow(unit, input.admissions, input.bedReleases), 0),
+      // D-115: a bed named for an accepted referral is not ready.
+      ready: units.reduce(
+        (sum, unit) =>
+          sum + readyBedsNow(unit, input.admissions, input.bedReleases, [...input.movements, ...input.referrals]),
+        0,
+      ),
       empty: units.reduce((sum, unit) => sum + unit.empty.value, 0),
       allocatable: units.reduce((sum, unit) => sum + unit.allocatable.value, 0),
       openNow: units.reduce((sum, unit) => sum + openBedsNow(unit, input.bedReleases), 0),

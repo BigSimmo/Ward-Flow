@@ -305,15 +305,15 @@ describe("Command's Home lists carry Needs you and Flow, the successor to the Pa
     expect(within(flowCard()).queryAllByTestId(/^ward-referral-row-/)).toHaveLength(0);
 
     // Every stage tab carries the real count of its own section's rows, and All carries them all.
-    const stages = screen.getByRole("tablist", { name: "Flow stages" });
-    expect(within(stages).getByRole("tab", { name: /^All/u })).toHaveTextContent(String(patientRows.length));
+    const stages = screen.getByRole("toolbar", { name: "Flow stages" });
+    expect(within(stages).getByRole("button", { name: /^All/u })).toHaveTextContent(String(patientRows.length));
     let sum = 0;
     for (const label of ["Needs a bed", "Bed agreed", "Ready to move", "Moving"]) {
       const section = within(flowCard()).getByRole("region", { name: label });
       const rows = within(section).queryAllByTestId(/^ward-queue-row-/).length;
       sum += rows;
       expect(
-        within(stages).getByRole("tab", { name: new RegExp(`^${label}`, "u") }),
+        within(stages).getByRole("button", { name: new RegExp(`^${label}`, "u") }),
         `the ${label} tab must carry its own section's row count`,
       ).toHaveTextContent(String(rows));
     }
@@ -367,14 +367,14 @@ describe("Command's Home lists carry Needs you and Flow, the successor to the Pa
 
     // Choosing a Flow stage decides which rows are on screen — it must not touch which record the
     // shortlist is explaining, even when the chosen stage does not list that movement.
-    const stages = screen.getByRole("tablist", { name: "Flow stages" });
+    const stages = screen.getByRole("toolbar", { name: "Flow stages" });
     const otherStage = ["Needs a bed", "Bed agreed", "Ready to move", "Moving"].find(
       (label) =>
         !within(within(flowCard()).getByRole("region", { name: label })).queryByTestId(
           movementRow.getAttribute("data-testid")!,
         ),
     )!;
-    fireEvent.click(within(stages).getByRole("tab", { name: new RegExp(`^${otherStage}`, "u") }));
+    fireEvent.click(within(stages).getByRole("button", { name: new RegExp(`^${otherStage}`, "u") }));
     expect(
       within(flowCard())
         .getAllByRole("region")

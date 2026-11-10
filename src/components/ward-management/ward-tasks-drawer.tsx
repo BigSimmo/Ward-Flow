@@ -67,7 +67,7 @@ import {
 import { InboxRowStatus, InboxSnoozeControl, snoozedLine } from "./inbox-snooze-control";
 import { useDirtyStateGuard } from "./use-dirty-state-guard";
 import { DISCARD_ESCALATION, useEscalationDiscard } from "./use-escalation-discard";
-import { AcknowledgeVisibleButton } from "./tasks-acknowledge-visible";
+import { AcknowledgeVisibleButton, acknowledgeVisibleRow } from "./tasks-acknowledge-visible";
 
 import styles from "./ward-tasks-drawer.module.css";
 import { AlertKindGroupRow, groupByTitle } from "./ward-tasks-drawer-group";
@@ -444,8 +444,10 @@ export function WardTasksDrawer({
     dispatch({ type: "UNSNOOZE_INBOX_ITEM", role, now, inboxItemId });
   }
 
-  function acknowledgeAllFacts(ids: readonly string[]) {
-    ids.forEach((inboxItemId) => dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId }));
+  // M13/M37 (D-129): one save per alert; each answer lets the drawer name who was not done, and lets a
+  // sign-out or role switch wait for them to be confirmed (D-125).
+  function acknowledgeOne(inboxItemId: string) {
+    return dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId });
   }
 
   // Snoozed rows leave the active list and come back by themselves when their time passes.
@@ -1355,8 +1357,20 @@ export function WardTasksDrawer({
             <span id={`${sectionId}-summary`}>Seen is not resolved</span>
           )}
           <AcknowledgeVisibleButton
-            ids={visibleUnacknowledged.map((item) => item.id)}
-            onAcknowledge={acknowledgeAllFacts}
+            rows={visibleUnacknowledged.map((item) => {
+              const movement = records?.movements.find((row) => row.id === item.movementId);
+              const admission = item.admissionId
+                ? records?.admissions?.find((row) => row.id === item.admissionId)
+                : undefined;
+              const pullReferralId = acceptedPullReferralId(item.id);
+              const subject =
+                movement ??
+                admission ??
+                item.plannedAdmission ??
+                (pullReferralId ? { referralId: pullReferralId } : undefined);
+              return acknowledgeVisibleRow(item, records ? resolveSubjectPatient(subject, records) : undefined);
+            })}
+            onAcknowledge={acknowledgeOne}
             classes={styles}
           />
         </div>

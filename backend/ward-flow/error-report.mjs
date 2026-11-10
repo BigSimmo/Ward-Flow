@@ -2,7 +2,8 @@
 //
 // No SDK: one small envelope per failure, sent with fetch. Each report carries only a fixed event
 // name, the allow-listed error name and code from `errorFields` (push.mjs), the environment and the
-// release. No message text, stack, request, user, address or record content is ever read here, so
+// release, plus closed trace tags (audit M74): the request ID, the desk role, the route and the
+// screen, each checked against a fixed shape or list. No message text, stack, request, user, address or record content is ever read here, so
 // nothing typed into Ward Flow can leave the server. Each event name is sent at most once every
 // five minutes, which keeps a long outage inside Sentry's free monthly allowance.
 
@@ -15,8 +16,16 @@ const EVENTS = new Set([
   "ward_backend_push_sweep_failure",
   // The live workspace has passed its size alert threshold (audit PS-02, config.mjs).
   "ward_backend_workspace_size_alert",
+  // A request the shared API answered with a 500 (`server_error` in shared-http.mjs, audit M74).
+  "ward_backend_server_error",
 ]);
 const SAFE_VALUE = /^[A-Za-z0-9_.-]{1,64}$/;
+/** Audit M74: the request ID from the reply header and log line, so one ID links all three. */
+const REQUEST_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+/** The desk roles (ACCESS_ROLES in postgres-preflight.mjs) and the screens a request can name. */
+const ROLES = new Set(["coordinator", "bed_manager", "ward", "ed", "community", "officer", "executive", "admin"]);
+const SCREENS = new Set(["tv", "patient", "movement", "referral"]);
+const ROUTE = /^[a-z_]{1,40}$/;
 export const REPORT_INTERVAL_MS = 300_000;
 const SEND_TIMEOUT_MS = 5_000;
 
@@ -47,6 +56,10 @@ export function failureEvent(event, { environment, release, now = Date.now() } =
   const tags = { service: "ward-flow-backend" };
   for (const key of ["errorName", "errorCode"])
     if (typeof event?.[key] === "string" && SAFE_VALUE.test(event[key])) tags[key] = event[key];
+  if (typeof event?.requestId === "string" && REQUEST_ID.test(event.requestId)) tags.requestId = event.requestId;
+  if (typeof event?.role === "string" && ROLES.has(event.role)) tags.role = event.role;
+  if (typeof event?.screen === "string" && SCREENS.has(event.screen)) tags.screen = event.screen;
+  if (typeof event?.route === "string" && ROUTE.test(event.route)) tags.route = event.route;
   return {
     event_id: randomUUID().replaceAll("-", ""),
     timestamp: now / 1000,
@@ -105,6 +118,11 @@ export function startErrorReporting(env = process.env) {
 /** Log a closed-field failure line and, when reporting is on, send it to Sentry. */
 export function logFailure(event) {
   console.error(JSON.stringify(event));
+  reportFailure(event);
+}
+
+/** Send a closed-field failure to Sentry when reporting is on, for an event already logged elsewhere. */
+export function reportFailure(event) {
   try {
     reporter?.(event);
   } catch {

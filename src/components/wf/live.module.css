@@ -253,4 +253,8 @@
   .onHero .u.clk {
     color: var(--wf-hero-ink);
   }
+  /* The clock's place before hydration: five mono figures, "10:42" (see `clockPending`). */
+  .u.clkPending {
+    min-width: 5ch;
+  }
 }

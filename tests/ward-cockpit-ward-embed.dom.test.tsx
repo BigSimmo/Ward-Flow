@@ -43,7 +43,7 @@ describe("the movement cockpit embedded on a ward page", () => {
           type="button"
           data-testid="test-orphan"
           onClick={() => {
-            dispatch({ type: "PULL_PATIENT", role: "ward", now, movementId: "WF-003", unitId });
+            dispatch({ type: "PULL_PATIENT", role: "ward", now, movementId: "WF-003", unitId, actingUnitId: unitId });
             dispatch({
               type: "BOOK_TRANSPORT",
               role: "ed",

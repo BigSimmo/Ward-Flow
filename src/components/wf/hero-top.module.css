@@ -509,15 +509,29 @@ a.cellBody {
 
   .chips,
   .cells {
-    margin-inline: -16px;
-    padding: 0 24px 0 16px;
+    /* Sideways only. The 4px top and bottom padding holds the chips' 48px tap band inside the row
+       (the negative margin takes it back), so nothing is taller than the row: iPhone Safari still
+       lets a row drag up and down when anything overflows it, even with overflow-y hidden. */
+    margin: -4px -16px;
+    padding: 4px 24px 4px 16px;
     overflow-x: auto;
+    overflow-y: hidden;
     overscroll-behavior-x: contain;
     scroll-padding-left: 16px;
+    /* A chip focused from the keyboard scrolls clear of the right-hand fade. */
+    scroll-padding-right: 48px;
     scroll-snap-type: x proximity;
     scrollbar-width: none;
     -webkit-mask-image: linear-gradient(90deg, black calc(100% - 36px), transparent);
     mask-image: linear-gradient(90deg, black calc(100% - 36px), transparent);
+  }
+
+  /* While a chip's menu is open it is pinned to the window below the row (wf/menu usePanelFit). The
+     fade comes off meanwhile: a mask would hide the menu and trap it under the page's pinned tabs. */
+  .chips:has([aria-expanded="true"]),
+  .cells:has([aria-expanded="true"]) {
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 
   .chips::-webkit-scrollbar,
@@ -624,9 +638,9 @@ a.cellBody {
   }
 }
 
-/* Desktop: equal cells, but never narrower than their words, so a long value and its note
-   ("1 (1 also held up)" on the bed board) cannot run into the next cell (QA, 10 Nov 2026). */
-@media (min-width: 64rem) {
+/* Tablet and desktop: equal cells, but never narrower than their words, so a long value and its
+   note ("1 (1 also held up)" on the bed board) cannot run into the next cell (QA, 10 Nov 2026). */
+@media (min-width: 46.5rem) {
   .cell {
     min-width: max-content;
   }
@@ -637,6 +651,21 @@ a.cellBody {
 
   .cells[data-compact] .cell:first-child .cellBody {
     padding-left: 0;
+  }
+}
+
+/* Tablet: a band too long for the width (the bed board's eight cells at 820px) scrolls sideways,
+   as on a phone, rather than overflowing the hero. */
+@media (min-width: 46.5rem) and (max-width: 63.99rem) {
+  .cells {
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .cells::-webkit-scrollbar {
+    display: none;
   }
 }
 

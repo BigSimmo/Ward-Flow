@@ -22,7 +22,8 @@ Log anything that did, or could, affect bed flow or privacy. For example:
   [breach plan](breach-plan.md) straight away.
 - **Anything else** that slowed bed flow, confused staff or looked unsafe.
 
-If you are unsure, log it. A short entry is better than none.
+If you are unsure, log it. A short entry is better than none. Near misses count. The route every desk uses is the
+[safety incident route](safety-incident-route.md).
 
 ## Fields
 

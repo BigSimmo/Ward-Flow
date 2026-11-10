@@ -7,7 +7,7 @@ import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 /**
  * ⚠️ THIS TEST PINS A GAP. IT DOES NOT ASSERT CORRECT BEHAVIOUR — READ BEFORE TOUCHING IT.
  *
- * Owner rulings 13 and 14 (`docs/ward-flow/owner-rulings-2026-09-01-bed-states-and-community.md`,
+ * Owner rulings 13 and 14 (`docs/history/archive/dated-notes/owner-rulings-2026-09-01-bed-states-and-community.md`,
  * quoted at `RF-007`'s split comment in `src/components/ward-management/ward-movements.ts`) forbid
  * a referral addressed to both `psychiatric_ward` and `community_team` at once: *"a community
  * referral would never be requested if a patient is needing a bed as community referral is for

@@ -507,6 +507,7 @@
   background: var(--surface-2);
   border-radius: var(--r1) var(--r1) 0 0;
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .tabBtn {
@@ -691,6 +692,7 @@
 .tableWrap {
   composes: tableScroll from "../ward-table/ward-table.module.css";
   overflow-x: auto;
+  overflow-y: hidden;
   min-width: 0;
 }
 
@@ -1660,6 +1662,7 @@
     padding: 5px;
     gap: 0;
     overflow-x: auto;
+    overflow-y: hidden;
   }
   .tabBtn {
     padding: 10px 8px;
@@ -2223,50 +2226,6 @@
   color: var(--wf-hero-ink);
 }
 
-.v6HeroTabsRow {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-width: 0;
-}
-
-.v6Tabs {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 3px;
-  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
-  border-radius: var(--wf-r-md);
-  background: color-mix(in srgb, var(--wf-hero-ink) 4%, transparent);
-}
-
-.v6Tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: var(--wf-h-sm);
-  padding: 0 var(--wf-s-3);
-  border: 0;
-  border-radius: var(--wf-r-sm);
-  background: transparent;
-  color: var(--wf-hero-ink-2);
-  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.v6Tab:hover {
-  background: color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
-  color: var(--wf-hero-ink);
-}
-
-.v6Tab[aria-selected="true"],
-.v6Tab[aria-selected="true"]:hover {
-  background: var(--wf-hero-ink);
-  color: var(--wf-hero-2);
-  font-weight: 600;
-}
-
 .v6TabCount {
   min-width: 18px;
   padding: 0 5px;
@@ -2274,10 +2233,6 @@
   background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
   font: 600 var(--wf-fs-12) / 18px var(--wf-mono);
   text-align: center;
-}
-
-.v6Tab[aria-selected="true"] .v6TabCount {
-  background: color-mix(in srgb, var(--wf-hero-2) 12%, transparent);
 }
 
 .v6HeroActions {
@@ -2362,6 +2317,7 @@
   .v6Steps {
     position: relative;
     overflow-x: auto;
+    overflow-y: hidden;
   }
 
   /* Device sweep (24 Oct 2026): on a tablet or a phone on its side the stage strip scrolls, and the
@@ -2375,20 +2331,10 @@
       animation-timeline: scroll(self inline);
     }
   }
-
-  .v6HeroTabsRow {
-    flex-wrap: wrap;
-  }
-
-  .v6Tabs {
-    overflow-x: auto;
-    max-width: 100%;
-  }
 }
 
 @media (max-width: 820px), (pointer: coarse) {
-  .v6StepBtn,
-  .v6Tab {
+  .v6StepBtn {
     min-height: 44px;
   }
 }
@@ -2484,10 +2430,6 @@
     text-overflow: ellipsis;
   }
 
-  .v6HeroTabsRow {
-    flex-wrap: wrap;
-  }
-
   .v6HeroActions {
     order: -1;
     flex: 1 1 100%;
@@ -2510,28 +2452,6 @@
     justify-content: center;
     min-height: 44px;
     padding-inline: var(--wf-s-3);
-  }
-
-  .screen .v6HeroTabsRow > a {
-    flex: 0 0 auto;
-    width: 44px;
-    height: 44px;
-  }
-
-  .screen .v6Tab {
-    min-height: 40px;
-  }
-
-  .v6Tabs {
-    display: flex;
-    flex: 1 1 0;
-    min-width: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .v6Tab {
-    flex: 0 0 auto;
   }
 }
 
@@ -2567,10 +2487,6 @@
   }
 
   .v6Steps {
-    padding: 2px;
-  }
-
-  .v6Tabs {
     padding: 2px;
   }
 }
@@ -2678,37 +2594,6 @@
   margin-left: 0;
 }
 
-.v6HeroTabsRow .v6Tabs {
-  border-color: var(--wf-line);
-  background: var(--wf-surface-2);
-}
-
-.v6HeroTabsRow .v6Tab {
-  color: var(--wf-ink-2);
-}
-
-.v6HeroTabsRow .v6Tab:hover {
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-}
-
-.v6HeroTabsRow .v6Tab[aria-selected="true"],
-.v6HeroTabsRow .v6Tab[aria-selected="true"]:hover {
-  background: var(--wf-surface);
-  box-shadow:
-    inset 0 0 0 1px var(--wf-line-2),
-    var(--wf-e1);
-  color: var(--wf-ink-1);
-}
-
-.v6HeroTabsRow .v6TabCount,
-.v6HeroTabsRow .v6Tab[aria-selected="true"] .v6TabCount {
-  background: var(--wf-surface-2);
-  box-shadow: inset 0 0 0 1px var(--wf-line);
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-}
-
 /* v10 Patient, phone: the facts become three figures (value over label), the status line leaves
  * the band (it stays announced), and the tabs keep 44px targets. Desktop is untouched. */
 @media (max-width: 46.4375rem) {
@@ -2782,42 +2667,11 @@
     clip-path: inset(50%);
     white-space: nowrap;
   }
-
-  .v6HeroTabsRow .v6Tab {
-    min-height: var(--wf-touch, 44px);
-  }
 }
 
 /* v10: the Journey strip under the stages, sized by real duration (bed wait hatched). */
 .v6Journey {
   min-width: 0;
-}
-
-/* v10 phone: the record tabs become a 44px segmented control (Now, History, Forms). */
-@media (max-width: 46.4375rem) {
-  .v6HeroTabsRow {
-    flex-wrap: wrap;
-  }
-
-  .v6Tabs {
-    display: flex;
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  .v6Tab {
-    flex: 1 1 0;
-    justify-content: center;
-    min-width: 0;
-    height: var(--wf-touch, 44px);
-  }
-
-  /* Equal shares when they fit, but a tab never shrinks below its label and count: while the record
-     loads, all five tabs show with counts and drew over each other at 360 px. The track scrolls.
-     Two classes, so this outranks the screen's 44px button floor. */
-  .v6Tabs .v6Tab {
-    min-width: max-content;
-  }
 }
 
 /* v10 Patient, phone (11 Oct 2026): the mode as the eyebrow, one identity line under the name,
@@ -2829,40 +2683,9 @@
   gap: 6px;
 }
 
-/* F-05 (phone review, Oct 2026): a movement's eyebrow may take two lines, so the observation level
- * (its own chip) is never cut off under the Live chip. */
-.phMoveEyebrow {
-  display: inline;
-}
-
-.phObsChip {
-  display: inline-flex;
-  align-items: center;
-  height: 20px;
-  margin-left: var(--wf-s-2);
-  padding: 0 var(--wf-s-2);
-  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 28%, transparent);
-  border-radius: var(--wf-r-tag);
-  background: color-mix(in srgb, var(--wf-hero-ink) 7%, transparent);
-  color: var(--wf-hero-ink);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  letter-spacing: 0;
-  text-transform: none;
-  white-space: nowrap;
-  vertical-align: middle;
-}
-
 /* Device sweep R2-01 (24 Oct 2026): a two-line clamp still hid the chip on a 390px phone when the
  * words took both lines, so the eyebrow takes as many lines as it needs and the observation chip
  * always shows. A 20px line fits the chip without the double gap a 24px line left. */
-@media (max-width: 46.4375rem) {
-  .v6Hero :has(> .phMoveEyebrow) {
-    display: block;
-    overflow: visible;
-    line-height: 20px;
-    white-space: normal;
-  }
-}
 
 .phIdSub {
   /* Page tops (approved mock-up, 9 Nov 2026; was F-05's two lines): one line under the name. A long
@@ -2918,12 +2741,6 @@
 .phMoreRow > svg {
   flex: none;
   color: var(--wf-ink-2);
-}
-
-@media (max-width: 46.4375rem) {
-  .v6HeroTabsRow > a[data-testid="ward-patient-back-button"] {
-    display: none;
-  }
 }
 
 /* v10 Movement, phone (11 Oct 2026): three figures, the stage dots, Copy handover as the kit's hero
@@ -3032,35 +2849,6 @@
   margin-top: var(--wf-s-1);
 }
 
-/* v10 phone record tabs: a full pill track, the chosen tab an outlined pill, round count badges. */
-@media (max-width: 46.4375rem) {
-  .v6HeroTabsRow .v6Tabs {
-    padding: 3px;
-    border-radius: var(--wf-r-track);
-  }
-
-  .v6HeroTabsRow .v6Tab {
-    border-radius: var(--wf-r-ctl);
-  }
-
-  .v6HeroTabsRow .v6Tab[aria-selected="true"],
-  .v6HeroTabsRow .v6Tab[aria-selected="true"]:hover {
-    box-shadow:
-      inset 0 0 0 1px var(--wf-ink-3),
-      var(--wf-e1);
-  }
-
-  .v6HeroTabsRow .v6TabCount,
-  .v6HeroTabsRow .v6Tab[aria-selected="true"] .v6TabCount {
-    min-width: 22px;
-    height: 22px;
-    padding: 0 6px;
-    border-radius: var(--wf-r-tag);
-    background: var(--wf-surface);
-    line-height: 22px;
-  }
-}
-
 /* v10 phone: one disclaimer line per page, the shared footer; this page-level copy hides on phone (A7). */
 @media (max-width: 46.4375rem) {
   .pnFoot {
@@ -3071,10 +2859,6 @@
 @media (forced-colors: active) {
   /* Device sweep R7-07/R7-09 (24 Oct 2026): the selected record tab and the recorded and current
    * stage marks kept only a background and a shadow, which forced colours drop. */
-  .v6Tab[aria-selected="true"] {
-    outline: 2px solid Highlight;
-    outline-offset: -2px;
-  }
   .v6Step[data-s="recorded"] .v6StepMark {
     forced-color-adjust: none;
     background: CanvasText;
@@ -3084,113 +2868,6 @@
     forced-color-adjust: none;
     background: Highlight;
     color: HighlightText;
-  }
-}
-
-/* Phone pinned record tabs (Josh, 12 Oct 2026). On a phone the screen renders the tabs row beside
- * the record with the shared `pinnedSwitch` class, so it sticks under the header as Home's queue
- * switch does. The row carries its own vertical padding (offset by a negative margin so the resting
- * layout keeps its spacing), and the track takes the shared phone segmented size (`--wf-phone-seg-*`):
- * a 48px box with a transparent band round a painted 44px track, so each 38px tab keeps a 48px hit
- * area without being clipped by the sideways scroll. Nothing here applies above 48rem. */
-@media (max-width: 46.4375rem) {
-  .v6Page > .v6HeroTabsRow {
-    margin-block: calc(-1 * var(--wf-s-2));
-    padding-block: var(--wf-s-2);
-  }
-
-  .v6HeroTabsRow .v6Tabs {
-    --wf-seg-r: var(--wf-r-track);
-    align-items: center;
-    box-sizing: border-box;
-    height: var(--spacing-tap, 3rem);
-    padding: var(--wf-phone-seg-band) 3px;
-    border: 0;
-    border-radius: 0;
-    background-color: transparent;
-    /* A soft cornered track painted inside the band, as in the shared phone Segmented. */
-    background-image:
-      radial-gradient(
-        circle at 100% 100%,
-        var(--wf-surface-2) calc(var(--wf-seg-r) - 1px),
-        var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
-        transparent var(--wf-seg-r)
-      ),
-      radial-gradient(
-        circle at 0 100%,
-        var(--wf-surface-2) calc(var(--wf-seg-r) - 1px),
-        var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
-        transparent var(--wf-seg-r)
-      ),
-      radial-gradient(
-        circle at 100% 0,
-        var(--wf-surface-2) calc(var(--wf-seg-r) - 1px),
-        var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
-        transparent var(--wf-seg-r)
-      ),
-      radial-gradient(
-        circle at 0 0,
-        var(--wf-surface-2) calc(var(--wf-seg-r) - 1px),
-        var(--wf-line) calc(var(--wf-seg-r) - 0.5px),
-        transparent var(--wf-seg-r)
-      ),
-      linear-gradient(
-        to bottom,
-        transparent var(--wf-phone-seg-band),
-        var(--wf-line) var(--wf-phone-seg-band),
-        var(--wf-line) calc(var(--wf-phone-seg-band) + 1px),
-        var(--wf-surface-2) calc(var(--wf-phone-seg-band) + 1px),
-        var(--wf-surface-2) calc(100% - var(--wf-phone-seg-band) - 1px),
-        var(--wf-line) calc(100% - var(--wf-phone-seg-band) - 1px),
-        var(--wf-line) calc(100% - var(--wf-phone-seg-band)),
-        transparent calc(100% - var(--wf-phone-seg-band))
-      ),
-      linear-gradient(
-        to right,
-        var(--wf-line) 1px,
-        var(--wf-surface-2) 1px,
-        var(--wf-surface-2) calc(100% - 1px),
-        var(--wf-line) calc(100% - 1px)
-      );
-    background-position:
-      left 0 top var(--wf-phone-seg-band),
-      right 0 top var(--wf-phone-seg-band),
-      left 0 bottom var(--wf-phone-seg-band),
-      right 0 bottom var(--wf-phone-seg-band),
-      center,
-      center;
-    background-size:
-      var(--wf-seg-r) var(--wf-seg-r),
-      var(--wf-seg-r) var(--wf-seg-r),
-      var(--wf-seg-r) var(--wf-seg-r),
-      var(--wf-seg-r) var(--wf-seg-r),
-      calc(100% - 2 * var(--wf-seg-r)) 100%,
-      100% calc(100% - 2 * var(--wf-phone-seg-band) - 2 * var(--wf-seg-r));
-    background-repeat: no-repeat;
-  }
-
-  .v6HeroTabsRow .v6Tab {
-    position: relative;
-    height: var(--wf-phone-seg-item-h);
-    min-height: 0;
-    padding: 0 var(--wf-phone-pill-px);
-    font-size: var(--wf-phone-pill-fs);
-    font-weight: 600;
-  }
-
-  .v6HeroTabsRow .v6Tab::after {
-    content: "";
-    position: absolute;
-    inset: calc(-1 * var(--wf-phone-seg-item-hit)) 0;
-  }
-
-  .v6HeroTabsRow .v6TabCount,
-  .v6HeroTabsRow .v6Tab[aria-selected="true"] .v6TabCount {
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px;
-    font-size: var(--wf-phone-pill-count-fs);
-    line-height: 18px;
   }
 }
 
@@ -3264,20 +2941,6 @@
     font-size: var(--wf-fs-14);
     line-height: 18px;
   }
-}
-
-/* Note 5 (approved mock-up): the selected record tab is a filled navy pill, matching the header. */
-.v6HeroTabsRow .v6Tab[aria-selected="true"],
-.v6HeroTabsRow .v6Tab[aria-selected="true"]:hover {
-  background: var(--wf-hero-1);
-  box-shadow: none;
-  color: var(--wf-hero-ink);
-}
-
-.v6HeroTabsRow .v6Tab[aria-selected="true"] .v6TabCount {
-  background: color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
-  box-shadow: none;
-  color: var(--wf-hero-ink);
 }
 
 /* ── Page tops (Josh, 9 Nov 2026) ──

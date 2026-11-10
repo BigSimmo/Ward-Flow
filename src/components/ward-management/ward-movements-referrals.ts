@@ -701,7 +701,7 @@ export const referrals: Referral[] = completeSyntheticReferralIntakes([
      *
      * This referral carried a `community_team` arm (`"Inner City Clinic"`, `queued`) beside the
      * ward arm below, and the pair was the exact shape owner rulings 13 and 14 forbid
-     * (`docs/ward-flow/owner-rulings-2026-09-01-bed-states-and-community.md`): *"a community
+     * (`docs/history/archive/dated-notes/owner-rulings-2026-09-01-bed-states-and-community.md`): *"a community
      * referral would never be requested if a patient is needing a bed as community referral is for
      * discharge."* `{psychiatric_ward, community_team}` is refused at the intake form from now on,
      * so no referral of that shape can be created again.

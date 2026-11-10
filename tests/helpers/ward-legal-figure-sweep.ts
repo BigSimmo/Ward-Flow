@@ -553,13 +553,18 @@ function candidatesForMovements(
         estimatedArrivalAt: now + 120,
       }));
     case "RECORD_MOVEMENT_MEDICAL_CLEARANCE":
-      return movementIds.map((movementId) => ({
-        type,
-        role,
-        now,
-        movementId,
-        cleared: true,
-      }));
+      // An ED names itself, and must be the journey's origin ED (M2).
+      return movementIds.map((movementId) => {
+        const originEdId = state.movements.find((movement) => movement.id === movementId)?.originEdId;
+        return {
+          type,
+          role,
+          now,
+          movementId,
+          cleared: true,
+          ...(originEdId === undefined ? {} : { actingPlaceId: originEdId }),
+        };
+      });
     case "RECORD_ARRIVAL_CHECK":
       // D-72: one candidate per movement crossed with each check, recorded as done.
       return movementIds.flatMap((movementId) =>
@@ -879,7 +884,8 @@ function candidatesForMovements(
       return pairs().map(({ movementId, unitId }) => ({ type, role, now, movementId, unitIds: [unitId] }));
     case "ACCEPT_IN_PRINCIPLE":
     case "PULL_PATIENT":
-      return pairs().map(({ movementId, unitId }) => ({ type, role, now, movementId, unitId }));
+      // `actingUnitId` mirrors `unitId`: a ward names itself (M4, strict).
+      return pairs().map(({ movementId, unitId }) => ({ type, role, now, movementId, unitId, actingUnitId: unitId }));
     case "DECLINE":
       return pairs().map(({ movementId, unitId }) => ({
         type,
@@ -887,6 +893,7 @@ function candidatesForMovements(
         now,
         movementId,
         unitId,
+        actingUnitId: unitId,
         reason: DECLINE_REASONS[0],
       }));
     // RA1 (item 18, 2026-09-17). Same shape as DECLINE immediately above — one candidate per
@@ -1515,6 +1522,7 @@ function candidatesForMovements(
             referralId: referral.id,
             destinationKind: "psychiatric_ward" as const,
             unitId,
+            actingUnitId: unitId,
           })),
         );
     case "HOLD_REFERRAL_BED":
@@ -1545,14 +1553,23 @@ function candidatesForMovements(
       return state.referrals
         .filter((referral) => referralState(referral) === "queued")
         .flatMap((referral) =>
-          REFERRAL_DECLINE_REASONS.map((reason) => ({
-            type,
-            role,
-            now,
-            referralId: referral.id,
-            destinationKind: "psychiatric_ward" as const,
-            reason,
-          })),
+          REFERRAL_DECLINE_REASONS.map((reason) => {
+            // A ward names itself (M4, strict): the ward the referral's own arm is addressed to, or
+            // for a network-wide arm the first ward, named as the ward answering.
+            const arm = referral.destinations.find((candidate) => candidate.destination.kind === "psychiatric_ward");
+            const named = arm?.destination.kind === "psychiatric_ward" ? arm.destination.unitId : undefined;
+            const actingUnitId = named ?? unitIds[0];
+            return {
+              type,
+              role,
+              now,
+              referralId: referral.id,
+              destinationKind: "psychiatric_ward" as const,
+              ...(named === undefined && actingUnitId !== undefined ? { unitId: actingUnitId } : {}),
+              ...(actingUnitId === undefined ? {} : { actingUnitId }),
+              reason,
+            };
+          }),
         );
     // Phase 8 Task 2. Generated against the CURRENT state for the same reason every list above
     // is: the sweep applies other event types as it goes, so which referrals are still queued
@@ -2109,6 +2126,7 @@ export function buildHeldMovementFor(code: string, now: number): { state: WardFl
     now,
     movementId: movement.id,
     unitId: unit!.id,
+    actingUnitId: unit!.id,
   });
   expect(
     acceptedInPrinciple.rejections,
@@ -2121,6 +2139,7 @@ export function buildHeldMovementFor(code: string, now: number): { state: WardFl
     now,
     movementId: movement.id,
     unitId: unit!.id,
+    actingUnitId: unit!.id,
   });
   expect(held.rejections, `PULL_PATIENT for Form ${code} was refused: ${held.rejections.at(-1)?.reason}`).toEqual([]);
 
@@ -2160,12 +2179,13 @@ function* pairCandidates(
         case "REFER_TO_UNITS":
           yield { ...base, type, unitIds: [unit.id] };
           break;
+        // A ward names itself on every answer (M4, strict), so `actingUnitId` mirrors `unitId`.
         case "ACCEPT_IN_PRINCIPLE":
         case "PULL_PATIENT":
-          yield { ...base, type, unitId: unit.id };
+          yield { ...base, type, unitId: unit.id, actingUnitId: unit.id };
           break;
         case "DECLINE":
-          yield { ...base, type, unitId: unit.id, reason: DECLINE_REASONS[0] };
+          yield { ...base, type, unitId: unit.id, actingUnitId: unit.id, reason: DECLINE_REASONS[0] };
           break;
         case "WITHDRAW_WARD_REQUEST":
           yield { ...base, type, unitId: unit.id, reason: WARD_REQUEST_WITHDRAWAL_REASONS[0] };
@@ -2295,6 +2315,7 @@ export function undoOf(
     unitId?: string;
     bedNumber?: number;
     plannedAdmissionId?: string;
+    releaseId?: string;
     patientId?: string;
   };
   const actingUnitId =
@@ -2317,6 +2338,8 @@ export function undoOf(
     ...(undoType === "UNDO_RELEASE_STEP" && fields.plannedAdmissionId !== undefined
       ? { plannedAdmissionId: fields.plannedAdmissionId }
       : {}),
+    // M37 (D-129): a discharge sign-off's Undo names its bed release.
+    ...(undoType === "UNDO_RELEASE_STEP" && fields.releaseId !== undefined ? { releaseId: fields.releaseId } : {}),
     ...(undoType === "UNDO_PATIENT_RECORD" ? { patientId: fields.patientId } : {}),
     ...(event.type === "COMPLETE_BED_MEETING_ACTION" || event.type === "RECORD_BED_MEETING_ACTION"
       ? { subject: event.subject, action: event.action }

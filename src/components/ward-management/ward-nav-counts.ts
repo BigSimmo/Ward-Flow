@@ -142,7 +142,12 @@ function deriveWardNavCounts(input: WardNavCountInput): WardNavCounts {
 
   const counts: WardNavCounts = {
     // Audit 6 (Josh, 20 Oct 2026): the one ready figure, which leaves out beds pulled for an incoming patient.
-    capacity: { value: totalReadyBedsNow(units, admissions ?? [], bedReleases), noun: "beds ready now", urgent: false },
+    // D-115 (Josh, 9 Nov 2026): and a bed named for an accepted referral, as the TV and print do.
+    capacity: {
+      value: totalReadyBedsNow(units, admissions ?? [], bedReleases, [...movements, ...referrals]),
+      noun: "beds ready now",
+      urgent: false,
+    },
     movements: { value: open.length, noun: "still open", urgent: false },
     // Overall review, 20 Oct 2026: the badge is Waiting's own title figure, in its words. The severe
     // causes (Josh, 25 Sept 2026) stay as the Needs you figure, which opens Waiting filtered to them.

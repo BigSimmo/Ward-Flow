@@ -36,14 +36,15 @@ function pruneWrongTries(now: number) {
 function overAllAddressCap(now: number): boolean {
   return now - allWrongTries.since <= WRONG_TRY_WINDOW_MS && allWrongTries.count >= ALL_WRONG_TRY_LIMIT;
 }
-function tooManyTries(address: string, now: number): boolean {
+/** "limited": this address has had too many wrong tries. "full": a new address, and no room to count it. */
+function tryLimit(address: string, now: number): "limited" | "full" | null {
   const entry = wrongTries.get(address);
   if (!entry || now - entry.since > WRONG_TRY_WINDOW_MS) {
-    if (wrongTries.size < ADDRESS_TABLE_LIMIT) return false;
+    if (wrongTries.size < ADDRESS_TABLE_LIMIT) return null;
     pruneWrongTries(now);
-    return wrongTries.size >= ADDRESS_TABLE_LIMIT;
+    return wrongTries.size >= ADDRESS_TABLE_LIMIT ? "full" : null;
   }
-  return entry.count >= WRONG_TRY_LIMIT;
+  return entry.count >= WRONG_TRY_LIMIT ? "limited" : null;
 }
 function countWrongTry(address: string, now: number) {
   if (now - allWrongTries.since > WRONG_TRY_WINDOW_MS) allWrongTries = { count: 1, since: now };
@@ -61,17 +62,22 @@ export function resetWrongTriesForTests() {
   allWrongTries = { count: 0, since: 0 };
 }
 
-/** A reserved try. `overCap`: wrong tries across all addresses hit the cap, so refuse a wrong code. */
+/**
+ * A reserved try. `overCap`: refuse a wrong code with a pause, because wrong tries across all
+ * addresses hit the cap, or the address table is full so this new address cannot be counted.
+ */
 export type DemoTry = { release: () => void; overCap: boolean };
 
 /**
  * Reserve before awaiting verification; only a confirmed correct code releases the slot. Null when
- * this address has had too many wrong tries. The cap across all addresses never refuses here: the
- * caller still checks the code, so the right code opens the door, and refuses a wrong one.
+ * this address has had too many wrong tries. Neither the cap across all addresses nor a full address
+ * table refuses here (M53, 10 November 2026): the caller still checks the code, so the right code
+ * from a new address opens the door, and a wrong one is refused with a pause.
  */
 export function reserveDemoTry(address: string, now: number): DemoTry | null {
-  if (tooManyTries(address, now)) return null;
-  const overCap = overAllAddressCap(now);
+  const limit = tryLimit(address, now);
+  if (limit === "limited") return null;
+  const overCap = limit === "full" || overAllAddressCap(now);
   countWrongTry(address, now);
   const entry = wrongTries.get(address);
   const total = allWrongTries;

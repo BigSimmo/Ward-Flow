@@ -769,6 +769,17 @@ export function commandScopeRefusal(
       (arm) => arm.destination.kind === command.destinationKind,
     )?.destination;
     if (destination?.kind === "emergency_department" && !edInScope(scope, destination.edId, places)) return outside;
+    // M4: an answer that names no ward answers for the referral's own ward, so every ward it is
+    // addressed to must be in scope too (a named `unitId` is checked with the other targets below).
+    if (
+      command.destinationKind === "psychiatric_ward" &&
+      command.unitId === undefined &&
+      referral?.destinations.some(
+        ({ destination: arm }) =>
+          arm.kind === "psychiatric_ward" && arm.unitId !== undefined && !unitInScope(scope, arm.unitId, places),
+      )
+    )
+      return outside;
     if (destination?.kind === "community_team") {
       const permitted =
         teamIsOwn(access, destination.teamName, places) ||
@@ -836,6 +847,12 @@ export function commandScopeRefusal(
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);
     const stay = movement ? admittedStayForArrival(movement, state.admissions) : undefined;
     if (!stay || !unitInScope(scope, stay.unitId, places)) return outside;
+  }
+  // D-128: a ward records a continuation only for a person its own ward accepted; a ward that was
+  // only referred the person is outside.
+  if (access.role === "ward" && command.type === "RECORD_LEGAL_FORM_CONTINUATION") {
+    const movement = state.movements.find((candidate) => candidate.id === command.movementId);
+    if (movement && (!movement.acceptedUnitId || !unitInScope(scope, movement.acceptedUnitId, places))) return outside;
   }
   // The legal-form caller intentionally carries no acting ward. Compare the authenticated
   // desk with the ward captured when the original fact was recorded, not today's eligibility.

@@ -114,8 +114,8 @@ describe("Ward Flow hub route (/ward-flow/hub)", () => {
  * destinations were walked against the running dev server and every one rendered its own subject:
  * 32 distinct URLs, 0 not-found renders, 0 thin pages, 0 page errors. **That run proves rendering
  * and this test cannot; this test runs on every commit and that run does not.** Neither replaces
- * the other, and a ward end-to-end spec is in neither `verify:ui` nor `test:focused`'s selection,
- * so a browser-only guard here would be a guard nothing executes.
+ * the other. `verify:ui` runs only a few named Ward journeys and `test:focused` none, so a
+ * browser-only guard here would be a guard nothing executes.
  */
 describe("Ward Flow hub — every destination it offers resolves to a route on disk", () => {
   const ROUTE_ROOT = resolve(process.cwd(), "src/app/ward-flow");

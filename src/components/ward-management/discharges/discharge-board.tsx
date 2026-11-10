@@ -188,7 +188,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     // Confirm date's control ("New expected out") sits in the release's arrangements, beside its barriers.
     base.setDrawerTab(part === "date" ? "barriers" : part);
   };
-  // D-64: rows show where criteria led discharge stands, behind its flag (off in production). L21 dropped
+  // D-64: rows show where criteria led discharge stands, behind its flag (now on everywhere, D-65). L21 dropped
   // the Stage column, so the tag now sits in the Now list's Hold-up cell for a patient still in a bed.
   const criteriaLedOn = useWardFeatureFlag("top25-criteria-led-discharge");
   const {
@@ -562,7 +562,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   return (
     <div className={`${styles.screen} ${pageStyles.screen}`} data-testid="ward-discharge-board" data-ward-design="v6">
       <main id="main-content" className={pageStyles.main}>
-        <h1 className={pageStyles.localTitle}>Discharges</h1>
         <p className={pageStyles.printScope}>
           {population === "records" ? "Admission records" : "Discharges by bed"} · Identifiers may be included
           {" · "}
@@ -584,8 +583,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           {" · "}As of {formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
         </p>
         <Hero
+          // Page tops (Josh, 9 Nov 2026): one plain title, as Home's; the place leads the spoken heading, the h1.
+          level={1}
           className={cx(pageTop.hero, folderTabClasses.hero)}
-          // Page tops (Josh, 9 Nov 2026): one plain title, as Home's; the place leads the spoken heading.
           title={
             nowView ? (
               <>

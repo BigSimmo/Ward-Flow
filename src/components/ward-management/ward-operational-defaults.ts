@@ -176,15 +176,17 @@ export const DECISION_TARGET_RANGE_MINUTES = { min: 15, max: 12 * MINUTES_PER_HO
  * - `FORECAST_ED_RISK_LEAD_MINUTES`: someone in ED will pass the access target within this time.
  * - `FORECAST_WORSE_ALERT_BEDS`: tomorrow's likely figure dropped this much since the last look.
  */
-export const FORECAST_SHORT_ALERT_BEDS = 3;
+export const FORECAST_SHORT_ALERT_BEDS = CLINICAL_VALUES.forecastShortAlert.value;
 export const FORECAST_SHORT_ALERT_RANGE_BEDS = { min: 1, max: 20, step: 1 } as const;
-export const FORECAST_ED_RISK_LEAD_MINUTES = 12 * MINUTES_PER_HOUR;
+export const FORECAST_ED_RISK_LEAD_MINUTES = CLINICAL_VALUES.forecastEdRiskLead.value;
 export const FORECAST_ED_RISK_LEAD_RANGE_MINUTES = {
   min: 2 * MINUTES_PER_HOUR,
   max: 24 * MINUTES_PER_HOUR,
   step: MINUTES_PER_HOUR,
 } as const;
-export const FORECAST_WORSE_ALERT_BEDS = 2;
+export const FORECAST_WORSE_ALERT_BEDS = CLINICAL_VALUES.forecastWorseAlert.value;
+/** The rail's shift ring says "Handover Due" this many minutes before the shift ends (D-122 register). */
+export const HANDOVER_DUE_PROMPT_MINUTES = CLINICAL_VALUES.handoverDuePrompt.value;
 export const FORECAST_WORSE_ALERT_RANGE_BEDS = { min: 1, max: 10, step: 1 } as const;
 
 /**
@@ -226,10 +228,6 @@ export const OVERDUE_AFTER_MINUTES_BY_TIER: Readonly<Record<1 | 2 | 3, number>> 
 };
 /** Any referral still running this long is overdue, whatever its tier. */
 export const OVERDUE_AFTER_ANY_TIER_MINUTES = CLINICAL_VALUES.anyTierOverdue.value;
-
-/** The Mental Health Act calculator's after-hours window, as hours of the day (17:00 to 08:00). */
-const AFTER_HOURS_START_HOUR = 17;
-const AFTER_HOURS_END_HOUR = 8;
 
 /**
  * How long a leave bed may stay open before Ward Flow warns, in hours. Josh, 26 Sept 2026 (D-23,
@@ -309,10 +307,6 @@ export const OPERATIONAL_DEFAULTS: readonly OperationalDefault[] = [
   {
     name: "Referral shown as overdue after",
     display: `${hoursText(OVERDUE_AFTER_MINUTES_BY_TIER[1])} (tier 1), ${hoursText(OVERDUE_AFTER_MINUTES_BY_TIER[2])} (tier 2), ${hoursText(OVERDUE_AFTER_MINUTES_BY_TIER[3])} (tier 3), ${hoursText(OVERDUE_AFTER_ANY_TIER_MINUTES)} (any tier)`,
-  },
-  {
-    name: "After-hours window in the Mental Health Act calculator",
-    display: `${String(AFTER_HOURS_START_HOUR).padStart(2, "0")}:00 to ${String(AFTER_HOURS_END_HOUR).padStart(2, "0")}:00`,
   },
   { name: "Shift pattern (every screen)", display: "07:00, 15:00 and 23:00" },
   { name: "Leave bed flagged to consider opening after", display: hoursText(LEAVE_BED_OPEN_WARNING_MINUTES) },

@@ -78,7 +78,7 @@ import { createReadmissionIndex, priorDischargeWithinWindow } from "@/components
 import {
   CLEARANCE_CHECKS,
   REFERRAL_RISK_FLAGS,
-  referralContactLimitError,
+  referralContactSendError,
   referralIntakeError,
   REFERRAL_REASON_MAX_CHARACTERS,
   type ClearanceChecklist,
@@ -921,7 +921,7 @@ export function useWardReferralDrawerState({
       referralError() ??
       storyError() ??
       docsError() ??
-      referralContactLimitError(cleanReferralContact(contact));
+      referralContactSendError(cleanReferralContact(contact));
     if (validation) {
       setFlowError(validation);
       setAttempted((current) => ({ ...current, contact: true }));

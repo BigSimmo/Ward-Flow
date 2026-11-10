@@ -69,8 +69,8 @@ function pulledAndBookedMovement(movementId = CAPACITY_MOVEMENT, unitId = CAPACI
       genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
       genderPlacementChecked: true,
     },
-    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId },
-    { type: "PULL_PATIENT", role: "ward", unitId },
+    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId, actingUnitId: unitId },
+    { type: "PULL_PATIENT", role: "ward", unitId, actingUnitId: unitId },
   ] as const) {
     state = wardFlowReducer(state, { ...step, now: NOW, movementId } as never);
   }

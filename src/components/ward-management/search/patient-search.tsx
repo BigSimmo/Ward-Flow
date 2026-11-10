@@ -117,6 +117,7 @@ import {
 
 import styles from "./search.module.css";
 import cs from "./census.module.css";
+import ct from "./census-top.module.css";
 import { isCommunityReferral } from "./community-referral";
 import { countPatientStates, PATIENT_STATES, patientStateOf, type PatientStateFilter } from "./patient-states";
 import {
@@ -132,6 +133,7 @@ import {
 import { AccessRecordPanel, PeopleSection, ResultsSection } from "./patient-search-sections";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace } from "../use-return-to-place";
+import { aboriginalOrTorresStraitIslanderIdentityLabel } from "@/components/ward-management/ward-patient-aboriginal-status";
 
 // Moved to `patient-search-sections.tsx`; re-exported so existing importers keep working.
 export { ResultsSection };
@@ -522,7 +524,9 @@ export function PatientSearchPage() {
           age: patientAge,
           sex: info.patient?.sex ?? info.patient?.gender ?? null,
           communityTeam: info.patient?.catchmentCommunityTeam ?? null,
-          indigenous: Boolean(info.patient?.aboriginalOrTorresStraitIslanderStatus),
+          indigenous:
+            aboriginalOrTorresStraitIslanderIdentityLabel(info.patient?.aboriginalOrTorresStraitIslanderStatus) !==
+            undefined,
           confidential: Boolean((info.patient as { confidential?: boolean } | undefined)?.confidential),
           origin: originText,
           setting: operational.setting,
@@ -571,7 +575,9 @@ export function PatientSearchPage() {
           age: patientAge,
           sex: info.patient?.sex ?? info.patient?.gender ?? null,
           communityTeam: info.patient?.catchmentCommunityTeam ?? null,
-          indigenous: Boolean(info.patient?.aboriginalOrTorresStraitIslanderStatus),
+          indigenous:
+            aboriginalOrTorresStraitIslanderIdentityLabel(info.patient?.aboriginalOrTorresStraitIslanderStatus) !==
+            undefined,
           confidential: Boolean((info.patient as { confidential?: boolean } | undefined)?.confidential),
           origin:
             ref.originSiteCode === undefined
@@ -790,7 +796,7 @@ export function PatientSearchPage() {
   };
   // Page tops (Josh, 9 Nov 2026): the switch is the page's folder tabs under the hero, at every width.
   const stateTabs = (
-    <FolderTabs label="Where people are now" value={patientState} className={cs.folder} testId="ward-patient-states">
+    <FolderTabs label="Where people are now" value={patientState} className={ct.folder} testId="ward-patient-states">
       <Segmented<PatientStateFilter>
         className={folderTabClasses.switch}
         label="Where people are now"
@@ -1065,9 +1071,10 @@ export function PatientSearchPage() {
       data-ward-rebuilt-screen="patient-search"
     >
       <main id="main-content" className={styles.main}>
-        <h1 className="sr-only">Patients</h1>
         <div data-testid="ward-patient-search-cockpit" className={styles.v6HeroWrap}>
           <Hero
+            // The hero title is the page's one h1 (a hidden "Patients" h1 no longer repeats it).
+            level={1}
             className={cx(cs.censusHero, titles.hero, folderTabClasses.hero, isPhone && cs.heroPhone)}
             // WF-11 (live test, 4 Nov 2026): the title names the desk's real scope, since the counts are
             // that scope's, not the state's. Page tops (Josh, 9 Nov 2026): "Find a patient statewide".
@@ -1079,7 +1086,7 @@ export function PatientSearchPage() {
             aside={
               <>
                 {/* Desktop: the Today band rides in the title line, before the Demo pill. */}
-                {isPhone ? null : <div className={cs.titleBand}>{todayBand}</div>}
+                {isPhone ? null : <div className={ct.titleBand}>{todayBand}</div>}
                 <LiveChip state="live" onHero age={formatInstant(now)} />
               </>
             }

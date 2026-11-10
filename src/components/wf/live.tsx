@@ -50,6 +50,17 @@ function subscribeLiveClock(listener: () => void) {
   };
 }
 
+const subscribeNever = () => () => {};
+
+/** False in the server's render and while hydrating it, true after. */
+function useHydrated(): boolean {
+  return useSyncExternalStore(
+    subscribeNever,
+    () => true,
+    () => false,
+  );
+}
+
 function useLiveClock(): string | undefined {
   return useSyncExternalStore(
     subscribeLiveClock,
@@ -195,12 +206,18 @@ export function useLiveFreshness(active = true): { state: "live" | "stale" | "of
     () => undefined,
   );
   const late = useSharedRefreshLate(active);
-  if (!online) return { state: "offline" };
+  // Offline keeps the last good shared read, so a sheet printed or copied offline still says since when.
+  if (!online) return { state: "offline", since: refresh?.receivedAt };
   // P167: one failed or slow refresh is not a gap by itself; a publisher with a limit turns stale
   // only when that limit passes.
   if (late || (refresh?.unavailable && refresh.staleAfterMs === undefined))
     return { state: "stale", since: refresh?.receivedAt };
   return { state: "live" };
+}
+
+/** M7: a printed or copied sheet says it is not updating while stale, or offline after a shared read. */
+export function isNotUpdating(freshness: { state: "live" | "stale" | "offline"; since?: number }): boolean {
+  return freshness.state === "stale" || (freshness.state === "offline" && freshness.since !== undefined);
 }
 
 /** M8: a stale board in words, "Not updating since 10:42" ("Not updating" with no known time). */
@@ -224,6 +241,11 @@ export function LiveChip({ state: requested, age, asAt, onHero = false, onToggle
   // Tablet and desktop chips never show an age or a clock.
   const phoneClock = isPhone && age !== null && clock ? clock : undefined;
   const shownAge = isPhone ? (phoneClock ?? age) : null;
+  // Phone load audit (10 Nov 2026): the shell's clock arrives only after hydration, so the server's
+  // pill read "Demo" and grew leftwards into "Demo 10:42". An empty slot the clock's width holds
+  // its place until then; it has no text, so nothing extra is read or matched.
+  const hydrated = useHydrated();
+  const clockPending = isPhone && age !== null && !hydrated && clock === undefined && shownAge == null;
   // M8: on tablet and desktop a plain Live chip would only repeat the top bar, so no pill shows.
   // The same status line stays mounted in every state, so a later Stale or Offline updates its
   // text and is announced, rather than arriving in a new region a screen reader can miss (#1375).
@@ -244,6 +266,8 @@ export function LiveChip({ state: requested, age, asAt, onHero = false, onToggle
       {/* Collapsed in the flex pill, but keeps "Demo 10:42" two words for label-in-name (F-19). */}{" "}
       {state === "live" && shownAge != null ? (
         <span className={cx(styles.u, phoneClock && styles.clk)}>{shownAge}</span>
+      ) : state === "live" && clockPending ? (
+        <span className={cx(styles.u, styles.clk, styles.clkPending)} />
       ) : null}
       {onTogglePause ? (
         <span className={styles.toggleGlyph}>

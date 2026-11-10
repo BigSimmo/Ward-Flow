@@ -1030,7 +1030,7 @@ export function MovementsScreen() {
                   type="button"
                   role="tab"
                   id={`movements-tab-${tab.id}`}
-                  aria-controls={`movements-pane-${tab.id}`}
+                  aria-controls={boardTab === tab.id ? `movements-pane-${tab.id}` : undefined}
                   aria-selected={boardTab === tab.id}
                   tabIndex={boardTab === tab.id ? 0 : -1}
                   onClick={() => {

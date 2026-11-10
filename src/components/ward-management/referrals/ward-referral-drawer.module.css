@@ -361,6 +361,7 @@
   max-width: 100%;
   box-sizing: border-box;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -2460,6 +2461,7 @@ details.refCard > summary {
 
 .letterText {
   overflow-x: auto;
+  overflow-y: hidden;
   margin: 0;
   padding: var(--wf-s-3);
   border: 1px solid var(--wf-line);

@@ -135,6 +135,8 @@ function multiDestinationReferral(): Referral {
     now: WARD_DECIDED_AT,
     referralId: created.id,
     destinationKind: "psychiatric_ward",
+    unitId: "scgh-adult-open",
+    actingUnitId: "scgh-adult-open",
     reason: "no_suitable_bed",
   });
   expect(declined.rejections, "the reducer refused the ward's own decline").toEqual([]);
@@ -276,6 +278,7 @@ function cancelledArmReferral(): Referral {
     referralId: created.id,
     destinationKind: "psychiatric_ward",
     unitId: "bty-youth",
+    actingUnitId: "bty-youth",
   });
   expect(accepted.rejections, "the reducer refused the ward's own acceptance").toEqual([]);
 
@@ -1557,7 +1560,7 @@ describe("FD-23 — a ward cannot see where else a patient has been referred", (
   /**
    * ⚠️ **OWNER RULING R-2026-09-04-B — AN EMERGENCY DEPARTMENT *MAY* SEE OTHER REFERRAL
    * DESTINATIONS.** Asked whether an ED may see that a patient was also referred to a ward, the owner
-   * answered *"Yes can see."* (`docs/ward-flow/owner-rulings-2026-09-04.md`.)
+   * answered *"Yes can see."* (`docs/history/archive/dated-notes/owner-rulings-2026-09-04.md`.)
    *
    * **So this block is the only one in this file whose job is partly to prove a DISCLOSURE happens.**
    * The ward and community blocks above assert absence; here the destination list must be PRESENT,
@@ -2812,6 +2815,7 @@ describe("the coordinator's work list — direction of the LIVE destinations", (
         referralId: created.id,
         destinationKind: "psychiatric_ward",
         unitId: "rph-adult-secure",
+        actingUnitId: "rph-adult-secure",
       });
       expect(
         secondAcceptance.rejections.length,

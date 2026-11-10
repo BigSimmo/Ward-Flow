@@ -30,6 +30,9 @@ const PUSH_BODIES = [
   new RegExp(`^${PUSH_WHERE}\\. Open (?:Alerts|Transport jobs) to review\\. Synthetic demo data\\.$`),
   /^A referral answered, or a client admitted or discharged\. Open Alerts to review\. Synthetic demo data\.$/,
 ];
+// One notification slot per kind, as pushPayload tags them: act-now rows (the default), an
+// officer's transport jobs and a community team's updates.
+const PUSH_TAGS = ["ward-flow-act-now", "ward-flow-jobs", "ward-flow-team"];
 // Must match WARD_PWA_OPEN_MESSAGE in shell/ward-pwa-registration.tsx.
 const OPEN_MESSAGE = "ward-flow-open";
 
@@ -259,8 +262,10 @@ self.addEventListener("push", (event) => {
       body,
       icon: "/icons/icon-192",
       badge: "/icons/monochrome-192",
-      tag: "ward-flow-act-now",
-      // A new act-now item should buzz even when an earlier one is still showing. The server's
+      // Audit M158: each kind keeps its own slot, so a transport job never replaces a red alert
+      // still showing. Only the server's known tags are used; anything else is the act-now slot.
+      tag: PUSH_TAGS.includes(data.tag) ? data.tag : PUSH_TAGS[0],
+      // A new item should buzz even when an earlier one of its kind is still showing. The server's
       // outbox retries only the device whose send failed, so a retry never re-buzzes another one.
       renotify: true,
       data: { url: wardFlowPath(data.url) },

@@ -86,11 +86,13 @@ export function LegalFormSummary({
           ) : (
             <>
               <span className={p.clockBig}>
-                {formProgression(movement) || legalForm?.endedBy !== undefined
+                {formProgression(movement)?.ended || legalForm?.endedBy !== undefined
                   ? "Ended"
-                  : movement.formedAt !== undefined
-                    ? "No expiry typed"
-                    : standingWord(standing, thresholds)}
+                  : formProgression(movement)
+                    ? `Form ${formProgression(movement)?.nextCode} to record`
+                    : movement.formedAt !== undefined
+                      ? "No expiry typed"
+                      : standingWord(standing, thresholds)}
               </span>
               <span className={p.clockWord}>{legalDeadlineText(movement, now)}</span>
             </>

@@ -682,7 +682,7 @@ export const SUITABILITY_GATES: readonly EligibilityGate[] = [
   // Added by owner ruling: the only gate moved out of the world-fact group. A stale bed count is
   // information, and "I have confirmed the current bed state with the ward directly" is a named
   // person taking responsibility. It buys past a stale count, never past `allocatable_bed`. See
-  // docs/ward-flow/owner-rulings-2026-09-02-staleness-and-legal-status.md.
+  // docs/history/archive/dated-notes/owner-rulings-2026-09-02-staleness-and-legal-status.md.
   "capacity_freshness",
 ] as const satisfies readonly Exclude<EligibilityGate, "gender_designation">[];
 
@@ -867,13 +867,15 @@ export function heldUnitGenderRefusal(
  * minus `SUITABILITY_GATES`); do not transcribe it here.
  *
  * B1: a ward answering a referral names itself with `actingUnitId` and is refused when that ward is
- * not its own. The coordinator acts for any ward and sends none.
+ * not its own, or names none (M4, strict, D-128). The coordinator acts for any ward and sends none.
  */
 function wardActingUnitRefusal(
   event: Extract<WardFlowEvent, { type: "ACCEPT_REFERRAL" | "DECLINE_REFERRAL" }>,
   addressing: ReferralAddressing,
 ): string | undefined {
-  if (event.role !== "ward" || event.actingUnitId === undefined) return undefined;
+  if (event.role !== "ward") return undefined;
+  if (event.actingUnitId === undefined)
+    return `${event.type} from a ward must name the acting ward; a ward answers only its own referrals`;
   const answering =
     event.unitId ?? (addressing.destination.kind === "psychiatric_ward" ? addressing.destination.unitId : undefined);
   if (answering === event.actingUnitId) return undefined;
@@ -882,12 +884,14 @@ function wardActingUnitRefusal(
 
 /**
  * A1-1, A1-3, S2-11: a ward caller acting on a movement names itself with `actingUnitId`, and is
- * refused when that unit is not its own.
+ * refused when that unit is not its own or when it names none (M4, strict).
  */
 function wardActingMovementRefusal(
   event: Extract<WardFlowEvent, { type: "ACCEPT_IN_PRINCIPLE" | "PULL_PATIENT" | "DECLINE" }>,
 ): string | undefined {
-  if (event.role !== "ward" || event.actingUnitId === undefined) return undefined;
+  if (event.role !== "ward") return undefined;
+  if (event.actingUnitId === undefined)
+    return `${event.type} from a ward must name the acting ward; a ward answers only its own referrals`;
   if (event.unitId === event.actingUnitId) return undefined;
   return `${event.type} was raised acting as unit ${event.actingUnitId} but answers for ${event.unitId}; a ward answers only its own referrals`;
 }

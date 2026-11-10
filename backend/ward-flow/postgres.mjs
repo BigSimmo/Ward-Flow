@@ -19,7 +19,7 @@ import {
   conflictingCollection,
   conflictRecordType,
   coveredRecords,
-  jsonCharacterLength,
+  jsonbTextByteLength,
   staleReason,
   markerKind,
   planSave,
@@ -148,6 +148,8 @@ const VIEW_LIST_LIMIT = 200;
 const REVIEW_DAYS = 7;
 /** A break glass opening's review id (`ward-break-glass-review-id.ts`) and the scope refusal. */
 const BREAK_GLASS_REVIEW_PREFIX = "audit-break-glass-";
+/** M58 (D-129): a cover given's review id names its ACCESS_COVER audit row. */
+const COVER_REVIEW_PREFIX = "audit-cover-";
 const OUTSIDE_PLACE = "This change names a record outside your role's place.";
 /** Minutes from `now` to a stored time, as the screens place server times on the demo clock. */
 const minutesBefore = (time, now) => Math.round((new Date(time).getTime() - now.getTime()) / 60_000);
@@ -167,8 +169,11 @@ function canonical(value) {
   return value;
 }
 
-/** The legacy JSON character count of a world, measured once per save (audit PS-12). */
-const worldBytes = jsonCharacterLength;
+/**
+ * The UTF-8 byte size of a world as the database's jsonb text measures it, once per save (audits
+ * PS-12, M162): the 8 MiB limit is the old `octet_length(payload::text)` CHECK on the whole world.
+ */
+const worldBytes = jsonbTextByteLength;
 
 /**
  * The audit row's `changes` as stored. A reset or new scenario replaces the whole board, so the
@@ -232,6 +237,10 @@ export function createWorkspaceStore(
     slowCommandMs = 500,
     retryAfterMs = 60_000,
     demoEvents = false,
+    // M113: the bootstrap coordinators at a time (auth.mjs `bootstrapCoordinators`), so a
+    // bootstrap account's archive and audit reads are re-checked under the lock as a membership
+    // is. The HTTP server always passes it; the store's own tests may leave it out.
+    bootstrapCoordinatorIds = /** @type {((atMs: number) => string[]) | null} */ (null),
   },
 ) {
   /**
@@ -781,6 +790,11 @@ export function createWorkspaceStore(
     const id = eventId.slice(BREAK_GLASS_REVIEW_PREFIX.length);
     return /^[1-9][0-9]{0,17}$/.test(id) ? id : null;
   };
+  const coverId = (eventId) => {
+    if (typeof eventId !== "string" || !eventId.startsWith(COVER_REVIEW_PREFIX)) return null;
+    const id = eventId.slice(COVER_REVIEW_PREFIX.length);
+    return /^[1-9][0-9]{0,17}$/.test(id) ? id : null;
+  };
   // A caller cannot supply this authority through a view or command. Each row belongs to one
   // read/locked transaction; only the committed scoped reply parts survive that request.
   const reviewAuthorities = new WeakMap();
@@ -799,12 +813,25 @@ export function createWorkspaceStore(
       );
       for (const opening of rows) openings.set(String(opening.id), opening.patient_id);
     }
-    reviewAuthorities.set(row, { openings, scopes: new WeakMap() });
+    // M58: a cover given is reviewed by its ACCESS_COVER audit row, inside the coordinator's place.
+    const coverIds = [...new Set(eventIds.map(coverId).filter((id) => id !== null))];
+    const covers = new Map();
+    if (coverIds.length && view.version >= ACCESS_COVER_MIGRATION) {
+      const { rows } = await connection.query(
+        "SELECT sequence::text AS id, changes->>'role' AS role, changes->'scope' AS scope FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype' AND action='ACCESS_COVER' AND outcome='accepted' AND sequence = ANY($2::bigint[])",
+        [workspaceId, coverIds],
+      );
+      for (const cover of rows) {
+        const access = engine.parseAccess(cover.role, cover.scope);
+        if (access) covers.set(String(cover.id), access.scope);
+      }
+    }
+    reviewAuthorities.set(row, { openings, covers, scopes: new WeakMap() });
   }
   function reviewIdsFor(row, world, view, at) {
     if (view?.access?.role !== "coordinator" || engine.wholeNetwork(view.access)) return [];
     const authority = reviewAuthorities.get(row);
-    if (!authority?.openings.size) return [];
+    if (!authority?.openings.size && !authority?.covers.size) return [];
     const scopeKey = JSON.stringify(canonical(view.access));
     const now = engine.worldNow(world, at);
     const cached = authority.scopes.get(world);
@@ -812,19 +839,30 @@ export function createWorkspaceStore(
     // Grants never widen governance review authority. Re-evaluate the same opening map against
     // the actual world being projected, including an accepted command's resulting world.
     const own = new Set(placeRecords(world, view.access, at));
-    const ids = [...authority.openings]
-      .filter(([, patientId]) => own.has(patientId))
-      .map(([id]) => `${BREAK_GLASS_REVIEW_PREFIX}${id}`)
-      .sort();
+    const ids = [
+      ...[...authority.openings]
+        .filter(([, patientId]) => own.has(patientId))
+        .map(([id]) => `${BREAK_GLASS_REVIEW_PREFIX}${id}`),
+      ...[...authority.covers]
+        .filter(([, scope]) => engine.scopeWithin(world, scope, view.access.scope))
+        .map(([id]) => `${COVER_REVIEW_PREFIX}${id}`),
+    ].sort();
     authority.scopes.set(world, { scopeKey, now, ids });
     return ids;
   }
   function breakGlassReviewRefusal(row, view, event, at) {
     const eventId = openingEventFor(row.payload, event);
-    if (typeof eventId !== "string" || !eventId.startsWith(BREAK_GLASS_REVIEW_PREFIX)) return null;
-    const id = openingId(eventId);
-    if (!id || !(view.version >= ROLE_ACCESS_MIGRATION) || !reviewAuthorities.get(row)?.openings.has(id))
-      return OUTSIDE_PLACE;
+    if (typeof eventId !== "string") return null;
+    if (eventId.startsWith(COVER_REVIEW_PREFIX)) {
+      const id = coverId(eventId);
+      if (!id || !(view.version >= ACCESS_COVER_MIGRATION) || !reviewAuthorities.get(row)?.covers.has(id))
+        return OUTSIDE_PLACE;
+    } else if (!eventId.startsWith(BREAK_GLASS_REVIEW_PREFIX)) return null;
+    else {
+      const id = openingId(eventId);
+      if (!id || !(view.version >= ROLE_ACCESS_MIGRATION) || !reviewAuthorities.get(row)?.openings.has(id))
+        return OUTSIDE_PLACE;
+    }
     if (engine.wholeNetwork(view.access)) return null;
     return reviewIdsFor(row, row.payload, view, at).includes(eventId) ? null : OUTSIDE_PLACE;
   }
@@ -1556,6 +1594,9 @@ export function createWorkspaceStore(
       return snapshot(row, now, current, undefined, client);
     });
   }
+  /** A signed-in bootstrap coordinator's view (no membership), once the server names the list. */
+  const bootstrapView = (view) =>
+    bootstrapCoordinatorIds !== null && typeof view?.actorId === "string" && !view.membershipId;
   /** Detail/history reads share the same authority boundary as a full scoped snapshot. */
   async function currentRecordRead(view, send, recordAccess = false) {
     return transaction(async (client, at) => {
@@ -1573,7 +1614,9 @@ export function createWorkspaceStore(
         current = await resolveViewer(view.actorId, { workingAs: view.membershipId }, client, at, view.version);
         if (current.status !== "ok") throw new Error("role-ended");
         Object.assign(view, current);
-      }
+      } else if (bootstrapView(view) && !bootstrapCoordinatorIds?.(at.getTime()).includes(view.actorId))
+        // M113: a bootstrap account past its end date, or taken off the list, stops here too.
+        throw new Error("role-ended");
       return send(client, at, current, row);
     });
   }
@@ -1839,7 +1882,14 @@ export function createWorkspaceStore(
     });
   }
   /** Inside the workspace lock: a new role for a person until a set time, audited. */
-  async function insertGrant(client, row, view, { actorId, access, expiresAt, kind = "role" }, at, action) {
+  async function insertGrant(
+    client,
+    row,
+    view,
+    { actorId, access, expiresAt, kind = "role", reason = undefined },
+    at,
+    action,
+  ) {
     if (kind === "role") {
       const { rows: existing } = await client.query(
         `SELECT * FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND role=$3 AND scope=$4::jsonb AND granted_by=$5 AND expires_at=$6 AND revoked_at IS NULL${view.version >= ACCESS_COVER_MIGRATION ? " AND kind='role'" : ""} AND granted_at > $7::timestamptz - ${MAX_TERM}${view.version >= ACCESS_COVER_MIGRATION ? " AND coalesce(last_used_at, granted_at) > $8" : ""} ORDER BY granted_at, id LIMIT 1`,
@@ -1875,9 +1925,38 @@ export function createWorkspaceStore(
         role: access.role,
         scope: access.scope,
         expiresAt: expiresAt.toISOString(),
+        // M58: cover keeps why it was given, from the list, for the coordinator's review list.
+        ...(reason ? { reason } : {}),
       },
     });
     return rows[0];
+  }
+  /**
+   * M58: an opening or cover sent with a request key is done once, kept as a receipt beside the
+   * board's command receipts. A retry or double tap of the same request finds the first answer,
+   * so it adds no row and no audit line; the same key on a different request is refused.
+   */
+  const requestFingerprint = (value) =>
+    createHash("sha256")
+      .update(JSON.stringify(canonical(value)))
+      .digest("hex");
+  async function earlierAnswer(client, actorId, intentKey, fingerprint) {
+    if (intentKey === undefined) return null;
+    const { rows } = await client.query(
+      "SELECT fingerprint, status, result FROM ward_flow.commands WHERE workspace_id=$1 AND actor_id=$2 AND command_id=$3",
+      [workspaceId, actorId, intentKey],
+    );
+    if (!rows.length) return null;
+    if (rows[0].fingerprint !== fingerprint)
+      return { refusal: refused(422, "That request was already used for a different change.") };
+    return { result: rows[0].result };
+  }
+  async function keepAnswer(client, actorId, intentKey, fingerprint, result) {
+    if (intentKey === undefined) return;
+    await client.query(
+      "INSERT INTO ward_flow.commands(workspace_id, actor_id, command_id, fingerprint, status, result) VALUES ($1,$2,$3,$4,$5,$6)",
+      [workspaceId, actorId, intentKey, fingerprint, 200, { outcome: "accepted", ...result }],
+    );
   }
   /** Who may hear phone alerts as this desk: a whole-network bootstrap, or a role from 9 on. */
   function pushByRole(view) {
@@ -2317,13 +2396,34 @@ export function createWorkspaceStore(
      * holder for the sign-in pre-check while it runs.
      */
     async giveCover(view, request) {
+      // M58 (D-129): like break glass, a reason from the list, refused before the database.
+      if (!engine.COVER_REASON_IDS.includes(request?.reason))
+        return refused(400, "A reason from the list is required.");
       const blocked = coverRefusalBefore9(view);
       if (blocked) return blocked;
       const shape = request.scope ? engine.coverAccess(request.scope) : null;
       const cover = shape ? engine.parseAccess(shape.role, request.scope) : null;
       if (!cover) return refused(400, "Cover is for one ward or one ED.");
+      const fingerprint = requestFingerprint({
+        kind: "cover",
+        membershipId: view.membershipId ?? null,
+        actorId: request.actorId,
+        scope: cover.scope,
+        minutes: request.minutes,
+      });
       return transaction(async (client, at) => {
         const row = await lock(client, view.actorId, at, view);
+        const earlier = await earlierAnswer(client, view.actorId, request.intentKey, fingerprint);
+        if (earlier?.refusal) return earlier.refusal;
+        if (earlier) {
+          const { rows: given } = await client.query(
+            "SELECT * FROM ward_flow.memberships WHERE id=$1 AND workspace_id=$2",
+            [earlier.result.membershipId, workspaceId],
+          );
+          return given.length
+            ? { status: 200, body: { membership: presentMembership(given[0], at) } }
+            : refused(409, "That cover was already given. Reload the list.");
+        }
         const giver = view.ownAccess === undefined ? view.access : view.ownAccess;
         if (!giver) return refused(403, "Cover cannot be passed on. Ask the ward's nurse in charge or a coordinator.");
         // D-80: only a colleague who already holds a ward or ED role, still in use, may be given cover.
@@ -2346,10 +2446,11 @@ export function createWorkspaceStore(
           client,
           row,
           view,
-          { actorId: request.actorId, access: cover, expiresAt, kind: "cover" },
+          { actorId: request.actorId, access: cover, expiresAt, kind: "cover", reason: request.reason },
           at,
           "ACCESS_COVER",
         );
+        await keepAnswer(client, view.actorId, request.intentKey, fingerprint, { membershipId: given.id });
         return { status: 200, body: { membership: presentMembership(given, at) } };
       });
     },
@@ -2752,6 +2853,39 @@ export function createWorkspaceStore(
       }));
     },
     /**
+     * Master audit M58 (D-129): each cover given in the last 7 days, for the coordinator's review
+     * list beside the break glass openings: the giver's desk, the cover, its reason and its times,
+     * from the ACCESS_COVER audit rows. Below statewide, only cover inside the coordinator's place.
+     */
+    async coversGiven(view) {
+      if (!(view.version >= ACCESS_COVER_MIGRATION)) return [];
+      const at = clock();
+      const statewide = engine.wholeNetwork(view.access) || view.access.scope.kind === "statewide";
+      const world = statewide ? null : (await readWorld(pool, "payload"))?.payload;
+      if (!statewide && (!world || !engine.validWorld(world))) return [];
+      const { rows } = await pool.query(
+        `SELECT sequence::text AS id, actor_role, actor_scope, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype' AND action='ACCESS_COVER' AND outcome='accepted' AND committed_at > $2 ORDER BY sequence DESC LIMIT ${VIEW_LIST_LIMIT}`,
+        [workspaceId, new Date(at.getTime() - REVIEW_DAYS * 86_400_000)],
+      );
+      return rows.flatMap(({ id, actor_role, actor_scope, changes, committed_at: given }) => {
+        const cover = engine.parseAccess(changes?.role, changes?.scope);
+        const until = new Date(changes?.expiresAt);
+        if (!cover || !Number.isFinite(until.getTime())) return [];
+        if (!statewide && !engine.scopeWithin(world, cover.scope, view.access.scope)) return [];
+        return [
+          {
+            id,
+            actor_role,
+            actor_scope,
+            role: cover.role,
+            scope: cover.scope,
+            reason: typeof changes.reason === "string" ? changes.reason : null,
+            minutes: { given: minutesBefore(given, at), until: minutesBefore(until, at) },
+          },
+        ];
+      });
+    },
+    /**
      * Readiness review item 8: a sign-out ends the sign-in here at once, not when its token
      * expires. The row lasts as long as any token of that sign-in could still be accepted: the
      * session limit from when it began. Sign-outs past that are removed. Before migration 11 it
@@ -2791,15 +2925,40 @@ export function createWorkspaceStore(
     /**
      * Opens one patient's record, read only, outside this desk's care for a set time, with a
      * reason. Each opening is kept as the "who looked" record and audited. More than the set
-     * number in one shift is marked as a pattern for the coordinator.
+     * number in one shift is marked as a pattern for the coordinator. `intentKey`: the browser's
+     * key for this one opening (M58), so a retry of it is not a second opening.
+     * @param {any} view @param {string} patientId @param {string} reason @param {string} [intentKey]
      */
-    async breakGlass(view, patientId, reason) {
+    async breakGlass(view, patientId, reason, intentKey = undefined) {
       if (!engine.BREAK_GLASS_REASON_IDS.includes(reason)) return refused(400, "A reason from the list is required.");
+      const fingerprint = requestFingerprint({
+        kind: "break-glass",
+        membershipId: view.membershipId ?? null,
+        patientId,
+        reason,
+      });
       return transaction(async (client, at) => {
         const row = await lock(client, view.actorId, at, view);
         const refusal = view.membershipId ? engine.breakGlassRefusal(row.payload, view.access, patientId, at) : null;
         if (refusal || !view.membershipId)
           return refused(422, refusal ?? "Opening a record outside your care is not part of your role.");
+        // M58: a retry of the same opening answers as the first did, with no second row or audit line.
+        const earlier = await earlierAnswer(client, view.actorId, intentKey, fingerprint);
+        if (earlier?.refusal) return earlier.refusal;
+        if (earlier) {
+          const kept = new Date(earlier.result.until);
+          if (!(kept > at)) return refused(409, "That opening has ended. Open the record again.");
+          const opened = { ...view, grants: [...view.grants, { patientId, until: kept }] };
+          await prepareReviewAuthority(client, row, opened);
+          return {
+            status: 200,
+            body: {
+              until: kept.toISOString(),
+              pattern: earlier.result.pattern === true,
+              snapshot: await snapshot(row, at, opened, undefined, client),
+            },
+          };
+        }
         const until = new Date(at.getTime() + engine.BREAK_GLASS_MINUTES * 60_000);
         await client.query(
           "INSERT INTO ward_flow.break_glass(workspace_id, actor_id, membership_id, patient_id, reason, opened_at, until) VALUES ($1,$2,$3,$4,$5,$6,$7)",
@@ -2812,6 +2971,7 @@ export function createWorkspaceStore(
         const pattern = rows[0].count > engine.BREAK_GLASS_PER_SHIFT;
         const revision = Number(row.revision);
         await audit(client, view, view.actorId, {
+          ...(intentKey === undefined ? {} : { commandId: intentKey }),
           action: "BREAK_GLASS",
           outcome: "accepted",
           priorRevision: revision,
@@ -2826,6 +2986,7 @@ export function createWorkspaceStore(
             openedAt: at.toISOString(),
           },
         });
+        await keepAnswer(client, view.actorId, intentKey, fingerprint, { until: until.toISOString(), pattern });
         const opened = { ...view, grants: [...view.grants, { patientId, until }] };
         await prepareReviewAuthority(client, row, opened);
         return {
@@ -3221,13 +3382,14 @@ export function createWorkspaceStore(
     "listCovers",
     "recordViews",
     "breakGlassOpenings",
+    "coversGiven",
     "forecastHistory",
   ]) {
     const readProtected = store[name].bind(store);
     store[name] = async (view, ...args) => {
       const originalScope = JSON.stringify(view?.access);
       const result = await readProtected(view, ...args);
-      if (!view?.membershipId) return result;
+      if (!view?.membershipId && !bootstrapView(view)) return result;
       return currentRecordRead(view, async (_client, _at, current) => {
         if (JSON.stringify(current.access) !== originalScope) throw new Error("role-ended");
         return result;

@@ -27,7 +27,8 @@ export const WAIT_BANDS: readonly {
   {
     id: "over24",
     title: "Past 24 hours",
-    note: "past the access target",
+    // D-122 (Josh, 10 Nov 2026): no "past the access target" here, as that target is a setting and this band is fixed.
+    note: "longest first",
     tone: "danger",
     limit: Number.POSITIVE_INFINITY,
     test: (row) => row.waited >= 24 * 60,

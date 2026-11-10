@@ -58,9 +58,12 @@ export function ReferralCoordinatorTop({
   tabsAside,
   className,
   testId,
+  level,
   children,
 }: {
   isPhone: boolean;
+  /** Heading level of the hero title: 1 when it is the page's title. */
+  level?: 1 | 2;
   title: ReactNode;
   /** "Oldest 3d 3h · decided in 4h 30m (median)", worded by the board. */
   titleMeta: ReactNode;
@@ -116,6 +119,7 @@ export function ReferralCoordinatorTop({
   return (
     <div className={top.wrap} data-testid={testId}>
       <Hero
+        level={level}
         className={cx(pageTop.hero, folderTabClasses.hero, top.hero, className)}
         // The page's name stays in the heading for a screen reader; the slate shows no eyebrow.
         title={

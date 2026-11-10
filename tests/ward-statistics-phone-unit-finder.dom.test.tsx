@@ -63,4 +63,23 @@ describe("Statistics phone Summary unit finder", () => {
     expect(screen.queryByTestId("ward-statistics-phone-unit-finder")).not.toBeInTheDocument();
     expect(result.container.querySelector("#choose-a-unit")).toBeNull();
   });
+
+  it("lists the Wards tab A to Z by ward name, not most ready beds first (D-126)", () => {
+    phoneViewport();
+    window.history.replaceState(null, "", "/ward-flow/statistics#choose-a-unit");
+    renderSummary();
+
+    const list = within(screen.getByTestId("ward-statistics-phone-unit-finder")).getByRole("list", { name: "wards" });
+    const rows = within(list)
+      .getAllByRole("link")
+      .map((link) => ({
+        name: link.querySelector("span")?.firstChild?.textContent ?? "",
+        ready: Number(/(\d+) ready/.exec(link.textContent ?? "")?.[1]),
+      }));
+    const names = rows.map((row) => row.name);
+    expect(names.length).toBeGreaterThan(1);
+    expect(names).toEqual(names.toSorted((a, b) => a.localeCompare(b)));
+    // The synthetic seed has a ward with more ready beds after one with fewer.
+    expect(rows.some((row, index) => rows.slice(index + 1).some((later) => later.ready > row.ready))).toBe(true);
+  });
 });

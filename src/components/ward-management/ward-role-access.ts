@@ -77,6 +77,15 @@ export function accessIsWholeNetwork(access: WardAccess): boolean {
 }
 
 /**
+ * The ED an ED-desk action on a journey is recorded as (M2): the desk's own department when it has
+ * one, otherwise (a demonstration desk with no ED scope) the journey's origin ED. The reducer refuses
+ * an ED that is not the origin, and the shared server checks the claim against the desk's scope.
+ */
+export function edActingPlaceId(access: WardAccess, originEdId: string | undefined): string | undefined {
+  return access.role === "ed" && access.scope.kind === "ed" ? access.scope.edId : originEdId;
+}
+
+/**
  * Every screen, by what it is rather than by its address. Old addresses that only redirect
  * (`command`, `constellation`, `queue`, `exceptions`, `escalation`, `transport`) resolve to their
  * target so they can never be a way round the table.
@@ -609,6 +618,19 @@ export const BREAK_GLASS_REASONS = [
 ] as const;
 
 export type BreakGlassReasonId = (typeof BREAK_GLASS_REASONS)[number]["id"];
+
+/**
+ * Master audit M58 (D-129, 10 Nov 2026): why cover is given, chosen from a short list like break
+ * glass. Only the id is sent and kept; no typed words.
+ */
+export const COVER_REASONS = [
+  { id: "night-weekend", label: "Night or weekend cover" },
+  { id: "staff-away", label: "Staff away or sick" },
+  { id: "busy", label: "Extra help when busy" },
+  { id: "other", label: "Other" },
+] as const;
+
+export type CoverReasonId = (typeof COVER_REASONS)[number]["id"];
 
 /** What the role is called on screen. */
 // #790: the coordinator is named as the rail and Settings name it, so one desk has one name.

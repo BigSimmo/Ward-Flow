@@ -42,8 +42,8 @@ You cannot accept or decline a referral, place a patient or discharge a patient.
 
 - Pilot lead: to be named.
 - Access admin (accounts, roles, removing access): to be named.
-- Something looks wrong or unsafe: tell the pilot lead the same shift, and keep working from the
-  whiteboard and phone.
+- Something unsafe, or a near miss: tell the bed coordinator on shift now, and keep working from
+  the whiteboard and phone ([safety incident route](../safety-incident-route.md)).
 
 Full guide: [Site bed manager desk guide](../../desk-guides/site-bed-manager.md).
 

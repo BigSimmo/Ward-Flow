@@ -119,7 +119,7 @@ import {
 import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { DECLINE_REASON_LABELS, isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
-import { occupiedBeds } from "./statistics-occupancy";
+import { occupancyShare, occupiedBeds } from "./statistics-occupancy";
 import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { ForecastTrackRecordTiles } from "@/components/ward-management/forecast/forecast-track-record";
 import { FixedQuestionsCard, WaitingStagesCard } from "@/components/ward-management/reports/closing-loop-cards-lazy";
@@ -242,7 +242,7 @@ function ExecutiveStatisticsScreen() {
         totalBeds: beds.total,
         occupiedCount: beds.occupied,
         inUseCount: beds.inUse,
-        occupiedPct: beds.total ? Math.round((beds.inUse / beds.total) * 100) : 0,
+        occupiedPct: beds.total ? Math.round((beds.inUse / beds.total) * 100) : null,
         availableNow: beds.ready,
         pendingPreparation: data.capacity.pendingPreparation,
         waitingCount: people.waitingInEd,
@@ -333,9 +333,12 @@ function OperationalStatisticsScreen({
   const inUseCount = occupancy.inUse;
   // One decimal place, the precision Home, Overview and Wards print (audit stats-20: 85.2%, not 85%).
   // Whole percent, the one rule for every percentage (Josh, 5 Nov 2026, CL-9).
-  const occupiedPct = occupancy.beds > 0 ? Math.round((occupancy.inUse / occupancy.beds) * 100) : 0;
+  // Audit M6: with no beds counted the share is unknown, never 0%, as Home leaves its ring out.
+  const occupiedPct = occupancy.beds > 0 ? Math.round((occupancy.inUse / occupancy.beds) * 100) : null;
   // Audit 6 (Josh, 20 Oct 2026): the one ready figure, leaving out beds pulled for an incoming patient.
-  const availableNow = totalReadyBedsNow(siteUnits, sourceAdmissions, sourceBedReleases);
+  // D-115: a bed named for an accepted referral is not ready, as on Home, the TV and print.
+  const namedHolds = useMemo(() => [...sourceMovements, ...sourceReferrals], [sourceMovements, sourceReferrals]);
+  const availableNow = totalReadyBedsNow(siteUnits, sourceAdmissions, sourceBedReleases, namedHolds);
   // Ready beds still being cleaned count as ready (the owner's ruling); the label says how many.
   const pendingPreparation = siteUnits.reduce((sum, u) => sum + bedsPendingPreparation(u.id, sourceBedReleases), 0);
   // Open ED-origin journeys retain accountability through transit; Still open also includes other origins.
@@ -387,13 +390,13 @@ function OperationalStatisticsScreen({
         site: u.siteCode,
         hospital: siteByCode(u.siteCode)?.name ?? u.siteCode,
         beds: u.beds,
-        ready: readyBedsNow(u, sourceAdmissions, sourceBedReleases),
+        ready: readyBedsNow(u, sourceAdmissions, sourceBedReleases, namedHolds),
         pendingPreparation: bedsPendingPreparation(u.id, sourceBedReleases),
         occupancyRate,
         referred: wardReferralTally(sourceMovements, u.id).askedAndWaiting,
       };
     });
-  }, [siteUnits, sourceAdmissions, sourceBedReleases, leaveBeds, sourceMovements]);
+  }, [siteUnits, sourceAdmissions, sourceBedReleases, leaveBeds, sourceMovements, namedHolds]);
 
   // A referral can have multiple destinations; count the referral once using its derived outcome.
   const todayBedReferrals = sourceReferrals.filter(
@@ -443,7 +446,9 @@ function OperationalStatisticsScreen({
         paused: live.paused,
         togglePause: live.togglePause,
         scopeLabel: siteName ?? "whole network",
-        services: networkServiceRows(networkUnitRows(units, sourceAdmissions, sourceBedReleases, leaveBeds)),
+        services: networkServiceRows(
+          networkUnitRows(units, sourceAdmissions, sourceBedReleases, leaveBeds, namedHolds),
+        ),
         refused,
         preparingCount,
         arrivals,
@@ -500,6 +505,7 @@ function OperationalStatisticsScreen({
             admissions={sourceAdmissions}
             bedReleases={sourceBedReleases}
             leaveBeds={leaveBeds}
+            holds={namedHolds}
           />
         ),
         flow: (
@@ -509,6 +515,7 @@ function OperationalStatisticsScreen({
             admissions={sourceAdmissions}
             bedReleases={sourceBedReleases}
             leaveBeds={leaveBeds}
+            holds={namedHolds}
           />
         ),
         journey: (onShowBoard) => <StatisticsJourneyView onShowBoard={onShowBoard} live={{ state: live.state, now }} />,
@@ -616,7 +623,7 @@ function StatisticsSummaryView({
       ["Beds", totalBeds],
       ["Occupied", occupiedCount],
       ["Beds in use (occupied or pulled)", inUseCount],
-      ["Occupancy percent", occupiedPct],
+      ["Occupancy percent", occupiedPct ?? "unknown"],
       ["Being made ready", pendingPreparation],
       // Issue #618: counts of people follow the executive's small number rule; beds stay exact.
       ["Discharged today", small(dischargesCount)],
@@ -670,9 +677,8 @@ function StatisticsSummaryView({
       phoneSkipsFinder
         ? { ward: [], ed: [], service: [], team: [] }
         : {
-            ward: allPressureWards
-              .map(wardFinderEntry)
-              .sort((left, right) => right.ready - left.ready || left.name.localeCompare(right.name)),
+            // D-126 (10 Nov 2026): a finder people search by name, so wards run A to Z, not most ready first.
+            ward: allPressureWards.map(wardFinderEntry).sort((left, right) => left.name.localeCompare(right.name)),
             ed: emergencyDepts
               .filter((ed) => directory === undefined || directory.edIds.includes(ed.id))
               .map((ed) => ({
@@ -1009,7 +1015,7 @@ function StatisticsSummaryView({
                         id: "in-use",
                         value: inUseCount,
                         unit: <> / {totalBeds}</>,
-                        label: `in use, ${occupiedPct}%`,
+                        label: `in use, ${occupancyShare(occupiedPct)}`,
                       },
                       { id: "ready", value: availableNow, label: availableNow === 1 ? "bed ready" : "beds ready" },
                       ...(notShown(waitingCount)

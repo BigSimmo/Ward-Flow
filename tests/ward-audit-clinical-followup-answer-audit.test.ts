@@ -66,6 +66,7 @@ describe("referral answers and arrivals leave an audit row", () => {
       now: at(2),
       movementId: "WF-012",
       unitId: "rgh-adult-secure",
+      actingUnitId: "rgh-adult-secure",
       reason: "capability_mismatch",
     } as WardFlowEvent);
     expect(declined.rejections.length).toBe(seed.rejections.length);

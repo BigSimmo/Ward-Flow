@@ -9,6 +9,7 @@
 .scroll {
   max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
   padding: var(--wf-s-2) calc(var(--wf-s-4) - 10px) 0;
 }
 .scroll:focus-visible {

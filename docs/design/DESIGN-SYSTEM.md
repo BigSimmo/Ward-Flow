@@ -71,14 +71,14 @@ Dark mode and the Bright light setting come from the same tokens. Check every sc
 - Rows: 44px default (`--wf-row-default`), 36px dense, 52px touch, 40px group heads.
 - Controls, by device:
 
-| Control                | Phone                                                                                   | Tablet and desktop                                              |
-| ---------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Button                 | 40px drawn, 48px tap cover                                                              | 36px (`--wf-h-md`); 28px is the smallest target (`--wf-target`) |
-| Small button           | 40px on phone (Q295)                                                                    | 32px (`--wf-h-sm`)                                              |
-| Tabs and segments      | 40px items on a 48px track (Q225; the kit overrides the older `--wf-phone-seg-*` 32/40) | 30px at 13px (Q231)                                             |
-| Chips and filter pills | 40px (`--wf-phone-pill-h`)                                                              | 24 to 30px; never a target under 24px (`--wf-target-min`)       |
-| Accept, Pull, Decline  | Full 48px (the one exception)                                                           | Kit size                                                        |
-| Controls at 200% text  | Grow with the text: min-height, never a fixed height (Q306)                             | Same                                                            |
+| Control                | Phone                                                                                                                                                       | Tablet and desktop                                              |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Button                 | 40px drawn, 48px tap cover                                                                                                                                  | 36px (`--wf-h-md`); 28px is the smallest target (`--wf-target`) |
+| Small button           | 40px on phone (Q295)                                                                                                                                        | 32px (`--wf-h-sm`)                                              |
+| Tabs and segments      | 40px items on a 48px track (Q225, 2 Nov, as built; this replaces D-94's 32px tab in a 40px track, and the kit overrides the older `--wf-phone-seg-*` 32/40) | 30px at 13px (Q231)                                             |
+| Chips and filter pills | 40px (`--wf-phone-pill-h`)                                                                                                                                  | 24 to 30px; never a target under 24px (`--wf-target-min`)       |
+| Accept, Pull, Decline  | Full 48px (the one exception)                                                                                                                               | Kit size                                                        |
+| Controls at 200% text  | Grow with the text: min-height, never a fixed height (Q306)                                                                                                 | Same                                                            |
 
 ### Motion
 
@@ -185,7 +185,7 @@ Use Lucide's current names, never the old aliases: `TriangleAlert` not `AlertTri
 
 **Lists and panels.** A list-and-panel page opens on the first useful item (Home's Placement panel is the exception). Group repeats into one row with one action ("Chase all"). Checklists: one head line with counts, a bulk action and Hide, then one-line cards three across, first nine shown.
 
-**Chips.** Filter and highlight chips sit in one row. A chip with nobody in it is hidden.
+**Chips.** Filter and highlight chips sit in one row. A chip with nobody in it is hidden. A row that scrolls sideways scrolls only sideways: it sets `overflow-y: hidden` beside its `overflow-x: auto`, and carries its chips' tap band in its own top and bottom padding (a matching negative margin keeps its place), because iPhone Safari still drags a row whose contents are taller than it (10 Nov 2026; `tests/css-sideways-rows-scroll-sideways-only.test.ts` checks every stylesheet, and the phone axe sweep checks every page's rows fit).
 
 **Pop-ups and side panels.** The name, a small status tag beside it, one quiet context line. Close takes focus; no second Back link. Open on a short Summary; long lists go behind tabs with counts. Facts are label and value pairs, three to five per titled group. Notes are one compact list with icons. Actions pinned at the foot, one filled. Documents are chips that open a marked synthetic preview. Forms open blank. Tab stays inside an open panel (Q300). On short screens the header scrolls and the footer unpins (Q288).
 

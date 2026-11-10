@@ -1,6 +1,6 @@
 # Ward Flow plans
 
-_Updated 2026-11-09 - active plans only; finished and September plans moved to history (D-107); Documentation owns._
+_Updated 2026-11-10 - active plans only; finished and September plans moved to history (D-107); Documentation owns._
 
 Start at the [Ward Flow entry point](../README.md). Open work is in the [backlog](../backlog.md) and
 the plan is the [roadmap](../roadmap.md). Plan checkboxes do not establish a current backlog.
@@ -11,6 +11,7 @@ the plan is the [roadmap](../roadmap.md). Plan checkboxes do not establish a cur
 | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | [Tier 1–4 improvements](2026-11-04-tier-improvements.md)                   | Approved implementation index; [evidence record](../evidence/2026-11-04-tier-improvements.md) |
 | [Tier improvements: operational acceptance](2026-11-04-tier-operations.md) | Draft for Josh's review; owner acceptance checklist still open                                |
+| [Tier 7 large audits](2026-11-10-tier-7-large-audits.md)                   | Draft for Josh's approval; no refactor starts until he approves                               |
 
 ## Finished and older plans
 

@@ -64,6 +64,38 @@
   box-shadow: none;
 }
 
+/* Visual QA (10 Nov 2026): Enlarge is a plain button, so it took the page's 16px; it reads at the
+   tab labels' size: 14px on a tablet and 15px from 64rem, as the folder tabs set theirs. */
+@media (min-width: 46.5rem) {
+  .tabButton {
+    font: 500 var(--wf-fs-14) / 20px var(--wf-font);
+  }
+}
+
+@media (min-width: 64rem) {
+  .tabButton {
+    font-size: var(--wf-fs-15);
+  }
+}
+
+/* The smallest phones (320 to 360px): the folder tabs draw More 36px square there, so Filter shows its
+   icon alone. The word stays in the button, visually hidden, so it is still the button's name; a
+   filter that is on still shows as the accent ring. */
+@media (max-width: 22.5rem) {
+  .tabButton {
+    position: relative;
+  }
+
+  .tabButton > :global(span) {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
 /* Phone: the page tabs pin under the header while the page scrolls, as Home's do. */
 @media (max-width: 46.4375rem) {
   .pageTabs {

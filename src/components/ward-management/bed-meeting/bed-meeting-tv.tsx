@@ -64,6 +64,7 @@ import { bedCountText } from "./tv-bed-count-text";
 import { edClinicalRows, wardClinicalRows } from "./tv-clinical-derivations";
 import { EdClinicalTvView, WardClinicalTvView, WardHandoverTvView } from "./tv-clinical-views";
 import { BoardSwitch, LivePulse, tvBoardOf, tvBoardTitle, type TvBoard } from "./tv-board-switch";
+import { LocalSettingsNote } from "@/components/ward-management/shell/local-settings-note";
 import { EdBedSearchTvView, WardLegalTvView, WardObsLeaveTvView, WardTodayTvView } from "./tv-function-views";
 import { MeetingTvTop } from "./bed-meeting-tv-top";
 import topStyles from "./bed-meeting-tv-top.module.css";
@@ -1397,6 +1398,7 @@ export function BedMeetingTvScreen({
                   : "updates on its own, this browser only"
                 : staleWarning}
             </p>
+            <LocalSettingsNote className={styles.sub} testId="bed-meeting-tv-local-settings" />
           </div>
           {/* Note 13 (Josh, 8 Nov 2026): the screen controls stay top right, in the same order, on every
               TV screen, and moving around has its own row below, so changing screen or view never

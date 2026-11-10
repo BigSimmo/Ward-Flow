@@ -17,8 +17,9 @@ import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
-import { stageCopy } from "@/components/ward-management/ward-derivations";
+import { stageCopy, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { edById } from "@/components/ward-management/ward-sites";
+import { edHealthService } from "@/components/ward-management/ward-service-scope";
 import {
   HEALTH_SERVICES,
   type HealthService,
@@ -237,8 +238,9 @@ export function MovementHorizonGantt({
   // Corridor calculations for the rail
   const acceptedPairs = new Set(corridors.map((corridor) => `${corridor.originEdId} ${corridor.acceptedUnitId}`));
   const rankedPairs = useMemo(() => rankCorridorPairs(corridors), [corridors]);
-  // Movements redesign (1 Nov 2026): corridors grouped under the ED they leave from, busiest ED
-  // first, each with its patients split by phase; declines grouped under the ward that said no.
+  // Movements redesign (1 Nov 2026): corridors grouped under the ED they leave from, each with its
+  // patients split by phase; declines grouped under the ward that said no. D-126 (10 Nov 2026): EDs
+  // sit in a fixed health service then ED name order, never busiest first, so each ED keeps its place.
   const edGroups = useMemo(() => {
     const groups = new Map<
       string,
@@ -259,7 +261,16 @@ export function MovementHorizonGantt({
       group.routes.push(pair);
       groups.set(pair.originEdId, group);
     }
-    return [...groups.values()].sort((a, b) => b.total - a.total || a.originEdId.localeCompare(b.originEdId));
+    const serviceRank = (edId: string) => {
+      const service = edHealthService(edId);
+      return service === undefined ? wardServiceOrder.length : wardServiceOrder.indexOf(service);
+    };
+    const edName = (edId: string) => edById(edId)?.name ?? edId;
+    return [...groups.values()].sort(
+      (a, b) =>
+        serviceRank(a.originEdId) - serviceRank(b.originEdId) ||
+        edName(a.originEdId).localeCompare(edName(b.originEdId)),
+    );
   }, [rankedPairs]);
   const corridorPatients = edGroups.reduce((total, group) => total + group.total, 0);
   const declinesByWard = useMemo(() => {
@@ -703,7 +714,7 @@ export function MovementHorizonGantt({
             </div>
 
             {/* Side Corridor Rail */}
-            <aside className={styles.corridorRail} aria-label="Ranked corridors">
+            <aside className={styles.corridorRail} aria-label="Corridors">
               <div className={styles.corridorRailHeader}>
                 <h3>Corridors</h3>
                 <div className={styles.corridorTabs} role="group" aria-label="Corridor kind">
@@ -734,7 +745,7 @@ export function MovementHorizonGantt({
                     </p>
                     {/* Scrolls when the list is long, so it takes a tab stop (axe scrollable-region-focusable). */}
                     {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable area: tabIndex lets keyboard users scroll it */}
-                    <ol className={styles.edGroups} tabIndex={0} aria-label="Accepted corridors by ED, busiest first">
+                    <ol className={styles.edGroups} tabIndex={0} aria-label="Accepted corridors by ED">
                       {edGroups.map((group) => {
                         const ed = edById(group.originEdId);
                         const edPicked =

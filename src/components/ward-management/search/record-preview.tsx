@@ -18,6 +18,7 @@ import {
   referralAddressingStateLabel,
 } from "@/components/ward-management/ward-referrals";
 import { patientDisplayName, patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
+import { aboriginalOrTorresStraitIslanderIdentityLabel } from "@/components/ward-management/ward-patient-aboriginal-status";
 import { calendarDateOf, demoDayZero, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NAME_NOT_RECORDED, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -433,8 +434,10 @@ export function RecordPreview({
               <span className={styles.metaDemographics}>
                 {ageText(patient, activeDate)} · born {patient.dateOfBirth} · {patient.sex ?? "Sex unrecorded"}
               </span>
-              {patient.aboriginalOrTorresStraitIslanderStatus ? (
-                <span className={styles.atsiPill}>Aboriginal (ATSI)</span>
+              {aboriginalOrTorresStraitIslanderIdentityLabel(patient.aboriginalOrTorresStraitIslanderStatus) ? (
+                <span className={styles.atsiPill}>
+                  {aboriginalOrTorresStraitIslanderIdentityLabel(patient.aboriginalOrTorresStraitIslanderStatus)}
+                </span>
               ) : null}
               <span className={styles.metaDivider}>·</span>
               <span className={styles.metaService}>{patient.catchmentCommunityTeam ?? NOT_RECORDED}</span>
@@ -939,8 +942,10 @@ export function RecordPreview({
             <span className={styles.metaDemographics}>
               {ageText(linkedPatient, activeDate)} · {linkedPatient?.sex ?? "Sex unrecorded"} · {summary.stageLabel}
             </span>
-            {linkedPatient?.aboriginalOrTorresStraitIslanderStatus ? (
-              <span className={styles.atsiPill}>Aboriginal (ATSI)</span>
+            {aboriginalOrTorresStraitIslanderIdentityLabel(linkedPatient?.aboriginalOrTorresStraitIslanderStatus) ? (
+              <span className={styles.atsiPill}>
+                {aboriginalOrTorresStraitIslanderIdentityLabel(linkedPatient?.aboriginalOrTorresStraitIslanderStatus)}
+              </span>
             ) : null}
             <span className={styles.metaDivider}>·</span>
             <span className={styles.metaService}>{summary.departmentText}</span>

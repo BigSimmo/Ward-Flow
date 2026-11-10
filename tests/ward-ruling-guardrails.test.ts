@@ -32,7 +32,7 @@ const GUARDS: Guard[] = [
     ruling: "D-71",
     source: "docs/ward-flow/decisions.md",
     entry: /^## D-71\. /mu,
-    guards: ["tests/ward-never-build-drift-guard.test.ts"],
+    guards: ["tests/ward-never-build-drift-guard.test.ts", "tests/ward-never-build-sort-inventory.test.ts"],
   },
   {
     ruling: "D-72",

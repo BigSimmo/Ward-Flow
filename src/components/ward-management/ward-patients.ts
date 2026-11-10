@@ -36,7 +36,7 @@ import {
  * field called `nextOfKinContact` or `progressNotes` fails even with a plausible decision id beside
  * it. Silence is not permission, and the one thing a widening must not do is widen by implication.
  *
- * OWNER RULING R-2026-09-04-A, 2026-09-04 (`docs/ward-flow/owner-rulings-2026-09-04.md` section A),
+ * OWNER RULING R-2026-09-04-A, 2026-09-04 (`docs/history/archive/dated-notes/owner-rulings-2026-09-04.md` section A),
  * widened the record beyond PD-1's five fields: address, suburb, GP, catchment community team,
  * legal status, interpreter/preferred language, Aboriginal or Torres Strait Islander status, plus
  * two the owner delegated and were selected narrowly — sex/gender (already carried on the

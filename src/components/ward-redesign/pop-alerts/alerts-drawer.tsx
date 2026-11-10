@@ -22,7 +22,8 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState, type Dispatch, type MouseEvent, type RefObject } from "react";
+import { useEffect, useId, useRef, useState, type MouseEvent, type RefObject } from "react";
+import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import { WARD_ALERTS_HREF, WARD_HOME_HREF, WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -37,7 +38,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
-import type { WardFlowEvent, WardFlowRole } from "@/components/ward-management/ward-flow-events";
+import type { WardFlowRole } from "@/components/ward-management/ward-flow-events";
 import {
   inboxItemCompletionState,
   type InboxAcknowledgement,
@@ -60,7 +61,10 @@ import {
 import { InboxRowStatus, InboxSnoozeControl, snoozedLine } from "@/components/ward-management/inbox-snooze-control";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { DISCARD_ESCALATION, useEscalationDiscard } from "@/components/ward-management/use-escalation-discard";
-import { AcknowledgeVisibleButton } from "@/components/ward-management/tasks-acknowledge-visible";
+import {
+  AcknowledgeVisibleButton,
+  acknowledgeVisibleRow,
+} from "@/components/ward-management/tasks-acknowledge-visible";
 
 import styles from "@/components/ward-redesign/pop-alerts/alerts-drawer.module.css";
 import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
@@ -78,7 +82,7 @@ type AlertsDrawerProps = {
   configuration?: WardConfiguration;
   role: WardFlowRole;
   now: Instant;
-  dispatch: Dispatch<WardFlowEvent>;
+  dispatch: WardCommandDispatch;
   onClose: () => void;
   /** The shell consults this drawer's own draft decision before closing its outer Sheet. */
   dismissalGuardRef?: RefObject<((retry?: () => void) => boolean) | null>;
@@ -480,8 +484,8 @@ export function AlertsDrawer({
     dispatch({ type: "UNSNOOZE_INBOX_ITEM", role, now, inboxItemId });
   }
 
-  function acknowledgeAllFacts(ids: readonly string[]) {
-    ids.forEach((inboxItemId) => dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId }));
+  function acknowledgeOne(inboxItemId: string) {
+    return dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId });
   }
 
   // Snoozed rows leave the active list and come back by themselves when their time passes.
@@ -1479,8 +1483,14 @@ export function AlertsDrawer({
             <span id={`${sectionId}-summary`}>Seen is not resolved</span>
           )}
           <AcknowledgeVisibleButton
-            ids={visibleUnacknowledged.map((item) => item.id)}
-            onAcknowledge={acknowledgeAllFacts}
+            rows={visibleUnacknowledged.map((item) => {
+              const subject =
+                records?.movements.find((row) => row.id === item.movementId) ??
+                (item.admissionId ? records?.admissions?.find((row) => row.id === item.admissionId) : undefined) ??
+                item.plannedAdmission;
+              return acknowledgeVisibleRow(item, records ? resolveSubjectPatient(subject, records) : undefined);
+            })}
+            onAcknowledge={acknowledgeOne}
             classes={styles}
           />
         </div>

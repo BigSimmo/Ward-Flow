@@ -35,7 +35,7 @@ import { edById } from "@/components/ward-management/ward-sites";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { declineReasonLabels } from "@/components/ward-management/movements/movement-workspace-derivations";
-import { bedStates, readyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { bedStates, readyBedsNow, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 import { communityOriginLabel, sourceWardName } from "@/components/ward-management/ward-movement-origin";
 import { currentLegalDueAt, formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
@@ -76,6 +76,22 @@ export function handoverAt(id: HandoverShiftId, now: Instant): Instant {
 /** The next handover still to come, which after the last one of the day is tomorrow morning's. */
 export function defaultHandoverShift(now: Instant): HandoverShiftId {
   return HANDOVER_SHIFTS.find((shift) => handoverAt(shift.id, now) > now)?.id ?? "am";
+}
+
+/** How long after a handover starts the Handover page still opens on it (master audit M19, D-129). */
+export const JUST_HELD_HANDOVER_MINUTES = 30;
+
+/**
+ * The handover the Handover page opens on. Master audit M19 (D-129): for the first 30 minutes after
+ * 07:00, 15:00 and 23:00 it is the handover just held, so a note written at 06:58 is still counted
+ * New and shown in "Since" for the shift reading it at 07:01. Otherwise it is the next one to come.
+ */
+export function openingHandoverShift(now: Instant): HandoverShiftId {
+  const minute = minuteOfDay(now);
+  const justHeld = HANDOVER_SHIFTS.find(
+    (shift) => minute >= shift.minute && minute - shift.minute < JUST_HELD_HANDOVER_MINUTES,
+  );
+  return justHeld?.id ?? defaultHandoverShift(now);
 }
 
 export function handoverHasPassed(id: HandoverShiftId, now: Instant): boolean {
@@ -281,7 +297,7 @@ export function toHandoverRow(
     legalStatus: movement.legalStatus,
     formCode: movement.legalForm?.code,
     formDueAt: currentLegalDueAt(movement),
-    formEnded: movement.legalForm?.endedBy !== undefined || formProgression(movement) !== undefined,
+    formEnded: movement.legalForm?.endedBy !== undefined || formProgression(movement)?.ended === true,
     destinationStatus:
       accepted === undefined && movement.referredUnitIds.length === 0
         ? sender === null
@@ -777,6 +793,7 @@ export function toHandoverWard(
   admissions: Admission[],
   now: Instant,
   bedReleases: BedRelease[] = [],
+  holds: readonly ReservationReferral[] = [],
 ): HandoverWard {
   const here = admissions.filter((admission) => admission.unitId === unit.id && bedIsOccupied(admission));
   const dayEnd = now - minuteOfDay(now) + MINUTES_PER_DAY;
@@ -789,12 +806,12 @@ export function toHandoverWard(
     occupied: here.length,
     empty: unit.empty.value,
     // Audit 6 (Josh, 20 Oct 2026): the one ready figure, leaving out beds pulled for an incoming patient.
-    ready: readyBedsNow(unit, admissions, bedReleases),
+    ready: readyBedsNow(unit, admissions, bedReleases, holds),
     pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
     confirmedAt: unit.empty.confirmedAt,
     staleAfter: unit.empty.staleAfterMinutes,
     // Audit 24-4 NA2-03: the Pulled box Capacity and Home print, never closed beds.
-    held: bedStates(unit, admissions, bedReleases, []).pulled,
+    held: bedStates(unit, admissions, bedReleases, [], holds).pulled,
     longStays: here.filter((admission) => (daysInBed(admission, now) ?? 0) >= CLINICAL_VALUES.longStayPrompt.value)
       .length,
     pastEdd: here.filter((admission) => admission.expectedDischargeAt !== null && admission.expectedDischargeAt < now)
@@ -807,6 +824,20 @@ export function toHandoverWard(
     ).length,
     holds: here.filter((admission) => admission.blockReason !== null).length,
   };
+}
+
+/**
+ * D-126 (Josh, 10 Nov 2026): handover lists wards by health service, each service's wards A to Z by
+ * name, never most ready beds first. Desktop and phone handover both read this, so they match.
+ */
+export function wardsByService<W extends Pick<HandoverWard, "name" | "service">>(
+  wards: readonly W[],
+): { service: W["service"]; wards: W[] }[] {
+  const services = [...new Set(wards.map((ward) => ward.service))];
+  return services.map((service) => ({
+    service,
+    wards: wards.filter((ward) => ward.service === service).sort((a, b) => a.name.localeCompare(b.name)),
+  }));
 }
 
 export const wardIsStale = (ward: HandoverWard, now: Instant) => now - ward.confirmedAt > ward.staleAfter;

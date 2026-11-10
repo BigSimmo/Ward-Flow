@@ -99,6 +99,12 @@ describe("clinical values file", () => {
       // D-106 (Josh, 9 Nov 2026): moved into the register, synthetic, no clinical decision yet.
       redRowSnoozeCap: 60,
       supportNotificationLookback: 4320,
+      // D-122 (Josh, 10 Nov 2026): the forecast alerts and the rail's handover prompt join the register,
+      // synthetic, at the figures they already ran on.
+      forecastShortAlert: 3,
+      forecastEdRiskLead: 720,
+      forecastWorseAlert: 2,
+      handoverDuePrompt: 15,
       lateArrivalGrace: 60,
       silentWardFirstReminder: 120,
       silentWardSecondReminder: 240,
@@ -253,6 +259,11 @@ function typedThresholdsIn(file: string, source: string): string[] {
  */
 const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> = [
   {
+    file: "handover/handover-model.ts",
+    name: "JUST_HELD_HANDOVER_MINUTES",
+    why: "how long after a handover starts the Handover page still opens on it (master audit M19, D-129); which page opens, never a clinical limit",
+  },
+  {
     file: "review/todays-review-derivations.ts",
     name: "REPEAT_DECLINE_THRESHOLD",
     why: "how many same-reason declines from one ward in a day Today's review raises for the bed meeting; a review prompt, never a clinical limit",
@@ -314,8 +325,6 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
   { file: "ward-operational-defaults.ts", name: "ED_TREND_STEP_MINUTES", why: "chart step" },
   { file: "ward-operational-defaults.ts", name: "SNOOZE_MAX_MINUTES", why: "software snooze bound" },
   { file: "ward-operational-defaults.ts", name: "WAIT_FILTER_SHORT_MINUTES", why: "a search filter band" },
-  { file: "ward-operational-defaults.ts", name: "AFTER_HOURS_START_HOUR", why: "a clock time" },
-  { file: "ward-operational-defaults.ts", name: "AFTER_HOURS_END_HOUR", why: "a clock time" },
   { file: "ward-operational-defaults.ts", name: "MORNING_HANDOVER_MINUTES", why: "a clock time" },
   { file: "ward-operational-defaults.ts", name: "BED_MEETING_MINUTES", why: "a clock time" },
   { file: "ward-operational-defaults.ts", name: "READY_AT_AHEAD_LIMIT_MINUTES", why: "input bound on a typed time" },
@@ -344,11 +353,6 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
   { file: "ward-bed-availability.ts", name: "LATE_AFTERNOON_MINUTES", why: "a day-part bin" },
   { file: "ward-board-derivations.ts", name: "ARROW_HORIZON_DAYS", why: "how far ahead the board draws" },
   { file: "forecast/ed-access-risk.ts", name: "RELEASE_LOOKAHEAD_DAYS", why: "how far ahead the ED risk card looks" },
-  {
-    file: "ward-operational-defaults.ts",
-    name: "FORECAST_ED_RISK_LEAD_MINUTES",
-    why: "forecast alert lead time, set in Settings",
-  },
 ];
 
 /** Synthetic fixtures build made-up records; their times are data, not thresholds.

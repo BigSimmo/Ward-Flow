@@ -458,6 +458,7 @@ describe("the no-4A-recorded notice beside the booking control", () => {
                   now: NOW_ANCHOR,
                   movementId: created.id,
                   unitId: "rph-adult-secure",
+                  actingUnitId: "rph-adult-secure",
                   overrideReason: OVERRIDE_REASONS[0],
                 })
               }
@@ -474,6 +475,7 @@ describe("the no-4A-recorded notice beside the booking control", () => {
                   now: NOW_ANCHOR,
                   movementId: created.id,
                   unitId: "rph-adult-secure",
+                  actingUnitId: "rph-adult-secure",
                 })
               }
             >

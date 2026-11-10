@@ -26,6 +26,7 @@ import {
 } from "@/components/ward-management/ward-movement-bed-hold";
 import { isOpen, unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import { byServiceThenName } from "@/components/ward-management/ward-derivations-shortlist";
 import type {
   Cohort,
   HealthService,
@@ -189,7 +190,8 @@ export function bedKindGaps(
 /**
  * Capacity issue 1 (Josh, 3 Nov 2026): the people and wards behind one Mismatch card, so the card
  * can open on what to act on. The same filters as `bedKindGaps`, so the pop-up's lists always add up
- * to the card's "waiting" and "ready that fit" figures. Wards are most fitting beds first.
+ * to the card's "waiting" and "ready that fit" figures. Wards run in the fixed fit-list order, health
+ * service then ward name (D-71, D-110, D-126), never most fitting beds first.
  */
 export function bedKindBreakdown(
   kind: BedKindId,
@@ -204,7 +206,7 @@ export function bedKindBreakdown(
   const wards = readySupply(units, admissions, [...movements, ...referrals])
     .map(({ unit, ready, held }) => ({ unit, beds: bedsOfKindAtUnit(unit, kind, ready, held) }))
     .filter((entry) => entry.beds > 0)
-    .sort((x, y) => y.beds - x.beds || x.unit.name.localeCompare(y.unit.name));
+    .sort((x, y) => byServiceThenName(x.unit, y.unit));
   return { waiting, wards };
 }
 

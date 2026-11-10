@@ -82,6 +82,7 @@ See also [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md), which pairs each 
 
 ## API routes
 
+- `/api/client-error` - Name-free browser error counts (TE-04). Source: `src/app/api/client-error/route.ts`.
 - `/api/health` - Railway deployment healthcheck. Source: `src/app/api/health/route.ts`.
 - `/api/local-project-id` - Local project identity guard. Source: `src/app/api/local-project-id/route.ts`.
 - `/api/session` - Route discovered from app directory Source: `src/app/api/session/route.ts`.

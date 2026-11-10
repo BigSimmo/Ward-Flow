@@ -50,6 +50,7 @@ import {
   obsLong,
   nextStep,
   wardIsStale,
+  wardsByService,
   type HandoverPill,
   type HandoverRow,
   type HandoverShiftId,
@@ -369,7 +370,7 @@ function WardRow({ ward, incoming, now }: { ward: HandoverWard; incoming: number
             <span className={styles.stale}>
               <StatusGlyph tone="warning" size={8} />
               {durMinutes(now - ward.confirmedAt)} ago
-              <SrOnly>, feed over 15 min</SrOnly>
+              <SrOnly>, feed past its time limit</SrOnly>
             </span>
           ) : null}
         </span>
@@ -384,17 +385,13 @@ function WardRow({ ward, incoming, now }: { ward: HandoverWard; incoming: number
 
 /** Beds (v10 phone): wards grouped by service, each with what is ready, held and incoming. */
 function BedsView({ rows, wards, now }: { rows: HandoverRow[]; wards: HandoverWard[]; now: Instant }) {
-  const services = [...new Set(wards.map((ward) => ward.service))];
   const incomingTo = (ward: HandoverWard) => rows.filter((row) => row.to?.unitId === ward.id).length;
   return (
     <div className={styles.beds} data-testid="ward-handover-phone-beds">
       {wards.length === 0 ? <p className={styles.empty}>No ward in this scope.</p> : null}
       {wards.length ? (
         <div className={styles.listCard}>
-          {services.map((service) => {
-            const list = wards
-              .filter((ward) => ward.service === service)
-              .sort((a, b) => b.ready - a.ready || a.name.localeCompare(b.name));
+          {wardsByService(wards).map(({ service, wards: list }) => {
             const ready = list.reduce((total, ward) => total + ward.ready, 0);
             return (
               <section key={service} className={styles.sec} aria-label={String(service)}>

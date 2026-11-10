@@ -52,7 +52,7 @@ test("archiving: an engine world past the limit splits into a live world under t
   assert.deepEqual(engine.archiveClosed(world, start).archived, [], "nothing is archived before 30 days");
   const { world: kept, archived } = engine.archiveClosed(world, monthLater);
   assert.ok(archived.length >= padded);
-  assert.ok(JSON.stringify(kept).length < WARN_WORLD_BYTES);
+  assert.ok(Buffer.byteLength(JSON.stringify(kept), "utf8") < WARN_WORLD_BYTES);
   assert.ok(engine.validWorld(JSON.parse(JSON.stringify(kept))));
 });
 
@@ -109,7 +109,7 @@ test(
       const after = await store.read(actor);
       assert.equal(after.revision, 7);
       assert.ok(after.archived >= padded);
-      assert.ok(JSON.stringify(after.payload).length < WARN_WORLD_BYTES);
+      assert.ok(Buffer.byteLength(JSON.stringify(after.payload), "utf8") < WARN_WORLD_BYTES);
       assert.ok(!after.payload.state.movements.some((movement) => movement.id.includes("-copy-")));
 
       // History reads every archived record back for the whole network.

@@ -50,6 +50,7 @@ function decline(world: World, movementId: World["state"]["movements"][number]["
     role: "ward",
     movementId,
     unitId,
+    actingUnitId: unitId,
     reason: "belongs_to_another_service",
     now: NOW_ANCHOR,
   });

@@ -134,7 +134,9 @@ describe("PillTabs", () => {
     const tabs = within(list).getAllByRole("tab");
     expect(tabs.map((tab) => tab.tabIndex)).toEqual([0, -1, -1]);
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
-    expect(tabs[1]).toHaveAttribute("aria-controls", "rec-panel-hist");
+    // Panels render only when chosen, so only the chosen tab names its panel.
+    expect(tabs[0]).toHaveAttribute("aria-controls", "rec-panel-now");
+    expect(tabs[1]).not.toHaveAttribute("aria-controls");
     fireEvent.keyDown(list, { key: "ArrowRight" });
     expect(within(list).getByRole("tab", { name: /History/ })).toHaveAttribute("aria-selected", "true");
     fireEvent.keyDown(list, { key: "End" });

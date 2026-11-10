@@ -419,6 +419,7 @@
 
 .sideTableWrap {
   overflow-x: auto;
+  overflow-y: hidden;
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-md);
 }
@@ -718,6 +719,7 @@
     min-width: 0;
     max-width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
   }
 
@@ -886,15 +888,6 @@
  * the health services and Reads alike are separate pill chips, the picked one edged in the accent.
  * (31 Oct 2026: the hero's Guide and Raise referral are Home's hero pills, phone-rows.module.css.) */
 @media (max-width: 46.4375rem) {
-  .heroActions {
-    width: 100%;
-    gap: var(--wf-s-2);
-  }
-
-  .phonePanes :global([role="radiogroup"]) {
-    width: 100%;
-  }
-
   .toolbar > .searchBox {
     height: 44px;
     min-height: 44px;

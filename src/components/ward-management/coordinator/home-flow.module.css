@@ -7,6 +7,7 @@
   min-width: 0;
   max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .late {
@@ -86,11 +87,11 @@
   padding-inline: 0;
 }
 
-.stagePills.stagePills [role="tab"] {
+.stagePills.stagePills button {
   color: var(--wf-ink-2);
 }
 
-.stagePills.stagePills [role="tab"]:hover {
+.stagePills.stagePills button:hover {
   color: var(--wf-ink-1);
   background: color-mix(in srgb, var(--wf-ink-1) 5%, transparent);
 }
@@ -111,7 +112,7 @@
 }
 
 /* The chosen stage is marked with a soft fill, lighter than the raised primary tab above it. */
-.stagePills.stagePills [aria-selected="true"] {
+.stagePills.stagePills [aria-pressed="true"] {
   background: var(--wf-track);
   box-shadow: none;
   outline: 1px solid var(--wf-line);
@@ -119,7 +120,7 @@
 }
 
 /* Keyboard focus keeps the kit's 2px ring on the chosen stage too. */
-.stagePills.stagePills [aria-selected="true"]:focus-visible {
+.stagePills.stagePills [aria-pressed="true"]:focus-visible {
   outline: none;
   box-shadow:
     inset 0 0 0 2px var(--wf-focus-gap),

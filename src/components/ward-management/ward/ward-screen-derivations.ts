@@ -2,7 +2,11 @@
 // draws. Split out of `ward-screen.tsx` (18 October 2026) to keep that file under the line cap.
 
 import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
-import { currentLegalDueAt, formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
+import {
+  currentLegalDueAt,
+  formProgression,
+  formProgressionPhrase,
+} from "@/components/ward-management/legal-forms/legal-form-progression";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
 import {
@@ -221,7 +225,7 @@ export function wardBedRoster({
     // stay's authority, so the card names the form still to record, as the person page does.
     const progression = patientLegalForm ? formProgression(linkedMovement) : undefined;
     const legalStatusLabel = progression
-      ? `Form ${progression.nextCode} not recorded (Form ${progression.endedCode} ended ${progression.endedWhen})`
+      ? `Form ${progression.nextCode} not recorded (${formProgressionPhrase(progression)})`
       : patientLegalForm
         ? `Form ${patientLegalForm.code}${patientLegalStatus ? ` ${patientLegalStatus}` : ""}`
         : patientLegalStatus;

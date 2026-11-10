@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 // The backend's payload builder, loaded by address so the website's type check does not take in the
 // untyped backend module. The tests below run its real output through the worker.
-type PushPayload = { title: string; body: string; url: string };
+type PushPayload = { title: string; body: string; url: string; tag: string };
 const { pushPayload } = (await import(new URL("../backend/ward-flow/push.mjs", import.meta.url).href)) as {
   pushPayload: (alerts: readonly { id: string; site: string | null; kind?: string }[]) => PushPayload;
 };
@@ -313,6 +313,11 @@ describe("what a push may show (PS-13)", () => {
   const FALLBACK = { title: "Ward Flow: act now", body: "Open Alerts to review. Synthetic demo data." };
 
   async function shown(data: unknown) {
+    const { title, options } = await notified(data);
+    return { title, body: options.body, url: options.data.url };
+  }
+
+  async function notified(data: unknown) {
     const listeners: Record<string, (event: unknown) => void> = {};
     const notes: { title: string; options: { body: string; tag: string; data: { url: string } } }[] = [];
     runInNewContext(WORKER_SOURCE, {
@@ -333,8 +338,23 @@ describe("what a push may show (PS-13)", () => {
     listeners.push({ data: { json: () => data }, waitUntil: (promise: Promise<unknown>) => (work = promise) });
     await work;
     expect(notes).toHaveLength(1);
-    return { title: notes[0].title, body: notes[0].options.body, url: notes[0].options.data.url };
+    return notes[0];
   }
+
+  it("shows each kind in its own slot, so a transport job never replaces a red alert (M158)", async () => {
+    const tags: string[] = [];
+    for (const kind of ["act-now", "job", "community"]) {
+      const payload = pushPayload([{ id: `synthetic-${kind}`, site: "Royal Perth Hospital", kind }]);
+      const { options } = await notified(payload);
+      expect(options.tag).toBe(payload.tag);
+      tags.push(options.tag);
+    }
+    expect(new Set(tags).size).toBe(3);
+    // Only the server's own tags pick a slot; anything else, or none, is the act-now slot.
+    const good = pushPayload([{ id: "x", site: "Royal Perth Hospital" }]);
+    for (const tag of [undefined, "Synthetic Person", "ward-flow-other", 7])
+      expect((await notified({ ...good, tag })).options.tag).toBe("ward-flow-act-now");
+  });
 
   it.each([
     ["act now, one site", [{ id: "bed-pull-WF-004", site: "Royal Perth Hospital" }]],

@@ -103,8 +103,10 @@ export const actionLabels: Record<AuditEvent["action"], string> = {
   RECORD_PATIENT_DISCHARGE: "Record patient discharge",
   OPEN_DISCHARGE_RECORD: "Open discharge record",
   BREAK_GLASS: "Break glass",
+  ACCESS_COVER: "Cover given",
   REVIEW_AUDIT_EVENT: "Review event",
   SET_CONFIGURATION: "Change configuration",
+  ACKNOWLEDGE_INBOX_ITEM: "Acknowledge action item",
   TAKE_INBOX_ITEM_OWNERSHIP: "Take action item",
   RELEASE_INBOX_ITEM_OWNERSHIP: "Release action item",
   SNOOZE_INBOX_ITEM: "Snooze action item",
@@ -156,6 +158,7 @@ export const UNDONE_STEP_LABELS: Partial<Record<string, string>> = {
   TRANSPORT_EN_ROUTE: "Transport en route",
   PATIENT_COLLECTED: "Patient collected",
   PATIENT_ARRIVED: "Patient arrived",
+  CONFIRM_BED_RELEASE: "Discharge sign-off",
 };
 export const reviewLabels = { reviewed: "Reviewed", "follow-up-required": "Follow-up required" } as const;
 export const display = (value: string | number | boolean | null | undefined) =>
@@ -218,6 +221,9 @@ export function subjectLabel(event: AuditEvent, patientOf: ReturnType<typeof use
     case "unresolved":
       if (event.action === "ARCHIVE_PATIENT")
         return event.details.umrn === null ? "Archived record" : `Archived record, UMRN ${event.details.umrn}`;
+      // M58: a cover given is about a ward or ED, not a record.
+      if (event.action === "ACCESS_COVER")
+        return event.details.cover ? `Cover of ${event.details.cover}` : "Cover not in this view";
       return event.action === "BREAK_GLASS" ? "Record not in this view" : "Unresolved record";
   }
 }

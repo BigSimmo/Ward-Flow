@@ -152,20 +152,6 @@
   padding: var(--ward-space-16) var(--ward-space-16) var(--ward-space-24);
 }
 
-.prototypeBadge {
-  align-self: flex-start;
-  margin: 0;
-  border: var(--ward-space-1) solid var(--warning-border);
-  border-radius: var(--radius-sm);
-  background: var(--ward-warning-soft);
-  padding: var(--ward-space-4) var(--ward-space-8);
-  color: var(--ward-warning);
-  font-size: var(--t-0);
-  font-weight: 700;
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-}
-
 .header {
   display: flex;
   flex-direction: column;
@@ -2366,20 +2352,6 @@
   white-space: nowrap;
 }
 
-.prototypeBadge {
-  align-self: flex-start;
-  margin: 0 0 0.75rem;
-  border: 1px solid var(--warn);
-  border-radius: var(--wf-r-tag);
-  background: var(--warn-soft);
-  padding: 0.25rem 0.625rem;
-  color: var(--warn);
-  font-size: var(--t-0);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
 .workBand,
 .gridColumn,
 .flowColumn,
@@ -2517,46 +2489,6 @@
   flex-wrap: wrap;
 }
 
-.wardScreenNav {
-  display: inline-flex;
-  align-items: center;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--wf-r-track);
-  padding: 2px;
-  gap: 2px;
-}
-
-.wardScreenNav a {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.75rem;
-  border-radius: var(--wf-r-seg-item);
-  color: var(--muted);
-  font-size: var(--t-1);
-  font-weight: 500;
-  text-decoration: none;
-  transition:
-    color 0.15s,
-    background 0.15s;
-}
-
-.wardScreenNav a:hover {
-  color: var(--ink);
-  background: var(--surface-2);
-}
-
-.wardScreenNav span[aria-current="page"] {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.75rem;
-  border-radius: var(--wf-r-seg-item);
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  font-size: var(--t-1);
-  font-weight: 600;
-}
-
 .topDailySheetButton {
   display: inline-flex;
   align-items: center;
@@ -2614,84 +2546,8 @@
   transform: rotate(180deg);
 }
 
-.wardScreenNav {
-  display: inline-flex;
-  gap: 0.125rem;
-  padding: 0.125rem;
-  border-radius: var(--r2);
-  background: var(--sunk);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-
-.wardScreenNav a,
-.wardScreenNav span {
-  display: inline-flex;
-  min-height: var(--ward-tap);
-  align-items: center;
-  border-radius: calc(var(--r2) - 0.125rem);
-  padding: 0.375rem 0.75rem;
-  color: var(--muted);
-  font-size: var(--t-1);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.wardScreenNav a:hover,
-.wardScreenNav span[aria-current="page"] {
-  background: var(--surface);
-  color: var(--ink);
-}
-
-.wardScreenNav span[aria-current="page"] {
-  box-shadow: inset 0 0 0 1px var(--accent);
-}
-
-.wardSwitch {
-  position: relative;
-}
-
-.wardSwitch > summary {
-  display: inline-flex;
-  min-height: var(--ward-tap);
-  align-items: center;
-  gap: 0.5rem;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r2);
-  padding: 0.375rem 0.75rem;
-  cursor: pointer;
-  list-style: none;
-  color: var(--ink);
-  font-size: var(--t-2);
-  font-weight: 600;
-}
-
-.wardSwitch > summary::-webkit-details-marker {
-  display: none;
-}
-
-.wardSwitch > summary::after {
-  width: 0.375rem;
-  height: 0.375rem;
-  border-right: 1px solid currentColor;
-  border-bottom: 1px solid currentColor;
-  content: "";
-  transform: rotate(45deg) translate(-1px, -1px);
-}
-
 .wardSwitchIcon {
   display: none;
-}
-
-.wardSwitch > summary .wardSwitchCount {
-  font-family: var(--mono);
-  font-size: var(--t-1);
-  font-weight: 500;
-}
-
-.wardSwitch[open] > summary {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  box-shadow: inset 0 0 0 1px var(--accent);
 }
 
 .wardSwitchBody {
@@ -3819,12 +3675,6 @@
     0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
 }
 
-.ph {
-  box-shadow:
-    0 4px 6px -1px color-mix(in srgb, var(--ink) 4%, transparent),
-    0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
-}
-
 .detailClose,
 .leavingButton,
 .sheetFoldSummary {
@@ -3955,24 +3805,14 @@
     position: static;
   }
 
-  .wardScreenNav,
-  .wardSwitch > summary,
   .filterSet,
   .orderControl,
   .orderControl select {
     width: 100%;
   }
 
-  .wardScreenNav a,
-  .wardScreenNav span,
   .filterSet button {
     min-height: var(--spacing-tap);
-  }
-
-  .wardScreenNav a,
-  .wardScreenNav span {
-    flex: 1 1 50%;
-    justify-content: center;
   }
 
   .filterSet button {
@@ -4014,7 +3854,6 @@
   .sheetFold,
   .bed,
   .filterSet,
-  .wardScreenNav,
   .wardSwitchBody {
     border-color: CanvasText;
   }
@@ -4038,7 +3877,6 @@
     padding: 0;
   }
 
-  .prototypeBadge,
   .screenName {
     position: static;
     width: auto;
@@ -4048,10 +3886,6 @@
     clip: auto;
     clip-path: none;
     white-space: normal;
-  }
-
-  .prototypeBadge {
-    display: block;
   }
 
   .workBand,
@@ -4300,28 +4134,6 @@
     width: 100%;
     height: 100%;
   }
-}
-
-.toast {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  z-index: var(--z-toast);
-  background: var(--ink);
-  color: var(--surface);
-  padding: 0.75rem 1.25rem;
-  border-radius: var(--r1);
-  box-shadow: var(--lift);
-  font-family: var(--body);
-  font-size: var(--t-2);
-  font-weight: 500;
-  pointer-events: none;
-}
-
-/* Walk-through WT-10: a refusal carries the warning glyph before its words. */
-.toastGlyph {
-  margin-right: 0.5rem;
-  vertical-align: middle;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -4666,33 +4478,6 @@
   font-weight: 600;
 }
 
-.recoveryContainer {
-  margin-top: var(--ward-space-16);
-}
-
-.recoveryLink {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--ward-tap);
-  padding: 0 var(--ward-space-16);
-  border-radius: var(--wb-control-radius);
-  background: var(--primary);
-  color: var(--surface);
-  font-size: var(--t-1);
-  font-weight: 600;
-  text-decoration: none;
-  transition: opacity 0.15s ease;
-}
-
-.recoveryLink:hover {
-  opacity: 0.9;
-}
-
-.recoveryLink:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
 /*
  * v6 bed board (design/pages-v6/WardBoard.png), screen only: the printed sheet keeps its own
  * layout. The board reads the v6 tokens through the shell names its rules use, so it follows the v6
@@ -4820,37 +4605,7 @@
     margin-bottom: var(--wf-s-3);
   }
 
-  .wardScreenNav {
-    gap: 2px;
-    padding: 3px;
-    border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
-    border-radius: var(--wf-r-md);
-    background: color-mix(in srgb, var(--wf-hero-edge) 60%, transparent);
-    box-shadow: none;
-  }
-
-  .wardScreenNav a,
-  .wardScreenNav span {
-    min-height: 2rem;
-    padding: 0 var(--wf-s-3);
-    border-radius: var(--wf-r-sm);
-    color: var(--wf-hero-ink-2);
-    font-size: var(--wf-fs-13);
-  }
-
-  .wardScreenNav a:hover {
-    background: transparent;
-    color: var(--wf-hero-ink);
-  }
-
-  .wardScreenNav span[aria-current="page"] {
-    background: var(--wf-hero-ink);
-    box-shadow: none;
-    color: var(--wf-hero-2);
-  }
-
-  .topDailySheetButton,
-  .wardSwitch > summary {
+  .topDailySheetButton {
     min-height: 2rem;
     height: auto;
     padding: 0 var(--wf-s-3);
@@ -4869,17 +4624,8 @@
     color: var(--wf-hero-ink);
   }
 
-  .wardSwitch > summary .wardSwitchCount {
-    color: var(--wf-hero-ink-2);
-  }
-
   /* Layout sweep WARD-11: open, Change ward keeps the band's dark fill and white words; the
      light accent fill left its white label almost invisible. */
-  .wardSwitch[open] > summary {
-    border-color: color-mix(in srgb, var(--wf-hero-ink) 40%, transparent);
-    background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
-    box-shadow: none;
-  }
 
   .triageFigures {
     grid-template-columns: repeat(10, minmax(0, 1fr));
@@ -5063,10 +4809,7 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .wardScreenNav a,
-    .wardScreenNav span,
-    .topDailySheetButton,
-    .wardSwitch > summary {
+    .topDailySheetButton {
       min-height: 3rem;
     }
   }
@@ -5777,73 +5520,7 @@
     flex: 0 0 auto;
   }
 
-  .screen .wardScreenNav {
-    display: flex;
-    width: 100%;
-    box-sizing: border-box;
-    gap: 2px;
-    padding: var(--wf-s-1);
-    border: 1px solid var(--wf-line);
-    border-radius: var(--wf-r-track);
-    background: var(--wf-track);
-    box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
-  }
-
-  .screen .wardScreenNav a,
-  .screen .wardScreenNav span {
-    flex: 1 1 auto;
-    justify-content: center;
-    min-width: 0;
-    min-height: var(--spacing-tap, 3rem);
-    padding: 0 var(--wf-s-2);
-    border-radius: var(--wf-r-seg-item);
-    background: transparent;
-    box-shadow: none;
-    color: var(--wf-ink-2);
-    font-size: var(--wf-fs-13);
-    font-weight: 500;
-    white-space: nowrap;
-  }
-
-  .screen .wardScreenNav span[aria-current="page"] {
-    background: var(--wf-surface);
-    color: var(--wf-ink-1);
-    font-weight: 600;
-    box-shadow: var(--wf-e-sel);
-  }
-
-  .screen .wardSwitch > summary {
-    justify-content: center;
-    width: var(--spacing-tap, 3rem);
-    min-height: var(--spacing-tap, 3rem);
-    padding: 0;
-    border: 1px solid var(--wf-line-2);
-    border-radius: var(--wf-r-ctl);
-    background: var(--wf-surface);
-    color: var(--wf-ink-1);
-  }
-
-  .screen .wardSwitch > summary::after {
-    display: none;
-  }
-
-  .screen .wardSwitch .wardSwitchIcon {
-    display: block;
-  }
-
   /* Still the button's name for a screen reader, just not drawn. */
-  .screen .wardSwitch .wardSwitchLabel {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
-  .screen .wardSwitch .wardSwitchCount {
-    display: none;
-  }
 
   .screen .triageFigures {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5944,49 +5621,6 @@
   }
 }
 
-/* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
-   with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
-   tablet keep the toast above. */
-@media (max-width: 46.4375rem) {
-  .toast {
-    --toast-bg: light-dark(
-      color-mix(in srgb, var(--wf-ink-1) 92%, transparent),
-      color-mix(in srgb, var(--wf-track) 97%, transparent)
-    );
-    --toast-ink: light-dark(var(--wf-surface), var(--wf-ink-1));
-    --toast-ring: light-dark(transparent, var(--wf-line-2));
-    position: fixed;
-    top: auto;
-    right: 12px;
-    bottom: 92px;
-    left: 12px;
-    width: fit-content;
-    max-width: calc(100% - 24px);
-    margin: 0 auto;
-    transform: none;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-height: 44px;
-    box-sizing: border-box;
-    padding: 0 14px;
-    border: 0;
-    border-radius: var(--wf-r-lg);
-    background: var(--toast-bg);
-    box-shadow:
-      0 0 0 1px var(--toast-ring),
-      var(--wf-e2);
-    color: var(--toast-ink);
-    font: 500 var(--wf-fs-13) / 18px var(--wf-font);
-    text-align: left;
-    white-space: normal;
-  }
-  /* A sheet or dialog is open: sit higher so its footer buttons stay clear. */
-  :global(html:has([role="dialog"][aria-modal="true"])) .toast {
-    bottom: 136px;
-  }
-}
-
 /* Device audit, 11 Oct 2026: the hero's "Show shift brief" is the one way to open the brief, so
    on screen the foot bar shows only while the brief is open (to hide it again). Print is untouched:
    the print rules still force the sheet out. */
@@ -6080,10 +5714,6 @@
 /* Moved from inline styles (styles cleanup, 16 Oct 2026). */
 .personFlagLine {
   margin: 4px 0;
-}
-
-.flushMargin {
-  margin: 0;
 }
 
 .personFlagBlock {

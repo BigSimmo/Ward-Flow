@@ -138,6 +138,7 @@ describe("acceptance", () => {
       now: NOW,
       movementId: "WF-009",
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
     });
     const target = movement(next, "WF-009");
     expect(target.acceptedUnitId).toBe("rph-adult-secure");
@@ -168,6 +169,7 @@ describe("acceptance", () => {
       now: NOW,
       movementId: "WF-009",
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
     });
     const next = wardFlowReducer(accepted, {
       type: "ACCEPT_IN_PRINCIPLE",
@@ -175,6 +177,7 @@ describe("acceptance", () => {
       now: NOW,
       movementId: "WF-009",
       unitId: "fsh-adult-secure",
+      actingUnitId: "fsh-adult-secure",
     });
     expect(next.rejections).toHaveLength(1);
     expect(next.rejections[0].reason).toMatch(/withdraw/i);
@@ -203,8 +206,16 @@ describe("the last bed", () => {
         now: NOW,
         movementId,
         unitId: unit.id,
+        actingUnitId: unit.id,
       });
-      state = wardFlowReducer(state, { type: "PULL_PATIENT", role: "ward", now: NOW, movementId, unitId: unit.id });
+      state = wardFlowReducer(state, {
+        type: "PULL_PATIENT",
+        role: "ward",
+        now: NOW,
+        movementId,
+        unitId: unit.id,
+        actingUnitId: unit.id,
+      });
     }
 
     /*
@@ -252,6 +263,7 @@ describe("holds", () => {
       now: NOW,
       movementId: "WF-009",
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
     });
     state = wardFlowReducer(state, {
       type: "PULL_PATIENT",
@@ -259,6 +271,7 @@ describe("holds", () => {
       now: NOW,
       movementId: "WF-009",
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
     });
     expect(movement(state, "WF-009").pullExpiresAt).toBe(NOW + 240);
     expect(movement(state, "WF-009").stage).toBe("pulled");
@@ -286,8 +299,8 @@ describe("arrival", () => {
     const before = state.units.find((unit) => unit.id === "rph-adult-secure")!.allocatable.value;
     for (const event of [
       { type: "REFER_TO_UNITS", role: "coordinator", unitIds: ["rph-adult-secure"] },
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure" },
-      { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure" },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
+      { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
       // Booking is a step of its own since 2026-08-31: `HANDOVER_READY` used to fabricate the
       // transport job and answer the escort question by deriving it from legal status. It no
       // longer invents either, so a walk that reaches handover without booking is refused.
@@ -333,8 +346,8 @@ describe("arrival", () => {
     let state = before;
     for (const event of [
       { type: "REFER_TO_UNITS", role: "coordinator", unitIds: ["rph-adult-secure"] },
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure" },
-      { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure" },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
+      { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
       // Booking is a step of its own since 2026-08-31: `HANDOVER_READY` used to fabricate the
       // transport job and answer the escort question by deriving it from legal status. It no
       // longer invents either, so a walk that reaches handover without booking is refused.
@@ -692,8 +705,8 @@ describe("examination", () => {
         genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
         genderPlacementChecked: true,
       },
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure" },
-      { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure" },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
+      { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
       // Booking is a step of its own since 2026-08-31: `HANDOVER_READY` used to fabricate the
       // transport job and answer the escort question by deriving it from legal status. It no
       // longer invents either, so a walk that reaches handover without booking is refused.
@@ -893,8 +906,8 @@ describe("examination", () => {
           genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
           genderPlacementChecked: true,
         },
-        { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure" },
-        { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure" },
+        { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
+        { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
         {
           type: "BOOK_TRANSPORT",
           role: "ed",
@@ -1007,8 +1020,8 @@ describe("examination", () => {
           genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
           genderPlacementChecked: true,
         },
-        { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure" },
-        { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure" },
+        { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
+        { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
       ] as const) {
         state = wardFlowReducer(state, { ...step, now: NOW, movementId: TARGET } as never);
       }
@@ -1046,8 +1059,8 @@ describe("examination", () => {
         genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
         genderPlacementChecked: true,
       },
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure" },
-      { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure" },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
+      { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
     ] as const;
     let state = seeded();
     for (const step of steps) {
@@ -1089,8 +1102,8 @@ describe("examination", () => {
         genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
         genderPlacementChecked: true,
       },
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure" },
-      { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure" },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
+      { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
     ] as const) {
       state = wardFlowReducer(state, { ...step, now: NOW, movementId: TARGET } as never);
     }
@@ -1140,8 +1153,8 @@ describe("examination", () => {
         genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
         genderPlacementChecked: true,
       },
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure" },
-      { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure" },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
+      { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
     ] as const;
     let state = seeded();
     for (const step of steps) {
@@ -1289,6 +1302,7 @@ describe("decline", () => {
       now: NOW,
       movementId: "WF-010",
       unitId: "sjgm-adult-open",
+      actingUnitId: "sjgm-adult-open",
       reason: "belongs_to_another_service",
     });
     const target = movement(next, "WF-010");
@@ -1403,12 +1417,18 @@ describe("arrival capacity floor", () => {
     // An arrival remains a fact if a restored in-flight record finds no empty bed on file.
     const pullSteps = [
       { type: "REFER_TO_UNITS", role: "coordinator", unitIds: ["rph-adult-secure"] },
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure" },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
       // Item 11, owner answer 11 — `rph-adult-secure` is wholly locked (20 of 20 beds), but
       // `CONFIRM_CAPACITY` below restates `allocatable.value` without touching
       // `allocatableLocked`, so later walks find no locked bed on file as free. A reason is
       // supplied unconditionally: unused when a locked bed is free (the first walk).
-      { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure", overrideReason: OVERRIDE_REASONS[0] },
+      {
+        type: "PULL_PATIENT",
+        role: "ward",
+        unitId: "rph-adult-secure",
+        actingUnitId: "rph-adult-secure",
+        overrideReason: OVERRIDE_REASONS[0],
+      },
     ] as const;
     const arriveSteps = [
       // Booking is a step of its own since 2026-08-31.
@@ -1818,8 +1838,8 @@ describe("release and cancel", () => {
         genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
         genderPlacementChecked: true,
       },
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure" },
-      { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure" },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
+      { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
       // Booking is a step of its own since 2026-08-31: `HANDOVER_READY` used to fabricate the
       // transport job and answer the escort question by deriving it from legal status. It no
       // longer invents either, so a walk that reaches handover without booking is refused.

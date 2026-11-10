@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -13,6 +13,8 @@ vi.mock("next/navigation", () => ({
 
 import { bedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -92,5 +94,39 @@ describe("Home and Statistics print the same figures as the bed meeting sheet (A
     expect(leadingNumber(figureOf(/^open ED movements$/u)), "open ED movements").toBe(
       openEdJourneys(state.movements, NOW_ANCHOR).total,
     );
+  });
+});
+
+/**
+ * Audit M6, no false "all clear": when the ward list a figure is built from comes back empty (a site
+ * desk whose site has no wards in this workspace, or a source that returned nothing), the occupancy
+ * share is unknown. Home already leaves its ring out; Statistics printed "0 / 0 in use, 0%".
+ */
+describe("a missing ward source reads as unknown, never 0% in use (audit M6)", () => {
+  afterEach(() => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", null);
+      resetWardAccessStoreForTests();
+    });
+  });
+
+  it("Statistics' hero shows a dash, not 0%, when no ward was counted", () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "bed_manager", scope: { kind: "site", siteCode: "SYN-NO-WARDS" } });
+    });
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <StatisticsScreen />
+      </WardFlowProvider>,
+    );
+    const chips = within(screen.getByTestId("ward-statistics-screen")).getByRole("group", {
+      name: "Network at a glance",
+    });
+    const inUse = within(chips)
+      .getByText(/^in use,/u)
+      .closest("p")!;
+    expect(inUse.textContent).toContain("—");
+    expect(inUse.textContent).not.toMatch(/\d\s*%/u);
   });
 });

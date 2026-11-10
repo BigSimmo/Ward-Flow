@@ -174,6 +174,13 @@ describe("occupancyTone", () => {
     expect(occupancyTone(92).code).toBe("yellow");
     expect(occupancyTone(80).code).toBe("green");
   });
+
+  it("bands the whole percent shown, so the colour always matches the figure (D-122, extending D-109)", () => {
+    expect(occupancyTone(89.6)).toEqual({ code: "yellow", codeLabel: "90%" });
+    expect(occupancyTone(89.4)).toEqual({ code: "green", codeLabel: "89%" });
+    expect(occupancyTone(97.6)).toEqual({ code: "red", codeLabel: "98%" });
+    expect(occupancyTone(97.4)).toEqual({ code: "yellow", codeLabel: "97%" });
+  });
 });
 
 describe("computeShiftProgress handover display", () => {

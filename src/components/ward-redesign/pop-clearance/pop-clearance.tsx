@@ -12,6 +12,8 @@ import { decodeRecordAddress } from "@/components/ward-management/shell/ward-rec
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { edActingPlaceId } from "@/components/ward-management/ward-role-access";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { Button, Checkbox, Dialog, Radio } from "@/components/wf";
@@ -89,6 +91,7 @@ export function PopClearance({ page }: { page: ReactNode }) {
   const now = useWardFlowClock();
   const gate = useRoleGate();
   const routeRole = useRouteRole();
+  const access = useEffectiveWardAccess();
   const clearanceGate = gate("RECORD_MOVEMENT_MEDICAL_CLEARANCE");
   const selectedId = decodeRecordAddress(SAMPLE_ADDRESS) ?? SAMPLE_ADDRESS;
   const clearanceSave = usePatientFormSave(selectedId);
@@ -199,6 +202,9 @@ export function PopClearance({ page }: { page: ReactNode }) {
                       now,
                       movementId: liveMovement.id,
                       cleared: clearanceDraft === "cleared",
+                      ...(routeRole === "ed"
+                        ? { actingPlaceId: edActingPlaceId(access, liveMovement.originEdId) }
+                        : {}),
                     }),
                   () => setShowClearanceModal(false),
                 );

@@ -5,14 +5,16 @@ import { encodeRecordAddress } from "@/components/ward-management/shell/ward-rec
 import { expectAccessible, isPhoneLayout } from "./helpers/ward-release-gate";
 
 /**
- * Every Ward Flow route passes an axe WCAG 2.1 AA scan with no serious or critical violation
+ * Every Ward Flow route passes an axe WCAG 2.2 AA scan with no serious or critical violation
  * (fix list 5.4 and 8.1, October 2026). The release-gate projects run it on desktop Chrome at
  * 1440px and on phone WebKit at 390x844, the same as the four journeys beside it.
  *
  * The journeys scan screens mid-task. This sweep opens each route fresh, so a screen no journey
  * reaches is still checked. Redirect-only routes (command, constellation, escalation, exceptions,
- * network, queue) are left out because they land on a route already listed. One seeded person and one
- * seeded movement stand in for the record pages, opened by their coded addresses.
+ * network, queue) are left out because they land on a route already listed. Activity and Help are
+ * kept (M159, 10 Nov 2026): they land on the desk's home with their panel open, so the panel is
+ * scanned too. One seeded person and one seeded movement stand in for the record pages, opened by
+ * their coded addresses.
  * The demonstration sign-in page is a sibling of `/ward-flow` with no rail or header, so it is
  * scanned on its own below (audit UI-8, 19 October 2026). It stays unlinked; this only checks it.
  * Synthetic data only.
@@ -20,6 +22,8 @@ import { expectAccessible, isPhoneLayout } from "./helpers/ward-release-gate";
 
 const ROUTES = [
   ["", "ward-coordinator"],
+  // WF-42: Activity and Help are shell panels; their addresses open the panel on the desk's home.
+  ["/activity", "ward-coordinator", ""],
   ["/alerts", "ward-alerts-page"],
   ["/bed-meeting", "bed-meeting-tv-off"],
   ["/bed-meeting/agenda", "bed-meeting-agenda"],
@@ -33,6 +37,7 @@ const ROUTES = [
   ["/ed/peel-ed", "ward-ed-screen"],
   ["/governance", "ward-mode-governance"],
   ["/handover", "ward-handover-page"],
+  ["/help", "ward-coordinator", ""],
   ["/hub", "ward-hub-page"],
   ["/legal-forms", "ward-legal-forms-page"],
   ["/movements", "ward-movements-page"],
@@ -41,10 +46,12 @@ const ROUTES = [
   ["/out-of-area", "ward-out-of-area-board"],
   ["/people/new", "ward-add-patient-screen"],
   [`/people/${encodeRecordAddress("PT-001")}`, "ward-person-screen"],
+  [`/people/${encodeRecordAddress("PT-001")}/triage`, "triage-risk-page"],
   ["/referrals", "ward-referral-board-screen"],
   ["/referrals/new", "ward-referral-board-screen"],
   ["/reports/chronology", "ward-patient-chronology"],
   ["/reports/downtime", "ward-downtime-pack"],
+  ["/review", "ward-todays-review"],
   ["/search", "ward-patient-search"],
   // FS3 (3 Nov 2026): Seclusion opens as a view in Forms for every desk that has Forms.
   ["/seclusion", "seclusion-forms-view", "/legal-forms?view=seclusion"],
@@ -62,6 +69,7 @@ const ROUTES = [
   ["/statistics/weekly", "ward-weekly-report"],
   ["/transport", "ward-officer-screen", "/transport/officer"],
   ["/transport/officer", "ward-officer-screen"],
+  ["/triage/new", "triage-start"],
   ["/ward/rph-adult-secure", "ward-unit-screen"],
   ["/ward/rph-adult-secure/answer", "ward-unit-screen"],
   ["/wards", "ward-index"],
@@ -86,6 +94,29 @@ test.beforeEach(async ({ page }) => {
 async function allowTips(page: Page) {
   // Tips start off on the demo site, so turn them on as Settings does.
   await page.addInitScript((key) => window.localStorage.setItem(key, "no"), HELP_TIPS_OFF_KEY);
+}
+
+/**
+ * Sideways rows slide only sideways (Josh, 10 Nov 2026). iPhone Safari lets a row that scrolls
+ * sideways be dragged up and down whenever anything inside it (a chip's invisible tap band, a focus
+ * ring) is taller than the row, even under `overflow-y: hidden`. So on the phone every sideways
+ * scroller must hold its contents' full height: the row carries the tap band in its own padding.
+ */
+async function expectSidewaysRowsFit(page: Page) {
+  const tooTall = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>("body *")]
+      .filter((el) => {
+        const style = getComputedStyle(el);
+        return (
+          ["auto", "scroll"].includes(style.overflowX) &&
+          style.overflowY === "hidden" &&
+          el.clientHeight > 0 &&
+          el.scrollHeight > el.clientHeight
+        );
+      })
+      .map((el) => `${String(el.className).slice(0, 80)} (${el.clientHeight}px row, ${el.scrollHeight}px inside)`),
+  );
+  expect(tooTall, "a sideways row is shorter than its contents, so it drags up and down on an iPhone").toEqual([]);
 }
 
 for (const [route, screenId, destination = route] of ROUTES) {
@@ -120,6 +151,102 @@ for (const [route, screenId, destination = route] of ROUTES) {
     await expect(page).toHaveURL(expectedUrl);
     await page.waitForLoadState("networkidle");
     await expectAccessible(page, testInfo, route || "/");
+    if (isPhoneLayout(page)) await expectSidewaysRowsFit(page);
+  });
+}
+
+/**
+ * M159 (final master audit, 10 Nov 2026): the sweep above runs as the statewide coordinator, who
+ * sees every screen. These run again as the ward, ED, community and transport officer desks, with
+ * role access on, on each desk's most-used routes, so a screen drawn differently for a desk is
+ * scanned as that desk sees it. Each desk is signed in the way `?flags=role-access:on` signs one in
+ * locally: its role and place ids in session storage (`ui-ward-tour-targets.spec.ts`). Every route
+ * listed is one the desk may open (`ROLE_SCREENS`), so the page must stay put, never be sent on to
+ * the desk's home. The officer desk opens only four screens, so it has four routes. Synthetic data only.
+ */
+const DESK_SWEEPS = [
+  {
+    desk: "ward",
+    access: { role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } },
+    routes: [
+      ["/ward/rph-adult-secure", "ward-unit-screen"],
+      ["/board/rph-adult-secure", "ward-board"],
+      ["/discharges", "ward-discharge-board"],
+      ["/referrals", "ward-referral-board-screen"],
+      ["/referrals/new", "ward-referral-board-screen"],
+      ["/people/new", "ward-add-patient-screen"],
+      ["/movements", "ward-movements-page"],
+      ["/waiting", "ward-delays-page"],
+      ["/legal-forms", "ward-legal-forms-page"],
+      ["/handover", "ward-handover-page"],
+      ["/search", "ward-patient-search"],
+      ["/settings", "ward-settings-screen"],
+    ],
+  },
+  {
+    desk: "ED",
+    access: { role: "ed", scope: { kind: "ed", edId: "peel-ed" } },
+    routes: [
+      ["/ed/peel-ed", "ward-ed-screen"],
+      ["/referrals", "ward-referral-board-screen"],
+      ["/referrals/new", "ward-referral-board-screen"],
+      ["/people/new", "ward-add-patient-screen"],
+      ["/triage/new", "triage-start"],
+      ["/movements", "ward-movements-page"],
+      ["/waiting", "ward-delays-page"],
+      ["/legal-forms", "ward-legal-forms-page"],
+      ["/handover", "ward-handover-page"],
+      ["/search", "ward-patient-search"],
+      ["/settings", "ward-settings-screen"],
+    ],
+  },
+  {
+    desk: "community",
+    access: { role: "community", scope: { kind: "team", teamName: "Midland" } },
+    routes: [
+      ["/community/midland", "ward-community-screen"],
+      ["/referrals", "ward-referral-board-screen"],
+      ["/referrals/new", "ward-referral-board-screen"],
+      ["/people/new", "ward-add-patient-screen"],
+      ["/triage/new", "triage-start"],
+      ["/movements", "ward-movements-page"],
+      ["/legal-forms", "ward-legal-forms-page"],
+      ["/search", "ward-patient-search"],
+      ["/alerts", "ward-alerts-page"],
+      ["/on-call", "ward-on-call-screen"],
+      ["/settings", "ward-settings-screen"],
+    ],
+  },
+  {
+    desk: "transport officer",
+    access: { role: "officer", scope: { kind: "jobs" } },
+    routes: [
+      ["/transport/officer", "ward-officer-screen"],
+      ["/alerts", "ward-alerts-page"],
+      ["/on-call", "ward-on-call-screen"],
+      ["/settings", "ward-settings-screen"],
+    ],
+  },
+] as const;
+
+for (const { desk, access, routes } of DESK_SWEEPS) {
+  test.describe(`${desk} desk`, () => {
+    test.beforeEach(async ({ page }) => {
+      await page.addInitScript((signedIn) => {
+        window.sessionStorage.setItem("wardflow:access-desk-v1", JSON.stringify(signedIn));
+        window.localStorage.setItem("ward_flow_feature_flags", JSON.stringify({ "role-access": true }));
+      }, access);
+    });
+
+    for (const [route, screenId] of routes) {
+      test(`axe ${desk} desk: ${route} has no serious or critical violation`, async ({ page }, testInfo) => {
+        const expectedUrl = new URL(`/ward-flow${route}`, testInfo.project.use.baseURL).href;
+        await openShell(page, route, screenId);
+        await expect(page.getByTestId("ward-access-own-home"), "the desk may open this page").toHaveCount(0);
+        await expect(page).toHaveURL(expectedUrl);
+        await expectAccessible(page, testInfo, `${desk} desk ${route}`);
+      });
+    }
   });
 }
 

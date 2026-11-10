@@ -7,6 +7,7 @@
   min-width: 0;
   border-bottom: 1px solid var(--wf-line);
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -57,6 +58,7 @@
   border: 1px solid var(--wf-line);
   box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -88,7 +90,8 @@
   color: var(--wf-ink-1);
 }
 
-.ptItem[aria-selected="true"] {
+.ptItem[aria-selected="true"],
+.ptItem[aria-pressed="true"] {
   background: var(--wf-raised, var(--wf-surface));
   color: var(--wf-ink-1);
   font-weight: 600;
@@ -440,6 +443,7 @@
     display: flex;
     max-width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
     overscroll-behavior-x: contain;
     scrollbar-width: none;
   }
@@ -490,6 +494,7 @@
   .segOn,
   .trk .segOn,
   .ptItem[aria-selected="true"],
+  .ptItem[aria-pressed="true"],
   .chip[aria-pressed="true"] {
     forced-color-adjust: none;
     border-color: Highlight;
@@ -500,6 +505,7 @@
   .segOn .k,
   .trk .segOn .k,
   .ptItem[aria-selected="true"] .k,
+  .ptItem[aria-pressed="true"] .k,
   .chip[aria-pressed="true"] .k {
     border: 1px solid HighlightText;
     background: Highlight;
@@ -711,6 +717,7 @@
     gap: var(--wf-phone-pill-gap);
     padding-block: var(--wf-phone-pill-hit);
     overflow-x: auto;
+    overflow-y: hidden;
     overscroll-behavior-x: contain;
     scrollbar-width: none;
   }

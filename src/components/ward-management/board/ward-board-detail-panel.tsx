@@ -54,6 +54,7 @@ const FOOT_SECONDARY = buttonClass({ variant: "sec" });
 
 /** The drawer's title for a tile that stands for a class of bed rather than a person. */
 function bedClassTitle(kind: Tile["kind"]): string {
+  if (kind === "waiting") return "A bed spoken for";
   if (kind === "empty") return "An empty bed";
   if (kind === "closed") return "A closed bed";
   return "A bed out of service";
@@ -65,7 +66,8 @@ function recordTag(tile: Tile, occupant: Occupant | null): ReactNode {
   if (tile.kind === "closed") return <StatusPill tone="closed">Closed</StatusPill>;
   if (tile.kind !== "occupied" && tile.kind !== "waiting")
     return <StatusPill tone="neutral">Out of service</StatusPill>;
-  if (tile.kind === "waiting") return <StatusPill tone="neutral">Not arrived</StatusPill>;
+  if (tile.kind === "waiting")
+    return <StatusPill tone="neutral">{tile.reserved ? "Spoken for" : "Not arrived"}</StatusPill>;
   if (occupant === null) return null;
   // The passed discharge date was a red "PAST DATE" badge; it is the head's status pill now.
   if (occupant.pastDate) return <StatusPill tone="warning">Past date</StatusPill>;
@@ -129,7 +131,7 @@ export function WardBoardDetailPanel({
   dateEdit: { admissionId: string; time: string; day: "recorded" | "today" | "tomorrow" } | null;
   dayZero: Date;
   dialogTriggerRef: RefObject<HTMLElement | null>;
-  dispatchAndReport: (record: () => ReturnType<WardCommandDispatch>, success: string) => void;
+  dispatchAndReport: (record: () => ReturnType<WardCommandDispatch>, success: string, who?: string) => void;
   emptyTileCount: number;
   leavingDestination: LeavingDestination | "";
   movements: Movement[];
@@ -141,6 +143,7 @@ export function WardBoardDetailPanel({
     record: () => ReturnType<WardCommandDispatch>,
     success: string,
     admissionId: string,
+    who?: string,
   ) => void;
   recordWardDeparture: (
     admissionId: string,
@@ -166,7 +169,9 @@ export function WardBoardDetailPanel({
   // Nothing chosen: no drawer. The bed grid itself is the prompt (drawer review, 6 Nov 2026).
   if (selectedTile === null) return null;
 
-  const isPerson = selectedTile.kind === "occupied" || selectedTile.kind === "waiting";
+  // D-115: a named bed with no stay yet is a bed class, never an unreadable admission record.
+  const isPerson =
+    selectedTile.kind === "occupied" || (selectedTile.kind === "waiting" && selectedTile.reserved !== true);
   const tileWho = selectedTile.kind === "occupied" ? selectedTile.who : undefined;
   // Walkthrough D9: a referral-linked stay read "Unknown Patient". Resolved through the ward-scoped
   // identity projection (never the full referral array); still unresolved means the name is not
@@ -254,6 +259,7 @@ export function WardBoardDetailPanel({
                       }),
                 `Recorded discharge: ${tileWho || nameFor(selectedTile.key)} has left the ward.`,
                 selectedTile.key,
+                tileWho || nameFor(selectedTile.key),
               );
               closeDetail();
             };
@@ -340,6 +346,11 @@ export function WardBoardDetailPanel({
               {selectedTile.kind === "waiting" && (
                 <p className={styles.personLine}>Bed given away. Nobody has arrived yet.</p>
               )}
+              {selectedOccupant?.absentWithoutLeave && (
+                <p className={styles.personLine} data-testid="ward-board-selected-awol">
+                  <StatusPill tone="danger">Absent without leave</StatusPill> Their bed is held for them.
+                </p>
+              )}
               {occupied !== null && (
                 <section className={redesign.recordSection} aria-labelledby="ward-board-record-heading">
                   <h3 id="ward-board-record-heading" className={redesign.recordHeading}>
@@ -378,6 +389,7 @@ export function WardBoardDetailPanel({
                               expectedDischargeAt,
                             }),
                           "Expected discharge updated.",
+                          nameFor(admission.id),
                         );
                         setDateEdit(null);
                       }}
@@ -436,6 +448,7 @@ export function WardBoardDetailPanel({
                                   actingUnitId: unit.id,
                                 }),
                               `Recorded: ${nameFor(selectedTile.key)} is currently away at an emergency department. Their bed is still held.`,
+                              nameFor(selectedTile.key),
                             );
                           };
 
@@ -467,6 +480,7 @@ export function WardBoardDetailPanel({
                                 actingUnitId: unit.id,
                               }),
                             `Returned to ward: ${nameFor(selectedTile.key)} marked back from the emergency department.`,
+                            nameFor(selectedTile.key),
                           )
                         }
                       >
@@ -480,7 +494,7 @@ export function WardBoardDetailPanel({
                     occupant={occupied}
                     unitId={unit.id}
                     raise={raise}
-                    dispatchAndReport={dispatchAndReport}
+                    dispatchAndReport={(record, success) => dispatchAndReport(record, success, nameFor(occupied.key))}
                   />
                   <div data-testid="ward-board-stepdown-container" className={styles.fullRowSpaced}>
                     <button
@@ -500,6 +514,7 @@ export function WardBoardDetailPanel({
                           nextStepDown
                             ? `Marked ${nameFor(occupied.key)} as step-down candidate for subacute care.`
                             : `Removed step-down candidate flag for ${nameFor(occupied.key)}.`,
+                          nameFor(occupied.key),
                         );
                       }}
                     >
@@ -542,6 +557,7 @@ export function WardBoardDetailPanel({
                                 barrier: val === "None" ? null : (val as DischargeBarrier),
                               }),
                             `Long-stay barrier for ${nameFor(occupied.key)}: ${val}`,
+                            nameFor(occupied.key),
                           );
                         }}
                       >
@@ -590,11 +606,13 @@ export function WardBoardDetailPanel({
         ) : (
           <div data-testid="ward-board-detail-bed-class">
             <p className={styles.detailLead}>
-              {selectedTile.kind === "empty"
-                ? `Free bed, one of ${emptyTileCount}.`
-                : selectedTile.kind === "closed"
-                  ? `Closed bed, one of ${closedTileCount}.`
-                  : `Out of service, one of ${blockedTileCount}.`}
+              {selectedTile.kind === "waiting"
+                ? "Named for an accepted referral or an incoming patient. Not ready for anyone else."
+                : selectedTile.kind === "empty"
+                  ? `Free bed, one of ${emptyTileCount}.`
+                  : selectedTile.kind === "closed"
+                    ? `Closed bed, one of ${closedTileCount}.`
+                    : `Out of service, one of ${blockedTileCount}.`}
             </p>
             {/* The constraint the header already carries, repeated here only where it bites: a
                 reader looking at a fillable bed is exactly the reader who needs to know what will

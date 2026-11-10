@@ -1,8 +1,8 @@
 # Ward Flow scripts inventory
 
-_Updated 2026-10-24 - CI section names every workflow and the two unlisted `ward-ci-public` scripts; Documentation owns._
+_Updated 2026-11-10 - CI rows for the protected safety tests, the pull-request patient-identifier scan with its exemptions, the identifier scan and the 5 KB raise cap scripts, and the audit and support tools; Documentation owns._
 
-Curated map of `scripts/` (161 files) and the `package.json` script surface (87 entries),
+Curated map of `scripts/` (177 files) and the `package.json` script surface (87 entries),
 grouped by what each part protects. `package.json` is the command surface; this page says why
 each group exists. `npm run docs:check-inventory` compares the two counts above exactly,
 and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs
@@ -53,20 +53,24 @@ The unit shards use `ward-flow/unit-durations.mjs`, `ward-flow/test-module-depen
 
 `scripts/ward-ci-public/` holds what `.github/workflows/ward-flow.yml` runs: `plan.mjs` and
 `verify-plan.mjs` (which jobs a change needs), `main-reuse.mjs` (reuse a pull request's proven
-result on main), `changed-checks.mjs` (format, lint and the test-deletion guard on changed files),
+result on main), `changed-checks.mjs` (format, lint, the test-deletion guard and the protected safety tests on changed files),
 `check-contracts.mjs` and `check-policy-contracts.mjs` (the workflow's own contracts),
 `install-chromium.mjs`, `apt-archive-cache.mjs` (the release gate's cached WebKit system packages), and
 `bot-author-policy.mjs` for the bot author workflow, `merge-latest-main.mjs` (merges current main
-before the production build measures the phone script budget) and `budget-recheck.mjs` (run by
-`.github/workflows/ward-flow-budget-recheck.yml` to re-measure armed pull requests when main moves),
-and `main-measured.mjs` (lets the budget gate reuse main's saved measurements instead of building main again).
+before the production build measures the phone script budget),
+`main-measured.mjs` (lets the budget gate reuse main's saved measurements instead of building main again),
+`identifier-scan.mjs` (runs the pre-commit secret and patient-identifier scan on a pull request's added lines, D-122) and
+`budget-raise-cap.mjs` (fails a phone limit raised more than 5 KB unless the PR's budget history records Josh's approval, D-121).
 The other workflows need no script here: `release-tag.yml` tags each CI-passed main commit
-`release-YYYY-MM-DD-<sha>`, and `backend-uptime.yml` checks the hosted backend's `/healthz` every
+`release-YYYY-MM-DD-<short sha>` (the full commit id if a different same-day commit already holds the short one), and `backend-uptime.yml` checks the hosted backend's `/healthz` every
 10 minutes, signs in as the synthetic monitor account to load `/v1/workspace`, and opens an issue
-for the owner when either stays down. `ward-flow-nightly-browsers.yml` runs the nightly image
+for the owner when either stays down. If the monitor secret is unset or the database check is hidden for
+about a day (144 runs), it also opens one "Uptime monitor not set up" issue, which closes itself when
+the check is complete again (M72). `ward-flow-nightly-browsers.yml` runs the nightly image
 baselines and the 834px tablet checks through `run-playwright.mjs` (front-end audit TE-01, TE-02),
 and a manual run with "update baselines" writes new baselines to commit; a failed scheduled run opens
-or refreshes one issue through `ward-ci-public/nightly-browsers-issue.mjs`. CI also runs
+or refreshes one issue through `ward-ci-public/nightly-browsers-issue.mjs`; it also writes the
+`ward-flow/skip-inventory.mjs` report to the run summary. CI also runs
 `check-script-budget.mjs` (phone first-load script budgets in `script-budget.json`),
 `check-knip-baseline.mjs` (`npm run check:knip`), `ward-flow/related-tests.mjs`,
 `ward-flow/gate-tsc.mjs` and `ward-flow/selected-baseline-verdict.mjs`. Beside the knip ratchet,
@@ -75,23 +79,26 @@ production patterns carry `!` in `knip.json`; front-end audit CB-13).
 
 ## Safety and data safeguards
 
-| Command or hook                                    | Script                                                                                 | Protects                                                                                  |
-| -------------------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| pre-commit hook                                    | `pre-commit-checks.mjs`, `staged-source-tree.mjs`, `check-staged-docs.mjs`             | Staged secret and patient-identifier admission, sign-out ownership, changed-line checks.  |
-| pre-push hook, `npm run guard:push`                | `guard-push.mjs`                                                                       | Push destination identity and auto-merge ownership (no override), then format and static. |
-| `npm run check:client-bundle-secrets`              | `check-client-bundle-secrets.mjs`                                                      | No API key, token or credentialed database URL in tracked client source.                  |
-| `npm run ward:governance:check`                    | `ward-flow/check-clinical-governance-gate.mjs`                                         | Synthetic fixture identifiers and the disclaimer source (runs in CI).                     |
-| `npm run check:ward-reference`                     | `ward-flow/check-ward-reference.mjs`, `ward-flow/build-reference-*.mjs`                | The generated ward reference registry still matches its source pack (runs in CI).         |
-| `npm run check:ward-legal-language`                | `ward-flow/check-ward-legal-language.mjs`                                              | No screen wording claims legal authority the app does not have (runs in CI).              |
-| `npm run check:ward-source-control-chars`          | `ward-flow/check-source-control-chars.mjs`                                             | Hidden or bidirectional control characters in source.                                     |
-| `npm run check:installed-lock-parity`              | `check-installed-lock-parity.mjs`, `check-node-engine.cjs`                             | Installed packages and Node match the lockfile and engine range.                          |
-| `npm run check:diff-integrity`                     | `check-diff-integrity.mjs`, `diff-integrity.json`                                      | A change cannot silently delete test cases or write a truncation banner.                  |
-| `npm run check:dead-code-candidate`                | `check-dead-code-candidate.mjs`                                                        | Refuses an unsafe dead-code removal unless the owner approves that run.                   |
-| `node scripts/ward-flow/sign-out-check.mjs <file>` | `ward-flow/sign-out-check.mjs`, `ward-flow/claim-files.mjs`, `ward-flow/logs-root.mjs` | Sign-out log clashes before editing.                                                      |
+| Command or hook                                    | Script                                                                                 | Protects                                                                                                                                  |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| pre-commit hook                                    | `pre-commit-checks.mjs`, `staged-source-tree.mjs`, `check-staged-docs.mjs`             | Staged secret and patient-identifier admission, sign-out ownership, changed-line checks.                                                  |
+| pre-push hook, `npm run guard:push`                | `guard-push.mjs`                                                                       | Push destination identity and auto-merge ownership (no override), then format and static.                                                 |
+| `npm run check:client-bundle-secrets`              | `check-client-bundle-secrets.mjs`                                                      | No API key, token or credentialed database URL in tracked client source.                                                                  |
+| `npm run ward:governance:check`                    | `ward-flow/check-clinical-governance-gate.mjs`                                         | Synthetic fixture identifiers and the disclaimer source (runs in CI).                                                                     |
+| `npm run check:ward-reference`                     | `ward-flow/check-ward-reference.mjs`, `ward-flow/build-reference-*.mjs`                | The generated ward reference registry still matches its source pack (runs in CI).                                                         |
+| `npm run check:ward-legal-language`                | `ward-flow/check-ward-legal-language.mjs`                                              | No screen wording claims legal authority the app does not have (runs in CI).                                                              |
+| `npm run check:ward-source-control-chars`          | `ward-flow/check-source-control-chars.mjs`                                             | Hidden or bidirectional control characters in source.                                                                                     |
+| `npm run check:installed-lock-parity`              | `check-installed-lock-parity.mjs`, `check-node-engine.cjs`                             | Installed packages and Node match the lockfile and engine range.                                                                          |
+| `npm run check:diff-integrity`                     | `check-diff-integrity.mjs`, `diff-integrity.json`                                      | A change cannot silently delete test cases or write a truncation banner.                                                                  |
+| CI changed-file checks                             | `ward-flow/check-protected-safety-tests.mjs`, `ward-flow/protected-safety-tests.json`  | Named safety tests cannot lose cases or assertions without Josh's approval line (D-123).                                                  |
+| CI static job                                      | `ward-flow/check-patient-identifiers.mjs`                                              | The pre-commit patient-identifier rules on a pull request's added lines, except fixture and test paths and `precommit-scan: allow` lines. |
+| `npm run check:dead-code-candidate`                | `check-dead-code-candidate.mjs`                                                        | Refuses an unsafe dead-code removal unless the owner approves that run.                                                                   |
+| `node scripts/ward-flow/sign-out-check.mjs <file>` | `ward-flow/sign-out-check.mjs`, `ward-flow/claim-files.mjs`, `ward-flow/logs-root.mjs` | Sign-out log clashes before editing.                                                                                                      |
 
 The dependency audit is the `npm audit` step in `.github/workflows/dependency-audit.yml`, and the
-secret history scan is the gitleaks job in `.github/workflows/ward-flow.yml`. Neither needs a
-script here.
+secret history scan is the gitleaks job in `.github/workflows/ward-flow.yml`. CodeQL code scanning
+is `.github/workflows/codeql.yml`, which blocks a pull request only on findings it introduces (D-124).
+None of these needs a script here.
 
 ## Documents and generated indexes
 
@@ -130,6 +137,23 @@ checks that refusal.
 them. `figma-tokens.mjs` syncs design tokens with Figma (see `docs/agents/figma-sync.md`).
 `check-ward-data.mjs` explains problems in the editable ward data in plain words. It has no npm
 command yet because it currently reports open data problems.
+
+## Audit and support tools
+
+Added by the 10 November 2026 audits. None runs a provider by default; the live ones need Josh's yes each time.
+
+| Script                                                          | Purpose                                                                                                            |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `check-live-security-headers.mjs`                               | One read-only request: the live site sends the security headers and cookie flags the code builds (M52).            |
+| `ward-flow/post-release-check.mjs`                              | The read-only check after a release: deployed commit, health, headers and a synthetic sign-in (M67; `--yes-live`). |
+| `ward-flow/live-schema-diff.mjs`                                | Compares a saved read-only query result from the live database with the repo's migrations and grants (M81).        |
+| `ward-flow/hotspots.mjs`                                        | Ranks source files by commits times lines, to pick split targets (M142).                                           |
+| `ward-flow/import-map.ts`, `ward-flow/import-map-baseline.json` | The runtime import map, cycles and screen-to-screen imports, against a baseline that may only shrink (M139).       |
+| `ward-flow/mutation-sample.mjs`                                 | A small hand-picked mutation run on eligibility rules and access scope, on a copy of the checkout (M87).           |
+| `ward-flow/script-size-trend.mjs`                               | Turns one CI script-size measurement into a month's rows of the phone size trend file (M85).                       |
+| `ward-flow/shift-change-load.mjs`                               | Local, synthetic shift-change load against a loopback database: read and save times and no lost save (M69).        |
+| `ward-flow/skip-inventory.mjs`                                  | Lists every skipped, to-do, fixme or conditional test with its reason (M137, M91); `--check` fails on none.        |
+| `ward-flow/stuck-work-check.ts`                                 | Flags ageing referrals and rising refusals in one saved synthetic state (M43, M73).                                |
 
 ## Setup and maintenance
 

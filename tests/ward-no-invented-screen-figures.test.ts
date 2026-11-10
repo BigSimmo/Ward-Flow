@@ -223,6 +223,24 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^(?:EARLY_TAP_MAX_AGE_MS|SETTLE_MS)$/,
   },
   {
+    id: "handover-just-held",
+    why: "How long after 07:00, 15:00 and 23:00 the Handover page still opens on the handover just held (master audit M19, D-129); which page opens, never shown, not a limit.",
+    file: /^handover\/handover-model\.ts$/,
+    name: /^JUST_HELD_HANDOVER_MINUTES$/,
+  },
+  {
+    id: "back-online-spread",
+    why: "Back online, each desk reads again after a random part of this spread so they do not all ask at once (master audit M69, D-129); network pacing, never shown, not a limit.",
+    file: /^ward-shared-pacing\.ts$/,
+    name: /^ONLINE_SPREAD_MS$/,
+  },
+  {
+    id: "limited-resend-busy-retry",
+    why: "A save resend that falls due after a 429 while a read is in flight waits this long and tries again (master audit M53 review fix, D-129); network pacing, never shown, not a limit.",
+    file: /^ward-shared-pacing\.ts$/,
+    name: /^BUSY_RETRY_MS$/,
+  },
+  {
     id: "shared-full-read-pace",
     why: "Shared mode (audit F-04, 19 Oct 2026): how often a desk re-reads its whole part of the workspace between lean polls; network pacing, never shown, not a limit.",
     file: /^ward-shared-client\.ts$/,

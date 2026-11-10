@@ -112,7 +112,13 @@ function legalFact(status: string | undefined, movement: Movement | undefined, n
   if (!form) return status ? { text: status } : null;
   const progression = formProgression(movement);
   if (progression)
-    return { text: `Form ${progression.nextCode} to record, Form ${progression.endedCode} ended`, tone: "danger" };
+    return {
+      // D-127: a community treatment order is not shown as ended at arrival.
+      text: `Form ${progression.nextCode} to record, ${
+        progression.ended ? `Form ${progression.endedCode} ended` : `on Form ${progression.endedCode} at arrival`
+      }`,
+      tone: "danger",
+    };
   // D-93: the form by its full name, as every other output names it (M17, 10 Nov 2026).
   const head = `${legalFormName(form)}${status ? `, ${status.toLowerCase()}` : ""}`;
   if (formRecordedEnded(movement)) return { text: `${head}. ${FORM_RECORDED_ENDED}` };

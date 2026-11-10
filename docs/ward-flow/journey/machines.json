@@ -88,6 +88,16 @@
           "guard": "the reason must come from this destination kind's own list"
         },
         {
+          "from": "declined",
+          "to": "accepted",
+          "action": "ACCEPT_REFERRAL",
+          "route": "below",
+          "offset": 0,
+          "kind": "back",
+          "label": "on clinical reassessment",
+          "guard": "only as an explicit clinical reassessment of this destination"
+        },
+        {
           "from": "queued",
           "to": "cancelled",
           "action": "ACCEPT_REFERRAL",
@@ -115,13 +125,13 @@
       "name": "A movement",
       "subject": "The separate bed-search record created by RAISE_REFERRAL, or created already arrived by an admitted-ward transfer. Front-door acceptance alone creates no movement. Seven stages plus a separate closure.",
       "width": 3122,
-      "height": 600,
+      "height": 900,
       "states": [
         {
           "id": "start",
           "kind": "start",
           "x": 20,
-          "y": 250,
+          "y": 370,
           "w": 230,
           "h": 60,
           "label": "Movement created"
@@ -130,7 +140,7 @@
           "id": "placement_requested",
           "kind": "normal",
           "x": 20,
-          "y": 60,
+          "y": 180,
           "w": 230,
           "h": 86,
           "label": "Placement requested",
@@ -140,7 +150,7 @@
           "id": "destination_review",
           "kind": "normal",
           "x": 492,
-          "y": 60,
+          "y": 180,
           "w": 230,
           "h": 86,
           "label": "Destination review",
@@ -150,7 +160,7 @@
           "id": "accepted_awaiting_bed",
           "kind": "normal",
           "x": 964,
-          "y": 60,
+          "y": 180,
           "w": 230,
           "h": 86,
           "label": "Accepted, awaiting bed",
@@ -160,7 +170,7 @@
           "id": "pulled",
           "kind": "normal",
           "x": 1436,
-          "y": 60,
+          "y": 180,
           "w": 230,
           "h": 86,
           "label": "Bed pulled",
@@ -170,7 +180,7 @@
           "id": "handover_ready",
           "kind": "normal",
           "x": 1908,
-          "y": 60,
+          "y": 180,
           "w": 230,
           "h": 86,
           "label": "Handover ready",
@@ -180,7 +190,7 @@
           "id": "moving",
           "kind": "normal",
           "x": 2380,
-          "y": 60,
+          "y": 180,
           "w": 230,
           "h": 86,
           "label": "Moving",
@@ -190,7 +200,7 @@
           "id": "arrived",
           "kind": "terminal",
           "x": 2852,
-          "y": 60,
+          "y": 180,
           "w": 230,
           "h": 86,
           "label": "Arrived",
@@ -200,7 +210,7 @@
           "id": "closed",
           "kind": "terminal",
           "x": 1396,
-          "y": 420,
+          "y": 760,
           "w": 310,
           "h": 90,
           "label": "Closed — did not proceed",
@@ -370,13 +380,144 @@
           "to": "placement_requested",
           "action": "STEP_BACK_STAGE",
           "route": "above",
-          "offset": 80,
+          "offset": 130,
           "kind": "back",
           "label": "to ANY strictly earlier stage",
           "guard": "refused once arrived; touches nothing but the stage — no bed given back, no transport cancelled"
+        },
+        {
+          "from": "destination_review",
+          "to": "placement_requested",
+          "action": "STEP_BACK_STAGE",
+          "route": "above",
+          "offset": 90,
+          "kind": "back",
+          "guard": "the same step back as from Moving: to any strictly earlier stage, touching nothing but the stage"
+        },
+        {
+          "from": "accepted_awaiting_bed",
+          "to": "placement_requested",
+          "action": "STEP_BACK_STAGE",
+          "route": "above",
+          "offset": 100,
+          "kind": "back",
+          "guard": "the same step back as from Moving: to any strictly earlier stage, touching nothing but the stage"
+        },
+        {
+          "from": "pulled",
+          "to": "placement_requested",
+          "action": "STEP_BACK_STAGE",
+          "route": "above",
+          "offset": 110,
+          "kind": "back",
+          "guard": "the same step back as from Moving: to any strictly earlier stage, touching nothing but the stage"
+        },
+        {
+          "from": "handover_ready",
+          "to": "placement_requested",
+          "action": "STEP_BACK_STAGE",
+          "route": "above",
+          "offset": 120,
+          "kind": "back",
+          "guard": "the same step back as from Moving: to any strictly earlier stage, touching nothing but the stage"
+        },
+        {
+          "from": "pulled",
+          "to": "destination_review",
+          "action": "WITHDRAW_ACCEPTANCE",
+          "route": "below",
+          "offset": 120,
+          "kind": "back",
+          "guard": "the held bed is released in the same write; cancel a live transport job first"
+        },
+        {
+          "from": "placement_requested",
+          "to": "closed",
+          "action": "RECORD_ED_OUTCOME",
+          "route": "exit",
+          "offset": 150,
+          "kind": "exit"
+        },
+        {
+          "from": "placement_requested",
+          "to": "closed",
+          "action": "RECORD_EXAMINATION",
+          "route": "exit",
+          "offset": 174,
+          "kind": "exit",
+          "label": "community order",
+          "guard": "a community order before a bed is pulled closes the journey"
+        },
+        {
+          "from": "destination_review",
+          "to": "closed",
+          "action": "WITHDRAW_REFERRAL",
+          "route": "exit",
+          "offset": 198,
+          "kind": "exit"
+        },
+        {
+          "from": "destination_review",
+          "to": "closed",
+          "action": "RECORD_ED_OUTCOME",
+          "route": "exit",
+          "offset": 222,
+          "kind": "exit"
+        },
+        {
+          "from": "destination_review",
+          "to": "closed",
+          "action": "RECORD_EXAMINATION",
+          "route": "exit",
+          "offset": 246,
+          "kind": "exit",
+          "label": "community order",
+          "guard": "a community order before a bed is pulled closes the journey"
+        },
+        {
+          "from": "accepted_awaiting_bed",
+          "to": "closed",
+          "action": "WITHDRAW_REFERRAL",
+          "route": "exit",
+          "offset": 270,
+          "kind": "exit"
+        },
+        {
+          "from": "accepted_awaiting_bed",
+          "to": "closed",
+          "action": "RECORD_ED_OUTCOME",
+          "route": "exit",
+          "offset": 294,
+          "kind": "exit"
+        },
+        {
+          "from": "accepted_awaiting_bed",
+          "to": "closed",
+          "action": "RECORD_EXAMINATION",
+          "route": "exit",
+          "offset": 318,
+          "kind": "exit",
+          "label": "community order",
+          "guard": "a community order before a bed is pulled closes the journey"
+        },
+        {
+          "from": "handover_ready",
+          "to": "closed",
+          "action": "WITHDRAW_REFERRAL",
+          "route": "exit",
+          "offset": 342,
+          "kind": "exit"
+        },
+        {
+          "from": "handover_ready",
+          "to": "closed",
+          "action": "RECORD_ED_OUTCOME",
+          "route": "exit",
+          "offset": 366,
+          "kind": "exit"
         }
       ],
-      "note": "STEP_BACK_STAGE records a strictly earlier stage with a reason, leaving bed and transport intact. It refuses a closure, an arrived stage or a delivered transport leg. WITHDRAW_ACCEPTANCE can release an uncollected hold atomically after cancelling a live job. The separate scoped UNDO_TRANSPORT_STEP route may reverse the latest recorded arrival while its time-window, unchanged-snapshot, actor and restored-bed checks pass."
+      "note": "STEP_BACK_STAGE records a strictly earlier stage with a reason, leaving bed and transport intact. It refuses a closure, an arrived stage or a delivered transport leg. WITHDRAW_ACCEPTANCE can release an uncollected hold atomically after cancelling a live job. The separate scoped UNDO_TRANSPORT_STEP route may reverse the latest recorded arrival while its time-window, unchanged-snapshot, actor and restored-bed checks pass. Withdrawing the referral (after placement is requested), an ED outcome (before Moving) and a community order (before a bed is pulled) close the movement from every open stage the engine allows, not only from Bed pulled; tests/ward-audit-m26-machine-moves.test.ts checks every arrow against the engine."
     },
     {
       "id": "admission",
@@ -616,16 +757,6 @@
           "label": "Arrived"
         },
         {
-          "id": "cancelled",
-          "kind": "terminal",
-          "x": 829,
-          "y": 260,
-          "w": 260,
-          "h": 86,
-          "label": "Deleted",
-          "sub": "The job is removed, not marked. Nothing is rebooked."
-        },
-        {
           "id": "stopped",
           "kind": "terminal",
           "x": 1683,
@@ -672,26 +803,27 @@
         },
         {
           "from": "booked",
-          "to": "cancelled",
+          "to": "none",
           "action": "CANCEL_TRANSPORT",
-          "route": "exit",
+          "route": "below",
           "offset": 0,
-          "kind": "exit"
+          "kind": "exit",
+          "label": "the job is deleted, not marked"
         },
         {
           "from": "accepted",
-          "to": "cancelled",
+          "to": "none",
           "action": "CANCEL_TRANSPORT",
-          "route": "exit",
-          "offset": 0,
+          "route": "below",
+          "offset": 20,
           "kind": "exit"
         },
         {
           "from": "enroute",
-          "to": "cancelled",
+          "to": "none",
           "action": "CANCEL_TRANSPORT",
-          "route": "exit",
-          "offset": 0,
+          "route": "below",
+          "offset": 40,
           "kind": "exit",
           "guard": "The booking ward/team must match the supplied acting place; an ED claim is checked against the recorded booking place when both are present. Coordinator access remains subject to the authenticated access boundary."
         },
@@ -711,7 +843,7 @@
       "name": "A bed release",
       "subject": "A ward's plan for a bed coming free. It names the stay it belongs to, and nothing else about the person leaving.",
       "width": 1709,
-      "height": 426,
+      "height": 566,
       "states": [
         {
           "id": "none",
@@ -756,21 +888,21 @@
           "id": "blocked",
           "kind": "flag",
           "x": 428,
-          "y": 250,
+          "y": 420,
           "w": 280,
           "h": 86,
           "label": "Stuck — a flag, not a stage",
-          "sub": "One of nine reasons. Sits on top of expected or confirmed."
+          "sub": "One of nine reasons. Sits on top of expected or confirmed; either can be flagged."
         },
         {
           "id": "preparing",
           "kind": "flag",
-          "x": 901,
-          "y": 250,
+          "x": 1250,
+          "y": 420,
           "w": 300,
           "h": 86,
           "label": "Being made ready — a flag",
-          "sub": "Cleaning or repair is a separate flag. It does not rewrite the ward count, but a new pull refuses when every free bed is still being prepared."
+          "sub": "Cleaning or repair is a separate flag. It can be set on an expected, confirmed or discharged release, and recording the departure (or a ward transfer arriving) sets it too. It does not rewrite the ward count, but a new pull refuses when every free bed is still being prepared."
         }
       ],
       "transitions": [
@@ -836,6 +968,14 @@
           "kind": "side"
         },
         {
+          "from": "confirmed",
+          "to": "blocked",
+          "action": "BLOCK_BED_RELEASE",
+          "route": "exit",
+          "offset": 90,
+          "kind": "side"
+        },
+        {
           "from": "blocked",
           "to": "expected",
           "action": "CLEAR_BED_RELEASE_BLOCK",
@@ -848,8 +988,61 @@
           "to": "preparing",
           "action": "SET_BED_PREPARATION",
           "route": "exit",
-          "offset": 0,
+          "offset": 110,
           "kind": "side"
+        },
+        {
+          "from": "confirmed",
+          "to": "preparing",
+          "action": "SET_BED_PREPARATION",
+          "route": "exit",
+          "offset": 130,
+          "kind": "side"
+        },
+        {
+          "from": "discharged",
+          "to": "preparing",
+          "action": "SET_BED_PREPARATION",
+          "route": "exit",
+          "offset": 150,
+          "kind": "side",
+          "label": "made ready after the person leaves"
+        },
+        {
+          "from": "expected",
+          "to": "preparing",
+          "action": "RECORD_LEAVING",
+          "route": "exit",
+          "offset": 170,
+          "kind": "side",
+          "label": "the departure also marks the bed"
+        },
+        {
+          "from": "confirmed",
+          "to": "preparing",
+          "action": "RECORD_LEAVING",
+          "route": "exit",
+          "offset": 190,
+          "kind": "side",
+          "label": "the departure also marks the bed"
+        },
+        {
+          "from": "expected",
+          "to": "preparing",
+          "action": "RECORD_ADMISSION_CARE",
+          "route": "exit",
+          "offset": 210,
+          "kind": "side",
+          "label": "a ward transfer arriving also marks the bed"
+        },
+        {
+          "from": "confirmed",
+          "to": "preparing",
+          "action": "RECORD_ADMISSION_CARE",
+          "route": "exit",
+          "offset": 230,
+          "kind": "side",
+          "label": "a ward transfer arriving also marks the bed"
         }
       ],
       "note": "Being stuck used to be a fourth stage and was deliberately removed on 28 August 2026, because each stage says only how certain the discharge is. Stuck-ness and cleaning are two separate flags sitting on top."
@@ -921,6 +1114,15 @@
           "action": "RECORD_MEDICAL_CLEARANCE",
           "route": "straight",
           "kind": "side"
+        },
+        {
+          "from": "expected",
+          "to": "cleared",
+          "action": "RECORD_MEDICAL_CLEARANCE",
+          "route": "below",
+          "offset": 0,
+          "kind": "side",
+          "label": "clearance can come first"
         }
       ],
       "note": "The owner's own words for this, quoted in the model: “When expects arrive and are marked as arrived, they become referrals.” Being marked present is the only door between the two lists."
@@ -1183,7 +1385,7 @@
           "w": 300,
           "h": 96,
           "label": "Acknowledged",
-          "sub": "Somebody has seen it. The row stays exactly where it was."
+          "sub": "Somebody has seen a fact row. The row stays exactly where it was. A commitment is never acknowledged."
         },
         {
           "id": "ticked",
@@ -1214,21 +1416,23 @@
           "guard": "hides nothing and removes nothing; a second person acknowledging is a second real fact"
         },
         {
-          "from": "acknowledged",
+          "from": "showing",
           "to": "ticked",
           "action": "COMPLETE_INBOX_ITEM",
           "route": "exit",
           "offset": 0,
           "kind": "side",
-          "guard": "Only commitment IDs; daily-check IDs require the day-N shape, and an already-complete history refuses. Facts remain until their underlying situation changes."
+          "label": "commitments only",
+          "guard": "Only commitment IDs; daily-check IDs require the day-N shape, and an already-complete history refuses. A commitment is completed straight from Showing and is never acknowledged. Facts remain until their underlying situation changes."
         },
         {
           "from": "ticked",
-          "to": "acknowledged",
+          "to": "showing",
           "action": "REOPEN_INBOX_ITEM",
-          "route": "exit",
-          "offset": 40,
-          "kind": "exit"
+          "route": "above",
+          "offset": 0,
+          "kind": "back",
+          "label": "back to showing"
         }
       ],
       "note": "Acknowledgement, ownership, snoozing and completion are separate histories. Real fact rows are never completed by COMPLETE_INBOX_ITEM. The daily check uses a day-shaped identifier rather than a movement; bed-meeting actions use COMPLETE_BED_MEETING_ACTION. CANCEL_TRANSPORT appends a returned snooze and a released ownership entry to the job's awaiting-departure and booking-estimate-passed rows. Completion validates category and day syntax, not whether the day is the current day."
@@ -1292,6 +1496,15 @@
           "action": "RECORD_LEGAL_FORM_EXPIRY",
           "route": "straight",
           "kind": "side"
+        },
+        {
+          "from": "not",
+          "to": "expiry",
+          "action": "RECORD_LEGAL_FORM_EXPIRY",
+          "route": "above",
+          "offset": 0,
+          "kind": "side",
+          "label": "before a receipt"
         }
       ],
       "note": "Receipt correction appends its reason and clears the receipt without erasing history. Expiry entry need not wait for a receipt: it requires a recorded form. The admitted ward may record a typed expiry on an arrived/closed movement; a checked correction and a later extension are distinct paths."
@@ -1531,7 +1744,7 @@
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
         "line": 1,
-        "sha256": "929ff1aa633496596c4101ec57028c9296fd9cb8bc46d1cccd1ad579235d26d3"
+        "sha256": "6b9c32af15d569ddb7bcffdd4202bc0def13f74465b211163a1bd706293a4721"
       },
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-sheets.tsx",
@@ -1546,7 +1759,7 @@
       {
         "path": "src/components/ward-management/patients/patient-now-screen.tsx",
         "line": 1,
-        "sha256": "25a8ca9f0e7da0a950299ab33faae60879c414e9bcaa19cb56d2b3767ffae0aa"
+        "sha256": "dfb17d155ac70a24ed4bb602838067ce4b93753a8cdba1d9a89b24092aba2e44"
       },
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner-body.tsx",
@@ -1595,8 +1808,8 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-bed-events.ts",
-        "line": 618,
-        "sha256": "ddebd9e68988d55d54e116ae85de0f490863cad54acec61a4750772c2b0685e8"
+        "line": 619,
+        "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
       },
       {
         "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1606,7 +1819,7 @@
       {
         "path": "src/components/ward-management/ward-flow-events.ts",
         "line": 1,
-        "sha256": "4aa95a6064d78bc02b633a4c4f2327282452b788888f2e6ae2173b98a5be10e7"
+        "sha256": "378044cce3b2c98c2c24f4e5bb6ab27f7c361f02a7fa8ab59fa36a77388c84bf"
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
@@ -1621,12 +1834,12 @@
       {
         "path": "src/components/ward-management/ward-flow-record-events.ts",
         "line": 601,
-        "sha256": "16b2a7e8fedb14eca7252a30effd7c5f5a6fd283ef641d75ece8978bc48b4978"
+        "sha256": "901a830650fc830bfa41e4351b15fcea7e71bf475cc389ac2ece99fe698c4e06"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
         "line": 52,
-        "sha256": "130c5ccae5b6ddf3f3cd4a212863a74f8468bb136ee4400992e852141b5941b4"
+        "sha256": "00105e89a350aa48ec39ce66907880bb7863bbc4cff2f4f31fc02ba659f1c6d9"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
@@ -1635,13 +1848,13 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-reducer.ts",
-        "line": 1165,
-        "sha256": "fa5c10c32e7272c9de8d3df5be6ac1eb9a423bee8cf750b9e9b5dffe8d0f02cc"
+        "line": 1169,
+        "sha256": "edd08d18e7d96cad77b0a026b29f7acc6b9918b4818010e53b14e08d9c00eb2a"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
         "line": 387,
-        "sha256": "130aeb0bfa36f56ba90900077bd9d6786215b4defd25a2f37d4c78e0b75b6536"
+        "sha256": "1155b5ab27b0a147654f89b5886f53ac1edc58c42eae52997cac0cc1838a590b"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
@@ -1681,7 +1894,7 @@
       {
         "path": "src/components/ward-management/ward-model-referral-parts.ts",
         "line": 1,
-        "sha256": "488033f6dd15f1ec6ceae6c3ad6ecf0c90d27079528589341b361d46c9cba14b"
+        "sha256": "a23ccdb01397d9807f0455c3baed92c6c8700422593ebcb89f5a51e990281fb6"
       },
       {
         "path": "src/components/ward-management/ward-model.ts",
@@ -1701,7 +1914,7 @@
       {
         "path": "src/components/ward-management/ward-undo.ts",
         "line": 1,
-        "sha256": "36d051b64588ebecde9f32a571384eb854272e3a933184f4286d5679711dc53f"
+        "sha256": "22a192fa0c973fff7b2b9b13038f17020b3990a33a0588af76ab2a4f79d035db"
       },
       {
         "path": "src/components/ward-management/ward-observation.ts",

@@ -19,121 +19,7 @@
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
-/* ---- Hero: jobs by provider ---- */
-
-.fleetPanel {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wf-s-2);
-}
-
-.fleetLabel {
-  margin-right: var(--wf-s-1);
-  color: var(--wf-hero-ink-2);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.fleetButton {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-width: 0;
-  min-height: 1.875rem;
-  padding: 0 var(--wf-s-3);
-  border: 1px solid var(--wf-hero-edge);
-  border-radius: var(--wf-r-ctl);
-  background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
-  color: var(--wf-hero-ink);
-  text-align: left;
-  cursor: pointer;
-}
-
-.fleetButton:hover {
-  border-color: var(--wf-hero-ink-2);
-}
-
-.fleetButton[aria-pressed="true"] {
-  border-color: var(--wf-hero-ink);
-  background: var(--wf-hero-ink);
-  color: var(--wf-hero-2, var(--wf-ink-1));
-}
-
-.fleetButton[aria-pressed="true"] .fleetCounts {
-  color: inherit;
-}
-
-.fleetButton:focus-visible {
-  outline: 2px solid var(--wf-hl);
-  outline-offset: 2px;
-}
-
-.fleetName {
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  white-space: nowrap;
-}
-
-.fleetCounts {
-  color: var(--wf-hero-ink-2);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  white-space: nowrap;
-}
-
 /* ---- Hero: highlight pills and page tools ---- */
-
-.heroPills {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: var(--wf-s-2);
-  min-width: 0;
-  /* The stat toggles reach 4px past their row; the sideways scroller would clip that, so the row
-     keeps 4px of room above and below (device audit, 11 Oct 2026: tiles clipped at the top). */
-  margin: -4px;
-  padding: 4px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.heroPill {
-  flex: none;
-}
-
-.shortLabel {
-  display: none;
-}
-
-.heroTools {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-width: 0;
-}
-
-.nextArrival {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-1);
-  min-width: 0;
-  height: var(--wf-h-sm);
-  padding: 0 var(--wf-s-3);
-  border: 1px solid var(--wf-hero-edge);
-  border-radius: var(--wf-r-ctl);
-  color: var(--wf-hero-ink);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  white-space: nowrap;
-}
-
-.nextArrival b {
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
-}
-
-.nextArrivalPlace {
-  overflow: hidden;
-  max-width: 10rem;
-  text-overflow: ellipsis;
-}
 
 .eyebrow {
   color: var(--wf-ink-2);
@@ -283,6 +169,7 @@
 .tableScroll {
   min-width: 0;
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .jobsTable {
@@ -1259,68 +1146,9 @@
   }
 
   /* Hero: three highlights in one row, short labels, the provider row left to the larger screen. */
-  .dispatchHero > div:has(.fleetPanel) {
-    display: none;
-  }
-
-  .heroPills {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    width: 100%;
-    overflow: visible;
-  }
-
-  .heroPills > .heroPill:not(.deskOnly) {
-    display: flex;
-    padding: 0;
-    border-left: 0;
-  }
-
-  .heroPill > button {
-    width: 100%;
-    min-height: var(--spacing-tap, 3rem);
-    margin: 0;
-  }
-
-  .heroPill .longLabel {
-    display: none;
-  }
-
-  .heroPill .shortLabel {
-    display: inline;
-  }
-
-  .heroTools {
-    flex: 1 1 100%;
-  }
-
-  .nextArrival {
-    flex: 1 1 auto;
-    height: 2.75rem;
-  }
-
-  .nextArrivalPlace {
-    flex: 1 1 auto;
-    max-width: none;
-  }
 
   .dispatchHero {
     position: relative;
-  }
-
-  .copyButton {
-    position: absolute;
-    top: var(--wf-s-3);
-    right: var(--wf-s-3);
-    flex: none;
-    width: 2.75rem;
-    height: 2.75rem;
-    padding: 0;
-    justify-content: center;
-  }
-
-  .copyButton .longLabel {
-    display: none;
   }
 
   /* Next action: the first piece of work, one tap from done. */
@@ -1721,7 +1549,6 @@
     display: none !important;
   }
 
-  .fleetPanel,
   .jobsPanel,
   .refusals,
   .cancelledSection,
@@ -1750,129 +1577,13 @@
  * are a pill segment; each job reads name, "ARM to ward", then the stage and forms dots, with the
  * ETA on the right. The search, highlight chips, UMRN and per-row step button stay on the larger
  * screen and in the job sheet the row opens. The ph* classes render only on phone. */
-.phProviders {
-  display: none;
-}
 
 @media (max-width: 46.4375rem) {
-  /* Phone review F-31: square corners, so the divider is a straight rule. The kit's figure keeps a
-   * 12px radius, which bent this left border into a bracket. */
-  .heroPills > .heroPill:not(.deskOnly) {
-    padding: 0 var(--wf-s-3);
-    border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
-    border-radius: 0;
-  }
-
-  .heroPills > .heroPill:first-child {
-    padding-left: 0;
-    border-left: 0;
-  }
-
-  .heroPill > button {
-    justify-content: flex-start;
-    border: 0;
-    background: transparent;
-    padding: 0;
-    text-align: left;
-  }
-
-  .heroTools.heroTools {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: var(--wf-s-2);
-    width: 100%;
-  }
-
   /* Device sweep R1-28/R2-18/R7-19: alone (no arrivals button), Copy handover spans both tracks, so
      the empty track's gap no longer stops it short of the right gutter. */
-  .heroTools.heroTools > :only-child {
-    grid-column: 1 / -1;
-  }
-
-  .nextArrival {
-    display: none;
-  }
-
-  .copyButton.copyButton {
-    position: static;
-    width: auto;
-    height: auto;
-    min-height: var(--spacing-tap, 3rem);
-    padding: 0 var(--wf-s-4);
-    border-radius: var(--wf-r-ctl);
-  }
-
-  .copyButton.copyButton .longLabel {
-    display: inline;
-  }
-
-  .phArrivalsButton {
-    min-height: var(--spacing-tap, 3rem);
-    padding: 0 var(--wf-s-4);
-    border-radius: var(--wf-r-ctl);
-  }
-
-  .phArrivalsCount {
-    min-width: 1.5rem;
-    padding: 1px 6px;
-    border-radius: var(--wf-r-tag);
-    background: var(--wf-hero-ink);
-    color: var(--wf-hero-2);
-    font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
-    text-align: center;
-  }
 
   .nextCard {
     border-color: var(--wf-line);
-  }
-
-  .phProviders {
-    position: relative;
-    display: flex;
-    gap: var(--wf-s-2);
-    /* Room for the chips' 48px tap covers inside the sideways scroller. */
-    padding-block: 4px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  /* A 40px chip with a 48px tap cover: no 48px controls (Josh, 31 Oct 2026). */
-  .phProvider {
-    position: relative;
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    gap: 6px;
-    min-height: 40px;
-    padding: 0 var(--wf-s-4);
-    border: 1px solid var(--wf-line);
-    border-radius: var(--wf-r-ctl);
-    background: var(--wf-surface);
-    color: var(--wf-ink-1);
-    font: 500 var(--wf-fs-13) / 1 var(--wf-font);
-    white-space: nowrap;
-    box-shadow: var(--wf-e1);
-    cursor: pointer;
-  }
-
-  .phProvider::after {
-    position: absolute;
-    inset: -4px 0;
-    content: "";
-  }
-
-  .phProvider[aria-pressed="true"] {
-    border-color: var(--wf-ink-1);
-  }
-
-  .phProvider:focus-visible {
-    outline: 2px solid var(--wf-focus-ring);
-    outline-offset: 2px;
-  }
-
-  .phProviderCount {
-    font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
-    font-feature-settings: "tnum" 1;
   }
 
   /* Jobs: no card around the tabs; the tabs are a full-width pill segment. */
@@ -2211,8 +1922,9 @@
 }
 
 /* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
-   with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
-   tablet keep the toast above. */
+   with the tooltip's tip colours, 12px from each side and 12px above the floating bar, text may
+   wrap. M100 (10 Nov 2026): the shared toast region's sum, as --wf-dock-clear counts the home
+   indicator; a fixed 92px sat on the bar. Desktop and tablet keep the toast above. */
 @media (max-width: 46.4375rem) {
   .toast {
     --toast-bg: light-dark(
@@ -2224,7 +1936,9 @@
     position: fixed;
     top: auto;
     right: 12px;
-    bottom: 92px;
+    bottom: calc(
+      var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + var(--wf-toast-dock-gap, 12px)
+    );
     left: 12px;
     width: fit-content;
     max-width: calc(100% - 24px);

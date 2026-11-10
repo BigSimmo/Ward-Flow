@@ -38,9 +38,6 @@
 /* Polish 3 (Josh, 3 Nov 2026): a quiet, balanced row. Initials lead, the time is small inline text
    with its word beside it, and the add control is the subtle text "Action" whose plus turns into a
    close mark when the form is open. */
-.rowAvatar {
-  flex: none;
-}
 
 .figure {
   flex: none;
@@ -261,19 +258,6 @@
   gap: var(--wf-s-3);
 }
 
-.filterLine {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wf-s-2) var(--wf-s-4);
-}
-
-.serviceTrack {
-  max-width: 100%;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
 .chipRow {
   flex-wrap: wrap;
 }
@@ -288,6 +272,7 @@
   .chipRow {
     flex-wrap: nowrap;
     overflow-x: auto;
+    overflow-y: hidden;
     width: 100%;
     scrollbar-width: none;
     mask-image: linear-gradient(to right, black calc(100% - 24px), transparent);
@@ -341,6 +326,7 @@
 .formLine > [role="group"] {
   max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -365,9 +351,6 @@
 
 /* Phone: the time drops its fixed width and the initials step aside, so the name keeps its room. */
 @media (max-width: 30rem) {
-  .row > .rowAvatar {
-    display: none;
-  }
   .figure {
     min-inline-size: 0;
     flex-direction: column;
@@ -383,17 +366,6 @@
 }
 
 /* B1 extended (Josh, 4 Nov 2026): the list chips and one quiet Filter button share a line. */
-.chipLine {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-width: 0;
-}
-
-.chipLine > .chipRow {
-  flex: 1 1 auto;
-  min-width: 0;
-}
 
 .groupFilter {
   flex: none;
@@ -521,9 +493,12 @@
   /* One row that scrolls sideways, as the shared chips do on a phone. */
   .heroChips {
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
-    margin-inline: calc(-1 * var(--wf-s-4));
-    padding-inline: var(--wf-s-4);
+    /* 4px top and bottom holds the chips' tap band (and the nested chip row's own 4px) inside the
+       row, so iPhone Safari has nothing to drag up and down; the negative margin keeps its place. */
+    margin: -4px calc(-1 * var(--wf-s-4));
+    padding: 4px var(--wf-s-4);
   }
 }
 

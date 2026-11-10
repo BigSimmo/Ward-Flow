@@ -27,6 +27,7 @@
 .departmentSwitcher {
   display: flex;
   overflow-x: auto;
+  overflow-y: hidden;
   border: 1px solid var(--line);
   border-radius: var(--r1);
   background: var(--surface-2);
@@ -161,6 +162,7 @@
 .tableWrap {
   max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   border-top: 1px solid var(--line);
   scrollbar-width: thin;

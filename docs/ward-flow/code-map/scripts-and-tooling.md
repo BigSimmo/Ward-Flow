@@ -146,7 +146,7 @@ run individually per file; nothing here was executed. Back to [the code map inde
   TypeScript source tree, so `SELECTABLE_LEGAL_FORMS` is a hand-copied constant kept in step with
   `ward-legal-forms.ts` by comment, not by import. Not npm-wired; run directly.
 - **`scripts/ward-flow/check-errata-freshness.mjs`** (263 lines) — npm: `check:ward-errata-freshness`.
-  Re-measures every factual claim in `docs/ward-flow/plans/2026-09-10-master-plan-errata.md`
+  Re-measures every factual claim in `docs/history/plans-2026-09/2026-09-10-master-plan-errata.md`
   against the current tree and reports STILL TRUE / EXPIRED per claim, using the command each claim
   names. Written after that errata sheet itself went stale within an hour and would have damaged a
   working guard if followed blindly.
@@ -460,7 +460,7 @@ is staged.
 - **Lines 61–85: task-branch / `main` commit guard.** Direct commits on `main`/`master` are guarded
   (work happens on a dedicated task branch in `BigSimmo/Ward-Flow`, where `origin/main` is Ward
   Flow's public main branch).
-- **`SKIP_DOCS_SYNC_HOOK=1`** (line 6) skips the entire hook, generated-index checks included.
+- **`SKIP_DOCS_SYNC_HOOK=1`** skips only the staged documentation sync at the end of the hook (`check-staged-docs.mjs` and the checks after it). The staged admission scan, the `main` commit guard and the generated-index re-checks still run before it.
 
 ## `docs/ward-flow/journey/*.mjs` — the journey-explorer build chain
 

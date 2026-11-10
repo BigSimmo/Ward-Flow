@@ -63,6 +63,8 @@ jobs:
         env:
           WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
         run: node scripts/install-locked-dependencies.mjs
+      - name: List skipped and conditional tests (M137)
+        run: node scripts/ward-flow/skip-inventory.mjs >> "$GITHUB_STEP_SUMMARY"
       - name: Resolve the Playwright version
         id: playwright-version
         run: echo "version=$(node -p "require('playwright-core/package.json').version")" >> "$GITHUB_OUTPUT" && echo "image=${ImageOS:-unknown}-${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"

@@ -31,7 +31,14 @@ function Probe() {
       <button
         type="button"
         onClick={() =>
-          dispatch({ type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE", role: "ed", now, movementId: held.id, cleared: false })
+          dispatch({
+            type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
+            role: "ed",
+            now,
+            movementId: held.id,
+            cleared: false,
+            actingPlaceId: held.originEdId,
+          })
         }
       >
         Record later negative clearance from another control

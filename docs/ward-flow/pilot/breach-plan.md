@@ -2,6 +2,8 @@
 
 _Created 2026-11-08 - drafted for go/no-go items B1 to B4; checked against source at `main` `d85618e6`; Documentation owns._
 
+_Updated 2026-11-10 - notification leads for the privacy officer and an approval record added (audit item M63); still a draft; Documentation owns._
+
 **For:** pilot site leads, the bed coordinator on shift, the hosting maintainer and Josh.
 **Status:** draft. Not yet approved by a privacy officer (none is named yet). It covers items
 B1 to B4 in [REAL-DATA-GO-NO-GO.md section 3](../governance/REAL-DATA-GO-NO-GO.md#3-breach-plan).
@@ -41,7 +43,7 @@ the hosted services. Never paste a secret value into a log, ticket, chat or this
 | Step                                   | How (detail in the linked page)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Who can do it                                                                                                                   |
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | **A. Stop new releases**               | Set the repository Actions variable `WARD_RELEASE_PAUSED` to `true`, and cancel any release run in progress ([rolling back the app, step 2](../OPERATIONS-RUNBOOK.md#rolling-back-the-app)).                                                                                                                                                                                                                                                                                                                                           | Repository owner, or the hosting maintainer with his yes                                                                        |
-| **B. Turn the front door to required** | On Railway, set `WARD_FRONT_DOOR=required` and make sure `WARD_PASS_SECRET` is set (32 or more random characters), then restart. Every page then needs a pass ([front door switch](../OPERATIONS-RUNBOOK.md#front-door-switch)). It is **off** today.                                                                                                                                                                                                                                                                                  | Hosting and database maintainer, with Josh's yes                                                                                |
+| **B. Turn the front door to required** | On Railway, set `WARD_FRONT_DOOR=required` and make sure `WARD_PASS_SECRET` is set (32 or more random characters), then restart. Every page then needs a pass ([front door switch](../OPERATIONS-RUNBOOK.md#front-door-switch)). The public demo was seen shut on 10 November 2026 (D-130).                                                                                                                                                                                                                                            | Hosting and database maintainer, with Josh's yes                                                                                |
 | **C. End every session**               | Change `WARD_PASS_SECRET` and restart: this signs everyone out of the front door. In the app, an access admin or statewide coordinator revokes the roles involved; an account with no role is refused. Each person's own sign-out ends their session on the server at once (migration 11, [backend README](../../../backend/ward-flow/README.md)). **Gap:** Ward Flow has no single "sign out everyone" control. Ending every Supabase sign-in at once needs a Supabase dashboard step that is **not written in this repository** yet. | Hosting maintainer (secret); access admin or statewide coordinator (roles); Supabase steps: hosting maintainer, with Josh's yes |
 | **D. Rotate the keys**                 | Make new values for `WARD_PASS_SECRET`, the Supabase publishable key, the `wardflow_backend` database password and `WARD_FLOW_UPTIME_TOKEN`. Update them in Railway and Supabase only. The signed-in site reads its browser settings at build time, so a new publishable key there needs a rebuild ([how a deploy happens](../OPERATIONS-RUNBOOK.md#how-a-deploy-happens)). Setting names are in the [Supabase settings template](../../../backend/ward-flow/infra/supabase-settings.template.env).                                    | Hosting and database maintainer, with Josh's yes                                                                                |
 | **E. Pause the Railway services**      | Stop `ward-flow-shared` and `ward-flow-backend` in the Railway dashboard ([what runs where](../OPERATIONS-RUNBOOK.md#what-runs-where)). The exact Railway steps are **not written in this repository**. Check the state afterwards with [RAILWAY-OPERATIONS.md](../RAILWAY-OPERATIONS.md#act-on-the-actual-state). The public demo (`ward-flow`) holds no shared data.                                                                                                                                                                 | Hosting and database maintainer, with Josh's yes                                                                                |
@@ -77,6 +79,17 @@ or a confirmed time limit.
 | Federal Notifiable Data Breaches scheme    | Possibly, if a private hospital or provider takes part | **To be confirmed** | Privacy officer (**to be named**) |
 | Telling affected people                    | **To be confirmed by the PIA**                         | **To be confirmed** | Privacy officer (**to be named**) |
 | Hospital incident system and executive     | Site rules                                             | Site rules          | Pilot site lead (**to be named**) |
+
+**Leads for the privacy officer to check** (drafter's memory, not verified, not legal advice):
+
+- The WA Privacy and Responsible Information Sharing Act 2024 sets up an information breach
+  notification scheme for WA public entities. Its parts commence in stages. Confirm whether the
+  breach scheme is in force on the day, what makes a breach notifiable, who is notified (the
+  regulator and affected people) and the time limits.
+- The Commonwealth Notifiable Data Breaches scheme (Privacy Act 1988, Part IIIC) applies only if
+  a private hospital or provider takes part. Under it a suspected eligible breach is assessed
+  within 30 days, and the Commissioner and affected people are told as soon as practicable.
+- The pilot site's own incident and executive reporting rules.
 
 ## Practice drill (B4)
 
@@ -127,3 +140,14 @@ Changes to make to this plan: \_\_\_\_\_\_\_
 
 A tabletop drill is not the end-to-end drill that item B4 asks for. That needs a separate, approved
 run on synthetic data.
+
+## Approval and drill record
+
+Items B1 to B4 are ticked only when each row below has a date and evidence.
+
+| Item | What                                                                  | Who                      | Date | Evidence |
+| ---- | --------------------------------------------------------------------- | ------------------------ | ---- | -------- |
+| B1   | Plan approved; notification duties in section 4 confirmed             | Privacy officer          |      |          |
+| B2   | Each containment step's owner confirmed                               | Josh, hosting maintainer |      |          |
+| B3   | Each provider's log retention confirmed                               | Hosting maintainer       |      |          |
+| B4   | 60-minute tabletop run once (record above), then the end-to-end drill | Facilitator              |      |          |

@@ -151,6 +151,7 @@ export function WardBoard({
     rejections,
     dayZero,
     dispatch,
+    wardReferralInbox,
   } = useWardFlowSelect(
     "units",
     "admissions",
@@ -163,6 +164,7 @@ export function WardBoard({
     "rejections",
     "dayZero",
     "dispatch",
+    "wardReferralInbox",
   );
   const now = useWardFlowClock();
   // D-80: a site bed manager blocks a release in its own name; the scope check keeps it to its wards.
@@ -300,6 +302,8 @@ export function WardBoard({
   const outcomeCheckRef = useRef<{
     prior: number;
     success: string;
+    /** Audit M2: who the step is for, so a refusal names them as the success message does. */
+    who?: string;
     outcome?: WardCommandOutcome;
   } | null>(null);
   const [outcomeToken, setOutcomeToken] = useState(0);
@@ -308,8 +312,8 @@ export function WardBoard({
   // H-0371 (D-83, Josh 27 Oct 2026): the screen reader hears the toast's own words, the patient's
   // name included, as Handover and ED already say it: the shared toast region reads them once.
   const dispatchAndReport = useCallback(
-    (record: () => ReturnType<WardCommandDispatch>, success: string) => {
-      const check = { prior: rejections.length, success };
+    (record: () => ReturnType<WardCommandDispatch>, success: string, who?: string) => {
+      const check = { prior: rejections.length, success, who };
       const result = record();
       if (result && "then" in result) {
         void result.then((outcome) => {
@@ -335,10 +339,13 @@ export function WardBoard({
     record: () => ReturnType<WardCommandDispatch>,
     success: string,
     admissionId: string,
+    /** Audit M2: who is leaving, so a refusal names them as the success message does. */
+    who?: string,
   ) => {
     setLeavingChoice(null);
     return runDeparture(record, {
       success,
+      who,
       undo: (at) => ({ type: "UNDO_DEPARTURE", role: "ward", now: at, admissionId, actingUnitId: unit.id }),
       undone: "Discharge undone. This patient is back on the ward.",
     });
@@ -353,6 +360,7 @@ export function WardBoard({
           ...(reason && movement ? { exception: { gaps: arrivalGaps(movement), reason } } : {}),
         }),
       `Patient arrived: ${who} confirmed on the ward.`,
+      who,
     );
   };
   useEffect(() => {
@@ -365,12 +373,14 @@ export function WardBoard({
         ? rejections[rejections.length - 1]
         : undefined;
     const unaccepted = check.outcome && check.outcome.status !== "accepted";
+    // A shared-board refusal never names the patient (P058), so the screen does (audit M2).
+    const named = (reason: string) => (check.who && !reason.includes(check.who) ? `${check.who}: ${reason}` : reason);
     const msg = unaccepted
       ? check.outcome!.status === "refused"
-        ? `Action refused: ${check.outcome!.message ? refusalReasonText(check.outcome!.message) : "The action was refused."}`
+        ? `Action refused: ${named(check.outcome!.message ? refusalReasonText(check.outcome!.message) : "The action was refused.")}`
         : (check.outcome!.message ?? SAVE_NOT_CONFIRMED)
       : refused
-        ? `Not recorded: ${refusalReasonText(refused.reason)}. Nothing was changed.`
+        ? `Not recorded: ${named(refusalReasonText(refused.reason))}. Nothing was changed.`
         : check.success;
     setToastMessage(refused || unaccepted ? { warning: msg } : msg);
   }, [outcomeToken, rejections, setToastMessage]);
@@ -463,7 +473,10 @@ export function WardBoard({
    */
   const bedReleases = derivedBedReleases([...admissions], now);
 
-  const available = headlineAvailable(unit, admissions, bedReleases, [...leaveBeds], now);
+  // D-115 item 3: beds named for an open journey or an accepted referral are spoken for, as on Home,
+  // Statistics, the TV and print. The ward-scoped inbox, never the full referral array.
+  const namedHolds = [...movements, ...(wardReferralInbox?.(unit.id) ?? [])];
+  const available = headlineAvailable(unit, admissions, bedReleases, [...leaveBeds], now, namedHolds);
   // 🔴 THE FIGURE ABOVE IS CORRECT AND MUST NOT CHANGE. `availableNow` deliberately subtracts
   // nothing for a preparation note: asked in September whether a bed being cleaned should drop the
   // ward's number or merely refuse the pull, the owner chose the refusal, because the ward has not
@@ -475,8 +488,8 @@ export function WardBoard({
   // Walkthrough D7 (25 Sept 2026): read the LIVE releases, because a preparation note is recorded
   // on a release in state; the rebuilt list above never carries one, so "being cleaned" never showed.
   const pendingPreparation = bedsPendingPreparation(unit.id, [...(liveBedReleases ?? [])]);
-  const constraint = constraintSentence(unit, admissions, bedReleases, [...leaveBeds], now);
-  const tiles = buildTiles(unit, admissions, bedReleases, now);
+  const constraint = constraintSentence(unit, admissions, bedReleases, [...leaveBeds], now, namedHolds);
+  const tiles = buildTiles(unit, admissions, bedReleases, now, { leaveBeds, holds: namedHolds });
   // Read straight back out, purely to say how many closed tiles are on screen in the footnote below
   // — never re-derived. `buildTiles` already clamped this into the physically-empty pool; the
   // footnote must describe exactly what got drawn, not a second, unclamped copy of the figure.
@@ -496,7 +509,7 @@ export function WardBoard({
   const targets = arrowTargets(admissionsForUnit(admissions, unit.id), now);
   /* Scoped inside `buildOccupants` with the same `admissionsForUnit(...)` + `bedIsOccupied` pair
    * `buildTiles` uses — see that function's own comment for the defect this prevents. */
-  const occupants = buildOccupants(unit, admissions, now);
+  const occupants = buildOccupants(unit, admissions, now, leaveBeds);
   // Feature 29 (Josh, 9 Nov 2026): the 28 day readmission flag on each inpatient's tile, as the
   // ward's own copy (discharge time only). Referrals stay out: a ward screen never reads them, so
   // identity goes through the provider's projection, as names do, and a referral-linked stay resolves.
@@ -556,7 +569,7 @@ export function WardBoard({
   const breakdown = capacityBreakdown(unit, [...bedReleases], [...leaveBeds], now);
   // The ruled Closed figure (`ward-bed-states.ts`), the same call `buildTiles` draws its closed
   // tiles from. `breakdown.held` is NOT this figure: it still counts a live pull's empty bed.
-  const states = bedStates(unit, admissions, [...bedReleases], [...leaveBeds]);
+  const states = bedStates(unit, admissions, [...bedReleases], [...leaveBeds], namedHolds);
   const incoming = buildIncoming(unit, admissions, movements, now);
   const outgoing = outgoingToday(unit, bedReleases, outgoingBasis, now);
   /*
@@ -876,6 +889,7 @@ export function WardBoard({
               }),
         `Recorded discharge: ${pendingConfirm.who} has left the ward.`,
         admissionId,
+        pendingConfirm.who,
       );
       if (selectedTile && admissionId === selectedTile.key) {
         closeDetail();
@@ -892,6 +906,7 @@ export function WardBoard({
             actingUnitId: unit.id,
           }),
         `Recorded: ${pendingConfirm.who} is currently away at an emergency department. Their bed is still held.`,
+        pendingConfirm.who,
       );
     }
     closeConfirmDialog();
@@ -912,6 +927,7 @@ export function WardBoard({
                 }),
           `Recorded discharge: ${item.who || nameFor(item.selectableKey)} has left the ward.`,
           item.selectableKey!,
+          item.who || nameFor(item.selectableKey),
         );
       };
 
@@ -1000,6 +1016,7 @@ export function WardBoard({
           return summarize(completed);
         },
         `Returned to ward: ${who} marked back${isAwayAtEd && !matchingLeave ? " from the emergency department" : " from leave"}.`,
+        who,
       );
       return;
     }

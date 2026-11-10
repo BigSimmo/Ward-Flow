@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, type KeyboardEvent } from "react";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
 import { DUE_SORT_OPTIONS, type DueSortMode } from "@/components/ward-management/ward-due-sort";
 import { ArrowDownUp, ChevronDown } from "lucide-react";
@@ -34,6 +35,29 @@ export function DischargePopulationSwitch({ s, className }: { s: DischargeWorksp
     sessionAdopted,
   } = s;
   const toWork = releaseGroups.blocked.length + releaseGroups.confirmed.length + releaseGroups.expected.length;
+  const nowRef = useRef<HTMLButtonElement>(null);
+  const recordedRef = useRef<HTMLButtonElement>(null);
+  function choose(next: "releases" | "records") {
+    setPopulation(next);
+    setStatus("all");
+    setDestination("all");
+    setBlockerCategory("all");
+    setHighlight(null);
+    clearSelection();
+  }
+  // The tablist's keys (roving tab stop, automatic activation): arrows move between the two tabs and
+  // choose the one reached; Home and End go to Now and Recorded.
+  function onTabKeyDown(event: KeyboardEvent) {
+    let next: "releases" | "records" | null = null;
+    if (event.key === "ArrowRight" || event.key === "ArrowLeft")
+      next = population === "releases" ? "records" : "releases";
+    else if (event.key === "Home") next = "releases";
+    else if (event.key === "End") next = "records";
+    if (next === null || !sessionAdopted) return;
+    event.preventDefault();
+    (next === "releases" ? nowRef : recordedRef).current?.focus();
+    if (next !== population) choose(next);
+  }
   return (
     <>
       {!sessionAdopted ? (
@@ -41,11 +65,13 @@ export function DischargePopulationSwitch({ s, className }: { s: DischargeWorksp
           Preparing discharge workspace…
         </span>
       ) : null}
+      {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab */}
       <div
         className={className ?? pageStyles.populationSwitch}
         role="tablist"
         aria-label="Now or recorded"
         aria-busy={!sessionAdopted}
+        onKeyDown={onTabKeyDown}
       >
         <button
           type="button"
@@ -53,14 +79,9 @@ export function DischargePopulationSwitch({ s, className }: { s: DischargeWorksp
           disabled={!sessionAdopted}
           aria-selected={population === "releases"}
           data-testid="ward-discharge-now"
-          onClick={() => {
-            setPopulation("releases");
-            setStatus("all");
-            setDestination("all");
-            setBlockerCategory("all");
-            setHighlight(null);
-            clearSelection();
-          }}
+          tabIndex={population === "releases" ? 0 : -1}
+          ref={nowRef}
+          onClick={() => choose("releases")}
         >
           Now
           {/* Josh, 30 Oct: Now says the hero's figure, the releases listed to work on. */}
@@ -75,14 +96,9 @@ export function DischargePopulationSwitch({ s, className }: { s: DischargeWorksp
           aria-selected={population === "records"}
           data-testid="ward-discharge-history"
           disabled={!sessionAdopted}
-          onClick={() => {
-            setPopulation("records");
-            setStatus("all");
-            setDestination("all");
-            setBlockerCategory("all");
-            setHighlight(null);
-            clearSelection();
-          }}
+          tabIndex={population === "records" ? 0 : -1}
+          ref={recordedRef}
+          onClick={() => choose("records")}
         >
           {/* DC4 (Josh, 3 Nov 2026): History becomes Recorded, the discharges of the last 7 days. */}
           Recorded

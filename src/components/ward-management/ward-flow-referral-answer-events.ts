@@ -1,6 +1,6 @@
 import { numberedBedKindRefusal } from "./ward-bed-designation";
 import { closedToAdmissionsRefusal } from "./capacity/ward-closure";
-import { referralIntakeError } from "./referrals/referral-submission";
+import { referralIntakeError, referrerPhoneError } from "./referrals/referral-submission";
 import { alternativeListPosition, alternativesConsideredError } from "./referrals/referral-alternatives";
 import { type AuditDecision } from "./ward-audit";
 import { GENDER_PLACEMENT_REASONS, GENDER_PLACEMENT_REFUSAL } from "@/components/ward-management/ward-change-reasons";
@@ -462,7 +462,7 @@ export function reduceReferralAnswerEvent(
           return reject(state, event, "RECEIVE_REFERRAL bed criteria must be answered");
       }
       if (event.intake !== undefined) {
-        const error = referralIntakeError(event.intake);
+        const error = referralIntakeError(event.intake) ?? referrerPhoneError(event.intake.referrer.phone);
         if (error) return reject(state, event, `RECEIVE_REFERRAL: ${error}`);
         // Finding 40 (Josh, 27 Oct 2026): "Catchment not known" is for a ward or ED referral only.
         if (event.intake.catchment.notKnown && kinds.includes("community_team")) {

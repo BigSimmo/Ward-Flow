@@ -192,22 +192,34 @@ jobs:
           # adds, one file per change in the app's folder. Read as data through the API, never run.
           # A folder missing at either end counts as empty. Ids in the older one-file list at the
           # base count as already shipped, so moving to one file per entry repeats no line.
+          # F-50 (D-121): only a 404 means "not there". Any other GitHub error fails the run before
+          # live moves, instead of quietly dropping or repeating staff lines.
+          gh_or_absent() {
+            local out err
+            out="$(mktemp)"; err="$(mktemp)"
+            if gh api "$@" > "$out" 2> "$err"; then cat "$out"; rm -f "$out" "$err"; return 0; fi
+            if grep -q '(HTTP 404)' "$err"; then rm -f "$out" "$err"; return 0; fi
+            cat "$err" >&2; rm -f "$out" "$err"; return 1
+          }
           dir="src/components/ward-management/help/whats-new"
           list_ids() {
-            gh api "repos/$REPOSITORY/contents/$dir?ref=$1" \
-              --jq '.[] | select(.type == "file" and (.name | endswith(".json"))) | .name | rtrimstr(".json")' 2>/dev/null || true
+            gh_or_absent "repos/$REPOSITORY/contents/$dir?ref=$1" \
+              --jq '.[] | select(.type == "file" and (.name | endswith(".json"))) | .name | rtrimstr(".json")'
           }
           legacy_ids() {
-            gh api -H "Accept: application/vnd.github.raw" \
-              "repos/$REPOSITORY/contents/src/components/ward-management/help/whats-new.json?ref=$1" 2>/dev/null \
-              | jq -r 'if type == "array" then .[].id else empty end' 2>/dev/null || true
+            local raw
+            raw="$(gh_or_absent -H "Accept: application/vnd.github.raw" \
+              "repos/$REPOSITORY/contents/src/components/ward-management/help/whats-new.json?ref=$1")" || return 1
+            # A malformed old list is a content problem, not an API failure: it adds no ids.
+            printf '%s' "$raw" | jq -r 'if type == "array" then .[].id else empty end' 2>/dev/null || true
           }
           { list_ids "$current"; legacy_ids "$current"; } | sort -u > shipped-ids.txt
           list_ids "$target" | sort -u > target-ids.txt
           : > staff.txt
           comm -13 shipped-ids.txt target-ids.txt | while read -r id; do
-            line="$(gh api -H "Accept: application/vnd.github.raw" "repos/$REPOSITORY/contents/$dir/$id.json?ref=$target" 2>/dev/null \
-              | jq -r 'if type == "object" and (.line | type) == "string" then .line else empty end' 2>/dev/null)" || line=""
+            # The entry was just listed at $target, so a failed read is a real error and fails the run.
+            raw="$(gh api -H "Accept: application/vnd.github.raw" "repos/$REPOSITORY/contents/$dir/$id.json?ref=$target")"
+            line="$(printf '%s' "$raw" | jq -r 'if type == "object" and (.line | type) == "string" then .line else empty end' 2>/dev/null)" || line=""
             if [ -n "$line" ]; then printf -- '- %s\n' "$line" >> staff.txt; fi
           done
           {

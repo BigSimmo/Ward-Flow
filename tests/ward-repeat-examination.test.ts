@@ -33,8 +33,8 @@ function atPulledBed(movementId: string) {
       genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
       genderPlacementChecked: true,
     },
-    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure" },
-    { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure" },
+    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
+    { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
   ] as const) {
     state = wardFlowReducer(state, { ...step, now: NOW, movementId } as never);
   }
