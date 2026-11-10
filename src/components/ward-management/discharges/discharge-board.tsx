@@ -189,7 +189,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     // Confirm date's control ("New expected out") sits in the release's arrangements, beside its barriers.
     base.setDrawerTab(part === "date" ? "barriers" : part);
   };
-  // D-64: rows show where criteria led discharge stands, behind its flag (off in production). L21 dropped
+  // D-64: rows show where criteria led discharge stands, behind its flag (on everywhere, D-65). L21 dropped
   // the Stage column, so the tag now sits in the Now list's Hold-up cell for a patient still in a bed.
   const criteriaLedOn = useWardFeatureFlag("top25-criteria-led-discharge");
   const {

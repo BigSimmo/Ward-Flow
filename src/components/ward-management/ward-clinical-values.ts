@@ -27,11 +27,12 @@ import {
  * fails if a threshold constant is typed as a number anywhere else in the ward directory, and pins
  * `docs/ward-flow/clinical-values.md` to this list.
  *
- * Three values stay written in `ward-model.ts`, where the legal figure guard keeps their provenance
- * (`MODEL_CONSTANT_PROVENANCE`): the ED access target, the pull hold and the ED medical bed release.
- * They are read in here so this list is complete, and their status lives here like every other.
+ * Four values stay written in `ward-model.ts`, where the legal figure guard keeps their provenance
+ * (`MODEL_CONSTANT_PROVENANCE` in `tests/ward-legal-figure-guard.test.ts`): the ED access target, the
+ * pull hold, the extra travel hold (D-75) and the ED medical bed release. They are read in here so
+ * this list is complete, and their status lives here like every other.
  *
- * This module is pure data. It imports nothing but those three numbers.
+ * This module is pure data. It imports nothing but those four numbers.
  */
 
 const MINUTES_PER_HOUR = 60;
