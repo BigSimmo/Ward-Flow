@@ -141,7 +141,7 @@ import { WardScreenHomeSection } from "./ward-screen-home-section";
 import { WardAcceptDialog, WardScreenDecisionJobs } from "./ward-on-demand";
 import type { DecisionReport } from "./ward-decisions-cockpit";
 import { formatDateOfBirth } from "@/components/ward-management/ward-patients";
-import { WardScreenBedDrawer } from "./ward-screen-overlays";
+import { notRecordedMessage, WardScreenBedDrawer } from "./ward-screen-overlays";
 import { WardScreenTabSections } from "./ward-screen-tab-sections";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 
@@ -510,7 +510,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         ? `${check.who}: ${reason}`
         : reason;
     if (namedReason !== undefined) {
-      warnToast(`Not recorded: ${namedReason.replace(/\.$/u, "")}. Nothing was changed.`);
+      // A shared-board refusal already ends "Nothing was changed."; say it once (audit M2).
+      warnToast(notRecordedMessage(namedReason));
       return;
     }
     // Audit A1-12: "Has left" offers Undo like Move bed, through the same toast.
@@ -582,7 +583,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       }
       const refused = wardCommandRefusal(check.outcome, rejections, check.prior, true);
       if (refused) {
-        const said = `Not recorded: ${refused.reason.replace(/\.$/, "")}. Nothing was changed.`;
+        // Audit M2: the refusal names the person (a shared-board reason never does) and says
+        // "Nothing was changed." once, though a shared-board reason already ends with it.
+        const reason = refused.reason;
+        const said = notRecordedMessage(check.who && !reason.includes(check.who) ? `${check.who}: ${reason}` : reason);
         setBoardSay(said);
         if (check.ask && refused.reason.includes(OPEN_BED_MOVE_REASON_REQUIRED)) setOpenBedAsk(check.ask);
         if (toast) toast.push({ tone: "warning", title: said });
@@ -1252,6 +1256,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       prior: rejections.length,
       bed: move.bedNumber,
       success: `Moved ${move.name} from bed ${bedNumberLabel(move.fromBed)} to bed ${bedNumberLabel(move.bedNumber)}.`,
+      who: move.name,
       undo: { kind: "stay", admissionId: move.admissionId, unitId: boardUnitId },
       ...(reason === undefined ? { ask: move } : {}),
     };
@@ -1296,6 +1301,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         prior: rejections.length,
         bed: bedNumber,
         success: `Placed ${pick.name} in bed ${bedNumberLabel(bedNumber)}. Accepted in principle.`,
+        who: pick.name,
         undo: {
           kind: "movement",
           movementId: pick.movementId,
@@ -1325,6 +1331,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           prior: rejections.length,
           bed: bedNumber,
           success: `Pulled bed ${bedNumberLabel(bedNumber)} for ${pick.name}. Original acceptance kept.`,
+          who: pick.name,
         },
       );
     } else {
@@ -1332,6 +1339,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         prior: rejections.length,
         bed: bedNumber,
         success: `Placed ${pick.name} in bed ${bedNumberLabel(bedNumber)}. Referral accepted.`,
+        who: pick.name,
         undo: {
           kind: "referral",
           referralId: pick.referralId,

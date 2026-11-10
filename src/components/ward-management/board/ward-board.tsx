@@ -300,6 +300,8 @@ export function WardBoard({
   const outcomeCheckRef = useRef<{
     prior: number;
     success: string;
+    /** Audit M2: who the step is for, so a refusal names them as the success message does. */
+    who?: string;
     outcome?: WardCommandOutcome;
   } | null>(null);
   const [outcomeToken, setOutcomeToken] = useState(0);
@@ -308,8 +310,8 @@ export function WardBoard({
   // H-0371 (D-83, Josh 27 Oct 2026): the screen reader hears the toast's own words, the patient's
   // name included, as Handover and ED already say it: the shared toast region reads them once.
   const dispatchAndReport = useCallback(
-    (record: () => ReturnType<WardCommandDispatch>, success: string) => {
-      const check = { prior: rejections.length, success };
+    (record: () => ReturnType<WardCommandDispatch>, success: string, who?: string) => {
+      const check = { prior: rejections.length, success, who };
       const result = record();
       if (result && "then" in result) {
         void result.then((outcome) => {
@@ -335,10 +337,13 @@ export function WardBoard({
     record: () => ReturnType<WardCommandDispatch>,
     success: string,
     admissionId: string,
+    /** Audit M2: who is leaving, so a refusal names them as the success message does. */
+    who?: string,
   ) => {
     setLeavingChoice(null);
     return runDeparture(record, {
       success,
+      who,
       undo: (at) => ({ type: "UNDO_DEPARTURE", role: "ward", now: at, admissionId, actingUnitId: unit.id }),
       undone: "Discharge undone. This patient is back on the ward.",
     });
@@ -353,6 +358,7 @@ export function WardBoard({
           ...(reason && movement ? { exception: { gaps: arrivalGaps(movement), reason } } : {}),
         }),
       `Patient arrived: ${who} confirmed on the ward.`,
+      who,
     );
   };
   useEffect(() => {
@@ -365,12 +371,14 @@ export function WardBoard({
         ? rejections[rejections.length - 1]
         : undefined;
     const unaccepted = check.outcome && check.outcome.status !== "accepted";
+    // A shared-board refusal never names the patient (P058), so the screen does (audit M2).
+    const named = (reason: string) => (check.who && !reason.includes(check.who) ? `${check.who}: ${reason}` : reason);
     const msg = unaccepted
       ? check.outcome!.status === "refused"
-        ? `Action refused: ${check.outcome!.message ? refusalReasonText(check.outcome!.message) : "The action was refused."}`
+        ? `Action refused: ${named(check.outcome!.message ? refusalReasonText(check.outcome!.message) : "The action was refused.")}`
         : (check.outcome!.message ?? SAVE_NOT_CONFIRMED)
       : refused
-        ? `Not recorded: ${refusalReasonText(refused.reason)}. Nothing was changed.`
+        ? `Not recorded: ${named(refusalReasonText(refused.reason))}. Nothing was changed.`
         : check.success;
     setToastMessage(refused || unaccepted ? { warning: msg } : msg);
   }, [outcomeToken, rejections, setToastMessage]);
@@ -876,6 +884,7 @@ export function WardBoard({
               }),
         `Recorded discharge: ${pendingConfirm.who} has left the ward.`,
         admissionId,
+        pendingConfirm.who,
       );
       if (selectedTile && admissionId === selectedTile.key) {
         closeDetail();
@@ -912,6 +921,7 @@ export function WardBoard({
                 }),
           `Recorded discharge: ${item.who || nameFor(item.selectableKey)} has left the ward.`,
           item.selectableKey!,
+          item.who || nameFor(item.selectableKey),
         );
       };
 

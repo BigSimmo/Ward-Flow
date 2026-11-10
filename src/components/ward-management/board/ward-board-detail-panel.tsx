@@ -141,6 +141,7 @@ export function WardBoardDetailPanel({
     record: () => ReturnType<WardCommandDispatch>,
     success: string,
     admissionId: string,
+    who?: string,
   ) => void;
   recordWardDeparture: (
     admissionId: string,
@@ -254,6 +255,7 @@ export function WardBoardDetailPanel({
                       }),
                 `Recorded discharge: ${tileWho || nameFor(selectedTile.key)} has left the ward.`,
                 selectedTile.key,
+                tileWho || nameFor(selectedTile.key),
               );
               closeDetail();
             };

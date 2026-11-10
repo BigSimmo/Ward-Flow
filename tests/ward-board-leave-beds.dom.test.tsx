@@ -285,7 +285,8 @@ it("labels a real local arrival refusal explicitly and announces it once", () =>
   const refusal = readProviderProbe()?.rejections.at(-1);
   expect(refusal?.attempted).toBe("PATIENT_ARRIVED");
   expect(refusal?.reason).toContain("cannot confirm arrival");
-  const expected = `Action refused: ${refusal?.reason}`;
+  // Audit M2: the refusal is led by whom it was for, as the success message names them.
+  const expected = `Action refused: the patient (name not recorded): ${refusal?.reason}`;
   expect(screen.getByTestId("ward-board-toast").textContent).toBe(expected);
   // Read once, by the shared toast region; the shell region no longer repeats it (notifications pass).
   expect(screen.getByTestId("toast-region")).toContainElement(screen.getByTestId("ward-board-toast"));
