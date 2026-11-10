@@ -74,7 +74,13 @@ function hostOfUrl(value: string): string | null {
 function hostOfConfiguredValue(value: string | null | undefined): string | null {
   const candidate = value?.trim();
   if (!candidate) return null;
-  return hostOfUrl(candidate.includes("://") ? candidate : `https://${candidate}`);
+  try {
+    // HTTP(S) only, matching src/lib/metadata-base.ts for the same variables.
+    const url = new URL(candidate.includes("://") ? candidate : `https://${candidate}`);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.host.toLowerCase() || null : null;
+  } catch {
+    return null;
+  }
 }
 
 /**

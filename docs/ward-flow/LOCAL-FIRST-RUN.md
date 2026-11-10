@@ -81,7 +81,7 @@ Your branch and its open pull request are your claim, so you need no sign-out li
 An optional shared sign-out log records other branches' holds, and the commit hook blocks a file
 another branch holds there. `WARD_SIGNOUT_FILE` selects its exact path; otherwise
 `WARD_FLOW_LOGS/sign-out.md`, then `D:/Repos/ward-flow-logs/sign-out.md` on Windows or
-`~/ward-flow-logs/sign-out.md` elsewhere applies. A missing log means no holds. Follow [HOW-WE-WORK §2](HOW-WE-WORK.md#2-branches-and-worktrees)
+`~/ward-flow-logs/sign-out.md` elsewhere applies. A missing log means no logged holds; claim files in its sibling `claims/` folder still count. Follow [HOW-WE-WORK §2](HOW-WE-WORK.md#2-branches-and-worktrees)
 for ownership, Cloud coordination and the limited single-user exception.
 
 ## Current checkout vs base

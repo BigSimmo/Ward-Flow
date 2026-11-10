@@ -235,7 +235,7 @@ runtime inventory verification. Static work includes CI contracts, source safety
 commands, facts and the dependency-free reference-pack membership/hash check. Full local
 `docs:maintain:check` additionally checks generated indexes and organisation and needs dependencies
 for site-map generation. Scoped frontend checks retain whole-tree lint and route/source typecheck.
-Eight disjoint unit shards produce coverage blobs; the coverage job merges them, enforces unchanged
+Four disjoint unit shards produce coverage blobs; the coverage job merges them, enforces unchanged
 thresholds and validates declared executable files. Source-reading guards remain mandatory in
 focused selection even after import fan-out capping; capped/deferred evidence remains partial.
 
@@ -247,7 +247,7 @@ authentication. It checks signed-in saves, another desk's view, reload persisten
 server refusals and keyboard focus. Backend/root tests cannot substitute for that browser proof.
 
 One prepared browser build feeds two journey groups; group 1 runs the separate Chromium CSRF
-case on the same server. The release gate requires all eight named desktop/phone journey cases,
+case on the same server. The release gate requires all 14 named desktop/phone journey cases,
 zero retry recovery and no serious or critical axe WCAG violations, without a recovery rescan. The required job checks plan, static,
 backend, unit, prepared build, journeys, release, secret scan, build and coverage, and rejects
 unexpected skips. Main reuse retains the existing exact-tree/PR-run proof. On that path only the

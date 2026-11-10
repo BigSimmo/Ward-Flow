@@ -6,8 +6,10 @@
 // backend SQL (forward migrations and `infra/` rollbacks), the backend sign-in, engine and
 // command-schema files, a clinical or legal-logic path, the CI workflows and public CI scripts, or
 // the protected safety tests (scripts/ward-flow/protected-safety-tests.json and every file it lists).
-// Such PRs would otherwise pass CI and could auto-merge with no human review. Dependabot only edits
-// dependency manifests, lockfiles and action pins, none of which match, so its PRs are unaffected.
+// Such PRs would otherwise pass CI and could auto-merge with no human review. Dependabot edits
+// dependency manifests and lockfiles, which do not match, and action pins in the workflows, which do:
+// a Dependabot commit whose workflow changes are only `uses:` pin lines (checked from each file's
+// patch) is exempt, so its security updates still merge. Any other workflow edit still fails.
 //
 // AGENT tier (warns only, A6-F02): commits authored by a coding agent (Claude `claude` /
 // noreply@anthropic.com, Cursor `cursoragent`, Codex `codex` / `chatgpt-codex-connector`) that touch
@@ -138,7 +140,10 @@ async function ensureProtectedSafetyTests({ repository, prNumber, token, api = "
     `${api}/repos/${repository}/contents/${PROTECTED_SAFETY_TESTS_PATH}?ref=${ref}`,
     token,
   );
-  loadProtectedSafetyTests(Buffer.from(String(content.content ?? ""), "base64").toString("utf8"));
+  if (content.encoding !== "base64" || typeof content.content !== "string" || !content.content) {
+    throw new Error(`${PROTECTED_SAFETY_TESTS_PATH} at the PR base came back without base64 content`);
+  }
+  loadProtectedSafetyTests(Buffer.from(content.content, "base64").toString("utf8"));
 }
 
 function normalizePath(filePath) {
@@ -154,7 +159,26 @@ export function isSensitivePath(filePath) {
   return sensitivePathPatterns.some((pattern) => pattern.test(file)) || protectedSafetyTests().has(file);
 }
 
-// commits: [{ sha, author: { login, email }, files: [path, ...] }]
+export function isDependabotAuthor(author) {
+  const { login, email } = authorIdentity(author);
+  return login === "dependabot[bot]" || /^(?:\d+\+)?dependabot\[bot\]@users\.noreply\.github\.com$/u.test(email);
+}
+
+const ACTION_PIN_LINE = /^[+-]\s*(?:-\s+)?uses:\s*[\w.-]+\/[\w./-]+@[\w.-]+(?:\s+#.*)?$/u;
+
+/**
+ * True when a workflow file's patch only swaps action pins: every changed line is a `uses:` line,
+ * with as many removed as added. A missing or empty patch (binary, too large) is not pin-only.
+ */
+export function isActionPinOnlyPatch(patch) {
+  if (typeof patch !== "string" || !patch) return false;
+  const changed = patch.split(/\r?\n/u).filter((line) => /^[+-]/u.test(line) && !/^(?:\+\+\+|---) /u.test(line));
+  if (changed.length === 0) return false;
+  const added = changed.filter((line) => line.startsWith("+")).length;
+  return added * 2 === changed.length && changed.every((line) => ACTION_PIN_LINE.test(line));
+}
+
+// commits: [{ sha, author: { login, email }, files: [path, ...], actionPinOnlyFiles?: [path, ...] }]
 export function botSensitiveCommitViolations(commits) {
   const violations = [];
   for (const commit of commits ?? []) {
@@ -165,7 +189,10 @@ export function botSensitiveCommitViolations(commits) {
       violations.push(`Bot-authored commit ${sha} (${who}) could not have its files verified; failing closed.`);
       continue;
     }
-    const sensitive = commit.files.filter(isSensitivePath);
+    const pinOnly = isDependabotAuthor(commit.author) ? new Set(commit.actionPinOnlyFiles ?? []) : new Set();
+    const sensitive = commit.files.filter(
+      (file) => isSensitivePath(file) && !(pinOnly.has(file) && /^\.github\/workflows\/[^/]+\.ya?ml$/u.test(file)),
+    );
     if (sensitive.length > 0) {
       violations.push(
         `Bot-authored commit ${sha} (${who}) touches protected paths (${sensitive.slice(0, 5).join(", ")}${sensitive.length > 5 ? ", …" : ""}). Supabase, backend SQL and sign-in, engine, legal and clinical paths need a human-authored commit and owner review.`,
@@ -212,16 +239,27 @@ export const MAX_PR_COMMITS = 250;
 export const MAX_COMPARE_COMMITS = 10000;
 export const MAX_COMMIT_FILES = 3000;
 
-export async function collectCommitFiles({ repository, sha, token, api = "https://api.github.com" }) {
+/** Every file of a commit: `files` (paths, renames' old paths included) and the action-pin-only ones. */
+export async function collectCommitFileDetails({ repository, sha, token, api = "https://api.github.com" }) {
   const files = [];
+  const actionPinOnlyFiles = [];
   for (let page = 1; ; page += 1) {
     const detail = await githubJson(`${api}/repos/${repository}/commits/${sha}?per_page=100&page=${page}`, token);
     const batch = detail.files ?? [];
     files.push(...batch.flatMap((file) => [file.filename, file.previous_filename].filter(Boolean)));
+    for (const file of batch) {
+      if (file.status === "modified" && !file.previous_filename && isActionPinOnlyPatch(file.patch)) {
+        actionPinOnlyFiles.push(file.filename);
+      }
+    }
     if (batch.length < 100) break;
     if (page * 100 >= MAX_COMMIT_FILES) throw new Error(`file list may be truncated at ${MAX_COMMIT_FILES}`);
   }
-  return files;
+  return { files, actionPinOnlyFiles };
+}
+
+export async function collectCommitFiles(options) {
+  return (await collectCommitFileDetails(options)).files;
 }
 
 export async function collectPullRequestCommits({ repository, prNumber, token, api = "https://api.github.com" }) {
@@ -266,13 +304,15 @@ export async function collectPullRequestCommits({ repository, prNumber, token, a
     const author = { login: item.author?.login ?? "", email: item.commit?.author?.email ?? "" };
     const bot = isBotAuthor(author);
     if (!bot && !isAgentAuthor(author)) continue;
-    let files;
+    let details;
     try {
-      files = await collectCommitFiles({ repository, sha: item.sha, token, api });
+      details = await collectCommitFileDetails({ repository, sha: item.sha, token, api });
     } catch (error) {
       console.warn(`Unable to read files of ${bot ? "bot" : "agent"} commit ${item.sha}: ${error.message}`);
     }
-    commits.push({ sha: item.sha, author, files });
+    const commit = { sha: item.sha, author, files: details?.files };
+    if (details && isDependabotAuthor(author)) commit.actionPinOnlyFiles = details.actionPinOnlyFiles;
+    commits.push(commit);
   }
   return commits;
 }

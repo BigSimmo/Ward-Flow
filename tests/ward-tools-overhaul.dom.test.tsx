@@ -9,7 +9,7 @@ import {
   useWardFlow,
   useWardNetwork,
 } from "@/components/ward-management/ward-flow-provider";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { NOW_ANCHOR, allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import type { LeaveBed } from "@/components/ward-management/ward-model";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -108,7 +108,12 @@ describe("Remind me (Q323)", () => {
     expect(Object.keys(stored[0]!).sort()).toEqual(["dueAt", "id", "kind", "reason", "targetId", "targetLabel"]);
     expect(stored[0]!.kind).toBe("movement");
     // The label names where the movement starts, never the person (D-39).
-    expect(stored[0]!.targetLabel).toMatch(/^Movement from [^\d,]+$/u);
+    // An exact place label from the synthetic ED list, so a stored name cannot pass.
+    const placeLabels = [
+      ...allEmergencyDepartments().map((ed) => `Movement from ${ed.name.toLowerCase()}`),
+      "Movement from another site",
+    ];
+    expect(placeLabels).toContain(stored[0]!.targetLabel);
   });
 });
 

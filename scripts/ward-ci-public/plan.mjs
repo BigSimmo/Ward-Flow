@@ -54,6 +54,15 @@ const docPathPattern = /^(?:README\.md|docs\/(?:ward-flow|history)\/.*)$/u;
  * Not seen: a test that walks the whole docs tree (tests/replaced-decision-citations.test.ts).
  */
 export function scanTestReadDocs(root = TESTS_ROOT) {
+  try {
+    return scanTestReadDocsOrThrow(root);
+  } catch {
+    // Fail closed: an unreadable test tree treats every document as read by unit tests.
+    return { exact: new Set(), prefixes: ["docs/", "README.md"] };
+  }
+}
+
+function scanTestReadDocsOrThrow(root) {
   const exact = new Set();
   const prefixes = new Set();
   const add = (path) => {

