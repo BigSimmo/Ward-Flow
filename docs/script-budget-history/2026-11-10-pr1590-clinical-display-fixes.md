@@ -7,3 +7,7 @@ Measured by hosted CI on the merged branch: ED 529.4 KB (main alone 529.2) and a
 Why it grew: D-122 adds four synthetic entries to the clinical values register (forecast alerts and the handover prompt), and the help copy now reads the access grant length from the register. The register is shared code that every ED route carries.
 
 Trim tried: the growth is 0.1 to 0.2 KB of register data that D-122 requires; no safe trim was found. Each limit is the measurement plus 0.2 KB. Re-measure on hosted CI and lower if it reads lower.
+
+## Second raise, same day (on `main` at `29352cd`)
+
+Hosted CI on head `39e13c5` measured this PR over five limits after the second main merge and the review fixes: home `/ward-flow` 570.2 KB (main alone 569.6), ED 529.6 (main alone 529.5), bed meeting 584.3 (main alone 584.1), and referrals and movements at their limits of 583.6 and 605.1 once unrounded. Raised home 570.0 to 570.4, referrals 583.6 to 583.8, ED 529.6 to 529.8, movements 605.1 to 605.3 and bed meeting 584.1 to 584.5, each the measurement plus 0.2 KB. Statistics is left alone: main alone is already over its limit, and the budget trim issue tracks that. The growth is the same shared register text as above; no safe trim was found.
