@@ -1,7 +1,7 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 
-import { formProgression } from "./legal-form-progression";
+import { formProgression, formProgressionPhrase } from "./legal-form-progression";
 import { currentLegalDueAt, isLegalDeadlineBreached } from "./legal-forms-derivations";
 import { hasGap, isOwnedLegalFormCode, type RecordGap } from "./legal-forms-view";
 import { typedTimePhrase } from "./legal-time-as-typed";
@@ -41,7 +41,7 @@ export function nextStep(movement: Movement, now: Instant): NextStep {
     return {
       action: "next-form",
       title: `Record Form ${progression.nextCode}`,
-      detail: `Form ${progression.endedCode} ended ${progression.endedWhen}.`,
+      detail: `${formProgressionPhrase(progression)}.`,
     };
   }
   const dueAt = currentLegalDueAt(movement);

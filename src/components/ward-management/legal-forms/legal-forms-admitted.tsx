@@ -4,7 +4,7 @@ import { Button } from "@/components/wf";
 import { admittedStayForArrival, type Admission } from "@/components/ward-management/ward-admissions";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
-import { formProgression } from "./legal-form-progression";
+import { formProgression, formProgressionPhrase } from "./legal-form-progression";
 import styles from "./legal-forms.module.css";
 
 export const WARD_RECORDS_ADMITTED =
@@ -24,8 +24,7 @@ export function admittedOnAForm(movements: readonly Movement[], admissions: read
 /** What the record holds now: the form still to record, or the form recorded since arrival. */
 export function admittedFormLine(movement: Movement): string {
   const progression = formProgression(movement);
-  if (progression)
-    return `Form ${progression.nextCode} not recorded (Form ${progression.endedCode} ended ${progression.endedWhen})`;
+  if (progression) return `Form ${progression.nextCode} not recorded (${formProgressionPhrase(progression)})`;
   return `Form ${movement.legalForm?.code ?? ""} recorded`;
 }
 

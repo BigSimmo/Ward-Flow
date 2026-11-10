@@ -207,8 +207,8 @@ export function PatientDocumentsTab({
         dateText: movement.formedAt !== undefined ? at(movement.formedAt) : undefined,
         sortAt: movement.formedAt !== undefined ? msOf(movement.formedAt) : Number.NaN,
         by: openNowBy,
-        status: progression || !movementInForce ? "Ended" : continued ? "Continued" : "In force",
-        statusNote: progression
+        status: progression?.ended || !movementInForce ? "Ended" : continued ? "Continued" : "In force",
+        statusNote: progression?.ended
           ? `${progression.endedWhen.charAt(0).toUpperCase()}${progression.endedWhen.slice(1)}${
               examinedAt !== undefined ? `, ${at(examinedAt)}` : ""
             }`

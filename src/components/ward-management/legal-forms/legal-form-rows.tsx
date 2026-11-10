@@ -7,7 +7,7 @@ import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
 
 import { currentLegalDueAt, legalDeadlineText, legalFormRowClassification } from "./legal-forms-derivations";
-import { formProgression } from "./legal-form-progression";
+import { formProgression, formProgressionShort } from "./legal-form-progression";
 import { nextStep, type NextStepAction } from "./legal-forms-next-step";
 import {
   STANDING_TONE,
@@ -146,7 +146,7 @@ export function FormRow({
           <>
             {/* Icon rules (3 Nov 2026): the words already say the state, so no mark beside them. */}
             <span className={styles.leftLine}>
-              <span className={styles.sub}>Ended {progression.endedWhen}</span>
+              <span className={styles.sub}>{formProgressionShort(progression)}</span>
             </span>
           </>
         ) : hasDue ? (

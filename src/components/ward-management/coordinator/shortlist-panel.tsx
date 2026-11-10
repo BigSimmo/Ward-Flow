@@ -2,7 +2,7 @@
 
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
-import { currentLegalDueAt, formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { currentLegalDueAt, formProgression, formProgressionPhrase } from "../legal-forms/legal-form-progression";
 
 import { Check, CircleCheck, CircleAlert, ChevronDown, ChevronUp, Info } from "lucide-react";
 import Link from "next/link";
@@ -242,7 +242,7 @@ function legalFormLine(movement: Movement, now: Instant) {
   if (!movement.legalForm) return "No legal form recorded";
   const formCode = `Form ${movement.legalForm.code}`;
   const progression = formProgression(movement);
-  if (progression) return `${formCode} ended ${progression.endedWhen}; Form ${progression.nextCode} to record`;
+  if (progression) return `${formProgressionPhrase(progression)}; Form ${progression.nextCode} to record`;
   const dueAt = currentLegalDueAt(movement);
   if (dueAt === undefined) {
     // States what the record holds, never what the Act requires (tests/ward-legal-figure-guard.test.ts).
