@@ -13,8 +13,8 @@ import { expect, test } from "playwright/test";
  * four would have passed on a hub with no links at all.
  *
  * ⚠️ **THIS FILE RUNS IN NEITHER DEFAULT LOOP, AND ITS NAME HAD TO BE ADDED TO TWO PATTERNS.**
- * `verify:ui` selects the `chromium` project (`productionSpecPattern`, which names no ward spec) and
- * then `--grep-invert`s `@mockup` — so it excludes this file twice over. It runs under:
+ * `verify:ui` names only a few Ward journeys (`test:e2e:pr` in package.json), not this one. It
+ * runs under:
  *
  *     node scripts/run-playwright.mjs --project=chromium-mockups tests/ui-ward-statistics-journey.spec.ts
  *

@@ -22,7 +22,7 @@ import { expect, test } from "playwright/test";
  * to the end it sat 24px off the left edge and ran 35px past the right. At rest it looked perfect.
  * The row headers now wrap and are capped.
  *
- * ⚠️ **THIS FILE RUNS IN NEITHER DEFAULT LOOP.** `verify:ui` does not select the ward E2E specs and
+ * ⚠️ **THIS FILE RUNS IN NEITHER DEFAULT LOOP.** `verify:ui` names only a few Ward journeys, not this one, and
  * `test:focused` cannot reach a Playwright spec at all, so this is proof only when somebody runs it.
  * Named rather than left as an assumption, because a guard nobody runs and a guard that cannot fail
  * are worth the same.
