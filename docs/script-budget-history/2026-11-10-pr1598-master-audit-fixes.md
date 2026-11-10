@@ -13,6 +13,7 @@ two are 612.4 and 590.4 (Bed meeting is 4.9 KB over main's 585.5 limit). After #
 After #1602 merged (main raised Home to 571.6 and Ward to 609.8 for the pinned chip menu), the same
 increase per route was re-applied: Home 574.7 and Ward 613.0 (3.1 and 3.2 KB over main); the rest are
 unchanged.
+The merged build then read Capacity 653.1, so it is 653.3 (2.2 KB over main's 651.1).
 
 Measured on hosted CI (merged branch against main alone, KB gzipped): Home 573.4 / 570.1, Referrals
 586.9 / 584.3, ED 532.8 / 530.1, Ward 612.0 / 608.9, Movement detail 607.5 / 605.5, Capacity
