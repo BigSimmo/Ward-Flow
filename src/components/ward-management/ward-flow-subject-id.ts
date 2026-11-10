@@ -200,6 +200,12 @@ export function subjectId(event: WardFlowEvent): string {
     case "REQUEST_WARD_STAFF":
     case "CLOSE_WARD_STAFF_REQUEST":
       return event.unitId;
+    // Batch 4 (10 Nov 2026): a site switch against its site; a pack print and an outage name no one record.
+    case "SET_SITE_FEATURE_SWITCH":
+      return event.siteCode;
+    case "RECORD_DOWNTIME_PACK_PRINTED":
+    case "RECORD_OUTAGE_WINDOW":
+      return "none";
     case "DISPATCH_BROADCAST_ALERT":
       return "broadcast";
     case "ACKNOWLEDGE_BROADCAST_ALERT":

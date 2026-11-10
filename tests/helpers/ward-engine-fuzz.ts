@@ -2459,6 +2459,22 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       };
     },
   ],
+  // Batch 4 (10 Nov 2026): a site feature switch, a pack print time and an outage window. Weight 0,
+  // so only the coverage sweep sends them and every other builder's weighted draws stay as they were.
+  [
+    0,
+    (state, random) => {
+      const unit = pick(random, state.units);
+      return {
+        type: "SET_SITE_FEATURE_SWITCH",
+        siteCode: unit?.siteCode ?? MISSING_ID,
+        feature: "help-ask",
+        off: true,
+      };
+    },
+  ],
+  [0, (state, random) => ({ type: "RECORD_DOWNTIME_PACK_PRINTED", unitIds: [id(pick(random, state.units))] })],
+  [0, () => ({ type: "RECORD_OUTAGE_WINDOW", from: currentNow - 120, to: currentNow - 10 })],
   // Care plans and safety flags (Josh, 9 Nov 2026): facts on the person, synthetic values only.
   // Weight 0 and last in the list: only the coverage sweep sends them, so the weighted draws of
   // every other builder stay as they were.

@@ -1603,3 +1603,12 @@ is inferred.
   8. **Accessibility:** moderate accessibility findings stay non-blocking; serious and critical still block.
   9. **New features:** none from the proposed list until #1564 to #1577 close.
 - **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge or release.
+
+## D-135. Batch 4, outages and pilot control: pack age and plan answers (10 November 2026)
+
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, choosing "Older than 24 hours" on a decision card in the Batch 4 thread (17:04 UTC), and saying "Go ahead with all your recommendations" for the feature build plan in the project chat (17:04 UTC). D-132 to D-134 are claimed by other open work.
+- **Decision:**
+  1. **Outage pack age (item 24):** a ward's downtime pack counts as old once its last print or PDF save is more than 24 hours ago (`PACK_OLD_AFTER_MINUTES`, clinical-values.md). The server keeps only the time and ward of each print, never the pack.
+  2. **Site switch-off (item 20):** a fixed allow-list says which features can be switched off at one site. Safety notices, legal times, ruling guards, role access, the AWOL bed hold review, ward closure and the demo reset can never be switched off.
+  3. **Catch-up after an outage (item 25):** a prompt only. It starts when the coordinator types "We were down from __ to __", nothing is filled in or guessed from the device, and a ward is caught up only when it confirms "Beds still correct" after the outage ended.
+- **Boundary:** the screens for items 20, 24 and 25 wait for Josh's approval of the Batch 4 design review (D-74). Until he rules on D-80, only the statewide coordinator can switch a site feature. Synthetic data only. Approves no merge or release.

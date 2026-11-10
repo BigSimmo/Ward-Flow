@@ -91,6 +91,8 @@ describe("clinical values file", () => {
       bedHoldReview: 120,
       bedCountFresh: 60,
       downtimePackStale: 60,
+      // Batch 4 item 24 (Josh, 10 Nov 2026, decision card): a ward's printed pack is old after 24 hours.
+      downtimePackOld: 1440,
       preparingBedStale: 61,
       bookingEstimatePassed: 10,
       // Discharge and capacity features: signed by Josh on 9 Nov 2026.

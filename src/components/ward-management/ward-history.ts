@@ -71,6 +71,10 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   RECORD_DIRECTORY_CHECK: { category: "neither", plainWording: "On-call directory entry checked" },
   REQUEST_WARD_STAFF: { category: "neither", plainWording: "Extra ward staff requested" },
   CLOSE_WARD_STAFF_REQUEST: { category: "neither", plainWording: "Ward staff request closed" },
+  // Batch 4 (10 Nov 2026): settings and records with no bed or patient change.
+  SET_SITE_FEATURE_SWITCH: { category: "neither", plainWording: "Feature switched off or on at a site" },
+  RECORD_DOWNTIME_PACK_PRINTED: { category: "neither", plainWording: "Downtime pack printed or saved" },
+  RECORD_OUTAGE_WINDOW: { category: "neither", plainWording: "Outage window recorded" },
   // Out of area "Flag early" (Josh, 3 Nov 2026).
   FLAG_RETURN_EARLY: { category: "patient", plainWording: "Out of area return flagged early" },
 

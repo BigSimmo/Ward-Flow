@@ -337,6 +337,11 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // Staff needed (feature 10): ward and request ids, closed lists and a whole count. No typed text.
   "REQUEST_WARD_STAFF",
   "CLOSE_WARD_STAFF_REQUEST",
+  // Batch 4 (10 Nov 2026): a site code the reducer checks, a feature from a fixed list and a flag;
+  // ward ids the reducer checks; two typed times already read to instants. No typed text.
+  "SET_SITE_FEATURE_SWITCH",
+  "RECORD_DOWNTIME_PACK_PRINTED",
+  "RECORD_OUTAGE_WINDOW",
   // Out of area "Flag early" (3 Nov 2026): an admission id and a site code the reducer checks. No typed text.
   "FLAG_RETURN_EARLY",
   "SET_DISCHARGE_BARRIER",

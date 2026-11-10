@@ -9,7 +9,8 @@ import {
   lastDowntimePack,
   rememberDowntimePack,
 } from "@/components/ward-management/reports/downtime-pack";
-import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { lastPackPrintedAt } from "@/components/ward-management/reports/downtime-pack-prints";
+import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /*
@@ -76,7 +77,15 @@ afterEach(() => {
 describe("downtime pack keeps no board data on the device (D-72 item 2)", () => {
   it("finds the downtime pack's source files", () => {
     const names = downtimePackSources().map((path) => path.split(/[\\/]/u).pop());
-    expect(names).toEqual(expect.arrayContaining(["downtime-pack.ts", "use-take-downtime-pack.ts"]));
+    expect(names).toEqual(
+      expect.arrayContaining([
+        "downtime-pack.ts",
+        "use-take-downtime-pack.ts",
+        // Batch 4 item 24 (10 Nov 2026): the print time record and the hook that sends it.
+        "downtime-pack-prints.ts",
+        "downtime-pack-print-hook.ts",
+      ]),
+    );
   });
 
   it("flags a storage call when one is written (non-vacuity)", () => {
@@ -115,5 +124,26 @@ describe("downtime pack keeps no board data on the device (D-72 item 2)", () => 
     expect(lastDowntimePack()).toBeNull();
     expect(localStorage.length).toBe(0);
     expect(sessionStorage.length).toBe(0);
+  });
+
+  // Batch 4 item 24 (10 Nov 2026): the shared record keeps only when each ward's pack was printed.
+  it("recording a print keeps ward ids and a time only, and writes nothing to the device", () => {
+    const before = { local: storedText(localStorage), session: storedText(sessionStorage) };
+    const pack = takePack();
+    rememberDowntimePack(pack);
+    const unitIds = pack.wards.map((ward) => ward.unitId);
+    const state = wardFlowReducer(seedWardFlowState(), {
+      type: "RECORD_DOWNTIME_PACK_PRINTED",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      unitIds,
+    });
+
+    expect(lastPackPrintedAt(state.downtimePackPrints, unitIds[0]!)).toBe(NOW_ANCHOR);
+    for (const record of state.downtimePackPrints ?? [])
+      expect(Object.keys(record).sort()).toEqual(["at", "by", "unitId"]);
+    expect(JSON.stringify(state.downtimePackPrints)).not.toContain(SYNTHETIC_NAME);
+    expect(storedText(localStorage)).toBe(before.local);
+    expect(storedText(sessionStorage)).toBe(before.session);
   });
 });

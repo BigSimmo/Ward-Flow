@@ -63,6 +63,7 @@ import {
 } from "./downtime-pack";
 import { useDowntimePackAccess } from "./downtime-pack-context";
 import { nextDowntimePackAt } from "./downtime-pack-schedule";
+import { useRecordDowntimePackPrint } from "./downtime-pack-print-hook";
 import { useTakeDowntimePack } from "./use-take-downtime-pack";
 import { reportDay, reportMoment } from "./report-parts";
 import topTitle from "../shell/page-top-title.module.css";
@@ -186,6 +187,8 @@ export function DowntimePackScreen() {
   const canSnapshot = role === "coordinator" && ready && online && (!shared?.enabled || shared.status === "ready");
 
   const take = useTakeDowntimePack();
+  // Batch 4 item 24: the time of each print or PDF save, per ward, goes to the shared record.
+  const recordPrint = useRecordDowntimePackPrint();
 
   // Taken or restored only after mount: the server snapshot is always null, so a server render never
   // holds a pack (it would be shared across visitors and its stamp would not match the browser's).
@@ -230,10 +233,13 @@ export function DowntimePackScreen() {
   // A print started from the browser's own menu counts as well as the Print button.
   useEffect(() => {
     if (pack === null) return;
-    const handled = () => markDowntimePackHandled(pack);
+    const handled = () => {
+      markDowntimePackHandled(pack);
+      recordPrint(pack);
+    };
     window.addEventListener("afterprint", handled);
     return () => window.removeEventListener("afterprint", handled);
-  }, [pack]);
+  }, [pack, recordPrint]);
 
   const [section, setSection] = useState<Section>("beds");
   const [sheet, setSheet] = useState<SheetRow | null>(null);
@@ -343,6 +349,7 @@ export function DowntimePackScreen() {
     if (!ready || lastDowntimePack(owner, worldGeneration) !== pack) return;
     window.print();
     markDowntimePackHandled(pack);
+    recordPrint(pack);
   };
   // Device audit 11 Oct 2026: a column where every row reads "Not recorded" only pads the print.
   const edAccepted = pack.edQueue.some((line) => line.acceptedWard !== "");

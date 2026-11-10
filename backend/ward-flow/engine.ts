@@ -50,6 +50,7 @@ import {
 } from "../../src/components/ward-management/ward-flow-reducer";
 import { isValidSharedWardFlowState } from "../../src/components/ward-management/ward-shared-state-validation";
 import { checkSyntheticPayload } from "../../src/lib/synthetic-data-guard";
+import { siteFeatureSwitchRefusal } from "../../src/components/ward-management/ward-site-feature-switches";
 import { cleanReferralFields } from "../../src/components/ward-management/referrals/referral-text-clean";
 
 export { checkSyntheticPayload };
@@ -636,6 +637,9 @@ export function commandRefusal(
   if (!Object.hasOwn(EVENT_ROLE, type)) return "This change is not one the workflow knows.";
   if (accessIsWholeNetwork(access)) return null;
   const notYours = "This change is not part of your role.";
+  // Batch 4 item 20 (10 Nov 2026): only an admin switches a feature off at a site. The statewide
+  // coordinator was returned above; every other desk, a service coordinator too, is refused here.
+  if (type === "SET_SITE_FEATURE_SWITCH") return siteFeatureSwitchRefusal(access, supplied) ?? notYours;
   if (access.role === "admin" || access.role === "executive" || role === "demo") return notYours;
   // A service coordinator is the coordinator inside its service (Josh, 10 Oct 2026: the
   // coordinator takes every action), so only its place limits it, below.

@@ -123,6 +123,10 @@ const CLINICAL_VALUE_NOTES = {
     source:
       "D-63 (16 Oct 2026), local workflow choice; each health service's business continuity plan sets downtime report refresh",
   },
+  downtimePackOld: {
+    source:
+      "Josh, 10 Nov 2026, decision card (Batch 4 item 24, D-135); each health service's business continuity plan sets how often paper is refreshed",
+  },
   preparingBedStale: {
     source: "D-63 (16 Oct 2026), more than an hour, local workflow choice",
   },

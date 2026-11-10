@@ -23,15 +23,18 @@
 // 9 Nov 2026 (PR #1583): main reached 2547 of the reducer's 2550 with PR #1563; the discharge and
 // capacity features add six dispatch lines (their logic already lives in slices), so the cap is 2555.
 // 10 Nov 2026 (PR #1583): PR #1578 took main to 2550, so with the same six lines the cap is 2560.
+// 10 Nov 2026 (Batch 4, outages and pilot control): main sits at the reducer's 2560 cap. Three new
+// events add a type import, a state type alias and one forwarding case (their logic lives in a lazy
+// slice), so the cap is 2570; their union member adds two lines to ward-flow-events, so its cap is 2755.
 export const MAX_LINES_DEFAULT = 1500;
 export const MAX_LINES_HEADROOM = 300;
 
 export const MAX_LINES_BASELINE = {
-  "src/components/ward-management/ward-flow-reducer.ts": 2560,
+  "src/components/ward-management/ward-flow-reducer.ts": 2570,
   "src/components/ward-management/ward/ward-screen.tsx": 2575,
   "src/components/ward-management/ward-model.ts": 1900,
   "src/components/ward-management/ward-movements.ts": 2070,
-  "src/components/ward-management/ward-flow-events.ts": 2750,
+  "src/components/ward-management/ward-flow-events.ts": 2755,
   "src/components/ward-management/coordinator/shortlist-panel.tsx": 2850,
   "src/components/ward-management/movements/movement-workspace-cockpit.tsx": 2150,
   "src/components/ward-management/ward/ward-home-tab.tsx": 2150,

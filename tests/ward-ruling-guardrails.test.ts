@@ -3,6 +3,15 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import {
+  WARD_FEATURE_FLAGS,
+  type WardFeatureFlagDefinition,
+} from "../src/components/ward-management/ward-feature-flags";
+import {
+  SITE_PROTECTED_FEATURES,
+  SITE_SWITCHABLE_FEATURES,
+} from "../src/components/ward-management/ward-site-feature-switches";
+
 /*
  * Ruling guardrail register (audit plan item 9, issue #1572; recorded in D-111).
  *
@@ -77,5 +86,43 @@ describe("ruling guardrail register", () => {
         tests.length,
       );
     }
+  });
+});
+
+/*
+ * Batch 4 item 20 (Josh's approved plan, 10 Nov 2026, D-135): an admin may switch a
+ * listed feature off at one site, but safety notices, legal times and ruling guards can never be
+ * switched off. This guard fails if a protected feature is ever added to the allow-list.
+ */
+describe("site feature switch-off never reaches a protected feature", () => {
+  const switchable: readonly string[] = SITE_SWITCHABLE_FEATURES;
+  const flags: Record<string, WardFeatureFlagDefinition> = WARD_FEATURE_FLAGS;
+
+  it("names safety notices, legal times and ruling guards as protected", () => {
+    expect(Object.keys(SITE_PROTECTED_FEATURES)).toEqual(
+      expect.arrayContaining(["safety-notices", "legal-times", "ruling-guards"]),
+    );
+  });
+
+  it("allows no protected feature onto the switch-off list", () => {
+    const protectedNames = Object.keys(SITE_PROTECTED_FEATURES);
+    expect(switchable.filter((name) => protectedNames.includes(name))).toEqual([]);
+    // Nothing that reads as a safety, legal or ruling feature, whatever its name.
+    expect(switchable.filter((name) => /safety|legal|ruling|guard|safeguard|access/iu.test(name))).toEqual([]);
+  });
+
+  it("allows only registered flags that are not a safeguard or local only, and protects every safeguard", () => {
+    for (const name of switchable) {
+      expect(Object.hasOwn(flags, name), `${name} is not a registered flag`).toBe(true);
+      expect(flags[name]?.safeguard, `${name} is a safeguard`).toBeUndefined();
+      expect(flags[name]?.localOnly, `${name} is local only`).toBeUndefined();
+    }
+    for (const [name, definition] of Object.entries(flags))
+      if (definition.safeguard) expect(Object.hasOwn(SITE_PROTECTED_FEATURES, name), name).toBe(true);
+  });
+
+  it("would catch a protected feature added to the list (non-vacuity)", () => {
+    const tampered = [...switchable, "role-access"];
+    expect(tampered.filter((name) => Object.hasOwn(SITE_PROTECTED_FEATURES, name))).toEqual(["role-access"]);
   });
 });

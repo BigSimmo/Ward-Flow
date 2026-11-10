@@ -490,6 +490,12 @@ describe("who may raise which event", () => {
     REQUEST_PSYCH_REVIEW: ["ed", "coordinator"],
     RECORD_PSYCH_REVIEW_SEEN: ["ed", "coordinator"],
     MARK_WARD_READY_FOR_NEXT: ["ward", "coordinator"],
+    // Batch 4 (Josh's plan, 10 Nov 2026): only the statewide coordinator switches a site feature (the
+    // server narrows the coordinator role to it; D-80 keeps the executive and access admin out); the
+    // downtime pack desks record a print; a coordinator records an outage window.
+    SET_SITE_FEATURE_SWITCH: ["coordinator"],
+    RECORD_DOWNTIME_PACK_PRINTED: ["coordinator", "bed_manager", "ward", "ed"],
+    RECORD_OUTAGE_WINDOW: ["coordinator"],
     RAISE_EXPECT_FLAG: ["ward", "coordinator", "ed", "community"],
     FLAG_LEGAL_MISMATCH: ["ward", "coordinator"],
     EVALUATE_LEAVE_BED_WARNINGS: ["ward", "coordinator"],

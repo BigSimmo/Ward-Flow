@@ -18,7 +18,7 @@ and the reducer still limit each desk to records in its own place.
 | Backend  | `deskCommand`, the role clause of `validSharedCommand` and `commandRefusal` (`backend/ward-flow/engine.ts`); no role is refused 403 in `shared-http.mjs`                                 | Called per cell                                     |
 | Database | Row level security policies and grants in `backend/ward-flow/migrations/` and `infra/`                                                                                                   | SQL read as text                                    |
 
-**193 actions x 10 desks = 1930 cells.**
+**196 actions x 10 desks = 1960 cells.**
 
 ## Matrix
 
@@ -110,6 +110,7 @@ and the reducer still limit each desk to records in its own place.
 | `RECORD_DISCHARGE_DEPENDENCY`               |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_DISCHARGE_PLAN_CHANGE`              |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_DIVERSION`                          |            Y            |             Y             |         Y         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
+| `RECORD_DOWNTIME_PACK_PRINTED`              |            Y            |             Y             |         -         |     Y     |        Y         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_ED_MEDICAL_DETERIORATION`           |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_ED_OUTCOME`                         |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_ED_PRESENTATION`                    |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
@@ -134,6 +135,7 @@ and the reducer still limit each desk to records in its own place.
 | `RECORD_MOVEMENT_MEDICAL_CLEARANCE`         |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_NO_REFERRAL`                        |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_OBSERVATION_LEVEL`                  |            Y            |             Y             |         -         |     Y     |        -         |      Y       |       -        |     -     |      -       |    -    |
+| `RECORD_OUTAGE_WINDOW`                      |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_PATIENT_DISCHARGE`                  |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_PSYCH_REVIEW_SEEN`                  |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_REFERRAL_COMMITMENT`                |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
@@ -184,6 +186,7 @@ and the reducer still limit each desk to records in its own place.
 | `SET_DISCHARGE_CRITERIA`                    |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `SET_SCENARIO`                              |            Y            |             -             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `SET_SECLUSION_ROOM_STATUS`                 |            Y            |             Y             |         -         |     Y     |        Y         |      -       |       -        |     -     |      -       |    -    |
+| `SET_SITE_FEATURE_SWITCH`                   |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `SET_STEP_DOWN_CANDIDATE`                   |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `SNOOZE_INBOX_ITEM`                         |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `STAND_DOWN_BROADCAST_ALERT`                |            Y            |             Y             |         -         |     -     |        Y         |      -       |       -        |     -     |      -       |    -    |

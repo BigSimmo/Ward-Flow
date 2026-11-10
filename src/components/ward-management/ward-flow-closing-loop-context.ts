@@ -4,6 +4,7 @@ import type { ReturnEarlyFlagRecord, ReturnEarlyNotice } from "./out-of-area/ret
 import type { SiteHandoverSignOffRecord } from "./site-sign-off/site-handover-sign-off";
 import type { TriageSignedRecord } from "./triage/triage-record";
 import type { StaffRequestRecord } from "./staffing/staff-requests";
+import type { PilotControlState } from "./ward-flow-pilot-control-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 
 /**
@@ -29,7 +30,7 @@ export type ClosingLoopContext = {
   triages?: TriageSignedRecord[];
   /** Staff needed (`REQUEST_WARD_STAFF`, feature 10): read through `openStaffRequests`. */
   staffRequests?: StaffRequestRecord[];
-};
+} & PilotControlState; // Batch 4 (10 Nov 2026): site switches, pack print times and outage windows.
 
 export const CLOSING_LOOP_CONTEXT_KEYS = {
   homeServiceReturns: true,
@@ -39,6 +40,9 @@ export const CLOSING_LOOP_CONTEXT_KEYS = {
   returnEarlyNotices: true,
   triages: true,
   staffRequests: true,
+  siteFeatureSwitches: true,
+  downtimePackPrints: true,
+  outageWindows: true,
 } as const;
 
 const NONE: never[] = [];
@@ -52,5 +56,8 @@ export function closingLoopContext(state: WardFlowState): Required<ClosingLoopCo
     returnEarlyNotices: Array.isArray(state.returnEarlyNotices) ? state.returnEarlyNotices : NONE,
     triages: Array.isArray(state.triages) ? state.triages : NONE,
     staffRequests: Array.isArray(state.staffRequests) ? state.staffRequests : NONE,
+    siteFeatureSwitches: Array.isArray(state.siteFeatureSwitches) ? state.siteFeatureSwitches : NONE,
+    downtimePackPrints: Array.isArray(state.downtimePackPrints) ? state.downtimePackPrints : NONE,
+    outageWindows: Array.isArray(state.outageWindows) ? state.outageWindows : NONE,
   };
 }
