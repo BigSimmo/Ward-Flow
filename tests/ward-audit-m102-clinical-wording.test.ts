@@ -142,30 +142,10 @@ const NOT_ABBREVIATIONS = new Set([
 ]);
 
 /**
- * Abbreviations shown on screen with no Help glossary entry, found 10 Nov 2026. Exact: glossing one
- * means taking it off; a new abbreviation on screen must be glossed or added here for Josh. Several are
- * clinical (ISBAR, DOB, ECG, FDV), so their meanings are Josh's words to approve.
+ * Abbreviations shown on screen with no Help glossary entry. The 18 found on 10 Nov 2026 were glossed
+ * the same day (audit M102); a new abbreviation on screen must be glossed or added here for Josh.
  */
-const NOT_GLOSSED = [
-  "ATSI",
-  "CMHT",
-  "CNS",
-  "DOB",
-  "ECG",
-  "EMR",
-  "FDV",
-  "HMDC",
-  "ISBAR",
-  "MBBS",
-  "MHERT",
-  "MHN",
-  "NICE",
-  "PAS",
-  "PSOLIS",
-  "RN",
-  "SMHMR",
-  "SW",
-];
+const NOT_GLOSSED: readonly string[] = [];
 
 function screenFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

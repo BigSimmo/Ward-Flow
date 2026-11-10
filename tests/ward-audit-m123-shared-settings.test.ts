@@ -1,8 +1,9 @@
 // Audit M123: settings that change shared thresholds are controlled and visible. One block per
 // setting: its signed range holds, every role but the coordinator is refused, a coordinator who is
 // not statewide is refused, and an accepted change writes one audit row naming the old and new
-// value. The fourth part, a shared view (TV, print, reports) saying a non-default value is active,
-// does not exist yet: it is recorded below as a todo per setting and reported to Josh.
+// value. The fourth part: a shared view (TV, print, weekly report) says a non-default value is
+// active, in one "Local settings in use" line (fixed 10 Nov 2026; the views' wiring is proved in
+// tests/ward-m123-local-settings-note.dom.test.tsx).
 import { describe, expect, it } from "vitest";
 
 import { applyCommand, commandRefusal, seedWorld } from "../backend/ward-flow/engine";
@@ -24,6 +25,8 @@ import {
   FORECAST_WORSE_ALERT_RANGE_BEDS,
 } from "@/components/ward-management/ward-operational-defaults";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
+import { localSettingsInUse } from "@/components/ward-management/settings/local-settings-note";
+import { ruleChanges } from "@/components/ward-management/settings/settings-rule-catalogue";
 
 type Bounds = { readonly min: number; readonly max: number; readonly step: number };
 type Key = keyof WardConfiguration;
@@ -132,6 +135,13 @@ describe.each(SETTINGS)("M123 $label ($key)", ({ key, bounds }) => {
     expect(row.details.after?.[key]).toBe(fine);
   });
 
-  // DEFECT M123, waits on Josh: no shared view yet marks a non-default threshold as active.
-  it.todo("shared views (TV, print, weekly report) say when a non-default value is active");
+  it("shared views (TV, print, weekly report) say when a non-default value is active", () => {
+    expect(localSettingsInUse(base)).toBeNull();
+    const fine = changedValue(key, bounds, base);
+    const changed = { ...base, [key]: fine };
+    const moved = ruleChanges(base, changed);
+    expect(moved).toHaveLength(1);
+    const { entry } = moved[0]!;
+    expect(localSettingsInUse(changed)).toBe(`Local settings in use: ${entry.label} ${entry.display(fine)}`);
+  });
 });

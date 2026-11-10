@@ -1307,6 +1307,32 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
     term: "Cover",
     meaning: "One ward or one ED handed to another desk for a time. It lasts for a set time and ends by itself.",
   },
+
+  // Abbreviations the screens show that had no entry (audit M102, Josh, 10 Nov 2026).
+  { term: "ATSI", meaning: "Aboriginal and Torres Strait Islander." },
+  { term: "CMHT", meaning: "Community mental health team." },
+  { term: "CNS", meaning: "Clinical nurse specialist." },
+  { term: "DOB", meaning: "Date of birth." },
+  { term: "ECG", meaning: "Electrocardiogram, a recording of the heart's rhythm." },
+  { term: "EMR", meaning: "Electronic medical record." },
+  { term: "FDV", meaning: "Family and domestic violence. The FDV951 is WA Health's screening form." },
+  { term: "HMDC", meaning: "Hospital Morbidity Data Collection, WA Health's record of hospital stays." },
+  {
+    term: "ISBAR",
+    meaning: "Identify, Situation, Background, Assessment, Recommendation: the order a clinical handover follows.",
+  },
+  { term: "MBBS", meaning: "Bachelor of Medicine, Bachelor of Surgery, a medical degree." },
+  { term: "MHERT", meaning: "Mental health emergency response team." },
+  { term: "MHN", meaning: "Mental health nurse." },
+  {
+    term: "NICE",
+    meaning: "National Institute for Health and Care Excellence, the UK body that writes clinical guidelines.",
+  },
+  { term: "PAS", meaning: "Patient administration system, the hospital's admissions and bed record." },
+  { term: "PSOLIS", meaning: "Psychiatric Services Online Information System, WA's mental health record." },
+  { term: "RN", meaning: "Registered nurse." },
+  { term: "SMHMR", meaning: "State Mental Health Medical Record, WA's standard mental health forms." },
+  { term: "SW", meaning: "Social worker." },
 ];
 
 /**

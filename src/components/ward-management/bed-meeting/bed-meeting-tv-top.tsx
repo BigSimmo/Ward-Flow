@@ -6,6 +6,7 @@ import type { BedMeetingSheet } from "@/components/ward-management/capacity/bed-
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import { LONG_WAIT_TEXT } from "@/components/ward-management/ward-operational-defaults";
 import { Hero, HeroAct, HeroFigures, HeroQuickChips, HeroTop, SrOnly, cx, type HeroChipItem } from "@/components/wf";
+import { LocalSettingsNote } from "@/components/ward-management/settings/local-settings-note";
 import pageTop from "../page-top-title.module.css";
 import styles from "./bed-meeting-tv-top.module.css";
 
@@ -128,6 +129,7 @@ export function MeetingTvTop({
               <p className={styles.checking} data-testid="bed-meeting-tv-checking">
                 {checking}
               </p>
+              <LocalSettingsNote className={styles.checking} testId="bed-meeting-tv-local-settings" />
             </div>
           }
         />

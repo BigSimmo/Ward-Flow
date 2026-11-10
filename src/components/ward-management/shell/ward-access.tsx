@@ -99,6 +99,7 @@ import { UnscopedWardFlowContext, useUnscopedWardFlow } from "./ward-access-cont
 import { announceToWardShell } from "./ward-live-region";
 import { forgetStepUp, useStepUp } from "./ward-step-up";
 import { accessPlaceLabel } from "./ward-access-labels";
+import { LocalSettingsNote } from "../settings/local-settings-note";
 import { SharedAccessContext } from "./ward-shared-access-context";
 import { SharedSessionContext } from "./ward-shared-session-context";
 import styles from "./ward-access.module.css";
@@ -1161,7 +1162,7 @@ export function WardPrintAttribution({
 export function WardPrintFooter() {
   return (
     <p className={styles.printFooter} data-testid="ward-print-footer">
-      <WardPrintAttribution />
+      <WardPrintAttribution /> <LocalSettingsNote as="span" testId="ward-print-local-settings" />
     </p>
   );
 }

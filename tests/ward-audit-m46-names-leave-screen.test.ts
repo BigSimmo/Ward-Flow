@@ -114,8 +114,14 @@ describe("M46 web addresses carry no names", () => {
 
 describe("M46 the other outbound channels each keep a name-marker test", () => {
   // Each entry: the channel, the test that proves no name leaves through it, and a phrase that
-  // test must still contain. CSV exports (D-102) are owned by audit M6 in another thread.
+  // test must still contain. CSV exports (D-102) are owned by audit M6 in another thread; the one-
+  // person chronology CSV, which audit M46 found carrying the name, is held here (fixed 10 Nov 2026).
   const channels: Array<{ channel: string; file: string; mustContain: RegExp }> = [
+    {
+      channel: "one-person chronology CSV (M46, D-102)",
+      file: "tests/ward-audit-24-7-print-notify.dom.test.tsx",
+      mustContain: /the file names the person by UMRN only, never by name/,
+    },
     {
       channel: "phone alert payload (M21)",
       file: "backend/ward-flow/push.test.mjs",
