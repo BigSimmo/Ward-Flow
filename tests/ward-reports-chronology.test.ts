@@ -501,10 +501,11 @@ describe("PIR chronology CSV", () => {
     expect(csv).toContain(OVERRIDE_REASONS[1]);
   });
 
-  it("names the person on its own line when given, before the column header", () => {
+  it("says whose chronology it is by UMRN on its own line, never by name (D-122, extending D-102)", () => {
     const chronology = patientChronology(inputFor(seedWardFlowState()));
-    const lines = chronologyCsv(chronology.rows, DAY_ZERO, NOW_ANCHOR, "Sample Person · 1000001").split("\r\n");
-    expect(lines[1]).toBe(`"Patient","Sample Person · 1000001"`);
+    const lines = chronologyCsv(chronology.rows, DAY_ZERO, NOW_ANCHOR, "UM1000001").split("\r\n");
+    expect(lines[1]).toBe(`"UMRN","UM1000001"`);
+    expect(lines.some((line) => line.startsWith(`"Patient",`))).toBe(false);
     expect(lines[4]).toBe(CHRONOLOGY_CSV_HEADER.map((cell) => `"${cell}"`).join(","));
   });
 });

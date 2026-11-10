@@ -9,6 +9,10 @@
  * Mental Health Act times, which Ward Flow never does.
  */
 import type { WardTourRole } from "./ward-help-store";
+import { CLINICAL_VALUES, formatClinicalFigure } from "@/components/ward-management/ward-clinical-values";
+
+/** The Give button's own words, from the value it grants (D-122: help never types a threshold). */
+const GIVE_FOR = `Give for ${formatClinicalFigure(CLINICAL_VALUES.accessGrantDefault.value, CLINICAL_VALUES.accessGrantDefault.unit)}`;
 
 type GuideJob = {
   /** The job in a few words, shown in bold. */
@@ -302,7 +306,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
     summary: "You give staff access to the right desk and place. You never see patients.",
     startsAt: "Settings is your home, where access is managed.",
     jobs: [
-      { job: "Answer a request", how: "Press Give for 90 days or Decline.", go: "home" },
+      { job: "Answer a request", how: `Press ${GIVE_FOR} or Decline.`, go: "home" },
       {
         job: "Give a role",
         howTo: "give-access",

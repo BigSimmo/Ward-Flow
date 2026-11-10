@@ -370,7 +370,7 @@ function WardRow({ ward, incoming, now }: { ward: HandoverWard; incoming: number
             <span className={styles.stale}>
               <StatusGlyph tone="warning" size={8} />
               {durMinutes(now - ward.confirmedAt)} ago
-              <SrOnly>, feed over 15 min</SrOnly>
+              <SrOnly>, feed past its time limit</SrOnly>
             </span>
           ) : null}
         </span>

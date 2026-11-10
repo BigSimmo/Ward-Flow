@@ -109,6 +109,9 @@ it("CT-12: the chronology CSV and printed copy name the filter, never the typed 
   expect(scopeAt).toBeGreaterThan(0);
   expect(lines[scopeAt + 1]).toBe('"Filter","All sources · Every record kind · Search applied"');
   expect(csv).not.toContain("qqsynthetic");
+  // D-122 (extends D-102): the file says whose chronology it is by UMRN, never by the synthetic name.
+  expect(lines).toContain('"UMRN","UM100013"');
+  expect(csv).not.toMatch(/Marrowvale|Gianna/u);
 });
 
 it("CT-13: acknowledging an urgent buzz does not play the chime again", () => {

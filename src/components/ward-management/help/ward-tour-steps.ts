@@ -15,6 +15,10 @@ import { DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-pers
 import { deskActions, type DeskRole } from "@/components/ward-management/settings/workstation-desks";
 import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { ROLE_SCREENS, type WardScreenId } from "@/components/ward-management/ward-role-access";
+import { CLINICAL_VALUES, formatClinicalFigure } from "@/components/ward-management/ward-clinical-values";
+
+/** The Give button's own words, from the value it grants (D-122: help never types a threshold). */
+const GIVE_FOR = `Give for ${formatClinicalFigure(CLINICAL_VALUES.accessGrantDefault.value, CLINICAL_VALUES.accessGrantDefault.unit)}`;
 
 /** The tour's own idea of a desk: the chrome roles, plus the access admin, who has no clinical chrome. */
 export type TourRole = WardChromeRole | "admin";
@@ -160,7 +164,7 @@ const ACCESS_STEPS: readonly TourStep[] = [
     "requests",
     { sel: '[data-testid="ward-access-requests"]' },
     "Requests and removing a role",
-    "Requests for access lists people asking for a role. Give for 90 days or Decline answers each one. Everyone with a role lists who has one, and Remove ends it straight away.",
+    `Requests for access lists people asking for a role. ${GIVE_FOR} or Decline answers each one. Everyone with a role lists who has one, and Remove ends it straight away.`,
   ),
 ];
 

@@ -26,6 +26,7 @@ import {
   type WfTone,
 } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { CLINICAL_VALUES, formatClinicalFigure } from "@/components/ward-management/ward-clinical-values";
 import {
   isActOrUrgent,
   isMoving,
@@ -64,9 +65,12 @@ export type HandoverBedsProps = {
 
 type BedChip = "ready" | "stale" | "full" | "holds";
 
+/** "7 days or more": `longStays` counts stays at or over the signed long-stay line (D-122, help words the check). */
+const LONG_STAY_WORDS = `${formatClinicalFigure(CLINICAL_VALUES.longStayPrompt.value, CLINICAL_VALUES.longStayPrompt.unit)} or more`;
+
 const BED_CHIPS: { id: BedChip; label: string; test: (ward: HandoverWard, now: Instant) => boolean }[] = [
   { id: "ready", label: "Wards with ready beds", test: (ward) => ward.ready > 0 },
-  { id: "stale", label: "Feed over 15 min", test: (ward, now) => wardIsStale(ward, now) },
+  { id: "stale", label: "Feed past its time limit", test: (ward, now) => wardIsStale(ward, now) },
   { id: "full", label: "Full", test: (ward) => ward.beds > 0 && ward.occupied >= ward.beds },
   { id: "holds", label: "Wards with discharges held up", test: (ward) => ward.holds > 0 },
 ];
@@ -154,11 +158,13 @@ function BedTiles({ rows, wards, held, now, waitingForBed }: Omit<HandoverBedsPr
       <div className={styles.tile}>
         <b className={cx(styles.tileValue, held.length > 0 && styles.inkWarning)}>{held.length}</b>
         <span className={styles.tileLabel}>Discharges held up</span>
-        <span className={styles.tileSub}>{sum("longStays")} stays over 7 days</span>
+        <span className={styles.tileSub}>
+          {sum("longStays")} stays of {LONG_STAY_WORDS}
+        </span>
       </div>
       <div className={styles.tile}>
         <b className={cx(styles.tileValue, stale > 0 && styles.inkWarning)}>{stale}</b>
-        <span className={styles.tileLabel}>Feeds over 15 min</span>
+        <span className={styles.tileLabel}>Feeds past their time limit</span>
         <span className={styles.tileSub}>of {wards.length} wards</span>
       </div>
     </div>
@@ -213,14 +219,14 @@ function WardPanel({
     ...(closedLine ? [{ label: "Admissions", value: closedLine, warn: true }] : []),
     {
       label: "Updated",
-      value: `${durMinutes(age)} ago, at ${formatInstantWithDay(ward.confirmedAt, now)}${stale ? ", over 15 min" : ""}`,
+      value: `${durMinutes(age)} ago, at ${formatInstantWithDay(ward.confirmedAt, now)}${stale ? ", past its time limit" : ""}`,
       warn: stale,
     },
     { label: "Being made ready", value: String(ward.pendingPreparation) },
     { label: "Pulled for incoming", value: String(ward.held) },
     { label: "Discharges due today", value: String(ward.outToday) },
     { label: "Past EDD", value: String(ward.pastEdd) },
-    { label: "Stays over 7 days", value: String(ward.longStays) },
+    { label: `Stays of ${LONG_STAY_WORDS}`, value: String(ward.longStays) },
     { label: "Discharges held up", value: String(ward.holds) },
   ];
   return (
@@ -588,7 +594,7 @@ export function HandoverBeds({ rows, wards: allWards, held, now, waitingForBed, 
                             <span className={styles.stale}>
                               <StatusGlyph tone="warning" size={8} />
                               <span className={styles.mono}>{durMinutes(age)} ago</span>
-                              <SrOnly>, over 15 minutes old</SrOnly>
+                              <SrOnly>, past its time limit</SrOnly>
                             </span>
                           ) : (
                             <span className={cx(styles.mono, styles.muted)}>{durMinutes(age)} ago</span>
@@ -614,7 +620,7 @@ export function HandoverBeds({ rows, wards: allWards, held, now, waitingForBed, 
               ))}
             </table>
           </div>
-          <div className={styles.foot}>A feed over 15 minutes old is amber.</div>
+          <div className={styles.foot}>A feed past its own time limit is amber.</div>
         </Card>
       </div>
       <div className={styles.side}>
