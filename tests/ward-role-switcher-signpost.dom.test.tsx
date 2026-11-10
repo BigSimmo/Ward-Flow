@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
  * ⚠️ **THIS FILE WAS DELIBERATELY REWRITTEN, 17 SEPTEMBER 2026.** It used to pin the 3 September
  * "resolve this" ruling as an every-route fact: the trigger names the wards a focused patient was
  * referred to, on whichever screen you happen to be looking at it from. Owner answer 38
- * (`docs/ward-flow/owner-answers-2026-09-17.md`, item 38) narrows that: *"Other wards in the ward
+ * (`docs/history/archive/dated-notes/owner-answers-2026-09-17.md`, item 38) narrows that: *"Other wards in the ward
  * switcher: coordinators only."* This file now pins the SPLIT rather than the old blanket rule —
  * it does not touch `docs/ward-flow/owner-decisions-2026-09-03.md` or any other ruling document,
  * because the 3 September ruling is not wrong, it is incomplete: it settled WHAT the trigger says

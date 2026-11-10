@@ -22,7 +22,7 @@ import {
 
 /**
  * A synthetic repository. Every case below is a real would-be deletion the 2026-09-02 survey
- * found, reduced to its smallest reproduction — see docs/mockup-retirement-policy.md.
+ * found, reduced to its smallest reproduction — see docs/history/mockup-retirement-policy.md.
  */
 function fakeRepo(files: Record<string, string>, directories: Record<string, string[]>) {
   const normalize = (p: string) => p.replaceAll("\\", "/").replace(/^\/+/, "");

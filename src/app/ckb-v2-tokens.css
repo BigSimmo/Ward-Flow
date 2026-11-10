@@ -150,7 +150,7 @@
   --quantity-unit-tracking: 0.01em;
   --quantity-unit-gap: 0.15em;
 
-  /* Evidence spine - the answer's left evidence rule (docs/design-system/SPEC.md
+  /* Evidence spine - the answer's left evidence rule (docs/history/design-system-psychsift/SPEC.md
      §7, §10). C1 note: the design-side token file proved unrecoverable (design
      project 08d6f126 was last updated 2026-07-13; the 31 July copy was never
      written to it), so these family names are authored repo-side, derived from

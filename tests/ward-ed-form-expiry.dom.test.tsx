@@ -17,7 +17,7 @@ vi.mock("next/link", () => ({
  * 🔴 **TASK T1 — THE ED SCREEN STOPS COMPUTING FORM LIMITS.**
  *
  * `docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md` item 1, on owner answer 1 (17
- * September 2026), quoted verbatim in `docs/ward-flow/owner-answers-2026-09-17.md`: *"the timer
+ * September 2026), quoted verbatim in `docs/history/archive/dated-notes/owner-answers-2026-09-17.md`: *"the timer
  * that starts when a patient arrives is separate to forms. One records time in ED and the other
  * is a forms category."* Before this task, the emergency department board computed a 72-hour
  * Form 1A validity window and a 72-hour Form 3D detention window from `formedAt` plus a

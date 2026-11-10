@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Re-measures every factual claim in `docs/ward-flow/plans/2026-09-10-master-plan-errata.md`
+ * Re-measures every factual claim in `docs/history/plans-2026-09/2026-09-10-master-plan-errata.md`
  * against the CURRENT tree, and says which are still true.
  *
  * WHY THIS EXISTS. The errata sheet expired once within an hour of being written: §B told every

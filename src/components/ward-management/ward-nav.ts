@@ -576,7 +576,7 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
   ],
   [
     "/ward-flow/reports/chronology",
-    "The PIR patient chronology (D-37). Reached from the Tools sheet's Print and share group (tools/ward-tools-sheet.tsx).",
+    "The PIR patient chronology (Reports build, 9 Oct 2026). Reached from the Tools sheet's Print and share group (tools/ward-tools-sheet.tsx).",
   ],
   [
     WARD_LEAVE_HREF,

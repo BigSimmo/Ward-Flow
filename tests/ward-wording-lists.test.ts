@@ -1,8 +1,8 @@
 // tests/ward-wording-lists.test.ts
 //
-// Owner item 55 (docs/ward-flow/owner-answers-2026-09-17.md: "Wording lists confirmed;
+// Owner item 55 (docs/history/archive/dated-notes/owner-answers-2026-09-17.md: "Wording lists confirmed;
 // 'Another reason — needs follow-up' means the same from an ED.") confirmed four wording
-// lists, verbatim in docs/ward-flow/owner-wording-page-2026-09-02.md ("A. Lists a clinician
+// lists, verbatim in docs/history/archive/dated-notes/owner-wording-page-2026-09-02.md ("A. Lists a clinician
 // picks from", rows #3, #9, #10, #11). This pins each against its source constant and label
 // map exactly as docs/history/plans-2026-09/2026-09-17-build-plan-screens.md §1 locates them:
 //
