@@ -1561,6 +1561,6 @@ is inferred.
   - List 10: Capacity, Mismatch pop-up: health service then ward name, the fixed order D-71 item 6 and D-110 use for fit lists.
   - List 11: Destination kinds: the fixed order Ward, Community, ED, with no "suggested" flag.
   - List 13: Movements timeline side rail: EDs by health service then name, labelled "Corridors".
-- **Kept:** list 9 (Statistics ED finder and phone ED list, already A to Z or a user-chosen column sort) and list 12 (New referral, Community team step, catchment team first, because teams are not wards).
+- **Kept:** list 9 (Statistics ED finder and the phone ED list keep their current order) and list 12 (New referral, Community team step, catchment team first, because teams are not wards).
 - **Why:** a list beside a waiting list that puts the most free beds first reads as "send them here". A fixed order keeps the same information without a ranking.
 - **Boundary:** D-71 stands: Ward Flow does not rank or recommend a bed. Synthetic data only. Approves no release.
