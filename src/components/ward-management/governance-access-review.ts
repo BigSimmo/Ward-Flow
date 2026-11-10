@@ -15,6 +15,10 @@
  *   from the seeded world each time they are read (never stored, like `ward-governance-seed.ts`),
  *   plus any opening made in this tab.
  *
+ * Each cover given joins the same list (master audit M58, D-125), with its reason, its giver's desk
+ * and the ward or ED it covers. The server reads its own ACCESS_COVER audit rows; the local demo
+ * lists the covers given in this tab.
+ *
  * A desk is its role and its place. More than 3 openings by one desk within 12 hours is a pattern
  * (`breakGlassPerShift`, `breakGlassShift`).
  */
@@ -26,13 +30,16 @@ import type { Unit } from "./ward-model";
 import {
   ACCESS_ROLE_LABELS,
   BREAK_GLASS_REASONS,
+  COVER_REASONS,
   type BreakGlassReasonId,
+  type CoverReasonId,
   type WardAccess,
   type WardAccessRole,
 } from "./ward-role-access";
 import { allEmergencyDepartments, siteByCode } from "./ward-sites";
-import { BREAK_GLASS_REVIEW_PREFIX } from "./ward-break-glass-review-id";
-import type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-client";
+import { BREAK_GLASS_REVIEW_PREFIX, COVER_REVIEW_PREFIX } from "./ward-break-glass-review-id";
+import type { SharedBreakGlassOpening, SharedCoverGiven, SharedRecordView } from "./ward-shared-client";
+import type { CoverRecord } from "./shell/ward-access-store";
 import { accessPlaceLabel } from "./shell/ward-access-labels";
 import { parseStoredAccess } from "./shell/ward-access-store";
 
@@ -135,6 +142,85 @@ export function openingEvents(openings: readonly AccessOpening[], generation: nu
         ...(opening.otherText ? { otherText: opening.otherText } : {}),
       },
     }));
+}
+
+/**
+ * Master audit M58 (D-125, 10 Nov 2026): one cover given, for the same review list. `desk` and
+ * `place` are the giver's; `cover` is the ward or ED covered, in words.
+ */
+export type AccessCover = {
+  readonly key: string;
+  readonly at: Instant;
+  readonly until: Instant;
+  readonly reason: CoverReasonId | null;
+  readonly desk: WardAccessRole;
+  readonly place: string;
+  readonly cover: string;
+};
+
+export function coverReasonLabel(reason: CoverReasonId | null | undefined): string {
+  return COVER_REASONS.find((option) => option.id === reason)?.label ?? "Not recorded";
+}
+
+/** Each cover given as a Governance review row, counted under Record access like an opening. */
+export function coverEvents(covers: readonly AccessCover[], generation: number): AuditEvent[] {
+  return [...covers]
+    .sort((a, b) => a.at - b.at)
+    .map((cover) => ({
+      id: `${COVER_REVIEW_PREFIX}${cover.key}`,
+      sequence: 0,
+      generation,
+      at: cover.at,
+      actor: { role: flowRole(cover.desk), actingUnitId: null, attribution: "declared-prototype-role" },
+      subject: { kind: "unresolved" },
+      outcome: "accepted",
+      reasonCode: "none",
+      origin: "break-glass-opening",
+      category: "record-access",
+      action: "ACCESS_COVER",
+      details: { reason: cover.reason, until: cover.until, desk: cover.desk, place: cover.place, cover: cover.cover },
+    }));
+}
+
+/** The server's covers given on the demo clock, as `serverOpenings`: a row it cannot read is left out. */
+export function serverCovers(rows: readonly SharedCoverGiven[], at: Instant, units: readonly Unit[]): AccessCover[] {
+  return rows.flatMap((row) => {
+    const giver = accessOf(row?.actor_role, row?.actor_scope);
+    const covered = accessOf(row?.role, row?.scope);
+    const minutes = row?.minutes;
+    if (
+      !giver ||
+      !covered ||
+      !SERVER_ID.test(String(row.id)) ||
+      !Number.isFinite(minutes?.given) ||
+      !Number.isFinite(minutes?.until)
+    )
+      return [];
+    return [
+      {
+        key: String(row.id),
+        at: at + minutes.given,
+        until: at + minutes.until,
+        reason: COVER_REASONS.find((option) => option.id === row.reason)?.id ?? null,
+        desk: giver.role,
+        place: accessPlaceLabel(giver, units),
+        cover: accessPlaceLabel(covered, units),
+      },
+    ];
+  });
+}
+
+/** This tab's covers given, for the local demo's review list. Memory only, never stored. */
+export function localCovers(records: readonly CoverRecord[], units: readonly Unit[]): AccessCover[] {
+  return records.map((record) => ({
+    key: `local-${record.id}-${Math.max(0, Math.round(record.givenAt))}`,
+    at: record.givenAt,
+    until: record.until,
+    reason: record.reason,
+    desk: record.givenBy.role,
+    place: accessPlaceLabel(record.givenBy, units),
+    cover: accessPlaceLabel({ role: record.scope.kind === "ed" ? "ed" : "ward", scope: record.scope }, units),
+  }));
 }
 
 /** True when an opening's desk made more than the set number in 12 hours. */

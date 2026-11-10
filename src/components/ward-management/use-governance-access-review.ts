@@ -13,12 +13,17 @@ import { WardFlowContext, useOptionalWardFlowSelect } from "./ward-flow-provider
 import { NEWEST_SEED_MINUTES_BEFORE } from "./ward-governance-seed";
 import { resolveSubjectPatient } from "./ward-patient-resolver";
 import { accessIsWholeNetwork } from "./ward-role-access";
-import type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-client";
+import type { SharedBreakGlassOpening, SharedCoverGiven, SharedRecordView } from "./ward-shared-client";
+import { scopeWithinScope } from "./ward-access-admin";
+import { wardAccessPlaces } from "./ward-access-places";
 import {
+  localCovers,
   markBreakGlass,
+  serverCovers,
   serverOpenings,
   serverViews,
   syntheticAccessReview,
+  type AccessCover,
   type AccessOpening,
   type RecordView,
 } from "./governance-access-review";
@@ -33,6 +38,8 @@ const READ_EVERY_MS = 60_000;
 export type AccessReviewSource = {
   readonly openings: readonly AccessOpening[];
   readonly views: readonly RecordView[];
+  /** M58 (D-125): each cover given, for the same review list. */
+  readonly covers: readonly AccessCover[];
   /** "server": read from the shared workspace. "demo": the local demo's synthetic rows. */
   readonly from: "server" | "demo";
   /** The server could not be read; the rows are the last ones read, or none. */
@@ -42,6 +49,7 @@ export type AccessReviewSource = {
 type Loaded = {
   readonly openings: readonly SharedBreakGlassOpening[];
   readonly views: readonly SharedRecordView[];
+  readonly covers: readonly SharedCoverGiven[];
   readonly at: Instant | null;
   readonly problem: boolean;
 };
@@ -60,7 +68,7 @@ export function useGovernanceAccessReview(governanceEvents: readonly AuditEvent[
   const unscoped = useContext(UnscopedWardFlowContext);
   const provided = useContext(WardFlowContext);
   const world = unscoped ?? provided;
-  const { records: tabOpenings } = useWardAccessSnapshot();
+  const { records: tabOpenings, coversGiven: tabCovers } = useWardAccessSnapshot();
   const [loaded, setLoaded] = useState<Loaded | null>(null);
 
   useEffect(() => {
@@ -69,7 +77,14 @@ export function useGovernanceAccessReview(governanceEvents: readonly AuditEvent[
     const load = () =>
       read().then(
         (value) => {
-          if (!cancelled) setLoaded({ openings: value.openings, views: value.views, at: null, problem: false });
+          if (!cancelled)
+            setLoaded({
+              openings: value.openings,
+              views: value.views,
+              covers: value.covers ?? [],
+              at: null,
+              problem: false,
+            });
         },
         () => {
           if (!cancelled) setLoaded((current) => (current ? { ...current, problem: true } : null) ?? EMPTY_FAILED);
@@ -136,6 +151,7 @@ export function useGovernanceAccessReview(governanceEvents: readonly AuditEvent[
           serverViews(loaded?.views ?? [], at, units).map((view) => ({ ...view, record: patientRecord(view.record) })),
           openings,
         ),
+        covers: serverCovers(loaded?.covers ?? [], at, units),
         from: "server",
         problem: loaded?.problem ?? false,
       };
@@ -150,8 +166,14 @@ export function useGovernanceAccessReview(governanceEvents: readonly AuditEvent[
       surface: "patient",
       breakGlass: true,
     }));
-    return { openings, views: mine([...demo.views, ...tabViews]), from: "demo", problem: false };
-  }, [access, demo, loaded, now, read, scoped, tabOpenings, world]);
+    // A service coordinator reviews the cover given inside its own place, as the server does.
+    const places = wardAccessPlaces(units);
+    const covers = localCovers(
+      tabCovers.filter((cover) => accessIsWholeNetwork(access) || scopeWithinScope(cover.scope, access.scope, places)),
+      units,
+    );
+    return { openings, views: mine([...demo.views, ...tabViews]), covers, from: "demo", problem: false };
+  }, [access, demo, loaded, now, read, scoped, tabCovers, tabOpenings, world]);
 }
 
-const EMPTY_FAILED: Loaded = { openings: [], views: [], at: null, problem: true };
+const EMPTY_FAILED: Loaded = { openings: [], views: [], covers: [], at: null, problem: true };

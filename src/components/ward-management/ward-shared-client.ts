@@ -36,7 +36,7 @@ import {
   type HeldArchive,
 } from "./ward-shared-archive-delta";
 import { reuseUnchangedPayload } from "./ward-shared-client-reuse";
-import type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
+import type { SharedRecordAccess, SharedRecordView } from "./ward-shared-record-access-types";
 import { RecordDetailHold } from "./ward-shared-record-detail";
 import {
   bindWorkspaceReply,
@@ -51,7 +51,7 @@ export type { ExecutiveAggregateSnapshot, SharedWorkspaceSnapshot } from "./ward
 import * as conflict from "./ward-conflict-scope";
 import * as push from "./ward-shared-push-api";
 import type { SharedAsk } from "./ward-shared-push-api";
-export type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
+export type { SharedBreakGlassOpening, SharedCoverGiven, SharedRecordView } from "./ward-shared-record-access-types";
 import type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
 import {
   markOwnSave,
@@ -1263,13 +1263,14 @@ export class SharedWorkspaceClient {
       return false; // Logged on the next opening; the page itself is unaffected.
     }
   }
-  /** D-80 item 14: the record views of the last 7 days and the break glass openings, for a coordinator. */
-  async readRecordAccess(): Promise<{ views: SharedRecordView[]; openings: SharedBreakGlassOpening[] }> {
+  /** D-80 item 14: the last 7 days' record views, break glass openings and covers given (M58). */
+  async readRecordAccess(): Promise<SharedRecordAccess> {
     const { response, value } = await this.request("/v1/workspace/record-access");
     if (!response.ok) throw new Error("Record access could not be read");
     return {
       views: Array.isArray(value?.views) ? value.views : [],
       openings: Array.isArray(value?.openings) ? value.openings : [],
+      covers: Array.isArray(value?.covers) ? value.covers : [],
     };
   }
   /**
@@ -1408,7 +1409,7 @@ export class SharedWorkspaceClient {
   revokeAccess(membershipId: string) {
     return this.change("/v1/workspace/access/revoke", { membershipId });
   }
-  giveCover(input: { actorId: string; scope: unknown; minutes: number }) {
+  giveCover(input: { actorId: string; scope: unknown; minutes: number; reason: string }) {
     return this.change("/v1/workspace/access/cover", input);
   }
   decideRequest(requestId: string, decision: "approved" | "declined", expiresInMinutes: number) {

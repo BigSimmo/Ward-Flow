@@ -703,14 +703,17 @@ test("cover, requests and answers check their fields; asking for access needs no
   const view = { ...STATEWIDE_VIEW, actorId: coordinator };
   const scope = { kind: "ward", unitIds: ["unit-a"] };
   const requestId = "77777777-7777-4777-8777-777777777777";
-  assert.equal((await handler(request("/access/cover", { actorId: other, scope, minutes: 480 }))).status, 200);
+  assert.equal(
+    (await handler(request("/access/cover", { actorId: other, scope, minutes: 480, reason: "busy" }))).status,
+    200,
+  );
   assert.deepEqual(await (await handler(request("/access/cover"))).json(), { name: "covers" });
   const decided = { requestId, decision: "approved", expiresAt: "2027-01-01T00:00:00.000Z" };
   assert.equal((await handler(request("/access/decide", decided))).status, 200);
   // Declining needs no end date.
   assert.equal((await handler(request("/access/decide", { requestId, decision: "declined" }))).status, 200);
   assert.deepEqual(seen, [
-    ["cover", view, { actorId: other, scope, minutes: 480 }],
+    ["cover", view, { actorId: other, scope, minutes: 480, reason: "busy" }],
     ["covers", view],
     ["decide", view, requestId, "approved", new Date(decided.expiresAt)],
     ["decide", view, requestId, "declined", null],
@@ -833,6 +836,8 @@ test("every desk logs the records it opens; the access admin reads the log, a co
     },
     recordViews: async (_view, patient) => [{ patient_id: patient ?? "PT-1001" }],
     breakGlassOpenings: async (view) => [{ id: "7", scope: view.access.scope.kind }],
+    // M58 (D-125): each cover given joins the review list beside the openings.
+    coversGiven: async (view) => [{ id: "9", scope: view.access.scope.kind }],
   };
   const ward = setup(other, "prototype", { ...store, viewer: async () => wardView });
   const opened = await ward.handler(request("/record-access", { patientId: "PT-1001", surface: "movement" }));
@@ -856,12 +861,13 @@ test("every desk logs the records it opens; the access admin reads the log, a co
   assert.equal(logged.length, 1);
   const lead = setup(coordinator, "prototype", store);
   const views = await lead.handler(request("/record-access?patient=PT-2002"));
-  assert.deepEqual(await views.json(), { views: [{ patient_id: "PT-2002" }], openings: [] });
+  assert.deepEqual(await views.json(), { views: [{ patient_id: "PT-2002" }], openings: [], covers: [] });
   assert.equal((await lead.handler(request("/record-access?patient=not%20an%20id"))).status, 400);
   // The review list reads the openings too (D-80 item 14).
   assert.deepEqual(await (await lead.handler(request("/record-access"))).json(), {
     views: [{ patient_id: "PT-1001" }],
     openings: [{ id: "7", scope: "statewide" }],
+    covers: [{ id: "9", scope: "statewide" }],
   });
   // The access admin reads the log for its Access log in Settings (D-80 item 14), without the
   // openings.
@@ -887,6 +893,7 @@ test("every desk logs the records it opens; the access admin reads the log, a co
   assert.deepEqual(await (await service.handler(request("/record-access"))).json(), {
     views: [{ patient_id: "PT-1001" }],
     openings: [{ id: "7", scope: "service" }],
+    covers: [{ id: "9", scope: "service" }],
   });
 });
 

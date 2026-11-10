@@ -98,6 +98,7 @@ export const actionLabels: Record<AuditEvent["action"], string> = {
   RECORD_PATIENT_DISCHARGE: "Record patient discharge",
   OPEN_DISCHARGE_RECORD: "Open discharge record",
   BREAK_GLASS: "Break glass",
+  ACCESS_COVER: "Cover given",
   REVIEW_AUDIT_EVENT: "Review event",
   SET_CONFIGURATION: "Change configuration",
   ACKNOWLEDGE_INBOX_ITEM: "Acknowledge action item",
@@ -215,6 +216,9 @@ export function subjectLabel(event: AuditEvent, patientOf: ReturnType<typeof use
     case "unresolved":
       if (event.action === "ARCHIVE_PATIENT")
         return event.details.umrn === null ? "Archived record" : `Archived record, UMRN ${event.details.umrn}`;
+      // M58: a cover given is about a ward or ED, not a record.
+      if (event.action === "ACCESS_COVER")
+        return event.details.cover ? `Cover of ${event.details.cover}` : "Cover not in this view";
       return event.action === "BREAK_GLASS" ? "Record not in this view" : "Unresolved record";
   }
 }

@@ -73,7 +73,7 @@ import {
   type WorkbenchProps,
 } from "./governance-shared";
 import { GAP_KEYS, GAP_LABEL, GapPill, cellTone, siteGaps } from "./governance-site-gaps";
-import { isPattern, openingEvents, viewsOfRecord } from "./governance-access-review";
+import { coverEvents, isPattern, openingEvents, viewsOfRecord } from "./governance-access-review";
 import { RecordViewsTable, WhoOpenedList } from "./governance-record-views";
 import { useGovernanceAccessReview } from "./use-governance-access-review";
 
@@ -295,12 +295,15 @@ function GovernanceSession({
   const allowed = eventRead?.status === "allowed" && reviewRead?.status === "allowed";
   const events = eventRead?.status === "allowed" ? eventRead.value : [];
   const reviews = reviewRead?.status === "allowed" ? reviewRead.value : [];
-  // D-80 item 14: each break glass opening joins the list, from the server or the demo, in time order.
+  // D-80 item 14: each break glass opening joins the list, from the server or the demo, in time order,
+  // and each cover given beside them (M58, D-125).
   const accessReview = useGovernanceAccessReview(events, now);
   const rows = allowed
-    ? [...events, ...openingEvents(accessReview.openings, api?.worldGeneration ?? 0)].sort(
-        (a, b) => (a.at ?? Number.MAX_SAFE_INTEGER) - (b.at ?? Number.MAX_SAFE_INTEGER),
-      )
+    ? [
+        ...events,
+        ...openingEvents(accessReview.openings, api?.worldGeneration ?? 0),
+        ...coverEvents(accessReview.covers, api?.worldGeneration ?? 0),
+      ].sort((a, b) => (a.at ?? Number.MAX_SAFE_INTEGER) - (b.at ?? Number.MAX_SAFE_INTEGER))
     : events;
   const historyFor = (event: AuditEvent) =>
     reviews.filter((review) => review.eventId === event.id && review.generation === event.generation);

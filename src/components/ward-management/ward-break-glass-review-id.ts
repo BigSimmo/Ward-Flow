@@ -9,10 +9,15 @@
  * it without loading the Governance screen.
  */
 export const BREAK_GLASS_REVIEW_PREFIX = "audit-break-glass-";
+/**
+ * Master audit M58 (D-125): each cover given joins the same list, kept outside the workspace like an
+ * opening (the server's audit row number, or a demo cover's own key), so it is named the same way.
+ */
+export const COVER_REVIEW_PREFIX = "audit-cover-";
 
-const REVIEW_ID = /^audit-break-glass-[a-z0-9-]{1,40}$/;
+const REVIEW_ID = /^audit-(?:break-glass|cover)-[a-z0-9-]{1,40}$/;
 
-/** True for the review id of a break glass opening. */
+/** True for the review id of a break glass opening or of a cover given. */
 export function isBreakGlassReviewId(id: unknown): id is string {
   return typeof id === "string" && REVIEW_ID.test(id);
 }

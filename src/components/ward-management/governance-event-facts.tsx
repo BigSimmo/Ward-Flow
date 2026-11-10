@@ -16,7 +16,7 @@ import { deskRoleLabel } from "./settings/workstation-desks";
 import { Badge } from "@/components/wf";
 import thirdEdition from "./governance-third-edition.module.css";
 import { ACCESS_ROLE_LABELS } from "./ward-role-access";
-import { PATTERN_HOURS, PATTERN_LIMIT, reasonLabel } from "./governance-access-review";
+import { PATTERN_HOURS, PATTERN_LIMIT, coverReasonLabel, reasonLabel } from "./governance-access-review";
 import { onBehalfReasonLabel } from "./ward-on-behalf-reason";
 import {
   UNDONE_STEP_LABELS,
@@ -66,6 +66,25 @@ function BreakGlassFacts({ event, now }: { event: AuditEvent & { action: "BREAK_
             : `${formatInstantWithDay(event.at, now)} to ${formatInstantWithDay(details.until, now)}, read only`,
         ],
         ["Pattern", count > PATTERN_LIMIT ? <Badge tone="warning">{pattern}</Badge> : pattern],
+      ]}
+    />
+  );
+}
+/** Master audit M58 (D-125): a cover given, with the desk that gave it, why and until when. */
+function CoverFacts({ event, now }: { event: AuditEvent & { action: "ACCESS_COVER" }; now: Instant }) {
+  const details = event.details;
+  return (
+    <FactList
+      facts={[
+        ["Given by", details.desk ? `${ACCESS_ROLE_LABELS[details.desk]}, ${details.place}` : "Not recorded"],
+        ["Cover of", details.cover || "Not recorded"],
+        ["Reason", coverReasonLabel(details.reason)],
+        [
+          "Held",
+          event.at === null || details.until === null
+            ? "Not recorded"
+            : `${formatInstantWithDay(event.at, now)} to ${formatInstantWithDay(details.until, now)}`,
+        ],
       ]}
     />
   );
@@ -223,6 +242,7 @@ export function EventFacts({ event, units, now }: { event: AuditEvent; units: Un
       );
     case "record-access":
       if (event.action === "BREAK_GLASS") return <BreakGlassFacts event={event} now={now} />;
+      if (event.action === "ACCESS_COVER") return <CoverFacts event={event} now={now} />;
       return (
         <>
           <FactList

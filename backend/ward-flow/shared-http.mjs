@@ -592,12 +592,14 @@ export function createSharedHandler({
           const patient = new URL(request.url).searchParams.get("patient");
           if (patient !== null && !RECORD_ID.test(patient)) return reply(400, { error: "A patient is required" });
           // #839: both lists are read at once, as each is its own round trip to the database.
-          const [views, openings] = await Promise.all([
+          // M58 (D-125): each cover given joins the coordinator's review list beside the openings.
+          const [views, openings, covers] = await Promise.all([
             store.recordViews ? store.recordViews(view, patient) : [],
             coordinator && store.breakGlassOpenings && patient === null ? store.breakGlassOpenings(view) : [],
+            coordinator && store.coversGiven && patient === null ? store.coversGiven(view) : [],
           ]);
           if (!coordinator) return reply(200, { views });
-          return reply(200, { views, openings });
+          return reply(200, { views, openings, covers });
         }
         const { body, refusal } = await json();
         if (refusal) return refusal;
@@ -651,6 +653,7 @@ export function createSharedHandler({
             actorId: body.actorId.toLowerCase(),
             scope: body.scope,
             minutes: body.minutes,
+            reason: body.reason,
           });
         } else if (path === "/v1/workspace/access/decide") {
           const expiresAt = requestedAccessEnd(body);

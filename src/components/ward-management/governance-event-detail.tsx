@@ -13,7 +13,14 @@ import type { AuditEvent, AuditReview } from "./ward-audit";
 import { deskRoleLabel } from "./settings/workstation-desks";
 import { movementHref, unitHref } from "./shell/ward-facade";
 import { Badge, Button, DrawerFootRow, PanelDrawer, StatusGlyph, StatusPill, buttonClass, cx } from "@/components/wf";
-import { PATTERN_HOURS, PATTERN_LIMIT, isPattern, reasonLabel, shortDeskLabel } from "./governance-access-review";
+import {
+  PATTERN_HOURS,
+  PATTERN_LIMIT,
+  coverReasonLabel,
+  isPattern,
+  reasonLabel,
+  shortDeskLabel,
+} from "./governance-access-review";
 import thirdEdition from "./governance-third-edition.module.css";
 import local from "./governance-event-list.module.css";
 import { EventFacts, FactList } from "./governance-event-facts";
@@ -93,6 +100,9 @@ export function EventTable({
             // D-80 item 14: a break glass opening reads as its reason, its desk and place, and how
             // long it was open, or the pattern when its desk made more than 3 in 12 hours.
             const glass = event.action === "BREAK_GLASS" ? event.details : null;
+            // M58 (D-125): a cover given reads as its reason and the desk that gave it.
+            const cover = event.action === "ACCESS_COVER" ? event.details : null;
+            const giver = glass ?? cover;
             return (
               <button
                 type="button"
@@ -107,7 +117,11 @@ export function EventTable({
                 <span className={thirdEdition.stack}>
                   <strong className={local.wrap}>{actionLabels[event.action]}</strong>
                   <span className={cx(thirdEdition.quietText, local.wrap)}>
-                    {glass ? reasonLabel(glass.reason) : categoryLabels[event.category]}
+                    {glass
+                      ? reasonLabel(glass.reason)
+                      : cover
+                        ? coverReasonLabel(cover.reason)
+                        : categoryLabels[event.category]}
                   </span>
                 </span>
                 <span className={thirdEdition.stack}>
@@ -118,10 +132,10 @@ export function EventTable({
                     </span>
                   ) : null}
                 </span>
-                {glass?.desk ? (
+                {giver?.desk ? (
                   <span className={thirdEdition.stack}>
-                    <span className={local.wrap}>{shortDeskLabel(glass.desk)}</span>
-                    <span className={cx(thirdEdition.quietText, local.wrap)}>{glass.place}</span>
+                    <span className={local.wrap}>{shortDeskLabel(giver.desk)}</span>
+                    <span className={cx(thirdEdition.quietText, local.wrap)}>{giver.place}</span>
                   </span>
                 ) : (
                   <span className={local.wrap}>

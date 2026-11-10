@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   BREAK_GLASS_MINUTES,
   BREAK_GLASS_REASON_IDS,
+  COVER_REASON_IDS,
   breakGlassRefusal,
   coverAccess,
   coverRefusal,
@@ -11,7 +12,19 @@ import {
   withCover,
   worldNow,
 } from "../backend/ward-flow/engine";
-import { serverOpenings } from "../src/components/ward-management/governance-access-review";
+import {
+  coverEvents,
+  localCovers,
+  serverCovers,
+  serverOpenings,
+} from "../src/components/ward-management/governance-access-review";
+import {
+  endDueCovers,
+  giveCover,
+  readWardAccessSnapshot,
+  resetWardAccessStoreForTests,
+} from "../src/components/ward-management/shell/ward-access-store";
+import { isBreakGlassReviewId } from "../src/components/ward-management/ward-break-glass-review-id";
 import type { WardAccess } from "../src/components/ward-management/ward-role-access";
 import { WARD_ACCESS_ROLES } from "../src/components/ward-management/ward-role-access";
 
@@ -120,10 +133,52 @@ describe("M58 cover", () => {
     }
   });
 
-  // GAP for Josh (M58, 10 Nov 2026): D-66 and D-80 ask cover to be scoped, to end and to be audited
-  // (ACCESS_COVER in the audit table), and the code does that. Cover takes no reason, and no cover
-  // appears on the coordinator's Governance review list or in the Access log. Neither decision asks
-  // for them; the audit item does. Left as todo until Josh rules.
-  it.todo("asks why when cover is given, and keeps the reason with the cover");
-  it.todo("lists each cover given on the coordinator's review list, as break glass openings are");
+  // M58 fixed (D-125, 10 Nov 2026): cover asks why from a short list, and each cover given lands on
+  // the coordinator's Governance review list beside the break glass openings. The server refuses
+  // an unlisted reason before the database and keeps the reason in its ACCESS_COVER audit row:
+  // backend/ward-flow/ward-audit-m58-break-glass-reason.test.mjs and postgres.test.mjs.
+  it("asks why when cover is given, and keeps the reason with the cover", () => {
+    expect(COVER_REASON_IDS.length).toBeGreaterThan(1);
+    expect(COVER_REASON_IDS).not.toContain("");
+    resetWardAccessStoreForTests();
+    const record = giveCover({ recipient: nurseB, scope: nurseA.scope, now: 0, until: 60, reason: "staff-away" });
+    expect(record?.reason).toBe("staff-away");
+    expect(readWardAccessSnapshot().coversGiven.map((cover) => cover.reason)).toEqual(["staff-away"]);
+    resetWardAccessStoreForTests();
+  });
+
+  it("lists each cover given on the coordinator's review list, as break glass openings are", () => {
+    const now = worldNow(world, at);
+    const covers = serverCovers(
+      [
+        {
+          id: "59",
+          actor_role: "ward",
+          actor_scope: nurseA.scope,
+          role: "ward",
+          scope: nurseA.scope,
+          reason: "night-weekend",
+          minutes: { given: -30, until: 450 },
+        },
+        // A row the screens cannot read is left out, not guessed.
+        { id: "x", actor_role: "ward", actor_scope: nurseA.scope, role: "ward", scope: nurseA.scope } as never,
+      ],
+      now,
+      world.state.units,
+    );
+    expect(covers).toHaveLength(1);
+    expect(covers[0]).toMatchObject({ reason: "night-weekend", desk: "ward", at: now - 30, until: now + 450 });
+    const rows = coverEvents(covers, 0);
+    expect(rows[0]).toMatchObject({ id: "audit-cover-59", category: "record-access", action: "ACCESS_COVER" });
+    // Its review mark is named like an opening's, so the reducer and access rules accept it.
+    expect(isBreakGlassReviewId(rows[0]!.id)).toBe(true);
+    // The local demo lists the covers given in this tab the same way, even after they end.
+    resetWardAccessStoreForTests();
+    giveCover({ recipient: nurseB, scope: nurseA.scope, now: 0, until: 60, reason: "busy" });
+    endDueCovers(61);
+    const local = localCovers(readWardAccessSnapshot().coversGiven, world.state.units);
+    expect(local).toHaveLength(1);
+    expect(local[0]).toMatchObject({ reason: "busy", desk: "coordinator", at: 0, until: 60 });
+    resetWardAccessStoreForTests();
+  });
 });

@@ -26,6 +26,7 @@ import {
   accessIsValid,
   accessIsWholeNetwork,
   type BreakGlassReasonId,
+  type CoverReasonId,
   type WardAccess,
   type WardAccessScope,
 } from "@/components/ward-management/ward-role-access";
@@ -69,6 +70,8 @@ export type CoverRecord = {
   readonly givenBy: WardAccess;
   readonly givenAt: Instant;
   readonly until: Instant;
+  /** Why it was given (M58, D-125), from `COVER_REASONS`. */
+  readonly reason: CoverReasonId | null;
 };
 
 type Snapshot = {
@@ -80,6 +83,11 @@ type Snapshot = {
   /** The coordinator previewing another role: the coordinator's own access to return to. */
   readonly previewOf: WardAccess | null;
   readonly covers: readonly CoverRecord[];
+  /**
+   * M58 (D-125): every cover given in this tab, kept after it ends so the coordinator's review list
+   * holds it as it holds this tab's break glass openings. Memory only.
+   */
+  readonly coversGiven: readonly CoverRecord[];
   /** The page a desk switch is leaving while the new desk's home loads (`markDeskSwitch`). */
   readonly switchFrom?: string;
   /** The page an account's sign-in landed on, while it is still showing (`markSignInLanding`). */
@@ -92,6 +100,7 @@ const EMPTY: Snapshot = {
   records: [],
   previewOf: null,
   covers: [],
+  coversGiven: [],
 };
 let snapshot: Snapshot = EMPTY;
 let loaded = false;
@@ -300,6 +309,7 @@ export function setWardAccess(
     records: expireGrants(snapshot.records),
     previewOf: null,
     covers: fromServer ? [] : snapshot.covers,
+    coversGiven: fromServer ? [] : snapshot.coversGiven,
     signInLanding: cleanLanding !== undefined ? cleanLanding : snapshot.signInLanding,
   });
 }
@@ -349,6 +359,7 @@ export function giveCover(input: {
   scope: WardAccessScope;
   now: Instant;
   until: Instant;
+  reason?: CoverReasonId;
 }): CoverRecord | null {
   load();
   if (snapshot.previewOf !== null || !accessIsValid(input.recipient) || !(input.until > input.now)) return null;
@@ -359,8 +370,9 @@ export function giveCover(input: {
     givenBy: snapshot.desk,
     givenAt: input.now,
     until: input.until,
+    reason: input.reason ?? null,
   };
-  emit({ ...snapshot, covers: [...snapshot.covers, record] });
+  emit({ ...snapshot, covers: [...snapshot.covers, record], coversGiven: [...snapshot.coversGiven, record] });
   return record;
 }
 
@@ -398,7 +410,7 @@ export function lockWardDesk(): void {
 function forgetAccountAccess(): void {
   load();
   clearPersonalKeys();
-  emit({ desk: snapshot.desk, records: [], previewOf: null, covers: [] });
+  emit({ desk: snapshot.desk, records: [], previewOf: null, covers: [], coversGiven: [] });
 }
 onWardSessionEnd(forgetAccountAccess);
 
