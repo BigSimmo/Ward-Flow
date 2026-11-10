@@ -1092,7 +1092,12 @@ export function WardGlobalSearch({
                   />
                 ) : null}
                 {groups.map((group) => (
-                  <div key={group.key} className={styles.groupItem} data-goto={group.key === "goto" || undefined}>
+                  <div
+                    key={group.key}
+                    className={styles.groupItem}
+                    data-goto={group.key === "goto" || undefined}
+                    data-group={group.key}
+                  >
                     <div>
                       <span className={styles.group} data-testid={`ward-global-search-group-${group.key}`}>
                         <span id={`${listId}-${group.key}-heading`}>

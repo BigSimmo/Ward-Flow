@@ -1463,3 +1463,297 @@ a.askChip {
   background: color-mix(in srgb, var(--wf-accent) 14%, transparent);
   box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--wf-accent) 45%, transparent);
 }
+
+/*
+ * ── Phone search start screen polish (Josh, 10 Nov 2026, "Polish the phone search screen") ────────
+ * Before anything is typed. One 14px edge for every section (the capsule's own edge), sections
+ * 24px apart, one heading style. Go to is one glass strip of four equal cells that always fits the
+ * width, so it never scrolls sideways. Alerts and Do sit in inset glass groups with hairlines that
+ * start at the text, and each alert's glyph sits on its own tone, not on action blue. Full patient
+ * search is a solid glass bar, so the page never shows through behind it.
+ */
+@media (max-width: 46.4375rem) {
+  .popup[data-start] .listPane {
+    padding: 4px 14px 16px;
+  }
+
+  .popup[data-start] .list {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .popup[data-start] .groupItem:not(:first-child) {
+    margin-top: 0;
+    padding-top: 0;
+  }
+
+  .popup[data-start] .group {
+    height: 28px;
+    padding: 0 2px;
+    font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+    color: var(--wf-ink-3);
+  }
+
+  .popup[data-start] .groupCount,
+  .popup[data-start] .group [id$="-needs-heading"] {
+    font-feature-settings: "tnum" 1;
+  }
+
+  .popup[data-start] .group .showAll {
+    min-height: 28px;
+    padding: 0 2px;
+    font-size: var(--wf-fs-13);
+  }
+
+  /* Try asking: tighter chips, the answer count in mono beside a hairline. */
+  .popup[data-start] .askRow {
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+  }
+
+  .popup[data-start] .askChips {
+    gap: 8px;
+    padding: 0;
+  }
+
+  .popup[data-start] .askChip {
+    height: 32px;
+    gap: 8px;
+    padding: 0 6px 0 12px;
+    border: 0;
+    background: color-mix(in srgb, var(--wf-surface) 70%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-ink-1) 9%, transparent);
+    color: var(--wf-ink-1);
+    font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+    transition: background var(--wf-m-fast) var(--wf-ease);
+  }
+
+  .popup[data-start] .askChip:active {
+    background: color-mix(in srgb, var(--wf-accent) 12%, transparent);
+  }
+
+  .popup[data-start] .askChip:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .popup[data-start] .askChip .kindCount {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--wf-ink-1) 5%, transparent);
+    color: var(--wf-ink-2);
+    font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+    opacity: 1;
+  }
+
+  /* Go to: one glass strip, four equal cells, hairlines between. Fits every phone width. */
+  .popup[data-start] .groupItem[data-goto] .groupList {
+    display: grid;
+    grid-template-columns: repeat(var(--wgs-goto-cols, 4), minmax(0, 1fr));
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--wf-surface) 70%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-ink-1) 8%, transparent);
+  }
+
+  .popup[data-start] .groupItem[data-goto] .optionItem + .optionItem .option::after {
+    display: block;
+    top: 14px;
+    bottom: 14px;
+    left: 0;
+    right: auto;
+    width: 1px;
+    height: auto;
+  }
+
+  .popup[data-start] .groupItem[data-goto] .option {
+    gap: 6px;
+    min-height: 68px;
+    padding: 12px 4px 10px;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .popup[data-start] .groupItem[data-goto] .itemIconBox {
+    flex-basis: 24px;
+    width: 24px;
+    height: 24px;
+    border-radius: 0;
+    background: transparent;
+    color: var(--wf-accent);
+  }
+
+  .popup[data-start] .groupItem[data-goto] .itemIconBox svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .popup[data-start] .groupItem[data-goto] .resultTitle {
+    font: 550 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    color: var(--wf-ink-1);
+  }
+
+  .popup[data-start] .groupItem[data-goto] .option:active {
+    background: color-mix(in srgb, var(--wf-accent) 10%, transparent);
+  }
+
+  /* Alerts, Recent, My views and Do: inset glass groups. */
+  .popup[data-start] .groupItem:not([data-goto]) .groupList {
+    overflow: hidden;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--wf-surface) 70%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-ink-1) 8%, transparent);
+  }
+
+  .popup[data-start] .groupItem:not([data-goto]) .option {
+    gap: 12px;
+    min-height: 60px;
+    padding: 10px 14px;
+    border-radius: 0;
+  }
+
+  .popup[data-start] .groupItem:not([data-goto]) .optionItem + .optionItem .option::after {
+    left: 58px;
+    right: 0;
+  }
+
+  .popup[data-start] .groupItem:not([data-goto]) .itemIconBox {
+    flex-basis: 32px;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+
+  .popup[data-start] .groupItem:not([data-goto]) .resultTitle {
+    font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  /* The meta line wraps whole rather than cutting "5 destinations have decl…". */
+  .popup[data-start] .groupItem:not([data-goto]) .resultMeta {
+    flex-wrap: wrap;
+    column-gap: 0;
+    white-space: normal;
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-3);
+  }
+
+  .popup[data-start] .groupItem:not([data-goto]) .resultMeta > span {
+    overflow: visible;
+  }
+
+  /* An alert's glyph sits on its own tone, so red reads as "act now" and blue stays for actions. */
+  .popup[data-start] .itemIconBox:has([data-wf-glyph="danger"]) {
+    background: color-mix(in srgb, var(--wf-danger) 13%, transparent);
+  }
+
+  .popup[data-start] .itemIconBox:has([data-wf-glyph="warning"]) {
+    background: color-mix(in srgb, var(--wf-warning) 15%, transparent);
+  }
+
+  .popup[data-start] .itemIconBox:has([data-wf-glyph]) svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* Do: the two actions side by side as quiet buttons, not two tall rows. */
+  .popup[data-start] .groupItem[data-group="do"] .groupList {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    gap: 8px;
+    overflow: visible;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .popup[data-start] .groupItem[data-group="do"] .option {
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 0 12px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--wf-surface) 70%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-ink-1) 8%, transparent);
+  }
+
+  .popup[data-start] .groupItem[data-group="do"] .option::after {
+    display: none;
+  }
+
+  .popup[data-start] .groupItem[data-group="do"] .itemIconBox {
+    flex-basis: 20px;
+    width: 20px;
+    height: 20px;
+    background: transparent;
+  }
+
+  .popup[data-start] .groupItem[data-group="do"] .resultContent {
+    flex: none;
+  }
+
+  .popup[data-start] .groupItem[data-group="do"] .resultTitle {
+    font-size: var(--wf-fs-14);
+    color: var(--wf-accent-ink);
+  }
+
+  .popup[data-start] .groupItem:not([data-goto]) .option:active {
+    background: color-mix(in srgb, var(--wf-accent) 8%, transparent);
+  }
+
+  /* Quick commands (demo): on the same edge, the same chips as Try asking. */
+  .popup[data-start] .quickCommands {
+    margin-top: 22px;
+    padding: 0;
+  }
+
+  .popup[data-start] .quickCommands .group {
+    padding: 0 2px;
+  }
+
+  .popup[data-start] .commandList {
+    gap: 8px;
+    padding-top: 4px;
+  }
+
+  .popup[data-start] .commandBtn {
+    height: 32px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--wf-surface) 70%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-ink-1) 9%, transparent);
+    color: var(--wf-ink-2);
+    font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+  }
+
+  /* Full patient search: a solid glass bar with a hairline, the link across its full width. */
+  .popup .resultsFooter {
+    padding: 0 14px;
+    border-top: 1px solid color-mix(in srgb, var(--wf-ink-1) 8%, transparent);
+    background: color-mix(in srgb, var(--wf-surface-2) 94%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+    backdrop-filter: blur(20px) saturate(1.6);
+  }
+
+  .popup .fullSearch {
+    flex: 1;
+    justify-content: space-between;
+    margin-left: 0;
+    padding: 0 2px;
+    font: 600 var(--wf-fs-14) / 1 var(--wf-font);
+  }
+}
