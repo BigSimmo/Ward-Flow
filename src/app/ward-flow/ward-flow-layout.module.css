@@ -53,6 +53,15 @@
 }
 
 /*
+ * Phone load audit (10 Nov 2026): after a page change or redirect the shell moves focus to the
+ * page's `main` (tabindex -1) for screen readers, and the browser drew its 1px default outline
+ * round the whole page. Focus there is for reading position only, so it draws nothing.
+ */
+.shellRow :global(#main-content[tabindex="-1"]:focus) {
+  outline: none;
+}
+
+/*
  * The two-tone focus ring (design system v9 section "Focus", carried into v10; site review,
  * 12 Oct 2026). Most Ward controls draw the shared 2px `--wf-focus-ring` outline 2px off their
  * edge, which left the gap to whatever sat behind and read as a single tone. This fills the gap

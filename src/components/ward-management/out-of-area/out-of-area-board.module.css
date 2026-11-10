@@ -148,12 +148,6 @@
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
 }
 
-.heroActs {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .heroNote {
   display: inline-flex;
   align-items: center;
@@ -221,20 +215,6 @@
 
 /* Days away strip (hero second row): the label, a short bar and four count-first chips that
  * highlight rows. Grey ramp, amber only at 90 plus. */
-.ageStrip {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-3);
-  min-width: 0;
-}
-
-.ageEyebrow {
-  flex: none;
-  color: var(--wf-hero-ink-3);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
 
 .ageBar {
   display: flex;
@@ -260,66 +240,6 @@
 
 .age_long {
   background: var(--wf-hero-warning);
-}
-
-.ageLabels {
-  display: flex;
-  gap: var(--wf-s-2);
-  min-width: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-}
-
-.ageLabels button {
-  display: inline-flex;
-  flex: 0 0 auto;
-  flex-direction: row-reverse;
-  align-items: center;
-  gap: 6px;
-  height: var(--wf-h-sm);
-  padding: 0 12px;
-  border: 1px solid var(--wf-on-hero-line);
-  border-radius: var(--wf-r-seg-item);
-  background: transparent;
-  color: var(--wf-hero-ink-2);
-  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-/* Count first: the count, then the dot, then the words. */
-.ageLabels button > b {
-  order: 3;
-  font-size: var(--wf-fs-15);
-}
-
-.ageLabels button > i {
-  order: 2;
-}
-
-.ageLabels button:hover,
-.ageLabels button[aria-pressed="true"] {
-  border-color: color-mix(in srgb, var(--wf-hero-ink) 55%, transparent);
-  background: var(--wf-on-hero-fill);
-  color: var(--wf-hero-ink);
-}
-
-.ageLabels button:focus-visible {
-  outline: 2px solid var(--wf-hero-ink);
-  outline-offset: 1px;
-}
-
-.ageLabels b {
-  color: var(--wf-hero-ink);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
-}
-
-.ageLabels i {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
 }
 
 /* ---- layout ---- */
@@ -1261,16 +1181,6 @@ fieldset.formRow {
   color: var(--wf-hero-ink);
 }
 
-.phoneTabs {
-  width: 100%;
-}
-
-.phoneTabs [role="radio"] {
-  flex: 1 1 0;
-  justify-content: center;
-  min-height: var(--wf-touch);
-}
-
 .phonePanel {
   display: flex;
   flex-direction: column;
@@ -1481,37 +1391,6 @@ fieldset.formRow {
   font: 600 var(--wf-fs-16) / 1 var(--wf-mono);
 }
 
-.phoneBar {
-  position: fixed;
-  right: var(--wf-s-3);
-  bottom: calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
-  left: var(--wf-s-3);
-  z-index: 30;
-  display: flex;
-  gap: var(--wf-s-2);
-  padding: 6px;
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-track);
-  background: var(--wf-glass);
-  box-shadow: var(--wf-e2);
-  -webkit-backdrop-filter: blur(24px) saturate(1.6);
-  backdrop-filter: blur(24px) saturate(1.6);
-}
-
-.phoneBar button {
-  min-height: var(--ward-tap, 3rem);
-}
-
-.phoneBarMain {
-  flex: 1 1 auto;
-  justify-content: center;
-}
-
-.phoneBarName {
-  font-weight: 400;
-  overflow-wrap: anywhere;
-}
-
 .phoneToast {
   position: fixed;
   right: var(--wf-s-3);
@@ -1688,34 +1567,6 @@ fieldset.formRow {
   font-size: var(--wf-fs-12);
 }
 
-/* v10 phone action bar: the two buttons sit on a fade at the foot of the screen, not in a glass
-   capsule; the main button is a full pill and copy a round button. */
-.phoneBar {
-  right: 0;
-  /* Sits flush on the phone dock's flat edge (Josh, 12 Oct 2026, iPhone); its padding clears the
-     + hump, which it covered when it sat at the foot of the screen. */
-  bottom: var(--wf-dock-top, 0px);
-  left: 0;
-  /* Under the shell bar's layer (z 30), which holds the dock, so the + hump draws over the bar. */
-  z-index: 29;
-  align-items: center;
-  border: 0;
-  border-radius: 0;
-  background: linear-gradient(180deg, transparent, var(--wf-canvas) 45%);
-  box-shadow: none;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-
-.phoneBar > button {
-  border-radius: var(--wf-r-seg-item);
-}
-
-.phoneBar > button:last-child:not(.phoneBarMain) {
-  flex: none;
-  width: var(--ward-tap, 3rem);
-}
-
 /* v10 phone person sheet (second pass, 11 Oct 2026): the four facts share one card on hairlines
  * and Call ward leads the footer with the primary filling the rest. Phone only (the peek renders
  * on the phone alone). */
@@ -1755,34 +1606,6 @@ fieldset.formRow {
 
 .peekActs button {
   border-radius: var(--wf-r-ctl);
-}
-
-/* v10 phone fidelity (11 Oct 2026): the action bar is a solid band at the foot of the screen with
- * a hairline above it, as the mockup's sticky action bar, so the cards never show through the
- * buttons. The phone bar renders on the phone alone. */
-.phoneBar {
-  /* Above the dock the home-bar inset is already cleared, so it is added only without a dock. */
-  padding: var(--wf-s-3) var(--wf-s-4)
-    max(
-      var(--wf-s-3),
-      calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px) - var(--wf-dock-top, 0px)),
-      calc(var(--wf-s-2) + var(--wf-dock-clear, 0px) - var(--wf-dock-top, 0px))
-    );
-  border-top: 1px solid var(--wf-line);
-  background: var(--wf-surface-2);
-  box-shadow: 0 -6px 16px -12px color-mix(in srgb, var(--wf-ink-1) 28%, transparent);
-}
-
-/* v10 phone: Needs you, Everyone and Beds stay pinned under the bar while the cards scroll, with
- * an 8px canvas collar so no card shows above or below the switch. The shared bar keeps the same height
- * throughout the scroll; the canvas collar fills the join beneath it. Phone-only element. */
-.phoneTabs {
-  position: sticky;
-  top: calc(var(--wf-header-height, 3.5rem) + var(--wf-s-2));
-  z-index: 6;
-  box-shadow:
-    0 0 0 var(--wf-s-2) var(--wf-canvas),
-    inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
 }
 
 /* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
@@ -1827,27 +1650,6 @@ fieldset.formRow {
   /* A sheet or dialog is open: sit higher so its footer buttons stay clear. */
   :global(html:has([role="dialog"][aria-modal="true"])) .phoneToast {
     bottom: 136px;
-  }
-}
-
-/* Phone compact switch (Josh, 12 Oct 2026): Needs you, Everyone and Beds take the shared phone track
- * (`--wf-phone-*`), whose 48px box carries a transparent band round the 34px track. The pinned
- * switch paints that band in the canvas and sits flush under the bar; the collar runs to the sides
- * and below only, so it never covers the bar. Phone only. The options keep the kit's 40px face
- * (Q295), not 0: this rule ties the kit's `.seg .segItem`, and when this sheet loaded after the
- * kit's a 0 squashed the options to their text (same fix as Governance and Legal forms, #1480). */
-@media (max-width: 46.4375rem) {
-  .phoneTabs [role="radio"] {
-    min-height: var(--wf-phone-seg-item-h, 40px);
-  }
-
-  .phoneTabs {
-    top: var(--wf-header-height, 3.5rem);
-    background-color: var(--wf-canvas);
-    box-shadow:
-      var(--wf-s-2) 0 0 var(--wf-canvas),
-      calc(-1 * var(--wf-s-2)) 0 0 var(--wf-canvas),
-      0 var(--wf-s-2) 0 var(--wf-canvas);
   }
 }
 
@@ -2001,8 +1803,8 @@ fieldset.formRow {
 }
 
 /* Page tops (9 Nov 2026): the highlights are the quieter second level of the folder tab row, each a
-   word with a mono count, the switched-on one on a soft track. On the slate below 64rem they take
-   the hero's ink. */
+   word with a mono count, the switched-on one on a soft track. On a phone they sit on the slate and
+   take the hero's ink; on a tablet they wrap below the tabs onto the sheet and keep the sheet's ink. */
 .pills.pills {
   flex-wrap: nowrap;
   gap: 2px;
@@ -2038,7 +1840,7 @@ fieldset.formRow {
   color: inherit;
   font: 500 var(--wf-fs-12) / 16px var(--wf-mono);
 }
-@media (max-width: 63.9375rem) {
+@media (max-width: 46.4375rem) {
   .pills.pills .pill {
     color: var(--wf-hero-ink-2);
   }

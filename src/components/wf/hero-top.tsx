@@ -294,12 +294,30 @@ function useScrollsSideways(ref: { current: HTMLElement | null }, watch: boolean
       setScrolls(false);
       return;
     }
-    const measure = () => setScrolls(list.scrollWidth > list.clientWidth + 1);
+    let live = true;
+    const measure = () => {
+      if (live) setScrolls(list.scrollWidth > list.clientWidth + 1);
+    };
     measure();
-    if (typeof ResizeObserver === "undefined") return;
+    // A phone band keeps its own width while its cells grow (late web fonts, a cell added after
+    // hydration, longer values), so each cell is watched as well as the band.
+    void document.fonts?.ready.then(measure);
+    if (typeof ResizeObserver === "undefined") return () => void (live = false);
     const observer = new ResizeObserver(measure);
-    observer.observe(list);
-    return () => observer.disconnect();
+    const watchCells = () => {
+      observer.disconnect();
+      observer.observe(list);
+      for (const cell of Array.from(list.children)) observer.observe(cell);
+      measure();
+    };
+    watchCells();
+    const cells = typeof MutationObserver === "undefined" ? null : new MutationObserver(watchCells);
+    cells?.observe(list, { childList: true });
+    return () => {
+      live = false;
+      observer.disconnect();
+      cells?.disconnect();
+    };
   }, [ref, watch]);
   return scrolls;
 }

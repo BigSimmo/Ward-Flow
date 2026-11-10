@@ -643,7 +643,7 @@ test.describe("@mockup Ward scroll geometry", () => {
 test.describe("@mockup phone navigation follows the stable header", () => {
   test.use({ viewport: { width: 390, height: 844 }, colorScheme: "light" });
   const strips = [
-    ["Patients", "/search", "census_folder__", 0],
+    ["Patients", "/search", "census-top_folder__", 0],
     ["Capacity", "/capacity", "capacity-page_pageTabs__", 0],
     ["Home", "", "home-flow_nav__", 0],
     // Next's webpack build names a class in `community-index.module.css` after its folder, as it does

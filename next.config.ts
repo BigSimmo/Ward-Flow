@@ -59,8 +59,15 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   // /ward-flow/patients was never a route: the patient finder is /ward-flow/search. People type it,
   // so it goes there rather than to a Page not found.
+  // The old /ward-flow/transport address (MERGE 03, shell-19) goes to the officer's page here,
+  // before any render: its page.tsx redirect() ran after loading.tsx had streamed, so a phone saw
+  // the placeholder for seconds first (phone load audit, 10 Nov 2026). page.tsx stays as the
+  // backstop the redirect-stub guards read; it is temporary (307) there, so false here too.
   async redirects() {
-    return [{ source: "/ward-flow/patients", destination: "/ward-flow/search", permanent: false }];
+    return [
+      { source: "/ward-flow/patients", destination: "/ward-flow/search", permanent: false },
+      { source: "/ward-flow/transport", destination: "/ward-flow/transport/officer", permanent: false },
+    ];
   },
   // Fix list 7.3: the React Compiler memoises screens on the inputs it can see. Screens take the
   // warnings and the scenario's wards as inputs (`useDueSoonThresholds()`, `useWardNetwork()`), and

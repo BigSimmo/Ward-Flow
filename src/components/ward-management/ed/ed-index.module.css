@@ -17,16 +17,6 @@
 }
 
 /* Hero highlight chips (v10: five at most) and the note that says every ED stays. */
-.heroChips {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-width: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-}
 
 .heroNote {
   display: inline-flex;
@@ -641,10 +631,6 @@
 
   .filterRow + .filterRow {
     display: none;
-  }
-
-  .heroChips :global(button) {
-    min-height: var(--wf-touch);
   }
 
   .cardGrid {

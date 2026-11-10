@@ -60,7 +60,7 @@ export type TabsProps<T extends string> = {
   onChange: (id: T) => void;
   /** Accessible name of the tab list. */
   label: string;
-  /** Links each tab to a `TabPanel` with the same prefix (`aria-controls`). */
+  /** Links each tab to a `TabPanel` with the same prefix (`aria-controls` on the chosen tab only). */
   idPrefix?: string;
   className?: string;
 };
@@ -83,7 +83,8 @@ export function Tabs<T extends string>({ items, value, onChange, label, idPrefix
             type="button"
             role="tab"
             id={idPrefix ? `${idPrefix}-tab-${item.id}` : undefined}
-            aria-controls={idPrefix ? `${idPrefix}-panel-${item.id}` : undefined}
+            // Panels render only when chosen, so only the chosen tab names one that exists.
+            aria-controls={idPrefix && selected ? `${idPrefix}-panel-${item.id}` : undefined}
             aria-selected={selected}
             tabIndex={index === stop ? 0 : -1}
             className={styles.tab}
@@ -102,6 +103,11 @@ export function Tabs<T extends string>({ items, value, onChange, label, idPrefix
 export type PillTabsProps<T extends string> = TabsProps<T> & {
   /** `fill` stretches the items across the width (phone page tabs). */
   fill?: boolean;
+  /**
+   * Filter buttons drawn as pill tabs: a `toolbar` of buttons with `aria-pressed`, no `tablist`, for
+   * a row that narrows a list rather than switching panels (none pressed when `value` matches none).
+   */
+  toggles?: boolean;
 };
 
 /**
@@ -116,14 +122,14 @@ export function PillTabs<T extends string>({
   label,
   idPrefix,
   fill = false,
+  toggles = false,
   className,
 }: PillTabsProps<T>) {
   const { refs, onKeyDown } = useRoving(items, value, onChange);
   const stop = tabStopIndex(items, value);
   return (
-    // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item
     <div
-      role="tablist"
+      role={toggles ? "toolbar" : "tablist"}
       aria-label={label}
       className={cx(styles.pt, fill && styles.ptFill, className)}
       onKeyDown={onKeyDown}
@@ -138,10 +144,12 @@ export function PillTabs<T extends string>({
               refs.current[index] = node;
             }}
             type="button"
-            role="tab"
-            id={idPrefix ? `${idPrefix}-tab-${item.id}` : undefined}
-            aria-controls={idPrefix ? `${idPrefix}-panel-${item.id}` : undefined}
-            aria-selected={selected}
+            role={toggles ? undefined : "tab"}
+            id={idPrefix && !toggles ? `${idPrefix}-tab-${item.id}` : undefined}
+            // Panels render only when chosen, so only the chosen tab names one that exists.
+            aria-controls={idPrefix && selected && !toggles ? `${idPrefix}-panel-${item.id}` : undefined}
+            aria-selected={toggles ? undefined : selected}
+            aria-pressed={toggles ? selected : undefined}
             tabIndex={index === stop ? 0 : -1}
             className={styles.ptItem}
             onClick={() => onChange(item.id)}

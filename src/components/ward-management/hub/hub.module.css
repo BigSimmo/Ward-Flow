@@ -81,36 +81,6 @@
   white-space: nowrap;
 }
 
-/* Controls */
-.controls {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-3) var(--wf-s-3);
-  border-top: 1px solid var(--wf-line);
-}
-
-.controlsRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wf-s-2) var(--wf-s-3);
-  min-width: 0;
-}
-
-.controlLabel {
-  font-size: var(--wf-fs-13);
-  color: var(--wf-ink-2);
-  white-space: nowrap;
-}
-
-.controlsEnd {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  margin-left: auto;
-}
-
 /* List */
 .listHead,
 .resultMain {
@@ -737,15 +707,6 @@
  * (hub-screen.tsx). Review point 21: each row is the place's two lines, with a stale count's
  * "Stale 5h" on the right of them (round 2). Desktop is unchanged. */
 @media (max-width: 46.4375rem) {
-  .controlsRow + .controlsRow > :first-child,
-  .controlsRow + .controlsRow > :nth-child(2) {
-    display: none;
-  }
-
-  .controlsEnd {
-    margin-left: 0;
-  }
-
   .resultMain {
     grid-template-columns: minmax(0, 1fr) auto;
     column-gap: var(--wf-s-3);
@@ -781,18 +742,6 @@
   .resultConfirmed:empty {
     display: none;
   }
-}
-
-/* Phone v10 (11 Oct 2026): All, Wards, EDs and Teams as one segmented control on the canvas,
- * the search pill with the order beside it, one Check first row (or the active highlight with
- * Clear), then the places in one card: each region a quiet header band, each place a two line
- * row with its ready figure. A tap opens the place's preview as a bottom sheet. The phone-only
- * classes render only on a phone; the rest sit under the phone query. */
-.phoneControls {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-3);
-  padding-bottom: var(--wf-s-3);
 }
 
 /* The kind switch pins under the stable header, full bleed on the canvas. */
@@ -837,73 +786,11 @@
   font-variant-numeric: tabular-nums;
 }
 
-.phoneSearchRow {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-}
-
 .phoneSearchBox {
   flex: 1 1 auto;
   min-width: 0;
   height: var(--wf-touch);
   border-radius: var(--wf-r-ctl);
-}
-
-.phoneSortButton {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-height: var(--wf-touch);
-  padding: 0 var(--wf-s-4);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-ctl);
-  background: var(--wf-surface);
-  box-shadow: var(--wf-e1);
-  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
-  color: var(--wf-ink-1);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.phoneCheckFirst {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-3);
-  width: 100%;
-  min-height: 52px;
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface);
-  box-shadow: var(--wf-e1);
-  text-align: left;
-  color: var(--wf-ink-1);
-  cursor: pointer;
-}
-
-.phoneCheckText {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.phoneCheckText > * {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.phoneCheckText b {
-  font-size: var(--wf-fs-13);
-}
-
-.phoneCheckText span {
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-3);
 }
 
 @media (max-width: 46.4375rem) {
@@ -987,10 +874,6 @@
 .heroSearch {
   flex: 0 1 18.75rem;
   min-width: 12rem;
-}
-
-.orderLabel {
-  margin-left: auto;
 }
 
 /* Wards by service: a count of wards, not beds. Each row searches its service. */
@@ -1136,28 +1019,10 @@
   .phoneKindBar {
     margin-bottom: 0;
   }
-  .phoneControls {
-    gap: var(--wf-s-2);
-  }
-  .phoneSearchRow {
-    gap: var(--wf-s-2);
-  }
   .phoneSearchBox.phoneSearchBox {
     height: 40px;
     min-height: 40px;
     border-radius: var(--wf-r-ctl);
-  }
-  .phoneSortButton {
-    position: relative;
-    min-height: 40px;
-    height: 40px;
-    padding: 0 var(--wf-s-3);
-    box-shadow: none;
-  }
-  .phoneSortButton::after {
-    content: "";
-    position: absolute;
-    inset: -4px 0;
   }
 }
 /* The band's Places and Catchments switch takes the phone's 40px control height, not 56px. */
@@ -1173,74 +1038,10 @@
 
 /* Note 10 (Josh, 8 Nov 2026): "At a glance" opens from a chip in the band, so the network list
    leads the page. The chip is amber while any ward's bed count needs a check. */
-.heroBar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wf-s-2) var(--wf-s-3);
-  min-width: 0;
-}
 
 .glanceAnchor {
   position: relative;
   display: inline-flex;
-}
-
-.glanceChip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-height: 40px;
-  padding: 0 var(--wf-s-3);
-  border: 1.5px solid color-mix(in srgb, var(--wf-hero-ink) 32%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
-  color: var(--wf-hero-ink);
-  font: inherit;
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-/* Amber while any ward's bed count needs a check (the band's night warning token). */
-.glanceChipWarn {
-  border-color: var(--wf-warning);
-  background: color-mix(in srgb, var(--wf-warning) 16%, transparent);
-}
-
-.glanceChip:hover {
-  background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
-}
-
-.glanceChipWarn:hover {
-  background: color-mix(in srgb, var(--wf-warning) 24%, transparent);
-}
-
-.glanceChip:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-}
-
-.glanceChipCaret {
-  transition: transform 120ms ease;
-}
-
-.glanceChip[aria-expanded="true"] .glanceChipCaret {
-  transform: rotate(180deg);
-}
-
-.glanceChipCount {
-  padding: 1px var(--wf-s-2);
-  border-radius: 999px;
-  background: var(--wf-warning);
-  color: var(--wf-hero-2);
-  font-size: var(--wf-fs-12);
-  font-weight: 700;
-}
-
-.glanceChipMeta {
-  color: color-mix(in srgb, var(--wf-hero-ink) 78%, transparent);
-  font-weight: 500;
 }
 
 /* The panel opens inside the band, so it puts the page's day status and focus tokens back. */
@@ -1340,11 +1141,6 @@
   .listHead > :last-child {
     white-space: nowrap;
   }
-}
-
-/* Order and Reset stay together at the right end of the controls row. */
-.orderLabel ~ .controlsEnd {
-  margin-left: 0;
 }
 
 /* Page tops (Josh, 9 Nov 2026): the slate top's search and order, the figure that opens At a
