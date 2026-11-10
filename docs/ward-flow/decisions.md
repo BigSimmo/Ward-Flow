@@ -13,7 +13,7 @@ ruling here. Do not start new `owner-*.md` files; the existing ones stay as date
 decision in one or two sentences, and why. Never rewrite an old entry's decision; a wording or citation correction is allowed when a later entry discloses it (D-107). If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
 
-_Updated 2026-11-10 - added D-121 and D-122 and corrected the D-58, D-74 and D-100 status rows; Documentation owns. Earlier changes are in Git history._
+_Updated 2026-11-10 - added D-121 and D-122 and corrected the D-58, D-74, D-94 and D-100 status rows; Documentation owns. Earlier changes are in Git history._
 
 ---
 

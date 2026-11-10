@@ -257,7 +257,8 @@
   }
   .panelTabs > [role="tablist"] {
     gap: 0;
-    padding: 6px 12px 0 0;
+    /* 8px top so the scrolling tablist does not clip the tabs' 8px upward tap extension. */
+    padding: 8px 12px 0 0;
     border-bottom: 0;
   }
   .panelTabs [role="tab"] {

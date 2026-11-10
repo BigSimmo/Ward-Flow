@@ -172,7 +172,8 @@ function splitTableRow(line) {
 
 function extractTableRowItems(lines) {
   const items = [];
-  const idCellRe = /^\*{0,2}([A-Z]{1,4}-\d+[a-zA-Z]?)\*{0,2}$/;
+  // Same ID grammar as the generic heading pattern, so `| D9-1 | ... |` rows are kept too.
+  const idCellRe = /^\*{0,2}([A-Z]{1,4}-?\d+(?:[.-]\d+)*[a-zA-Z]?)\*{0,2}$/;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (!line.trim().startsWith("|")) continue;
@@ -307,6 +308,8 @@ function collect(files) {
       stale.push(`${file}: now yields ${f.items.length} item(s); drop it from KNOWN_NON_RULING_FILES`);
     else if (WHOLE_FILE_RULINGS.has(file) && f.items.some((it) => it.kind !== "whole-file ruling"))
       stale.push(`${file}: now has numbered items; drop it from WHOLE_FILE_RULINGS`);
+    else if (WHOLE_FILE_RULINGS.has(file) && f.items.length !== 1)
+      stale.push(`${file}: no longer yields its one whole-file ruling (title heading missing?)`);
   }
   if (stale.length > 0) {
     console.error(`owner-rulings index: stale exception entries —\n  ${stale.join("\n  ")}`);

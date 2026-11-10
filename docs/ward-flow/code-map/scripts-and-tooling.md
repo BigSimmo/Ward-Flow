@@ -146,7 +146,7 @@ run individually per file; nothing here was executed. Back to [the code map inde
   TypeScript source tree, so `SELECTABLE_LEGAL_FORMS` is a hand-copied constant kept in step with
   `ward-legal-forms.ts` by comment, not by import. Not npm-wired; run directly.
 - **`scripts/ward-flow/check-errata-freshness.mjs`** (263 lines) — npm: `check:ward-errata-freshness`.
-  Re-measures every factual claim in `docs/ward-flow/plans/2026-09-10-master-plan-errata.md`
+  Re-measures every factual claim in `docs/history/plans-2026-09/2026-09-10-master-plan-errata.md`
   against the current tree and reports STILL TRUE / EXPIRED per claim, using the command each claim
   names. Written after that errata sheet itself went stale within an hour and would have damaged a
   working guard if followed blindly.

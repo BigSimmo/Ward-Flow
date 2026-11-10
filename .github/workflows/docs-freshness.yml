@@ -5,7 +5,8 @@ name: Ward Flow living-page reminder
 # scripts/check-living-docs-freshness.mjs) against their last-checked dates. When any page is past
 # its limit (7 days for the status page, 14 for the rest), it opens one `docs-stale` issue that
 # @mentions the owner, so GitHub emails him, or updates the open one. When every page is fresh again,
-# it closes that issue. It reads the repository and writes only that one issue (issues: write):
+# it closes that issue. It reads the repository and writes only that one issue and its `docs-stale`
+# label (`gh label create` makes or updates the label; issues: write):
 # no install, no outside provider and no secrets.
 # Public repository: free. GitHub turns scheduled workflows off after 60 days without repository
 # activity.

@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/his
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**664 rulings/items extracted, across 43 of 44 files.**
+**684 rulings/items extracted, across 43 of 44 files.**
 **0 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 **1 file(s) recorded as holding no ruling of their own**, each with its reason. See below.
 
@@ -26,13 +26,13 @@ tell: `owner-question-*` and `owner-*-to-settle-*` files are frequently still op
 
 ⚠️ **IDs are NOT globally unique across this corpus.** The same token has been issued
 independently in more than one file for 48 ID(s) below (e.g. `D-1`).
-A further 2 ID(s) recur inside a single file only (e.g. `Q-8`) — a later heading
+A further 3 ID(s) recur inside a single file only (e.g. `Q-8`) — a later heading
 revisiting the same item, not a second issue of the ID. Every occurrence is listed with its file and
 line, in the order discovered — confirm which instance you mean before citing it.
 
 ---
 
-## ID index — 415 distinct IDs
+## ID index — 434 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -304,6 +304,11 @@ safe global key across 30 files.
 | `D9-9` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:242 | D9-9 — Waiting-time equity and the out-of-area ledger are designed knowing about each other (SESSION) |
 | `Decision 1` | `../history/archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:17 | Decision 1 — a referral pointing at a person who does not exist |
 | `Decision 2` | `../history/archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:56 | Decision 2 — legal status on the referral's ward arm |
+| `F8` | `../history/archive/dated-notes/ward-flow-phase-3-rulings.md`:24 | The referral control stops advertising an action it cannot perform; the confirmation is derived from the movement's own state; refusals surface with the reducer's own reason. — The screen reported a successful referral while the reducer had refused it — on **nine of eighteen** hand-authored movements. The phase's most… [truncated — full text at line 24] |
+| `F9` | `../history/archive/dated-notes/ward-flow-phase-3-rulings.md`:26 | A voluntary patient on a locked ward gets its own, more prominent flag, distinct from "more restrictive than required". — The product owner's own ruling: a voluntary person who cannot leave a locked ward is detained in fact without an order. It prompts a review of legal status and never blocks placement. — The diagram… [truncated — full text at line 26] |
+| `F12` | `../history/archive/dated-notes/ward-flow-phase-3-rulings.md`:48 | A clock guard scoped by co-occurrence — helper indirection, namespace imports and any component outside the rule all walked past. — A reviewer added a helper and watched the guard stay green. |
+| `F18` | `../history/archive/dated-notes/ward-flow-phase-3-rulings.md`:49 | The rebuilt guard walked **one directory** while its name claimed the whole rule. — Probed with a file one directory out. |
+| `F20` | `../history/archive/dated-notes/ward-flow-phase-3-rulings.md`:50 | A hand-rolled scanner with no concept of a regex literal — a quote inside a regex blinded it to the rest of the file. Two real files carried exactly that pattern. — Appended a plain import to one of them; the guard stayed green. |
 | `O-1` | `../history/archive/dated-notes/owner-decisions-2026-09-1x.md`:1518 | O-1 · Narrow widths — SCROLL SIDEWAYS, and show that it does · 🔴 A RATIFICATION, NOT A NEW RULING |
 | `O-2` | `../history/archive/dated-notes/owner-decisions-2026-09-1x.md`:1542 | O-2 · "Not a measurement" means three things — THREE PHRASINGS |
 | `O-3` | `../history/archive/dated-notes/owner-decisions-2026-09-1x.md`:1560 | O-3 · The six community questions — BRING THEM SOON |
@@ -509,8 +514,24 @@ safe global key across 30 files.
 | `R2-22` | `../history/archive/dated-notes/owner-answers-2026-09-17.md`:303 | R2-22 — **Show him** the ward-request withdrawal reasons and the urgent-flag reasons. |
 | `R2-23` | `../history/archive/dated-notes/owner-answers-2026-09-17.md`:305 | R2-23 — Recommendation accepted. Fix the stray control characters in the two lesson notes. |
 | `R2-24` | `../history/archive/dated-notes/owner-answers-2026-09-17.md`:307 | R2-24 — Recommendation accepted. Fix the old broken document links. |
-| `R3` | `../history/archive/dated-notes/owner-rulings-2026-09-02-afternoon.md`:59 | R3–R9 — the seven he approved in the same message, recorded because they were nearly lost |
+| `R3` **2 occurrences in one file — same item revisited** | | |
+| ↳ | `../history/archive/dated-notes/owner-rulings-2026-09-02-afternoon.md`:59 | R3–R9 — the seven he approved in the same message, recorded because they were nearly lost |
+| ↳ | `../history/archive/dated-notes/owner-rulings-2026-09-02-afternoon.md`:69 | Should the referrals board say what an ED referral was actually asking for? — **Yes** — and more: _"When a patient is referred on the ED referral board, it should say where they have been referred to, the referral status, wait time, etc. When a patient is on the inbox to review, it should also say if they are… [truncated — full text at line 69] |
+| `R4` | `../history/archive/dated-notes/owner-rulings-2026-09-02-afternoon.md`:70 | Should the ED form let one-to-one nursing be set? — **Yes** |
+| `R5` | `../history/archive/dated-notes/owner-rulings-2026-09-02-afternoon.md`:71 | Should the four provenance controls get a blank option? — **Yes** |
+| `R6` | `../history/archive/dated-notes/owner-rulings-2026-09-02-afternoon.md`:72 | Should the demo data include a referral to two places at once? — **Yes** — this is **A16**, and it is SETTLED, not merely measured |
+| `R7` | `../history/archive/dated-notes/owner-rulings-2026-09-02-afternoon.md`:73 | Should the board's control-border contrast be fixed? — **"address this"** |
+| `R8` | `../history/archive/dated-notes/owner-rulings-2026-09-02-afternoon.md`:74 | The patient screen and the add-patient screen — _"Ensure you have built the patient screen. Also ensure you have built the screen where a new patient is added."_ ⚠️ **A verification job first, not a build job** — the patient screen already exists and its referral button already navigates; the add-patient screen does… [truncated — full text at line 74] |
+| `R9` | `../history/archive/dated-notes/owner-rulings-2026-09-02-afternoon.md`:75 | May an emergency department's name appear on a ward's inbox card? — **"yes widen the second check too"** — answered directly to Ward Builder One and built. ⚠️ **Consequence: a ward's inbox card may now NEVER name another hospital's ED. A future card meant to read "arriving from RPH Emergency Department" will go red.**… [truncated — full text at line 75] |
 | `R10` | `../history/archive/dated-notes/owner-rulings-2026-09-02-afternoon.md`:98 | R10 — A community team sees only its own referrals |
+| `R28` | `../history/archive/dated-notes/ward-flow-phase-3-rulings.md`:51 | The access-target quarantine is file-scoped and misses helper indirection, intermediate locals and spreads — **weakest exactly where its one real consumer would exercise it**. — Named honestly and enforcement moved into the brief and review of the task that would exercise it. |
+| `R36` | `../history/archive/dated-notes/ward-flow-phase-3-rulings.md`:25 | The flow diagram now raises the **voluntary-patient-on-a-locked-ward** warning, not just the milder "more restrictive than required". — An earlier ruling claimed all voluntary movements were also open-security, so the diagram was merely less specific. **That claim was never measured and was false** — 4 of 26 are… [truncated — full text at line 25] |
+| `R50` | `../history/archive/dated-notes/ward-flow-phase-3-rulings.md`:52 | A scroll assertion comparing `window.scrollY` before and after — on a screen that is `100dvh` with `overflow: hidden` and **has no scroll range at all**. Zero equals zero, forever. — An implementer disclosed that its own mutation survived. |
+| `R58` | `../history/archive/dated-notes/ward-flow-phase-3-rulings.md`:27 | Six patients recorded at stage `moving` with no collection were given the collection their stage implies. — `PATIENT_COLLECTED` is the only producer of stage `moving` and always sets `collectedAt`, so the state was unreachable — and clinically impossible: nobody is in a vehicle that never picked them up. **Six of… [truncated — full text at line 27] |
+| `R59` | `../history/archive/dated-notes/ward-flow-phase-3-rulings.md`:53 | A horizontal-overflow assertion that cannot fail, because a site-wide `overflow-x: clip` guarantees it. — An implementer disclosed it and diagnosed why rather than reformulating. |
+| `R60` | `../history/archive/dated-notes/ward-flow-phase-3-rulings.md`:54 | A vacuity tripwire counting **loop iterations instead of matches** — so its companion assertion ran on zero records and passed regardless. — Found by reading the diff, in a guard written to prevent exactly this. |
+| `R63` | `../history/archive/dated-notes/ward-flow-phase-3-rulings.md`:55 | The fixture-coherence invariant was derived from **a list the controller wrote**, not from the reducer's complete set of stage-producing transitions — so it caught the instance and missed the class, for the third time. — A second, larger instance surfaced on a screenshot. |
+| `R67` | `../history/archive/dated-notes/ward-flow-phase-3-rulings.md`:32 | The end-to-end journey now **opens with the examination**. — Makes the proof demonstrate the clinician's own rule instead of quietly contradicting it, and exercises `RECORD_EXAMINATION` from a real control for the first time. — The journey is one step longer. |
 | `Ruling 1` ⚠️ **2 occurrences in 2 files — not unique** | | |
 | ↳ | `../history/archive/dated-notes/owner-decisions-2026-09-16-rulings.md`:35 | Ruling 1 · Form 1A (72h / 24h with ED Received Button) & Form 3D (72h Clock) |
 | ↳ | `../history/archive/dated-notes/owner-rulings-2026-09-02-staleness-and-legal-status.md`:8 | Ruling 1 — the fixture keeps the record of what was once possible |
@@ -736,10 +757,23 @@ safe global key across 30 files.
 
 **Title:** Ward Flow Phase 3 — every decision made on the product owner's behalf
 
-5 item(s):
+18 item(s):
 
 - #1 (no owner-issued ID, this file's own numbering) — line 17, heading: "1. The eleven that changed what the software says to a clinician"
+- `F8` — line 24, table row: "The referral control stops advertising an action it cannot perform; the confirmation is derived from the movement's own state; refusals surface with the reducer's own reason. — The screen reported a successful referral while the reducer had refused it — on **nine of eighteen** hand-authored movements. The phase's most… [truncated — full text at line 24]"
+- `R36` — line 25, table row: "The flow diagram now raises the **voluntary-patient-on-a-locked-ward** warning, not just the milder "more restrictive than required". — An earlier ruling claimed all voluntary movements were also open-security, so the diagram was merely less specific. **That claim was never measured and was false** — 4 of 26 are… [truncated — full text at line 25]"
+- `F9` — line 26, table row: "A voluntary patient on a locked ward gets its own, more prominent flag, distinct from "more restrictive than required". — The product owner's own ruling: a voluntary person who cannot leave a locked ward is detained in fact without an order. It prompts a review of legal status and never blocks placement. — The diagram… [truncated — full text at line 26]"
+- `R58` — line 27, table row: "Six patients recorded at stage `moving` with no collection were given the collection their stage implies. — `PATIENT_COLLECTED` is the only producer of stage `moving` and always sets `collectedAt`, so the state was unreachable — and clinically impossible: nobody is in a vehicle that never picked them up. **Six of… [truncated — full text at line 27]"
+- `R67` — line 32, table row: "The end-to-end journey now **opens with the examination**. — Makes the proof demonstrate the clinician's own rule instead of quietly contradicting it, and exercises `RECORD_EXAMINATION` from a real control for the first time. — The journey is one step longer."
 - #2 (no owner-issued ID, this file's own numbering) — line 41, heading: "2. The recurring defect, and the eight rulings spent on it"
+- `F12` — line 48, table row: "A clock guard scoped by co-occurrence — helper indirection, namespace imports and any component outside the rule all walked past. — A reviewer added a helper and watched the guard stay green."
+- `F18` — line 49, table row: "The rebuilt guard walked **one directory** while its name claimed the whole rule. — Probed with a file one directory out."
+- `F20` — line 50, table row: "A hand-rolled scanner with no concept of a regex literal — a quote inside a regex blinded it to the rest of the file. Two real files carried exactly that pattern. — Appended a plain import to one of them; the guard stayed green."
+- `R28` — line 51, table row: "The access-target quarantine is file-scoped and misses helper indirection, intermediate locals and spreads — **weakest exactly where its one real consumer would exercise it**. — Named honestly and enforcement moved into the brief and review of the task that would exercise it."
+- `R50` — line 52, table row: "A scroll assertion comparing `window.scrollY` before and after — on a screen that is `100dvh` with `overflow: hidden` and **has no scroll range at all**. Zero equals zero, forever. — An implementer disclosed that its own mutation survived."
+- `R59` — line 53, table row: "A horizontal-overflow assertion that cannot fail, because a site-wide `overflow-x: clip` guarantees it. — An implementer disclosed it and diagnosed why rather than reformulating."
+- `R60` — line 54, table row: "A vacuity tripwire counting **loop iterations instead of matches** — so its companion assertion ran on zero records and passed regardless. — Found by reading the diff, in a guard written to prevent exactly this."
+- `R63` — line 55, table row: "The fixture-coherence invariant was derived from **a list the controller wrote**, not from the reducer's complete set of stage-producing transitions — so it caught the instance and missed the class, for the third time. — A second, larger instance surfaced on a screenshot."
 - #3 (no owner-issued ID, this file's own numbering) — line 67, heading: "3. Unmeasured claims — six, three of them the controller's own"
 - #4 (no owner-issued ID, this file's own numbering) — line 87, heading: "4. Process and environment — decided, not asked"
 - #5 (no owner-issued ID, this file's own numbering) — line 111, heading: "5. Still open with the product owner"
@@ -1376,11 +1410,18 @@ safe global key across 30 files.
 
 **Title:** Owner rulings, 2026-09-02 afternoon — verbatim, with what each settles
 
-4 item(s):
+11 item(s):
 
 - `R1` — line 8, heading: "R1 — The engine stays advisory"
 - `R2` — line 30, heading: "R2 — No viewer identity. Scope by screen instead."
 - `R3` — line 59, heading: "R3–R9 — the seven he approved in the same message, recorded because they were nearly lost"
+- `R3` — line 69, table row: "Should the referrals board say what an ED referral was actually asking for? — **Yes** — and more: _"When a patient is referred on the ED referral board, it should say where they have been referred to, the referral status, wait time, etc. When a patient is on the inbox to review, it should also say if they are… [truncated — full text at line 69]"
+- `R4` — line 70, table row: "Should the ED form let one-to-one nursing be set? — **Yes**"
+- `R5` — line 71, table row: "Should the four provenance controls get a blank option? — **Yes**"
+- `R6` — line 72, table row: "Should the demo data include a referral to two places at once? — **Yes** — this is **A16**, and it is SETTLED, not merely measured"
+- `R7` — line 73, table row: "Should the board's control-border contrast be fixed? — **"address this"**"
+- `R8` — line 74, table row: "The patient screen and the add-patient screen — _"Ensure you have built the patient screen. Also ensure you have built the screen where a new patient is added."_ ⚠️ **A verification job first, not a build job** — the patient screen already exists and its referral button already navigates; the add-patient screen does… [truncated — full text at line 74]"
+- `R9` — line 75, table row: "May an emergency department's name appear on a ward's inbox card? — **"yes widen the second check too"** — answered directly to Ward Builder One and built. ⚠️ **Consequence: a ward's inbox card may now NEVER name another hospital's ED. A future card meant to read "arriving from RPH Emergency Department" will go red.**… [truncated — full text at line 75]"
 - `R10` — line 98, heading: "R10 — A community team sees only its own referrals"
 
 ### `../history/archive/dated-notes/owner-ruling-patient-link-2026-09-02.md` (2026-09-02)
