@@ -276,8 +276,7 @@ export class SharedWorkspaceClient {
   private saveAnswered = false;
   /** #817: the poll in flight, which a new save stops so the save is not held behind it. */
   private pollAbort: AbortController | null = null;
-  /** Requests stay with the desk that started them, even while waiting for a token. */
-  private viewGeneration = 0;
+  private viewGeneration = 0; // Requests stay with the desk that started them, even while waiting for a token.
   private intentKeys = new SharedIntentKeys();
   /** Polls started before a grant must not replace the newly opened view. */
   private grantGeneration = 0;
