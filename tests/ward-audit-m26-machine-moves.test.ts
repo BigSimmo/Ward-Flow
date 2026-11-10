@@ -86,6 +86,7 @@ function buildSnapshots(): Record<string, WardFlowState[]> {
       now: t(20),
       movementId: MOVEMENT_ID,
       unitId: UNIT_DECLINED,
+      actingUnitId: UNIT_DECLINED,
       reason: "capability_mismatch",
     },
     "decline",
@@ -93,12 +94,26 @@ function buildSnapshots(): Record<string, WardFlowState[]> {
   const s3 = step(s2, refer(UNIT_ACCEPTED, t(30)), "re-refer");
   const s4 = step(
     s3,
-    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", now: t(40), movementId: MOVEMENT_ID, unitId: UNIT_ACCEPTED },
+    {
+      type: "ACCEPT_IN_PRINCIPLE",
+      role: "ward",
+      now: t(40),
+      movementId: MOVEMENT_ID,
+      unitId: UNIT_ACCEPTED,
+      actingUnitId: UNIT_ACCEPTED,
+    },
     "accept",
   );
   const s5 = step(
     s4,
-    { type: "PULL_PATIENT", role: "ward", now: t(50), movementId: MOVEMENT_ID, unitId: UNIT_ACCEPTED },
+    {
+      type: "PULL_PATIENT",
+      role: "ward",
+      now: t(50),
+      movementId: MOVEMENT_ID,
+      unitId: UNIT_ACCEPTED,
+      actingUnitId: UNIT_ACCEPTED,
+    },
     "pull",
   );
   const s6 = step(
@@ -141,7 +156,14 @@ function buildSnapshots(): Record<string, WardFlowState[]> {
   );
   const s5NoTransport = step(
     s4NoTransport,
-    { type: "PULL_PATIENT", role: "ward", now: t(50), movementId: MOVEMENT_ID, unitId: UNIT_ACCEPTED },
+    {
+      type: "PULL_PATIENT",
+      role: "ward",
+      now: t(50),
+      movementId: MOVEMENT_ID,
+      unitId: UNIT_ACCEPTED,
+      actingUnitId: UNIT_ACCEPTED,
+    },
     "pull with no transport needed",
   );
   // A conclusive examination, so a legal-form patient can be referred to a community team.
@@ -181,6 +203,7 @@ function eventFor(action: string, state: WardFlowState): WardFlowEvent | undefin
       type: "DECLINE",
       role: "ward",
       unitId: movement.referredUnitIds?.[0] ?? UNIT_ACCEPTED,
+      actingUnitId: movement.referredUnitIds?.[0] ?? UNIT_ACCEPTED,
       reason: "capability_mismatch",
     },
     WITHDRAW_WARD_REQUEST: {
@@ -195,9 +218,16 @@ function eventFor(action: string, state: WardFlowState): WardFlowEvent | undefin
       type: "ACCEPT_IN_PRINCIPLE",
       role: "ward",
       unitId: movement.referredUnitIds?.[0] ?? UNIT_ACCEPTED,
+      actingUnitId: movement.referredUnitIds?.[0] ?? UNIT_ACCEPTED,
     },
     WITHDRAW_ACCEPTANCE: { ...base, type: "WITHDRAW_ACCEPTANCE", role: "coordinator", reason: "the_decision_changed" },
-    PULL_PATIENT: { ...base, type: "PULL_PATIENT", role: "ward", unitId: movement.acceptedUnitId ?? UNIT_ACCEPTED },
+    PULL_PATIENT: {
+      ...base,
+      type: "PULL_PATIENT",
+      role: "ward",
+      unitId: movement.acceptedUnitId ?? UNIT_ACCEPTED,
+      actingUnitId: movement.acceptedUnitId ?? UNIT_ACCEPTED,
+    },
     RELEASE_PULL: { ...base, type: "RELEASE_PULL", role: "coordinator", reason: "pull_made_in_error" },
     HANDOVER_READY: { ...base, type: "HANDOVER_READY", role: "ed" },
     PATIENT_COLLECTED: { ...base, type: "PATIENT_COLLECTED", role: "officer" },

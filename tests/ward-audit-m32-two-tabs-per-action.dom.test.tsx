@@ -88,6 +88,7 @@ function mainActions(): { name: string; events: (state: WardFlowState, now: numb
       now,
       movementId,
       unitId,
+      actingUnitId: unitId,
       overrideReason: "The bed information is known to be out of date",
     } as unknown as WardFlowEvent;
   };
@@ -116,7 +117,14 @@ function mainActions(): { name: string; events: (state: WardFlowState, now: numb
         const { movementId, unitId } = openMovement(state);
         return [
           accept(state, now),
-          { type: "PULL_PATIENT", role: "ward", now: now + 1, movementId, unitId } as unknown as WardFlowEvent,
+          {
+            type: "PULL_PATIENT",
+            role: "ward",
+            now: now + 1,
+            movementId,
+            unitId,
+            actingUnitId: unitId,
+          } as unknown as WardFlowEvent,
         ];
       },
     },
@@ -126,7 +134,14 @@ function mainActions(): { name: string; events: (state: WardFlowState, now: numb
         const { movementId, unitId } = openMovement(state);
         return [
           accept(state, now),
-          { type: "PULL_PATIENT", role: "ward", now: now + 1, movementId, unitId } as unknown as WardFlowEvent,
+          {
+            type: "PULL_PATIENT",
+            role: "ward",
+            now: now + 1,
+            movementId,
+            unitId,
+            actingUnitId: unitId,
+          } as unknown as WardFlowEvent,
           {
             type: "RECORD_TRANSPORT_NEED",
             role: "ed",

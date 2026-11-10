@@ -60,12 +60,30 @@ function referred() {
 }
 function accepted() {
   const before = referred();
-  const state = apply(before, { type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: MOVEMENT_ID, unitId: WARD });
+  const state = apply(before, {
+    type: "ACCEPT_IN_PRINCIPLE",
+    role: "ward",
+    movementId: MOVEMENT_ID,
+    unitId: WARD,
+    actingUnitId: WARD,
+  });
   expect(refusedWith(before, state)).toBeUndefined();
   return state;
 }
-const waitingPull = { type: "PULL_PATIENT", role: "ward", movementId: MOVEMENT_ID, unitId: WARD } as const;
-const waitingAnswer = { type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: MOVEMENT_ID, unitId: WARD } as const;
+const waitingPull = {
+  type: "PULL_PATIENT",
+  role: "ward",
+  movementId: MOVEMENT_ID,
+  unitId: WARD,
+  actingUnitId: WARD,
+} as const;
+const waitingAnswer = {
+  type: "ACCEPT_IN_PRINCIPLE",
+  role: "ward",
+  movementId: MOVEMENT_ID,
+  unitId: WARD,
+  actingUnitId: WARD,
+} as const;
 
 /** Empty, open beds on the ward, as the Bed board seats them. */
 function freeBeds(state: WardFlowState) {
