@@ -37,6 +37,7 @@ Agreed by Josh or required by a decision, with no build or check yet.
 
 - Legal times decision card: keep D-93 (typed times only, no countdowns) and D-72 item 2 (the outage copy is a print or saved file only) unless Josh changes them on the pending card. ([D-93](decisions.md#d-93-legal-form-times-show-only-as-typed-never-as-a-countdown-31-october-2026))
 - ED next-step wording: Josh to sign off the 3, 8, 24 and 48 hour defaults before the wording is final. (owner thread, 9 November 2026)
+- Ward risk flags on bed requests backed by a full referral: wards see none today because ward screens cannot read referral records (FD-23). Separate work (D-117 item 3). ([decisions.md](decisions.md#d-117-care-plans-follow-up-frequent-presenter-count-tribunal-date-and-ward-flags-10-november-2026))
 - Clinical values still synthetic (six added since D-63, four more under D-106) need a sourced value and Josh's signature. ([clinical-values.md](clinical-values.md))
 - Review the per-client sign-in limits before any real user signs in (D-97 item 6, WF-B008). ([decisions.md](decisions.md#d-97-owner-answers-on-seven-open-items-n21-n25-n26-n29-n40-n41-and-wf-b008-8-november-2026))
 - Desk walk, part 2: Patient, movement and referral detail pages, break glass, cover, the phone layout and the shared signed-in server. ([desk walk](evidence/desk-walk-2026-11-08.md))
