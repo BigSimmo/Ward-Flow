@@ -167,7 +167,7 @@ export function PatientLegalNowCard({
       // The typed expiry is already in `left` ("Ends 15:42 as typed"), so the time is not said twice.
       time: expiry ? undefined : recordedAt !== undefined ? clock(recordedAt) : undefined,
       left: expiry?.text,
-      ended: progression !== undefined,
+      ended: progression?.ended === true,
     });
     if (progression)
       rows.push({
