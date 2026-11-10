@@ -1,6 +1,6 @@
 # Ward Flow handover: start here
 
-_Updated 3 November 2026. This file replaces `/mnt/project-files/ward-flow/HANDOVER.md` (Q381, Josh, 3 November 2026), which now only points here._
+_Updated 10 November 2026. This file replaces `/mnt/project-files/ward-flow/HANDOVER.md` (Q381, Josh, 3 November 2026), which now only points here._
 
 This is the one handover entry for the Ward Flow redesign and the **source of truth for owner question numbers (Q numbers)**. Record each new question and its answer in the [question log](#question-log) below, in the same PR as the work or in a small docs PR.
 
@@ -54,6 +54,8 @@ Port the mock-up's components and tokens as they are; don't rebuild them. Compar
 ## Question log
 
 Carried over from `HANDOVER.md` on 3 November 2026, with the later blocks from the project notes. Early entries are short; the thread named in each block holds the detail. "Yes" means Josh answered yes to the recommendation.
+
+**Numbers before Q120 are not kept here.** Code, tests and a few docs cite Q29, Q31, Q36, Q40, Q58, Q61 to Q63, Q66 to Q69, Q75, Q77, Q84, Q92 to Q94, Q96, Q97, Q99, Q102 to Q107, Q111, Q112, Q117 and Q118. They were asked in earlier threads, before this log started, and some numbers were reused by more than one thread. Their answers were not copied here and are not rebuilt (D-121). Where a ruling matters, read [decisions.md](../../ward-flow/decisions.md) (Q61 and Q97 are cited there) or the [4 September review](../../history/lessons/ward-flow-owner-rulings-2026-09-04-review.md) (Q31, Q62, Q68 and Q69). Source and tests prove what is built.
 
 ### Q120 to Q163 (1 November 2026)
 
@@ -115,7 +117,7 @@ Numbers not listed above in this block were not recorded in HANDOVER.md.
 - Q341: the Home flow is the master Home tab (mock-up https://claude.ai/artifact/28i1iqpx6Le844G3rbPL5U). Yes.
 - Q342: build the Home flow as a PR. Yes, #1324 merged 3 November.
 - Q343: stage tiles always shown, Needs you | Flow tabs. Yes.
-- Q344: merge the ED strip into the stage card as one chip row (option A). Open.
+- Q344: merge the ED strip into the stage card as one chip row (option A). Open; tracked in the [backlog](../../ward-flow/backlog.md#ideas).
 - Q345: one nav row, Needs you | Flow raised, stages as lighter trackless tabs. Yes, in #1324.
 - Q346 to Q349: reserved for the design system block; not used.
 
@@ -148,8 +150,8 @@ Josh answered "Yes to 2 to 12" at 17:09 UTC, which is Q371 to Q381. Q370 was not
 
 ### Q382 to Q389 (threads started 3 November 2026)
 
-- Q383: Josh to check the Railway `WARD_FRONT_DOOR`, `WARD_PASS_SECRET` and `WARD_DEMO_CODE` settings before #1345 can merge. Open.
-- Q384: Josh adds `Ward Flow hold` as a required check in the main ruleset, so the `hold` label blocks merges. Open.
+- Q383: Josh to check the Railway `WARD_FRONT_DOOR`, `WARD_PASS_SECRET` and `WARD_DEMO_CODE` settings before #1345 can merge. Not kept: #1345 merged.
+- Q384: Josh adds `Ward Flow hold` as a required check in the main ruleset, so the `hold` label blocks merges. Open; tracked in the [backlog](../../ward-flow/backlog.md#agreed-not-started).
 - Other numbers in this block are held for those threads.
 
 ### Q390 to Q392 (real-data go/no-go, 3 November 2026)

@@ -12,7 +12,7 @@ Published folders and where each came from:
 - pa/ = Patient Screen Redesign.zip; he/ = Ward Flow Redesign 1.zip (Help)
 - al/ = alerts/alerts-redesign; cm/ = community/community-team-mockup.html; pu/ = popups screenshots; ac/ = alerts-clarity/hifi (interactive clarity proposal, not approved)
 
-Rebuild (from a Ward-Flow checkout, npm ci --engine-strict=false works on Node 22), then copy kit/kit.html into `<pub>/m`:
+Rebuild from a Ward-Flow checkout on Node 24 (the repository requires it; in a cloud session use `/opt/node24/bin`), then copy kit/kit.html into `<pub>/m`:
 
 ```sh
 node scripts/ward-flow/build-redesign-preview.mjs --out <pub>/m

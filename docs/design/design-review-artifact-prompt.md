@@ -108,7 +108,7 @@ Embed images as compressed WebP or optimised PNG, lazy-loaded, keeping the page 
 
 - People use it in a hurry, interrupted, on phones and shared screens. Make it scannable at a glance, with key facts aligned and in the same place every time.
 - On desktop, keyboard paths and shortcuts help power users ("/" to search, Escape to close).
-- On shared screens, offer privacy options such as initials only.
+- On shared screens, keep full names (D-83, D-113) and offer other privacy aids, such as the D-102 screenshot blur. Never offer initials only.
 
 ## D. Make it beautiful (visual design and polish)
 

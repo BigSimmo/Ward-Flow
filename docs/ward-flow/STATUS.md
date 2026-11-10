@@ -1,9 +1,9 @@
 # Ward Flow — status
 
-<!-- last-checked: 2026-11-09 -->
+<!-- last-checked: 2026-11-10 -->
 
 **The one page for where Ward Flow stands now.** Audience: Josh, staff testers and every builder.
-Owner: Documentation. Checked on 9 November 2026 against `main` at `bd16e4adb` (PR #1531) by reading
+Owner: Documentation. Checked on 10 November 2026 against `main` at `b29dfaa76` (PR #1581) by reading
 the merged pull request titles and searching source. No browser, hosted or deployment check was run
 for this page. Work items live in the [backlog](backlog.md). Older status is in
 [the status history](../history/status-to-2026-11-03.md).
@@ -12,6 +12,22 @@ Synthetic data only. Do not enter real patient information. Ward Flow is not app
 deployment.
 
 ## Now
+
+### Merged 9 to 10 November 2026
+
+19 pull requests merged after #1531, #1553 to #1588. In themes:
+
+- **Rulings applied:** the 8 and 9 November rules audit (#1555), the D-106 clinical value changes
+  (#1556), D-117 care plans follow-up (#1586) and the D-115 audit guards and audits 1 to 8 (#1579).
+- **Features:** Tomorrow on Home, the step-by-step bed meeting and ED long-wait next steps (D-108,
+  #1560); ten ED and referral features (D-110, #1563); care plans, safety flags, tribunal dates and
+  escalation history (#1578); search, export and training tools (#1559); staff and handover tools
+  (#1562); deciding referrals on Home and the Log a delay form (#1584).
+- **Design:** page tops on every page (D-116, D-118, D-119, #1581); the floating phone bar (D-112,
+  #1580); one "under a form" rule (D-100, #1553).
+- **Help:** a Help drawer overhaul (#1558) and the three figures at the top of Home explained (#1561).
+- **Phone limits and CI:** Capacity loads on first open (#1557), main back under its limits (#1582),
+  steadier tests (#1554) and 30 minute unit shards (#1588).
 
 ### Merged 8 to 9 November 2026
 
@@ -68,27 +84,34 @@ To list every merge since a date or revision:
   findings were fixed ([desk walk](evidence/desk-walk-2026-11-08.md)). Part 2 of the walk is in the
   [backlog](backlog.md).
 - **Pilot readiness:** the steps in the [roadmap](roadmap.md#2-pilot-readiness).
-- **Audits of 9 November:** clinical values (D-106) and working rules and documentation (D-107).
+- **Audits of 9 and 10 November:** the latest rulings are D-121 (working rules, guards and Josh's PC)
+  and D-122 (clinical and privacy answers). The documentation fixes ship in one PR. D-122's clinical
+  items ship in one held clinical PR. Earlier audits: clinical values (D-106) and working rules and
+  documentation (D-107).
 
 ### Waiting on Josh
 
-Carried from 3 November. On 9 November item 1 was added and the access log mock-up was removed
-(built after Josh's yes of 31 October). The rest is not re-checked.
+Re-checked on 10 November. D-108 settled the legal times and ED next-step questions, so they are
+gone. The 16 November date for the sign-in test was dropped (Q390). Items 4 to 13 are carried from
+3 November and not re-checked.
 
-1. Answer the open decision cards: legal times (keep D-93 and D-72 unless changed) and the ED
-   next-step wording defaults (3, 8, 24 and 48 hours).
-2. Sign-in renewal test before about 16 November (Q390): sign in with a test account in the morning,
-   and make one save after lunch without signing in again.
-3. In Supabase: turn off "Allow new users to sign up", and turn off the organisation's AI SQL, log and
+1. Protect the `live` branch in GitHub so only the release workflow can update it, with no
+   force-push or deletion (D-121 item 1).
+2. If not done yet, add the Actions event policy for `pull_request_target` before GitHub's second
+   brownout on 16 November 2026 (D-114). GitHub blocks it by default from 2 December.
+3. Check the held clinical PR for D-122 when it opens. It merges only after you check it.
+4. Sign-in renewal test (Q390): sign in with a test account in the morning, and make one save after
+   lunch without signing in again.
+5. In Supabase: turn off "Allow new users to sign up", and turn off the organisation's AI SQL, log and
    data options (Q391).
-4. Choose the Sentry organisation for server error reporting (PR #686).
-5. Turn on Remote Control for the backup-restore drill and the hosted two-person run.
-6. Set limits on who can grant administrator access.
-7. Name the privacy officer and the clinical safety owner.
-8. Turn on Dependabot security updates in GitHub settings.
-9. Arrange the clinician trial.
-10. Keep or strike the decision entries marked "Source unverified" (D-28 and D-30 to D-35).
-11. Before any real data (deferred): the [real-data go/no-go checklist](governance/REAL-DATA-GO-NO-GO.md).
+6. Choose the Sentry organisation for server error reporting (PR #686).
+7. Turn on Remote Control for the backup-restore drill and the hosted two-person run.
+8. Set limits on who can grant administrator access.
+9. Name the privacy officer and the clinical safety owner.
+10. Turn on Dependabot security updates in GitHub settings.
+11. Arrange the clinician trial.
+12. Keep or strike the decision entries marked "Source unverified" (D-28 and D-30 to D-35).
+13. Before any real data (deferred): the [real-data go/no-go checklist](governance/REAL-DATA-GO-NO-GO.md).
 
 ### Keeping this page true
 

@@ -10,7 +10,7 @@ import { join, relative } from "node:path";
  * Source of truth: the "Status of every entry" table at the top of docs/ward-flow/decisions.md.
  * Only rows marked exactly "Replaced by D-n" count; "Partly replaced" entries still apply in part.
  * A citation is fine when its own sentence says it is history (replaced, removed, withdrawn, once,
- * overruled, superseded, archive) or names the replacing decision, or is a range such as
+ * overruled, superseded, archived) or names the replacing decision, or is a range such as
  * "D-1 to D-81". The sentence may wrap onto the next line; a new sentence there does not count.
  */
 const root = join(__dirname, "..");
@@ -25,7 +25,7 @@ const SKIP = [
   "docs/ward-flow/RULES.md",
 ];
 const HISTORY_WORDS =
-  /\b(replac\w*|removed|withdr[ae]wn?|once|overruled|supersed\w*|archive|retired|former(ly)?|old)\b/iu;
+  /\b(replac\w*|removed|withdr[ae]wn?|once|overruled|supersed\w*|archiv\w*|retired|former(ly)?|old)\b/iu;
 
 function fullyReplaced(markdown: string): Map<string, string[]> {
   const out = new Map<string, string[]>();
@@ -75,6 +75,45 @@ function liveDocs(): string[] {
   return files;
 }
 
+/**
+ * D-121 item 5: code, tests and scripts are checked too. Test files that use D-numbers as synthetic
+ * inputs to a checker (a temporary decisions.md, a fact marker) are skipped as a whole.
+ */
+const CODE_FIXTURE_FILES = [
+  "tests/decision-log-integrity.test.ts",
+  "tests/doc-facts.test.ts",
+  "tests/pre-commit-ward-flow-main-guard.test.ts",
+  "tests/replaced-decision-citations.test.ts",
+  "tests/ward-doc-facts-history.test.ts",
+];
+
+/**
+ * Wrong "D-37" citations in clinical files another thread owns (patient-chronology.ts:33,
+ * patient-chronology-screen.tsx:~139, ward-nav.ts:577 on 10 Nov 2026): fixed in held clinical PR
+ * (D-122). Take each entry off once that PR lands. Keyed by file and ID, not line, so edits there do
+ * not break this test.
+ */
+// Paths are relative to the src tree.
+const HELD_CLINICAL_FIXES: ReadonlyArray<readonly [string, string]> = [
+  ["components/ward-management/reports/patient-chronology-screen.tsx", "D-37"], // fixed in held clinical PR
+  ["components/ward-management/reports/patient-chronology.ts", "D-37"], // fixed in held clinical PR
+  ["components/ward-management/ward-nav.ts", "D-37"], // fixed in held clinical PR
+];
+
+function codeFiles(): string[] {
+  const files: string[] = [];
+  const walk = (directory: string) => {
+    for (const name of readdirSync(directory)) {
+      if (name === "node_modules") continue;
+      const path = join(directory, name);
+      if (statSync(path).isDirectory()) walk(path);
+      else if (/\.(?:[cm]?[jt]sx?|json|css|sh)$/u.test(name)) files.push(path);
+    }
+  };
+  for (const tree of ["src", "tests", "scripts"]) walk(join(root, tree));
+  return files;
+}
+
 describe("live docs do not cite a replaced decision as current", () => {
   const replaced = fullyReplaced(readFileSync(decisionsPath, "utf8"));
 
@@ -96,6 +135,20 @@ describe("live docs do not cite a replaced decision as current", () => {
     const problems = liveDocs().flatMap((file) =>
       staleCitations(readFileSync(file, "utf8"), replaced).map((hit) => `${relative(root, file)}:${hit}`),
     );
+    expect(problems).toEqual([]);
+  });
+
+  it("finds no stale citation in src, tests or scripts (D-121 item 5)", () => {
+    const problems = codeFiles().flatMap((file) => {
+      const rel = relative(root, file).split("\\").join("/");
+      if (CODE_FIXTURE_FILES.includes(rel)) return [];
+      return staleCitations(readFileSync(file, "utf8"), replaced)
+        .filter(
+          (hit) =>
+            !HELD_CLINICAL_FIXES.some(([held, id]) => rel === ["src", held].join("/") && hit.includes(`cites ${id} `)),
+        )
+        .map((hit) => `${rel}:${hit}`);
+    });
     expect(problems).toEqual([]);
   });
 });

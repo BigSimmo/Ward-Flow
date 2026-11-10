@@ -71,14 +71,14 @@ Dark mode and the Bright light setting come from the same tokens. Check every sc
 - Rows: 44px default (`--wf-row-default`), 36px dense, 52px touch, 40px group heads.
 - Controls, by device:
 
-| Control                | Phone                                                                                   | Tablet and desktop                                              |
-| ---------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Button                 | 40px drawn, 48px tap cover                                                              | 36px (`--wf-h-md`); 28px is the smallest target (`--wf-target`) |
-| Small button           | 40px on phone (Q295)                                                                    | 32px (`--wf-h-sm`)                                              |
-| Tabs and segments      | 40px items on a 48px track (Q225; the kit overrides the older `--wf-phone-seg-*` 32/40) | 30px at 13px (Q231)                                             |
-| Chips and filter pills | 40px (`--wf-phone-pill-h`)                                                              | 24 to 30px; never a target under 24px (`--wf-target-min`)       |
-| Accept, Pull, Decline  | Full 48px (the one exception)                                                           | Kit size                                                        |
-| Controls at 200% text  | Grow with the text: min-height, never a fixed height (Q306)                             | Same                                                            |
+| Control                | Phone                                                                                                                                                       | Tablet and desktop                                              |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Button                 | 40px drawn, 48px tap cover                                                                                                                                  | 36px (`--wf-h-md`); 28px is the smallest target (`--wf-target`) |
+| Small button           | 40px on phone (Q295)                                                                                                                                        | 32px (`--wf-h-sm`)                                              |
+| Tabs and segments      | 40px items on a 48px track (Q225, 2 Nov, as built; this replaces D-94's 32px tab in a 40px track, and the kit overrides the older `--wf-phone-seg-*` 32/40) | 30px at 13px (Q231)                                             |
+| Chips and filter pills | 40px (`--wf-phone-pill-h`)                                                                                                                                  | 24 to 30px; never a target under 24px (`--wf-target-min`)       |
+| Accept, Pull, Decline  | Full 48px (the one exception)                                                                                                                               | Kit size                                                        |
+| Controls at 200% text  | Grow with the text: min-height, never a fixed height (Q306)                                                                                                 | Same                                                            |
 
 ### Motion
 

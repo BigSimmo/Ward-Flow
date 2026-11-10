@@ -233,7 +233,7 @@
        2xs         12px  Chip `compact` / secondary labels; raised from 11px to the
                          same 12px floor (1 Nov 2026).
        (xs 12 · sm 14 · base 16 come from Tailwind's default scale —
-        Chip `standard` uses xs / 12px; see docs/design-system/TOKENS.md)
+        Chip `standard` uses xs / 12px; see docs/history/design-system-psychsift/TOKENS.md)
        sm-minus    13px  one notch under sm — dense body/labels bigger than xs
        base-minus  15px  one notch under base — comfortable body just under 16
        (lg 18 · xl 20 · 2xl 24 come from Tailwind's default scale)
@@ -634,9 +634,6 @@
   --shadow-overlay: var(--e4);
   --shadow-lux: inset 0 1px 0 rgb(255 255 255 / 90%), var(--e4);
   --shadow-inset: inset 0 1px 0 rgb(255 255 255 / 58%);
-  /* Active left-rail marker (nav/list "current" indicator). One token so the
-     accent rail is a consistent 2px everywhere instead of hand-inlined at 2px/3px. */
-  --shadow-rail-active: inset 2px 0 0 var(--clinical-accent);
   /* Mode-nav collapsed control: a surface lifted off the header. */
   --shadow-lift: 0 1px 2px rgb(12 24 34 / 8%), 0 2px 6px rgb(12 24 34 / 5%);
   --safe-area-top: env(safe-area-inset-top, 0px);
@@ -652,7 +649,7 @@
      49px short wherever the `header-collapse-addon` nav row mounts, and blind to
      `#main-content`'s own `sm:pb-8` — so pages whose content had ended still
      carried scroll range. They grow into their box instead (invariant 24 in
-     docs/search-chrome-behaviour.md). Keep this token for chrome offsets and for
+     docs/history/search-chrome-behaviour.md). Keep this token for chrome offsets and for
      `--phone-overlay-chrome-h` below, which adds the top pad back explicitly;
      do not resurrect it as a page-fill floor. */
   --shell-header-h: 4rem;
@@ -1673,7 +1670,6 @@ html[data-motion="reduced"] *::after {
     --shadow-overlay: none;
     --shadow-lux: none;
     --shadow-inset: none;
-    --shadow-rail-active: none;
   }
 
   button,

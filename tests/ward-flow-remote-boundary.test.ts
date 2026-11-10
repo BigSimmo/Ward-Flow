@@ -131,6 +131,23 @@ describe("Ward-Flow push destination", () => {
     expect(pushWithOldVariable.status, `${pushWithOldVariable.stderr}\n${pushWithOldVariable.stdout}`).toBe(1);
   });
 
+  it("blocks pushes to refs/heads/live, including from a feature branch and deletions (D-121)", (ctx) => {
+    ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
+    const liveInput = `refs/heads/feature ${head} refs/heads/live ${head}\n`;
+    const liveVerdict = directMainPushVerdict(liveInput, {} as unknown as NodeJS.ProcessEnv);
+    expect(liveVerdict.ok).toBe(false);
+    expect(liveVerdict.message).toMatch(/refs\/heads\/live/);
+    expect(run("https://github.com/BigSimmo/Ward-Flow.git", liveInput).status).toBe(1);
+    const liveDeletion = `(delete) ${"0".repeat(40)} refs/heads/live ${head}\n`;
+    expect(directMainPushVerdict(liveDeletion, {} as unknown as NodeJS.ProcessEnv).ok).toBe(false);
+    expect(
+      directMainPushVerdict(
+        `refs/heads/live-notes ${head} refs/heads/live-notes ${head}\n`,
+        {} as unknown as NodeJS.ProcessEnv,
+      ).ok,
+    ).toBe(true);
+  });
+
   it("guards deletion of refs/heads/main as well", () => {
     const mainDeletion = `refs/heads/main ${"0".repeat(40)} refs/heads/main ${head}\n`;
     expect(run("https://github.com/BigSimmo/Ward-Flow.git", mainDeletion).status).toBe(1);

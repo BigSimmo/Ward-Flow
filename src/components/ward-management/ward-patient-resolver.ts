@@ -196,6 +196,15 @@ export function patientHeldBedUnitId(
   )?.unitId;
 }
 
+/**
+ * Whether one movement or referral is linked to one person: a yes or no for that record only.
+ * Patient search's presence label reads the link here (D-122 item 7), where the archived D-14
+ * patient-link guard can see it, instead of reading the field reflectively.
+ */
+export function recordLinksPatient(record: Pick<Movement | Referral, "patientId">, patientId: string): boolean {
+  return record.patientId === patientId;
+}
+
 export const NAME_NOT_RECORDED = "Name not recorded";
 export const UMRN_NOT_RECORDED = "UMRN not recorded";
 /** The person is recorded, but this desk's access scope leaves their record out (Q29). */

@@ -6,7 +6,7 @@ import { useSyncExternalStore } from "react";
  * The shell's one polite live region. `WardRail`, `WardBar` and, later, a mounting host page all
  * call `announceToWardShell` rather than rendering their own `aria-live` region, so a second
  * `aria-live` region anywhere in `shell/` would be the same defect as a second fixed search bar
- * (`docs/search-chrome-behaviour.md`'s "one owner" rule, applied to announcements not layout).
+ * (`docs/history/search-chrome-behaviour.md`'s "one owner" rule, applied to announcements not layout).
  *
  * The authority is standard §7.4 ("Every change of subject is one sentence to THE live region" —
  * the definite article is the rule), NOT §7.7 as an earlier version of this comment claimed.

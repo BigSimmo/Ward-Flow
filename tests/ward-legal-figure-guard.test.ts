@@ -264,10 +264,11 @@ const MODEL_CONSTANT_PROVENANCE: Record<string, string> = {
   ED_ACCESS_TARGET_RANGE_MINUTES:
     "this prototype's own adjustment band around ED_ACCESS_TARGET_MINUTES — not independently sourced",
 
-  // Owner answer 35, 17 September 2026 (docs/ward-flow/owner-answers-2026-09-17.md): default 4
+  // Owner answer 35, 17 September 2026 (docs/history/archive/dated-notes/owner-answers-2026-09-17.md): default 4
   // hours. Replaces the carried-over literal (`event.now + 60`) that predated this constant, with
   // no clinician or owner attribution — see the constant's own doc comment in ward-model.ts.
-  PULL_HOLD_MINUTES: "owner answer 35, 17 September 2026 (docs/ward-flow/owner-answers-2026-09-17.md): default 4 hours",
+  PULL_HOLD_MINUTES:
+    "owner answer 35, 17 September 2026 (docs/history/archive/dated-notes/owner-answers-2026-09-17.md): default 4 hours",
 
   // D-75 item 5 bed hold (Josh, 21 Oct 2026): the extra-travel hold adds 60 minutes to the
   // configured pull hold. A bed-management choice, not a Mental Health Act period.

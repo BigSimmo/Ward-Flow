@@ -460,7 +460,7 @@ is staged.
 - **Lines 61–85: task-branch / `main` commit guard.** Direct commits on `main`/`master` are guarded
   (work happens on a dedicated task branch in `BigSimmo/Ward-Flow`, where `origin/main` is Ward
   Flow's public main branch).
-- **`SKIP_DOCS_SYNC_HOOK=1`** (line 6) skips the entire hook, generated-index checks included.
+- **`SKIP_DOCS_SYNC_HOOK=1`** skips only the staged documentation sync at the end of the hook (`check-staged-docs.mjs` and the checks after it). The staged admission scan, the `main` commit guard and the generated-index re-checks still run before it.
 
 ## `docs/ward-flow/journey/*.mjs` — the journey-explorer build chain
 

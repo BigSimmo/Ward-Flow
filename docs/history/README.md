@@ -2,7 +2,7 @@
 
 **Historical records. Not current guidance.** Audience: anyone tracing why something was decided.
 Owner: Documentation. Moved here on 8 November 2026 with Josh's approval (documentation audit of
-7 November 2026). More moved on 9 November 2026 (D-107). Nothing was deleted.
+7 November 2026). More moved on 9 November 2026 (D-107) and 10 November 2026 (D-121). Nothing was deleted.
 
 Nothing here describes the app as it is now. For current work start at
 [`docs/README.md`](../README.md), [`AGENTS.md`](../../AGENTS.md) and the
@@ -10,20 +10,23 @@ Nothing here describes the app as it is now. For current work start at
 
 ## What is here
 
-| Folder or file                                                                           | What it is                                                                                                                                   |
-| ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`lessons/`](lessons/README.md)                                                          | 207 lessons imported from the former Database project. `docs/ward-flow/RULES.md` is still generated from them.                               |
-| [`archive/`](archive/)                                                                   | Dated notes, owner-ruling dumps and registers. `docs/ward-flow/OWNER-RULINGS.md` is still generated partly from them.                        |
-| `ward-flow-*.md`                                                                         | Superseded top-level files: old ledger, phase handovers and decisions, provisional values, remaining-work list.                              |
-| [`ARCHIVE-NOTE.md`](ARCHIVE-NOTE.md)                                                     | The former archive note. Its record of earlier trims is now [below](#deleted-files-kept-in-git-history).                                     |
-| [`superpowers/`](superpowers/)                                                           | Agent-authored plans and specs, August to October 2026 (moved 9 November).                                                                   |
-| [`plans-2026-09/`](plans-2026-09/)                                                       | September 2026 build, fix and lane plans from `ward-flow/plans/` (moved 9 November).                                                         |
-| [`plans-2026/`](plans-2026/)                                                             | Finished October and November plans: documentation repairs (#526) and the Handover redesign (#1232).                                         |
-| [`design-2026-11/`](design-2026-11/)                                                     | The 1 November per-screen redesign handover notes and mock-up status notes.                                                                  |
-| [`design-system-psychsift/`](design-system-psychsift/README.md)                          | The old v2 design system. `docs/design-system/token-layer-divergences.json` stays, because a script reads it.                                |
-| [`ward-flow/`](ward-flow/)                                                               | The old vocabulary list (now [`word-list.md`](../ward-flow/word-list.md)), the 6 November live audit handoff and the retired scoring rubric. |
-| [`roadmap-2026-10.md`](roadmap-2026-10.md)                                               | The 17 October and 25 September programmes and the milestone log.                                                                            |
-| [`mockup-retirement-policy.md`](mockup-retirement-policy.md), [`decisions/`](decisions/) | The inherited mock-up retirement policy and the CCZ4HB review-coverage decision.                                                             |
+| Folder or file                                                                                       | What it is                                                                                                                                   |
+| ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`lessons/`](lessons/README.md)                                                                      | 207 lessons imported from the former Database project. `docs/ward-flow/RULES.md` is still generated from them.                               |
+| [`archive/`](archive/)                                                                               | Dated notes, owner-ruling dumps and registers. `docs/ward-flow/OWNER-RULINGS.md` is still generated partly from them.                        |
+| `ward-flow-*.md`                                                                                     | Superseded top-level files: old ledger, phase handovers and decisions, provisional values, remaining-work list.                              |
+| [`ARCHIVE-NOTE.md`](ARCHIVE-NOTE.md)                                                                 | The former archive note. Its record of earlier trims is now [below](#deleted-files-kept-in-git-history).                                     |
+| [`superpowers/`](superpowers/)                                                                       | Agent-authored plans and specs, August to October 2026 (moved 9 November).                                                                   |
+| [`plans-2026-09/`](plans-2026-09/)                                                                   | September 2026 build, fix and lane plans from `ward-flow/plans/` (moved 9 November).                                                         |
+| [`plans-2026/`](plans-2026/)                                                                         | Finished October and November plans: documentation repairs (#526) and the Handover redesign (#1232).                                         |
+| [`design-2026-11/`](design-2026-11/)                                                                 | The 1 November per-screen redesign handover notes and mock-up status notes.                                                                  |
+| [`design-system-psychsift/`](design-system-psychsift/README.md)                                      | The old v2 design system. `docs/design-system/token-layer-divergences.json` stays, because a script reads it.                                |
+| [`ward-flow/`](ward-flow/)                                                                           | The old vocabulary list (now [`word-list.md`](../ward-flow/word-list.md)), the 6 November live audit handoff and the retired scoring rubric. |
+| [`roadmap-2026-10.md`](roadmap-2026-10.md)                                                           | The 17 October and 25 September programmes and the milestone log.                                                                            |
+| [`mockup-retirement-policy.md`](mockup-retirement-policy.md), [`decisions/`](decisions/)             | The inherited mock-up retirement policy and the CCZ4HB review-coverage decision.                                                             |
+| [`search-chrome-behaviour.md`](search-chrome-behaviour.md)                                           | The inherited PsychSift search-chrome contract (moved 10 November, D-121). Some CSS and code comments still cite its rules.                  |
+| [`archive/dated-notes/owner-answers-2026-10-21.md`](archive/dated-notes/owner-answers-2026-10-21.md) | The owner answers of 21 October 2026 (moved 10 November, D-121). The owner-rulings index still reads it.                                     |
+| [`pc-only-2026-11-10/`](pc-only-2026-11-10/README.md)                                                | Untracked handover, audit-prompt, audit-report and test-suite notes copied from Josh's PC checkout (10 November, D-121).                     |
 
 ## How to use it
 
@@ -50,6 +53,15 @@ Read or restore a file:
 git show 0a469c6:docs/ward-flow/reports/remediation-2026-10-08.md
 git checkout 0a469c6 -- docs/ward-flow/reports/remediation-2026-10-08.md
 ```
+
+### Moved to `docs/history/` on 10 November 2026
+
+Josh approved 10 November 2026 (D-121 item 6). Nothing was deleted.
+
+- `docs/search-chrome-behaviour.md` → `docs/history/search-chrome-behaviour.md`
+- `docs/ward-flow/owner-answers-2026-10-21.md` → `docs/history/archive/dated-notes/owner-answers-2026-10-21.md`, beside the other owner answers, so the owner-rulings index still reads it
+
+The tree before this move is `main` commit `b29dfaa76`.
 
 ### Moved to `docs/history/` on 8 November 2026
 

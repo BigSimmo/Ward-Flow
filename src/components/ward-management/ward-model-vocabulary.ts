@@ -497,7 +497,7 @@ export type LegalForm = LegalFormDetails & {
    * DEADLINE.** Until this date `ward-flow-reducer.ts`'s `capturedDueAt` kept a submitted
    * `legalFormDueAt` only for `kind === "transport"` or `"transfer"`, so an examination or
    * detention form had the wrong `kind` and fell through to `undefined`. Owner answer 1,
-   * 2026-09-17 (`docs/ward-flow/owner-answers-2026-09-17.md`) is that the clinician types the
+   * 2026-09-17 (`docs/history/archive/dated-notes/owner-answers-2026-09-17.md`) is that the clinician types the
    * expiry written on whichever form they hold, of any code — so capture no longer reads `kind`
    * at all. This field still records what KIND of instrument the form is, for whatever else reads
    * it; it is simply no longer the gate on `dueAt`.

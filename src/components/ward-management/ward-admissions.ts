@@ -320,7 +320,7 @@ export type PullReleaseReason = (typeof PULL_RELEASE_REASONS)[number];
  * one spelling, and the field's entire runtime vocabulary.
  *
  * Owner ruling 5, 2026-09-01
- * (`docs/ward-flow/owner-rulings-2026-09-01-fourteen-decisions.md`): **"Ward manager" wins,
+ * (`docs/history/archive/dated-notes/owner-rulings-2026-09-01-fourteen-decisions.md`): **"Ward manager" wins,
  * everywhere, one spelling.** Before this ruling both fields carried whichever of three spellings
  * a given seed line happened to use — `"Ward manager"`, `"Bed coordinator"` and `"Nurse unit
  * manager"` were all live — because the fields were typed `string | null` with no runtime

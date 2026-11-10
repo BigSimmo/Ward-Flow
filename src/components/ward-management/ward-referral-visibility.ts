@@ -93,7 +93,7 @@ import type {
  * ---
  *
  * **AND THE EMERGENCY DEPARTMENT IS NOW DECIDED — owner ruling R-2026-09-04-B**
- * (`docs/ward-flow/owner-rulings-2026-09-04.md`). Asked whether an ED may see that a patient was
+ * (`docs/history/archive/dated-notes/owner-rulings-2026-09-04.md`). Asked whether an ED may see that a patient was
  * also referred to a ward, the owner answered *"Yes can see."* So the ED seat is **coordinator-like
  * for destination visibility, and the opposite of the ward and community seats**, which are both
  * restricted. `EdScopedReferral` below is that seat, and it carries the destination list.
@@ -485,7 +485,7 @@ export type EdScopedAddressing = {
  * is where owner ruling R-2026-09-04-B is actually spent, so it is where the omissions are argued.
  *
  * The ruling: *"Yes can see."* Its interpretation, recorded in
- * `docs/ward-flow/owner-rulings-2026-09-04.md` so the owner can correct it rather than discover it,
+ * `docs/history/archive/dated-notes/owner-rulings-2026-09-04.md` so the owner can correct it rather than discover it,
  * is that an ED-facing screen may see **which destinations were asked and the state of those arms**.
  *
  * ⚠️ **SO IT IS TWO FIELDS, AND EVERY OTHER FIELD OF A `ReferralAddressing` IS LEFT OFF ON PURPOSE.**

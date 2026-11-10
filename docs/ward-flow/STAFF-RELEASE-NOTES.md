@@ -16,6 +16,9 @@ assuming a change is available on the hosted board.
 - Coordinators can use **Record departure** for a confirmed discharge on **Discharges**.
 - Help includes searchable instructions and printable desk guides. Its task instructions distinguish
   the desks that can perform each job; global rule changes belong to the statewide coordinator.
+- **Help → Report a problem** (added to this page on 10 November) copies a short note for the pilot
+  team, with the screen, desk, browser and time added for you. A picture of the screen is optional
+  and off by default; it blurs the page content and shows a preview first. Nothing is sent anywhere.
 
 ## Keeping this history
 

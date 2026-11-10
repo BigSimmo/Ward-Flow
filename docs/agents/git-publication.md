@@ -1,13 +1,13 @@
 # Ward Flow Git and publication workflow
 
-_Updated 2026-11-09 - fewest PRs, no merge queue, the integration thread and the five-PR cap written in one place (Josh, 9 Nov 2026, D-107); Documentation owns._
+_Updated 2026-11-10 - Josh's PC host hooks, the missing-log wording and read-only tasks (D-121); Documentation owns._
 
 Read this reference before committing, publishing, reviewing or observing CI. [AGENTS.md](../../AGENTS.md) governs safeguards. Use only the applicable section; provider and ownership boundaries remain binding.
 
 ## Commit as you go
 
 - When local commits are within the task's authority, commit each coherent owned unit as it becomes ready: a module and its test, a fix and its proof, a document. Do not wait for the whole task.
-- Preserve owned work at every real boundary: coherent completion, a pause or transfer, task end, a checkout or branch change, or a risky restoration. If you cannot commit, name the uncommitted paths and the blocker in the checkpoint. Ordinary conversation is not a boundary.
+- Preserve owned work at every real boundary: coherent completion, a pause or transfer, task end, a checkout or branch change, or a risky restoration. If you cannot commit, name the uncommitted paths and the blocker in the checkpoint. Ordinary conversation is not a boundary. A read-only task (a review, audit, question or plan that changes no file) needs no commit and no empty commit to be done; its report is the record.
 - Formatting belongs in the same unit. Do not make a separate commit only because a formatter ran.
 - A blocked gate stays blocked. Report the exact blocker, the unrun or failed evidence and the next safe step. Never bypass an ownership guard or call unverified work passing.
 - Unrelated dirty files do not freeze your commit. Never stage, move, discard or overwrite a peer's changes to clear a hook. Coordinate a release or an approved takeover instead.
@@ -20,7 +20,7 @@ When the user says `open PR`, `create PR` or `publish PR` without also asking fo
 
 - Inspect only what stops the wrong change being published: branch, base, staged and unstaged scope, and the PR title and body. Reuse the existing task branch or worktree. Do not fetch, pull, rebase, review the ledger, load a release or handover skill or create a worktree unless that keeps unrelated work out.
 - Do **not** run or wait for `npm run format`, dependency installs, `npm run verify:pr-local`, tests, lint, typecheck, builds, browser checks, audits, generated-doc syncs or CI.
-- For this explicit route only, use `SKIP_PRECOMMIT_READINESS=1 git commit ...` to omit commit readiness checks. The hook independently runs `scripts/pre-commit-checks.mjs --admission-only` against the staged index first: secret/patient scanning and ownership admission must pass, including deletions and merge commits. An absent checker, unavailable log, unsigned file or ownership conflict blocks publication. `SKIP_SIGNOUT_GUARD=1` is rejected in this mode. Never use `git commit --no-verify` or disable hooks to publish.
+- For this explicit route only, use `SKIP_PRECOMMIT_READINESS=1 git commit ...` to omit commit readiness checks. The hook independently runs `scripts/pre-commit-checks.mjs --admission-only` against the staged index first: secret/patient scanning and ownership admission must pass, including deletions and merge commits. An absent checker, an unreadable claims folder or a file another branch holds in the optional shared log blocks publication. A missing log does not block, and a file needs no sign-out line of its own (Q374). `SKIP_SIGNOUT_GUARD=1` is rejected in this mode. Never use `git commit --no-verify` or disable hooks to publish.
 - If a readiness-only push guard (format or static) is the only blocker, use that guard's own scoped override (`SKIP_FORMAT_GUARD=1` or `SKIP_STATIC_GUARD=1`). Never skip the push hook wholesale — the auto-merge ownership guard has no override and must never be bypassed, even for a bare-publication request. This exception is limited to the explicit bare-publication request and does not weaken normal-push safeguards.
 - Create the PR straight after the push. PsychSift's PR template does not apply. Report the URL, executed admission evidence and which local/hosted readiness checks remain unrun by request; admission is not a readiness verdict. Do not babysit CI, amend or do follow-up readiness work unless asked. This route overrides generic branch-bundling, handover, review, and babysit instructions.
 
@@ -38,6 +38,20 @@ When the user says `open PR`, `create PR` or `publish PR` without also asking fo
 - If asked to watch CI, check at most every 5 minutes for at most 30 minutes, then report where it stands. Never leave a scheduled job watching a PR.
 - **A PR that changes something staff will see adds one small file to `src/components/ward-management/help/whats-new/`**, named `<YYYY-MM-DD-short-slug>.json` (the date of the change, then a few lower-case words) and holding `{ "line": "One plain sentence." }`: under 120 characters, no PR numbers or code words. Never edit another PR's file, so What's new cannot conflict. The build combines the files and shows the last 6 months of them (older files stay in the repository), the app's What's new note and Help list show the line after the next daily release, and the release workflow copies it into that release's notes. Engineering-only changes add nothing.
 - Never weaken, skip or relax a required check to save time.
+
+## Josh's PC host hooks
+
+On Josh's own PC only, an extra host hook runs before agent commands, on top of this repository's
+Git hooks (D-121 item 7). Its source is `ward-host-hooks.mjs` in Josh's `ai-rules` repository; read
+that file for the exact current behaviour, as this summary can lag it.
+
+- It blocks any Ward Flow `git push`, `gh pr create` or `gh pr merge` unless the command carries an
+  explicit publication assertion and names the repository literally: `git -C <absolute path>` for a
+  push, or `-R github.com/BigSimmo/Ward-Flow` for `gh`.
+- It blocks every push to `main` and every force-push.
+- It checks the branch history against a fixed anchor commit before a push.
+- It does not run in cloud sessions. There, the repository's own hooks (`.githooks/pre-commit` and
+  `.githooks/pre-push`) are the only local guards.
 
 ## Fewest PRs
 

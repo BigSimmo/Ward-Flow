@@ -122,7 +122,7 @@ consumers before applying its advice; keep original incident commands/results as
 ### Historical architecture & design catalogue
 
 - [wiring-conventions.md](wiring-conventions.md) — page/button wiring conventions and the dead-button / orphan-route gates
-- [search-chrome-behaviour.md](search-chrome-behaviour.md) — shared search-chrome contract: composer ownership, phone edge-to-edge dock, hide/reveal reserves
+- [history/search-chrome-behaviour.md](history/search-chrome-behaviour.md) — the inherited shared search-chrome contract (history only, moved 10 November 2026, D-121): composer ownership, phone edge-to-edge dock, hide/reveal reserves
 - [history/mockup-retirement-policy.md](history/mockup-retirement-policy.md) — historical mockup retirement policy
 - [history/design-system-psychsift/README.md](history/design-system-psychsift/README.md) — the inherited PsychSift v2 design system (history only). The current Ward Flow design system is [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md)
 - [brand/brand-mark.md](brand/brand-mark.md) — the mark geometry inherited from PsychSift, still drawn by Ward Flow (`src/lib/brand-mark.ts`); a Ward Flow mark of its own is an owner decision

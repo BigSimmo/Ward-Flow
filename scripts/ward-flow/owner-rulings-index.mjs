@@ -37,7 +37,11 @@
  *      corpus (`owner-decisions-2026-09-1x.md`'s Q-table, `owner-questions-queued-2026-09-10.md`'s
  *      A/B tables) that number rulings and open questions as table rows rather than headings.
  *
- * A file where none of the three shapes appears is listed under "Unparsed files", NOT silently
+ * Two looser fallback shapes (a `#`-headed numbered table, a `**1. …**` numbered paragraph) are tried
+ * only in a file where none of the three appears, and two explicit lists near `firstH1` record the
+ * remaining files deliberately: a one-ruling file indexed whole, or a file holding no ruling of its own.
+ *
+ * A file where none of these shapes appears is listed under "Unparsed files", NOT silently
  * dropped — see the comment above `UNPARSED` below for why that matters more than a clean-looking
  * index.
  *
@@ -114,7 +118,10 @@ const ID_PATTERNS = [
   /^(R-B-\d{2,3})\b/, // R-B-01 .. R-B-18
   /^(§\d+(?:\.\d+)?)\s*[-–—:·]/, // §3 — ... (needs the dash: see comment below)
   /^((?:Decision|Ruling)\s+\d+)\s*[-–—:·]/i, // Decision 1 — ... / Ruling 1 — ...
-  /^([A-Z]{1,4}-?\d+(?:\.\d+)*[a-zA-Z]?)\b/, // D-8, D-3b, O-17.1, R1, R10, Q-1, A-6 (generic)
+  // Generic: D-8, D-3b, O-17.1, R1, R10, Q-1, A-6, and hyphen-numbered series such as D9-1 and
+  // R2-14. The `[.-]\d+` suffix matters: with `\.` alone, `\b` stopped at the hyphen and every
+  // `D9-1 … D9-9` heading collapsed into one fake nine-way `D9` collision (audit F-57).
+  /^([A-Z]{1,4}-?\d+(?:[.-]\d+)*[a-zA-Z]?)\b/,
 ];
 
 // `(?:Decision|Ruling)\s+\d+` and `§N` REQUIRE a following dash/colon/middle-dot. Without that
@@ -180,6 +187,67 @@ function extractTableRowItems(lines) {
   return items;
 }
 
+// Fallback shapes, tried ONLY when shapes 1-3 found nothing in a file (so a file that already
+// parses never gains rows from these looser patterns):
+//   4. A numbered row (`| 3 | ... |`) in a table whose header's first cell is `#` — the open-questions
+//      list numbers its questions this way.
+//   5. A bold numbered paragraph (`**1. Should ...?**`) — how the `owner-question-*` letters put their
+//      numbered questions to the owner.
+function extractHashTableRows(lines) {
+  const items = [];
+  let inHashTable = false;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim().startsWith("|")) {
+      inHashTable = false;
+      continue;
+    }
+    const cells = splitTableRow(line);
+    const prevIsTable = i > 0 && lines[i - 1].trim().startsWith("|");
+    if (!prevIsTable) {
+      inHashTable = cells[0] === "#";
+      continue;
+    }
+    if (!inHashTable) continue;
+    const om = /^(\d+)$/.exec(cells[0]);
+    if (!om) continue;
+    const text = cells.slice(1).join(" — ").replace(/\s+/g, " ").trim();
+    if (!text) continue;
+    items.push({ line: i + 1, id: null, ordinal: om[1], text, kind: "table row" });
+  }
+  return items;
+}
+
+function extractBoldNumberedParagraphs(lines) {
+  const items = [];
+  for (let i = 0; i < lines.length; i++) {
+    const m = /^\*\*(\d+)\.\s+(.+?)\*\*/.exec(lines[i]);
+    if (m) items.push({ line: i + 1, id: null, ordinal: m[1], text: m[2].trim(), kind: "numbered paragraph" });
+  }
+  return items;
+}
+
+// Files with no numbered structure at all, each recorded here deliberately with the reason, so the
+// "Unparsed" list holds only files nobody has looked at. An entry that stops matching (file renamed,
+// or the file starts to parse) fails the run — an exception must stay a decision, not a leftover.
+const DATED = "../history/archive/dated-notes/";
+const WHOLE_FILE_RULINGS = new Map([
+  [
+    `${DATED}owner-ruling-2026-09-07-board-columns.md`,
+    "one ruling, stated in the file's own title; indexed as a single item",
+  ],
+  [
+    `${DATED}owner-ruling-patient-link-2026-09-02.md`,
+    "one ruling, stated in the file's own title; indexed as a single item",
+  ],
+]);
+const KNOWN_NON_RULING_FILES = new Map([
+  [
+    `${DATED}owner-decision-pending-device-copy-2026-09-04.md`,
+    "a question put to the owner; its own status line says it was closed by R-B-04 and R-B-11, which are indexed under owner-rulings-2026-09-04-decision-batch.md",
+  ],
+]);
+
 function firstH1(lines) {
   for (const line of lines) {
     const m = /^#\s+(.*)$/.exec(line.trim());
@@ -215,13 +283,34 @@ function collect(files) {
   for (const file of files) {
     const text = readFileSync(join(DOCS_DIR, file), "utf8");
     const lines = text.split(/\r?\n/);
-    const items = [...extractHeadingItems(lines), ...extractTableRowItems(lines)].sort((a, b) => a.line - b.line);
+    let items = [...extractHeadingItems(lines), ...extractTableRowItems(lines)];
+    if (items.length === 0) items = [...extractHashTableRows(lines), ...extractBoldNumberedParagraphs(lines)];
+    if (items.length === 0 && WHOLE_FILE_RULINGS.has(file)) {
+      const h1 = lines.findIndex((l) => /^#\s+/.test(l.trim()));
+      if (h1 >= 0) items = [{ line: h1 + 1, id: null, ordinal: null, text: firstH1(lines), kind: "whole-file ruling" }];
+    }
+    items.sort((a, b) => a.line - b.line);
     perFile.push({
       file,
       title: firstH1(lines),
       date: fileDate(file, text),
       items,
     });
+  }
+  const stale = [];
+  for (const file of [...WHOLE_FILE_RULINGS.keys(), ...KNOWN_NON_RULING_FILES.keys()]) {
+    const f = perFile.find((p) => p.file === file);
+    if (!f) {
+      // A fixture tree without the archive has nothing to check; a real tree must still hold the file.
+      if (existsSync(DATED_NOTES_DIR)) stale.push(`${file}: no longer scanned (renamed or removed)`);
+    } else if (KNOWN_NON_RULING_FILES.has(file) && f.items.length > 0)
+      stale.push(`${file}: now yields ${f.items.length} item(s); drop it from KNOWN_NON_RULING_FILES`);
+    else if (WHOLE_FILE_RULINGS.has(file) && f.items.some((it) => it.kind !== "whole-file ruling"))
+      stale.push(`${file}: now has numbered items; drop it from WHOLE_FILE_RULINGS`);
+  }
+  if (stale.length > 0) {
+    console.error(`owner-rulings index: stale exception entries —\n  ${stale.join("\n  ")}`);
+    process.exit(1);
   }
   return perFile;
 }
@@ -232,7 +321,8 @@ function collect(files) {
 
 function render(perFile, patterns) {
   const withItems = perFile.filter((f) => f.items.length > 0);
-  const unparsed = perFile.filter((f) => f.items.length === 0);
+  const knownNonRuling = perFile.filter((f) => f.items.length === 0 && KNOWN_NON_RULING_FILES.has(f.file));
+  const unparsed = perFile.filter((f) => f.items.length === 0 && !KNOWN_NON_RULING_FILES.has(f.file));
   const totalItems = withItems.reduce((n, f) => n + f.items.length, 0);
 
   // Flat ID index — only items that carry a real, owner-style ID (letter-coded, R-date, R-B, §N,
@@ -247,7 +337,11 @@ function render(perFile, patterns) {
     }
   }
   const idKeys = [...idIndex.keys()].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-  const collidingIds = idKeys.filter((k) => idIndex.get(k).length > 1);
+  const fileCount = (k) => new Set(idIndex.get(k).map((o) => o.file)).size;
+  const crossFileIds = idKeys.filter((k) => fileCount(k) > 1);
+  // Same ID more than once inside ONE file: a later heading revisiting the item (a scope limit, a
+  // correction), not a second issue of the ID. Counted apart so the cross-file figure stays honest.
+  const withinFileIds = idKeys.filter((k) => fileCount(k) === 1 && idIndex.get(k).length > 1);
 
   const sortedFiles = [...withItems].sort((a, b) => {
     if (a.date.sortKey !== b.date.sortKey) return b.date.sortKey.localeCompare(a.date.sortKey);
@@ -271,6 +365,7 @@ function render(perFile, patterns) {
     "",
     `**${totalItems} rulings/items extracted, across ${withItems.length} of ${perFile.length} files.**`,
     `**${unparsed.length} file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.`,
+    `**${knownNonRuling.length} file(s) recorded as holding no ruling of their own**, each with its reason. See below.`,
     "",
     "⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run",
     "below — it does NOT prove the ruling is still CURRENT.** Owner rulings in this corpus get",
@@ -284,9 +379,10 @@ function render(perFile, patterns) {
     "tell: `owner-question-*` and `owner-*-to-settle-*` files are frequently still open.",
     "",
     "⚠️ **IDs are NOT globally unique across this corpus.** The same token has been issued",
-    `independently in more than one file ${collidingIds.length} time(s) below (e.g. \`${collidingIds[0] ?? "none"}\`).`,
-    "Where that happens every occurrence is listed, in the order discovered — confirm which file's",
-    "instance is the one you mean before citing it.",
+    `independently in more than one file for ${crossFileIds.length} ID(s) below (e.g. \`${crossFileIds[0] ?? "none"}\`).`,
+    `A further ${withinFileIds.length} ID(s) recur inside a single file only (e.g. \`${withinFileIds[0] ?? "none"}\`) — a later heading`,
+    "revisiting the same item, not a second issue of the ID. Every occurrence is listed with its file and",
+    "line, in the order discovered — confirm which instance you mean before citing it.",
     "",
     "---",
     "",
@@ -306,7 +402,12 @@ function render(perFile, patterns) {
       const o = occurrences[0];
       lines.push(`| \`${id}\` | \`${o.file}\`:${o.line} | ${truncate(o.text, o.line).replace(/\|/g, "\\|")} |`);
     } else {
-      lines.push(`| \`${id}\` ⚠️ **${occurrences.length} occurrences — not unique** | | |`);
+      const files = fileCount(id);
+      lines.push(
+        files > 1
+          ? `| \`${id}\` ⚠️ **${occurrences.length} occurrences in ${files} files — not unique** | | |`
+          : `| \`${id}\` **${occurrences.length} occurrences in one file — same item revisited** | | |`,
+      );
       for (const o of occurrences) {
         lines.push(`| ↳ | \`${o.file}\`:${o.line} | ${truncate(o.text, o.line).replace(/\|/g, "\\|")} |`);
       }
@@ -322,7 +423,7 @@ function render(perFile, patterns) {
         "**Recorded decision log.** Read the source for supersession and current scope; indexing does not grant authority.",
         "",
       );
-    if (/owner-question|owner-questions|to-settle/.test(f.file))
+    if (/owner-question|owner-questions|open-questions|to-settle/.test(f.file))
       lines.push(
         "**Question/proposal source.** An indexed item is not an approved decision; read the source for an explicit owner answer.",
         "",
@@ -330,7 +431,11 @@ function render(perFile, patterns) {
     if (f.title) lines.push(`**Title:** ${f.title}`, "");
     lines.push(`${f.items.length} item(s):`, "");
     for (const item of f.items) {
-      const label = item.id ? `\`${item.id}\`` : `#${item.ordinal} (no owner-issued ID, this file's own numbering)`;
+      const label = item.id
+        ? `\`${item.id}\``
+        : item.ordinal
+          ? `#${item.ordinal} (no owner-issued ID, this file's own numbering)`
+          : `whole file (${WHOLE_FILE_RULINGS.get(f.file)})`;
       lines.push(`- ${label} — line ${item.line}, ${item.kind}: "${truncate(item.text, item.line)}"`);
     }
     lines.push("");
@@ -351,6 +456,20 @@ function render(perFile, patterns) {
   } else {
     for (const f of unparsed.sort((a, b) => a.file.localeCompare(b.file))) {
       lines.push(`- \`${f.file}\`${f.title ? ` — "${f.title}"` : ""}`);
+    }
+    lines.push("");
+  }
+
+  lines.push("---", "", `## Files recorded as holding no ruling of their own — ${knownNonRuling.length}`, "");
+  lines.push(
+    "Each is listed deliberately in `KNOWN_NON_RULING_FILES` in the generator, with the reason. The",
+    "generator fails if an entry stops matching, so this list cannot quietly go stale.",
+    "",
+  );
+  if (knownNonRuling.length === 0) lines.push("(none)", "");
+  else {
+    for (const f of knownNonRuling.sort((a, b) => a.file.localeCompare(b.file))) {
+      lines.push(`- \`${f.file}\`${f.title ? ` — "${f.title}"` : ""}: ${KNOWN_NON_RULING_FILES.get(f.file)}`);
     }
     lines.push("");
   }
@@ -382,5 +501,5 @@ if (process.argv.includes("--check")) {
 
 writeFileSync(OUT, text, "utf8");
 const itemCount = perFile.reduce((n, f) => n + f.items.length, 0);
-const unparsedCount = perFile.filter((f) => f.items.length === 0).length;
+const unparsedCount = perFile.filter((f) => f.items.length === 0 && !KNOWN_NON_RULING_FILES.has(f.file)).length;
 console.log(`wrote ${OUT} — ${itemCount} items across ${perFile.length} files (${unparsedCount} unparsed).`);
