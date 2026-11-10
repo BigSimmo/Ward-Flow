@@ -29,6 +29,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { CardSafetyTags } from "@/components/ward-management/patients/card-safety-tags";
+import { ArrivalStaffingNote } from "@/components/ward-management/patients/arrival-staffing-note";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import {
@@ -133,6 +134,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     resolvePatientIdentity,
     configuration,
     dayZero,
+    wardReferralInbox,
   } = useWardFlowSelect(
     "movements",
     "units",
@@ -144,10 +146,13 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     "resolvePatientIdentity",
     "configuration",
     "dayZero",
+    "wardReferralInbox",
   );
   const now = useWardFlowClock();
   const raise = useWardRaise("ward");
   const unit = units.find((candidate) => candidate.id === unitId);
+  // D-117 item 3: only the referrals sent to this ward (FD-23) feed the request card's flags.
+  const wardReferrals = useMemo(() => (unit ? (wardReferralInbox?.(unit.id) ?? []) : []), [wardReferralInbox, unit]);
 
   // CS-08 / Notices option A: hold by journey id, not list position; a Notices link opens its named request.
   const [answerSelection, setAnswerSelection] = useState<{ id?: string; index: number; name?: string }>({
@@ -929,18 +934,18 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             </div>
                           </div>
                         )}
-                        {/* Referral risk flags (H10) and an interpreter need. FD-23: a ward-only view
-                            holds no referral records, so a referral-backed request shows "not shared"
-                            (nothing); a journey whose referral letter rides on the movement shows the
-                            flags this ward's referral detail already shows. */}
+                        {/* Referral risk flags (H10), an interpreter need and, for aggression or
+                            absconding, "Plan staffing for this arrival" (D-117 item 3). FD-23: only
+                            referrals sent to this ward are read; a letter riding on the movement too. */}
                         <div className={styles.safetyTagsRow}>
                           <CardSafetyTags
                             movement={activeMovement}
-                            referrals={[]}
+                            referrals={wardReferrals}
                             patient={resolvePatientIdentity(activeMovement).patient}
                             dayZero={dayZero}
                             testId={`ward-answer-safety-tags-${activeMovement.id}`}
                           />
+                          <ArrivalStaffingNote movement={activeMovement} referrals={wardReferrals} />
                         </div>
 
                         {/* SBAR Narrative Sections */}
