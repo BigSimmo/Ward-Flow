@@ -59,7 +59,8 @@ function desktopWork() {
   const map = Array.prototype.map;
   vi.spyOn(Array.prototype, "sort").mockImplementation(function <T>(this: T[], compare?: (a: T, b: T) => number): T[] {
     if (has(this[0], "occupancyRate", "referred", "beds")) counts.wardSort++;
-    if (has(this[0], "ready", "meta", "code")) counts.finderSort++;
+    // D-126: finder entries no longer carry `ready` (wards sort A to Z), so match on name, meta and code.
+    if (has(this[0], "name", "meta", "code")) counts.finderSort++;
     return Reflect.apply(sort, this, [compare]) as T[];
   });
   vi.spyOn(Array.prototype, "slice").mockImplementation(function <T>(this: T[], start?: number, end?: number): T[] {
