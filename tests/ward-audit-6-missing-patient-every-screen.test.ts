@@ -237,8 +237,12 @@ describe("audit 6: a person marked absent without leave reaches every screen aft
     const figureOf = (label: string) => ward.breakdown.find((row) => row.label === label)!.figure;
     // One person is a small number: it is never printed exactly, and neither is approved leave,
     // which the published held-bed total would otherwise give away by subtraction.
-    expect(figureOf("Absent without leave")).not.toMatchObject({ count: { kind: "exact" } });
-    expect(figureOf("On leave")).not.toMatchObject({ count: { kind: "exact" } });
+    // A released count that is hidden, never a dropped record or a printed zero.
+    for (const label of ["Absent without leave", "On leave"]) {
+      const figure = figureOf(label);
+      expect(figure.kind, label).toBe("count");
+      expect(figure.kind === "count" ? figure.count.kind : undefined, label).toMatch(/^(small|withheld)$/);
+    }
   });
 
   it("ward board (/ward-flow/board/[unitId]): the tile and person panel say Absent without leave (D-115 item 4)", () => {

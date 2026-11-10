@@ -475,7 +475,7 @@ export function WardBoard({
   // Walkthrough D7 (25 Sept 2026): read the LIVE releases, because a preparation note is recorded
   // on a release in state; the rebuilt list above never carries one, so "being cleaned" never showed.
   const pendingPreparation = bedsPendingPreparation(unit.id, [...(liveBedReleases ?? [])]);
-  const constraint = constraintSentence(unit, admissions, bedReleases, [...leaveBeds], now);
+  const constraint = constraintSentence(unit, admissions, bedReleases, [...leaveBeds], now, namedHolds);
   const tiles = buildTiles(unit, admissions, bedReleases, now, { leaveBeds, holds: namedHolds });
   // Read straight back out, purely to say how many closed tiles are on screen in the footnote below
   // — never re-derived. `buildTiles` already clamped this into the physically-empty pool; the

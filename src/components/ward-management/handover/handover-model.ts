@@ -795,7 +795,7 @@ export function toHandoverWard(
     confirmedAt: unit.empty.confirmedAt,
     staleAfter: unit.empty.staleAfterMinutes,
     // Audit 24-4 NA2-03: the Pulled box Capacity and Home print, never closed beds.
-    held: bedStates(unit, admissions, bedReleases, []).pulled,
+    held: bedStates(unit, admissions, bedReleases, [], holds).pulled,
     longStays: here.filter((admission) => (daysInBed(admission, now) ?? 0) >= CLINICAL_VALUES.longStayPrompt.value)
       .length,
     pastEdd: here.filter((admission) => admission.expectedDischargeAt !== null && admission.expectedDischargeAt < now)

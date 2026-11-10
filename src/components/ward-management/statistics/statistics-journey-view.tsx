@@ -346,6 +346,9 @@ type HospitalRow = {
   pulled: number;
   closed: number;
   occupied: number;
+  /** Beds in use for the alert line (Occupied + Pulled by a stay), the figure Home reads. A bed
+   *  named for an accepted referral is Pulled in the bar but not yet in use (D-115). */
+  inUse: number;
 };
 
 type JourneyViewProps = {
@@ -389,7 +392,8 @@ function OperationalJourneyView({
   const hospitals = useMemo(() => {
     const bySite = new Map<string, HospitalRow>();
     for (const unit of units) {
-      const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+      // D-115: a named bed is Pulled, not Ready, in the four boxes; occupancy stays beds in use.
+      const states = bedStates(unit, admissions, bedReleases, leaveBeds, [...movements, ...referrals]);
       const row = bySite.get(unit.siteCode) ?? {
         code: unit.siteCode,
         name: shortSiteName(siteByCode(unit.siteCode)?.name ?? unit.siteCode),
@@ -399,7 +403,10 @@ function OperationalJourneyView({
         pulled: 0,
         closed: 0,
         occupied: 0,
+        inUse: 0,
       };
+      const unheld = bedStates(unit, admissions, bedReleases, leaveBeds);
+      row.inUse += unheld.occupied + unheld.pulled;
       row.wards += 1;
       row.beds += unit.beds;
       row.ready += states.ready;
@@ -411,7 +418,7 @@ function OperationalJourneyView({
     return [...bySite.values()]
       .filter((row) => row.ready > 0)
       .sort((a, b) => b.ready - a.ready || a.name.localeCompare(b.name));
-  }, [units, admissions, bedReleases, leaveBeds]);
+  }, [units, admissions, bedReleases, leaveBeds, movements, referrals]);
 
   const waitingRows = useMemo<EdSwarmRow[]>(
     () =>
@@ -462,6 +469,7 @@ function ExecutiveJourneyView({ data, onShowBoard }: { data: ExecutiveReportingF
       pulled: site.beds.pulled,
       closed: site.beds.closed,
       occupied: site.beds.occupied,
+      inUse: site.beds.inUse,
     }))
     .sort((a, b) => b.ready - a.ready || a.name.localeCompare(b.name));
   const waitingSummary = data.emergencyDepartments.map((ed) => ({
@@ -614,7 +622,7 @@ function JourneyPresentation({
                 <ul className={styles.hospitalList}>
                   {hospitals.map((row) => {
                     const share = (value: number) => `${(value / (row.beds || 1)) * 100}%`;
-                    const occupancy = row.beds ? ((row.occupied + row.pulled) / row.beds) * 100 : 0;
+                    const occupancy = row.beds ? (row.inUse / row.beds) * 100 : 0;
                     const over = occupancy >= BED_ALERT_THRESHOLD_PERCENT;
                     return (
                       <li key={row.code}>

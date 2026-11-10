@@ -228,8 +228,9 @@ export function acceptingBedCounts(
   bedReleases: readonly BedRelease[],
   leaveBeds: readonly LeaveBed[],
   now: Instant,
+  holds: readonly ReservationReferral[] = [],
 ): AcceptingBedCounts {
-  const free = headlineAvailable(unit, admissions, bedReleases, leaveBeds, now);
+  const free = headlineAvailable(unit, admissions, bedReleases, leaveBeds, now, holds);
   const staffable = remainingSpeciallingCapacity(unit, admissions);
 
   return {
@@ -272,8 +273,9 @@ export function constraintSentence(
   bedReleases: readonly BedRelease[],
   leaveBeds: readonly LeaveBed[],
   now: Instant,
+  holds: readonly ReservationReferral[] = [],
 ): string | null {
-  const free = headlineAvailable(unit, admissions, bedReleases, leaveBeds, now);
+  const free = headlineAvailable(unit, admissions, bedReleases, leaveBeds, now, holds);
   if (free <= 0) return null;
 
   const counts = acceptingBedCounts(unit, admissions, bedReleases, leaveBeds, now);

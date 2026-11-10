@@ -494,6 +494,7 @@ function OperationalStatisticsScreen({
             admissions={sourceAdmissions}
             bedReleases={sourceBedReleases}
             leaveBeds={leaveBeds}
+            holds={namedHolds}
           />
         ),
         flow: (
@@ -503,6 +504,7 @@ function OperationalStatisticsScreen({
             admissions={sourceAdmissions}
             bedReleases={sourceBedReleases}
             leaveBeds={leaveBeds}
+            holds={namedHolds}
           />
         ),
         journey: (onShowBoard) => <StatisticsJourneyView onShowBoard={onShowBoard} live={{ state: live.state, now }} />,
