@@ -9,7 +9,7 @@ import { gunzipSync } from "node:zlib";
 import * as engine from "./dist/engine.mjs";
 import { LATEST_MIGRATION } from "./migrations.mjs";
 import { createWorkspaceStore, storedAuditChanges } from "./postgres.mjs";
-import { jsonCharacterLength, planSave } from "./records.mjs";
+import { jsonByteLength, jsonCharacterLength, planSave } from "./records.mjs";
 import { withoutRecordDetail } from "./record-detail.mjs";
 import { LruCache, gzipSegments, jsonResponse, registerPart, replySegments, segmentBytes } from "./reply-cache.mjs";
 import { listen, processCacheNotice } from "./server.mjs";
@@ -684,7 +684,7 @@ test("a revision-only save measures its world without serialising a whole-world 
   const world = engine.seedWorld(start);
   const unit = world.state.units[0];
   const expected = engine.applyCommand(world, refresh(unit.id), start).world;
-  const expectedLength = JSON.stringify(expected).length;
+  const expectedLength = Buffer.byteLength(JSON.stringify(expected), "utf8");
   const windows = [];
   const alerts = [];
   const watching = {
@@ -719,7 +719,7 @@ test("a revision-only save measures its world without serialising a whole-world 
   const reloaded = await store.read(actorId);
   assert.equal(reloaded.revision, saved.body.commandRevision);
   assert.deepEqual(reloaded.payload, withoutRecordDetail(expected));
-  assert.deepEqual(windows, [], "the exact native JSON character length is not above its pressure threshold");
+  assert.deepEqual(windows, [], "the exact native JSON byte length is not above its pressure threshold");
   assert.equal(alerts.length, 0);
   assert.equal(wholeWorldSerialisations, 0, "size measurement must not join a whole-world JSON string");
 });
@@ -873,13 +873,14 @@ test("unsupported JSON shapes retain the native root fallback and callback conte
   }
 });
 
-test("command size pressure uses the exact native JSON character boundary", async () => {
+test("command size pressure uses the exact UTF-8 byte boundary of the native JSON (M162)", async () => {
   for (const offset of [-1, 0, 1]) {
     const seed = engine.seedWorld(start);
     const world = { ...seed, state: { ...seed.state, syntheticSizeProbe: "é😀\u0000" } };
     const unit = world.state.units[0];
     const expected = engine.applyCommand(world, refresh(unit.id), start).world;
-    const oracleLength = JSON.stringify(expected).length;
+    const oracleLength = Buffer.byteLength(JSON.stringify(expected), "utf8");
+    assert.ok(oracleLength > JSON.stringify(expected).length, "Accented text weighs more in bytes than characters");
     const windows = [];
     const alerts = [];
     const { store } = storeFor(world, {
@@ -905,16 +906,16 @@ test("command size pressure uses the exact native JSON character boundary", asyn
   }
 });
 
-test("the existing maximum world character boundary accepts equality and refuses one character more", async () => {
+test("the maximum world byte boundary accepts equality and refuses one byte more", async () => {
   const limit = 8_388_608;
   for (const extra of [0, 1]) {
     const seed = engine.seedWorld(start);
     const world = { ...seed, state: { ...seed.state, syntheticSizeProbe: "" } };
     const unit = world.state.units[0];
     const base = engine.applyCommand(world, refresh(unit.id), start).world;
-    world.state.syntheticSizeProbe = "x".repeat(limit + extra - JSON.stringify(base).length);
+    world.state.syntheticSizeProbe = "x".repeat(limit + extra - Buffer.byteLength(JSON.stringify(base), "utf8"));
     const expected = engine.applyCommand(world, refresh(unit.id), start).world;
-    assert.equal(JSON.stringify(expected).length, limit + extra);
+    assert.equal(Buffer.byteLength(JSON.stringify(expected), "utf8"), limit + extra);
     const { store, db } = storeFor(world, {
       engine: { ...engine, archiveClosed: (value) => ({ world: value, archived: [] }) },
     });
@@ -932,6 +933,39 @@ test("the existing maximum world character boundary accepts equality and refuses
       assert.equal(db.revision, first.revision);
     }
   }
+});
+
+test("the 8 MiB cap counts UTF-8 bytes, so accented text under it in characters is still refused (M162)", async () => {
+  const limit = 8_388_608;
+  const seed = engine.seedWorld(start);
+  const world = { ...seed, state: { ...seed.state, syntheticSizeProbe: "" } };
+  const unit = world.state.units[0];
+  const base = engine.applyCommand(world, refresh(unit.id), start).world;
+  // "é" is one character but two bytes: a world just under the cap in characters, well over in bytes.
+  world.state.syntheticSizeProbe = "é".repeat(limit - JSON.stringify(base).length);
+  const expected = engine.applyCommand(world, refresh(unit.id), start).world;
+  assert.equal(JSON.stringify(expected).length, limit);
+  assert.ok(Buffer.byteLength(JSON.stringify(expected), "utf8") > limit);
+  const { store, db } = storeFor(world, {
+    engine: { ...engine, archiveClosed: (value) => ({ world: value, archived: [] }) },
+  });
+  await store.viewer(actorId, {}).catch(() => {});
+  const first = await store.read(actorId);
+  await assert.rejects(
+    store.command(actorId, crypto.randomUUID(), first.revision, refresh(unit.id), { revisionOnly: true }),
+    { name: "WorkspaceTooLargeError" },
+  );
+  assert.equal(db.revision, first.revision);
+});
+
+test("the byte count matches the native JSON's UTF-8 length for accented, emoji and escaped text (M162)", () => {
+  for (const value of [
+    "é😀\u0000",
+    { name: "Zoë Ngā", note: ["café", "naïve", "\ud800", "x".repeat(40_000) + "ü"] },
+    { clé: "é".repeat(20_000) + "😀".repeat(9_000) },
+    [1, true, null, -0, 1e21, undefined, "Ōtautahi"],
+  ])
+    assert.equal(jsonByteLength(value), Buffer.byteLength(JSON.stringify(value), "utf8"));
 });
 
 test("PS-12 and PS-02: one size measurement per save; past the threshold the short window and a limited alert", async () => {

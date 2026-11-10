@@ -29,18 +29,26 @@ const JSON_LENGTH_CHUNK = 16_384;
 const JSON_LENGTH_DEPTH = 128;
 const isRawJson = Object.getOwnPropertyDescriptor(JSON, "isRawJSON")?.value;
 
+/** Measures one native JSON chunk: UTF-16 code units (`chars`) or UTF-8 bytes (`bytes`). */
+const UNITS = Object.freeze({
+  chars: (/** @type {string} */ json) => json.length,
+  bytes: (/** @type {string} */ json) => Buffer.byteLength(json, "utf8"),
+});
+/** @typedef {(json: string) => number} Unit */
+
 /**
  * The native serializer owns every escape; avoid splitting a surrogate pair across chunks.
  * @param {string} value
+ * @param {Unit} unit
  */
-function quotedJsonLength(value) {
+function quotedJsonLength(value, unit) {
   let length = 2;
   for (let start = 0; start < value.length;) {
     let end = Math.min(start + JSON_LENGTH_CHUNK, value.length);
     const last = value.charCodeAt(end - 1);
     const next = value.charCodeAt(end);
     if (end < value.length && last >= 0xd800 && last <= 0xdbff && next >= 0xdc00 && next <= 0xdfff) end -= 1;
-    length += JSON.stringify(value.slice(start, end)).length - 2;
+    length += unit(JSON.stringify(value.slice(start, end))) - 2;
     if (length > bufferConstants.MAX_STRING_LENGTH) return null;
     start = end;
   }
@@ -52,12 +60,13 @@ function quotedJsonLength(value) {
  * @param {unknown} value
  * @param {Set<object>} ancestors
  * @param {number} depth
+ * @param {Unit} unit
  * @returns {number | undefined | null}
  */
-function dataJsonLength(value, ancestors, depth) {
+function dataJsonLength(value, ancestors, depth, unit) {
   if (value === undefined) return undefined;
   if (value === null) return 4;
-  if (typeof value === "string") return quotedJsonLength(value);
+  if (typeof value === "string") return quotedJsonLength(value, unit);
   if (typeof value === "boolean" || typeof value === "number") return JSON.stringify(value).length;
   if (typeof value !== "object" || depth >= JSON_LENGTH_DEPTH || types.isProxy(value)) return null;
   if (typeof isRawJson === "function" && isRawJson(value)) return null;
@@ -82,11 +91,11 @@ function dataJsonLength(value, ancestors, depth) {
       const key = array ? String(index) : keys[index];
       const descriptor = Object.getOwnPropertyDescriptor(value, key);
       if (!descriptor || !Object.hasOwn(descriptor, "value")) return null;
-      const part = dataJsonLength(descriptor.value, ancestors, depth + 1);
+      const part = dataJsonLength(descriptor.value, ancestors, depth + 1, unit);
       if (part === null) return null;
       if (array) length += (count++ ? 1 : 0) + (part ?? 4);
       else if (part !== undefined) {
-        const keyLength = quotedJsonLength(key);
+        const keyLength = quotedJsonLength(key, unit);
         if (keyLength === null) return null;
         length += (count++ ? 1 : 0) + keyLength + 1 + part;
       }
@@ -103,8 +112,17 @@ function dataJsonLength(value, ancestors, depth) {
  * for ordinary immutable JSON data. Unsupported shapes use the original native operation once.
  */
 export function jsonCharacterLength(value) {
-  const length = dataJsonLength(value, new Set(), 0);
+  const length = dataJsonLength(value, new Set(), 0, UNITS.chars);
   return typeof length === "number" ? length : JSON.stringify(value).length;
+}
+
+/**
+ * M162: the exact UTF-8 byte length of JSON.stringify(value), what the size cap means, measured
+ * the same way: no joined JSON string for ordinary data, the native operation once otherwise.
+ */
+export function jsonByteLength(value) {
+  const length = dataJsonLength(value, new Set(), 0, UNITS.bytes);
+  return typeof length === "number" ? length : Buffer.byteLength(JSON.stringify(value), "utf8");
 }
 
 const MARKER = "$records";

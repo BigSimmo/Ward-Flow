@@ -19,7 +19,7 @@ import {
   conflictingCollection,
   conflictRecordType,
   coveredRecords,
-  jsonCharacterLength,
+  jsonByteLength,
   staleReason,
   markerKind,
   planSave,
@@ -167,8 +167,8 @@ function canonical(value) {
   return value;
 }
 
-/** The legacy JSON character count of a world, measured once per save (audit PS-12). */
-const worldBytes = jsonCharacterLength;
+/** A world's JSON size in UTF-8 bytes (M162), measured once per save (audit PS-12). */
+const worldBytes = jsonByteLength;
 
 /**
  * The audit row's `changes` as stored. A reset or new scenario replaces the whole board, so the
