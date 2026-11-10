@@ -102,7 +102,13 @@ function legalFact(status: string | undefined, movement: Movement | undefined, n
   if (!form) return status ? { text: status } : null;
   const progression = formProgression(movement);
   if (progression)
-    return { text: `Form ${progression.nextCode} to record, Form ${progression.endedCode} ended`, tone: "danger" };
+    return {
+      // D-127: a community treatment order is not shown as ended at arrival.
+      text: `Form ${progression.nextCode} to record, ${
+        progression.ended ? `Form ${progression.endedCode} ended` : `on Form ${progression.endedCode} at arrival`
+      }`,
+      tone: "danger",
+    };
   const head = `Form ${form.code}${status ? `, ${status.toLowerCase()}` : ""}`;
   if (form.dueAt === undefined) return { text: head };
   const left = form.dueAt - now;

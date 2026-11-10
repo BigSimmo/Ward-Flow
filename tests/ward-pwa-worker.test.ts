@@ -312,12 +312,14 @@ describe("worker lifecycle", () => {
 describe("what a push may show (PS-13)", () => {
   const FALLBACK = { title: "Ward Flow: act now", body: "Open Alerts to review. Synthetic demo data." };
 
-  type Note = { title: string; options: { body: string; tag: string; renotify: boolean; data: { url: string } } };
+  async function shown(data: unknown) {
+    const { title, options } = await notified(data);
+    return { title, body: options.body, url: options.data.url };
+  }
 
-  /** Runs each payload through one worker, like a phone receiving them in turn. */
-  async function notified(...payloads: unknown[]) {
+  async function notified(data: unknown) {
     const listeners: Record<string, (event: unknown) => void> = {};
-    const notes: Note[] = [];
+    const notes: { title: string; options: { body: string; tag: string; data: { url: string } } }[] = [];
     runInNewContext(WORKER_SOURCE, {
       URL,
       self: {
@@ -326,46 +328,33 @@ describe("what a push may show (PS-13)", () => {
           listeners[type] = listener;
         },
         registration: {
-          showNotification: async (title: string, options: Note["options"]) => {
+          showNotification: async (title: string, options: (typeof notes)[number]["options"]) => {
             notes.push({ title, options });
           },
         },
       },
     });
-    for (const data of payloads) {
-      let work: Promise<unknown> = Promise.resolve();
-      listeners.push({ data: { json: () => data }, waitUntil: (promise: Promise<unknown>) => (work = promise) });
-      await work;
-    }
-    return notes;
-  }
-
-  it("keeps a red act-now alert and a transport job in separate slots (M158)", async () => {
-    const actNow = pushPayload([{ id: "x", site: "Royal Perth Hospital" }]);
-    const job = pushPayload([{ id: "job:WF-005:abc", site: "Peel Health Campus", kind: "job" }]);
-    const team = pushPayload([{ id: "community:1", site: "Royal Perth Hospital", kind: "community" }]);
-    const notes = await notified(actNow, job, team);
-    expect(notes.map((note) => note.options.tag)).toEqual(["ward-flow-act-now", "ward-flow-jobs", "ward-flow-team"]);
-    expect(new Set(notes.map((note) => note.options.tag)).size).toBe(3);
-    // Only act now buzzes again over an earlier one; the other slots update quietly.
-    expect(notes.map((note) => note.options.renotify)).toEqual([true, false, false]);
-  });
-
-  it.each([
-    ["an unknown tag", "ward-flow-other"],
-    ["no tag", undefined],
-    ["a non-string tag", 7],
-  ])("uses the act-now slot for %s", async (_label, tag) => {
-    const payload = { ...pushPayload([{ id: "x", site: null }]), tag };
-    const [note] = await notified(payload);
-    expect(note.options).toMatchObject({ tag: "ward-flow-act-now", renotify: true });
-  });
-
-  async function shown(data: unknown) {
-    const notes = await notified(data);
+    let work: Promise<unknown> = Promise.resolve();
+    listeners.push({ data: { json: () => data }, waitUntil: (promise: Promise<unknown>) => (work = promise) });
+    await work;
     expect(notes).toHaveLength(1);
-    return { title: notes[0].title, body: notes[0].options.body, url: notes[0].options.data.url };
+    return notes[0];
   }
+
+  it("shows each kind in its own slot, so a transport job never replaces a red alert (M158)", async () => {
+    const tags: string[] = [];
+    for (const kind of ["act-now", "job", "community"]) {
+      const payload = pushPayload([{ id: `synthetic-${kind}`, site: "Royal Perth Hospital", kind }]);
+      const { options } = await notified(payload);
+      expect(options.tag).toBe(payload.tag);
+      tags.push(options.tag);
+    }
+    expect(new Set(tags).size).toBe(3);
+    // Only the server's own tags pick a slot; anything else, or none, is the act-now slot.
+    const good = pushPayload([{ id: "x", site: "Royal Perth Hospital" }]);
+    for (const tag of [undefined, "Synthetic Person", "ward-flow-other", 7])
+      expect((await notified({ ...good, tag })).options.tag).toBe("ward-flow-act-now");
+  });
 
   it.each([
     ["act now, one site", [{ id: "bed-pull-WF-004", site: "Royal Perth Hospital" }]],

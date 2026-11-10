@@ -189,6 +189,7 @@ function requireWorkflow(source) {
       "Check synthetic fixture identifiers and disclaimer source",
       "node scripts/ward-flow/check-clinical-governance-gate.mjs",
     ],
+    ["Check added lines for patient identifiers", "node scripts/ward-flow/check-patient-identifiers.mjs"],
     ["Scan added lines for secrets and patient identifiers", "node scripts/ward-ci-public/identifier-scan.mjs"],
     ["Check the 5 KB phone limit raise cap", "node scripts/ward-ci-public/budget-raise-cap.mjs"],
     ["Check document links and anchors", "npm run docs:check-links"],
@@ -624,15 +625,17 @@ function requireWorkflow(source) {
     jobs.get("required"),
     /^ {4}needs: \[plan, reuse, static, backend, unit, browser-build, browser, release-gate, build, coverage\]$/mu,
   );
-  for (const name of ["Scan added lines for secrets and patient identifiers", "Check the 5 KB phone limit raise cap"])
+  for (const name of [
+    "Check doc facts and retired terms",
+    "Check added lines for patient identifiers",
+    "Scan added lines for secrets and patient identifiers",
+    "Check the 5 KB phone limit raise cap",
+  ])
     assert.match(
       step("static", name).text,
       /^ {10}WARD_BASE_SHA: \$\{\{ github.event.pull_request.base.sha \|\| github.event.merge_group.base_sha \}\}$/mu,
+      `static: ${name} compares against the PR or merge-group base`,
     );
-  assert.match(
-    step("static", "Check doc facts and retired terms").text,
-    /^ {10}WARD_BASE_SHA: \$\{\{ github.event.pull_request.base.sha \|\| github.event.merge_group.base_sha \}\}$/mu,
-  );
   for (const [job, body] of jobs) {
     for (const entry of steps(job)) {
       if (entry.fields.get("uses")?.startsWith("actions/checkout@"))
@@ -957,6 +960,10 @@ for (const [before, after] of [
   ],
   ["needs.reuse.outputs.backend_verified != 'true' }}", "true }}"],
   ["branches: [main]", "branches: [other]"],
+  [
+    "        env:\n          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}\n        run: node scripts/ward-flow/check-patient-identifiers.mjs",
+    "        run: node scripts/ward-flow/check-patient-identifiers.mjs",
+  ],
   ["--max-warnings 0 --no-error-on-unmatched-pattern", "--max-warnings 0 --no-error-on-unmatched-pattern || true"],
 ]) {
   const changed = workflow.replace(before, after);

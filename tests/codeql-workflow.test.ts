@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 /**
- * M161 (final master audit; Josh, 10 Nov 2026, D-124 item 7): CodeQL scans JavaScript and
+ * M161 (final master audit; Josh, 10 Nov 2026, D-128 item 7): CodeQL scans JavaScript and
  * TypeScript on pull requests and on main, and blocks only on findings a pull request introduces.
  */
 const workflowUrl = new URL("../.github/workflows/codeql.yml", import.meta.url);

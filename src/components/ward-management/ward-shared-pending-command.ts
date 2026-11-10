@@ -20,6 +20,8 @@ type QueuedCommand = {
   worldEpoch: number;
   /** The popups open when this was asked for (audit CS-19); it is checked against what they showed. */
   sheets?: readonly object[];
+  /** Made or held while this desk was offline, for the "while you were offline" message (audit M10). */
+  offline?: boolean;
 };
 /**
  * What an open popup has shown (audit CS-19): the revision this tab held when it opened, and the
@@ -79,8 +81,14 @@ export function markOwnSave(
  * sent later the server refuses it if another desk changed the record meanwhile, rather than it
  * overwriting that change (CS-19). One already tied to an open popup keeps that popup's basis.
  */
-export function pinToBoard(queue: QueuedCommand[], sheetSeen: WeakMap<object, SheetSeen>, revision: number) {
+export function pinToBoard(
+  queue: QueuedCommand[],
+  sheetSeen: WeakMap<object, SheetSeen>,
+  revision: number,
+  offline: boolean,
+) {
   for (const queued of queue) {
+    queued.offline ||= offline;
     if (queued.sheets?.some((sheet) => sheetSeen.has(sheet))) continue;
     const pin = {};
     sheetSeen.set(pin, { revision, records: new Map() });

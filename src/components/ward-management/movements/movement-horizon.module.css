@@ -1,7 +1,7 @@
 /* src/components/ward-management/movements/movement-horizon.module.css
  * The movement timeline card on Movements (v6, 7 Oct 2026). v6 tokens only: a card head with the
  * chart's own controls, a scrub row with a pill legend, a six-column grid of receiving wards and
- * the ranked corridors rail.
+ * the corridors rail.
  */
 
 .horizonContainer {

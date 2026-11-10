@@ -11,6 +11,7 @@ import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command
 import { useUndoableStep } from "../use-undoable-step";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { WardBedDossierDrawer } from "./ward-screen-lazy";
+import { wardSafeRejectionReason } from "./ward-rejection-text";
 import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction } from "react";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
@@ -64,6 +65,15 @@ type WardScreenBedDrawerProps = {
 export function notRecordedMessage(message?: string): string {
   const reason = (message ?? "The change was refused").replace(/\s*Nothing was changed\.$/u, "").replace(/\.$/u, "");
   return `Not recorded: ${reason}. Nothing was changed.`;
+}
+
+/**
+ * D-125 (audit M2): a refused referral answer said on this ward's own toast. It names the person,
+ * as the success message does; the engine's reason is put in ward words first.
+ */
+export function namedNotRecordedMessage(reason: string, who: string): string {
+  const said = wardSafeRejectionReason(reason);
+  return notRecordedMessage(said.includes(who) ? said : `${who}: ${said}`);
 }
 
 export function WardScreenBedDrawer({

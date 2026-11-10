@@ -40,6 +40,7 @@ import {
   redesignStyles as redesign,
 } from "@/components/ward-management/statistics/redesign/statistics-redesign-parts";
 import { STATISTICS_SERVICES_HREF } from "./statistics-sections";
+import { occupancyShare } from "./statistics-occupancy";
 import { ServiceDot } from "./statistics-services-index";
 
 /*
@@ -210,7 +211,7 @@ export function ServiceOccupancyCard({
   const body = (entry: NetworkServiceRow) => (
     <>
       <span className={styles.serviceTop}>
-        <Donut value={entry.share} label={`${entry.name} occupancy`} />
+        <Donut value={entry.share} unknown={entry.beds <= 0} label={`${entry.name} occupancy`} />
         <span className={styles.serviceText}>
           <span className={styles.serviceName}>{entry.name}</span>
           <span className={styles.serviceBeds}>
@@ -284,8 +285,9 @@ export function ServiceOccupancyCard({
       >
         <Strip label="Occupancy by health service" cols={services.length}>
           {services.map((entry) => {
-            const percent = Math.round(entry.share * 100);
-            const hot = percent >= BED_ALERT_THRESHOLD_PERCENT;
+            // Audit M6: a service with no beds counted reads "—", never 0% in use.
+            const percent = entry.beds > 0 ? Math.round(entry.share * 100) : null;
+            const hot = percent !== null && percent >= BED_ALERT_THRESHOLD_PERCENT;
             return (
               <Tile
                 key={entry.id}
@@ -296,7 +298,7 @@ export function ServiceOccupancyCard({
                     {entry.name}
                   </>
                 }
-                fig={`${percent}%`}
+                fig={occupancyShare(percent)}
                 slimFig
                 unit={`${entry.inUse} of ${entry.beds} beds`}
               >
@@ -727,7 +729,7 @@ export type SummaryModel = {
   totalBeds: number;
   occupiedCount: number;
   inUseCount: number;
-  occupiedPct: number;
+  occupiedPct: number | null;
   availableNow: number;
   pendingPreparation: number;
   waitingCount: StatisticsCount;

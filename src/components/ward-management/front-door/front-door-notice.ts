@@ -13,6 +13,14 @@ export const SIGNED_OUT_UNCONFIRMED_NOTICE =
   "You have signed out. Changes not yet confirmed on this page were cleared, and a change already sent may still have been saved. Check the board after you sign in. On a shared computer, close the browser too.";
 
 /**
+ * D-125 (audit M8 gap A): added after the reason when the session limit or a refused session signs
+ * the person out while changes were still waiting or held in an Undo window. Forced expiry never
+ * waits, so those were dropped. It names no record.
+ */
+export const UNSENT_CHANGES_DROPPED_NOTICE =
+  "Changes still waiting on this page were not saved, and a change already sent may still have been saved. Check the board after you sign in.";
+
+/**
  * Why the sign-in screen is showing, as one banner: the reason the app gave when it signed this
  * tab out (an idle sign-out, another tab, the sign-in limit, a refused sign-in). The first sentence
  * is the banner's title and the rest its body, so the app's own words reach the screen unchanged.

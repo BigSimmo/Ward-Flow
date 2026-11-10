@@ -11,7 +11,7 @@ import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { formTitleForCode } from "@/lib/form-register";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { formProgression, formProgressionShort } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
 import { clock } from "./patient-now-records";
 import styles from "./patient-now-cards.module.css";
@@ -162,12 +162,12 @@ export function PatientLegalNowCard({
       // A3-8: the code is already in `code`, so the name is the register title alone, said once.
       // Audit S-6: a form the examination or arrival moved on from reads as ended.
       name: progression
-        ? `Ended ${progression.endedWhen}`
+        ? formProgressionShort(progression)
         : (formTitleForCode(movement.legalForm.code) ?? "Title not in the forms register"),
       // The typed expiry is already in `left` ("Ends 15:42 as typed"), so the time is not said twice.
       time: expiry ? undefined : recordedAt !== undefined ? clock(recordedAt) : undefined,
       left: expiry?.text,
-      ended: progression !== undefined,
+      ended: progression?.ended === true,
     });
     if (progression)
       rows.push({

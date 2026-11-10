@@ -2215,7 +2215,7 @@ export type WardFlowEvent =
       role: WardFlowRole;
       now: Instant;
       movementId: string;
-      /** D-124: a ward claims the ward that accepted the person; the server checks its membership. */
+      /** D-128: a ward claims the ward that accepted the person; the server checks its membership. */
       actingUnitId?: string;
       formCode: string;
       startedAt: Instant;

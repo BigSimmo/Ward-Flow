@@ -132,6 +132,7 @@ import {
 import { AccessRecordPanel, PeopleSection, ResultsSection } from "./patient-search-sections";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace } from "../use-return-to-place";
+import { aboriginalOrTorresStraitIslanderIdentityLabel } from "@/components/ward-management/ward-patient-aboriginal-status";
 
 // Moved to `patient-search-sections.tsx`; re-exported so existing importers keep working.
 export { ResultsSection };
@@ -522,7 +523,9 @@ export function PatientSearchPage() {
           age: patientAge,
           sex: info.patient?.sex ?? info.patient?.gender ?? null,
           communityTeam: info.patient?.catchmentCommunityTeam ?? null,
-          indigenous: Boolean(info.patient?.aboriginalOrTorresStraitIslanderStatus),
+          indigenous:
+            aboriginalOrTorresStraitIslanderIdentityLabel(info.patient?.aboriginalOrTorresStraitIslanderStatus) !==
+            undefined,
           confidential: Boolean((info.patient as { confidential?: boolean } | undefined)?.confidential),
           origin: originText,
           setting: operational.setting,
@@ -571,7 +574,9 @@ export function PatientSearchPage() {
           age: patientAge,
           sex: info.patient?.sex ?? info.patient?.gender ?? null,
           communityTeam: info.patient?.catchmentCommunityTeam ?? null,
-          indigenous: Boolean(info.patient?.aboriginalOrTorresStraitIslanderStatus),
+          indigenous:
+            aboriginalOrTorresStraitIslanderIdentityLabel(info.patient?.aboriginalOrTorresStraitIslanderStatus) !==
+            undefined,
           confidential: Boolean((info.patient as { confidential?: boolean } | undefined)?.confidential),
           origin:
             ref.originSiteCode === undefined

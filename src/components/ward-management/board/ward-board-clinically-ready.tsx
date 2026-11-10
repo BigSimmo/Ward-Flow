@@ -50,7 +50,7 @@ export function ClinicallyReadyControl({
   now: Instant;
   dayZero: Date;
   raise: WardRaise;
-  dispatchAndReport: (record: () => ReturnType<WardCommandDispatch>, success: string) => void;
+  dispatchAndReport: (record: () => ReturnType<WardCommandDispatch>, success: string, who?: string) => void;
   nameFor: (admissionId: string) => string;
 }) {
   const recorded = occupant.clinicallyReady;
@@ -98,6 +98,7 @@ export function ClinicallyReadyControl({
               ready: { since, reason },
             }),
           `${name}: clinically ready, waiting on ${reason}.`,
+          name,
         );
       }}
     >
@@ -132,6 +133,7 @@ export function ClinicallyReadyControl({
             dispatchAndReport(
               () => raise("SET_CLINICALLY_READY", { actingUnitId: unitId, admissionId: occupant.key, ready: null }),
               `${name}: clinically ready date cleared.`,
+              name,
             );
           }}
         >

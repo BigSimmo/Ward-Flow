@@ -25,6 +25,12 @@ type RecoveryHost = {
   current: (entry: RecoveryEntry, checkExpiry?: boolean) => void;
 };
 
+/** Waiting saves are held in memory only (D-18), so after a reload they are named as not sent. */
+const notSentText = (count: number) =>
+  count === 1
+    ? "1 waiting change was not sent. Its content was not retained after reload. Review the board before entering it again."
+    : `${count} waiting changes were not sent. Their content was not retained after reload. Review the board before entering them again.`;
+
 /** Check receipt identities in order without ever reconstructing or replaying a command body. */
 export async function recoverCommandReceipts(host: RecoveryHost) {
   const read = readCommandRecovery(host.storage);
@@ -89,11 +95,12 @@ export async function recoverCommandReceipts(host: RecoveryHost) {
       if (value.receipt === null) {
         // #1435: absence cannot prove a request delayed before the write lock will never commit.
         // Keep the entry and the gate; the next check asks again until the identity expires.
+        // Audit M10: saves that only waited were never sent, which is already certain, so say so now.
+        const waited = entries.filter((entry) => entry.phase === "queued").length;
         host.publish({
           status: "unavailable",
           boardCurrent: true,
-          recovery:
-            "The previous save is still unresolved. Saving remains disabled while its receipt is checked. Try checking again.",
+          recovery: `The previous save is still unresolved. Saving remains disabled while its receipt is checked. Try checking again.${waited ? ` ${notSentText(waited)}` : ""}`,
         });
         return;
       }
@@ -127,7 +134,7 @@ export async function recoverCommandReceipts(host: RecoveryHost) {
   host.publish({
     status: "ready",
     recovery: unsent
-      ? `${unsent} waiting change${unsent === 1 ? " was" : "s were"} not sent. Their content was not retained after reload. Review the board before entering them again.`
+      ? notSentText(unsent)
       : unknown
         ? "A previous save receipt has expired. Its outcome is unknown. Review the board before repeating any action."
         : partly

@@ -1464,7 +1464,7 @@
       "path": "tests/ward-ci-budget-recheck.test.ts",
       "before": 26,
       "after": 0,
-      "reason": "Retired with the code it tested. Josh ruled to delete the switched-off budget recheck job (D-124 item 6, 10 Nov 2026), so .github/workflows/ward-flow-budget-recheck.yml and scripts/ward-ci-public/budget-recheck.mjs are deleted in the same change. The job had run with if: false, so these cases guarded nothing that ran. Budget prevention still lives in merge-latest-main.mjs and the production build's budget gate, tested by their own suites.",
+      "reason": "Retired with the code it tested. Josh ruled to delete the switched-off budget recheck job (D-128 item 6, 10 Nov 2026), so .github/workflows/ward-flow-budget-recheck.yml and scripts/ward-ci-public/budget-recheck.mjs are deleted in the same change. The job had run with if: false, so these cases guarded nothing that ran. Budget prevention still lives in merge-latest-main.mjs and the production build's budget gate, tested by their own suites.",
       "approvedOn": "2026-11-10"
     }
   ]

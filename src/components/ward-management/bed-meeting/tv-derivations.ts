@@ -278,7 +278,7 @@ export type EdTvSheet = {
   morePeople: number;
   /** Waiting at each point over `ED_TREND_SPAN_MINUTES`, the last point now (`edWaitingSeries`). */
   trend: number[];
-  /** Wards in this department's health service with a bed ready now, most ready first. */
+  /** Wards in this department's health service with a bed ready now, A to Z by ward name (D-126). */
   wards: EdTvWard[];
   moreWards: number;
   readyInService: number;
@@ -314,9 +314,11 @@ export function edTvSheet(input: TvInputs & { edId: string; accessTargetMinutes:
   const serviceUnits = service === undefined ? [] : units.filter((unit) => unitHealthService(unit) === service);
   // WF-FIG-017: a journey holding a named bed takes it off Ready, as on Capacity.
   const rows = networkWardRows(serviceUnits, now, bedReleases, admissions, leaveBeds, input.namedHolds ?? movements);
+  // D-126 (10 Nov 2026): A to Z, never most ready first, so the wall screen beside the waiting
+  // list does not read as "send them here", and the row cut does not favour the fullest wards.
   const withBeds = rows
     .filter((row) => row.ready > 0)
-    .sort((a, b) => b.ready - a.ready || a.unit.name.localeCompare(b.unit.name))
+    .sort((a, b) => a.unit.name.localeCompare(b.unit.name))
     .map((row) => ({ id: row.unit.id, name: row.unit.name, ready: row.ready, lockedReady: row.lockedReady }));
   const inStages = (stages: readonly Movement["stage"][]) =>
     summary.open.filter((movement) => stages.includes(movement.stage)).length;

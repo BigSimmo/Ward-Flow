@@ -199,7 +199,7 @@ phone script budget can land together over it. Before 4 November 2026 that turne
 required production build red until someone raised the limit by hand. Three parts now handle it:
 
 - **Prevention.** The build merges the latest main before measuring (`merge-latest-main.mjs`).
-  The old armed-PR recheck job was deleted (D-124), so nothing re-checks an armed PR when main
+  The old armed-PR recheck job was deleted (D-128), so nothing re-checks an armed PR when main
   moves. The build records the exact measured main revision; a matching latest-attempt receipt avoids a
   redundant rerun even when the recheck starts late. Contradictory receipts override timestamps;
   missing legacy receipts retain the conservative timing fallback. Annotation errors cannot

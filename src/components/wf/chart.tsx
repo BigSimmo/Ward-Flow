@@ -326,23 +326,34 @@ export type DonutProps = {
   text?: ReactNode;
   /** Accessible name ("North Metro occupancy"). */
   label: string;
+  /** No value to show (a service with no beds counted): "—", read as "not known". */
+  unknown?: boolean;
   className?: string;
 };
 
 /** Ring gauge with the value in the middle (occupancy by service). One colour plus the track. */
-export function Donut({ value, size = 56, thickness = 6, fill = "data-1", text, label, className }: DonutProps) {
+export function Donut({
+  value,
+  size = 56,
+  thickness = 6,
+  fill = "data-1",
+  text,
+  label,
+  unknown,
+  className,
+}: DonutProps) {
   const r = (size - thickness) / 2;
   const c = 2 * Math.PI * r;
-  const v = Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
+  const v = !unknown && Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
   // Butt caps: the arc ends exactly at its value. Round caps drew a dot at 0% and closed the gap
   // from about 96%, and trimming them still misread small values. 0% draws no arc at all.
   const dash = c * v;
-  const shown = text ?? `${Math.round(v * 100)}%`;
+  const shown = unknown ? "—" : (text ?? `${Math.round(v * 100)}%`);
   return (
     <span
       className={cx(styles.donutWrap, className)}
       role="img"
-      aria-label={`${label}, ${Math.round(v * 100)}%`}
+      aria-label={unknown ? `${label}, not known` : `${label}, ${Math.round(v * 100)}%`}
       style={{ width: size, height: size }}
     >
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true" focusable="false">

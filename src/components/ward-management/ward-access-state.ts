@@ -847,7 +847,7 @@ export function commandScopeRefusal(
     const stay = movement ? admittedStayForArrival(movement, state.admissions) : undefined;
     if (!stay || !unitInScope(scope, stay.unitId, places)) return outside;
   }
-  // D-124: a ward records a continuation only for a person its own ward accepted; a ward that was
+  // D-128: a ward records a continuation only for a person its own ward accepted; a ward that was
   // only referred the person is outside.
   if (access.role === "ward" && command.type === "RECORD_LEGAL_FORM_CONTINUATION") {
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);

@@ -281,7 +281,7 @@ export function toHandoverRow(
     legalStatus: movement.legalStatus,
     formCode: movement.legalForm?.code,
     formDueAt: currentLegalDueAt(movement),
-    formEnded: movement.legalForm?.endedBy !== undefined || formProgression(movement) !== undefined,
+    formEnded: movement.legalForm?.endedBy !== undefined || formProgression(movement)?.ended === true,
     destinationStatus:
       accepted === undefined && movement.referredUnitIds.length === 0
         ? sender === null
@@ -808,6 +808,20 @@ export function toHandoverWard(
     ).length,
     holds: here.filter((admission) => admission.blockReason !== null).length,
   };
+}
+
+/**
+ * D-126 (Josh, 10 Nov 2026): handover lists wards by health service, each service's wards A to Z by
+ * name, never most ready beds first. Desktop and phone handover both read this, so they match.
+ */
+export function wardsByService<W extends Pick<HandoverWard, "name" | "service">>(
+  wards: readonly W[],
+): { service: W["service"]; wards: W[] }[] {
+  const services = [...new Set(wards.map((ward) => ward.service))];
+  return services.map((service) => ({
+    service,
+    wards: wards.filter((ward) => ward.service === service).sort((a, b) => a.name.localeCompare(b.name)),
+  }));
 }
 
 export const wardIsStale = (ward: HandoverWard, now: Instant) => now - ward.confirmedAt > ward.staleAfter;

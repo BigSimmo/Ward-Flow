@@ -170,7 +170,8 @@ export function wardFormsHeld(unit: Pick<Unit, "authorised" | "forensic">): stri
 export type ServiceFilter = "all" | HealthService;
 type StatusFilter = "all" | "has-ready" | "full" | "stale";
 type CohortFilter = "all" | "adult" | "older-adult" | "youth" | "perinatal";
-type OrderBy = "service" | "most-ready" | "fullest";
+// D-126 (10 Nov 2026): neutral orders only; no "Most ready" or "Fullest" ranking of wards.
+type OrderBy = "service" | "a-z";
 
 const STATUS_LABELS: Record<Exclude<StatusFilter, "all">, string> = {
   "has-ready": "Has a ready bed",
@@ -402,8 +403,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   const lit = placed.filter(isLit);
   const serviceRank = (row: WardRow) => wardServiceOrder.indexOf(row.service as HealthService);
   const ordered = [...placed].sort((a, b) => {
-    if (order === "most-ready") return b.ready - a.ready || serviceRank(a) - serviceRank(b);
-    if (order === "fullest") return b.occupancy - a.occupancy || serviceRank(a) - serviceRank(b);
+    if (order === "a-z") return a.unit.name.localeCompare(b.unit.name);
     return serviceRank(a) - serviceRank(b);
   });
 
@@ -449,14 +449,9 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   const noReadyCount = heroPlaced.filter((row) => row.ready === 0).length;
   const wardsWithReady = heroPlaced.length - noReadyCount;
   const staleRows = [...heroRows.filter((row) => row.stale)].sort((a, b) => a.confirmedAt - b.confirmedAt);
-  const [mostReady, runnerUp] = [...heroPlaced].sort(
-    (a, b) => b.ready - a.ready || a.unit.name.localeCompare(b.unit.name),
-  );
-  // A site desk names its most ready ward only when one ward leads, so a tie names neither.
-  const showMostReady =
-    mostReady !== undefined &&
-    mostReady.ready > 0 &&
-    (deskSite === undefined || (runnerUp?.ready ?? -1) < mostReady.ready);
+  // D-126 (10 Nov 2026): no single "Most ready" ward. The desktop hero chip counts the wards with a
+  // ready bed and toggles the Has ready filter; a site desk already has that as a figure.
+  const showHasReadyChip = deskSite === undefined && wardsWithReady > 0;
   const drawerRow = drawerWardId === null ? undefined : rows.find((row) => row.unit.id === drawerWardId);
   const statewidePercent = totalBeds > 0 ? (totalOccupied / totalBeds) * 100 : null;
   // Filters counts the filters it holds that are set. Order is not a filter, so it never counts.
@@ -647,19 +642,20 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             }
             // Desktop: the one job chip sits right of the figures (Home's act place), the pill under them.
             act={
-              !isPhone && showMostReady ? (
+              !isPhone && showHasReadyChip ? (
                 <HeroQuickChips
-                  label="Most ready"
+                  label="Has ready"
                   items={[
                     {
-                      id: "most-ready",
-                      label: `Most ready: ${mostReady.unit.name}`,
+                      id: "has-ready",
+                      label: "Has ready",
                       icon: <BedSingle size={16} strokeWidth={1.75} aria-hidden="true" />,
-                      count: mostReady.ready,
+                      count: wardsWithReady,
                       countTone: "quiet",
-                      countLabel: "ready",
-                      href: `/ward-flow/ward/${mostReady.unit.id}`,
-                      testId: "ward-index-most-ready",
+                      countLabel: wardsWithReady === 1 ? "ward" : "wards",
+                      pressed: status === "has-ready",
+                      onClick: () => setStatus(status === "has-ready" ? "all" : "has-ready"),
+                      testId: "ward-index-has-ready",
                     },
                   ]}
                 />
@@ -762,8 +758,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                   label="Order"
                   items={[
                     { id: "service" as OrderBy, label: deskSite ? "Site" : "Service" },
-                    { id: "most-ready" as OrderBy, label: "Most ready" },
-                    { id: "fullest" as OrderBy, label: "Fullest" },
+                    { id: "a-z" as OrderBy, label: "A to Z" },
                   ]}
                   value={order}
                   onChange={setOrder}

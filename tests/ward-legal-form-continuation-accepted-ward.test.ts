@@ -13,7 +13,7 @@ import type { WardAccess } from "../src/components/ward-management/ward-role-acc
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 /**
- * D-124 item 1 (Josh, 10 Nov 2026): only the ward that accepted the person (plus the coordinator,
+ * D-128 item 1 (Josh, 10 Nov 2026): only the ward that accepted the person (plus the coordinator,
  * and ED and community as before) records a legal-form continuation. A ward that was only referred
  * the person is refused, in the app and in the server's place check. Synthetic seed data only.
  */
@@ -40,7 +40,7 @@ function continuation(movementId: string, role: WardFlowRole, actingUnitId?: str
   };
 }
 
-describe("legal-form continuation is the accepting ward's (D-124)", () => {
+describe("legal-form continuation is the accepting ward's (D-128)", () => {
   it("lets the accepted ward record a continuation", () => {
     const { state, movement, acceptedUnitId } = acceptedJourney();
     const next = wardFlowReducer(state, continuation(movement.id, "ward", acceptedUnitId));
