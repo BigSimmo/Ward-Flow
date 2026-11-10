@@ -4981,6 +4981,11 @@
     box-shadow: var(--wf-e1);
   }
 
+  /* Item 18: "Waiting for transport" is a second work card under Before handover, not on top of it. */
+  .screen .workZone + .workZone {
+    grid-row: 3;
+  }
+
   .screen .flowColumn {
     grid-column: 2;
     grid-row: 2;
@@ -5325,6 +5330,10 @@
 
   .screen .workZone {
     order: 3;
+  }
+
+  .screen .workZone + .workZone {
+    grid-row: auto;
   }
 
   .screen .flowColumn {
