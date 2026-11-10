@@ -223,7 +223,7 @@ export function referralContactError(contact: ReferralContact): string | null {
   const text = (value: unknown) => (typeof value === "string" ? value : "");
   const missing: string[] = [];
   if (!text(contact.name).trim()) missing.push("name");
-  if (!/^[+\d\s().-]+$/.test(text(contact.phone)) || text(contact.phone).replace(/\D/g, "").length < 8)
+  if (!PHONE_FORMAT.test(text(contact.phone)) || text(contact.phone).replace(/\D/g, "").length < 8)
     missing.push("phone number");
   if (!text(contact.role).trim()) missing.push("role");
   if (!text(contact.location).trim()) missing.push("location or service");
@@ -237,7 +237,7 @@ export function referralContactError(contact: ReferralContact): string | null {
  * still missing for the warning. Only the shape and the length limits refuse a send, here and at the
  * engine boundary.
  */
-export function referralContactLimitError(contact: ReferralContact): string | null {
+function referralContactLimitError(contact: ReferralContact): string | null {
   if (
     !onlyFields(contact, ["name", "email", "phone", "role", "location"]) ||
     [contact.name, contact.email, contact.phone, contact.role, contact.location].some(
@@ -250,6 +250,26 @@ export function referralContactLimitError(contact: ReferralContact): string | nu
   if (contact.email.length > 254) return "Shorten your email to 254 characters.";
   if (contact.phone.length > 40) return "Shorten your phone number to 40 characters.";
   return null;
+}
+
+/** The characters a phone number may hold, on the form and at the send boundary. */
+const PHONE_FORMAT = /^[+\d\s().-]+$/;
+
+/**
+ * Audit M39 (Josh, 10 Nov 2026): a phone number may be left blank or part typed (FORM-REF warns about
+ * both), but one that is typed must be a phone number: the form's own characters and at least one
+ * digit. Checked when a referral is sent, by the drawer and by the engine, so a hostile client cannot
+ * store a link or a script as the number to ring. Stored and older referrals are not re-checked.
+ */
+export function referrerPhoneError(phone: unknown): string | null {
+  if (typeof phone !== "string" || phone.trim() === "") return null;
+  if (PHONE_FORMAT.test(phone.trim()) && /\d/.test(phone)) return null;
+  return "Enter a phone number in digits, or leave it blank.";
+}
+
+/** What refuses the drawer's Send for the contact: the limits, then a typed phone that is not one. */
+export function referralContactSendError(contact: ReferralContact): string | null {
+  return referralContactLimitError(contact) ?? referrerPhoneError(contact.phone);
 }
 
 /** Finding 40: the words a letter shows for the catchment, flagging "Catchment not known". */

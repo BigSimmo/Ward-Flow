@@ -26,6 +26,7 @@ import {
   CardBody,
   CardHead,
   Field,
+  Radio,
   Select,
   TextInput,
   requestConfirm,
@@ -33,7 +34,9 @@ import {
 } from "@/components/wf";
 import {
   ACCESS_ROLE_LABELS,
+  COVER_REASONS,
   WARD_ACCESS_ROLES,
+  type CoverReasonId,
   type WardAccess,
   type WardAccessRole,
 } from "@/components/ward-management/ward-role-access";
@@ -481,19 +484,19 @@ function CoverPanel() {
   const [recipientKey, setRecipientKey] = useState("");
   const recipient = recipients.find((option) => option.key === recipientKey);
   const [hours, setHours] = useState<number | null>(null);
+  // M58 (D-129): cover asks why, from a short list like break glass, and nothing is chosen for you.
+  const [reason, setReason] = useState<CoverReasonId | "">("");
   const coverMissing = !place
     ? "Choose the ward or ED first."
-    : shared
-      ? !account
-        ? "Enter the account id first."
-        : hours === null
-          ? "Choose how long."
-          : undefined
-      : !recipient
+    : shared && !account
+      ? "Enter the account id first."
+      : !shared && !recipient
         ? "Choose who holds it."
         : hours === null
           ? "Choose how long."
-          : undefined;
+          : !reason
+            ? "Choose why."
+            : undefined;
   // A desk sees the cover it gave or holds; a coordinator also sees any cover inside its place.
   const mine = covers.filter(
     (cover) =>
@@ -504,11 +507,11 @@ function CoverPanel() {
   const label = (access: WardAccess) => `${ACCESS_ROLE_LABELS[access.role]}, ${accessPlaceLabel(access, units)}`;
 
   const give = () => {
-    if (hours === null) return;
+    if (hours === null || !reason) return;
     if (shared) {
       if (!place) return;
       const actorId = account;
-      void guard(() => shared.give({ actorId, scope: place.scope, minutes: hours * 60 })).then((r) =>
+      void guard(() => shared.give({ actorId, scope: place.scope, minutes: hours * 60, reason })).then((r) =>
         say(r, `Cover given: ${shared.label(actorId)} holds ${place.label} for ${plural(hours, "hour")}.`),
       );
       return;
@@ -529,7 +532,7 @@ function CoverPanel() {
         recipientRoles: [recipientAccess.role],
       });
       if (refusal) return refusal;
-      return giveCover({ recipient: recipientAccess, scope: place.scope, now, until: now + minutes })
+      return giveCover({ recipient: recipientAccess, scope: place.scope, now, until: now + minutes, reason })
         ? null
         : "Cover was not given.";
     }).then((r) => say(r, `Cover given: ${recipient.label} holds ${place.label} for ${plural(hours, "hour")}.`));
@@ -607,6 +610,20 @@ function CoverPanel() {
                   ))}
                 </Select>
               </Field>
+              {/* Q36: a kit radio choice, never the browser's own drop-down. */}
+              <fieldset className={styles.choices} data-testid="ward-access-cover-reason">
+                <legend className={styles.choicesLegend}>Why</legend>
+                {COVER_REASONS.map((option) => (
+                  <Radio
+                    key={option.id}
+                    name="ward-access-cover-reason"
+                    value={option.id}
+                    checked={reason === option.id}
+                    onChange={() => setReason(option.id)}
+                    label={option.label}
+                  />
+                ))}
+              </fieldset>
             </div>
             <div className={styles.formFoot}>
               <Button

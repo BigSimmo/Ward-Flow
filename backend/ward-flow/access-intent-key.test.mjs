@@ -165,7 +165,13 @@ test("a key reused for a different opening is refused, and adds nothing", async 
 test("the same cover retried with its key gives one cover and one audit line", async () => {
   const { access, unitId } = wardOutsideCare();
   const { store, view, memberships, audits } = setup(access);
-  const request = { actorId: colleague, scope: { kind: "ward", unitIds: [unitId] }, minutes: 60, intentKey: keyA };
+  const request = {
+    actorId: colleague,
+    scope: { kind: "ward", unitIds: [unitId] },
+    minutes: 60,
+    reason: "night-weekend",
+    intentKey: keyA,
+  };
   const first = await store.giveCover(view, request);
   assert.equal(first.status, 200, JSON.stringify(first.body?.error));
   const retried = await store.giveCover(view, request);

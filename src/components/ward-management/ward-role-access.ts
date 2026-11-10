@@ -619,6 +619,19 @@ export const BREAK_GLASS_REASONS = [
 
 export type BreakGlassReasonId = (typeof BREAK_GLASS_REASONS)[number]["id"];
 
+/**
+ * Master audit M58 (D-129, 10 Nov 2026): why cover is given, chosen from a short list like break
+ * glass. Only the id is sent and kept; no typed words.
+ */
+export const COVER_REASONS = [
+  { id: "night-weekend", label: "Night or weekend cover" },
+  { id: "staff-away", label: "Staff away or sick" },
+  { id: "busy", label: "Extra help when busy" },
+  { id: "other", label: "Other" },
+] as const;
+
+export type CoverReasonId = (typeof COVER_REASONS)[number]["id"];
+
 /** What the role is called on screen. */
 // #790: the coordinator is named as the rail and Settings name it, so one desk has one name.
 export const ACCESS_ROLE_LABELS: Record<WardAccessRole, string> = {

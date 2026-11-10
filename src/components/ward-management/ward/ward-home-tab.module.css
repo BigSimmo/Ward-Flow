@@ -1224,6 +1224,8 @@ label.todoMain:has(.todoTick:focus-visible) {
  * scrolls the row instead of overlapping them. */
 @media (max-width: 46.4375rem) {
   .flowSwitch > div {
+    /* One row that slides sideways: wrapping here put Discharges on a hidden second line. */
+    flex-wrap: nowrap;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;

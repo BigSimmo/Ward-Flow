@@ -156,12 +156,21 @@ describe("Report a problem: picture of the screen", () => {
       imageSmoothingQuality: string;
       drawImage: ReturnType<typeof vi.fn>;
       clearRect: ReturnType<typeof vi.fn>;
+      fillRect: ReturnType<typeof vi.fn>;
+      fillText: ReturnType<typeof vi.fn>;
     };
     const contexts = new Map<HTMLCanvasElement, FakeContext>();
     const contextOf = (canvas: HTMLCanvasElement) => {
       let context = contexts.get(canvas);
       if (!context) {
-        context = { imageSmoothingEnabled: true, imageSmoothingQuality: "low", drawImage: vi.fn(), clearRect: vi.fn() };
+        context = {
+          imageSmoothingEnabled: true,
+          imageSmoothingQuality: "low",
+          drawImage: vi.fn(),
+          clearRect: vi.fn(),
+          fillRect: vi.fn(),
+          fillText: vi.fn(),
+        };
         contexts.set(canvas, context);
       }
       return context;
@@ -195,6 +204,9 @@ describe("Report a problem: picture of the screen", () => {
     // Only the menu's visible part is copied sharp: never the rail's header or footer.
     expect(out[1].drawImage).toHaveBeenCalledTimes(2);
     expect(out[1].drawImage).toHaveBeenNthCalledWith(2, sharp, 0, 60, 200, 480, 0, 60, 200, 480);
+    // M124: the picture carries the synthetic line on a band across its foot.
+    expect(out[1].fillRect).toHaveBeenCalledWith(0, 600 - 24, 800, 24);
+    expect(out[1].fillText).toHaveBeenCalledWith("Synthetic prototype", 8, 600 - 12);
     // The sharp drawing is wiped and emptied before the picture leaves.
     expect(contexts.get(sharp)?.clearRect).toHaveBeenCalledWith(0, 0, 800, 600);
     expect(sharp.width).toBe(0);

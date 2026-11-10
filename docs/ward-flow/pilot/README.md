@@ -7,14 +7,15 @@ first launch: a shadow pilot with invented patients, run beside the ward whitebo
 stays the record. Nothing here authorises real patient data; that needs the
 [real-data go/no-go checklist](../governance/REAL-DATA-GO-NO-GO.md).
 
-| Document                                    | What it is for                                                              |
-| ------------------------------------------- | --------------------------------------------------------------------------- |
-| [Breach plan](breach-plan.md)               | Who is told, who decides, containment steps, evidence, and a tabletop drill |
-| [Incident log](incident-log.md)             | How to log a pilot incident, severity, the first hour, and the review       |
-| [Known issues](known-issues.md)             | What staff may notice, with a workaround and a source for each              |
-| [Account process](account-process.md)       | How pilot accounts are asked for, given and ended.                          |
-| [Quick-start sheets](quick-start/README.md) | One-page sheets for each desk.                                              |
-| [Competency check](competency-check.md)     | What each user shows before using the pilot.                                |
+| Document                                          | What it is for                                                              |
+| ------------------------------------------------- | --------------------------------------------------------------------------- |
+| [Breach plan](breach-plan.md)                     | Who is told, who decides, containment steps, evidence, and a tabletop drill |
+| [Incident log](incident-log.md)                   | How to log a pilot incident, severity, the first hour, and the review       |
+| [Safety incident route](safety-incident-route.md) | The one way any desk reports an incident or near miss, and its test         |
+| [Known issues](known-issues.md)                   | What staff may notice, with a workaround and a source for each              |
+| [Account process](account-process.md)             | How pilot accounts are asked for, given and ended.                          |
+| [Quick-start sheets](quick-start/README.md)       | One-page sheets for each desk.                                              |
+| [Competency check](competency-check.md)           | What each user shows before using the pilot.                                |
 
 Related: [operations runbook](../OPERATIONS-RUNBOOK.md), [desk guides](../desk-guides/README.md),
 [what's new for staff](../STAFF-RELEASE-NOTES.md).

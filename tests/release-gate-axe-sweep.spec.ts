@@ -99,6 +99,29 @@ async function allowTips(page: Page) {
   await page.addInitScript((key) => window.localStorage.setItem(key, "no"), HELP_TIPS_OFF_KEY);
 }
 
+/**
+ * Sideways rows slide only sideways (Josh, 10 Nov 2026). iPhone Safari lets a row that scrolls
+ * sideways be dragged up and down whenever anything inside it (a chip's invisible tap band, a focus
+ * ring) is taller than the row, even under `overflow-y: hidden`. So on the phone every sideways
+ * scroller must hold its contents' full height: the row carries the tap band in its own padding.
+ */
+async function expectSidewaysRowsFit(page: Page) {
+  const tooTall = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>("body *")]
+      .filter((el) => {
+        const style = getComputedStyle(el);
+        return (
+          ["auto", "scroll"].includes(style.overflowX) &&
+          style.overflowY === "hidden" &&
+          el.clientHeight > 0 &&
+          el.scrollHeight > el.clientHeight
+        );
+      })
+      .map((el) => `${String(el.className).slice(0, 80)} (${el.clientHeight}px row, ${el.scrollHeight}px inside)`),
+  );
+  expect(tooTall, "a sideways row is shorter than its contents, so it drags up and down on an iPhone").toEqual([]);
+}
+
 for (const [route, screenId, destination = route] of ROUTES) {
   test(`axe: ${route || "/"} has no serious or critical violation`, async ({ page }, testInfo) => {
     const expectedUrl = new URL(`/ward-flow${destination}`, testInfo.project.use.baseURL).href;
@@ -131,6 +154,7 @@ for (const [route, screenId, destination = route] of ROUTES) {
     await expect(page).toHaveURL(expectedUrl);
     await page.waitForLoadState("networkidle");
     await expectAccessible(page, testInfo, route || "/");
+    if (isPhoneLayout(page)) await expectSidewaysRowsFit(page);
   });
 }
 
