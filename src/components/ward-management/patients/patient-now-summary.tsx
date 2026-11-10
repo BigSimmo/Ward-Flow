@@ -43,6 +43,7 @@ import { clearToMove, getStageBedflowDetail } from "./patient-now-screen-helpers
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { CommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
 import { useState, type Dispatch, type JSX, type RefObject, type SetStateAction } from "react";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import type { CareStep } from "./patient-care-journey";
 import { PatientCareJourneyStrip, journeyToggleClass } from "./patient-care-journey-strip";
 import type { FormTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
@@ -76,6 +77,8 @@ export type PatientNowSummaryProps = {
   expandedStageIndex: number | null;
   focusedStageIndex: number;
   handleCopySummary: () => void;
+  /** Item 27: the transfer as text for the notes; absent until a ward has accepted. */
+  transferNotes?: () => string | undefined;
   isLiveBedflow: boolean;
   isPhone: boolean;
   lastStay: Admission | undefined;
@@ -136,6 +139,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
     expandedStageIndex,
     focusedStageIndex,
     handleCopySummary,
+    transferNotes,
     isLiveBedflow,
     isPhone,
     lastStay,
@@ -293,6 +297,18 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
   // Feature 31: Pin (to Home) is a quick chip in the top; a record with no live movement shows it
   // alone on a phone, and beside Copy summary on a desktop.
   const pinChip = usePatientPinChip(livePatient?.id, displayName);
+  const [notesCopied, setNotesCopied] = useState(false);
+  const copyTransferNotes = () => {
+    const text = transferNotes?.();
+    if (!text) return;
+    void copyTextToClipboard(text).then(
+      () => {
+        setNotesCopied(true);
+        setTimeout(() => setNotesCopied(false), 2000);
+      },
+      () => undefined,
+    );
+  };
   const movementChips = movementTop ? (
     <HeroQuickChips
       label="Patient actions"
@@ -304,6 +320,17 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
           onClick: handleCopySummary,
           testId: "ward-patient-copy-handover",
         },
+        ...(transferNotes
+          ? [
+              {
+                id: "copy-notes",
+                label: notesCopied ? "Copied" : "Copy to notes",
+                icon: <Copy size={16} strokeWidth={1.75} aria-hidden="true" />,
+                onClick: copyTransferNotes,
+                testId: "ward-patient-copy-transfer-notes",
+              },
+            ]
+          : []),
         ...(pinChip ? [pinChip] : []),
         ...(onOpenForms
           ? [

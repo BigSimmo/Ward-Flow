@@ -10,7 +10,7 @@ import { openInformationNeeds } from "./referral-information-needs";
 import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { personLine } from "./referral-panel-parts";
 import { referralFollowUpLine } from "./referral-owner-and-calls-model";
-import { ReferralNoReplyFlag } from "./referral-no-reply-flag";
+import { ReferralNoReplyFlag, ReferralNotOpenedTag } from "./referral-no-reply-flag";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
@@ -315,6 +315,12 @@ export function QueuedSection({
                         className={a.rowNote}
                         testId={`ward-referral-board-no-reply-${referral.id}`}
                       />
+                      <ReferralNotOpenedTag
+                        referral={referral}
+                        now={now}
+                        className={a.rowNote}
+                        testId={`ward-referral-board-not-opened-${referral.id}`}
+                      />
                     </td>
                     <td className={a.numCell} data-testid={`ward-referral-board-wait-${referral.id}`}>
                       <span className="sr-only">{referralWaitLine(referral, now)}</span>
@@ -501,6 +507,12 @@ export function QueuedSection({
                     now={now}
                     className={a.cardNote}
                     testId={`ward-referral-board-card-no-reply-${referral.id}`}
+                  />
+                  <ReferralNotOpenedTag
+                    referral={referral}
+                    now={now}
+                    className={a.cardNote}
+                    testId={`ward-referral-board-card-not-opened-${referral.id}`}
                   />
                 </li>
               );

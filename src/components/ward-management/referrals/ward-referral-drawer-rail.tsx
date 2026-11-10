@@ -10,6 +10,7 @@ import { DisabledReason, StatusGlyph } from "@/components/wf";
 import { sectionLabel } from "./ward-referral-drawer-model";
 import { drawerRailHeading } from "./referral-drawer-foot-status";
 import { sendWarningsLine } from "./referral-send-warnings";
+import { referralStillOpen } from "./referral-still-open";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
 /** v10 phone: opens and closes the send checklist. */
@@ -63,6 +64,18 @@ export function ReferralSummaryRail({
     communityNeeds,
     sendWarnings,
   } = s;
+  // Item 10 (10 Nov 2026): what the record already holds open. It never blocks Send.
+  const stillOpen = sentReferralId
+    ? []
+    : referralStillOpen({
+        personId: s.patientRecord?.id,
+        referrals: s.referrals,
+        edMovement: s.openJourney
+          ? s.movements.find((movement) => movement.id === s.openJourney?.movementId)
+          : undefined,
+        formSaysDone: s.documentation.medical === "yes",
+        now: s.now,
+      });
   return (
     <aside
       className={styles.rail}
@@ -145,6 +158,25 @@ export function ReferralSummaryRail({
               })}
             </dl>
           </section>
+          {stillOpen.length ? (
+            <section
+              className={styles.railCard}
+              aria-labelledby={`${sectionId}-still-open`}
+              data-testid="ward-referral-still-open"
+            >
+              <p className={styles.eyebrow} id={`${sectionId}-still-open`}>
+                Still open
+              </p>
+              <ul className={styles.stillOpen}>
+                {stillOpen.map((item) => (
+                  <li key={item.id} data-testid={`ward-referral-still-open-${item.id}`}>
+                    <StatusGlyph tone={item.flagged ? "warning" : "neutral"} size={9} />
+                    {item.words}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
           {/* Urgency is already a Before you send row, and "Already open: None" was an empty cell, so
               this card shows only what the list does not: a community referral's first contact time,
               and an open referral to check. */}

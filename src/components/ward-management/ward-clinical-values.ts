@@ -90,6 +90,8 @@ const SIGNED_BY_JOSH_23_OCT = { status: "signed", signedBy: "Josh (product owner
  * and capacity review page).
  */
 const SIGNED_BY_JOSH_9_NOV = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-11-09" } as const;
+/** D-133 (Josh, 10 Nov 2026): signed the referral "Not opened yet" tag at 30 minutes. */
+const SIGNED_BY_JOSH_10_NOV = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-11-10" } as const;
 
 /**
  * The name each observation level is shown under, everywhere Ward Flow shows one (fix plan item 10,
@@ -401,6 +403,14 @@ export const CLINICAL_VALUES = {
     name: "Bed request with no ward asked counted as missed after",
     group: "Arrivals and answers",
     value: 2 * MINUTES_PER_HOUR,
+    unit: "minutes",
+  },
+  referralNotOpened: {
+    // D-133 (Josh, 10 Nov 2026): a prompt only. It re-routes, re-sorts and escalates nothing.
+    ...SIGNED_BY_JOSH_10_NOV,
+    name: "Sent referral tagged Not opened yet when no ward has opened it after",
+    group: "Arrivals and answers",
+    value: 30,
     unit: "minutes",
   },
   wardAnswerTarget: {
