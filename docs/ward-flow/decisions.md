@@ -1603,3 +1603,12 @@ is inferred.
   8. **Accessibility:** moderate accessibility findings stay non-blocking; serious and critical still block.
   9. **New features:** none from the proposed list until #1564 to #1577 close.
 - **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge or release.
+
+## D-136. Feature batch 3 (shift change and follow-up): two signed values (10 November 2026)
+
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, on two decision cards in the batch 3 build thread, and "Go ahead with all your recommendations" on the feature build plan the same day. Numbered D-136 because D-129 to D-135 were claimed by other open work.
+- **Decision:**
+  1. **Diversion return (item 28):** a person offered an alternative to admission (D-110) who returns to ED within 7 days prompts the team that took them to review. Signed as `diversionReturnReview`.
+  2. **End-of-shift handover (item 21):** the handover page lists your own open work, with "Hand to", once the shift has 30 minutes or less to run. Signed as `handoverOwnWorkLead`.
+  3. **Batch scope:** batch 3 builds items 11, 12, 21, 22, 23 and 28 of the feature build plan. Josh's go-ahead on the plan, given after D-128 item 9, starts these features while #1564 to #1577 are still open.
+- **Boundary:** synthetic data only. Both values are prompts: neither blocks sign-out, ranks a person or judges the alternative. Approves no merge or release.

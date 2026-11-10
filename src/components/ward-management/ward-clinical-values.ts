@@ -90,6 +90,7 @@ const SIGNED_BY_JOSH_23_OCT = { status: "signed", signedBy: "Josh (product owner
  * and capacity review page).
  */
 const SIGNED_BY_JOSH_9_NOV = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-11-09" } as const;
+const SIGNED_BY_JOSH_10_NOV = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-11-10" } as const;
 
 /**
  * The name each observation level is shown under, everywhere Ward Flow shows one (fix plan item 10,
@@ -193,6 +194,16 @@ export const CLINICAL_VALUES = {
     group: "Emergency department waits",
     value: 6,
     unit: "hours",
+  },
+  diversionReturnReview: {
+    // Batch 3 item 28 (10 Nov 2026): a person offered an alternative to admission (D-110) who
+    // returns to ED within this many days prompts the team that took them to review. A review
+    // prompt only, never a judgement or score. Josh signed 7 days, 10 Nov 2026 (D-136).
+    ...SIGNED_BY_JOSH_10_NOV,
+    name: "Return to ED after an alternative to admission prompts the team that took them to review, within",
+    group: "Emergency department waits",
+    value: 7,
+    unit: "days",
   },
 
   // ---- Bed occupancy -------------------------------------------------------------------------
@@ -371,6 +382,15 @@ export const CLINICAL_VALUES = {
     name: "Rail shows Handover Due once the shift has this long or less to run",
     group: "Alerts and holds",
     value: 15,
+    unit: "minutes",
+  },
+  handoverOwnWorkLead: {
+    // Batch 3 item 21 (10 Nov 2026): when the handover page starts listing your own open work with
+    // "Hand to". A prompt only: sign-out is never blocked. Josh signed 30 minutes, 10 Nov 2026 (D-136).
+    ...SIGNED_BY_JOSH_10_NOV,
+    name: "Handover page lists your own open work to hand on once the shift has this long or less to run",
+    group: "Alerts and holds",
+    value: 30,
     unit: "minutes",
   },
 
