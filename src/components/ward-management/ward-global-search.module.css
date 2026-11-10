@@ -1638,22 +1638,23 @@ a.askChip {
     opacity: 1;
   }
 
-  /* Four tiles fill the row edge to edge with even 8px gaps, labels centred under them. */
+  /* Four compact square tiles, centred as one cluster with even 20px gaps; labels centred under them. */
   .popup[data-start] .groupItem[data-group="goto"] .groupList {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(4, 74px);
+    justify-content: center;
+    gap: 0;
   }
 
   .popup[data-start] .groupItem[data-group="goto"] .option {
-    gap: 7px;
-    padding: 4px 0;
+    gap: 8px;
+    padding: 2px 0;
   }
 
   .popup[data-start] .groupItem[data-group="goto"] .itemIconBox {
-    flex-basis: auto;
-    align-self: stretch;
-    width: auto;
-    height: 56px;
+    flex: 0 0 auto;
+    align-self: center;
+    width: 54px;
+    height: 54px;
     border-radius: 16px;
     background: color-mix(in srgb, var(--wf-accent-tint) 78%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-accent) 9%, transparent);
@@ -1753,5 +1754,12 @@ a.askChip {
 
   .popup[data-start] .groupItem[data-group="do"] .option {
     min-height: 52px;
+  }
+}
+
+/* A touch-only phone has no keyboard, so the Keyboard shortcuts command is hidden there. */
+@media (max-width: 46.4375rem) and (hover: none) and (pointer: coarse) {
+  .popup[data-start] [data-testid="ward-global-search-cmd-shortcuts"] {
+    display: none;
   }
 }
