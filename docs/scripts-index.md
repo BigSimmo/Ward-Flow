@@ -2,7 +2,7 @@
 
 _Updated 2026-10-24 - CI section names every workflow and the two unlisted `ward-ci-public` scripts; Documentation owns._
 
-Curated map of `scripts/` (162 files) and the `package.json` script surface (87 entries),
+Curated map of `scripts/` (164 files) and the `package.json` script surface (87 entries),
 grouped by what each part protects. `package.json` is the command surface; this page says why
 each group exists. `npm run docs:check-inventory` compares the two counts above exactly,
 and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs
@@ -72,6 +72,11 @@ or refreshes one issue through `ward-ci-public/nightly-browsers-issue.mjs`. CI a
 `ward-flow/gate-tsc.mjs` and `ward-flow/selected-baseline-verdict.mjs`. Beside the knip ratchet,
 `npm run check:knip:production` lists app files that only tests reach (advisory, never fails; the
 production patterns carry `!` in `knip.json`; front-end audit CB-13).
+Two read-only Tier 7 audits (M142, M139) run by hand: `ward-flow/hotspots.mjs` ranks source files
+by commits times lines from `git log` (it says when the history is shallow), and
+`ward-flow/import-map.ts` (`node scripts/run-tsx.mjs scripts/ward-flow/import-map.ts`) prints the
+import map between layers. Its baseline `ward-flow/import-map-baseline.json` (no cycle, a ceiling on
+screen-to-screen imports) is enforced by `tests/ward-import-map-guard.test.ts`.
 
 ## Safety and data safeguards
 
