@@ -374,7 +374,7 @@ it. Ratings above are unchanged. Nothing here is signed: the clinical safety own
 acceptance (go/no-go row S2) stays open. **Gap** means no test was found for the named control.
 Files marked † are protected safety tests: without Josh's approval, CI blocks removing one,
 dropping its test-case or assertion count, adding a skip and changing the list (D-123 item 3;
-list in `scripts/ward-flow/protected-safety-tests.json`). A weakened matcher keeps the counts,
+list in `scripts/ward-flow/protected-safety-tests.json`). CI checks only that the approval line is present in a commit message, not that Josh gave it, so a reviewer confirms it before merging. A weakened matcher keeps the counts,
 so it remains a review control. All paths are
 under `tests/`.
 
@@ -385,7 +385,7 @@ under `tests/`.
 | H-03   | Bed matching counts recorded sex only; acuity gate advises where staffing is missing                     | `ward-bed-matching-recorded-sex.test.ts`, `ward-acuity-gate.test.ts`                                                                                                               |
 | H-04   | "Not recorded" where nothing is recorded; no invented figures                                            | `ward-unlinked-movement-says-not-recorded.dom.test.tsx`, `ward-no-invented-screen-figures.test.ts`, `ward-clinical-values.test.ts`†. **Gap:** A-03, A-04 open                      |
 | H-05   | Each count shows when it was recorded; a silent connection turns the board stale                         | `ward-silent-connection-stale.dom.test.tsx`†, `ward-downtime-last-sync.dom.test.tsx`                                                                                               |
-| H-06   | A lapsed pull time limit keeps showing and is never called cleared                                       | `ward-audit24-1-arrival-pull-time-limit.dom.test.tsx`, `ward-clinical-values.test.ts`†                                                                                             |
+| H-06   | A lapsed pull time limit keeps showing and is never called cleared                                       | `ward-audit24-1-arrival-pull-time-limit.dom.test.tsx`, `ward-clinical-values.test.ts`†. **Gap:** A-02 stays open until the clinical safety owner reviews it                        |
 | H-07   | Confirm or undo on consequential steps                                                                   | `ward-tier1-undo.test.ts`, `ward-undo-steps.test.ts`. **Gap:** D-02, B-06 to B-09 open                                                                                             |
 | H-08   | A conflicting save is refused, not silently applied                                                      | `ward-board-concurrent-saves.dom.test.tsx`, `ward-conflict-scope.test.ts`. **Gap:** hosted two-desk replay                                                                         |
 | H-09   | Legal form times shown only as typed, never as a countdown; time order checked                           | `ward-legal-as-typed-guard.test.ts`†, `ward-legal-form-time-order.dom.test.tsx`, `ward-ruling-guardrails.test.ts`† (D-93)                                                          |

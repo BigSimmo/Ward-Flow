@@ -40,7 +40,7 @@ import { countTestCases } from "../check-diff-integrity.mjs";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 export const LIST_PATH = "scripts/ward-flow/protected-safety-tests.json";
 export const APPROVAL_PREFIX = "Protected-test-change: approved by Josh";
-const APPROVAL_LINE = /^[ \t>*-]*Protected-test-change:\s*approved by Josh\b[\s:,;–—-]*(\S.{7,})$/imu;
+const APPROVAL_LINE = /^[ \t>*-]*Protected-test-change:[ \t]*approved by Josh\b[ \t:,;–—-]*(\S.{7,})$/imu;
 
 const ASSERTION_ROOTS = new Set(["expect", "assert"]);
 const CASE_OR_SUITE_ROOTS = new Set(["test", "it", "describe"]);

@@ -78,6 +78,7 @@ describe("findApproval", () => {
 
   it("refuses a bare marker, another approver or no marker", () => {
     expect(findApproval([APPROVAL_PREFIX])).toBeNull();
+    expect(findApproval([`${APPROVAL_PREFIX}\n\nSigned-off-by: Someone Else`])).toBeNull();
     expect(findApproval(["Protected-test-change: approved by Jane because she said so"])).toBeNull();
     expect(findApproval(["test: tidy assertions"])).toBeNull();
   });

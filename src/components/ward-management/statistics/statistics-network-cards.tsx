@@ -197,7 +197,7 @@ export function ServiceOccupancyCard({
   const body = (entry: NetworkServiceRow) => (
     <>
       <span className={styles.serviceTop}>
-        <Donut value={entry.share} label={`${entry.name} occupancy`} />
+        <Donut value={entry.share} unknown={entry.beds <= 0} label={`${entry.name} occupancy`} />
         <span className={styles.serviceText}>
           <span className={styles.serviceName}>{entry.name}</span>
           <span className={styles.serviceBeds}>

@@ -77,7 +77,7 @@ function dataJsonLength(value, ancestors, depth, spaced = false) {
   if (value === undefined) return undefined;
   if (value === null) return 4;
   if (typeof value === "string") return quotedJsonLength(value);
-  if (typeof value === "boolean") return JSON.stringify(value).length;
+  if (typeof value === "boolean") return value ? 4 : 5;
   if (typeof value === "number")
     return spaced ? numericTextLength(JSON.stringify(value)) : JSON.stringify(value).length;
   if (typeof value !== "object" || depth >= JSON_LENGTH_DEPTH || types.isProxy(value)) return null;

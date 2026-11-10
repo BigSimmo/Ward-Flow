@@ -431,8 +431,11 @@ describe(
           const seen = await read(canary, inCanary);
           const other = await read(twin, inTwin);
           const text = JSON.stringify(seen.body);
-          const expected = EXPECTED_STATUS[route]?.(desk);
-          if (expected) assert.equal(seen.status, expected, `${desk.name} ${route} answers ${expected}`);
+          if (route !== "reply to the desk's own change") {
+            assert.ok(EXPECTED_STATUS[route], `${route} has an expected status`);
+            const expected = EXPECTED_STATUS[route](desk);
+            assert.equal(seen.status, expected, `${desk.name} ${route} answers ${expected}`);
+          }
           for (const trace of CANARY_TRACES)
             assert.equal(text.includes(trace), false, `${desk.name} ${route} names ${trace}: ${seen.status}`);
           // A desk's Activity feed carries no change facts, only kinds and times. Ward B's change to
