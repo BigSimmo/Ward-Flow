@@ -18,6 +18,7 @@ import {
 } from "@/components/wf";
 import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { sheetPatientLabel } from "@/components/ward-management/ward-patient-resolver";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
@@ -155,8 +156,8 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
             now,
             thresholds,
             service,
-            // D-83: the printed sheet names people surname first.
-            nameOf: (movement) => patientOf(movement).formalName,
+            // M103 (Josh, 10 Nov 2026): the printed sheet shows initials and UMRN only.
+            nameOf: (movement) => sheetPatientLabel(patientOf(movement)),
             referrals,
             referralLimitMinutes: configuration.referralDecisionTargetMinutes,
           })

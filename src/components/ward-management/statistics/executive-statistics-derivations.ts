@@ -1,6 +1,6 @@
 import type { WardFlowState } from "../ward-flow-reducer";
 import { wardStatistics } from "../ward-statistics";
-import { bedIsOccupied, STAY_BANDS, stayBand } from "../ward-admissions";
+import { bedIsOccupied, endedInWardTransfer, STAY_BANDS, stayBand } from "../ward-admissions";
 import { dayOf, MINUTES_PER_DAY, isClockBreached } from "../ward-clock";
 import { openBedsNow, bedsPendingPreparation } from "../ward-bed-availability";
 import { dischargeDateCoverage } from "./statistics-ward-discharge-dates";
@@ -230,7 +230,12 @@ export function executiveWardSummary(ward: PublicWard, input: ExecutivePrivateIn
     dischargedToday: c(
       "dischargedToday",
       input.admissions.filter(
-        (row) => row.unitId === ward.id && row.leftAt !== null && dayOf(row.leftAt) === dayOf(now),
+        // M35 (Josh, 10 Nov 2026): a transfer to another psychiatric ward is a move, not a discharge.
+        (row) =>
+          row.unitId === ward.id &&
+          row.leftAt !== null &&
+          dayOf(row.leftAt) === dayOf(now) &&
+          !endedInWardTransfer(row),
       ).length,
     ),
     dueToday: dueByDay[0]!.count,
@@ -754,7 +759,8 @@ export function executiveSites(
     const c = (suffix: string, value: number) => release.count(`site:${code}:${suffix}`, value);
     const dischargedToday = c(
       "dischargedToday",
-      onSite.filter((row) => row.leftAt !== null && dayOf(row.leftAt) === dayOf(input.now)).length,
+      onSite.filter((row) => row.leftAt !== null && dayOf(row.leftAt) === dayOf(input.now) && !endedInWardTransfer(row))
+        .length,
     );
     const dueToday = c(
       "dueToday",
@@ -934,7 +940,7 @@ export function executiveJourney(
       figure: { kind: "bed" as const, value: beds.occupied },
       breakdown: [
         {
-          label: "Of beds",
+          label: "In use",
           figure: {
             kind: "text" as const,
             // M121 (L1 ruling, D-125): in use (Occupied + Pulled), or "No beds".

@@ -29,7 +29,10 @@ import {
   observationSummary,
   type Observation,
 } from "@/components/ward-management/ward-observation";
-import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import {
+  ED_SEVERE_PRESSURE_WAIT_MINUTES,
+  TV_LEAVE_DUE_BACK_WINDOW_MINUTES,
+} from "@/components/ward-management/ward-operational-defaults";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { wardStaySeats } from "@/components/ward-management/ward/ward-bed-layout";
 
@@ -255,7 +258,7 @@ function attentionFor(row: WardClinicalRow, leave: LeaveBed | undefined, now: In
   const items: WardClinicalRow["attention"] = [];
   if (row.where === "awol") items.push({ group: "missing", text: row.whereabouts?.text ?? "", tone: "danger" });
   if (row.legal?.tone) items.push({ group: "legal", text: row.legal.text, tone: row.legal.tone });
-  if (row.where === "leave" && leave && leave.expectedReturn - now <= 12 * 60)
+  if (row.where === "leave" && leave && leave.expectedReturn - now <= TV_LEAVE_DUE_BACK_WINDOW_MINUTES)
     items.push({ group: "leave", text: row.whereabouts?.text ?? "", tone: row.whereabouts?.tone });
   if (row.constantObs) items.push({ group: "obs", text: row.obs.text, tone: "warning" });
   if (row.arrivedToday)

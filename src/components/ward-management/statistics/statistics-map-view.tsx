@@ -23,7 +23,7 @@ import {
   wardStatisticsHref,
 } from "@/components/ward-management/shell/ward-facade";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
-import type { Admission } from "@/components/ward-management/ward-admissions";
+import { endedInWardTransfer, type Admission } from "@/components/ward-management/ward-admissions";
 import {
   calendarDateOf,
   dayOf,
@@ -150,9 +150,12 @@ type MapNetwork = Pick<
   | "longStays"
 > & { preparing: number; longest: PresentedSiteFigures | null };
 
-/** Gone today: left the ward on today's date. The hero's "Discharged today" uses the same rule. */
+/**
+ * Gone today: discharged from the ward on today's date. A transfer to another psychiatric ward is a
+ * move, not a discharge, so it is left out (M35, Josh, 10 Nov 2026).
+ */
 const leftToday = (admission: Admission, now: Instant) =>
-  admission.leftAt !== null && dayOf(admission.leftAt) === dayOf(now);
+  admission.leftAt !== null && dayOf(admission.leftAt) === dayOf(now) && !endedInWardTransfer(admission);
 
 /**
  * Due later today: still on the ward (not pulled, not departed) with a written discharge date later
@@ -499,7 +502,8 @@ function ExecutiveMapView({ data }: { data: ExecutiveReportingFoundation }) {
     edOver24: data.networkDetails.listedOver24h,
     edOver48: sumStatisticsCounts(sites.map((site) => site.edOver48)),
     longest,
-    dischargedToday: data.network.people.admissionsEndedToday,
+    // Discharges only, as each site counts them; a ward transfer is a move (M35).
+    dischargedToday: sumStatisticsCounts(sites.map((site) => site.dischargedToday)),
     dueToday: sumStatisticsCounts(sites.map((site) => site.dueToday)),
     blocked: data.networkDetails.blockedTotal,
     meanStay: data.networkDetails.pooledAverageStayDays,

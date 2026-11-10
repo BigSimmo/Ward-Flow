@@ -18,6 +18,7 @@ import thirdEdition from "./governance-third-edition.module.css";
 import { ACCESS_ROLE_LABELS } from "./ward-role-access";
 import { PATTERN_HOURS, PATTERN_LIMIT, reasonLabel } from "./governance-access-review";
 import { onBehalfReasonLabel } from "./ward-on-behalf-reason";
+import { COMMUNITY_DECLINE_REASON_LABELS, DECLINE_REASON_LABELS } from "./ward-referrals";
 import {
   UNDONE_STEP_LABELS,
   actionLabels,
@@ -113,6 +114,11 @@ function RequestedBedFacts({ request, now }: { request: BedReleaseAuditRequest; 
       break;
   }
   return <FactList facts={facts} />;
+}
+/** A ward named once in `units`, or "Not recorded". */
+function wardName(units: readonly Unit[], unitId: string | null): string {
+  const matches = units.filter((unit) => unit.id === unitId);
+  return matches.length === 1 ? matches[0]!.name : "Not recorded";
 }
 export function EventFacts({ event, units, now }: { event: AuditEvent; units: Unit[]; now: Instant }) {
   switch (event.category) {
@@ -311,6 +317,35 @@ export function EventFacts({ event, units, now }: { event: AuditEvent; units: Un
               "Decided at",
               event.details.decidedAt === null ? "Not recorded" : formatInstantWithDay(event.details.decidedAt, now),
             ],
+          ]}
+        />
+      );
+    case "referral-answer": {
+      const reason = event.details.reason;
+      const labels: Record<string, string> = { ...DECLINE_REASON_LABELS, ...COMMUNITY_DECLINE_REASON_LABELS };
+      return (
+        <FactList
+          facts={[
+            [
+              "Answer",
+              event.details.answer === null
+                ? "Not recorded"
+                : event.details.answer === "waitlisted"
+                  ? "Waitlisted"
+                  : "Declined",
+            ],
+            ["Ward", wardName(units, event.details.unitId)],
+            ["Reason", reason === null ? "Not recorded" : (labels[reason] ?? reason)],
+          ]}
+        />
+      );
+    }
+    case "arrival":
+      return (
+        <FactList
+          facts={[
+            ["Step", event.details.step === "delivered" ? "Delivered by transport" : "Arrived on the ward"],
+            ["Ward", wardName(units, event.details.unitId)],
           ]}
         />
       );

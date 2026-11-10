@@ -84,7 +84,7 @@ describe("M121 hand-worked figures", () => {
     );
   });
 
-  it("M121 fixed: 'Of beds' is beds in use (occupied + pulled) over beds, like every other occupancy", () => {
+  it("M121 fixed: 'In use' is beds in use (occupied + pulled) over beds, like every other occupancy", () => {
     const seed = seedWardFlowState();
     const { units, admissions, bedReleases, leaveBeds, movements } = seed;
     const totals = units.reduce(
@@ -103,13 +103,13 @@ describe("M121 hand-worked figures", () => {
     const ward = journeyStages({ units, admissions, bedReleases, leaveBeds, movements, now: NOW_ANCHOR }).find(
       (stage) => stage.id === "ward",
     );
-    expect(ward?.breakdown.find((part) => part.label === "Of beds")?.value).toBe(
+    expect(ward?.breakdown.find((part) => part.label === "In use")?.value).toBe(
       `${Math.round((totals.inUse / totals.beds) * 100)}%`,
     );
     expect(
       journeyStages({ units: [], admissions, bedReleases, leaveBeds, movements, now: NOW_ANCHOR })
         .find((stage) => stage.id === "ward")
-        ?.breakdown.find((part) => part.label === "Of beds")?.value,
+        ?.breakdown.find((part) => part.label === "In use")?.value,
     ).toBe("No beds");
     const dir = path.join(__dirname, "..", "src/components/ward-management/statistics");
     const exec = readFileSync(path.join(dir, "executive-statistics-derivations.ts"), "utf8");

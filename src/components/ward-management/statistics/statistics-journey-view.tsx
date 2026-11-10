@@ -194,7 +194,7 @@ export function journeyStages({
       count: beds.occupied,
       breakdown: [
         // M121 (L1 ruling, D-125): the one occupancy figure, in use (Occupied + Pulled), or "No beds".
-        { label: "Of beds", value: occupancyText({ beds: beds.beds, inUse: beds.occupied + beds.pulled }) },
+        { label: "In use", value: occupancyText({ beds: beds.beds, inUse: beds.occupied + beds.pulled }) },
         { label: "On leave", value: beds.onLeave },
         { label: "Ready beds", value: beds.ready },
       ],

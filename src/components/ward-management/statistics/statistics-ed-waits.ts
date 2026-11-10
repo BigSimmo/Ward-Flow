@@ -3,6 +3,8 @@ import { isEdOriginJourney, isWaitingInEd } from "@/components/ward-management/w
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import {
   ED_SEVERE_PRESSURE_WAIT_MINUTES,
+  ED_STATISTICS_FIRST_BAND_EDGE_MINUTES,
+  ED_STATISTICS_THIRD_BAND_EDGE_MINUTES,
   LONG_WAIT_MINUTES,
   VERY_LONG_WAIT_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
@@ -151,13 +153,13 @@ const middleBand = (fromMinutes: number, toMinutes: number) => ({
   fromMinutes,
 });
 
-// The 8 h edge reads the signed edSeverePressure (M16, D-125). The 4 h and 12 h edges have no signed
-// value; they stay typed and are on the M16 todo list for Josh.
+// The 8 h edge reads the signed edSeverePressure (M16, D-125). The 4 h and 12 h edges read their own
+// values, signed by Josh 10 Nov 2026 as they were (D-130).
 export const ED_WAIT_BANDS = [
-  { label: "Under 4 hours", fromMinutes: 0 },
-  middleBand(4 * 60, ED_SEVERE_PRESSURE_WAIT_MINUTES),
-  middleBand(ED_SEVERE_PRESSURE_WAIT_MINUTES, 12 * 60),
-  middleBand(12 * 60, MINUTES_PER_DAY),
+  { label: `Under ${ED_STATISTICS_FIRST_BAND_EDGE_MINUTES / 60} hours`, fromMinutes: 0 },
+  middleBand(ED_STATISTICS_FIRST_BAND_EDGE_MINUTES, ED_SEVERE_PRESSURE_WAIT_MINUTES),
+  middleBand(ED_SEVERE_PRESSURE_WAIT_MINUTES, ED_STATISTICS_THIRD_BAND_EDGE_MINUTES),
+  middleBand(ED_STATISTICS_THIRD_BAND_EDGE_MINUTES, MINUTES_PER_DAY),
   { label: "Past 24 hours", fromMinutes: MINUTES_PER_DAY },
 ] as const;
 

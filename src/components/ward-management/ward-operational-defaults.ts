@@ -99,6 +99,25 @@ export const LONG_WAIT_MINUTES = CLINICAL_VALUES.longWait.value;
 export const LONG_WAIT_TEXT = `past ${LONG_WAIT_MINUTES / MINUTES_PER_HOUR} hours`;
 
 /**
+ * M16 (signed by Josh 10 Nov 2026, D-130, as they were typed; synthetic prototype values, not legal
+ * limits). Each was a number a screen typed inline; it now reads the signed value.
+ */
+/** Ward TV: a person on leave is listed under attention when their return is due within this. */
+export const TV_LEAVE_DUE_BACK_WINDOW_MINUTES = CLINICAL_VALUES.tvLeaveDueBack.value;
+/** ED screen: a referral waiting longer than this is flagged "Referred and not yet seen". */
+export const ED_REFERRED_NOT_SEEN_MINUTES = CLINICAL_VALUES.edReferredNotSeen.value;
+/** ED statistics wait bands: the end of the first band ("Under 4 hours") and the start of the third. */
+export const ED_STATISTICS_FIRST_BAND_EDGE_MINUTES = CLINICAL_VALUES.edStatisticsFirstBandEdge.value;
+export const ED_STATISTICS_THIRD_BAND_EDGE_MINUTES = CLINICAL_VALUES.edStatisticsThirdBandEdge.value;
+/** Ward bed board: a referral chip turns to a warning once it has waited this long. */
+export const BED_BOARD_CHIP_WAIT_WARNING_MINUTES = CLINICAL_VALUES.bedBoardReferralWaitWarning.value;
+/** Age bands, in whole years: Youth under the first, Older adult from the second. */
+export const YOUTH_AGE_BAND_UNDER_YEARS = CLINICAL_VALUES.youthAgeBandUnder.value;
+export const OLDER_ADULT_AGE_BAND_FROM_YEARS = CLINICAL_VALUES.olderAdultAgeBandFrom.value;
+/** An adult up to this age may still be accepted by a youth service (a note; it never blocks). */
+export const YOUTH_SERVICE_NOTE_UP_TO_YEARS = CLINICAL_VALUES.youthServiceNoteUpTo.value;
+
+/**
  * Reminders when a ward has not answered a referral (Delays and Coordinator screens): the first and
  * second reminder marks, then the end of the shift the referral was made in.
  */

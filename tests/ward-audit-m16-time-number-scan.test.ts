@@ -23,8 +23,8 @@ import { describe, expect, it } from "vitest";
  *
  * Fixed (Josh approved, D-125, 10 Nov 2026): the 8 h ED wait was typed as 480 or `8 * 60` in seven
  * files. Each now reads `ED_SEVERE_PRESSURE_WAIT_MINUTES` (the signed `edSeverePressure`, 8 h), and
- * the band labels are built from it. The entries left under `SUSPECTED_DRIFT` have no signed value
- * to read, so they stay as todos for Josh.
+ * the band labels are built from it. The rest were signed by Josh as they were on 10 Nov 2026
+ * (D-130) and now read their own values, so `SUSPECTED_DRIFT` is empty.
  *
  * Every hit must be on an allowlist with a reason. An entry also pins how many times its expression
  * appears in its file, so a second copy of an allowed number is caught too. Hits that look like a
@@ -401,76 +401,9 @@ type Drift = Allowed & { readonly signedValue: string };
  * DEFECTS for Josh: clinical, so they are reported and left as they are (no behaviour change).
  */
 const SUSPECTED_DRIFT: readonly Drift[] = [
-  {
-    file: "bed-meeting/tv-clinical-derivations.ts",
-    expr: "12 * 60",
-    n: 1,
-    signedValue: "none (unsigned)",
-    why: "TV shows a leave return due within 12 h; no signed value names this window",
-  },
-  {
-    file: "ed/ed-screen-derivations.ts",
-    expr: "waited > 60",
-    n: 1,
-    signedValue: "none (unsigned)",
-    why: "'Referred and not yet seen' warning flag after 60 minutes is typed inline",
-  },
-  {
-    file: "statistics/statistics-ed-waits.ts",
-    expr: "4 * 60",
-    n: 1,
-    signedValue: "none (unsigned; tierTwoOverdue is a referral tier, edAccessTarget is 24 h)",
-    why: "statistics ED wait band edge at 4 h is typed; no signed ED wait value is 4 h",
-  },
-  {
-    file: "statistics/statistics-ed-waits.ts",
-    expr: "12 * 60",
-    n: 2,
-    signedValue: "none (unsigned)",
-    why: "statistics ED wait bands are typed, not read",
-  },
-  {
-    file: "ward/ward-bed-board.tsx",
-    expr: "referral.waitedMinutes >= 240",
-    n: 1,
-    signedValue: "none (unsigned; 4 h)",
-    why: "ward bed board referral chip turns warning at 4 h, typed inline",
-  },
-  {
-    file: "referrals/referral-age-band.ts",
-    expr: "age < 18",
-    n: 1,
-    signedValue: "none (age band rule)",
-    why: "age band edges are typed here and again in ward-patients.ts (see M118)",
-  },
-  {
-    file: "referrals/referral-age-band.ts",
-    expr: "age >= 65",
-    n: 1,
-    signedValue: "none (age band rule)",
-    why: "age band edges are typed here and again in ward-patients.ts (see M118)",
-  },
-  {
-    file: "referrals/referral-age-band.ts",
-    expr: "age <= 24",
-    n: 1,
-    signedValue: "none (youth note)",
-    why: "the 'youth up to 24' note edge is typed inline",
-  },
-  {
-    file: "ward-patients.ts",
-    expr: "age < 18",
-    n: 1,
-    signedValue: "none (age band rule)",
-    why: "second copy of the age band edges",
-  },
-  {
-    file: "ward-patients.ts",
-    expr: "age >= 65",
-    n: 1,
-    signedValue: "none (age band rule)",
-    why: "second copy of the age band edges",
-  },
+  // Empty since 10 Nov 2026: Josh signed the last ten as they were (D-130). The TV leave window, the
+  // ED "not yet seen" flag, the ED statistics 4 h and 12 h band edges, the bed board referral chip and
+  // the age bands now read their signed values (`ward-operational-defaults.ts`).
 ];
 
 // ---- The scanner ----------------------------------------------------------------------------------

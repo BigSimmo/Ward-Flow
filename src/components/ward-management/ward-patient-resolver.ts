@@ -202,6 +202,14 @@ export const UMRN_NOT_RECORDED = "UMRN not recorded";
 export const NAME_NOT_SHOWN = "Name not shown on this desk";
 const UMRN_NOT_SHOWN = "UMRN not shown on this desk";
 
+/**
+ * M103 (Josh, 10 Nov 2026): how a printed sheet names a person, initials and UMRN only, never the
+ * full name: "AP · UM100026". Used by the Call sheet and the bed meeting sheets.
+ */
+export function sheetPatientLabel(info: Pick<ResolvedPatientInfo, "initials" | "umrn">): string {
+  return `${info.initials} · ${info.umrn}`;
+}
+
 /** Whether a resolved name is one of the resolver's placeholders rather than a person's name. */
 export function isPlaceholderName(name: string): boolean {
   return name === NAME_NOT_RECORDED || name === NAME_NOT_SHOWN;
