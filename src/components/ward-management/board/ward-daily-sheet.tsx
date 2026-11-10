@@ -7,6 +7,7 @@ import {
   CardHead,
   CountBubble,
   Icon,
+  isNotUpdating,
   notUpdatingWords,
   StatusGlyph,
   useLiveFreshness,
@@ -32,6 +33,7 @@ import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-mornin
 
 import styles from "./ward-daily-sheet.module.css";
 import { WardShiftSummaryCard } from "./ward-shift-summary-card";
+import { LocalSettingsNote } from "@/components/ward-management/shell/local-settings-note";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /**
@@ -486,7 +488,7 @@ export function WardDailySheet({
   const resolvedTimestamp = shiftTimestamp ?? (now !== undefined ? asAtStamp(now, liveFlow?.dayZero).time : null);
   // Master audit M7 (D-129): the standalone sheet's stamp says so too while reads are frozen.
   const freshness = useLiveFreshness(!isEmbedded);
-  const staleLine = !isEmbedded && freshness.state === "stale" ? staleStampWords(freshness.since) : null;
+  const staleLine = !isEmbedded && isNotUpdating(freshness) ? staleStampWords(freshness.since) : null;
 
   return (
     <section
@@ -781,7 +783,7 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
   const stamp = sheetProps.now !== undefined ? asAtStamp(sheetProps.now, flow?.dayZero) : null;
   // Master audit M7 (D-129): while the shared reads are frozen, the printed brief says since when.
   const freshness = useLiveFreshness();
-  const staleLine = freshness.state === "stale" ? staleStampWords(freshness.since) : null;
+  const staleLine = isNotUpdating(freshness) ? staleStampWords(freshness.since) : null;
   const stampLine =
     stamp === null || stamp.time === null
       ? null
@@ -872,6 +874,8 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
                 {staleLine}
               </strong>
             ) : null}
+            {/* M123: printing the brief hides the shell's footer, so its head carries the line. */}
+            <LocalSettingsNote as="span" className={styles.dialogStamp} testId="ward-daily-sheet-local-settings" />
           </div>
           <div className={styles.dialogActions}>
             {canCopy ? (

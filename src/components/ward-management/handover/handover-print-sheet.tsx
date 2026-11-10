@@ -16,11 +16,13 @@ import {
   StatusGlyph,
   Switch,
   cx,
+  isNotUpdating,
   notUpdatingWords,
   useLiveFreshness,
   type WfTone,
 } from "@/components/wf";
 import { WardPrintAttribution } from "@/components/ward-management/shell/ward-access";
+import { LocalSettingsNote } from "@/components/ward-management/shell/local-settings-note";
 import {
   formatInstant,
   formatInstantWithDay,
@@ -293,11 +295,13 @@ export function HandoverPrintSheet({
         <span>
           Page {pageNumber} of {totalPages} · Synthetic data, not a medical record
         </span>
-        {freshness.state === "stale" ? (
+        {isNotUpdating(freshness) ? (
           <strong data-testid="handover-print-not-updating">
             {notUpdatingWords(freshness.since)}. Figures may be out of date.
           </strong>
         ) : null}
+        {/* M123: the print isolation hides the shell's footer, so each page carries the line itself. */}
+        <LocalSettingsNote as="span" testId="handover-print-local-settings" />
         <WardPrintAttribution
           at={preparedAt ?? now}
           className={styles.attribution}

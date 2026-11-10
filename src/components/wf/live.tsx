@@ -195,12 +195,18 @@ export function useLiveFreshness(active = true): { state: "live" | "stale" | "of
     () => undefined,
   );
   const late = useSharedRefreshLate(active);
-  if (!online) return { state: "offline" };
+  // Offline keeps the last good shared read, so a sheet printed or copied offline still says since when.
+  if (!online) return { state: "offline", since: refresh?.receivedAt };
   // P167: one failed or slow refresh is not a gap by itself; a publisher with a limit turns stale
   // only when that limit passes.
   if (late || (refresh?.unavailable && refresh.staleAfterMs === undefined))
     return { state: "stale", since: refresh?.receivedAt };
   return { state: "live" };
+}
+
+/** M7: a printed or copied sheet says it is not updating while stale, or offline after a shared read. */
+export function isNotUpdating(freshness: { state: "live" | "stale" | "offline"; since?: number }): boolean {
+  return freshness.state === "stale" || (freshness.state === "offline" && freshness.since !== undefined);
 }
 
 /** M8: a stale board in words, "Not updating since 10:42" ("Not updating" with no known time). */

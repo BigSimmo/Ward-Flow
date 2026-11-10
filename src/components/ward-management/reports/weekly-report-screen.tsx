@@ -30,7 +30,11 @@ import { reportWeek, weeklyOperationsReport, type WeeklyReport, type ReportWeek 
 import { useOwnUnits } from "./use-own-units";
 import { WeeklyDelayHeatmap, preloadWeeklyDelayHeatmap } from "./weekly-delay-heatmap-lazy";
 import { createReadmissionIndex, readmissionsArrivedIn } from "@/components/ward-management/ward-readmission";
-import { LocalSettingsNote } from "@/components/ward-management/shell/local-settings-note";
+import {
+  LocalSettingsNote,
+  usePageSettingsConfiguration,
+} from "@/components/ward-management/shell/local-settings-note";
+import type { WardConfiguration } from "@/components/ward-management/ward-configuration";
 import styles from "./reports.module.css";
 import weekly from "./weekly-report.module.css";
 
@@ -147,6 +151,7 @@ function ExecutiveWeeklyReport({ offset, setOffset }: WeekPicker) {
       togglePause={controls.togglePause}
       scopeLabel={data.network.scope.kind === "statewide" ? "Statewide" : data.network.scope.service}
       pilot={selected.pilot}
+      configuration={data.publicConfiguration ?? null}
     />
   );
 }
@@ -235,6 +240,7 @@ function OperationalWeeklyReport({ offset, setOffset }: WeekPicker) {
       now={now}
       paused={paused}
       togglePause={togglePause}
+      configuration={configuration}
       readmissions={readmissions}
       heatmap={(isPhone) => (
         // Feature 42 (Josh, 9 Nov 2026): bed days lost to delayed discharge, ward by day.
@@ -280,8 +286,11 @@ function WeeklyReportView({
   readmissions,
   heatmap,
   delayedReasons,
+  configuration,
 }: WeekPicker & {
   delayedReasons?: ReactNode;
+  /** The settings behind these figures: held with them while paused (M123). */
+  configuration: WardConfiguration | null;
   week: ReportWeek;
   report: WeeklyViewReport;
   pilot: WeeklyPilot;
@@ -297,6 +306,7 @@ function WeeklyReportView({
 }) {
   const isPhone = useIsPhone();
   const figures = usePilotFigures(pilot);
+  usePageSettingsConfiguration(configuration);
   const rows = report.edWaits.rows;
   // The phone names each ED by its short name (stats-14); the desktop keeps the full name.
   const edLabel = (movement: NonNullable<typeof rows>[number]["movement"]) => {
@@ -515,7 +525,11 @@ function WeeklyReportView({
         />
         {/* M123: on paper the shell's print footer carries the same line, so paper shows it once. */}
         <div data-print-hide>
-          <LocalSettingsNote className={styles.disclosure} testId="ward-weekly-local-settings" />
+          <LocalSettingsNote
+            className={styles.disclosure}
+            testId="ward-weekly-local-settings"
+            configuration={configuration}
+          />
         </div>
         <WardPrototypeFooter testId="ward-weekly-footer" note="Synthetic data" />
       </main>
