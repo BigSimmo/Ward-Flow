@@ -831,6 +831,28 @@ const PAGE_HELP: readonly PageHelp[] = [
     ],
   },
   {
+    id: "night",
+    path: /^\/ward-flow\/night$/u,
+    title: "Night view",
+    purpose:
+      "The coordinator's overnight page: beds ready, ED waits by Step, who is on the way, intake windows and on-call lines.",
+    actions: [
+      "Read the figures across the top. They are the same as Home, Waiting and Movements.",
+      "Open a ward, a patient or a line from its card. Each card links to its full page.",
+      "Open Help and choose Show me around for a short first-night walk round.",
+    ],
+    questions: [
+      {
+        question: "Why are the wards in this order?",
+        answer: "Wards are listed by health service, then by name. They are never ranked by beds ready.",
+      },
+      {
+        question: "Why do the intake windows say Not recorded?",
+        answer: "Wards do not record overnight intake windows in Ward Flow yet, so no time is shown.",
+      },
+    ],
+  },
+  {
     id: "downtime",
     path: /^\/ward-flow\/reports\/downtime$/u,
     title: "Downtime pack",
