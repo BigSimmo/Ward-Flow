@@ -267,6 +267,7 @@
   gap: var(--wf-s-2);
   min-width: 0;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -422,6 +423,7 @@
    half, and eighteen rows do not need an inner scroll. */
 .tableScroll {
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 /* Padding comes from the wf table (12px inner, 16px edges, the same on headers and cells). */

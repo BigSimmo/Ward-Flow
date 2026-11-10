@@ -490,6 +490,7 @@
    the per-screen behaviour, which is the phone swap. */
 .tableScroll {
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 /*

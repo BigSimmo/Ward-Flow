@@ -116,6 +116,7 @@
 
 .tableWrap {
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .kbd {

@@ -247,6 +247,7 @@
     margin-inline: -16px;
     padding-inline: 16px;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
     -webkit-mask-image: linear-gradient(to right, black 88%, transparent);
     mask-image: linear-gradient(to right, black 88%, transparent);
