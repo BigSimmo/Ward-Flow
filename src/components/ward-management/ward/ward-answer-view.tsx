@@ -428,6 +428,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     setAnsweredHereId(movementId);
     const unitIdHere = currentUnit.id;
     const accepted = incoming.find((movement) => movement.id === movementId);
+    const who = accepted ? resolvePatientIdentity(accepted).formalName : undefined;
     // v10 pass 3: Accept, then Undo on the toast (`UNDO_ACCEPT_IN_PRINCIPLE`, this ward's own).
     // Owner, 26 Sept 2026: no WF journey number in a person-facing toast; it names the person (24-1 B-08).
     runStep(
@@ -441,7 +442,9 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
         ...(withExtendedHold ? { extendedHold: true as const } : {}),
       },
       {
-        success: `Accepted ${accepted ? `${resolvePatientIdentity(accepted).formalName} ` : ""}in principle.`,
+        success: `Accepted ${who ? `${who} ` : ""}in principle.`,
+        // D-125 (audit M2): a refusal names the person too.
+        who,
         undo: (at) => ({
           type: "UNDO_ACCEPT_IN_PRINCIPLE",
           role: "ward",
@@ -650,7 +653,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                 alertAt={ANSWER_ALERT_LINE}
                 scope={unit.name}
                 status={
-                  occupancy.percent !== null && occupancy.percent >= ANSWER_ALERT_LINE
+                  occupancy.percent !== null && Math.round(occupancy.percent) >= ANSWER_ALERT_LINE
                     ? { tone: "warning", word: `At risk, over ${ANSWER_ALERT_LINE}%` }
                     : { tone: "success", word: `In use, under ${ANSWER_ALERT_LINE}%` }
                 }

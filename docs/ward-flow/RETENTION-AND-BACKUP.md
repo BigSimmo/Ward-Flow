@@ -1,8 +1,6 @@
 # Ward Flow retention, correction and backup plan
 
-_Updated 2026-10-26 - added the passing `pg_dump` restore drill of the hosted data; Documentation owns._
-
-_Updated 2026-10-24 - step 7 now names the migration runner and the 13, 12, 11 undo chain; Documentation owns._
+_Updated 2026-10-26 - added the passing `pg_dump` restore drill of the hosted data. Earlier (24 October): step 7 names the migration runner and the 13, 12, 11 undo chain. Documentation owns._
 
 _Correction 2026-11-03 - Git revision `899b232e` contains 13 migrations, latest `013-referral-record-views`, not the later values previously inserted by live fact markers. This corrects the source attribution in the note dated 24 October; it is not a fresh verification of that note's table list or the dated drills. Documentation owns._
 

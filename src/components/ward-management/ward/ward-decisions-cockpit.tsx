@@ -14,7 +14,7 @@ export { openDecisionCount };
 /**
  * Called once the screen's command has its answer: true recorded, false not recorded. Called with
  * nothing when there is no command answer (the local engine), so the cockpit reads the rows instead.
- * M37 (D-125): a sign-off the screen can take back passes `undo`, which sends the Undo and reports it.
+ * M37 (D-129): a sign-off the screen can take back passes `undo`, which sends the Undo and reports it.
  */
 export type DecisionReport = (recorded?: boolean, undo?: (report: DecisionReport) => void) => void;
 
@@ -233,7 +233,7 @@ function Queue({
   const [sent, setSent] = useState<SentAction | null>(null);
   // The command's own answer for each row of the latest action, when the screen has one.
   const [answers, setAnswers] = useState<{ seq: number; id: string; recorded: boolean }[]>([]);
-  // M37 (D-125): each signed-off row's Undo, offered for UNDO_TOAST_MS after the sign-off.
+  // M37 (D-129): each signed-off row's Undo, offered for UNDO_TOAST_MS after the sign-off.
   const [undos, setUndos] = useState<{ seq: number; id: string; run: (report: DecisionReport) => void }[]>([]);
   const [undoSeq, setUndoSeq] = useState(0);
   const seqRef = useRef(0);

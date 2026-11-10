@@ -258,13 +258,13 @@ describe("the Access tab", () => {
     // Nothing is chosen for the nurse in charge: the place, the colleague and the length start empty.
     expect(screen.getByTestId("ward-access-cover-submit")).toHaveAttribute("aria-disabled", "true");
     choose(screen.getByTestId("ward-access-cover"));
-    // M58 (D-125): the reason is a radio choice (Q36), so it is chosen by pressing one.
+    // M58 (D-129): the reason is a radio choice (Q36), so it is chosen by pressing one.
     fireEvent.click(within(screen.getByTestId("ward-access-cover-reason")).getAllByRole("radio")[0]!);
     fireEvent.click(screen.getByTestId("ward-access-cover-submit"));
     await act(async () => confirmStepUp());
     expect(screen.getByTestId("ward-access-result")).toHaveTextContent("Cover given");
     expect(readWardAccessSnapshot().covers).toHaveLength(1);
-    // M58 (D-125): the form asks why, and the cover keeps the reason.
+    // M58 (D-129): the form asks why, and the cover keeps the reason.
     expect(readWardAccessSnapshot().covers[0]?.reason).not.toBeNull();
     const list = screen.getByTestId("ward-access-cover-list");
     // A statewide coordinator sees cover given by a ward inside its place, and may end it.

@@ -602,6 +602,7 @@
   .panel:has(.dataTable),
   .panel:has(.stageBoard) {
     overflow-x: auto;
+    overflow-y: hidden;
   }
 
   .patientFacts {

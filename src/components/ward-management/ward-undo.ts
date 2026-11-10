@@ -114,7 +114,7 @@ export const UNDO_STEP_ACTIONS = {
     "CANCEL_TRANSPORT",
     "WITHDRAW_WARD_REQUEST",
     "CANCEL_PLANNED_ADMISSION",
-    // M37 (D-125, 10 Nov 2026): a discharge signed off from Ward Decisions, filed against its bed release.
+    // M37 (D-129, 10 Nov 2026): a discharge signed off from Ward Decisions, filed against its bed release.
     "CONFIRM_BED_RELEASE",
   ],
   UNDO_PATIENT_RECORD: ["RECORD_COMMUNITY_TREATMENT_ORDER", "END_COMMUNITY_TREATMENT_ORDER", "ARCHIVE_PATIENT"],

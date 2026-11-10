@@ -298,7 +298,7 @@ export function PatientTypeahead({
            * ARIA 1.2 puts `role="combobox"` on the input, and that is what this had. It cost the
            * input its implicit `textbox` role, and `tests/ward-patient-search.dom.test.tsx` asserts
            * this page owns exactly ONE text input — the one-composer-per-page contract in
-           * `docs/search-chrome-behaviour.md`. The composer count never changed; only the role name
+           * `docs/history/search-chrome-behaviour.md`. The composer count never changed; only the role name
            * did, and the guard could not tell those apart. The repo contract wins over the generic
            * pattern (AGENTS.md, "External skill precedence"), so the code moved rather than the test.
            *

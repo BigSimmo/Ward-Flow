@@ -22,7 +22,7 @@ export type SharedBreakGlassOpening = {
   minutes: { opened: number; until: number };
 };
 /**
- * Master audit M58 (D-125): a cover given, as the server lists it for a coordinator's review list.
+ * Master audit M58 (D-129): a cover given, as the server lists it for a coordinator's review list.
  * `actor_*` is the giver's desk, `role` and `scope` the cover. Times are minutes from the server's now.
  */
 export type SharedCoverGiven = {

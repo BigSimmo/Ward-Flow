@@ -17,12 +17,15 @@ import type { WardChromeRole } from "@/components/ward-management/ward-chrome-ro
 import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 import { ROLE_SCREENS } from "@/components/ward-management/ward-role-access";
 import { CONTINUATION_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
-import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { CLINICAL_VALUES, formatClinicalFigure } from "@/components/ward-management/ward-clinical-values";
 import { WARD_COMMAND_HREF } from "@/components/ward-management/ward-nav";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
 import type { SiteIdentity } from "@/components/ward-management/ward-sites";
 
 import type { WardTourRole } from "./ward-help-store";
+
+/** The Give button's own words, from the value it grants (D-122: help never types a threshold). */
+const GIVE_FOR = `Give for ${formatClinicalFigure(CLINICAL_VALUES.accessGrantDefault.value, CLINICAL_VALUES.accessGrantDefault.unit)}`;
 
 export type ScreenHelp = {
   /** The screen's name as the rail or the page heading shows it. */
@@ -1010,7 +1013,7 @@ export const ADMIN_SETTINGS_HELP: ScreenHelp & { id: string } = {
   title: "Settings",
   purpose: "Where you give, check and remove roles. It opens on Access. You see no patients from this desk.",
   actions: [
-    "Answer Requests for access with Give for 90 days or Decline.",
+    `Answer Requests for access with ${GIVE_FOR} or Decline.`,
     "Use Give a role for a new role: the person, one desk, one place and an end date.",
     "Check Everyone with a role, and Remove a role when someone changes job or leaves.",
   ],

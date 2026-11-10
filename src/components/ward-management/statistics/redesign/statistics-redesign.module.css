@@ -232,6 +232,7 @@
  * with the content (local) and hide each edge shadow (scroll) once that end is reached. */
 .tableWrap {
   overflow-x: auto;
+  overflow-y: hidden;
   background:
     linear-gradient(to right, var(--wf-surface) 30%, transparent) left center / 32px 100% no-repeat local,
     linear-gradient(to left, var(--wf-surface) 30%, transparent) right center / 32px 100% no-repeat local,
@@ -545,6 +546,7 @@
 .plotWrap {
   padding: 16px 16px 8px;
   overflow-x: auto;
+  overflow-y: hidden;
 }
 .dots {
   display: block;
@@ -820,6 +822,7 @@
   .tableWrap:has(> table[id="edPressureTable"]),
   .tableWrap:has(> table[id="wardPressureTable"]) {
     overflow-x: auto;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
   }
 }

@@ -777,6 +777,7 @@
   gap: var(--wf-s-4);
   border-bottom: 1px solid var(--wf-line);
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 

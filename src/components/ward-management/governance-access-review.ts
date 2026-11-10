@@ -15,7 +15,7 @@
  *   from the seeded world each time they are read (never stored, like `ward-governance-seed.ts`),
  *   plus any opening made in this tab.
  *
- * Each cover given joins the same list (master audit M58, D-125), with its reason, its giver's desk
+ * Each cover given joins the same list (master audit M58, D-129), with its reason, its giver's desk
  * and the ward or ED it covers. The server reads its own ACCESS_COVER audit rows; the local demo
  * lists the covers given in this tab.
  *
@@ -145,7 +145,7 @@ export function openingEvents(openings: readonly AccessOpening[], generation: nu
 }
 
 /**
- * Master audit M58 (D-125, 10 Nov 2026): one cover given, for the same review list. `desk` and
+ * Master audit M58 (D-129, 10 Nov 2026): one cover given, for the same review list. `desk` and
  * `place` are the giver's; `cover` is the ward or ED covered, in words.
  */
 export type AccessCover = {

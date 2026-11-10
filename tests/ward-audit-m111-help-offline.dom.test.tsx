@@ -13,7 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * page where the service worker is installed (the A1-18 finding that `shell/ward-offline-links.tsx`
  * fixed for links). Show me did not go through that guard.
  *
- * Fixed 10 Nov 2026 (D-125): offline, a run that opens another screen stays put and shows the offline
+ * Fixed 10 Nov 2026 (D-129): offline, a run that opens another screen stays put and shows the offline
  * link notice ("You're offline. Tap again once you're back online."). Synthetic data only.
  */
 

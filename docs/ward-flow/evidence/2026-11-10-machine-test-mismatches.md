@@ -1,6 +1,6 @@
 # Machine test mismatches for Josh (M26)
 
-_Created 2026-11-10 - audit item M26, approved as a list by Josh (D-126); Documentation owns._
+_Created 2026-11-10 - audit item M26, approved as a list by Josh (D-130); Documentation owns._
 
 **Status:** open questions for Josh. **Nothing has changed.** The movement diagram
 (`docs/ward-flow/journey/machines.json`) and the engine disagree on the moves below. The test
@@ -26,7 +26,7 @@ Josh rules on). The recommendation keeps the engine as it is and corrects the di
 ## Related finding (M35)
 
 The Map report counted a ward transfer out as a discharge, and referral declines and arrivals wrote
-no audit row. Both are fixed in the held clinical PR (D-126).
+no audit row. Both are fixed in the held clinical PR (D-130).
 
 ## After Josh rules
 

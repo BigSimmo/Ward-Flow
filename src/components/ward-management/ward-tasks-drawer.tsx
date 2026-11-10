@@ -444,7 +444,8 @@ export function WardTasksDrawer({
     dispatch({ type: "UNSNOOZE_INBOX_ITEM", role, now, inboxItemId });
   }
 
-  // M13/M37 (D-125): one save per alert, each answer returned so the drawer can say who was not done.
+  // M13/M37 (D-129): one save per alert; each answer lets the drawer name who was not done, and lets a
+  // sign-out or role switch wait for them to be confirmed (D-125).
   function acknowledgeOne(inboxItemId: string) {
     return dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId });
   }

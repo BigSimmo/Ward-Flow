@@ -143,7 +143,7 @@ describe("M13/M37: Acknowledge visible with the middle save refused", () => {
     );
     expect(after.inboxAcknowledgements[ids[1]!]).toBeUndefined();
     expect(after.rejections.length - seed.rejections.length).toBe(1);
-    // M37 (D-125): one audit row per alert, with its own outcome.
+    // M37 (D-129): one audit row per alert, with its own outcome.
     const rows = after.auditEvents.slice(auditFrom);
     expect(
       rows.map((row) => [row.category, row.action, (row.details as { inboxItemId?: string }).inboxItemId, row.outcome]),

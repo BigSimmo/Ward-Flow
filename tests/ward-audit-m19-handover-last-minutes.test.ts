@@ -123,7 +123,7 @@ describe("M19: a note in the last minutes of a shift reaches the next shift", ()
         expect(since.find((item) => item.id === "opened")!.value).toBeGreaterThanOrEqual(1);
       });
 
-      // Fixed (master audit M19, D-125): for the first 30 minutes after a handover the page opens on
+      // Fixed (master audit M19, D-129): for the first 30 minutes after a handover the page opens on
       // the handover just held, so the note is New and in its Since line on the default view.
       it("is counted New on the incoming shift's default view (opens on the handover just held)", () => {
         const { rows, note } = sheet(noteAt);

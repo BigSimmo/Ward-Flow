@@ -296,7 +296,7 @@ function GovernanceSession({
   const events = eventRead?.status === "allowed" ? eventRead.value : [];
   const reviews = reviewRead?.status === "allowed" ? reviewRead.value : [];
   // D-80 item 14: each break glass opening joins the list, from the server or the demo, in time order,
-  // and each cover given beside them (M58, D-125).
+  // and each cover given beside them (M58, D-129).
   const accessReview = useGovernanceAccessReview(events, now);
   const rows = allowed
     ? [

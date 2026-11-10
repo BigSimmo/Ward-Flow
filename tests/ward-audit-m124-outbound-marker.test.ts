@@ -160,7 +160,7 @@ describe("M124 each other outbound item keeps its marker test", () => {
     expect(readFileSync(full, "utf8")).toMatch(mustContain);
   });
 
-  // Fixed 10 Nov 2026 (D-125): the picture is drawn with "Synthetic prototype" and named synthetic.
+  // Fixed 10 Nov 2026 (D-129): the picture is drawn with "Synthetic prototype" and named synthetic.
   it("Report-a-problem picture carries the synthetic marker in its pixels and its name", () => {
     const pictureTest = readFileSync(path.join(ROOT, "tests/ward-help-report-picture.test.ts"), "utf8");
     expect(pictureTest).toMatch(/fillText\)\.toHaveBeenCalledWith\("Synthetic prototype"/);

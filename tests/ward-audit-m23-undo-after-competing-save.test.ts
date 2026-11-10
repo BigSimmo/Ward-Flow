@@ -69,7 +69,7 @@ function undoEventFor(event: WardFlowEvent, undoType: UndoStepType, role: WardFl
     ...(undoType === "UNDO_RELEASE_STEP" && fields.plannedAdmissionId
       ? { plannedAdmissionId: fields.plannedAdmissionId }
       : {}),
-    // M37 (D-125): a discharge sign-off's Undo names its bed release, as in tests/ward-undo-steps.test.ts.
+    // M37 (D-129): a discharge sign-off's Undo names its bed release, as in tests/ward-undo-steps.test.ts.
     ...(undoType === "UNDO_RELEASE_STEP" && fields.releaseId ? { releaseId: fields.releaseId } : {}),
     ...(undoType === "UNDO_PATIENT_RECORD" ? { patientId: fields.patientId } : {}),
     ...(event.type === "COMPLETE_BED_MEETING_ACTION" || event.type === "RECORD_BED_MEETING_ACTION"

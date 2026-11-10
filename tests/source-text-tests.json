@@ -152,6 +152,7 @@
     "tests/ward-nav.test.ts",
     "tests/ward-never-build-behaviour-guard.test.ts",
     "tests/ward-never-build-drift-guard.test.ts",
+    "tests/ward-never-build-sort-inventory.test.ts",
     "tests/ward-no-control-characters.test.ts",
     "tests/ward-no-invented-screen-figures.test.ts",
     "tests/ward-no-screen-claims-a-durable-access-record.test.ts",

@@ -1784,7 +1784,7 @@ test(
       assert.equal(given.status, 200);
       assert.equal(given.body.membership.kind, "cover");
       assert.equal(given.body.membership.minutes.expires, 480);
-      // M58 (D-125): cover needs a reason from the list, and lands on the coordinator's review list.
+      // M58 (D-129): cover needs a reason from the list, and lands on the coordinator's review list.
       assert.equal((await store.giveCover(aView, { actorId: nurseB, scope: wardA, minutes: 60 })).status, 400);
       const coversListed = await store.coversGiven(leadView);
       assert.equal(coversListed.length, 1);

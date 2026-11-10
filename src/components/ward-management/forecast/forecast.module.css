@@ -184,6 +184,7 @@
 /* Next 7 days. */
 .weekWrap {
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .week {

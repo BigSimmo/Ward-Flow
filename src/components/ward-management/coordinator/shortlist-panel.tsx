@@ -2,7 +2,7 @@
 
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
-import { currentLegalDueAt, formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { currentLegalDueAt, formProgression, formProgressionPhrase } from "../legal-forms/legal-form-progression";
 
 import { Check, CircleCheck, CircleAlert, ChevronDown, ChevronUp, Info } from "lucide-react";
 import Link from "next/link";
@@ -242,7 +242,7 @@ function legalFormLine(movement: Movement, now: Instant) {
   if (!movement.legalForm) return "No legal form recorded";
   const formCode = `Form ${movement.legalForm.code}`;
   const progression = formProgression(movement);
-  if (progression) return `${formCode} ended ${progression.endedWhen}; Form ${progression.nextCode} to record`;
+  if (progression) return `${formProgressionPhrase(progression)}; Form ${progression.nextCode} to record`;
   const dueAt = currentLegalDueAt(movement);
   if (dueAt === undefined) {
     // States what the record holds, never what the Act requires (tests/ward-legal-figure-guard.test.ts).
@@ -490,7 +490,7 @@ export function ShortlistPanel({
   const [genderPlacementChecked, setGenderPlacementChecked] = useState(false);
   const [confirmationMovementId, setConfirmationMovementId] = useState(movement?.id);
   // Task 5/RA1: new referral picks are separate from selectedUnitId (the inspected ward); live requests stay
-  // locked and REFER_TO_UNITS adds to them. Finding 188: the parallel cap warns but does not block.
+  // locked and REFER_TO_UNITS adds to them. Finding 188, D-122: passing the configured limit warns but never blocks.
   const [referTargets, setReferTargets] = useState<string[]>([]);
   // RA1: the withdrawal opening and reason belong to one genuinely live ward request.
   const [withdrawUnitId, setWithdrawUnitId] = useState<string | undefined>(undefined);
@@ -896,8 +896,8 @@ export function ShortlistPanel({
     if (!canOverride) return;
     const reason = overrideReason.trim();
     if (reason.length === 0) return;
-    // D-86 (findings 111 and 113, Josh, 27 Oct 2026): no second approvers. The reason is the only
-    // thing an override needs, the same standard as the Referrals board and the patient page.
+    // D-122 (Josh, 10 Nov 2026; findings 111 and 113, 27 Oct 2026): no second approvers. The reason is
+    // the only thing an override needs, the same standard as the Referrals board and the patient page.
     // Validate the same closed reason list as the reducer.
     if (!OVERRIDE_REASONS.includes(reason as OverrideReason)) return;
     // OD-3: the reducer records the reason; the local record is only accepted-save feedback.

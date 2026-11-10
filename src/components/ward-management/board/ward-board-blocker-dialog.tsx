@@ -37,7 +37,7 @@ export function WardBoardBlockerDialog({
   item: ShiftTileItem;
   blockerDialogRef: RefObject<HTMLDivElement | null>;
   closeBlockerDialog: () => void;
-  dispatchAndReport: (record: () => ReturnType<WardCommandDispatch>, success: string) => void;
+  dispatchAndReport: (record: () => ReturnType<WardCommandDispatch>, success: string, who?: string) => void;
   liveBedReleases: BedRelease[];
   nameFor: (admissionId: string | undefined) => string;
   raise: WardRaise;
@@ -76,6 +76,7 @@ export function WardBoardBlockerDialog({
             blocker: chosen,
           }),
         `Hold-up recorded for ${who}: ${chosen}.`,
+        who,
       );
     }
     closeBlockerDialog();

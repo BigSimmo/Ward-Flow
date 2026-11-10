@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import { alertGroupOf, alertKindOf } from "@/components/ward-management/alerts/alerts-model";
 import { wardClinicalRows } from "@/components/ward-management/bed-meeting/tv-clinical-derivations";
+import { buildOccupants, buildTiles } from "@/components/ward-management/board/ward-board-model";
 import { patientMode } from "@/components/ward-management/patients/patient-mode";
 import { downtimePack } from "@/components/ward-management/reports/downtime-pack";
 import { buildCensus } from "@/components/ward-management/search/patient-census";
+import { projectExecutiveReportingFoundation } from "@/components/ward-management/statistics/executive-statistics-projector";
 import { rosterStatus } from "@/components/ward-management/statistics/statistics-ward-phone";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { wardBedRoster } from "@/components/ward-management/ward/ward-screen-derivations";
 import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import {
@@ -215,14 +218,43 @@ describe("audit 6: a person marked absent without leave reaches every screen aft
     expect(ward.counts.onLeave).toBe(after.leaveBeds.filter((bed) => bed.unitId === unit.id).length);
   });
 
-  // Blocked (D-115 item 3): the executive scope strips `absentWithoutLeave` from every held bed
-  // (`countsOnlyLeaveBed` in ward-access-scope.ts), and an open PR holds that file.
-  it.todo(
-    "executive statistics (projectExecutiveNetworkStatistics): count an absence without leave apart from On leave once countsOnlyLeaveBed keeps the flag",
-  );
+  it("executive statistics count an absence without leave apart from approved leave (D-115 item 6)", () => {
+    const { after } = markMissing();
+    const report = projectExecutiveReportingFoundation(
+      after,
+      { role: "executive", scope: { kind: "statewide" } },
+      {
+        now: NOW,
+        dayZero: "2026-10-24T00:00:00.000Z",
+        startedAt: "2026-10-24T00:00:00.000Z",
+        places: wardPlaceLookup(after.units),
+      },
+    );
+    const ward = report.journey.find((stage) => stage.id === "ward")!;
+    const labels = ward.breakdown.map((row) => row.label);
+    expect(labels).toContain("On leave");
+    expect(labels).toContain("Absent without leave");
+    const figureOf = (label: string) => ward.breakdown.find((row) => row.label === label)!.figure;
+    // One person is a small number: it is never printed exactly, and neither is approved leave,
+    // which the published held-bed total would otherwise give away by subtraction.
+    // A released count that is hidden, never a dropped record or a printed zero.
+    for (const label of ["Absent without leave", "On leave"]) {
+      const figure = figureOf(label);
+      expect(figure.kind, label).toBe("count");
+      expect(figure.kind === "count" ? figure.count.kind : undefined, label).toMatch(/^(small|withheld)$/);
+    }
+  });
 
-  // Blocked (D-115 item 1): the fix needs board files that open PRs hold.
-  it.todo(
-    "ward board (/ward-flow/board/[unitId]): tiles and the person panel (buildTiles, buildOccupants) take no held beds, so the missing person reads as an ordinary occupied bed; capacityBreakdown counts them under On leave",
-  );
+  it("ward board (/ward-flow/board/[unitId]): the tile and person panel say Absent without leave (D-115 item 4)", () => {
+    const { after, stay, unit } = markMissing();
+    const tiles = buildTiles(unit, after.admissions, after.bedReleases, NOW, { leaveBeds: after.leaveBeds });
+    const tile = tiles.find((candidate) => candidate.key === stay.id);
+    expect(tile).toMatchObject({ kind: "occupied", absentWithoutLeave: true });
+    // Nobody else on the ward is marked, approved leave included.
+    expect(tiles.filter((candidate) => candidate.kind === "occupied" && candidate.absentWithoutLeave)).toHaveLength(1);
+    const occupant = buildOccupants(unit, after.admissions, NOW, after.leaveBeds).find(
+      (candidate) => candidate.key === stay.id,
+    );
+    expect(occupant?.absentWithoutLeave).toBe(true);
+  });
 });

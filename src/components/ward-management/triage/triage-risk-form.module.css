@@ -1437,6 +1437,7 @@
 
 .tableWrap {
   overflow-x: auto;
+  overflow-y: hidden;
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-md);
 }
@@ -1475,6 +1476,7 @@
     flex-direction: row;
     gap: var(--wf-s-1);
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
   }
   .index::-webkit-scrollbar {

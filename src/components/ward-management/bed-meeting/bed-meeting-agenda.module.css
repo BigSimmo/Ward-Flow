@@ -271,6 +271,7 @@
 .serviceTrack {
   max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -288,6 +289,7 @@
   .chipRow {
     flex-wrap: nowrap;
     overflow-x: auto;
+    overflow-y: hidden;
     width: 100%;
     scrollbar-width: none;
     mask-image: linear-gradient(to right, black calc(100% - 24px), transparent);
@@ -341,6 +343,7 @@
 .formLine > [role="group"] {
   max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -521,6 +524,7 @@
   /* One row that scrolls sideways, as the shared chips do on a phone. */
   .heroChips {
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
     margin-inline: calc(-1 * var(--wf-s-4));
     padding-inline: var(--wf-s-4);

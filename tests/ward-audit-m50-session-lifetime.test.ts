@@ -6,7 +6,7 @@ import { ACCOUNT_PASS_HOURS, DEMO_PASS_HOURS, issuePass, verifyPass } from "../s
 
 /**
  * Master audit M50 (10 Nov 2026): session lifetime on shared computers. The inventory of every
- * setting is `docs/ward-flow/governance/SESSION-LIFETIME.md`; this file pins the values it quotes and
+ * setting is `docs/ward-flow/governance/session-lifetime.md`; this file pins the values it quotes and
  * adds the two races it found untested. Synthetic account; no provider is contacted.
  */
 const url = "https://zakzoemeedfepxcstsou.supabase.co";

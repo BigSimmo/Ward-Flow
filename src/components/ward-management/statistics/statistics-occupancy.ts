@@ -41,6 +41,14 @@ export function occupancyPercent(figure: { beds: number; inUse: number }): numbe
   return figure.beds > 0 ? Math.round((figure.inUse / figure.beds) * 100) : 0;
 }
 
+/**
+ * The occupancy share as shown beside "in use": "—" when no beds were counted (audit M6), so an
+ * empty or missing ward list never reads as 0% in use, the dash the tools figures already use.
+ */
+export function occupancyShare(percent: number | null): string {
+  return percent === null ? "—" : `${Math.round(percent)}%`;
+}
+
 /** Whole hours as "13h", or "7d 1h" once a wait passes a day, so long waits read at a glance. */
 export function hoursText(hours: number): string {
   if (hours < 24) return `${hours}h`;

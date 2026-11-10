@@ -2,7 +2,7 @@
  * Master audit M7 (10 Nov 2026): stale data must never look live. When the shared reads freeze
  * (the last good read is older than two refreshes, `2 * SHARED_REFRESH_MS`), every main surface
  * says how old its figures are: Home, the ward board, the TV (prominently, as nobody is watching it)
- * and the printed handover and shift brief (fixed: M7 print, D-125). The freeze is published the same way the shell publishes it
+ * and the printed handover and shift brief (fixed: M7 print, D-129). The freeze is published the same way the shell publishes it
  * (`publishLiveRefresh` from `WardSharedAccess`). Synthetic data only.
  */
 import { act, cleanup, render, screen } from "@testing-library/react";

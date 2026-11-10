@@ -19,7 +19,7 @@ type SignOffUndoContext = {
 };
 
 /**
- * M37 (D-125, 10 Nov 2026): a recorded discharge sign-off can be taken back from Ward Decisions for
+ * M37 (D-129, 10 Nov 2026): a recorded discharge sign-off can be taken back from Ward Decisions for
  * a short time, through the step undo (`UNDO_RELEASE_STEP` on its bed release), which refuses when
  * anyone has changed the release since. Undefined when this sign-off has nothing to take back.
  */

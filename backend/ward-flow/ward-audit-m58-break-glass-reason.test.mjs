@@ -25,7 +25,7 @@ test("break glass without a listed reason is refused before the database is touc
   assert.ok(engine.BREAK_GLASS_REASON_IDS.length > 1);
 });
 
-// M58 fixed (D-125, 10 Nov 2026): cover asks why too, from its own short list, and the store refuses
+// M58 fixed (D-129, 10 Nov 2026): cover asks why too, from its own short list, and the store refuses
 // any other reason before it opens a transaction, as break glass does.
 test("cover without a listed reason is refused before the database is touched", async () => {
   const engine = await import("./dist/engine.mjs");

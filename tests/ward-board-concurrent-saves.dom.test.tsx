@@ -83,6 +83,8 @@ it("reports the first move's refusal even when a second move was sent before it 
   });
 
   const said = screen.getAllByTestId("toast").map((toast) => within(toast).queryByText(/Not recorded/u)?.textContent);
-  expect(said).toContain("Not recorded: Someone else moved this person first. Nothing was changed.");
-  expect(said).toContain("Not recorded: An earlier change was refused. Nothing was changed.");
+  // Audit M2: each refusal is led by the name of the person whose move it was.
+  const refusal = (reason: string) => new RegExp(`^Not recorded: [^:]+: ${reason} Nothing was changed\\.$`, "u");
+  expect(said.some((text) => refusal("Someone else moved this person first\\.").test(text ?? ""))).toBe(true);
+  expect(said.some((text) => refusal("An earlier change was refused\\.").test(text ?? ""))).toBe(true);
 });

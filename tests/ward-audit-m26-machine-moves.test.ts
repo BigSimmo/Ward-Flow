@@ -242,7 +242,7 @@ const CREATION_MOVES: Record<string, string> = {
  * the diagram is wrong (fix machines.json) or the engine is (a clinical-behaviour change he rules on).
  * Key: "<from> <ACTION>". Value: what the engine does instead, and the question.
  *
- * Empty since 10 Nov 2026 (D-125): the 15 pairs found by the audit (Q1-Q5 in its report: step back,
+ * Empty since 10 Nov 2026 (D-129): the 15 pairs found by the audit (Q1-Q5 in its report: step back,
  * withdraw referral, ED outcome and community order from every open stage the engine allows, and
  * withdraw acceptance from Bed pulled) were diagram gaps, and machines.json now draws them.
  */

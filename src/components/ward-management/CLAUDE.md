@@ -1,8 +1,6 @@
 # Ward Flow component guidance
 
-@../../../AGENTS.md
-
-The root [AGENTS.md](../../../AGENTS.md) is the canonical operational rule source within the host
+The root [AGENTS.md](../../../AGENTS.md), already loaded through the root `CLAUDE.md`, is the canonical operational rule source within the host
 instruction hierarchy. This subtree adds only component-specific pointers. HOW-WE-WORK and the
 product README provide context; neither overrides root safeguards. Read the affected
 [code-map section](../../../docs/ward-flow/code-map/README.md) before component work.
@@ -12,6 +10,6 @@ product README provide context; neither overrides root safeguards. Read the affe
 - Classify new events in `ward-flow-persistence-classification.ts`, map their roles in
   `EVENT_ROLE` (`ward-flow-event-roles.ts`, re-exported from `ward-flow-events.ts`) and cover permissions in `tests/ward-event-permissions.test.ts`.
 - Use the shared [wf kit](../wf/) and existing `--wf-*` tokens from
-  [ward-flow-v9-tokens.css](../../app/ward-flow-v9-tokens.css), with the
+  [ward-flow-v9-tokens.css](../../app/ward-flow-v9-tokens.css), following the current
   [design system](../../../docs/design/DESIGN-SYSTEM.md). Preserve accepted appearance;
   follow [UI and local server workflow](../../../docs/agents/building-ui.md) for actual UI work.

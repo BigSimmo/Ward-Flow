@@ -229,7 +229,7 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   the word Demo and the board time ("Demo 10:42"). It is the live-state word: it says nothing is live.
   Elsewhere the clock is Board time, never Demo time ([DESIGN-SYSTEM §6](../design/DESIGN-SYSTEM.md#6-words)).
 - **Phone size limits (owner rule [D-82](decisions.md#d-82-a-pr-may-raise-a-phone-size-limit-by-up-to-5-kb-per-screen-without-asking-26-october-2026), 26 October 2026).**
-  The five phone first-load script limits live in `script-budget.json` and are checked by
+  The phone first-load script limits (nine screens on 10 November 2026) live in `script-budget.json` and are checked by
   `scripts/check-script-budget.mjs`. A PR may raise a screen's limit by up to **5 KB in total per
   screen** (added up across the whole PR) without asking Josh. Above 5 KB on any screen, ask first,
   as before. There is no once-per-PR restriction.

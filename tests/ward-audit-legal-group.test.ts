@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { dueTone, isDueSoon, type BoardRow } from "@/components/ward-management/delays/delays-board-model";
-import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
+import {
+  formProgression,
+  formProgressionPhrase,
+  formProgressionShort,
+} from "@/components/ward-management/legal-forms/legal-form-progression";
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
 import {
   currentLegalDueAt,
@@ -84,15 +88,59 @@ describe("form moves on after examination or arrival (S-6)", () => {
       legalForm: { code: "1A", kind: "examination" },
       examination: { at: NOW, outcome: "inpatient_order" },
     });
-    expect(formProgression(examined)).toEqual({ endedCode: "1A", endedWhen: "at the examination", nextCode: "6A" });
+    expect(formProgression(examined)).toEqual({
+      endedCode: "1A",
+      endedWhen: "at the examination",
+      nextCode: "6A",
+      ended: true,
+    });
     const arrived = movement({
       legalStatus: "Involuntary inpatient",
       legalForm: { code: "4C", kind: "transport" },
       closure: { at: NOW, outcome: "arrived", reason: "arrived" },
     });
     expect(formProgression(arrived)?.endedWhen).toBe("at arrival");
+    expect(formProgressionPhrase(formProgression(arrived)!)).toBe("Form 4C ended at arrival");
     expect(formProgression({ ...arrived, legalForm: { code: "6A", kind: "detention" } } as Movement)).toBeUndefined();
     expect(formProgression({ ...arrived, legalStatus: "Voluntary" } as Movement)).toBeUndefined();
+  });
+
+  it("still names Form 6A when a person on a community treatment order arrives (M117, D-123)", () => {
+    for (const code of ["5A", "5B"]) {
+      const arrivedOnCto = movement({
+        legalStatus: "Involuntary inpatient",
+        legalForm: { code },
+        closure: { at: NOW, outcome: "arrived", reason: "arrived" },
+      });
+      // D-127: arrival alone does not end a community treatment order, so the wording stays neutral.
+      expect(formProgression(arrivedOnCto)).toEqual({
+        endedCode: code,
+        endedWhen: "at arrival",
+        nextCode: "6A",
+        ended: false,
+      });
+      expect(formProgressionPhrase(formProgression(arrivedOnCto)!)).toBe(`On Form ${code} at arrival`);
+      expect(formProgressionShort(formProgression(arrivedOnCto)!)).toBe("On this form at arrival");
+      const examinedOnCto = movement({
+        legalStatus: "Involuntary inpatient",
+        legalForm: { code },
+        examination: { at: NOW, outcome: "inpatient_order" },
+      });
+      expect(formProgression(examinedOnCto)).toEqual({
+        endedCode: code,
+        endedWhen: "at the examination",
+        nextCode: "6A",
+        ended: true,
+      });
+    }
+    for (const code of ["6A", "6B", "6C"]) {
+      const arrivedOnOrder = movement({
+        legalStatus: "Involuntary inpatient",
+        legalForm: { code },
+        closure: { at: NOW, outcome: "arrived", reason: "arrived" },
+      });
+      expect(formProgression(arrivedOnOrder)).toBeUndefined();
+    }
   });
 
   it("keeps an ended form's typed expiry as history on Forms and Delays, never in force or overdue", () => {

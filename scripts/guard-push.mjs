@@ -171,21 +171,33 @@ export function wardFlowCheckoutVerdict(cwd = PROJECT_ROOT, env = process.env) {
 
 /**
  * Git's stdin names the actual remote ref, including for deletion-only pushes.
+ * Refuses pushes (and deletions) targeting refs/heads/main or refs/heads/live.
  * @param {string} stdinText
  * @param {Record<string, string | undefined>} [env]
  */
 export function directMainPushVerdict(stdinText, env = process.env) {
   void env;
-  const targetsMain = stdinText.split(/\r?\n/).some((line) => line.trim().split(/\s+/)[2] === "refs/heads/main");
-  return targetsMain
-    ? {
-        name: "direct-main-push",
-        ok: false,
-        message:
-          "Direct pushes to refs/heads/main are blocked, with no override. " +
-          "Push a feature branch and open a pull request.",
-      }
-    : { name: "direct-main-push", ok: true };
+  const targets = stdinText.split(/\r?\n/).map((line) => line.trim().split(/\s+/)[2]);
+  if (targets.includes("refs/heads/main")) {
+    return {
+      name: "direct-main-push",
+      ok: false,
+      message:
+        "Direct pushes to refs/heads/main are blocked, with no override. " +
+        "Push a feature branch and open a pull request.",
+    };
+  }
+  // D-121 item 1: only the daily release workflow moves `live` (AGENTS rule 12). No override.
+  if (targets.includes("refs/heads/live")) {
+    return {
+      name: "direct-main-push",
+      ok: false,
+      message:
+        "Pushes to refs/heads/live are blocked, with no override. " +
+        "Only the release workflow moves live (AGENTS rule 12, D-121).",
+    };
+  }
+  return { name: "direct-main-push", ok: true };
 }
 
 function runGit(args, cwd = PROJECT_ROOT) {
@@ -377,8 +389,12 @@ function ghIsAvailable() {
 }
 
 // ---------------------------------------------------------------------------
-// Legacy local-only Ward Flow policy. Retained as pure exports for existing
-// tests, but it is no longer invoked by the pre-push runtime.
+// Retired policy from when Ward Flow lived inside another repository and was
+// kept off its remote. Ward Flow now has its own repository (BigSimmo/Ward-Flow):
+// every task pushes a feature branch and opens a pull request, and only the
+// release workflow moves `live` (AGENTS.md rules 2, 6 and 12). The live guards
+// are wardFlowRemoteVerdict and directMainPushVerdict above. These exports are
+// kept only for their existing tests; the pre-push runtime never calls them.
 // ---------------------------------------------------------------------------
 export function isMainBranch(branch) {
   if (!branch) return false;
@@ -407,7 +423,10 @@ export function isWardFlowFile(filePath) {
   );
 }
 
-/** The local Ward Flow line. It is never pushed, so its unpushed history marks Ward Flow work. */
+/**
+ * Name of the retired local Ward Flow line from the shared-repository era, when it was kept off the
+ * remote. Kept only for the retired helpers below; current Ward Flow work is pushed on feature branches.
+ */
 export const WARD_LINE_BRANCH = "codex/task-ward-flow-live-state-20260831";
 
 /**

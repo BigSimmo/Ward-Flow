@@ -592,7 +592,7 @@ export function createSharedHandler({
           const patient = new URL(request.url).searchParams.get("patient");
           if (patient !== null && !RECORD_ID.test(patient)) return reply(400, { error: "A patient is required" });
           // #839: both lists are read at once, as each is its own round trip to the database.
-          // M58 (D-125): each cover given joins the coordinator's review list beside the openings.
+          // M58 (D-129): each cover given joins the coordinator's review list beside the openings.
           const [views, openings, covers] = await Promise.all([
             store.recordViews ? store.recordViews(view, patient) : [],
             coordinator && store.breakGlassOpenings && patient === null ? store.breakGlassOpenings(view) : [],

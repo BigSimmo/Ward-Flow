@@ -100,7 +100,7 @@ export function EventTable({
             // D-80 item 14: a break glass opening reads as its reason, its desk and place, and how
             // long it was open, or the pattern when its desk made more than 3 in 12 hours.
             const glass = event.action === "BREAK_GLASS" ? event.details : null;
-            // M58 (D-125): a cover given reads as its reason and the desk that gave it.
+            // M58 (D-129): a cover given reads as its reason and the desk that gave it.
             const cover = event.action === "ACCESS_COVER" ? event.details : null;
             const giver = glass ?? cover;
             return (

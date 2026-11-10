@@ -484,7 +484,7 @@ function CoverPanel() {
   const [recipientKey, setRecipientKey] = useState("");
   const recipient = recipients.find((option) => option.key === recipientKey);
   const [hours, setHours] = useState<number | null>(null);
-  // M58 (D-125): cover asks why, from a short list like break glass, and nothing is chosen for you.
+  // M58 (D-129): cover asks why, from a short list like break glass, and nothing is chosen for you.
   const [reason, setReason] = useState<CoverReasonId | "">("");
   const coverMissing = !place
     ? "Choose the ward or ED first."

@@ -70,7 +70,7 @@ export type CoverRecord = {
   readonly givenBy: WardAccess;
   readonly givenAt: Instant;
   readonly until: Instant;
-  /** Why it was given (M58, D-125), from `COVER_REASONS`. */
+  /** Why it was given (M58, D-129), from `COVER_REASONS`. */
   readonly reason: CoverReasonId | null;
 };
 
@@ -84,7 +84,7 @@ type Snapshot = {
   readonly previewOf: WardAccess | null;
   readonly covers: readonly CoverRecord[];
   /**
-   * M58 (D-125): every cover given in this tab, kept after it ends so the coordinator's review list
+   * M58 (D-129): every cover given in this tab, kept after it ends so the coordinator's review list
    * holds it as it holds this tab's break glass openings. Memory only.
    */
   readonly coversGiven: readonly CoverRecord[];

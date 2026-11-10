@@ -12,7 +12,7 @@
 //    rest on the keyboard instead, and the phone sheet's footer rises above it.
 // 3. Both bars' clearance includes the home indicator (`env(safe-area-inset-bottom)`).
 // 4. A phone bar or toast pinned to the foot follows the clearance, or is listed in FIXED_FOOT with
-//    why. Fixed 10 Nov 2026 (D-125): the officer, ward answer and ready-to-leave toasts sat 92px up, on
+//    why. Fixed 10 Nov 2026 (D-129): the officer, ward answer and ready-to-leave toasts sat 92px up, on
 //    the floating bar where the home indicator is (113px clearance), and now take the shared toast
 //    region's sum above --wf-dock-clear; the four unused 92px toast classes were deleted.
 //

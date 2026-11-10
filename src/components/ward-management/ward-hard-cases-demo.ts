@@ -1,5 +1,5 @@
 /**
- * M134 (audit 10 Nov 2026, approved by Josh as D-125): the synthetic hard cases, as an opt-in
+ * M134 (audit 10 Nov 2026, approved by Josh as D-129): the synthetic hard cases, as an opt-in
  * overlay on the standard seed. Audits and demos that pass "on the seed" prove nothing for a case
  * the seed lacks, so this adds one record for each case the default seed did not hold:
  *

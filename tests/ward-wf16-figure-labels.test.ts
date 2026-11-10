@@ -41,7 +41,10 @@ describe("WF-16 figure labels", () => {
     expect(stage?.count).toBe(totals.occupied);
     // "Leave included": the seed has people on leave, and they sit inside Occupied.
     expect(totals.onLeave).toBeGreaterThan(0);
-    expect(stage?.breakdown.find((part) => part.label === "On leave")?.value).toBe(totals.onLeave);
+    // D-115 item 6: held beds split into approved leave and absent without leave, which together
+    // make the held-bed count.
+    const part = (label: string) => Number(stage?.breakdown.find((entry) => entry.label === label)?.value ?? 0);
+    expect(part("On leave") + part("Absent without leave")).toBe(totals.onLeave);
   });
 
   it("In use is Occupied plus Pulled, so it differs from Occupied wherever a bed is pulled", () => {

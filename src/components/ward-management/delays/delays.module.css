@@ -337,6 +337,7 @@
   background: var(--surface-2);
   padding: 0 8px;
   overflow-x: auto;
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 }
@@ -1172,6 +1173,7 @@
   flex-wrap: nowrap;
   max-width: calc(100% - 2 * var(--wf-s-4));
   overflow-x: auto;
+  overflow-y: hidden;
   margin: var(--wf-s-3) var(--wf-s-4) var(--wf-s-1);
   border: 0;
   border-radius: var(--wf-r-md);

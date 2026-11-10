@@ -189,7 +189,7 @@ export function asAtStamp(now: Instant, dayZero?: Date): { time: string | null; 
   };
 }
 
-/** Master audit M7 (D-125): the stamp's line while the shared reads are frozen. */
+/** Master audit M7 (D-129): the stamp's line while the shared reads are frozen. */
 function staleStampWords(since: number | undefined): string {
   return `${notUpdatingWords(since)}. Figures may be out of date.`;
 }
@@ -484,7 +484,7 @@ export function WardDailySheet({
   const incomingTotal = resolvedIncomingPulled + resolvedIncomingWaitlisted;
 
   const resolvedTimestamp = shiftTimestamp ?? (now !== undefined ? asAtStamp(now, liveFlow?.dayZero).time : null);
-  // Master audit M7 (D-125): the standalone sheet's stamp says so too while reads are frozen.
+  // Master audit M7 (D-129): the standalone sheet's stamp says so too while reads are frozen.
   const freshness = useLiveFreshness(!isEmbedded);
   const staleLine = !isEmbedded && freshness.state === "stale" ? staleStampWords(freshness.since) : null;
 
@@ -779,7 +779,7 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
   const wardName = sheetProps.unit?.name ?? null;
   const title = wardName === null ? "Shift brief" : `${wardName} shift brief`;
   const stamp = sheetProps.now !== undefined ? asAtStamp(sheetProps.now, flow?.dayZero) : null;
-  // Master audit M7 (D-125): while the shared reads are frozen, the printed brief says since when.
+  // Master audit M7 (D-129): while the shared reads are frozen, the printed brief says since when.
   const freshness = useLiveFreshness();
   const staleLine = freshness.state === "stale" ? staleStampWords(freshness.since) : null;
   const stampLine =

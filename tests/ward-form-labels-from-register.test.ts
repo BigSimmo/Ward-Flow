@@ -120,7 +120,7 @@ describe("every rendered form label comes from the Chief Psychiatrist register",
   });
 
   it("Form 3D's register title is the owner's 'further examination' order and carries no duration", () => {
-    // Owner, second round, 17 September 2026 (docs/ward-flow/owner-answers-2026-09-17.md, answer
+    // Owner, second round, 17 September 2026 (docs/history/archive/dated-notes/owner-answers-2026-09-17.md, answer
     // 3): "3D whhich is further examination up to 72 hours" — the register title stands, and D5
     // forbids showing or computing the 72-hour figure itself.
     const title = formTitleForCode("3D");

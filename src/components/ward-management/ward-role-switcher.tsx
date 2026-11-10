@@ -130,7 +130,7 @@ export function WardRoleSwitcher({
    * SUPERSEDING THE 3 SEPTEMBER "RESOLVE THIS" RULING'S REACH ACROSS EVERY ROUTE.** That earlier
    * ruling was right that the trigger must say what is behind it rather than only that it changes
    * the view — but it never asked "behind it, to whom?", and answered as though every route ought
-   * to see the same thing. `docs/ward-flow/owner-answers-2026-09-17.md` item 38: *"Other wards in
+   * to see the same thing. `docs/history/archive/dated-notes/owner-answers-2026-09-17.md` item 38: *"Other wards in
    * the ward switcher: coordinators only."* A ward's own nurse-in-charge screen, or an ED clinician's,
    * has no legitimate reason to be told which OTHER wards a patient was referred to — that is
    * coordinator-only traffic, the same way the coordinator's own inbox is. So this component now

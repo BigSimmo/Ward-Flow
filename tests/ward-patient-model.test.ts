@@ -53,7 +53,7 @@ const DECISIONS = new Map<string, string>([
   ],
   [
     "R-2026-09-04-A",
-    "Owner, 2026-09-04 (docs/ward-flow/owner-rulings-2026-09-04.md section A): explicit permission " +
+    "Owner, 2026-09-04 (docs/history/archive/dated-notes/owner-rulings-2026-09-04.md section A): explicit permission " +
       "to hold address, suburb, GP, catchment community team, legal status, interpreter/preferred " +
       "language, Aboriginal or Torres Strait Islander status, sex/gender and preferred name. Risk " +
       "flags, diagnosis, next of kin and medication were explicitly asked about and explicitly " +
@@ -73,7 +73,7 @@ const DECISIONS = new Map<string, string>([
   ],
   [
     "OWNER-2026-09-10-GENDER",
-    "Owner, 2026-09-09/2026-09-10 (docs/ward-flow/owner-decisions-2026-09-09.md sections 8-9): sex " +
+    "Owner, 2026-09-09/2026-09-10 (docs/history/archive/dated-notes/owner-decisions-2026-09-09.md sections 8-9): sex " +
       "and gender are split into two separate fields; gender is Female or Male, held on the patient " +
       "profile, or not yet recorded — a real, distinct state, never defaulted from sex — completed " +
       "by the clinician at referral if absent. This id covers the new `gender` field only; the " +

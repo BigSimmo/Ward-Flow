@@ -109,8 +109,8 @@ it("CT-12: the chronology CSV and printed copy name the filter, never the typed 
   expect(scopeAt).toBeGreaterThan(0);
   expect(lines[scopeAt + 1]).toBe('"Filter","All sources · Every record kind · Search applied"');
   expect(csv).not.toContain("qqsynthetic");
-  // Audit M46 (D-102): the file names the person by UMRN only, never by name.
-  expect(lines).toContain('"Patient","UM100013"');
+  // D-122 (extends D-102): the file says whose chronology it is by UMRN, never by the synthetic name.
+  expect(lines).toContain('"UMRN","UM100013"');
   expect(csv).not.toMatch(/Marrowvale|Gianna/u);
 });
 

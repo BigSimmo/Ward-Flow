@@ -49,8 +49,8 @@ concurrency:
 jobs:
   recheck:
     name: Ward Flow budget recheck
-    # Disabled until merge queue confirmed working; re-enable by removing this `if: false` line.
-    # The merge queue re-measures each group head against main, which replaces this recheck.
+    # Switched off on 5 Nov 2026 (commit e86878bac) for a planned merge queue, which is not in use
+    # (AGENTS rule 6), so nothing re-checks here now. Re-enabling is a separate CI change (audit F-30).
     if: false
     runs-on: ubuntu-24.04
     timeout-minutes: 15

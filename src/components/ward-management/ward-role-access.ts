@@ -611,7 +611,7 @@ export const BREAK_GLASS_REASONS = [
 export type BreakGlassReasonId = (typeof BREAK_GLASS_REASONS)[number]["id"];
 
 /**
- * Master audit M58 (D-125, 10 Nov 2026): why cover is given, chosen from a short list like break
+ * Master audit M58 (D-129, 10 Nov 2026): why cover is given, chosen from a short list like break
  * glass. Only the id is sent and kept; no typed words.
  */
 export const COVER_REASONS = [

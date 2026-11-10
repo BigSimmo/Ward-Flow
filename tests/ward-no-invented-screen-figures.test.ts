@@ -224,13 +224,13 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
   },
   {
     id: "handover-just-held",
-    why: "How long after 07:00, 15:00 and 23:00 the Handover page still opens on the handover just held (master audit M19, D-125); which page opens, never shown, not a limit.",
+    why: "How long after 07:00, 15:00 and 23:00 the Handover page still opens on the handover just held (master audit M19, D-129); which page opens, never shown, not a limit.",
     file: /^handover\/handover-model\.ts$/,
     name: /^JUST_HELD_HANDOVER_MINUTES$/,
   },
   {
     id: "back-online-spread",
-    why: "Back online, each desk reads again after a random part of this spread so they do not all ask at once (master audit M69, D-125); network pacing, never shown, not a limit.",
+    why: "Back online, each desk reads again after a random part of this spread so they do not all ask at once (master audit M69, D-129); network pacing, never shown, not a limit.",
     file: /^ward-shared-pacing\.ts$/,
     name: /^ONLINE_SPREAD_MS$/,
   },

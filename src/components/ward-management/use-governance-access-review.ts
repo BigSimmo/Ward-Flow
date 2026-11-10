@@ -38,7 +38,7 @@ const READ_EVERY_MS = 60_000;
 export type AccessReviewSource = {
   readonly openings: readonly AccessOpening[];
   readonly views: readonly RecordView[];
-  /** M58 (D-125): each cover given, for the same review list. */
+  /** M58 (D-129): each cover given, for the same review list. */
   readonly covers: readonly AccessCover[];
   /** "server": read from the shared workspace. "demo": the local demo's synthetic rows. */
   readonly from: "server" | "demo";

@@ -48,7 +48,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { formatInstant, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { type Patient } from "@/components/ward-management/ward-patients";
+import type { Patient } from "@/components/ward-management/ward-patients";
 
 import {
   chronologyCsv,
@@ -140,7 +140,7 @@ function dayGroups(rows: readonly ChronologyRow[], dayZero: Date) {
 const pickerName = (patient: Patient) => `${patient.familyName}, ${patient.givenName}`;
 
 /**
- * PIR CHRONOLOGY (D-37). Choose one synthetic person and read every recorded event for them
+ * PIR CHRONOLOGY (Reports build, 9 Oct 2026, #157). Choose one synthetic person and read every recorded event for them
  * in time order: occurred and recorded time, role, action, before and after, and any override or
  * change reason. Prints from the browser and downloads as CSV. The audit trail is coordinator-only,
  * so it is read only when the route's role is the coordinator; any other role sees records and the
@@ -289,9 +289,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
       rows,
       dayZero,
       now,
-      // Audit M46 (Josh, 10 Nov 2026): a file leaves the screen, so it carries the UMRN and never the
-      // name, like every other export (D-102).
-      chronology.patient?.umrn || undefined,
+      // D-122 (extends D-102): the file carries the UMRN, never the name the screen shows.
+      chronology.patient?.umrn,
     ).split("\r\n");
     // Audit 24-7 (CT-12): a filter row sits under Scope so the file says which rows it holds.
     const scopeAt = lines.findIndex((line) => line.startsWith(`${csvCell("Scope")},`));

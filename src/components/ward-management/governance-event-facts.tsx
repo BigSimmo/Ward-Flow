@@ -70,7 +70,7 @@ function BreakGlassFacts({ event, now }: { event: AuditEvent & { action: "BREAK_
     />
   );
 }
-/** Master audit M58 (D-125): a cover given, with the desk that gave it, why and until when. */
+/** Master audit M58 (D-129): a cover given, with the desk that gave it, why and until when. */
 function CoverFacts({ event, now }: { event: AuditEvent & { action: "ACCESS_COVER" }; now: Instant }) {
   const details = event.details;
   return (

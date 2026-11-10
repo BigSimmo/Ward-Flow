@@ -133,7 +133,7 @@ describe("M58 cover", () => {
     }
   });
 
-  // M58 fixed (D-125, 10 Nov 2026): cover asks why from a short list, and each cover given lands on
+  // M58 fixed (D-129, 10 Nov 2026): cover asks why from a short list, and each cover given lands on
   // the coordinator's Governance review list beside the break glass openings. The server refuses
   // an unlisted reason before the database and keeps the reason in its ACCESS_COVER audit row:
   // backend/ward-flow/ward-audit-m58-break-glass-reason.test.mjs and postgres.test.mjs.

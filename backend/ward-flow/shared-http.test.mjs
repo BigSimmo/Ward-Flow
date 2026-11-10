@@ -836,7 +836,7 @@ test("every desk logs the records it opens; the access admin reads the log, a co
     },
     recordViews: async (_view, patient) => [{ patient_id: patient ?? "PT-1001" }],
     breakGlassOpenings: async (view) => [{ id: "7", scope: view.access.scope.kind }],
-    // M58 (D-125): each cover given joins the review list beside the openings.
+    // M58 (D-129): each cover given joins the review list beside the openings.
     coversGiven: async (view) => [{ id: "9", scope: view.access.scope.kind }],
   };
   const ward = setup(other, "prototype", { ...store, viewer: async () => wardView });

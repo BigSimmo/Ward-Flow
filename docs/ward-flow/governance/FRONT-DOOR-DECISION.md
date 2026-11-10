@@ -2,9 +2,9 @@
 
 _Created 2026-11-10 - audit item M128; drafted on branch `claude/project-thread-bnphlk` (from `main` `29352cd0`); Documentation owns._
 
-**Status:** settled. Josh approved switching it on (D-125). On 10 November 2026 Josh saw the
+**Status:** settled. Josh approved switching it on (D-129). On 10 November 2026 Josh saw the
 public demo asking for the demo code, so the front door is on there, and he asked for no Railway
-change (D-126). The signed-in site was not checked from the cloud, which cannot reach the live sites.
+change (D-130). The signed-in site was not checked from the cloud, which cannot reach the live sites.
 
 ## Where things stand
 

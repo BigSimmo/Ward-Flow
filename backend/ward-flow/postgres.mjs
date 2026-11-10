@@ -19,7 +19,7 @@ import {
   conflictingCollection,
   conflictRecordType,
   coveredRecords,
-  jsonCharacterLength,
+  jsonbTextByteLength,
   staleReason,
   markerKind,
   planSave,
@@ -148,7 +148,7 @@ const VIEW_LIST_LIMIT = 200;
 const REVIEW_DAYS = 7;
 /** A break glass opening's review id (`ward-break-glass-review-id.ts`) and the scope refusal. */
 const BREAK_GLASS_REVIEW_PREFIX = "audit-break-glass-";
-/** M58 (D-125): a cover given's review id names its ACCESS_COVER audit row. */
+/** M58 (D-129): a cover given's review id names its ACCESS_COVER audit row. */
 const COVER_REVIEW_PREFIX = "audit-cover-";
 const OUTSIDE_PLACE = "This change names a record outside your role's place.";
 /** Minutes from `now` to a stored time, as the screens place server times on the demo clock. */
@@ -169,8 +169,11 @@ function canonical(value) {
   return value;
 }
 
-/** The legacy JSON character count of a world, measured once per save (audit PS-12). */
-const worldBytes = jsonCharacterLength;
+/**
+ * The UTF-8 byte size of a world as the database's jsonb text measures it, once per save (audits
+ * PS-12, M162): the 8 MiB limit is the old `octet_length(payload::text)` CHECK on the whole world.
+ */
+const worldBytes = jsonbTextByteLength;
 
 /**
  * The audit row's `changes` as stored. A reset or new scenario replaces the whole board, so the
@@ -2357,7 +2360,7 @@ export function createWorkspaceStore(
      * holder for the sign-in pre-check while it runs.
      */
     async giveCover(view, request) {
-      // M58 (D-125): like break glass, a reason from the list, refused before the database.
+      // M58 (D-129): like break glass, a reason from the list, refused before the database.
       if (!engine.COVER_REASON_IDS.includes(request?.reason))
         return refused(400, "A reason from the list is required.");
       const blocked = coverRefusalBefore9(view);
@@ -2795,7 +2798,7 @@ export function createWorkspaceStore(
       }));
     },
     /**
-     * Master audit M58 (D-125): each cover given in the last 7 days, for the coordinator's review
+     * Master audit M58 (D-129): each cover given in the last 7 days, for the coordinator's review
      * list beside the break glass openings: the giver's desk, the cover, its reason and its times,
      * from the ACCESS_COVER audit rows. Below statewide, only cover inside the coordinator's place.
      */

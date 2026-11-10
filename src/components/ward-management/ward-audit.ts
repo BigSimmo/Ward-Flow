@@ -135,7 +135,7 @@ type BreakGlassAuditDetails = {
   otherText?: string;
 };
 /**
- * Master audit M58 (D-125, 10 Nov 2026): a cover given, on the coordinator's review list beside the
+ * Master audit M58 (D-129, 10 Nov 2026): a cover given, on the coordinator's review list beside the
  * break glass openings, kept outside `auditEvents` the same way (origin `break-glass-opening`: held
  * outside the workspace). The desk is the giver's role and place; `cover` is the ward or ED covered.
  */
@@ -300,7 +300,7 @@ export type AuditEvent = AuditBase &
       }
     | {
         // Stream A, 9 Oct 2026: who took, snoozed or returned an action item. The reason is a closed list.
-        // M37 (D-125, 10 Nov 2026): an acknowledgement too, so "Acknowledge visible" leaves one row per alert.
+        // M37 (D-129, 10 Nov 2026): an acknowledgement too, so "Acknowledge visible" leaves one row per alert.
         category: "inbox";
         action:
           | "ACKNOWLEDGE_INBOX_ITEM"

@@ -248,7 +248,15 @@ Source digests were re-reviewed file by file before being re-recorded:
 
 The other command models citing these files had only their digests re-recorded, because none of their handlers, guards, roles or payloads changed.
 
-## Source review — 10 Nov 2026 (master audit fix batches, D-125)
+## Source review — 10 Nov 2026 (clinical display answers, D-122)
+
+Source digests were re-reviewed file by file before being re-recorded:
+
+- `ward-flow-bed-events.ts`: one import was added (line 21), so every cited line after it moved down by one. `EVALUATE_LEAVE_BED_WARNINGS` now words its notice from the signed leave bed value ("24 hours or more", the check being at or over the line). Its guard, role, payload and the warning time are unchanged.
+- `coordinator/shortlist-panel.tsx`: comment-only edits (the override comment cites D-122, not D-86; the three-ward cap comment cites D-122). The edits replace comment lines one for one, so no cited line moved.
+- `ward/ward-answer-view.tsx`: the hero ring's at-risk word tests the whole percent shown (D-109, extended by D-122). No dispatch, role or cited line changed.
+
+## Source review — 10 Nov 2026 (master audit fix batches, D-129)
 
 Source digests were re-reviewed file by file before being re-recorded:
 
@@ -258,3 +266,5 @@ Source digests were re-reviewed file by file before being re-recorded:
 - `ward/ward-screen.tsx`: the sign-off now builds its short Undo (`ward-sign-off-undo.ts`) from the outcome; one import line added. The dispatches cited for twelve events moved down by one to three lines, unchanged in role, payload and guard.
 - `ward-tasks-drawer.tsx`: Acknowledge visible sends one `ACKNOWLEDGE_INBOX_ITEM` per row and names each alert (M13). The event, its role and payload are unchanged; `RECORD_ESCALATION` moved from line 671 to 672.
 - `governance-registers.tsx`: Governance's review list also shows each cover given (M58); `REVIEW_AUDIT_EVENT` moved from line 543 to 546, unchanged.
+
+After `main` (D-121 to D-127) was merged into this branch (10 Nov 2026), `ward/ward-screen.tsx` and `ward-tasks-drawer.tsx` hold both sides' edits. Each cited line was found again by its text, unchanged in role, payload and guard: the twelve `ward-screen.tsx` citations moved down by three to seven lines, and `RECORD_ESCALATION` in `ward-tasks-drawer.tsx` moved to line 673 (one comment line added beside the D-125 sign-out wait). Only lines and digests were re-recorded. This thread's rulings were then renumbered D-129 and D-130, a comment-only change in the cited files, so those digests (in `actions.json`, `event-dispositions.json` and `machines.json`) were re-recorded with no line moved.

@@ -474,6 +474,7 @@
   margin: 0;
   padding: var(--wf-s-3);
   overflow-x: auto;
+  overflow-y: hidden;
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-md);
   background: var(--wf-surface-2);

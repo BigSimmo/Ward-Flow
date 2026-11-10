@@ -1,8 +1,8 @@
 # Ward Flow scripts inventory
 
-_Updated 2026-10-24 - CI section names every workflow and the two unlisted `ward-ci-public` scripts; Documentation owns._
+_Updated 2026-11-10 - CI rows for the protected safety tests, the pull-request patient-identifier scan with its exemptions, the identifier scan and the 5 KB raise cap scripts; Documentation owns._
 
-Curated map of `scripts/` (172 files) and the `package.json` script surface (87 entries),
+Curated map of `scripts/` (178 files) and the `package.json` script surface (87 entries),
 grouped by what each part protects. `package.json` is the command surface; this page says why
 each group exists. `npm run docs:check-inventory` compares the two counts above exactly,
 and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs
@@ -53,15 +53,17 @@ The unit shards use `ward-flow/unit-durations.mjs`, `ward-flow/test-module-depen
 
 `scripts/ward-ci-public/` holds what `.github/workflows/ward-flow.yml` runs: `plan.mjs` and
 `verify-plan.mjs` (which jobs a change needs), `main-reuse.mjs` (reuse a pull request's proven
-result on main), `changed-checks.mjs` (format, lint and the test-deletion guard on changed files),
+result on main), `changed-checks.mjs` (format, lint, the test-deletion guard and the protected safety tests on changed files),
 `check-contracts.mjs` and `check-policy-contracts.mjs` (the workflow's own contracts),
 `install-chromium.mjs`, `apt-archive-cache.mjs` (the release gate's cached WebKit system packages), and
 `bot-author-policy.mjs` for the bot author workflow, `merge-latest-main.mjs` (merges current main
-before the production build measures the phone script budget) and `budget-recheck.mjs` (run by
-`.github/workflows/ward-flow-budget-recheck.yml` to re-measure armed pull requests when main moves),
-and `main-measured.mjs` (lets the budget gate reuse main's saved measurements instead of building main again).
+before the production build measures the phone script budget) and `budget-recheck.mjs` (for
+`.github/workflows/ward-flow-budget-recheck.yml`, which would re-measure armed pull requests when main moves; its job is switched off with `if: false`),
+`main-measured.mjs` (lets the budget gate reuse main's saved measurements instead of building main again),
+`identifier-scan.mjs` (runs the pre-commit secret and patient-identifier scan on a pull request's added lines, D-122) and
+`budget-raise-cap.mjs` (fails a phone limit raised more than 5 KB unless the PR's budget history records Josh's approval, D-121).
 The other workflows need no script here: `release-tag.yml` tags each CI-passed main commit
-`release-YYYY-MM-DD-<sha>`, and `backend-uptime.yml` checks the hosted backend's `/healthz` every
+`release-YYYY-MM-DD-<short sha>` (the full commit id if a different same-day commit already holds the short one), and `backend-uptime.yml` checks the hosted backend's `/healthz` every
 10 minutes, signs in as the synthetic monitor account to load `/v1/workspace`, and opens an issue
 for the owner when either stays down. `ward-flow-nightly-browsers.yml` runs the nightly image
 baselines and the 834px tablet checks through `run-playwright.mjs` (front-end audit TE-01, TE-02),
@@ -72,27 +74,24 @@ or refreshes one issue through `ward-ci-public/nightly-browsers-issue.mjs`. CI a
 `ward-flow/gate-tsc.mjs` and `ward-flow/selected-baseline-verdict.mjs`. Beside the knip ratchet,
 `npm run check:knip:production` lists app files that only tests reach (advisory, never fails; the
 production patterns carry `!` in `knip.json`; front-end audit CB-13).
-Two read-only Tier 7 audits (M142, M139) run by hand: `ward-flow/hotspots.mjs` ranks source files
-by commits times lines from `git log` (it says when the history is shallow), and
-`ward-flow/import-map.ts` (`node scripts/run-tsx.mjs scripts/ward-flow/import-map.ts`) prints the
-import map between layers. Its baseline `ward-flow/import-map-baseline.json` (no cycle, a ceiling on
-screen-to-screen imports) is enforced by `tests/ward-import-map-guard.test.ts`.
 
 ## Safety and data safeguards
 
-| Command or hook                                    | Script                                                                                 | Protects                                                                                  |
-| -------------------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| pre-commit hook                                    | `pre-commit-checks.mjs`, `staged-source-tree.mjs`, `check-staged-docs.mjs`             | Staged secret and patient-identifier admission, sign-out ownership, changed-line checks.  |
-| pre-push hook, `npm run guard:push`                | `guard-push.mjs`                                                                       | Push destination identity and auto-merge ownership (no override), then format and static. |
-| `npm run check:client-bundle-secrets`              | `check-client-bundle-secrets.mjs`                                                      | No API key, token or credentialed database URL in tracked client source.                  |
-| `npm run ward:governance:check`                    | `ward-flow/check-clinical-governance-gate.mjs`                                         | Synthetic fixture identifiers and the disclaimer source (runs in CI).                     |
-| `npm run check:ward-reference`                     | `ward-flow/check-ward-reference.mjs`, `ward-flow/build-reference-*.mjs`                | The generated ward reference registry still matches its source pack (runs in CI).         |
-| `npm run check:ward-legal-language`                | `ward-flow/check-ward-legal-language.mjs`                                              | No screen wording claims legal authority the app does not have (runs in CI).              |
-| `npm run check:ward-source-control-chars`          | `ward-flow/check-source-control-chars.mjs`                                             | Hidden or bidirectional control characters in source.                                     |
-| `npm run check:installed-lock-parity`              | `check-installed-lock-parity.mjs`, `check-node-engine.cjs`                             | Installed packages and Node match the lockfile and engine range.                          |
-| `npm run check:diff-integrity`                     | `check-diff-integrity.mjs`, `diff-integrity.json`                                      | A change cannot silently delete test cases or write a truncation banner.                  |
-| `npm run check:dead-code-candidate`                | `check-dead-code-candidate.mjs`                                                        | Refuses an unsafe dead-code removal unless the owner approves that run.                   |
-| `node scripts/ward-flow/sign-out-check.mjs <file>` | `ward-flow/sign-out-check.mjs`, `ward-flow/claim-files.mjs`, `ward-flow/logs-root.mjs` | Sign-out log clashes before editing.                                                      |
+| Command or hook                                    | Script                                                                                 | Protects                                                                                                                                  |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| pre-commit hook                                    | `pre-commit-checks.mjs`, `staged-source-tree.mjs`, `check-staged-docs.mjs`             | Staged secret and patient-identifier admission, sign-out ownership, changed-line checks.                                                  |
+| pre-push hook, `npm run guard:push`                | `guard-push.mjs`                                                                       | Push destination identity and auto-merge ownership (no override), then format and static.                                                 |
+| `npm run check:client-bundle-secrets`              | `check-client-bundle-secrets.mjs`                                                      | No API key, token or credentialed database URL in tracked client source.                                                                  |
+| `npm run ward:governance:check`                    | `ward-flow/check-clinical-governance-gate.mjs`                                         | Synthetic fixture identifiers and the disclaimer source (runs in CI).                                                                     |
+| `npm run check:ward-reference`                     | `ward-flow/check-ward-reference.mjs`, `ward-flow/build-reference-*.mjs`                | The generated ward reference registry still matches its source pack (runs in CI).                                                         |
+| `npm run check:ward-legal-language`                | `ward-flow/check-ward-legal-language.mjs`                                              | No screen wording claims legal authority the app does not have (runs in CI).                                                              |
+| `npm run check:ward-source-control-chars`          | `ward-flow/check-source-control-chars.mjs`                                             | Hidden or bidirectional control characters in source.                                                                                     |
+| `npm run check:installed-lock-parity`              | `check-installed-lock-parity.mjs`, `check-node-engine.cjs`                             | Installed packages and Node match the lockfile and engine range.                                                                          |
+| `npm run check:diff-integrity`                     | `check-diff-integrity.mjs`, `diff-integrity.json`                                      | A change cannot silently delete test cases or write a truncation banner.                                                                  |
+| CI changed-file checks                             | `ward-flow/check-protected-safety-tests.mjs`, `ward-flow/protected-safety-tests.json`  | Named safety tests cannot lose cases or assertions without Josh's approval line (D-123).                                                  |
+| CI static job                                      | `ward-flow/check-patient-identifiers.mjs`                                              | The pre-commit patient-identifier rules on a pull request's added lines, except fixture and test paths and `precommit-scan: allow` lines. |
+| `npm run check:dead-code-candidate`                | `check-dead-code-candidate.mjs`                                                        | Refuses an unsafe dead-code removal unless the owner approves that run.                                                                   |
+| `node scripts/ward-flow/sign-out-check.mjs <file>` | `ward-flow/sign-out-check.mjs`, `ward-flow/claim-files.mjs`, `ward-flow/logs-root.mjs` | Sign-out log clashes before editing.                                                                                                      |
 
 The dependency audit is the `npm audit` step in `.github/workflows/dependency-audit.yml`, and the
 secret history scan is the gitleaks job in `.github/workflows/ward-flow.yml`. Neither needs a
