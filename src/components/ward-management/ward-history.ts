@@ -48,6 +48,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   OPEN_DISCHARGE_RECORD: { category: "neither", plainWording: "Discharge record viewed" },
   REVIEW_AUDIT_EVENT: { category: "neither", plainWording: "Governance audit review completed" },
   RECORD_LEAVING: { category: "both", plainWording: "Patient departed ward" },
+  MARK_TRANSPORT_COLLECTED: { category: "patient", plainWording: "Collected by transport" },
   RECORD_AWAY_AT_EMERGENCY_DEPARTMENT: {
     category: "patient",
     plainWording: "Patient temporarily away at Emergency Department",

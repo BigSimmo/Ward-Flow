@@ -4,6 +4,7 @@
 import { stayLegalStatusIsInvoluntary } from "./ward-discharge-records";
 import { openRestrictivePracticeRefusal } from "./restrictive-practice/ward-restrictive-practice";
 import { isLeavingDestination } from "./ward-admissions";
+import { LEFT_WARD_NEEDS_TRANSPORT, transportPendingFor } from "./ward-left-ward";
 import { type AuditDecision, finiteInstant } from "./ward-audit";
 import { recordedCommunityTransition } from "./ward-care-journey";
 import type {
@@ -46,6 +47,7 @@ type RecordedStayEvent = Extract<
   {
     type:
       | "RECORD_LEAVING"
+      | "MARK_TRANSPORT_COLLECTED"
       | "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT"
       | "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT"
       | "RECORD_STAY_DISCHARGE_BLOCKER"
@@ -152,6 +154,10 @@ export function reduceRecordedStayEvent(
         decision.reasonCode = "invalid-payload";
         return reject(state, event, "Departure cannot precede this admission's arrival");
       }
+      // Item 18: "Left the ward" only for a discharge still waiting on transport.
+      if (event.awaitingTransport === true && !transportPendingFor(admission, state.bedReleases)) {
+        return reject(state, event, LEFT_WARD_NEEDS_TRANSPORT);
+      }
 
       // Discharge blocked while in transit: a patient cannot be discharged while their transfer
       // ambulance is actively on the road.
@@ -202,7 +208,42 @@ export function reduceRecordedStayEvent(
 
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return departAdmission(state, admission, unit, event.now, event.leavingDestination, event.role);
+      return departAdmission(
+        state,
+        admission,
+        unit,
+        event.now,
+        event.leavingDestination,
+        event.role,
+        event.awaitingTransport === true,
+      );
+    }
+
+    case "MARK_TRANSPORT_COLLECTED": {
+      // Item 18: the person who left the ward waiting for transport has gone. No bed figure moves:
+      // the bed freed when they left the ward.
+      if (finiteInstant(event.now) === null) {
+        decision.reasonCode = "invalid-payload";
+        return reject(state, event, "Collected needs a finite time");
+      }
+      const admission = findAdmission(state, event.admissionId);
+      if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
+      if (event.actingUnitId !== admission.unitId) {
+        decision.reasonCode = "scope";
+        return reject(
+          state,
+          event,
+          `MARK_TRANSPORT_COLLECTED was raised acting as unit ${event.actingUnitId} but admission ${admission.id} belongs to unit ${admission.unitId}`,
+        );
+      }
+      if (admission.state !== "departed" || admission.waitingForTransport === undefined) {
+        return reject(state, event, `admission ${admission.id} is not waiting for transport`);
+      }
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
+      const collected: typeof admission = { ...admission };
+      delete collected.waitingForTransport;
+      return replaceAdmission(state, admission.id, collected);
     }
 
     case "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT": {

@@ -1425,6 +1425,8 @@ function candidatesForMovements(
       return movementIds.map((movementId) => ({ type, role, now, movementId, blocker: "Awaiting a bed" }));
     case "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT":
     case "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT":
+    // Item 18: Collected names the stay and its ward, nothing else.
+    case "MARK_TRANSPORT_COLLECTED":
       // One candidate per admission already in `state.admissions`, `actingUnitId` mirroring the
       // admission's own unit — the same discipline `RECORD_LEAVING` above uses, and for the same
       // reason: a mismatched acting unit is refused before the reducer body runs, and a refused

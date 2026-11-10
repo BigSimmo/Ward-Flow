@@ -842,6 +842,13 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
     1,
     (state, random) => {
       const stay = stayFor(state, random, (candidate) => candidate.awayAtEmergencyDepartmentSince !== null);
+      // Item 18: on alternate calls (by the refusal count, never a fresh draw, so the seeded runs keep
+      // their random stream), or with nobody away at an ED, Collected for the first stay waiting for transport.
+      const waiting =
+        stay && state.rejections.length % 2 === 1
+          ? undefined
+          : state.admissions.find((candidate) => candidate.waitingForTransport);
+      if (waiting) return { type: "MARK_TRANSPORT_COLLECTED", admissionId: waiting.id, actingUnitId: waiting.unitId };
       return {
         type: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
         admissionId: id(stay),

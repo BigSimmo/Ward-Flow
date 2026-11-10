@@ -26,6 +26,7 @@ import type {
 import type { UndoBedMeetingActionEvent } from "./ward-bed-meeting-undo-event-type";
 import type { Tier1UndoEvent } from "./ward-tier1-undo-event-types";
 import type { PatientCollectedEvent, RecordTransportCadEvent } from "./ward-transport-collection-events";
+import type { MarkTransportCollectedEvent } from "./ward-left-ward";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
 import type {
   ReferralContactOutcome,
@@ -170,6 +171,7 @@ export type WardFlowEvent =
       expectedGeneration: number;
       expectedRevision: number;
       leavingDestination: LeavingDestination;
+      awaitingTransport?: true; // Item 18, "Left the ward": see `ward-left-ward.ts`.
     }
   | {
       type: "UPDATE_EXPECTED_DISCHARGE";
@@ -1774,7 +1776,9 @@ export type WardFlowEvent =
        * what makes the difference between a bed freed and a bed moved.
        */
       leavingDestination: LeavingDestination;
+      awaitingTransport?: true; // Item 18, "Left the ward": see `ward-left-ward.ts`.
     }
+  | MarkTransportCollectedEvent
   | {
       /**
        * A WARD SENDS ONE OF ITS OWN OCCUPANTS OUT TO AN EMERGENCY DEPARTMENT, AND KEEPS THE BED.
@@ -2725,26 +2729,3 @@ export type WardFlowEvent =
 /** Road or flight — the two repatriation modes this prototype records. Never free text. */
 export const REPATRIATION_MODES = ["road", "flight"] as const;
 export type RepatriationMode = (typeof REPATRIATION_MODES)[number];
-
-/**
- * ⚠️ THE EVENTS A RECORDED REASON CAN GET PAST — AND THE POINT IS THAT IT IS DERIVED, NOT LISTED.
- *
- * `Extract` reads the union itself, so this cannot drift from `WardFlowEvent`. The reducer's two
- * refusal helpers take THIS rather than `WardFlowEvent & { overrideReason?: OverrideReason }`.
- *
- * That intersection was the defect: it RE-ADDED the field regardless of what the union member
- * declared, so deleting `overrideReason?: OverrideReason` from an event produced no type error
- * anywhere. The declaration was load-bearing for CALLERS constructing the event and NOT for the
- * reducer reading it — a deletion would have left screens unable to pass a reason while the
- * reducer went on reading one that could never arrive. A field with no producer, arriving by
- * deletion, invisible to tsc.
- *
- * ⚠️ AND A STRUCTURAL CHECK WOULD NOT HAVE CAUGHT IT EITHER. `Member extends { overrideReason?:
- * OverrideReason }` stays TRUE when the field is deleted, because a type missing an OPTIONAL
- * property is still structurally assignable to one that declares it optional. That check would
- * compile for ever and report nothing — a check that cannot fail, in the type system.
- */
-export type OverridableWardFlowEvent = Extract<
-  WardFlowEvent,
-  { type: "REFER_TO_UNITS" | "ACCEPT_IN_PRINCIPLE" | "PULL_PATIENT" | "ACCEPT_REFERRAL" }
->;

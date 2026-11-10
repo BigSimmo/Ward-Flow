@@ -454,6 +454,8 @@ type Departure = {
    *  alongside a real `referralId`, and only on `AD-LEFT-01` (`RF-010` → `PT-001`, `wardPatients[0]`,
    *  sex Female, matching this departure's own recorded sex). */
   readonly patientId?: PatientId;
+  /** Item 18: left the ward and still on site waiting for transport, since they left. */
+  readonly waitingForTransport?: true;
 };
 
 function departed(departure: Departure): Admission {
@@ -487,6 +489,7 @@ function departed(departure: Departure): Admission {
     blockReason: null,
     leavingDestination: departure.destination,
     leftAt,
+    ...(departure.waitingForTransport ? { waitingForTransport: { since: leftAt, by: "ward" as const } } : {}),
     followUp: departure.followUp,
   };
 }
@@ -1013,6 +1016,8 @@ const departures: Admission[] = [
     referralId: "RF-010",
     movementId: null,
     patientId: "PT-010",
+    // Item 18: the seeded "Waiting for transport" case, so the ward board's list has someone on it.
+    waitingForTransport: true,
   }),
   departed({
     id: "AD-LEFT-02",

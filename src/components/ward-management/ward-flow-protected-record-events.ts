@@ -1,4 +1,5 @@
 import { pulledBedAvailability } from "./ward-ready-beds";
+import { LEFT_WARD_NEEDS_TRANSPORT, transportPendingFor } from "./ward-left-ward";
 import { withoutRecordNumbers } from "./ward-patient-resolver";
 import { validCareChange, careChangeRefusal, applyCareChange, emptyCareJourney } from "./ward-care-journey";
 import { PROTECTED_REFUSAL_REASONS } from "./ward-protected-refusal-reasons";
@@ -486,9 +487,13 @@ export function reduceProtectedRecordEvent(
     movementSourceAdmission(state, movement),
   );
   if (returnRefusal) return deny("transition", "denied", returnRefusal);
+  // Item 18: "Left the ward" only for a discharge still waiting on transport.
+  const awaitingTransport = event.awaitingTransport === true;
+  if (awaitingTransport && !transportPendingFor(admission, state.bedReleases))
+    return deny("transition", "denied", LEFT_WARD_NEEDS_TRANSPORT);
   return appendAudit(
     state,
-    departAdmission(state, admission, unit, event.now, event.leavingDestination, event.role),
+    departAdmission(state, admission, unit, event.now, event.leavingDestination, event.role, awaitingTransport),
     event,
     {
       outcome: "accepted",

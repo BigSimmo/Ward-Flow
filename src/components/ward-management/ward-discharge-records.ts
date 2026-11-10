@@ -43,6 +43,7 @@ export type DischargeRecord = Readonly<
     | "blockReason"
     | "leftAt"
     | "leavingDestination"
+    | "waitingForTransport"
     | "followUp"
     | "careJourney"
     | "dischargeCriteria"
@@ -217,6 +218,8 @@ function project(state: WardFlowState, admission: Admission, actor: WardRecordAc
     blockReason: admission.blockReason,
     leftAt: admission.leftAt,
     leavingDestination: admission.leavingDestination,
+    // Item 18: left the ward, still on site waiting for transport. A time and a role only.
+    ...(admission.waitingForTransport ? { waitingForTransport: admission.waitingForTransport } : {}),
     followUp: admission.followUp,
     careJourney: admission.careJourney,
     weekendDischargeReviews: admission.weekendDischargeReviews,
