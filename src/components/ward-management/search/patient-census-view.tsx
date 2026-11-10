@@ -15,6 +15,7 @@ import {
 } from "react";
 import { CalendarDays, ChevronDown, ChevronLeft, Clock, Copy, Search, SearchX, UserPlus, X } from "lucide-react";
 
+import { ListExportButton } from "@/components/ward-management/ward-list-export-button";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import {
   Avatar,
@@ -236,6 +237,8 @@ export type CensusTableProps = {
   historyCount: number | undefined;
   history: ReactNode;
   onCopyList: () => void;
+  /** Export (feature 44): the rows on screen as a spreadsheet. */
+  onExportList?: () => Promise<void>;
   copyNote: string | null;
   empty: ReactNode;
   notice?: ReactNode;
@@ -342,6 +345,14 @@ export function CensusTable(props: CensusTableProps) {
             >
               Copy list
             </Button>
+            {props.onExportList ? (
+              <ListExportButton
+                load={props.onExportList}
+                variant="ghost"
+                disabled={rows.length === 0}
+                testId="ward-census-export"
+              />
+            ) : null}
           </>
         ) : null}
       </div>

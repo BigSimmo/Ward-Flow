@@ -15,13 +15,13 @@ import {
   Ambulance,
 } from "lucide-react";
 import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
-import { dayOf, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { ListExportButton } from "@/components/ward-management/ward-list-export-button";
 import {
   Button,
   Card,
@@ -40,7 +40,7 @@ import {
 import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { CriteriaLedTag } from "@/components/ward-management/ward/ward-criteria-led-tag";
-import { DischargeBarrierBars, DischargeDayChart, type DischargeDay } from "./discharge-flow-charts";
+import { DischargeBarrierBars, DischargeDayChart } from "./discharge-flow-charts";
 import styles from "./discharges.module.css";
 import releaseList from "./discharge-release-list.module.css";
 import {
@@ -68,12 +68,10 @@ import {
   WORK_ORDER,
   kpiCardLabel,
   recordStage,
-  recordStatus,
   recordName,
   recordedMoment,
   recordedDate,
   matchesHighlight,
-  perthDay,
   stageTone,
 } from "./discharge-board-model";
 import { DischargePopulationSwitch, DischargeFilterCard } from "./discharge-board-filters";
@@ -86,6 +84,7 @@ import {
 } from "./discharge-detail-panes";
 import { useDischargeDeskView } from "./discharge-desk-view";
 import { useDischargeWorkspaceState } from "./use-discharge-workspace-state";
+import { dischargeChartDays } from "./discharge-chart-days";
 // Closing-the-loop package B (24 Oct 2026): the weekend and holiday list. Since the redesign (approved
 // 31 Oct 2026) it is a compact notice ABOVE the list, so it loads with the board: loaded lazily, the
 // server's copy vanished on hydration and came back, and the whole list jumped (layout shift 0.21).
@@ -113,9 +112,6 @@ import { OnBehalfReasonForm } from "../on-behalf-reason-form-lazy";
  * read it; the opposite is true, a discharge board that lagged reality would be actively
  * misleading about which bed is actually free to chase next.
  */
-
-/** Days the chart covers after today; the column before them gathers every date already passed. */
-const CHART_DAYS_AHEAD = 14;
 
 /** Recorded (DC4): the days of recorded discharges it lists. */
 const RECORDED_DAYS = 7;
@@ -269,52 +265,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const canChangeDate = siteName === undefined;
   const placeLine = (unit: (typeof units)[number] | undefined, unitId: string) =>
     siteName ? unitLabel(unit, unitId) : `${unitLabel(unit, unitId)} · ${healthServiceLabel(unit)}`;
-  const today = dayOf(now);
-  const chartDays: DischargeDay[] = [
-    {
-      key: "past",
-      // DC5 (Josh, 3 Nov 2026): the expected dates already gone by read "Overdue", not "Passed".
-      label: "Overdue",
-      name: "Overdue, expected date already passed",
-      expected: 0,
-      blocked: 0,
-      weekend: false,
-    },
-    ...Array.from({ length: CHART_DAYS_AHEAD }, (_, index): DischargeDay => {
-      const noon = (today + index) * MINUTES_PER_DAY + 12 * 60;
-      const weekday = perthDay(noon, dayZero, { weekday: "short" });
-      return {
-        key: index,
-        label: index === 0 ? "Today" : `${weekday} ${perthDay(noon, dayZero, { day: "numeric" })}`,
-        name: perthDay(noon, dayZero, { weekday: "long", day: "numeric", month: "long" }),
-        expected: 0,
-        blocked: 0,
-        weekend: weekday === "Sat" || weekday === "Sun",
-      };
-    }),
-  ];
-  const dayOfChart = (at: number | null) =>
-    chartDays.find((candidate) => matchesHighlight({ kind: "day", day: candidate.key }, at, null, now));
-  if (nowView) {
-    // Now: every open bed release in scope by its expected day, as Capacity's forecast counts
-    // recorded discharges; the red part is the held-up ones, as the list says. Closed wards are left
-    // out, as Capacity's forecast leaves them out (Josh, 30 Oct 2026), so the two pages agree.
-    const closedUnitIds = new Set(units.filter((unit) => unit.isClosed).map((unit) => unit.id));
-    for (const release of openReleases) {
-      if (closedUnitIds.has(release.unitId)) continue;
-      const day = dayOfChart(release.expectedAt);
-      if (!day) continue;
-      if (release.blocker !== null) day.blocked += 1;
-      else day.expected += 1;
-    }
-  } else {
-    for (const record of openScopedRecords) {
-      const day = dayOfChart(record.expectedDischargeAt);
-      if (!day) continue;
-      if (recordStatus(record) === "blocked") day.blocked += 1;
-      else day.expected += 1;
-    }
-  }
+  const chartDays = dischargeChartDays({ now, dayZero, nowView, units, openReleases, openScopedRecords });
   const phoneOverdue = chartDays[0] ? chartDays[0].expected + chartDays[0].blocked : 0;
   const phoneTodayDay = chartDays.find((candidate) => candidate.key === 0);
   const phoneToday = phoneTodayDay ? phoneTodayDay.expected + phoneTodayDay.blocked : 0;
@@ -365,6 +316,55 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
       () => base.setCopyNote("Copying is not available in this browser."),
     );
   };
+  // Export (feature 44): the list on screen, never names; the builder loads on the click.
+  const exportList = async () => {
+    const exporter = await import("./discharge-export");
+    const wardName = (unitId: string) =>
+      unitLabel(
+        units.find((unit) => unit.id === unitId),
+        unitId,
+      );
+    const at = (instant: number) => formatSheetMoment(instant, dayZero);
+    const what = nowView ? "Discharges, Now" : `Discharges, Recorded in the last ${RECORDED_DAYS} days`;
+    const filters = [service, ward, status, base.blockerCategory, ...(nowView ? [] : [identity, base.destination])];
+    const narrowed = filters.some((value) => value !== "all");
+    // Now exports the release groups the list shows, not every record in scope; the header says so.
+    const shownWords = nowView
+      ? `the discharges by bed ${narrowed ? "the current filters show" : "the list shows"}, by status`
+      : narrowed
+        ? "the recorded discharges the current filters show"
+        : "every recorded discharge in this desk's scope";
+    const provenance = {
+      asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+      scope: `${what}; ${shownWords} (highlights do not narrow it)`,
+    };
+    if (!nowView) {
+      exporter.downloadDischargeRecords(
+        recorded,
+        {
+          wardName,
+          destinationOf: (record) =>
+            LEAVING_DESTINATIONS.find((item) => item.id === record.leavingDestination)?.label ?? "Not recorded",
+          followUpOf: (record) => followUpOf(record).status,
+          at,
+        },
+        provenance,
+      );
+      return;
+    }
+    const rows = visibleReleaseGroups.flatMap((key) =>
+      shownGroups[key].map((release) => ({
+        ...release,
+        statusWord: WORK_STATUS_LABELS[key === "discharged-today" ? "departed" : key],
+      })),
+    );
+    const umrnOf = (release: (typeof rows)[number]) => {
+      const record = records.find((candidate) => candidate.admissionId === release.admissionId);
+      return record?.identity.kind === "linked" ? record.identity.patient.umrn : "UMRN not recorded";
+    };
+    exporter.downloadDischargeReleases(rows, { umrnOf, wardName, statusOf: (row) => row.statusWord, at }, provenance);
+  };
+  const exportCount = nowView ? visibleReleaseGroups.reduce((n, k) => n + shownGroups[k].length, 0) : recorded.length;
   // Now and Recorded: in the hero on desktop and tablet, under it on a phone (v10).
   const populationSwitch = <DischargePopulationSwitch s={s} />;
   const filterCard = <DischargeFilterCard s={s} />;
@@ -845,7 +845,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             foldable={isPhone}
           />
         ) : null}
-        {/* Feature 6 (9 Nov 2026): stays whose expected date has slipped past the flag, most slipped first. */}
+        {/* Feature 6 (9 Nov 2026): stays whose expected date has slipped past the flag, most slipped first.
+            A row with no bed release flagged yet still opens, on the stay's discharge record. */}
         {guarded.status === "allowed" && population === "releases" ? (
           <DischargeSlippingList
             records={visibleRecords}
@@ -857,7 +858,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               );
               if (release) openReleaseOn(release.id, opener, "milestones");
               else {
-                // No bed release flagged yet: the row still opens, on the stay's discharge record.
                 const record = visibleRecords.find((candidate) => candidate.admissionId === admissionId);
                 if (record) openRecord(record, opener);
               }
@@ -910,6 +910,15 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       ? `${toWorkCount} to work${counts.departed > 0 ? ` · ${counts.departed} discharged` : ""}`
                       : `${shown} shown`}
               </span>
+              {/* Export (feature 44) sits with the list it exports, not in the page top (page-tops v6). */}
+              {isPhone ? null : (
+                <ListExportButton
+                  load={exportList}
+                  variant="ghost"
+                  disabled={exportCount === 0}
+                  testId="ward-discharge-export"
+                />
+              )}
             </header>
             {isPhone ? null : <DischargeFilterCard s={s} bare />}
             <div

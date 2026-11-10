@@ -20,7 +20,7 @@ import { presentationDecidedAt, outcomeLabel } from "./referral-board-model";
 import { acceptedReferralsAwaitingPull, acceptedWardOf, type AcceptedAwaitingPull } from "./accepted-ward-referral";
 import { ChevronLeft, ChevronRight, FileText, ListOrdered, TriangleAlert, UserRound } from "lucide-react";
 
-import { type Instant } from "@/components/ward-management/ward-clock";
+import { formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import { overlayOpener } from "@/components/wf/sheet-focus";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { type Movement, type Referral } from "@/components/ward-management/ward-model";
@@ -73,6 +73,7 @@ import {
   referralTimeline,
   wardArm,
 } from "./referral-board-parts";
+import { referralWaitLine } from "./referral-wait";
 import styles from "./referrals.module.css";
 import { demographicLabel, journeyDuration, referralJourneyStages } from "./referral-board-model";
 import { DecidedSection, QueuedSection } from "./referral-board-sections";
@@ -106,6 +107,7 @@ import { focusIsLost, rememberOpener, returnFocusToOpener, useIsPhone, type Focu
 import { focusAfterDecision, focusQueueFallback, nextQueuedId } from "./referral-focus-fallback";
 import mph from "./referral-match-phone.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { ListExportButton } from "@/components/ward-management/ward-list-export-button";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { recordIdFromParam } from "@/components/ward-management/shell/ward-record-address";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -414,6 +416,28 @@ export function ReferralBoard({
    */
   const phoneFiltered = phoneLayout && anyHighlight;
   const listedQueued = phoneFiltered ? queued.filter(isHighlighted) : queued;
+
+  // Export (feature 44): the whole queue (highlights only dim on a desktop), never names; the
+  // builder loads on the click.
+  const exportQueue = async () =>
+    (await import("./referral-export")).downloadReferralQueue(
+      queued,
+      {
+        sinceReferralOf: (referral) => referralWaitLine(referral, now),
+        umrnOf: (referral) => resolveSubjectPatient(referral, resolverState).umrn,
+        // An ASCII separator, so a spreadsheet opened without UTF-8 shows the label cleanly.
+        tierOf: (referral) => urgencyTierLabel(referral.urgency).replace(" · ", " - "),
+        priorityOf: (referral) => referralPriorityLabel(getReferralPriority(referral, now)),
+        fromOf: (referral) =>
+          siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode ?? ORIGIN_NOT_RECORDED,
+        needsOf: needWords,
+        at: (instant) => formatSheetMoment(instant, dayZero),
+      },
+      {
+        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+        scope: "Referral queue; every referral in this desk's queue, regardless of highlights",
+      },
+    );
 
   const decided = presentationLists.recentlyDecided;
   // The DENOMINATOR, uncapped. `decided` above is already truncated to the display limit, so its
@@ -949,6 +973,9 @@ export function ReferralBoard({
                     </span>
                   ) : null}
                 </span>
+                {!phoneLayout && view === "queue" && queued.length > 0 ? (
+                  <ListExportButton load={exportQueue} testId="ward-referral-export" />
+                ) : null}
               </div>
               <TabPanel idPrefix="ward-referral-view" id="queue" hidden={view !== "queue"}>
                 {presentationLists.unavailable.length > 0 ? (

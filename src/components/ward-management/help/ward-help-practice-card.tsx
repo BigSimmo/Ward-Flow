@@ -9,6 +9,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Button, StatusGlyph, useIsPhone } from "@/components/wf";
 
 import { setPracticeSession, usePracticeSession } from "@/components/ward-management/demo-reset/ward-practice-session";
+import { WardTrainingSwitch } from "@/components/ward-management/demo-reset/ward-training-switch";
 import { PRACTICE_STEPS, practiceProgress } from "@/components/ward-management/demo-reset/ward-practice-steps";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
@@ -41,7 +42,8 @@ export const PRACTICE_SHOW_ME: Readonly<Record<PracticeStepId, string | undefine
  * Reset practice button that puts it back"). The same practice as Tools (`ward-practice-mode.tsx`):
  * one session, the same six steps, ticked off from the record. Help adds a Show me for the step
  * that is next and Reset practice, which reloads the current demo scenario through `SET_SCENARIO`
- * after a confirm, then starts a fresh practice. Off in the shared workspace, as in Tools.
+ * after a confirm, then starts a fresh practice. Off in the shared workspace, as in Tools, unless
+ * training is on (feature 47): Start training here runs it on a private synthetic world for this tab.
  */
 export function WardHelpPracticeCard({
   role,
@@ -152,9 +154,13 @@ export function WardHelpPracticeCard({
         ) : null}
       </div>
       {inShared ? (
-        <p className={s.intro} data-testid="ward-help-practice-shared-off">
-          Practice is off in the shared workspace, where every step is saved for everyone. Use the demo on this device.
-        </p>
+        <div className={s.practiceActions}>
+          <p className={s.intro} data-testid="ward-help-practice-shared-off">
+            Practice is off in the shared workspace, where every step is saved for everyone. Start training to practise
+            on synthetic patients that nobody else sees.
+          </p>
+          <WardTrainingSwitch testId="ward-help-training" />
+        </div>
       ) : progress === null ? null : (
         <>
           <ol className={s.practiceSteps} data-testid="ward-help-practice-steps">

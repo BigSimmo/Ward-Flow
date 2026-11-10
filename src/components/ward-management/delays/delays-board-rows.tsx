@@ -26,7 +26,7 @@ import { Tooltip } from "@/components/wf/tooltip";
 import { Glyph } from "./delays-board-parts";
 import { OVER_24H, OVER_8H, rowEvents, type BoardRow } from "./delays-board-model";
 import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
-import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { typedTimeLine, typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import styles from "./delays-board.module.css";
 import redesign from "./waiting.module.css";
 
@@ -46,6 +46,12 @@ export function ago(minutes: number): string {
  * titles from the form register only) opens on keyboard focus and on a tap, not only on hover. A tap
  * on the chip shows the tip and does not open the row.
  */
+/** The export's legal time: the form's time exactly as typed, or none recorded. Never a countdown (D-93). */
+export function legalTimeAsTypedWords(movement: Movement, now: Instant): string {
+  const typed = movement.legalForm === undefined ? undefined : currentLegalDueAt(movement);
+  return typed === undefined ? "None recorded" : typedTimeLine(typed, now);
+}
+
 export function legalCell(row: BoardRow, now: Instant, thresholds: DueSoonThresholds): ReactNode {
   const short = legalStatusShort(row.movement);
   const full = legalStatusFull(row.movement);

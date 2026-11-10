@@ -33,7 +33,11 @@ export function bindReferralDraftAccessContext(context: string): void {
   if (setDraftAccessContext(context)) clearReferralDraftMemory();
 }
 
-function clearReferralDraftMemory(): void {
+/**
+ * The in-memory referral draft only. A training world reset (feature 47) uses this, so the real
+ * world's stored drafts and browser session stay; the scope change fences the old training drafts.
+ */
+export function clearReferralDraftMemory(): void {
   referralDraftMemory.sessionVersion += 1;
   referralDraftMemory.submissions.clear();
   referralDraftMemory.keptStorageKey = undefined;
