@@ -330,8 +330,19 @@ export type Unit = {
    * because of it. Cleared by a pull into this ward or by the ward cancelling it.
    */
   readyForNextAt?: Instant;
-  /** H-0978: beds closed one by one (`SET_BED_CLOSED`); a reopened one keeps `reopenedAt` as seat history. */
-  closedBeds?: { bedNumber: number; at: Instant; by: string; reason?: WardClosureReason; reopenedAt?: Instant }[];
+  /**
+   * H-0978: beds closed one by one (`SET_BED_CLOSED`); a reopened one keeps `reopenedAt` as seat history.
+   * Item 6 (10 Nov 2026): `reviewAt`, "look at this again", only prompts (`bedReviewDue`); reopening
+   * always needs a person, and it changes no bed figure.
+   */
+  closedBeds?: {
+    bedNumber: number;
+    at: Instant;
+    by: string;
+    reason?: WardClosureReason;
+    reviewAt?: Instant;
+    reopenedAt?: Instant;
+  }[];
   /**
    * D-72 (21 Oct 2026), operational only: seclusion and restraint in use now, the seclusion room's
    * recorded status, and incidents the ward recorded. Typed times and fixed lists, no legal limit.

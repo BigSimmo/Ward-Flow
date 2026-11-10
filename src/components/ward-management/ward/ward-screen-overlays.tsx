@@ -6,6 +6,8 @@
 import type { LeavingDestination } from "@/components/ward-management/ward-admissions";
 import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
+import { bedReviewLine } from "../capacity/bed-closure-review";
+import { reviewAtFrom } from "../capacity/closure-choice";
 import { admissionCriteriaEligibility } from "@/components/ward-management/ward-flow-reducer";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 import { useUndoableStep } from "../use-undoable-step";
@@ -145,9 +147,20 @@ export function WardScreenBedDrawer({
     !pathname || routeRole === "ward" || routeRole === "bed_manager" || routeRole === "coordinator";
   // Tier 1 item 6 (Josh, 4 Nov 2026): closing or reopening a bed offers Undo on its toast.
   const bedClosureRole: WardFlowRole = !pathname || routeRole === "ward" ? "ward" : routeRole;
-  const setBedClosed = (bedNumber: number, closed: boolean) =>
-    runBedStep(
-      { type: "SET_BED_CLOSED", role: bedClosureRole, now, unitId: unit.id, actingUnitId: unitId, bedNumber, closed },
+  const setBedClosed = (bedNumber: number, closed: boolean, reviewAfter = "") => {
+    // Item 6: "Review in" read to a time at the tap; "Not known" leaves it out.
+    const reviewAt = closed ? reviewAtFrom(reviewAfter, now) : undefined;
+    return runBedStep(
+      {
+        type: "SET_BED_CLOSED",
+        role: bedClosureRole,
+        now,
+        unitId: unit.id,
+        actingUnitId: unitId,
+        bedNumber,
+        closed,
+        ...(reviewAt !== undefined ? { reviewAt } : {}),
+      },
       {
         success: closed
           ? `Bed ${bedNumber} closed. It is not offered until it is reopened.`
@@ -163,11 +176,13 @@ export function WardScreenBedDrawer({
         undone: closed ? `Undone. Bed ${bedNumber} is open again.` : `Undone. Bed ${bedNumber} is closed again.`,
       },
     );
+  };
   return selectedBed !== null
     ? (() => {
         const selectedBedItem = bedsList.find((b) => b.bedNumber === selectedBed);
         const selectedAdmission = admissions.find((admission) => admission.id === selectedBedItem?.admissionId);
-        const closedByNumber = activeClosedBeds(unit).some((mark) => mark.bedNumber === selectedBed);
+        const closedMark = activeClosedBeds(unit).find((mark) => mark.bedNumber === selectedBed);
+        const closedByNumber = closedMark !== undefined;
         return (
           <WardBedDossierDrawer
             selectedBed={selectedBed}
@@ -304,12 +319,13 @@ export function WardScreenBedDrawer({
             bedClosure={{
               onCloseBed:
                 bedClosureAllowed && selectedBedItem?.status === "ready" && !selectedBedItem.heldFor
-                  ? () => setBedClosed(selectedBed, true)
+                  ? (reviewAfter: string) => setBedClosed(selectedBed, true, reviewAfter)
                   : undefined,
               onReopenBed:
                 bedClosureAllowed && selectedBedItem?.status === "closed" && closedByNumber
                   ? () => setBedClosed(selectedBed, false)
                   : undefined,
+              reviewLine: closedMark ? bedReviewLine(closedMark, now) : null,
             }}
             bedDrawerRef={bedDrawerRef}
             onKeyDown={handleBedDrawerKeyDown}

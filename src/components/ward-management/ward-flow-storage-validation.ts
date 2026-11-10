@@ -383,6 +383,8 @@ const unit = z
           reason: z.optional(
             z.enum(WARD_CLOSURE_REASONS.map((entry) => entry.id) as [WardClosureReason, ...WardClosureReason[]]),
           ),
+          // Item 6: when to look at it again, a prompt only. Optional, so older marks still load.
+          reviewAt: z.optional(finite),
           // A reopened mark stays as seat history; it reopened no earlier than it closed.
           reopenedAt: z.optional(finite),
         }),

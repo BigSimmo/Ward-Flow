@@ -1140,7 +1140,11 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         actingUnitId: id(unit),
         bedNumber: beds - int(random, 0, Math.min(2, beds - 1)),
         closed: true,
-        ...(chance(random, 0.5) ? { reason: pick(random, WARD_CLOSURE_REASON_IDS) } : {}),
+        // Item 6: a review time rides with a chosen reason, with no extra draw, so the runs aimed
+        // before it was added stay where they were.
+        ...(chance(random, 0.5)
+          ? { reason: pick(random, WARD_CLOSURE_REASON_IDS), reviewAt: currentNow + WARD_REOPEN_AFTER_HOURS[0] * 60 }
+          : {}),
       };
     },
   ],

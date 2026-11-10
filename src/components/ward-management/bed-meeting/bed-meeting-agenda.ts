@@ -7,6 +7,7 @@ import { edById } from "../ward-sites";
 import { outOfAreaLedger } from "../ward-referrals-out-of-area";
 import { strandedFlags, strandedPromptText } from "../ward-stranded";
 import { isWaitingInEd } from "../ward-ed-presence";
+import { closedBedsPastReview } from "../capacity/bed-closure-review";
 import type { BedMeetingAction, BedMeetingSubject } from "./bed-meeting-actions";
 
 /**
@@ -127,6 +128,34 @@ export function bedMeetingAgenda(
     total: section.items.length,
     items: section.items.slice(0, limit),
   }));
+}
+
+/** Item 6 (10 Nov 2026): one bed still closed whose review time has passed. A bed, not a person. */
+export type ClosedBedReviewItem = {
+  unitId: string;
+  wardName: string;
+  bedNumber: number;
+  closedAt: Instant;
+  reviewAt: Instant;
+};
+
+/**
+ * Item 6: "Closed beds past review", its own small section kind, since an agenda item is about a
+ * person (`AgendaItem.record`). Wards in the neutral service-then-name order. A prompt only: the
+ * ward reopens a bed on its own page.
+ */
+export function closedBedsReviewSection(
+  units: readonly Unit[],
+  now: Instant,
+): { id: "closed-beds-review"; title: string; total: number; items: ClosedBedReviewItem[] } {
+  const items = closedBedsPastReview(units, now).map(({ unit, mark }) => ({
+    unitId: unit.id,
+    wardName: unit.name,
+    bedNumber: mark.bedNumber,
+    closedAt: mark.at,
+    reviewAt: mark.reviewAt!,
+  }));
+  return { id: "closed-beds-review", title: "Closed beds past review", total: items.length, items };
 }
 
 /** Every recorded action, where it stands now. Overdue is shown, never escalated. */

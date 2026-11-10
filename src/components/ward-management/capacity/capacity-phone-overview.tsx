@@ -11,6 +11,7 @@ import type { CapacityModel } from "./capacity-model";
 import { gapWords } from "./capacity-range-line";
 import { ReadyByRoadTime } from "./capacity-road-time";
 import { ShiftChecks } from "./capacity-shift-checks";
+import { ClosedBedsPastReview } from "./capacity-closed-beds-review";
 import styles from "./capacity-page.module.css";
 
 /**
@@ -119,6 +120,8 @@ export function PhoneOverview({
         )}
       </Card>
       <ShiftChecks model={model} onAskWard={onAskWard} siteName={model.site?.name} />
+      {/* Item 6 (10 Nov 2026): beds closed past their review time; hidden when there are none. */}
+      <ClosedBedsPastReview units={networkRows.map((row) => row.unit)} now={now} executive={executive} />
       {model.site ? (
         // Site bed manager: every site's ready beds by road time, opened in the ward drawer or the
         // Other sites counts, because another site's ward page is not this desk's to open.

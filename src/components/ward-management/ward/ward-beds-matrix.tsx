@@ -128,6 +128,7 @@ function areBedCardPropsEqual(prev: WardBedCardProps, next: WardBedCardProps): b
     p.expectedDays === n.expectedDays &&
     p.departureExpectedAt === n.departureExpectedAt &&
     p.isClosed === n.isClosed &&
+    p.closedReview === n.closedReview &&
     p.isPulled === n.isPulled &&
     p.pastDate === n.pastDate &&
     p.admissionId === n.admissionId &&
@@ -225,7 +226,9 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect 
     who = (
       <>
         <span className={styles.rowName}>Not offered</span>
-        <span className={styles.rowSub}>Closed until it is reopened</span>
+        <span className={styles.rowSub}>
+          {bed.closedReview ? `Closed until reopened · ${bed.closedReview}` : "Closed until it is reopened"}
+        </span>
       </>
     );
   } else if (isPulled) {

@@ -35,6 +35,7 @@ import { patientAgeYears } from "@/components/ward-management/ward-patients";
 import { WARD_LOCKED_BED_SPLITS } from "@/components/ward-management/ward-sites";
 import { layoutBedNumbers, wardStaySeats } from "./ward-bed-layout";
 import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
+import { bedReviewLine } from "../capacity/bed-closure-review";
 import { arrivalIsLate } from "./ward-screen-helpers";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
@@ -394,9 +395,12 @@ export function wardBedRoster({
     const releaseId = preparingByBed.has(bedNumber) ? undefined : unplacedReleases.shift();
     if (releaseId !== undefined) preparingByBed.set(bedNumber, releaseId);
   }
+  // Item 6: a bed closed by number carries its review line ("Review 14:00", "Review overdue").
+  const closedMarks = new Map(activeClosedBeds(unit).map((mark) => [mark.bedNumber, mark]));
   const bedsList = rawBeds
     .map((bed, index) => {
       const bedNumber = bedNumbers[index];
+      const closedMark = bed.status === "closed" ? closedMarks.get(bedNumber) : undefined;
       const preparingReleaseId = bed.status === "ready" ? preparingByBed.get(bedNumber) : undefined;
       const designation: "Locked" | "Open" | undefined = isMixed
         ? bedNumber <= lockedBeds
@@ -414,6 +418,7 @@ export function wardBedRoster({
         preparing: preparingReleaseId !== undefined,
         preparingReleaseId,
         statusText: preparingReleaseId !== undefined ? BED_STATE_LABELS.beingMadeReady : bed.statusText,
+        closedReview: closedMark ? (bedReviewLine(closedMark, now) ?? undefined) : undefined,
       };
     })
     .sort((left, right) => left.bedNumber - right.bedNumber);

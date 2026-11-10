@@ -816,8 +816,7 @@ export type WardFlowEvent =
       role: WardFlowRole;
       now: Instant;
       unitId: string;
-      /** The ward's own claim, refused when it is not `unitId`. Absent for the coordinator. */
-      actingUnitId?: string;
+      actingUnitId?: string; // The ward's own claim, refused when it is not `unitId`. Absent for the coordinator.
       reason: WardClosureReason;
       until?: Instant;
     }
@@ -839,6 +838,7 @@ export type WardFlowEvent =
       bedNumber: number;
       closed: boolean;
       reason?: WardClosureReason;
+      reviewAt?: Instant; // Item 6: look again then, a prompt only. Closing only; capped as a ward's `until`.
     }
   | {
       /**

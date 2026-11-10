@@ -1,5 +1,8 @@
+import { bedIsOccupied, type Admission } from "./ward-admissions";
 import type { Instant } from "./ward-clock";
 import type { Movement, Unit } from "./ward-model";
+import { boundedBedAvailability } from "./ward-ready-beds";
+import { wardStaySeats } from "./ward/ward-bed-layout";
 
 /**
  * CLOSING THE LOOP, PACKAGE D (24 Oct 2026): synthetic demo marks, so each record is visible in the
@@ -11,20 +14,45 @@ import type { Movement, Unit } from "./ward-model";
  * - Graylands Adult Secure has an intake limit with a review due later today.
  * - Graylands Older Adult is closed for staffing with an overdue review, so its transition list
  *   shows what still points at it.
+ * - Item 6 (10 Nov 2026): Maali (Ward 4.2) has its top empty bed closed for staffing four hours ago
+ *   with a review time an hour ago, so "Closed beds past review" shows on Capacity and the bed
+ *   meeting agenda. It takes one Ready bed, as any closed bed does.
  */
 const CANCELLED_MOVEMENT_ID = "WF-008";
 const CONDITIONS_MOVEMENT_ID = "WF-003";
 const BED_AFTER_MOVEMENT_ID = "WF-023";
 const LIMITED_UNIT_ID = "gry-adult-secure";
 const CLOSED_UNIT_ID = "gry-older-adult";
+const CLOSED_BED_UNIT_ID = "fre-adult-open";
 
 const COORDINATOR = "Bed coordinator";
 const WARD = "Ward manager";
 
-export function applyLoopChecksDemoOverlay<T extends { movements: Movement[]; units: Unit[] }>(
-  state: T,
-  now: Instant,
-): T {
+/**
+ * The highest bed on the ward with no stay in it and none held, while the ward keeps another Ready
+ * bed; `undefined` leaves the ward alone, so a changed fixture never breaks the seed.
+ */
+function demoClosedBed(unit: Unit, movements: readonly Movement[], admissions: readonly Admission[]) {
+  if (unit.isClosed || (unit.closedBeds ?? []).length > 0 || boundedBedAvailability(unit).available < 2) return;
+  const seats = wardStaySeats(unit, admissions);
+  const taken = new Set<number>();
+  for (const stay of admissions) {
+    if (stay.unitId !== unit.id || !bedIsOccupied(stay)) continue;
+    const bed = stay.bedNumber ?? seats.get(stay.id);
+    if (bed !== undefined) taken.add(bed);
+  }
+  for (const movement of movements) {
+    if (!movement.closure && movement.acceptedUnitId === unit.id && movement.heldBedNumber !== undefined) {
+      taken.add(movement.heldBedNumber);
+    }
+  }
+  for (let bed = unit.beds; bed >= 1; bed -= 1) if (!taken.has(bed)) return bed;
+  return undefined;
+}
+
+export function applyLoopChecksDemoOverlay<
+  T extends { movements: Movement[]; units: Unit[]; admissions?: readonly Admission[] },
+>(state: T, now: Instant): T {
   const movements = state.movements.map((movement): Movement => {
     if (movement.id === CANCELLED_MOVEMENT_ID && movement.closure?.outcome === "did_not_proceed") {
       const at = movement.closure.at;
@@ -107,6 +135,14 @@ export function applyLoopChecksDemoOverlay<T extends { movements: Movement[]; un
             startedAt: closedAt,
           },
         ],
+      };
+    }
+    if (unit.id === CLOSED_BED_UNIT_ID) {
+      const bedNumber = demoClosedBed(unit, state.movements, state.admissions ?? []);
+      if (bedNumber === undefined) return unit;
+      return {
+        ...unit,
+        closedBeds: [{ bedNumber, at: now - 240, by: WARD, reason: "staffing", reviewAt: now - 60 }],
       };
     }
     return unit;
