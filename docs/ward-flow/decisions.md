@@ -145,9 +145,11 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-120](#d-120-discharge-and-capacity-values-pull-limit-transport-delay-and-discharge-date-slip-9-november-2026)                                        | Discharge and capacity values: pull limit, transport delay, date slip                  | Active                                           |
 | [D-121](#d-121-working-rules-guards-and-your-pc-from-the-10-november-2026-audit-10-november-2026)                                                       | Working rules, guards and PC tidy from the 10 Nov audit                                | Active                                           |
 | [D-122](#d-122-clinical-and-privacy-answers-from-the-10-november-2026-audit-10-november-2026)                                                           | Clinical and privacy answers from the 10 Nov audit                                     | Active                                           |
+| [D-123](#d-123-master-audit-list-answers-two-clinical-fixes-and-five-working-rules-10-november-2026)                                                    | Master audit list answers: two clinical fixes and five working rules                   | Active                                           |
 | [D-124](#d-124-offline-saves-whose-record-changed-are-refused-and-shown-10-november-2026)                                                               | Offline saves whose record changed: refuse and show                                    | Active                                           |
 | [D-125](#d-125-top-10-audit-follow-ups-approved-10-november-2026)                                                                                       | Top 10 audit follow-ups: refusal toast, sign-out waits, executive report, ranked lists | Active                                           |
 | [D-126](#d-126-ranked-lists-neutral-orders-approved-10-november-2026)                                                                                   | Ranked lists: neutral orders on 11 lists, lists 9 and 12 kept                          | Active                                           |
+| [D-127](#d-127-neutral-wording-for-a-community-treatment-order-at-arrival-10-november-2026)                                                             | Neutral wording for a community treatment order at arrival                             | Active                                           |
 
 ---
 
@@ -1527,6 +1529,20 @@ is inferred.
   7. **Privacy:** the chronology CSV download carries no patient name (extends D-102). Hosted CI runs the identifier scan (Medicare, IHI and URN shapes) that today runs only in the local pre-commit hook. Patient search reads patient links through the resolver, where the privacy guard can see them. The design review prompt drops "initials only" (D-83, D-113).
 - **Boundary:** synthetic data only and for the prototype; real patient use still needs formal clinical governance sign-off (D-54). No value is a legal limit (D-22). Approves no release.
 
+## D-123. Master audit list answers: two clinical fixes and five working rules (10 November 2026)
+
+- **Date:** 10 November 2026, 1:41 PM AWST (05:41 UTC). **Decided by:** Josh, in the Ward Flow project thread "Perfect the master audit list": "Go ahead with all recommendations now please", answering the six questions in the revised master audit list (Claude Doc, 10 November 2026). D-120 is claimed by PR #1583 and D-121 and D-122 by the documentation audit.
+- **Decision:**
+  1. **Forms 5A and 5B (audit M117):** they are community treatment orders in the register, not inpatient orders. A person on one who arrives on the ward, or is examined and placed on an inpatient order, gets the "Record Form 6A" prompt like any other non-inpatient form. Only 6A, 6B and 6C count as authorising an inpatient stay. Whether leave and return forms (7A to 7D) and the 4B extension should be recordable is not decided here.
+  2. **Aboriginal and Torres Strait Islander identity (audit M119):** the search record preview shows the identity as recorded ("Aboriginal", "Torres Strait Islander" or "Aboriginal and Torres Strait Islander"), and nothing for "Neither", "Not stated" or no answer. It replaces a fixed "Aboriginal (ATSI)" tag shown for any answer.
+  3. **Protected safety tests (audit M131):** for a named list of safety test files, a removed or loosened assertion should fail CI unless the PR says why and Josh approves. This narrows the Prototype Operating Mode's advisory test-deletion guard for those files only. Built when that audit item is run.
+  4. **Independent review on safety paths (audit M129):** a PR that changes the engine, access scope, database rules or legal wording gets one review by a different thread before auto-merge. Built when that audit item is run.
+  5. **Monthly read-only provider checks (audits M81 to M83):** a standing yes to read-only checks of the live schema, Supabase advisors and plan limits once a month. No writes, setting changes or spending.
+  6. **Cultural safety review (audit M122):** the Aboriginal cultural safety review the charter calls mandatory joins the real-data gate, beside D-111 item 8 and D-87.
+  7. **Audit numbering:** the master audit list numbers items M1 to M156 and supersedes the 84-item plan. D-111 and issues #1564 to #1577 use the plan's numbers (File A). In the master list, D-111 item 8's gate items 16, 33, 34, 35, 42, 43 and 44 are M65, M3, M60, M61, M62, M63 and M64; its items 52, 55 and 80 are M69, M72 and M85. Write M12 or A12, never a bare number. The full File A to M crosswalk is kept in the master audit list's change log (Claude Doc, "Ward Flow master audit list"), not copied here.
+- **Why:** the review found items 1 and 2 as probable defects while reading the code, and items 3 to 7 close gaps that let safety checks weaken quietly or let rulings be misread.
+- **Boundary:** synthetic data only. Items 1 and 2 are clinical display rules built in a held PR. Item 5 authorises reads only. Approves no release.
+
 ## D-124. Offline saves whose record changed are refused and shown (10 November 2026)
 
 - **Date:** 10 November 2026, about 2:04 PM AWST (06:04 UTC). **Decided by:** Josh, on the decision card in the Ward Flow project thread "Perfect the master audit list": "Refuse and show what changed", while audit M10 (issue #1575) ran. D-123 is claimed by held PR #1591.
@@ -1564,3 +1580,10 @@ is inferred.
 - **Kept:** list 9 (Statistics ED finder and the phone ED list keep their current order) and list 12 (New referral, Community team step, catchment team first, because teams are not wards).
 - **Why:** a list beside a waiting list that puts the most free beds first reads as "send them here". A fixed order keeps the same information without a ranking.
 - **Boundary:** D-71 stands: Ward Flow does not rank or recommend a bed. Synthetic data only. Approves no release.
+
+## D-127. Neutral wording for a community treatment order at arrival (10 November 2026)
+
+- **Date:** 10 November 2026, 5:59 PM AWST (09:59 UTC). **Decided by:** Josh, choosing "Neutral wording" on a decision card in the Ward Flow project thread, after a review question on PR #1591 about D-123 item 1. D-124, D-125 and D-126 are claimed by PR #1593.
+- **Decision:** when a person on Form 5A or 5B (a community treatment order) arrives on the ward, screens no longer say the form "ended at arrival". They say "On Form 5A at arrival; Form 6A to record" (or 5B), and short rows say "On this form at arrival". The "Record Form 6A" prompt from D-123 stays. Other forms that move on at arrival (for example 4C) still say "ended at arrival", and any form followed by an inpatient order at examination still says "ended at the examination". The arrival record keeps hiding the form's typed expiry exactly as before.
+- **Why:** arrival on the ward does not by itself end a community treatment order, so "ended" overstated the legal position.
+- **Boundary:** wording only; no timing, count or prompt changes. Synthetic data only. Approves no release.

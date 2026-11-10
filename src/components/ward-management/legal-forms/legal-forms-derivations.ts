@@ -11,7 +11,7 @@ import { elapsedLabel, isOpen } from "@/components/ward-management/ward-derivati
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { LegalForm, Movement } from "@/components/ward-management/ward-model";
 import type { WardRecordTone } from "@/components/ward-management/ward-record-row";
-import { currentLegalDueAt, formProgression } from "./legal-form-progression";
+import { currentLegalDueAt, formProgression, formProgressionPhrase } from "./legal-form-progression";
 export { currentLegalDueAt } from "./legal-form-progression";
 import { typedTimePhrase } from "./legal-time-as-typed";
 
@@ -181,8 +181,7 @@ export function legalDeadlineText(movement: Movement, now: Instant): string {
     throw new Error(`legalDeadlineText called on movement ${movement.id}, which carries no legal form`);
   }
   const progression = formProgression(movement);
-  if (progression)
-    return `Form ${progression.endedCode} ended ${progression.endedWhen}; Form ${progression.nextCode} to record`;
+  if (progression) return `${formProgressionPhrase(progression)}; Form ${progression.nextCode} to record`;
   if (legalForm.dueAt !== undefined) {
     // Legal times only as typed (31 Oct 2026): "Form expiry ends 15:42 as typed", never a count.
     return `Form expiry ${typedTimePhrase(legalForm.dueAt, now)}`;
