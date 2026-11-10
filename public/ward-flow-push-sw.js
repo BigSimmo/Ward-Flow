@@ -30,6 +30,10 @@ const PUSH_BODIES = [
   new RegExp(`^${PUSH_WHERE}\\. Open (?:Alerts|Transport jobs) to review\\. Synthetic demo data\\.$`),
   /^A referral answered, or a client admitted or discharged\. Open Alerts to review\. Synthetic demo data\.$/,
 ];
+// The notification slots pushPayload uses (M158): act-now rows, an officer's transport jobs and a
+// community team's updates each replace only their own kind. An unknown tag falls back to act-now.
+const ACT_NOW_TAG = "ward-flow-act-now";
+const PUSH_TAGS = [ACT_NOW_TAG, "ward-flow-jobs", "ward-flow-team"];
 // Must match WARD_PWA_OPEN_MESSAGE in shell/ward-pwa-registration.tsx.
 const OPEN_MESSAGE = "ward-flow-open";
 
@@ -254,15 +258,17 @@ self.addEventListener("push", (event) => {
   }
   const title = pushText(data.title, FALLBACK.title, 120, PUSH_TITLES);
   const body = pushText(data.body, FALLBACK.body, 240, PUSH_BODIES);
+  const tag = PUSH_TAGS.includes(data.tag) ? data.tag : ACT_NOW_TAG;
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
       icon: "/icons/icon-192",
       badge: "/icons/monochrome-192",
-      tag: "ward-flow-act-now",
+      tag,
       // A new act-now item should buzz even when an earlier one is still showing. The server's
       // outbox retries only the device whose send failed, so a retry never re-buzzes another one.
-      renotify: true,
+      // Jobs and team updates replace their own slot quietly.
+      renotify: tag === ACT_NOW_TAG,
       data: { url: wardFlowPath(data.url) },
     }),
   );

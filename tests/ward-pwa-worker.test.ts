@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 // The backend's payload builder, loaded by address so the website's type check does not take in the
 // untyped backend module. The tests below run its real output through the worker.
-type PushPayload = { title: string; body: string; url: string };
+type PushPayload = { title: string; body: string; url: string; tag: string };
 const { pushPayload } = (await import(new URL("../backend/ward-flow/push.mjs", import.meta.url).href)) as {
   pushPayload: (alerts: readonly { id: string; site: string | null; kind?: string }[]) => PushPayload;
 };
@@ -312,9 +312,12 @@ describe("worker lifecycle", () => {
 describe("what a push may show (PS-13)", () => {
   const FALLBACK = { title: "Ward Flow: act now", body: "Open Alerts to review. Synthetic demo data." };
 
-  async function shown(data: unknown) {
+  type Note = { title: string; options: { body: string; tag: string; renotify: boolean; data: { url: string } } };
+
+  /** Runs each payload through one worker, like a phone receiving them in turn. */
+  async function notified(...payloads: unknown[]) {
     const listeners: Record<string, (event: unknown) => void> = {};
-    const notes: { title: string; options: { body: string; tag: string; data: { url: string } } }[] = [];
+    const notes: Note[] = [];
     runInNewContext(WORKER_SOURCE, {
       URL,
       self: {
@@ -323,15 +326,43 @@ describe("what a push may show (PS-13)", () => {
           listeners[type] = listener;
         },
         registration: {
-          showNotification: async (title: string, options: (typeof notes)[number]["options"]) => {
+          showNotification: async (title: string, options: Note["options"]) => {
             notes.push({ title, options });
           },
         },
       },
     });
-    let work: Promise<unknown> = Promise.resolve();
-    listeners.push({ data: { json: () => data }, waitUntil: (promise: Promise<unknown>) => (work = promise) });
-    await work;
+    for (const data of payloads) {
+      let work: Promise<unknown> = Promise.resolve();
+      listeners.push({ data: { json: () => data }, waitUntil: (promise: Promise<unknown>) => (work = promise) });
+      await work;
+    }
+    return notes;
+  }
+
+  it("keeps a red act-now alert and a transport job in separate slots (M158)", async () => {
+    const actNow = pushPayload([{ id: "x", site: "Royal Perth Hospital" }]);
+    const job = pushPayload([{ id: "job:WF-005:abc", site: "Peel Health Campus", kind: "job" }]);
+    const team = pushPayload([{ id: "community:1", site: "Royal Perth Hospital", kind: "community" }]);
+    const notes = await notified(actNow, job, team);
+    expect(notes.map((note) => note.options.tag)).toEqual(["ward-flow-act-now", "ward-flow-jobs", "ward-flow-team"]);
+    expect(new Set(notes.map((note) => note.options.tag)).size).toBe(3);
+    // Only act now buzzes again over an earlier one; the other slots update quietly.
+    expect(notes.map((note) => note.options.renotify)).toEqual([true, false, false]);
+  });
+
+  it.each([
+    ["an unknown tag", "ward-flow-other"],
+    ["no tag", undefined],
+    ["a non-string tag", 7],
+  ])("uses the act-now slot for %s", async (_label, tag) => {
+    const payload = { ...pushPayload([{ id: "x", site: null }]), tag };
+    const [note] = await notified(payload);
+    expect(note.options).toMatchObject({ tag: "ward-flow-act-now", renotify: true });
+  });
+
+  async function shown(data: unknown) {
+    const notes = await notified(data);
     expect(notes).toHaveLength(1);
     return { title: notes[0].title, body: notes[0].options.body, url: notes[0].options.data.url };
   }
