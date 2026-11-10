@@ -90,6 +90,8 @@ const SIGNED_BY_JOSH_23_OCT = { status: "signed", signedBy: "Josh (product owner
  * and capacity review page).
  */
 const SIGNED_BY_JOSH_9_NOV = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-11-09" } as const;
+/** Josh signed the TV change mark's length for the prototype on 10 Nov 2026 (D-137). */
+const SIGNED_BY_JOSH_10_NOV = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-11-10" } as const;
 
 /**
  * The name each observation level is shown under, everywhere Ward Flow shows one (fix plan item 10,
@@ -369,6 +371,13 @@ export const CLINICAL_VALUES = {
   handoverDuePrompt: {
     status: "synthetic",
     name: "Rail shows Handover Due once the shift has this long or less to run",
+    group: "Alerts and holds",
+    value: 15,
+    unit: "minutes",
+  },
+  tvChangeMark: {
+    ...SIGNED_BY_JOSH_10_NOV,
+    name: "TV tile shows when its figure changed, for",
     group: "Alerts and holds",
     value: 15,
     unit: "minutes",

@@ -65,6 +65,7 @@ import { EdClinicalTvView, WardClinicalTvView, WardHandoverTvView } from "./tv-c
 import { BoardSwitch, LivePulse, tvBoardOf, tvBoardTitle, type TvBoard } from "./tv-board-switch";
 import { EdBedSearchTvView, WardLegalTvView, WardObsLeaveTvView, WardTodayTvView } from "./tv-function-views";
 import { MeetingTvTop } from "./bed-meeting-tv-top";
+import { TvChangeMark, useWardTvChangeMarks } from "./tv-change-mark";
 import topStyles from "./bed-meeting-tv-top.module.css";
 import styles from "./bed-meeting-tv.module.css";
 
@@ -138,10 +139,12 @@ type TvTileProps = {
   meter?: { value: number; max: number };
   /** A second line under the detail: when the figure was last confirmed (`bedCountText`), or a note. */
   age?: string;
+  /** Plan item 43 (D-137): "Changed 14:32" while the figure's change mark lasts. */
+  changed?: string | null;
   testId: string;
 };
 
-function TvTile({ label, value, detail, tone, meter, age, testId }: TvTileProps) {
+function TvTile({ label, value, detail, tone, meter, age, changed, testId }: TvTileProps) {
   // Final polish (31 Oct 2026): every tile draws its bar in the same place; an empty whole (nobody
   // waiting) draws an empty track rather than leaving the row blank.
   const share = meter && meter.max > 0 ? Math.min(100, Math.round((meter.value / meter.max) * 100)) : meter ? 0 : null;
@@ -160,9 +163,11 @@ function TvTile({ label, value, detail, tone, meter, age, testId }: TvTileProps)
         </dd>
       )}
       <dd className={styles.tileDetail}>{detail}</dd>
-      {age ? (
+      {age || changed ? (
         <dd className={styles.tileDetail} data-testid={`${testId}-age`}>
           {age}
+          {age && changed ? " · " : null}
+          <TvChangeMark text={changed ?? null} testId={`${testId}-changed`} />
         </dd>
       ) : null}
     </div>
@@ -175,7 +180,7 @@ function TvTiles({ tiles }: { tiles: TvTileProps[] }) {
       className={styles.tiles}
       aria-label="Today at a glance"
       data-testid="bed-meeting-tv-tiles"
-      data-ages={tiles.some((tile) => tile.age) ? "" : undefined}
+      data-ages={tiles.some((tile) => tile.age || tile.changed) ? "" : undefined}
     >
       {tiles.map((tile) => (
         <TvTile key={tile.testId} {...tile} />
@@ -620,15 +625,20 @@ export function WardTvView({
   now,
   scenario,
   nameOfStay,
+  frozen = false,
 }: {
   sheet: WardTvSheet;
   now: number;
   scenario: string;
   /** The patient's name for a stay (an admission id); without it the rows give sex and day only. */
   nameOfStay?: (admissionId: string) => string;
+  /** Not live: the figures are the last live ones, so no change mark is recorded (plan item 43). */
+  frozen?: boolean;
 }) {
   const { capacity, incoming, discharges } = sheet;
   const going = discharges.heldUp + discharges.confirmed + discharges.expected;
+  const changed = useWardTvChangeMarks(sheet, scenario, now, frozen);
+
   const stuck = [
     ...sheet.heldUp.map((person) => ({ person, note: `Held up: ${person.blockReason ?? ""}`.trim() })),
     ...sheet.overdue
@@ -647,6 +657,7 @@ export function WardTvView({
             tone: capacity.ready === 0 ? "danger" : sheet.bedCount.notConfirmed > 0 ? "warning" : undefined,
             meter: { value: capacity.ready, max: capacity.beds },
             age: bedCountText(sheet.bedCount, now),
+            changed: changed("ready"),
             testId: "ward-tv-ready",
           },
           {
@@ -656,6 +667,7 @@ export function WardTvView({
             tone: sheet.askedCount > 0 ? "warning" : undefined,
             // Final polish: still unanswered, of this ward's referrals (asked plus accepted).
             meter: { value: sheet.askedCount, max: sheet.askedCount + incoming.total },
+            changed: changed("asked"),
             testId: "ward-tv-asked",
           },
           {
@@ -664,6 +676,7 @@ export function WardTvView({
             detail: `Accepted. ${incoming.onTheWay} on the way now`,
             tone: incoming.total > capacity.ready ? "warning" : undefined,
             meter: { value: incoming.onTheWay, max: incoming.total }, // Final polish: on the way now, of all
+            changed: changed("incoming"),
             testId: "ward-tv-incoming",
           },
           {
@@ -672,6 +685,7 @@ export function WardTvView({
             detail: `Today and tomorrow. ${discharges.confirmed} confirmed, ${releasesHeldUpText(discharges.heldUp)}`,
             tone: discharges.heldUp > 0 ? "warning" : undefined,
             meter: { value: discharges.confirmed, max: going },
+            changed: changed("going"),
             testId: "ward-tv-going",
           },
           {
@@ -680,6 +694,7 @@ export function WardTvView({
             detail: `${sheet.noDate} with no date set`,
             tone: sheet.overdue.length > 0 ? "warning" : undefined,
             meter: { value: sheet.overdue.length, max: sheet.occupied },
+            changed: changed("overdue"),
             testId: "ward-tv-overdue",
           },
         ]}
@@ -1317,6 +1332,8 @@ export function BedMeetingTvScreen({
           local={shared?.enabled !== true}
           asAt={stamp.time}
           stale={staleWarning}
+          now={shownNow}
+          screen={`${current}:${scenario}`}
           chips={[
             {
               id: "screen",
@@ -1437,7 +1454,7 @@ export function BedMeetingTvScreen({
       {view.kind === "network" ? (
         <BedMeetingTvView sheet={view.sheet} extras={view.extras} now={shownNow} scenario={scenarioLabel} />
       ) : view.kind === "ward" ? (
-        <WardTvView sheet={view.sheet} now={shownNow} scenario={scenarioLabel} nameOfStay={nameOfStay} />
+        <WardTvView sheet={view.sheet} now={shownNow} scenario={scenarioLabel} nameOfStay={nameOfStay} frozen={!live} />
       ) : view.kind === "ward-clinical" ? (
         (() => {
           const footer = <Footer scope={view.unit.name} scenario={scenarioLabel} now={shownNow} />;
