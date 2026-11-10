@@ -1804,3 +1804,221 @@ a.askChip {
   font-variant-numeric: tabular-nums;
   text-align: center;
 }
+
+/*
+ * ── Phone search while typing (Josh, 10 Nov 2026, "polish all the other components and activity
+ * during search"): results, the best match and No matches share the start screen's language. Rows sit
+ * on the glass on the same 14px edge, with the same soft icon tiles, headings and hairlines. The best
+ * match is a soft wash, not a ringed card. Match highlights are a light tint, and Full patient search
+ * stays at the foot of the sheet.
+ */
+@media (max-width: 46.4375rem) {
+  /* The results fill the sheet, so Full patient search stays at its foot however few rows match. */
+  .popup:not([data-start]) .split {
+    flex: 1 1 auto;
+  }
+
+  .popup:not([data-start]) .listPane {
+    padding: 4px 14px 20px;
+  }
+
+  /* "First 40 matches" sits under its heading as a quiet note. */
+  .popup:not([data-start]) .groupItem .group + .emptyDescription {
+    max-width: none;
+    margin: -2px 2px 6px;
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-3);
+  }
+
+  .popup:not([data-start]) .list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .popup:not([data-start]) .groupItem:not(:first-child) {
+    margin-top: 0;
+    padding-top: 0;
+  }
+
+  .popup:not([data-start]) .group {
+    height: 24px;
+    margin-bottom: 4px;
+    padding: 0 2px;
+    font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+    color: var(--wf-ink-3);
+  }
+
+  .popup:not([data-start]) .group .showAll {
+    position: relative;
+    min-height: 24px;
+    padding: 0 2px;
+    font-size: var(--wf-fs-13);
+  }
+
+  .popup:not([data-start]) .group .showAll::after {
+    content: "";
+    position: absolute;
+    inset: -20px -4px -4px; /* 48px tall; grows into the gap above, never over the first row */
+  }
+
+  .popup:not([data-start]) .groupList {
+    overflow: visible;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .popup:not([data-start]) .option {
+    gap: 12px;
+    min-height: 56px;
+    padding: 8px 2px;
+    border-radius: 12px;
+  }
+
+  .popup:not([data-start]) .optionItem + .optionItem .option::after {
+    left: 50px;
+    right: 0;
+  }
+
+  .popup:not([data-start]) .itemIconBox {
+    flex-basis: 36px;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--wf-accent-tint) 78%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-accent) 9%, transparent);
+  }
+
+  .popup:not([data-start]) .itemIconBox svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .popup:not([data-start]) .itemIconBox:has([data-wf-glyph="danger"]) {
+    background: color-mix(in srgb, var(--wf-danger) 12%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-danger) 14%, transparent);
+  }
+
+  .popup:not([data-start]) .itemIconBox:has([data-wf-glyph="warning"]) {
+    background: color-mix(in srgb, var(--wf-warning) 14%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-warning) 16%, transparent);
+  }
+
+  .popup:not([data-start]) .itemIconBox:has([data-wf-glyph]) svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  .popup:not([data-start]) .resultContent {
+    gap: 1px;
+  }
+
+  .popup:not([data-start]) .resultTitle {
+    font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+    letter-spacing: -0.006em;
+  }
+
+  /* Details wrap whole instead of cutting a ward's name mid-word. */
+  .popup:not([data-start]) .resultMeta {
+    flex-wrap: wrap;
+    white-space: normal;
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-3);
+  }
+
+  .popup:not([data-start]) .resultMeta > span {
+    overflow: visible;
+  }
+
+  /* The best match: the same row, lifted by a soft wash. No ring and no Enter key on a phone. */
+  .popup.popup:not([data-start]) .groupItem[data-group="goto"] .option,
+  .popup.popup:not([data-start]) .option[data-active] {
+    min-height: 60px;
+    padding: 10px 10px;
+    margin: 0 -8px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--wf-accent-tint) 70%, transparent);
+    box-shadow: none;
+  }
+
+  .popup:not([data-start]) .groupItem[data-group="goto"] .itemIconBox {
+    flex-basis: 40px;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--wf-surface);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 8%, transparent);
+  }
+
+  .popup:not([data-start]) .groupItem[data-group="goto"] .resultTitle {
+    font: 600 var(--wf-fs-15, 15px) / var(--wf-lh-15, 20px) var(--wf-font);
+  }
+
+  .popup:not([data-start]) .option[data-active]::after,
+  .popup:not([data-start]) .option[data-active] + .option::after {
+    display: none;
+  }
+
+  /* Match highlights: a light tint that reads as a hint, not a block. */
+  .popup:not([data-start]) .option mark {
+    padding: 0 1px;
+    margin: 0 -1px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--wf-accent) 13%, transparent);
+    color: var(--wf-ink-1);
+    font-weight: inherit;
+    box-decoration-break: clone;
+  }
+
+  /* Pressed and keyboard states, as on the start screen. */
+  .popup:not([data-start]) .option:active {
+    background: color-mix(in srgb, var(--wf-ink-1) 5%, transparent);
+  }
+
+  .popup:not([data-start]) .option:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: -2px;
+  }
+
+  /* No matches: left-aligned on the same edge, with the suggestions as a tidy chip row. */
+  .popup:not([data-start]) .empty {
+    align-items: flex-start;
+    padding: 20px 2px 8px;
+    text-align: left;
+  }
+
+  .popup:not([data-start]) .emptyIcon {
+    width: 36px;
+    height: 36px;
+    padding: 9px;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--wf-accent-tint) 78%, transparent);
+    color: var(--wf-accent);
+  }
+
+  .popup:not([data-start]) .emptyTitle {
+    margin-top: 12px;
+    font: 600 var(--wf-fs-16) / var(--wf-lh-16, 22px) var(--wf-font);
+  }
+
+  .popup:not([data-start]) .emptyDescription {
+    max-width: 34ch;
+    font-size: var(--wf-fs-13);
+    color: var(--wf-ink-3);
+  }
+
+  .popup:not([data-start]) .emptyTry {
+    justify-content: flex-start;
+    gap: 6px;
+    margin-top: 16px;
+  }
+}
+
+/* A phone has no Enter key to show. */
+@media (max-width: 46.4375rem) {
+  .popup.popup .actionHint {
+    display: none;
+  }
+}
