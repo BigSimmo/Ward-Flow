@@ -64,7 +64,10 @@ function renderBoard() {
 
 /** "3Ward bed" -> ["Ward bed", 3] */
 function split(el: HTMLElement): [string, number] {
-  const text = (el.textContent ?? "").trim();
+  // A chip's spoken copy of its count (", 3") is for a screen reader; read what is shown.
+  const shown = el.cloneNode(true) as HTMLElement;
+  shown.querySelectorAll(".sr-only").forEach((node) => node.remove());
+  const text = (shown.textContent ?? "").trim();
   const m = /^(\d+)\s*(.+)$/.exec(text) ?? /^(.+?)\s*(\d+)$/.exec(text);
   expect(m, `no count in "${text}"`).not.toBeNull();
   return /^\d/.test(text) ? [m![2]!.trim(), Number(m![1])] : [m![1]!.trim(), Number(m![2])];
@@ -78,7 +81,8 @@ describe("P154: one type chip set on phone and desktop, each referral counted on
   it("phone chips read Ward bed · ED · More than one · Community · Refused once; types sum to the queue", () => {
     setPhone(true);
     const queued = renderBoard();
-    const group = screen.getByRole("group", { name: "Highlight by what is asked" });
+    // Page tops (Josh, 9 Nov 2026): the type chips are the slate's quick chips (Bed meeting is a link).
+    const group = screen.getByRole("list", { name: "Referral highlights" });
     const chips = within(group).getAllByRole("button").map(split);
     // Referrals redesign (31 Oct 2026): a chip with nobody in it hides, so the chips shown keep this
     // order and each holds someone; the types shown still sum to the queue (each counted once).
@@ -102,11 +106,11 @@ describe("P154: one type chip set on phone and desktop, each referral counted on
     document.body.innerHTML = "";
     setPhone(false);
     const queued = renderBoard();
-    const group = screen.getByRole("group", { name: "Highlight referrals" });
+    // Page tops (Josh, 9 Nov 2026): Decision overdue is a hero figure; the type chips and Refused once
+    // are the slate's quick chips, the same set as the phone's (hidden, like the rest, while nobody is in it).
+    const group = screen.getByRole("list", { name: "Referral highlights" });
     const pills = within(group).getAllByRole("button").map(split);
-    // Referrals redesign (31 Oct 2026): "Decision overdue" is the one word for late decisions, and
-    // Refused once joins this group (hidden, like the rest, while nobody is in it).
-    const order = ["Decision overdue", "Tier 1", "Ward bed", "ED", "More than one", "Community", "Refused once"];
+    const order = ["Tier 1", "Ward bed", "ED", "More than one", "Community", "Refused once"];
     expect(pills.map(([label]) => label)).toEqual(order.filter((label) => pills.some(([shown]) => shown === label)));
     expect(pills.every(([, n]) => n > 0)).toBe(true);
     const types = pills.filter(([label]) => !["Decision overdue", "Tier 1", "Refused once"].includes(label));

@@ -96,12 +96,12 @@ describe("command-specific action feedback", () => {
     expect(screen.getByText("Preparing discharge workspace…")).toBeInTheDocument();
     expect(screen.getByText("Preparing discharge workspace…").closest('[aria-busy="true"]')).toBeNull();
     fireEvent.click(history);
-    expect(history).toHaveAttribute("aria-pressed", "false");
+    expect(history).toHaveAttribute("aria-selected", "false");
     view.rerender(content(true));
     expect(history).toBeEnabled();
     expect(screen.queryByText("Preparing discharge workspace…")).not.toBeInTheDocument();
     fireEvent.click(history);
-    expect(history).toHaveAttribute("aria-pressed", "true");
+    expect(history).toHaveAttribute("aria-selected", "true");
   });
   it.each(["accepted", "refused", "failed", "cancelled"] as const)(
     "waits for transport's %s completion instead of counting reducer refusals",
@@ -369,8 +369,10 @@ describe("role restrictions and record actors", () => {
     renderCommand(<CapacityScreen />, dispatch);
     // Capacity redesign (31 Oct 2026): a desk that may not ask a ward to confirm sees no Ask
     // control at all, rather than a locked one with a reason.
-    const shift = within(screen.getByRole("region", { name: "Bed counts confirmed" }));
+    // Page tops (Josh, 9 Nov 2026): the counts confirmed this shift are the hero's pill.
+    const shift = within(screen.getByTestId("capacity-hero-confirmed"));
     expect(shift.queryByRole("button", { name: /^Ask .+ to confirm its beds$/u })).toBeNull();
+    expect(shift.queryByRole("button", { name: /^Ask/u })).toBeNull();
     const card = bedMapCards().find((candidate) => wardCardName(candidate) === seedUnitName("rph-adult-secure"));
     expect(card, "the bed map must draw the ward desk's own ward").toBeDefined();
     fireEvent.click(card!);

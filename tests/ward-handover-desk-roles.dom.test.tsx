@@ -37,7 +37,8 @@ describe("Handover role branches", () => {
   it("the nurse in charge's one-ward desk counts people and drops the coordinator's bed search", () => {
     renderAtDesk({ role: "ward", scope: { kind: "ward", unitIds: ["brm-adult-secure"] } });
     expect(screen.getByRole("heading", { level: 1, name: /\d+ (person|people) to hand over/ })).toBeInTheDocument();
-    const counts = within(screen.getByTestId("ward-handover-kpi-strip"));
+    // Page tops (9 Nov 2026): the top's figures are act now, urgent and due by; no bed search count.
+    const counts = within(screen.getByTestId("ward-handover-hero"));
     expect(counts.queryByText("Finding a ward")).toBeNull();
     // 1 Nov 2026 redesign: the highlight chips sit in the sheet's one Highlight menu.
     fireEvent.click(within(screen.getByTestId("ward-handover-sheet")).getByRole("button", { name: /^Highlight/ }));

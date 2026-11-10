@@ -16,11 +16,17 @@ function renderIndex() {
   );
 }
 
-/** The checked choice's label, without its count ("South2" reads "South"). */
+/**
+ * The checked choice's label, without its count ("South2" reads "South"). Page tops (Josh, 9 Nov
+ * 2026): on a desktop the health services are filter tabs beside the view tabs, so a selected tab
+ * counts as checked too.
+ */
 const checked = (container: HTMLElement) =>
-  [...container.querySelectorAll<HTMLElement>('[role="radio"][aria-checked="true"]')].map((element) =>
-    (element.textContent ?? "").replace(/\d+$/u, ""),
-  );
+  [
+    ...container.querySelectorAll<HTMLElement>(
+      '[role="radio"][aria-checked="true"], [role="tab"][aria-selected="true"]',
+    ),
+  ].map((element) => (element.textContent ?? "").replace(/\d+$/u, ""));
 
 afterEach(() => {
   cleanup();

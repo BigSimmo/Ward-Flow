@@ -5,7 +5,8 @@
 import { Fragment, type ReactNode } from "react";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
-import { PhoneFilterFold, PhoneListRow, Segmented, StatusGlyph } from "@/components/wf";
+import { Maximize2, Minimize } from "lucide-react";
+import { FolderTabs, PhoneFilterFold, PhoneListRow, Segmented, StatusGlyph, folderTabClasses } from "@/components/wf";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import { EdBoardChips } from "./ed-board-chips";
 import { edRowReferralStatus } from "./ed-referral-status";
@@ -16,9 +17,8 @@ import styles from "./ed.module.css";
 import foldRow from "./ed-phone-fold.module.css";
 
 /**
- * Phone: Board, Needs you and Lists are one tap apart (v10 ED page, phone). C1 (19 Oct 2026): the
- * board's filter chips fold into one Filter button at the end of this pinned row, so the first
- * person sits higher. It shows on the Board only, where the filters apply.
+ * The Board, My list and Lists switch with the board's Filter fold, as one phone row. The ED page now
+ * uses `EdBoardTabs`; the redesigned ED board (`ed-board-redesign.tsx`) keeps this row.
  */
 export function EdPhonePanes({ ctx }: { ctx: EdScreenContext }) {
   const { phonePane, setPhonePane, patients, needsYouItems, boardFilter } = ctx;
@@ -48,6 +48,80 @@ export function EdPhonePanes({ ctx }: { ctx: EdScreenContext }) {
         </PhoneFilterFold>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * The ED board's tabs (page tops, Josh 9 Nov 2026): Board and My list on every size, Lists too on a
+ * phone, as curved folder tabs under the hero (underline tabs on a desktop). C1 (19 Oct 2026): on a
+ * phone the board's filter chips fold into one Filter button at the row's end, shown on the Board
+ * only, where they apply. Wider screens end the row with Enlarge (the handover view).
+ */
+export function EdBoardTabs({ ctx }: { ctx: EdScreenContext }) {
+  const {
+    phonePane,
+    setPhonePane,
+    patients,
+    needsYouItems,
+    boardFilter,
+    isPhone,
+    fullscreenBoard,
+    setFullscreenBoard,
+  } = ctx;
+  const pane = !isPhone && phonePane === "lists" ? "board" : phonePane;
+  return (
+    <FolderTabs
+      label="ED board views"
+      value={pane}
+      className={foldRow.pageTabs}
+      testId="ward-ed-tabs"
+      more={
+        isPhone ? (
+          pane === "board" ? (
+            <PhoneFilterFold
+              count={boardFilter === "all" ? 0 : 1}
+              title="Filter the board"
+              description="Everyone stays on the board."
+              data-testid="ward-ed-filter-fold"
+              className={`${folderTabClasses.more} ${foldRow.tabButton}`}
+            >
+              <EdBoardChips ctx={ctx} className={foldRow.sheetChips} />
+            </PhoneFilterFold>
+          ) : null
+        ) : (
+          <button
+            type="button"
+            className={`${folderTabClasses.more} ${foldRow.tabButton}`}
+            aria-pressed={fullscreenBoard}
+            onClick={() => {
+              setPhonePane("board");
+              setFullscreenBoard((prev) => !prev);
+            }}
+            data-testid="ward-ed-tabs-enlarge"
+          >
+            {fullscreenBoard ? (
+              <Minimize size={16} strokeWidth={1.75} aria-hidden="true" />
+            ) : (
+              <Maximize2 size={16} strokeWidth={1.75} aria-hidden="true" />
+            )}
+            {fullscreenBoard ? "Exit enlarge" : "Enlarge"}
+          </button>
+        )
+      }
+    >
+      <Segmented
+        className={folderTabClasses.switch}
+        label="Show"
+        size="md"
+        value={pane}
+        onChange={setPhonePane}
+        items={[
+          { id: "board" as const, label: "Board", count: patients.length },
+          { id: "needs" as const, label: "My list", count: needsYouItems.length },
+          ...(isPhone ? [{ id: "lists" as const, label: "Lists" }] : []),
+        ]}
+      />
+    </FolderTabs>
   );
 }
 

@@ -319,7 +319,7 @@ const AROUND: readonly Around[] = [
     keywords: "shift sheet sign off print",
     steps: [
       {
-        target: [id("ward-handover-kpi-strip"), id("wf-phone-hero-figure-act")],
+        target: id("ward-handover-kpi-strip"),
         title: "What to hand over",
         body: "Act now, flagged urgent and due before the handover. Read Act now first.",
       },
@@ -439,7 +439,7 @@ const AROUND: readonly Around[] = [
     keywords: "phone number roster who to call",
     steps: [
       {
-        target: id("ward-on-call-hud-island"),
+        target: id("ward-on-call-top"),
         title: "Who to call now",
         body: "The state lines, then bed flow for each service, then your starred lines. Copy a number straight from its card.",
       },
@@ -479,7 +479,7 @@ const AROUND: readonly Around[] = [
         body: "How many people are in a bed outside their home health service, split by days away. Checking counts discharge dates passed and missing return plans.",
       },
       {
-        target: [starts("ward-out-of-area-highlight-"), PHONE_FIGURES],
+        target: [starts("ward-out-of-area-highlight-"), starts("ward-out-of-area-figure-")],
         title: "Quick views",
         body: "Discharge date passed, no plan and the long trips home. Each narrows the list.",
       },
@@ -508,7 +508,7 @@ const AROUND: readonly Around[] = [
         body: "Times are as typed, and nothing works out a legal limit.",
       },
       {
-        target: id("seclusion-live"),
+        target: [id("seclusion-live"), id("seclusion-figure-live")],
         title: "In use now",
         body: "Everyone in seclusion or restraint now, longest first. Ward staff record changes on their own ward.",
       },
@@ -572,7 +572,7 @@ const AROUND: readonly Around[] = [
     keywords: "figures trends numbers",
     steps: [
       {
-        target: id("ward-statistics-nav"),
+        target: { sel: '[data-testid="ward-statistics-nav"], [data-testid="ward-statistics-index"]' },
         title: "Choose a view",
         body: "Network, Compare, Services, Wards, EDs, Teams and Weekly. Every figure is from synthetic records.",
       },
@@ -857,7 +857,10 @@ export const MORE_JOBS: readonly HowTo[] = [
     go: "out-of-area",
     showMe: [
       {
-        target: [{ sel: '[data-testid^="ward-out-of-area-row-"]' }, { sel: '[data-testid^="wf-phone-hero-figure-"]' }],
+        target: [
+          { sel: '[data-testid^="ward-out-of-area-row-"]' },
+          { sel: '[data-testid^="ward-out-of-area-figure-"]' },
+        ],
         title: "Choose the person",
         body: "Everyone in a bed outside their home health service, with days away.",
       },
@@ -883,7 +886,8 @@ export const MORE_JOBS: readonly HowTo[] = [
     go: "seclusion",
     showMe: [
       {
-        target: { sel: '[data-testid="seclusion-live"]' },
+        // With none in use, the page top's "in use now" figure says so (page tops, 9 Nov 2026).
+        target: [{ sel: '[data-testid="seclusion-live"]' }, { sel: '[data-testid="seclusion-figure-live"]' }],
         title: "In use now",
         body: "Everyone in seclusion or restraint now, with Record end on each row.",
       },
@@ -914,7 +918,7 @@ export const MORE_JOBS: readonly HowTo[] = [
         // The phone fallback is the next step row only when it names held-up discharges.
         target: [
           { sel: '[data-testid="ward-discharge-kpi-blocked"]' },
-          { sel: "#main-content [data-wf-hero-next]", text: "held-up" },
+          { sel: "#main-content [data-wf-hero-next]", text: "held up" },
         ],
         title: "Held up",
         body: "How many discharges have something in the way.",

@@ -1,8 +1,4 @@
-/*
- * C1 (phone simplification, 19 Oct 2026): the pinned Board, Needs you and Lists row also holds the
- * folded Filter button. The switch takes the space left; the button keeps its own width. Phone only
- * (the row renders on a phone alone); its sticky band comes from `.phonePanes` in ed.module.css.
- */
+/* The redesigned ED board's phone switch (EdPhonePanes): Board, My list and Lists, then Filter. */
 .paneRow {
   display: flex;
   align-items: center;
@@ -51,4 +47,28 @@
   border: 2px solid var(--wf-accent);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
+}
+
+/* Enlarge at the tab row's end: the icon beside its word. */
+.tabButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* Filter at the phone tab row's end reads as plain words on the slate, like More. */
+.tabButton,
+.tabButton:hover {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* Phone: the page tabs pin under the header while the page scrolls, as Home's do. */
+@media (max-width: 46.4375rem) {
+  .pageTabs {
+    position: sticky;
+    top: var(--wf-header-height, 3.5rem);
+    z-index: 6;
+  }
 }

@@ -68,6 +68,13 @@ export type SuburbLookupCardProps = {
   layout?: "stacked" | "bar";
   /** On a phone, no card chrome: the page's own pane is the card (Community's Suburb pane). */
   plainOnPhone?: boolean;
+  /**
+   * The typed words, when the page owns the field (Community's page top, Josh 9 Nov 2026): the card
+   * then answers this query and draws no field of its own. Left out, the card keeps its own field.
+   */
+  query?: string;
+  /** Called when a quick pick sets the query the page owns. */
+  onQueryChange?: (query: string) => void;
   className?: string;
 };
 
@@ -80,13 +87,24 @@ export function SuburbLookupCard({
   teamActions,
   layout = "stacked",
   plainOnPhone = false,
+  query: ownedQuery,
+  onQueryChange,
   className,
 }: SuburbLookupCardProps) {
   const id = useId();
   // Opens empty, nothing chosen (Josh, 31 Oct 2026): a warning shows only once the reader picks or
   // types a suburb.
-  const [query, setQuery] = useState("");
+  const [ownQuery, setOwnQuery] = useState("");
+  const owned = ownedQuery !== undefined;
+  const query = owned ? ownedQuery : ownQuery;
+  const setQuery = (next: string) => (owned ? onQueryChange?.(next) : setOwnQuery(next));
   const [showAll, setShowAll] = useState(false);
+  // A new query from the page's own field starts the answer short again.
+  const [shownFor, setShownFor] = useState(query);
+  if (shownFor !== query) {
+    setShownFor(query);
+    setShowAll(false);
+  }
   const trimmed = query.trim();
   const lookups = useMemo(() => catchmentLookupsFor(trimmed), [trimmed]);
   const shown = showAll ? lookups : lookups.slice(0, SUBURBS_SHOWN);
@@ -100,16 +118,18 @@ export function SuburbLookupCard({
       <CardHead id={`${id}-title`} title={title} eyebrow aside={<span className={styles.headNote}>{note}</span>} />
       <CardBody className={cx(styles.body, layout === "bar" && styles.bar)}>
         <div className={styles.ask}>
-          <SearchField
-            id={`${id}-field`}
-            label="Suburb or postcode"
-            placeholder="Suburb, alias or postcode"
-            value={query}
-            onValueChange={(next) => {
-              setQuery(next);
-              setShowAll(false);
-            }}
-          />
+          {owned ? null : (
+            <SearchField
+              id={`${id}-field`}
+              label="Suburb or postcode"
+              placeholder="Suburb, alias or postcode"
+              value={query}
+              onValueChange={(next) => {
+                setQuery(next);
+                setShowAll(false);
+              }}
+            />
+          )}
           {picks.length > 0 ? (
             <div className={cx(styles.picks, phoneRows.chipRow)} role="group" aria-label={picksLabel}>
               {picks.map((pick) => (

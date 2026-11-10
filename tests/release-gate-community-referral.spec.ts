@@ -85,14 +85,22 @@ async function openReferralStep(sheet: Locator, name: string) {
 
 /**
  * How many referrals wait for this team's own answer, as its desk shows it: the Referrals count in
- * the team's section row, a tab on desktop (locked design, 1 Nov 2026) and a section-track radio on
- * the Midland phone page (Q155).
+ * the team's section row, a tab on desktop (locked design, 1 Nov 2026). Page tops (Josh, 9 Nov 2026):
+ * a phone shows three section tabs and keeps Referrals, with its count, under More team sections.
  */
 async function teamWaitingCount(page: Page): Promise<number> {
   const screen = page.getByTestId("ward-community-screen");
-  const control = screen.getByRole(isPhoneLayout(page) ? "radio" : "tab", { name: /^Referrals/u });
+  const phone = isPhoneLayout(page);
+  if (phone) await screen.getByRole("button", { name: "More team sections" }).click();
+  const control = phone
+    ? page.getByRole("menuitem", { name: /^Referrals/u })
+    : screen.getByRole("tab", { name: /^Referrals/u });
   await expect(control).toBeVisible();
   const text = (await control.innerText()).trim();
+  if (phone) {
+    await page.keyboard.press("Escape");
+    await expect(control).toBeHidden();
+  }
   const match = /(\d+)/u.exec(text);
   return match ? Number(match[1]) : 0;
 }
@@ -129,12 +137,12 @@ test("Community referral: a community team refers from its own desk, the ward it
   await expectAccessible(page, testInfo, "community team desk");
 
   // --- The team refers from its own desk. The slide-out opens over the team page. ---
-  // On the Midland phone page (Q155) Refer from team is the Referrals section's hero action.
-  if (isPhoneLayout(page))
-    await page
-      .getByTestId("ward-community-screen")
-      .getByRole("radio", { name: /^Referrals/u })
-      .click();
+  // On the Midland phone page (Q155) Refer from team is the Referrals section's hero action. Page
+  // tops (Josh, 9 Nov 2026): a phone keeps Referrals under More team sections.
+  if (isPhoneLayout(page)) {
+    await page.getByTestId("ward-community-screen").getByRole("button", { name: "More team sections" }).click();
+    await page.getByRole("menuitem", { name: /^Referrals/u }).click();
+  }
   await page.getByRole("button", { name: "Refer from team", exact: true }).click();
   const sheet = page.getByTestId("ward-bar-referral-sheet");
   await expect(sheet).toBeVisible({ timeout: 15_000 });
@@ -297,9 +305,20 @@ test("Community referral: a community team refers from its own desk, the ward it
   await expect(page.getByTestId("ward-board-say")).toContainText("Referral accepted.");
   await expect(page.getByTestId(bedTestId)).toHaveAttribute("data-state", "held");
   // H-0893: an answered referral folds behind "Show N answered" below the waiting ones, on the
-  // ward's Referrals tab.
-  await page.getByTestId("ward-tab-referrals").click();
-  await inbox.getByRole("button", { name: /^Show \d+ answered$/ }).click();
+  // ward's Referrals tab. Page tops (9 Nov 2026): the phone's view tabs now sit under the hero
+  // rather than pinned under the header, so leaving a long Bed board scrolls back up to them and the
+  // page shortens under the next tap. Hosted WebKit once found no answered card after the "Show" tap
+  // (PR #1581), so each step is checked, and repeated until the tab is chosen and the list is open.
+  const referralsTab = page.getByTestId("ward-tab-referrals");
+  const answeredToggle = inbox.getByRole("button", { name: /^(Show|Hide) \d+ answered$/ });
+  await expect(async () => {
+    if ((await referralsTab.getAttribute("aria-selected", { timeout: 2_000 })) !== "true")
+      await referralsTab.click({ timeout: 2_000 });
+    await expect(referralsTab).toHaveAttribute("aria-selected", "true", { timeout: 2_000 });
+    if ((await answeredToggle.getAttribute("aria-expanded", { timeout: 2_000 })) !== "true")
+      await answeredToggle.click({ timeout: 2_000 });
+    await expect(answeredToggle).toHaveAttribute("aria-expanded", "true", { timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
   await expect(inboxEntry).toContainText("Accepted");
   await expectAccessible(page, testInfo, "ward Bed board after accepting into a held bed");
   await expectNoReloadSince(page, "the ward accepting into a held bed");

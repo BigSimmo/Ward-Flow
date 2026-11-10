@@ -1,19 +1,82 @@
 /*
- * Curved folder tabs (sticky header redesign, option A, Josh 9 Nov 2026). Home's list tabs rise into
- * the slate hero's foot: the row overlaps the band by --wf-folder-rise (tab inset 6 + tab 40 + sheet
- * corner 20), and `HomeFolderShape` (home-folder.tsx) paints the page sheet and the chosen tab as one
- * outline. Tabs off the outline sit on slate in hero ink; the chosen one sits on the sheet in page ink.
- * Doubled and tripled classes outrank the list switch's own phone rules (home-list.module.css).
+ * Curved folder tabs (sticky header redesign, option A, Josh 9 Nov 2026), shared by every page since
+ * the page-tops build (9 Nov 2026). The tabs rise into the slate hero's foot: the row overlaps the band
+ * by --wf-folder-rise (tab inset 6 + tab 40 + sheet corner 20), and `FolderShape` (folder-tabs.tsx)
+ * paints the page sheet and the chosen tab as one outline. The primary switch carries `.switch`;
+ * `.hero` goes on the Hero above. A page whose column gap is not 12px sets --wf-folder-gap. Tabs off
+ * the outline sit on slate in hero ink; the chosen one sits on the sheet in page ink.
+ * Repeated classes outrank a page's own switch rules (Home: home-list.module.css, three classes),
+ * whatever order the stylesheets load in.
  */
+
+/* The hero above the row: room for the folder under its content, and its own lip steps aside (the
+   folder draws the band's foot) until the desktop's underline tabs. */
+.hero.hero.hero {
+  --wf-folder-rise: 66px;
+}
+
+.hero.hero.hero::after {
+  display: none;
+}
+
+.hero.hero.hero[data-band],
+.hero.hero.hero[data-wf-hero="band"]:not([data-band]) {
+  padding-bottom: calc(var(--wf-s-3) + var(--wf-folder-rise));
+  margin-bottom: 0;
+  background-size: 100% 100%;
+}
+
+@media (min-width: 64rem) {
+  .hero.hero.hero::after {
+    display: block;
+  }
+
+  .hero.hero.hero[data-band],
+  .hero.hero.hero[data-wf-hero="band"]:not([data-band]) {
+    padding-bottom: calc(var(--wf-s-4) + var(--wf-band-lip, 22px));
+  }
+}
+
+/* A plain row (a page may lay it out itself, as Home does): switch, filters, then More on the right. */
+:where(.nav) {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+:where(.filters) {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+:where(.moreSlot) {
+  margin-left: auto;
+}
+
+@media (max-width: 63.99rem) {
+  :where(.rule) {
+    display: none;
+  }
+
+  :where(.filters) {
+    flex: 1 0 100%;
+  }
+}
 
 .nav.nav {
   --wf-bar-frost: color-mix(in srgb, var(--wf-hero-2) 94%, transparent);
-  /* How far the row reaches past the page's side padding; home-folder.tsx measures and sets it. */
+  /* How far the row reaches past the page's side padding; folder-tabs.tsx measures and sets it. */
   --wf-folder-bleed: var(--wf-s-4);
   --wf-folder-rise: 66px;
   --wf-folder-row: 46px;
   /* Up by the rise and by Home's column gap (home.module.css .body). */
-  margin-top: calc(-1 * (var(--wf-folder-rise) + var(--wf-s-3)));
+  margin-top: calc(-1 * (var(--wf-folder-rise) + var(--wf-folder-gap, var(--wf-s-3))));
   /* The row ends at the tabs' foot; the sheet's curved edge (20px) runs on below it, so the lists
      start a little under that edge. */
   margin-bottom: 8px;
@@ -82,7 +145,7 @@
 }
 
 /* The list switch: plain tabs on the slate, 44px tall; the chosen one takes page ink on the sheet. */
-.switch.switch.switch {
+.switch.switch.switch.switch {
   align-self: start;
   height: 40px;
   min-height: 40px;
@@ -97,7 +160,7 @@
   overflow: visible;
 }
 
-.switch.switch.switch > * {
+.switch.switch.switch.switch > * {
   height: 40px;
   min-height: 40px;
   padding: 0 16px;
@@ -112,17 +175,18 @@
   transition: color var(--wf-m-base, 160ms) var(--wf-ease, ease);
 }
 
-.switch.switch.switch > *:hover {
+.switch.switch.switch.switch > *:hover {
   color: var(--wf-hero-ink);
   background: transparent;
 }
 
-.switch.switch.switch > [aria-checked="true"] {
+.switch.switch.switch.switch
+  > :is([aria-checked="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"]) {
   color: var(--wf-ink-1);
   font-weight: 600;
 }
 
-.switch.switch.switch > * > :last-child {
+.switch.switch.switch.switch > * > :last-child {
   min-width: 0;
   padding: 0;
   background: transparent;
@@ -132,13 +196,18 @@
   font-variant-numeric: tabular-nums;
 }
 
-.switch.switch.switch > [aria-checked="true"] > :last-child {
+.switch.switch.switch.switch
+  > :is([aria-checked="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"])
+  > :last-child {
   color: var(--wf-ink-3);
 }
 
 /* Needs you: while anything needs a person now its count is a small red badge, centred on the label's
    line, instead of a dot beside a grey number. */
-.nav[data-act] .switch.switch.switch > :first-child > :last-child {
+.nav[data-act="1"] .switch.switch.switch.switch > :nth-child(1) > :last-child,
+.nav[data-act="2"] .switch.switch.switch.switch > :nth-child(2) > :last-child,
+.nav[data-act="3"] .switch.switch.switch.switch > :nth-child(3) > :last-child,
+.nav[data-act="4"] .switch.switch.switch.switch > :nth-child(4) > :last-child {
   display: inline-grid;
   place-items: center;
   box-sizing: border-box;
@@ -154,7 +223,22 @@
   letter-spacing: -0.02em;
 }
 
-.nav[data-act] .switch.switch.switch > [aria-checked="true"]:first-child > :last-child {
+.nav[data-act="1"]
+  .switch.switch.switch.switch
+  > :is([aria-checked="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"]):nth-child(1)
+  > :last-child,
+.nav[data-act="2"]
+  .switch.switch.switch.switch
+  > :is([aria-checked="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"]):nth-child(2)
+  > :last-child,
+.nav[data-act="3"]
+  .switch.switch.switch.switch
+  > :is([aria-checked="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"]):nth-child(3)
+  > :last-child,
+.nav[data-act="4"]
+  .switch.switch.switch.switch
+  > :is([aria-checked="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"]):nth-child(4)
+  > :last-child {
   background: var(--wf-danger);
   /* Pure white on the light theme's red keeps 4.5:1 for 12px text (the surface tint falls just short). */
   color: light-dark(white, var(--wf-surface));
@@ -164,48 +248,52 @@
    so they carry the band's foot colour themselves (the same to the eye) and contrast checks measure
    their text against the slate, not the page canvas. */
 @media (max-width: 63.99rem) {
-  .switch.switch.switch > :not([aria-checked="true"]),
-  .more.more.more:not(:hover) {
+  .switch.switch.switch.switch
+    > :not([aria-checked="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"]),
+  .more.more.more.more:not(:hover) {
     background-color: var(--wf-hero-2);
   }
 
   /* Pinned, they carry the frosted slate as it looks over the page (solid, so the eye sees no seam
      and a contrast check still finds the slate rather than the canvas). */
-  .nav[data-docked] .switch.switch.switch > :not([aria-checked="true"]),
-  .nav[data-docked] .more.more.more:not(:hover) {
+  .nav[data-docked]
+    .switch.switch.switch.switch
+    > :not([aria-checked="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"]),
+  .nav[data-docked] .more.more.more.more:not(:hover) {
     background-color: color-mix(in srgb, var(--wf-hero-2) 94%, var(--wf-page-canvas, var(--wf-canvas)));
   }
 }
 
-.switch.switch.switch > *:focus-visible {
+.switch.switch.switch.switch > *:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -4px;
   border-radius: 12px;
   box-shadow: none;
 }
 
-.switch.switch.switch > :not([aria-checked="true"]):focus-visible {
+.switch.switch.switch.switch
+  > :not([aria-checked="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"]):focus-visible {
   outline-color: var(--wf-hero-ink);
 }
 
 /* More: on the slate beside the tabs. */
-.nav.nav > :last-child {
+.moreSlot.moreSlot {
   align-self: start;
   margin-top: 0;
   color: var(--wf-hero-ink-2);
 }
 
-.more.more.more {
+.more.more.more.more {
   color: var(--wf-hero-ink-2);
   background: transparent;
 }
 
-.more.more.more:hover {
+.more.more.more.more:hover {
   color: var(--wf-hero-ink);
   background: var(--wf-on-hero-fill);
 }
 
-.more.more.more:focus-visible {
+.more.more.more.more:focus-visible {
   --wf-focus-ring: var(--wf-hero-ink);
 }
 
@@ -217,18 +305,20 @@
     box-shadow: none;
   }
 
-  .switch.switch.switch {
+  .switch.switch.switch.switch {
     flex: 0 1 auto;
   }
 
   /* Each tab hugs its label with the same space either side, so the chosen folder is symmetrical. */
-  .switch.switch.switch > * {
+  .switch.switch.switch.switch > * {
+    position: relative;
     flex: 0 0 auto;
     padding: 0 12px;
   }
 
-  /* The visible tab is 40px; an invisible cover keeps each tap area 48px tall. */
-  .switch.switch.switch > *::after {
+  /* The visible tab is 40px; an invisible cover keeps each tap area 48px tall. Each tab anchors its
+     own cover, or the last tab's would lie over the whole row and take every press. */
+  .switch.switch.switch.switch > *::after {
     content: "";
     display: block;
     position: absolute;
@@ -236,20 +326,31 @@
     background: none;
   }
 
-  .nav[data-docked] .switch.switch.switch > :not([aria-checked="true"]) {
+  .nav[data-docked]
+    .switch.switch.switch.switch
+    > :not([aria-checked="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"]) {
     color: var(--wf-hero-ink-2);
+  }
+
+  /* A More button is drawn 40px square at least, whatever kit size it carries (phone house rule). */
+  .more.more.more.more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 40px;
   }
 }
 
 /* The smallest phones (320px): tighter tabs so Later today keeps its line. */
 @media (max-width: 22.5rem) {
-  .switch.switch.switch > * {
+  .switch.switch.switch.switch > * {
     padding: 0 7px;
     font-size: var(--wf-fs-13);
     gap: 4px;
   }
 
-  .more.more.more {
+  .more.more.more.more {
     min-width: 36px;
     width: 36px;
     margin-right: -10px;
@@ -262,7 +363,8 @@
     background: Canvas;
   }
 
-  .switch.switch.switch > [aria-checked="true"] {
+  .switch.switch.switch.switch
+    > :is([aria-checked="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"]) {
     outline: 2px solid Highlight;
     outline-offset: -2px;
   }
@@ -280,7 +382,7 @@
 }
 
 /* One count style across both tab levels: plain mono numbers, no grey boxes (Josh, 9 Nov 2026). */
-.nav.nav [role="tablist"] [role="tab"] > :last-child {
+.nav.nav [role="tablist"]:not(.switch) [role="tab"] > :last-child {
   min-width: 0;
   padding: 0;
   background: transparent;
@@ -290,16 +392,16 @@
 }
 
 @media (max-width: 63.99rem) {
-  .nav.nav [role="tablist"] [role="tab"] > :last-child {
+  .nav.nav [role="tablist"]:not(.switch) [role="tab"] > :last-child {
     color: var(--wf-ink-3);
   }
 
-  .nav.nav [role="tablist"] [role="tab"][aria-selected="true"] {
+  .nav.nav [role="tablist"]:not(.switch) [role="tab"][aria-selected="true"] {
     outline: 0;
     font-weight: 600;
   }
 
-  .nav.nav [role="tablist"] [role="tab"][aria-selected="true"] > :last-child {
+  .nav.nav [role="tablist"]:not(.switch) [role="tab"][aria-selected="true"] > :last-child {
     color: var(--wf-ink-2);
   }
 }
@@ -309,19 +411,22 @@
  * even gap. The Needs you badge is a compact 16px circle (a pill for two digits); text keeps the
  * 12px floor.
  */
-.switch.switch.switch > *,
-.nav.nav [role="tablist"] [role="tab"] {
+.switch.switch.switch.switch > *,
+.nav.nav [role="tablist"]:not(.switch) [role="tab"] {
   gap: 5px;
 }
 
-.switch.switch.switch > * > :last-child,
-.nav.nav [role="tablist"] [role="tab"] > :last-child {
+.switch.switch.switch.switch > * > :last-child,
+.nav.nav [role="tablist"]:not(.switch) [role="tab"] > :last-child {
   align-self: center;
   font-size: var(--wf-fs-12);
   line-height: 16px;
 }
 
-.nav[data-act] .switch.switch.switch > :first-child > :last-child {
+.nav[data-act="1"] .switch.switch.switch.switch > :nth-child(1) > :last-child,
+.nav[data-act="2"] .switch.switch.switch.switch > :nth-child(2) > :last-child,
+.nav[data-act="3"] .switch.switch.switch.switch > :nth-child(3) > :last-child,
+.nav[data-act="4"] .switch.switch.switch.switch > :nth-child(4) > :last-child {
   box-sizing: border-box;
   min-width: 16px;
   height: 16px;
@@ -343,7 +448,7 @@
 @media (min-width: 64rem) {
   .nav.nav {
     /* Up to sit just under the slate's lip (Home's column gap plus a little). */
-    margin-top: calc(-1 * var(--wf-s-3) - 14px);
+    margin-top: calc(-1 * var(--wf-folder-gap, var(--wf-s-3)) - 14px);
     margin-bottom: var(--wf-s-3);
     min-height: 52px;
     padding: 0 2px;
@@ -357,7 +462,7 @@
     display: none;
   }
 
-  .switch.switch.switch {
+  .switch.switch.switch.switch {
     align-self: stretch;
     height: 52px;
     min-height: 52px;
@@ -365,7 +470,7 @@
     gap: 28px;
   }
 
-  .switch.switch.switch > * {
+  .switch.switch.switch.switch > * {
     position: relative;
     height: 52px;
     min-height: 52px;
@@ -375,16 +480,18 @@
     letter-spacing: -0.012em;
   }
 
-  .switch.switch.switch > *:hover {
+  .switch.switch.switch.switch > *:hover {
     color: var(--wf-ink-1);
   }
 
-  .switch.switch.switch > [aria-checked="true"] {
+  .switch.switch.switch.switch
+    > :is([aria-checked="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"]) {
     color: var(--wf-ink-1);
     font-weight: 600;
   }
 
-  .switch.switch.switch > [aria-checked="true"]::after {
+  .switch.switch.switch.switch
+    > :is([aria-checked="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"])::after {
     content: "";
     display: block;
     position: absolute;
@@ -397,22 +504,27 @@
     background: var(--wf-accent);
   }
 
-  .switch.switch.switch > * > :last-child {
+  .switch.switch.switch.switch > * > :last-child {
     color: var(--wf-ink-3);
   }
 
-  .switch.switch.switch > [aria-checked="true"] > :last-child {
+  .switch.switch.switch.switch
+    > :is([aria-checked="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"])
+    > :last-child {
     color: var(--wf-ink-2);
   }
 
-  .nav[data-act] .switch.switch.switch > :first-child > :last-child,
-  .nav[data-act] .switch.switch.switch > [aria-checked="true"]:first-child > :last-child {
+  .nav[data-act="1"] .switch.switch.switch.switch > :nth-child(1) > :last-child,
+  .nav[data-act="2"] .switch.switch.switch.switch > :nth-child(2) > :last-child,
+  .nav[data-act="3"] .switch.switch.switch.switch > :nth-child(3) > :last-child,
+  .nav[data-act="4"] .switch.switch.switch.switch > :nth-child(4) > :last-child {
     background: var(--wf-danger);
     color: light-dark(white, var(--wf-surface));
   }
 
-  .switch.switch.switch > *:focus-visible,
-  .switch.switch.switch > :not([aria-checked="true"]):focus-visible {
+  .switch.switch.switch.switch > *:focus-visible,
+  .switch.switch.switch.switch
+    > :not([aria-checked="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"]):focus-visible {
     outline-color: var(--wf-focus-ring);
   }
 
@@ -424,23 +536,23 @@
     background: var(--wf-line-2);
   }
 
-  .nav.nav > :last-child {
+  .moreSlot.moreSlot {
     align-self: center;
     color: var(--wf-ink-3);
   }
 
-  .more.more.more {
+  .more.more.more.more {
     height: 32px;
     border-radius: 9px;
     color: var(--wf-ink-3);
   }
 
-  .more.more.more:hover {
+  .more.more.more.more:hover {
     color: var(--wf-ink-1);
     background: var(--wf-track);
   }
 
-  .more.more.more:focus-visible {
+  .more.more.more.more:focus-visible {
     --wf-focus-ring: var(--wf-accent);
   }
 }
@@ -448,13 +560,13 @@
 /* Every size: the stage filters sit on the light page as quiet words, the chosen stage on a soft
    track, so the second level reads alike wherever it sits. */
 @media all {
-  .nav.nav [role="tablist"] {
+  .nav.nav [role="tablist"]:not(.switch) {
     align-self: center;
     margin-top: 0;
     gap: 2px;
   }
 
-  .nav.nav [role="tablist"] [role="tab"] {
+  .nav.nav [role="tablist"]:not(.switch) [role="tab"] {
     height: 32px;
     min-height: 32px;
     padding: 0 11px;
@@ -465,28 +577,28 @@
     font: 500 var(--wf-fs-14) / 18px var(--wf-font);
   }
 
-  .nav.nav [role="tablist"] [role="tab"]:hover {
+  .nav.nav [role="tablist"]:not(.switch) [role="tab"]:hover {
     color: var(--wf-ink-1);
     background: var(--wf-track);
   }
 
-  .nav.nav [role="tablist"] [role="tab"][aria-selected="true"] {
+  .nav.nav [role="tablist"]:not(.switch) [role="tab"][aria-selected="true"] {
     color: var(--wf-ink-1);
     font-weight: 600;
     background: var(--wf-track);
     box-shadow: inset 0 0 0 1px var(--wf-line);
   }
 
-  .nav.nav [role="tablist"] [role="tab"] > :last-child {
+  .nav.nav [role="tablist"]:not(.switch) [role="tab"] > :last-child {
     color: var(--wf-ink-3);
   }
 
-  .nav.nav [role="tablist"] [role="tab"][aria-selected="true"] > :last-child {
+  .nav.nav [role="tablist"]:not(.switch) [role="tab"][aria-selected="true"] > :last-child {
     color: var(--wf-ink-2);
   }
 
-  .nav.nav [role="tablist"] [role="tab"]:focus-visible,
-  .nav.nav [role="tablist"] [role="tab"][aria-selected="true"]:focus-visible {
+  .nav.nav [role="tablist"]:not(.switch) [role="tab"]:focus-visible,
+  .nav.nav [role="tablist"]:not(.switch) [role="tab"][aria-selected="true"]:focus-visible {
     outline: 2px solid var(--wf-focus-ring);
     outline-offset: 2px;
   }
@@ -494,11 +606,11 @@
 
 /* Phone and tablet: the 32px stage filters keep a 48px tap area with an invisible cover. */
 @media (max-width: 63.99rem) {
-  .nav.nav [role="tablist"] [role="tab"] {
+  .nav.nav [role="tablist"]:not(.switch) [role="tab"] {
     position: relative;
   }
 
-  .nav.nav [role="tablist"] [role="tab"]::after {
+  .nav.nav [role="tablist"]:not(.switch) [role="tab"]::after {
     content: "";
     position: absolute;
     inset: -8px 0;

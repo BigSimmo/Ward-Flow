@@ -6,27 +6,35 @@ import { wardScrollBehavior } from "../ward-scroll";
 import dynamic from "next/dynamic";
 import { startTransition, useEffect, useMemo, useState } from "react";
 
-import { Drawer, PanelDrawer, Segmented, StatusPill, useIsPhone, useOptionalToast } from "@/components/wf";
+import {
+  Drawer,
+  FolderTabs,
+  folderTabClasses,
+  PanelDrawer,
+  Segmented,
+  StatusPill,
+  useIsPhone,
+  useOptionalToast,
+} from "@/components/wf";
 import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { unitHealthService } from "@/components/ward-management/ward-service-scope";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { tvServiceParam } from "@/components/ward-management/bed-meeting/tv-derivations";
 import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
-import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { siteLabel } from "@/components/ward-management/ward-absence-labels";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 
 import { bedMeetingSheet } from "./bed-meeting-derivations";
 import { BedForecast } from "./capacity-bed-forecast";
-import { BedMapCards, type Highlight } from "./capacity-bed-map-cards";
+import { BedMapCards, BedMapHighlights, type Highlight } from "./capacity-bed-map-cards";
 import { ComingIn } from "./capacity-coming-in";
 import { CapacityHero } from "./capacity-hero";
-import { MismatchBand } from "./capacity-mismatch-band";
 import { useCapacityModel, type CapacityModel } from "./capacity-model";
 import { OtherSitesCounts } from "./capacity-other-sites";
 import { PhoneOverview } from "./capacity-phone-overview";
@@ -53,7 +61,7 @@ const CapacityWardSidebar = dynamic(() => import("./capacity-open-parts").then((
 });
 
 type Popup = { kind: "scenario" } | { kind: "sheet" } | { kind: "ward"; unitId: string } | { kind: "forecast" } | null;
-type PhoneTab = "overview" | "wards" | "planned";
+type PageTab = "overview" | "wards" | "planned";
 
 /**
  * Capacity (redesign approved by Josh, 31 Oct 2026). The page answers one question, "where is the
@@ -81,11 +89,12 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
   const executive = access.role === "executive";
   const siteDesk = model.site !== undefined;
   const service = useServiceScope();
+  const tvOn = useWardFeatureFlag("bed-meeting-tv");
   const [openPopup, setOpenPopup] = useState<{ popup: Popup; generation: number | null }>(() => ({
     popup: initialPopup(openOnLoad, model),
     generation: null,
   }));
-  const [phoneTab, setPhoneTab] = useState<PhoneTab>("overview");
+  const [tab, setTab] = useState<PageTab>("overview");
   const [highlight, setHighlight] = useState<Highlight | null>(null);
   // Site bed manager: another site's ward has no drawer here (its ward page and Discharge board are
   // not this desk's to open), so choosing one shows its row in Other sites instead.
@@ -125,7 +134,6 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
   const thresholds = useDueSoonThresholds();
   const patientOf = usePatientOf();
   const toast = useOptionalToast();
-  const tvOn = useWardFeatureFlag("bed-meeting-tv");
   const edWaiting = useSiteEdWaiting(model.site, model.now);
   const { now } = model;
 
@@ -192,7 +200,7 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
   const openWard = (unitId: string) => {
     if (siteDesk && !model.networkRows.some((row) => row.unit.id === unitId)) {
       setFocusUnitId(unitId);
-      if (isPhone) startTransition(() => setPhoneTab("wards"));
+      startTransition(() => setTab("wards"));
       window.setTimeout(
         () =>
           document
@@ -203,13 +211,6 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
       return;
     }
     setPopup({ kind: "ward", unitId });
-  };
-  const highlightFromHero = (next: Highlight) => {
-    const value = highlight === next ? null : next;
-    setHighlight(value);
-    if (isPhone) startTransition(() => setPhoneTab("wards"));
-    else if (value)
-      document.getElementById("capacity-bed-map")?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
   };
   const bedMap = (
     <>
@@ -227,6 +228,8 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
         selectedUnitId={selectedRow?.unit.id}
         highlight={highlight}
         onHighlight={setHighlight}
+        // Desktop: the highlights sit at the right of the page tabs (page tops, 9 Nov 2026).
+        highlightsInCard={isPhone}
       />
       {siteDesk ? <OtherSitesCounts model={model} focusUnitId={focusUnitId} /> : null}
     </>
@@ -251,49 +254,60 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
           model={model}
           isPhone={isPhone}
           service={service}
-          tvHref={tvOn && !executive ? bedMeetingTvHref({ service: tvServiceParam(service) }) : undefined}
           executive={executive}
           edWaiting={edWaiting}
-          highlight={highlight}
-          onHighlight={highlightFromHero}
+          networkWide={networkWide}
+          hideEmptyTypes={siteDesk}
+          tvHref={tvOn && !executive ? bedMeetingTvHref({ service: tvServiceParam(service) }) : undefined}
           onSheet={() => setPopup({ kind: "sheet" })}
+          onForecast={() => setPopup({ kind: "forecast" })}
           onWard={openWard}
           onAskWard={askWard}
         />
-        {isPhone ? (
-          <>
-            <Segmented
-              label="Capacity view"
-              className={styles.phoneTabs}
-              items={[
-                { id: "overview" as const, label: "Overview" },
-                { id: "wards" as const, label: "Wards", count: mapModel.networkRows.length },
-                { id: "planned" as const, label: "Planned", count: model.plannedBooked },
-              ]}
-              value={phoneTab}
-              onChange={(tab) => startTransition(() => setPhoneTab(tab))}
-            />
-            {phoneTab === "overview" ? (
-              <PhoneOverview
+        {/* Page tops (Josh, 9 Nov 2026): Overview, Wards and Planned on every size. The Mismatch card
+            is gone: its gap by bed type is the hero's band, and each band cell opens its pop-up. */}
+        <FolderTabs label="Capacity view" value={tab} testId="capacity-tabs" className={styles.pageTabs}>
+          <Segmented
+            label="Capacity view"
+            size="md"
+            className={folderTabClasses.switch}
+            items={[
+              { id: "overview" as const, label: "Overview" },
+              { id: "wards" as const, label: "Wards", count: mapModel.networkRows.length },
+              { id: "planned" as const, label: "Planned", count: model.plannedBooked },
+            ]}
+            value={tab}
+            onChange={(next) => startTransition(() => setTab(next))}
+          />
+          {isPhone || tab === "planned" ? null : (
+            <>
+              <span className={folderTabClasses.rule} aria-hidden="true" />
+              <BedMapHighlights
+                className={folderTabClasses.filters}
                 model={mapModel}
-                networkWide={networkWide}
-                executive={executive}
-                onForecast={() => setPopup({ kind: "forecast" })}
-                onWard={openWard}
-                onAskWard={askWard}
+                highlight={highlight}
+                onHighlight={setHighlight}
               />
-            ) : phoneTab === "wards" ? (
-              bedMap
-            ) : (
-              planned
-            )}
-          </>
+            </>
+          )}
+        </FolderTabs>
+        {tab === "wards" ? (
+          bedMap
+        ) : tab === "planned" ? (
+          planned
+        ) : isPhone ? (
+          <PhoneOverview
+            model={mapModel}
+            networkWide={networkWide}
+            executive={executive}
+            onForecast={() => setPopup({ kind: "forecast" })}
+            onWard={openWard}
+            onAskWard={askWard}
+          />
         ) : (
           <>
-            {/* Capacity issue 2 (Josh, 3 Nov 2026): the bed map sits straight under Mismatch, the
-                forecast below it. Issue 7: State bedflow is gone; it repeated the bed map, and its one
-                extra figure (beds freeing today) is now on each bed map card. */}
-            <MismatchBand model={model} hideEmptyTypes={siteDesk} onWard={openWard} networkWide={networkWide} />
+            {/* Capacity issue 2 (Josh, 3 Nov 2026): the bed map first, the forecast below it. Issue 7:
+                State bedflow is gone; it repeated the bed map. */}
             {bedMap}
             <BedForecast
               model={model}
@@ -304,9 +318,8 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
               networkWide={networkWide}
             />
             {/* Capacity issue 6 (Josh, 3 Nov 2026): Planned moves, booked admissions and step downs in
-                one card, full width. Josh's fifth notes (8 Nov 2026): the row under it (Nearest ready
-                beds, This shift) is gone; drive times are in the Mismatch drawer, the shift figures
-                in the hero strip and an unchanged count on its ward card. */}
+                one card, full width. Josh's fifth notes (8 Nov 2026): the row under it is gone; the
+                shift figures are in the hero and an unchanged count on its ward card. */}
             {planned}
           </>
         )}

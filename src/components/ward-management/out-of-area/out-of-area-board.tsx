@@ -7,15 +7,20 @@ import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Copy, Download, Map as MapIcon, Route, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, ClipboardCopy, Download, Map as MapIcon, Search } from "lucide-react";
 
 import {
   Button,
   Card,
   CardFoot,
-  CheckingFoot,
   EmptyState,
+  FolderTabs,
   Hero,
+  HeroAct,
+  HeroBand,
+  HeroFigures,
+  HeroQuickChips,
+  HeroTop,
   LiveChip,
   PanelDrawer,
   Segmented,
@@ -25,6 +30,7 @@ import {
   Tabs,
   TextInput,
   cx,
+  folderTabClasses,
   tableClasses,
   type WfTone,
   useIsPhone,
@@ -89,6 +95,7 @@ import {
 } from "./out-of-area-return-plan";
 import { HomeBedsCard, ReadyCard, ShiftCard, type ReadyRow, type ShiftReturnRow } from "./out-of-area-side";
 import styles from "./out-of-area-board.module.css";
+import pageTop from "../page-top-hero.module.css";
 import { isOnOrder, stayLegalShort, stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
@@ -674,6 +681,93 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     </p>
   );
 
+  /* ---- page top (Josh approved, 9 Nov 2026): figures, the next return, two chips, Days away ---- */
+  const heroTitle = (
+    <>
+      {/* H-0887: the page heading names the page, not only the count. */}
+      <SrOnly>Out of area:</SrOnly> {entries.length} away <span className={pageTop.titleSoft}>from home</span>
+    </>
+  );
+  const heroAside = (
+    <>
+      {toolNote && !isPhone ? (
+        <span className={styles.heroNote} role="status">
+          {toolNote}
+        </span>
+      ) : null}
+      <LiveChip state="live" onHero age={formatInstant(now)} />
+    </>
+  );
+  const heroTop = (
+    <HeroTop
+      figures={
+        <HeroFigures
+          label="Away from home figures"
+          items={[
+            {
+              id: "due",
+              value: countOf("due"),
+              label: "date passed",
+              onClick: () => toggleHighlight("due"),
+              pressed: highlight === "due",
+              testId: "ward-out-of-area-figure-due",
+            },
+            {
+              id: "noplan",
+              value: countOf("noplan"),
+              label: "no return plan",
+              onClick: () => toggleHighlight("noplan"),
+              pressed: highlight === "noplan",
+              testId: "ward-out-of-area-figure-noplan",
+            },
+            { id: "bed-days", value: bedDays, label: bedDays === 1 ? "bed day" : "bed days" },
+          ]}
+        />
+      }
+      act={
+        nextUp ? (
+          <HeroAct
+            tone="warning"
+            title={`Next return: ${patientOf(nextUp).formalName}`}
+            titleTestId="ward-out-of-area-next-return"
+            action={{
+              label: "Plan next return",
+              phoneLabel: "Plan",
+              onClick: () => selectPlacement(nextUp.admission.id),
+              testId: "ward-out-of-area-plan-next",
+            }}
+          />
+        ) : (
+          <HeroAct tone="calm" title="Everyone has a return plan" />
+        )
+      }
+      chips={
+        <HeroQuickChips
+          label="Out of area actions"
+          items={[
+            {
+              id: "copy",
+              label: isPhone ? "Copy for bed meeting" : "Copy bed meeting summary",
+              icon: <ClipboardCopy strokeWidth={1.75} aria-hidden="true" />,
+              onClick: copySummary,
+              testId: "ward-out-of-area-copy",
+            },
+            {
+              id: "export",
+              label: isPhone ? "Export list" : "Export list as CSV",
+              icon: <Download strokeWidth={1.75} aria-hidden="true" />,
+              onClick: exportList,
+              testId: "ward-out-of-area-export",
+            },
+          ]}
+        />
+      }
+      band={
+        <DaysAwayBand entries={entries} now={now} longest={longest} highlight={highlight} onToggle={toggleHighlight} />
+      }
+    />
+  );
+
   /* ---- phone ---- */
   if (isPhone) {
     const phonePeople: PhonePerson[] = sorted.map((entry) => {
@@ -698,12 +792,12 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       <div className={styles.screen} data-testid="ward-out-of-area-board" data-ward-design="v8-a">
         <main id="main-content" className={cx(styles.main, styles.phoneMain)}>
           <OutOfAreaPhone
+            hero={
+              <Hero level={1} className={cx(pageTop.hero, folderTabClasses.hero)} title={heroTitle} aside={heroAside}>
+                {heroTop}
+              </Hero>
+            }
             people={phonePeople}
-            totalAway={entries.length}
-            dueCount={countOf("due")}
-            noPlanCount={countOf("noplan")}
-            highlight={highlight}
-            onHighlight={(key) => toggleHighlight(key)}
             query={searchQuery}
             onQuery={setSearchQuery}
             anyHighlight={anyHighlight}
@@ -715,14 +809,6 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             selectedId={selectedId}
             onSelect={(id) => setSelectedId(id)}
             onClose={() => setSelectedId(null)}
-            nextUpId={nextUp?.admission.id}
-            // The phone hero matches the wide one: no bed-meeting comparison, only the bed days.
-            since={
-              <>
-                <b className={styles.mono}>{bedDays}</b> {bedDays === 1 ? "bed day" : "bed days"}
-              </>
-            }
-            onCopy={copySummary}
             toolNote={toolNote}
             renderPlan={(entry) => renderPlan(entry, undefined, "ward-out-of-area-phone-plan")}
             shift={
@@ -757,7 +843,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
 
   /* ---- desktop ---- */
   // A highlight with nobody in it is hidden (design audit B19), unless it is the one switched on.
-  const pill = (key: HighlightKey, label: string, tone?: WfTone) =>
+  const pill = (key: HighlightKey, label: string) =>
     countOf(key) === 0 && highlight !== key ? null : (
       <button
         key={key}
@@ -767,9 +853,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         data-testid={`ward-out-of-area-highlight-${key}`}
         onClick={() => toggleHighlight(key)}
       >
-        <span className={styles.pillCount}>{countOf(key)}</span>
-        {tone ? <StatusGlyph tone={tone} size={9} /> : null}
         {label}
+        <span className={styles.pillCount}>{countOf(key)}</span>
       </button>
     );
 
@@ -850,74 +935,36 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   return (
     <div className={styles.screen} data-testid="ward-out-of-area-board" data-ward-design="v8-a">
       <main id="main-content" className={styles.main}>
-        <Hero
-          level={1}
-          // The bed days and the longest stay are figures the header does not carry (Q153).
-          phoneEyebrow="show"
-          eyebrow={`Out of area · Statewide · ${plural(bedDays, "bed day", "bed days")} · longest ${plural(longest, "day", "days")}`}
-          // H-0887: the page heading names the page, not only the count.
-          title={
+        <Hero level={1} className={cx(pageTop.hero, folderTabClasses.hero)} title={heroTitle} aside={heroAside}>
+          {heroTop}
+        </Hero>
+        {/* Page tops (9 Nov 2026): Away now and History as the folder tabs, the highlights after them. */}
+        <FolderTabs label="Out of area views" value={tab} testId="ward-out-of-area-tabs">
+          <Tabs
+            className={folderTabClasses.switch}
+            label="Out of area view"
+            idPrefix="ward-out-of-area-view"
+            value={tab}
+            onChange={setTab}
+            items={[
+              { id: "now", label: "Away now", count: entries.length },
+              { id: "history", label: "History", count: repatriations.length },
+            ]}
+          />
+          {tab === "now" ? (
             <>
-              <SrOnly>Out of area:</SrOnly> {entries.length} away from home
+              <span className={folderTabClasses.rule} aria-hidden="true" />
+              <div className={cx(folderTabClasses.filters, styles.pills)} role="group" aria-label="Highlight people">
+                {pill("due", "Date passed")}
+                {pill("air", "Air only")}
+                {pill("road", TRAVEL_SHORT.three_hours_or_more)}
+                {pill("noplan", "No plan")}
+                {pill("notagreed", "Not agreed")}
+                {pill("bed", "Awaiting home bed")}
+              </div>
             </>
-          }
-          aside={
-            <span className={styles.heroActs}>
-              {/* Redesign (31 Oct 2026): the "since the bed meeting" comparison left the hero, as it was hard
-                  to read; This shift carries the shift's changes. */}
-              <LiveChip state="live" onHero />
-            </span>
-          }
-          bar={<DaysAwayStrip entries={entries} now={now} highlight={highlight} onToggle={toggleHighlight} />}
-          barAside={
-            <span className={styles.heroActs}>
-              {toolNote ? (
-                <span className={styles.heroNote} role="status">
-                  {toolNote}
-                </span>
-              ) : null}
-              <Button
-                variant="light"
-                size="sm"
-                icon={Route}
-                disabledReason={nextUp ? undefined : "Everyone has a return plan."}
-                reasonDisplay="tooltip"
-                title={
-                  nextUp ? `Opens ${patientOf(nextUp).formalName}, the longest past discharge with no plan` : undefined
-                }
-                onClick={() => nextUp && selectPlacement(nextUp.admission.id)}
-              >
-                {nextUp ? `Plan next return ${patientOf(nextUp).formalName}` : "Plan next return"}
-              </Button>
-              <Button
-                variant="onHero"
-                size="sm"
-                iconOnly
-                icon={Copy}
-                aria-label="Copy bed meeting summary"
-                title="Copy bed meeting summary"
-                onClick={copySummary}
-              />
-              <Button
-                variant="onHero"
-                size="sm"
-                iconOnly
-                icon={Download}
-                aria-label="Export list as CSV"
-                title="Export list as CSV"
-                onClick={exportList}
-              />
-            </span>
-          }
-          foot={
-            <CheckingFoot
-              items={[
-                { id: "due", label: "Discharge date passed", value: countOf("due"), tone: "warning" },
-                { id: "noplan", label: "No return plan", value: countOf("noplan"), tone: "neutral" },
-              ]}
-            />
-          }
-        />
+          ) : null}
+        </FolderTabs>
 
         <div className={styles.layout}>
           <Card
@@ -929,16 +976,6 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
               Away from home register
             </h2>
             <div className={styles.toolbar}>
-              <Tabs
-                label="Out of area view"
-                idPrefix="ward-out-of-area-view"
-                value={tab}
-                onChange={setTab}
-                items={[
-                  { id: "now", label: "Away now", count: entries.length },
-                  { id: "history", label: "History", count: repatriations.length },
-                ]}
-              />
               {tab === "now" ? (
                 <span className={styles.toolbarTools}>
                   <TextInput
@@ -976,14 +1013,6 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
               </div>
             ) : (
               <div role="tabpanel" id="ward-out-of-area-view-panel-now" aria-labelledby="ward-out-of-area-view-tab-now">
-                <div className={styles.pills} role="group" aria-label="Highlight people">
-                  {pill("due", "Date passed", "warning")}
-                  {pill("air", "Air only")}
-                  {pill("road", TRAVEL_SHORT.three_hours_or_more)}
-                  {pill("noplan", "No plan", "neutral")}
-                  {pill("notagreed", "Not agreed", "neutral")}
-                  {pill("bed", "Awaiting home bed", "neutral")}
-                </div>
                 <div className={styles.hlLine}>
                   <span aria-live="polite">
                     {anyHighlight ? (
@@ -1259,42 +1288,49 @@ function ReturnCell({
   );
 }
 
-/** Days away, in the four display groups, on the hero. Each segment and label highlights its rows. */
-function DaysAwayStrip({
+/** Page tops: the short band words for the four Days away groups ("<7", "7–29", "30–89", "90+"). */
+const DAYS_AWAY_SHORT: Record<string, string> = { under7: "<7", week: "7–29", month: "30–89", long: "90+" };
+
+/**
+ * Days away, in the four display groups, as the hero's band (page tops, 9 Nov 2026). Each cell
+ * highlights its rows; the aside names the longest stay away.
+ */
+function DaysAwayBand({
   entries,
   now,
+  longest,
   highlight,
   onToggle,
 }: {
   entries: OutOfAreaEntry[];
   now: Instant;
+  longest: number;
   highlight: HighlightKey | null;
   onToggle: (key: HighlightKey) => void;
 }) {
-  const groups = DAYS_AWAY_GROUPS.map((group) => ({
-    ...group,
-    key: `age:${group.id}` as HighlightKey,
-    n: entries.filter((entry) => inDaysAwayGroup(entry, now, group.id)).length,
-  }));
   return (
-    <div className={styles.ageStrip} role="group" aria-label="Days away, highlights rows">
-      <span className={styles.ageEyebrow}>Days away</span>
-      <span className={styles.ageLabels}>
-        {groups.map((group) => (
-          <button
-            key={group.id}
-            type="button"
-            aria-pressed={highlight === group.key}
-            // CB-3: the visible band and count lead the name (axe label-content-name-mismatch).
-            aria-label={`${group.label}, ${group.n} away for ${group.label.toLowerCase()} days`}
-            onClick={() => onToggle(group.key)}
-          >
-            <i className={styles[`age_${group.id}`]} aria-hidden="true" />
-            {group.label} <b>{group.n}</b>
-          </button>
-        ))}
-      </span>
-    </div>
+    <HeroBand
+      title="Days away"
+      testId="ward-out-of-area-days-away"
+      aside={
+        <>
+          longest <b>{longest}</b> {longest === 1 ? "day" : "days"}
+        </>
+      }
+      cells={DAYS_AWAY_GROUPS.map((group) => {
+        const key = `age:${group.id}` as HighlightKey;
+        const n = entries.filter((entry) => inDaysAwayGroup(entry, now, group.id)).length;
+        return {
+          id: group.id,
+          label: DAYS_AWAY_SHORT[group.id] ?? group.label,
+          value: n,
+          pressed: highlight === key,
+          // CB-3: the visible band and count lead the name (axe label-content-name-mismatch).
+          ariaLabel: `${DAYS_AWAY_SHORT[group.id] ?? group.label} ${n}, away for ${group.label.toLowerCase()} days`,
+          onClick: () => onToggle(key),
+        };
+      })}
+    />
   );
 }
 

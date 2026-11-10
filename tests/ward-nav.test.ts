@@ -1762,11 +1762,14 @@ describe("Ward index — every ward in the network has a way in", () => {
     // v6 (approved Wards mockup, 7 Oct 2026): the hero band carries the statewide counts and one
     // filter card carries service, search, view, status, cohort and order.
     expect(markup).toContain("All wards");
-    expect(markup).toContain("Wards · Statewide");
+    // Page tops (Josh, 9 Nov 2026): the statewide eyebrow left the hero; its figures carry the scope.
+    expect(markup).toContain("Statewide counts");
     expect(markup).toContain("Ward filters");
     expect(markup).toContain("Occupied");
-    expect(markup).toContain("Ready now");
-    expect(markup).toContain("Stale counts");
+    // Page tops (9 Nov 2026): "Ready now" is the "beds ready" figure, and the stale-counts chip is the
+    // rail's "Counts to check" list (with the confirmed pill in the hero).
+    expect(markup).toContain("beds ready");
+    expect(markup).toContain("Counts to check");
     // Owner ruling 2026-09-17: live capacity lives on each directory card; former footer Live-bed sentence removed.
 
     // All 23 units have their cards with link and capacity details

@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { QUICK_BAR } from "@/components/ward-management/quick-bar/ward-quick-bar-spec";
@@ -32,6 +34,25 @@ describe("Quick bar (Josh, 8 Nov 2026)", () => {
       expect(tools).not.toContain("bed-finder");
       expect(tools).not.toContain("figures");
       expect(tools).not.toContain("messages");
+    }
+  });
+
+  // Page tops v6 (Josh, 9 Nov 2026: the mock-ups are the source of truth): Home's four chips.
+  it("gives the coordinator Home's mock-up chips, in order", () => {
+    expect(QUICK_BAR.coordinator.map((control) => control.label)).toEqual([
+      "Ward updates",
+      "Find a bed",
+      "Call and contacts",
+      "Handover",
+    ]);
+  });
+
+  it("links only to pages the app has", () => {
+    for (const controls of Object.values(QUICK_BAR)) {
+      for (const control of controls) {
+        if (control.kind !== "link") continue;
+        expect(existsSync(join(process.cwd(), "src/app", control.href, "page.tsx")), control.href).toBe(true);
+      }
     }
   });
 });

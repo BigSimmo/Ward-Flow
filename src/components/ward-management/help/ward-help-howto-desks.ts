@@ -32,7 +32,7 @@ const REFERRAL_ROW: TourTarget[] = [
 ];
 /** A Statistics view's chip in the statistics bar. */
 const statisticsView = (label: string): TourTarget => ({
-  sel: '[data-testid="ward-statistics-nav"] a, [data-testid="ward-statistics-nav"] button',
+  sel: ':is([data-testid="ward-statistics-nav"], [data-testid="ward-statistics-index"]) :is(a, button)',
   text: label,
 });
 

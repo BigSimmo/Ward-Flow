@@ -91,12 +91,12 @@ export const ED_ELEVATED_PRESSURE_WAIT_MINUTES = CLINICAL_VALUES.edElevatedPress
 export const ED_SEVERE_PRESSURE_WAIT_MINUTES = CLINICAL_VALUES.edSeverePressure.value;
 
 /**
- * A wait in hospital counted as long: neutral colour, worded "Waiting over 24 hours". Josh, 26 Sept 2026
+ * A wait in hospital counted as long: neutral colour, worded "Waiting past 24 hours" (Josh, 9 Nov 2026: "past", not "over"). Josh, 26 Sept 2026
  * (D-24, morning list item 1): back as his default, never a breach and never a "standard".
  */
 export const LONG_WAIT_MINUTES = CLINICAL_VALUES.longWait.value;
-/** The words screens use for it, built from the value: "over 24 hours". */
-export const LONG_WAIT_TEXT = `over ${LONG_WAIT_MINUTES / MINUTES_PER_HOUR} hours`;
+/** The words screens use for it, built from the value: "past 24 hours". */
+export const LONG_WAIT_TEXT = `past ${LONG_WAIT_MINUTES / MINUTES_PER_HOUR} hours`;
 
 /**
  * Reminders when a ward has not answered a referral (Delays and Coordinator screens): the first and

@@ -246,40 +246,6 @@
   white-space: nowrap;
 }
 
-.staleLine {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-
-/* Frozen replaces Live: a quiet pill with a still grey dot and the frozen clock time. */
-.frozen {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 24px;
-  padding: 2px var(--wf-s-2);
-  box-sizing: border-box;
-  border: 1px solid var(--wf-on-hero-line);
-  border-radius: var(--wf-r-tag);
-  background: var(--wf-on-hero-fill);
-  color: var(--wf-hero-ink);
-  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
-.frozen b {
-  font-family: var(--wf-mono);
-  font-weight: 600;
-}
-
-.frozenDot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--wf-hero-neutral);
-}
-
 .gated {
   display: inline-flex;
   align-items: center;
@@ -290,6 +256,32 @@
   color: var(--wf-on-hero-ink);
   font-size: var(--wf-fs-12);
   white-space: nowrap;
+}
+
+/* Downtime page top (Josh, 9 Nov 2026): New snapshot, then (wider screens) the keep-a-copy note beside it. */
+.topChips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+}
+
+.topNote {
+  margin: 0;
+  color: var(--wf-hero-ink-2);
+  font: 400 var(--wf-fs-12) / 17px var(--wf-font);
+}
+
+.topTwins {
+  margin: 0;
+  color: var(--wf-hero-ink-2);
+  font: 400 var(--wf-fs-12) / 17px var(--wf-font);
+}
+
+@media (max-width: 46.4375rem) {
+  .topChips .reasonOnHero {
+    white-space: normal;
+  }
 }
 
 .packCard {
@@ -1022,38 +1014,17 @@
 
 .phoneReady {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   gap: 5px;
+  white-space: nowrap;
 }
-
-/* v10 phone downtime pack (11 Oct 2026, pass 2): the hero's two actions share the row equally, and
-   each service head is bare text on the canvas with its list card below. Phone tree only. */
-/* Scoped to the downtime hero: unscoped, it reached the chronology hero, whose last block is the
-   title when no patient is chosen, and collapsed its "Choose a patient" title to 0px. */
-.downtimePhoneHero > div:last-child > * {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-.downtimePhoneHero > div:last-child > * > button,
-.downtimePhoneHero > div:last-child > button {
-  justify-content: center;
-  width: 100%;
+.phoneReadyUnit {
+  font: 400 var(--wf-fs-14) / 1 var(--wf-font);
+  color: var(--wf-ink-2);
 }
 
 .phonePage .gated {
   display: flex;
-}
-
-/* Visual desk, 22 Oct 2026: offline, the New snapshot reason ran over Print on the phone hero, so the
-   reason sits under its button and wraps. */
-.downtimePhoneHero .gated {
-  flex-direction: column;
-  align-items: stretch;
-}
-
-.downtimePhoneHero .reasonOnHero {
-  white-space: normal;
 }
 
 .phoneGroupHead,
@@ -1062,18 +1033,6 @@
   padding: var(--wf-s-2) var(--wf-s-1) 0;
   border: 0;
   background: transparent;
-}
-
-/* v10 phone downtime pack: Beds, ED, Moves and Forms stay pinned under the bar while the list
- * scrolls, with an 8px canvas collar so no row shows round the switch. The shared bar keeps the same height
- * throughout the scroll; the canvas collar fills the join beneath it. Phone-only element. */
-/* Device sweep R1-19/R2-12 (24 Oct 2026): as on the statistics phone, the inset shadow drew a faint
- * square frame round the rounded track. Only the canvas ring that hides scrolled rows stays. */
-.phoneSegPinned {
-  position: sticky;
-  top: calc(var(--wf-header-height, 3.5rem) + var(--wf-s-2));
-  z-index: 6;
-  box-shadow: 0 0 0 var(--wf-s-2) var(--wf-canvas);
 }
 
 /* Keep the first report load recognisable without inventing any figures or table rows. */

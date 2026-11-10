@@ -398,8 +398,9 @@ describe("Out of area v10 pass", () => {
   // this list; the screen-reader counts line still states that figure once.
   it("the hero foot says what is being checked", () => {
     renderBoard();
-    expect(screen.getAllByText("Discharge date passed").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("No return plan").length).toBeGreaterThan(0);
+    // Page tops (Josh approved, 9 Nov 2026): the two figures are the hero's own, in short lower-case words.
+    expect(screen.getByTestId("ward-out-of-area-figure-due")).toHaveTextContent("date passed");
+    expect(screen.getByTestId("ward-out-of-area-figure-noplan")).toHaveTextContent("no return plan");
     expect(screen.queryByText("Other records without home area or travel time")).not.toBeInTheDocument();
     expect(screen.getByTestId("ward-out-of-area-count-not-banded")).toHaveTextContent(
       /more could not be placed in a band/,
@@ -420,7 +421,8 @@ describe("Out of area redesign", () => {
 
     renderPhoneBoard();
     expect(screen.queryByTestId("ward-out-of-area-twin")).not.toBeInTheDocument();
-    expect(screen.queryByText(/bed meeting$/i)).not.toBeInTheDocument();
+    // Page tops: the "Copy for bed meeting" chip is a tool, not the comparison.
+    expect(screen.queryByText(/since .*bed meeting$/i)).not.toBeInTheDocument();
     expect(screen.getAllByText(/^bed days?$/).length).toBeGreaterThan(0);
   });
 
@@ -503,7 +505,8 @@ describe("Out of area redesign", () => {
     expect(within(more).getByText(/^\d+ more in Everyone$/)).toBeInTheDocument();
     fireEvent.click(more);
     expect(screen.getByRole("radio", { name: /Everyone/ })).toBeChecked();
-    expect(screen.getByRole("button", { name: /with no return plan, highlight them$/ })).toBeInTheDocument();
+    // Page tops: the hero's no return plan figure highlights them.
+    expect(screen.getByRole("button", { name: /^\d+ no return plan$/ })).toBeInTheDocument();
   });
 });
 

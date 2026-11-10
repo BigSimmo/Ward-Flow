@@ -964,7 +964,8 @@ const JOBS: readonly HowTo[] = [
     go: "statistics",
     showMe: [
       {
-        target: { sel: '[data-testid="ward-statistics-nav"]' },
+        // The index's folder tabs carry ward-statistics-index (page tops, 9 Nov 2026).
+        target: { sel: '[data-testid="ward-statistics-nav"], [data-testid="ward-statistics-index"]' },
         title: "Choose a view",
         body: "Network, Compare, Services, Wards, EDs, Teams and Weekly. Every figure is from synthetic records.",
       },

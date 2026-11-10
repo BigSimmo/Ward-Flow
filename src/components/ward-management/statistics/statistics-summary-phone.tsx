@@ -2,31 +2,43 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Activity, Building2, ChevronRight, Layers, Siren } from "lucide-react";
+import { Activity, Building2, ChevronRight, Clock, Download, Layers, Search, Siren } from "lucide-react";
 
 import {
   GroupHead,
+  Hero,
+  HeroAct,
+  HeroBand,
+  HeroFigures,
+  HeroQuickChips,
+  HeroTop,
   IconTile,
   LiveChip,
-  PhoneHero,
   PhoneListRow,
   PhoneSheet,
   Segmented,
   StatusGlyph,
   cx,
   durMinutes,
+  folderTabClasses,
   ShowMoreRow,
+  SrOnly,
 } from "@/components/wf";
 import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { formatInstant } from "@/components/ward-management/ward-clock";
-import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 
 import { StatisticsNav } from "./statistics-nav";
+import { downloadStatisticsFigures } from "./statistics-hero";
+import type { StatisticsExport } from "./statistics-csv";
+import type { NetworkServiceRow } from "./statistics-network-cards";
+import { setStatisticsSamples, useStatisticsSamples } from "./statistics-samples";
 import { PhoneDotKey } from "./statistics-phone-parts";
 import { STATISTICS_SERVICES_HREF } from "./statistics-sections";
 import styles from "./statistics-phone.module.css";
+import topTitle from "../shell/page-top-title.module.css";
 import { SmallNumberNote } from "./statistics-count-list";
 import note from "./statistics-count-list.module.css";
 import { ShortLabel } from "./redesign/statistics-redesign-parts";
@@ -158,7 +170,9 @@ function MoreFigures({ figures }: { figures: PhoneMoreFigures }) {
  * referral figures as rows that open bottom sheets. Every figure is passed in from the desktop
  * screen's own derivations, so the two never disagree.
  */
-type PhoneSummaryProps = Omit<Parameters<typeof StatisticsSummaryPhoneView>[0], "now"> & { now?: number };
+type PhoneSummaryProps = Omit<Parameters<typeof StatisticsSummaryPhoneView>[0], "now" | "dayZero"> & {
+  now?: number;
+};
 
 export function StatisticsSummaryPhone(props: PhoneSummaryProps) {
   const control = useExecutiveStatisticsControl();
@@ -171,6 +185,7 @@ export function StatisticsSummaryPhone(props: PhoneSummaryProps) {
         {...props}
         eds={props.eds.map((ed) => ({ ...ed, openable: data.openableEmergencyDepartmentIds.includes(ed.id) }))}
         now={data.network.asAt.now}
+        dayZero={new Date(data.network.asAt.dayZero)}
         paused={control.paused}
         onTogglePause={control.togglePause ?? undefined}
       />
@@ -182,16 +197,18 @@ export function StatisticsSummaryPhone(props: PhoneSummaryProps) {
 
 function OperationalSummaryPhone(props: PhoneSummaryProps) {
   const now = useWardFlowClock();
-  return <StatisticsSummaryPhoneView {...props} now={props.now ?? now} />;
+  const { dayZero } = useWardFlowSelect("dayZero");
+  return <StatisticsSummaryPhoneView {...props} now={props.now ?? now} dayZero={dayZero} />;
 }
+
+/** "North Metro" reads "North", "Country (WACHS)" reads "WACHS" in the page-top band. */
+const bandName = (name: string) => name.replace(/ Metro$/u, "").replace(/^Country \((.+)\)$/u, "$1");
 
 function StatisticsSummaryPhoneView({
   ready,
-  beingMadeReady,
   occupied,
   occupiedPct,
   waitingInEd,
-  endedToday,
   wards,
   eds,
   referrals,
@@ -200,8 +217,13 @@ function StatisticsSummaryPhoneView({
   paused,
   onTogglePause,
   now,
+  dayZero,
   eyebrow = "Statistics · Network now",
   totalBeds,
+  services,
+  onOpenUnit,
+  unitFinderOpen = false,
+  exportFigures,
 }: {
   ready: number;
   beingMadeReady: number;
@@ -222,6 +244,14 @@ function StatisticsSummaryPhoneView({
   eyebrow?: string;
   /** Role view (executive): every bed, shown when the people counts are held back. */
   totalBeds?: number;
+  dayZero: Date;
+  /** Each health service's beds, for the page-top band. Left out, the band is not drawn. */
+  services?: readonly NetworkServiceRow[];
+  /** Opens the one unit finder. Left out (bed manager), the chip is not offered. */
+  onOpenUnit?: () => void;
+  unitFinderOpen?: boolean;
+  /** The figures the Export chip downloads, as the desktop's. */
+  exportFigures?: StatisticsExport;
 }) {
   const access = useEffectiveWardAccess();
   // Role view (site bed manager, D-80): one hospital, which the hero names, so its wards are listed
@@ -266,6 +296,8 @@ function StatisticsSummaryPhoneView({
     null,
   );
   const listLength = group === "hospital" ? hospitals.length : wards.length;
+  const samples = useStatisticsSamples();
+  const closedBeds = services?.reduce((sum, entry) => sum + entry.closed, 0) ?? 0;
 
   const wardRow = (ward: PhoneWard) => (
     <PhoneListRow
@@ -340,40 +372,19 @@ function StatisticsSummaryPhoneView({
   return (
     <div className={styles.page} data-testid="ward-statistics-screen" data-ward-design="v10">
       <main id="main-content" className={styles.main}>
-        <PhoneHero
+        {/* The page top (Josh, 9 Nov 2026): the place, three figures, the wards at or over the line,
+            the tools and each service's share in use. The sections follow as folder tabs. */}
+        <Hero
           level={1}
-          title={`${ready} ${ready === 1 ? "bed" : "beds"} ready now`}
-          sub={`Prototype, invented records${beingMadeReady > 0 ? ` · ${beingMadeReady} being made ready` : ""}`}
-          figures={[
-            // Phone review F-26: the big figure says what it counts, with its share beside it.
-            { id: "occupied", value: occupied, label: `Beds in use, ${Math.round(occupiedPct)}%` },
-            // Role view (executive): with both people counts held back, one figure stood alone in a
-            // row of three; every bed (exact, like all bed counts) sits beside it.
-            ...(totalBeds !== undefined && held(waitingInEd) && held(endedToday)
-              ? [{ id: "beds", value: totalBeds, label: "Beds" }]
-              : []),
-            ...(held(waitingInEd)
-              ? []
-              : [
-                  {
-                    id: "ed",
-                    value: statisticsCountText(waitingInEd),
-                    label: <ShortLabel short="Open movements" full="Open ED movements" />,
-                  },
-                ]),
-            // The figure names what happened, as the desktop's "Discharged today" does: stays that ended today.
-            ...(held(endedToday)
-              ? []
-              : [
-                  {
-                    id: "ended",
-                    value: statisticsCountText(endedToday),
-                    label: <ShortLabel short="Discharged" full="Discharged today" />,
-                  },
-                ]),
-          ]}
-          eyebrow={eyebrow}
-          chip={
+          className={cx(topTitle.hero, folderTabClasses.hero)}
+          title={
+            <>
+              <SrOnly>{eyebrow} · </SrOnly>
+              {siteDesk ? eyebrow.replace(/^Statistics · /u, "") : "Whole network"}
+              <span className={topTitle.soft}> right now</span>
+            </>
+          }
+          aside={
             <LiveChip
               state={paused ? "paused" : "live"}
               onHero
@@ -381,11 +392,113 @@ function StatisticsSummaryPhoneView({
               onTogglePause={onTogglePause}
             />
           }
-        />
+        >
+          <HeroTop
+            figures={
+              <HeroFigures
+                label="Network at a glance"
+                items={[
+                  // Phone review F-26: the figure says what it counts, with its share beside it.
+                  {
+                    id: "occupied",
+                    value: occupied,
+                    unit: totalBeds === undefined ? undefined : <> / {totalBeds}</>,
+                    label: `in use, ${Math.round(occupiedPct)}%`,
+                  },
+                  { id: "ready", value: ready, label: ready === 1 ? "bed ready" : "beds ready" },
+                  ...(held(waitingInEd)
+                    ? []
+                    : [
+                        {
+                          id: "ed",
+                          value: statisticsCountText(waitingInEd),
+                          label: <ShortLabel short="open movements" full="open ED movements" />,
+                        },
+                      ]),
+                ]}
+              />
+            }
+            act={
+              siteDesk ? undefined : (
+                <HeroAct
+                  tone="calm"
+                  testId="ward-statistics-pressure-act"
+                  title={
+                    overCount === 0
+                      ? `No ward at or over ${BED_ALERT_THRESHOLD_PERCENT}%`
+                      : `${overCount} ${overCount === 1 ? "ward" : "wards"} at or over ${BED_ALERT_THRESHOLD_PERCENT}%`
+                  }
+                  action={
+                    overCount === 0
+                      ? undefined
+                      : { label: "Show wards", phoneLabel: "Show", onClick: () => setSheet({ kind: "pressure" }) }
+                  }
+                />
+              )
+            }
+            chips={
+              <HeroQuickChips
+                label="Statistics tools"
+                items={[
+                  ...(onOpenUnit
+                    ? [
+                        {
+                          id: "unit",
+                          label: "Open a unit",
+                          icon: <Search size={16} strokeWidth={1.75} aria-hidden="true" />,
+                          onClick: onOpenUnit,
+                          expanded: unitFinderOpen,
+                          testId: "ward-statistics-tool-open-unit",
+                        },
+                      ]
+                    : []),
+                  ...(exportFigures
+                    ? [
+                        {
+                          id: "export",
+                          label: "Export",
+                          icon: <Download size={16} strokeWidth={1.75} aria-hidden="true" />,
+                          onClick: () => downloadStatisticsFigures(exportFigures, now, dayZero),
+                          testId: "ward-statistics-export",
+                        },
+                      ]
+                    : []),
+                  {
+                    id: "history",
+                    label: "Example history",
+                    icon: <Clock size={16} strokeWidth={1.75} aria-hidden="true" />,
+                    onClick: () => setStatisticsSamples(!samples),
+                    pressed: samples,
+                    testId: "ward-statistics-example-history",
+                  },
+                ]}
+              />
+            }
+            band={
+              services && services.length > 0 ? (
+                <HeroBand
+                  title="In use by health service"
+                  aside={
+                    <>
+                      <b>{closedBeds}</b> closed
+                    </>
+                  }
+                  asideHref={canOpen(STATISTICS_SERVICES_HREF) ? STATISTICS_SERVICES_HREF : undefined}
+                  cells={services.map((entry) => ({
+                    id: entry.id,
+                    label: bandName(entry.name),
+                    value: `${Math.round(entry.share * 100)}%`,
+                  }))}
+                  testId="ward-statistics-service-band"
+                />
+              ) : undefined
+            }
+          />
+        </Hero>
+
+        <StatisticsNav currentSection="hub" withSamples={false} wardCount={wardCount} variant="folder" />
 
         {executive ? <SmallNumberNote className={note.note} /> : null}
-
-        <StatisticsNav currentSection="hub" withSamples={false} wardCount={wardCount} variant="chips" />
 
         {/* v10: the switch stays pinned under the bar while its list scrolls, and lets go after it. */}
         <div className={styles.segGroup}>

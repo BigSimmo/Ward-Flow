@@ -43,7 +43,8 @@ export function StrandedPrompts({
     <details className={styles.panel} data-testid="ward-board-stranded" open>
       <summary className={styles.summary}>
         <span id={`${baseId}-ward-board-stranded-heading`}>Worth a look: long stays and people waiting to leave</span>
-        <span className={styles.count}>({flags.length})</span>
+        {/* Page tops (9 Nov 2026): a quiet mono count, as other counts are, not "(1)". */}{" "}
+        <span className={styles.count}>{flags.length}</span>
       </summary>
       {/* Device audit, 11 Oct 2026: the four-line explanation is gone; the heading says what
           the list is. */}

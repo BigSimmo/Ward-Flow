@@ -25,6 +25,7 @@ import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 
 const current = allUnits().find((unit) => unit.id === "rph-adult-secure")!;
 const others = allUnits().filter((unit) => unit.id !== current.id && unit.siteCode === current.siteCode);
+// Page tops (9 Nov 2026): Switch ward is a hero chip; its spoken name still says which ward is current.
 const switchName = `Switch ward, now ${current.name}`;
 
 afterEach(() => {

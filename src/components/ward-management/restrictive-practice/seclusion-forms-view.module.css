@@ -8,7 +8,7 @@
 
 .pair {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: start;
   gap: var(--wf-s-4);
 }
@@ -38,14 +38,57 @@
   border-top: 0;
 }
 
-/* Rooms: name, state tag, Change. */
+/* Rooms (page tops, 9 Nov 2026): name, state tag and Change on one line, who marked it under. */
 [data-testid="seclusion-rooms"] .row {
   grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: baseline;
+  row-gap: 1px;
+  column-gap: var(--wf-s-3);
+}
+
+[data-testid="seclusion-rooms"] .row > .rowMain {
+  display: contents;
+}
+
+[data-testid="seclusion-rooms"] .row .name {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+[data-testid="seclusion-rooms"] .row .detail {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+[data-testid="seclusion-rooms"] .row > .tag {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+[data-testid="seclusion-rooms"] .row > button {
+  grid-column: 3;
+  grid-row: 1;
+  min-height: 28px;
+}
+
+/* Incidents: the typed time at the right edge, in mono; the ward and recorder on one line. */
+[data-testid="seclusion-incidents"] .row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+[data-testid="seclusion-incidents"] .row > .detail {
+  font-family: var(--wf-mono);
+  white-space: nowrap;
+}
+
+[data-testid="seclusion-incidents"] .rowMain .detail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 46.4375rem) {
-  .row,
-  [data-testid="seclusion-rooms"] .row {
+  .row {
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
@@ -93,9 +136,23 @@
   color: var(--wf-ink-3);
 }
 
-.foot {
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border-top: 1px solid var(--wf-line);
+/* The view's scope line: first, slim and quiet, no card. It is a safety line, so it stays. */
+.scopeNote {
+  margin: 0;
+  padding: 0 var(--wf-s-1);
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .error {

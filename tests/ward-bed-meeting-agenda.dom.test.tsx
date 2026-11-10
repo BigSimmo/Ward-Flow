@@ -208,8 +208,8 @@ describe("bed meeting agenda", () => {
     );
     fireEvent.click(screen.getByTestId("bed-meeting-action-record"));
 
-    const filters = screen.getByTestId("bed-meeting-agenda-filters");
-    fireEvent.click(within(filters).getByRole("button", { name: /With an action/ }));
+    // Page tops (9 Nov 2026): "With an action" is a chip in the top, shown once someone carries one.
+    fireEvent.click(screen.getByTestId("agenda-actioned-chip"));
 
     const narrowed = screen.getByTestId("bed-meeting-agenda-ed-waits");
     expect(within(narrowed).getByText("Book transport", { selector: "span" })).toBeInTheDocument();
@@ -262,7 +262,7 @@ describe("bed meeting agenda", () => {
         <BedMeetingAgendaScreen />
       </WardFlowProvider>,
     );
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Agenda");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/agenda/iu);
     expect(screen.getByTestId("agenda-start-meeting")).toHaveAttribute("href", "/ward-flow/bed-meeting");
     expect(screen.queryByTestId("bed-meeting-sheet-open")).not.toBeInTheDocument();
   });
@@ -322,16 +322,16 @@ describe("bed meeting agenda group filter (B1 extended, 4 Nov 2026)", () => {
  * list then shows, never the unfiltered total.
  */
 describe("bed meeting agenda filtered headline counts", () => {
+  // Page tops (9 Nov 2026): the top shows the first three lists' figures; Out of area keeps its card.
   const HERO_LISTS = [
     ["ed-waits", "ED waits"],
-    ["holds", "Pulled beds"],
-    ["stranded", "Stranded"],
-    ["out-of-area", "Out of area"],
+    ["holds", "pulled beds"],
+    ["stranded", "stranded"],
   ] as const;
 
   /** The hero figure printed above `label`, read from the hero band only. */
   function heroFigure(label: string): number {
-    const hero = screen.getByRole("heading", { level: 1, name: /Agenda/u }).closest("section, header")!;
+    const hero = screen.getByRole("heading", { level: 1, name: /agenda/iu }).closest("section, header")!;
     const labelNode = within(hero as HTMLElement).getByText(label, { exact: true });
     const stat = labelNode.parentElement!;
     return Number(stat.firstElementChild!.textContent!.trim());

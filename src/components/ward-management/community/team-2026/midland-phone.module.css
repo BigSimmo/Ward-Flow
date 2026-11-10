@@ -2,15 +2,6 @@
    Ported from the design's own CSS (mockups/community/phone/community-phone.html), tokens only.
    Rendered only under the phone breakpoint, so nothing here reaches desktop or tablet. */
 
-.track {
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.track > * {
-  flex: none;
-}
-
 .card {
   min-width: 0;
   overflow: hidden;
@@ -70,11 +61,6 @@
   font-weight: 400;
 }
 
-.quiet {
-  flex: none;
-  color: var(--wf-ink-3);
-}
-
 .tag {
   padding: 2px 8px;
   border-radius: var(--wf-r-tag);
@@ -112,93 +98,10 @@
 }
 
 .more:focus-visible,
-.tile:focus-visible,
 .chip:focus-visible,
 .linkRow:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
-}
-
-/* Duty officer line */
-.reach {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-}
-
-.reachText {
-  flex: 1;
-  min-width: 0;
-}
-
-/* Four figure tiles, two by two */
-.tiles {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-}
-
-.tile {
-  display: grid;
-  gap: 6px;
-  min-width: 0;
-  padding: 12px 14px;
-  border: 0;
-  border-right: 1px solid var(--wf-line);
-  border-bottom: 1px solid var(--wf-line);
-  background: none;
-  color: var(--wf-ink-1);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.tile:nth-child(2n) {
-  border-right: 0;
-}
-
-.tile:nth-child(n + 3) {
-  border-bottom: 0;
-}
-
-.tileHead {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.tileHead .mono {
-  color: var(--wf-ink-1);
-  font-size: 15px;
-}
-
-.bar {
-  display: flex;
-  gap: 2px;
-  height: 6px;
-  overflow: hidden;
-  border-radius: 3px;
-  background: var(--wf-line);
-}
-
-.bar i {
-  display: block;
-  height: 100%;
-}
-
-.d1 {
-  background: var(--wf-data-1);
-}
-
-.d2 {
-  background: var(--wf-data-2);
-}
-
-.dw {
-  background: var(--wf-warning);
-}
-
-.dk {
-  background: var(--wf-danger);
 }
 
 /* Caseload by case manager */
@@ -532,11 +435,4 @@
 
 .dl {
   font-size: 14px;
-}
-
-/* The phone band at its fixed insets: the page's 12px phone gutter on each side and above. */
-.band {
-  --wf-band-top: var(--wf-s-3);
-  --wf-band-left: var(--wf-s-3);
-  --wf-band-right: var(--wf-s-3);
 }

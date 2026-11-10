@@ -46,10 +46,10 @@ describe("Waiting names the people in transit beside its waiting count", () => {
     const hero = screen.getByTestId("delays-hero");
     const split = waitingSplit(movements);
     expect(notWaitingParts(split)).toEqual(["1 in transit"]);
-    expect(within(hero).getByRole("heading", { level: 1 })).toHaveTextContent(
-      new RegExp(`^${split.waiting} waiting in ED, 1 in transit$`, "u"),
-    );
+    // Page tops (9 Nov 2026): the title is "ED waits right now"; the figures carry the counts.
     const stats = within(hero).getByRole("group", { name: "Filter by the headline counts" });
+    expect(within(stats).getByTestId("delays-stat-waiting")).toHaveTextContent(`${split.waiting} in ED`);
+    expect(stats).toHaveTextContent("1 in transit");
     expect(within(stats).getByTestId("delays-stat-over8")).toBeInTheDocument();
 
     // The band holding the person in transit says so, folded or open, in the same words.
@@ -72,9 +72,7 @@ describe("Waiting names the people in transit beside its waiting count", () => {
       </WardFlowProvider>,
     );
     const hero = screen.getByTestId("delays-hero");
-    expect(within(hero).getByRole("heading", { level: 1 })).toHaveTextContent(
-      new RegExp(`^${waitingSplit(waiting).waiting} waiting in ED$`, "u"),
-    );
+    expect(within(hero).getByTestId("delays-stat-waiting")).toHaveTextContent(`${waitingSplit(waiting).waiting} in ED`);
     expect(screen.queryByText(/in transit/u)).toBeNull();
     for (const band of screen.getAllByTestId(/^delays-band-/u)) {
       expect(band.getAttribute("aria-label")).not.toMatch(/in transit/u);

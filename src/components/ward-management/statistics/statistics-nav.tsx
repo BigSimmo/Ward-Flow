@@ -2,9 +2,19 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, ChevronLeft } from "lucide-react";
+import { ChevronDown, ChevronLeft, Ellipsis } from "lucide-react";
 
-import { HeroTrack, Menu, Switch } from "@/components/wf";
+import {
+  FolderTabs,
+  HeroTrack,
+  Menu,
+  Segmented,
+  Switch,
+  buttonClass,
+  cx,
+  folderTabClasses,
+  useIsPhone,
+} from "@/components/wf";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
@@ -39,10 +49,17 @@ interface StatisticsNavProps {
   wardCount?: number;
   /**
    * `chips`: the phone Summary's row of section chips on the sheet under the hero (v10 phone), in
-   * place of the hero track and its phone select. Defaults to `hero`.
+   * place of the hero track and its phone select. `folder`: the page-top tabs (Josh, 9 Nov 2026),
+   * curved folder tabs under the hero on a phone and tablet and underline tabs on a desktop; render
+   * it as the next sibling of the page's Hero. Defaults to `hero`.
    */
-  variant?: "hero" | "chips";
+  variant?: "hero" | "chips" | "folder";
+  /** The folder row's test id (defaults to `ward-statistics-nav`). */
+  testId?: string;
 }
+
+/** On a phone the folder row keeps these sections (and the current one); the rest open from More. */
+const PHONE_FOLDER_SECTIONS: readonly StatisticsNavSection[] = ["hub", "service", "ward"];
 
 /**
  * The current chip scrolls into the row's view, so a later section (Teams, Weekly) never hides
@@ -127,6 +144,7 @@ export function StatisticsNav({
   withSamples = true,
   wardCount,
   variant = "hero",
+  testId,
 }: StatisticsNavProps) {
   const pathname = useOptionalPathname();
   const router = useOptionalRouter();
@@ -163,6 +181,8 @@ export function StatisticsNav({
 
   // A desk with one section or none has nowhere to move to, so no track or row of one is drawn.
   if (ownPlaceOnly || items.length < 2) return withSamples && variant !== "chips" ? <StatisticsSamplesSwitch /> : null;
+
+  if (variant === "folder") return <StatisticsFolderTabs items={items} activeSection={activeSection} testId={testId} />;
 
   if (variant === "chips") {
     // Phone review F-12 (15 Oct 2026): every statistics screen shows the same eight chips, in the
@@ -228,5 +248,71 @@ export function StatisticsNav({
       <HeroTrack className={styles.track} label="Statistics sections" value={activeSection} items={items} />
       {withSamples ? <StatisticsSamplesSwitch /> : null}
     </nav>
+  );
+}
+
+type NavItem = { id: StatisticsNavSection; label: string; href: string; count?: number };
+
+/**
+ * The statistics sections as page-top folder tabs (Josh, 9 Nov 2026). Each tab is a link, so a
+ * section opens at its own address; the chosen one carries aria-current. A phone shows Network,
+ * Services and Wards (and the current section) and puts the rest under More.
+ */
+function StatisticsFolderTabs({
+  items,
+  activeSection,
+  testId = "ward-statistics-nav",
+}: {
+  items: NavItem[];
+  activeSection: StatisticsNavSection;
+  testId?: string;
+}) {
+  const isPhone = useIsPhone();
+  const router = useOptionalRouter();
+  const shown = isPhone
+    ? items.filter((item) => PHONE_FOLDER_SECTIONS.includes(item.id) || item.id === activeSection)
+    : items;
+  const rest = items.filter((item) => !shown.includes(item));
+  return (
+    <FolderTabs
+      label="Ward Flow statistics sections"
+      value={activeSection}
+      testId={testId}
+      more={
+        rest.length === 0 ? undefined : (
+          <Menu
+            label="More statistics sections"
+            align="end"
+            items={rest.map((item) => ({
+              id: item.id,
+              label: item.count === undefined ? item.label : `${item.label} ${item.count}`,
+              onSelect: () => {
+                if (router) router.push(item.href);
+                else window.location.assign(item.href);
+              },
+            }))}
+            trigger={(props) => (
+              <button
+                type="button"
+                {...props}
+                className={cx(buttonClass({ variant: "ghost", size: "sm" }), folderTabClasses.more)}
+                data-testid="ward-statistics-nav-more"
+              >
+                <Ellipsis size={16} strokeWidth={1.75} aria-hidden="true" />
+                <span className="sr-only">More statistics sections</span>
+              </button>
+            )}
+          />
+        )
+      }
+    >
+      <Segmented<StatisticsNavSection>
+        className={folderTabClasses.switch}
+        label="Statistics sections"
+        size="md"
+        value={activeSection}
+        items={shown.map((item) => ({ id: item.id, label: item.label, count: item.count, href: item.href }))}
+      />
+    </FolderTabs>
   );
 }

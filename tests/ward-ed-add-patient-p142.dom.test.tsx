@@ -72,7 +72,8 @@ describe("P142: the ED home offers Add patient", () => {
     expect(add).toHaveTextContent("Add patient");
     expect(add).toHaveAttribute("href", "/ward-flow/people/new");
     const raise = screen.getAllByTestId("ward-ed-raise-referral-toggle")[0]!;
-    expect(raise.parentElement).toBe(add.parentElement);
+    // Page tops (Josh, 9 Nov 2026): both are chips in the hero's one chip row.
+    expect(raise.closest("ul")).toBe(add.closest("ul"));
   });
 
   // Deep audit (4 Nov 2026): off the phone the app bar's New referral is always there, so the hero

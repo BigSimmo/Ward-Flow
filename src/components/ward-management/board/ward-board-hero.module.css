@@ -202,3 +202,34 @@
     display: none;
   }
 }
+/* Page tops (9 Nov 2026): the sentences and the As at stamp as one quiet line under the band. */
+p.heroNote {
+  margin: 0;
+}
+/* The two route links sit in the folder row as tabs. */
+.boardTabs {
+  display: flex;
+  align-items: center;
+}
+.boardTabs > a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+/* The Confirmed cell's overlap note, on the value's line in the band (QA, 9 Nov 2026). */
+.bandNote {
+  margin-left: 2px;
+  font: 500 var(--wf-fs-12) / 16px var(--wf-font);
+  color: var(--wf-hero-ink-2);
+  white-space: nowrap;
+}
+
+/* The board's column has no gap (siblings carry their own 12px margins), so the folder rises by its
+   own height only and the sheet meets the slate with no strip between (QA, 9 Nov 2026). */
+@media (max-width: 63.9375rem) {
+  .boardFolder {
+    --wf-folder-gap: 0px;
+  }
+}

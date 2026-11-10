@@ -135,11 +135,11 @@ describe("Referrals, coordinator desk is unchanged by the ED branches", () => {
     expect(within(hero).getByText("Referrals")).toBeTruthy();
     expect(within(hero).getByText("1 awaiting decision")).toBeTruthy();
     expect(screen.queryByTestId("ward-referral-ed-raised")).toBeNull();
-    // MU1 (Josh, 5 Nov 2026): Next overdue is the hero's one button; the agenda sits under "...".
-    expect(within(hero).queryByRole("link", { name: /Bed meeting/ })).toBeNull();
-    fireEvent.click(within(hero).getByRole("button", { name: "More referral actions" }));
-    fireEvent.click(screen.getByRole("menuitem", { name: /^Bed meeting agenda/ }));
-    expect(push).toHaveBeenLastCalledWith("/ward-flow/bed-meeting/agenda#agenda-referrals");
+    // Page tops (Josh, 9 Nov 2026): the bed meeting agenda is the slate's first quick chip, a link.
+    expect(within(hero).getByRole("link", { name: /Bed meeting/ })).toHaveAttribute(
+      "href",
+      "/ward-flow/bed-meeting/agenda#agenda-referrals",
+    );
     // R5 fold (Josh, 3 Nov 2026): M still opens the agenda at its referrals.
     push.mockClear();
     fireEvent.keyDown(window, { key: "m" });

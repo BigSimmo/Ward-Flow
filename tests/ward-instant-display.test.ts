@@ -47,6 +47,9 @@ const MAY_ASSERT_TODAY = new Map([
     "Patient Documents register (1 Nov 2026): moment() shows the bare clock only when dayOf(at) equals dayOf(now), and prefixes the Perth date on any other day, so the row still names the day.",
   ],
   ["liveNow", "the morning page's live view; the current instant under another name"],
+  ["boardNow", "On-call page top (9 Nov 2026): the Live pill's age, the board's current instant under another name"],
+  ["props.now", "Bed board page top (9 Nov 2026): the Live pill's age, the current instant passed down"],
+  ["view.now", "Community page top (9 Nov 2026): the Live pill's age, the view's current instant"],
   ["MORNING_HANDOVER_MINUTES", "08:00 of the day being shown, a constant time of day rather than a point in history"],
   [
     "DAY_SHIFT_END_MINUTE",

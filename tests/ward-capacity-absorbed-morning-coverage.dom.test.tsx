@@ -171,11 +171,13 @@ describe("Case 2 — the hero headline states availableNow alone", () => {
     );
 
     renderScreen();
-    const headline = screen.getByRole("heading", { level: 1 });
+    // Page tops (Josh, 9 Nov 2026): the headline became "Beds ready and short" and the count moved
+    // to the hero's first figure, "N / M beds ready". The figure is held to the same exact claim.
+    const headline = screen.getByTestId("capacity-hero-ready");
     expect(
       headline.textContent?.replace(/\s+/gu, " ").trim(),
-      `the headline must state exactly ${netTotals.ready} beds ready of ${netTotals.beds}`,
-    ).toBe(`Capacity, ${netTotals.ready} beds ready of ${netTotals.beds}`);
+      `the hero must state exactly ${netTotals.ready} beds ready of ${netTotals.beds}`,
+    ).toBe(`${netTotals.ready}/ ${netTotals.beds} ${netTotals.ready === 1 ? "bed ready" : "beds ready"}`);
   });
 });
 

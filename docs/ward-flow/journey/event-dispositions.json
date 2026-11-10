@@ -2223,7 +2223,7 @@
         {
           "path": "src/components/ward-management/alerts/ward-broadcast-model.ts",
           "line": 317,
-          "sha256": "0e5f3b91bc8eaa35959313c446cd9cfd8a986fea2b3b6d0f6b37aa23edd7a316"
+          "sha256": "b27896e799de72fbb71c7782bc2a571627809762c61a40dcecb86b07007ca647"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",

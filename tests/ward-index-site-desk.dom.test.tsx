@@ -86,11 +86,11 @@ describe("All wards: the site bed manager's desk", () => {
     expect(within(otherGrid).getAllByRole("article")).toHaveLength(other.length);
     expect(screen.getByRole("button", { name: "Show fewer other sites" })).toHaveAttribute("aria-expanded", "true");
 
-    // The hero chip counts wards with a ready bed; Ready now and Pulled leave the chips.
+    // A hero figure counts wards with a ready bed, and the pulled figure leaves the hero. Page tops
+    // (Josh, 9 Nov 2026): the ready beds are the first figure, "N / M beds ready", on every desk.
     const chips = screen.getByRole("group", { name: `${siteName} counts` });
-    expect(within(chips).getByText(/Wards? with a ready bed/u)).toBeInTheDocument();
-    expect(within(chips).queryByText("Ready now")).toBeNull();
-    expect(within(chips).queryByText("Pulled")).toBeNull();
+    expect(within(chips).getByText(/wards? with a ready bed/iu)).toBeInTheDocument();
+    expect(within(chips).queryByText(/^pulled$/iu)).toBeNull();
   });
 
   it("keeps the statewide page for the coordinator", () => {
@@ -98,7 +98,8 @@ describe("All wards: the site bed manager's desk", () => {
     expect(screen.queryByRole("heading", { level: 2, name: /^Other sites/u })).toBeNull();
     expect(screen.queryByRole("button", { name: /wards at other sites/u })).toBeNull();
     const chips = screen.getByRole("group", { name: "Statewide counts" });
-    expect(within(chips).getByText("Ready now")).toBeInTheDocument();
+    expect(within(chips).getByText(/^beds? ready$/u)).toBeInTheDocument();
+    expect(within(chips).getByText("pulled")).toBeInTheDocument();
     expect(screen.getByTestId("ward-index-count-note")).toHaveTextContent(/^\d+ wards$/u);
   });
 });

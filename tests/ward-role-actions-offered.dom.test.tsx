@@ -50,15 +50,21 @@ describe("Broadcast alert", () => {
         <AlertsScreen />
       </WardFlowProvider>,
     );
-    return screen.getAllByRole("button", { name: /^Broadcast/ })[0]!;
+    return screen.queryAllByRole("button", { name: /^Broadcast/ })[0];
   }
 
-  it("is disabled for an ED desk", () => {
-    expect(broadcastButton("ed")).toHaveAttribute("aria-disabled", "true");
+  it("is not offered to an ED desk", () => {
+    // Page tops (9 Nov 2026): Broadcast alert is a hero chip, left out (not greyed) where the desk may not
+    // broadcast. Either way the ED desk has no working Broadcast.
+    const button = broadcastButton("ed");
+    if (button) expect(button).toHaveAttribute("aria-disabled", "true");
+    else expect(screen.getByTestId("ward-alerts-top")).toBeInTheDocument();
   });
 
   it("stays available to a bed manager", () => {
-    expect(broadcastButton("bed_manager")).not.toHaveAttribute("aria-disabled", "true");
+    const button = broadcastButton("bed_manager");
+    expect(button).toBeDefined();
+    expect(button).not.toHaveAttribute("aria-disabled", "true");
   });
 });
 

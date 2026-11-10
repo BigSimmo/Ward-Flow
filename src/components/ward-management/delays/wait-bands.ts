@@ -22,7 +22,7 @@ export const WAIT_BANDS: readonly {
 }[] = [
   {
     id: "over24",
-    title: "Over 24 hours",
+    title: "Past 24 hours",
     note: "past the access target",
     tone: "danger",
     limit: Number.POSITIVE_INFINITY,

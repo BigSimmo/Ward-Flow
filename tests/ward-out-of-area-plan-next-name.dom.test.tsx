@@ -29,9 +29,11 @@ describe("out-of-area desktop: Plan next return names the patient (P192)", () =>
         <OutOfAreaBoard admissions={wardAdmissions} />
       </WardFlowProvider>,
     );
+    // Page tops (Josh approved, 9 Nov 2026): the full name sits in the hero's next-step title, read
+    // before the Plan next return button.
     const button = screen.getByRole("button", { name: /Plan next return/i });
-    const opens = /^Opens (.+), the longest past discharge with no plan$/.exec(button.getAttribute("title") ?? "");
-    expect(opens).not.toBeNull();
-    expect(button.textContent).toBe(`Plan next return ${opens![1]}`);
+    const title = screen.getByTestId("ward-out-of-area-next-return");
+    expect(title.textContent).toMatch(/^Next return: \S.+$/);
+    expect(title.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

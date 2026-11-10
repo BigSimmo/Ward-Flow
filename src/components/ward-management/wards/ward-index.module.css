@@ -16,24 +16,13 @@
   padding: var(--wf-s-4);
 }
 
-/* Filter card */
+/* Page tops (Josh, 9 Nov 2026): the service choice is the page tabs, so what is left (the bed key
+   and the ward count, and the Filters panel when open) sits on the page with no card around it. */
 .filters {
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-3);
-  padding: var(--wf-s-3);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
-  box-shadow: var(--wf-e1);
-}
-
-.filterRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wf-s-2) var(--wf-s-3);
-  min-width: 0;
+  padding: 0 2px;
 }
 
 .filterLabel {
@@ -44,58 +33,12 @@
 
 /* WS2 (Josh, 3 Nov 2026): service, search, Filters and the view switch on one row. The search
    takes the space left over, so the row stays one line at 1440 and wraps tidily below that. */
-.filterRow:first-child {
-  flex-wrap: wrap;
-}
-
-.serviceChoice {
-  flex: none;
-  max-width: 100%;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
 
 /* When the row wraps (tablet), the view switch keeps to the right-hand edge. */
-.viewChoice {
-  margin-inline-start: auto;
-}
 
 .search {
   flex: 1 1 12rem;
   min-width: 10rem;
-}
-
-.filtersToggle {
-  position: relative;
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: var(--wf-s-2);
-  height: var(--wf-h-md);
-  padding: 0 var(--wf-s-3);
-  border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-ctl);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  font: inherit;
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.filtersToggle:hover {
-  background: var(--wf-hover);
-}
-
-.filtersToggle[aria-expanded="true"],
-.filtersToggle[data-active="true"] {
-  border-color: var(--wf-ink-3);
-}
-
-.filtersToggle:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
 }
 
 /* Status, Cohort and Order: kit choices behind Filters, one quiet line under the row when open. */
@@ -108,8 +51,10 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2) var(--wf-s-4);
-  padding-top: var(--wf-s-3);
-  border-top: 1px solid var(--wf-line);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
 }
 
 .moreFilters .filterLabel {
@@ -131,12 +76,6 @@
 
 .keyRow > * {
   margin: 0;
-}
-
-.viewLabel {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .shownCount {
@@ -255,53 +194,6 @@
 }
 
 /* Hero chips and the Most ready jump. */
-.heroChips {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: var(--wf-s-2);
-  min-width: 0;
-}
-
-.heroJump {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  max-width: 22rem;
-  min-height: 32px;
-  padding: 0 var(--wf-s-3);
-  border: 1px solid var(--wf-on-hero-line);
-  border-radius: var(--wf-r-ctl);
-  background: var(--wf-on-hero-fill);
-  color: var(--wf-on-hero-ink);
-  font-size: var(--wf-fs-13);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.heroJump:hover {
-  background: var(--wf-on-hero-hl);
-}
-
-.heroJump:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 2px;
-}
-
-.heroJumpLabel {
-  color: var(--wf-hero-ink-2);
-}
-
-.heroJumpName {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.heroJumpValue {
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-15, 15px);
-  font-variant-numeric: tabular-nums;
-}
 
 /* A filter that does not match a ward dims it by colour; the card stays in place. */
 .wardCard[data-dim="true"] .wardTitle,
@@ -382,8 +274,8 @@
 
 .readyFigure {
   font-family: var(--wf-mono);
-  font-size: var(--wf-fs-28);
-  line-height: 1;
+  font-size: var(--wf-fs-15);
+  line-height: 20px;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
   color: var(--wf-ink-1);
@@ -798,9 +690,6 @@
   }
 
   /* Phone: the search and Filters share one line; the service is the header's own choice. */
-  .filterRow:first-child {
-    flex-wrap: nowrap;
-  }
 
   .moreFilters[data-open="true"] {
     flex-direction: column;
@@ -859,9 +748,6 @@
   }
 
   /* The Filters pill: a 40px phone button beside the search. */
-  .filtersToggle {
-    height: 40px;
-  }
 }
 
 /* The rail is narrower than Capacity's panel: the service name column gives way to the bar. */
@@ -877,22 +763,6 @@
 }
 
 /* Phone: the hero chips scroll sideways at the touch height rather than wrap or clip. */
-@media (max-width: 46.4375rem) {
-  .heroChips {
-    max-width: 100%;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .heroChips > * {
-    flex: none;
-  }
-
-  .heroJump {
-    min-height: var(--wf-touch, 44px);
-    max-width: 100%;
-  }
-}
 
 /* Phone v10 (11 Oct 2026): the service chips, the search and Filters sit on the canvas, then
  * Every ward with its count, then one card of wards: each service a quiet header band with its
@@ -1105,10 +975,6 @@
     box-shadow: none;
   }
 
-  .filterRow:first-child {
-    row-gap: var(--wf-s-3);
-  }
-
   .search {
     height: var(--wf-touch);
     border-radius: var(--wf-r-ctl);
@@ -1311,4 +1177,33 @@
 
 .phoneDotKey > svg {
   flex: none;
+}
+
+/* Page tops (Josh, 9 Nov 2026): the title's quieter half and the pill count, as on Home. */
+.titleSoft {
+  color: var(--wf-hero-ink-3);
+  font-weight: 500;
+}
+
+.pillCount {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  color: var(--wf-hero-ink);
+}
+
+/* Filters and the view switch at the right end of the tab row. */
+.tabControl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tabControl[data-active="true"] {
+  color: var(--wf-ink-1);
+}
+
+.tabActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
 }

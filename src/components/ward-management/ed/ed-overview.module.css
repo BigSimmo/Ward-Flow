@@ -400,3 +400,39 @@
     background: linear-gradient(180deg, var(--wf-pri-1-hover), var(--wf-pri-2-hover));
   }
 }
+
+/* Page tops (Josh, 9 Nov 2026): the title's quieter half, as on Home, and the jobs row (the updates
+   pill, then the chips). */
+.titleSoft {
+  color: var(--wf-hero-ink-3);
+  font-weight: 500;
+}
+
+/* "2 updates since 10:27" reads as one of the hero's chips. */
+.updates {
+  display: inline-flex;
+  flex: none;
+}
+
+/* The pill's slot keeps a fixed width in the app bar; here it fits the pill. */
+.updates.updates > :global(span:not([data-empty="true"])) {
+  flex: none;
+  inline-size: auto;
+  justify-content: flex-start;
+}
+
+.updates.updates :global(button) {
+  height: 36px;
+  min-height: 36px;
+  padding: 0 13px;
+  border: 1px solid var(--wf-on-hero-line);
+  border-radius: var(--wf-r-pill);
+  background: transparent;
+  box-shadow: none;
+  color: var(--wf-hero-ink);
+  font: 500 13.5px / 1 var(--wf-font);
+}
+
+.updates.updates :global(button):hover {
+  background: var(--wf-on-hero-fill);
+}

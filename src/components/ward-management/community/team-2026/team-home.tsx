@@ -22,40 +22,6 @@ export type TeamGo = (
   caseManager?: string,
 ) => void;
 
-type BarPart = readonly [number, string];
-
-function Tile(props: {
-  go: () => void;
-  n: number;
-  label: string;
-  right: string;
-  bar: readonly BarPart[];
-  lines: readonly (readonly [WfTone | "", number, string])[];
-}) {
-  return (
-    <button type="button" className={t.tile} onClick={props.go}>
-      <span className={t.tileTop}>
-        <b className={t.tileN}>{props.n}</b>
-        <span className={t.tileL}>{props.label}</span>
-        <span className={t.tileR}>{props.right}</span>
-      </span>
-      <span className={t.bar} aria-hidden="true">
-        {props.bar.map(([flex, colour], index) => (
-          <i key={index} style={{ flex, background: `var(${colour})` }} />
-        ))}
-      </span>
-      <span className={t.tileLines}>
-        {props.lines.map(([tone, n, text]) => (
-          <span key={text}>
-            {tone ? <StatusGlyph tone={tone} size={12} /> : null}
-            <b>{n}</b> {text}
-          </span>
-        ))}
-      </span>
-    </button>
-  );
-}
-
 function ListRow(props: {
   tone: WfTone;
   title: string;
@@ -180,87 +146,6 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
   const f = DEMO_FIGURES;
   return (
     <>
-      <Card className={`${home.v6Card} ${t.summary}`} aria-label="Team summary">
-        <div className={t.tiles}>
-          <Tile
-            go={() => go("caseload")}
-            n={f.caseload}
-            label="Caseload"
-            right="6 case managers"
-            bar={[
-              [f.managed, "--wf-data-1"],
-              [f.psychiatristOnly, "--wf-data-2"],
-              [f.unallocated, "--wf-warning"],
-            ]}
-            lines={[
-              ["", f.managed, "managed"],
-              ["", f.psychiatristOnly, "psychiatrist only"],
-              ["warning", f.unallocated, "unallocated"],
-            ]}
-          />
-          <Tile
-            go={() => go("hospital")}
-            n={f.inHospital}
-            label="In hospital"
-            right={`longest ${f.longestInBed}`}
-            bar={[
-              [4, "--wf-data-1"],
-              [3, "--wf-data-2"],
-              [2, "--wf-warning"],
-            ]}
-            lines={[
-              ["", f.homeIn7Days, "home in 7 days"],
-              ["warning", f.datesPassed, "dates passed"],
-            ]}
-          />
-          <Tile
-            go={() => go("referrals")}
-            n={open.length}
-            label="Referrals"
-            right={`oldest ${f.oldestReferral}`}
-            bar={[
-              [2, "--wf-data-1"],
-              [1, "--wf-warning"],
-            ]}
-            lines={[
-              ["warning", f.pastTime, "past its time"],
-              ["", f.dueThisWeek, "due this week"],
-            ]}
-          />
-          <Tile
-            go={() => go("hospital")}
-            n={f.followUps}
-            label="Follow-up"
-            right="within 7 days"
-            bar={[
-              [1, "--wf-success"],
-              [1, "--wf-data-1"],
-              [1, "--wf-warning"],
-              [1, "--wf-danger"],
-            ]}
-            lines={[
-              ["danger", 1, "due today"],
-              ["warning", 1, "not booked"],
-            ]}
-          />
-        </div>
-        <div className={t.key}>
-          <span>
-            <i style={{ background: "var(--wf-data-1)" }} />
-            On track
-          </span>
-          <span>
-            <i style={{ background: "var(--wf-data-2)" }} />
-            Other
-          </span>
-          <span>
-            <i style={{ background: "var(--wf-warning)" }} />
-            Needs a look
-          </span>
-          <span className={t.keyNote}>Choose a figure to open its list.</span>
-        </div>
-      </Card>
-
       <div className={t.grid}>
         <div className={t.col}>
           <Card className={home.v6Card}>

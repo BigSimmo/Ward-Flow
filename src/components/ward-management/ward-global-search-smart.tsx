@@ -26,7 +26,7 @@ export const SHEET_KINDS: ReadonlySet<string> = new Set(["person", "movement", "
 
 /** The common questions offered before anything is typed, as label and the phrase it asks. */
 const TRY_ASKING: readonly (readonly [string, string])[] = [
-  ["Waiting over 24 hours", "waiting over 24 hours"],
+  ["Waiting past 24 hours", "waiting past 24 hours"],
   ["No bed yet", "no bed yet"],
   ["On a form", "on a form"],
   ["Transport not booked", "transport not booked"],
@@ -41,7 +41,7 @@ export function TryAsking({ census, onAsk }: { census: Census; onAsk: (phrase: s
       <div className={styles.askChips}>
         {TRY_ASKING.map(([label, phrase]) => {
           const total = answerQuestion(phrase, census, 1)?.total ?? 0;
-          // WF-29 (live test, 4 Nov 2026): the chip is read as "Waiting over 24 hours, 9", not the
+          // WF-29 (live test, 4 Nov 2026): the chip is read as "Waiting past 24 hours, 9", not the
           // label and count run together.
           return (
             <button

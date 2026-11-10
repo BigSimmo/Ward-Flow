@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import StatisticsServicePage from "@/app/ward-flow/statistics/service/[serviceId]/page";
+import { lastDowntimePack } from "@/components/ward-management/reports/downtime-pack";
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { StatisticsCommunityScreen } from "@/components/ward-management/statistics/statistics-community-screen";
 import { StatisticsCapacityChart } from "@/components/ward-management/statistics/statistics-capacity-chart";
@@ -86,26 +87,34 @@ describe("Statistics and outage trims (UX audit 21 Oct 2026)", () => {
     expect(within(card).getByRole("button", { name: /^Show all \d+$/u })).toBeInTheDocument();
   });
 
-  it("names the downtime pack's tables in its tabs without repeating the hero totals", () => {
+  it("names the downtime pack's tables in its tabs, each with its count (page-top redesign, 9 Nov 2026)", () => {
     renderInProvider(<DowntimePackScreen />);
     const tabs = screen.getByRole("tablist", { name: "Downtime pack section" });
+    const pack = lastDowntimePack()!;
     expect(
       within(tabs)
         .getAllByRole("tab")
         .map((tab) => tab.textContent),
-    ).toEqual(["Beds by ward", "ED queue", "Pending movements", "Legal forms"]);
+    ).toEqual([
+      `Beds by ward${pack.totals.ready}`,
+      `ED queue${pack.edQueue.length}`,
+      `Pending movements${pack.pendingMoves.length}`,
+      `Legal forms${pack.legalForms.length}`,
+    ]);
   });
 
   it("shows one downtime table on screen at a time and keeps the rest for the printout (Josh, 31 Oct 2026)", () => {
     renderInProvider(<DowntimePackScreen />);
     const panels = screen.getAllByRole("tabpanel", { hidden: true });
     expect(panels).toHaveLength(4);
-    expect(screen.getByRole("tab", { name: "Beds by ward" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /^Beds by ward/u })).toHaveAttribute("aria-selected", "true");
     // Every table stays in the page, so Print or save PDF still holds all four.
     expect(screen.getByText("Beds by ward", { selector: "h2, h3" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("tab", { name: "Legal forms" }));
-    expect(screen.getByRole("tab", { name: "Legal forms" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByText(/Print or save PDF holds all four tables\./u)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: /^Legal forms/u }));
+    expect(screen.getByRole("tab", { name: /^Legal forms/u })).toHaveAttribute("aria-selected", "true");
+    // The other three tables stay in the page for Print or save PDF.
+    expect(screen.getAllByRole("tabpanel", { hidden: true })).toHaveLength(4);
+    expect(screen.getByTestId("ward-downtime-print")).toHaveTextContent("Print or save PDF");
   });
 
   it("opens a hospital's details under its own row, not beside the chart", () => {

@@ -140,19 +140,24 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     // Search input and filter buttons are rendered
     expect(main.querySelector("#wardSearchInput")).toBeInTheDocument();
     // v6 (approved Wards mockup, 7 Oct 2026): service, status, cohort and order are segmented
-    // radio groups rather than tabs and dropdowns.
-    for (const group of ["Health service", "Status", "Cohort", "Order", "View"]) {
+    // radio groups rather than tabs and dropdowns. Page tops (Josh, 9 Nov 2026): the services are the
+    // page's tabs, and the card or table view is one switch at the tab row's right end.
+    for (const group of ["Health service", "Status", "Cohort", "Order"]) {
       expect(screen.getByRole("radiogroup", { name: group })).toBeInTheDocument();
     }
-    expect(screen.getAllByRole("radio", { name: "All" }).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByRole("radio", { name: /^All/u }).length).toBeGreaterThanOrEqual(2);
+    const viewSwitch = screen.getByTestId("ward-index-view-toggle");
+    expect(viewSwitch).toHaveTextContent("Table view");
+    fireEvent.click(viewSwitch);
+    expect(screen.getByTestId("ward-index-view-toggle")).toHaveTextContent("Card view");
 
-    // Statewide capacity counts on the hero band. v10 (10 Oct 2026): the title answers how many
-    // beds are ready, occupancy moved into the hero's ring, and the chips are five or fewer.
-    for (const label of ["Ready now", "Pulled", "Stale counts"]) {
-      expect(screen.getAllByText(label).length).toBeGreaterThan(0);
-    }
-    expect(screen.getByTestId("wf-occupancy-ring")).toBeInTheDocument();
-    expect(screen.getByTestId("wf-checking-foot")).toBeInTheDocument();
+    // Statewide capacity counts on the hero. Page tops (Josh, 9 Nov 2026): the ready beds lead, then
+    // the beds ready by the shift's end, pulled beds and the wards full; the counts confirmed this
+    // shift are the pill under them (the old ring and checking foot went with the old top).
+    expect(screen.getByTestId("ward-index-figure-ready")).toHaveTextContent(/beds? ready$/u);
+    expect(screen.getByTestId("ward-index-figure-ready-by")).toHaveTextContent(/ready by \d\d:\d\d$/u);
+    expect(screen.getByTestId("ward-index-figure-pulled")).toHaveTextContent(/pulled$/u);
+    expect(screen.getByTestId("ward-index-confirmed")).toHaveTextContent(/\d+ of \d+/u);
   });
 
   it("links to every ward the live provider holds — none hand-picked, none missing", () => {
@@ -167,6 +172,20 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
         `/ward-flow/ward/${unit.id}`,
       );
     }
+  });
+
+  it('"/" opens Filters and puts the cursor in the ward search behind it', () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardIndex />
+      </WardFlowProvider>,
+    );
+    const filters = document.getElementById("ward-index-more-filters")!;
+    // Page tops (Josh, 9 Nov 2026): the search sits behind Filters, which starts closed.
+    expect(filters).not.toHaveAttribute("data-open");
+    fireEvent.keyDown(document.body, { key: "/" });
+    expect(filters).toHaveAttribute("data-open", "true");
+    expect(screen.getByRole("searchbox", { name: "Filter wards by keyword" })).toHaveFocus();
   });
 
   it("filters ward cards by search query and opens the ward's side panel", () => {
@@ -207,14 +226,15 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
         <WardScreen unitId="rph-adult-secure" />
       </WardFlowProvider>,
     );
-    const hero = screen.getByRole("region", { name: "Ward capacity" });
+    // Page tops (9 Nov 2026): the hero figures are the shared HeroFigures group; a figure's label is
+    // the button, and the chosen filter shows in the Highlight beds group.
+    const hero = screen.getByRole("group", { name: "Ward capacity" });
     const showBeds = screen.getByRole("radiogroup", { name: "Highlight beds" });
 
-    fireEvent.click(within(hero).getByRole("button", { name: /Occupied/ }));
-    expect(within(hero).getByRole("button", { name: /Occupied/ })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(within(hero).getByRole("button", { name: /occupied/i }));
     expect(within(showBeds).getByRole("radio", { checked: true })).toHaveTextContent(/Occupied/);
 
-    fireEvent.click(within(hero).getByRole("button", { name: /Ready by/ }));
+    fireEvent.click(within(hero).getByRole("button", { name: /ready by/i }));
     expect(within(showBeds).getByRole("radio", { checked: true })).toHaveTextContent(/Ready by shift end/);
 
     fireEvent.click(within(showBeds).getByRole("radio", { name: /^All/ }));
@@ -254,7 +274,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     // Top Action Bar & Live Capacity Glance Strip
     expect(screen.queryByRole("button", { name: /Enter Ward \/ Open Bed Board/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Bed board" })).not.toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Ward capacity" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Ward capacity" })).toBeInTheDocument();
 
     // Ward Hub (9 Oct 2026): the full bed list is no longer a tab; Every bed opens it from Home.
     expect(screen.queryByRole("tab", { name: /Bed Board & Roster/i })).not.toBeInTheDocument();

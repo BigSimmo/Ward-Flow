@@ -666,7 +666,7 @@ export function buildCensus(state: {
 /** Highlight chips. They tint and lift matching rows; they never hide one. */
 export const CENSUS_HIGHLIGHTS = [
   { id: "t1", label: "Tier 1", glyph: null, test: (row: CensusRow) => row.tier === 1 },
-  { id: "long", label: "Over 24 hours", glyph: "risk", test: (row: CensusRow) => row.longWait },
+  { id: "long", label: "Past 24 hours", glyph: "risk", test: (row: CensusRow) => row.longWait },
   { id: "form", label: "Form recorded", glyph: null, test: (row: CensusRow) => row.formCode !== null },
   { id: "edd", label: "Past expected date", glyph: "risk", test: (row: CensusRow) => row.pastExpected },
   { id: "aed", label: "Away at ED", glyph: null, test: (row: CensusRow) => row.awayAtEd },

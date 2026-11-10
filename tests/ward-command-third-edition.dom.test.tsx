@@ -93,8 +93,8 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     // Sticky header redesign (Josh, 9 Nov 2026): one plain hero title; the counts are its figures,
     // and the ED strip sits inside the hero under its own level-3 "Waiting in ED" heading.
     expect(atRest[0]).toBe("Bed flow right now");
-    expect(screen.getByTestId("home-figure-ed")).toHaveTextContent(/^\d+open ED movements$/u);
-    expect(screen.getByTestId("home-figure-beds")).toHaveTextContent(/^\d+beds? ready$/u);
+    expect(screen.getByTestId("home-figure-ed")).toHaveTextContent(/^\d+ open ED movements$/u);
+    expect(screen.getByTestId("home-figure-beds")).toHaveTextContent(/^\d+ beds? ready$/u);
     // Open ED journeys retain accountability through transit; the queue can also contain ward/community origins.
     // Home and Activity (Josh, 31 Oct 2026): "in transit" as the phone says it, and the demo
     // coverage disclosure lives in the app bar and the footer, so the hero keeps only its facts.

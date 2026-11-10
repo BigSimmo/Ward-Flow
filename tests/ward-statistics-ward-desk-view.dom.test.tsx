@@ -59,7 +59,7 @@ describe("one ward's statistics, coordinator and ward desk", () => {
     expect(screen.getByTestId("ward-statistics-ward-beds-now")).toBeTruthy();
     expect(screen.getByTestId("ward-statistics-ward-referrals-panel")).toBeTruthy();
     expect(screen.getByTestId("ward-statistics-ward-roster")).toBeTruthy();
-    expect(screen.getByText("Discharges due, 7 days")).toBeTruthy();
+    expect(screen.getByText("discharges due, 7 days")).toBeTruthy();
   });
 
   it("opens the coordinator's roster on its first eight rows, then Show more", () => {

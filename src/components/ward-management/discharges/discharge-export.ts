@@ -117,3 +117,51 @@ export function downloadDischargeRecords<R extends DischargeExportRecord>(
 ): void {
   downloadCsv("ward-flow-synthetic-discharges-recorded.csv", dischargeRecordExportLines(records, ctx), provenance);
 }
+
+/**
+ * The board's Export button (feature 44): Now hands over the release groups the list shows, Recorded
+ * the recorded discharges in scope; the header names which and whether filters narrowed it. Moved here
+ * from discharge-board.tsx (page tops, 9 Nov 2026) so the board stays under its line cap.
+ */
+export function exportDischargeList<
+  Rel extends DischargeExportRelease & { readonly statusWord: string },
+  Rec extends DischargeExportRecord,
+>(o: {
+  readonly nowView: boolean;
+  readonly narrowed: boolean;
+  readonly recordedDays: number;
+  readonly asAt: string;
+  readonly at: (instant: Instant) => string;
+  readonly wardName: (unitId: string) => string;
+  readonly releases: readonly Rel[];
+  readonly recorded: readonly Rec[];
+  readonly records: readonly DischargeRecord[];
+  readonly destinationOf: (record: Rec) => string;
+  readonly followUpOf: (record: Rec) => FollowUpCheck["status"];
+}): void {
+  const what = o.nowView ? "Discharges, Now" : `Discharges, Recorded in the last ${o.recordedDays} days`;
+  // Now exports the release groups the list shows, not every record in scope; the header says so.
+  const shownWords = o.nowView
+    ? `the discharges by bed ${o.narrowed ? "the current filters show" : "the list shows"}, by status`
+    : o.narrowed
+      ? "the recorded discharges the current filters show"
+      : "every recorded discharge in this desk's scope";
+  const provenance = { asAt: o.asAt, scope: `${what}; ${shownWords} (highlights do not narrow it)` };
+  if (!o.nowView) {
+    downloadDischargeRecords(
+      o.recorded,
+      { wardName: o.wardName, destinationOf: o.destinationOf, followUpOf: o.followUpOf, at: o.at },
+      provenance,
+    );
+    return;
+  }
+  const umrnOf = (release: Rel) => {
+    const record = o.records.find((candidate) => candidate.admissionId === release.admissionId);
+    return record?.identity.kind === "linked" ? record.identity.patient.umrn : "UMRN not recorded";
+  };
+  downloadDischargeReleases(
+    o.releases,
+    { umrnOf, wardName: o.wardName, statusOf: (row) => row.statusWord, at: o.at },
+    provenance,
+  );
+}

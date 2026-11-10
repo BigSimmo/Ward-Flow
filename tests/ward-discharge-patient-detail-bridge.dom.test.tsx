@@ -29,7 +29,7 @@ describe("discharges board patient detail and navigation bridge", () => {
     renderBoard();
 
     // Recorded (DC4, 3 Nov 2026) lists the departed admission records of the last 7 days.
-    fireEvent.click(screen.getByRole("button", { name: /^Recorded/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Recorded/ }));
 
     const tbody = document.querySelector("table tbody");
     expect(tbody).not.toBeNull();
@@ -79,7 +79,7 @@ describe("discharges board patient detail and navigation bridge", () => {
     giveOnBehalfReason();
 
     // Population should now have switched to Admission records and rendered full record
-    expect(screen.getByRole("button", { name: /^Recorded/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("tab", { name: /^Recorded/ })).toHaveAttribute("aria-selected", "true");
     const details = screen.getByTestId("ward-discharge-detail");
     expect(within(details).getByText("Expected discharge")).toBeInTheDocument();
     expect(within(details).getByText("Date recorded")).toBeInTheDocument();
@@ -88,7 +88,7 @@ describe("discharges board patient detail and navigation bridge", () => {
   it("supports keyboard activation on recorded discharge rows using Enter and Space", () => {
     renderBoard();
 
-    fireEvent.click(screen.getByRole("button", { name: /^Recorded/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Recorded/ }));
 
     const tbody = document.querySelector("table tbody");
     const rows = within(tbody as HTMLElement).getAllByRole("row");

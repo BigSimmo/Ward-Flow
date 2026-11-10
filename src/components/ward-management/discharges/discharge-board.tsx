@@ -3,21 +3,11 @@
 import { WardPeekButton } from "@/components/ward-management/board/ward-peek";
 import { useRef, useState } from "react";
 import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
-import {
-  ChevronDown,
-  ChevronRight,
-  Copy,
-  FileText,
-  Filter,
-  OctagonAlert,
-  Printer,
-  TrendingUp,
-  Ambulance,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, Copy, FileText, Filter, Printer, Send, TrendingUp, Ambulance } from "lucide-react";
 import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { MINUTES_PER_DAY, formatSheetMoment } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY, formatInstant, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -25,9 +15,17 @@ import { ListExportButton } from "@/components/ward-management/ward-list-export-
 import {
   Button,
   Card,
+  cx,
   DrawerFootRow,
   Field,
+  FolderTabs,
+  folderTabClasses,
   Hero,
+  HeroAct,
+  HeroBand,
+  HeroFigures,
+  HeroQuickChips,
+  HeroTop,
   LiveChip,
   PanelDrawer,
   PhoneSheet,
@@ -40,7 +38,7 @@ import {
 import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { CriteriaLedTag } from "@/components/ward-management/ward/ward-criteria-led-tag";
-import { DischargeBarrierBars, DischargeDayChart } from "./discharge-flow-charts";
+import { DischargeDayChart } from "./discharge-flow-charts";
 import styles from "./discharges.module.css";
 import releaseList from "./discharge-release-list.module.css";
 import {
@@ -57,7 +55,7 @@ import {
   useOpenGroupsForPrint,
 } from "./discharge-release-actions";
 import pageStyles from "./discharges-third-edition.module.css";
-import wardPin from "../ward-pinned-switch.module.css";
+import pageTop from "../page-top-hero.module.css";
 import {
   PHONE_GROUP_TONES,
   GROUP_ORDER,
@@ -72,7 +70,6 @@ import {
   recordedMoment,
   recordedDate,
   matchesHighlight,
-  stageTone,
 } from "./discharge-board-model";
 import { DischargePopulationSwitch, DischargeFilterCard } from "./discharge-board-filters";
 import {
@@ -94,7 +91,7 @@ import { weekendReviewLeads } from "./discharge-weekend-review";
 import { DischargeSlippingList } from "./discharge-slipping-list";
 import { DischargeChecklistTag } from "./discharge-checklist-tag";
 import { followUpWithinWindowCheck } from "./discharge-follow-up-check";
-import { DischargeAskOverdueWards } from "./discharge-message-ward";
+import { useAskOverdueWards } from "./discharge-message-ward";
 import { OnBehalfReasonForm } from "../on-behalf-reason-form-lazy";
 
 /**
@@ -145,7 +142,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const toWorkCount = groups.blocked.length + groups.confirmed.length + groups.expected.length;
   const openReleases = base.scopedReleases.filter((release) => release.state !== "discharged");
   const overdueOpen = openReleases.filter((release) => release.expectedAt < base.now);
-  const overdueWards = new Set(overdueOpen.map((release) => release.unitId)).size;
   const highlightWithinView: typeof base.highlightOn = (next) => {
     if (!nowView) {
       base.highlightOn(next);
@@ -266,9 +262,11 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const placeLine = (unit: (typeof units)[number] | undefined, unitId: string) =>
     siteName ? unitLabel(unit, unitId) : `${unitLabel(unit, unitId)} · ${healthServiceLabel(unit)}`;
   const chartDays = dischargeChartDays({ now, dayZero, nowView, units, openReleases, openScopedRecords });
+  // The phone's Per day chip shows the overdue count, as the old Per day card did; its name adds today.
   const phoneOverdue = chartDays[0] ? chartDays[0].expected + chartDays[0].blocked : 0;
   const phoneTodayDay = chartDays.find((candidate) => candidate.key === 0);
   const phoneToday = phoneTodayDay ? phoneTodayDay.expected + phoneTodayDay.blocked : 0;
+  const phoneDayChart = guarded.status === "allowed" && isPhone && nowView;
   // A day two or more ahead also holds releases the list leaves out (due in 2+ days, not held up).
   // DC5 (Josh, 3 Nov 2026): choosing that day's bar opens its people, so they join the Expected
   // group, lit and first, while the day stays chosen.
@@ -317,57 +315,50 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     );
   };
   // Export (feature 44): the list on screen, never names; the builder loads on the click.
-  const exportList = async () => {
-    const exporter = await import("./discharge-export");
-    const wardName = (unitId: string) =>
-      unitLabel(
-        units.find((unit) => unit.id === unitId),
-        unitId,
-      );
-    const at = (instant: number) => formatSheetMoment(instant, dayZero);
-    const what = nowView ? "Discharges, Now" : `Discharges, Recorded in the last ${RECORDED_DAYS} days`;
-    const filters = [service, ward, status, base.blockerCategory, ...(nowView ? [] : [identity, base.destination])];
-    const narrowed = filters.some((value) => value !== "all");
-    // Now exports the release groups the list shows, not every record in scope; the header says so.
-    const shownWords = nowView
-      ? `the discharges by bed ${narrowed ? "the current filters show" : "the list shows"}, by status`
-      : narrowed
-        ? "the recorded discharges the current filters show"
-        : "every recorded discharge in this desk's scope";
-    const provenance = {
+  const exportList = async () =>
+    (await import("./discharge-export")).exportDischargeList({
+      nowView,
+      narrowed: [service, ward, status, base.blockerCategory, ...(nowView ? [] : [identity, base.destination])].some(
+        (value) => value !== "all",
+      ),
+      recordedDays: RECORDED_DAYS,
       asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
-      scope: `${what}; ${shownWords} (highlights do not narrow it)`,
-    };
-    if (!nowView) {
-      exporter.downloadDischargeRecords(
-        recorded,
-        {
-          wardName,
-          destinationOf: (record) =>
-            LEAVING_DESTINATIONS.find((item) => item.id === record.leavingDestination)?.label ?? "Not recorded",
-          followUpOf: (record) => followUpOf(record).status,
-          at,
-        },
-        provenance,
-      );
-      return;
-    }
-    const rows = visibleReleaseGroups.flatMap((key) =>
-      shownGroups[key].map((release) => ({
-        ...release,
-        statusWord: WORK_STATUS_LABELS[key === "discharged-today" ? "departed" : key],
-      })),
-    );
-    const umrnOf = (release: (typeof rows)[number]) => {
-      const record = records.find((candidate) => candidate.admissionId === release.admissionId);
-      return record?.identity.kind === "linked" ? record.identity.patient.umrn : "UMRN not recorded";
-    };
-    exporter.downloadDischargeReleases(rows, { umrnOf, wardName, statusOf: (row) => row.statusWord, at }, provenance);
-  };
+      at: (instant) => formatSheetMoment(instant, dayZero),
+      wardName: (unitId) =>
+        unitLabel(
+          units.find((unit) => unit.id === unitId),
+          unitId,
+        ),
+      releases: visibleReleaseGroups.flatMap((key) =>
+        shownGroups[key].map((release) => ({
+          ...release,
+          statusWord: WORK_STATUS_LABELS[key === "discharged-today" ? "departed" : key],
+        })),
+      ),
+      recorded,
+      records,
+      destinationOf: (record) =>
+        LEAVING_DESTINATIONS.find((item) => item.id === record.leavingDestination)?.label ?? "Not recorded",
+      followUpOf: (record) => followUpOf(record).status,
+    });
   const exportCount = nowView ? visibleReleaseGroups.reduce((n, k) => n + shownGroups[k].length, 0) : recorded.length;
-  // Now and Recorded: in the hero on desktop and tablet, under it on a phone (v10).
-  const populationSwitch = <DischargePopulationSwitch s={s} />;
   const filterCard = <DischargeFilterCard s={s} />;
+  // Page tops (Josh, 9 Nov 2026): the held-up reasons as one slim band in the hero.
+  const reasons = barrierCounts.filter((barrier) => barrier.count > 0);
+  // Ask overdue wards, now a hero chip (it was a bar under the hero).
+  const askWards = useAskOverdueWards({
+    overdue: overdueOpen,
+    wardName: (unitId) => units.find((unit) => unit.id === unitId)?.name ?? "Ward",
+    now,
+    dispatch,
+  });
+  // The place the counts cover, for the hero's spoken heading in the old eyebrow's words.
+  const heroPlace =
+    ownWard || siteName
+      ? `Discharges · ${ownWard ? ownWard.name : siteName}`
+      : isPhone
+        ? `Discharges · ${service === "all" ? "statewide" : service}`
+        : `Discharges · ${service === "all" ? "all services" : service}`;
   // Plan item 2i (proposal): the hero's next step, from the same status counts as the chips. Held up
   // first, as the list is ordered; with nothing held up, the confirmed ones are next to see out.
   const noun = (n: number) =>
@@ -386,7 +377,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const heroNext: HeroNextStep = {
     answer:
       nextKey === "blocked"
-        ? `${counts.blocked} held-up ${noun(counts.blocked)}${nextPlace} ${counts.blocked === 1 ? "needs" : "need"} chasing`
+        ? // Page tops (Josh approved, 9 Nov 2026): the act row's short words.
+          `${counts.blocked} held up to chase${nextPlace}`
         : nextKey === "confirmed"
           ? `Nothing held up${nextPlace} · ${counts.confirmed} confirmed ${noun(counts.confirmed)} to see out`
           : `Nothing held up${nextPlace}`,
@@ -482,8 +474,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     detailRelease && detailRelease.state !== "discharged" && !canRecordDeparture
       ? releaseActionLabel(detailRelease, canChangeDate)
       : null;
-  // Feature 14 (Josh, 9 Nov 2026): Weekend discharges sits first on Thursday and Friday, before the
-  // weekend, and under the list on other days. It follows the Service and Ward filters, as the list does.
+  // Feature 14 (Josh, 9 Nov 2026): Weekend discharges leads on Thu and Fri, else sits under the list; filtered too.
   const weekendReview =
     guarded.status === "allowed" && population === "releases" ? (
       <DischargeWeekendReview
@@ -593,154 +584,223 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           {" · "}As of {formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
         </p>
         <Hero
-          className={pageStyles.phoneHero}
-          eyebrow={
-            population === "releases"
-              ? ownWard || siteName
-                ? `Discharges · ${ownWard ? ownWard.name : siteName}`
-                : isPhone
-                  ? `Discharges · ${service === "all" ? "statewide" : service}`
-                  : "Discharges · all services"
-              : ownWard
-                ? `Recorded · ${ownWard.name} · last ${RECORDED_DAYS} days`
-                : `Recorded discharges · last ${RECORDED_DAYS} days`
-          }
-          // A4-22 (audit round 2): History counts admission records, not today's bed releases, so
-          // its title says so rather than reading as the same figure jumping.
+          className={cx(pageTop.hero, folderTabClasses.hero)}
+          // Page tops (Josh, 9 Nov 2026): one plain title, as Home's; the place leads the spoken heading.
           title={
-            population === "records"
-              ? `${recorded.length} ${recorded.length === 1 ? "discharge" : "discharges"} recorded`
-              : // Redesign (point 20): the headline counts the rows listed below it; the wider total
-                // and what it adds sit beside it, so no two figures on the page disagree unexplained.
-                `${openCount} to work now`
+            nowView ? (
+              <>
+                <SrOnly>{heroPlace}</SrOnly>
+                <SrOnly>:</SrOnly> Discharge work <span className={pageTop.titleSoft}>right now</span>
+              </>
+            ) : (
+              <>
+                {ownWard ? <SrOnly>{`${ownWard.name}:`}</SrOnly> : null} Recorded discharges{" "}
+                <span className={pageTop.titleSoft}>last {RECORDED_DAYS} days</span>
+              </>
+            )
           }
-          titleMeta={
-            <span
-              className={`${pageStyles.bedDaysPast} ${releaseList.meta}`}
-              data-testid="ward-discharge-bed-days-past"
-            >
-              {/* Josh, 30 Oct: "59 to work now · of 207 open". Open is every release not yet discharged;
-                  the 148 due in 2+ days are said once, in the list's footer. */}
-              {population === "releases" ? (
-                <>
-                  {`${isPhone ? "" : "· "}of ${openReleases.length} open · `}
-                  <strong>{bedDaysPast}</strong> bed {bedDaysPast === 1 ? "day" : "days"} past the ward&rsquo;s date
-                </>
-              ) : (
-                <>
-                  {isPhone ? "" : "· "}
-                  <strong>{followUpToCheck}</strong> {followUpToCheck === 1 ? "follow-up" : "follow-ups"} to check
-                </>
-              )}
-            </span>
-          }
-          next={heroNext}
           aside={
             <div className={pageStyles.heroTools}>
-              <LiveChip state="live" onHero />
-              {isPhone ? null : (
-                <Button
-                  size="sm"
-                  variant="onHero"
-                  icon={Copy}
-                  onClick={nowView ? copySummary : copyRecorded}
-                  data-testid="ward-discharge-copy"
-                >
-                  Copy counts
-                </Button>
-              )}
-              <Button
-                size="sm"
-                variant="onHero"
-                icon={Printer}
-                className={pageStyles.desktopOnly}
-                onClick={() => window.print()}
-                data-testid="ward-discharge-print"
-                aria-label="Print list (may include identifiers)"
-              >
-                Print list
-              </Button>
+              <LiveChip state="live" onHero age={formatInstant(now)} />
               <span className={pageStyles.copyNote} role="status" aria-live="polite">
                 {copyNote}
               </span>
             </div>
           }
-          bar={
-            population === "records" ? undefined : (
-              <>
-                <div
-                  className={pageStyles.kpiStrip}
-                  data-testid="ward-discharge-kpi-strip"
-                  role="region"
-                  aria-label="Discharge pipeline highlights"
-                >
-                  {WORK_ORDER.map((key) => (
-                    <button
-                      key={key}
-                      type="button"
-                      data-testid={`ward-discharge-kpi-${key}`}
-                      className={pageStyles.kpi}
-                      aria-pressed={statusHighlight === key}
-                      // P082: the name starts with what the button shows (count, then label).
-                      aria-label={`${counts[key]} ${key === "blocked" ? `${HELD_UP} (${kpiCardLabel(key, population)})` : kpiCardLabel(key, population)}`}
-                      onClick={() => {
-                        setHighlight(statusHighlight === key ? null : { kind: "status", status: key });
-                        setStatus("all");
-                      }}
-                    >
-                      <strong className={pageStyles.kpiValue}>{counts[key]}</strong>{" "}
-                      <span className={pageStyles.kpiLabel}>
-                        {key === "departed" ? null : <StatusGlyph tone={stageTone(key)} size={9} />}
-                        <span>
-                          {/* Josh, 30 Oct: one word for a release with a blocker, "Held up", at every width. */}
-                          {key === "blocked" ? HELD_UP : kpiCardLabel(key, population)}
-                        </span>
-                      </span>
-                    </button>
-                  ))}
-                </div>
-                {/* Device audit, 11 Oct 2026: no desk tools in the phone hero, so Copy summary
-                  is off phone (it stays in the tablet and desktop hero). */}
-              </>
-            )
-          }
-          barAside={isPhone ? undefined : populationSwitch}
-        />
-        {nowView && s.releaseActor.role === "coordinator" && overdueOpen.length > 0 ? (
-          /* DC1 round 2 (3 Nov 2026): the coordinator's most common chase is one tap. The line says
-             how many dates have passed on how many wards, and the button asks just those wards. */
-          <div className={releaseList.chase} data-testid="ward-discharge-chase">
-            <span className={releaseList.chaseText}>
-              <StatusGlyph tone="warning" size={9} />
-              <span>
-                <strong>{overdueOpen.length}</strong> overdue {overdueOpen.length === 1 ? "date" : "dates"} on{" "}
-                <strong>{overdueWards}</strong> {overdueWards === 1 ? "ward" : "wards"}
-              </span>
-            </span>
-            <DischargeAskOverdueWards
-              overdue={overdueOpen}
-              wardName={(unitId) => units.find((unit) => unit.id === unitId)?.name ?? "Ward"}
-              now={now}
-              dispatch={dispatch}
-            />
-          </div>
-        ) : null}
-        {isPhone ? (
-          <div className={`${pageStyles.phToolbar} ${wardPin.pinnedSwitch}`}>
-            {populationSwitch}
-            <button
-              type="button"
-              className={pageStyles.phFilterButton}
-              aria-label={filtersActive ? "Filters, some applied" : "Filters"}
-              aria-expanded={phoneFiltersOpen}
-              data-active={filtersActive || undefined}
-              onClick={() => setPhoneFiltersOpen(true)}
-              data-testid="ward-discharge-phone-filters"
-            >
-              <Filter size={18} aria-hidden="true" />
-            </button>
-          </div>
-        ) : null}
+        >
+          <HeroTop
+            figures={
+              nowView ? (
+                <HeroFigures
+                  label="Discharge figures"
+                  items={[
+                    {
+                      id: "work",
+                      // Josh, 30 Oct: "59 to work now · of 207 open". Open is every release not yet
+                      // discharged; the ones due in 2+ days are said once, in the list's footer.
+                      value: openCount,
+                      unit: (
+                        <>
+                          <span aria-hidden="true"> / </span>
+                          <SrOnly> of </SrOnly>
+                          {openReleases.length}
+                          <SrOnly> open,</SrOnly>
+                        </>
+                      ),
+                      label: "to work now",
+                      testId: "ward-discharge-figure-work",
+                    },
+                    {
+                      id: "overdue",
+                      value: overdueOpen.length,
+                      label: overdueOpen.length === 1 ? "date overdue" : "dates overdue",
+                      testId: "ward-discharge-figure-overdue",
+                    },
+                    {
+                      id: "bed-days",
+                      value: bedDaysPast,
+                      label: bedDaysPast === 1 ? "overdue bed day" : "overdue bed days",
+                      testId: "ward-discharge-bed-days-past",
+                    },
+                  ]}
+                />
+              ) : (
+                <HeroFigures
+                  label="Recorded discharge figures"
+                  items={[
+                    {
+                      id: "recorded",
+                      value: recorded.length,
+                      label: "recorded",
+                      testId: "ward-discharge-figure-recorded",
+                    },
+                    {
+                      id: "follow-up",
+                      value: followUpToCheck,
+                      label: followUpToCheck === 1 ? "follow-up to check" : "follow-ups to check",
+                      tone: followUpToCheck > 0 ? "warning" : undefined,
+                      testId: "ward-discharge-bed-days-past",
+                    },
+                  ]}
+                />
+              )
+            }
+            act={
+              nowView ? (
+                <HeroAct
+                  // Red only for the act-now chase: held-up discharges. Confirmed ones to see out are calm.
+                  tone={nextKey === "blocked" ? "danger" : "calm"}
+                  title={heroNext.answer}
+                  titleTestId="hero-next-answer"
+                  action={
+                    heroNext.action
+                      ? {
+                          label: heroNext.action.label,
+                          phoneLabel: heroNext.action.pressed ? "Show all" : "Show",
+                          pressed: heroNext.action.pressed,
+                          onClick: heroNext.action.onClick,
+                          testId: heroNext.action.testId,
+                        }
+                      : undefined
+                  }
+                />
+              ) : undefined
+            }
+            chips={
+              <HeroQuickChips
+                label="Discharge actions"
+                items={[
+                  // DC1 round 2 (3 Nov 2026): ask just the wards with an overdue date; a hero chip.
+                  ...(askWards && nowView && s.releaseActor.role === "coordinator"
+                    ? [
+                        {
+                          id: "ask",
+                          label: askWards.label,
+                          icon: <Send strokeWidth={1.75} aria-hidden="true" />,
+                          onClick: () => void askWards.ask(),
+                          testId: "ward-discharge-ask-overdue",
+                        },
+                      ]
+                    : []),
+                  // Page tops: the phone's Per day card is a chip that opens the day chart to pick a day.
+                  ...(phoneDayChart
+                    ? [
+                        {
+                          id: "per-day",
+                          label: "Per day",
+                          icon: <TrendingUp strokeWidth={1.75} aria-hidden="true" />,
+                          count: phoneOverdue,
+                          countTone: phoneOverdue > 0 ? ("warning" as const) : ("quiet" as const),
+                          // CB-3: the name starts with the chip's visible words (axe label-content-name-mismatch).
+                          ariaLabel: `Per day, ${phoneOverdue} overdue, ${phoneToday} today. Expected discharges per day, overdue and the next ${chartDays.filter((day) => day.key !== "past").length} days`,
+                          onClick: () => setPhoneChart("days"),
+                          testId: "ward-discharge-phone-per-day",
+                        },
+                      ]
+                    : []),
+                  {
+                    id: "copy",
+                    label: "Copy counts",
+                    icon: <Copy strokeWidth={1.75} aria-hidden="true" />,
+                    onClick: nowView ? copySummary : copyRecorded,
+                    testId: "ward-discharge-copy",
+                  },
+                  isPhone
+                    ? {
+                        id: "filter",
+                        label: filtersActive ? "Filters on" : "Filter",
+                        icon: <Filter strokeWidth={1.75} aria-hidden="true" />,
+                        onClick: () => setPhoneFiltersOpen(true),
+                        testId: "ward-discharge-phone-filters",
+                      }
+                    : {
+                        id: "print",
+                        label: "Print list",
+                        // A privacy cue: the paper copy may carry identifiers.
+                        ariaLabel: "Print list (may include identifiers)",
+                        icon: <Printer strokeWidth={1.75} aria-hidden="true" />,
+                        onClick: () => window.print(),
+                        testId: "ward-discharge-print",
+                      },
+                ]}
+              />
+            }
+            band={
+              nowView && guarded.status === "allowed" && reasons.length > 0 ? (
+                // Redesign (Josh, 30 Oct): held-up releases by reason; a reason highlights its rows.
+                <HeroBand
+                  title="Held up by reason"
+                  testId="ward-discharge-barrier-bars"
+                  cells={reasons.map((barrier) => ({
+                    id: barrier.id,
+                    label: barrier.label,
+                    value: barrier.count,
+                    pressed: highlight?.kind === "barrier" && highlight.id === barrier.id,
+                    ariaLabel: `${barrier.label}: ${barrier.count} held up`,
+                    onClick: () =>
+                      highlight?.kind === "barrier" && highlight.id === barrier.id
+                        ? setHighlight(null)
+                        : highlightOn({ kind: "barrier", id: barrier.id }),
+                  }))}
+                />
+              ) : undefined
+            }
+          />
+        </Hero>
+        <FolderTabs label="Discharge views" value={population} testId="ward-discharge-tabs">
+          <DischargePopulationSwitch s={s} className={cx(folderTabClasses.switch, pageStyles.viewTabs)} />
+          {nowView && !isPhone ? (
+            <>
+              <span className={folderTabClasses.rule} aria-hidden="true" />
+              <div
+                className={cx(folderTabClasses.filters, pageStyles.filterTabs)}
+                data-testid="ward-discharge-kpi-strip"
+                role="group"
+                aria-label="Discharge pipeline highlights"
+              >
+                {WORK_ORDER.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    data-testid={`ward-discharge-kpi-${key}`}
+                    className={pageStyles.filterTab}
+                    aria-pressed={statusHighlight === key}
+                    // P082: the name starts with what the button shows (label, then count).
+                    aria-label={`${key === "blocked" ? HELD_UP : kpiCardLabel(key, population)} ${counts[key]}${key === "blocked" ? ` (${kpiCardLabel(key, population)})` : ""}`}
+                    onClick={() => {
+                      setHighlight(statusHighlight === key ? null : { kind: "status", status: key });
+                      setStatus("all");
+                    }}
+                  >
+                    {/* Josh, 30 Oct: one word for a release with a blocker, "Held up", at every width. */}
+                    <span>{key === "blocked" ? HELD_UP : kpiCardLabel(key, population)}</span>{" "}
+                    <span className={pageStyles.filterCount}>{counts[key]}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : null}
+        </FolderTabs>
         {isPhone ? (
           <PhoneSheet
             open={phoneFiltersOpen}
@@ -751,74 +811,27 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             {filterCard}
           </PhoneSheet>
         ) : null}
-        {guarded.status === "allowed" && isPhone && nowView ? (
-          /* v10 phone: the two charts are one tap away as cards; each opens a sheet that scrolls
-             sideways with 48px tap columns. A tap highlights rows and closes the sheet. */
-          <div className={pageStyles.phChartCards} data-testid="ward-discharge-phone-chart-cards">
-            <button
-              type="button"
-              className={pageStyles.phChartCard}
-              // CB-3: the name starts with the card's visible words (axe label-content-name-mismatch).
-              aria-label={`Per day, ${phoneOverdue} overdue, ${phoneToday} today. Expected discharges per day, overdue and the next ${chartDays.filter((day) => day.key !== "past").length} days`}
-              onClick={() => setPhoneChart("days")}
-            >
-              <TrendingUp size={16} aria-hidden="true" className={pageStyles.phChartIcon} />
-              <span className={pageStyles.phChartText}>
-                <span className={pageStyles.phChartTitle}>Per day</span>{" "}
-                <span className={pageStyles.phChartMeta}>
-                  <b>{phoneOverdue}</b> overdue · <b>{phoneToday}</b> today
-                </span>
-              </span>
-              <ChevronRight size={16} aria-hidden="true" className={pageStyles.phChartIcon} />
-            </button>
-            <button
-              type="button"
-              className={pageStyles.phChartCard}
-              aria-label={`By reason, ${barrierCounts[0] && barrierCounts[0].count > 0 ? `Most: ${barrierCounts[0].label}` : "None held up"}. Held up by reason, ${barrierCounts.filter((barrier) => barrier.count > 0).length} reasons`}
-              onClick={() => setPhoneChart("barriers")}
-            >
-              <OctagonAlert size={16} aria-hidden="true" className={pageStyles.phChartIcon} />
-              <span className={pageStyles.phChartText}>
-                <span className={pageStyles.phChartTitle}>By reason</span>{" "}
-                <span className={`${pageStyles.phChartMeta} ${releaseList.phChartWrap}`}>
-                  {barrierCounts[0] && barrierCounts[0].count > 0 ? `Most: ${barrierCounts[0].label}` : "None held up"}
-                </span>
-              </span>
-              <ChevronRight size={16} aria-hidden="true" className={pageStyles.phChartIcon} />
-            </button>
-            <PhoneSheet
-              open={phoneChart !== null}
-              onClose={() => setPhoneChart(null)}
-              title={phoneChart === "barriers" ? "Held up by reason" : "Expected discharges per day"}
-              description="Tap to highlight people in the list. Nobody is hidden."
-              height="tall"
-              className={pageStyles.phChartSheet}
-              data-testid="ward-discharge-phone-chart-sheet"
-            >
-              {phoneChart === "barriers" ? (
-                <DischargeBarrierBars
-                  barriers={barrierCounts}
-                  counts={nowView ? "releases" : "people"}
-                  selected={highlight?.kind === "barrier" ? highlight.id : null}
-                  onSelect={(id) => {
-                    highlightOn({ kind: "barrier", id });
-                    setPhoneChart(null);
-                  }}
-                  onClear={() => setHighlight(null)}
-                />
-              ) : (
-                <DischargeDayChart
-                  days={chartDays}
-                  selected={highlight?.kind === "day" ? highlight.day : null}
-                  onSelect={(day) => {
-                    highlightOn({ kind: "day", day });
-                    setPhoneChart(null);
-                  }}
-                  onClear={() => setHighlight(null)}
-                />
-              )}
-            </PhoneSheet>
-          </div>
+        {phoneDayChart ? (
+          /* v10 phone: the day chart's sheet scrolls sideways with 48px tap columns. A tap highlights
+             rows and closes the sheet. */
+          <PhoneSheet
+            open={phoneChart === "days"}
+            onClose={() => setPhoneChart(null)}
+            title="Expected discharges per day"
+            description="Tap to highlight people in the list. Nobody is hidden."
+            height="tall"
+            data-testid="ward-discharge-phone-chart-sheet"
+          >
+            <DischargeDayChart
+              days={chartDays}
+              selected={highlight?.kind === "day" ? highlight.day : null}
+              onSelect={(day) => {
+                highlightOn({ kind: "day", day });
+                setPhoneChart(null);
+              }}
+              onClear={() => setHighlight(null)}
+            />
+          </PhoneSheet>
         ) : null}
         {/* Josh, 30 Oct: the weekend and holiday cut-offs are a compact notice above the list, not a
             panel under about 60 rows. */}
@@ -1414,13 +1427,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               place under the list. The Barriers view is gone. */}
           {guarded.status === "allowed" && !isPhone && nowView ? (
             <div className={releaseList.barrierSide}>
-              <DischargeBarrierBars
-                barriers={barrierCounts}
-                counts={nowView ? "releases" : "people"}
-                selected={highlight?.kind === "barrier" ? highlight.id : null}
-                onSelect={(id) => highlightOn({ kind: "barrier", id })}
-                onClear={() => setHighlight(null)}
-              />
+              {/* Page tops (9 Nov 2026): the held-up reasons moved to the hero's band. */}
               <DischargeDayChart
                 days={chartDays}
                 layout="rows"
@@ -1478,13 +1485,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               days={chartDays}
               selected={highlight?.kind === "day" ? highlight.day : null}
               onSelect={(day) => highlightOn({ kind: "day", day })}
-              onClear={() => setHighlight(null)}
-            />
-            <DischargeBarrierBars
-              barriers={barrierCounts}
-              counts={nowView ? "releases" : "people"}
-              selected={highlight?.kind === "barrier" ? highlight.id : null}
-              onSelect={(id) => highlightOn({ kind: "barrier", id })}
               onClear={() => setHighlight(null)}
             />
           </div>

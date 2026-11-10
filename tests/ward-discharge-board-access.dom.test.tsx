@@ -56,7 +56,7 @@ function ResetScenario() {
 // Recorded (DC4, 3 Nov 2026) lists only discharges of the last 7 days, so these open a recent
 // departed record. A departed stay offers no date update, so its UMRN line is the opened-record evidence.
 function openFirstRecord(worklist?: HTMLElement) {
-  fireEvent.click(screen.getByRole("button", { name: /^Recorded/ }));
+  fireEvent.click(screen.getByRole("tab", { name: /^Recorded/ }));
   const rows = within(worklist ?? screen.getByRole("region", { name: "Discharge worklist" })).getAllByRole("row");
   // Only the first record is exercised; later row buttons add no assertion.
   let openers: HTMLElement[] = [];
@@ -117,7 +117,7 @@ describe("DischargeBoard guarded detail access", () => {
 
   it("asks the coordinator why before the ward's record opens, and opens nothing until then", () => {
     renderBoard();
-    fireEvent.click(screen.getByRole("button", { name: /^Recorded/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Recorded/ }));
     const row = within(screen.getByRole("region", { name: "Discharge worklist" }))
       .getAllByRole("row")
       .find((candidate) => within(candidate).queryAllByRole("button").length > 0)!;

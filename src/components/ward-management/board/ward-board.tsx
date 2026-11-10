@@ -35,6 +35,8 @@ import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-
 
 import { asAtStamp } from "./ward-daily-sheet";
 import { StrandedPrompts, WardForecastShare } from "./stranded-prompts";
+import { strandedFlags } from "@/components/ward-management/ward-stranded";
+import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import styles from "./board.module.css";
@@ -59,7 +61,7 @@ import {
   type ShiftTileItem,
   type Tile,
 } from "./ward-board-model";
-import { WardBoardAlsoOnWard, WardBoardHero, WardBoardScreenNav, WardBoardTools } from "./ward-board-hero";
+import { WardBoardHero, WardBoardTools } from "./ward-board-hero";
 import hero from "./ward-board-hero.module.css";
 import panels from "./ward-board-panels.module.css";
 import { WardBoardFlowColumn } from "./ward-board-flow-column";
@@ -275,6 +277,7 @@ export function WardBoard({
    * half that matters most: the sheet exists to be printed.
    */
   const [sheetOpen, setSheetOpen] = useState(false);
+  const online = useOnlineStatus();
   // Phone: Needs you opens on its first three items (device audit, 11 Oct 2026).
   const [shiftExpanded, setShiftExpanded] = useState(false);
   useEffect(() => {
@@ -745,6 +748,16 @@ export function WardBoard({
     { key: "onLeave", label: CAPACITY_FIGURE_LABELS.onLeave, value: breakdown.onLeave },
   ];
 
+  // Page tops (9 Nov 2026): the hero's next step is the "Worth a look" list, the same flags it shows.
+  const worthALook = strandedFlags(admissionsForUnit(admissions, unit.id), now, liveBedReleases).length;
+  const showWorthALook = () => {
+    const panel = document.querySelector<HTMLDetailsElement>('[data-testid="ward-board-stranded"]');
+    if (!panel) return;
+    panel.open = true;
+    panel.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
+    panel.querySelector<HTMLElement>("summary")?.focus({ preventScroll: true });
+  };
+
   const shiftTiles: ShiftTileItem[] = [];
 
   // 1. Confirmed or Expected discharges past their expected time or due today
@@ -1092,7 +1105,11 @@ export function WardBoard({
           stamp={stamp}
           states={states}
           unit={unit}
-          nav={<WardBoardScreenNav unit={unit} />}
+          now={now}
+          online={online}
+          figures={figures}
+          worthALook={worthALook}
+          onShowWorthALook={showWorthALook}
           tools={
             <WardBoardTools
               sheetOpen={sheetOpen}
@@ -1129,7 +1146,6 @@ export function WardBoard({
             {gridColumn}
           </div>
         )}
-        <WardBoardAlsoOnWard figures={figures} />
 
         {/* Stranded-patient prompts (smart feature 12): long stays with no expected date, and people
             ready to leave but waiting on something outside the ward. Scoped to this ward. */}
