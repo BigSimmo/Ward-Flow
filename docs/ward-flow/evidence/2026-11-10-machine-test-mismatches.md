@@ -2,7 +2,7 @@
 
 _Created 2026-11-10 - audit item M26, approved as a list by Josh (D-130); Documentation owns._
 
-**Status:** open questions for Josh. **Nothing has changed.** The movement diagram
+**Status:** Josh approved every recommendation (D-131, 10 Nov 2026); the diagram is being corrected. The movement diagram
 (`docs/ward-flow/journey/machines.json`) and the engine disagree on the moves below. The test
 `tests/ward-audit-m26-other-machines.test.ts` names each one, so a new mismatch fails the build.
 
