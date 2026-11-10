@@ -144,6 +144,8 @@ describe("clinical values file", () => {
       triageUrgencyC: 12,
       triageUrgencyD: 48,
       triageUrgencyE: 14,
+      // D-104 (Josh, 9 Nov 2026): approved default, quoted from memory, synthetic until checked.
+      frequentPresenterEdPresentations: 4,
     });
     expect(unsignedClinicalValueCount()).toBe(
       CLINICAL_VALUE_LIST.filter((entry) => entry.status === "synthetic").length,

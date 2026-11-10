@@ -194,8 +194,8 @@ export function GovernanceView() {
         <summary tabIndex={-1}>Synthetic prototype · not approved for clinical use</summary>
         <NotAMedicalDeviceStatement />
         <p data-testid="ward-governance-data-scope">
-          Patient identity and operational facts are recorded, including patient-linked discharge records. No diagnosis,
-          medication or narrative history is held.
+          Patient identity and operational facts are recorded, including patient-linked discharge records, care plan
+          details and tribunal hearing dates. No diagnosis, medication or narrative history is held.
         </p>
         <p data-testid="ward-governance-audit-limit">
           The system&apos;s recommendations and the bed state shown at decision time are not recorded.

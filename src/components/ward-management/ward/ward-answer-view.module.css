@@ -275,6 +275,10 @@
   min-width: 0;
 }
 
+.safetyTagsRow:empty {
+  display: none;
+}
+
 .patientDossierBanner {
   display: flex;
   justify-content: space-between;
@@ -1238,6 +1242,11 @@
   .patientDossierBanner {
     padding: var(--wf-s-3) var(--wf-s-4);
     border-bottom: 1px solid var(--wf-line);
+  }
+
+  /* Referral flags sit at the card's inset, level with the name above. */
+  .safetyTagsRow {
+    padding: var(--wf-s-2) var(--wf-s-4) 0;
   }
 
   .patientNameLine {

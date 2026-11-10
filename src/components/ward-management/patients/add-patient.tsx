@@ -28,9 +28,12 @@ import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav
 import { edById } from "@/components/ward-management/ward-sites";
 import {
   duplicateCandidates,
+  duplicateCheckHasInput,
+  DUPLICATE_MATCH_LABEL,
+  NEAR_MATCH_MINIMUM_TERM_LENGTH,
+  orderedDuplicateMatches,
   GENDERS,
   type Gender,
-  type Patient,
   patientAddedOnDayOf,
 } from "@/components/ward-management/ward-patients";
 import {
@@ -214,17 +217,7 @@ function longTextWarning(value: string, what: "name" | "suburb") {
   );
 }
 
-const NEAR_MATCH_MINIMUM_TERM_LENGTH = 4;
 const RECENT_RECORDS_SHOWN = 7;
-
-type MatchKind = "record-number" | "same-name-same-dob" | "same-name" | "near";
-
-const MATCH_LABEL: Record<MatchKind, string> = {
-  "record-number": "Record number collision",
-  "same-name-same-dob": "Same name & DOB",
-  "same-name": "Same name",
-  near: "Similar spelling",
-};
 
 export function AddPatientForm() {
   const { patients, worldGeneration, dayZero } = useWardFlowSelect("patients", "worldGeneration", "dayZero");
@@ -456,25 +449,9 @@ export function AddPatientForm() {
 
   const candidates = useMemo(() => duplicateCandidates(patients, draft), [patients, draft]);
 
-  const hasCheckedAnything =
-    draft.umrn.trim().length > 0 ||
-    (draft.givenName.trim().length > 0 && draft.familyName.trim().length > 0) ||
-    [draft.givenName, draft.familyName].some((term) => term.trim().length >= NEAR_MATCH_MINIMUM_TERM_LENGTH);
+  const hasCheckedAnything = duplicateCheckHasInput(draft);
 
-  /** Every candidate once, strongest reason first: the exact tiers, then near spellings. */
-  const matches = useMemo(() => {
-    const out: { patient: Patient; kind: MatchKind }[] = [];
-    const add = (list: readonly Patient[], kind: MatchKind) => {
-      for (const patient of list) {
-        if (!out.some((entry) => entry.patient.id === patient.id)) out.push({ patient, kind });
-      }
-    };
-    add(candidates.recordNumberCollision, "record-number");
-    add(candidates.sameNameSameBirthDate, "same-name-same-dob");
-    add(candidates.sameNameBirthDateNotMatched, "same-name");
-    add(candidates.nearSpelling, "near");
-    return out;
-  }, [candidates]);
+  const matches = useMemo(() => orderedDuplicateMatches(candidates), [candidates]);
   const nearMatches = candidates.nearSpelling;
   const foundSomething = matches.length > 0;
 
@@ -825,7 +802,7 @@ export function AddPatientForm() {
                       </strong>
                       <span className={styles.dupKind}>
                         <StatusGlyph tone={kind === "near" ? "neutral" : "warning"} size={9} />
-                        {MATCH_LABEL[kind]}
+                        {DUPLICATE_MATCH_LABEL[kind]}
                       </span>
                     </span>
                     <span className={styles.dupMeta}>

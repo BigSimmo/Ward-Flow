@@ -8,12 +8,13 @@ import { TRANSPORT_PROVIDERS } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { ReferralIntakeDetails } from "@/components/ward-management/referrals/referral-submission";
 import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
+import { CARE_PLAN_HELPS, CARE_PLAN_TYPES } from "@/components/ward-management/ward-patient-care-plans";
 
 /**
  * One ACCEPTED dispatch of every Ward Flow event that can carry human-typed text, with a distinctive
  * marker string in every typed field.
  *
- * The list is the 14 types on `WARD_FLOW_TYPED_TEXT_EVENT_TYPES`, plus the payload-level cases
+ * The list is the 16 types on `WARD_FLOW_TYPED_TEXT_EVENT_TYPES`, plus the payload-level cases
  * `eventCarriesTypedTextPayload` catches on otherwise text-safe types: `overrideSignOff` on the three
  * placement events, a non-blank `reassessmentNote` on `ACCEPT_REFERRAL`, and a patient specific
  * (off-list) criterion on `SET_DISCHARGE_CRITERIA` (all in `ward-flow-persistence-classification.ts`).
@@ -150,6 +151,17 @@ const M = {
   signOffPull: "Signoff-pull-marker-c07e",
   reassessmentNote: "Reassessment-note-marker-4a8d",
   patientSpecificCriterion: "Criterion-marker-7e3b",
+  carePlanAgreedBy: "Agreed-by-marker-2f6a",
+  // Dates must be real YYYY-MM-DD days, so unusual real dates rather than long markers.
+  carePlanAgreedOn: "1907-04-23",
+  carePlanReviewOn: "1907-05-29",
+  carePlanContactName: "Plan-contact-marker-7b1d",
+  // Digits, spaces and + ( ) - only, at most 20 characters.
+  carePlanContactPhone: "+61 8 9417 5283",
+  carePlanHelpsExtra: "Helps-note-marker-c41e",
+  tribunalHearingDate: "1911-02-13",
+  // Pattern-checked as HH:MM, so it is short.
+  tribunalHearingTime: "03:19",
 } as const;
 
 const intake: ReferralIntakeDetails = {
@@ -745,5 +757,61 @@ export const TYPED_TEXT_FIXTURES: readonly TypedTextFixture[] = [
       };
     },
     markers: [M.patientSpecificCriterion],
+  },
+  {
+    label: "RECORD_CARE_PLAN",
+    type: "RECORD_CARE_PLAN",
+    // `type`, `helps` and the attachment's `fileType` come from fixed lists, so are not markers.
+    build: onSeed((seed, now) =>
+      firstAccepted(
+        seed,
+        seed.patients.map((patient): WardFlowEvent => ({
+          type: "RECORD_CARE_PLAN",
+          role: "coordinator",
+          now,
+          patientId: patient.id,
+          plan: {
+            type: CARE_PLAN_TYPES[0],
+            agreedBy: M.carePlanAgreedBy,
+            agreedOn: M.carePlanAgreedOn,
+            reviewOn: M.carePlanReviewOn,
+            contactName: M.carePlanContactName,
+            contactPhone: M.carePlanContactPhone,
+            helps: [CARE_PLAN_HELPS[0]],
+            helpsExtra: M.carePlanHelpsExtra,
+          },
+        })),
+        "RECORD_CARE_PLAN",
+        M.carePlanAgreedBy,
+      ),
+    ),
+    markers: [
+      M.carePlanAgreedBy,
+      M.carePlanAgreedOn,
+      M.carePlanReviewOn,
+      M.carePlanContactName,
+      M.carePlanContactPhone,
+      M.carePlanHelpsExtra,
+    ],
+  },
+  {
+    label: "RECORD_TRIBUNAL_HEARING",
+    type: "RECORD_TRIBUNAL_HEARING",
+    build: onSeed((seed, now) =>
+      firstAccepted(
+        seed,
+        seed.patients.map((patient): WardFlowEvent => ({
+          type: "RECORD_TRIBUNAL_HEARING",
+          role: "coordinator",
+          now,
+          patientId: patient.id,
+          date: M.tribunalHearingDate,
+          time: M.tribunalHearingTime,
+        })),
+        "RECORD_TRIBUNAL_HEARING",
+        M.tribunalHearingDate,
+      ),
+    ),
+    markers: [M.tribunalHearingDate, M.tribunalHearingTime],
   },
 ];
