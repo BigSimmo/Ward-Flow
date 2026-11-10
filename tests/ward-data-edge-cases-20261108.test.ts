@@ -90,7 +90,7 @@ describe("PULL_PATIENT resolves the patient once for the bed check and the new s
     let state: WardFlowState = seedWardFlowState();
     for (const event of [
       { type: "REFER_TO_UNITS", role: "coordinator", unitIds: [UNIT_ID] },
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: UNIT_ID },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: UNIT_ID, actingUnitId: UNIT_ID },
     ] as const) {
       state = wardFlowReducer(state, { ...event, now: NOW, movementId: MOVEMENT_ID } as never);
     }
@@ -118,6 +118,7 @@ describe("PULL_PATIENT resolves the patient once for the bed check and the new s
       now: NOW,
       movementId: MOVEMENT_ID,
       unitId: UNIT_ID,
+      actingUnitId: UNIT_ID,
     });
   }
 

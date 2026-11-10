@@ -286,6 +286,7 @@ function fixture(answer = "declined") {
       role: "ward",
       movementId: id,
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
       reason: "belongs_to_another_service",
     });
   if (answer === "accepted")
@@ -294,6 +295,7 @@ function fixture(answer = "declined") {
       role: "ward",
       movementId: id,
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
     });
   const places = engine.accessPlaces(world);
   const siteCode = places.edSiteCode("jhc-ed");
@@ -615,6 +617,7 @@ test("refused commands and replay use the same bound response factory without pe
     role: "ward",
     movementId: id,
     unitId: "rph-adult-secure",
+    actingUnitId: "rph-adult-secure",
     reason: "belongs_to_another_service",
   };
   const first = await store.command(actorId, "synthetic-refused-command", 7, event, { view });
@@ -645,6 +648,7 @@ function senderAlertFixture() {
       role: "ward",
       movementId: id,
       unitId,
+      actingUnitId: unitId,
       reason: "belongs_to_another_service",
     });
   }

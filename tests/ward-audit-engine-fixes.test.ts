@@ -121,6 +121,7 @@ describe("PULL_PATIENT carries observation history (item 5)", () => {
       now: NOW,
       movementId: movement.id,
       unitId: movement.acceptedUnitId!,
+      actingUnitId: movement.acceptedUnitId!,
     });
     expect(after.rejections).toEqual([]);
     const admissionId = after.movements.find((m) => m.id === movement.id)!.admissionId!;
@@ -146,6 +147,7 @@ describe("PULL_PATIENT carries observation history (item 5)", () => {
       now: NOW,
       movementId: movement.id,
       unitId: movement.acceptedUnitId!,
+      actingUnitId: movement.acceptedUnitId!,
     });
     const admissionId = after.movements.find((m) => m.id === movement.id)!.admissionId!;
     expect(after.admissions.find((a) => a.id === admissionId)).not.toHaveProperty("observationChanges");

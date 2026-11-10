@@ -51,7 +51,7 @@ export function edExportLines<M extends EdExportMovement>(
       splitDuration(ctx.minutesOf(movement)),
       movement.urgency,
       movement.legalStatus,
-      movement.legalForm ? `Form ${movement.legalForm.code}` : "None",
+      movement.legalForm ? `Form ${movement.legalForm.code}` : "Not recorded",
       ctx.stageOf(movement),
     ]),
   ];

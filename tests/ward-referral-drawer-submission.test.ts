@@ -129,6 +129,7 @@ describe("confirmed drawer submissions use the shared referral engine", () => {
       referralId: id,
       destinationKind: "psychiatric_ward",
       unitId: "arm-adult-open",
+      actingUnitId: "arm-adult-open",
       reason: "another_reason",
     });
     expect(declined.referrals.at(-1)!.destinations.map((arm) => arm.state)).toEqual(["queued", "declined"]);
@@ -175,6 +176,7 @@ describe("confirmed drawer submissions use the shared referral engine", () => {
       referralId: received.referrals.at(-1)!.id,
       destinationKind: "psychiatric_ward",
       unitId: "arm-adult-open",
+      actingUnitId: "arm-adult-open",
       reason: "no_suitable_bed",
       waitlist: true,
     });

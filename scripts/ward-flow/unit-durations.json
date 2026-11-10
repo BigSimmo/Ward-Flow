@@ -449,7 +449,6 @@
     "tests/ward-chunk-load-error-twins.test.ts": 0.6,
     "tests/ward-chunk-load-offline.dom.test.tsx": 2.6,
     "tests/ward-chunk-load-pending-recovery.dom.test.tsx": 2.1,
-    "tests/ward-ci-budget-recheck.test.ts": 1.5,
     "tests/ward-ci-main-reuse.test.ts": 1.3,
     "tests/ward-ci-scope.test.ts": 0.5,
     "tests/ward-claim-files.test.ts": 1.2,

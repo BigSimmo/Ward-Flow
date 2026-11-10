@@ -85,7 +85,13 @@ function withReferral(state: WardFlowState, movementIndex: number, linked = true
   };
 }
 function pull(state: WardFlowState, index: number) {
-  return send(state, { type: "PULL_PATIENT", role: "ward", movementId: state.movements[index]!.id, unitId: UNIT });
+  return send(state, {
+    type: "PULL_PATIENT",
+    role: "ward",
+    movementId: state.movements[index]!.id,
+    unitId: UNIT,
+    actingUnitId: UNIT,
+  });
 }
 
 describe("numbered reservations survive unrelated allocations and release completely", () => {

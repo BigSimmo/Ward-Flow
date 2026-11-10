@@ -256,6 +256,17 @@ Source digests were re-reviewed file by file before being re-recorded:
 - `coordinator/shortlist-panel.tsx`: comment-only edits (the override comment cites D-122, not D-86; the three-ward cap comment cites D-122). The edits replace comment lines one for one, so no cited line moved.
 - `ward/ward-answer-view.tsx`: the hero ring's at-risk word tests the whole percent shown (D-109, extended by D-122). No dispatch, role or cited line changed.
 
+## Source review — 10 Nov 2026 (final master audit fixes, PR #1594, D-128)
+
+Source digests were re-reviewed after these edits, and every cited line was re-mapped against `main` line by line (no citation sat on a changed line):
+
+- `ward-flow-record-events.ts` and `ed/ed-medical-placement-controls.tsx`: `RECORD_MOVEMENT_MEDICAL_CLEARANCE` now carries `actingPlaceId`, and an ED is refused unless it names itself as the journey's origin ED (M2). The coordinator sends none. Its needs note and a new refusal row were added.
+- `ward-flow-record-legal-events.ts`, `ward-flow-events.ts` and `movements/movement-workflow-actions.tsx`: `RECORD_LEGAL_FORM_CONTINUATION` takes an optional `actingUnitId`; on a ward desk only the accepted ward may record it (D-128 item 1). Coordinator, ED and community behaviour is unchanged. Its needs note and a new refusal row were added.
+- `ward-access-state.ts` and `ward-flow-reducer.ts`: a ward caller that names no acting ward or movement place is now refused rather than allowed (M4, M113), and the shared server's place check covers the continuation. The existing notes already say the acting ward is required for ward callers, so no note changed. Other events' roles, payloads and graph edges are unchanged.
+- `patients/patient-now-screen.tsx`, `patients/patient-transit-operations.tsx` and `referrals/referral-match.tsx`: dispatches now pass the acting ward or ED. Event names, roles and guards are unchanged.
+
+After `main` was merged in (10 Nov 2026), this PR's ruling became D-128 because main had used D-124. The comment-only renumbering in `ward-access-state.ts`, `ward-flow-events.ts`, `ward-flow-record-legal-events.ts` and `ward-flow-reducer.ts` changed no line, so only their digests were re-recorded. Citations in files only `main` changed keep `main`'s reviewed lines and digests.
+
 ## Source review — 10 Nov 2026 (master audit fix batches, D-129)
 
 Source digests were re-reviewed file by file before being re-recorded:

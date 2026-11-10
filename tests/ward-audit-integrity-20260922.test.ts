@@ -55,8 +55,8 @@ function booked(now = NOW_ANCHOR) {
     genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
     genderPlacementChecked: true,
   });
-  state = apply(state, { type: "ACCEPT_IN_PRINCIPLE", role: "ward", now, movementId, unitId });
-  state = apply(state, { type: "PULL_PATIENT", role: "ward", now, movementId, unitId });
+  state = apply(state, { type: "ACCEPT_IN_PRINCIPLE", role: "ward", now, movementId, unitId, actingUnitId: unitId });
+  state = apply(state, { type: "PULL_PATIENT", role: "ward", now, movementId, unitId, actingUnitId: unitId });
   state = apply(state, {
     type: "BOOK_TRANSPORT",
     role: "ed",

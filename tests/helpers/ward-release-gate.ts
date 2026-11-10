@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Locator, type Page, type TestInfo } from "playwright/test";
+import type { NodeResult, Result } from "axe-core";
 
 /**
  * Shared steps for the four release-gate journeys (`tests/release-gate-journeys.spec.ts`).
@@ -11,7 +12,12 @@ import { expect, type Locator, type Page, type TestInfo } from "playwright/test"
  * 390x844, which is its own design rather than a squeezed desktop.
  */
 
-/** WCAG 2.2 A and AA. Best-practice rules are left out: the gate fails on standards, not taste. */
+/**
+ * WCAG 2.0 and 2.1 A and AA, plus WCAG 2.2 AA. There is no `wcag22a` tag: axe-core 4.14 has no rule
+ * tagged with it (its one WCAG 2.2 rule, target-size, is `wcag22aa`), so WCAG 2.2 A adds nothing to
+ * scan for (checked 10 Nov 2026, M159). Best-practice rules are left out: the gate fails on
+ * standards, not taste.
+ */
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 /**
  * Target size (WCAG 2.5.8) is scanned with the screen scrolled to the top. Mid-scroll, the pinned
@@ -25,7 +31,7 @@ const BLOCKING_IMPACTS = new Set(["serious", "critical"]);
 
 /**
  * Runs axe on the page as it stands and fails on any serious or critical WCAG 2.2 AA violation
- * (the tags in `AXE_TAGS` include 2.0, 2.1 and 2.2 A and AA).
+ * (the tags in `AXE_TAGS`: 2.0 and 2.1 A and AA, and 2.2 AA).
  * Moderate and minor findings are attached to the report but never fail the gate. The full result
  * is attached per step, so a red run says which rule failed on which element at which step.
  */
@@ -33,7 +39,7 @@ export async function expectAccessible(page: Page, testInfo: TestInfo, step: str
   const scan = async () => {
     const results = await new AxeBuilder({ page }).withTags(AXE_TAGS).disableRules(SCROLL_TOP_RULES).analyze();
     const atTop = await atScrollTop(page, () => new AxeBuilder({ page }).withRules(SCROLL_TOP_RULES).analyze());
-    results.violations.push(...atTop.violations);
+    results.violations.push(...(await withoutPinnedBarOverlap(page, atTop.violations)));
     const blocking = results.violations.filter((violation) => BLOCKING_IMPACTS.has(violation.impact ?? ""));
     return { results, blocking };
   };
@@ -176,6 +182,46 @@ export async function waitForAccessibleReadiness(page: Page) {
  * Runs `action` with the window and the work column (`[data-wf-scroller]`, which scrolls on a
  * phone) at the top, then puts both back where they were.
  */
+/**
+ * The bottom twin of the scroll-top rule above. A pinned bottom bar (Handover's Copy summary, the
+ * phone dock) always sits over whatever row is passing under it, at any scroll position, so axe
+ * counts that row's button as too small. Only a target whose size check failed solely because a
+ * `position: sticky` or `fixed` bar covers part of it is set aside; a target that is small, or
+ * covered by anything else, still fails.
+ */
+async function withoutPinnedBarOverlap(page: Page, violations: Result[]): Promise<Result[]> {
+  const kept: Result[] = [];
+  for (const violation of violations) {
+    if (violation.id !== "target-size") {
+      kept.push(violation);
+      continue;
+    }
+    const nodes: NodeResult[] = [];
+    for (const node of violation.nodes) {
+      const size = node.any.find((check) => check.id === "target-size");
+      const covers = (size?.relatedNodes ?? []).map((related) => related.target.join(" "));
+      const obscured = (size?.data as { messageKey?: string } | null)?.messageKey === "partiallyObscured";
+      const pinned =
+        obscured &&
+        covers.length > 0 &&
+        (await page.evaluate(
+          (selectors) =>
+            selectors.every((selector) => {
+              for (let el = document.querySelector(selector); el; el = el.parentElement) {
+                const position = getComputedStyle(el).position;
+                if (position === "sticky" || position === "fixed") return true;
+              }
+              return false;
+            }),
+          covers,
+        ));
+      if (!pinned) nodes.push(node);
+    }
+    if (nodes.length > 0) kept.push({ ...violation, nodes });
+  }
+  return kept;
+}
+
 async function atScrollTop<T>(page: Page, action: () => Promise<T>): Promise<T> {
   const saved = await page.evaluate(() => {
     const column = document.querySelector("[data-wf-scroller]");

@@ -2,7 +2,7 @@
 
 _Updated 2026-11-10 - CI rows for the protected safety tests, the pull-request patient-identifier scan with its exemptions, the identifier scan and the 5 KB raise cap scripts, and the audit and support tools; Documentation owns._
 
-Curated map of `scripts/` (178 files) and the `package.json` script surface (87 entries),
+Curated map of `scripts/` (177 files) and the `package.json` script surface (87 entries),
 grouped by what each part protects. `package.json` is the command surface; this page says why
 each group exists. `npm run docs:check-inventory` compares the two counts above exactly,
 and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs
@@ -57,8 +57,7 @@ result on main), `changed-checks.mjs` (format, lint, the test-deletion guard and
 `check-contracts.mjs` and `check-policy-contracts.mjs` (the workflow's own contracts),
 `install-chromium.mjs`, `apt-archive-cache.mjs` (the release gate's cached WebKit system packages), and
 `bot-author-policy.mjs` for the bot author workflow, `merge-latest-main.mjs` (merges current main
-before the production build measures the phone script budget) and `budget-recheck.mjs` (for
-`.github/workflows/ward-flow-budget-recheck.yml`, which would re-measure armed pull requests when main moves; its job is switched off with `if: false`),
+before the production build measures the phone script budget),
 `main-measured.mjs` (lets the budget gate reuse main's saved measurements instead of building main again),
 `identifier-scan.mjs` (runs the pre-commit secret and patient-identifier scan on a pull request's added lines, D-122) and
 `budget-raise-cap.mjs` (fails a phone limit raised more than 5 KB unless the PR's budget history records Josh's approval, D-121).
@@ -97,8 +96,9 @@ production patterns carry `!` in `knip.json`; front-end audit CB-13).
 | `node scripts/ward-flow/sign-out-check.mjs <file>` | `ward-flow/sign-out-check.mjs`, `ward-flow/claim-files.mjs`, `ward-flow/logs-root.mjs` | Sign-out log clashes before editing.                                                                                                      |
 
 The dependency audit is the `npm audit` step in `.github/workflows/dependency-audit.yml`, and the
-secret history scan is the gitleaks job in `.github/workflows/ward-flow.yml`. Neither needs a
-script here.
+secret history scan is the gitleaks job in `.github/workflows/ward-flow.yml`. CodeQL code scanning
+is `.github/workflows/codeql.yml`, which blocks a pull request only on findings it introduces (D-124).
+None of these needs a script here.
 
 ## Documents and generated indexes
 

@@ -43,6 +43,7 @@ function collected(state: WardFlowState) {
     now: NOW,
     movementId: open.id,
     unitId,
+    actingUnitId: unitId,
     overrideReason: "The bed information is known to be out of date",
   });
   expect(accepted.rejections).toHaveLength(0);
@@ -52,6 +53,7 @@ function collected(state: WardFlowState) {
     now: NOW + 1,
     movementId: open.id,
     unitId,
+    actingUnitId: unitId,
   });
   expect(pulled.rejections).toHaveLength(0);
   const booked = wardFlowReducer(pulled, {
@@ -148,6 +150,7 @@ describe("RECORD_DIVERSION — build plan item 29 / R2-7", () => {
       now: NOW,
       movementId: open.id,
       unitId,
+      actingUnitId: unitId,
       overrideReason: "The bed information is known to be out of date",
     });
     expect(state.rejections).toHaveLength(0);
@@ -157,6 +160,7 @@ describe("RECORD_DIVERSION — build plan item 29 / R2-7", () => {
       now: NOW + 1,
       movementId: open.id,
       unitId,
+      actingUnitId: unitId,
     });
     expect(state.rejections).toHaveLength(0);
     state = wardFlowReducer(state, {

@@ -574,6 +574,32 @@ test("access and break glass routes check their fields and pass the store's answ
   assert.equal(seen.length, 5);
 });
 
+test("an opening or cover passes the browser's intent key to the store, checked as a UUID (M58)", async () => {
+  const seen = [];
+  const answer =
+    (name) =>
+    async (...args) => {
+      seen.push([name, ...args.slice(1)]);
+      return { status: 200, body: { name } };
+    };
+  const { handler } = setup(coordinator, "prototype", {
+    breakGlass: answer("breakGlass"),
+    giveCover: answer("giveCover"),
+  });
+  const key = "77777777-7777-4777-8777-777777777777";
+  const opening = { patientId: "p-1", reason: "handover", intentKey: key.toUpperCase() };
+  const cover = { actorId: other, scope: { kind: "ward", unitIds: ["unit-a"] }, minutes: 60, intentKey: key };
+  assert.equal((await handler(request("/break-glass", opening))).status, 200);
+  assert.equal((await handler(request("/access/cover", cover))).status, 200);
+  assert.deepEqual(seen, [
+    ["breakGlass", "p-1", "handover", key],
+    ["giveCover", { actorId: other, scope: cover.scope, minutes: 60, intentKey: key }],
+  ]);
+  assert.equal((await handler(request("/break-glass", { ...opening, intentKey: "again" }))).status, 400);
+  assert.equal((await handler(request("/access/cover", { ...cover, intentKey: 7 }))).status, 400);
+  assert.equal(seen.length, 2);
+});
+
 test("a role's length in minutes is turned into an end date on the server's clock (TC2-04, H-0763)", async () => {
   const seen = [];
   const answer =

@@ -183,7 +183,8 @@ export function FormRow({
           <button
             type="button"
             className={styles.rowLink}
-            aria-label={`${step.action === "written" && canAddTime ? "Add the time" : step.title} for ${name}`}
+            // The name starts with the words shown, so speech and voice control match (axe label-content-name-mismatch).
+            aria-label={`${step.action === "next-form" ? step.title : STEP_LABEL[step.action]} for ${name}`}
             title={step.detail}
             onClick={() => (step.action === "written" && canAddTime ? onAddTime(movement) : onSelect(movement))}
           >

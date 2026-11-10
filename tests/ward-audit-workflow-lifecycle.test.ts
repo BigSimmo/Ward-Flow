@@ -63,8 +63,16 @@ function journey() {
       now: NOW_ANCHOR,
       movementId: movement.id,
       unitId: "scgh-adult-open",
+      actingUnitId: "scgh-adult-open",
     });
-    send({ type: "PULL_PATIENT", role: "ward", now: NOW_ANCHOR, movementId: movement.id, unitId: "scgh-adult-open" });
+    send({
+      type: "PULL_PATIENT",
+      role: "ward",
+      now: NOW_ANCHOR,
+      movementId: movement.id,
+      unitId: "scgh-adult-open",
+      actingUnitId: "scgh-adult-open",
+    });
   };
   return {
     get state() {

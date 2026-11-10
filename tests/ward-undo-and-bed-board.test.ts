@@ -64,6 +64,7 @@ const accept = (referralId: string, role: WardFlowEvent["role"] = "ward", now = 
     referralId,
     destinationKind: "psychiatric_ward",
     unitId: UNIT,
+    ...(role === "ward" ? { actingUnitId: UNIT } : {}),
     ...(bedNumber === undefined ? {} : { bedNumber }),
   }) as WardFlowEvent;
 
@@ -120,6 +121,7 @@ describe("UNDO_REFERRAL_DECISION", () => {
       referralId,
       destinationKind: "psychiatric_ward",
       unitId: UNIT,
+      actingUnitId: UNIT,
       reason: REFERRAL_DECLINE_REASONS[0],
     });
     expect(declined.rejections).toEqual([]);

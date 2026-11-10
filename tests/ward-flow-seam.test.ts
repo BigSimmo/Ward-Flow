@@ -134,6 +134,10 @@ const APPROVED_ROUTE_REFERENCES = new Map([
   ],
   ["src/app/not-found.tsx", "the standalone app's not-found fallback returns visitors to its only product, Ward Flow"],
   [
+    "src/lib/client-error-receiver.ts",
+    "browser error reports name the screen by its route template, and only listed templates are logged (TE-04, 10 Nov 2026)",
+  ],
+  [
     "src/app/manifest.ts",
     "the installed app opens Ward Flow directly and its home-screen shortcuts name Ward Flow pages (phone PWA plan, 15 October 2026)",
   ],
@@ -359,7 +363,8 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // 8 -> 9 on 2026-10-27: the front door pass names the Ward Flow home it returns people to (D-88).
     // 9 -> 7 on 2026-11-01: the sign-in page became ward code (it renders the front door's card), so
     // its route and screen files moved inside WARD_DIRS and no longer count as outside references.
-    expect(APPROVED_ROUTE_REFERENCES.size).toBe(7);
+    // 7 -> 8 on 2026-11-10: browser error reports log a screen only by a listed route template (TE-04).
+    expect(APPROVED_ROUTE_REFERENCES.size).toBe(8);
     expect(wardFiles.length).toBeGreaterThan(50);
     expect(allSourceFiles.length).toBeGreaterThan(wardFiles.length);
   });

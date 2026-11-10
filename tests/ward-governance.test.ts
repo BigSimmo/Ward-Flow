@@ -273,6 +273,7 @@ describe("effectivenessNumbers", () => {
       now: target.openedAt + 45,
       movementId: target.id,
       unitId,
+      actingUnitId: unitId,
     });
     expect(after.rejections).toHaveLength(0);
     const updated = after.movements.find((movement) => movement.id === target.id);

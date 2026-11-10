@@ -192,6 +192,7 @@ function pull(state: WardFlowState, overrideReason?: (typeof OVERRIDE_REASONS)[n
     now: NOW,
     movementId: "WF-BM-PULL",
     unitId: MX_F_ID,
+    actingUnitId: MX_F_ID,
     overrideReason,
   });
 }

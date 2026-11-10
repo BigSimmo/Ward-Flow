@@ -209,7 +209,14 @@ function PullToWardHarness() {
         type="button"
         data-testid="test-accept-in-principle"
         onClick={() =>
-          dispatch({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", now, movementId: target.id, unitId: HARNESS_UNIT_ID })
+          dispatch({
+            type: "ACCEPT_IN_PRINCIPLE",
+            role: "ward",
+            now,
+            movementId: target.id,
+            unitId: HARNESS_UNIT_ID,
+            actingUnitId: HARNESS_UNIT_ID,
+          })
         }
       >
         accept
@@ -218,7 +225,14 @@ function PullToWardHarness() {
         type="button"
         data-testid="test-pull-patient"
         onClick={() =>
-          dispatch({ type: "PULL_PATIENT", role: "ward", now, movementId: target.id, unitId: HARNESS_UNIT_ID })
+          dispatch({
+            type: "PULL_PATIENT",
+            role: "ward",
+            now,
+            movementId: target.id,
+            unitId: HARNESS_UNIT_ID,
+            actingUnitId: HARNESS_UNIT_ID,
+          })
         }
       >
         pull

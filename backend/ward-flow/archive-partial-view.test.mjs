@@ -48,6 +48,7 @@ function movementFixture() {
     role: "ward",
     movementId: id,
     unitId: "rph-adult-secure",
+    actingUnitId: "rph-adult-secure",
     reason: "belongs_to_another_service",
   });
   const siteCode = engine.accessPlaces(world).edSiteCode("jhc-ed");

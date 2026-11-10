@@ -105,6 +105,9 @@ function decline(state: WardFlowState, referralId: string, role: string, destina
     now: NOW,
     referralId,
     destinationKind,
+    // M4 (strict): a ward names itself, and the ward it answers for.
+    ...(role === "ward" ? { actingUnitId: MATCHING_WARD_UNIT_ID } : {}),
+    ...(role === "ward" && destinationKind === "psychiatric_ward" ? { unitId: MATCHING_WARD_UNIT_ID } : {}),
     reason: declineReasonFor(destinationKind),
   } as never);
 }
@@ -120,6 +123,7 @@ function accept(state: WardFlowState, referralId: string, role: string, destinat
     referralId,
     destinationKind,
     unitId,
+    ...(role === "ward" ? { actingUnitId: unitId ?? MATCHING_WARD_UNIT_ID } : {}),
   } as never);
 }
 

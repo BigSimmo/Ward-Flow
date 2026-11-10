@@ -207,6 +207,7 @@ describe("re-anchoring moves every instant and nothing else", () => {
       now: NOW_ANCHOR,
       movementId,
       unitId: "scgh-adult-open",
+      actingUnitId: "scgh-adult-open",
     });
     state = wardFlowReducer(state, {
       type: "RECORD_ED_MEDICAL_DETERIORATION",
@@ -221,6 +222,7 @@ describe("re-anchoring moves every instant and nothing else", () => {
       now: NOW_ANCHOR + 15,
       movementId,
       cleared: true,
+      actingPlaceId: state.movements.find((m) => m.id === movementId)!.originEdId,
     });
     expect(state.rejections).toEqual([]);
     const before = state.movements.at(-1)!.medicalDeterioration!;

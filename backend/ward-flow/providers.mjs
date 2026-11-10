@@ -1,5 +1,6 @@
 // @ts-check
 import { createPush } from "./push.mjs";
+import { bootstrapCoordinators } from "./auth.mjs";
 
 /**
  * Provider adapters, keyed by the names config.mjs accepts. Supabase is the current provider
@@ -56,6 +57,7 @@ export async function createBackend(config, dependencies = {}) {
         engine,
         push: await createPush(config),
         demoEvents: config.sharedDemoEvents === true,
+        bootstrapCoordinatorIds: (atMs) => bootstrapCoordinators(config, atMs),
       });
     }
     return { config, authenticate, sharedStore, pool };

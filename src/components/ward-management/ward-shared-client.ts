@@ -71,6 +71,7 @@ import {
 import { SharedPacing } from "./ward-shared-pacing";
 
 import type { SharedSnapshot, SharedView, SharedChangeResult, WardCommandOutcome } from "./ward-shared-client-types";
+import { SharedIntentKeys } from "./shared-intent-keys";
 export type {
   SharedSnapshot,
   SharedRoleChoice,
@@ -264,8 +265,8 @@ export class SharedWorkspaceClient {
   private saveAnswered = false;
   /** #817: the poll in flight, which a new save stops so the save is not held behind it. */
   private pollAbort: AbortController | null = null;
-  /** Requests stay with the desk that started them, even while waiting for a token. */
-  private viewGeneration = 0;
+  private viewGeneration = 0; // Requests stay with the desk that started them, even while waiting for a token.
+  private intentKeys = new SharedIntentKeys();
   /** Polls started before a grant must not replace the newly opened view. */
   private grantGeneration = 0;
   private needsRefresh = false;
@@ -1354,11 +1355,14 @@ export class SharedWorkspaceClient {
     if (requestingRole && this.view.status === "no-role") return true;
     return !!this.view.snapshot && ["ready", "saving"].includes(this.view.status);
   }
+  private keyedRequest(path: string, d: Record<string, unknown>) {
+    return this.intentKeys.send([this.viewGeneration, path], d, this.options.commandId, (b) => this.request(path, b));
+  }
   /** A change on an access route: done, a fresh sign-in first, or the server's reason. */
-  private async change(path: string, body: Record<string, unknown>): Promise<SharedChangeResult> {
+  private async change(path: string, body: Record<string, unknown>, keyed = false): Promise<SharedChangeResult> {
     if (!this.accessChangeAllowed(path === "/v1/workspace/access/request"))
       return "Shared access changes are unavailable. Reconnect and finish checking any uncertain save first.";
-    const { response, value } = await this.request(path, body);
+    const { response, value } = await (keyed ? this.keyedRequest(path, body) : this.request(path, body));
     if (response.ok) return null;
     if (response.status === 401 && value?.code === "step-up") return "step-up";
     if (response.status >= 500) throw new Error("Change not confirmed");
@@ -1398,19 +1402,15 @@ export class SharedWorkspaceClient {
     return Array.isArray(value.covers) ? value.covers : [];
   }
   grantAccess(input: { actorId: string; role: string; scope: unknown; expiresInMinutes: number }) {
-    return this.change("/v1/workspace/access/grant", {
-      actorId: input.actorId,
-      role: input.role,
-      scope: input.scope,
-      expiresInMinutes: input.expiresInMinutes,
-    });
+    const { actorId, role, scope, expiresInMinutes } = input;
+    return this.change("/v1/workspace/access/grant", { actorId, role, scope, expiresInMinutes });
   }
   /** Removes a role, or ends cover early (its giver may too). */
   revokeAccess(membershipId: string) {
     return this.change("/v1/workspace/access/revoke", { membershipId });
   }
   giveCover(input: { actorId: string; scope: unknown; minutes: number; reason: string }) {
-    return this.change("/v1/workspace/access/cover", input);
+    return this.change("/v1/workspace/access/cover", input, true);
   }
   decideRequest(requestId: string, decision: "approved" | "declined", expiresInMinutes: number) {
     return this.change("/v1/workspace/access/decide", { requestId, decision, expiresInMinutes });
@@ -1422,7 +1422,7 @@ export class SharedWorkspaceClient {
       return "Opening records is unavailable. Reconnect and finish checking any uncertain save first.";
     const generation = this.viewGeneration;
     const grantGeneration = this.grantGeneration;
-    const { response, value } = await this.request("/v1/workspace/break-glass", { patientId, reason });
+    const { response, value } = await this.keyedRequest("/v1/workspace/break-glass", { patientId, reason });
     if (generation !== this.viewGeneration) return "The working view changed; open the record again.";
     if (response.ok) {
       this.grantGeneration += 1;

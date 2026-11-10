@@ -167,6 +167,7 @@ describe("audit remaining authority and concurrency fixes (27 Oct 2026)", () => 
       now: NOW_ANCHOR,
       movementId,
       unitId: unit.id,
+      actingUnitId: unit.id,
     });
 
     // Step 3: Pull
@@ -176,6 +177,7 @@ describe("audit remaining authority and concurrency fixes (27 Oct 2026)", () => 
       now: NOW_ANCHOR,
       movementId,
       unitId: unit.id,
+      actingUnitId: unit.id,
     });
 
     const pulledAdmission = state.admissions.find((a) => a.movementId === movementId);
