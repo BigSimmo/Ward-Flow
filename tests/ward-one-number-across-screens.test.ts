@@ -388,9 +388,7 @@ describe("a failed or partial ward source never reads as 0% in use (audit M6)", 
    * Beds ready, waiting in ED and the other counts read 0 with no wards or no movements, the same as
    * a real "none". The snapshot carries no per-collection "incomplete" mark to tell them apart, so a
    * screen cannot say "unknown" without one. Adding that mark to the server contract and choosing the
-   * words is a product decision for Josh, not a wording fix.
+   * words is a product decision for Josh, not a wording fix (open question in the M6 audit; no
+   * `it.todo` here, because this file is a protected safety test, D-123 item 3).
    */
-  it.todo(
-    "M6: a partial snapshot (a collection the server could not read) marks beds ready and ED waiting as unknown on every screen",
-  );
 });
