@@ -41,9 +41,10 @@ owns._
 
 2. Open the address it prints in Chrome or Edge, 1440 px wide or wider, 100% zoom. Use one tab for
    the whole demo. If the **Welcome to Ward Flow** cards appear, press **Not now**.
-3. In the header, press the **Board time** clock. **Tools** opens at **Scenario and clock**. Press
-   **Reset demo**, then **Reset demo** again in the "Reset the demo?" box. The scenario is
-   **Standard day**. The demo clock starts at **10:42**. Press **Esc**.
+3. In the header, press the **Board time** clock. **Tools** opens at **Scenario and clock**. Check the
+   scenario is **Standard day**, and pick it first if it is not: Reset demo reloads whichever
+   scenario is loaded. Press **Reset demo**, then **Reset demo** again in the "Reset the demo?" box.
+   The demo clock keeps the current Perth time, so say the time you see. Press **Esc**.
 4. Check the page footer reads "Synthetic prototype" and ends "… synthetic demonstration figures ·
    Not approved for clinical use".
 5. Rehearse once from start to finish, then **Reset demo** again.
@@ -95,7 +96,7 @@ adult, Older adult, Youth).
 
 **Say:**
 
-> "It's mid-morning. This is the statewide picture a bed coordinator would bring to the bed meeting.
+> "This is the statewide picture a bed coordinator would bring to the bed meeting.
 > Everything you'll see today is synthetic: invented patients and figures, under real hospital
 > names so the map is familiar.
 >
