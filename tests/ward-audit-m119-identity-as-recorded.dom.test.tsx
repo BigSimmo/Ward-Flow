@@ -29,9 +29,8 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  *   - the patient record's Details tab (`PatientDetailsTab`);
  *   - the search record preview, for a person and for their movement (`RecordPreview`).
  *
- * Open PR #1591 (held) changes the identity tag display, so this file changes no display. Where a
- * surface shows words that differ from the record, the case is an `it.todo` DEFECT, and a probe pins
- * today's words so the change #1591 makes is noticed here.
+ * PR #1591 (D-123) fixed the search record preview's identity tag: it now shows the answer as
+ * recorded, and nothing for "Neither" or "Not stated". The tests below pin that.
  */
 
 afterEach(cleanup);
@@ -100,27 +99,30 @@ describe("M119: the interpreter tag reads the recorded words", () => {
   });
 });
 
-describe("M119: the search record preview (probes; display held for PR #1591)", () => {
-  /** Today's words: any recorded answer, including "Neither" and "Not stated", shows the same pill. */
+describe("M119: the search record preview shows the identity as recorded (fixed by #1591, D-123)", () => {
+  const LABELS: Record<string, string | null> = {
+    "Aboriginal, not Torres Strait Islander": "Aboriginal",
+    "Torres Strait Islander, not Aboriginal": "Torres Strait Islander",
+    "Aboriginal and Torres Strait Islander": "Aboriginal and Torres Strait Islander",
+    "Neither Aboriginal nor Torres Strait Islander": null,
+    "Not stated": null,
+  };
   for (const kind of ["person", "movement"] as const) {
     for (const status of ABORIGINAL_OR_TORRES_STRAIT_ISLANDER_STATUSES) {
-      it(`probe (${kind}): "${status}" shows the "Aboriginal (ATSI)" pill today`, () => {
+      it(`${kind}: "${status}" shows ${LABELS[status] ? `"${LABELS[status]}"` : "no identity tag"}, never "Aboriginal (ATSI)"`, () => {
         const pane = preview(person({ aboriginalOrTorresStraitIslanderStatus: status }), kind);
-        expect(pane.getByText("Aboriginal (ATSI)")).toBeInTheDocument();
-        expect(pane.queryByText(status)).not.toBeInTheDocument();
+        expect(pane.queryByText("Aboriginal (ATSI)")).not.toBeInTheDocument();
+        const label = LABELS[status];
+        if (label) expect(pane.getByText(label)).toBeInTheDocument();
+        else expect(pane.queryByText(/\bATSI\b|^Aboriginal$|^Torres Strait Islander$/u)).not.toBeInTheDocument();
       });
     }
-    it(`probe (${kind}): no recorded answer shows no pill`, () => {
+    it(`${kind}: no recorded answer shows no identity tag`, () => {
       const pane = preview(person({ aboriginalOrTorresStraitIslanderStatus: undefined }), kind);
       expect(pane.queryByText("Aboriginal (ATSI)")).not.toBeInTheDocument();
     });
   }
 
-  for (const status of ABORIGINAL_OR_TORRES_STRAIT_ISLANDER_STATUSES) {
-    it.todo(
-      `M119 defect: the search record preview shows "Aboriginal (ATSI)" for "${status}"; it should show the recorded answer or nothing (record-preview.tsx, person and movement views; PR #1591 owns the fix)`,
-    );
-  }
   it.todo(
     "M119 gap: the search record preview shows sex only ('Sex unrecorded' when absent), never the recorded gender; Josh to say whether gender belongs there",
   );

@@ -120,7 +120,7 @@ describe("M46 the other outbound channels each keep a name-marker test", () => {
     {
       channel: "one-person chronology CSV (M46, D-102)",
       file: "tests/ward-audit-24-7-print-notify.dom.test.tsx",
-      mustContain: /the file names the person by UMRN only, never by name/,
+      mustContain: /whose chronology it is by UMRN, never by the synthetic name/,
     },
     {
       channel: "phone alert payload (M21)",

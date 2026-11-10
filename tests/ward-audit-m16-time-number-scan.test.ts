@@ -320,8 +320,8 @@ const ALLOWED: readonly Allowed[] = [
   {
     file: "ward-operational-defaults.ts",
     expr: "12 * MINUTES_PER_HOUR",
-    n: 3,
-    why: "chart span, a Settings range bound and the forecast lead (each on the not-clinical list)",
+    n: 2,
+    why: "chart span and a Settings range bound (each on the not-clinical list); the forecast lead now reads ward-clinical-values.ts (D-122)",
   },
   { file: "ward-operational-defaults.ts", expr: "15 * MINUTES_PER_HOUR", n: 2, why: "synthetic shift times (15:00)" },
   {
