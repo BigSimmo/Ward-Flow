@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { readWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
-import { lookedThisShift } from "@/components/ward-management/coordinator/shift-first-look";
+import { lookedThisShift } from "@/components/ward-management/shift-first-look";
 import type { Instant } from "@/components/ward-management/ward-clock";
 
 import type { HandoverDigestInput } from "./handover-digest-model";
 import type { HandoverScope } from "./handover-scope";
 import { handoverSinceItems } from "./handover-since-items";
-import { nightMovementChanges } from "@/components/ward-management/coordinator/night-movement-changes";
+import { nightMovementChanges } from "@/components/ward-management/night-movement-changes";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 /**

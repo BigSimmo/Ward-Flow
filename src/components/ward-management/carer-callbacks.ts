@@ -5,7 +5,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 
-import { handoverDeskOf } from "./handover-desk";
+import { handoverDeskOf } from "@/components/ward-management/handover/handover-desk";
 import type { CarerCallbackRecord } from "./handover-work-events";
 import { carerCallbacksDue } from "./handover-work-model";
 

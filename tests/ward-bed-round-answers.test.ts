@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { ASK_CONFIRM_BEDS, askWardsFields } from "@/components/ward-management/alerts/ask-wards";
 import type { BroadcastAlert } from "@/components/ward-management/alerts/ward-broadcast-model";
-import { bedRoundAnswers, notConfirmedOnly } from "@/components/ward-management/bed-meeting/bed-round-answers";
+import { bedRoundAnswers, notConfirmedOnly } from "@/components/ward-management/bed-round-answers";
 import { byServiceThenName } from "@/components/ward-management/ward-derivations-shortlist";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Unit } from "@/components/ward-management/ward-model";

@@ -17,8 +17,8 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { useSinceLastLook } from "./since-last-look-panel";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
-import { shiftLookWindowStart } from "./shift-first-look";
-import { nightMovementChanges, type NightMovementChange } from "./night-movement-changes";
+import { shiftLookWindowStart } from "@/components/ward-management/shift-first-look";
+import { nightMovementChanges, type NightMovementChange } from "@/components/ward-management/night-movement-changes";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import type { Admission } from "@/components/ward-management/ward-admissions";

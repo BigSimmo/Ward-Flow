@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { PhoneCall } from "lucide-react";
 
-import { Button, Field, Icon, TIME_FIELD_ERROR, TimeField } from "@/components/wf";
+import { Button, Field, Icon, StateLine, TIME_FIELD_ERROR, TimeField } from "@/components/wf";
 import { useEffectiveWardAccess, useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
 import { formatInstantWithDay, minuteOfDayFromClockText } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlowSelect, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -11,7 +11,7 @@ import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 
-import { handoverDeskOf } from "./handover-desk";
+import { handoverDeskOf } from "@/components/ward-management/handover/handover-desk";
 import { nextClockInstant, openCarerCallbackFor } from "./handover-work-model";
 import styles from "./carer-callback-card.module.css";
 
@@ -121,11 +121,7 @@ export function CarerCallbackCard({ admissionId, movementId }: { admissionId?: s
             <TimeField value={time} onValueChange={setTime} data-testid="ward-carer-callback-time" />
           </Field>
           <p className={styles.note}>Only the time is kept. Do not add the carer&apos;s name or number.</p>
-          {save.error ? (
-            <p className={styles.error} role="alert">
-              {save.error}
-            </p>
-          ) : null}
+          {save.error ? <StateLine kind="error" compact title={save.error} /> : null}
           <span className={styles.actions}>
             <Button
               variant="ghost"

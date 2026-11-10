@@ -18,15 +18,15 @@ import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles"
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 
-import { handoverDeskOf } from "./handover-desk";
-import type { HandedItemRecord, HandedItemRef, WorkDesk } from "./handover-work-events";
+import { handoverDeskOf } from "@/components/ward-management/handover/handover-desk";
+import type { HandedItemRecord, HandedItemRef, WorkDesk } from "@/components/ward-management/handover-work-events";
 import {
   HANDOVER_OWN_WORK_LEAD_MINUTES,
   handOverTargets,
   incomingHandOvers,
   ownWorkItems,
   ownWorkListOpen,
-} from "./handover-work-model";
+} from "@/components/ward-management/handover-work-model";
 import styles from "./handover-own-work.module.css";
 
 /** The desks that can own handed work (`EVENT_ROLE.HAND_OVER_ITEM`). */

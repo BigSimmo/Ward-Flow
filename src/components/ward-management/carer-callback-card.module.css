@@ -53,9 +53,3 @@
   font: 400 var(--wf-fs-12) / 16px var(--wf-font);
   color: var(--wf-ink-3);
 }
-
-.error {
-  margin: 0;
-  font: 400 var(--wf-fs-12) / 16px var(--wf-font);
-  color: var(--wf-danger-ink, var(--wf-danger));
-}

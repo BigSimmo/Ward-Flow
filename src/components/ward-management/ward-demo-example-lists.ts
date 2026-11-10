@@ -28,7 +28,7 @@ import { completeSyntheticReferralIntake } from "./ward-referral-intake-seed";
 import { wardReferralInboxEntries } from "./referrals/referral-inbox";
 import { currentShiftStartInstant } from "./ward-board-time-features";
 import type { StaffRequestRecord } from "./staffing/staff-requests";
-import { seededHandoverWork } from "./handover/handover-work-demo";
+import { seededHandoverWork } from "@/components/ward-management/handover-work-demo";
 import type { WardIncident, WardIncidentCategory } from "./restrictive-practice/ward-restrictive-practice";
 
 const FAMILY = [

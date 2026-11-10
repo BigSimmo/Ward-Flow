@@ -8,7 +8,7 @@ import { formatInstantWithDay } from "../ward-clock";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import type { HealthService } from "../ward-model-vocabulary";
 import { unitHealthService } from "../ward-service-scope";
-import { bedRoundAnswers, notConfirmedOnly } from "./bed-round-answers";
+import { bedRoundAnswers, notConfirmedOnly } from "@/components/ward-management/bed-round-answers";
 import styles from "./bed-meeting-agenda.module.css";
 
 /** Wards shown before "Show N more" (DESIGN-SYSTEM section 4 folds at about eight). */

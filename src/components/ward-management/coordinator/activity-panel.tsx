@@ -39,7 +39,7 @@ import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 
 import { CHANGE_GROUPS, type ChangeLine, changesHandoverText, useExplicitReview } from "./activity-changes";
-import { shiftLookLabel } from "./shift-first-look";
+import { shiftLookLabel } from "@/components/ward-management/shift-first-look";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import styles from "./home-activity.module.css";
 

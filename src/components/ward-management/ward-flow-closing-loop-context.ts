@@ -4,7 +4,7 @@ import type { ReturnEarlyFlagRecord, ReturnEarlyNotice } from "./out-of-area/ret
 import type { SiteHandoverSignOffRecord } from "./site-sign-off/site-handover-sign-off";
 import type { TriageSignedRecord } from "./triage/triage-record";
 import type { StaffRequestRecord } from "./staffing/staff-requests";
-import type { CarerCallbackRecord, HandedItemRecord } from "./handover/handover-work-events";
+import type { CarerCallbackRecord, HandedItemRecord } from "@/components/ward-management/handover-work-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 
 /**

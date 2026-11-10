@@ -92,7 +92,9 @@ const PatientDocumentsTab = dynamic(() => loadDocumentsTab().then((m) => m.Patie
 // Triage and risk (built 7 Nov 2026): the signed triages and the Triage action, on Now. Loaded with
 // the page's other lazy parts so the movement page's phone first load does not grow.
 const PatientTriageCard = dynamic(() => import("../triage/patient-triage-card").then((m) => m.PatientTriageCard));
-const CarerCallbackCard = dynamic(() => import("../handover/carer-callback-card").then((m) => m.CarerCallbackCard));
+const CarerCallbackCard = dynamic(() =>
+  import("@/components/ward-management/carer-callback-card").then((m) => m.CarerCallbackCard),
+);
 preloadWhenIdle(
   loadTransitOperations,
   loadUploadForms,

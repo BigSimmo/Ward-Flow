@@ -1,8 +1,8 @@
-import { ASK_CONFIRM_BEDS } from "../alerts/ask-wards";
-import type { BroadcastAlert } from "../alerts/ward-broadcast-model";
-import type { Instant } from "../ward-clock";
-import { byServiceThenName } from "../ward-derivations-shortlist";
-import type { Unit } from "../ward-model";
+import { ASK_CONFIRM_BEDS } from "@/components/ward-management/alerts/ask-wards";
+import type { BroadcastAlert } from "@/components/ward-management/alerts/ward-broadcast-model";
+import type { Instant } from "@/components/ward-management/ward-clock";
+import { byServiceThenName } from "@/components/ward-management/ward-derivations-shortlist";
+import type { Unit } from "@/components/ward-management/ward-model";
 
 /**
  * Bed round answers on the agenda (feature build plan batch 3, item 12; D-136 item 3). Each ward

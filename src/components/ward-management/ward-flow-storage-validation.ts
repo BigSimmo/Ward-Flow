@@ -92,7 +92,7 @@ import { isObservation, type Observation } from "./ward-observation";
 import { isTentativeDiagnosisBlock } from "./ward-diagnosis";
 import { isCommunityReferralPurpose } from "./ward-model-referral-parts";
 import { storedStaffRequests } from "./staffing/staff-requests-schema";
-import { storedCarerCallbacks, storedHandedItems } from "./handover/handover-work-schema";
+import { storedCarerCallbacks, storedHandedItems } from "@/components/ward-management/handover-work-schema";
 
 // D-72: numbered device-copy stand-ins keep typed criteria distinct.
 export function typedCriterionNotKept(n: number): string {

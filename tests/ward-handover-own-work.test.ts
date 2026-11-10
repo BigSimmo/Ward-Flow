@@ -5,11 +5,7 @@
 // Synthetic data only.
 import { describe, expect, it } from "vitest";
 
-import type {
-  HandedItemRef,
-  HandoverWorkEvent,
-  WorkDesk,
-} from "@/components/ward-management/handover/handover-work-events";
+import type { HandedItemRef, HandoverWorkEvent, WorkDesk } from "@/components/ward-management/handover-work-events";
 import {
   HANDOVER_OWN_WORK_LEAD_MINUTES,
   carerCallbacksDue,
@@ -19,7 +15,7 @@ import {
   ownWorkItems,
   ownWorkListOpen,
   pendingHandOver,
-} from "@/components/ward-management/handover/handover-work-model";
+} from "@/components/ward-management/handover-work-model";
 import { promisesHeroAct } from "@/components/ward-management/handover/handover-open-promises";
 import {
   currentReferralOwner,

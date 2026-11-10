@@ -27,8 +27,8 @@ import type { Movement, Referral, Unit } from "@/components/ward-management/ward
 import { openStaffRequests, type StaffRequestRecord } from "@/components/ward-management/staffing/staff-requests";
 import { durMinutes } from "@/components/wf";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
-import { previousShiftStartInstant } from "@/components/ward-management/coordinator/shift-first-look";
-import type { NightMovementChange } from "@/components/ward-management/coordinator/night-movement-changes";
+import { previousShiftStartInstant } from "@/components/ward-management/shift-first-look";
+import type { NightMovementChange } from "@/components/ward-management/night-movement-changes";
 
 import { openPromiseCounts, promiseChaseTimes } from "./handover-open-promises";
 import type { HandoverPill } from "./handover-model";

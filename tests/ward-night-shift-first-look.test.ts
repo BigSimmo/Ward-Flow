@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { changesSinceInstant } from "@/components/ward-management/coordinator/since-last-look";
-import { nightMovementChanges } from "@/components/ward-management/coordinator/night-movement-changes";
+import { nightMovementChanges } from "@/components/ward-management/night-movement-changes";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
   previousShiftStartInstant,
   shiftLookLabel,
   shiftLookWindowStart,
-} from "@/components/ward-management/coordinator/shift-first-look";
+} from "@/components/ward-management/shift-first-look";
 import { buildHandoverDigest, handoverDigestText } from "@/components/ward-management/handover/handover-digest-model";
 import { toHandoverRow } from "@/components/ward-management/handover/handover-model";
 import { handoverSinceItems } from "@/components/ward-management/handover/handover-since-items";

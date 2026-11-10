@@ -1,6 +1,6 @@
 import type { WardFlowEvent } from "./ward-flow-events";
 import { PATIENT_RECORD_UNDO_TYPES, undoStepSubjectId } from "./ward-undo";
-import type { HandedItemRef } from "./handover/handover-work-events";
+import type { HandedItemRef } from "@/components/ward-management/handover-work-events";
 
 /** A hand-over's item id; a malformed item (from the wire) files against nothing rather than throwing. */
 function handedItemSubjectId(item: HandedItemRef | undefined): string {

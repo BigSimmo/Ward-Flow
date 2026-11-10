@@ -20,10 +20,10 @@ import { useWardAccessSnapshot } from "@/components/ward-management/shell/ward-a
 import { ChevronRight, PhoneCall } from "lucide-react";
 import { Button, FormalName, Icon, StatusGlyph, type HeroActProps } from "@/components/wf";
 
-import { useCarerCallbacksDue } from "./carer-callbacks";
-import { HandoverOwnWork } from "./handover-own-work";
+import { useCarerCallbacksDue } from "@/components/ward-management/carer-callbacks";
+import { HandoverOwnWork } from "@/components/ward-management/handover-own-work";
 
-export { useCarerCallbacksDue as useCarerDue } from "./carer-callbacks";
+export { useCarerCallbacksDue as useCarerDue } from "@/components/ward-management/carer-callbacks";
 import styles from "./handover-open-promises.module.css";
 
 /** "1 carer call back", "2 carer call backs". */
