@@ -1603,3 +1603,15 @@ is inferred.
   8. **Accessibility:** moderate accessibility findings stay non-blocking; serious and critical still block.
   9. **New features:** none from the proposed list until #1564 to #1577 close.
 - **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge or release.
+
+## D-134. Ward arrival and beds batch: how to hold, advocate line, night list and the feature freeze (10 November 2026)
+
+- **Date:** 10 November 2026, about 1:02 AM to 1:08 AM AWST on 11 November (17:02 to 17:08 UTC on 10 November). **Decided by:** Josh, on two decision cards in the Ward Flow project thread "Build ward arrival and bed features", then "Yes to all recommendations please" to the thread's numbered questions. Numbered D-134 because D-128 to D-133 are claimed by PRs #1594, #1598, #1599 and the ED and referral flow batch.
+- **Decision:**
+  1. **Held split:** items 6 (bed closure review time), 7 (plan staffing for an arrival), 13 (overnight intake window) and 18 (left the ward, waiting for transport) go in one PR that may merge once green. Items 4 (young person on an adult ward) and 15 (interpreter, Aboriginal liaison and advocate lines at arrival) go in a second PR with the `hold` label until Josh signs them off.
+  2. **Advocate line (item 15):** "Mental Health Advocacy Service told" shows on the arrival checklist for every patient the app already treats as detained, the same group the existing support and advocacy notification checklist covers, and reuses that record.
+  3. **Item 4:** nothing is built until Josh gives the legal duty and the exact notice wording.
+  4. **Night list (item 13):** a "Tonight's intake windows" card on the Capacity page, beside "Closed beds past review", in the neutral service-then-name order (D-126).
+  5. **Feature freeze:** Josh's instruction to begin the feature batches replaces D-128 item 9 for the 27 items he chose on 10 November. Other features stay frozen until #1564 to #1577 close.
+  6. **Design review first:** Josh approves the batch's design review page before its PR is opened (D-74, D-107).
+- **Boundary:** synthetic data only. Information and prompts only: nothing ranks or recommends a ward or bed (D-71), and no clinical value changes. Approves no merge or release.
