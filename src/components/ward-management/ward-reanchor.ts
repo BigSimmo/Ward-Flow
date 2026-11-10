@@ -218,6 +218,8 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   // WS-15: when a closed bed was reopened. The mark keeps it so a stay seated during the closure
   // stays put.
   "reopenedAt",
+  // Item 6: when to look at a closed bed again, a prompt only.
+  "reviewAt",
 ]);
 
 /**

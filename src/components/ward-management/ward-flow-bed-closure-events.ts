@@ -1,6 +1,6 @@
 import type { AuditDecision } from "./ward-audit";
 import { bedIsOccupied } from "./ward-admissions";
-import { WARD_CLOSURE_REASON_IDS } from "./capacity/ward-closure";
+import { WARD_CLOSURE_REASON_IDS, WARD_REOPEN_AFTER_HOURS } from "./capacity/ward-closure";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { findUnit, heldBedRefusal, reject, replaceUnit, WardFlowState } from "./ward-flow-reducer";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
@@ -73,6 +73,7 @@ export function reduceBedClosureEvent(
 
       if (!event.closed) {
         if (event.reason !== undefined) return reject(state, event, "Reopening a bed takes no reason");
+        if (event.reviewAt !== undefined) return reject(state, event, "Reopening a bed takes no review time");
         if (!isMarked) return reject(state, event, `Bed ${event.bedNumber} on ${unit.name} is not closed`);
         decision.outcome = "accepted";
         decision.reasonCode = "none";
@@ -94,6 +95,14 @@ export function reduceBedClosureEvent(
       if (event.reason !== undefined && !WARD_CLOSURE_REASON_IDS.includes(event.reason)) {
         return reject(state, event, "SET_BED_CLOSED reason must be chosen from WARD_CLOSURE_REASONS");
       }
+      // Item 6: validated as a whole ward's expected reopening (`until`), capped at the longest
+      // listed choice since the clock can tick between showing the choices and the tap.
+      if (event.reviewAt !== undefined && !(typeof event.reviewAt === "number" && event.reviewAt > event.now)) {
+        return reject(state, event, "The review time must be later than now");
+      }
+      if (event.reviewAt !== undefined && event.reviewAt - event.now > Math.max(...WARD_REOPEN_AFTER_HOURS) * 60) {
+        return reject(state, event, "The review time must be within the listed choices");
+      }
       if (bedsWithAStay(state, unit).has(event.bedNumber)) {
         return reject(state, event, `Bed ${event.bedNumber} on ${unit.name} has someone in it, so it cannot be closed`);
       }
@@ -113,6 +122,7 @@ export function reduceBedClosureEvent(
             at: event.now,
             by: WARD_FLOW_ROLE_LABELS[event.role],
             ...(event.reason !== undefined ? { reason: event.reason } : {}),
+            ...(event.reviewAt !== undefined ? { reviewAt: event.reviewAt } : {}),
           },
         ],
       };

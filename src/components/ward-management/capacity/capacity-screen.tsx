@@ -34,6 +34,7 @@ import { bedMeetingSheet } from "./bed-meeting-derivations";
 import { BedForecast } from "./capacity-bed-forecast";
 import { BedMapCards, BedMapHighlights, type Highlight } from "./capacity-bed-map-cards";
 import { ComingIn } from "./capacity-coming-in";
+import { ClosedBedsPastReview } from "./capacity-closed-beds-review";
 import { CapacityHero } from "./capacity-hero";
 import { useCapacityModel, type CapacityModel } from "./capacity-model";
 import { OtherSitesCounts } from "./capacity-other-sites";
@@ -329,6 +330,12 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
                 one card, full width. Josh's fifth notes (8 Nov 2026): the row under it is gone; the
                 shift figures are in the hero and an unchanged count on its ward card. */}
             {planned}
+            {/* Item 6 (10 Nov 2026): beds closed past their review time; hidden when there are none. */}
+            <ClosedBedsPastReview
+              units={mapModel.networkRows.map((row) => row.unit)}
+              now={mapModel.now}
+              executive={executive}
+            />
           </>
         )}
         <WardPrototypeFooter
