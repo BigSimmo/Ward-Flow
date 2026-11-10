@@ -10,12 +10,44 @@ import { plural } from "./ward-plural";
 
 // Rows confirmed but still inside their Undo window. Held outside the component so closing and
 // reopening the drawer inside the window keeps them pending (Josh, 27 Oct 2026, 10:41 PM AWST).
-type DeferredBatch = { ids: readonly string[]; isCurrent: () => boolean };
+// `end` closes the batch's Undo toast, which records it through the toast's own `onExpire`.
+type DeferredBatch = { ids: readonly string[]; isCurrent: () => boolean; end?: () => void };
 const heldBatches = new Map<symbol, DeferredBatch>();
 let heldRows: ReadonlySet<string> = new Set();
 const heldListeners = new Set<() => void>();
 function publishHeld() {
+  syncLeaveFlush();
   heldListeners.forEach((listener) => listener());
+}
+
+/**
+ * Audit M8: a held batch lived only in this tab, so closing, reloading or leaving the page inside
+ * the Undo window lost confirmed acknowledgements without a word. Leaving now ends the window
+ * early and records them, and `beforeunload` also asks the browser to warn while that save goes.
+ * Undo itself is unchanged while the page stays open, including while the tab is hidden.
+ */
+function flushHeldOnLeave(event: Event) {
+  let flushed = false;
+  for (const batch of [...heldBatches.values()]) {
+    if (!batch.end || !batch.isCurrent()) continue;
+    batch.end();
+    flushed = true;
+  }
+  if (flushed && event.type === "beforeunload") {
+    event.preventDefault();
+    (event as BeforeUnloadEvent).returnValue = "";
+  }
+}
+let leaveFlushListening = false;
+function syncLeaveFlush() {
+  if (typeof window === "undefined") return;
+  const needed = heldBatches.size > 0;
+  if (needed === leaveFlushListening) return;
+  leaveFlushListening = needed;
+  for (const type of ["beforeunload", "pagehide"] as const) {
+    if (needed) window.addEventListener(type, flushHeldOnLeave);
+    else window.removeEventListener(type, flushHeldOnLeave);
+  }
 }
 function subscribeHeld(listener: () => void) {
   heldListeners.add(listener);
@@ -70,7 +102,7 @@ export function AcknowledgeVisibleButton({
     const batchId = Symbol("acknowledgements");
     heldBatches.set(batchId, batch);
     publishHeld();
-    toast.push({
+    const toastId = toast.push({
       tone: "success",
       title: `${plural(batch.ids.length, "alert", "alerts")} acknowledged.`,
       undo: {
@@ -82,6 +114,7 @@ export function AcknowledgeVisibleButton({
         },
       },
     });
+    if (heldBatches.has(batchId)) heldBatches.set(batchId, { ...batch, end: () => toast.dismiss(toastId) });
   }
 
   if (offered.length === 0 && !asking) return null;

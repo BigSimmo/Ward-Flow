@@ -126,3 +126,64 @@ describe("Acknowledge visible says one alert in the singular (CL-7, 5 Nov 2026)"
     expect(screen.getByText("1 alert acknowledged.")).toBeTruthy();
   });
 });
+
+/**
+ * Audit M8, silent data loss: the batch waits in this tab for its Undo window, so leaving the page
+ * inside the window used to lose it. Leaving now records it at once, and a close or reload also
+ * asks the browser to warn while that save goes. Undo is unchanged while the page stays open.
+ */
+describe("Acknowledge visible records a held batch when the page is left inside the Undo window (audit M8)", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  function confirmBatch() {
+    const { dispatch, button, n } = renderDrawer();
+    fireEvent.click(button);
+    fireEvent.click(screen.getByRole("button", { name: `Acknowledge ${n}` }));
+    expect(acks(dispatch)).toHaveLength(0);
+    return { dispatch, n };
+  }
+
+  it("a tab close or reload records the batch at once and asks the browser to warn", () => {
+    const { dispatch, n } = confirmBatch();
+    const unload = new Event("beforeunload", { cancelable: true });
+    act(() => {
+      window.dispatchEvent(unload);
+    });
+    expect(acks(dispatch)).toHaveLength(n);
+    expect(unload.defaultPrevented).toBe(true);
+    expect(screen.queryByText(`${n} alerts acknowledged.`)).toBeNull();
+    // The window ending later records nothing twice, and a second leave has nothing to warn about.
+    act(() => vi.advanceTimersByTime(UNDO_TOAST_MS * 2));
+    expect(acks(dispatch)).toHaveLength(n);
+    const again = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(again);
+    expect(again.defaultPrevented).toBe(false);
+  });
+
+  it("pagehide (a phone closing the tab, or navigating away) records the batch at once", () => {
+    const { dispatch, n } = confirmBatch();
+    act(() => {
+      window.dispatchEvent(new Event("pagehide"));
+    });
+    expect(acks(dispatch)).toHaveLength(n);
+  });
+
+  it("Undo before leaving still records nothing, and leaving then does not warn", () => {
+    const { dispatch } = confirmBatch();
+    fireEvent.click(screen.getByRole("button", { name: /^Undo/ }));
+    const unload = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(unload);
+    window.dispatchEvent(new Event("pagehide"));
+    expect(acks(dispatch)).toHaveLength(0);
+    expect(unload.defaultPrevented).toBe(false);
+  });
+
+  /*
+   * Sign-out and role switch inside the window still drop the batch: `isCurrent()` turns false and
+   * the shared client disconnects in the same click, so a flush there would only queue a save the
+   * sign-out then clears. Recording it needs sign-out to wait for that save (or ask, as it does for
+   * other waiting changes): a sequencing change in `use-ward-supabase-shared.ts`, left for Josh.
+   */
+  it.todo("M8: Sign out or Switch role inside the Undo window records the held batch first, or asks");
+});
