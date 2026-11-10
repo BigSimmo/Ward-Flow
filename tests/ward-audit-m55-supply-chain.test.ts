@@ -54,14 +54,16 @@ describe("M55 workflows pin actions and declare permissions", () => {
   });
 });
 
-// Filled from the workflows as they stood when this test was written.
+// Filled from the workflows as they stood when this test was written; the budget recheck job was
+// deleted by D-124 item 6.
 const REVIEWED_WRITE_SCOPES: Record<string, string[]> = {
   "backend-uptime.yml": ["issues"],
+  // CodeQL uploads its results (added on main).
+  "codeql.yml": ["security-events"],
   "daily-release.yml": ["contents"],
   "docs-freshness.yml": ["issues"],
   "release-tag.yml": ["contents"],
   "ward-flow-budget-heal.yml": ["issues"],
-  "ward-flow-budget-recheck.yml": ["actions"],
   "ward-flow-ci-tidy.yml": ["actions"],
   "ward-flow-nightly-browsers.yml": ["issues"],
   "workflow-keepalive.yml": ["actions"],

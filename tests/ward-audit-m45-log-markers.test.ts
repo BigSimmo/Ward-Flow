@@ -50,7 +50,8 @@ describe("M45 server logger", () => {
     // The logger redacts by key and by record-number shape, so a name under a neutral key such as
     // `label` would pass. Every call site is therefore reviewed: adding one fails this test until
     // it is checked to pass closed fields only and added here.
-    const reviewed = new Set(["src/instrumentation.ts"]);
+    // client-error-receiver.ts (TE-04) logs only the error type, route template, release and role.
+    const reviewed = new Set(["src/instrumentation.ts", "src/lib/client-error-receiver.ts"]);
     const root = path.resolve(__dirname, "..");
     const found: string[] = [];
     const walk = (dir: string) => {
