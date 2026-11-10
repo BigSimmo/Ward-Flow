@@ -290,7 +290,8 @@
  * values (spec section 3). Components switch to these inside `.hero` through src/components/wf.
  */
 :root {
-  --wf-hero-danger: #e27a68;
+  /* Lifted from #e27a68 (10 Nov 2026) so 18px red figures keep 4.5:1 on the slate (#21374b: 4.7:1). */
+  --wf-hero-danger: #e88573;
   --wf-hero-warning: #d9a441;
   --wf-hero-success: #4cb383;
   --wf-hero-info: #7fa3c8;

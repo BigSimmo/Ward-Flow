@@ -1122,6 +1122,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
         <main id="main-content" className={styles.phoneMain}>
           <PhoneHero
             level={1}
+            opensPage
             data-testid="ward-settings-profile"
             title={
               <span className={styles.phoneWho}>

@@ -31,6 +31,7 @@ import {
   type HeroChipItem,
 } from "@/components/wf";
 import topTitle from "@/components/ward-management/shell/page-top-title.module.css";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import ward from "@/components/ward-management/ward/ward.module.css";
 import type { CommunityTeamSection } from "../community-screen-hero";
 import { DEMO_FIGURES as f } from "./midland-demo";
@@ -45,8 +46,31 @@ const SECTIONS: { id: CommunityTeamSection; label: string }[] = [
   { id: "clinicians", label: "Clinicians" },
 ];
 
-/** A phone shows these sections as tabs, and the one open; the rest are under More. */
+/**
+ * A phone shows three sections as tabs; the rest are under More. A section opened from More (or the
+ * Duty chip) takes the last tab's place, so the switch stays three tabs wide on a 366px phone.
+ */
 const PHONE_SECTIONS: CommunityTeamSection[] = ["home", "caseload", "hospital"];
+
+function phoneSections(section: CommunityTeamSection): CommunityTeamSection[] {
+  return PHONE_SECTIONS.includes(section) ? PHONE_SECTIONS : [...PHONE_SECTIONS.slice(0, -1), section];
+}
+
+/** Marks the act-now list on Team home (desktop and phone), for Show act now to scroll to and focus. */
+export const MIDLAND_ACT_NOW_ATTR = "data-midland-act-now";
+
+/** After Team home has drawn, bring its act-now list into view and move focus to it. */
+function revealActNow(): void {
+  if (typeof window === "undefined") return;
+  window.requestAnimationFrame(() =>
+    window.requestAnimationFrame(() => {
+      const target = document.querySelector<HTMLElement>(`[${MIDLAND_ACT_NOW_ATTR}]`);
+      if (!target) return;
+      target.scrollIntoView?.({ block: "start", behavior: wardScrollBehavior() });
+      target.focus({ preventScroll: true });
+    }),
+  );
+}
 
 export type MidlandTopProps = {
   isPhone: boolean;
@@ -142,7 +166,8 @@ export function MidlandTop({
       : []),
   ];
 
-  const shown = isPhone ? SECTIONS.filter((item) => PHONE_SECTIONS.includes(item.id) || item.id === section) : SECTIONS;
+  const phoneIds = phoneSections(section);
+  const shown = isPhone ? SECTIONS.filter((item) => phoneIds.includes(item.id)) : SECTIONS;
   const rest = SECTIONS.filter((item) => !shown.includes(item));
   const menuItems = [
     ...rest.map((item) => ({
@@ -236,7 +261,10 @@ export function MidlandTop({
               action={{
                 label: "Show act now",
                 phoneLabel: "Show",
-                onClick: () => open("home"),
+                onClick: () => {
+                  open("home");
+                  revealActNow();
+                },
                 testId: "community-top-act",
               }}
             />

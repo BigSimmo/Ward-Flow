@@ -73,19 +73,6 @@
   }
 }
 
-.notFoundHeading {
-  margin: var(--ward-space-20) 0 var(--ward-space-8);
-  color: var(--ink);
-  font-size: var(--t-3);
-}
-
-.notFoundBody {
-  max-width: 32rem;
-  margin: 0;
-  color: var(--muted);
-  line-height: var(--ward-leading-prose);
-}
-
 .notFoundAction {
   display: inline-flex;
   align-items: center;
@@ -105,39 +92,6 @@
   background: var(--surface-2, var(--ground));
 }
 
-.governanceBanner {
-  display: flex;
-  min-height: var(--ward-tap);
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ward-space-12);
-  border-bottom: 0.0625rem solid var(--ward-divider);
-  background: var(--surface-chrome);
-  padding: var(--ward-space-8) var(--ward-space-12);
-}
-
-.governanceBanner p {
-  min-width: 0;
-  flex: 1 1 12rem;
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-body);
-}
-
-.prototypeBadge {
-  flex-shrink: 0;
-  border: 0.0625rem solid var(--warning-border);
-  border-radius: var(--radius-sm);
-  background: var(--ward-warning-soft);
-  padding: var(--ward-space-2) var(--ward-space-8);
-  color: var(--ward-warning);
-  font-size: var(--t-0);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
 .unitCard {
   min-width: 0;
   border: 0.0625rem solid var(--ward-border);
@@ -152,13 +106,6 @@
   color: var(--ink);
   font-size: var(--t-3);
   font-weight: 700;
-}
-
-.unitMeta {
-  margin: 0;
-  overflow-wrap: anywhere;
-  color: var(--muted);
-  font-size: var(--t-0);
 }
 
 .sectionHeading {
@@ -286,42 +233,6 @@
   line-height: var(--ward-leading-body);
 }
 
-.capacityForm {
-  display: grid;
-  gap: var(--ward-space-6);
-  margin-top: var(--ward-space-12);
-  border-top: 0.0625rem solid var(--ward-divider);
-  padding-top: var(--ward-space-12);
-}
-
-.capacityLabel {
-  color: var(--ink);
-  font-size: var(--t-0);
-  font-weight: 700;
-}
-
-.capacityRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: var(--ward-space-8);
-}
-
-.capacityInput {
-  min-height: var(--ward-tap);
-  width: 6rem;
-  border: 0.0625rem solid var(--ward-border);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  padding: 0 var(--ward-space-10);
-  color: var(--ink);
-  font-size: var(--t-1);
-}
-
-.capacityRow select.capacityInput {
-  width: min(16rem, 100%);
-}
-
 .capacitySubmit {
   display: inline-flex;
   min-height: var(--ward-tap);
@@ -349,46 +260,10 @@
   transform: translateY(-1px);
 }
 
-.capacityConfirmed {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--t-0);
-}
-
 .placeholder {
   margin: 0;
   color: var(--muted);
   font-size: var(--t-0);
-}
-
-.cardList {
-  display: grid;
-  gap: var(--ward-space-10);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.card {
-  display: grid;
-  min-width: 0;
-  gap: var(--ward-space-6);
-  border: 0.0625rem solid var(--ward-border);
-  border-radius: var(--radius-md);
-  background: var(--surface-subtle);
-  padding: var(--ward-space-10);
-}
-
-.cardHeader {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--ward-space-8);
-}
-
-.cardHeader strong {
-  color: var(--ink);
-  font-size: var(--t-1);
 }
 
 .cardMeta {
@@ -412,36 +287,6 @@
  * `flow-diagram.tsx` — the ward is the party who would be holding the person (spec §3), so it
  * sees both, in the exact same wording. Never re-authored here.
  */
-.notice {
-  justify-self: start;
-  border: 0.0625rem solid var(--warning-border);
-  border-radius: var(--radius-sm);
-  background: var(--ward-warning-soft);
-  padding: var(--ward-space-6) var(--ward-space-8);
-  color: var(--ward-warning);
-  font-size: var(--t-0);
-  font-weight: 700;
-  line-height: var(--ward-leading-body);
-}
-
-.noticeProminent {
-  justify-self: start;
-  border: 0.0625rem solid var(--danger-border);
-  border-radius: var(--radius-sm);
-  background: var(--ward-danger-soft);
-  padding: var(--ward-space-6) var(--ward-space-8);
-  color: var(--ward-danger);
-  font-size: var(--t-0);
-  font-weight: 700;
-  line-height: var(--ward-leading-body);
-}
-
-.actionRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ward-space-8);
-}
 
 .acceptButton,
 .declineButton {
@@ -527,33 +372,6 @@
   overflow-wrap: anywhere;
   color: var(--ink);
   font-size: var(--t-0);
-}
-
-.declineSubmit {
-  display: inline-flex;
-  min-height: var(--ward-tap);
-  align-items: center;
-  justify-content: center;
-  border: 0.0625rem solid var(--clinical-accent-border);
-  border-radius: var(--radius-md);
-  background: var(--clinical-accent);
-  padding: 0 var(--ward-space-14);
-  color: var(--clinical-accent-contrast);
-  font-size: var(--t-0);
-  font-weight: 700;
-}
-
-.declineSubmit:disabled {
-  cursor: not-allowed;
-  border-color: var(--ward-border);
-  background: var(--surface-subtle);
-  color: var(--muted);
-}
-
-@media (max-width: 20rem) {
-  .capacityInput {
-    width: 100%;
-  }
 }
 
 /*
@@ -736,29 +554,6 @@
      */
     background-color: Canvas !important;
   }
-}
-
-/*
- * The cleaning count under this ward's bed grid (owner ruling 2026-09-05).
- *
- * ⚠️ **DELIBERATELY NOT THE SAME SHAPE AS `capacity.module.css`/`ed.module.css`, AND THAT IS THE
- * POINT.** On those two screens the fact sits in a table cell beside a per-ward number, where a
- * `display: block` note genuinely stacks under the figure. Here the figure lives in a 24px pill in
- * a flex row of eight, where the same treatment put the note ON THE SAME LINE as the number and
- * rendered "Ready 2" immediately followed by "1 still being made ready". Stamping one shape onto
- * both containers is what produced that; this is a sentence under the grid instead.
- */
-.beingMadeReady {
-  margin: var(--ward-space-6) 0 0;
-  max-width: var(--container-reading);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-body);
-  color: var(--ward-muted);
-}
-
-.beingMadeReady strong {
-  color: var(--ward-text);
-  font-weight: 600;
 }
 
 /*
@@ -979,7 +774,6 @@
   font-weight: 600;
 }
 
-.unitMeta,
 .cardMeta,
 .placeholder {
   color: var(--muted);
@@ -1035,47 +829,10 @@
   text-transform: none;
 }
 
-.cardList {
-  gap: 0;
-}
-
-.card {
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  border-radius: 0;
-  background: var(--surface);
-  box-shadow: none;
-}
-
-.card:last-child {
-  border-bottom: 0;
-}
-
-.governanceBanner {
-  order: 100;
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
-  color: var(--muted);
-  background: var(--surface-2);
-}
-
-.governanceBanner p,
-.prototypeBadge {
-  font-size: var(--t-0);
-}
-
-.prototypeBadge {
-  border-color: var(--warn);
-  border-radius: var(--r2);
-  color: var(--warn);
-  background: var(--warn-soft);
-}
-
 .screen[data-presentation="answer"] .main > * {
   display: none;
 }
 
-.screen[data-presentation="answer"] .main > .governanceBanner,
 .screen[data-presentation="answer"] .main > .screenName,
 .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] {
   display: block;
@@ -1085,165 +842,12 @@
   order: 2;
 }
 
-.screen[data-presentation="answer"] .governanceBanner {
-  order: 5;
-}
-
-.screen[data-presentation="answer"] .cardList {
-  display: block;
-}
-
-.screen[data-presentation="answer"] .card {
-  padding: 1rem;
-  font-size: var(--t-1);
-}
-
-.answerIdentityAbsence {
-  margin: 0;
-}
-
-.answerTier {
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r2);
-  padding: 0.125rem 0.5rem;
-  color: var(--ink-soft);
-  font-family: var(--mono);
-  font-size: var(--t-0);
-}
-
-.answerTier[data-flagged-urgent="true"] {
-  border-color: var(--danger);
-  color: var(--danger);
-  background: var(--danger-soft);
-}
-
-.answerIdentityAbsence {
-  color: var(--muted);
-  font-size: var(--t-0);
-}
-
 @media (min-width: 48.001rem) {
-  .screen[data-presentation="answer"] .actionRow {
-    justify-content: flex-start;
-  }
-
   .screen[data-presentation="answer"] .acceptButton,
   .screen[data-presentation="answer"] .declineButton {
     flex: 0 0 auto;
     min-width: 9rem;
   }
-}
-
-.answerFacts {
-  display: grid;
-  grid-template-columns: minmax(10rem, 10.5rem) minmax(0, 1fr);
-  gap: 0.375rem 1rem;
-  margin: 0.5rem 0 0;
-}
-
-.answerFacts > div {
-  display: contents;
-}
-
-.answerFacts dt,
-.answerFacts dd {
-  margin: 0;
-}
-
-.answerFacts dt {
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.answerFacts dd {
-  color: var(--ink);
-}
-
-.answerGates {
-  margin-top: 0.375rem;
-  border-top: 1px solid var(--line);
-}
-
-.answerGatesHeading {
-  display: flex;
-  min-height: 2.75rem;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.answerGatesHeading h3,
-.answerGatesHeading span {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.answerGatesHeading span {
-  font-family: var(--mono);
-  font-weight: 500;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.answerGates ul {
-  display: grid;
-  gap: 0.375rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.answerGates li {
-  display: grid;
-  grid-template-columns: 1.25rem minmax(0, 1fr) auto;
-  gap: 0.625rem;
-  align-items: start;
-  border-radius: var(--r2);
-  background: var(--surface-2);
-  padding: 0.625rem 0.75rem;
-}
-
-.answerGates li[data-pass="false"] {
-  background: var(--danger-soft);
-}
-
-.answerGateMark,
-.answerGateVerdict {
-  color: var(--good);
-  font-size: var(--t-0);
-  font-weight: 700;
-}
-
-.answerGates li[data-pass="false"] .answerGateMark,
-.answerGates li[data-pass="false"] .answerGateVerdict {
-  color: var(--danger);
-}
-
-.answerGateCopy {
-  display: grid;
-  gap: 0.125rem;
-  min-width: 0;
-}
-
-.answerGateCopy > strong {
-  color: var(--ink);
-}
-
-.answerGateCopy > span {
-  color: var(--muted);
-  font-size: var(--t-0);
-}
-
-.answerGateVerdict {
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 @media (max-width: 46.4375rem) {
@@ -1255,27 +859,9 @@
   .unitCard {
     grid-template-columns: 1fr;
   }
-
-  .answerFacts {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .answerFacts > div {
-    display: grid;
-    gap: 0.125rem;
-  }
-
-  .answerGates li {
-    grid-template-columns: 1.25rem minmax(0, 1fr);
-  }
-
-  .answerGateVerdict {
-    grid-column: 2;
-  }
 }
 
 @media print {
-  .screen[data-presentation="answer"] .main > .governanceBanner,
   .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] {
     display: block !important;
   }
@@ -1478,30 +1064,6 @@
   grid-column: 1;
 }
 
-.attentionList {
-  display: grid;
-  gap: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.attentionList li {
-  display: grid;
-  gap: 0.25rem;
-  padding: 0.85rem 1rem;
-  border-bottom: 1px solid var(--line);
-}
-
-.attentionList li:last-child {
-  border-bottom: 0;
-}
-
-.attentionList span {
-  color: var(--muted);
-  font-size: var(--t-1);
-}
-
 @media (max-width: 62.5rem) {
   .screen[data-presentation="overview"] .main {
     grid-template-columns: minmax(0, 1fr);
@@ -1603,7 +1165,6 @@
     align-items: start;
   }
 
-  .screen[data-presentation="answer"] .main > .governanceBanner,
   .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] {
     grid-column: 1 / -1;
   }
@@ -1618,14 +1179,6 @@
 
   .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] > .sectionHeading {
     flex: none;
-  }
-
-  .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] > .cardList {
-    min-height: 0;
-    flex: 1;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
   }
 }
 
@@ -1642,10 +1195,6 @@
   .screen[data-presentation="answer"] .main,
   .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] {
     display: block;
-  }
-
-  .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"] > .cardList {
-    overflow: visible;
   }
 }
 /* Q004: short operational lists occupy their content height; long bodies remain bounded. */
@@ -1669,9 +1218,6 @@
   .screen[data-presentation="answer"] .main > .listSection[aria-label="Awaiting your answer"][data-empty="true"] {
     height: auto;
     min-height: 8rem;
-  }
-  .screen[data-presentation="answer"] .answerGates ul {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 .confirmRow {
@@ -2278,10 +1824,6 @@
   background: var(--surface);
 }
 
-.bedCard.ready .bedNum {
-  color: var(--good);
-}
-
 .bedCard.hdu {
   border: 1px solid var(--line);
 }
@@ -2294,13 +1836,6 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.bedNum {
-  font-family: var(--mono);
-  font-size: var(--t-2);
-  font-weight: 700;
-  color: var(--ink);
 }
 
 .bedStatusTag {
@@ -2379,31 +1914,6 @@
   opacity: 1;
 }
 
-.drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: min(94vw, 32rem);
-  height: 100dvh;
-  max-height: 100dvh;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  box-sizing: border-box;
-  background: var(--surface);
-  border-left: 1px solid var(--line-strong);
-  box-shadow: var(--lift);
-  z-index: 90;
-  transform: translateX(100%);
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.drawer.show {
-  transform: translateX(0);
-}
-
 .drawerHead {
   position: sticky;
   top: 0;
@@ -2469,17 +1979,6 @@
   scrollbar-width: thin;
 }
 
-.drawerFoot {
-  padding: 10px 18px;
-  border-top: 1px solid var(--line);
-  background: var(--surface-2);
-  font-size: var(--t-1);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-}
-
 /* ─── Confirmation Modal Styles ───────────────────────────────── */
 .modalOverlay {
   position: fixed;
@@ -2509,40 +2008,12 @@
   overflow: hidden;
 }
 
-.modalHead {
-  padding: 14px 18px;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-}
-
 .modalTitle {
   font-family: var(--display, sans-serif);
   font-size: var(--t-3, 14px);
   font-weight: 600;
   color: var(--accent-ink);
   margin: 0;
-}
-
-.modalBody {
-  padding: 20px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.modalFoot {
-  padding: 12px 18px;
-  background: var(--surface-2);
-  border-top: 1px solid var(--line);
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  flex-shrink: 0;
 }
 
 /* ─── Action Toast (Owner Rule D4) ────────────────────────────── */
@@ -2603,7 +2074,6 @@
   flex-direction: column;
 }
 
-.ph,
 .panelHead {
   padding: 12px 16px;
   background: var(--surface-2);
@@ -2617,17 +2087,6 @@
   gap: 12px;
   flex-shrink: 0;
   flex-wrap: wrap;
-}
-
-.panelTitle {
-  font-family: var(--display, sans-serif);
-  font-size: var(--t-2, 13.5px);
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .badgePill {
@@ -2875,10 +2334,6 @@
   color: var(--accent-ink);
 }
 
-.drawer.wide {
-  width: min(94vw, 38rem);
-}
-
 .bedBoardQuickBar {
   display: flex;
   align-items: center;
@@ -3105,11 +2560,6 @@
   clip: rect(0, 0, 0, 0) !important;
   white-space: nowrap !important;
   border: 0 !important;
-}
-
-.notificationTriggerWrap {
-  position: relative;
-  display: inline-flex;
 }
 
 .notificationCountBadge {
@@ -3967,90 +3417,6 @@
   }
 }
 
-/* Option B (Josh, 20 Oct 2026): under the hero's numbers, one quiet line with the confirm time,
-   Confirm numbers, the Notices bell and More. These replace the chip row above the tabs. */
-/* Device sweep R1-09/B6-15: the row wraps, so on a narrow phone the confirm time keeps its own full
-   line above the buttons instead of being cut to "Confir…". */
-.phoneHeroFoot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wf-s-2);
-  width: 100%;
-  min-width: 0;
-}
-
-.phoneHeroConfirmed {
-  flex: 1 1 auto;
-  min-width: min(100%, max-content);
-  overflow: hidden;
-  font-size: var(--wf-fs-12);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--wf-hero-ink-2);
-}
-
-/* A narrow phone gives the confirm time the first line and keeps the three buttons together on the
-   second, rather than leaving the bell and More on a line of their own. */
-@media (max-width: 30rem) {
-  .phoneHeroConfirmed {
-    flex-basis: 100%;
-  }
-}
-
-.phoneHeroAction {
-  flex: none;
-  min-height: var(--wf-touch);
-  padding: 0 var(--wf-s-3);
-  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
-  border-radius: var(--wf-r-ctl);
-  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
-  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
-  color: var(--wf-hero-ink);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.phoneHeroAction:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-}
-
-.phoneHeroIcon {
-  position: relative;
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: var(--wf-touch);
-  height: var(--wf-touch);
-  padding: 0;
-  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
-  border-radius: var(--wf-r-ctl);
-  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
-  color: var(--wf-hero-ink);
-  cursor: pointer;
-}
-
-.phoneHeroIcon:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-}
-
-.phoneHeroBadge {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  min-width: 20px;
-  padding: 2px 5px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-danger);
-  font: 600 var(--wf-fs-11, 11px) / 1.2 var(--wf-mono);
-  text-align: center;
-  /* Q302 (pre-launch A6, 2 Nov 2026): the hero takes the night danger fill (#e27a68) in both themes,
-     and white on it was 2.9:1. The count is drawn in the hero's deep slate instead (4.7:1). */
-  color: var(--wf-hero-2);
-}
-
 /* The phone's ward name is the Switch ward button: the name and a chevron in one 44px target. */
 .wardSwitchName {
   display: inline-flex;
@@ -4079,41 +3445,8 @@
   flex: none;
 }
 
-.phoneHeroTitle .wardSwitchName {
-  overflow: hidden;
-}
-
-.phoneHeroTitle {
-  position: relative;
-  display: flex;
-  width: 100%;
-  align-items: center;
-  gap: var(--wf-s-2);
-  max-width: 100%;
-  min-width: 0;
-}
-
 /* The ward switch list opens from the start of the ward name, not from the chevron, so a long
    name never pushes it off the right edge of a phone. */
-.phoneHeroTitle > .wardSwitchAnchor {
-  position: static;
-  /* Layout sweep WARD-03: the anchor may shrink, so a long ward name ends in an ellipsis rather
-     than pushing the hero past a 360px screen. */
-  display: flex;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.phoneHeroTitle > .wardSwitchAnchor > [role="menu"] {
-  max-width: calc(100vw - 2 * var(--wf-s-4));
-}
-
-.phoneHeroName {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 .phoneFindBox {
   width: 100%;
@@ -4150,36 +3483,6 @@
     min-height: var(--wf-touch);
     font-size: var(--wf-fs-14);
   }
-}
-
-/* The phone ward name is the Switch ward button (Option B, 20 Oct 2026). */
-@media (max-width: 46.4375rem) and (pointer: coarse) {
-  /* The hero title clips its overflow, which would clip the button's focus ring. The ward name
-     keeps its own ellipsis inside the button. */
-  .wardHero :has(> .phoneHeroTitle) {
-    overflow: visible;
-  }
-}
-
-/* The hero's foot clips its overflow too, which cut the More menu down to its first item. */
-.wardHero :has(> .phoneHeroFoot) {
-  overflow: visible;
-}
-
-/* Phone (v10): the views pin under the stable header on the canvas, full
-   bleed, as on Home. The class renders only on phone. */
-.phoneTabBar {
-  position: sticky;
-  top: var(--wf-header-height, 3.5rem);
-  width: calc(100% + 2 * var(--wf-s-3));
-  max-width: none;
-  z-index: 6;
-  margin: calc(-1 * var(--wf-s-2)) calc(-1 * var(--wf-s-3));
-  padding: var(--wf-s-2) var(--wf-s-3);
-  background: var(--wf-canvas);
-  /* A hairline under the pinned tabs, so headings scrolling under them read as passing beneath
-     rather than cut off. */
-  box-shadow: 0 1px 0 var(--wf-line);
 }
 
 /* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
@@ -4235,7 +3538,6 @@
 }
 
 @media (max-width: 46.4375rem), (pointer: coarse) {
-  .capacityInput,
   .suburbSearchInput {
     font-size: max(1rem, 16px);
   }

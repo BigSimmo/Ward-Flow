@@ -67,3 +67,30 @@
 .hero.hero.hero [data-wf-hero-title-line] > [data-wf-hero-title] + span span {
   display: inline;
 }
+
+/* Visual QA (10 Nov 2026): between phone and desktop the sort note sits in the folder tab row on the
+   slate, so it takes the hero's ink there, and keeps a gap before Export. */
+@media (min-width: 46.5rem) and (max-width: 63.9375rem) {
+  .tabs [data-testid="ward-referral-board-order-note"],
+  .tabs [data-testid="ward-referral-highlight-note"] {
+    color: var(--wf-hero-ink-2);
+    margin-inline-end: var(--wf-s-2);
+  }
+
+  .tabs [data-testid="ward-referral-board-order-note"] b,
+  .tabs [data-testid="ward-referral-highlight-note"] b {
+    color: var(--wf-hero-ink);
+  }
+}
+
+/* Phone: the wrapper steps aside so the folder tabs can pin under the header for the whole page
+   (a sticky row only pins inside its parent); the folder then rises past the page's column gap. */
+@media (max-width: 46.4375rem) {
+  .wrap {
+    display: contents;
+  }
+
+  .tabs {
+    --wf-folder-gap: var(--wf-s-3);
+  }
+}

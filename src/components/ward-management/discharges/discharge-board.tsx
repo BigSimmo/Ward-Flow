@@ -562,7 +562,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   return (
     <div className={`${styles.screen} ${pageStyles.screen}`} data-testid="ward-discharge-board" data-ward-design="v6">
       <main id="main-content" className={pageStyles.main}>
-        <h1 className={pageStyles.localTitle}>Discharges</h1>
         <p className={pageStyles.printScope}>
           {population === "records" ? "Admission records" : "Discharges by bed"} · Identifiers may be included
           {" · "}
@@ -584,8 +583,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           {" · "}As of {formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
         </p>
         <Hero
+          // Page tops (Josh, 9 Nov 2026): one plain title, as Home's; the place leads the spoken heading, the h1.
+          level={1}
           className={cx(pageTop.hero, folderTabClasses.hero)}
-          // Page tops (Josh, 9 Nov 2026): one plain title, as Home's; the place leads the spoken heading.
           title={
             nowView ? (
               <>

@@ -1216,7 +1216,9 @@
    clipping the last one. */
 @media (max-width: 46.4375rem) {
   .screen[data-ward-design="v6"] .main {
-    padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-8);
+    padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-8); /* The shared phone server band (wf/hero.module.css) takes these 16px sides, so the hero
+       paints at its measured place on the first frame (phone load audit, 10 Nov 2026). */
+    --wf-band-phone-x: var(--wf-s-4);
   }
 
   .screen[data-ward-page="delays"] [data-ward-primitive="panel-header"] {

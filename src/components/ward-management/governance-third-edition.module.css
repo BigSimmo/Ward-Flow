@@ -53,14 +53,6 @@
   line-height: var(--wf-lh-12);
 }
 
-.heroActions {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
 .govLayout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(20rem, 23.25rem);
@@ -688,32 +680,6 @@
 }
 
 /* Tabs build (9 Oct 2026): reviewed ring, gaps by site, register and report previews. */
-.reviewedRing {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  color: var(--wf-hero-ink);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
-.reviewedRing strong {
-  font: 650 var(--wf-fs-16) / 1.1 var(--wf-mono);
-}
-
-.reviewedRing span {
-  color: var(--wf-hero-ink-2);
-}
-
-.ringDial {
-  width: 2.25rem;
-  height: 2.25rem;
-  flex: none;
-  border-radius: 50%;
-  --done: 0deg;
-  background: conic-gradient(var(--wf-hero-success) var(--done), var(--wf-hero-edge) 0);
-  -webkit-mask: radial-gradient(circle at center, transparent 12px, var(--wf-ink-1) 13px);
-  mask: radial-gradient(circle at center, transparent 12px, var(--wf-ink-1) 13px);
-}
 
 .stackGap {
   display: grid;
@@ -870,7 +836,6 @@
 }
 
 @media print {
-  .heroActions,
   .filterRow,
   .modal,
   .toastSlot {
@@ -909,15 +874,6 @@
   min-width: 0;
 }
 
-.phoneTabs {
-  width: 100%;
-}
-
-.phoneTabs [role="radio"] {
-  flex: 1 1 0;
-  min-height: var(--wf-touch);
-}
-
 .phoneList {
   margin: 0;
   padding: 0;
@@ -935,36 +891,6 @@
   padding: var(--wf-s-3) var(--wf-s-4);
   color: var(--wf-ink-3);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-}
-
-.phoneMore {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--wf-s-2);
-}
-
-.phoneMoreCard {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-height: var(--wf-touch);
-  padding: var(--wf-s-3);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.phoneMoreCard > .stack {
-  flex: 1 1 auto;
-}
-
-.phoneMoreCard:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
 }
 
 .phoneNotice {
@@ -990,36 +916,12 @@
   white-space: normal;
 }
 
-.phoneMore {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.phoneMoreIcon {
-  flex: none;
-  color: var(--wf-ink-2);
-}
-
 /* v10 phone second pass (11 Oct 2026). Phone only: these elements render in the phone tree alone.
  * Review next fills the hero row; the view switch stays under the bar while the list scrolls; the
  * Registers and Reports cards read at the row size (14px title, 12px line). */
 .phoneHeroAction {
   flex: 1 1 auto;
   justify-content: center;
-}
-
-.phoneTabs {
-  position: sticky;
-  top: calc(var(--wf-header-height, 3.5rem) + var(--wf-s-2));
-  z-index: 6;
-  box-shadow: 0 0 0 var(--wf-s-2) var(--wf-canvas);
-}
-
-.phoneMoreCard strong {
-  font: 600 var(--wf-fs-14) / 1.3 var(--wf-font);
-}
-
-.phoneMoreCard .quietText {
-  font-size: var(--wf-fs-12);
 }
 
 /* v10 phone: the safety-incidents line is a quiet note above the shared footer, not a bold badge.
@@ -1039,22 +941,4 @@
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: var(--wf-tr-caps);
   text-transform: uppercase;
-}
-
-/* Device audit 11 Oct 2026: the safety-incident line is a notice, so plain quiet text on the hero. */
-.heroNotice {
-  color: var(--wf-hero-ink-2);
-  font-size: 0.75rem;
-  white-space: nowrap;
-}
-
-/* Phone compact switch (Josh, 12 Oct 2026): the tabs take the shared phone track (`--wf-phone-*`);
- * each option's hit area reaches the 48px floor, so the face drops its own 44px floor to the kit's
- * 40px face (Q295). Not 0: this rule ties the kit's `.seg .segItem` and, when this sheet loads after
- * the kit's, a 0 here squashed the options to their text (PR #1480 design sweep). The switch pins
- * under the phone header through the shared `pinnedSwitch` (ward-pinned-switch.module.css). */
-@media (max-width: 46.4375rem) {
-  .phoneTabs [role="radio"] {
-    min-height: var(--wf-phone-seg-item-h, 40px);
-  }
 }

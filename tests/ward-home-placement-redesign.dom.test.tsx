@@ -91,10 +91,10 @@ const ROW_STAGES = FLOW_STAGES.filter((stage) => stage.id !== "referral");
 /** Switches to Flow and returns the first stage with more rows than the cap, and its count. */
 function cappedStage() {
   showEveryoneWaiting();
-  const tabs = screen.getByRole("tablist", { name: "Flow stages" });
+  const tabs = screen.getByRole("toolbar", { name: "Flow stages" });
   for (const stage of ROW_STAGES) {
     const total = Number(
-      within(within(tabs).getByRole("tab", { name: new RegExp(`^${stage.label}`, "u") })).getByText(/^\d+$/u)
+      within(within(tabs).getByRole("button", { name: new RegExp(`^${stage.label}`, "u") })).getByText(/^\d+$/u)
         .textContent,
     );
     if (total > FLOW_STAGE_CAP) {
