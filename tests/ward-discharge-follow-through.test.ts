@@ -65,6 +65,10 @@ describe("discharge date trail (feature 6)", () => {
     expect(dischargeDateSlipDays({ dischargeDateTrail: trail, expectedDischargeAt: 5 * DAY })).toBe(5);
     expect(dischargeDateSlipDays({ dischargeDateTrail: trail, expectedDischargeAt: -2 * DAY })).toBe(0);
     expect(dischargeDateSlipDays({ expectedDischargeAt: 5 * DAY })).toBeNull();
+    // Counted by calendar day, not elapsed hours: 22:00 to 08:00 four days later is four days.
+    const late = { firstExpectedAt: 22 * 60, revisions: [] };
+    expect(dischargeDateSlipDays({ dischargeDateTrail: late, expectedDischargeAt: 4 * DAY + 8 * 60 })).toBe(4);
+    expect(dischargeDateSlipDays({ dischargeDateTrail: trail, expectedDischargeAt: 3 * DAY + 22 * 60 })).toBe(3);
     const rows = slippingDischarges(
       [
         { admissionId: "a", unitId: "u", departed: false, dischargeDateTrail: trail, expectedDischargeAt: 4 * DAY },

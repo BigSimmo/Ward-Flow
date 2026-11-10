@@ -476,12 +476,28 @@ describe("complete guarded local care journey", () => {
     expect(refused.units).toBe(unavailable.units);
     expect(refused.units.find((u) => u.id === target.id)!.empty.value).toBe(0);
     expect(refused.rejections.at(-1)?.reason).toContain("suitable available bed");
+    // The sending ward's discharge date plan stays behind (PR #1583 review).
+    next = {
+      ...next,
+      admissions: next.admissions.map((a) =>
+        a.id === admission.id
+          ? {
+              ...a,
+              dischargeDateTrail: { firstExpectedAt: 0, revisions: [] },
+              weekendDischargeReviews: [{ weekendStart: 0, at: 0, by: "ward" as const }],
+            }
+          : a,
+      ),
+    };
     const before = next;
     next = wardFlowReducer(
       next,
       command(next, admission.id, { kind: "transfer", receivingUnitId: target.id, step: "arrived" }),
     );
     expect(next.rejections).toEqual([]);
+    const receivingStay = next.admissions.find((a) => a.patientId === admission.patientId && a.state === "occupied");
+    expect(receivingStay?.dischargeDateTrail).toBeUndefined();
+    expect(receivingStay?.weekendDischargeReviews).toBeUndefined();
     expect(next.admissions.find((a) => a.id === admission.id)?.state).toBe("departed");
     expect(next.admissions.filter((a) => a.patientId === admission.patientId && a.state === "occupied")).toHaveLength(
       1,

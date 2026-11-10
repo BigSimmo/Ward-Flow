@@ -1953,7 +1953,7 @@ Source-contract SHA256: 136d6f01a9cec23c2b65456a1ecf9e0ec062489a5a664c19681323d9
   effects: Does not erase the reviewed event or its original review/Undo audit entries.
   tests: tests/ward-undo-and-bed-board.test.ts
   tests: tests/ward-governance.dom.test.tsx
-  Reviewed source: src/components/ward-management/ward-flow-protected-record-events.ts:103; SHA256 a6c8fc4bfd515eb3a93440995df00ed3affb7f1240c19f0a064deb9cb152f02e
+  Reviewed source: src/components/ward-management/ward-flow-protected-record-events.ts:103; SHA256 54c8451a1eab7a74e88ff65a617a8cd2440a3de08b73e42b7e5e93720531fc96
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2587; SHA256 4aa95a6064d78bc02b633a4c4f2327282452b788888f2e6ae2173b98a5be10e7
   Reviewed source: src/components/ward-management/ward-undo.ts:482; SHA256 36d051b64588ebecde9f32a571384eb854272e3a933184f4286d5679711dc53f
   Reviewed source: src/components/ward-management/ward-access-state.ts:658; SHA256 b7e5bfa41c1d5f1a5d9574379ab37c7278b1f9f1b4f2f2fc32d14a78ad7aa21c

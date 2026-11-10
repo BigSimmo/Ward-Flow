@@ -1616,7 +1616,7 @@
       {
         "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
         "line": 1,
-        "sha256": "a6c8fc4bfd515eb3a93440995df00ed3affb7f1240c19f0a064deb9cb152f02e"
+        "sha256": "54c8451a1eab7a74e88ff65a617a8cd2440a3de08b73e42b7e5e93720531fc96"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-events.ts",

@@ -1,4 +1,4 @@
-import { MINUTES_PER_DAY, type Instant } from "./ward-clock";
+import { dayOf, type Instant } from "./ward-clock";
 
 /**
  * Discharge date drift (feature 6, 9 Nov 2026). The first expected discharge date the ward set for
@@ -48,8 +48,9 @@ export function nextDischargeDateTrail(
 }
 
 /**
- * Whole days the current expected date sits after the first one, or 0 when it has not slipped (or
- * moved earlier). `null` when there is no trail or no current date, so a screen says nothing rather
+ * Calendar days the current expected date sits after the first one, or 0 when it has not slipped (or
+ * moved earlier). Counted by ward day, not elapsed hours, so a move from 22:00 to 08:00 four days
+ * later is four days. `null` when there is no trail or no current date, so a screen says nothing rather
  * than "0 days".
  */
 export function dischargeDateSlipDays(stay: {
@@ -58,7 +59,7 @@ export function dischargeDateSlipDays(stay: {
 }): number | null {
   const trail = stay.dischargeDateTrail;
   if (!trail || stay.expectedDischargeAt === null) return null;
-  return Math.max(0, Math.round((stay.expectedDischargeAt - trail.firstExpectedAt) / MINUTES_PER_DAY));
+  return Math.max(0, dayOf(stay.expectedDischargeAt) - dayOf(trail.firstExpectedAt));
 }
 
 export type SlippingDischarge = {
