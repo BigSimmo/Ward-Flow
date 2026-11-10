@@ -301,7 +301,11 @@ describe("scoped Ward and ED last-look sheets", () => {
         <EdScreen edId={state.movements[0]!.originEdId!} />
       </WardFlowProvider>,
     );
-    expect(screen.getByTestId(`since-last-look-ed:${state.movements[0]!.originEdId!}`)).toBeInTheDocument();
+    // Page tops (QA, 10 Nov 2026): on the ED header the tracker is the hero's Updates chip.
+    const edUpdates = screen.getByTestId("ward-ed-updates");
+    expect(edUpdates).toHaveTextContent("Updates");
+    fireEvent.click(edUpdates);
+    expect(screen.getByRole("dialog", { name: "Since you last looked" })).toBeInTheDocument();
   });
 });
 

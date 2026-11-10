@@ -55,7 +55,7 @@ describe("the Delays board's saved views", () => {
     withProvider(<DelaysScreen />);
     expect(screen.queryByTestId("delays-stat-due")).toBeNull();
     const next = screen.queryByTestId("delays-hero-next8");
-    if (next) expect(next).toHaveTextContent(/^Next past 8h/u);
+    if (next) expect(next).toHaveTextContent(/^Next over 8h/u);
   });
 
   it("counts the referrals not yet on the list, with a link to Referrals", () => {
