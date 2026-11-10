@@ -87,6 +87,7 @@ describe("declined-by-all precedence against acceptance", () => {
       now: NOW,
       movementId,
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
       reason: "no_suitable_bed",
     });
     expect(state.rejections).toHaveLength(0);
@@ -102,6 +103,7 @@ describe("declined-by-all precedence against acceptance", () => {
       now: NOW,
       movementId,
       unitId: "fsh-adult-secure",
+      actingUnitId: "fsh-adult-secure",
     });
     expect(state.rejections).toHaveLength(0);
 
@@ -148,6 +150,7 @@ describe("declined-by-all precedence against acceptance", () => {
       now: NOW,
       movementId,
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
       reason: "no_suitable_bed",
     });
     expect(state.rejections).toHaveLength(0);
@@ -159,6 +162,7 @@ describe("declined-by-all precedence against acceptance", () => {
       now: NOW,
       movementId,
       unitId: "fsh-adult-secure",
+      actingUnitId: "fsh-adult-secure",
     });
     expect(state.rejections).toHaveLength(0);
     expect(findMovement(state, movementId).stage).toBe("accepted_awaiting_bed");
@@ -207,6 +211,7 @@ describe("declined-by-all precedence against acceptance", () => {
       now: NOW + 3,
       movementId,
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
       reason: "belongs_to_another_service",
     });
     expect(state.rejections).toHaveLength(0);
@@ -245,6 +250,7 @@ describe("declined-by-all precedence against acceptance", () => {
       now: NOW,
       movementId,
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
       reason: "belongs_to_another_service",
     });
     expect(state.rejections).toHaveLength(0);
@@ -255,6 +261,7 @@ describe("declined-by-all precedence against acceptance", () => {
       now: NOW,
       movementId,
       unitId: "fsh-adult-secure",
+      actingUnitId: "fsh-adult-secure",
       reason: "belongs_to_another_service",
     });
     expect(state.rejections).toHaveLength(0);
@@ -299,6 +306,7 @@ describe("declined-by-all precedence against acceptance", () => {
       now: NOW,
       movementId,
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
       reason: "belongs_to_another_service",
     });
     expect(state.rejections).toHaveLength(0);
@@ -328,6 +336,7 @@ describe("declined-by-all precedence against acceptance", () => {
       now: NOW,
       movementId,
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
       reason: "no_suitable_bed",
     });
     expect(state.rejections).toHaveLength(0);
@@ -340,6 +349,7 @@ describe("declined-by-all precedence against acceptance", () => {
       now: NOW,
       movementId,
       unitId: "fsh-adult-secure",
+      actingUnitId: "fsh-adult-secure",
       reason: "bed_pulled_for_earlier_referral",
     });
     expect(state.rejections).toHaveLength(0);

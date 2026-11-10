@@ -85,7 +85,16 @@ const pull = (
   movementId: string,
   now = NOW,
   overrideReason?: (typeof OVERRIDE_REASONS)[number],
-) => wardFlowReducer(state, { type: "PULL_PATIENT", role: "ward", now, movementId, unitId: UNIT_ID, overrideReason });
+) =>
+  wardFlowReducer(state, {
+    type: "PULL_PATIENT",
+    role: "ward",
+    now,
+    movementId,
+    unitId: UNIT_ID,
+    actingUnitId: UNIT_ID,
+    overrideReason,
+  });
 const admissionOf = (state: WardFlowState, movementId: string) =>
   state.admissions.find((admission) => admission.id === state.movements.find((m) => m.id === movementId)?.admissionId)!;
 

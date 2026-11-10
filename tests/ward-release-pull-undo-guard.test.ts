@@ -20,7 +20,7 @@ function acceptedAwaitingBed(): WardFlowState {
   let state: WardFlowState = seedWardFlowState();
   for (const event of [
     { type: "REFER_TO_UNITS", role: "coordinator", unitIds: [UNIT_ID] },
-    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: UNIT_ID },
+    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: UNIT_ID, actingUnitId: UNIT_ID },
   ] as const) {
     state = wardFlowReducer(state, { ...event, now: NOW, movementId: MOVEMENT_ID } as never);
   }
@@ -37,6 +37,7 @@ function pull(state: WardFlowState, at = NOW): WardFlowState {
     now: at,
     movementId: MOVEMENT_ID,
     unitId: UNIT_ID,
+    actingUnitId: UNIT_ID,
     // A re-pull after a release is a fresh placement against changed capacity, so it states why.
     overrideReason: "The bed information is known to be out of date",
   });

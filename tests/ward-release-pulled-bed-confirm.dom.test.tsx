@@ -41,9 +41,10 @@ function journeySteps(ending: "diverted" | "stopped"): { movementId: string; uni
       role: "ward",
       movementId,
       unitId,
+      actingUnitId: unitId,
       overrideReason: "The bed information is known to be out of date",
     },
-    { type: "PULL_PATIENT", role: "ward", movementId, unitId },
+    { type: "PULL_PATIENT", role: "ward", movementId, unitId, actingUnitId: unitId },
     {
       type: "BOOK_TRANSPORT",
       role: "ed",

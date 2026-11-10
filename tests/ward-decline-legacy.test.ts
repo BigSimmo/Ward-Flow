@@ -90,6 +90,7 @@ describe("saves and events from before the one decline list", () => {
       now: NOW_ANCHOR,
       movementId: movement.id,
       unitId: unit.id,
+      actingUnitId: unit.id,
       reason: "out_of_catchment" as string as DeclineReason,
     });
     expect(after.rejections).toEqual([]);

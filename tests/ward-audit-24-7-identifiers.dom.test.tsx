@@ -266,6 +266,7 @@ describe("ward arrivals card: a double tap on Pull never lands on Release (B-09,
       role: "ward",
       movementId: open.id,
       unitId,
+      actingUnitId: unitId,
       now: NOW_ANCHOR + 1,
       overrideReason: "The bed information is known to be out of date",
     } as unknown as WardFlowEvent;
@@ -312,6 +313,7 @@ describe("ward arrivals card: a double tap on Pull never lands on Release (B-09,
                 now: NOW_ANCHOR + 2,
                 movementId: id,
                 unitId: unit,
+                actingUnitId: unit,
               } as unknown as WardFlowEvent),
             )
           }

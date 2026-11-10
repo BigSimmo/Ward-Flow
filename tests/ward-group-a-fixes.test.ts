@@ -44,6 +44,7 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
         now: NOW + 5,
         movementId,
         unitId,
+        actingUnitId: unitId,
       });
       state = wardFlowReducer(state, {
         type: "PULL_PATIENT",
@@ -51,6 +52,7 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
         now: NOW + 10,
         movementId,
         unitId,
+        actingUnitId: unitId,
       });
       state = wardFlowReducer(state, {
         type: "BOOK_TRANSPORT",
@@ -184,6 +186,7 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
         now: NOW + 5,
         movementId,
         unitId,
+        actingUnitId: unitId,
       });
       state = wardFlowReducer(state, {
         type: "PULL_PATIENT",
@@ -191,6 +194,7 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
         now: NOW + 10,
         movementId,
         unitId,
+        actingUnitId: unitId,
       });
       state = wardFlowReducer(state, {
         type: "BOOK_TRANSPORT",

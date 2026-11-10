@@ -50,9 +50,10 @@ function pulledNoTransport() {
       role: "ward",
       movementId,
       unitId,
+      actingUnitId: unitId,
       overrideReason: "The bed information is known to be out of date",
     },
-    { type: "PULL_PATIENT", role: "ward", movementId, unitId },
+    { type: "PULL_PATIENT", role: "ward", movementId, unitId, actingUnitId: unitId },
     { type: "RECORD_TRANSPORT_NEED", role: "ed", movementId, needed: false },
   ].map((step, index) => ({ ...step, now: NOW + index + 1 }) as unknown as WardFlowEvent);
   return { movementId, steps };

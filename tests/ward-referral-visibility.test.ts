@@ -135,6 +135,8 @@ function multiDestinationReferral(): Referral {
     now: WARD_DECIDED_AT,
     referralId: created.id,
     destinationKind: "psychiatric_ward",
+    unitId: "scgh-adult-open",
+    actingUnitId: "scgh-adult-open",
     reason: "no_suitable_bed",
   });
   expect(declined.rejections, "the reducer refused the ward's own decline").toEqual([]);
@@ -276,6 +278,7 @@ function cancelledArmReferral(): Referral {
     referralId: created.id,
     destinationKind: "psychiatric_ward",
     unitId: "bty-youth",
+    actingUnitId: "bty-youth",
   });
   expect(accepted.rejections, "the reducer refused the ward's own acceptance").toEqual([]);
 
@@ -2812,6 +2815,7 @@ describe("the coordinator's work list — direction of the LIVE destinations", (
         referralId: created.id,
         destinationKind: "psychiatric_ward",
         unitId: "rph-adult-secure",
+        actingUnitId: "rph-adult-secure",
       });
       expect(
         secondAcceptance.rejections.length,
