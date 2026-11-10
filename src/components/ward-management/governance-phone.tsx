@@ -43,7 +43,14 @@ import thirdEdition from "./governance-third-edition.module.css";
 import pageTop from "./page-top-title.module.css";
 import eventList from "./governance-event-list.module.css";
 import { EventFacts } from "./governance-event-facts";
-import { PATTERN_HOURS, PATTERN_LIMIT, isPattern, reasonLabel, shortDeskLabel } from "./governance-access-review";
+import {
+  PATTERN_HOURS,
+  PATTERN_LIMIT,
+  coverReasonLabel,
+  isPattern,
+  reasonLabel,
+  shortDeskLabel,
+} from "./governance-access-review";
 import {
   OUTCOME_TONE,
   actionLabels,
@@ -197,7 +204,9 @@ export function GovernancePhone({
               <StatusGlyph tone={tone} size={9} />
               {event.action === "BREAK_GLASS" && event.details.desk
                 ? `${reasonLabel(event.details.reason)} · ${shortDeskLabel(event.details.desk)}, ${event.details.place}`
-                : `${categoryLabels[event.category]} · ${outcomeLabels[event.outcome]}${event.actor.role ? ` · ${rowRoleLabel(deskRoleLabel(event.actor.role))}` : ""}`}
+                : event.action === "ACCESS_COVER" && event.details.desk
+                  ? `${coverReasonLabel(event.details.reason)} · ${shortDeskLabel(event.details.desk)}, ${event.details.place}`
+                  : `${categoryLabels[event.category]} · ${outcomeLabels[event.outcome]}${event.actor.role ? ` · ${rowRoleLabel(deskRoleLabel(event.actor.role))}` : ""}`}
             </span>
             {isPattern(event) ? (
               <span className={thirdEdition.phoneMetaLine}>
@@ -539,9 +548,11 @@ export function GovernancePhone({
                   value:
                     selected.action === "BREAK_GLASS"
                       ? reasonLabel(selected.details.reason)
-                      : selected.reasonCode !== "none"
-                        ? reasonLabels[selected.reasonCode]
-                        : "None recorded",
+                      : selected.action === "ACCESS_COVER"
+                        ? coverReasonLabel(selected.details.reason)
+                        : selected.reasonCode !== "none"
+                          ? reasonLabels[selected.reasonCode]
+                          : "None recorded",
                 },
               ]}
             />

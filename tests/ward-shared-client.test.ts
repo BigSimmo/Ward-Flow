@@ -1110,7 +1110,12 @@ describe("shared workspace connection", () => {
     await client.breakGlass("P-1", "handover");
     expect(bodies[2].intentKey).not.toBe(bodies[0].intentKey);
     await client.breakGlass("P-2", "handover");
-    const cover = { actorId: "synthetic-colleague", scope: { kind: "ward", unitIds: ["ward-a"] }, minutes: 60 };
+    const cover = {
+      actorId: "synthetic-colleague",
+      scope: { kind: "ward", unitIds: ["ward-a"] },
+      minutes: 60,
+      reason: "busy",
+    };
     await expect(client.giveCover(cover)).rejects.toThrow("Change not confirmed");
     fail = false;
     await expect(client.giveCover(cover)).resolves.toBeNull();

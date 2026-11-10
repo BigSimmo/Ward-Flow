@@ -4,6 +4,7 @@ import { CornerDownLeft } from "lucide-react";
 import styles from "./ward-global-search.module.css";
 import { patientResultTitle, type SearchResultItem } from "./ward-global-search-groups";
 import { SearchResultIcon } from "./ward-global-search-icon";
+import { ViewCount } from "./ward-global-search-view-count";
 
 /**
  * What one search result row shows: icon, title, meta line, kind and the Enter hint. Shared by the
@@ -24,9 +25,11 @@ export function SearchOptionBody({
     <>
       <span className={styles.itemIconBox} aria-hidden="true">
         {item.tone ? <StatusGlyph tone={item.tone} /> : <SearchResultIcon kind={item.kind} id={item.id} />}
+        {item.kind === "view" ? <ViewCount id={item.id} /> : null}
       </span>
       <span className={styles.resultContent}>
         <span className={styles.resultTitle}>{marked(patientResultTitle(item, nameFor), highlight)}</span>
+        {item.kind === "view" ? <ViewCount id={item.id} spoken /> : null}
         <span className={styles.resultMeta}>
           {item.umrn ? (
             <>

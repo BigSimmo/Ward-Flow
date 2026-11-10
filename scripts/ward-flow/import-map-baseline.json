@@ -1,0 +1,5 @@
+{
+  "note": "M139 (10 Nov 2026, main 29352cd0). Frozen by scripts/ward-flow/import-map.ts and tests/ward-import-map-guard.test.ts. Counts may only fall: lower them with --update-baseline, never raise them by hand.",
+  "cycles": [],
+  "screenToScreenImports": 564
+}

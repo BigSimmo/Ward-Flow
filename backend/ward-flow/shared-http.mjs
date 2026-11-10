@@ -5,6 +5,8 @@ import { bootstrapCoordinators } from "./auth.mjs";
 import { jsonResponse } from "./reply-cache.mjs";
 import { forecastHistoryInput, forecastReasonRole } from "./forecast-history.mjs";
 import { accountPreferencesInput } from "./account-preferences.mjs";
+import { COMMAND_LIMIT, PUSH_SUBSCRIBE_LIMIT, createWindowLimiter } from "./request-limits.mjs";
+import { reportFailure } from "./error-report.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Each shared path and the closed route name it is logged under. */
@@ -159,14 +161,36 @@ export function createSharedHandler({
   // Part B item 49 groundwork: off until the health service's sign-in or Supabase factors are set up.
   requireSecondStep = false,
   log = (event) => console.info(JSON.stringify(event)),
+  // Audit M53: phone alert sign-ups per account, checked before anything is stored.
+  pushSubscribeLimiter = createWindowLimiter(PUSH_SUBSCRIBE_LIMIT),
+  // Audit M53: saves per account, checked before the body is read or anything is stored.
+  commandLimiter = createWindowLimiter(COMMAND_LIMIT),
+  // Audit M74: a handled 500 is sent to Sentry too (off unless SENTRY_DSN is set, error-report.mjs).
+  report = reportFailure,
 }) {
   return async (request, meta = {}) => {
     const requestId = randomUUID();
     const startedAt = performance.now();
     const path = new URL(request.url).pathname;
-    /** @type {{ outcome?: string, failure?: Record<string, unknown> }} */
+    /** @type {{ outcome?: string, failure?: Record<string, unknown>, role?: string }} */
     const note = {};
     const response = await handle(request, path, requestId, note, meta);
+    if (note.outcome === "server_error")
+      try {
+        // Closed fields only (error-report.mjs checks each again): the same request ID as the reply
+        // header and log line, the desk role, the route and the screen. Never a name or payload.
+        report({
+          event: "ward_backend_server_error",
+          requestId,
+          route: ROUTES.get(path) ?? "unknown",
+          ...(note.role ? { role: note.role } : {}),
+          ...(request.headers.get(SCREEN) === "tv" ? { screen: "tv" } : {}),
+          ...(typeof note.failure?.errorName === "string" ? { errorName: note.failure.errorName } : {}),
+          ...(typeof note.failure?.errorCode === "string" ? { errorCode: note.failure.errorCode } : {}),
+        });
+      } catch {
+        // Monitoring must not alter the API result.
+      }
     try {
       // Closed metadata vocabulary only: never log tokens, actor IDs, query strings or payloads.
       log({
@@ -392,6 +416,7 @@ export function createSharedHandler({
           },
           "auth_denied",
         );
+      note.role = view.access.role;
       // A recent sign-in for the powerful steps. The window comes from the clinical values module
       // through the store; a store that names none asks every time.
       if (STEP_UP_PATHS.has(path) && request.method === "POST") {
@@ -426,6 +451,8 @@ export function createSharedHandler({
           workingAs: view.membershipId ?? "bootstrap",
           actorId,
           workspaceId: config.workspaceId,
+          // Drill 4: changes on a database restore, so open tabs drop the board they hold.
+          ...(typeof config.restoreMarker === "string" ? { restoreMarker: config.restoreMarker } : {}),
           // No session limit configured means no sign-in deadline (a set limit with no start time was
           // already refused above), so only a role or grant expiry can bound access here.
           accessUntil: Math.min(
@@ -565,12 +592,14 @@ export function createSharedHandler({
           const patient = new URL(request.url).searchParams.get("patient");
           if (patient !== null && !RECORD_ID.test(patient)) return reply(400, { error: "A patient is required" });
           // #839: both lists are read at once, as each is its own round trip to the database.
-          const [views, openings] = await Promise.all([
+          // M58 (D-129): each cover given joins the coordinator's review list beside the openings.
+          const [views, openings, covers] = await Promise.all([
             store.recordViews ? store.recordViews(view, patient) : [],
             coordinator && store.breakGlassOpenings && patient === null ? store.breakGlassOpenings(view) : [],
+            coordinator && store.coversGiven && patient === null ? store.coversGiven(view) : [],
           ]);
           if (!coordinator) return reply(200, { views });
-          return reply(200, { views, openings });
+          return reply(200, { views, openings, covers });
         }
         const { body, refusal } = await json();
         if (refusal) return refusal;
@@ -633,6 +662,7 @@ export function createSharedHandler({
             actorId: body.actorId.toLowerCase(),
             scope: body.scope,
             minutes: body.minutes,
+            reason: body.reason,
             ...(intentKey === undefined ? {} : { intentKey }),
           });
         } else if (path === "/v1/workspace/access/decide") {
@@ -689,6 +719,15 @@ export function createSharedHandler({
           return reply(messageOf(error) === "too_large" ? 413 : 400, { error: "Invalid subscription" });
         }
         if (path === "/v1/workspace/push-subscribe") {
+          const limited = pushSubscribeLimiter(actorId);
+          if (!limited.allowed) {
+            headers["retry-after"] = String(limited.retryAfterSeconds);
+            return reply(
+              429,
+              { code: "rate-limited", error: "Too many phone alert requests; try again shortly" },
+              "rate_limited",
+            );
+          }
           const subscription = parseSubscription(body?.subscription);
           if (!subscription) return reply(400, { error: "A browser push subscription is required" });
           const outcome = await store.subscribe(actorId, subscription, view.membershipId ?? null);
@@ -721,6 +760,15 @@ export function createSharedHandler({
       }
       if (path !== "/v1/workspace/commands" || request.method !== "POST")
         return reply(405, { error: "Method not allowed" });
+      const limited = commandLimiter(actorId);
+      if (!limited.allowed) {
+        headers["retry-after"] = String(limited.retryAfterSeconds);
+        return reply(
+          429,
+          { code: "rate-limited", error: "Too many saves; this change was not saved yet" },
+          "rate_limited",
+        );
+      }
       if (request.headers.get("content-type")?.split(";")[0].trim() !== "application/json")
         return reply(415, { error: "JSON required" });
       let body;

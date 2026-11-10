@@ -13,7 +13,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { AccessMembership, AccessRequest } from "@/components/ward-management/ward-access-admin";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import type { WardAccess, WardAccessScope } from "@/components/ward-management/ward-role-access";
+import type { CoverReasonId, WardAccess, WardAccessScope } from "@/components/ward-management/ward-role-access";
 import type {
   SharedAccessRequest,
   SharedChangeResult,
@@ -181,7 +181,12 @@ export type SharedCoverSource = {
   readonly loading: boolean;
   readonly self: string | null;
   readonly label: (actorId: string) => string;
-  readonly give: (input: { actorId: string; scope: WardAccessScope; minutes: number }) => Promise<StepUpResult>;
+  readonly give: (input: {
+    actorId: string;
+    scope: WardAccessScope;
+    minutes: number;
+    reason: CoverReasonId;
+  }) => Promise<StepUpResult>;
   readonly end: (id: string) => Promise<StepUpResult>;
 };
 
