@@ -1041,6 +1041,8 @@ export class SharedWorkspaceClient {
     if (this.busy || this.disposed) return;
     this.busy = true;
     const generation = this.viewGeneration;
+    // Audit M10: a refusal earlier in this run stays on the board while later, unrelated saves go.
+    let refusal: string | null = null;
     try {
       while (!this.disposed && (this.pending || this.queue.length)) {
         if (!this.pending) {
@@ -1063,7 +1065,7 @@ export class SharedWorkspaceClient {
             ...(this.queue.length && !queued.confirmed ? { reply: "revision" as const } : {}),
           };
         }
-        this.publish({ status: "saving", error: null });
+        this.publish({ status: "saving", error: refusal });
         const command = this.pending;
         const grantGeneration = this.grantGeneration;
         const epoch = this.roleEpoch;
@@ -1169,7 +1171,11 @@ export class SharedWorkspaceClient {
           return;
         }
         if (!response.ok) {
-          const scoped = response.status === 409 && conflict.namedConflict(value);
+          // Audit M10: a definite refusal (a named conflict, or the workflow's own 422) stops only the
+          // queued saves on its own record; the server still checks each of the others when it goes.
+          const scoped =
+            (response.status === 409 && conflict.namedConflict(value)) ||
+            (response.status === 422 && value?.code !== "role-ended");
           if (scoped) this.cancelQueuedOn(command.event, value);
           else this.cancelQueued();
           if (response.status === 409) {
@@ -1183,7 +1189,7 @@ export class SharedWorkspaceClient {
             error:
               response.status === 409
                 ? scoped
-                  ? conflict.changedFirstText(value)
+                  ? conflict.changedFirstText(value, this.offlineHold)
                   : saveProblem("changedMeanwhile")
                 : value?.code === "scope" && typeof value.error === "string"
                   ? `${value.error} Nothing was changed.`
@@ -1199,6 +1205,7 @@ export class SharedWorkspaceClient {
                           : saveProblem("refused"),
           });
           this.settle(command.commandId, "refused", this.view.error ?? "The action was not applied.");
+          refusal = this.view.error;
           if (scoped && this.queue.length) continue;
           break;
         }
@@ -1209,7 +1216,10 @@ export class SharedWorkspaceClient {
         // Audit E-05: the board's message line names the ward that was not asked, as the local refusal note does.
         this.publish({
           status: "ready",
-          error: partly ? `Sent to the suitable wards only. ${sentence(partly)}` : null,
+          error:
+            [refusal, partly ? `Sent to the suitable wards only. ${sentence(partly)}` : null]
+              .filter(Boolean)
+              .join(" ") || null,
         });
       }
     } catch {

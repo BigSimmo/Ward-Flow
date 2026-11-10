@@ -56,9 +56,9 @@ export const namedConflict = (value: unknown): boolean =>
   (value as { code?: unknown } | null)?.code === "stale" &&
   typeof (value as { recordType?: unknown } | null)?.recordType === "string";
 
-/** The board's message for the refused action. */
-export const changedFirstText = (value: unknown): string =>
-  `${conflictDesk(value)} changed this ${conflictRecordType(value)} while you were looking. Your action was not applied. Check the latest details, then try again.`;
+/** The board's message for the refused action; `offline` for a save that waited offline (audit M10). */
+export const changedFirstText = (value: unknown, offline = false): string =>
+  `${conflictDesk(value)} changed this ${conflictRecordType(value)} while you were ${offline ? "offline" : "looking"}. Your action was not applied. Check the latest details, then try again.`;
 
 /** The settle message for queued actions on the same record that were not sent. */
 export const queuedNotSentText = (count: number, value: unknown): string =>
