@@ -138,6 +138,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-113](#d-113-second-patient-identifier-on-accept-and-mark-done-no-initials-search-9-november-2026)                                                    | Second identifier on accept and Mark done; no initials search                        | Active                                           |
 | [D-114](#d-114-allow-pull_request_target-for-three-workflows-only-9-november-2026)                                                                      | Allow pull_request_target for three workflows only                                   | Active                                           |
 | [D-115](#d-115-one-count-on-every-screen-and-a-missing-patient-shown-everywhere-9-november-2026)                                                        | One count on every screen; missing patient shown everywhere                          | Active                                           |
+| [D-117](#d-117-care-plans-follow-up-frequent-presenter-count-tribunal-date-and-ward-flags-10-november-2026)                                             | Care plans follow-up: frequent presenter count, tribunal date, ward flags            | Active                                           |
 
 ---
 
@@ -1441,3 +1442,12 @@ is inferred.
 - **Also in the same PR:** the Statistics ward rosters show "Absent without leave", not "On leave" (D-38, no new ruling needed).
 - **Built so far (PR #1579):** items 1, 2 and 5. Items 3, 4 and 6 wait until PRs #1581 and #1583 merge, because those PRs hold the ward board and access-scope files the changes need; each is pinned as a to-do test in the audit files.
 - **Boundary:** synthetic data only. Changes display counts and labels; changes no signed clinical value or clinical rule, and approves no merge or release.
+
+## D-117. Care plans follow-up: frequent presenter count, tribunal date and ward flags (10 November 2026)
+
+- **Date:** 10 November 2026, about 10:01 AM AWST (02:01 UTC). **Decided by:** Josh, answering "Go ahead with all recommendations" to the three questions left after PR #1578 (D-104) merged. D-116 is claimed by PR #1581.
+- **Decision:**
+  1. **Frequent presenter tag:** counts earlier ED presentations in the last 12 months only. The current presentation is not counted, so the tag reflects history rather than today. The threshold stays 4 (D-104 item 3, synthetic).
+  2. **Tribunal hearing date:** stays typed text that the browser's own device copy does not keep (D-18). On a local board, after a refresh, "Hearing date passed, outcome not recorded" cannot show until the date is entered again. A shared synthetic workspace reloads from the server copy, so the date and the line can survive a refresh there. This stands while the app uses synthetic data; changing it needs a privacy rule change.
+  3. **Risk flags on referral-backed bed requests:** the ward's bed request card receives no referral data today, so it shows no flags. A ward can still read the full referral sent to it (D-79), and never sees other destinations (FD-23). Showing the flags on the request card is separate work, listed in the [backlog](backlog.md).
+- **Boundary:** synthetic data only. Confirms what is built; changes no signed clinical value or clinical rule, and approves no merge or release.
