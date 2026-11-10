@@ -117,7 +117,7 @@ describe("evaluate against a real git history", () => {
   }
 
   afterEach(() => {
-    if (root) rmSync(root, { recursive: true, force: true });
+    if (root) rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     root = "";
   });
 
