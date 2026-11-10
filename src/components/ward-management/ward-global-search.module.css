@@ -1604,6 +1604,17 @@ a.askChip {
     font-size: var(--wf-fs-13);
   }
 
+  /* Drawn at the heading's height, tapped at 48px (HOW-WE-WORK §6). */
+  .popup[data-start] .group .showAll {
+    position: relative;
+  }
+
+  .popup[data-start] .group .showAll::after {
+    content: "";
+    position: absolute;
+    inset: -12px -4px;
+  }
+
   .popup[data-start] .askChip,
   .popup[data-start] .commandBtn {
     height: 32px;
