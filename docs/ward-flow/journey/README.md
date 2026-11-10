@@ -279,3 +279,14 @@ Source digests were re-reviewed file by file before being re-recorded:
 - `governance-registers.tsx`: Governance's review list also shows each cover given (M58); `REVIEW_AUDIT_EVENT` moved from line 543 to 546, unchanged.
 
 After `main` (D-121 to D-127) was merged into this branch (10 Nov 2026), `ward/ward-screen.tsx` and `ward-tasks-drawer.tsx` hold both sides' edits. Each cited line was found again by its text, unchanged in role, payload and guard: the twelve `ward-screen.tsx` citations moved down by three to seven lines, and `RECORD_ESCALATION` in `ward-tasks-drawer.tsx` moved to line 673 (one comment line added beside the D-125 sign-out wait). Only lines and digests were re-recorded. This thread's rulings were then renumbered D-129 and D-130, a comment-only change in the cited files, so those digests (in `actions.json`, `event-dispositions.json` and `machines.json`) were re-recorded with no line moved.
+
+## Source review — 10 Nov 2026 (Batch 4 outages and pilot control, PR #1603, D-135)
+
+Source digests were re-reviewed file by file against `main` before being re-recorded. Only additive Batch 4 edits were found:
+
+- `ward-flow-event-roles.ts`, `ward-flow-events.ts`: three new events (`SET_SITE_FEATURE_SWITCH`, `RECORD_DOWNTIME_PACK_PRINTED`, `RECORD_OUTAGE_WINDOW`) and their roles were added. No existing event's payload or role changed; cited lines below the additions moved down only.
+- `ward-flow-reducer.ts`: one type import, the `PilotControlState` records joined to `WardFlowState`, and the three new events routed to `reducePilotControlEvent`. No existing case changed; later citations moved down by one to six lines.
+- `ward-access-state.ts`: the three new records are scoped (switches and outage windows to every desk, print times to the desks of the wards printed for). No existing field rule changed; every citation moved down by seven to ten lines.
+- `ward-flow-storage-validation.ts`: the three stored records are checked on restore. The cited locked-bed invariant moved from line 460 to 461, unchanged.
+
+Each cited line was found again by its text. The three new events have command models in `event-dispositions.json`; no screen dispatches `SET_SITE_FEATURE_SWITCH` or `RECORD_OUTAGE_WINDOW` yet (screens wait for the Batch 4 design review, D-74).
