@@ -14,7 +14,7 @@ import {
  * signed: it may be Josh's product default, or a figure an earlier build typed in with no decision
  * behind it (its `source` in `ward-clinical-value-notes.ts` says which). **Signed** means a named person signed it on a date, and the
  * type will not accept a signed value without both. On 15 Oct 2026 Josh signed every value with a
- * recorded source (D-56), and two more with a national source (D-58). On 16 Oct 2026 he signed the rest,
+ * recorded source (D-56), and two more with a national source (D-58, confirmed by D-122). On 16 Oct 2026 he signed the rest,
  * changing two of them (D-63). Signing is for
  * the prototype: real patient use still needs formal clinical governance sign-off (D-54). No value
  * is a legal limit (D-22) and none comes from the Mental Health Act. Ward Flow holds no Act periods:
@@ -27,11 +27,12 @@ import {
  * fails if a threshold constant is typed as a number anywhere else in the ward directory, and pins
  * `docs/ward-flow/clinical-values.md` to this list.
  *
- * Three values stay written in `ward-model.ts`, where the legal figure guard keeps their provenance
- * (`MODEL_CONSTANT_PROVENANCE`): the ED access target, the pull hold and the ED medical bed release.
- * They are read in here so this list is complete, and their status lives here like every other.
+ * Four values stay written in `ward-model.ts`, where the legal figure guard keeps their provenance
+ * (`MODEL_CONSTANT_PROVENANCE` in `tests/ward-legal-figure-guard.test.ts`): the ED access target, the
+ * pull hold, the extra travel hold (D-75) and the ED medical bed release. They are read in here so
+ * this list is complete, and their status lives here like every other.
  *
- * This module is pure data. It imports nothing but those three numbers.
+ * This module is pure data. It imports nothing but those four numbers.
  */
 
 const MINUTES_PER_HOUR = 60;
@@ -67,7 +68,7 @@ export type ClinicalValueEntry = ClinicalValueSignature & {
   readonly adjustable?: boolean;
 };
 
-/** Josh signed every value with a recorded source on 15 Oct 2026 (D-56), and two with a national source (D-58). */
+/** Josh signed every value with a recorded source on 15 Oct 2026 (D-56), and two with a national source (D-58, confirmed by D-122). */
 const SIGNED_BY_JOSH = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-15" } as const;
 /** Josh signed the remaining synthetic values for the prototype on 16 Oct 2026, two of them changed (D-63). */
 const SIGNED_BY_JOSH_16_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-16" } as const;
@@ -337,6 +338,39 @@ export const CLINICAL_VALUES = {
     name: "Carer, PSP and MHAS notification task stays listed, after an involuntary admission, transfer or discharge, for",
     group: "Alerts and holds",
     value: 72 * MINUTES_PER_HOUR,
+    unit: "minutes",
+  },
+  // D-122 (Josh, 10 Nov 2026): the register lists every value that flags or escalates, so the three
+  // forecast alert rules and the rail's handover prompt join it with the figures they already ran on.
+  forecastShortAlert: {
+    status: "synthetic",
+    name: "Forecast alert raised when a bed type is likely this many beds short tomorrow",
+    group: "Alerts and holds",
+    value: 3,
+    unit: "count",
+    adjustable: true,
+  },
+  forecastEdRiskLead: {
+    status: "synthetic",
+    name: "Forecast alert raised when someone in ED will pass the access target within",
+    group: "Alerts and holds",
+    value: 12 * MINUTES_PER_HOUR,
+    unit: "minutes",
+    adjustable: true,
+  },
+  forecastWorseAlert: {
+    status: "synthetic",
+    name: "Forecast alert raised when tomorrow's likely free beds dropped since the last look by",
+    group: "Alerts and holds",
+    value: 2,
+    unit: "count",
+    adjustable: true,
+  },
+  handoverDuePrompt: {
+    status: "synthetic",
+    name: "Rail shows Handover Due once the shift has this long or less to run",
+    group: "Alerts and holds",
+    value: 15,
     unit: "minutes",
   },
 
@@ -623,8 +657,9 @@ export const CLINICAL_VALUES = {
   },
   // ---- Triage urgency (triage and risk build, 7 Nov 2026) ------------------------------------------
   // The windows the triage form names beside urgencies B to E. Josh chose (7 Nov 2026) to list them
-  // here, synthetic until he signs them. They describe the urgency the clinician chooses; nothing
-  // computes, flags or escalates from them, and A, F and G carry no window.
+  // here, synthetic until he signs them. The form shows a "See by" time from the chosen urgency's
+  // window (`triage/triage-see-by.ts`, confirmed by D-122); nothing flags or escalates from them. A is
+  // seen straight away, and F and G carry no window.
   triageUrgencyB: {
     status: "synthetic",
     name: "Triage urgency B: seen within",

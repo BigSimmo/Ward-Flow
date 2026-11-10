@@ -56,6 +56,6 @@ A dated record of what the Ward Flow screen builds and reviews taught us. The ru
 ## Process lessons
 
 - Build only approved designs, mock-up first, numbered questions with one recommendation each.
-- Mark a PR ready once CI is green and it matches the mock-up; switch auto-merge on while checks run (GitHub refuses it on an already-green PR, Q175), but never on a PR that is held or awaiting Josh's approval; never merge by hand.
+- Mark a PR ready once the draft checks are green and it matches the mock-up ("Ward Flow required" fails on a draft by design and goes green only after the PR is ready); switch auto-merge on while checks run (GitHub refuses it on an already-green PR, Q175), but never on a PR that is held or awaiting Josh's approval. If GitHub refuses to arm a clean green PR of your own, merge it by hand (AGENTS.md hard rule 6, 3 November 2026).
 - Run one capture process at a time against a dev server; three at once crashed it. A production build (`WARD_GATE_BUILD=1 npm run build`, `next start`) takes five parallel reviewers.
 - Rewrite tests that pin old wording; never skip a test to get green.

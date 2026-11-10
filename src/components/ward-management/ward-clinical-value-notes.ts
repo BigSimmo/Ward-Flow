@@ -30,6 +30,9 @@ export interface ClinicalValueNote {
 const OBSERVATION_LEVEL_SOURCE = "Fix plan item 10 (21 Oct 2026)";
 /** Values a screen typed in, moved into the register unsigned (D-106, Josh, 9 Nov 2026). */
 const ADDED_9_NOV_SOURCE = "Added to the register 9 Nov 2026 (D-106); no clinical decision yet";
+/** The forecast alert rules in Settings, moved into the register unsigned (D-122, Josh, 10 Nov 2026). */
+const FORECAST_ALERT_SOURCE =
+  "Forecasting build (Josh, 23 Oct 2026, per the forecast source comments; no decision entry), labelled default; added to the register 10 Nov 2026 (D-122)";
 /** The triage form's urgency windows (Josh, 7 Nov 2026: list them here, synthetic until signed). */
 const TRIAGE_URGENCY_SOURCE =
   "WA mental health triage scale urgency categories, as on the triage form (SMHMR900); listed 7 Nov 2026, awaiting Josh's sign-off";
@@ -110,7 +113,8 @@ const CLINICAL_VALUE_NOTES = {
     source: "Josh, 21 Oct 2026, D-75 item 5 (ward-model.ts provenance)",
   },
   bedHoldReview: {
-    source: "Josh, 26 Sep 2026, his default",
+    source:
+      "Josh, 26 Sep 2026, his default. Dormant (D-122, 10 Nov 2026): signed, but no operational code uses it (only this reference list shows it); kept, not deleted",
   },
   bedCountFresh: {
     source: "D-63 (16 Oct 2026), local workflow choice, no external source",
@@ -135,6 +139,13 @@ const CLINICAL_VALUE_NOTES = {
   },
   redRowSnoozeCap: { source: ADDED_9_NOV_SOURCE },
   supportNotificationLookback: { source: ADDED_9_NOV_SOURCE },
+  forecastShortAlert: { source: FORECAST_ALERT_SOURCE },
+  forecastEdRiskLead: { source: FORECAST_ALERT_SOURCE },
+  forecastWorseAlert: { source: FORECAST_ALERT_SOURCE },
+  handoverDuePrompt: {
+    source:
+      "Shift ring on the rail, in the 27 Sep 2026 source snapshot with no decision recorded; added to the register 10 Nov 2026 (D-122)",
+  },
   lateArrivalGrace: {
     source: "D-22 (26 Sep 2026), labelled default",
   },

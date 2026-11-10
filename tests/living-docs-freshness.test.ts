@@ -1,8 +1,8 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { assess, readLastChecked, run } from "../scripts/check-living-docs-freshness.mjs";
+import { assess, LIVING_DOCS, readLastChecked, run } from "../scripts/check-living-docs-freshness.mjs";
 
 describe("check-living-docs-freshness", () => {
   it("reads the last-checked marker", () => {
@@ -31,10 +31,11 @@ describe("check-living-docs-freshness", () => {
     writeFileSync(join(root, "README.md"), "<!-- last-checked: 2026-10-24 -->\n");
     writeFileSync(join(root, "docs/ward-flow/STATUS.md"), "<!-- last-checked: 2026-10-24 -->\n");
     const report = run({ root, days: 14, reference: "2026-11-02" });
-    expect(report.problems).toEqual([
+    const present = (problems: { status: string }[]) => problems.filter((p) => p.status !== "absent");
+    expect(present(report.problems)).toEqual([
       expect.objectContaining({ path: "docs/ward-flow/STATUS.md", status: "stale", ageDays: 9, limit: 7 }),
     ]);
-    expect(run({ root, days: 3, reference: "2026-10-28" }).problems).toHaveLength(2);
+    expect(present(run({ root, days: 3, reference: "2026-10-28" }).problems)).toHaveLength(2);
   });
 
   it("checks listed pages and every page in a living folder", () => {
@@ -43,9 +44,36 @@ describe("check-living-docs-freshness", () => {
     writeFileSync(join(root, "README.md"), "<!-- last-checked: 2026-10-24 -->\n");
     writeFileSync(join(root, "docs/ward-flow/desk-guides/ward.md"), "# Ward\n");
     const report = run({ root, days: 14, reference: "2026-10-24" });
-    expect(report.results.map((r) => r.path)).toEqual(["README.md", "docs/ward-flow/desk-guides/ward.md"]);
-    expect(report.problems).toEqual([
+    expect(report.results.map((r) => r.path)).toEqual([...LIVING_DOCS, "docs/ward-flow/desk-guides/ward.md"]);
+    expect(report.problems.filter((p) => p.status !== "absent")).toEqual([
       expect.objectContaining({ path: "docs/ward-flow/desk-guides/ward.md", status: "missing" }),
     ]);
+  });
+
+  it("reports a listed page that is gone instead of dropping it (F-49)", () => {
+    const root = mkdtempSync(join(tmpdir(), "living-docs-"));
+    for (const path of LIVING_DOCS) {
+      mkdirSync(join(root, path, ".."), { recursive: true });
+      writeFileSync(join(root, path), "<!-- last-checked: 2026-10-24 -->\n");
+    }
+    expect(run({ root, days: 14, reference: "2026-10-24" }).problems).toEqual([]);
+    const gone = LIVING_DOCS[LIVING_DOCS.length - 1];
+    rmSync(join(root, gone));
+    expect(run({ root, days: 14, reference: "2026-10-24" }).problems).toEqual([
+      expect.objectContaining({ path: gone, status: "absent", detail: expect.stringContaining("file is gone") }),
+    ]);
+  });
+
+  it("does not treat an invalid or future date as fresh (F-49)", () => {
+    expect(assess({ lastChecked: "2026-02-30", reference: "2026-10-24", days: 14 })).toEqual({
+      status: "invalid",
+      ageDays: null,
+    });
+    expect(assess({ lastChecked: "2026-13-01", reference: "2026-10-24", days: 14 }).status).toBe("invalid");
+    expect(assess({ lastChecked: "2027-10-24", reference: "2026-10-24", days: 14 }).status).toBe("invalid");
+    expect(assess({ lastChecked: "2026-10-24", reference: "2026-10-24", days: 14 })).toEqual({
+      status: "ok",
+      ageDays: 0,
+    });
   });
 });

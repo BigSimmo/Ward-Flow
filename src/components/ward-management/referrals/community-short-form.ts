@@ -15,7 +15,7 @@ import type { FIRST_CONTACT_TARGETS } from "./referral-submission";
  * clearance question (Josh, 23 Oct 2026). Triage, charts and extra documents are recorded as none.
  */
 
-/** Josh, 23 Oct 2026: first contact sets the urgency tier. 24 hours is Tier 1, 72 hours Tier 2, 7 days Tier 3. */
+/** D-122 (Josh, 23 Oct 2026, recorded 10 Nov 2026): first contact sets the urgency tier. 24 hours is Tier 1, 72 hours Tier 2, 7 days Tier 3. */
 const TIER_BY_FIRST_CONTACT: Record<(typeof FIRST_CONTACT_TARGETS)[number], string> = {
   "24 hours": "1",
   "72 hours": "2",

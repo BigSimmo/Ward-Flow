@@ -11,7 +11,7 @@ import { describe, expect, it } from "vitest";
  * drawing.
  *
  * **The ruling.** Owner, 2026-08-30, upheld as `Q-13` on 2026-09-10 and recorded in
- * `docs/ward-flow/owner-rulings-2026-09-05.md` §1 (FD-13), verbatim: *"one story box, optional, and
+ * `docs/history/archive/dated-notes/owner-rulings-2026-09-05.md` §1 (FD-13), verbatim: *"one story box, optional, and
  * keep the two-pane layout."*
  *
  * 🔴 **THE DRAWING STILL SHOWS THREE, AND THAT IS WHY THIS FILE EXISTS.**

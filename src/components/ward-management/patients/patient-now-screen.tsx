@@ -198,7 +198,7 @@ export function PatientNowScreen({
     "worldGeneration",
   );
   const now = useWardFlowClock();
-  // D-65: the held bed review warning is paused behind its own flag until the hold time is reviewed.
+  // The held bed review warning sits behind its own flag: paused by D-65, on by default since 20 Oct 2026.
   const awolHoldReview = useWardFeatureFlag("awol-bed-hold-review");
   // Feature 11: actions follow the route's role (`ward-role-permissions.ts`, cross-role pairs listed there).
   const deskSwitch = useDeskRoleSwitch();
@@ -545,9 +545,13 @@ export function PatientNowScreen({
   const expandedStageDetail = expandedStage ? getStageBedflowDetail(expandedStage.id, liveMovement) : undefined;
   // Where they are right now, for the identity line under the name.
   const stayUnit = resolved.liveAdmission ? units.find((u) => u.id === resolved.liveAdmission?.unitId) : undefined;
+  // Page tops (QA, 10 Nov 2026): the phone's one identity line names the ED by its short name ("ARM ED").
+  const originEdCode = liveMovement?.originEdId === undefined ? undefined : edById(liveMovement.originEdId)?.siteCode;
   const where =
     mode === "find" || mode === "held"
-      ? originName
+      ? isPhone && originEdCode
+        ? `${originEdCode} ED`
+        : originName
       : mode === "transit"
         ? // Handover ready is still in the ED, awaiting collection: only Moving is on the way.
           `${liveMovement?.stage === "moving" ? "On the way to" : "Ready to go to"} ${acceptingUnit?.name ?? "the receiving ward"}`
@@ -932,12 +936,11 @@ export function PatientNowScreen({
     { key: "documents", label: "Documents", count: documentCount + (extras?.documents.length ?? 0) },
   ];
   const phoneMovement = isPhone && isLiveBedflow && liveMovement !== undefined;
-  // The phone shows the same tabs as the desktop, without counts, so the record reads the same everywhere.
+  // The phone shows the same tabs as the desktop, counts included (page tops, QA 10 Nov 2026).
   // Phone audit (1 Nov 2026): "Documents" was cut to "Documen" at 390 px; "Docs" lets all five fit.
   const phoneTabs = tabs.map((tab) => ({
     ...tab,
     label: tab.key === "documents" ? "Docs" : tab.label,
-    count: undefined,
   }));
   const canWithdraw =
     liveMovement !== undefined &&

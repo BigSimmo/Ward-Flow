@@ -7,7 +7,7 @@
 // text-3xs (10px) is the smallest STEP in that token scale; the old 8px text-4xs
 // step is retired. That is a fact about the token list, not a sanctioned rendered
 // size: the Ward Flow standard's floor for rendered HTML text is 12px (owner
-// rulings D-3 and O-15.1, docs/ward-flow/owner-decisions-2026-09-1x.md), and
+// rulings D-3 and O-15.1, docs/history/archive/dated-notes/owner-decisions-2026-09-1x.md), and
 // existing text-3xs/text-2xs uses on ward screens are grandfathered until each
 // screen's rebuild. This script does not enforce that floor; it only flags
 // arbitrary off-scale utilities.

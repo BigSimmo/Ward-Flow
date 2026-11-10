@@ -152,8 +152,9 @@ export type OccupancyRingProps = {
   className?: string;
 };
 
+/** D-109 and D-122 (Josh): the ring tests the whole percent it shows, so "85%" never sits beside "Under the 85% line". */
 function ringStatus(percent: number, alertAt: number): { tone: WfTone; word: string } {
-  return percent >= alertAt
+  return Math.round(percent) >= alertAt
     ? { tone: "warning", word: `At risk, over ${alertAt}%` }
     : { tone: "success", word: `Under the ${alertAt}% line` };
 }

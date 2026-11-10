@@ -13,6 +13,7 @@ import {
   MapPin,
   Ellipsis,
   Printer,
+  Star,
   Users,
 } from "lucide-react";
 import { MINUTES_PER_DAY, dayOf, formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
@@ -556,7 +557,9 @@ export function OnCallScreen() {
     { id: "community" as const, label: "Teams", count: tabCounts.community },
     { id: "statewide" as const, label: "State", count: tabCounts.statewide },
     { id: "mine" as const, label: "Mine", count: tabCounts.mine },
-  ];
+    // Page tops QA (10 Nov 2026): a phone shows three tabs; Mine opens from the More menu beside the
+    // search and joins the row only while it is the chosen tab.
+  ].filter((item) => !isPhone || item.id !== "mine" || tab === "mine");
 
   const hero = (
     <div data-testid="ward-on-call-hud-island" className={styles.hudIsland}>
@@ -762,6 +765,13 @@ export function OnCallScreen() {
                 label="On-call tools"
                 align="end"
                 items={[
+                  {
+                    id: "mine",
+                    label: "Mine",
+                    icon: Star,
+                    meta: tabCounts.mine,
+                    onSelect: () => setTab("mine"),
+                  },
                   { id: "copy", label: "Copy who is on", icon: Copy, onSelect: copyWhoIsOn },
                   { id: "downtime", label: "Downtime card", icon: Printer, onSelect: () => setDowntimeOpen(true) },
                 ]}

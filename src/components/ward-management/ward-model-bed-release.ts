@@ -64,7 +64,7 @@ export const BED_RELEASE_WAITING_ON = [
   "Awaiting community team acceptance",
   /*
    * ═══ TWO ADDED 2026-09-06 — OWNER RULING, CLINICIAN CHECK R6: *"Add those two."* ═══
-   * (`docs/ward-flow/clinician-check-rulings-2026-09-06.md`, read at source before this edit.)
+   * (`docs/history/archive/dated-notes/clinician-check-rulings-2026-09-06.md`, read at source before this edit.)
    *
    * ⚠️ **A FIXED CLINICAL LIST, EXTENDED BY THE OWNER — NO AGENT MAY ALTER IT FURTHER.** These
    * values ARE the rendered text; there is no label map between them and a coordinator's screen.
