@@ -4,7 +4,7 @@ import { SrOnly, StatusGlyph, cx } from "@/components/wf";
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { daysInBed, stayBand, type Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { BED_STATE_DETAILS, bedStates } from "@/components/ward-management/ward-bed-states";
+import { BED_STATE_DETAILS, bedStates, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 
 import styles from "./statistics-bed-map.module.css";
@@ -88,8 +88,10 @@ export function bedMapCells(
   bedReleases: BedRelease[],
   leaveBeds: readonly LeaveBed[],
   now: number,
+  holds: readonly ReservationReferral[] = [],
 ): BedMap {
-  const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+  // D-115: a bed named for an incoming patient is drawn Pulled, not Ready (it has no stay to attach).
+  const states = bedStates(unit, admissions, bedReleases, leaveBeds, holds);
   const here = admissions.filter((admission) => admission.unitId === unit.id && admission.state !== "departed");
   const leaveIds = new Set(leaveBeds.filter((bed) => bed.unitId === unit.id).map((bed) => bed.admissionId));
   const byLongestStay = (a: Admission, b: Admission) => (daysInBed(b, now) ?? -1) - (daysInBed(a, now) ?? -1);

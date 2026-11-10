@@ -108,7 +108,9 @@ export function StatisticsOverviewScreen() {
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'overview' section");
 
   const live = useStatisticsLive();
-  const { admissions, movements, bedReleases, leaveBeds, units } = live.state;
+  const { admissions, movements, referrals, bedReleases, leaveBeds, units } = live.state;
+  // D-115: a bed named for an incoming patient is not Ready.
+  const namedHolds = useMemo(() => [...movements, ...referrals], [movements, referrals]);
   const now = live.now;
   const service = useServiceScope();
   const [serviceFilter, setServiceFilter] = useState<string | null>(null);
@@ -125,7 +127,10 @@ export function StatisticsOverviewScreen() {
     [units, bedReleases],
   );
   const refused = useMemo(() => refusedAndNothingPending(movements, units, now), [movements, units, now]);
-  const capacity = useMemo(() => networkCapacity(units, bedReleases, admissions), [units, bedReleases, admissions]);
+  const capacity = useMemo(
+    () => networkCapacity(units, bedReleases, admissions, namedHolds),
+    [units, bedReleases, admissions, namedHolds],
+  );
   // Executive: the stage and decline parts add up to a total on the same card, so they hide together.
   const stagesShown = parts(stageTallies.map((stage) => stage.count));
   const declinesShown = declinesReadout.ok ? parts(declinesReadout.value.tallies.map((tally) => tally.count)) : [];
@@ -144,8 +149,8 @@ export function StatisticsOverviewScreen() {
   );
 
   const unitRows = useMemo(
-    () => networkUnitRows(units, admissions, bedReleases, leaveBeds),
-    [units, admissions, bedReleases, leaveBeds],
+    () => networkUnitRows(units, admissions, bedReleases, leaveBeds, namedHolds),
+    [units, admissions, bedReleases, leaveBeds, namedHolds],
   );
   const wardsOverLine = useMemo(
     () => unitRows.filter((row) => row.rate >= BED_ALERT_THRESHOLD_PERCENT).length,
@@ -277,6 +282,7 @@ export function StatisticsOverviewScreen() {
                 bedReleases={bedReleases}
                 admissions={admissions}
                 leaveBeds={leaveBeds}
+                holds={namedHolds}
                 service={serviceFilter}
               />
             </Follow>

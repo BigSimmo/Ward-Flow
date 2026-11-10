@@ -4,7 +4,7 @@ import {
   remainingSpeciallingCapacity,
   type Admission,
 } from "@/components/ward-management/ward-admissions";
-import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { readyBedsNow, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { mixSexOf, referralEligibility } from "@/components/ward-management/ward-eligibility";
 import {
@@ -182,10 +182,11 @@ export function headlineAvailable(
   bedReleases: readonly BedRelease[],
   leaveBeds: readonly LeaveBed[],
   now: Instant,
+  holds: readonly ReservationReferral[] = [],
 ): number {
   void leaveBeds;
   void now;
-  const ready = readyBedsNow(unit, admissions, bedReleases);
+  const ready = readyBedsNow(unit, admissions, bedReleases, holds);
   if (!Number.isFinite(ready) || ready <= 0) return 0;
   return Math.floor(ready);
 }
@@ -227,8 +228,9 @@ export function acceptingBedCounts(
   bedReleases: readonly BedRelease[],
   leaveBeds: readonly LeaveBed[],
   now: Instant,
+  holds: readonly ReservationReferral[] = [],
 ): AcceptingBedCounts {
-  const free = headlineAvailable(unit, admissions, bedReleases, leaveBeds, now);
+  const free = headlineAvailable(unit, admissions, bedReleases, leaveBeds, now, holds);
   const staffable = remainingSpeciallingCapacity(unit, admissions);
 
   return {
@@ -271,8 +273,9 @@ export function constraintSentence(
   bedReleases: readonly BedRelease[],
   leaveBeds: readonly LeaveBed[],
   now: Instant,
+  holds: readonly ReservationReferral[] = [],
 ): string | null {
-  const free = headlineAvailable(unit, admissions, bedReleases, leaveBeds, now);
+  const free = headlineAvailable(unit, admissions, bedReleases, leaveBeds, now, holds);
   if (free <= 0) return null;
 
   const counts = acceptingBedCounts(unit, admissions, bedReleases, leaveBeds, now);

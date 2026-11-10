@@ -12,7 +12,7 @@ import {
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { readyBedsNow, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import type { BedRelease, DeclineReason, HealthService, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
@@ -67,7 +67,14 @@ function shortSite(name: string): string {
   return name.replace(/ (Memorial |General |Public )?(Hospital|Health Campus|Health Service)$/, "");
 }
 
-type UnitRow = { unit: Unit; states: ReturnType<typeof bedStates>; rate: number; service: string };
+type UnitRow = {
+  unit: Unit;
+  states: ReturnType<typeof bedStates>;
+  /** Beds in use (Occupied + Pulled by a stay), the figure Home's occupancy reads. */
+  inUse: number;
+  rate: number;
+  service: string;
+};
 
 /** Each ward's bed states and in-use rate (Occupied + Pulled), with the service it reports to. */
 export function networkUnitRows(
@@ -75,11 +82,16 @@ export function networkUnitRows(
   admissions: Admission[],
   bedReleases: BedRelease[],
   leaveBeds: LeaveBed[],
+  holds: readonly ReservationReferral[] = [],
 ): UnitRow[] {
   return units.map((unit) => {
-    const states = bedStates(unit, admissions, bedReleases, leaveBeds);
-    const rate = unit.beds > 0 ? Math.round(((states.occupied + states.pulled) / unit.beds) * 100) : 0;
-    return { unit, states, rate, service: siteByCode(unit.siteCode)?.service ?? "Other" };
+    // D-115: a bed named for an incoming patient is Pulled, not Ready, in the four boxes. The
+    // in-use rate stays the beds taken by a stay, as Home's occupancy and the 85% line read it.
+    const states = bedStates(unit, admissions, bedReleases, leaveBeds, holds);
+    const unheld = holds.length === 0 ? states : bedStates(unit, admissions, bedReleases, leaveBeds);
+    const inUse = unheld.occupied + unheld.pulled;
+    const rate = unit.beds > 0 ? Math.round((inUse / unit.beds) * 100) : 0;
+    return { unit, states, inUse, rate, service: siteByCode(unit.siteCode)?.service ?? "Other" };
   });
 }
 
@@ -91,7 +103,7 @@ export function networkServiceRows(unitRows: UnitRow[]) {
     const rows = unitRows.filter((row) => row.service === entry.service);
     const sum = (pick: (row: UnitRow) => number) => rows.reduce((total, row) => total + pick(row), 0);
     const beds = sum((row) => row.unit.beds);
-    const inUse = sum((row) => row.states.occupied + row.states.pulled);
+    const inUse = sum((row) => row.inUse);
     const ready = sum((row) => row.states.ready);
     const closed = sum((row) => row.states.closed);
     const sites = Array.from(
@@ -100,6 +112,7 @@ export function networkServiceRows(unitRows: UnitRow[]) {
     return {
       ...entry,
       beds,
+      inUse,
       occupied: sum((row) => row.states.occupied),
       ready,
       pulled: sum((row) => row.states.pulled),
@@ -159,12 +172,13 @@ export function networkCapacity(
   units: Unit[],
   bedReleases: BedRelease[],
   admissions: readonly Admission[],
+  holds: readonly ReservationReferral[] = [],
 ): { ready: number; empty: number; allocatable: number } {
   let ready = 0;
   let empty = 0;
   let allocatable = 0;
   for (const unit of units) {
-    ready += readyBedsNow(unit, admissions, bedReleases);
+    ready += readyBedsNow(unit, admissions, bedReleases, holds);
     empty += unit.empty.value;
     allocatable += unit.allocatable.value;
   }
@@ -284,7 +298,7 @@ export function ServiceOccupancyCard({
                 }
                 fig={`${percent}%`}
                 slimFig
-                unit={`${entry.occupied + entry.pulled} of ${entry.beds} beds`}
+                unit={`${entry.inUse} of ${entry.beds} beds`}
               >
                 <BedStack
                   label={`${entry.name} beds`}
@@ -523,19 +537,25 @@ export function NetworkOverviewCards({
   admissions,
   bedReleases,
   leaveBeds,
+  holds = [],
 }: {
   part: NetworkOverviewPart;
   units: Unit[];
   admissions: Admission[];
   bedReleases: BedRelease[];
   leaveBeds: LeaveBed[];
+  /** D-115: open journeys and referrals, so a bed named for an incoming patient is not Ready. */
+  holds?: readonly ReservationReferral[];
 }) {
   const unitRows = useMemo(
-    () => networkUnitRows(units, admissions, bedReleases, leaveBeds),
-    [units, admissions, bedReleases, leaveBeds],
+    () => networkUnitRows(units, admissions, bedReleases, leaveBeds, holds),
+    [units, admissions, bedReleases, leaveBeds, holds],
   );
   const services = useMemo(() => networkServiceRows(unitRows), [unitRows]);
-  const capacity = useMemo(() => networkCapacity(units, bedReleases, admissions), [units, bedReleases, admissions]);
+  const capacity = useMemo(
+    () => networkCapacity(units, bedReleases, admissions, holds),
+    [units, bedReleases, admissions, holds],
+  );
   const openNow = useMemo(
     () => units.reduce((sum, unit) => sum + openBedsNow(unit, bedReleases), 0),
     [units, bedReleases],
@@ -576,16 +596,19 @@ export function SiteOverviewCards({
   admissions,
   bedReleases,
   leaveBeds,
+  holds = [],
 }: {
   part: NetworkOverviewPart;
   units: Unit[];
   admissions: Admission[];
   bedReleases: BedRelease[];
   leaveBeds: LeaveBed[];
+  /** D-115: open journeys and referrals, so a bed named for an incoming patient is not Ready. */
+  holds?: readonly ReservationReferral[];
 }) {
   const services = useMemo(
-    () => networkServiceRows(networkUnitRows(units, admissions, bedReleases, leaveBeds)),
-    [units, admissions, bedReleases, leaveBeds],
+    () => networkServiceRows(networkUnitRows(units, admissions, bedReleases, leaveBeds, holds)),
+    [units, admissions, bedReleases, leaveBeds, holds],
   );
   return part === "occupancy" ? (
     <div data-testid="ward-statistics-network-cards">
@@ -615,6 +638,7 @@ export function ExecutiveNetworkOverviewCards({
       {
         ...entry,
         beds: beds.total,
+        inUse: beds.inUse,
         occupied: beds.occupied,
         ready: beds.ready,
         pulled: beds.pulled,
