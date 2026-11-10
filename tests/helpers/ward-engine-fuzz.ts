@@ -10,6 +10,7 @@
 import { PULL_HOLD_EXTENSION_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { upcomingWeekendWindow } from "@/components/ward-management/discharges/discharge-weekend-review";
 import { perthMidnight } from "@/components/ward-management/ward-clock";
+import { TRIBUNAL_OUTCOMES } from "@/components/ward-management/ward-patient-care-plans";
 import {
   CANCEL_TRANSPORT_REASONS,
   DIVERSION_REASONS,
@@ -2455,6 +2456,68 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         shift: pick(random, ["this_shift", "next_shift"] as const) ?? "this_shift",
         count: pick(random, [1, 2, 3, 4] as const) ?? 1,
         reasons: chance(random, 0.9) ? ["high_acuity"] : [],
+      };
+    },
+  ],
+  // Care plans and safety flags (Josh, 9 Nov 2026): facts on the person, synthetic values only.
+  // Weight 0 and last in the list: only the coverage sweep sends them, so the weighted draws of
+  // every other builder stay as they were.
+  [
+    0,
+    (state, random) => ({
+      type: "RECORD_CARE_PLAN",
+      patientId: pick(random, state.patients)?.id ?? MISSING_ID,
+      plan: {
+        type: "Crisis/safety plan",
+        agreedBy: "Community team",
+        agreedOn: "2026-11-01",
+        helps: ["Quiet space"],
+        ...(random() < 0.5 ? { attachment: { fileType: "PDF", sizeBytes: 2048 } } : {}),
+      },
+    }),
+  ],
+  [
+    0,
+    (state, random) => ({
+      type: "RECORD_TRIBUNAL_HEARING",
+      patientId: pick(random, state.patients)?.id ?? MISSING_ID,
+      date: random() < 0.5 ? "2026-10-20" : "2027-01-15",
+      ...(random() < 0.5 ? { time: "10:30" } : {}),
+    }),
+  ],
+  [
+    0,
+    (state, random) => {
+      const patient = prefer(random, state.patients, (candidate) => Boolean(candidate.tribunalHearing));
+      return {
+        type: "RECORD_TRIBUNAL_OUTCOME",
+        patientId: patient?.id ?? MISSING_ID,
+        outcome: pick(random, TRIBUNAL_OUTCOMES) ?? "Adjourned",
+      };
+    },
+  ],
+  [
+    0,
+    (state, random) => ({
+      type: "SET_CULTURAL_SUPPORT_REQUEST",
+      patientId: pick(random, state.patients)?.id ?? MISSING_ID,
+      request: random() < 0.7 ? "Aboriginal liaison officer" : null,
+    }),
+  ],
+  // A release step's Undo, aimed at its own newest record. Only the random step undo drew it
+  // before, so a change in the builder count could leave the coverage sweep without it.
+  [
+    0,
+    (state) => {
+      const record = (state.undoRecords ?? []).findLast(
+        (candidate) => candidate.kind === "step" && candidate.undoType === "UNDO_RELEASE_STEP",
+      );
+      if (!record || record.kind !== "step") return { type: "UNDO_RELEASE_STEP" };
+      return {
+        type: "UNDO_RELEASE_STEP",
+        role: record.role,
+        ...undoSubjectField(state, record.subjectId),
+        ...(record.unitId ? { actingUnitId: record.unitId } : {}),
       };
     },
   ],

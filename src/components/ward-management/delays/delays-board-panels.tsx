@@ -47,6 +47,12 @@ import { standingSuffix, typedTimeStanding } from "@/components/ward-management/
 import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import redesign from "./waiting.module.css";
 import polish from "./waiting-polish.module.css";
+import {
+  escalationHistory,
+  escalationNextLabel,
+  escalationSentence,
+  escalationRecords,
+} from "@/components/ward-management/movements/escalation-history";
 
 /** Round 7: candidate wards shown before Show more. */
 const CANDIDATE_LIMIT = 5;
@@ -83,7 +89,12 @@ export function PersonPanel({
   const thresholds = useDueSoonThresholds();
   const typedStanding = typedTimeStanding(movement, now, thresholds);
   const patient = patientOf(movement);
-  const escalation = movement.escalation;
+  // Item 28: the latest escalation and those before it, each with what happened next (derived),
+  // all read from one list so the two never disagree.
+  const escalations = escalationHistory(movement);
+  const escalation = escalations.at(-1);
+  const earlierEscalations = escalations.slice(0, -1);
+  const unitNameFor = (unitId: string) => units.find((unit) => unit.id === unitId)?.name ?? "a ward";
   const triedUnits = (escalation?.triedUnitIds ?? [])
     .map((unitId) => units.find((unit) => unit.id === unitId))
     .filter((unit): unit is Unit => unit !== undefined);
@@ -326,6 +337,23 @@ export function PersonPanel({
                         ))}
                       </>
                     )}
+                    {earlierEscalations.length > 0 ? (
+                      <span data-testid="delays-escalation-history">
+                        {" · Earlier: "}
+                        {earlierEscalations
+                          .map(
+                            (entry) =>
+                              `${formatInstantWithDay(entry.at, now)}, ${escalationSentence(entry).replace(/^\w/u, (first) => first.toLowerCase())}, tried ${
+                                entry.triedUnitIds.length > 0
+                                  ? entry.triedUnitIds.map((unitId) => unitNameFor(unitId)).join(", ")
+                                  : "no units recorded"
+                              }, then ${escalationNextLabel(entry.next, unitNameFor, (at) =>
+                                formatInstantWithDay(at, now),
+                              ).replace(/^\w/u, (first) => first.toLowerCase())}`,
+                          )
+                          .join("; ")}
+                      </span>
+                    ) : null}
                   </span>
                 </p>
               ) : null}
@@ -696,6 +724,9 @@ export function Registers({
                     <span className={styles.ell}>{patientOf(movement).formalName}</span>
                     <small className={styles.ell}>
                       {`To ${escalation.contact}, ${formatInstantWithDay(escalation.at, now)}`}
+                      {escalationRecords(movement).length > 1
+                        ? ` · escalated ${escalationRecords(movement).length} times`
+                        : null}
                       {isOutsideService(movement) ? (
                         <span data-testid={`delays-escalation-outside-${movement.id}`}>{` · Outside ${service}`}</span>
                       ) : null}

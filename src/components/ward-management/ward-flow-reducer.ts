@@ -195,6 +195,7 @@ import { reduceReviewReadyEvent } from "./ward-flow-review-ready-events";
 import { applyExampleListsOverlay } from "@/components/ward-management/ward-demo-example-lists";
 import { stepUndoSubjectId, subjectId } from "./ward-flow-subject-id";
 import { nextBedReleaseId, withFreshIds } from "./ward-runtime-ids";
+import { isPatientCarePlanEvent } from "./ward-patient-care-plan-events";
 export { UNLINKED_CARE_REFUSAL } from "./ward-flow-protected-record-events";
 
 /**
@@ -2374,6 +2375,8 @@ export function reduceClinicalEvent(
     case "RECORD_TRIAGE_SIGNED":
       return reducerSlices().reduceTriageSigned(state, event, reject);
     default: {
+      if (isPatientCarePlanEvent(event))
+        return reducerSlices().reducePatientCarePlanEvent(state, event, reject, decision);
       const _exhaustive: never = event;
       void _exhaustive;
       return state;

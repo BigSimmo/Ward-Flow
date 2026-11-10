@@ -11,6 +11,8 @@ export const RISK_FLAG_LABELS: Record<ReferralIntakeDetails["riskFlags"][number]
   medical: "Acute medical",
   vulnerable: "Vulnerable adult",
   suicide: "Suicide or self-harm",
+  // Josh, 9 Nov 2026, care plans and safety flags thread: defaults approved.
+  securityEscort: "Needs security escort",
 };
 
 /** A recorded flag in words; a flag not on the list reads as recorded. */

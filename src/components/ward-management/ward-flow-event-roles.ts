@@ -657,4 +657,11 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   UNDO_BED_STEP: ["ward", "bed_manager", "coordinator"],
   UNDO_RELEASE_STEP: ["coordinator", "ward", "ed", "community", "bed_manager"],
   UNDO_PATIENT_RECORD: ["community", "coordinator"],
+  // Care plans and safety flags (Josh, 9 Nov 2026, defaults approved): any clinical desk that can
+  // open the patient may record a plan or a cultural support request; tribunal dates are recorded
+  // by the ward, the community team (CTO hearings) or the coordinator.
+  RECORD_CARE_PLAN: ["ward", "ed", "community", "coordinator"],
+  RECORD_TRIBUNAL_HEARING: ["ward", "community", "coordinator"],
+  RECORD_TRIBUNAL_OUTCOME: ["ward", "community", "coordinator"],
+  SET_CULTURAL_SUPPORT_REQUEST: ["ward", "ed", "community", "coordinator"],
 };

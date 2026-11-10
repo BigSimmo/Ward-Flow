@@ -477,7 +477,7 @@ export const CRAWL_JOBS: readonly HowTo[] = [
       {
         target: { sel: '[data-testid="ward-shortlist-escalation-toggle"]' },
         title: "Record escalation",
-        body: "Opens a short form. Update escalation changes one already recorded.",
+        body: "Opens a short form. Update escalation records a further escalation; earlier ones stay in the history.",
       },
       {
         target: { sel: '[data-testid="ward-shortlist-escalation-submit"]' },

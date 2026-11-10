@@ -118,6 +118,7 @@ export const HUMAN_ONLY_TEXT_FIELDS: readonly string[] = [
   "reassessmentNote",
   "reassessmentHistory[].note",
   "escalation.contact",
+  "escalations[].contact",
   "cadNumber",
   "trackingNumber",
   "uploadedForms[].formName",
@@ -127,6 +128,16 @@ export const HUMAN_ONLY_TEXT_FIELDS: readonly string[] = [
   "who",
   "^supportNotifications[].reason",
   "dischargeCriteria.items[].criterion",
+  // D-104 care plans and tribunal hearing (9 Nov 2026). The stored shape takes any text in these, so
+  // the placeholder passes the restore fence.
+  "^patients[].carePlans[].agreedBy",
+  "^patients[].carePlans[].agreedOn",
+  "^patients[].carePlans[].reviewOn",
+  "^patients[].carePlans[].contactName",
+  "^patients[].carePlans[].contactPhone",
+  "^patients[].carePlans[].helpsExtra",
+  "^patients[].tribunalHearing.date",
+  "^patients[].tribunalHearing.time",
 ];
 
 /**

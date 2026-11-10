@@ -64,10 +64,12 @@ describe("Ward Flow Read-Only Plain History", () => {
       // Feature 14 (9 Nov 2026) adds MARK_WEEKEND_DISCHARGE_REVIEWED.
       // Feature 5 (9 Nov 2026) adds SET_CLINICALLY_READY.
       // Features 37 and 13 (9 Nov 2026) add RECORD_DISCHARGE_CHECK and RECORD_FOLLOW_UP_REPLY.
+      // Care plans and safety flags (D-104, 9 Nov 2026) adds RECORD_CARE_PLAN, RECORD_TRIBUNAL_HEARING,
+      // RECORD_TRIBUNAL_OUTCOME and SET_CULTURAL_SUPPORT_REQUEST.
       // Review tracker and wait list (9 Nov 2026) add REQUEST_PSYCH_REVIEW, RECORD_PSYCH_REVIEW_SEEN
       // and MARK_WARD_READY_FOR_NEXT. Staff needed (9 Nov 2026) adds REQUEST_WARD_STAFF and
       // CLOSE_WARD_STAFF_REQUEST.
-      expect(allEventTypes.length).toBe(189);
+      expect(allEventTypes.length).toBe(193);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

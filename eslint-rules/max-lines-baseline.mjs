@@ -22,11 +22,12 @@
 // 30 October 2026 (D-89): and the nurse in charge's and ED clinician's Waiting copies, which follow the coordinator's line by line.
 // 9 Nov 2026 (PR #1583): main reached 2547 of the reducer's 2550 with PR #1563; the discharge and
 // capacity features add six dispatch lines (their logic already lives in slices), so the cap is 2555.
+// 10 Nov 2026 (PR #1583): PR #1578 took main to 2550, so with the same six lines the cap is 2560.
 export const MAX_LINES_DEFAULT = 1500;
 export const MAX_LINES_HEADROOM = 300;
 
 export const MAX_LINES_BASELINE = {
-  "src/components/ward-management/ward-flow-reducer.ts": 2555,
+  "src/components/ward-management/ward-flow-reducer.ts": 2560,
   "src/components/ward-management/ward/ward-screen.tsx": 2575,
   "src/components/ward-management/ward-model.ts": 1900,
   "src/components/ward-management/ward-movements.ts": 2070,

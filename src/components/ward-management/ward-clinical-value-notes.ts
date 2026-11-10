@@ -256,6 +256,10 @@ const CLINICAL_VALUE_NOTES = {
   triageUrgencyC: { source: TRIAGE_URGENCY_SOURCE },
   triageUrgencyD: { source: TRIAGE_URGENCY_SOURCE },
   triageUrgencyE: { source: TRIAGE_URGENCY_SOURCE },
+  frequentPresenterEdPresentations: {
+    source:
+      "Josh's product default, 9 Nov 2026 (D-104, care plans and safety flags); quoted from memory, check before clinical use",
+  },
 } satisfies Record<ClinicalValueId, ClinicalValueNote>;
 
 /** Every value as a list, with its id, in the order Settings and the doc show them. */

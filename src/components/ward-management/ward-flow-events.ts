@@ -11,6 +11,7 @@ import type {
 import type { AdminDetailField, Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { ArchivePatientEvent } from "./ward-patient-archive";
 import type { DischargeReasonEvent } from "./ward-delayed-discharge";
+import type { PatientCarePlanEvent } from "./ward-patient-care-plan-events";
 import type { InboxWardFlowEvent } from "./ward-inbox-events";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { EdPresentation } from "./ed/ed-presentation";
@@ -2718,7 +2719,8 @@ export type WardFlowEvent =
     }
   | UndoBedMeetingActionEvent
   | Tier1UndoEvent
-  | ArchivePatientEvent;
+  | ArchivePatientEvent
+  | PatientCarePlanEvent;
 
 /** Road or flight — the two repatriation modes this prototype records. Never free text. */
 export const REPATRIATION_MODES = ["road", "flight"] as const;

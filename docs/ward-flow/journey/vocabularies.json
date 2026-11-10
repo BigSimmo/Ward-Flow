@@ -694,7 +694,10 @@
     "interpreterRequired",
     "maritalStatus",
     "advanceHealthDirective",
-    "enduringGuardian"
+    "enduringGuardian",
+    "carePlans",
+    "tribunalHearing",
+    "culturalSupportRequested"
    ]
   },
   "ELIGIBILITY_GATES": {
@@ -713,6 +716,42 @@
     "gender_designation",
     "sex_mix",
     "specialling"
+   ]
+  },
+  "CARE_PLAN_TYPES": {
+   "file": "ward-patient-care-plans.ts",
+   "members": [
+    "Crisis/safety plan",
+    "Frequent presenter plan",
+    "Community care plan",
+    "Other"
+   ]
+  },
+  "CARE_PLAN_HELPS": {
+   "file": "ward-patient-care-plans.ts",
+   "members": [
+    "Quiet space",
+    "Known staff member",
+    "Family or carer involved early",
+    "Clear plan explained",
+    "Interpreter",
+    "Cultural support",
+    "Contact the community team"
+   ]
+  },
+  "TRIBUNAL_OUTCOMES": {
+   "file": "ward-patient-care-plans.ts",
+   "members": [
+    "Held",
+    "Adjourned",
+    "Cancelled"
+   ]
+  },
+  "CULTURAL_SUPPORT_REQUESTS": {
+   "file": "ward-patient-care-plans.ts",
+   "members": [
+    "Aboriginal liaison officer",
+    "Other cultural support"
    ]
   }
  },
