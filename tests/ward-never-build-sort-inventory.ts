@@ -70,21 +70,21 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
   },
   {
     file: "statistics/statistics-screen.tsx",
-    match: "right.ready - left.ready || left.name.localeCompare(right.name)",
+    match: "left.name.localeCompare(right.name)",
     list: "wards",
-    key: "ready beds, most first; then ward name",
-    order: "NEEDS JOSH",
+    key: "ward name, A to Z",
+    order: "fixed order",
     reason:
-      "The Statistics finder, where a person picks a ward to open, lists wards most ready beds first rather than A to Z.",
+      "D-126 (10 Nov 2026): the Statistics finder's Wards tab, where a person picks a ward to open, lists wards A to Z by name, not most ready beds first.",
   },
   {
     file: "capacity/capacity-derivations.ts",
-    match: "y.beds - x.beds || x.unit.name.localeCompare(y.unit.name)",
+    match: "byServiceThenName(x.unit, y.unit)",
     list: "wards",
-    key: "ready beds of the needed kind, most first; then ward name",
-    order: "NEEDS JOSH",
+    key: "health service, then ward name",
+    order: "fixed order",
     reason:
-      "The Capacity mismatch pop-up lists 'Ready beds that fit' a waiting group most fitting beds first, beside those waiting people, and each ward row is a button.",
+      "D-126 (10 Nov 2026): the Capacity mismatch pop-up's 'Ready beds that fit' list uses the fixed fit-list order (health service then ward name, as D-71 and D-110), not most fitting beds first.",
   },
   {
     file: "referrals/referral-destination-options.ts",

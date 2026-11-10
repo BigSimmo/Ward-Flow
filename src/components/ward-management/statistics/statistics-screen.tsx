@@ -671,9 +671,8 @@ function StatisticsSummaryView({
       phoneSkipsFinder
         ? { ward: [], ed: [], service: [], team: [] }
         : {
-            ward: allPressureWards
-              .map(wardFinderEntry)
-              .sort((left, right) => right.ready - left.ready || left.name.localeCompare(right.name)),
+            // D-126 (10 Nov 2026): a finder people search by name, so wards run A to Z, not most ready first.
+            ward: allPressureWards.map(wardFinderEntry).sort((left, right) => left.name.localeCompare(right.name)),
             ed: emergencyDepts
               .filter((ed) => directory === undefined || directory.edIds.includes(ed.id))
               .map((ed) => ({
