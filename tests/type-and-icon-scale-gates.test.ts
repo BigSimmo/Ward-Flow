@@ -27,7 +27,7 @@ const GATES = [
 
 const fixtures: string[] = [];
 afterEach(() => {
-  for (const fixture of fixtures.splice(0)) rmSync(fixture, { recursive: true, force: true });
+  for (const fixture of fixtures.splice(0)) rmSync(fixture, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 describe.each(GATES)("$script", ({ script, clean, offending }) => {
