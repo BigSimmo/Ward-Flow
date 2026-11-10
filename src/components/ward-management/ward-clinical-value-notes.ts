@@ -127,10 +127,11 @@ const CLINICAL_VALUE_NOTES = {
   },
   pullHoldMaxTotal: {
     source:
-      "Josh, 9 Nov 2026, decision card on the discharge and capacity review page: signed the proposed pull limit (feature 11)",
+      "D-118 (Josh, 9 Nov 2026, decision card on the discharge and capacity review page): signed 12 hours (feature 11)",
   },
   transportAcceptDelay: {
-    source: "Josh, 9 Nov 2026, decision card on the discharge and capacity review page: signed 30 minutes (feature 25)",
+    source:
+      "D-118 (Josh, 9 Nov 2026, decision card on the discharge and capacity review page): signed 30 minutes (feature 25)",
   },
   redRowSnoozeCap: { source: ADDED_9_NOV_SOURCE },
   supportNotificationLookback: { source: ADDED_9_NOV_SOURCE },
@@ -195,7 +196,8 @@ const CLINICAL_VALUE_NOTES = {
     source: "D-58 (15 Oct 2026), national mental health KPI for readmission within 28 days (AIHW); a prompt to look",
   },
   eddSlipFlag: {
-    source: "Josh, 9 Nov 2026, decision card on the discharge and capacity review page: signed 3 days (feature 6)",
+    source:
+      "D-118 (Josh, 9 Nov 2026, decision card on the discharge and capacity review page): signed 3 days (feature 6)",
   },
   breakGlassWindow: {
     source: "D-63 (16 Oct 2026), local privacy choice under MP 0015/16 need to know and audit",

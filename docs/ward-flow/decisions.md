@@ -139,6 +139,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-114](#d-114-allow-pull_request_target-for-three-workflows-only-9-november-2026)                                                                      | Allow pull_request_target for three workflows only                                   | Active                                           |
 | [D-115](#d-115-one-count-on-every-screen-and-a-missing-patient-shown-everywhere-9-november-2026)                                                        | One count on every screen; missing patient shown everywhere                          | Active                                           |
 | [D-117](#d-117-care-plans-follow-up-frequent-presenter-count-tribunal-date-and-ward-flags-10-november-2026)                                             | Care plans follow-up: frequent presenter count, tribunal date, ward flags            | Active                                           |
+| [D-118](#d-118-discharge-and-capacity-values-pull-limit-transport-delay-and-discharge-date-slip-9-november-2026)                                        | Discharge and capacity values: pull limit, transport delay, date slip                | Active                                           |
 
 ---
 
@@ -1451,3 +1452,12 @@ is inferred.
   2. **Tribunal hearing date:** stays typed text that the browser's own device copy does not keep (D-18). On a local board, after a refresh, "Hearing date passed, outcome not recorded" cannot show until the date is entered again. A shared synthetic workspace reloads from the server copy, so the date and the line can survive a refresh there. This stands while the app uses synthetic data; changing it needs a privacy rule change.
   3. **Risk flags on referral-backed bed requests:** the ward's bed request card receives no referral data today, so it shows no flags. A ward can still read the full referral sent to it (D-79), and never sees other destinations (FD-23). Showing the flags on the request card is separate work, listed in the [backlog](backlog.md).
 - **Boundary:** synthetic data only. Confirms what is built; changes no signed clinical value or clinical rule, and approves no merge or release.
+
+## D-118. Discharge and capacity values: pull limit, transport delay and discharge date slip (9 November 2026)
+
+- **Date:** 9 November 2026. **Decided by:** Josh, on the decision card on the discharge and capacity review page (PR #1583). D-116 is claimed by PR #1581.
+- **Decision:** three values join the clinical values register as signed:
+  1. **Extend pull limit:** a pulled bed can be held for at most 12 hours in total (feature 11, `pullHoldMaxTotal`).
+  2. **Transport delay:** a transport job not accepted within 30 minutes shows as delayed (feature 25, `transportAcceptDelay`).
+  3. **Discharge date slip:** a stay whose expected discharge date has moved more than 3 days is flagged as slipping (feature 6, `eddSlipFlag`).
+- **Boundary:** synthetic data only. Sets these three values; approves no merge or release.
