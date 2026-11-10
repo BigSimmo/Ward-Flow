@@ -52,7 +52,7 @@ function conflictDesk(value: unknown): string {
 }
 
 /** The server named the record type of a "changed first" refusal (P058 servers only). */
-export const namedConflict = (value: unknown): boolean =>
+const namedConflict = (value: unknown): boolean =>
   (value as { code?: unknown } | null)?.code === "stale" &&
   typeof (value as { recordType?: unknown } | null)?.recordType === "string";
 
