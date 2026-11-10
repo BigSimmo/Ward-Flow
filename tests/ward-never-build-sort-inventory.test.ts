@@ -293,8 +293,6 @@ describe("never-build sort inventory (D-71, audit M116)", () => {
     const needsJosh = SORT_INVENTORY.filter((entry) => entry.order === "NEEDS JOSH").map((entry) => entry.file);
     expect(needsJosh).toEqual(
       expect.arrayContaining([
-        "handover/handover-beds.tsx",
-        "handover/handover-phone.tsx",
         "movements/movement-horizon-gantt.tsx",
       ]),
     );

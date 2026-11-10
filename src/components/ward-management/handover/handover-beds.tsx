@@ -32,6 +32,7 @@ import {
   isWaitingForBed,
   handoverStatusLabel,
   wardIsStale,
+  wardsByService,
   type HandoverRow,
   type HandoverWard,
   type HeldDischarge,
@@ -410,11 +411,7 @@ export function HandoverBeds({ rows, wards: allWards, held, now, waitingForBed, 
   const incoming = useMemo(() => incomingCounts(rows), [rows]);
 
   const groups = useMemo(() => {
-    const services = [...new Set(wards.map((ward) => ward.service))];
-    return services.map((service) => {
-      const members = wards
-        .filter((ward) => ward.service === service)
-        .sort((a, b) => b.ready - a.ready || a.name.localeCompare(b.name));
+    return wardsByService(wards).map(({ service, wards: members }) => {
       const beds = members.reduce((total, ward) => total + ward.beds, 0);
       const occupied = members.reduce((total, ward) => total + ward.occupied, 0);
       const ready = members.reduce((total, ward) => total + ward.ready, 0);

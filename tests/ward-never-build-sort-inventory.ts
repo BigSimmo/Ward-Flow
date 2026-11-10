@@ -42,23 +42,6 @@ export type SortInventoryEntry = {
 export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
   // ---------------------------------------------------------------- NEEDS JOSH
   {
-    file: "handover/handover-beds.tsx",
-    match: "b.ready - a.ready || a.name.localeCompare(b.name)",
-    list: "wards",
-    key: "ready beds, most first; then ward name (within each health service)",
-    order: "NEEDS JOSH",
-    reason:
-      "The desktop handover Beds table puts the ward with most ready beds at the top of each service, under the 'waiting for a bed' count, and each row opens the ward.",
-  },
-  {
-    file: "handover/handover-phone.tsx",
-    match: "b.ready - a.ready || a.name.localeCompare(b.name)",
-    list: "wards",
-    key: "ready beds, most first; then ward name (within each health service)",
-    order: "NEEDS JOSH",
-    reason: "The phone handover Beds view orders each service's wards most ready beds first.",
-  },
-  {
     file: "wards/ward-index.tsx",
     match:
       'if (order === "a-z") return a.unit.name.localeCompare(b.unit.name); return serviceRank(a) - serviceRank(b);',
@@ -394,6 +377,15 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
     key: "ward name; community team name",
     order: "fixed order",
     reason: "Ward and community team choices for an owner or call, each A to Z.",
+  },
+  {
+    file: "handover/handover-model.ts",
+    match: "(a, b) => a.name.localeCompare(b.name)",
+    list: "wards",
+    key: "ward name A to Z (within each health service)",
+    order: "fixed order",
+    reason:
+      "Desktop handover Beds table and phone handover Beds view, both through wardsByService: each service's wards A to Z, no longer most ready beds first (D-126, 10 Nov 2026).",
   },
   {
     file: "ward-step-down.ts",
