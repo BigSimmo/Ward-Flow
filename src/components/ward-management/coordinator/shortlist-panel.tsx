@@ -112,6 +112,7 @@ import shortlistStyles from "./shortlist-panel.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { FIT_LABEL, fitGroups, type FitKind } from "./home-fit";
 import { NextWardAfterRefusal } from "./next-ward-after-refusal";
+import { HomeReferralDecision, HomeReferralNote } from "./home-referral-decision";
 import { PreMatchCleaningNote } from "./prematch-cleaning-note";
 import { TIER_TARGETS_NOTE, queueWaitThresholds } from "./priority-queue";
 import { plural } from "@/components/ward-management/ward-plural";
@@ -261,9 +262,7 @@ function legalFormLine(movement: Movement, now: Instant) {
  * attaches; a referral is a request for a bed, not yet a movement, and carries no unit, no stage
  * and no legal clock of its own. This renders none of those: no "referred to", no ward column, no
  * back-link to a unit — only the facts the referral itself actually carries.
- *
- * Deliberately minimal: the decision itself lives on the Referrals board, so this preview builds
- * no second copy of it. Its Decide link opens that board on this referral (WS-04, 26 Oct 2026).
+ * Item 6a: the coordinator decides here in the board's own view; other desks keep Decide (WS-04).
  */
 export function ReferralPlacementPanel({
   referral,
@@ -281,7 +280,6 @@ export function ReferralPlacementPanel({
   const { patients, referrals, movements, units } = useWardFlowSelect("patients", "referrals", "movements", "units");
   const patientInfo = resolveSubjectPatient(referral, { patients, referrals, movements });
   const patientLabel = patientInfo.patient ? patientInfo.formalName : "Not recorded";
-  // WS-04: Decide opens the referral on the Referrals board, where Accept and Decline live.
   const decide = (
     <Link
       href={referralBoardHref(referral.id)}
@@ -314,9 +312,14 @@ export function ReferralPlacementPanel({
               area and never an address (PD-3), in the wording every reader uses. Never a filter (Q-2). */}
           <Fact label="Suburb" value={referralSuburbLabel(referral.suburb)} testId="ward-referral-placement-suburb" />
         </dl>
-        <p className={shortlistStyles.listNote}>A request for a bed. Accept or decline it on the Referrals board.</p>
+        <HomeReferralNote className={shortlistStyles.listNote} />
       </div>
-      {footerSlot ? createPortal(decide, footerSlot) : <div className={drawer.actions}>{decide}</div>}
+      <HomeReferralDecision
+        referral={referral}
+        patientInfo={{ displayName: patientLabel, umrn: patientInfo.umrn }}
+        footSlot={footerSlot}
+        otherDesk={footerSlot ? createPortal(decide, footerSlot) : <div className={drawer.actions}>{decide}</div>}
+      />
     </div>
   );
 }

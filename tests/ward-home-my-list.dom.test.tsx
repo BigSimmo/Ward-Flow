@@ -28,10 +28,20 @@ describe("Home My List referral rows (D-92, Josh 31 Oct 2026)", () => {
     expect(open).toHaveAttribute("aria-current", "true");
     // CB-3: the row's name is "Open referral for <name>: <visible title>".
     const name = open!.getAttribute("aria-label")!.replace(/^Open referral for (.+?): .*$/u, "$1");
-    // One Decide in the row, one in the side panel the row opened (named by its own words, axe 4.14).
+    // The row keeps its Decide; the side panel the row opened holds the decision itself (item 6a).
     expect(screen.getAllByRole("link", { name: `Decide referral for ${name}` }).length).toBeGreaterThanOrEqual(1);
-    expect(
-      (await screen.findAllByRole("link", { name: `Decide on this referral for ${name}` })).length,
-    ).toBeGreaterThanOrEqual(1);
+    expect(await screen.findByRole("region", { name: `Decide on this referral for ${name}` })).toBeInTheDocument();
+  });
+
+  it("decides in Home's panel: a plain click on Decide opens the referral here, not the board (item 6a)", async () => {
+    renderHome();
+    const group = screen.getByRole("region", { name: "Referrals to decide" });
+    const decide = within(group).getAllByRole("link", { name: /^Decide referral for / })[0]!;
+    const name = decide.getAttribute("aria-label")!.replace(/^Decide referral for /u, "");
+    // The href stays for a new tab; a plain click is kept on Home.
+    expect(decide.getAttribute("href")).toMatch(/referrals/u);
+    expect(decide).toHaveAttribute("aria-haspopup", "dialog");
+    expect(fireEvent.click(decide)).toBe(false);
+    expect(await screen.findByRole("region", { name: `Decide on this referral for ${name}` })).toBeInTheDocument();
   });
 });
