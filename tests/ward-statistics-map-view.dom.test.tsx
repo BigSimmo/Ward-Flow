@@ -13,6 +13,7 @@ vi.mock("next/link", () => ({
 
 import { lensValue, siteFigures, StatisticsMapView } from "@/components/ward-management/statistics/statistics-map-view";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
+import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -71,24 +72,41 @@ describe("Summary, Map view", () => {
     expect(sites.reduce((sum, site) => sum + lensValue(site, "ed"), 0)).toBe(waiting);
   });
 
-  it("ranks sites by the lens, highest first, and each row opens a ward statistics page", () => {
+  it("lists sites in health service then site name order, unnumbered, each opening its first ward A to Z (D-126)", () => {
     renderView();
-    const rank = screen.getByTestId("ward-statistics-map-rank");
-    const links = within(rank).getAllByRole("link");
+    const list = screen.getByTestId("ward-statistics-map-rank");
+    expect(within(list).getByRole("heading", { name: "Ready beds by site" })).toBeTruthy();
+    expect(list.textContent).not.toMatch(/most ready/iu);
+    expect(list.querySelector("ol")).toBeNull();
+    expect(list.querySelector("[class*='rankNo']")).toBeNull();
+    const links = within(list).getAllByRole("link");
     expect(links.length).toBeGreaterThan(0);
-    for (const link of links) expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/statistics\/ward\//);
 
     const { sites } = figuresAtAnchor();
-    const values = sites.filter((site) => site.wards.length > 0).map((site) => lensValue(site, "beds"));
+    const expected = sites
+      .filter((site) => site.wards.length > 0)
+      .sort(
+        (a, b) =>
+          HEALTH_SERVICES.indexOf(a.service) - HEALTH_SERVICES.indexOf(b.service) || a.name.localeCompare(b.name),
+      );
+    const shownNames = links.map((link) => link.querySelector("[class*='rankName']")?.textContent);
+    expect(shownNames).toEqual(expected.map((site) => site.name));
+    // Not a league table: the shown ready-bed figures are not in most-first order at the anchor.
     const shown = links.map((link) => Number(link.querySelector("[class*='rankValue']")?.textContent));
-    expect(shown).toEqual([...values].sort((a, b) => b - a));
+    expect(shown).not.toEqual([...shown].sort((a, b) => b - a));
+
+    expected.forEach((site, index) => {
+      const first = [...site.wards].sort((a, b) => a.unit.name.localeCompare(b.unit.name))[0]!;
+      expect(links[index]!.getAttribute("href")).toBe(`/ward-flow/statistics/ward/${first.unit.id}`);
+      expect(links[index]!.querySelector("[class*='rankSub']")?.textContent?.startsWith(first.unit.name)).toBe(true);
+    });
   });
 
   it("the ED lens ranks EDs and opens ED statistics pages", () => {
     renderView();
     fireEvent.click(screen.getByRole("radio", { name: /^Open ED movements/ }));
     const rank = screen.getByTestId("ward-statistics-map-rank");
-    expect(within(rank).getByRole("heading", { name: "Most open ED movements" })).toBeTruthy();
+    expect(within(rank).getByRole("heading", { name: "Open ED movements by ED" })).toBeTruthy();
     const links = within(rank).getAllByRole("link");
     expect(links).toHaveLength(allEmergencyDepartments().length);
     for (const link of links) expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/statistics\/ed\//);
@@ -137,7 +155,7 @@ describe("Summary, Map view", () => {
       "Centre: average stay in days, including people who have left.",
     );
     const rank = screen.getByTestId("ward-statistics-map-rank");
-    expect(within(rank).getByRole("heading", { name: "Longest average stay" })).toBeTruthy();
+    expect(within(rank).getByRole("heading", { name: "Average stay by site" })).toBeTruthy();
     const view = screen.getByTestId("ward-statistics-map-view").textContent ?? "";
     expect(view).not.toMatch(/mean stay/iu);
     expect(view).not.toMatch(/\d\.\dd\b/u);

@@ -3,7 +3,7 @@
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarClock, ChevronRight, Clock, Lock, ListOrdered, Map as MapIcon, Stethoscope, X } from "lucide-react";
+import { CalendarClock, ChevronRight, Clock, List, Lock, Map as MapIcon, Stethoscope, X } from "lucide-react";
 
 import {
   BarList,
@@ -33,13 +33,14 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { IN_USE_NOUN } from "@/components/ward-management/ward-occupancy";
-import type {
-  BedRelease,
-  EmergencyDepartment,
-  HealthService,
-  LeaveBed,
-  Movement,
-  Unit,
+import {
+  HEALTH_SERVICES,
+  type BedRelease,
+  type EmergencyDepartment,
+  type HealthService,
+  type LeaveBed,
+  type Movement,
+  type Unit,
 } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { wardStatistics } from "@/components/ward-management/ward-statistics";
@@ -333,55 +334,50 @@ const lensAria = (site: PresentedSiteFigures, lens: MapLens): string => {
   return `${site.name}: average stay ${site.meanStay === null ? "none" : `${site.meanStay.toFixed(1)} days`}, ${statisticsCountText(site.longStays)} over 3 months`;
 };
 
-const LENSES: ReadonlyArray<{ id: MapLens; label: string; rankTitle: string; key: string }> = [
+const LENSES: ReadonlyArray<{ id: MapLens; label: string; listTitle: string; key: string }> = [
   {
     id: "beds",
     label: "Beds",
-    rankTitle: "Most ready beds",
+    listTitle: "Ready beds by site",
     key: `Ring: occupancy. Centre: ready beds. Amber dot: a ward at or over ${BED_ALERT_THRESHOLD_PERCENT}%.`,
   },
   {
     id: "ed",
     label: "Open ED movements",
-    rankTitle: "Most open ED movements",
+    listTitle: "Open ED movements by ED",
     key: `Ring: longest time since opening, to ${VERY_LONG_WAIT_HOURS}h. Centre: open ED movements. Amber dot: past ${LONG_WAIT_HOURS}h. Triangle: over ${VERY_LONG_WAIT_HOURS}h.`,
   },
   {
     id: "dis",
     label: "Discharge",
-    rankTitle: "Most discharges today",
+    listTitle: "Discharges by site",
     key: "Ring: share already gone. Centre: gone or due today. Amber dot: a blocked discharge.",
   },
   {
     id: "stay",
     label: "Stay",
-    rankTitle: "Longest average stay",
+    listTitle: "Average stay by site",
     key: "Ring: share over 3 months. Centre: average stay in days, including people who have left.",
   },
 ];
 
-/** The ward a rank row opens: the one that leads this site on the lens. */
-function leadWard(site: PresentedSiteFigures, lens: MapLens): WardFigures<StatisticsCount> | undefined {
-  const score = (ward: WardFigures<StatisticsCount>) =>
-    lens === "beds"
-      ? ward.ready
-      : lens === "dis"
-        ? exactStatisticsCount(sumStatisticsCounts([ward.dischargedToday, ward.dueToday]))
-        : (ward.meanStay ?? -1);
-  return [...site.wards].sort((a, b) => {
-    const left = score(a);
-    const right = score(b);
-    return left === null || right === null
-      ? a.unit.name.localeCompare(b.unit.name)
-      : right - left || a.unit.name.localeCompare(b.unit.name);
-  })[0];
+/**
+ * D-126 (10 Nov 2026): the side list is in a fixed order, health service then site name, so no site
+ * is ranked above another by its figure (D-71).
+ */
+const bySiteOrder = (a: PresentedSiteFigures, b: PresentedSiteFigures) =>
+  HEALTH_SERVICES.indexOf(a.service) - HEALTH_SERVICES.indexOf(b.service) || a.name.localeCompare(b.name);
+
+/** The ward a site row names and opens: D-126, the site's first ward A to Z, never one picked by its figures. */
+function firstWard(site: PresentedSiteFigures): WardFigures<StatisticsCount> | undefined {
+  return [...site.wards].sort((a, b) => a.unit.name.localeCompare(b.unit.name))[0];
 }
 
 type Headline = { value: string; label: string; tone?: "warning" | "danger" };
 
 /**
  * Summary, Map view: every site across WA on one map, with lenses for beds, ED waits, discharges and
- * length of stay, and a ranked list beside it. Reached with the view bar or #map.
+ * length of stay, and a site list beside it in a fixed order. Reached with the view bar or #map.
  */
 type MapViewProps = { live?: { state: ReturnType<typeof useStatisticsLive>["state"]; now: Instant } };
 
@@ -602,7 +598,7 @@ function MapPresentation({
     ariaLabel: lensAria(site, lens),
   }));
 
-  const ranked = sites.filter((site) => applies(site, lens)).sort((a, b) => compareSites(a, b, lens));
+  const listed = sites.filter((site) => applies(site, lens)).sort(bySiteOrder);
 
   const chosen = selected ? sites.find((site) => site.code === selected) : undefined;
   const asAt = formatInstant(now);
@@ -664,15 +660,15 @@ function MapPresentation({
           {chosen ? <SiteCard site={chosen} lens={lens} onClose={() => setSelected(null)} /> : null}
           <StatCard
             id="map-rank"
-            icon={ListOrdered}
-            title={lensInfo.rankTitle}
-            meta={`${ranked.length} ${lens === "ed" ? "EDs" : "sites"}`}
+            icon={List}
+            title={lensInfo.listTitle}
+            meta={`${listed.length} ${lens === "ed" ? "EDs" : "sites"}`}
             data-testid="ward-statistics-map-rank"
           >
             <CardBody flush>
-              <ol className={styles.rank}>
-                {ranked.map((site, index) => {
-                  const ward = lens === "ed" ? undefined : leadWard(site, lens);
+              <ul className={styles.rank}>
+                {listed.map((site) => {
+                  const ward = lens === "ed" ? undefined : firstWard(site);
                   const targetHref =
                     lens === "ed" && site.ed && site.ed.openable !== false
                       ? edStatisticsHref(site.ed.id)
@@ -685,7 +681,6 @@ function MapPresentation({
                   const status = lensStatus(site, lens);
                   const content = (
                     <>
-                      <span className={styles.rankNo}>{index + 1}</span>
                       <span
                         className={styles.rankDot}
                         style={{ background: SERVICE_COLOUR[site.service] }}
@@ -732,7 +727,7 @@ function MapPresentation({
                     </li>
                   );
                 })}
-              </ol>
+              </ul>
             </CardBody>
           </StatCard>
         </Follow>

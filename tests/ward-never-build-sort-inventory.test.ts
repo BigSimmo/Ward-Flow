@@ -295,7 +295,6 @@ describe("never-build sort inventory (D-71, audit M116)", () => {
       expect.arrayContaining([
         "handover/handover-beds.tsx",
         "handover/handover-phone.tsx",
-        "statistics/statistics-map-view.tsx",
         "movements/movement-horizon-gantt.tsx",
       ]),
     );

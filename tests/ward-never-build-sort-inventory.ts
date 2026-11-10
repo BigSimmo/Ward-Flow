@@ -69,24 +69,6 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
       "D-126 (10 Nov 2026): the Wards index Order choice keeps only neutral orders, Service (default) and A to Z; 'Most ready' and 'Fullest' were removed, and the hero's 'Most ready: <ward>' chip and its sort became a 'Has ready' filter chip counting the wards with a ready bed.",
   },
   {
-    file: "statistics/statistics-map-view.tsx",
-    match: "compareSites(a, b, lens)",
-    list: "places",
-    key: "the map lens figure (ready beds on the Beds lens), most first; then site name",
-    order: "NEEDS JOSH",
-    reason:
-      "The Statistics map's numbered rank list, titled 'Most ready beds' on the Beds lens, ranks sites 1, 2, 3 by ready beds and links each to a ward.",
-  },
-  {
-    file: "statistics/statistics-map-view.tsx",
-    match: "const left = score(a); const right = score(b);",
-    list: "wards",
-    key: "the map lens figure per ward (ready beds on the Beds lens), most first; first row only",
-    order: "NEEDS JOSH",
-    reason:
-      "Chooses the 'lead ward' each ranked site row names and opens: on the Beds lens, the site's ward with most ready beds.",
-  },
-  {
     file: "statistics/statistics-screen.tsx",
     match: "right.ready - left.ready || left.name.localeCompare(right.name)",
     list: "wards",
@@ -325,6 +307,24 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
     order: "fixed order",
     reason:
       "D-126 (10 Nov 2026): the ED wall TV's 'Beds ready in <service>' panel lists wards A to Z, not most beds first, so the row cut beside the waiting list favours no ward.",
+  },
+  {
+    file: "statistics/statistics-map-view.tsx",
+    match: "bySiteOrder",
+    list: "places",
+    key: "health service, then site name",
+    order: "fixed order",
+    reason:
+      "D-126 (10 Nov 2026): the Statistics map's site list (was the numbered 'Most ready beds' rank) is in health service then site name order, with no rank numbers and a neutral title.",
+  },
+  {
+    file: "statistics/statistics-map-view.tsx",
+    match: "a.unit.name.localeCompare(b.unit.name)",
+    list: "wards",
+    key: "ward name A to Z; first row only",
+    order: "fixed order",
+    reason:
+      "D-126 (10 Nov 2026): each site row names and opens the site's first ward A to Z, no longer the ward with most ready beds.",
   },
   {
     file: "ward-derivations-shortlist.ts",
