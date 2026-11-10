@@ -20,6 +20,7 @@ import { noFormWords as formNotHeldWords } from "@/components/ward-management/wa
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edWaitStep } from "@/components/ward-management/ward-ed-wait-steps";
 import { buttonClass, StatusGlyph } from "@/components/wf";
+import { CardSafetyTagsLazy as CardSafetyTags } from "@/components/ward-management/patients/card-safety-tags-lazy";
 import { EdActionsMenu } from "./ed-board-controls";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
@@ -65,7 +66,17 @@ export function renderEdBoardTableRow(
     unavailableFacts,
     withdrawUnavailableFact,
   } = facts;
-  const { accessTarget, isBoardRowDim, isTabletPortrait, setPhoneSheetReason, setPhoneSheetFor, now, thresholds } = ctx;
+  const {
+    accessTarget,
+    isBoardRowDim,
+    isTabletPortrait,
+    setPhoneSheetReason,
+    setPhoneSheetFor,
+    now,
+    thresholds,
+    referrals,
+    dayZero,
+  } = ctx;
   // At or over, never strictly over: the one ED long-wait rule (ward-pressure.ts, ops-16, 13 Oct
   // 2026) is red "once the longest wait reaches the ED access target".
   const overTarget = minutesInDepartment >= accessTarget;
@@ -239,6 +250,14 @@ export function renderEdBoardTableRow(
               ].join(" · ")
             : `${patientInfo.umrn} · ${movement.cohort} · ${movement.security === "Secure" ? "Locked" : movement.security}`}
         </span>
+        {/* Referral risk flags (H10 conditions) and an interpreter need, as small worded tags. */}
+        <CardSafetyTags
+          movement={movement}
+          referrals={referrals}
+          patient={patientInfo.patient}
+          dayZero={dayZero}
+          testId={`ward-ed-safety-tags-${movement.id}`}
+        />
         <span className={styles.a2Facts}>
           {readmissionFact}
           {patientFactsTail}

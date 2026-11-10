@@ -153,6 +153,7 @@ function ownReferredUnits(movement: Movement, unitIn: (unitId: string) => boolea
     // The sender's truthful escalation progress is a response sibling. Neither a contact nor a
     // reason copied into the chronology may reveal a foreign request through this record.
     delete copy.escalation;
+    delete copy.escalations;
     copy.stageChanges = copy.stageChanges.map((change) => {
       if (
         change.unitId !== undefined ||
@@ -169,8 +170,15 @@ function ownReferredUnits(movement: Movement, unitIn: (unitId: string) => boolea
       delete chronology.reason;
       return chronology;
     });
-  } else if (movement.escalation)
-    copy.escalation = { ...movement.escalation, triedUnitIds: movement.escalation.triedUnitIds.filter(unitIn) };
+  } else {
+    if (movement.escalation)
+      copy.escalation = { ...movement.escalation, triedUnitIds: movement.escalation.triedUnitIds.filter(unitIn) };
+    if (movement.escalations)
+      copy.escalations = movement.escalations.map((entry) => ({
+        ...entry,
+        triedUnitIds: entry.triedUnitIds.filter(unitIn),
+      }));
+  }
   if (movement.acceptedUnitId && !placementIn(movement.acceptedUnitId)) {
     delete copy.acceptedUnitId;
     delete copy.heldBedNumber;

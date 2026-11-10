@@ -29,7 +29,9 @@ type TypedTextEventType =
   | "UPLOAD_PATIENT_FORM"
   | "DISPATCH_BROADCAST_ALERT"
   | "BOOK_PLANNED_ADMISSION"
-  | "RECORD_SUPPORT_NOTIFICATION";
+  | "RECORD_SUPPORT_NOTIFICATION"
+  | "RECORD_CARE_PLAN"
+  | "RECORD_TRIBUNAL_HEARING";
 
 /**
  * Default deny inside each typed-text event: EVERY string in its payload is treated as typed except
@@ -76,6 +78,11 @@ const NOT_TYPED_KEYS: { readonly [T in TypedTextEventType]: readonly string[] } 
   DISPATCH_BROADCAST_ALERT: ["severity", "category", "targetScope", "kind", "targetUnitIds"],
   BOOK_PLANNED_ADMISSION: ["patientId", "sex", "gender", "reason", "unitId", "legalStatus", "ageBand"],
   RECORD_SUPPORT_NOTIFICATION: ["occasion", "movementId", "admissionId", "party", "outcome"],
+  // `plan.type`, `plan.helps` and `plan.attachment.fileType` are checked against fixed lists.
+  RECORD_CARE_PLAN: ["patientId", "type", "helps", "fileType"],
+  // The date and time are typed; only the patient id is reviewed. Written with `Array.of` because the
+  // D-14 patient link guard reads a one-entry `["patientId"]` literal as a bracket read of the link.
+  RECORD_TRIBUNAL_HEARING: Array.of("patientId"),
 };
 
 /** Keys that are never typed in any event: the discriminant and the caller's role. */

@@ -59,10 +59,12 @@ describe("Ward Flow Read-Only Plain History", () => {
       // Gap list (Josh, 4 Nov 2026) adds RECORD_LEGAL_FORM_DETAILS and RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP.
       // Tier 1 item 6 (4 Nov 2026) adds UNDO_BED_STEP, UNDO_RELEASE_STEP and UNDO_PATIENT_RECORD.
       // Triage and risk (7 Nov 2026) adds RECORD_TRIAGE_SIGNED.
+      // Care plans and safety flags (D-104, 9 Nov 2026) adds RECORD_CARE_PLAN, RECORD_TRIBUNAL_HEARING,
+      // RECORD_TRIBUNAL_OUTCOME and SET_CULTURAL_SUPPORT_REQUEST.
       // Review tracker and wait list (9 Nov 2026) add REQUEST_PSYCH_REVIEW, RECORD_PSYCH_REVIEW_SEEN
       // and MARK_WARD_READY_FOR_NEXT. Staff needed (9 Nov 2026) adds REQUEST_WARD_STAFF and
       // CLOSE_WARD_STAFF_REQUEST.
-      expect(allEventTypes.length).toBe(184);
+      expect(allEventTypes.length).toBe(188);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

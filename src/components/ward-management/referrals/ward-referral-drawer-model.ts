@@ -136,6 +136,7 @@ export type MockPatientProfile = {
     medical: boolean;
     vulnerable: boolean;
     suicide: boolean;
+    securityEscort: boolean;
   };
 };
 
@@ -225,6 +226,7 @@ const NO_RISK_FLAGS: MockPatientProfile["riskFlags"] = {
   medical: false,
   vulnerable: false,
   suicide: false,
+  securityEscort: false,
 };
 
 export function sampleProfile(

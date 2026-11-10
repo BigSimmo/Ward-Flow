@@ -69,7 +69,8 @@ import { REPATRIATION_MODES } from "./ward-flow-events";
 import { HOME_SERVICE_ANSWERS, RETURN_PREREQUISITES } from "./out-of-area/home-service-return";
 import { isDirectoryEntryId } from "./on-call/on-call-checks";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
-import { PAPER_EXPIRY_CORRECTION_REASONS } from "./ward-model-vocabulary";
+import { legalFormExpiryCorrection } from "./ward-flow-storage-legal-form-rules";
+import { STORED_PATIENT_CARE_PLAN_FIELDS } from "./ward-patient-care-plans-storage";
 import {
   SUPPORT_NOTIFICATION_OCCASIONS,
   SUPPORT_NOTIFICATION_OUTCOMES,
@@ -143,17 +144,6 @@ const id = text.check(z.minLength(1));
 // Pass 1: rules for known keys at any depth. A history list holds rows with a finite time and the
 // named text fields; a record key holds an object; a unit list holds strings.
 const history = (shape: z.core.$ZodShape) => z.array(z.looseObject({ at: finite, ...shape }));
-const legalFormExpiryCorrection = z
-  .strictObject({
-    at: finite,
-    by: z.enum(Object.keys(WARD_FLOW_ROLE_LABELS) as [string, ...string[]]),
-    formCode: id,
-    formWrittenAt: z.optional(finite),
-    previousDueAt: finite,
-    dueAt: finite,
-    reason: z.enum(PAPER_EXPIRY_CORRECTION_REASONS),
-  })
-  .check(z.refine((row) => row.previousDueAt !== row.dueAt));
 const legalFormRule = z.looseObject({
   code: text,
   region: z.optional(z.enum(["metro", "country"])),
@@ -170,6 +160,15 @@ const NESTED_KEY_RULES = new Map<string, z.ZodMiniType>([
   ["referralAnswerHistory", history({ unitId: text, answer: z.enum(["waitlisted", "declined", "withdrawn"]) })],
   ["unwinds", history({ kind: text, by: text, reason: text })],
   ["stageChanges", history({ to: text, by: text })],
+  // `by` is a role key: an arbitrary string such as "__proto__" would reach the role label lookup.
+  [
+    "escalations",
+    history({
+      by: z.optional(z.enum(Object.keys(WARD_FLOW_ROLE_LABELS) as [string, ...string[]])),
+      contact: text,
+      triedUnitIds: strings,
+    }),
+  ],
   ["legalFormExpiryHistory", history({ by: text, basis: text })],
   ["legalFormExpiryCorrections", z.array(legalFormExpiryCorrection)],
   ["legalFormReceiptCorrections", history({ by: text, reason: text })],
@@ -274,6 +273,7 @@ const patient = z.catchall(
     registrationScope: z.optional(
       z.strictObject({ kind: z.enum(["ed", "ward", "team", "site", "service"]), placeId: text }),
     ),
+    ...STORED_PATIENT_CARE_PLAN_FIELDS,
   }),
   // Every other patient field stays plain text.
   text,
