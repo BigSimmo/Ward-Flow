@@ -471,9 +471,18 @@ export type Unit = {
    * limiting intake is recorded".
    */
   intakeConstraints?: readonly WardIntakeConstraint[];
+  /**
+   * Feature item 13 (10 Nov 2026): the hours tonight the ward says it can take an admission, set by
+   * `SET_INTAKE_WINDOW`. Information only: never blocks a referral or orders wards. Read through
+   * `tonightIntakeWindow`, which ignores a window set before the latest 07:00 day start.
+   */
+  intakeWindow?: WardIntakeWindow;
   restrictionReviews?: LoopChecks.WardRestrictionReview[]; // Closing the loop D3: reviewer and review time.
   homeRegion?: HomeRegion;
 };
+
+/** Feature item 13: typed clock times read to instants (D-72), when set and by which desk. */
+export type WardIntakeWindow = { from: Instant; to: Instant; at: Instant; by: string };
 
 export type Site = {
   code: string;

@@ -39,6 +39,7 @@ import { CapacityHero } from "./capacity-hero";
 import { useCapacityModel, type CapacityModel } from "./capacity-model";
 import { OtherSitesCounts } from "./capacity-other-sites";
 import { PhoneOverview } from "./capacity-phone-overview";
+import { CapacityIntakeWindowsCard } from "./capacity-intake-windows-card";
 import { PlannedCounts } from "./capacity-planned-counts";
 import { useSiteEdWaiting } from "./capacity-site-ed";
 import { heldUpReleases } from "./capacity-held-up";
@@ -335,6 +336,11 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
               units={mapModel.networkRows.map((row) => row.unit)}
               now={mapModel.now}
               executive={executive}
+            />
+            <CapacityIntakeWindowsCard
+              units={mapModel.networkRows.map((row) => row.unit)}
+              now={now}
+              onWard={openWard}
             />
           </>
         )}

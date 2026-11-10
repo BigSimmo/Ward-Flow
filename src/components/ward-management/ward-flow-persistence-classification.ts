@@ -291,6 +291,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // the reducer, never a bare `string[]` — the same "array element types reviewed by hand" shape
   // `REFER_TO_UNITS.unitIds` already has on this list.
   "RECORD_WARD_INTAKE_CONSTRAINTS",
+  // Feature item 13 (D-72 pattern): ids and two typed clock times already read to instants. No typed text.
+  "SET_INTAKE_WINDOW",
   "REFER_TO_UNITS",
   // Owner answer 8 (second round, 2026-09-17): `movementId`/`actingUnitId` are ids (reviewed
   // above) and the caller's own `role` — no human-typed field, the same shape `RELEASE_PULL`

@@ -1,0 +1,38 @@
+/* Feature item 13: tonight's intake hours on the ward hero. Colours inherit, so the line reads on the
+   dark hero and on the phone's white details card alike. */
+
+.row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1);
+  align-items: center;
+  font-size: var(--wf-fs-13);
+}
+
+.trigger {
+  min-height: 40px;
+  padding: 0 var(--wf-s-1);
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  background: none;
+  border: 0;
+}
+
+.trigger:focus-visible {
+  outline: 2px solid currentcolor;
+  outline-offset: 2px;
+}
+
+.refused {
+  flex-basis: 100%;
+  font-size: var(--wf-fs-12);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--wf-s-3);
+}

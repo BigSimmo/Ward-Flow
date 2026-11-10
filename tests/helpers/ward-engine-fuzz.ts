@@ -2118,6 +2118,21 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       };
     },
   ],
+  // Feature item 13: tonight's intake hours, set (from the next whole hour, two to six hours long)
+  // or cleared. Information only, so it must leave every count and placement where it was.
+  [
+    0.5,
+    (state, random) => {
+      const unit = pick(random, state.units);
+      const from = Math.ceil((currentNow + 1) / 60) * 60;
+      return {
+        type: "SET_INTAKE_WINDOW",
+        unitId: id(unit),
+        actingUnitId: id(unit),
+        intake: chance(random, 0.3) ? null : { from, to: from + int(random, 2, 6) * 60 },
+      };
+    },
+  ],
   // Ward-level confirmations and requests.
   [
     1,

@@ -211,6 +211,8 @@ describe("who may raise which event", () => {
     // Owner Answer 18 (second round, 2026-09-17): the ward's own answer to what is currently
     // limiting its intake, same role as CONFIRM_CAPACITY above.
     RECORD_WARD_INTAKE_CONSTRAINTS: ["ward", "coordinator"],
+    // Feature item 13: tonight's intake hours, the ward for itself or the coordinator.
+    SET_INTAKE_WINDOW: ["ward", "coordinator"],
     RECORD_NO_REFERRAL: ["ed", "coordinator"],
     RECORD_LEAVE_BED: ["ward", "coordinator"],
     // D-38 (9 Oct 2026): the ward records an absence and its steps; the community team a CTO.

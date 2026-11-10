@@ -1,5 +1,6 @@
 "use client";
 
+import { intakeWindowLine, tonightIntakeWindow } from "@/components/ward-management/capacity/ward-intake-window";
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { currentLegalDueAt, formProgression, formProgressionPhrase } from "../legal-forms/legal-form-progression";
@@ -2181,6 +2182,15 @@ export function ShortlistPanel({
                   >
                     Limiting intake:{" "}
                     {activeUnit.intakeConstraints.map((code) => wardIntakeConstraintLabels[code]).join(", ")}
+                  </span>
+                ) : null}
+                {/* Feature item 13: tonight's intake hours, information only. */}
+                {tonightIntakeWindow(activeUnit, now) ? (
+                  <span
+                    className={styles.diagramBeingMadeReady}
+                    data-testid={`ward-shortlist-ward-detail-intake-window-${activeUnit.id}`}
+                  >
+                    {intakeWindowLine(tonightIntakeWindow(activeUnit, now))}
                   </span>
                 ) : null}
               </div>

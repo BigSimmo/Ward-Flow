@@ -70,7 +70,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // and MARK_WARD_READY_FOR_NEXT. Staff needed (9 Nov 2026) adds REQUEST_WARD_STAFF and
       // CLOSE_WARD_STAFF_REQUEST.
       // Item 18 (10 Nov 2026) adds MARK_TRANSPORT_COLLECTED.
-      expect(allEventTypes.length).toBe(194);
+      // Feature item 13 (10 Nov 2026) adds SET_INTAKE_WINDOW.
+      expect(allEventTypes.length).toBe(195);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

@@ -184,6 +184,7 @@ import { type SupportNotificationRecord } from "@/components/ward-management/war
 import { applyLoopChecksDemoOverlay } from "./ward-loop-checks-demo";
 import { applyWaitlistDemoOverlay } from "./ward-demo-waitlist";
 import { reduceReviewReadyEvent } from "./ward-flow-review-ready-events";
+import { applyIntakeWindowDemoOverlay } from "./capacity/ward-intake-window-demo";
 // S6 example data (3 Nov 2026): no demo list opens empty. A live shared build swaps in a no-op.
 import { applyExampleListsOverlay } from "@/components/ward-management/ward-demo-example-lists";
 import { stepUndoSubjectId, subjectId } from "./ward-flow-subject-id";
@@ -590,7 +591,12 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
   };
   // Closing the loop, package D (24 Oct 2026): a few synthetic marks so each record shows in the demo.
   const demo = network ? seed : applyLoopChecksDemoOverlay(applyRulingsDemoOverlay(seed, NOW_ANCHOR), NOW_ANCHOR);
-  return applyExampleListsOverlay(network ? demo : applyWaitlistDemoOverlay(demo, NOW_ANCHOR), NOW_ANCHOR);
+  // Feature item 13: a few synthetic intake windows set this morning.
+  const withWindows = network ? demo : applyIntakeWindowDemoOverlay(demo, NOW_ANCHOR);
+  return applyExampleListsOverlay(
+    network ? withWindows : applyWaitlistDemoOverlay(withWindows, NOW_ANCHOR),
+    NOW_ANCHOR,
+  );
 }
 
 /**
@@ -1816,6 +1822,9 @@ export function reduceClinicalEvent(
     case "CLOSE_WARD_TO_ADMISSIONS":
     case "REOPEN_WARD_TO_ADMISSIONS":
       return reducerSlices().reduceWardClosureEvent(state, event, decision, { findUnit, reject, replaceUnit });
+    // Feature item 13: tonight's intake hours, information only.
+    case "SET_INTAKE_WINDOW":
+      return reducerSlices().reduceIntakeWindowEvent(state, event, decision, { findUnit, reject, replaceUnit });
     // H-0978 / WS-15: one exact bed closed or reopened (`Unit.closedBeds`).
     case "SET_BED_CLOSED":
       return reducerSlices().reduceBedClosureEvent(state, event, decision, {
