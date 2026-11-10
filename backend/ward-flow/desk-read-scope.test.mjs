@@ -19,8 +19,8 @@ const url = process.env.WARD_TEST_DATABASE_URL;
 if (url && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
   throw new Error("Database tests require an isolated loopback PostgreSQL server");
 
-// The real clock: the HTTP layer checks each desk's access deadline against it, and the service
-// executive's report is drawn on the seed world's first day.
+// The real clock: the HTTP layer checks each desk's access deadline against it. The service
+// executive's report on later demo days is covered in role-aggregate-privacy.test.mjs (D-125).
 const start = new Date(Math.floor(Date.now() / 60_000) * 60_000);
 const WARD_A = "rph-adult-secure";
 const WARD_B = "fsh-adult-secure";

@@ -260,6 +260,7 @@ export class ExecutiveCountRelease {
     withheld: ReadonlySet<string>,
     previous: ReadonlyMap<string, IntegerWitness>,
     addedExact?: string,
+    pairs = false,
   ) {
     const witnesses = new Map<string, IntegerWitness>();
     const missing = new Set(protectedKeys);
@@ -332,7 +333,7 @@ export class ExecutiveCountRelease {
       (key) => !basis.has(key) && relevant.has(this.component(key)),
     );
     // Finite search, shared across every protected key. Failure simply refuses that candidate.
-    for (const freeKey of free.slice(0, 1024)) {
+    const directionFor = (freeKey: string): Map<string, number> => {
       const affected = new Set<number>();
       const pending = [freeKey];
       for (let cursor = 0; cursor < pending.length; cursor++)
@@ -349,8 +350,40 @@ export class ExecutiveCountRelease {
         for (const [key, coefficient] of row) if (key !== pivot) value -= coefficient * (direction.get(key) ?? 0);
         if (Math.abs(value) > EPSILON) direction.set(pivot, value);
       }
+      return direction;
+    };
+    const directions: Map<string, number>[] = [];
+    for (const freeKey of free.slice(0, 1024)) {
+      const direction = directionFor(freeKey);
+      directions.push(direction);
       tryDirection(direction);
       if (!missing.size) break;
+    }
+    // D-125: one free count rarely moves alone. A request that could have fallen in the next
+    // reporting week must also leave this one, or an all-weeks total would change. Only when the
+    // baseline fallback has nothing left to withhold (it would otherwise refuse the whole report)
+    // try pairs: one count moved from one place to another. Every pair is still proved by
+    // validWitness against the original equations and tag bounds, so a pair only adds proofs.
+    if (pairs && missing.size) {
+      const touching = directions.filter((direction) =>
+        [...direction].some(([key, change]) => missing.has(key) && Math.abs(change) > EPSILON),
+      );
+      const combine = (first: Map<string, number>, second: Map<string, number>, sign: number) => {
+        const combined = new Map(first);
+        for (const [key, value] of second) {
+          const next = (combined.get(key) ?? 0) + sign * value;
+          if (Math.abs(next) < EPSILON) combined.delete(key);
+          else combined.set(key, next);
+        }
+        return combined;
+      };
+      for (const first of touching) {
+        for (const second of directions) {
+          if (second === first) continue;
+          if (tryDirection(combine(first, second, 1)) || tryDirection(combine(first, second, -1))) break;
+        }
+        if (!missing.size) break;
+      }
     }
     return { witnesses, missing };
   }
@@ -410,7 +443,22 @@ export class ExecutiveCountRelease {
           changed = true;
         }
       }
-      if (!changed) throw new Error("Reporting tags cannot be released safely.");
+      if (!changed) {
+        // Ranges pinning a small cell cannot be answered by any witness.
+        if (this.rangesExposeSmall(exact, withheld).size) throw new Error("Reporting tags cannot be released safely.");
+        const proof = this.alternateWitnesses(
+          protectedKeys,
+          exact,
+          basis,
+          withheld,
+          verifiedWitnesses,
+          undefined,
+          true,
+        );
+        if (proof.missing.size) throw new Error("Reporting tags cannot be released safely.");
+        verifiedWitnesses = proof.witnesses;
+        break;
+      }
       propagateWithheld();
     }
     const candidates = [...this.cells]
