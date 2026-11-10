@@ -11,8 +11,11 @@ import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
+// The unit shards install only the root packages; `pg` lives in the backend's own install, so the
+// clean-up module's connection imports would fail to load here. These tests pass their own pool.
+vi.mock("pg", () => ({ Pool: class {} }));
 // Loaded by URL so the root typecheck does not pull the backend's own (looser) JS checking in.
 type ReceiptPool = { query(text: string, values?: number[]): Promise<unknown> };
 const { pruneReceipts, pruneReceiptsAsPruner } = (await import(
