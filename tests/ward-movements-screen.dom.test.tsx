@@ -395,10 +395,10 @@ describe("the Movements screen", () => {
   it("counts only booked or moving legs in the hero's 'On the road or booked' figure", () => {
     renderScreen();
     const figure = within(screen.getByRole("group", { name: "Highlight movements" }))
-      .getByText("On the road or booked")
-      .closest("div");
+      .getByText("on the road or booked")
+      .closest("p");
     expect(figure).toHaveTextContent(
-      new RegExp(`^${counts.Accepted + counts["En route"] + counts.Collected}On the road or booked$`, "u"),
+      new RegExp(`^${counts.Accepted + counts["En route"] + counts.Collected} on the road or booked$`, "u"),
     );
   });
 

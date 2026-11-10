@@ -38,8 +38,6 @@ const seeded = seedWardFlowState();
 const gapRows = bedKindGaps(seeded.movements, seeded.units, NOW, seeded.admissions);
 const networkRows = networkWardRows(seeded.units, NOW, seeded.bedReleases, seeded.admissions, seeded.leaveBeds);
 const netTotals = networkTotals(networkRows);
-const totalLockedReady = networkRows.reduce((sum, row) => sum + row.lockedReady, 0);
-const totalOpenReady = netTotals.ready - totalLockedReady;
 const mapGroups = groupBedMapWardsByService(
   bedMapWards(seeded.units, [...seeded.bedReleases], seeded.admissions, seeded.leaveBeds),
 );
@@ -57,17 +55,18 @@ function renderScreen() {
   );
 }
 
-/** The hero's headline and its two ready chips must always be the whole network's. */
+/**
+ * The hero's ready figure must always be the whole network's. Page tops (Josh, 9 Nov 2026): the
+ * headline is now "Beds ready and short" and the ready count is the first hero figure; the
+ * Locked / Open ready chips went with the old top, and their split lives on as the bed map's
+ * highlights, which a service does narrow.
+ */
 function expectWholeNetworkHero() {
-  const [headline] = screen.getAllByRole("heading", { level: 1 });
-  expect(headline).toHaveTextContent(new RegExp(`^Capacity, ${netTotals.ready} beds ready of ${netTotals.beds}$`, "u"));
-  const chips = screen.getByRole("group", { name: "Network beds" });
-  expect(within(chips).getByRole("button", { name: /Locked ready/u })).toHaveTextContent(
-    new RegExp(`^${totalLockedReady}\\s*Locked ready$`, "u"),
+  const figures = screen.getByRole("group", { name: "Network beds" });
+  expect(within(figures).getByTestId("capacity-hero-ready")).toHaveTextContent(
+    new RegExp(`^${netTotals.ready}\\s*/ ${netTotals.beds}\\s*beds? ready$`, "u"),
   );
-  expect(within(chips).getByRole("button", { name: /Open ready/u })).toHaveTextContent(
-    new RegExp(`^${totalOpenReady}\\s*Open ready$`, "u"),
-  );
+  expect(netTotals.ready, "the network and South Metro could not be told apart").not.toBe(scopedReady);
 }
 
 beforeEach(() => {
@@ -93,11 +92,13 @@ describe("Capacity screen service scope — the fixture actually has something t
 });
 
 describe("with All services chosen, nothing is narrowed", () => {
-  it("mounts no scope bar and labels the hero Modelled network", () => {
+  // Page tops (Josh, 9 Nov 2026): with nothing chosen the header names the network, so the hero
+  // has no eyebrow; its figures are still named the network's.
+  it("mounts no scope bar and labels the hero's figures the network's", () => {
     renderScreen();
     expect(screen.queryByTestId("ward-service-scope-bar")).not.toBeInTheDocument();
-    expect(screen.getByText(/^Capacity · Modelled network · /u)).toBeInTheDocument();
-    expect(screen.getByTestId("wf-occupancy-ring")).toHaveAccessibleName(/^Modelled network /u);
+    expect(screen.getByRole("group", { name: "Network beds" })).toBeInTheDocument();
+    expect(screen.queryByText(/not only/u)).toBeNull();
   });
 
   it("draws every ward on the bed map, in every service that has one — nothing pre-filtered", () => {
@@ -152,11 +153,12 @@ describe("with South Metro chosen, only the bed map is scoped", () => {
   it("labels the hero Modelled network, never South Metro, because its figures are whole-network (shell-1)", () => {
     setServiceScope(SCOPED_SERVICE);
     renderScreen();
-    expect(screen.getByText(/^Capacity · Modelled network, not only South Metro · /u)).toBeInTheDocument();
-    expect(screen.queryByText(/^Capacity · South Metro/u)).toBeNull();
-    const ring = screen.getByTestId("wf-occupancy-ring");
-    expect(ring).toHaveAccessibleName(/^Modelled network /u);
-    expect(ring.getAttribute("aria-label") ?? "").not.toContain(SCOPED_SERVICE);
+    expect(screen.getAllByText(/^Modelled network, not only South Metro$/u).length).toBeGreaterThan(0);
+    // The bed map below names South Metro's group; the hero itself never names it alone.
+    const hero = screen.getByRole("heading", { level: 1 }).closest("[data-wf-hero]") as HTMLElement;
+    expect(within(hero).queryByText(/^South Metro$/u)).toBeNull();
+    const figures = screen.getByRole("group", { name: "Network beds" });
+    expect(figures.getAttribute("aria-label") ?? "").not.toContain(SCOPED_SERVICE);
   });
 
   it("shows the exact scope bar sentence — 'Showing N of M wards, in South Metro.'", () => {
@@ -182,6 +184,11 @@ describe("with South Metro chosen, only the bed map is scoped", () => {
  * Only React's generated ids are normalised, because they differ between any two mounts.
  */
 /** React's `useId` values count up across mounts, so two renders differ there and nowhere else. */
+/** The Mismatch band (in the hero since the page tops) or the Bed forecast card. */
+function card(view: ReturnType<typeof renderScreen>, name: "Mismatch" | "Bed forecast"): HTMLElement {
+  return name === "Mismatch" ? view.getByTestId("capacity-mismatch") : view.getByRole("region", { name });
+}
+
 function withoutIds(html: string): string {
   return html.replace(/_r_[0-9a-z]+_/gu, "_r_id_");
 }
@@ -190,19 +197,21 @@ describe("safety property: the mismatch band and the forecast are identical with
   for (const name of ["Mismatch", "Bed forecast"] as const) {
     it(`produces byte-identical markup for the ${name} card under All services and under South Metro`, () => {
       const withoutService = renderScreen();
-      const unscopedHtml = withoutIds(withoutService.getByRole("region", { name }).outerHTML);
+      const unscopedHtml = withoutIds(card(withoutService, name).outerHTML);
       withoutService.unmount();
 
       setServiceScope(SCOPED_SERVICE);
       const withService = renderScreen();
       expect(withService.getByTestId("ward-service-scope-bar")).toBeInTheDocument();
-      const scopedHtml = withoutIds(withService.getByRole("region", { name }).outerHTML);
+      const scopedHtml = withoutIds(card(withService, name).outerHTML);
       withService.unmount();
 
       expect(unscopedHtml.length).toBeGreaterThan(0);
       // Scope audit (Josh, 3 Nov 2026): the scoped card adds one quiet "Network-wide" label and
       // nothing else; every figure is the same.
-      const label = /<span class="[^"]*">Network-wide<\/span>/u;
+      // The Mismatch card is now the hero's band (page tops, Josh 9 Nov 2026), whose aside is a <p>.
+      const label =
+        name === "Mismatch" ? /<p class="[^"]*">Network-wide<\/p>/u : /<span class="[^"]*">Network-wide<\/span>/u;
       expect(unscopedHtml).not.toMatch(label);
       expect(scopedHtml).toMatch(label);
       expect(scopedHtml.replace(label, "")).toBe(unscopedHtml);

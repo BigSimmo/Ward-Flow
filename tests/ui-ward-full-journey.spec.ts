@@ -412,9 +412,12 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     // running this spec and finding a real "Occupied (\d+)" match impossible against the actual
     // rendered text, not assumed from the source alone.
     const wardScreen = page.getByTestId("ward-unit-screen");
-    // Integration QA (3 Nov 2026): Occupied sits once, in the hero, not in the bed grid.
-    const occupiedChip = wardScreen.getByRole("button", { name: /^\d+\s*Occupied$/u });
-    const occupiedBeforeText = await occupiedChip.innerText();
+    // Integration QA (3 Nov 2026): Occupied sits once, in the hero, not in the bed grid. Page tops
+    // (Josh, 9 Nov 2026): the hero figure's button is its word, named by figure and word together
+    // ("16 of 20 occupied"); the figure itself is the <b> beside it.
+    const occupiedFigure = (scope: Locator) =>
+      scope.locator("p", { has: scope.page().getByRole("button", { name: /^\d+\b.*\boccupied$/iu }) }).locator("b");
+    const occupiedBeforeText = await occupiedFigure(wardScreen).innerText();
     const occupiedBeforeCount = Number(/\d+/u.exec(occupiedBeforeText)?.[0] ?? "NaN");
     expect(
       Number.isNaN(occupiedBeforeCount),
@@ -583,9 +586,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await expect(wardScreenAfterArrival.getByTestId(`ward-accepted-${movementId}`)).toHaveCount(0);
     await page.locator("#tabBtn-attn").click();
     await expect(wardScreenAfterArrival.getByTestId(`ward-pull-${movementId}`)).toHaveCount(0);
-    await expect(wardScreenAfterArrival.getByRole("button", { name: /^\d+\s*Occupied$/u })).toContainText(
-      String(occupiedBeforeCount + 1),
-    );
+    await expect(occupiedFigure(wardScreenAfterArrival)).toHaveText(new RegExp(`^${occupiedBeforeCount + 1}\\b`, "u"));
 
     // --- Step 8: a discharge is planned — the ward flags a bed coming free, the real, wired
     // "plan a discharge" mechanism (the discharges board's own "+ Plan departure" button is

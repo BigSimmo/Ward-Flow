@@ -1,27 +1,12 @@
 /*
  * Home's slate hero (sticky header redesign, Josh 9 Nov 2026). One plain title with the Live pill,
- * three figures, the next step as a soft card (beside the figures from tablet up) and the ED strip,
- * all inside the band. The list tabs below rise into the band's foot as a curved folder
- * (home-folder.module.css), so the band's own light lip is not drawn here. Tokens only.
+ * then the shared page top (wf/hero-top: figures, the next step, v6 sizes) and the ED strip, all
+ * inside the band. The list tabs below rise into the band's foot as a curved folder
+ * (wf/folder-tabs, whose `hero` class makes the room). Tokens only.
  */
 
 .hero.hero.hero {
-  /* Shared with the folder tabs (home-folder.module.css): tab inset 6 + tab 40 + sheet corner 20. */
-  --wf-folder-rise: 66px;
   gap: 0;
-}
-
-/* The folder tabs draw the band's foot, so the hero's round lip steps aside and the band runs on
-   under the tabs (they overlap it by --wf-folder-rise). */
-.hero.hero.hero::after {
-  display: none;
-}
-
-.hero.hero.hero[data-band],
-.hero.hero.hero[data-wf-hero="band"]:not([data-band]) {
-  padding-bottom: calc(var(--wf-s-3) + var(--wf-folder-rise));
-  margin-bottom: 0;
-  background-size: 100% 100%;
 }
 
 .hero.hero.hero h2 {
@@ -35,116 +20,8 @@
   font-weight: 500;
 }
 
-.main {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-4);
-  margin-top: var(--wf-s-3);
-  min-width: 0;
-}
-
-.figures {
-  display: grid;
-  grid-template-columns: 1.25fr 1fr 1fr;
-  min-width: 0;
-}
-
-.figure {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  margin: 0;
-  padding-left: 14px;
-  border-left: 1px solid var(--wf-on-hero-div);
-}
-
-.figure:first-child {
-  padding-left: 0;
-  border-left: 0;
-}
-
-.figure b {
-  font: 600 24px / 28px var(--wf-mono);
-  letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
-  color: var(--wf-hero-ink);
-}
-
-.figure small {
-  font: 400 var(--wf-fs-13) / 17px var(--wf-font);
-  color: var(--wf-hero-ink-2);
-}
-
-.figureLink {
-  color: inherit;
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--wf-hero-ink-2) 50%, transparent);
-  text-underline-offset: 3px;
-}
-
-.figureLink:hover {
-  color: var(--wf-hero-ink);
-}
-
-/* The next step: a soft card in the band, its one light button on the right. */
-.next {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-3);
-  min-width: 0;
-  padding: 12px 12px 12px 14px;
-  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--wf-hero-ink) 7%, transparent);
-}
-
-.nextGlyph {
-  flex: none;
-}
-
-.nextText {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.nextAnswer {
-  margin: 0;
-  font: 600 var(--wf-fs-15, 15px) / 20px var(--wf-font);
-  color: var(--wf-hero-ink);
-}
-
-.nextChecking {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  margin: 0;
-  font: 400 var(--wf-fs-12) / 16px var(--wf-font);
-  color: var(--wf-hero-ink-3);
-}
-
-.nextChecking::before {
-  content: "";
-  flex: none;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--wf-hero-warning);
-  transform: translateY(-1px);
-}
-
-.nextAction.nextAction {
-  flex: none;
-  min-height: 40px;
-  border-radius: 12px;
-}
-
 /* ED strip: one row of departments in the band, hairlines between them. */
 .ed {
-  margin-top: var(--wf-s-4, 16px);
   min-width: 0;
 }
 
@@ -159,21 +36,39 @@
 .edLabel {
   margin: 0;
   font: 600 var(--wf-fs-12) / 16px var(--wf-font);
-  letter-spacing: var(--wf-tr-caps, 0.06em);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--wf-hero-ink-3);
 }
 
 .edPopulation {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   margin: 0;
   font: 400 var(--wf-fs-12) / 16px var(--wf-font);
-  color: var(--wf-hero-ink-3);
+  color: var(--wf-hero-ink-2);
+  text-decoration: none;
   white-space: nowrap;
 }
 
+.edPopulation svg {
+  color: var(--wf-hero-ink-3);
+}
+
+.edPopulation:hover {
+  color: var(--wf-hero-ink);
+}
+
+.edPopulation:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .edPopulation b {
-  font: 500 var(--wf-fs-12) / 16px var(--wf-mono);
-  color: var(--wf-on-hero-ink, var(--wf-hero-ink-2));
+  font: 600 var(--wf-fs-12) / 16px var(--wf-mono);
+  color: var(--wf-hero-ink);
 }
 
 .edStrip {
@@ -201,7 +96,7 @@
   row-gap: 1px;
   min-width: 0;
   min-height: 44px;
-  padding: 2px 10px 3px 12px;
+  padding: 0 14px;
   border: 0;
   border-left: 1px solid var(--wf-on-hero-div);
   border-radius: 0;
@@ -246,7 +141,8 @@
 }
 
 .edCode {
-  font: 600 var(--wf-fs-13) / 16px var(--wf-font);
+  font: 600 var(--wf-fs-12) / 16px var(--wf-font);
+  letter-spacing: 0.01em;
   color: var(--wf-on-hero-ink, var(--wf-hero-ink-2));
 }
 
@@ -265,7 +161,7 @@
 }
 
 .edWaitingValue {
-  font: 600 var(--wf-fs-20, 20px) / 24px var(--wf-mono);
+  font: 600 var(--wf-fs-15) / 20px var(--wf-mono);
   font-variant-numeric: tabular-nums;
   color: var(--wf-hero-ink);
 }
@@ -308,7 +204,7 @@
 .edClearCell {
   align-items: flex-start;
   min-width: 0;
-  padding: 2px 0 3px 12px;
+  padding: 0 0 0 14px;
   border-left: 1px solid var(--wf-on-hero-div);
 }
 
@@ -333,25 +229,6 @@
   color: var(--wf-hero-ink-3);
 }
 
-/* Tablet and desktop: the figures and the next step share one line. */
-@media (min-width: 46.5rem) {
-  .main {
-    display: grid;
-    grid-template-columns: minmax(0, 26rem) minmax(0, 1fr);
-    align-items: center;
-    gap: var(--wf-s-6, 24px);
-  }
-
-  .figure b {
-    font-size: 26px;
-    line-height: 30px;
-  }
-
-  .edPopulation {
-    font-size: var(--wf-fs-13);
-  }
-}
-
 /* Phone: the title shares its line with the Live pill, and the strip scrolls sideways under a soft
    fade, running to the screen's edges. */
 @media (max-width: 46.4375rem) {
@@ -363,11 +240,6 @@
   .hero.hero.hero h2 {
     font-size: var(--wf-fs-15, 15px);
     line-height: 20px;
-  }
-
-  .main {
-    margin-top: var(--wf-s-3);
-    gap: 18px;
   }
 
   .edStrip {
@@ -386,29 +258,17 @@
 
   .edButton {
     min-width: 76px;
-    padding: 2px 14px 3px 12px;
+    padding: 0 14px;
   }
 }
 
-@media (forced-colors: active) {
-  .next {
-    border-color: CanvasText;
-  }
-}
-
-/* Desktop (option C): the tabs sit on the light page, so the band keeps its own curved lip. */
+/* Page tops v6 (Josh, 9 Nov 2026): the strip reads as one slim band; desktop cells breathe a little. */
 @media (min-width: 64rem) {
-  .hero.hero.hero::after {
-    display: block;
+  .edButton {
+    padding: 0 20px;
   }
 
-  .hero.hero.hero[data-band],
-  .hero.hero.hero[data-wf-hero="band"]:not([data-band]) {
-    padding-bottom: calc(var(--wf-s-4) + var(--wf-band-lip, 22px));
+  .edClearCell {
+    padding-left: 20px;
   }
-}
-
-/* The shell's Quick bar at the hero's foot (#1549): a clear step below the ED strip. */
-.hero.hero.hero [data-wf-quick-bar] {
-  margin-top: var(--wf-s-4, 16px);
 }

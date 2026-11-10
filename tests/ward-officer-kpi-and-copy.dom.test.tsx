@@ -34,9 +34,11 @@ afterEach(() => {
  */
 
 /** A hero highlight's count: the pill's value precedes its label inside one toggle button. */
+/** A Job stages cell's count (page tops, 9 Nov 2026: the stages are one band, label then count). */
 function heroCount(label: string): number {
-  const pill = screen.getByText(label).closest("button");
-  return Number(pill?.textContent?.match(/^\d+/)?.[0] ?? Number.NaN);
+  const band = within(screen.getByRole("list", { name: "Job stages" }));
+  const cell = band.getByText(label).closest("button");
+  return Number(cell?.textContent?.match(/(\d+)$/u)?.[1] ?? Number.NaN);
 }
 
 describe("officer screen KPI captions match their populations", () => {
@@ -84,12 +86,12 @@ describe("officer screen KPI captions match their populations", () => {
     );
 
     // Transport page A (9 Oct 2026): the accepted-not-collected population is split across two
-    // hero highlights, "Crew to send" (accepted, crew not yet sent) and "Crew en route". Together
+    // hero highlights, "Crew to send" (accepted, crew not yet sent) and "En route". Together
     // they must still count those jobs only.
     // Before the 16 Sept fix the value was 8 (every open job, including WF-005/WF-015 which nobody
     // has yet collected) — a number the caption beside it did not cover.
     // 2 → 5: the 17 Sept sample-data addition, WF-021/WF-025/WF-030 (accepted-only).
-    expect(heroCount("Crew to send") + heroCount("Crew en route")).toBe(5);
+    expect(heroCount("Crew to send") + heroCount("En route")).toBe(5);
   });
 
   it("renders the not-yet-accepted count as those jobs only, not every not-yet-collected job", () => {
@@ -104,24 +106,22 @@ describe("officer screen KPI captions match their populations", () => {
     expect(heroCount("To accept")).toBe(0);
   });
 
-  it("names the screen 'Transport' in the h1 (P195) and keeps the collected count in its chip", () => {
+  it("names the desk in the h1 (P195) and keeps the collected count in its stage", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <OfficerScreen />
       </WardFlowProvider>,
     );
 
-    // P195 (audit 27 Oct 2026): the h1 is the screen name, not a count.
+    // P195 (audit 27 Oct 2026): the h1 is the screen name, not a count. Page tops (9 Nov 2026): it
+    // names the desk; the open-job count is the Jobs tab's.
     const title = screen.getByRole("heading", { level: 1 });
-    expect(title.textContent).toBe("Transport");
-    // Transport redesign (31 Oct 2026): the count sits beside the h1, never inside it.
-    expect(screen.getByText(/^\d+ jobs? open$/)).toBeInTheDocument();
-    // The collected figure (8: collected-not-arrived, WF-026/WF-031) still shows in its chip, which
-    // now uses the stage column's own word, "Collected" (it read "On board").
-    const chips = screen.getByRole("group", { name: "Highlight jobs" });
-    const collected = within(chips).getByText("Collected").closest("button");
-    expect(Number(collected?.textContent?.match(/^\d+/)?.[0])).toBe(8);
-    expect(within(chips).queryByText("On board")).toBeNull();
+    expect(title.textContent).toBe("Transport desk right now");
+    expect(screen.getByRole("tab", { name: /^Jobs\s*13$/u })).toBeInTheDocument();
+    // The collected figure (8: collected-not-arrived, WF-026/WF-031) still shows in its stage,
+    // which uses the stage column's own word, "Collected" (it read "On board").
+    expect(heroCount("Collected")).toBe(8);
+    expect(within(screen.getByRole("list", { name: "Job stages" })).queryByText("On board")).toBeNull();
   });
 });
 

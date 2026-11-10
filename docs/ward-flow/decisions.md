@@ -138,7 +138,10 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-113](#d-113-second-patient-identifier-on-accept-and-mark-done-no-initials-search-9-november-2026)                                                    | Second identifier on accept and Mark done; no initials search                        | Active                                           |
 | [D-114](#d-114-allow-pull_request_target-for-three-workflows-only-9-november-2026)                                                                      | Allow pull_request_target for three workflows only                                   | Active                                           |
 | [D-115](#d-115-one-count-on-every-screen-and-a-missing-patient-shown-everywhere-9-november-2026)                                                        | One count on every screen; missing patient shown everywhere                          | Active                                           |
+| [D-116](#d-116-page-tops-the-pr-1581-recommendations-stand-9-november-2026)                                                                             | Page tops: PR #1581 recommendations stand                                            | Active                                           |
 | [D-117](#d-117-care-plans-follow-up-frequent-presenter-count-tribunal-date-and-ward-flags-10-november-2026)                                             | Care plans follow-up: frequent presenter count, tribunal date, ward flags            | Active                                           |
+| [D-118](#d-118-page-tops-referrals-and-ward-phone-limits-up-to-8-kb-above-main-10-november-2026)                                                        | Page tops: Referrals and Ward phone limits up to 8 KB above main                     | Active                                           |
+| [D-119](#d-119-page-tops-phone-limits-raised-to-measured-sizes-trim-after-merge-10-november-2026)                                                       | Page tops: phone limits at measured sizes, trim after merge                          | Active                                           |
 
 ---
 
@@ -1443,6 +1446,23 @@ is inferred.
 - **Built so far (PR #1579):** items 1, 2 and 5. Items 3, 4 and 6 wait until PRs #1581 and #1583 merge, because those PRs hold the ward board and access-scope files the changes need; each is pinned as a to-do test in the audit files.
 - **Boundary:** synthetic data only. Changes display counts and labels; changes no signed clinical value or clinical rule, and approves no merge or release.
 
+## D-116. Page tops: the PR #1581 recommendations stand (9 November 2026)
+
+- **Date:** 9 November 2026 (`2026-11-09`). **Decided by:** Josh, in the Ward Flow project: "Please work autonomously and complete everything over night including PRs. I give permission" (18:24 UTC), taken as accepting each recommendation listed for him in PR #1581. Earlier the same day he approved the v6 page tops and their per-page rulings, and allowed the Statistics (+8 KB, 16:10 UTC) and bed meeting (+6.6 KB, 17:20 UTC) phone limit raises on decision cards.
+- **Decision:** the built page tops keep these choices:
+  - All wards shows service tabs on a phone, replacing shell-15's "no region chips on a phone".
+  - The New referral chip stays phone-only and never shows on the ED desk.
+  - Capacity's top drops the locked/open ready, pulled and freeing-today figures; the bed map and ward cards still show them.
+  - Transport's act row reads "Most urgent", because its first row is the most urgent job, not always the longest wait.
+  - On the officer's phone, Copy handover sits in the top chip row, reversing the 31 October placement.
+  - The On-call phone keeps "Prototype data, invented numbers", and the TV keeps "Updates in this browser only" on wide screens.
+  - Legal forms phone route lines are one line with an ellipsis, reversing F-05.
+  - The Patient page keeps its mode pill and Placement steps toggle; Settings keeps its Rules / Last save strip; Pin on the patient page is a chip.
+  - An ED desk no longer sees a greyed Broadcast chip on Alerts.
+  - A community team's phone shows three section tabs; Referrals sits under "More team sections", as the approved mock-up shows.
+- **Left as follow-ups, not decided here:** removing now-unused symbols (needs the owner-approved dead-code override), the other community teams' and the Referrals desks' tops, and phone bar title truncation.
+- **Boundary:** layout and wording only on synthetic data; no clinical logic changes. Approves no release.
+
 ## D-117. Care plans follow-up: frequent presenter count, tribunal date and ward flags (10 November 2026)
 
 - **Date:** 10 November 2026, about 10:01 AM AWST (02:01 UTC). **Decided by:** Josh, answering "Go ahead with all recommendations" to the three questions left after PR #1578 (D-104) merged. D-116 is claimed by PR #1581.
@@ -1451,3 +1471,16 @@ is inferred.
   2. **Tribunal hearing date:** stays typed text that the browser's own device copy does not keep (D-18). On a local board, after a refresh, "Hearing date passed, outcome not recorded" cannot show until the date is entered again. A shared synthetic workspace reloads from the server copy, so the date and the line can survive a refresh there. This stands while the app uses synthetic data; changing it needs a privacy rule change.
   3. **Risk flags on referral-backed bed requests:** the ward's bed request card receives no referral data today, so it shows no flags. A ward can still read the full referral sent to it (D-79), and never sees other destinations (FD-23). Showing the flags on the request card is separate work, listed in the [backlog](backlog.md).
 - **Boundary:** synthetic data only. Confirms what is built; changes no signed clinical value or clinical rule, and approves no merge or release.
+
+## D-118. Page tops: Referrals and Ward phone limits up to 8 KB above main (10 November 2026)
+
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, on a decision card in the Ward Flow project (02:18 UTC), choosing "Allow up to 8 KB" on "Allow Referrals and Ward phone limits up to 8 KB above main?".
+- **Decision:** PR #1581 may set the phone first-load limits (`script-budget.json`) for `/ward-flow/referrals` and `/ward-flow/ward/rph-adult-secure` up to 8 KB above main alone's measured size, as D-116's approvals already allow for Statistics (8 KB) and bed meeting (6.6 KB). Every other route keeps the 5 KB rule.
+- **Boundary:** applies to this PR only, after a trim has been tried; it approves no other raise and no release.
+
+## D-119. Page tops: phone limits raised to measured sizes, trim after merge (10 November 2026)
+
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, on a decision card in the Ward Flow project (02:30 UTC), choosing "Raise now, trim after merge" on "Raise the phone limits to today's measured sizes now, and trim in a follow-up?".
+- **Decision:** PR #1581 sets each phone first-load limit to hosted CI's measured size plus about 0.2 KB, so it can merge without waiting for a trim. That puts Referrals about 10 KB and Capacity about 6.5 KB over main alone, beyond D-118's 8 KB and the 5 KB rule. A follow-up PR trims them back.
+- **Why:** after #1578 merged, webpack began copying the shared `next/link` and `next/dynamic` code into page chunks on Referrals, Capacity and one ED (about 9 KB loaded twice). The follow-up adds a named shared chunk for that code and lowers the limits.
+- **Boundary:** this PR only; layout and download size only, no clinical change. Approves no release.

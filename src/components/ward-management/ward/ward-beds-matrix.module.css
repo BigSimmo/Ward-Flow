@@ -340,7 +340,8 @@
 }
 
 .countFigure {
-  font: 600 var(--wf-fs-28) / 1 var(--wf-mono);
+  /* Page tops (9 Nov 2026): 20px, so a body figure never sits above the hero's own figures. */
+  font: 600 var(--wf-fs-20) / 1.2 var(--wf-mono);
   font-variant-numeric: tabular-nums;
   color: var(--wf-ink-1);
 }

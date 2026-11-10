@@ -55,7 +55,7 @@ describe("discharge actions stay usable and accessible across filters", () => {
     // DC2 (Josh, 3 Nov 2026): the in-list Status chips are gone (the hero counts highlight and never
     // hide), so the record view is now the only view without release rows.
     expect(screen.queryByRole("group", { name: "Status" })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /^Recorded/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Recorded/ }));
     expect(heldUpRowButton()).toBeNull();
   });
   it("offers every blocker on Now and announces pipeline counts", () => {
@@ -87,7 +87,7 @@ describe("discharge actions stay usable and accessible across filters", () => {
     expect(screen.getByRole("button", { name: /^Held up by: Pharmacy/u })).toBeInTheDocument();
     expect(screen.getByTestId("discharge-pipeline-announcement")).toHaveTextContent(/Discharges by bed: \d+ held up/);
     // DC4: Recorded lists people who have left, so it filters by where they went, not by hold-up.
-    fireEvent.click(screen.getByRole("button", { name: /^Recorded/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Recorded/ }));
     expect(screen.queryByRole("button", { name: /^Held up by: /u })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Going to: /u })).toBeInTheDocument();
   });

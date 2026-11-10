@@ -225,7 +225,7 @@ describe("Community gateway — live search narrows to exactly the matching set"
       0,
     );
 
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search team names" }), { target: { value: sampleWord } });
+    fireEvent.change(screen.getByRole("searchbox", { name: "Suburb or postcode" }), { target: { value: sampleWord } });
 
     // Every name stays; the matching ones stay solid.
     expect(screen.getAllByTestId("community-index-link")).toHaveLength(COMMUNITY_TEAM_PAGES.length);
@@ -304,7 +304,7 @@ describe("Community gateway — the family panel lists exactly the shared deriva
 describe("Community gateway — accessible plumbing the brief specifically asks for", () => {
   it('focuses the search field when "/" is pressed anywhere on the page', () => {
     renderGateway();
-    const input = screen.getByRole("searchbox", { name: "Search team names" });
+    const input = screen.getByRole("searchbox", { name: "Suburb or postcode" });
     fireEvent.keyDown(document, { key: "/" });
     expect(document.activeElement).toBe(input);
   });
@@ -329,7 +329,7 @@ describe("Community gateway — accessible plumbing the brief specifically asks 
       </WardFlowProvider>,
     );
 
-    const communityInput = screen.getByRole("searchbox", { name: "Search team names" });
+    const communityInput = screen.getByRole("searchbox", { name: "Suburb or postcode" });
     const headerInput = screen.getByTestId("ward-global-search-input");
     // Start from neither field focused, so the assertion below cannot pass merely because one
     // already happened to hold focus before the key was pressed.
@@ -495,7 +495,7 @@ describe("Community gateway — directory header layout and service filtering", 
     renderGateway();
     expect(screen.queryByRole("button", { name: /reset all search and filter/i })).toBeNull();
 
-    const searchInput = screen.getByRole("searchbox", { name: "Search team names" });
+    const searchInput = screen.getByRole("searchbox", { name: "Suburb or postcode" });
     fireEvent.change(searchInput, { target: { value: "test" } });
 
     const resetBtn = screen.getByRole("button", { name: /reset all search and filter/i });

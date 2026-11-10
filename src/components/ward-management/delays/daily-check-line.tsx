@@ -293,7 +293,8 @@ export function DailyCheckList({
   );
 }
 
-export function DailyCheckLine() {
+/** `initiallyOpen`: the list starts open (Waiting's hero chip opens it, page tops 9 Nov 2026). */
+export function DailyCheckLine({ initiallyOpen = false }: { initiallyOpen?: boolean } = {}) {
   const access = useEffectiveWardAccess();
   const { movements, referrals, patients, inboxCompletions } = useWardFlowSelect(
     "movements",
@@ -305,7 +306,7 @@ export function DailyCheckLine() {
   const now = useWardFlowClock();
   const patientOf = usePatientOf();
   const listId = useId();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initiallyOpen);
   // Josh, 30 Oct 2026: the opened list shows its first 8, then the shared Show more row.
   const [all, setAll] = useState(false);
   // Josh, 30 Oct 2026: on a phone the check is one line, "Daily check: 17 to check", with the full

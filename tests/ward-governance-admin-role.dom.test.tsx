@@ -110,7 +110,8 @@ describe("Governance as the coordinator", () => {
     asDesk("coordinator");
     renderEmpty();
     fireEvent.click(screen.getByRole("radio", { name: /^Review/ }));
-    expect(screen.getByRole("radio", { name: /^Form gaps by site/ })).toBeInTheDocument();
+    // Page tops (9 Nov 2026): the tab reads "Form gaps", its count the gaps.
+    expect(screen.getByRole("radio", { name: /^Form gaps/ })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: /^Registers/ })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /PIR chronology/ })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Open the Access log" })).not.toBeInTheDocument();

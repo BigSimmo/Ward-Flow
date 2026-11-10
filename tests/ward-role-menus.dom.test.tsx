@@ -341,15 +341,21 @@ describe("a ward or ED desk is not offered pages outside its role (DA-09)", () =
       const { unmount } = render(wrap(overview));
       // ED desk redesign (Josh, 30 Oct 2026): the strip is left out for an ED desk, whose copy holds
       // only its own department (it showed one link and "Not shown at this desk" tiles before).
-      expect(screen.queryByRole("navigation", { name: "Emergency departments" })).toBeNull();
+      // Page tops (Josh, 9 Nov 2026): the strip is the hero's "Switch ED" band.
+      expect(screen.queryByTestId("ward-ed-switch")).toBeNull();
       expect(screen.queryByRole("link", { name: /RPH/u })).toBeNull();
       expect(screen.queryByTestId("ward-ed-open-tv")).toBeNull();
       unmount();
 
       atDesk(null);
       render(wrap(overview));
-      const coordinatorStrip = screen.getByRole("navigation", { name: "Emergency departments" });
-      expect(within(coordinatorStrip).getAllByRole("link")).toHaveLength(2);
+      const coordinatorStrip = screen.getByRole("list", { name: "Switch ED" });
+      // Both departments are on the band; the other one is a link, this one is not.
+      expect(within(coordinatorStrip).getByTestId("ward-ed-switch-peel-ed")).not.toHaveAttribute("href");
+      expect(within(coordinatorStrip).getByTestId("ward-ed-switch-rph-ed")).toHaveAttribute(
+        "href",
+        "/ward-flow/ed/rph-ed",
+      );
       expect(screen.getByTestId("ward-ed-open-tv")).toBeInTheDocument();
     } finally {
       act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", null));

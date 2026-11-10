@@ -80,6 +80,8 @@ describe("the bed board states how the chosen service relates to it (item 44, ta
     const scopedFigures = scoped.getByTestId("ward-board-triage").innerHTML;
 
     expect(scopedBeds).toBe(unscopedBeds);
-    expect(scopedFigures).toBe(unscopedFigures);
+    // Page tops (9 Nov 2026): the band names its list by a React id, which differs per render.
+    const withoutIds = (html: string) => html.replace(/_r_[0-9a-z]+_/gu, "_r_");
+    expect(withoutIds(scopedFigures)).toBe(withoutIds(unscopedFigures));
   });
 });

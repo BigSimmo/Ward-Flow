@@ -6,74 +6,25 @@
  * band hero with three figures, the section track, phone rows and the bottom sheet. Nothing is saved.
  */
 
-import { useCallback, useLayoutEffect, useState, type ReactNode } from "react";
-import { Check, ChevronDown, ChevronRight, FileText, Phone, Plus, Search } from "lucide-react";
-import {
-  Button,
-  LiveChip,
-  PhoneHero,
-  PhoneListRow,
-  PhoneSheet,
-  ScrollRow,
-  Segmented,
-  SrOnly,
-  StatusGlyph,
-  buttonClass,
-  registerWfBandHero,
-} from "@/components/wf";
+import { useCallback, useState, type ReactNode } from "react";
+import { Check, ChevronDown, ChevronRight, FileText, Phone, Search } from "lucide-react";
+import { Button, PhoneListRow, PhoneSheet, ScrollRow, Segmented, SrOnly, StatusGlyph } from "@/components/wf";
 import { perthWeekdayTime } from "@/components/ward-management/ward-clock";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import phone from "../community-team-phone.module.css";
 import type { CommunityTeamSection } from "../community-screen-hero";
-import { DEMO_FIGURES, SENT, STAFF as AUTHORED_STAFF, TODAY, staffName } from "./midland-demo";
+import { DEMO_FIGURES, SENT, TODAY, staffName } from "./midland-demo";
 import { useMidlandDay, useMidlandDemo } from "./use-midland-demo";
 import { ReferralPage, useAnswer } from "./team-referrals";
 import { openReferrals, useMidlandDecisions } from "./midland-decisions";
 import { useRegisterWardBarPlaceSwitch } from "@/components/ward-management/shell/ward-bar-place-switch";
 import p from "./midland-phone.module.css";
+import { MidlandTop } from "./midland-top";
 
 const f = DEMO_FIGURES;
 const SHOWN = 8;
 /** HOW-WE-WORK D4: an unconnected control says exactly this. */
 const NOT_WIRED = "Not wired in this prototype.";
-
-/** Audit B2 (5 Nov 2026): every "to answer" figure is the open-referral count, so a decision lowers each one at once. */
-const sectionsFor = (toAnswer: number): { id: CommunityTeamSection; label: string; count?: number }[] => [
-  { id: "home", label: "Home" },
-  { id: "caseload", label: "Caseload", count: f.caseload },
-  { id: "hospital", label: "In hospital", count: f.inHospital },
-  { id: "referrals", label: "Referrals", count: toAnswer },
-  { id: "clinicians", label: "Clinicians", count: f.clinicians },
-];
-
-type Figure = { id: string; value: ReactNode; label: string; tone?: "danger" | "warning" | "info" };
-const figuresFor = (toAnswer: number): Record<CommunityTeamSection, Figure[]> => ({
-  home: [
-    { id: "act", value: f.actNow, label: "Act now", tone: "danger" },
-    { id: "answer", value: toAnswer, label: "To answer", tone: "warning" },
-    { id: "home", value: f.homeIn7Days, label: "Home in 7 days", tone: "info" },
-  ],
-  caseload: [
-    { id: "all", value: f.caseload, label: "On the caseload" },
-    { id: "cto", value: f.onCto, label: "On a CTO" },
-    { id: "seen", value: f.notSeen4Weeks, label: "Not seen 4 wk", tone: "warning" },
-  ],
-  hospital: [
-    { id: "in", value: f.inHospital, label: "In hospital" },
-    { id: "home", value: f.homeIn7Days, label: "Home in 7 days" },
-    { id: "passed", value: f.datesPassed, label: "Dates passed", tone: "warning" },
-  ],
-  referrals: [
-    { id: "answer", value: toAnswer, label: "To answer" },
-    { id: "past", value: f.pastTime, label: "Past its time", tone: "warning" },
-    { id: "oldest", value: f.oldestReferral, label: "Oldest" },
-  ],
-  clinicians: [
-    { id: "working", value: f.working, label: "Working today" },
-    { id: "field", value: AUTHORED_STAFF.filter((s) => s.today === "field").length, label: "In the field" },
-    { id: "away", value: AUTHORED_STAFF.filter((s) => s.today === "leave").length, label: "Away" },
-  ],
-});
 
 function Card({ title, aside, children }: { title?: string; aside?: ReactNode; children: ReactNode }) {
   return (
@@ -142,7 +93,6 @@ function HomeSection({
   const { STAFF, REFERRALS } = useMidlandDemo();
   const day = useMidlandDay();
   const cms = STAFF.filter((s) => s.load);
-  const duty = STAFF.find((s) => s.today === "duty")!;
   // Same decision state as the Referrals tab (and the tablet home): once answered, it leaves Act now.
   const decisions = useMidlandDecisions();
   const open = openReferrals(REFERRALS, decisions);
@@ -224,19 +174,6 @@ function HomeSection({
   ];
   return (
     <>
-      <section className={`${p.card} ${p.reach}`} aria-label="Duty officer">
-        <Phone size={20} aria-hidden="true" className={p.quiet} />
-        <div className={p.reachText}>
-          <b>{duty.name}</b> <span className={p.mono}>ext {duty.ext}</span>
-          <span className={p.small}>
-            Duty officer today · {f.working} of {f.clinicians} working
-          </span>
-        </div>
-        <Button size="sm" onClick={() => note(NOT_WIRED)}>
-          Call<SrOnly> {duty.name}</SrOnly>
-        </Button>
-      </section>
-
       <Card title="Team list" aside={<span className={p.tag}>To do {actNow.length + thisWeek.length}</span>}>
         <GroupHead title={`Act now ${actNow.length}`} hint="needs someone today" danger />
         <ul className={p.rows}>
@@ -285,69 +222,6 @@ function HomeSection({
         ) : null}
         <More shown={0} total={thisWeek.length} open={week} onToggle={() => setWeek(!week)} what="for this week" />
       </Card>
-
-      <section className={`${p.card} ${p.tiles}`} aria-label="Team figures">
-        {[
-          {
-            id: "caseload" as const,
-            value: f.caseload,
-            label: "Caseload",
-            line: `${f.managed} managed · ${f.unallocated} unallocated`,
-            bar: [
-              [f.managed, "d1"],
-              [f.psychiatristOnly, "d2"],
-              [f.unallocated, "dw"],
-            ],
-          },
-          {
-            id: "hospital" as const,
-            value: f.inHospital,
-            label: "In hospital",
-            line: `${f.homeIn7Days} home in 7 days · ${f.datesPassed} dates passed`,
-            bar: [
-              [4, "d1"],
-              [3, "d2"],
-              [2, "dw"],
-            ],
-          },
-          {
-            id: "referrals" as const,
-            value: open.length,
-            label: "Referrals",
-            line: `${f.pastTime} past its time · ${f.dueThisWeek} due this week`,
-            bar: [
-              [1, "dw"],
-              [2, "d1"],
-            ],
-          },
-          {
-            id: "hospital" as const,
-            value: f.followUps,
-            label: "Follow-up",
-            line: "1 due today · 1 not booked",
-            bar: [
-              [2, "d1"],
-              [1, "dw"],
-              [1, "dk"],
-            ],
-          },
-        ].map((tile) => {
-          const total = tile.bar.reduce((sum, [n]) => sum + Number(n), 0);
-          return (
-            <button key={tile.label} type="button" className={p.tile} onClick={() => go(tile.id)}>
-              <span className={p.tileHead}>
-                <b className={p.mono}>{tile.value}</b> {tile.label}
-              </span>
-              <span className={p.bar} aria-hidden="true">
-                {tile.bar.map(([n, c], i) => (
-                  <i key={i} className={p[String(c)]} style={{ width: `${(Number(n) / total) * 100}%` }} />
-                ))}
-              </span>
-              <span className={p.small}>{tile.line}</span>
-            </button>
-          );
-        })}
-      </section>
 
       <Card title="Caseload by case manager" aside={<span className={p.small}>of agreed limit</span>}>
         <ul className={p.rows}>
@@ -792,17 +666,12 @@ export function MidlandPhone({
   const [sheet, setSheet] = useState<number | null>(null);
   const [full, setFull] = useState<number | null>(null);
   const { say: note } = useAnswer("");
-  // The band is drawn at the phone's fixed 12px insets from the first paint, not measured after
-  // hydration: the measured band jumped on load (layout shift 0.11 on the release gate, 1 Nov 2026).
-  // Registering it keeps the header in hero ink at rest, as the measured band does.
-  useLayoutEffect(() => (full === null ? registerWfBandHero() : undefined), [full]);
   const switchTeam = useCallback(() => onSwitchTeam?.(true), [onSwitchTeam]);
   useRegisterWardBarPlaceSwitch(
     onSwitchTeam ? { label: "East Metro · Adult", actionLabel: "Switch team", onPress: switchTeam } : null,
   );
   const { REFERRALS } = useMidlandDemo();
   const toAnswer = openReferrals(REFERRALS, useMidlandDecisions()).length;
-  const figures = figuresFor(toAnswer)[section];
   if (full !== null) {
     return (
       <div className={phone.phone} data-testid="ward-community-phone">
@@ -812,52 +681,17 @@ export function MidlandPhone({
   }
   return (
     <div className={phone.phone} data-testid="ward-community-phone">
-      <div className={`${phone.band} ${p.band}`} data-wf-hero="band" data-band="on">
-        <PhoneHero
-          level={1}
-          className={phone.teamHero}
-          data-testid="ward-community-phone-hero"
-          eyebrow="Midland · East Metro · Adult"
-          chip={<LiveChip state="live" onHero />}
-          title={
-            section === "home" ? `${f.caseload} on the caseload` : <SrOnly>{`${f.caseload} on the caseload`}</SrOnly>
-          }
-          sub={
-            section === "home" ? `${f.inHospital} in hospital · ${f.unallocated} waiting for a case manager` : undefined
-          }
-          figures={figures.map((fig) => ({ id: fig.id, value: fig.value, label: fig.label, tone: fig.tone }))}
-          actions={
-            section === "home" ? (
-              <button
-                type="button"
-                className={buttonClass({ variant: "onHero", size: "md" })}
-                onClick={onRecordContact}
-              >
-                <Phone size={16} aria-hidden="true" />
-                Record contact
-              </button>
-            ) : section === "referrals" ? (
-              <button
-                type="button"
-                className={buttonClass({ variant: "onHero", size: "md" })}
-                onClick={onReferFromTeam}
-              >
-                <Plus size={16} aria-hidden="true" />
-                Refer from team
-              </button>
-            ) : undefined
-          }
-        />
-      </div>
+      {/* Page-top redesign (Josh, 9 Nov 2026): the shared top and the sections as folder tabs. */}
+      <MidlandTop
+        isPhone
+        section={section}
+        open={open}
+        toAnswer={toAnswer}
+        onRecordContact={onRecordContact}
+        onReferFromTeam={onReferFromTeam}
+        // Switch team stays on the bar's place line on a phone (Q158), so the top has no second one.
+      />
       <div className={phone.body}>
-        <Segmented
-          label="Team sections"
-          size="md"
-          className={`${phone.segmented} ${p.track}`}
-          value={section}
-          onChange={open}
-          items={sectionsFor(toAnswer)}
-        />
         {section === "home" ? <HomeSection go={open} onRecord={onRecordContact} note={note} /> : null}
         {section === "caseload" ? <CaseloadSection /> : null}
         {section === "hospital" ? <HospitalSection note={note} onRecord={onRecordContact} /> : null}

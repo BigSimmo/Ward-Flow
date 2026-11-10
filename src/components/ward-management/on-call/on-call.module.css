@@ -984,8 +984,9 @@
   color: var(--wf-ink-2);
 }
 
+/* Page tops (9 Nov 2026): 20px, so the card's number no longer outshouts the slate top. */
 .nowNumber {
-  font: 600 var(--wf-fs-28) / 1.1 var(--wf-mono);
+  font: 600 var(--wf-fs-20) / 26px var(--wf-mono);
   letter-spacing: -0.01em;
   color: var(--wf-ink-1);
   font-variant-numeric: tabular-nums;
@@ -2271,4 +2272,70 @@
   .phoneChips {
     flex-wrap: wrap;
   }
+}
+
+/* Page tops (Josh, 9 Nov 2026): the slate top. The island wrapper leaves the hero and the folder
+   tabs as items of the page column, so the column's 12px gap sits between them. */
+.hudIsland {
+  display: contents;
+}
+
+.actLine {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.actKey {
+  flex: none;
+  color: var(--wf-hero-ink-2);
+  font: 500 var(--wf-fs-14) / 20px var(--wf-font);
+}
+
+.actNumber {
+  flex: none;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-15);
+  font-variant-numeric: tabular-nums;
+}
+
+.actSoft {
+  overflow: hidden;
+  color: var(--wf-hero-ink-3);
+  font: 400 var(--wf-fs-13) / 20px var(--wf-font);
+  text-overflow: ellipsis;
+}
+
+.coverValue {
+  font-weight: 600;
+}
+
+.allLines {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.allLines:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.keyLineNumber {
+  font-weight: 500;
+}
+
+.keyLineUntil {
+  color: var(--wf-hero-ink-3);
+  font: 400 var(--wf-fs-12) / 20px var(--wf-font);
 }

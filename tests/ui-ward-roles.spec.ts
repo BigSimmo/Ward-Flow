@@ -622,13 +622,14 @@ test.describe("@mockup Movements — transport panel", () => {
         .filter({ hasText: label })
         .locator("span")
         .first();
+    // Page tops (Josh, 9 Nov 2026): the hero's figures put the number first (<b>), then its words.
     const dayMetric = (label: RegExp) =>
-      page.getByTestId("movements-day-metric").filter({ hasText: label }).locator("strong");
+      page.getByTestId("movements-day-metric").filter({ hasText: label }).locator("b");
     // Audit round 2, A4-18 (13 Oct 2026): "No transport leg" now counts only movements that need a
     // vehicle (pulled, handover ready or moving) and have none, so 57 became 8. Re-derived from the
     // seed with the screen's own `withoutTransport` filter, not adjusted by guesswork.
     await expect(tile(/No transport leg$/)).toHaveText("8");
-    await expect(dayMetric(/^Open movements/)).toHaveText("70");
+    await expect(dayMetric(/open movements$/u)).toHaveText("70");
   });
 });
 

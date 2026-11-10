@@ -1,103 +1,17 @@
 "use client";
 
 /**
- * Waiting redesign, round 4 (Josh, 31 Oct 2026): "make the header larger, with something high
- * yield in it". Under the header counts, one row of three tiles on the dark band: the daily check
- * (passed in, coordinator only) and the next person to pass 8h, whose tile opens that person's row.
- * Laptop only; the phone keeps its short header. Also the table's key line and the blocker groups'
- * whose-move tag.
- *
- * Plan item 2i (proposal, 3 Nov 2026): the longest wait tile is gone. The longest wait shows once,
- * as the list's first row, instead of three times (this bar, the owner tile and the row).
+ * Waiting redesign, round 4 (Josh, 31 Oct 2026): the table's key line and the blocker groups'
+ * whose-move tag. The round 4 header bar (next past 8h) is now a hero chip on the page top
+ * (page tops, 9 Nov 2026; delays-board.tsx).
  */
-import type { ReactNode } from "react";
-import { ChevronRight, TimerReset } from "lucide-react";
-
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import { H8, OVER_8H, SILENT_MINUTES, ownerName, type BoardRow } from "./delays-board-model";
+import { SILENT_MINUTES, ownerName, type BoardRow } from "./delays-board-model";
 import { SrOnly, useIsPhone } from "@/components/wf";
 import { TierKey } from "@/components/ward-management/tier-key";
 import { TYPED_TIME_KEY } from "./waiting-typed-time";
 import board from "./delays-board.module.css";
 import waitingKeys from "./waiting.module.css";
 import styles from "./waiting-polish.module.css";
-
-function Item({
-  icon,
-  label,
-  value,
-  sub,
-  row,
-  onOpen,
-  testId,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: ReactNode;
-  sub: string;
-  row: BoardRow | null;
-  onOpen: (id: string) => void;
-  testId: string;
-}) {
-  return (
-    <button
-      type="button"
-      className={styles.strip}
-      disabled={row === null}
-      onClick={() => {
-        if (row) onOpen(row.movement.id);
-      }}
-      data-testid={testId}
-    >
-      {icon}
-      <span className={styles.stripLabel}>{label}</span>
-      <span className={styles.stripValue}>{value}</span>
-      {sub ? <span className={styles.stripSub}>{sub}</span> : null}
-      {row ? <ChevronRight size={14} aria-hidden="true" className={styles.heroChevron} /> : null}
-    </button>
-  );
-}
-
-export function WaitingHeroBar({
-  rows,
-  now,
-  check,
-  onOpen,
-}: {
-  rows: readonly BoardRow[];
-  now: Instant;
-  check?: ReactNode;
-  onOpen: (id: string) => void;
-}) {
-  const patientOf = usePatientOf();
-  const under8 = rows.filter((row) => row.waited < OVER_8H).sort((a, b) => b.waited - a.waited);
-  const next = under8[0] ?? null;
-  const withinHour = under8.filter((row) => OVER_8H - row.waited <= 60).length;
-  return (
-    <div className={styles.heroBar} role="group" aria-label="At a glance">
-      {check}
-      <Item
-        icon={<TimerReset size={14} aria-hidden="true" className={styles.stripIcon} data-tone="warning" />}
-        label={`Next past ${H8}`}
-        value={
-          next ? (
-            <>
-              <b className={styles.heroNum}>{formatInstantWithDay(now + (OVER_8H - next.waited), now)}</b>{" "}
-              <span className={styles.heroName}>{patientOf(next.movement).formalName}</span>
-            </>
-          ) : (
-            `Nobody under ${H8}`
-          )
-        }
-        sub={next && withinHour > 1 ? `+${withinHour - 1} more within the hour` : ""}
-        row={next}
-        onOpen={onOpen}
-        testId="delays-hero-next8"
-      />
-    </div>
-  );
-}
 
 /** Round 4: whose move a blocker group is, as one short tag ("Your move", "Wards' move"). */
 export function moveWord(owner: BoardRow["owner"]): string {

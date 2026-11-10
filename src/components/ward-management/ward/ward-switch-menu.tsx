@@ -70,6 +70,59 @@ export function WardSwitchMenu({
   );
 }
 
+/**
+ * Page tops (Josh approved, 9 Nov 2026): the same list, opened from a hero chip the page draws (the
+ * chip carries `anchorTestId`). The page owns `open`; the list sits under the chip and focus returns
+ * to it on Escape.
+ */
+export function WardSwitchPopover({
+  unit,
+  switchUnits,
+  onChoose,
+  open,
+  onClose,
+  anchorTestId,
+}: {
+  unit: Unit;
+  switchUnits: readonly Unit[];
+  onChoose: (unitId: string) => void;
+  open: boolean;
+  onClose: () => void;
+  anchorTestId: string;
+}) {
+  // Opted out of the React Compiler, as the ward's top bar is (ward-screen-top-bar.tsx): it renders on
+  // the ward page's first load, where memoising it only added to the phone download.
+  "use no memo";
+  // The chip is drawn by the shared hero parts, so it is found by its test id when the list opens.
+  const triggerRef = useMemo<RefObject<HTMLButtonElement | null>>(
+    () => ({
+      get current() {
+        return typeof document === "undefined"
+          ? null
+          : document.querySelector<HTMLButtonElement>(`[data-testid="${anchorTestId}"]`);
+      },
+    }),
+    [anchorTestId],
+  );
+  if (!open) return null;
+  return (
+    <WardSwitchPanel
+      unit={unit}
+      switchUnits={switchUnits}
+      triggerRef={triggerRef}
+      onClose={(returnFocus) => {
+        onClose();
+        if (returnFocus) triggerRef.current?.focus({ preventScroll: true });
+      }}
+      onChoose={(id, name) => {
+        onClose();
+        announceToWardShell(`${name}.`);
+        onChoose(id);
+      }}
+    />
+  );
+}
+
 function WardSwitchPanel({
   unit,
   switchUnits,
@@ -83,6 +136,9 @@ function WardSwitchPanel({
   onClose: (returnFocus: boolean) => void;
   onChoose: (unitId: string, name: string) => void;
 }) {
+  // Opted out of the React Compiler (it loads with the ward page, open or not): its figures keep their
+  // own useMemo and its effects read the latest close handler from a ref, so nothing reruns differently.
+  "use no memo";
   const titleId = useId();
   const panel = useRef<HTMLDivElement>(null);
   const network = useWardNetwork();

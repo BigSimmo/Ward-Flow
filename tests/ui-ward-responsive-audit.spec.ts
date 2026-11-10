@@ -638,16 +638,20 @@ test.describe("@mockup Ward scroll geometry", () => {
 
 // These pages formerly positioned their phone controls against different resting and scrolled
 // header heights. Cover direct canvas bands and the controls with an 8px painted canvas collar.
+// Page tops (9 Nov 2026): each page's phone strip is now its folder tabs (FolderTabs), pinned under
+// the header by the class named here.
 test.describe("@mockup phone navigation follows the stable header", () => {
   test.use({ viewport: { width: 390, height: 844 }, colorScheme: "light" });
   const strips = [
-    ["Patients", "/search", "census_phoneStates__", 0],
-    ["Capacity", "/capacity", "capacity-page_phoneTabs__", 0],
+    ["Patients", "/search", "census_folder__", 0],
+    ["Capacity", "/capacity", "capacity-page_pageTabs__", 0],
     ["Home", "", "home-flow_nav__", 0],
-    ["Catchments", "/hub/catchments", "community_phonePanes__", 0],
-    ["ED", "/ed/rph-ed", "ed_phonePanes__", 0],
+    // Next's webpack build names a class in `community-index.module.css` after its folder, as it does
+    // for any file ending `index.module.css`: `community_paneTabs__<hash>`.
+    ["Catchments", "/hub/catchments", "community_paneTabs__", 0],
+    ["ED", "/ed/rph-ed", "ed-phone-fold_pageTabs__", 0],
     ["Ward statistics", "/statistics/ward/rph-adult-secure", "statistics-phone-body_stickySeg__", 0],
-    ["Out-of-area", "/out-of-area", "out-of-area-board_phoneTabs__", 0],
+    ["Out-of-area", "/out-of-area", "out-of-area-board_phoneFolder__", 0],
   ] as const;
   for (const [label, route, classPrefix, collar] of strips) {
     test(`${label} keeps its navigation aligned while crossing the scroll threshold`, async ({ page }, testInfo) => {

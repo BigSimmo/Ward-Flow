@@ -74,7 +74,8 @@ describe("ward decisions tab keeps the compact queue and not the census form", (
     const badge = container.querySelector("#badgeReturn");
     expect(badge).not.toBeNull();
     if (dueMatch) {
-      expect(badge).toHaveTextContent(`${dueMatch[1]} Due`);
+      // Page tops (9 Nov 2026): the folder tab shows the count alone, as a red circle.
+      expect(badge).toHaveTextContent(new RegExp(`^${dueMatch[1]}$`));
     } else {
       expect(heading).toHaveTextContent("Done");
       expect(badge).toHaveTextContent("Done");

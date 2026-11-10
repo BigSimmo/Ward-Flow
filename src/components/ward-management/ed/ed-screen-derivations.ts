@@ -480,7 +480,7 @@ export function deriveEdScreen({
         recordId: m.id,
         personName: flagPatientInfo.formalName,
         meta: `${m.cohort} · ${urgencyTierLabel(m.urgency)}`,
-        why: `Waiting in the emergency department for ${splitDuration(now - m.openedAt)}, over ${LONG_WAIT_MINUTES / 60} hours (${OPERATIONAL_DEFAULT_LABEL}).`,
+        why: `Waiting in the emergency department for ${splitDuration(now - m.openedAt)}, past ${LONG_WAIT_MINUTES / 60} hours (${OPERATIONAL_DEFAULT_LABEL}).`,
         when: `waiting ${splitDuration(now - m.openedAt)}`,
       });
     }

@@ -75,10 +75,11 @@ describe("Statistics hero: Export the figures", () => {
       ];
       inProvider(<StatisticsScreen movements={movements} />);
       const hero = screen.getByRole("heading", { level: 1 }).closest("section")!;
-      const label = within(hero).getByText("Open ED movements", { exact: true });
-      const figure = phone ? label.closest("li") : label.parentElement;
-      // The phone strip shows a short label and keeps the full words for a screen reader.
-      expect(figure?.textContent).toMatch(phone ? /^3 Open movementsOpen ED movements$/ : /^3Open ED movements$/);
+      // Page-top redesign (9 Nov 2026): a figure; the phone shows a short label and keeps the full words.
+      const label = within(hero).getByText("open ED movements", { exact: true });
+      const figure = label.closest("p");
+      expect(figure?.querySelector("b")?.textContent).toBe("3");
+      expect(figure?.textContent).toMatch(phone ? /^3 open movementsopen ED movements$/ : /^3 open ED movements$/);
       if (!phone) {
         const { csv } = await exportedCsv(screen.getByTestId("ward-statistics-export"));
         expect(csv).toContain('"Open ED movements","3"');
@@ -89,10 +90,17 @@ describe("Statistics hero: Export the figures", () => {
   it("sits in the Summary hero and exports the band's ready count, labelled synthetic", async () => {
     inProvider(<StatisticsScreen />);
     const button = screen.getByTestId("ward-statistics-export");
-    expect(button).toHaveTextContent("Export the figures");
+    // Page-top redesign (9 Nov 2026): the Export chip; beds ready is the second figure.
+    expect(button).toHaveTextContent("Export");
     expect(button).not.toHaveAttribute("aria-disabled");
-    const title = within(screen.getByTestId("ward-statistics-screen")).getByRole("heading", { level: 1 });
-    const ready = Number.parseInt((title.textContent ?? "").replace(/^Statistics:\s*/u, ""), 10);
+    const figures = screen.getByRole("group", { name: "Network at a glance" });
+    const ready = Number(
+      within(figures)
+        .getByText(/^beds? ready$/u)
+        .closest("p")
+        ?.querySelector("b")?.textContent,
+    );
+    expect(Number.isInteger(ready) && ready > 0, "the ready figure must be read, not defaulted").toBe(true);
 
     const { csv, name } = await exportedCsv(button);
     expect(name).toBe("ward-flow-synthetic-network-figures.csv");

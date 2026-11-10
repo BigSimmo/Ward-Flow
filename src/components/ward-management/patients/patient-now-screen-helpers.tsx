@@ -1,14 +1,12 @@
 "use client";
 
 // The patient page's small shared pieces: the stage detail and transport legal-status readings, the
-// record tab keys and the phone hero's clear-cells figure. Split out of `patient-now-screen.tsx` so
+// record tab keys. Split out of `patient-now-screen.tsx` so
 // the screen and its section files share them without importing one another.
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { PatientMode } from "./patient-mode";
 import { type PatientStatusContext, buildPatientStatus } from "./patient-status-card";
 import { STAGES, clock } from "./patient-now-records";
-import { StatusGlyph } from "@/components/wf";
-import styles from "./patient-now.module.css";
 
 /**
  * Ward, site and emergency-department names read from the one data layer (`ward-sites.ts`) that
@@ -75,20 +73,8 @@ export type TabKey = "now" | "history" | "community" | "details" | "documents";
  * status context (whose clearance handler remembers its trigger in a ref) is read as a prop rather
  * than during the screen's render.
  */
-export function PhoneClearFact({ mode, context }: { mode: PatientMode; context: PatientStatusContext }) {
+/** How many of the status card's move conditions are clear ("0 of 3"), as the card counts them. */
+export function clearToMove(mode: PatientMode, context: PatientStatusContext): { clear: number; of: number } {
   const status = buildPatientStatus(mode, context);
-  const clear = status.cells.filter((cell) => cell.clear).length;
-  return (
-    <span className={styles.v6HeroFact}>
-      <strong className={styles.v6HeroWait}>
-        {clear} of {status.cells.length}
-      </strong>
-      <span className={styles.phFigLabel}>
-        {clear < status.cells.length ? (
-          <StatusGlyph tone={status.tone === "danger" ? "danger" : "warning"} size={9} />
-        ) : null}
-        Clear
-      </span>
-    </span>
-  );
+  return { clear: status.cells.filter((cell) => cell.clear).length, of: status.cells.length };
 }

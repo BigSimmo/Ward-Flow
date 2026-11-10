@@ -59,7 +59,8 @@ describe("ED board redesign", () => {
     // Deep audit (4 Nov 2026): off the phone the app bar's New referral is the one button, so the
     // hero no longer repeats it. The phone keeps it (tests/ward-ed-add-patient-p142.dom.test.tsx).
     expect(screen.queryByTestId("ward-ed-raise-referral-toggle")).toBeNull();
-    expect(screen.getByRole("navigation", { name: "Emergency departments" })).toBeInTheDocument();
+    // Page tops (Josh, 9 Nov 2026): the department strip is the hero's "Switch ED" band.
+    expect(screen.getByRole("list", { name: "Switch ED" })).toBeInTheDocument();
   });
 
   it("leaves the access card, the hero's Raise referral and the strip off the ED desk", () => {
@@ -69,7 +70,7 @@ describe("ED board redesign", () => {
     expect(screen.getByTestId("ward-ed-screen")).toBeInTheDocument();
     expect(screen.queryByTestId("ed-access-risk-card-stand-in")).toBeNull();
     expect(screen.queryByTestId("ward-ed-raise-referral-toggle")).toBeNull();
-    expect(screen.queryByRole("navigation", { name: "Emergency departments" })).toBeNull();
+    expect(screen.queryByTestId("ward-ed-switch")).toBeNull();
     // Add patient keeps its place (P142).
     expect(screen.getAllByTestId("ward-ed-add-patient")[0]).toHaveAttribute("href", "/ward-flow/people/new");
   });

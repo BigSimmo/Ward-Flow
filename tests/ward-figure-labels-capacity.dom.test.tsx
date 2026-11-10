@@ -71,12 +71,14 @@ describe("capacity labels say what each figure counts", () => {
   it("Capacity phone hero says occupancy includes pulled beds", () => {
     const seed = seedWardFlowState();
     renderCapacity(true);
-    // The pulled count is the "Beds pulled" stat beside it; this label says occupancy includes them.
-    expect(screen.getAllByText(/^In use, including pulled$/u).length).toBeGreaterThan(0);
-    expect(Number(screen.getAllByText("Beds pulled")[0]!.previousElementSibling?.textContent ?? "0")).toBeGreaterThan(
-      0,
-    );
-    expect(seed.units.length).toBeGreaterThan(0);
+    // Page tops (Josh, 9 Nov 2026): the "Beds pulled" stat left the hero; the occupancy figure's label
+    // still says it counts pulled beds as in use (audit P100, D-81) whenever any bed is pulled.
+    const rows = networkWardRows(seed.units, NOW_ANCHOR, seed.bedReleases, seed.admissions, seed.leaveBeds);
+    expect(
+      rows.reduce((sum, row) => sum + row.pulled, 0),
+      "no bed is pulled — this guard proved nothing",
+    ).toBeGreaterThan(0);
+    expect(screen.getByTestId("capacity-hero-occupancy")).toHaveTextContent(/in use, including pulled beds$/u);
   });
 
   it("Referrals band shows its total, cells that add up to it, and locked as a part", () => {

@@ -10,7 +10,6 @@ import {
   FileText,
   LayoutGrid,
   ListOrdered,
-  Scale,
   Search,
   Users,
 } from "lucide-react";
@@ -20,20 +19,15 @@ import {
   Button,
   CardBody,
   ColumnChart,
-  HeroStat,
   Segmented,
   SrOnly,
   StatusGlyph,
   TextInput,
   ShowMoreRow,
-  durMinutes,
-  cx,
-  phoneRows,
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
 import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
-import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import {
   cannotBeFormed,
   measured,
@@ -45,8 +39,6 @@ import { readyNotYetGone, type ReadyNotYetGone } from "@/components/ward-managem
 import { wardReferralTally } from "@/components/ward-management/statistics/statistics-ward-referrals";
 import {
   statisticsSectionById,
-  STATISTICS_COMPARE_HREF,
-  STATISTICS_WARDS_HREF,
   WARD_STAY_CARD_ID as STAY_CARD_ID,
 } from "@/components/ward-management/statistics/statistics-sections";
 // D-91: the one unit finder, on the Summary page. It still lives with the Statistics mock-up until
@@ -69,7 +61,6 @@ import { PhoneBody, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import { dateOf, fromToday, isPastDate, weekdayOf } from "./statistics-dates";
 import { downloadCsv } from "./statistics-csv";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
-import { HeroTool, UnitStepper } from "./statistics-hero-tools";
 import { FlushRow, FlushStack } from "./statistics-layout";
 import { occupancyPercent, occupiedBeds } from "./statistics-occupancy";
 import {
@@ -83,17 +74,25 @@ import {
 } from "./statistics-small-numbers";
 import styles from "./statistics-v6.module.css";
 import { BedsNowCard, ReferralsCard } from "./statistics-ward-cards";
-import { ChangeWard } from "./statistics-ward-change-ward";
 import { CompactBedMap } from "./statistics-ward-compact-bed-map";
-import compact from "./statistics-ward-compact.module.css";
 import { ROSTER_FIRST_ROWS, WardPhone, rosterStatus, stayDaysOf } from "./statistics-ward-phone";
 import ward from "./statistics-ward.module.css";
+import { medianDays, wardStatisticsTop, type WardStayStrip } from "./statistics-ward-top";
+import { useStatisticsSamples } from "./statistics-samples";
+import { shortSiteName } from "./statistics-screen-parts";
 
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import type { WardDetailModel, ReadyView } from "./statistics-wards-index";
 
-type WardSlots = { phone: ReactNode; bedMap: ReactNode; stay: ReactNode; roster: ReactNode };
+type WardSlots = {
+  phone: ReactNode;
+  bedMap: ReactNode;
+  stay: ReactNode;
+  roster: ReactNode;
+  /** The phone page-top Length of stay strip (see `wardStatisticsTop`). */
+  stayStrip?: WardStayStrip;
+};
 const exact = exactStatisticsCount;
 const positive = (count: StatisticsCount) => exact(count) !== 0;
 const share = (numerator: StatisticsCount, denominator: StatisticsCount) => {
@@ -210,6 +209,7 @@ function ExecutiveWardScreen({ unitId }: { unitId: string }) {
         ),
         stay: stay(false),
         roster: <PeopleNotListed testId="ward-statistics-ward-roster-not-listed" />,
+        stayStrip: { bands: item.stayBands.map((band) => ({ id: band.id, label: band.label, count: band.count })) },
       }}
     />
   );
@@ -421,6 +421,17 @@ function OperationalWardScreen({
         bedMap: <CompactBedMap map={bedMap} wardName={unit.name} />,
         stay: stay(false),
         roster: <Roster unit={unit} current={current} now={now} dayZero={dayZero} leaveBeds={leaveBeds} />,
+        stayStrip: {
+          bands: STAY_BANDS.map((band) => ({
+            id: band.id,
+            label: band.label,
+            count: current.filter((admission) => stayBand(admission, now)?.id === band.id).length,
+          })),
+          inBedDays: current.flatMap((admission) => {
+            const days = daysInBed(admission, now);
+            return days === null ? [] : [days];
+          }),
+        },
       }}
     />
   );
@@ -428,12 +439,9 @@ function OperationalWardScreen({
 function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardSlots }) {
   const {
     unit,
-    openUnits,
     site,
     statistics,
     capacity,
-    emptyBeds,
-    allocatableBeds,
     wardOccupancy,
     occupancyPct,
     referrals,
@@ -442,18 +450,17 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
     dischargeDates,
     dueByDay,
     dueThisWeek,
-    oldestPulled,
     now,
     dayZero,
     paused,
     togglePause,
     countsOnly,
-    canOpen,
   } = model;
   const section = statisticsSectionById("units")!;
   const isPhone = useIsPhone();
   // Role view (nurse in charge), D-80: the ward desk's Statistics is this page, as counts.
   const wardDesk = useEffectiveWardAccess().role === "ward";
+  const samples = useStatisticsSamples();
   const small = statisticsCountText;
   const parts = (counts: StatisticsCount[]) => counts.map((count) => small(count));
   const headlineTotal = ready === null ? statistics.readyToLeaveCannot : ready.total;
@@ -475,41 +482,16 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
       slug={unit.id}
       testId="ward-statistics-ward-screen"
       title={unit.name}
-      titleAction={
-        openUnits.length > 1 ? (
-          // Phone (Josh, 31 Oct 2026): previous, Change ward and next are Home's hero pills.
-          <span className={cx(ward.titleTools, compact.heroPillTools, phoneRows.heroPills)}>
-            <ChangeWard units={openUnits} currentId={unit.id} className={phoneRows.heroPill} />
-            <UnitStepper
-              noun="ward"
-              currentId={unit.id}
-              items={openUnits.map((each) => ({ id: each.id, href: wardStatisticsHref(each.id), label: each.name }))}
-            />
-          </span>
-        ) : undefined
-      }
-      tools={
-        <>
-          {canOpen(STATISTICS_WARDS_HREF) ? (
-            <HeroTool
-              href={STATISTICS_WARDS_HREF}
-              icon={<ListOrdered size={14} aria-hidden="true" />}
-              testId="ward-statistics-ward-all-wards"
-            >
-              All wards
-            </HeroTool>
-          ) : null}
-          {canOpen(STATISTICS_COMPARE_HREF) ? (
-            <HeroTool
-              href={STATISTICS_COMPARE_HREF}
-              icon={<Scale size={14} aria-hidden="true" />}
-              testId="ward-statistics-ward-compare"
-            >
-              Compare
-            </HeroTool>
-          ) : null}
-        </>
-      }
+      top={wardStatisticsTop({
+        model,
+        isPhone,
+        wardDesk,
+        cohortLabel,
+        siteLabel: site ? (isPhone ? unit.siteCode : shortSiteName(site.name)) : "Hospital not recorded",
+        dueThisWeekText: small(dueThisWeek),
+        stayStrip: slots.stayStrip,
+        samples,
+      })}
       eyebrowLabel="Ward statistics"
       eyebrowDetail={
         <span data-testid="ward-statistics-ward-identity">
@@ -534,62 +516,6 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
           ["Discharges due, 7 days", small(dueThisWeek)],
         ],
       }}
-      phone={{
-        eyebrow: site?.name ?? "Hospital not recorded",
-        // The % sits in the sub line so the hero label never clips (audit stats-15).
-        sub: `${cohortLabel} · ${occupancyPct}% of ${unit.beds} beds in use${averageStay === null ? "" : ` · average stay ${averageStay} days`}`,
-        stats: (
-          <>
-            <HeroStat
-              value={wardOccupancy.inUse}
-              label="In use"
-              tone={occupancyPct >= BED_ALERT_THRESHOLD_PERCENT ? "warning" : undefined}
-            />
-            <HeroStat value={capacity.available} label="Ready" />
-            <HeroStat value={wardOccupancy.pulled} label="Pulled" />
-          </>
-        ),
-      }}
-      stats={
-        <>
-          {/* Five figures at most (v10). Beds is on both bed cards' heads, so the hero leaves it
-              out; the export still carries it.
-              ROLE BRANCH (ward): the bed totals live here once (Josh, 30 Oct 2026). Beds now is gone: its
-              Empty and Allocatable join the hero, Pending is the legend's "Being made ready", Open now
-              (Ready less Being made ready) reads from those two, and the oldest pull is said on Pulled.
-              Average stay and Due out are on their own cards, so the hero keeps five bed figures. */}
-          <HeroStat value={wardOccupancy.inUse} label={`In use, ${occupancyPct}%`} />
-          <HeroStat
-            value={wardOccupancy.pulled}
-            label={
-              <span className={styles.flagged}>
-                {wardOccupancy.pulled > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                {wardDesk && oldestPulled !== null
-                  ? `Pulled, oldest ${durMinutes(oldestPulled)}`
-                  : "Pulled, not arrived"}
-              </span>
-            }
-          />
-          <HeroStat value={<span data-testid="ward-stat-capacity-ready">{capacity.available}</span>} label="Ready" />
-          {wardDesk ? (
-            <>
-              <HeroStat
-                value={<span data-testid="ward-stat-capacity-allocatable">{allocatableBeds}</span>}
-                label="Allocatable"
-              />
-              <HeroStat value={<span data-testid="ward-stat-capacity-empty">{emptyBeds}</span>} label="Empty" />
-              {/* The phone has no stay or discharge cards, so these two stay in its hero. */}
-              {isPhone && averageStay !== null ? <HeroStat value={`${averageStay} days`} label="Average stay" /> : null}
-              {isPhone ? <HeroStat value={small(dueThisWeek)} label="Discharges due, 7 days" /> : null}
-            </>
-          ) : (
-            <>
-              {averageStay === null ? null : <HeroStat value={`${averageStay} days`} label="Average stay" />}
-              <HeroStat value={small(dueThisWeek)} label="Discharges due, 7 days" />
-            </>
-          )}
-        </>
-      }
     >
       {isPhone ? (
         slots.phone
@@ -772,14 +698,6 @@ const STAY_DAY_BUCKETS = [
   { id: "15", label: "15 to 28 days", min: 15, max: 28 },
   { id: "29", label: "29 days or more", min: 29, max: Number.POSITIVE_INFINITY },
 ] as const;
-
-/** The middle stay in whole days, as the ward page worked it out (the two middle ones averaged). */
-function medianDays(days: readonly number[]): number | null {
-  const sorted = [...days].sort((left, right) => left - right);
-  if (sorted.length === 0) return null;
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 1 ? sorted[middle]! : Math.round((sorted[middle - 1]! + sorted[middle]!) / 2);
-}
 
 const dayWord = (days: number) => (days === 1 ? "day" : "days");
 

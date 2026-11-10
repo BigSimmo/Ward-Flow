@@ -40,8 +40,9 @@ function lookupCard(): HTMLElement {
   return screen.getByTestId("suburb-lookup-card");
 }
 
+/** The page-top search (Josh, 9 Nov 2026): the one field, which the lookup card answers. */
 function suburbField(): HTMLInputElement {
-  return within(lookupCard()).getByRole("searchbox", { name: "Suburb or postcode" }) as HTMLInputElement;
+  return screen.getByRole("searchbox", { name: "Suburb or postcode" }) as HTMLInputElement;
 }
 
 /** Chooses a suburb from the quick picks, the way a reader would. */
@@ -55,20 +56,22 @@ afterEach(() => {
 });
 
 describe("Community heading — a live count of community teams", () => {
+  // Page-top redesign (Josh, 9 Nov 2026): the title asks the page's question and the live count is
+  // the first figure, with the source line beside the search.
   it('reads "N community teams" from the list it is given, with the source line under it', () => {
     renderIndex();
-    const heading = screen.getByRole("heading", { level: 1 });
-    expect(heading.textContent?.replace(/\s+/gu, " ").trim()).toBe(
-      `Community: ${COMMUNITY_TEAM_PAGES.length} community teams`,
+    expect(screen.getByRole("heading", { level: 1 }).textContent?.replace(/\s+/gu, " ").trim()).toBe(
+      "Which team covers a suburb",
     );
-    expect(screen.getByText("Names from referral catchment documents, not verified services")).toBeInTheDocument();
+    const figure = screen.getByTestId("community-figure-teams");
+    expect(figure.querySelector("b")?.textContent).toBe(String(COMMUNITY_TEAM_PAGES.length));
+    expect(within(figure).getByText("community teams")).toBeInTheDocument();
+    expect(screen.getByText("From referral catchment documents · not verified")).toBeInTheDocument();
   });
 
   it("follows the list, not a fixed number", () => {
     renderIndex(COMMUNITY_TEAM_PAGES.slice(0, 5));
-    expect(screen.getByRole("heading", { level: 1 }).textContent?.replace(/\s+/gu, " ").trim()).toBe(
-      "Community: 5 community teams",
-    );
+    expect(screen.getByTestId("community-figure-teams").querySelector("b")?.textContent).toBe("5");
   });
 });
 

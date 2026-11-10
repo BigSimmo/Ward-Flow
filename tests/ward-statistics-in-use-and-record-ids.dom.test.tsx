@@ -110,7 +110,7 @@ describe("Statistics ward page (stats-2, stats-3)", () => {
     renderInProvider(<StatisticsWardScreen unitId={unit.id} />);
     const figure = wardOccupancy([seed.units.find((each) => each.id === unit.id)!], seed.admissions, seed.bedReleases);
     const percent = Math.round((figure.inUse / figure.beds) * 100);
-    expect(screen.getAllByText(`In use, ${percent}%`).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(`in use, ${percent}%`).length).toBeGreaterThan(0);
   });
 
   it("lists the phone roster by admission id, with no name or UMRN", () => {

@@ -75,6 +75,9 @@ import {
   useIsPhone,
   useOptionalToast,
   type ToastInput,
+  FolderTabs,
+  HeroAct,
+  folderTabClasses,
 } from "@/components/wf";
 
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -345,7 +348,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     const measure = (scroller: Element | null) => {
       frame = 0;
       if (jumpLock.current > 0) return;
-      const line = (document.querySelector(`.${rx.sectionBand}`)?.getBoundingClientRect().bottom ?? 120) + 24;
+      const line = (document.querySelector(`.${rx.folderRow}`)?.getBoundingClientRect().bottom ?? 120) + 24;
       let current: SettingsSection | undefined = ids[0];
       for (const id of ids) {
         const top = document.getElementById(`settings-section-${id}`)?.getBoundingClientRect().top;
@@ -1084,11 +1087,15 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
      setting, the four settings people change on a phone, then the five areas as rows that open
      tall sheets. Rules keep the stepper; unsaved rules pin a save bar and the sheet has Save in
      its foot. */
+  /* Page tops (Josh, 9 Nov 2026): one calm line says whether this phone or desk alerts at all, the
+     same on/off the Alerts row reads, with a way straight to Alerts. */
+  const alertsOn = actNowNotifications || phonePushRow(phonePush).checked;
+  const alertsTitle = alertsOn ? "Alerts are on" : "Alerts are off";
   if (isPhone) {
     const areaSummary: Record<SettingsSection, string> = {
       // Simplify Settings (Josh, 8 Nov 2026): each line says what is inside, in plain words.
       rules: readOnlyWords === null ? "ED targets, form warnings and reply targets" : "Read only",
-      alerts: `Alerts ${actNowNotifications || phonePushRow(phonePush).checked ? "on" : "off"} · Buzz sound ${audioBuzz ? "on" : "off"}`,
+      alerts: `Alerts ${alertsOn ? "on" : "off"} · Buzz sound ${audioBuzz ? "on" : "off"}`,
       display: "Motion, contrast, page tips and restore defaults",
       access: "Roles, approvals and requests",
       data: "Rules file, bug report copy, reference tables",
@@ -1141,10 +1148,24 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
               </span>
             }
             eyebrow={deskProfile.location}
-            className={styles.phoneProfile}
+            className={cx(styles.phoneProfile, rx.phoneTop)}
+            actions={
+              <>
+                {findSetting}
+                <HeroAct
+                  tone="calm"
+                  testId="ward-settings-alerts-act"
+                  title={alertsTitle}
+                  action={{
+                    label: "Open alerts",
+                    phoneLabel: "Open",
+                    onClick: () => setPhoneSheet("alerts"),
+                    testId: "ward-settings-open-alerts",
+                  }}
+                />
+              </>
+            }
           />
-
-          <div className={styles.phoneFind}>{findSetting}</div>
           {refusedLine}
           {accessInline ? (
             <section className={styles.phoneSection} aria-label="Access">
@@ -1315,7 +1336,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
             last save and how saving works. The section tabs sit below in a full-width bar that stays
             in view while a long section scrolls, with Show changed only beside them. */}
         <Hero
-          className={cx(styles.band, rx.bandCompact, rx.profileHero)}
+          className={cx(styles.band, rx.bandCompact, rx.profileHero, folderTabClasses.hero)}
           testId="ward-settings-profile"
           lead={
             <Avatar
@@ -1335,7 +1356,6 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
                 : `${deskProfile.role} · ${deskProfile.location}`}
             </span>
           }
-          aside={findSetting}
           footKind="actions"
           foot={
             editsRules ? (
@@ -1374,31 +1394,49 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
               </dl>
             ) : undefined
           }
-        />
+        >
+          <div className={rx.heroTopRow}>
+            {findSetting}
+            <HeroAct
+              tone="calm"
+              testId="ward-settings-alerts-act"
+              title={alertsTitle}
+              action={{
+                label: "Open alerts",
+                phoneLabel: "Open",
+                onClick: () => showSection("alerts"),
+                testId: "ward-settings-open-alerts",
+              }}
+            />
+          </div>
+        </Hero>
 
-        <div className={rx.sectionBand}>
-          <nav className={rx.sectionTabs} aria-label="Settings sections" data-testid="ward-settings-section-tabs">
+        <FolderTabs
+          label="Settings sections"
+          value={shownSection}
+          className={rx.folderRow}
+          testId="ward-settings-section-tabs"
+        >
+          <div className={cx(rx.folderSwitch, folderTabClasses.switch)}>
             {sections.map((section) => {
-              const Icon = SECTION_ICONS[section];
               const current = section === shownSection;
               return (
                 <button
                   key={section}
                   type="button"
-                  className={rx.sectionTab}
                   aria-current={current ? "true" : undefined}
                   onClick={() => showSection(section)}
                   data-testid={`ward-settings-jump-${section}`}
                 >
-                  <Icon size={15} aria-hidden="true" />
                   {SECTION_LABELS[section]}
                   {section === "rules" && hasUnsavedRules ? <CountCircle n={unsavedCount} label="unsaved" /> : null}
                 </button>
               );
             })}
-          </nav>
+          </div>
+          {editsRules ? <span className={cx(folderTabClasses.rule)} aria-hidden="true" /> : null}
           {editsRules ? (
-            <span className={rx.bandAside} data-setting="changed-only">
+            <span className={cx(folderTabClasses.filters, rx.folderFilter)} data-setting="changed-only">
               <ChangedOnlySwitch
                 checked={changedOnly}
                 onChange={(on) => {
@@ -1410,7 +1448,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
               />
             </span>
           ) : null}
-        </div>
+        </FolderTabs>
 
         {refusedLine}
 

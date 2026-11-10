@@ -69,18 +69,20 @@ describe("an ED desk shows no false zero for another department (WT-24)", () => 
     act(() => setWardFeatureFlagOnDevice("role-access", true));
     act(() => setWardAccess(ED_DESK));
     render(overview);
-    expect(screen.queryByRole("navigation", { name: "Emergency departments" })).toBeNull();
+    // Page tops (Josh, 9 Nov 2026): the strip is the hero's "Switch ED" band.
+    expect(screen.queryByTestId("ward-ed-switch")).toBeNull();
     expect(screen.queryByText("RPH")).toBeNull();
     expect(screen.queryByText("Nobody waiting")).toBeNull();
     // Its own figure stays in the hero, beside the title (handover build, 1 Nov 2026).
-    expect(screen.getByText("On the board").parentElement).toHaveTextContent("2On the board");
+    expect(screen.getByTestId("ward-ed-figure-on-board")).toHaveTextContent(/^2\s*on the board$/u);
   });
 
   it("keeps every figure for the coordinator", () => {
     render(overview);
-    const strip = screen.getByRole("navigation", { name: "Emergency departments" });
+    const strip = screen.getByRole("list", { name: "Switch ED" });
+    // The departments with nobody waiting share one quiet cell, which says so in words, never "0".
     const rph = within(strip).getByText("RPH").closest("li")!;
-    expect(within(rph).getByText("Nobody waiting")).toBeInTheDocument();
-    expect(within(strip).getAllByRole("link")).toHaveLength(2);
+    expect(rph).toHaveTextContent("no wait");
+    expect(within(strip).getByTestId("ward-ed-switch-peel-ed")).toHaveTextContent("2");
   });
 });

@@ -25,12 +25,14 @@ describe("Statistics Summary v10 hero and pressure chip", () => {
       </WardFlowProvider>,
     );
 
-  it("answers with the beds ready now and keeps five chips at most", () => {
+  // Page-top redesign (Josh, 9 Nov 2026): the title names the place; beds ready is a figure.
+  it("answers with the beds ready now and keeps five figures at most", () => {
     renderSummary();
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^Statistics: \d+ beds? ready now$/u);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^Statistics: Whole network right now$/u);
     const chips = screen.getByRole("group", { name: "Network at a glance" });
     expect(chips.children.length).toBeLessThanOrEqual(5);
-    expect(within(chips).getByText("Discharged today")).toBeInTheDocument();
+    expect(within(chips).getByText(/^beds? ready$/u)).toBeInTheDocument();
+    expect(within(chips).getByText("discharged today")).toBeInTheDocument();
   });
 
   it("labels the line 'At or over 85%' and highlights rather than hides", () => {

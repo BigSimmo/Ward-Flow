@@ -48,9 +48,12 @@ describe("count labels say what they count", () => {
   it("Waiting leads with the one waiting figure and names the people in transit on its list", () => {
     inProvider(<DelaysScreen />);
     const hero = screen.getByTestId("delays-hero");
-    const title = within(hero).getByRole("heading", { level: 1 });
     expect(split.notWaiting.in_transit, "the seed has people in transit").toBeGreaterThan(0);
-    expect(title.textContent).toBe(`${split.waiting} waiting in ED, ${split.notWaiting.in_transit} in transit`);
+    // Page tops (Josh, 9 Nov 2026): the title is "ED waits right now"; the figures lead with the
+    // one waiting count and name the people in transit beside it.
+    const stats = within(hero).getByRole("group", { name: "Filter by the headline counts" });
+    expect(within(stats).getByTestId("delays-stat-waiting").textContent).toBe(`${split.waiting} in ED`);
+    expect(stats).toHaveTextContent(`${split.notWaiting.in_transit} in transit`);
     // The list itself still holds everybody, and says so.
     expect(screen.getByTestId("delays-shown-count")).toHaveTextContent(`${split.listed} of ${split.listed}`);
   });
@@ -58,7 +61,8 @@ describe("count labels say what they count", () => {
   it("Waiting keeps its views and drops the chips that repeated them", () => {
     inProvider(<DelaysScreen />);
     const waiting = screen.getByRole("region", { name: "Waiting" });
-    expect(within(waiting).getByTestId("delays-view-needs-me")).toBeInTheDocument();
+    // Page tops: the views sit on the folder tab row above the list.
+    expect(screen.getByTestId("delays-view-needs-me")).toBeInTheDocument();
     expect(within(waiting).queryByRole("button", { name: /^12h\+/u })).toBeNull();
     expect(within(waiting).queryByRole("button", { name: /^No update 2h\+/u })).toBeNull();
     // "Yours" read as the Needs me now view; the tile is whose move it is, in different words.
@@ -71,24 +75,28 @@ describe("count labels say what they count", () => {
     const rph = edOpenSummaries(state.movements, NOW_ANCHOR).find((summary) => summary.ed.id === "rph-ed")!;
     const splitLine = screen.getByTestId("ward-ed-board-split");
     expect(splitLine.textContent).toMatch(new RegExp(`^${rph.waiting} waiting, \\d+ in transit$`, "u"));
-    const tile = screen.getByRole("navigation", { name: "Emergency departments" });
-    const rphTile = within(tile)
-      .getAllByRole("link")
-      .find((link) => link.getAttribute("data-ed") === "rph-ed")!;
-    expect(rphTile).toHaveTextContent(`${rph.waiting}waiting`);
+    // Page tops (Josh, 9 Nov 2026): the split is the act row's quiet line, and this department's
+    // waiting count is its own cell on the hero's "Switch ED" band (other departments' cells are links
+    // named "N waiting"; this one is not a link).
+    const band = screen.getByRole("list", { name: "Switch ED" });
+    const rphTile = within(band).getByTestId("ward-ed-switch-rph-ed");
+    expect(rphTile.querySelector('[class*="cellValue"]')).toHaveTextContent(new RegExp(`^${rph.waiting}$`, "u"));
+    expect(rphTile).toHaveTextContent(new RegExp(`^RPH\\s*${rph.waiting}`, "u"));
   });
 
   // Q111/Q112 (Josh, 1 Nov 2026): Act now counts accepted referrals with no bed pulled, as Home
-  // does, and the title is "{act} act now, {waiting} waiting" with no "new to you" clause.
+  // does, with no "new to you" clause. Page tops (Josh, 9 Nov 2026): the counts are the top's first
+  // two figures, "{act} act now" then "{waiting} waiting", under the title "Alerts needing a person".
   it("Alerts leads with Home's Act now figure, then the waiting figure", () => {
     inProvider(<AlertsScreen />);
     const actNow =
       activeActNowItems(state, NOW_ANCHOR).length +
       acceptedReferralsAwaitingPull(state.referrals, state.units, state.movements).length;
     expect(actNow).toBeGreaterThan(0);
-    const title = screen.getByRole("heading", { level: 1 });
-    expect(title.textContent).toMatch(new RegExp(`^${actNow} act now, \\d+ waiting$`, "u"));
-    expect(title.textContent).not.toMatch(/new to you/u);
+    const figures = within(screen.getByTestId("ward-alerts-top")).getByRole("group", { name: "Figures" });
+    // HeroFigures puts a space between a figure and its label (spoken "4 act now").
+    expect(figures.textContent).toMatch(new RegExp(`^${actNow} ?act now\\d+ ?waiting`, "u"));
+    expect(screen.getByTestId("ward-alerts-top").textContent).not.toMatch(/new to you/u);
   });
 
   // Audit 6 (Josh, 20 Oct 2026): the figures the audit found still counting for themselves.
@@ -98,18 +106,20 @@ describe("count labels say what they count", () => {
     ).length;
     inProvider(<StatisticsScreen />);
     const chips = screen.getByRole("group", { name: "Network at a glance" });
-    const journeys = within(chips).getByText("Open ED movements", { exact: true }).closest("button")!;
+    // Page tops (9 Nov 2026): the count is a hero figure, a number then its label.
+    const journeys = within(chips).getByText("open ED movements", { exact: true }).closest("p")!;
     expect(openEdJourneys(state.movements, NOW_ANCHOR).total).toBe(expected);
-    expect(journeys.textContent).toBe(`${expected}Open ED movements`);
+    expect(journeys.textContent).toBe(`${expected} open ED movements`);
   });
 
   it("Handover's Act now is Alerts' act-now list, with flagged urgent on its own line", () => {
     inProvider(<HandoverPage />);
-    const strip = screen.getByTestId("ward-handover-kpi-strip");
-    // Audit 24-4 decision 5 (Josh): the pill names people and alerts separately.
-    const act = within(strip).getByRole("button", { name: /Act now \(\d+ (?:person|people), \d+ alerts?\)$/u });
-    expect(act.textContent).toMatch(new RegExp(`^${activeActNowItems(state, NOW_ANCHOR).length} Act now$`, "u"));
-    expect(within(strip).getByRole("button", { name: /Flagged urgent$/u })).toBeInTheDocument();
+    // Page tops (9 Nov 2026): the top's figures; "urgent" (flagged urgent) is its own figure.
+    const strip = screen.getByTestId("ward-handover-hero");
+    // Audit 24-4 decision 5 (Josh): the figure's spoken name gives people and alerts separately.
+    const act = within(strip).getByRole("button", { name: /^\d+ act now ?\(\d+ (?:person|people), \d+ alerts?\)$/u });
+    expect(act).toHaveTextContent(new RegExp(`, ${activeActNowItems(state, NOW_ANCHOR).length} alerts?\\)$`, "u"));
+    expect(within(strip).getByRole("button", { name: /^\d+ urgent$/u })).toBeInTheDocument();
   });
 
   // NA3-03 (audit 26 Oct 2026): and only people still in an ED, as Waiting counts them.

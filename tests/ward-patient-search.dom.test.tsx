@@ -691,8 +691,9 @@ describe('"What to show" — the movement-only facet row', () => {
       .getAllByRole("tab")
       .map((tab) => (tab.textContent ?? "").replace(/\s*(none|\d+)\s*$/, "").trim());
 
-    // Copied verbatim, in order, from docs/history/plans-2026-09/2026-09-1x-lane-c-drawing-facts.md §A3:
-    // "Everything · Accepted · No ward yet · No owner · Under 6 hours · 6 to 24 hours · Over 24 hours".
+    // Copied verbatim, in order, from docs/history/plans-2026-09/2026-09-1x-lane-c-drawing-facts.md §A3, with
+    // "Over 24 hours" now "Past 24 hours" (Josh, 9 Nov 2026):
+    // "Everything · Accepted · No ward yet · No owner · Under 6 hours · 6 to 24 hours · Past 24 hours".
     expect(labels).toEqual([
       "Everything",
       "Accepted",
@@ -700,7 +701,7 @@ describe('"What to show" — the movement-only facet row', () => {
       "No owner",
       "Under 6 hours",
       "6 to 24 hours",
-      "Over 24 hours",
+      "Past 24 hours",
     ]);
   });
 
@@ -814,7 +815,7 @@ describe('"What to show" — the movement-only facet row', () => {
   // The drawing gives no `empty` sentence for the three wait bands (see the doc comment on
   // `SHOW_FACETS` in patient-search.tsx); this proves the mechanism still gives each one its OWN
   // wording rather than falling back to a generic sentence, or to another facet's.
-  it("shows the \"Over 24 hours\" facet's own composed empty sentence — never the generic sentence, and never another facet's", async () => {
+  it("shows the \"Past 24 hours\" facet's own composed empty sentence — never the generic sentence, and never another facet's", async () => {
     const movements = [
       movementFixture({
         id: "WF-FACET-24-EMPTY-1",
@@ -824,9 +825,9 @@ describe('"What to show" — the movement-only facet row', () => {
       }),
     ];
     renderMovements(movements);
-    await userEvent.setup().click(screen.getByRole("tab", { name: /^Over 24 hours/ }));
+    await userEvent.setup().click(screen.getByRole("tab", { name: /^Past 24 hours/ }));
     const empty = screen.getByTestId("ward-patient-search-facet-empty");
-    expect(empty).toHaveTextContent("No open movement here has waited over 24 hours.");
+    expect(empty).toHaveTextContent("No open movement here has waited past 24 hours.");
     expect(empty).not.toHaveTextContent(/no open movement fits the current search/i);
     expect(empty).not.toHaveTextContent(/accepted ward/i);
     expect(empty).not.toHaveTextContent(/has an owner/i);
@@ -1017,13 +1018,13 @@ describe("Third Edition dropdown filters and yield strip", () => {
   });
 
   // D-24 item 1 (docs/ward-flow/decisions.md): the 24-hour wait card is Josh's own labelled
-  // default, never a legal breach — worded "Waiting over 24 hours", captioned as his default, and
+  // default, never a legal breach — worded "Waiting past 24 hours", captioned as his default, and
   // the word "Breach" must not appear anywhere on the page.
   it("labels the 24-hour wait card as Josh's default, never a breach", () => {
     renderSearch();
 
     const card = document.getElementById("kpi-breaches");
-    expect(card).toHaveTextContent("Waiting over 24 hours");
+    expect(card).toHaveTextContent("Waiting past 24 hours");
     expect(card).toHaveTextContent("Your default, not a legal limit");
     expect(document.body.textContent).not.toMatch(/breach/i);
   });
@@ -1253,7 +1254,7 @@ describe("the highlight chips follow the search (shell-16)", () => {
     fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: umrn } });
 
     expect(chipCount("Tier 1")).toBeLessThanOrEqual(1);
-    expect(chipCount("Over 24 hours")).toBeLessThanOrEqual(1);
+    expect(chipCount("Past 24 hours")).toBeLessThanOrEqual(1);
     // PS1: there is no History tab to carry a count; History opens from the hero's Today chip.
     expect(screen.queryByRole("tab", { name: /^History/u })).toBeNull();
   });

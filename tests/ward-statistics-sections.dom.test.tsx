@@ -440,7 +440,8 @@ describe("one ward in detail", () => {
       />,
     );
 
-    expect(screen.getByTestId("ward-statistics-ward-site").textContent).toBe("Royal Perth Hospital");
+    // Page-top redesign (9 Nov 2026): the title's soft part names the hospital short.
+    expect(screen.getByTestId("ward-statistics-ward-site").textContent).toBe("Royal Perth");
     expect(screen.getByTestId("ward-statistics-ward-measures")).toBeTruthy();
     expect(screen.queryByTestId("ward-statistics-ward-unresolved")).toBeNull();
   });

@@ -391,7 +391,7 @@ describe("waitingSplit", () => {
     expect(bandFor(justUnder8h)).toBe("Under 8 hours");
     expect(bandFor(exactly8h)).toBe("8 to 24 hours");
     expect(bandFor(justUnder24h)).toBe("8 to 24 hours");
-    expect(bandFor(exactly24h)).toBe("Over 24 hours");
+    expect(bandFor(exactly24h)).toBe("Past 24 hours");
   });
 
   /**

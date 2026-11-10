@@ -2547,3 +2547,88 @@
   min-width: 0;
   white-space: nowrap;
 }
+
+/* ---- Page tops (Josh approved, 9 Nov 2026) ----
+   Now and Recorded as the shared folder tabs; the status
+   highlights as quiet filters after them (desktop and tablet). */
+.viewTabs {
+  display: flex;
+  align-items: center;
+}
+
+.viewTabs > button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.viewTabs > button:disabled {
+  cursor: default;
+}
+
+/* Now's count, in line with its word as the folder tabs draw counts (its spoken words follow it). */
+.viewTabs .tabCount {
+  align-self: center;
+  color: var(--wf-hero-ink-3);
+  font: 500 var(--wf-fs-12) / 16px var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.viewTabs > [aria-selected="true"] .tabCount {
+  color: var(--wf-ink-3);
+}
+
+@media (min-width: 64rem) {
+  .viewTabs .tabCount {
+    color: var(--wf-ink-3);
+  }
+}
+
+.filterTabs {
+  align-self: center;
+  gap: 2px;
+}
+
+.filterTab {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-14) / 18px var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.filterTab:hover {
+  background: var(--wf-track);
+  color: var(--wf-ink-1);
+}
+
+.filterTab[aria-pressed="true"] {
+  background: var(--wf-track);
+  box-shadow: inset 0 0 0 1px var(--wf-line);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.filterTab:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.filterCount {
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / 16px var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.filterTab[aria-pressed="true"] .filterCount {
+  color: var(--wf-ink-2);
+}

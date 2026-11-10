@@ -1,27 +1,18 @@
 /* Staff needed (feature 10) and the ward contact card (feature 32). */
 
-.actions {
-  display: inline-flex;
+/* The page top's row for an open request, under the figures and chips. */
+.tagRow {
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-2);
 }
 
-/* Its own line under the phone hero's foot row. */
+/* On a phone the tag is its own full-width line. */
 .phoneRow {
   display: flex;
   flex: 1 1 100%;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-2);
-}
-
-/* The desktop hero's foot, right: the open request above the capacity time. */
-.footStack {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--wf-s-2);
 }
 
 /* A quiet worded tag on the hero: a state, not an alarm. */
@@ -77,29 +68,6 @@
 .tagAction:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 1px;
-}
-
-/* Phone hero buttons, as the ward hero's own quiet action. */
-.phoneAction {
-  position: relative;
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-1);
-  min-height: 40px;
-  padding: 0 var(--wf-s-3);
-  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
-  border-radius: var(--wf-r-ctl);
-  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
-  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
-  color: var(--wf-hero-ink);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.phoneAction:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
 }
 
 /* Sheet body */
@@ -238,7 +206,6 @@
 }
 
 /* A 40px control keeps a 48px tap area, as the kit's Button does on phones. */
-.phoneAction::after,
 .phoneRow .tagAction::after {
   content: "";
   position: absolute;

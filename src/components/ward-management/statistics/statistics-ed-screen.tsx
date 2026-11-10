@@ -634,7 +634,7 @@ function EdPresentation({
           ["Longest wait", longestWaitMinutes !== null ? splitDuration(longestWaitMinutes) : "none"],
           ["Median wait", median === null ? "none" : splitDuration(Math.round(median))],
           ["Flagged urgent", small(urgent)],
-          [`Over ${longHours}h`, small(over24h)],
+          [`Past ${longHours}h`, small(over24h)],
           ["No ward yet", small(unplaced)],
           ...(model.clearance
             ? [["Median time to medical clearance", clearanceMedianText(model.clearance)] as [string, string]]
@@ -695,7 +695,7 @@ function EdPresentation({
             label={
               <span className={styles.flagged}>
                 {edCountsDesk && exactStatisticsCount(over24h) !== 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                {`Over ${longHours}h`}
+                {`Past ${longHours}h`}
               </span>
             }
           />

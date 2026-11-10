@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, type LucideIcon } from "lucide-react";
-import { useId, useRef, type ElementType, type ReactNode } from "react";
+import { Children, isValidElement, useId, useRef, type ElementType, type ReactNode } from "react";
 import { useWfBandBleed } from "./band";
 import { Button } from "./button";
 import { cx } from "./cx";
@@ -237,9 +237,16 @@ export function Hero({
           {footAside ? <div className={styles.footAside}>{footAside}</div> : null}
         </div>
       ) : null}
-      {band && !quiet ? footSlot : null}
+      {band && !quiet && !takesFootSlot(children) ? footSlot : null}
       {condensed ? <HeroCondensedLine heroRef={sectionRef}>{condensed}</HeroCondensedLine> : null}
     </section>
+  );
+}
+
+/** A `HeroTop` (hero-top.tsx) draws the foot slot in its chip row; read by a flag, so this file never loads it. */
+function takesFootSlot(children: ReactNode): boolean {
+  return Children.toArray(children).some(
+    (child) => isValidElement(child) && (child.type as { wfTakesFootSlot?: boolean }).wfTakesFootSlot === true,
   );
 }
 

@@ -72,8 +72,8 @@ describe("Discharges as each desk reads it", () => {
     expect(within(serviceMenu).getByRole("menuitemradio", { name: "All" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("columnheader", { name: "Person" })).toBeInTheDocument();
     expect(worklistButtons()).toContain("Confirm date");
-    // The coordinator's one-tap chase of overdue dates.
-    expect(screen.getByTestId("ward-discharge-chase")).toBeInTheDocument();
+    // The coordinator's one-tap chase of overdue dates (a hero chip since the page tops, 9 Nov 2026).
+    expect(screen.getByTestId("ward-discharge-ask-overdue")).toBeInTheDocument();
   });
 
   it("the nurse in charge reads its own ward, without the Service and Ward filters or the ward line", () => {
@@ -94,8 +94,8 @@ describe("Discharges as each desk reads it", () => {
     expect(screen.getByText(`Discharges · ${SITE.name}`)).toBeInTheDocument();
     expect(filterPick("Service")).not.toBeInTheDocument();
     expect(filterPick("Ward")).toBeInTheDocument();
-    // The chase strip is the coordinator's alone.
-    expect(screen.queryByTestId("ward-discharge-chase")).not.toBeInTheDocument();
+    // The chase is the coordinator's alone.
+    expect(screen.queryByTestId("ward-discharge-ask-overdue")).not.toBeInTheDocument();
     // Only the ward or the coordinator can change an expected date (Josh, 30 Oct).
     expect(worklistButtons()).not.toContain("Confirm date");
     expect(worklistButtons()).toContain("Open");

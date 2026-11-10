@@ -79,16 +79,17 @@ describe("Home and Statistics print the same figures as the bed meeting sheet (A
       </WardFlowProvider>,
     );
     const page = screen.getByTestId("ward-statistics-screen");
-    expect(within(page).getByText(/beds? ready now$/u).textContent).toMatch(
-      new RegExp(`(^|\\s)${sheet.capacity.ready} beds? ready now$`, "u"),
-    );
+    // Page tops (9 Nov 2026, PR #1581): the hero's figures are one "Network at a glance" row, each
+    // a number then its words ("4 beds ready", "41 / 60 in use, 68%").
     const chips = within(page).getByRole("group", { name: "Network at a glance" });
-    expect(leadingNumber(within(chips).getByText(/^In use ·/u).parentElement!), "in use vs print").toBe(printedInUse);
+    const figureOf = (words: RegExp) => within(chips).getByText(words).closest("p")!;
+    expect(leadingNumber(figureOf(/^beds? ready$/u)), "ready vs print").toBe(sheet.capacity.ready);
+    expect(leadingNumber(figureOf(/^in use,/u)), "in use vs print").toBe(printedInUse);
     expect(
       leadingNumber(within(chips).getByTestId("ward-statistics-discharges-today-count")),
       "discharged today vs print",
     ).toBe(sheet.discharges.dischargedToday);
-    expect(leadingNumber(within(chips).getByText("Open ED movements").parentElement!), "open ED movements").toBe(
+    expect(leadingNumber(figureOf(/^open ED movements$/u)), "open ED movements").toBe(
       openEdJourneys(state.movements, NOW_ANCHOR).total,
     );
   });

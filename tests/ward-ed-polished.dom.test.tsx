@@ -98,11 +98,18 @@ describe("ED compact draft selectors", () => {
         .queryAllByTestId(/^ward-ed-patient-WF-/)
         .map((row) => byId.get(row.dataset.testid!.replace("ward-ed-patient-", "")))
         .filter((movement) => movement !== undefined && isWaitingInEd(movement)).length;
-      // v6: the department strip is always shown, so there is no "Other EDs" toggle to open first.
-      const strip = screen.getByRole("navigation", { name: "Emergency departments" });
-      const currentDepartment = within(strip).getByRole("link", { current: "page" });
-      const boardCount = within(currentDepartment).getByText("waiting").parentElement!;
-      expect(boardCount).toHaveTextContent(new RegExp(`^${count}\\s*waiting$`));
+      // Page tops (Josh, 9 Nov 2026): the department strip is the hero's "Switch ED" band. A department
+      // with someone waiting has its own cell (this one is not a link); the rest share a "no wait" cell.
+      const strip = screen.getByRole("list", { name: "Switch ED" });
+      const own = within(strip).queryByTestId(`ward-ed-switch-${department.id}`);
+      if (count === 0) {
+        expect(own, `${department.id} has nobody waiting but its own cell`).toBeNull();
+        expect(strip).toHaveTextContent("no wait");
+      } else {
+        expect(own, `${department.id} has no cell of its own`).not.toBeNull();
+        expect(own).not.toHaveAttribute("href");
+        expect(own!.querySelector('[class*="cellValue"]')).toHaveTextContent(new RegExp(`^${count}$`));
+      }
       view.unmount();
     }
   });

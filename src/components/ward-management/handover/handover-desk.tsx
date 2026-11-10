@@ -29,10 +29,6 @@ export function handoverDeskOf(access: WardAccess, units: readonly Unit[]): Hand
   return { ownWard, edDesk, edName };
 }
 
-/** The hero chips a ward desk gets: Finding a ward is the coordinator's work, not the ward's. */
-export const WARD_DESK_PILLS = ["act", "urg", "due", "mov"] as const;
-export const COORDINATOR_PILLS = ["act", "urg", "due", "bed", "mov"] as const;
-
 /** The groups with nobody in them, named on one line instead of one empty row each. */
 export function WardDeskEmptyGroups({ groups }: { groups: readonly { title: string; rows: readonly unknown[] }[] }) {
   // Finding a ward is the coordinator's group (WARD_DESK_PILLS drops it), so the ward's line leaves it out.

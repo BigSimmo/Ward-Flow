@@ -2003,3 +2003,13 @@ button.check[aria-pressed="true"] {
 .phoneRow[data-act="true"] {
   position: relative;
 }
+
+/* Page tops (Josh, 9 Nov 2026): words beside a mono band value ("8 flagged · 4 clear"). */
+.bandWords {
+  font: 500 var(--wf-fs-12) / 20px var(--wf-font);
+  color: var(--wf-hero-ink-3);
+}
+.bandWords b {
+  font: 600 var(--wf-fs-15) / 20px var(--wf-mono);
+  color: var(--wf-hero-ink);
+}

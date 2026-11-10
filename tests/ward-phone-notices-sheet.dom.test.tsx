@@ -48,7 +48,9 @@ describe("phone Notices sheet", () => {
         </ToastProvider>
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByTestId("ward-notifications-toggle-btn"));
+    // Page tops (9 Nov 2026): the phone bell left the hero; Notices opens from the tab row's More menu.
+    fireEvent.click(screen.getByTestId("ward-phone-chip-more"));
+    fireEvent.click(screen.getByRole("menuitem", { name: /^Notices/ }));
     const sheet = screen.getByTestId("ward-notifications-sheet");
     const title = document.getElementById(sheet.getAttribute("aria-labelledby") ?? "")!;
     expect(title).toHaveTextContent("Notices");

@@ -466,13 +466,14 @@ test.describe("@mockup WA disposition pathways", () => {
       // History). A click during the screen transition must not leave this journey on the Now view.
       await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
       await expect(page.getByTestId("ward-discharge-board")).toBeVisible();
-      await expect(page.getByRole("group", { name: "Now or recorded", exact: true })).toHaveAttribute(
+      // Page tops (Josh, 9 Nov 2026): Now and Recorded are the page's folder tabs.
+      await expect(page.getByRole("tablist", { name: "Now or recorded", exact: true })).toHaveAttribute(
         "aria-busy",
         "false",
       );
       const history = page.getByTestId("ward-discharge-history");
       await history.click();
-      await expect(history).toHaveAttribute("aria-pressed", "true");
+      await expect(history).toHaveAttribute("aria-selected", "true");
       // DC2 (3 Nov 2026): the filters are menus, so Going to is picked from its own list.
       await page.getByRole("button", { name: /^Going to: / }).click();
       await page.getByRole("menuitemradio", { name: destination.label, exact: true }).click();

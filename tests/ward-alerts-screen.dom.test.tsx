@@ -1,6 +1,5 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { buttonClass, phoneRows } from "@/components/wf";
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -306,7 +305,9 @@ describe("Alerts owner menu (remaining-pages audit ops-15, 13 Oct 2026; one menu
 });
 
 describe("Alerts phone hero (remaining-pages audit ops-14, 13 Oct 2026)", () => {
-  it("makes Next alert the one primary and puts Broadcast under the menu (Q153)", () => {
+  // Page tops (Josh, 9 Nov 2026): one hero at every width. Next alert stays the one light button (its
+  // phone face reads "Open"); Broadcast is a quiet chip that opens the composer, never a send (P017).
+  it("makes Next alert the one primary and keeps Broadcast a quiet chip (Q153)", () => {
     vi.stubGlobal(
       "matchMedia",
       vi.fn((query: string) => ({
@@ -318,13 +319,41 @@ describe("Alerts phone hero (remaining-pages audit ops-14, 13 Oct 2026)", () => 
     );
     try {
       renderScreen();
-      const hero = within(screen.getByTestId("ward-alerts-phone-hero"));
-      // Redesign (31 Oct 2026): both sit as Home's hero pills; Next keeps the one light (primary) face.
-      expect(hero.getByRole("button", { name: /^Next alert/u }).className).toBe(
-        buttonClass({ variant: "light", className: phoneRows.heroPill }),
-      );
-      expect(hero.queryByRole("button", { name: /^Broadcast/u })).toBeNull();
-      expect(hero.getByRole("button", { name: "More alert actions" }).className).toContain(phoneRows.heroPill);
+      const hero = within(screen.getByTestId("ward-alerts-hero"));
+      const next = hero.getByTestId("ward-alerts-next-action");
+      expect(next).toHaveAccessibleName("Next alert");
+      expect(hero.getAllByRole("button", { name: "Next alert" })).toHaveLength(1);
+      const broadcast = hero.getByTestId("ward-alerts-broadcast");
+      expect(broadcast).toHaveTextContent("Broadcast alert");
+      expect(broadcast.className).not.toBe(next.className);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe("Alerts phone Act now filter (page tops, 9 Nov 2026)", () => {
+  // The phone's filter row leaves out Act now, so the top's Act now figure is the way to show only it.
+  it("the Act now figure turns the Act now filter on and off", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === "(max-width: 46.4375rem)",
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+    try {
+      renderScreen();
+      const figure = within(screen.getByTestId("ward-alerts-figure-act")).getByRole("button", {
+        name: /^\d+ act now$/u,
+      });
+      expect(figure).toHaveAttribute("aria-pressed", "false");
+      fireEvent.click(figure);
+      expect(figure).toHaveAttribute("aria-pressed", "true");
+      fireEvent.click(figure);
+      expect(figure).toHaveAttribute("aria-pressed", "false");
     } finally {
       vi.unstubAllGlobals();
     }

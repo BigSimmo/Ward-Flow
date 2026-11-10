@@ -31,7 +31,7 @@ import { raiseReferralHref } from "@/components/ward-management/shell/ward-facad
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
@@ -81,6 +81,7 @@ import {
 } from "./community-screen-panels";
 import { CommunityScreenPhone } from "./community-screen-phone";
 import { MidlandPhone } from "./team-2026/midland-phone";
+import { MidlandTop } from "./team-2026/midland-top";
 import { CommunityScreenSentTab } from "./community-screen-sent-tab";
 import {
   CommunityOtherTeams,
@@ -1158,20 +1159,44 @@ export function CommunityScreen(props: CommunityScreenProps) {
   const sectionPanel = (section: CommunityTeamSection) => ({
     id: `community-panel-${section}`,
     role: "tabpanel" as const,
-    "aria-labelledby": `community-section-${section}`,
+    // Midland's tabs are the kit's Tabs (idPrefix "community"); other teams keep their own tab row.
+    "aria-labelledby": view.midlandDemo ? `community-tab-${section}` : `community-section-${section}`,
     className: teamSection === section ? v6.section : v6.sectionHidden,
   });
 
   return (
     <div className={styles.screen} data-ward-design="third-edition" data-testid="ward-community-screen">
       <main id="main-content" className={styles.main}>
-        {isPhone ? null : (
+        {isPhone ? null : view.midlandDemo ? (
+          // Page-top redesign (Josh, 9 Nov 2026): Midland's top and its sections as underline tabs.
+          <MidlandTop
+            isPhone={false}
+            section={teamSection}
+            open={view.openTeamSection}
+            toAnswer={view.waitingCount}
+            onRecordContact={() => view.setActiveModalType("contact")}
+            onReferFromTeam={view.openNewReferral}
+            onSwitchTeam={view.ownTeamOnly ? undefined : () => view.setSwitchOpen(true)}
+            switchOpen={view.switchOpen}
+            switchTriggerRef={view.switchTriggerRef}
+            find={{ value: find, set: setFind }}
+            age={formatInstant(view.now)}
+            moreItems={[
+              { id: "cto", label: "CTO register", onSelect: () => view.openTeamSection("caseload") },
+              { id: "counts", label: "Catchment counts", onSelect: () => view.setActiveModalType("handover") },
+              { id: "reach", label: "How to reach the team", onSelect: () => view.openTeamSection("home") },
+              { id: "activity", label: "Activity sample", onSelect: () => view.setActiveDrawer("activityDrawer") },
+              { id: "tasks", label: "Alerts sample", onSelect: () => view.setActiveDrawer("tasksDrawer") },
+              { id: "tools", label: "Tools sample", onSelect: () => view.setActiveDrawer("toolsDrawer") },
+            ]}
+          />
+        ) : (
           <>
             <CommunityScreenDesktopHero view={view} />
 
-            <CommunityScreenTabRow view={view} find={view.midlandDemo ? { value: find, set: setFind } : undefined} />
+            <CommunityScreenTabRow view={view} />
 
-            {view.midlandDemo ? null : communitySinceElement(view)}
+            {communitySinceElement(view)}
           </>
         )}
         {isPhone && view.midlandDemo ? (

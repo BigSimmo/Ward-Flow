@@ -2403,6 +2403,12 @@
 }
 
 @media (max-width: 46.4375rem) {
+  /* Phone: the wrap steps aside so the folder tabs under the hero can pin for the whole page, not
+     only while the hero is on screen (census.module.css .folder). */
+  .v6HeroWrap {
+    display: contents;
+  }
+
   .v6Row {
     grid-template-columns: 2.5rem minmax(0, 1fr) auto;
   }
@@ -2413,8 +2419,9 @@
     display: none;
   }
 
-  .screen[data-ward-design="v6"] button,
-  .screen[data-ward-design="v6"] a[href] {
+  /* Page tops (9 Nov 2026): the shared top and tabs keep their own sizes and tap areas. */
+  .screen[data-ward-design="v6"] button:not(:is([data-wf-hero-top], [data-wf-folder]) *),
+  .screen[data-ward-design="v6"] a[href]:not(:is([data-wf-hero-top], [data-wf-folder]) *) {
     min-height: 3rem;
   }
 

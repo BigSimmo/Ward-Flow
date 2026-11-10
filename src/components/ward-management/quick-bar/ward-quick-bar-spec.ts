@@ -9,7 +9,9 @@ import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-t
  */
 export type QuickControl =
   | { readonly kind: "tool"; readonly tool: ToolsSheetToolId; readonly label: string; readonly detail: string }
-  | { readonly kind: "referral"; readonly label: string; readonly detail: string };
+  | { readonly kind: "referral"; readonly label: string; readonly detail: string }
+  /** A page the desk already has (page tops v6, Josh 9 Nov 2026: Home's Handover chip). */
+  | { readonly kind: "link"; readonly href: string; readonly label: string; readonly detail: string };
 
 const tool = (id: ToolsSheetToolId, label: string, detail: string): QuickControl => ({
   kind: "tool",
@@ -19,16 +21,21 @@ const tool = (id: ToolsSheetToolId, label: string, detail: string): QuickControl
 });
 const referral: QuickControl = { kind: "referral", label: "New referral", detail: "Start one" };
 
-/** Most used first. Tools listed here must be panels (not page links) for that desk. */
+/**
+ * Most used first. Tools listed here must be panels (not page links) for that desk; a `link` opens an
+ * existing page and is dropped when the desk may not open it.
+ *
+ * Page tops v6 (Josh, 9 Nov 2026: the mock-ups are the source of truth): the coordinator's set is
+ * Home's mock-up chips. The other desk homes' mock-up chips are that page's own actions (Export,
+ * Confirm numbers, Add patient and the like), which the page draws itself through `HeroTop`'s
+ * `chips`; the Quick bar then steps aside there, and these sets serve only desk homes that do not.
+ */
 export const QUICK_BAR: Record<WardAccessRole, readonly QuickControl[]> = {
   coordinator: [
     tool("quick-actions", "Ward updates", "Not confirmed"),
     tool("bed-finder", "Find a bed", "Ready now"),
-    tool("call-log", "Call and log", "What a ward said"),
-    tool("messages", "Bed summary", "Copy for email"),
-    tool("update-bed", "Update a bed", "Open or close"),
-    referral,
-    tool("remind", "Remind me", "A nudge"),
+    tool("contacts", "Call and contacts", "Who is on"),
+    { kind: "link", href: "/ward-flow/handover", label: "Handover", detail: "Shift handover" },
   ],
   bed_manager: [
     tool("bed-finder", "Find a bed", "Ready now"),

@@ -37,7 +37,8 @@ describe("Alerts as the desk's full log (AL2)", () => {
 
   it("filters Open by kind with named, counted chips, one pressed at a time", () => {
     mount();
-    const all = chips().getByRole("button", { name: "All" });
+    // Page tops (9 Nov 2026): on a desktop All carries the Open view's count, as Home's All does.
+    const all = chips().getByRole("button", { name: /^All\s*\d+$/u });
     const waiting = chips().getByRole("button", { name: /^Waiting\s*\d+$/u });
     expect(all).toHaveAttribute("aria-pressed", "true");
     expect(chips().getByRole("button", { name: /^Act now\s*\d+$/u })).toHaveAttribute("aria-pressed", "false");

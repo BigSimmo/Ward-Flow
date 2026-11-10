@@ -37,12 +37,17 @@ afterEach(() => {
 });
 
 describe("phone bed grid", () => {
-  it("puts every bed above the day figures, with the filters", () => {
+  // Page tops (Josh approved, 9 Nov 2026): the day figures are the hero's "Also on this ward" band, so
+  // they sit above the page; every bed still comes first in the page body (D-77), before the notices.
+  it("puts every bed first in the page body, under the hero's day figures, with the filters", () => {
     stubPhone(true);
     renderBoard();
     const beds = screen.getByTestId("ward-board-beds");
     const figures = screen.getByTestId("ward-board-triage");
-    expect(beds.compareDocumentPosition(figures) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(figures.closest("[data-wf-hero]")).not.toBeNull();
+    expect(figures.compareDocumentPosition(beds) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const notice = screen.queryByTestId("ward-board-stranded");
+    if (notice) expect(beds.compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(beds).getAllByRole("button").length).toBeGreaterThan(0);
     // One row: a Show drop-down and the order select as a sort button, not the chip group.
     expect(screen.queryByRole("group", { name: "Narrow Bed board" })).toBeNull();

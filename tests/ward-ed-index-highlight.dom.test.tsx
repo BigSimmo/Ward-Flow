@@ -23,10 +23,22 @@ function renderIndex() {
 /** Every department in the Cards view: a card for each with someone waiting, a clear-line entry for the rest. */
 const cards = () => screen.getAllByTestId(/^ed-index-(card|clear)-/u);
 
+/**
+ * Page tops (Josh, 9 Nov 2026): the highlights are the hero's pressable figures (past 24h, over 8h,
+ * no bed yet) and the Under a form and Accepted chips. Every one is a pressed toggle.
+ */
+function highlightToggles(): HTMLElement[] {
+  const figures = within(screen.getByRole("group", { name: "Highlight people waiting" })).queryAllByRole("button");
+  const chips = within(screen.getByRole("list", { name: "Common jobs" }))
+    .queryAllByRole("button")
+    .filter((button) => button.hasAttribute("aria-pressed"));
+  return [...figures, ...chips];
+}
+
 describe("All EDs — hero chips", () => {
   it("has five highlight chips at most, each a pressed toggle", () => {
     renderIndex();
-    const chips = within(screen.getByRole("group", { name: "Highlight people waiting" })).getAllByRole("button");
+    const chips = highlightToggles();
     expect(chips.length).toBeGreaterThan(0);
     expect(chips.length).toBeLessThanOrEqual(5);
     for (const chip of chips) expect(chip).toHaveAttribute("aria-pressed", "false");
@@ -35,9 +47,8 @@ describe("All EDs — hero chips", () => {
   it("hides EDs a chip does not match, says so, and clears", () => {
     renderIndex();
     const total = cards().length;
-    const chip = within(screen.getByRole("group", { name: "Highlight people waiting" })).getByRole("button", {
-      name: /Past 24h/u,
-    });
+    const chip = highlightToggles().find((toggle) => /past 24h/iu.test(toggle.textContent ?? ""))!;
+    expect(chip, "no past 24h highlight").toBeDefined();
     fireEvent.click(chip);
     expect(chip).toHaveAttribute("aria-pressed", "true");
     expect(cards().length).toBeLessThan(total);
@@ -75,9 +86,10 @@ describe("All EDs — filters hide what they leave out (E1, 3 Nov 2026)", () => 
     renderIndex();
     const total = cards().length;
     fireEvent.click(within(screen.getByRole("radiogroup", { name: "Status" })).getByRole("radio", { name: "Clear" }));
-    // Each service count applies the other filters, so a service at 0 leaves no ED shown.
-    const empty = within(screen.getByRole("radiogroup", { name: "Health service" }))
-      .getAllByRole("radio")
+    // Each service count applies the other filters, so a service at 0 leaves no ED shown. Page tops
+    // (Josh, 9 Nov 2026): on a desktop the services are the quiet filter tabs beside the view tabs.
+    const empty = within(screen.getByRole("tablist", { name: "Health service" }))
+      .getAllByRole("tab")
       .find((radio) => /\D0$/u.test(radio.textContent ?? ""));
     expect(empty).toBeDefined();
     fireEvent.click(empty!);
@@ -91,7 +103,11 @@ describe("All EDs — filters hide what they leave out (E1, 3 Nov 2026)", () => 
     renderIndex();
     const ranks = screen.getAllByTestId(/^ed-index-card-/u).map((card) => card.querySelector("h2")?.textContent ?? "");
     ranks.forEach((title, index) => expect(title.startsWith(String(index + 1))).toBe(true));
-    expect(screen.getByTestId("ed-index-match-count")).toHaveTextContent("Sorted longest wait first");
+    // The order is stated once, by the Order control beside the cards (the "Sorted …" echo went with
+    // the one-row filter bar, page tops, Josh 9 Nov 2026).
+    expect(
+      within(screen.getByRole("radiogroup", { name: "Order" })).getByRole("radio", { checked: true }),
+    ).toHaveTextContent("Longest wait");
   });
 });
 
@@ -164,13 +180,17 @@ describe("All EDs — design review (Josh, 31 Oct 2026): title count and the nob
   const cardsOnly = () => screen.getAllByTestId(/^ed-index-card-/u);
   const clearOnly = () => screen.queryAllByTestId(/^ed-index-clear-/u);
 
-  it("counts every department in the title, with the number that have someone waiting beside it", () => {
+  it("counts every department in the hero, and the ones with someone waiting are the cards", () => {
     renderIndex();
     const total = cards().length;
     const withWaiting = cardsOnly().length;
-    const heading = screen.getByRole("heading", { level: 1 });
-    expect(heading).toHaveTextContent(new RegExp(`\\d+ waiting across ${total} EDs`, "u"));
-    expect(screen.getByText(`${withWaiting} with someone waiting`)).toBeInTheDocument();
+    // Page tops (Josh, 9 Nov 2026): the count is the hero's first figure, "N waiting in M EDs"; the
+    // departments with someone waiting are the cards, and the rest share the nobody-waiting line.
+    expect(screen.getByTestId("ed-index-figure-waiting")).toHaveTextContent(
+      new RegExp(`^\\d+\\s*waiting in ${total} EDs$`, "u"),
+    );
+    expect(withWaiting).toBeGreaterThan(0);
+    expect(clearOnly()).toHaveLength(total - withWaiting);
   });
 
   it("puts each department with nobody waiting on one line, with its own Enter button and no card", () => {

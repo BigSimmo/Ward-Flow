@@ -2,9 +2,7 @@
 
 import { useCallback, useState } from "react";
 import dynamic from "next/dynamic";
-import { FileText } from "lucide-react";
 
-import { Button } from "@/components/wf";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 
 import type { HandoverDigestAction, HandoverDigestInput } from "./handover-digest-model";
@@ -35,23 +33,6 @@ export function useHandoverDigestOpen(digestParam: boolean): [boolean, (open: bo
     window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
   }, []);
   return [open, set];
-}
-
-/** The hero's secondary Digest button, beside Start meeting. */
-export function HandoverDigestButton({ open, onOpen }: { open: boolean; onOpen: () => void }) {
-  return (
-    <Button
-      variant="onHero"
-      size="sm"
-      icon={FileText}
-      aria-haspopup="dialog"
-      aria-expanded={open}
-      onClick={onOpen}
-      data-testid="ward-handover-digest-open"
-    >
-      Digest
-    </Button>
-  );
 }
 
 /** The digest sheet, mounted only while open. Showing replies scrolls to the promises card. */

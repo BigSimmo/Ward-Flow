@@ -156,18 +156,16 @@ describe("the Capacity screen's bed map controls", () => {
     expect(litIds()).toEqual(new Set(networkRows.map((row) => row.unit.id)));
   });
 
-  it("the hero's 'Locked ready' figure presses the bed map's 'Locked ready' highlight", () => {
+  // Page tops (Josh, 9 Nov 2026): the hero's Locked ready shortcut went with the new top, so the
+  // bed map's own "Locked ready" highlight is the one control; it marks exactly the locked-ready wards.
+  it("the bed map's 'Locked ready' highlight marks exactly the wards with a locked bed ready", () => {
     renderScreen();
     const lockedWards = networkRows.filter((row) => row.lockedReady > 0);
     expect(lockedWards.length, "no ward has a locked bed ready — this guard proved nothing").toBeGreaterThan(0);
-    const heroChips = within(screen.getByRole("group", { name: "Network beds" }));
-    const heroLocked = heroChips.getByRole("button", { name: /Locked ready/u });
-    expect(heroLocked).toHaveTextContent(String(networkRows.reduce((sum, row) => sum + row.lockedReady, 0)));
     expect(highlightChip("Locked ready")).toHaveAttribute("aria-pressed", "false");
 
-    fireEvent.click(heroLocked);
+    fireEvent.click(highlightChip("Locked ready"));
 
-    expect(heroLocked).toHaveAttribute("aria-pressed", "true");
     expect(highlightChip("Locked ready")).toHaveAttribute("aria-pressed", "true");
     expect(highlightChip("Locked ready")).toHaveTextContent(
       `${lockedWards.length} ${lockedWards.length === 1 ? "ward" : "wards"}`,

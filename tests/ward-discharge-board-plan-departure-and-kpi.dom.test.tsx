@@ -86,7 +86,7 @@ describe("the discharge board's KPI captions no longer assert what the count doe
     // Discharges redesign (approved 31 Oct 2026): the card shows the one word "Held up" at every width;
     // its accessible name still says what it counts.
     expect(within(screen.getByTestId("ward-discharge-kpi-blocked")).getByText("Held up")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-discharge-kpi-blocked")).toHaveAccessibleName(/^\d+ Held up \(Releases held up\)$/);
+    expect(screen.getByTestId("ward-discharge-kpi-blocked")).toHaveAccessibleName(/^Held up \d+ \(Releases held up\)$/);
     // "Confirmed today"/"Discharged today"/"Expected on round" are gone — none of the three
     // buckets is scoped to a calendar day or an invented "round" workflow.
     expect(screen.queryByText("Confirmed today")).not.toBeInTheDocument();
@@ -103,7 +103,7 @@ describe("the discharge board's KPI captions no longer assert what the count doe
     renderBoard();
     expect(screen.getByTestId("ward-discharge-kpi-strip")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /^Recorded/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Recorded/ }));
 
     // DC4 (Josh, 3 Nov 2026): Recorded lists only the last 7 days of discharges, so the pipeline
     // KPI strip is hidden there. Before the original fix these cards read "Blocked releases" /
@@ -114,6 +114,6 @@ describe("the discharge board's KPI captions no longer assert what the count doe
     }
     expect(screen.queryByText("Blocked releases")).toBeNull();
     expect(screen.queryByText("Discharged · 24h")).toBeNull();
-    expect(screen.getByText(/^\d+ discharges? recorded$/)).toBeInTheDocument();
+    expect(screen.getByTestId("ward-discharge-figure-recorded")).toHaveTextContent(/^\d+\s*recorded$/);
   });
 });

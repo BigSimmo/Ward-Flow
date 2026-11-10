@@ -1,7 +1,8 @@
 "use client";
 
-import { type RefObject, useEffect, useRef } from "react";
-import styles from "./home-folder.module.css";
+import { type ReactNode, type RefObject, forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import { cx } from "./cx";
+import styles from "./folder-tabs.module.css";
 
 /**
  * Curved folder tabs (sticky header redesign, option A, Josh 9 Nov 2026). The page's light sheet and
@@ -42,13 +43,17 @@ function folderPath({ width: W, height: H, x0: rawX0, x1, sheetRadius: R }: Geom
   return `${start}${end}`;
 }
 
+// FolderShape and FolderTabs opt out of the React Compiler ("use no memo"), as the page top parts do
+// (hero-top.tsx): on every page's first load, and the effect already reruns only when `value` changes.
+
 const round = (value: number) => Math.round(value * 10) / 10;
 
 /**
- * The outline behind Home's list tabs. Put it first inside the tab row (`navRef`); it measures the
- * hero above to run edge to edge, and the chosen `[role="radio"]` inside the row for the tab.
+ * The outline behind a folder tab row (`navRef`). `FolderTabs` draws it for you; it measures the hero
+ * above (a sibling `[data-wf-hero]`) to run edge to edge, and the chosen tab in the row's switch.
  */
-export function HomeFolderShape({ navRef, value }: { navRef: RefObject<HTMLElement | null>; value: string }) {
+function FolderShape({ navRef, value }: { navRef: RefObject<HTMLElement | null>; value: string }) {
+  "use no memo";
   const shapeRef = useRef<HTMLDivElement>(null);
   const backRef = useRef<HTMLDivElement>(null);
   const shown = useRef<{ x0: number; x1: number } | null>(null);
@@ -59,6 +64,7 @@ export function HomeFolderShape({ navRef, value }: { navRef: RefObject<HTMLEleme
     const back = backRef.current;
     if (!nav || !shape || !back) return;
     let frame = 0;
+    let moving = false;
     // Read back from the row, so a tab switch while pinned keeps the slate and its 280ms move.
     let docked = nav.hasAttribute("data-docked");
     const reduce =
@@ -72,7 +78,12 @@ export function HomeFolderShape({ navRef, value }: { navRef: RefObject<HTMLEleme
       const width = heroBox ? heroBox.width : navBox.width;
       // The first tab starts at the sheet's own edge, so its label sits centred in the folder.
       nav.style.setProperty("--wf-folder-bleed", `${Math.max(0, round(-left))}px`);
-      const tab = nav.querySelector<HTMLElement>('[role="radio"][aria-checked="true"]');
+      // The chosen tab of the primary switch (a Segmented radio, a PillTabs tab, or a Segmented of links,
+      // whose chosen link carries aria-current="page", or a section jump aria-current="true").
+      const tab =
+        nav.querySelector<HTMLElement>(
+          `.${styles.switch} > [aria-checked="true"], .${styles.switch} > [aria-selected="true"], .${styles.switch} > [aria-current="page"], .${styles.switch} > [aria-current="true"]`,
+        ) ?? nav.querySelector<HTMLElement>('[role="radio"][aria-checked="true"]');
       const tabBox = tab?.getBoundingClientRect();
       const x0 = tabBox ? tabBox.left - navBox.left - left : 0;
       const x1 = tabBox ? tabBox.right - navBox.left - left : 0;
@@ -102,11 +113,13 @@ export function HomeFolderShape({ navRef, value }: { navRef: RefObject<HTMLEleme
         return;
       }
       const start = performance.now();
+      moving = true;
       const step = (now: number) => {
         const t = Math.min(1, (now - start) / MOVE_MS);
         const ease = 1 - (1 - t) ** 3;
         paint(left, width, from.x0 + (x0 - from.x0) * ease, from.x1 + (x1 - from.x1) * ease);
         if (t < 1) frame = requestAnimationFrame(step);
+        else moving = false;
       };
       frame = requestAnimationFrame(step);
     };
@@ -129,19 +142,62 @@ export function HomeFolderShape({ navRef, value }: { navRef: RefObject<HTMLEleme
         ? null
         : new ResizeObserver(() => {
             // The observer reports once as it starts; that first report would cut short the move above.
+            // Unless the row changed before that report came (a phone's shorter tab list after hydration).
             if (!sized) {
               sized = true;
-              return;
+              if (moving) return;
             }
             // A resize can unpin the row (say phone to tablet), so docking is checked again first.
             checkDocked();
             place(false);
           });
     resize?.observe(nav);
+    // The switch can change width without the row doing so (a phone's shorter tab list after hydration),
+    // and a phone row that scrolls sideways carries the chosen tab with it.
+    const follow = () => place(false);
+    let tabSwitch: HTMLElement | null = null;
+    const watchSwitch = () => {
+      const next = nav.querySelector<HTMLElement>(`.${styles.switch}`);
+      if (next === tabSwitch) return;
+      tabSwitch?.removeEventListener("scroll", follow);
+      tabSwitch = next;
+      if (!next) return;
+      resize?.observe(next);
+      next.addEventListener("scroll", follow, { passive: true });
+    };
+    watchSwitch();
+    // The row's tabs can be swapped or relabelled after mount (a phone's own tab list, a count that
+    // arrives), so the outline follows any change inside the row.
+    const mutations =
+      typeof MutationObserver === "undefined"
+        ? null
+        : new MutationObserver(() => {
+            watchSwitch();
+            if (!moving) place(false);
+          });
+    mutations?.observe(nav, { childList: true, subtree: true, characterData: true });
+    // A tab's size or the row's bleed can ease into place (any transition, even reduced motion's
+    // near-zero one), so the outline is measured again once it has settled.
+    const settled = () => {
+      if (!moving) place(false);
+    };
+    nav.addEventListener("transitionend", settled);
+    // The hero above can settle after mount (its gutter bleed or a phone layout swap), so it is watched too,
+    // and the chosen tab is measured again once the web fonts have loaded.
+    const hero = nav.parentElement?.querySelector<HTMLElement>("[data-wf-hero]");
+    if (hero) resize?.observe(hero);
+    let live = true;
+    void document.fonts?.ready.then(() => {
+      if (live && !moving) place(false);
+    });
     document.addEventListener("scroll", checkDocked, { capture: true, passive: true });
     return () => {
+      live = false;
       cancelAnimationFrame(frame);
       resize?.disconnect();
+      mutations?.disconnect();
+      nav.removeEventListener("transitionend", settled);
+      tabSwitch?.removeEventListener("scroll", follow);
       document.removeEventListener("scroll", checkDocked, { capture: true });
     };
   }, [navRef, value]);
@@ -153,3 +209,63 @@ export function HomeFolderShape({ navRef, value }: { navRef: RefObject<HTMLEleme
     </>
   );
 }
+
+/**
+ * Class names a page puts on its own parts of a folder tab row: `switch` on the primary tab control
+ * (PillTabs or Segmented), `hero` on the `Hero` just above the row (it makes room for the folder and
+ * steps the band's lip aside on phone and tablet), `rule` on an optional divider before filters, and
+ * `more` on a More button.
+ */
+export const folderTabClasses = {
+  switch: styles.switch,
+  hero: styles.hero,
+  rule: styles.rule,
+  filters: styles.filters,
+  more: styles.more,
+} as const;
+
+export type FolderTabsProps = {
+  /** The row's accessible name ("Home lists"). */
+  label: string;
+  /** The chosen tab's id; the folder moves when it changes. */
+  value: string;
+  /**
+   * An act-now count sits on a tab: that tab's count becomes a 16px deep red circle. `true` means the
+   * first tab; a number 1 to 4 names the tab.
+   */
+  act?: boolean | 1 | 2 | 3 | 4;
+  /** The primary switch (with `folderTabClasses.switch`), then any rule and filters. */
+  children: ReactNode;
+  /** Drawn last, on the right (a More menu). */
+  more?: ReactNode;
+  className?: string;
+  testId?: string;
+};
+
+/**
+ * Page tabs (Josh, 9 Nov 2026): curved folder tabs rising out of the slate on a phone and tablet,
+ * underline tabs on the light page from 64rem. Render it as the next sibling of the page's `Hero`
+ * (with `folderTabClasses.hero` on the hero).
+ */
+export const FolderTabs = forwardRef<HTMLElement, FolderTabsProps>(function FolderTabs(
+  { label, value, act, children, more, className, testId },
+  ref,
+) {
+  "use no memo";
+  const navRef = useRef<HTMLElement>(null);
+  useImperativeHandle(ref, () => navRef.current as HTMLElement);
+  return (
+    <nav
+      ref={navRef}
+      className={cx(styles.nav, className)}
+      aria-label={label}
+      data-testid={testId}
+      data-act={act ? String(act === true ? 1 : act) : undefined}
+      data-wf-folder=""
+    >
+      {children}
+      <FolderShape navRef={navRef} value={value} />
+      {more ? <div className={styles.moreSlot}>{more}</div> : null}
+    </nav>
+  );
+});

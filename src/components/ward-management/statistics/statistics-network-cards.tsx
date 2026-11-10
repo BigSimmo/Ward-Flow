@@ -283,6 +283,7 @@ export function ServiceOccupancyCard({
                   </>
                 }
                 fig={`${percent}%`}
+                slimFig
                 unit={`${entry.occupied + entry.pulled} of ${entry.beds} beds`}
               >
                 <BedStack
@@ -688,6 +689,8 @@ type SummaryDeclines = Omit<
 };
 export type SummaryModel = {
   executive: boolean;
+  /** Each health service's beds, for the phone's page-top band (9 Nov 2026). Left out, no band. */
+  services?: NetworkServiceRow[];
   eventLog?: readonly import("../ward-event-log").EventLogEntry[];
   directory?: { services: string[]; teams: { id: string; name: string }[]; edIds: string[] };
   now: Instant;

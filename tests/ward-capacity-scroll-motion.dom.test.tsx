@@ -22,8 +22,11 @@ afterEach(() => {
 });
 
 describe("Capacity bed map reveal motion", () => {
+  // Page tops (Josh, 9 Nov 2026): the hero's Locked / Open ready shortcuts that scrolled to the bed
+  // map are gone; the highlights sit beside the map. The hero's band cells open a pop-up in place,
+  // so the motion rule left to hold is that pressing one never animates a scroll under reduced motion.
   it.each(["app", "system", "ordinary"] as const)(
-    "honours the %s motion preference when a hero figure highlights beds",
+    "honours the %s motion preference when a hero band cell opens who is waiting",
     (mode) => {
       vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
         matches: mode === "system" && query === "(prefers-reduced-motion: reduce)",
@@ -43,10 +46,13 @@ describe("Capacity bed map reveal motion", () => {
       );
       const scroll = vi.mocked(Element.prototype.scrollIntoView);
       scroll.mockClear();
-      fireEvent.click(
-        within(screen.getByRole("group", { name: "Network beds" })).getByRole("button", { name: /Locked ready/u }),
-      );
-      expect(scroll).toHaveBeenCalledWith({ block: "start", behavior: mode === "ordinary" ? "smooth" : "instant" });
+      const [cell] = within(screen.getByTestId("capacity-mismatch")).getAllByRole("button");
+      expect(cell, "the hero has no band cell to press").toBeDefined();
+      fireEvent.click(cell!);
+      for (const [options] of scroll.mock.calls) {
+        const behavior = typeof options === "object" && options ? options.behavior : undefined;
+        if (mode !== "ordinary") expect(behavior, "a reduced-motion user saw a smooth scroll").not.toBe("smooth");
+      }
     },
   );
 

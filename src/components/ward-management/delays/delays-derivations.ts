@@ -519,7 +519,7 @@ export function waitingSplit(movements: Movement[], now: Instant): WardBarSegmen
     // Josh to rule, not this bucket — it only describes recorded waits, so it carries no
     // danger/warning colour of its own.
     {
-      label: "Over 24 hours",
+      label: "Past 24 hours",
       value: open.filter((movement) => waited(movement) >= LONG_WAIT_MINUTES).length,
       tone: "rest",
     },

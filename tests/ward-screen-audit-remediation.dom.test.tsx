@@ -146,14 +146,18 @@ describe("WardScreen & WardIndex audit remediation", () => {
     expect(hasOpenSheet()).toBe(false);
   });
 
-  it("renders WardIndex h1 with a space between the ready bed count and beds ready now", () => {
+  it("renders WardIndex h1 and its ready figure with a space between the count and the bed total", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardIndex />
       </WardFlowProvider>,
     );
 
+    // Page tops (Josh, 9 Nov 2026): the title is "Ward beds right now" and the ready count is the
+    // hero's first figure, "N / M beds ready", whose value and unit keep their space.
     const h1 = screen.getByRole("heading", { level: 1 });
-    expect(h1.textContent).toMatch(/All wards, \d+ beds? ready/i);
+    expect(h1.textContent).toBe("All wards, Ward beds right now");
+    // HeroFigures speaks a space between the figure and its label ("26/ 304 beds ready").
+    expect(screen.getByTestId("ward-index-figure-ready").textContent).toMatch(/^\d+\/ \d+ beds? ready$/u);
   });
 });

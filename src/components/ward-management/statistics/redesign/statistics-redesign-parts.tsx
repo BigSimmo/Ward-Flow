@@ -134,6 +134,7 @@ export function Tile({
   unit,
   sub,
   muted = false,
+  slimFig = false,
   testId,
   children,
 }: {
@@ -143,6 +144,8 @@ export function Tile({
   unit?: ReactNode;
   sub?: ReactNode;
   muted?: boolean;
+  /** The page-top redesign (Josh, 9 Nov 2026): the figure at strip size, so it never outweighs the hero's. */
+  slimFig?: boolean;
   testId?: string;
   children?: ReactNode;
 }) {
@@ -153,7 +156,7 @@ export function Tile({
         {now}
       </div>
       {fig != null ? (
-        <p className={s.fig}>
+        <p className={cx(s.fig, slimFig && s.slimFig)}>
           <b>{fig}</b>
           {unit ? <span>{unit}</span> : null}
         </p>

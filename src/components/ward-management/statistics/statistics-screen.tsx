@@ -5,6 +5,7 @@ import { readDeclinesByReason } from "./statistics-decline-reporting";
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { Clock, Download, Search } from "lucide-react";
 
 import {
   BarList,
@@ -12,8 +13,10 @@ import {
   CardBody,
   CardHead,
   ColumnChart,
-  HeroChip,
-  HeroChips,
+  HeroAct,
+  HeroFigures,
+  HeroQuickChips,
+  HeroTop,
   Spinner,
   useIsPhone,
 } from "@/components/wf";
@@ -34,7 +37,6 @@ import {
   calendarDateOf,
   formatSheetMoment,
   dayOf,
-  formatInstant,
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
@@ -62,7 +64,7 @@ import {
   redesignStyles as redesign,
 } from "./redesign/statistics-redesign-parts";
 import { useStatisticsView } from "./statistics-view-bar";
-import { FindUnitTool, PhoneUnitFinder, StatisticsViewSwitch, useUnitFinder } from "./statistics-view-switch";
+import { PhoneUnitFinder, StatisticsViewSwitch, useUnitFinder } from "./statistics-view-switch";
 import { LeadsViewSwitch, useViewSwitchAction } from "./statistics-view-switch-slot";
 import { StatisticsEdJourneysCard } from "./statistics-ed-journeys-card";
 import { StatisticsReferralsTodayCard } from "./statistics-referrals-today-card";
@@ -98,6 +100,9 @@ import styles from "./statistics-v6.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
 import { StatisticsHero, useStatisticsLive } from "./statistics-hero";
+import { setStatisticsSamples, useStatisticsSamples } from "./statistics-samples";
+import type { StatisticsExport } from "./statistics-csv";
+import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { StatisticsSessionTrendsCard } from "./statistics-session-trends-card";
 import trendStyles from "./statistics-session-trends.module.css";
 import { StatisticsSummaryPhone } from "./statistics-summary-phone";
@@ -105,6 +110,8 @@ import {
   NetworkOverviewCards,
   ExecutiveNetworkOverviewCards,
   SiteOverviewCards,
+  networkServiceRows,
+  networkUnitRows,
   type SummaryModel,
   type SummarySlots,
   type SummaryEd,
@@ -436,6 +443,7 @@ function OperationalStatisticsScreen({
         paused: live.paused,
         togglePause: live.togglePause,
         scopeLabel: siteName ?? "whole network",
+        services: networkServiceRows(networkUnitRows(units, sourceAdmissions, sourceBedReleases, leaveBeds)),
         refused,
         preparingCount,
         arrivals,
@@ -590,6 +598,32 @@ function StatisticsSummaryView({
   // finds either by name.
   // D-91: the one unit finder, opened from "Open a unit" on the tab row.
   const unitFinder = useUnitFinder();
+  const samples = useStatisticsSamples();
+  // The page top (Josh, 9 Nov 2026): the place, the wards at or over the line, and the export.
+  const overCount = allPressureWards.filter(
+    (ward) => Math.round(ward.occupancyRate * 100) >= BED_ALERT_THRESHOLD_PERCENT,
+  ).length;
+  const heroTitle = (
+    <>
+      <span className={styles.srOnly}>Statistics:</span> {scopeLabel === "whole network" ? "Whole network" : scopeLabel}
+    </>
+  );
+  const exportFigures: StatisticsExport = {
+    stem: "network",
+    scope: scopeLabel,
+    figures: () => [
+      ["Beds ready now", availableNow],
+      ["Beds", totalBeds],
+      ["Occupied", occupiedCount],
+      ["Beds in use (occupied or pulled)", inUseCount],
+      ["Occupancy percent", occupiedPct],
+      ["Being made ready", pendingPreparation],
+      // Issue #618: counts of people follow the executive's small number rule; beds stay exact.
+      ["Discharged today", small(dischargesCount)],
+      ["Open ED movements", small(waitingCount)],
+      ["Still open", small(stillOpenCount)],
+    ],
+  };
   const wardTable = useWardTable(allPressureWards, isPhone);
   const [edSortCol, setEdSortCol] = useState<EdSortKey>("waiting");
   const [edSortAsc, setEdSortAsc] = useState(false);
@@ -925,6 +959,11 @@ function StatisticsSummaryView({
           wardCount={allPressureWards.length}
           paused={paused}
           onTogglePause={togglePause ?? undefined}
+          services={model.services}
+          // Bed manager: no finder, as on the desktop.
+          onOpenUnit={siteName ? undefined : unitFinder.toggle}
+          unitFinderOpen={unitFinder.open}
+          exportFigures={exportFigures}
         />
         {/* Bed manager: no finder, as on the desktop. */}
         {siteName ? null : (
@@ -949,67 +988,120 @@ function StatisticsSummaryView({
         <StatisticsHero
           section="hub"
           navTestId="ward-statistics-index"
-          tools={siteName ? undefined : <FindUnitTool open={unitFinder.open} onToggle={unitFinder.toggle} />}
-          eyebrow={`Statistics · ${scopeLabel} · as at ${formatInstant(now)}`}
-          // H-0887: the page heading names the page, not only the count.
-          title={
-            <>
-              <span className={styles.srOnly}>Statistics:</span> {availableNow} {availableNow === 1 ? "bed" : "beds"}{" "}
-              ready now
-            </>
-          }
+          eyebrow={`Statistics · ${scopeLabel}`}
+          title={heroTitle}
           now={now}
           paused={paused}
           onTogglePause={togglePause ?? undefined}
-          exportFigures={{
-            stem: "network",
-            scope: scopeLabel,
-            figures: () => [
-              ["Beds ready now", availableNow],
-              ["Beds", totalBeds],
-              ["Occupied", occupiedCount],
-              ["Beds in use (occupied or pulled)", inUseCount],
-              ["Occupancy percent", occupiedPct],
-              ["Being made ready", pendingPreparation],
-              // Issue #618: counts of people follow the executive's small number rule; beds stay exact.
-              ["Discharged today", small(dischargesCount)],
-              ["Open ED movements", small(waitingCount)],
-              ["Still open", small(stillOpenCount)],
-            ],
+          exportFigures={exportFigures}
+          top={{
+            // H-0887: the page heading names the page as well as the place.
+            title: heroTitle,
+            soft: "right now",
+            content: ({ exportFigures: exportNow }) => (
+              <HeroTop
+                figures={
+                  <HeroFigures
+                    label="Network at a glance"
+                    items={[
+                      // The count names its noun first, its share after (L1: Occupied + Pulled).
+                      {
+                        id: "in-use",
+                        value: inUseCount,
+                        unit: <> / {totalBeds}</>,
+                        label: `in use, ${occupiedPct}%`,
+                      },
+                      { id: "ready", value: availableNow, label: availableNow === 1 ? "bed ready" : "beds ready" },
+                      ...(notShown(waitingCount)
+                        ? []
+                        : [{ id: "ed", value: small(waitingCount), label: "open ED movements" }]),
+                      ...(notShown(dischargesCount)
+                        ? []
+                        : [
+                            {
+                              id: "discharged",
+                              value: (
+                                <span data-testid="ward-statistics-discharges-today-count">
+                                  {small(dischargesCount)}
+                                </span>
+                              ),
+                              label: (
+                                <>
+                                  discharged today
+                                  <span
+                                    className={styles.srOnly}
+                                    data-testid="ward-statistics-discharges-today-caption"
+                                  >
+                                    {reportDayCaption}
+                                  </span>
+                                </>
+                              ),
+                            },
+                          ]),
+                    ]}
+                  />
+                }
+                act={
+                  <HeroAct
+                    tone="calm"
+                    testId="ward-statistics-pressure-act"
+                    title={
+                      overCount === 0
+                        ? `No ward at or over ${BED_ALERT_THRESHOLD_PERCENT}%`
+                        : `${overCount} ${overCount === 1 ? "ward" : "wards"} at or over ${BED_ALERT_THRESHOLD_PERCENT}%`
+                    }
+                    action={
+                      overCount === 0
+                        ? undefined
+                        : {
+                            label: "Show wards",
+                            onClick: () => document.getElementById("pressure")?.scrollIntoView?.({ block: "start" }),
+                          }
+                    }
+                  />
+                }
+                chips={
+                  <HeroQuickChips
+                    label="Statistics tools"
+                    items={[
+                      // Bed manager: no Open a unit (its own wards are listed below).
+                      ...(siteName
+                        ? []
+                        : [
+                            {
+                              id: "unit",
+                              label: "Open a unit",
+                              icon: <Search size={16} strokeWidth={1.75} aria-hidden="true" />,
+                              onClick: unitFinder.toggle,
+                              expanded: unitFinder.open,
+                              testId: "ward-statistics-tool-open-unit",
+                            },
+                          ]),
+                      ...(exportNow
+                        ? [
+                            {
+                              id: "export",
+                              label: "Export",
+                              icon: <Download size={16} strokeWidth={1.75} aria-hidden="true" />,
+                              onClick: exportNow,
+                              testId: "ward-statistics-export",
+                            },
+                          ]
+                        : []),
+                      {
+                        id: "history",
+                        label: "Example history",
+                        icon: <Clock size={16} strokeWidth={1.75} aria-hidden="true" />,
+                        onClick: () => setStatisticsSamples(!samples),
+                        pressed: samples,
+                        testId: "ward-statistics-example-history",
+                      },
+                    ]}
+                  />
+                }
+              />
+            ),
           }}
-          chips={
-            <HeroChips label="Network at a glance">
-              <HeroChip value={totalBeds} label="Beds" />
-              {/* The count names its noun first, its share after. */}
-              <HeroChip value={inUseCount} label={`In use · ${occupiedPct}%`} />
-              <HeroChip value={pendingPreparation} label="Being made ready" />
-              {notShown(dischargesCount) ? null : (
-                <HeroChip
-                  value={<span data-testid="ward-statistics-discharges-today-count">{small(dischargesCount)}</span>}
-                  label={
-                    <>
-                      Discharged today
-                      <span className={styles.srOnly} data-testid="ward-statistics-discharges-today-caption">
-                        {reportDayCaption}
-                      </span>
-                    </>
-                  }
-                />
-              )}
-              {notShown(waitingCount) ? null : (
-                <HeroChip
-                  value={small(waitingCount)}
-                  // Five chips at most; the open-journey figure rides with the waiting one it contains.
-                  label="Open ED movements"
-                  onPress={() =>
-                    document
-                      .querySelector('[data-testid="ward-statistics-emergency-departments"]')
-                      ?.scrollIntoView({ block: "start" })
-                  }
-                />
-              )}
-            </HeroChips>
-          }
         />
 
         {/* Role view (executive): one sentence for the small number rule, so "not shown" and "fewer

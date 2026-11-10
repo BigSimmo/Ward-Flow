@@ -1,10 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BellRing,
-  ChevronRight,
+  ClipboardList,
   CalendarClock,
   ChartColumn,
   Clock4,
@@ -19,7 +19,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { PhoneSheet, useIsPhone } from "@/components/wf";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { seesNetworkBedFigures } from "@/components/ward-management/ward-role-access";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
@@ -67,6 +66,7 @@ function useQuickControls() {
   const controls = (QUICK_BAR[role] ?? []).filter(
     (control) =>
       (control.kind === "referral" && canOpen(WARD_REFERRAL_INTAKE_HREF)) ||
+      (control.kind === "link" && canOpen(control.href)) ||
       (control.kind === "tool" && (!NETWORK_TOOLS.has(control.tool) || seesNetworkBedFigures(role))),
   );
   const unconfirmed = useUnconfirmedCount(role === "coordinator");
@@ -75,10 +75,10 @@ function useQuickControls() {
 
 function press(control: QuickControl, button: HTMLElement) {
   if (control.kind === "referral") openWardDrawer("referral");
-  else requestToolsTool(control.tool, button);
+  else if (control.kind === "tool") requestToolsTool(control.tool, button);
 }
 
-/** Desktop and tablet: the chip row, at the foot of the home's hero under the act now row. */
+/** The chip row in the home's hero, under the act now row. */
 function QuickChipRow({
   controls,
   unconfirmed,
@@ -99,25 +99,36 @@ function QuickChipRow({
         {controls.map((control) => {
           const Icon = controlIcon(control);
           const count = control.kind === "tool" && control.tool === "quick-actions" ? unconfirmed : undefined;
+          const body = (
+            <>
+              <Icon aria-hidden="true" strokeWidth={1.75} />
+              {control.label}
+              {count ? (
+                <b className={styles.count}>
+                  <span aria-hidden="true">{count}</span>
+                  <span className="sr-only">, {count} to do</span>
+                </b>
+              ) : null}
+              <span className="sr-only">, {control.detail}</span>
+            </>
+          );
           return (
-            <li key={control.kind === "tool" ? control.tool : "referral"}>
-              <button
-                type="button"
-                className={styles.control}
-                onClick={(event) => press(control, event.currentTarget)}
-                aria-haspopup="dialog"
-                title={control.detail}
-              >
-                <Icon aria-hidden="true" strokeWidth={1.75} />
-                {control.label}
-                {count ? (
-                  <b className={styles.count}>
-                    <span aria-hidden="true">{count}</span>
-                    <span className="sr-only">, {count} to do</span>
-                  </b>
-                ) : null}
-                <span className="sr-only">, {control.detail}</span>
-              </button>
+            <li key={controlKey(control)}>
+              {control.kind === "link" ? (
+                <Link href={control.href} className={styles.control} title={control.detail}>
+                  {body}
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.control}
+                  onClick={(event) => press(control, event.currentTarget)}
+                  aria-haspopup="dialog"
+                  title={control.detail}
+                >
+                  {body}
+                </button>
+              )}
             </li>
           );
         })}
@@ -127,123 +138,21 @@ function QuickChipRow({
 }
 
 function controlIcon(control: QuickControl): LucideIcon {
+  if (control.kind === "link") return ClipboardList;
   return control.kind === "referral" ? Plus : (ICONS[control.tool] ?? Zap);
 }
 
+const controlKey = (control: QuickControl) =>
+  control.kind === "tool" ? control.tool : control.kind === "link" ? control.href : "referral";
+
 /**
  * Given to the desk home's band hero through WardQuickHeroProvider (layout), and drawn on the desk's home
- * only. It sits under the act now row, as in the confirmed header design (Josh, 9 Nov 2026): a chip
- * row on desktop and tablet, one Quick actions button on phone.
+ * only. A page top built with `HeroTop` draws it in its chip row, under the act row (page tops v6,
+ * Josh 9 Nov 2026): 36px chips on every size, one row that scrolls sideways on a phone (it replaced
+ * the phone's Quick actions sheet button).
  */
 export function WardQuickHeroSlot() {
   const { controls, unconfirmed, onHome } = useQuickControls();
-  const isPhone = useIsPhone();
   if (!onHome) return null;
-  return isPhone ? (
-    <QuickActionsLauncher controls={controls} unconfirmed={unconfirmed} />
-  ) : (
-    <QuickChipRow controls={controls} unconfirmed={unconfirmed} />
-  );
-}
-
-/**
- * Phone (Josh, 9 Nov 2026): one "Quick actions" button at the foot of the hero, under the
- * need-a-person line, instead of a sideways row of chips. It names the first few controls and opens
- * them all in a bottom sheet; each row then opens its tool on this page, as the chips did.
- */
-function QuickActionsLauncher({
-  controls,
-  unconfirmed,
-}: {
-  controls: readonly QuickControl[];
-  unconfirmed: number | undefined;
-}) {
-  const [open, setOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const preview = controls
-    .slice(0, 3)
-    .map((control) => control.label)
-    .join(" · ");
-  const rest = controls.length - 3;
-  return (
-    <nav
-      className={styles.launch}
-      aria-label="Quick controls"
-      data-testid="ward-quick-bar"
-      data-wf-quick-bar=""
-      data-in-hero=""
-      data-print-hide
-    >
-      <button
-        ref={buttonRef}
-        type="button"
-        className={styles.launchButton}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={() => setOpen(true)}
-        data-testid="ward-quick-launch"
-      >
-        <span className={styles.launchIcon} aria-hidden="true">
-          <Zap aria-hidden="true" strokeWidth={1.75} />
-        </span>
-        <span className={styles.launchText}>
-          <b>Quick actions</b>
-          <small>
-            {preview}
-            {rest > 0 ? ` +${rest}` : ""}
-          </small>
-        </span>
-        {unconfirmed ? (
-          <b className={styles.count}>
-            <span aria-hidden="true">{unconfirmed}</span>
-            <span className="sr-only">, {unconfirmed} to do</span>
-          </b>
-        ) : null}
-        <ChevronRight className={styles.launchChevron} aria-hidden="true" strokeWidth={1.75} />
-      </button>
-      <PhoneSheet
-        open={open}
-        onClose={() => setOpen(false)}
-        title="Quick actions"
-        description="Each opens here, on this page"
-        returnFocusRef={buttonRef}
-      >
-        <ul className={styles.sheetList} data-testid="ward-quick-sheet">
-          {controls.map((control) => {
-            const Icon = controlIcon(control);
-            const count = control.kind === "tool" && control.tool === "quick-actions" ? unconfirmed : undefined;
-            return (
-              <li key={control.kind === "tool" ? control.tool : "referral"}>
-                <button
-                  type="button"
-                  className={styles.sheetRow}
-                  aria-haspopup="dialog"
-                  onClick={() => {
-                    setOpen(false);
-                    const anchor = buttonRef.current;
-                    if (anchor) requestAnimationFrame(() => press(control, anchor));
-                  }}
-                >
-                  <span className={styles.sheetIcon} aria-hidden="true">
-                    <Icon aria-hidden="true" strokeWidth={1.75} />
-                  </span>
-                  <span className={styles.launchText}>
-                    <b>{control.label}</b>
-                    <small>{control.detail}</small>
-                  </span>
-                  {count ? (
-                    <b className={styles.sheetCount}>
-                      <span aria-hidden="true">{count}</span>
-                      <span className="sr-only">, {count} to do</span>
-                    </b>
-                  ) : null}
-                  <ChevronRight className={styles.sheetChevron} aria-hidden="true" strokeWidth={1.75} />
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </PhoneSheet>
-    </nav>
-  );
+  return <QuickChipRow controls={controls} unconfirmed={unconfirmed} />;
 }

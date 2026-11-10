@@ -3,11 +3,11 @@
 // The governance workbench's phone tree (v10), split out of `governance-registers.tsx`
 // (18 October 2026) to keep that file under the line cap.
 
-import { ChevronRight, ClipboardList, FileText, History, ShieldCheck } from "lucide-react";
+import { Check, ChevronRight, ClipboardList, Clock, Ellipsis } from "lucide-react";
 import Link from "next/link";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { allOverrides } from "@/components/ward-management/ward-derivations";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import type { RoleGate } from "@/components/ward-management/ward-role-gate";
 import type { AuditEvent, AuditReview } from "./ward-audit";
@@ -20,8 +20,14 @@ import {
   Card,
   FactGrid,
   GroupHead,
+  FolderTabs,
+  Hero,
+  HeroAct,
+  HeroFigures,
+  HeroQuickChips,
+  HeroTop,
   LiveChip,
-  PhoneHero,
+  Menu,
   PhoneListRow,
   PhoneSheet,
   Segmented,
@@ -29,12 +35,12 @@ import {
   buttonClass,
   cx,
   durMinutes,
+  folderTabClasses,
   type WfTone,
-  phoneRows,
 } from "@/components/wf";
 import { GovernanceRestrictiveRegister } from "./governance-restrictive-register";
 import thirdEdition from "./governance-third-edition.module.css";
-import wardPin from "./ward-pinned-switch.module.css";
+import pageTop from "./page-top-title.module.css";
 import eventList from "./governance-event-list.module.css";
 import { EventFacts } from "./governance-event-facts";
 import { PATTERN_HOURS, PATTERN_LIMIT, isPattern, reasonLabel, shortDeskLabel } from "./governance-access-review";
@@ -64,7 +70,6 @@ type GovernancePhoneInputs = {
   announcement: string;
   canReview: boolean;
   changeTab: (next: GovernanceTab) => void;
-  chip: ReviewChip | null;
   chipMatches: (event: AuditEvent) => boolean;
   choose: (event: AuditEvent | null) => void;
   followUp: number;
@@ -85,8 +90,10 @@ type GovernancePhoneInputs = {
   ) => boolean;
   refusedCount: number;
   reviewGate: RoleGate;
+  /** The figure the waiting list is highlighted by, and its toggle (tap a figure again to clear). */
+  chip: ReviewChip | null;
+  toggleChip: (next: ReviewChip) => void;
   reviewState: (event: AuditEvent) => AuditReview["decision"] | "unreviewed";
-  reviewTitle: string;
   reviewable: AuditEvent[];
   reviewedCount: number;
   selected: AuditEvent | null;
@@ -99,7 +106,6 @@ type GovernancePhoneInputs = {
   sites: SiteGap[];
   tab: GovernanceTab;
   toReview: AuditEvent[];
-  toggleChip: (next: ReviewChip) => void;
   totalGaps: number;
   units: Unit[];
 };
@@ -111,7 +117,6 @@ export function GovernancePhone({
   announcement,
   canReview,
   changeTab,
-  chip,
   chipMatches,
   choose,
   followUp,
@@ -127,8 +132,9 @@ export function GovernancePhone({
   recordViews,
   refusedCount,
   reviewGate,
+  chip,
+  toggleChip,
   reviewState,
-  reviewTitle,
   reviewable,
   reviewedCount,
   selected,
@@ -141,7 +147,6 @@ export function GovernancePhone({
   sites,
   tab,
   toReview,
-  toggleChip,
   totalGaps,
   units,
 }: GovernancePhoneInputs) {
@@ -158,6 +163,11 @@ export function GovernancePhone({
     choose(event);
     setPhoneSheet(true);
   };
+  // Page tops (Josh, 9 Nov 2026): the newest event still waiting, named in the act row.
+  const newest = toReview.find((event) => reviewState(event) === "unreviewed") ?? toReview[0] ?? null;
+  const newestTitle = newest
+    ? `Newest ${newest.at === null ? "time unavailable" : formatInstantWithDay(newest.at, now)} · ${actionLabels[newest.action]}`
+    : "Nothing waiting for review";
   const phoneReviewReason = !reviewGate.allowed ? reviewGate.reason : !canReview ? "Recording review…" : undefined;
   const recordPhoneReview = (decision: AuditReview["decision"]) => {
     if (!recordReview(decision)) return;
@@ -210,84 +220,143 @@ export function GovernancePhone({
       : null;
   const phoneTree = (
     <div className={thirdEdition.phoneScreen} data-testid="ward-governance-phone">
-      <PhoneHero
-        eyebrow="Governance · This session"
+      <Hero
+        className={cx(pageTop.hero, folderTabClasses.hero)}
+        title={
+          <>
+            Review <span className={pageTop.soft}>this session</span>
+          </>
+        }
         // F-08 (phone review, Oct 2026): real-looking names sit beside "Change legal status" here, so
         // the hero carries the Demo pill and says the records are invented.
-        chip={<LiveChip state="live" onHero />}
-        title={reviewTitle}
-        // No sub line: the title carries the count and any follow-up, the Reviewed tab its own count, and
-        // the footer says the records are invented.
-        // Role (access admin): no row of zero figures while nothing waits, as on the desktop.
-        figures={
-          adminEmpty
-            ? undefined
-            : [
-                {
-                  id: "override",
-                  value: overrideCount,
-                  label: "Overrides",
-                  onPress: () => toggleChip("override"),
-                  pressed: chip === "override",
-                },
-                {
-                  id: "refused",
-                  value: refusedCount,
-                  label: "Refused",
-                  onPress: () => toggleChip("refused"),
-                  pressed: chip === "refused",
-                },
-                {
-                  id: "access",
-                  value: accessCount,
-                  label: "Record access",
-                  onPress: () => toggleChip("access"),
-                  pressed: chip === "access",
-                },
-              ]
-        }
-        actions={
-          // Role (access admin): no Review next while nothing waits (the hero's only button would do nothing).
-          adminEmpty ? undefined : (
-            <Button
-              variant="onHero"
-              icon={ShieldCheck}
-              // Phone (Josh, 31 Oct 2026): Home's hero pill, not a full-width button.
-              className={phoneRows.heroPill}
-              disabledReason={toReview.length === 0 ? "Nothing waits for review" : undefined}
-              reasonDisplay="tooltip"
-              onClick={() => {
-                const first = toReview[0];
-                if (first) openPhoneEvent(first);
-              }}
-            >
-              Review next
-            </Button>
-          )
-        }
-      />
-      <Segmented<"review" | "gaps" | "audit">
-        className={`${thirdEdition.phoneTabs} ${wardPin.pinnedSwitch}`}
+        aside={<LiveChip state="live" onHero age={formatInstant(now)} />}
+      >
+        <HeroTop
+          // Role (access admin): no row of zero figures and no Review next while nothing waits.
+          figures={
+            adminEmpty ? undefined : (
+              <HeroFigures
+                items={[
+                  // Each figure highlights its events in the waiting list; tap again to clear.
+                  ...(
+                    [
+                      ["override", overrideCount, "overrides"],
+                      ["refused", refusedCount, "refused or stale"],
+                      ["access", accessCount, "record access"],
+                    ] as const
+                  ).map(([id, value, label]) => ({
+                    id,
+                    value,
+                    label,
+                    onClick: () => toggleChip(id),
+                    pressed: chip === id,
+                    linkTestId: `wf-phone-hero-figure-${id}`,
+                  })),
+                ]}
+              />
+            )
+          }
+          act={
+            adminEmpty ? undefined : (
+              <HeroAct
+                tone="calm"
+                title={newestTitle}
+                sub={followUp > 0 ? `${followUp} follow-up required` : undefined}
+                testId="ward-governance-act"
+                action={
+                  newest
+                    ? {
+                        label: "Review next",
+                        phoneLabel: "Review",
+                        testId: "ward-governance-review-next",
+                        onClick: () => openPhoneEvent(newest),
+                      }
+                    : undefined
+                }
+              />
+            )
+          }
+          chips={
+            <HeroQuickChips
+              label="Governance actions"
+              items={[
+                // Shown whenever events wait; a desk that may not review is told why in the sheet.
+                ...(adminEmpty || !newest
+                  ? []
+                  : [
+                      {
+                        id: "record",
+                        label: "Record review",
+                        icon: <Check strokeWidth={1.75} aria-hidden="true" />,
+                        testId: "ward-governance-phone-record-review",
+                        onClick: () => openPhoneEvent(selected ?? newest),
+                      },
+                    ]),
+                // Role (access admin): a patient's chronology is not this desk's to open.
+                ...(adminDesk
+                  ? []
+                  : [
+                      {
+                        id: "pir",
+                        label: "PIR chronology",
+                        icon: <Clock strokeWidth={1.75} aria-hidden="true" />,
+                        href: PATIENT_CHRONOLOGY_HREF,
+                      },
+                    ]),
+              ]}
+            />
+          }
+        />
+      </Hero>
+      <FolderTabs
         label="Governance views"
         value={phoneTab}
-        onChange={(next) => changeTab(next)}
-        items={[
-          { id: "review", label: "Review", count: toReview.length },
-          ...(adminDesk ? [] : [{ id: "gaps" as const, label: "Form gaps", count: totalGaps }]),
-          { id: "audit", label: "Audit trail", count: reviewedCount },
-        ]}
-      />
+        testId="ward-governance-tabs"
+        more={
+          // Registers and Reports sit behind More on a phone, as on Home.
+          adminDesk ? undefined : (
+            <Menu
+              label="More governance views"
+              align="end"
+              items={[
+                { id: "registers", label: "Registers", onSelect: () => setPhoneMore("registers") },
+                { id: "reports", label: "Reports", onSelect: () => setPhoneMore("reports") },
+              ]}
+              trigger={(props) => (
+                <Button
+                  {...props}
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  icon={Ellipsis}
+                  className={folderTabClasses.more}
+                  aria-label="More governance views"
+                />
+              )}
+            />
+          )
+        }
+      >
+        <Segmented<"review" | "gaps" | "audit">
+          className={folderTabClasses.switch}
+          label="Governance views"
+          value={phoneTab}
+          onChange={(next) => changeTab(next)}
+          items={[
+            { id: "review", label: "Review", count: toReview.length },
+            ...(adminDesk ? [] : [{ id: "gaps" as const, label: "Form gaps", count: totalGaps }]),
+            { id: "audit", label: "Audit trail", ...(reviewedCount > 0 ? { count: reviewedCount } : {}) },
+          ]}
+        />
+      </FolderTabs>
       {phoneTab === "review" ? (
         <Card aria-label="Waiting for review">
           {toReview.length > 0 ? (
             <>
               {toReview.some((event) => reviewState(event) === "unreviewed") ? (
                 <>
-                  <GroupHead
-                    title="Waiting"
-                    count={toReview.filter((event) => reviewState(event) === "unreviewed").length}
-                    aside="newest first"
-                  />
+                  {/* The count is the Review tab's; the head says only the order. */}
+                  <GroupHead title="Waiting" aside="newest first" />
                   <ul className={thirdEdition.phoneList}>
                     {toReview.filter((event) => reviewState(event) === "unreviewed").map(phoneEventRow)}
                   </ul>
@@ -406,30 +475,6 @@ export function GovernancePhone({
           )}
         </Card>
       ) : null}
-      {adminDesk ? null : (
-        <div className={thirdEdition.phoneMore}>
-          <button type="button" className={thirdEdition.phoneMoreCard} onClick={() => setPhoneMore("registers")}>
-            <FileText size={18} aria-hidden="true" className={thirdEdition.phoneMoreIcon} />
-            <span className={thirdEdition.stack}>
-              <strong>Registers</strong>
-              <span className={cx(thirdEdition.quietText, thirdEdition.clip)}>
-                Overrides, access, seclusion, restraint
-              </span>
-            </span>
-            <ChevronRight size={16} aria-hidden="true" />
-          </button>
-          <button type="button" className={thirdEdition.phoneMoreCard} onClick={() => setPhoneMore("reports")}>
-            <History size={18} aria-hidden="true" className={thirdEdition.phoneMoreIcon} />
-            <span className={thirdEdition.stack}>
-              <strong>Reports</strong>
-              <span className={cx(thirdEdition.quietText, thirdEdition.clip)}>
-                Weekly report, PIR chronology, downtime pack
-              </span>
-            </span>
-            <ChevronRight size={16} aria-hidden="true" />
-          </button>
-        </div>
-      )}
       <p className={thirdEdition.phoneNotice}>
         <Badge variant="plain" tone="neutral">
           Safety incidents not recorded here

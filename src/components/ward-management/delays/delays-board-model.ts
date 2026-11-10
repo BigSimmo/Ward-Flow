@@ -66,7 +66,7 @@ export const WAIT_BANDS = [
   `Under ${H8}`,
   `${OVER_8H / 60} to ${H12}`,
   `${OVER_12H / 60} to ${H24}`,
-  `Over ${H24}`,
+  `Past ${H24}`,
 ] as const;
 export type BandCounts = [number, number, number, number];
 
@@ -278,7 +278,7 @@ export function isDueSoon(row: BoardRow, thresholds: DueSoonThresholds): boolean
   return row.dueIn !== undefined && row.dueIn >= 0 && row.dueIn <= thresholds.urgentMinutes;
 }
 
-export function isBreached(row: BoardRow): boolean {
+function isBreached(row: BoardRow): boolean {
   return row.dueIn !== undefined && row.dueIn < 0;
 }
 

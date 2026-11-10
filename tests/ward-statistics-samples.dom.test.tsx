@@ -34,13 +34,14 @@ afterEach(() => {
 describe("optional sample statistics", () => {
   it("defaults to off, hides unavailable history, and preserves recorded figures when switched on and off", () => {
     render(<Workspace />);
-    const toggle = screen.getByRole("switch", { name: "Show example history" });
-    expect(toggle).toHaveAttribute("aria-checked", "false");
+    // Page-top redesign (9 Nov 2026): on a ward page Example history is a chip in the top.
+    const toggle = screen.getByRole("button", { name: "Example history" });
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
     expect(screen.queryByTestId("statistics-sample-figures")).toBeNull();
     expect(screen.queryByTestId("ward-statistics-ward-occupancy-trajectory")).toBeNull();
     const ready = screen.getByTestId("ward-stat-capacity-ready").textContent;
     fireEvent.click(toggle);
-    expect(toggle).toHaveAttribute("aria-checked", "true");
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
     const samples = screen.getByTestId("statistics-sample-figures");
     expect(samples).toHaveTextContent("Invented data · 30 days");
     expect(within(samples).getAllByRole("img")).toHaveLength(3);
@@ -62,11 +63,11 @@ describe("optional sample statistics", () => {
 
   it("persists across page mounts and switches to the appropriate metrics for the selected mode", () => {
     const view = render(<Workspace />);
-    fireEvent.click(screen.getByRole("switch", { name: "Show example history" }));
+    fireEvent.click(screen.getByRole("button", { name: "Example history" }));
     view.unmount();
     route.pathname = "/ward-flow/statistics/ed/rph-ed";
     render(<Workspace />);
-    expect(screen.getByRole("switch", { name: "Show example history" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("button", { name: "Example history" })).toHaveAttribute("aria-pressed", "true");
     const samples = screen.getByTestId("statistics-sample-figures");
     expect(within(samples).getByRole("heading", { name: /Median wait/ })).toBeTruthy();
     expect(samples).toHaveTextContent("Royal Perth");
@@ -88,15 +89,16 @@ describe("optional sample statistics", () => {
         <StatisticsWardScreen unitId={ward.id} />
       </WardFlowProvider>,
     );
-    expect(screen.getByRole("heading", { name: "Dabakarn", level: 1 })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: /^Dabakarn\b/u, level: 1 })).toBeTruthy();
     // v6 (7 Oct 2026): the hero band is a region named by the ward; no other card may repeat the name.
-    const title = screen.getByRole("heading", { name: "Dabakarn", level: 1 });
-    expect(screen.queryAllByRole("region", { name: "Dabakarn" }).filter((region) => !region.contains(title))).toEqual(
-      [],
-    );
+    const title = screen.getByRole("heading", { name: /^Dabakarn\b/u, level: 1 });
+    // Page-top redesign (9 Nov 2026): the title reads "Dabakarn Royal Perth · adult locked".
+    expect(
+      screen.queryAllByRole("region", { name: /^Dabakarn\b/u }).filter((region) => !region.contains(title)),
+    ).toEqual([]);
     expect(screen.getByTestId("ward-statistics-ward-beds-now")).toBeTruthy();
     expect(screen.queryByTestId("ward-statistics-section-governance")).toBeNull();
-    expect(screen.getByRole("heading", { name: "Dabakarn", level: 1 }).parentElement).not.toHaveTextContent(
+    expect(screen.getByRole("heading", { name: /^Dabakarn\b/u, level: 1 }).parentElement).not.toHaveTextContent(
       "Synthetic prototype",
     );
   });
@@ -112,8 +114,8 @@ describe("example history default (owner polish, 3 Nov 2026)", () => {
   it("follows the build's default until this device makes a choice, then keeps the choice", () => {
     window.localStorage.removeItem("ward-flow-statistics-samples");
     render(<Workspace />);
-    const toggle = screen.getByRole("switch", { name: "Show example history" });
-    expect(toggle).toHaveAttribute("aria-checked", String(statisticsSamplesDefault()));
+    const toggle = screen.getByRole("button", { name: "Example history" });
+    expect(toggle).toHaveAttribute("aria-pressed", String(statisticsSamplesDefault()));
     fireEvent.click(toggle);
     expect(window.localStorage.getItem("ward-flow-statistics-samples")).toBe(statisticsSamplesDefault() ? "off" : "on");
   });

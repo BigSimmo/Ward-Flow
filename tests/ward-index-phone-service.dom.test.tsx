@@ -1,5 +1,6 @@
-// shell-15 (Josh, 13 Oct 2026): on a phone All wards draws no region chips; it follows the header's
-// service, and shows no "22 of 22" while nothing is filtered. Desktop keeps its own chips.
+// shell-15 (Josh, 13 Oct 2026): on a phone All wards follows the header's service, and shows no
+// "22 of 22" while nothing is filtered. Page tops (Josh, 9 Nov 2026): both sizes draw the services
+// as the page's tabs.
 import "@testing-library/jest-dom/vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -33,9 +34,13 @@ afterEach(() => {
 });
 
 describe("All wards service control on a phone (shell-15)", () => {
-  it("draws no Health service chips and no 'N of N wards' while nothing is filtered", () => {
+  // Page tops (Josh, 9 Nov 2026, approved mock-up): the phone's tab row is the health services
+  // (All, then the first few, the rest under More), replacing shell-15's "no region chips on a phone".
+  // What stays from shell-15: All is chosen while nothing is filtered, and no "N of N wards" shows.
+  it("opens on All in the service tabs and shows no 'N of N wards' while nothing is filtered", () => {
     renderIndex(true);
-    expect(screen.queryByLabelText("Health service")).toBeNull();
+    const services = screen.getByRole("radiogroup", { name: "Health service" });
+    expect(within(services).getByRole("radio", { checked: true })).toHaveTextContent(/^All\s*\d+$/u);
     expect(screen.getByTestId("ward-index-count-note")).not.toHaveTextContent(/of \d+ wards/u);
   });
 

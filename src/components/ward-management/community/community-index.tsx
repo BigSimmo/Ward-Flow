@@ -6,7 +6,19 @@ import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowRight, BookOpen, ChevronRight, Download, History, Info, MapPin, Plus, Search, X } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronRight,
+  Download,
+  FileText,
+  History,
+  Info,
+  Map as MapIcon,
+  MapPin,
+  Plus,
+  Users,
+  X,
+} from "lucide-react";
 
 import {
   BarList,
@@ -14,24 +26,25 @@ import {
   Card,
   CardBody,
   CardHead,
-  CheckingFoot,
   Drawer,
   FilterChip,
+  FolderTabs,
   Hero,
-  HeroStat,
+  HeroFigures,
+  HeroQuickChips,
+  HeroTop,
+  SearchField,
+  cx,
+  folderTabClasses,
+  heroChipClassName,
   Icon,
   GroupHead,
-  Kbd,
-  LiveChip,
-  ScrollRow,
   Segmented,
   Select,
   SrOnly,
   StatusGlyph,
-  TextInput,
   buttonClass,
   tableClasses,
-  phoneRows,
   useIsPhone,
   type BarListRow,
 } from "@/components/wf";
@@ -41,7 +54,8 @@ import {
   type CommunityTeam,
 } from "@/components/ward-management/community/community-derivations";
 import { communityTeamHref } from "@/components/ward-management/shell/ward-facade";
-import { PlacesTrack } from "@/components/ward-management/hub/places-track";
+import { PLACES_CATCHMENTS_HREF, PLACES_HREF } from "@/components/ward-management/hub/places-hrefs";
+import topTitle from "@/components/ward-management/shell/page-top-title.module.css";
 import {
   communityNameCollisions,
   communityNamesInCollisions,
@@ -513,135 +527,151 @@ export function CommunityIndex({
       </section>
     ) : null;
 
+  const folderTabs = isPhone ? (
+    <FolderTabs label="Catchment panes" value={phonePane} className={styles.paneTabs} testId="community-index-panes">
+      <Segmented
+        className={folderTabClasses.switch}
+        label="Show"
+        size="md"
+        value={phonePane}
+        onChange={setPhonePane}
+        items={[
+          // Suburb leads: "which team covers this suburb" is the phone job.
+          { id: "suburb" as const, label: "Suburb" },
+          { id: "az" as const, label: "A to Z" },
+          { id: "alike" as const, label: "Read alike" },
+          { id: "services" as const, label: "Services" },
+        ]}
+      />
+    </FolderTabs>
+  ) : inPlaces ? (
+    <FolderTabs label="Places views" value="catchments" testId="places-track">
+      <Segmented
+        className={folderTabClasses.switch}
+        label="Places views"
+        size="md"
+        value="catchments"
+        items={[
+          { id: "places" as const, label: "Places", href: PLACES_HREF },
+          { id: "catchments" as const, label: "Catchments", count: allTeams.length, href: PLACES_CATCHMENTS_HREF },
+        ]}
+      />
+    </FolderTabs>
+  ) : null;
+
   return (
     <div className={styles.screen} data-testid="community-index">
       <main id="main-content" className={styles.main}>
+        {/* Page-top redesign (Josh, 9 Nov 2026): the question the page answers, three figures, one search
+            that both answers a suburb and narrows the A–Z, the source line, then the page's own actions
+            as chips. The panes (phone) or Places and Catchments (desktop) follow as folder tabs. */}
         <Hero
           level={1}
-          // Core pages review (approved 31 Oct 2026): one eyebrow on every device, as on Places.
-          eyebrow={inPlaces ? "Places · Catchments · Statewide" : "Community · Statewide"}
-          // Device audit 11 Oct 2026: one title on every device; Read alike is its own figure below.
+          className={cx(topTitle.hero, folderTabs && folderTabClasses.hero)}
+          eyebrow={<SrOnly>{inPlaces ? "Places · Catchments · Statewide" : "Community · Statewide"}</SrOnly>}
           title={
             <>
-              <SrOnly>{inPlaces ? "Catchments:" : "Community:"}</SrOnly>{" "}
-              <b className={styles.heroFigure}>{allTeams.length}</b> community teams
+              Which team <span className={topTitle.soft}>covers a suburb</span>
             </>
           }
-          // Core pages review (approved 31 Oct 2026): one short line on where the names come from, on every device.
-          titleMeta="Names from referral catchment documents, not verified services"
-          stats={
-            isPhone ? (
-              // v10 phone: three figures on hairlines, value over label.
-              <>
-                {/* On a phone, dimming the list showed only dimmed names on the first screen, so the
-                    figure opens the Alike tab instead (device audit 11 Oct 2026). */}
-                <HeroStat
-                  value={alikeTeamCount}
-                  label="Read alike"
-                  tone={alikeTeamCount > 0 ? "warning" : undefined}
-                  pressed={phonePane === "alike"}
-                  onToggle={() => setPhonePane((pane) => (pane === "alike" ? "suburb" : "alike"))}
+        >
+          <HeroTop
+            // The search takes the act row's place: beside the figures on wider screens, under them on a phone.
+            act={
+              <div className={styles.topAsk}>
+                <SearchField
+                  className={styles.topSearch}
+                  inputRef={searchInputRef}
+                  label="Suburb or postcode"
+                  placeholder="Suburb, alias or postcode"
+                  autoComplete="off"
+                  value={query}
+                  onValueChange={setQuery}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape" && query) {
+                      event.stopPropagation();
+                      setQuery("");
+                    }
+                  }}
+                  shortcut={!isPhone}
                 />
-                <HeroStat
-                  value={sharedSuburbs.suburbs}
-                  label="Shared suburbs"
-                  pressed={sharedSuburbOnly}
-                  onToggle={() => setSharedSuburbOnly((value) => !value)}
-                />
-                <HeroStat value={suburbsMapped} label="Suburbs" />
-              </>
-            ) : (
-              <div className={styles.heroChips} role="group" aria-label="Highlight team names">
-                <HeroStat
-                  inline
-                  value={alikeTeamCount}
-                  label="Read alike"
-                  tone={alikeTeamCount > 0 ? "warning" : undefined}
-                  pressed={alikeOnly}
-                  onToggle={() => setAlikeOnly((value) => !value)}
-                />
-                <HeroStat
-                  inline
-                  value={sharedSuburbs.suburbs}
-                  label="Shared suburbs"
-                  pressed={sharedSuburbOnly}
-                  onToggle={() => setSharedSuburbOnly((value) => !value)}
-                />
+                <p className={styles.topNote}>From referral catchment documents · not verified</p>
               </div>
-            )
-          }
-          foot={
-            isPhone ? undefined : (
-              <CheckingFoot
-                // Core pages review: the title carries the team count and the title line says the names are not
-                // verified, so the foot keeps only what they do not say.
+            }
+            figures={
+              <HeroFigures
+                label="Catchment figures"
                 items={[
-                  { id: "services", label: "Health services", value: serviceCounts.size },
-                  { id: "suburbs", label: "Suburbs mapped", value: suburbsMapped },
+                  { id: "teams", value: allTeams.length, label: "community teams", testId: "community-figure-teams" },
+                  { id: "suburbs", value: suburbsMapped, label: "suburbs" },
+                  { id: "alike", value: alikeTeamCount, label: "read alike" },
                 ]}
               />
-            )
-          }
-          aside={
-            <>
-              {/* F-08 (phone review, Oct 2026): the standard Demo pill on the phone hero. */}
-              {isPhone ? <LiveChip state="live" onHero /> : null}
-              {/* Phone (Josh, 31 Oct 2026): Guide and New referral are Home's hero pills. */}
-              <div className={`${styles.heroActions} ${phoneRows.heroPills}`}>
-                <Button
-                  ref={drawerTriggerRef}
-                  variant="onHero"
-                  icon={BookOpen}
-                  className={phoneRows.heroPill}
-                  onClick={() => setDrawerOpen(true)}
-                  data-testid="community-action-catchment-guide"
-                  aria-haspopup="dialog"
-                  aria-expanded={drawerOpen}
-                >
-                  {isPhone ? "Guide" : "Catchment guide"}
-                </Button>
-                {/* Core pages review: no Referrals link here; the menu opens the board. PL1: inside Places
-                    the header's own New referral is the one way in, so the hero keeps only the guide. */}
-                {inPlaces ? null : (
-                  <Link
-                    href="/ward-flow/referrals/new"
-                    className={`${buttonClass({ variant: "light" })} ${phoneRows.heroPill}`}
-                    data-testid="community-action-raise-referral"
-                  >
-                    <Icon icon={Plus} size={16} />
-                    New referral
-                  </Link>
-                )}
-              </div>
-            </>
-          }
-          bar={inPlaces ? <PlacesTrack value="catchments" /> : recentStrip}
-          barAside={
-            inPlaces ? (
-              recentStrip
-            ) : recentNames.length > 0 ? (
-              <span className={styles.heroNote}>Recorded names</span>
-            ) : undefined
-          }
-        />
+            }
+            chips={
+              <HeroQuickChips
+                label="Catchment actions"
+                items={[
+                  {
+                    id: "guide",
+                    label: "Catchment guide",
+                    node: (
+                      <button
+                        ref={drawerTriggerRef}
+                        type="button"
+                        className={heroChipClassName}
+                        onClick={() => setDrawerOpen(true)}
+                        data-testid="community-action-catchment-guide"
+                        aria-haspopup="dialog"
+                        aria-expanded={drawerOpen}
+                      >
+                        <FileText size={16} strokeWidth={1.75} aria-hidden="true" />
+                        Catchment guide
+                      </button>
+                    ),
+                  },
+                  {
+                    id: "shared",
+                    label: "Shared suburbs",
+                    icon: <Users strokeWidth={1.75} aria-hidden="true" />,
+                    count: sharedSuburbs.suburbs,
+                    countTone: "quiet",
+                    countLabel: "suburbs",
+                    pressed: sharedSuburbOnly,
+                    onClick: () => setSharedSuburbOnly((value) => !value),
+                    testId: "community-action-shared-suburbs",
+                  },
+                  ...(inPlaces && isPhone
+                    ? [
+                        {
+                          id: "places",
+                          label: "Places",
+                          icon: <MapIcon strokeWidth={1.75} aria-hidden="true" />,
+                          href: PLACES_HREF,
+                        },
+                      ]
+                    : []),
+                  // PL1: inside Places the header's own New referral is the one way in.
+                  ...(inPlaces
+                    ? []
+                    : [
+                        {
+                          id: "referral",
+                          label: "New referral",
+                          icon: <Plus strokeWidth={1.75} aria-hidden="true" />,
+                          href: "/ward-flow/referrals/new",
+                          testId: "community-action-raise-referral",
+                        },
+                      ]),
+                ]}
+              />
+            }
+          >
+            {recentStrip}
+          </HeroTop>
+        </Hero>
 
-        {isPhone ? (
-          <ScrollRow className={styles.phonePanes}>
-            <Segmented
-              label="Show"
-              size="md"
-              value={phonePane}
-              onChange={setPhonePane}
-              items={[
-                // Suburb leads: "which team covers this suburb" is the phone job.
-                { id: "suburb" as const, label: "Suburb" },
-                { id: "az" as const, label: "A to Z" },
-                { id: "alike" as const, label: "Read alike" },
-                { id: "services" as const, label: "Services" },
-              ]}
-            />
-          </ScrollRow>
-        ) : null}
+        {folderTabs}
 
         <div className={styles.layout} data-phone-pane={isPhone ? phonePane : undefined}>
           {/* Core pages review: the suburb lookup, the most common job, is a full-width bar above the list. */}
@@ -649,6 +679,8 @@ export function CommunityIndex({
             {/* D-91: the one suburb lookup card, shared with the ward's Discharges tab and Tools. */}
             <SuburbLookupCard
               layout="bar"
+              query={query}
+              onQueryChange={setQuery}
               plainOnPhone
               picks={contestedPicks}
               picksLabel="Suburbs whose row names more than one team"
@@ -711,25 +743,6 @@ export function CommunityIndex({
               />
             </div>
             <div className={styles.toolbar}>
-              <TextInput
-                ref={searchInputRef}
-                type="search"
-                icon={Search}
-                boxClassName={styles.searchBox}
-                placeholder="Team, suburb or postcode"
-                autoComplete="off"
-                aria-label="Search team names"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                onClear={() => setQuery("")}
-                onKeyDown={(event) => {
-                  if (event.key === "Escape" && query) {
-                    event.stopPropagation();
-                    setQuery("");
-                  }
-                }}
-                trailing={isPhone ? undefined : <Kbd>/</Kbd>}
-              />
               <Segmented
                 label="Filter team names"
                 items={serviceItems}
