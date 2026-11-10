@@ -1407,7 +1407,7 @@ export interface ShiftProgress {
   percent: number;
   /** Minutes until the shift ends. */
   remainingMinutes: number;
-  /** True inside the last 15 minutes of the shift. */
+  /** True inside the handover prompt window (`HANDOVER_DUE_PROMPT_MINUTES`). */
   handoverDue: boolean;
   countdownStr: string;
   dashOffset: number;

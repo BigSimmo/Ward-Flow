@@ -196,7 +196,7 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 666,
+          "line": 667,
           "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
         },
         {
@@ -285,7 +285,7 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 246,
+          "line": 247,
           "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
         },
         {
@@ -1821,7 +1821,7 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 752,
+          "line": 753,
           "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
         },
         {
@@ -2791,7 +2791,7 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 96,
+          "line": 97,
           "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
         },
         {

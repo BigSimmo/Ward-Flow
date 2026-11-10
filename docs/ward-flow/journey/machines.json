@@ -1546,7 +1546,7 @@
       {
         "path": "src/components/ward-management/patients/patient-now-screen.tsx",
         "line": 1,
-        "sha256": "32df7b49667bb9d9ee9da930b61cc639de19cff57381e3b1fceda8f146d2092b"
+        "sha256": "6d62b6682074b1afd6488dfb383b04881842fcb9c8738ffb2ff18c8f45e01725"
       },
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner-body.tsx",
@@ -1595,7 +1595,7 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-bed-events.ts",
-        "line": 618,
+        "line": 619,
         "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
       },
       {

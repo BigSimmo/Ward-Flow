@@ -198,7 +198,7 @@ export function PatientNowScreen({
     "worldGeneration",
   );
   const now = useWardFlowClock();
-  // The held bed review warning sits behind its own flag: paused by D-65, on everywhere since 20 Oct 2026.
+  // The held bed review warning sits behind its own flag: paused by D-65, on by default since 20 Oct 2026.
   const awolHoldReview = useWardFeatureFlag("awol-bed-hold-review");
   // Feature 11: actions follow the route's role (`ward-role-permissions.ts`, cross-role pairs listed there).
   const deskSwitch = useDeskRoleSwitch();

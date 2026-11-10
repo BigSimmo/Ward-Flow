@@ -374,7 +374,7 @@ Source-contract SHA256: 0dd5d0653f6130d44495353d08a0b2f0b77f1e031d1b02c24ca94e00
   effects: Adds endedAt; retains the order and earlier history; no timer or automatic end
   effects: The step can be taken back by UNDO_PATIENT_RECORD within the Undo window, filed against the patient record.
   tests: tests/ward-absence-and-cto.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:666; SHA256 be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113
+  Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:667; SHA256 be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:216; SHA256 01913e33459ff2e0c7dfce7de7e0e731cc155400a42b2537e1e6ad7a6c3c83eb
   Reviewed source: src/components/ward-management/ward-flow-events.ts:1405; SHA256 4aa95a6064d78bc02b633a4c4f2327282452b788888f2e6ae2173b98a5be10e7
   Reviewed source: src/components/ward-management/ward-access-state.ts:658; SHA256 b7e5bfa41c1d5f1a5d9574379ab37c7278b1f9f1b4f2f2fc32d14a78ad7aa21c
@@ -432,7 +432,7 @@ Source-contract SHA256: 0dd5d0653f6130d44495353d08a0b2f0b77f1e031d1b02c24ca94e00
   effects: If a same-ward nondischarged release has the same blocker, clears its blocker/blockedBy and appends clearance history there; otherwise appends stayBlockClearances
   effects: Does not release the bed or change admission state
   tests: tests/ward-stay-discharge-blocker.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:246; SHA256 be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113
+  Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:247; SHA256 be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:237; SHA256 01913e33459ff2e0c7dfce7de7e0e731cc155400a42b2537e1e6ad7a6c3c83eb
   Reviewed source: src/components/ward-management/ward-flow-events.ts:1855; SHA256 4aa95a6064d78bc02b633a4c4f2327282452b788888f2e6ae2173b98a5be10e7
   Reviewed source: src/components/ward-management/ward-access-state.ts:658; SHA256 b7e5bfa41c1d5f1a5d9574379ab37c7278b1f9f1b4f2f2fc32d14a78ad7aa21c
@@ -1242,7 +1242,7 @@ Source-contract SHA256: 0dd5d0653f6130d44495353d08a0b2f0b77f1e031d1b02c24ca94e00
   effects: Writes admission.dischargeCriteria; review resets its validity time and review-bound/lapsed ticks, while retained applicable ticks persist.
   effects: No departure, bed release or clinical eligibility decision is performed; typed patient-specific payloads follow the typed-text persistence boundary.
   tests: tests/ward-criteria-led-discharge.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:752; SHA256 be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113
+  Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:753; SHA256 be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113
   Reviewed source: src/components/ward-management/ward-discharge-criteria.ts:271; SHA256 70e720fb09a6a8bd9ab6952b29e786e949b7c635b3eded6a97c9be8582648c5b
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2114; SHA256 4aa95a6064d78bc02b633a4c4f2327282452b788888f2e6ae2173b98a5be10e7
   Reviewed source: src/components/ward-management/ward-access-state.ts:658; SHA256 b7e5bfa41c1d5f1a5d9574379ab37c7278b1f9f1b4f2f2fc32d14a78ad7aa21c
@@ -1975,7 +1975,7 @@ Source-contract SHA256: 0dd5d0653f6130d44495353d08a0b2f0b77f1e031d1b02c24ca94e00
   effects: Captures the exact bed-placement Undo snapshot including prior kind, capacity revision and linked holds.
   tests: tests/ward-undo-and-bed-board.test.ts
   tests: tests/ward-release-pull-undo-guard.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:96; SHA256 be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113
+  Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:97; SHA256 be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2592; SHA256 4aa95a6064d78bc02b633a4c4f2327282452b788888f2e6ae2173b98a5be10e7
   Reviewed source: src/components/ward-management/ward-access-state.ts:658; SHA256 b7e5bfa41c1d5f1a5d9574379ab37c7278b1f9f1b4f2f2fc32d14a78ad7aa21c
 - UNDO_PLACE_IN_BED — modelled; event roles: ward, coordinator

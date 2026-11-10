@@ -114,7 +114,7 @@ const CLINICAL_VALUE_NOTES = {
   },
   bedHoldReview: {
     source:
-      "Josh, 26 Sep 2026, his default. Dormant (D-122, 10 Nov 2026): signed, but nothing in the app reads it; kept, not deleted",
+      "Josh, 26 Sep 2026, his default. Dormant (D-122, 10 Nov 2026): signed, but no operational code uses it (only this reference list shows it); kept, not deleted",
   },
   bedCountFresh: {
     source: "D-63 (16 Oct 2026), local workflow choice, no external source",
