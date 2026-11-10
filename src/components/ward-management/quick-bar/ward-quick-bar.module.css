@@ -127,6 +127,13 @@
     scroll-snap-align: start;
   }
 
+  /* While a chip's menu is open it is pinned to the window below the row (wf/menu usePanelFit). The
+     fade comes off meanwhile: a mask would hide the menu and trap it under the page's pinned tabs. */
+  .list:has([aria-expanded="true"]) {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
   /* The house rule (Q295, Q377): every phone control is at least 40px, as the shared HeroQuickChips
      grow to on a phone (hero-top.module.css); the tap area stays 48px. */
   .control {

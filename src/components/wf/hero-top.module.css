@@ -526,6 +526,14 @@ a.cellBody {
     mask-image: linear-gradient(90deg, black calc(100% - 36px), transparent);
   }
 
+  /* While a chip's menu is open it is pinned to the window below the row (wf/menu usePanelFit). The
+     fade comes off meanwhile: a mask would hide the menu and trap it under the page's pinned tabs. */
+  .chips:has([aria-expanded="true"]),
+  .cells:has([aria-expanded="true"]) {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
   .chips::-webkit-scrollbar,
   .cells::-webkit-scrollbar {
     display: none;
