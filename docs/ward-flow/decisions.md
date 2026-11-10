@@ -143,6 +143,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-118](#d-118-page-tops-referrals-and-ward-phone-limits-up-to-8-kb-above-main-10-november-2026)                                                        | Page tops: Referrals and Ward phone limits up to 8 KB above main                     | Active                                           |
 | [D-119](#d-119-page-tops-phone-limits-raised-to-measured-sizes-trim-after-merge-10-november-2026)                                                       | Page tops: phone limits at measured sizes, trim after merge                          | Active                                           |
 | [D-120](#d-120-discharge-and-capacity-values-pull-limit-transport-delay-and-discharge-date-slip-9-november-2026)                                        | Discharge and capacity values: pull limit, transport delay, date slip                | Active                                           |
+| [D-124](#d-124-offline-saves-whose-record-changed-are-refused-and-shown-10-november-2026)                                                               | Offline saves whose record changed: refuse and show                                  | Active                                           |
 
 ---
 
@@ -1494,3 +1495,10 @@ is inferred.
   2. **Transport delay:** a transport job not accepted within 30 minutes shows as delayed (feature 25, `transportAcceptDelay`).
   3. **Discharge date slip:** a stay whose expected discharge date has moved more than 3 days is flagged as slipping (feature 6, `eddSlipFlag`).
 - **Boundary:** synthetic data only. Sets these three values; approves no merge or release.
+
+## D-124. Offline saves whose record changed are refused and shown (10 November 2026)
+
+- **Date:** 10 November 2026, about 2:04 PM AWST (06:04 UTC). **Decided by:** Josh, on the decision card in the Ward Flow project thread "Perfect the master audit list": "Refuse and show what changed", while audit M10 (issue #1575) ran. D-123 is claimed by held PR #1591.
+- **Decision:** a save made while offline, whose record another desk changed in the meantime, is not applied when the connection returns. The person sees which kind of record changed, at which desk, "while you were offline", and redoes the change if it is still right. Nothing is merged silently, even when the two changes touch different fields. One refused save cancels only the other waiting saves on the same record; unrelated waiting saves still go, each checked by the server.
+- **Why:** a save made offline was decided on old information, so a person should look again. This matches how the server already refuses stale edits (409 by revision).
+- **Boundary:** synthetic data only. The message still names the record type and desk, never the patient (27 October 2026 rule). Waiting saves stay in memory only (D-18, D-72). Approves no release.
