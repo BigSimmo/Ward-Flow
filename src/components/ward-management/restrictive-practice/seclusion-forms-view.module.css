@@ -140,7 +140,7 @@
 .scopeNote {
   margin: 0;
   padding: 0 var(--wf-s-1);
-  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+  font: 400 12.5px / 17px var(--wf-font);
   color: var(--wf-ink-3);
 }
 

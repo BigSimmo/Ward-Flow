@@ -3,7 +3,7 @@
 import { settledWardCommand } from "../ward-command-completion";
 import { useWardRaise } from "../ward-flow-raise";
 
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useLegalFormsCopy } from "./use-legal-forms-copy";
 import { BookOpen, ClipboardCopy, ClipboardList, Ellipsis, Plus } from "lucide-react";
@@ -66,6 +66,7 @@ import {
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { useWardBarPageTitle } from "@/components/ward-management/shell/ward-bar-page-tools";
 
 import {
   currentLegalDueAt,
@@ -329,6 +330,9 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   // FS3: only the desks that may open seclusion (D-72: ward, site bed manager, coordinator) see the view.
   const seesSeclusion = ROLE_SCREENS[access.role].seclusion !== undefined;
   const shownView: View = view === "seclusion" && !seesSeclusion ? "clocks" : view;
+  // Page tops (10 Nov 2026): the bar names the Seclusion tab, as the old Seclusion page did.
+  const pathname = usePathname() ?? "";
+  useWardBarPageTitle(pathname, shownView === "seclusion" ? "Seclusion" : undefined);
   const seclusionItem = seesSeclusion ? [{ id: "seclusion" as const, label: "Seclusion and restraint" }] : [];
   const receivedUnavailable = (movement: Movement): string | undefined =>
     receivedGate.reason ??
