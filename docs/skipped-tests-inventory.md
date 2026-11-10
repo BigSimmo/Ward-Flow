@@ -11,7 +11,7 @@ own, so its row names the test it sits in; a title passed through a helper names
 Indirect registrations such as `(cond ? it.skip : it)(…)` are listed by condition. The reason column is the
 skip's own condition or message; read the comment above the call for the why.
 
-Total: 42
+Total: 41
 
 | Location                                                  | Kind                  | Title                                                                                                          | Condition or message                                                                                           |
 | --------------------------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -33,7 +33,6 @@ Total: 42
 | `tests/ward-audit-m118-ward-fit-surfaces.test.ts`         | it.todo               | M118 defect: the Tools bed finder lists forensic wards (D7: never offered) and does not check security, bay s… | -                                                                                                              |
 | `tests/ward-audit-m118-ward-fit-surfaces.test.ts`         | it.todo               | M118 gap: the Tools bed finder's 'Ward for' choice offers Female and Male only, so a gender diverse or not-re… | -                                                                                                              |
 | `tests/ward-audit-m118-ward-fit-surfaces.test.ts`         | it.todo               | M118 gap: out-of-area 'closer bed' options (closerBedOptions, homeRegionBeds) check cohort only (homeRegionBe… | -                                                                                                              |
-| `tests/ward-audit-m119-identity-as-recorded.dom.test.tsx` | it.todo               | ``M119 defect: the search record preview shows "Aboriginal (ATSI)" for "${status}"; it should show the record… | -                                                                                                              |
 | `tests/ward-audit-m119-identity-as-recorded.dom.test.tsx` | it.todo               | M119 gap: the search record preview shows sex only ('Sex unrecorded' when absent), never the recorded gender;… | -                                                                                                              |
 | `tests/ward-audit-m120-forecast-honesty.test.ts`          | it.todo               | DEFECT M120 (Josh): the ED 'May pass' card states no method or limits, and lists named people with UMRN, time… | -                                                                                                              |
 | `tests/ward-audit-m120-forecast-honesty.test.ts`          | it.todo               | DEFECT M120 (Josh): the bed meeting TV 'Tomorrow' column and brief state no method or limits                   | -                                                                                                              |
