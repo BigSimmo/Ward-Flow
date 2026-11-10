@@ -274,7 +274,7 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
 
       fireEvent.click(screen.getByRole("tab", { name: /Beds/ }));
       const beds = screen.getByTestId("ward-handover-beds");
-      expect(beds.textContent).toMatch(/stays over 7 days/i);
+      expect(beds.textContent).toMatch(/stays of 7 days or more/i);
       expect(beds.textContent).toContain("Discharges held up");
     });
   });

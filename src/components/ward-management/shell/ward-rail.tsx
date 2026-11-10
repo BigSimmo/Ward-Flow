@@ -38,7 +38,10 @@ import type { HealthService } from "@/components/ward-management/ward-model";
 import { edById } from "@/components/ward-management/ward-sites";
 import { WARD_CAPACITY_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
-import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
+import {
+  HANDOVER_DUE_PROMPT_MINUTES,
+  OPERATIONAL_DEFAULT_LABEL,
+} from "@/components/ward-management/ward-operational-defaults";
 import { shiftAtMinute } from "@/components/ward-management/ward-board-time-features";
 import { Dot, SrOnly, durMinutes, useIsPhone } from "@/components/wf";
 import { applyAppearance, applyGlare } from "./ward-bar";
@@ -1453,7 +1456,7 @@ function computeShiftProgress(nowInput?: number | Date): ShiftProgress {
   const elapsedMins = elapsedTotal % 60;
   const percent = Math.min(100, Math.max(0, Math.round((elapsedTotal / shiftDuration) * 100)));
   const dashOffset = Number((CIRCUMFERENCE * (1 - percent / 100)).toFixed(2));
-  const handoverDue = remainingTotal <= 15;
+  const handoverDue = remainingTotal <= HANDOVER_DUE_PROMPT_MINUTES;
 
   let countdownStr: string;
   if (handoverDue) {

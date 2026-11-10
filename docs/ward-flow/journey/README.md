@@ -247,3 +247,11 @@ Source digests were re-reviewed file by file before being re-recorded:
 - `patients/add-patient.tsx`: the duplicate check's tier order, wording and input rule moved to shared helpers in `ward-patients.ts` with the same behaviour. `ADD_PATIENT`'s dispatch, role and payload are unchanged.
 
 The other command models citing these files had only their digests re-recorded, because none of their handlers, guards, roles or payloads changed.
+
+## Source review — 10 Nov 2026 (clinical display answers, D-122)
+
+Source digests were re-reviewed file by file before being re-recorded:
+
+- `ward-flow-bed-events.ts`: one import was added (line 20), so every cited line after it moved down by one. `EVALUATE_LEAVE_BED_WARNINGS` now words its notice from the signed leave bed value ("24 hours or more", the check being at or over the line). Its guard, role, payload and the warning time are unchanged.
+- `coordinator/shortlist-panel.tsx`: comment-only edits (the override comment cites D-122, not D-86; the three-ward cap comment cites D-122). One comment line was added at line 494, so the cited lines after it moved down by one.
+- `ward/ward-answer-view.tsx`: the hero ring's at-risk word tests the whole percent shown (D-109, extended by D-122). No dispatch, role or cited line changed.

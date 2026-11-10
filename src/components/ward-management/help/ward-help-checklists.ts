@@ -17,6 +17,10 @@ import { deskOpens, EVERY_LOGIN, howToFor } from "./ward-help-access";
 import { howToHref } from "./ward-help-href";
 import { HOW_TOS } from "./ward-help-howto";
 import type { WardTourRole } from "./ward-help-store";
+import { CLINICAL_VALUES, formatClinicalFigure } from "@/components/ward-management/ward-clinical-values";
+
+/** The Give button's own words, from the value it grants (D-122: help never types a threshold). */
+const GIVE_FOR = `Give for ${formatClinicalFigure(CLINICAL_VALUES.accessGrantDefault.value, CLINICAL_VALUES.accessGrantDefault.unit)}`;
 
 export type ChecklistId =
   | "getting-started-coordinator"
@@ -172,7 +176,7 @@ const GETTING_STARTED: readonly Checklist[] = [
       go: "settings#access",
       showMe: "give-access",
     },
-    { text: "Answer one request for access: Give for 90 days or Decline.", go: "settings#access" },
+    { text: `Answer one request for access: ${GIVE_FOR} or Decline.`, go: "settings#access" },
     {
       text: "On Governance, open an event under Review and read what it records.",
       go: "governance",

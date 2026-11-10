@@ -17,6 +17,7 @@ import {
 import { nextDischargeCriteria } from "@/components/ward-management/ward-discharge-criteria";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { leaveBedNeedsOpenWarning } from "@/components/ward-management/ward-legal-clock";
+import { CLINICAL_VALUES, formatClinicalFigure } from "@/components/ward-management/ward-clinical-values";
 import {
   BED_RELEASE_WAITING_ON,
   type BedRelease,
@@ -826,7 +827,7 @@ export function reduceBedEvent(
             "leave_bed_open_warning",
             { role: "ward", placeId: leaveBed.unitId },
             { unitId: leaveBed.unitId },
-            `Leave bed ${leaveBed.id} has been away for more than 24 hours — consider opening it.`,
+            `Leave bed ${leaveBed.id} has been away for ${formatClinicalFigure(CLINICAL_VALUES.leaveOpenWarning.value, CLINICAL_VALUES.leaveOpenWarning.unit)} or more — consider opening it.`,
           ),
         );
         return { ...leaveBed, openWarningAt: event.now };

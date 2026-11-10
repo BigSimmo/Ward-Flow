@@ -30,7 +30,7 @@ import { csvCell } from "@/components/ward-management/statistics/statistics-csv"
 import { originName } from "@/components/ward-management/ward-movement-origin";
 
 /**
- * PIR CHRONOLOGY (D-37): every recorded fact about one synthetic person, in time order, for a
+ * PIR CHRONOLOGY (Reports build, 9 Oct 2026, #157): every recorded fact about one synthetic person, in time order, for a
  * post-incident review. Read-only. It joins the person to their own referrals, movements and
  * admissions, then reads three sources that already exist:
  *
@@ -963,21 +963,21 @@ export const CHRONOLOGY_CSV_HEADER = [
  * never be mistaken for a real record.
  */
 /**
- * `patient` is the person as the screen names them (`patientDisplayName` and UMRN), so a downloaded
- * copy says whose chronology it is; it is never a record id.
+ * `umrn` says whose chronology a downloaded copy is without naming them: D-122 extends D-102, so the
+ * file carries the UMRN only, never the person's name or initials, like the patient-table export.
  */
 export function chronologyCsv(
   rows: readonly ChronologyRow[],
   dayZero: Date,
   generatedAt: Instant,
-  patient?: string,
+  umrn?: string,
 ): string {
   const lines = [
     [
       csvCell("Synthetic demo data. Not a clinical record."),
       csvCell(`Generated ${formatSheetMoment(generatedAt, dayZero, { includeYearAndZone: true })}`),
     ].join(","),
-    ...(patient ? [[csvCell("Patient"), csvCell(patient)].join(",")] : []),
+    ...(umrn ? [[csvCell("UMRN"), csvCell(umrn)].join(",")] : []),
     [csvCell("Scope"), csvCell("Selected patient's retained chronology")].join(","),
     [csvCell("Period"), csvCell("Recorded events in the exported view; no date-range restriction")].join(","),
     CHRONOLOGY_CSV_HEADER.map(csvCell).join(","),
