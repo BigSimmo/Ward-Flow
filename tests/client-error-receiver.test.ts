@@ -9,7 +9,6 @@ import {
   CLIENT_ERROR_LINES_PER_MINUTE,
   CLIENT_ERROR_ROLES,
   CLIENT_ROUTE_TEMPLATES,
-  parseClientErrorReport,
   resetClientErrorLimit,
 } from "@/lib/client-error-receiver";
 import { logger } from "@/lib/logger";
