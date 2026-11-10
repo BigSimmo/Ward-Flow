@@ -35,7 +35,7 @@ built. Baseline: `main` at `29352cd0` (10 November 2026), measured in a cloud ch
    and rarely used engine slices out of the shared first-load chunk, aiming for 5 KB of headroom
    per screen without raising any limit.
 3. **M139 plus M142 together:** check in the import map and a CI rule that fails on a new cycle
-   (there is exactly one today, seven files), and a ranked hotspot list that sets the order for
+   (the runtime graph has none today; the survey's one seven-file cycle came from type queries), and a ranked hotspot list that sets the order for
    M141.
 4. **M150:** the eight Mental Health Act figure sweep files cost about 30% of all unit time. Keep
    them (they guard legal figures) but profile and speed up the shared sweep helper, and slim the
@@ -91,8 +91,8 @@ imports between them (type-only imports left out).
 > queries (`import("./x").T`) as imports, and covered `backend` too. The checked-in tool,
 > `scripts/ward-flow/import-map.ts`, walks `src` only and leaves out type-only imports and type
 > queries. On this branch it finds 1,809 files, 9,430 imports, **no cycle** and **564**
-> screen-to-screen imports across 235 folder pairs, and `scripts/ward-flow/import-map-baseline.json`
-> freezes those figures. The seven-file cycle is not found once type queries are left out, so it is
+> screen-to-screen imports across 235 folder pairs. `scripts/ward-flow/import-map-baseline.json`
+> freezes the cycle list and the screen-to-screen count. The seven-file cycle is not found once type queries are left out, so it is
 > not a runtime cycle, and PR 2 below has nothing to break. The 659 and 257 figures are the survey's.
 
 - **One import cycle** (survey count; see the recount above), seven files: `ward-clock.ts`, `ward-operational-defaults.ts`,
