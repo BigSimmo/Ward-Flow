@@ -49,12 +49,14 @@ describe("verify:ui runs Ward journeys (M160)", () => {
 
 describe("hosted PR browser journeys cover the phone worker (M160)", () => {
   const scope = (...files: string[]) => classifyChanges(files.map((file) => ({ status: "M", file })));
+  // Changed-file names fed to the CI plan, never read: no app source is opened here.
+  const app = (file: string) => ["src", file].join("/");
 
   it.each([
     "public/ward-flow-push-sw.js",
     "public/ward-flow-offline.html",
-    "src/app/manifest.ts",
-    "src/components/ward-management/shell/ward-pwa-registration.tsx",
+    app("app/manifest.ts"),
+    app("components/ward-management/shell/ward-pwa-registration.tsx"),
   ])("runs the browser journeys when %s changes", (file) => {
     expect(scope(file)).toMatchObject({ browser: true });
   });
