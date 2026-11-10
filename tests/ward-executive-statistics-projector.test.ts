@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createHash } from "node:crypto";
 import { isExecutiveNetworkAggregate } from "../src/components/ward-management/statistics/executive-statistics-contract";
-import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
+import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
 import { wardPlaceLookup } from "../src/components/ward-management/ward-access-places";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { occupiedBeds } from "../src/components/ward-management/statistics/statistics-occupancy";
@@ -1405,3 +1405,26 @@ function LivePreviewProbe() {
     (data ? "ready" : "unavailable") + ":" + (control.executive ? "executive" : "operational"),
   );
 }
+
+describe("executive projection with a named hold (D-115)", () => {
+  it("takes the named bed out of ready but leaves beds in use as a stay count", () => {
+    const state = seedWardFlowState();
+    const unitId = "rph-older-adult";
+    const accepted = wardFlowReducer(state, {
+      type: "ACCEPT_REFERRAL",
+      role: "ward",
+      now: NOW_ANCHOR,
+      referralId: "RF-005",
+      destinationKind: "psychiatric_ward",
+      unitId,
+      actingUnitId: unitId,
+      bedNumber: 1,
+    } as Parameters<typeof wardFlowReducer>[1]);
+    expect(accepted.rejections.length, "the acceptance was taken").toBe(state.rejections.length);
+    const before = project(state).wards.find((ward) => ward.id === unitId)!;
+    const after = project(accepted).wards.find((ward) => ward.id === unitId)!;
+    expect(after.beds.ready).toBe(before.beds.ready - 1);
+    expect(after.beds.inUse, "a named hold is not a stay").toBe(before.beds.inUse);
+    expect(after.beds.inUse).toBe(after.beds.occupied + after.beds.pulled - 1);
+  });
+});

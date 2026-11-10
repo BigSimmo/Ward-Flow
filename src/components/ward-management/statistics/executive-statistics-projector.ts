@@ -104,6 +104,8 @@ export function projectExecutiveNetworkStatistics(
       ...scoped.movements,
       ...scoped.referrals,
     ]);
+    // Occupancy stays hold-free ("beds taken by a stay"), as every other Statistics screen counts it.
+    const unheld = bedStates(unit, scoped.admissions, scoped.bedReleases, scoped.leaveBeds);
     return {
       id: unit.id,
       name: unit.name,
@@ -116,7 +118,7 @@ export function projectExecutiveNetworkStatistics(
         closed: states.closed,
         // WF-16: Occupied and In use from the same bedStates boxes (wardBedUseFigures).
         occupied: states.occupied,
-        inUse: states.occupied + states.pulled,
+        inUse: unheld.occupied + unheld.pulled,
         beingMadeReady: states.beingMadeReady,
         onLeave: states.onLeave,
       },
