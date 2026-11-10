@@ -78,6 +78,22 @@ export function defaultHandoverShift(now: Instant): HandoverShiftId {
   return HANDOVER_SHIFTS.find((shift) => handoverAt(shift.id, now) > now)?.id ?? "am";
 }
 
+/** How long after a handover starts the Handover page still opens on it (master audit M19, D-125). */
+export const JUST_HELD_HANDOVER_MINUTES = 30;
+
+/**
+ * The handover the Handover page opens on. Master audit M19 (D-125): for the first 30 minutes after
+ * 07:00, 15:00 and 23:00 it is the handover just held, so a note written at 06:58 is still counted
+ * New and shown in "Since" for the shift reading it at 07:01. Otherwise it is the next one to come.
+ */
+export function openingHandoverShift(now: Instant): HandoverShiftId {
+  const minute = minuteOfDay(now);
+  const justHeld = HANDOVER_SHIFTS.find(
+    (shift) => minute >= shift.minute && minute - shift.minute < JUST_HELD_HANDOVER_MINUTES,
+  );
+  return justHeld?.id ?? defaultHandoverShift(now);
+}
+
 export function handoverHasPassed(id: HandoverShiftId, now: Instant): boolean {
   return handoverAt(id, now) <= now;
 }

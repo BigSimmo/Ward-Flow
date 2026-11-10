@@ -2,7 +2,7 @@
  * Master audit M7 (10 Nov 2026): stale data must never look live. When the shared reads freeze
  * (the last good read is older than two refreshes, `2 * SHARED_REFRESH_MS`), every main surface
  * says how old its figures are: Home, the ward board, the TV (prominently, as nobody is watching it)
- * and the printed handover (still open: DEFECT M7 print). The freeze is published the same way the shell publishes it
+ * and the printed handover and shift brief (fixed: M7 print, D-125). The freeze is published the same way the shell publishes it
  * (`publishLiveRefresh` from `WardSharedAccess`). Synthetic data only.
  */
 import { act, cleanup, render, screen } from "@testing-library/react";
@@ -27,6 +27,8 @@ import { clk } from "@/components/wf/format";
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { WardBoard } from "@/components/ward-management/board/ward-board";
 import { BedMeetingTvScreen } from "@/components/ward-management/bed-meeting/bed-meeting-tv";
+import { WardDailySheet, WardDailySheetDialog } from "@/components/ward-management/board/ward-daily-sheet";
+import { DEFAULT_PRINT_OPTIONS, HandoverPrintSheet } from "@/components/ward-management/handover/handover-print-sheet";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useWardFlow, WardFlowOverride, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { SHARED_REFRESH_MS } from "@/components/ward-management/ward-operational-defaults";
@@ -116,7 +118,73 @@ describe("M7: frozen reads show their age on every main surface", () => {
     }
   });
 
-  // The printed handover's stale line is a UI change awaiting an approved mock-up (Josh's design
-  // rule), so the print case stays open. The proposed change is in the integration notes.
-  it.todo("DEFECT M7 print: the printed handover says its figures are not updating, with the last good read");
+  const STALE_WORDS = () => new RegExp(`^Not updating since ${clk(lastGood)}\\. Figures may be out of date\\.$`, "u");
+
+  it("M7 print: every printed handover page's stamp says it is not updating, with the last good read", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <HandoverPrintSheet
+          groups={[]}
+          columns={[]}
+          ctx={{ now: NOW_ANCHOR, cutoff: NOW_ANCHOR, readyBeds: () => 0 }}
+          wards={[]}
+          held={[]}
+          outsideAct={[]}
+          isHighlighted={() => false}
+          anyHighlight={false}
+          scopeLabel="Whole network"
+          shiftLabel="Day"
+          densityLabel="Standard"
+          sheetDate="Friday"
+          options={DEFAULT_PRINT_OPTIONS}
+          onOptionsChange={() => {}}
+          controls={null}
+          highlightControls={null}
+          onOpenPatient={() => {}}
+          onBack={() => {}}
+          onPrintPrepared={() => {}}
+          preparedAt={null}
+          now={NOW_ANCHOR}
+        />
+      </WardFlowProvider>,
+    );
+    freezeReads(STALE_LIMIT_MS - 500);
+    expect(screen.queryByTestId("handover-print-not-updating")).toBeNull();
+    act(() => vi.advanceTimersByTime(1000));
+    const pages = screen.getAllByText(/^Page \d+ of \d+/u);
+    const lines = screen.getAllByTestId("handover-print-not-updating");
+    expect(lines).toHaveLength(pages.length);
+    for (const line of lines) expect(line.textContent).toMatch(STALE_WORDS());
+  });
+
+  it("M7 print: the shift brief's As at stamp says it is not updating, and the copied brief keeps it", () => {
+    render(
+      <WardFlowProvider initialNow={WARD_ADMISSIONS_ANCHOR}>
+        <WardDailySheetDialog now={WARD_ADMISSIONS_ANCHOR} onClose={() => {}} />
+      </WardFlowProvider>,
+    );
+    freezeReads(STALE_LIMIT_MS - 500);
+    expect(screen.queryByTestId("ward-daily-sheet-not-updating")).toBeNull();
+    act(() => vi.advanceTimersByTime(1000));
+    expect(screen.getByTestId("ward-daily-sheet-dialog-stamp").textContent).toMatch(/^As at /u);
+    const lines = screen.getAllByTestId("ward-daily-sheet-not-updating");
+    // The dialog's stamp carries it once; the embedded sheet inside does not repeat it.
+    expect(lines).toHaveLength(1);
+    expect(lines[0]!.textContent).toMatch(STALE_WORDS());
+    expect(screen.getByTestId("ward-daily-sheet-dialog-stamp").getAttribute("title")).toMatch(
+      new RegExp(`Not updating since ${clk(lastGood)}\\. Figures may be out of date\\.`, "u"),
+    );
+  });
+
+  it("M7 print: the standalone shift brief (printed with the ward board) says so beside its timestamp", () => {
+    render(
+      <WardFlowProvider initialNow={WARD_ADMISSIONS_ANCHOR}>
+        <WardDailySheet now={WARD_ADMISSIONS_ANCHOR} />
+      </WardFlowProvider>,
+    );
+    freezeReads(STALE_LIMIT_MS - 500);
+    expect(screen.queryByTestId("ward-daily-sheet-not-updating")).toBeNull();
+    act(() => vi.advanceTimersByTime(1000));
+    expect(screen.getByTestId("ward-daily-sheet-not-updating").textContent).toMatch(STALE_WORDS());
+  });
 });

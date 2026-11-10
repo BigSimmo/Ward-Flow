@@ -6,6 +6,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   defaultHandoverShift,
+  JUST_HELD_HANDOVER_MINUTES,
+  openingHandoverShift,
   groupRows,
   HANDOVER_CHIPS,
   handoverAt,
@@ -55,9 +57,9 @@ function sheet(noteAt: number): { rows: HandoverRow[]; note: HandoverRow } {
   return { rows, note: rows[0]! };
 }
 
-/** What the incoming shift's page holds when it opens: the next handover still to come. */
+/** What the incoming shift's page holds when it opens (`openingHandoverShift`, as handover-page.tsx). */
 function incomingView(readAt: number) {
-  const held = holdHandover(defaultHandoverShift(readAt), readAt);
+  const held = holdHandover(openingHandoverShift(readAt), readAt);
   return { cutoff: heldHandoverCutoff(held.at, readAt), newSince: heldHandoverNewSince(held.at, readAt) };
 }
 
@@ -70,6 +72,7 @@ function receivedView(id: HandoverShiftId, readAt: number) {
 const CASES = [
   { label: "night to day", noteAt: at(6, 58), readAt: at(7, 1), received: "am" as const },
   { label: "day to evening", noteAt: at(14, 58), readAt: at(15, 1), received: "pm" as const },
+  { label: "evening to night", noteAt: at(22, 58), readAt: at(23, 1), received: "ev" as const },
 ];
 
 describe("M19: a note in the last minutes of a shift reaches the next shift", () => {
@@ -120,17 +123,33 @@ describe("M19: a note in the last minutes of a shift reaches the next shift", ()
         expect(since.find((item) => item.id === "opened")!.value).toBeGreaterThanOrEqual(1);
       });
 
-      // FINDING for Josh (M19): the page opens on the NEXT handover still to come, whose "new since"
-      // is the boundary that has just passed. A note written two minutes before 07:00 or 15:00 is
-      // therefore not "New" and not in "Since 07:00" for a reader who opens the page at 07:01; it
-      // is still on the sheet. Whether the incoming view should reach back to the received
-      // handover's window is a product decision, so this stays a todo rather than a red test.
-      it.todo("is counted New on the incoming shift's default view (opens on the next handover)");
-
-      it("is not New on the incoming default view today (pins the current behaviour behind the todo)", () => {
-        const { note } = sheet(noteAt);
+      // Fixed (master audit M19, D-125): for the first 30 minutes after a handover the page opens on
+      // the handover just held, so the note is New and in its Since line on the default view.
+      it("is counted New on the incoming shift's default view (opens on the handover just held)", () => {
+        const { rows, note } = sheet(noteAt);
+        expect(openingHandoverShift(readAt)).toBe(received);
         const { cutoff, newSince } = incomingView(readAt);
-        expect(pillTest("new", note, readAt, cutoff, newSince)).toBe(false);
+        expect(pillTest("new", note, readAt, cutoff, newSince)).toBe(true);
+        const since = handoverSinceItems({
+          admissions: state.admissions,
+          wards: state.units,
+          units: state.units,
+          rows,
+          scopeKind: "network",
+          newSince,
+          now: readAt,
+          edDesk: false,
+        });
+        expect(since.find((item) => item.id === "opened")!.value).toBeGreaterThanOrEqual(1);
+      });
+
+      it("opens on the next handover again once the first 30 minutes have passed", () => {
+        const heldAt = handoverAt(received, readAt);
+        expect(openingHandoverShift(heldAt)).toBe(received);
+        expect(openingHandoverShift(heldAt + JUST_HELD_HANDOVER_MINUTES - 1)).toBe(received);
+        const after = heldAt + JUST_HELD_HANDOVER_MINUTES;
+        expect(openingHandoverShift(after)).toBe(defaultHandoverShift(after));
+        expect(openingHandoverShift(after)).not.toBe(received);
       });
     });
   }
