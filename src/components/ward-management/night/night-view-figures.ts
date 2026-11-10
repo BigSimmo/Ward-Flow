@@ -37,7 +37,7 @@ import { minutesInEd } from "@/components/ward-management/ward-shared-figures";
  * Wards are listed in a fixed order, health service then ward name (D-126), never most ready first.
  */
 
-export type NightWardBeds = { unit: Unit; ready: number };
+type NightWardBeds = { unit: Unit; ready: number };
 
 export type NightReadyBeds = {
   /** The same figure as Home's "beds ready" (`wardNavCounts().capacity`). */
@@ -55,7 +55,7 @@ function serviceRank(unit: Unit): number {
 }
 
 /** Fixed order (D-126): health service, then ward name A to Z. */
-export function wardsInFixedOrder<T extends { unit: Unit }>(rows: readonly T[]): T[] {
+function wardsInFixedOrder<T extends { unit: Unit }>(rows: readonly T[]): T[] {
   return [...rows].sort((a, b) => serviceRank(a.unit) - serviceRank(b.unit) || a.unit.name.localeCompare(b.unit.name));
 }
 
@@ -76,7 +76,7 @@ export function nightReadyBeds(
   };
 }
 
-export type NightStepRow = EdWaitStep & { count: number };
+type NightStepRow = EdWaitStep & { count: number };
 
 export type NightEdWaits = {
   /** Everyone waiting in an ED: Waiting's title figure (`waitingInEds().total`). */

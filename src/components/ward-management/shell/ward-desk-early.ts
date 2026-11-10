@@ -33,7 +33,7 @@ export const WARD_DESK_PENDING_ATTRIBUTE = "data-wf-desk-pending";
 export const WARD_DESK_HELD_COOKIE = "wardflow-desk-held";
 
 /** The one value that lets the server draw the coordinator's page (D-137). */
-export const WARD_DESK_WHOLE_NETWORK_VALUE = "0";
+const WARD_DESK_WHOLE_NETWORK_VALUE = "0";
 
 const HELD_COOKIE = `${WARD_DESK_HELD_COOKIE}=1;path=/ward-flow;SameSite=Strict`;
 const CLEARED_COOKIE = `${WARD_DESK_HELD_COOKIE}=${WARD_DESK_WHOLE_NETWORK_VALUE};path=/ward-flow;SameSite=Strict`;
