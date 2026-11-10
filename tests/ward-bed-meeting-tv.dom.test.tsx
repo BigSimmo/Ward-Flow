@@ -565,6 +565,31 @@ describe("the ward and ED TV views", () => {
     expect(screen.getByTestId("ed-tv-beds-ready")).toHaveTextContent(String(sheet.readyInService));
   });
 
+  it("lists the ED's ready wards A to Z, not most ready first (D-126)", () => {
+    const { state, inputs } = seedInputs();
+    const accessTargetMinutes = state.configuration.edAccessTargetMinutes;
+    const sheet = edTvSheet({
+      ...inputs,
+      edId: "scgh-ed",
+      accessTargetMinutes,
+      thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
+    });
+    if (!sheet) throw new Error("expected an ED sheet");
+    const names = sheet.wards.map((ward) => ward.name);
+    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+    // The seed gives a later ward more ready beds than an earlier one; it no longer jumps the queue.
+    expect(
+      sheet.wards.some((ward, index) => index > 0 && ward.ready > sheet.wards[index - 1].ready),
+      "a ward with more ready beds sits after one with fewer",
+    ).toBe(true);
+    renderTv({ ed: "scgh-ed" });
+    const shownNames = within(screen.getByTestId("ed-tv-beds-panel"))
+      .getAllByRole("listitem")
+      .map((item) => item.querySelector("span")?.textContent);
+    expect(shownNames).toEqual(names.slice(0, shownNames.length));
+    expect(screen.getByTestId("ed-tv-beds-panel")).not.toHaveTextContent(/most ready|suggested/i);
+  });
+
   it("is read only and names people in full on a ward or ED screen too", () => {
     const { state, inputs } = seedInputs();
     const resolve = createPatientResolver(state);

@@ -32,11 +32,15 @@ function conflictRecordKey(event: WardFlowEvent): string | null {
   return null;
 }
 
-/** A queued action is on the conflicting record when it names the same one, or either names none. */
-export function sameConflictRecord(conflicting: WardFlowEvent, queued: WardFlowEvent): boolean {
+/**
+ * A queued action is on the conflicting record when it names the same one, or either names none.
+ * `exact` (a workflow 422): only an action naming the same record counts. A refused action that
+ * names no record stops nothing else, because the server checks each queued save on its own.
+ */
+export function sameConflictRecord(conflicting: WardFlowEvent, queued: WardFlowEvent, exact = false): boolean {
   const a = conflictRecordKey(conflicting);
   const b = conflictRecordKey(queued);
-  return a === null || b === null || a === b;
+  return exact ? a !== null && a === b : a === null || b === null || a === b;
 }
 
 /** The record type the server named, or "record". */
@@ -52,13 +56,13 @@ function conflictDesk(value: unknown): string {
 }
 
 /** The server named the record type of a "changed first" refusal (P058 servers only). */
-export const namedConflict = (value: unknown): boolean =>
+const namedConflict = (value: unknown): boolean =>
   (value as { code?: unknown } | null)?.code === "stale" &&
   typeof (value as { recordType?: unknown } | null)?.recordType === "string";
 
-/** The board's message for the refused action. */
-export const changedFirstText = (value: unknown): string =>
-  `${conflictDesk(value)} changed this ${conflictRecordType(value)} while you were looking. Your action was not applied. Check the latest details, then try again.`;
+/** The board's message for the refused action; `offline` for a save that waited offline (audit M10). */
+export const changedFirstText = (value: unknown, offline = false): string =>
+  `${conflictDesk(value)} changed this ${conflictRecordType(value)} while you were ${offline ? "offline" : "looking"}. Your action was not applied. Check the latest details, then try again.`;
 
 /** The settle message for queued actions on the same record that were not sent. */
 export const queuedNotSentText = (count: number, value: unknown): string =>
@@ -82,3 +86,13 @@ export function keepBasis<S extends { revision: number; records: Map<string, num
   }
   return kept;
 }
+
+/**
+ * Audit M10: a definite refusal (a named conflict, or the workflow's own 422) stops only the queued
+ * saves on its own record; the server still checks each of the others when it goes.
+ */
+export const definiteRefusal = (status: number, value: { code?: unknown } | null | undefined): boolean =>
+  (status === 409 && namedConflict(value)) || (status === 422 && value?.code !== "role-ended");
+
+/** Audit M10: the board's message line keeps an earlier refusal beside any later note. */
+export const joinNotes = (...notes: (string | null)[]): string | null => notes.filter(Boolean).join(" ") || null;

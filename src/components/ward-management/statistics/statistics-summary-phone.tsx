@@ -50,6 +50,7 @@ import {
   type StatisticsCount,
 } from "./statistics-small-numbers";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { occupancyShare } from "./statistics-occupancy";
 
 /** One ward on the phone Summary, from the same figures the desktop pressure table reads. */
 type PhoneWard = {
@@ -229,7 +230,7 @@ function StatisticsSummaryPhoneView({
   beingMadeReady: number;
   /** Beds in use: Occupied + Pulled, the one occupancy count (`ward-occupancy.ts`). */
   occupied: number;
-  occupiedPct: number;
+  occupiedPct: number | null;
   waitingInEd: StatisticsCount;
   endedToday: StatisticsCount;
   wards: readonly PhoneWard[];
@@ -403,7 +404,7 @@ function StatisticsSummaryPhoneView({
                     id: "occupied",
                     value: occupied,
                     unit: totalBeds === undefined ? undefined : <> / {totalBeds}</>,
-                    label: `in use, ${Math.round(occupiedPct)}%`,
+                    label: `in use, ${occupancyShare(occupiedPct)}`,
                   },
                   { id: "ready", value: ready, label: ready === 1 ? "bed ready" : "beds ready" },
                   ...(held(waitingInEd)

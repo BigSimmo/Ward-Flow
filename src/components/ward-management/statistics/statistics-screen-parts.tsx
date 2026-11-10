@@ -68,6 +68,5 @@ export function wardFinderEntry(ward: { id: string; name: string; site: string; 
     name: ward.name,
     code: ward.site,
     meta: siteByCode(ward.site) ? `${ward.ready} ready` : `${ward.ready} ready · site code matches no site`,
-    ready: ward.ready,
   };
 }

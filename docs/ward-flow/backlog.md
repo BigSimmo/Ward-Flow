@@ -23,6 +23,7 @@ Not agreed. Each needs Josh's yes before anyone builds it.
 - Tools in two panes on wide desktops (Q311, "not yet"). ([Tools review](../design/reviews/2026-11-02/tools-2-nov/SUGGESTIONS.md))
 - External domain review: deferred until a real need; needs spending authority (D-97 item 4). ([decisions.md](decisions.md#d-97-owner-answers-on-seven-open-items-n21-n25-n26-n29-n40-n41-and-wf-b008-8-november-2026))
 - Regional multi-leg transport (D-35, deferred). ([decisions.md](decisions.md))
+- Silent data loss gaps A and C: say how many waiting saves the session limit dropped, and a frozen hidden tab (audit M8). Gap B, sign-out inside an Undo window, is fixed by D-125. ([evidence](evidence/2026-11-10-silent-data-loss-paths.md#gaps-left-for-josh))
 - Merge the ED strip into the Home stage card as one chip row, option A (Q344, asked 3 November, not answered). ([design handover](../design/handover/README.md#q327-to-q349-design-system-and-home-flow-2-to-3-november-2026))
 
 ## Leads to verify
@@ -48,6 +49,7 @@ Agreed by Josh or required by a decision, with no build or check yet.
 - Live acceptance of shared save, reload, conflict and recovery with real test accounts, under a bounded spend. ([live audit handoff](../history/ward-flow/live-audit-handoff-2026-11-06.md#remaining-acceptance-work))
 - Tier operations acceptance: downtime wording, licence exceptions, alert contacts, NVDA, VoiceOver and physical devices. ([tier operations](plans/2026-11-04-tier-operations.md#owner-acceptance-checklist))
 - iPhone and iPad Safari on a real device. ([known issues](pilot/known-issues.md))
+- Unknown counts after a partial load (audit M6): when partial data loads can really happen, show "unknown" instead of "0 beds ready" for the missing wards. Not built now (D-125 item 4). ([decisions.md](decisions.md#d-125-top-10-audit-follow-ups-approved-10-november-2026))
 
 ## Building (with PR)
 

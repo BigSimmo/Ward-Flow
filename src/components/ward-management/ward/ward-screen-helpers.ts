@@ -27,6 +27,11 @@ export type BoardCheck = {
     | { kind: "movement"; movementId: string; unitId: string };
   /** A stay move sent without a reason: a refusal asking for one opens the reason form (audit CS3-12). */
   ask?: { admissionId: string; fromBed: number; bedNumber: number; name: string };
+  /**
+   * Audit M2: who the step is for. A refusal names them as the success message does (Josh, 26 Sept
+   * 2026), because a shared-board refusal never names the patient (P058).
+   */
+  who?: string;
 };
 
 /** The undo event for what the Bed board placed or moved (v10 pass 2 and 3). */
