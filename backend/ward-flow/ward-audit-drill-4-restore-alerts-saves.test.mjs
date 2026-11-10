@@ -8,6 +8,8 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
+import { readConfig } from "./config.mjs";
+import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
 import { drillDatabaseUrl, drillFixture } from "./ward-audit-drill.test-support.mjs";
 
 test(
@@ -72,15 +74,23 @@ test(
     }
     const tabRevision = board.revision;
     assert.equal(tabRevision, backupRevision + 2);
+    // The marker the open tab holds: none is set before any restore.
+    const tabMarker = (await f.request(after.base, deskA)).body.restoreMarker;
+    assert.equal(tabMarker, undefined);
     // An open tab still holds a save it has not sent yet, made against the newest board.
     const waiting = f.command({ type: "REQUEST_CAPACITY_REFRESH", unitId: unitIds[3] }, tabRevision);
     await f.stopBackend(after);
 
-    // The restore: a new backend on the backup copy.
-    const restored = await f.startBackend(copy.url, { push });
-    const reread = (await f.request(restored.base, deskB)).body.snapshot;
+    // The restore: a new backend on the backup copy, with a new WARD_RESTORE_MARKER (runbook step).
+    const restored = await f.startBackend(copy.url, { push }, { restoreMarker: "2026-11-10-restore-1" });
+    const rereadReply = (await f.request(restored.base, deskB)).body;
+    const reread = rereadReply.snapshot;
     assert.equal(reread.revision, backupRevision, "the restored board is the backup's, older than the open tab's");
     assert.ok(reread.revision < tabRevision);
+    // The restored backend names a marker the open tab has not seen, so the tab drops its lost board
+    // and reads the restored one whole (ward-shared-client.ts, `dropRestoredBoard`).
+    assert.equal(rereadReply.restoreMarker, "2026-11-10-restore-1");
+    assert.notEqual(rereadReply.restoreMarker, tabMarker);
 
     // Recovery notes naming the lost saves: the restored database has no receipt for them, and
     // still has the one made before the backup.
@@ -117,3 +127,21 @@ test(
     assert.ok(repeats.length <= 1, "an alert sent in the gap is repeated at most once after a restore");
   },
 );
+
+test("WARD_RESTORE_MARKER: unset sends none, a plain value is kept, anything else fails closed", () => {
+  const environment = {
+    WARD_COORDINATOR_USER_IDS: "22222222-2222-4222-8222-222222222222",
+    WARD_SUPABASE_PROJECT_REF: APPROVED_SUPABASE_PROJECT,
+    WARD_SUPABASE_URL: APPROVED_SUPABASE_URL,
+    WARD_SUPABASE_PUBLISHABLE_KEY: ["sb", "publishable", "synthetic_offline_fixture"].join("_"),
+  };
+  assert.equal(readConfig(environment).restoreMarker, null);
+  assert.equal(readConfig({ ...environment, WARD_RESTORE_MARKER: " " }).restoreMarker, null);
+  assert.equal(readConfig({ ...environment, WARD_RESTORE_MARKER: "2026-11-10-1" }).restoreMarker, "2026-11-10-1");
+  for (const value of ["has space", "<b>", "x".repeat(65), "a/b"])
+    assert.throws(
+      () => readConfig({ ...environment, WARD_RESTORE_MARKER: value }),
+      /Invalid restore marker configuration/,
+      value,
+    );
+});

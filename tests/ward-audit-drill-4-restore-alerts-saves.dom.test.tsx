@@ -28,8 +28,16 @@ const transportOf = (state: State | undefined) =>
   JSON.stringify(state?.movements.find((movement) => movement.id === movementId)?.transportNeed ?? null);
 
 function setup(start: { revision: number; state: State }) {
-  const server = { ...start, receipts: new Map<string, number>() };
+  const server = {
+    ...start,
+    receipts: new Map<string, number>(),
+    // The backend's WARD_RESTORE_MARKER: unset until a restore.
+    restoreMarker: undefined as string | undefined,
+    // One answer for the next save, when a test sets it; otherwise saves are refused as stale.
+    commandStatus: 409,
+  };
   const asked: string[] = [];
+  const sent: { expectedRevision: number }[] = [];
   let view: SharedView | undefined;
   const snapshot = (): SharedSnapshot => ({
     dataMode: "prototype",
@@ -44,30 +52,45 @@ function setup(start: { revision: number; state: State }) {
     changed: (next) => {
       view = next;
     },
-    fetch: async (url) => {
+    fetch: async (url, init) => {
       const parsed = new URL(String(url));
       asked.push(parsed.pathname + parsed.search);
+      if (parsed.pathname === "/v1/workspace/commands") {
+        sent.push(JSON.parse(String(init?.body)));
+        if (server.commandStatus >= 500) return Response.json({ error: "Database unavailable" }, { status: 503 });
+        return Response.json(
+          { outcome: "stale", error: "The board changed. Nothing was changed.", snapshot: snapshot() },
+          { status: server.commandStatus },
+        );
+      }
       if (parsed.pathname === "/v1/workspace/receipt") {
         const revision = server.receipts.get(parsed.searchParams.get("commandId") ?? "");
         return Response.json({
           receipt: revision === undefined ? null : { outcome: "accepted", commandRevision: revision },
         });
       }
+      // A poll naming the revision the server holds is answered "not modified", as the backend does.
+      const unchanged = parsed.searchParams.get("since") === String(server.revision);
       return Response.json({
         actorId: "synthetic-actor-drill-4",
         accessUntil: Date.now() + 8 * 3_600_000,
         receiptScope,
-        snapshot: snapshot(),
+        ...(server.restoreMarker ? { restoreMarker: server.restoreMarker } : {}),
+        ...(unchanged ? { notModified: true, revision: server.revision, now: 642 } : { snapshot: snapshot() }),
       });
     },
   });
-  /** The database is restored from a backup taken at `revision`, with `state`. */
-  const restore = (revision: number, state: State) => {
+  /**
+   * The database is restored from a backup taken at `revision`, with `state`. `marked` is the
+   * runbook step that gives the backend a new WARD_RESTORE_MARKER.
+   */
+  const restore = (revision: number, state: State, marked = true) => {
     server.revision = revision;
     server.state = state;
     server.receipts.clear();
+    if (marked) server.restoreMarker = `synthetic-restore-${revision}`;
   };
-  return { client, server, asked, view: () => view, restore };
+  return { client, server, asked, sent, view: () => view, restore };
 }
 
 describe("compound drill 4: an open tab across a database restore", () => {
@@ -118,32 +141,68 @@ describe("compound drill 4: an open tab across a database restore", () => {
     harness.client.dispose();
   });
 
-  // DEFECT (drill 4, 10 Nov 2026): a tab that held revision 4 ignores the restored board at
-  // revision 2, because a lower revision is never adopted (`adopt`, ward-shared-client.ts). It keeps
-  // showing the lost change as current, marked ready, until the restored workspace climbs past 4,
-  // and a revision number reached again after the restore can carry different content. Not fixed
-  // here: it needs a restore marker from the server (for example a workspace epoch). It fails today,
-  // so it is an expected failure; turn it back into a plain test once that exists.
-  it.fails(
-    "DEFECT: a tab holding a newer revision than the restored database stops showing the lost board as current",
-    async () => {
-      const harness = setup({ revision: 4, state: afterLost });
-      await harness.client.refresh();
-      expect(transportOf(harness.view()?.snapshot?.payload.state)).toBe(transportOf(afterLost));
-      harness.restore(2, seed);
-      await harness.client.refresh();
-      const shown = harness.view();
-      const showsLostBoardAsCurrent =
-        shown?.status === "ready" && transportOf(shown.snapshot?.payload.state) === transportOf(afterLost);
-      expect(showsLostBoardAsCurrent).toBe(false);
-      harness.client.dispose();
-    },
-  );
-
-  it("today's behaviour, recorded for the drill: the tab keeps its newer board after the restore", async () => {
+  // Fixed (drill 4, 10 Nov 2026): a lower revision is still never adopted (`adopt`,
+  // ward-shared-client.ts), so a restore alone left the tab showing the lost change as current. The
+  // backend now sends a restore marker (WARD_RESTORE_MARKER) that changes on a restore; a tab that
+  // sees it change drops its board and reads the restored one whole.
+  it("a tab holding a newer revision than the restored database stops showing the lost board as current", async () => {
     const harness = setup({ revision: 4, state: afterLost });
     await harness.client.refresh();
+    expect(transportOf(harness.view()?.snapshot?.payload.state)).toBe(transportOf(afterLost));
     harness.restore(2, seed);
+    await harness.client.refresh();
+    const shown = harness.view();
+    const showsLostBoardAsCurrent =
+      shown?.status === "ready" && transportOf(shown.snapshot?.payload.state) === transportOf(afterLost);
+    expect(showsLostBoardAsCurrent).toBe(false);
+    // The follow-up read is whole (no `since`) and the restored board is shown as current.
+    await vi.advanceTimersByTimeAsync(0);
+    expect(harness.asked.at(-1)).toBe("/v1/workspace");
+    expect(harness.view()?.status).toBe("ready");
+    expect(harness.view()?.snapshot?.revision).toBe(2);
+    expect(transportOf(harness.view()?.snapshot?.payload.state)).toBe(transportOf(seed));
+    harness.client.dispose();
+  });
+
+  it("a restored database that reaches the tab's revision again with other content is read again too", async () => {
+    const harness = setup({ revision: 4, state: afterLost });
+    await harness.client.refresh();
+    harness.restore(4, seed);
+    await harness.client.refresh();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(harness.view()?.status).toBe("ready");
+    expect(transportOf(harness.view()?.snapshot?.payload.state)).toBe(transportOf(seed));
+    harness.client.dispose();
+  });
+
+  it("a save waiting on Retry is kept across the restore and is refused as stale, never applied blind", async () => {
+    const harness = setup({ revision: 4, state: afterLost });
+    await harness.client.refresh();
+    harness.server.commandStatus = 503;
+    void harness.client.dispatch(lostChange as unknown as WardFlowEvent);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(harness.sent.at(-1)?.expectedRevision).toBe(4);
+    expect(harness.view()?.pendingCount).toBe(1);
+    harness.restore(2, seed);
+    await harness.client.refresh();
+    await vi.advanceTimersByTimeAsync(0);
+    // The restored board is shown, and the waiting save is still there for the person to retry.
+    expect(transportOf(harness.view()?.snapshot?.payload.state)).toBe(transportOf(seed));
+    expect(harness.view()?.pendingCount).toBe(1);
+    harness.server.commandStatus = 409;
+    await harness.client.retry();
+    await vi.advanceTimersByTimeAsync(0);
+    // Sent against the lost revision, so the restored backend refuses it as stale (409).
+    expect(harness.sent.at(-1)?.expectedRevision).toBe(4);
+    expect(harness.view()?.pendingCount).toBe(0);
+    expect(transportOf(harness.view()?.snapshot?.payload.state)).toBe(transportOf(seed));
+    harness.client.dispose();
+  });
+
+  it("without a new restore marker the tab keeps its newer board: the runbook step is needed", async () => {
+    const harness = setup({ revision: 4, state: afterLost });
+    await harness.client.refresh();
+    harness.restore(2, seed, false);
     await harness.client.refresh();
     expect(harness.view()?.snapshot?.revision).toBe(4);
     expect(transportOf(harness.view()?.snapshot?.payload.state)).toBe(transportOf(afterLost));

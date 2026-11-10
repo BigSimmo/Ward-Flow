@@ -429,6 +429,8 @@ export function createSharedHandler({
           workingAs: view.membershipId ?? "bootstrap",
           actorId,
           workspaceId: config.workspaceId,
+          // Drill 4: changes on a database restore, so open tabs drop the board they hold.
+          ...(typeof config.restoreMarker === "string" ? { restoreMarker: config.restoreMarker } : {}),
           // No session limit configured means no sign-in deadline (a set limit with no start time was
           // already refused above), so only a role or grant expiry can bound access here.
           accessUntil: Math.min(

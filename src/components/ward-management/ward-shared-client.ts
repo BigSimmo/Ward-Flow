@@ -30,8 +30,8 @@ import { bindReferralDraftAccessContext, clearReferralDraftSession } from "./ref
 import type { BoundWardPartialView, WardPartialView } from "./ward-partial-view-contract";
 import { boardNotRefreshed, saveProblem } from "./ward-save-failure";
 import {
-  ARCHIVED_COLLECTIONS,
   foldArchiveReply,
+  withArchivedRecords,
   type ArchivedCollection,
   type HeldArchive,
 } from "./ward-shared-archive-delta";
@@ -286,6 +286,8 @@ export class SharedWorkspaceClient {
   private workingAsOverride: string | null | undefined;
   /** The revision this tab's own accepted revision-only commands reached, ahead of its snapshot. */
   private headRevision = 0;
+  /** Drill 4: the server's restore marker last read; undefined before the first read. */
+  private restoreMarker: string | null | undefined;
   /** CS-19: popup opening revisions let the server refuse stale edits after another desk changed the record. */
   private sheetSeen = new WeakMap<object, SheetSeen>();
   /** The popups the command in flight was asked for from, while it is in flight. */
@@ -382,18 +384,7 @@ export class SharedWorkspaceClient {
     payload: SharedSnapshot["payload"],
     accessContext: SharedSnapshot["accessContext"],
   ): SharedSnapshot["payload"] {
-    payload = this.recordDetail.apply(payload, accessContext);
-    const archive = this.archive;
-    if (!archive || archive.generation !== payload.state.worldGeneration || archive.accessContext !== accessContext)
-      return payload;
-    const state = { ...payload.state } as Record<string, unknown>;
-    for (const collection of ARCHIVED_COLLECTIONS) {
-      const live = payload.state[collection] as { id: string }[];
-      if (!archive.records[collection].length) continue;
-      const ids = new Set(live.map((record) => record.id));
-      state[collection] = [...archive.records[collection].filter((record) => !ids.has(record.id)), ...live];
-    }
-    return { ...payload, state: state as WardFlowState };
+    return withArchivedRecords(this.recordDetail.apply(payload, accessContext), this.archive, accessContext);
   }
   /** The live display with the archive's progress beside it, for the same access view and world
    * generation only. Archived progress that is missing or invalid is simply left out. */
@@ -874,6 +865,11 @@ export class SharedWorkspaceClient {
       if (!response.ok) throw new Error("Workspace unavailable");
       const workspaceId =
         typeof value.workspaceId === "string" && value.workspaceId.trim() ? value.workspaceId : undefined;
+      // Drill 4: a new restore marker means the database was restored (its revision went back, which
+      // `adopt` never takes): drop the board and read it whole; waiting saves meet the normal 409.
+      const restoreMarker = typeof value.restoreMarker === "string" ? value.restoreMarker : null;
+      const restored = this.restoreMarker !== undefined && restoreMarker !== this.restoreMarker;
+      this.restoreMarker = restoreMarker;
       if (this.view.snapshot && workspaceId !== this.view.workspaceId) {
         // The endpoint may have been rebound to another workspace at the same revision. Retire
         // its commands, openings and receipt before asking for that workspace's full board.
@@ -888,6 +884,11 @@ export class SharedWorkspaceClient {
           error: null,
         });
         return;
+      }
+      if (restored && (this.view.snapshot || this.view.executiveSnapshot)) {
+        pinToBoard(this.queue, this.sheetSeen, this.held());
+        [this.headRevision, this.needsRefresh] = [0, true];
+        return this.publish({ snapshot: null, workspaceId, status: "loading", error: null });
       }
       const bound = await bindWorkspaceReply(
         {

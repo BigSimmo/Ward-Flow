@@ -102,11 +102,21 @@ export async function drillFixture(t, options = {}) {
   });
   const workspaceId = randomUUID();
 
-  /** One backend process on a database: its own pool, store and HTTP listener. */
-  async function startBackend(url = primary.url, extra = {}) {
+  /**
+   * One backend process on a database: its own pool, store and HTTP listener. `restoreMarker` is
+   * the backend's WARD_RESTORE_MARKER setting, which the runbook changes after a restore.
+   * @param {string} [url]
+   * @param {Record<string, unknown>} [extra]
+   * @param {{ restoreMarker?: string | null }} [options]
+   */
+  async function startBackend(url = primary.url, extra = {}, { restoreMarker = null } = {}) {
     const backendPool = pool(url);
     const sharedStore = createWorkspaceStore(backendPool, { workspaceId, engine, clock: () => new Date(at), ...extra });
-    const server = listen(createHandler({ config, sharedStore, authenticate, log: () => {} }), config);
+    const backendConfig = { ...config, restoreMarker };
+    const server = listen(
+      createHandler({ config: backendConfig, sharedStore, authenticate, log: () => {} }),
+      backendConfig,
+    );
     servers.push(server);
     await once(server, "listening");
     const address = server.address();

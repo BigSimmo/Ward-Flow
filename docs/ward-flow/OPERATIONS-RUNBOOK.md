@@ -240,6 +240,12 @@ What the repo knows, from [RETENTION-AND-BACKUP.md](RETENTION-AND-BACKUP.md#back
   it offline.
 - After any restore, the `wardflow_backend` password must be reset and the backend setting
   updated. Daily backups do not keep custom role passwords.
+- In the same backend settings, set `WARD_RESTORE_MARKER` to a new value (for example the restore
+  date and a number, `2026-11-10-1`; letters, digits, `.`, `_` and `-` only). Open tabs then drop
+  the board they hold and load the restored one. Without it a tab keeps showing saves the restore
+  lost as current. Saves still waiting in a tab are refused as out of date and must be checked.
+- Tell staff: phone alerts sent between the backup and the restore may be sent again. Check the
+  board before acting on an alert.
 - A manual backup schema, `ward_flow_backup_20261019`, exists in the live database (reported by
   the owner, not recorded elsewhere in the repo). **Keep it until the shared pilot has run for a
   week.** Deleting it needs Josh's explicit yes.
