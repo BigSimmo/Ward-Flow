@@ -1028,13 +1028,13 @@ button.option {
   cursor: pointer;
 }
 
-.groupItem[data-goto] .option {
+.groupItem[data-group="goto"] .option {
   min-height: 52px;
   background: var(--wf-selected);
   box-shadow: inset 0 0 0 1px var(--wf-line-2);
 }
 
-.groupItem[data-goto] .resultTitle {
+.groupItem[data-group="goto"] .resultTitle {
   font-size: var(--wf-fs-15, 15px);
 }
 
@@ -1152,18 +1152,18 @@ a.askChip {
 }
 
 /* Go to row: the key fact gets its own line, never cut off behind the title. */
-.groupItem[data-goto] .resultContent {
+.groupItem[data-group="goto"] .resultContent {
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
 }
 
-.groupItem[data-goto] .resultMeta {
+.groupItem[data-group="goto"] .resultMeta {
   white-space: normal;
   color: var(--wf-ink-2);
 }
 
-.groupItem[data-goto] .resultTitle {
+.groupItem[data-group="goto"] .resultTitle {
   max-width: 100%;
   white-space: normal;
 }
@@ -1254,14 +1254,14 @@ a.askChip {
 }
 
 /* The best match: a soft blue glass card with a white icon tile, not a bold block. */
-.popup:not([data-start]) .groupItem[data-goto] .option {
+.popup:not([data-start]) .groupItem[data-group="goto"] .option {
   min-height: 60px;
   border-radius: 14px;
   background: color-mix(in srgb, var(--wf-accent-tint) 72%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-accent) 16%, transparent);
 }
 
-.popup:not([data-start]) .groupItem[data-goto] .itemIconBox {
+.popup:not([data-start]) .groupItem[data-group="goto"] .itemIconBox {
   flex-basis: 40px;
   width: 40px;
   height: 40px;
@@ -1270,21 +1270,21 @@ a.askChip {
   box-shadow: 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 8%, transparent);
 }
 
-.popup:not([data-start]) .groupItem[data-goto] .resultTitle {
+.popup:not([data-start]) .groupItem[data-group="goto"] .resultTitle {
   font-size: var(--wf-fs-16);
   line-height: var(--wf-lh-16, 22px);
   font-weight: 600;
 }
 
 /* Before typing, Go to is a row of tiles. */
-.popup[data-start] .groupItem[data-goto] .groupList {
+.popup[data-start] .groupItem[data-group="goto"] .groupList {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(4.25rem, 1fr));
   gap: 8px;
   padding: 2px 2px 8px;
 }
 
-.popup[data-start] .groupItem[data-goto] .option {
+.popup[data-start] .groupItem[data-group="goto"] .option {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
@@ -1297,11 +1297,11 @@ a.askChip {
   text-align: center;
 }
 
-.popup[data-start] .groupItem[data-goto] :is(.resultMeta, .actionHint, .resultKind) {
+.popup[data-start] .groupItem[data-group="goto"] :is(.resultMeta, .actionHint, .resultKind) {
   display: none;
 }
 
-.popup[data-start] .groupItem[data-goto] .resultContent {
+.popup[data-start] .groupItem[data-group="goto"] .resultContent {
   flex: none;
   width: 100%;
   align-items: center;
@@ -1309,13 +1309,13 @@ a.askChip {
   text-align: center;
 }
 
-.popup[data-start] .groupItem[data-goto] .resultTitle {
+.popup[data-start] .groupItem[data-group="goto"] .resultTitle {
   max-width: 100%;
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
 }
 
-.popup[data-start] .groupItem[data-goto] .itemIconBox {
+.popup[data-start] .groupItem[data-group="goto"] .itemIconBox {
   flex-basis: 36px;
   width: 36px;
   height: 36px;
@@ -1428,12 +1428,12 @@ a.askChip {
     background: color-mix(in srgb, var(--wf-ink-1) 7%, transparent);
   }
 
-  .popup[data-start] .groupItem[data-goto] .option::after,
-  .popup:not([data-start]) .groupItem[data-goto] .option::after {
+  .popup[data-start] .groupItem[data-group="goto"] .option::after,
+  .popup:not([data-start]) .groupItem[data-group="goto"] .option::after {
     display: none;
   }
 
-  .popup:not([data-start]) .groupItem[data-goto] .option {
+  .popup:not([data-start]) .groupItem[data-group="goto"] .option {
     min-height: 66px;
     padding: 10px 12px;
     border-radius: 16px;
@@ -1459,7 +1459,7 @@ a.askChip {
 }
 
 /* The arrow keys' choice stays visible on the Top hit card and the Go to tiles. */
-.popup.popup .groupItem[data-goto] .option[data-active] {
+.popup.popup .groupItem[data-group="goto"] .option[data-active] {
   background: color-mix(in srgb, var(--wf-accent) 14%, transparent);
   box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--wf-accent) 45%, transparent);
 }
@@ -1512,7 +1512,7 @@ a.askChip {
   }
 
   /* Go to always fits the width: four equal columns, so it never scrolls sideways. */
-  .popup[data-start] .groupItem[data-goto] .groupList {
+  .popup[data-start] .groupItem[data-group="goto"] .groupList {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     padding: 0;
@@ -1522,7 +1522,7 @@ a.askChip {
     box-shadow: none;
   }
 
-  .popup[data-start] .groupItem[data-goto] .option {
+  .popup[data-start] .groupItem[data-group="goto"] .option {
     min-height: 0;
     border-radius: 14px;
     background: transparent;
@@ -1530,25 +1530,25 @@ a.askChip {
   }
 
   /* Rows sit straight on the glass; long details wrap whole. */
-  .popup[data-start] .groupItem:not([data-goto]) .groupList {
+  .popup[data-start] .groupItem:not([data-group="goto"]) .groupList {
     overflow: visible;
     border-radius: 0;
     background: transparent;
     box-shadow: none;
   }
 
-  .popup[data-start] .groupItem:not([data-goto]) .resultMeta {
+  .popup[data-start] .groupItem:not([data-group="goto"]) .resultMeta {
     flex-wrap: wrap;
     white-space: normal;
     font-size: var(--wf-fs-12);
     color: var(--wf-ink-3);
   }
 
-  .popup[data-start] .groupItem:not([data-goto]) .resultMeta > span {
+  .popup[data-start] .groupItem:not([data-group="goto"]) .resultMeta > span {
     overflow: visible;
   }
 
-  .popup[data-start] .groupItem:not([data-goto]) .resultTitle {
+  .popup[data-start] .groupItem:not([data-group="goto"]) .resultTitle {
     white-space: normal;
     display: -webkit-box;
     -webkit-box-orient: vertical;
@@ -1627,18 +1627,18 @@ a.askChip {
   }
 
   /* Icon columns sit on the page edges, like a home screen row, labels centred under them. */
-  .popup[data-start] .groupItem[data-goto] .groupList {
+  .popup[data-start] .groupItem[data-group="goto"] .groupList {
     grid-template-columns: repeat(4, minmax(0, 3.5rem));
     justify-content: space-between;
     gap: 4px;
   }
 
-  .popup[data-start] .groupItem[data-goto] .option {
+  .popup[data-start] .groupItem[data-group="goto"] .option {
     gap: 7px;
     padding: 4px 0;
   }
 
-  .popup[data-start] .groupItem[data-goto] .itemIconBox {
+  .popup[data-start] .groupItem[data-group="goto"] .itemIconBox {
     flex-basis: 54px;
     width: 54px;
     height: 54px;
@@ -1649,38 +1649,38 @@ a.askChip {
     transition: background var(--wf-m-fast) var(--wf-ease);
   }
 
-  .popup[data-start] .groupItem[data-goto] .itemIconBox svg {
+  .popup[data-start] .groupItem[data-group="goto"] .itemIconBox svg {
     width: 22px;
     height: 22px;
   }
 
-  .popup[data-start] .groupItem[data-goto] .resultContent {
+  .popup[data-start] .groupItem[data-group="goto"] .resultContent {
     overflow: visible;
   }
 
-  .popup[data-start] .groupItem[data-goto] .resultTitle {
+  .popup[data-start] .groupItem[data-group="goto"] .resultTitle {
     overflow: visible;
     font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
     color: var(--wf-ink-2);
   }
 
-  .popup[data-start] .groupItem[data-goto] .option:active .itemIconBox {
+  .popup[data-start] .groupItem[data-group="goto"] .option:active .itemIconBox {
     background: color-mix(in srgb, var(--wf-accent) 18%, transparent);
   }
 
-  .popup[data-start] .groupItem:not([data-goto]) .option {
+  .popup[data-start] .groupItem:not([data-group="goto"]) .option {
     gap: 12px;
     min-height: 56px;
     padding: 8px 2px;
     border-radius: 12px;
   }
 
-  .popup[data-start] .groupItem:not([data-goto]) .optionItem + .optionItem .option::after {
+  .popup[data-start] .groupItem:not([data-group="goto"]) .optionItem + .optionItem .option::after {
     left: 50px;
     right: 0;
   }
 
-  .popup[data-start] .groupItem:not([data-goto]) .itemIconBox {
+  .popup[data-start] .groupItem:not([data-group="goto"]) .itemIconBox {
     flex-basis: 36px;
     width: 36px;
     height: 36px;
@@ -1689,37 +1689,37 @@ a.askChip {
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-accent) 9%, transparent);
   }
 
-  .popup[data-start] .groupItem:not([data-goto]) .itemIconBox:has([data-wf-glyph="danger"]) {
+  .popup[data-start] .groupItem:not([data-group="goto"]) .itemIconBox:has([data-wf-glyph="danger"]) {
     background: color-mix(in srgb, var(--wf-danger) 12%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-danger) 14%, transparent);
   }
 
-  .popup[data-start] .groupItem:not([data-goto]) .itemIconBox:has([data-wf-glyph="warning"]) {
+  .popup[data-start] .groupItem:not([data-group="goto"]) .itemIconBox:has([data-wf-glyph="warning"]) {
     background: color-mix(in srgb, var(--wf-warning) 14%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-warning) 16%, transparent);
   }
 
-  .popup[data-start] .groupItem:not([data-goto]) .itemIconBox svg {
+  .popup[data-start] .groupItem:not([data-group="goto"]) .itemIconBox svg {
     width: 18px;
     height: 18px;
   }
 
-  .popup[data-start] .groupItem:not([data-goto]) .itemIconBox:has([data-wf-glyph]) svg {
+  .popup[data-start] .groupItem:not([data-group="goto"]) .itemIconBox:has([data-wf-glyph]) svg {
     width: 11px;
     height: 11px;
   }
 
-  .popup[data-start] .groupItem:not([data-goto]) .resultContent {
+  .popup[data-start] .groupItem:not([data-group="goto"]) .resultContent {
     gap: 1px;
   }
 
-  .popup[data-start] .groupItem:not([data-goto]) .resultTitle {
+  .popup[data-start] .groupItem:not([data-group="goto"]) .resultTitle {
     font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
     letter-spacing: -0.006em;
   }
 
   /* Pressed and keyboard states: a soft wash, and the system focus ring. */
-  .popup[data-start] .groupItem:not([data-goto]) .option:active {
+  .popup[data-start] .groupItem:not([data-group="goto"]) .option:active {
     background: color-mix(in srgb, var(--wf-ink-1) 5%, transparent);
   }
 
@@ -1734,7 +1734,7 @@ a.askChip {
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .popup[data-start] .groupItem[data-goto] .itemIconBox {
+    .popup[data-start] .groupItem[data-group="goto"] .itemIconBox {
       transition: none;
     }
   }
