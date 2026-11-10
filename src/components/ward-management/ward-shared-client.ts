@@ -277,6 +277,8 @@ export class SharedWorkspaceClient {
   private pollAbort: AbortController | null = null;
   /** Requests stay with the desk that started them, even while waiting for a token. */
   private viewGeneration = 0;
+  /** M58: one key per opening or cover intent, kept until the server answers for certain. */
+  private intentKeys = new Map<string, string>();
   /** Polls started before a grant must not replace the newly opened view. */
   private grantGeneration = 0;
   private needsRefresh = false;
@@ -1355,10 +1357,28 @@ export class SharedWorkspaceClient {
     return !!this.view.snapshot && ["ready", "saving"].includes(this.view.status);
   }
   /** A change on an access route: done, a fresh sign-in first, or the server's reason. */
-  private async change(path: string, body: Record<string, unknown>): Promise<SharedChangeResult> {
+  /** The same intent (a double tap, or trying again after no answer) reuses its key, so it is done once. */
+  private intentKey(path: string, body: Record<string, unknown>) {
+    const intent = JSON.stringify([this.viewGeneration, path, body]);
+    let key = this.intentKeys.get(intent);
+    if (!key) {
+      key = (this.options.commandId ?? (() => crypto.randomUUID()))();
+      if (this.intentKeys.size >= 50) this.intentKeys.clear();
+      this.intentKeys.set(intent, key);
+    }
+    return { intent, body: { ...body, intentKey: key } };
+  }
+  /** A clear answer ends the intent; no answer, a server failure or a second step keeps its key. */
+  private settleIntent(intent: string, response: Response, value: { code?: unknown } | null | undefined) {
+    if (response.status < 500 && !(response.status === 401 && value?.code === "step-up"))
+      this.intentKeys.delete(intent);
+  }
+  private async change(path: string, body: Record<string, unknown>, keyed = false): Promise<SharedChangeResult> {
     if (!this.accessChangeAllowed(path === "/v1/workspace/access/request"))
       return "Shared access changes are unavailable. Reconnect and finish checking any uncertain save first.";
-    const { response, value } = await this.request(path, body);
+    const sent = keyed ? this.intentKey(path, body) : null;
+    const { response, value } = await this.request(path, sent?.body ?? body);
+    if (sent) this.settleIntent(sent.intent, response, value);
     if (response.ok) return null;
     if (response.status === 401 && value?.code === "step-up") return "step-up";
     if (response.status >= 500) throw new Error("Change not confirmed");
@@ -1410,7 +1430,7 @@ export class SharedWorkspaceClient {
     return this.change("/v1/workspace/access/revoke", { membershipId });
   }
   giveCover(input: { actorId: string; scope: unknown; minutes: number }) {
-    return this.change("/v1/workspace/access/cover", input);
+    return this.change("/v1/workspace/access/cover", input, true);
   }
   decideRequest(requestId: string, decision: "approved" | "declined", expiresInMinutes: number) {
     return this.change("/v1/workspace/access/decide", { requestId, decision, expiresInMinutes });
@@ -1422,7 +1442,9 @@ export class SharedWorkspaceClient {
       return "Opening records is unavailable. Reconnect and finish checking any uncertain save first.";
     const generation = this.viewGeneration;
     const grantGeneration = this.grantGeneration;
-    const { response, value } = await this.request("/v1/workspace/break-glass", { patientId, reason });
+    const { intent, body } = this.intentKey("/v1/workspace/break-glass", { patientId, reason });
+    const { response, value } = await this.request("/v1/workspace/break-glass", body);
+    this.settleIntent(intent, response, value);
     if (generation !== this.viewGeneration) return "The working view changed; open the record again.";
     if (response.ok) {
       this.grantGeneration += 1;

@@ -1080,8 +1080,45 @@ describe("shared workspace connection", () => {
     await expect(client.breakGlass("P-1", "handover")).resolves.toBeNull();
     expect(view?.snapshot).not.toBe(before);
     expect(view?.status).toBe("ready");
-    // Only the patient and the reason from the list are sent.
-    expect(bodies[0]).toEqual({ patientId: "P-1", reason: "handover" });
+    // Only the patient, the reason from the list and this intent's key are sent.
+    const keys = bodies.map((body) => (body as { intentKey?: string }).intentKey);
+    expect(bodies[0]).toEqual({ patientId: "P-1", reason: "handover", intentKey: keys[0] });
+    expect(keys[0]).toMatch(/^[0-9a-f-]{36}$/);
+    // M58: trying again after the second step is the same opening; after a clear answer it is a new one.
+    expect(keys[1]).toBe(keys[0]);
+    expect(keys[2]).not.toBe(keys[1]);
+    client.dispose();
+  });
+  it("sends a double tap or a retry after no answer with the same key, so it opens once (M58)", async () => {
+    const bodies: Array<Record<string, unknown>> = [];
+    let fail = true;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: () => {},
+      fetch: async (url, options) => {
+        if (!options?.body) return Response.json({ snapshot: snapshot(1) });
+        bodies.push(JSON.parse(String(options.body)));
+        if (String(url).endsWith("/access/cover"))
+          return fail ? Response.json({ error: "busy" }, { status: 503 }) : Response.json({ membership: {} });
+        return Response.json({ until: "2026-10-07T11:00:00Z", pattern: false, snapshot: snapshot(1) });
+      },
+    });
+    await client.refresh();
+    await Promise.all([client.breakGlass("P-1", "handover"), client.breakGlass("P-1", "handover")]);
+    expect(bodies[1].intentKey).toBe(bodies[0].intentKey);
+    await client.breakGlass("P-1", "handover");
+    expect(bodies[2].intentKey).not.toBe(bodies[0].intentKey);
+    await client.breakGlass("P-2", "handover");
+    const cover = { actorId: "synthetic-colleague", scope: { kind: "ward", unitIds: ["ward-a"] }, minutes: 60 };
+    await expect(client.giveCover(cover)).rejects.toThrow("Change not confirmed");
+    fail = false;
+    await expect(client.giveCover(cover)).resolves.toBeNull();
+    await expect(client.giveCover(cover)).resolves.toBeNull();
+    const covers = bodies.slice(4);
+    expect(covers[1].intentKey).toBe(covers[0].intentKey);
+    expect(covers[2].intentKey).not.toBe(covers[1].intentKey);
+    expect(covers[0]).toEqual({ ...cover, intentKey: covers[0].intentKey });
     client.dispose();
   });
   it("rejects missing or live provenance before showing a shared snapshot", async () => {
