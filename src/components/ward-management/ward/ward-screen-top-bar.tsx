@@ -209,177 +209,186 @@ export function WardScreenTopBar({
       onClose={closeNotices}
     />
   );
-  return (
-    <section className={styles.topActionBarWrap} aria-label="This ward" data-testid={`ward-unit-card-${unit.id}`}>
-      <h2 className={styles.srOnlyHeading}>This ward</h2>
-      <Hero
-        className={cx(styles.wardHero, pageTop.hero, folderTabClasses.hero)}
-        title={
-          <>
-            <SrOnly>{`${unit.name}, ${position}.`}</SrOnly> {shift.name}
-            {shift.hours ? <span className={pageTop.titleSoft}> {shift.hours}</span> : null}
-          </>
-        }
-        aside={<LiveChip state={online ? "live" : "offline"} onHero age={formatInstant(now)} />}
-      >
-        <HeroTop
-          figures={wardFigures}
-          act={wardAct}
-          chips={
-            <HeroQuickChips
-              label="Ward actions"
-              items={[
-                {
-                  id: "confirm",
-                  label: "Confirm numbers",
-                  icon: <Check strokeWidth={1.75} aria-hidden="true" />,
-                  onClick: openCapacityModal,
-                  testId: "ward-confirm-numbers",
-                },
-                {
-                  id: "updates",
-                  // The since-you-last-looked review, as the old "1 update since 10:27" pill.
-                  label: "Updates",
-                  icon: <Zap strokeWidth={1.75} aria-hidden="true" />,
-                  count: updates.count > 0 ? updates.count : undefined,
-                  countLabel: `${updates.count === 1 ? "update" : "updates"} since ${formatInstantWithDay(updates.since, now)}`,
-                  onClick: updates.open,
-                  testId: "ward-updates",
-                },
-                ...staffContact.chips,
-                ...(raiseReferralGate.allowed
-                  ? [
-                      {
-                        id: "referral",
-                        label: "New referral",
-                        icon: <Send strokeWidth={1.75} aria-hidden="true" />,
-                        onClick: () => handleRaiseWardReferral(),
-                        testId: "ward-new-referral",
-                      },
-                    ]
-                  : []),
-                ...(wardSwitch
-                  ? [
-                      {
-                        id: "switch",
-                        label: "Switch ward",
-                        ariaLabel: `Switch ward, now ${unit.name}`,
-                        icon: <Bed strokeWidth={1.75} aria-hidden="true" />,
-                        onClick: () => setSwitchOpen((was) => !was),
-                        testId: "ward-switch-btn",
-                      },
-                    ]
-                  : []),
-              ]}
-            />
-          }
-          band={wardBand}
-        >
-          {wardHeroMeta}
-          {staffContact.tag}
-        </HeroTop>
-      </Hero>
-      <FolderTabs
-        label="Ward tabs"
-        value={tabValue}
-        act={decisionsDue ? 3 : undefined}
-        testId="ward-tabs"
-        more={
-          isPhone ? (
-            wardMoreMenu(folderTabClasses.more, true, { notices: true, iconOnly: true, testId: "ward-phone-chip-more" })
-          ) : (
-            <div className={styles.tabTools} role="toolbar" aria-label="Ward actions">
-              {/* Josh, 4 Nov 2026: the find box is the search icon that opens in place, so the tab row
+  // Phone: the view tabs sit after the ward section, not inside it, so they can pin under the header
+  // as the page scrolls (a sticky row only pins within its parent). Wider screens keep them inside.
+  const viewTabs = (
+    <FolderTabs
+      className={isPhone ? styles.folderTabsPinned : undefined}
+      label="Ward tabs"
+      value={tabValue}
+      act={decisionsDue ? 3 : undefined}
+      testId="ward-tabs"
+      more={
+        isPhone ? (
+          wardMoreMenu(folderTabClasses.more, true, { notices: true, iconOnly: true, testId: "ward-phone-chip-more" })
+        ) : (
+          <div className={styles.tabTools} role="toolbar" aria-label="Ward actions">
+            {/* Josh, 4 Nov 2026: the find box is the search icon that opens in place, so the tab row
                   keeps its room (page tops: at every desktop width). */}
-              <WardPhoneFind value={bedQuery} onChange={findBed} />
-              {/* This ward's own TV screen, behind the `bed-meeting-tv` flag. Desktop only. */}
-              {tvViewsOn ? (
-                <Link
-                  className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolSolo}`}
-                  href={bedMeetingTvHref({ ward: unit.id })}
-                  data-testid="ward-open-tv"
-                >
-                  <Presentation strokeWidth={1.75} size={16} aria-hidden="true" />
-                  On TV
-                </Link>
-              ) : null}
+            <WardPhoneFind value={bedQuery} onChange={findBed} />
+            {/* This ward's own TV screen, behind the `bed-meeting-tv` flag. Desktop only. */}
+            {tvViewsOn ? (
               <Link
-                className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolWide}`}
-                href={
-                  (raisedReferral && raisedReferral.bed === selectedBed ? raisedReferral.href : null) ??
-                  fullWardReferralHref(
-                    selectedBed !== null
-                      ? bedsList.find((b) => b.bedNumber === selectedBed)?.patientInfo?.patient?.id
-                      : undefined,
-                  )
-                }
-                data-testid="ward-open-full-referral-form-link"
-                aria-label="Open the full referral form"
+                className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolSolo}`}
+                href={bedMeetingTvHref({ ward: unit.id })}
+                data-testid="ward-open-tv"
               >
-                {/* Usability audit 24 Oct 2026: the longer label was cut off at 1280 px. */}
-                Referral form
+                <Presentation strokeWidth={1.75} size={16} aria-hidden="true" />
+                On TV
               </Link>
-              {/* Approved 31 Oct 2026: Notices, Shift brief and Handover sit in the More menu. */}
-              {wardMoreMenu(cx(buttonClass({ variant: "ghost", size: "sm" }), folderTabClasses.more), true)}
-            </div>
-          )
-        }
+            ) : null}
+            <Link
+              className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolWide}`}
+              href={
+                (raisedReferral && raisedReferral.bed === selectedBed ? raisedReferral.href : null) ??
+                fullWardReferralHref(
+                  selectedBed !== null
+                    ? bedsList.find((b) => b.bedNumber === selectedBed)?.patientInfo?.patient?.id
+                    : undefined,
+                )
+              }
+              data-testid="ward-open-full-referral-form-link"
+              aria-label="Open the full referral form"
+            >
+              {/* Usability audit 24 Oct 2026: the longer label was cut off at 1280 px. */}
+              Referral form
+            </Link>
+            {/* Approved 31 Oct 2026: Notices, Shift brief and Handover sit in the More menu. */}
+            {wardMoreMenu(cx(buttonClass({ variant: "ghost", size: "sm" }), folderTabClasses.more), true)}
+          </div>
+        )
+      }
+    >
+      {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab */}
+      <div
+        className={cx(folderTabClasses.switch, styles.folderTabList)}
+        role="tablist"
+        id="mainTabList"
+        aria-label="Ward views"
+        onKeyDown={moveBetweenWardTabs}
       >
-        {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab */}
-        <div
-          className={cx(folderTabClasses.switch, styles.folderTabList)}
-          role="tablist"
-          id="mainTabList"
-          aria-label="Ward views"
-          onKeyDown={moveBetweenWardTabs}
+        {tabHome}
+        {tabReferrals}
+        {tabDecisions}
+      </div>
+    </FolderTabs>
+  );
+  return (
+    <>
+      <section className={styles.topActionBarWrap} aria-label="This ward" data-testid={`ward-unit-card-${unit.id}`}>
+        <h2 className={styles.srOnlyHeading}>This ward</h2>
+        <Hero
+          className={cx(styles.wardHero, pageTop.hero, folderTabClasses.hero)}
+          title={
+            <>
+              <SrOnly>{`${unit.name}, ${position}.`}</SrOnly> {shift.name}
+              {shift.hours ? <span className={pageTop.titleSoft}> {shift.hours}</span> : null}
+            </>
+          }
+          aside={<LiveChip state={online ? "live" : "offline"} onHero age={formatInstant(now)} />}
         >
-          {tabHome}
-          {tabReferrals}
-          {tabDecisions}
-        </div>
-      </FolderTabs>
-      {raiseReferralGate.allowed ? null : raiseReferralGate.note}
-      {wardRoleLockNote}
-      {updates.sheet}
-      {wardSwitch ? (
-        <WardSwitchPopover
-          unit={unit}
-          switchUnits={wardSwitch.units}
-          onChoose={wardSwitch.onChoose}
-          open={switchOpen}
-          onClose={() => setSwitchOpen(false)}
-          anchorTestId="ward-switch-btn"
-        />
-      ) : null}
-      {isPhone ? (
-        // Phone notices (20 Oct 2026): a pop-up sheet, so the page stays put behind it and Close
-        // returns to where it was opened.
-        <PhoneSheet
-          open={notificationCenterOpen}
-          onClose={closeNotices}
-          title="Notices"
-          height="tall"
-          returnFocusRef={notificationTriggerRef}
-          data-testid="ward-notifications-sheet"
-        >
-          <div data-testid="ward-notification-center-wrap">{noticesPanel(true)}</div>
-        </PhoneSheet>
-      ) : (
-        // Notices option A (22 Oct 2026): the desktop Notices open as the same right-hand drawer as Alerts.
-        <Sheet
-          open={notificationCenterOpen}
-          onClose={closeNotices}
-          ariaLabel="Notices"
-          headerHidden
-          placement="right"
-          returnFocusRef={notificationTriggerRef}
-          contentClassName={noticesSheet.sheet}
-          bodyClassName={noticesSheet.body}
-        >
-          {notificationCenterOpen ? <div>{noticesPanel(false)}</div> : null}
-        </Sheet>
-      )}
-      {staffContact.sheets}
-    </section>
+          <HeroTop
+            figures={wardFigures}
+            act={wardAct}
+            chips={
+              <HeroQuickChips
+                label="Ward actions"
+                items={[
+                  {
+                    id: "confirm",
+                    label: "Confirm numbers",
+                    icon: <Check strokeWidth={1.75} aria-hidden="true" />,
+                    onClick: openCapacityModal,
+                    testId: "ward-confirm-numbers",
+                  },
+                  {
+                    id: "updates",
+                    // The since-you-last-looked review, as the old "1 update since 10:27" pill.
+                    label: "Updates",
+                    icon: <Zap strokeWidth={1.75} aria-hidden="true" />,
+                    count: updates.count > 0 ? updates.count : undefined,
+                    countLabel: `${updates.count === 1 ? "update" : "updates"} since ${formatInstantWithDay(updates.since, now)}`,
+                    onClick: updates.open,
+                    testId: "ward-updates",
+                  },
+                  ...staffContact.chips,
+                  ...(raiseReferralGate.allowed
+                    ? [
+                        {
+                          id: "referral",
+                          label: "New referral",
+                          icon: <Send strokeWidth={1.75} aria-hidden="true" />,
+                          onClick: () => handleRaiseWardReferral(),
+                          testId: "ward-new-referral",
+                        },
+                      ]
+                    : []),
+                  ...(wardSwitch
+                    ? [
+                        {
+                          id: "switch",
+                          label: "Switch ward",
+                          ariaLabel: `Switch ward, now ${unit.name}`,
+                          icon: <Bed strokeWidth={1.75} aria-hidden="true" />,
+                          onClick: () => setSwitchOpen((was) => !was),
+                          testId: "ward-switch-btn",
+                        },
+                      ]
+                    : []),
+                ]}
+              />
+            }
+            band={wardBand}
+          >
+            {wardHeroMeta}
+            {staffContact.tag}
+          </HeroTop>
+        </Hero>
+        {isPhone ? null : viewTabs}
+        {raiseReferralGate.allowed ? null : raiseReferralGate.note}
+        {wardRoleLockNote}
+        {updates.sheet}
+        {wardSwitch ? (
+          <WardSwitchPopover
+            unit={unit}
+            switchUnits={wardSwitch.units}
+            onChoose={wardSwitch.onChoose}
+            open={switchOpen}
+            onClose={() => setSwitchOpen(false)}
+            anchorTestId="ward-switch-btn"
+          />
+        ) : null}
+        {isPhone ? (
+          // Phone notices (20 Oct 2026): a pop-up sheet, so the page stays put behind it and Close
+          // returns to where it was opened.
+          <PhoneSheet
+            open={notificationCenterOpen}
+            onClose={closeNotices}
+            title="Notices"
+            height="tall"
+            returnFocusRef={notificationTriggerRef}
+            data-testid="ward-notifications-sheet"
+          >
+            <div data-testid="ward-notification-center-wrap">{noticesPanel(true)}</div>
+          </PhoneSheet>
+        ) : (
+          // Notices option A (22 Oct 2026): the desktop Notices open as the same right-hand drawer as Alerts.
+          <Sheet
+            open={notificationCenterOpen}
+            onClose={closeNotices}
+            ariaLabel="Notices"
+            headerHidden
+            placement="right"
+            returnFocusRef={notificationTriggerRef}
+            contentClassName={noticesSheet.sheet}
+            bodyClassName={noticesSheet.body}
+          >
+            {notificationCenterOpen ? <div>{noticesPanel(false)}</div> : null}
+          </Sheet>
+        )}
+        {staffContact.sheets}
+      </section>
+      {isPhone ? viewTabs : null}
+    </>
   );
 }

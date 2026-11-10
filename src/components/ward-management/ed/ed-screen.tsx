@@ -21,7 +21,6 @@ import { useIsPhone, useIsTabletPortrait, useMediaQuery, useOptionalToast } from
 import { EdElsewhereLinks, EdNeedsYou } from "./ed-needs-you";
 import styles from "./ed.module.css";
 import { EdOverview } from "./ed-overview";
-import { SinceLastLookPill } from "../since-last-look-pill";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -427,7 +426,6 @@ export function EdScreen({ edId }: EdScreenProps) {
       >
         <EdOverview
           key={department.id}
-          sinceLastLook={<SinceLastLookPill scopeKey={`ed:${department.id}`} collapseWhenEmpty />}
           departmentId={department.id}
           departments={departments.map((candidate) => {
             const candidateSite = siteByCode(candidate.siteCode);

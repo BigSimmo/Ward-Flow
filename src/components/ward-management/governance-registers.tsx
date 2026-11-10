@@ -591,12 +591,8 @@ function GovernanceSession({
   const newestTitle = newest
     ? `Newest ${newest.at === null ? "time unavailable" : formatInstantWithDay(newest.at, now)} · ${actionLabels[newest.action]}`
     : "Nothing waiting for review";
-  const newestSub =
-    followUp > 0
-      ? `${followUp} follow-up required`
-      : patternCount > 0
-        ? `${patternCount} ${patternCount === 1 ? "pattern" : "patterns"} to look at`
-        : undefined;
+  // Page tops QA (10 Nov 2026): patterns are not repeated under the act row; the Pattern chip counts them.
+  const newestSub = followUp > 0 ? `${followUp} follow-up required` : undefined;
   const reviewedOf = reviewable.length;
 
   // D-80 item 14: who opened the chosen row's record, when the row has one.
