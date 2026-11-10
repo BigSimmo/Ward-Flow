@@ -650,7 +650,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                 alertAt={ANSWER_ALERT_LINE}
                 scope={unit.name}
                 status={
-                  occupancy.percent !== null && occupancy.percent >= ANSWER_ALERT_LINE
+                  occupancy.percent !== null && Math.round(occupancy.percent) >= ANSWER_ALERT_LINE
                     ? { tone: "warning", word: `At risk, over ${ANSWER_ALERT_LINE}%` }
                     : { tone: "success", word: `In use, under ${ANSWER_ALERT_LINE}%` }
                 }

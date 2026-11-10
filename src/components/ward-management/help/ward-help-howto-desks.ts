@@ -10,6 +10,10 @@
  */
 import type { HowTo } from "./ward-help-howto";
 import type { TourTarget } from "./ward-tour-steps";
+import { CLINICAL_VALUES, formatClinicalFigure } from "@/components/ward-management/ward-clinical-values";
+
+/** The Give button's own words, from the value it grants (D-122: help never types a threshold). */
+const GIVE_FOR = `Give for ${formatClinicalFigure(CLINICAL_VALUES.accessGrantDefault.value, CLINICAL_VALUES.accessGrantDefault.unit)}`;
 
 /** A transport officer's open job: the job list, or a phone's Jobs section, stands in. */
 const OFFICER_JOB: TourTarget[] = [
@@ -238,8 +242,7 @@ export const DESK_JOBS: readonly HowTo[] = [
     topic: "Settings and display",
     title: "Answer a request for access",
     keywords: "request access approve decline asked waiting new starter admin",
-    answer:
-      "Settings, Access, Requests for access: each request says who asked and for which desk. Press Give for 90 days or Decline. Nobody grants themselves a role.",
+    answer: `Settings, Access, Requests for access: each request says who asked and for which desk. Press ${GIVE_FOR} or Decline. Nobody grants themselves a role.`,
     desks: ["admin"],
     go: "settings#access",
     showMe: [
@@ -249,7 +252,7 @@ export const DESK_JOBS: readonly HowTo[] = [
           { sel: '[data-testid="ward-settings-phone-area-access"]' },
         ],
         title: "Requests for access",
-        body: "Give for 90 days or Decline, for each request.",
+        body: `${GIVE_FOR} or Decline, for each request.`,
       },
     ],
   },

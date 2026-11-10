@@ -196,8 +196,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 666,
-          "sha256": "ddebd9e68988d55d54e116ae85de0f490863cad54acec61a4750772c2b0685e8"
+          "line": 667,
+          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -285,8 +285,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 246,
-          "sha256": "ddebd9e68988d55d54e116ae85de0f490863cad54acec61a4750772c2b0685e8"
+          "line": 247,
+          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1821,8 +1821,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 752,
-          "sha256": "ddebd9e68988d55d54e116ae85de0f490863cad54acec61a4750772c2b0685e8"
+          "line": 753,
+          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
         },
         {
           "path": "src/components/ward-management/ward-discharge-criteria.ts",
@@ -2791,8 +2791,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 96,
-          "sha256": "ddebd9e68988d55d54e116ae85de0f490863cad54acec61a4750772c2b0685e8"
+          "line": 97,
+          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",

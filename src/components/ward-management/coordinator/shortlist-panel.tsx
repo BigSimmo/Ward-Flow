@@ -490,7 +490,7 @@ export function ShortlistPanel({
   const [genderPlacementChecked, setGenderPlacementChecked] = useState(false);
   const [confirmationMovementId, setConfirmationMovementId] = useState(movement?.id);
   // Task 5/RA1: new referral picks are separate from selectedUnitId (the inspected ward); live requests stay
-  // locked and REFER_TO_UNITS adds to them. Finding 188: the parallel cap warns but does not block.
+  // locked and REFER_TO_UNITS adds to them. Finding 188, D-122: passing the configured limit warns but never blocks.
   const [referTargets, setReferTargets] = useState<string[]>([]);
   // RA1: the withdrawal opening and reason belong to one genuinely live ward request.
   const [withdrawUnitId, setWithdrawUnitId] = useState<string | undefined>(undefined);
@@ -896,8 +896,8 @@ export function ShortlistPanel({
     if (!canOverride) return;
     const reason = overrideReason.trim();
     if (reason.length === 0) return;
-    // D-86 (findings 111 and 113, Josh, 27 Oct 2026): no second approvers. The reason is the only
-    // thing an override needs, the same standard as the Referrals board and the patient page.
+    // D-122 (Josh, 10 Nov 2026; findings 111 and 113, 27 Oct 2026): no second approvers. The reason is
+    // the only thing an override needs, the same standard as the Referrals board and the patient page.
     // Validate the same closed reason list as the reducer.
     if (!OVERRIDE_REASONS.includes(reason as OverrideReason)) return;
     // OD-3: the reducer records the reason; the local record is only accepted-save feedback.

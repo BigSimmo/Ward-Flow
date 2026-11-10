@@ -73,15 +73,17 @@ export interface ServiceBedAlertsSummary {
 
 /**
  * Occupancy colour band applied the same way to every service.
- * Labels are the occupancy figure, not invented clinical codes.
+ * Labels are the occupancy figure, not invented clinical codes. D-122 (Josh, 10 Nov 2026) extends
+ * D-109: each band tests the whole percent shown, so "90%" is always in the 90% band.
  */
 export function occupancyTone(occupancyPercent: number): {
   code: ServiceBedAlertCode;
   codeLabel: string;
 } {
   const codeLabel = formatOccupancyPercent(occupancyPercent);
-  if (occupancyPercent >= OCCUPANCY_CRITICAL_PERCENT) return { code: "red", codeLabel };
-  if (occupancyPercent >= OCCUPANCY_ALERT_PERCENT) return { code: "yellow", codeLabel };
+  const shown = Math.round(occupancyPercent);
+  if (shown >= OCCUPANCY_CRITICAL_PERCENT) return { code: "red", codeLabel };
+  if (shown >= OCCUPANCY_ALERT_PERCENT) return { code: "yellow", codeLabel };
   return { code: "green", codeLabel };
 }
 
