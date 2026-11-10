@@ -47,23 +47,26 @@ describe("beds ready agrees on every screen after a pull", () => {
           now,
           thresholds: dueSoonThresholdsOf(state.configuration),
         });
+        // D-115: every screen leaves out a bed named for an open journey or an accepted referral.
+        const holds = [...state.movements, ...state.referrals];
         const boxes = state.units.reduce(
-          (sum, unit) => sum + bedStates(unit, state.admissions, state.bedReleases, state.leaveBeds).ready,
+          (sum, unit) => sum + bedStates(unit, state.admissions, state.bedReleases, state.leaveBeds, holds).ready,
           0,
         );
         const handover = state.units.reduce(
-          (sum, unit) => sum + toHandoverWard(unit, state.admissions, now, state.bedReleases).ready,
+          (sum, unit) => sum + toHandoverWard(unit, state.admissions, now, state.bedReleases, holds).ready,
           0,
         );
         expect(nav.capacity?.value, `${scenario} seed ${seed} step ${step}`).toBe(boxes);
         expect(handover, `${scenario} seed ${seed} step ${step}`).toBe(boxes);
         const board = state.units.reduce(
-          (sum, unit) => sum + headlineAvailable(unit, state.admissions, state.bedReleases, state.leaveBeds, now),
+          (sum, unit) =>
+            sum + headlineAvailable(unit, state.admissions, state.bedReleases, state.leaveBeds, now, holds),
           0,
         );
         expect(board, `${scenario} seed ${seed} step ${step}`).toBe(boxes);
         // NA2-06 (audit 24 Oct 2026): Referrals' "Beds ready statewide" reads the same figure.
-        const referrals = bedsReadySummary(state.units, state.admissions, state.bedReleases, now);
+        const referrals = bedsReadySummary(state.units, state.admissions, state.bedReleases, now, holds);
         expect(referrals.total, `${scenario} seed ${seed} step ${step}`).toBe(boxes);
         const old = state.units.reduce((sum, unit) => sum + boundedBedAvailability(unit).available, 0);
         if (old !== boxes) oldFormulaSplit += 1;

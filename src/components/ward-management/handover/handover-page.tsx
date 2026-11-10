@@ -330,8 +330,8 @@ export function HandoverPage() {
   );
   const deskPlaces = useMemo(() => wardPlaceLookup(units), [units]);
   const allWards = useMemo(
-    () => units.map((unit) => toHandoverWard(unit, admissions, now, bedReleases)),
-    [units, admissions, now, bedReleases],
+    () => units.map((unit) => toHandoverWard(unit, admissions, now, bedReleases, [...movements, ...referrals])),
+    [units, admissions, now, bedReleases, movements, referrals],
   );
   const wards = useMemo(
     () =>

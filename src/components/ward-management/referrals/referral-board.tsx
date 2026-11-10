@@ -512,8 +512,9 @@ export function ReferralBoard({
     now,
   );
   const bedsSummary = useMemo(
-    () => bedsReadySummary(bedUnits, admissions, bedReleases, now),
-    [bedUnits, admissions, bedReleases, now],
+    // D-115: a bed named for an accepted referral is not offered as ready.
+    () => bedsReadySummary(bedUnits, admissions, bedReleases, now, [...movements, ...referrals]),
+    [bedUnits, admissions, bedReleases, now, movements, referrals],
   );
   // R5 fold (Josh, 3 Nov 2026): the bed meeting's referrals live on the agenda now. The button
   // counts those waiting in the header's service, as the agenda's Referrals list does.

@@ -21,10 +21,11 @@ import {
   MINUTES_PER_DAY,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { bedStates } from "@/components/ward-management/ward-bed-states";
+import { bedStates, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import type {
   BedRelease,
   HomeRegion,
+  LeaveBed,
   Movement,
   RecordedSex,
   ReferralGender,
@@ -63,6 +64,8 @@ export type Tile =
        * bed is not on the board.
        */
       awayAtEd: boolean;
+      /** D-115 item 4: the person is absent without leave, shown in red on the tile (D-38). */
+      absentWithoutLeave?: boolean;
       who?: string;
     }
   | { kind: "waiting"; key: string }
@@ -178,8 +181,17 @@ export function buildTiles(
   admissions: readonly Admission[],
   bedReleases: readonly BedRelease[],
   now: Instant,
+  /**
+   * D-115: the ward's held beds, so a person absent without leave reads so on their tile, and the
+   * named holds (open journeys and accepted referrals), so a bed named for an incoming patient is
+   * drawn as given away, not Ready, as the header and every other screen count it.
+   */
+  extras: { leaveBeds?: readonly LeaveBed[]; holds?: readonly ReservationReferral[] } = {},
 ): Tile[] {
   const occupants = admissionsForUnit(admissions, unit.id).filter(bedIsOccupied);
+  const absentIds = new Set(
+    (extras.leaveBeds ?? []).filter((bed) => bed.absentWithoutLeave).map((bed) => bed.admissionId),
+  );
 
   const tiles: Tile[] = occupants.map((admission) => {
     const days = daysInBed(admission, now);
@@ -195,6 +207,7 @@ export function buildTiles(
       bandLabel: band?.label ?? "Stay not banded",
       pastDate: isPastExpectedDischarge(admission, now),
       awayAtEd: admission.awayAtEmergencyDepartmentSince !== null,
+      ...(absentIds.has(admission.id) ? { absentWithoutLeave: true } : {}),
     };
   });
 
@@ -217,15 +230,30 @@ export function buildTiles(
   // count that overshot the physically-empty pool would otherwise draw more tiles than the ward has
   // beds, which is the same failure class `blockedCount`'s own guard exists to prevent. Leave beds
   // are passed empty: they only feed the On leave marker, never a tile count.
-  const closedCount = Math.max(
-    0,
-    Math.min(Math.floor(bedStates(unit, admissions, [...bedReleases], []).closed), emptyPoolCount),
-  );
+  const holds = extras.holds ?? [];
+  const states = bedStates(unit, admissions, [...bedReleases], [], holds);
+  const closedCount = Math.max(0, Math.min(Math.floor(states.closed), emptyPoolCount));
   for (let index = 0; index < closedCount; index += 1) {
     tiles.push({ kind: "closed", key: `closed-${index}` });
   }
 
-  const emptyCount = Math.max(0, emptyPoolCount - closedCount);
+  // D-115 item 3: a bed named for an accepted referral or open journey is spoken for. It is drawn
+  // as given away (the ruled Pulled box), taken from the physically-empty pool, never as Ready.
+  const namedCount =
+    holds.length === 0
+      ? 0
+      : Math.max(
+          0,
+          Math.min(
+            states.pulled - bedStates(unit, admissions, [...bedReleases], []).pulled,
+            emptyPoolCount - closedCount,
+          ),
+        );
+  for (let index = 0; index < namedCount; index += 1) {
+    tiles.push({ kind: "waiting", key: `named-${index}` });
+  }
+
+  const emptyCount = Math.max(0, emptyPoolCount - closedCount - namedCount);
   for (let index = 0; index < emptyCount; index += 1) {
     tiles.push({ kind: "empty", key: `empty-${index}` });
   }
@@ -295,6 +323,8 @@ export type Occupant = {
   admissionId: string;
   dischargeBarrier: DischargeBarrier | null;
   stepDownCandidate: boolean;
+  /** D-115 item 4: absent without leave (D-38), so the person panel says so in red. */
+  absentWithoutLeave?: boolean;
 };
 
 /** The expected date, or `null` for both of the ways it can be missing — unset, and unusable.
@@ -347,8 +377,14 @@ function daysUntilExpected(admission: Admission, now: Instant): number | null {
  * of the same fixture must not reshuffle. A passed date sorts to the top on its own, because its
  * instant is the smallest, which is where a flow meeting wants it.
  */
-export function buildOccupants(unit: Unit, admissions: readonly Admission[], now: Instant): Occupant[] {
+export function buildOccupants(
+  unit: Unit,
+  admissions: readonly Admission[],
+  now: Instant,
+  leaveBeds: readonly LeaveBed[] = [],
+): Occupant[] {
   const inBeds = admissionsForUnit(admissions, unit.id).filter(bedIsOccupied);
+  const absentIds = new Set(leaveBeds.filter((bed) => bed.absentWithoutLeave).map((bed) => bed.admissionId));
 
   return [...inBeds]
     .sort((a, b) => {
@@ -387,6 +423,7 @@ export function buildOccupants(unit: Unit, admissions: readonly Admission[], now
       admissionId: admission.id,
       dischargeBarrier: admission.dischargeBarrier ?? null,
       stepDownCandidate: Boolean(admission.stepDownCandidate),
+      ...(absentIds.has(admission.id) ? { absentWithoutLeave: true } : {}),
     }));
 }
 

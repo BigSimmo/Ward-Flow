@@ -79,7 +79,10 @@ export function useNextNavCounts(): {
       placeUnits && counts.capacity
         ? {
             ...counts,
-            capacity: { ...counts.capacity, value: totalReadyBedsNow(placeUnits, admissions ?? [], bedReleases) },
+            capacity: {
+              ...counts.capacity,
+              value: totalReadyBedsNow(placeUnits, admissions ?? [], bedReleases, [...movements, ...referrals]),
+            },
           }
         : counts,
     placeId: wardPlaceIdFor(pathname),

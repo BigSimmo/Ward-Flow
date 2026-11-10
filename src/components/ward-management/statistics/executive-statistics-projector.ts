@@ -99,7 +99,11 @@ export function projectExecutiveNetworkStatistics(
   // this executive's wards, rather than counting global beds beside service-scoped admissions.
   const units = scoped.units.filter((unit) => unitInScope(access.scope, unit.id, places));
   const wards = units.map((unit) => {
-    const states = bedStates(unit, scoped.admissions, scoped.bedReleases, scoped.leaveBeds);
+    // D-115: a bed named for an open journey or an accepted referral is not ready.
+    const states = bedStates(unit, scoped.admissions, scoped.bedReleases, scoped.leaveBeds, [
+      ...scoped.movements,
+      ...scoped.referrals,
+    ]);
     return {
       id: unit.id,
       name: unit.name,
@@ -746,7 +750,12 @@ export function projectExecutiveReportingFoundation(
     },
     settings: { pullHoldMinutes: input.pullHoldMinutes, parallelReferralCap: state.configuration.parallelReferralCap },
     capacity: {
-      ready: units.reduce((sum, unit) => sum + readyBedsNow(unit, input.admissions, input.bedReleases), 0),
+      // D-115: a bed named for an accepted referral is not ready.
+      ready: units.reduce(
+        (sum, unit) =>
+          sum + readyBedsNow(unit, input.admissions, input.bedReleases, [...input.movements, ...input.referrals]),
+        0,
+      ),
       empty: units.reduce((sum, unit) => sum + unit.empty.value, 0),
       allocatable: units.reduce((sum, unit) => sum + unit.allocatable.value, 0),
       openNow: units.reduce((sum, unit) => sum + openBedsNow(unit, input.bedReleases), 0),

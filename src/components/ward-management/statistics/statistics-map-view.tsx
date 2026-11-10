@@ -31,7 +31,7 @@ import {
   MINUTES_PER_DAY,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { readyBedsNow, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { IN_USE_NOUN } from "@/components/ward-management/ward-occupancy";
 import type {
   BedRelease,
@@ -179,6 +179,7 @@ export function siteFigures({
   bedReleases,
   leaveBeds,
   movements,
+  referrals = [],
   now,
 }: {
   units: readonly Unit[];
@@ -186,6 +187,8 @@ export function siteFigures({
   bedReleases: BedRelease[];
   leaveBeds: readonly LeaveBed[];
   movements: readonly Movement[];
+  /** D-115: so a bed named for an accepted referral is not counted as ready. */
+  referrals?: readonly ReservationReferral[];
   now: Instant;
 }): SiteFigures[] {
   const eds = allEmergencyDepartments();
@@ -201,7 +204,7 @@ export function siteFigures({
       const onWard = admissions.filter((admission) => admission.unitId === unit.id);
       return {
         unit,
-        ready: readyBedsNow(unit, admissions, bedReleases),
+        ready: readyBedsNow(unit, admissions, bedReleases, [...movements, ...referrals]),
         occupied,
         pct: unit.beds > 0 ? Math.round((occupied / unit.beds) * 100) : 0,
         dischargedToday: onWard.filter((admission) => leftToday(admission, now)).length,
@@ -402,12 +405,12 @@ function OperationalMapView({
 } = {}) {
   const ownLive = useStatisticsLive();
   const live = liveProp ?? ownLive;
-  const { admissions, bedReleases, movements, leaveBeds, units, dayZero } = live.state;
+  const { admissions, bedReleases, movements, referrals, leaveBeds, units, dayZero } = live.state;
   const now = live.now;
 
   const sites = useMemo(
-    () => siteFigures({ units, admissions, bedReleases, leaveBeds, movements, now }),
-    [units, admissions, bedReleases, leaveBeds, movements, now],
+    () => siteFigures({ units, admissions, bedReleases, leaveBeds, movements, referrals, now }),
+    [units, admissions, bedReleases, leaveBeds, movements, referrals, now],
   );
 
   const network = useMemo(() => {

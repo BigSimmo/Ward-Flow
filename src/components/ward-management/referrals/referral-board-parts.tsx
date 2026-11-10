@@ -4,7 +4,7 @@ import { wardAddressing } from "@/components/ward-management/ward-eligibility";
 import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
-import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { readyBedsNow, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
@@ -351,6 +351,7 @@ export function bedsReadySummary(
   admissions: readonly Admission[],
   bedReleases: BedRelease[],
   now: Instant,
+  holds: readonly ReservationReferral[] = [],
 ): BedsReadySummary {
   const totals = { Adult: 0, "Older adult": 0, Youth: 0, Locked: 0 };
   let total = 0;
@@ -359,7 +360,7 @@ export function bedsReadySummary(
   for (const unit of units) {
     // Every unit counts: a unit without authorisation still takes voluntary admissions. The shared
     // per-unit ready figure, so the cohort cells add up to the same total every other page shows.
-    const ready = readyBedsNow(unit, admissions, bedReleases);
+    const ready = readyBedsNow(unit, admissions, bedReleases, holds);
     total += ready;
     totals[unit.cohort] += ready;
     // Locked is the ready locked portion of any ward, mixed wards included.

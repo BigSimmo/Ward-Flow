@@ -339,6 +339,11 @@ export function WardBoardDetailPanel({
               {selectedTile.kind === "waiting" && (
                 <p className={styles.personLine}>Bed given away. Nobody has arrived yet.</p>
               )}
+              {selectedOccupant?.absentWithoutLeave && (
+                <p className={styles.personLine} data-testid="ward-board-selected-awol">
+                  <StatusPill tone="danger">Absent without leave</StatusPill> Their bed is held for them.
+                </p>
+              )}
               {occupied !== null && (
                 <section className={redesign.recordSection} aria-labelledby="ward-board-record-heading">
                   <h3 id="ward-board-record-heading" className={redesign.recordHeading}>

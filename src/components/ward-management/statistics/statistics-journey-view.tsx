@@ -7,7 +7,7 @@ import { BedSingle, Clock, Columns3, Route } from "lucide-react";
 
 import { Button, CardBody, Legend, SrOnly, StatusGlyph, cx, type WfTone } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { bedStates } from "@/components/ward-management/ward-bed-states";
+import { bedStates, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
 import { isEdOriginJourney } from "@/components/ward-management/ward-ed-presence";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -85,12 +85,15 @@ export function journeyStages({
   bedReleases,
   leaveBeds,
   movements,
+  referrals = [],
   now,
 }: {
   units: readonly Unit[];
   admissions: readonly Admission[];
   bedReleases: BedRelease[];
   leaveBeds: readonly LeaveBed[];
+  /** D-115: so a bed named for an accepted referral is not counted as ready. */
+  referrals?: readonly ReservationReferral[];
   movements: readonly Movement[];
   now: Instant;
 }): JourneyStage[] {
@@ -103,15 +106,18 @@ export function journeyStages({
 
   const beds = units.reduce(
     (sum, unit) => {
-      const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+      const states = bedStates(unit, admissions, bedReleases, leaveBeds, [...movements, ...referrals]);
+      // D-115 item 6: an absence without leave is a held bed (D-38), counted apart from approved leave.
+      const absent = leaveBeds.filter((bed) => bed.unitId === unit.id && bed.absentWithoutLeave).length;
       return {
         beds: sum.beds + unit.beds,
         occupied: sum.occupied + states.occupied,
         ready: sum.ready + states.ready,
         onLeave: sum.onLeave + states.onLeave,
+        absent: sum.absent + Math.min(absent, states.onLeave),
       };
     },
-    { beds: 0, occupied: 0, ready: 0, onLeave: 0 },
+    { beds: 0, occupied: 0, ready: 0, onLeave: 0, absent: 0 },
   );
 
   const today = dayOf(now);
@@ -192,7 +198,8 @@ export function journeyStages({
       count: beds.occupied,
       breakdown: [
         { label: "Of beds", value: `${beds.beds > 0 ? Math.round((beds.occupied / beds.beds) * 100) : 0}%` },
-        { label: "On leave", value: beds.onLeave },
+        { label: "On leave", value: beds.onLeave - beds.absent },
+        { label: "Absent without leave", value: beds.absent, tone: beds.absent > 0 ? "danger" : undefined },
         { label: "Ready beds", value: beds.ready },
       ],
     },
@@ -369,14 +376,14 @@ function OperationalJourneyView({
 }) {
   const ownLive = useStatisticsLive();
   const live = liveProp ?? ownLive;
-  const { units, admissions, bedReleases, leaveBeds, movements } = live.state;
+  const { units, admissions, bedReleases, leaveBeds, movements, referrals } = live.state;
   const now = live.now;
   // An ED links to its page only where this desk may open it (access audit, 31 Oct 2026).
   const canOpen = useCanOpenHref();
 
   const stages = useMemo(
-    () => journeyStages({ units, admissions, bedReleases, leaveBeds, movements, now }),
-    [units, admissions, bedReleases, leaveBeds, movements, now],
+    () => journeyStages({ units, admissions, bedReleases, leaveBeds, movements, referrals, now }),
+    [units, admissions, bedReleases, leaveBeds, movements, referrals, now],
   );
 
   const hospitals = useMemo(() => {

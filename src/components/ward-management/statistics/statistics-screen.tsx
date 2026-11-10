@@ -328,7 +328,9 @@ function OperationalStatisticsScreen({
   // Whole percent, the one rule for every percentage (Josh, 5 Nov 2026, CL-9).
   const occupiedPct = occupancy.beds > 0 ? Math.round((occupancy.inUse / occupancy.beds) * 100) : 0;
   // Audit 6 (Josh, 20 Oct 2026): the one ready figure, leaving out beds pulled for an incoming patient.
-  const availableNow = totalReadyBedsNow(siteUnits, sourceAdmissions, sourceBedReleases);
+  // D-115: a bed named for an accepted referral is not ready, as on Home, the TV and print.
+  const namedHolds = useMemo(() => [...sourceMovements, ...sourceReferrals], [sourceMovements, sourceReferrals]);
+  const availableNow = totalReadyBedsNow(siteUnits, sourceAdmissions, sourceBedReleases, namedHolds);
   // Ready beds still being cleaned count as ready (the owner's ruling); the label says how many.
   const pendingPreparation = siteUnits.reduce((sum, u) => sum + bedsPendingPreparation(u.id, sourceBedReleases), 0);
   // Open ED-origin journeys retain accountability through transit; Still open also includes other origins.
@@ -380,13 +382,13 @@ function OperationalStatisticsScreen({
         site: u.siteCode,
         hospital: siteByCode(u.siteCode)?.name ?? u.siteCode,
         beds: u.beds,
-        ready: readyBedsNow(u, sourceAdmissions, sourceBedReleases),
+        ready: readyBedsNow(u, sourceAdmissions, sourceBedReleases, namedHolds),
         pendingPreparation: bedsPendingPreparation(u.id, sourceBedReleases),
         occupancyRate,
         referred: wardReferralTally(sourceMovements, u.id).askedAndWaiting,
       };
     });
-  }, [siteUnits, sourceAdmissions, sourceBedReleases, leaveBeds, sourceMovements]);
+  }, [siteUnits, sourceAdmissions, sourceBedReleases, leaveBeds, sourceMovements, namedHolds]);
 
   // A referral can have multiple destinations; count the referral once using its derived outcome.
   const todayBedReferrals = sourceReferrals.filter(

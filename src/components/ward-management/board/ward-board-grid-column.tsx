@@ -318,6 +318,13 @@ export function WardBoardGridColumn({
                             above, and the same direction.** The tile is 80px on a phone, not 390px.
                             **Two comments in one component carried the same wrong width**, which is
                             how a number gets believed: it was consistent with itself. */}
+                    {/* D-115 item 4: red, as the ward screen shows it (D-38). Never read as approved leave. */}
+                    {tile.absentWithoutLeave && (
+                      <span className={styles.pastMark} data-testid={`ward-board-bed-${index + 1}-awol`}>
+                        <StatusGlyph tone="danger" size={10} className={styles.statusGlyph} />{" "}
+                        <span>Absent without leave</span>
+                      </span>
+                    )}
                     {tile.awayAtEd && (
                       <span className={styles.awayMark} data-testid={`ward-board-bed-${index + 1}-away`}>
                         <StatusGlyph tone="info" size={10} className={styles.statusGlyph} /> <span>At ED</span>

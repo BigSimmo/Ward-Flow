@@ -1,7 +1,7 @@
 import { durMinutes } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { sourceWardName } from "@/components/ward-management/ward-movement-origin";
-import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { readyBedsNow, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, EmergencyDepartment, Movement, Unit } from "@/components/ward-management/ward-model";
@@ -50,6 +50,8 @@ export type PinnedWorld = {
   admissions: readonly Admission[];
   bedReleases: readonly BedRelease[];
   movements: readonly Movement[];
+  /** D-115: referrals, so a bed named for an accepted referral is not counted as ready. */
+  referrals?: readonly ReservationReferral[];
   /**
    * Which patient a movement or stay belongs to, through the shared resolver (`usePatientOf`), so
    * this file never reads the patient link itself (D-14 default-deny guard).
@@ -94,7 +96,7 @@ export function pinnedRows(
       id,
       name: unit.name,
       siteCode: unit.siteCode,
-      ready: readyBedsNow(unit, world.admissions, world.bedReleases),
+      ready: readyBedsNow(unit, world.admissions, world.bedReleases, [...world.movements, ...(world.referrals ?? [])]),
       inUse: wardBedsInUse(unit, world.admissions, world.bedReleases),
       beds: unit.beds,
       href,
