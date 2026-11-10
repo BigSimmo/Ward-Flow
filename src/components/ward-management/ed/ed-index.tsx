@@ -504,6 +504,7 @@ export function EdIndex() {
               <span className={folderTabClasses.rule} aria-hidden="true" />
               <div className={folderTabClasses.filters}>
                 <PillTabs
+                  className={styles.serviceTabs}
                   label="Health service"
                   items={serviceItems}
                   value={service}

@@ -1133,7 +1133,7 @@ export function DelaysBoard({
                   ? [
                       {
                         id: "next8",
-                        label: `Next past ${H8} · ${formatInstantWithDay(now + (OVER_8H - next8.waited), now)}`,
+                        label: `Next over ${H8} · ${formatInstantWithDay(now + (OVER_8H - next8.waited), now)}`,
                         icon: <Clock {...CHIP_ICON} />,
                         count: next8Within > 1 ? next8Within - 1 : undefined,
                         countTone: "quiet" as const,

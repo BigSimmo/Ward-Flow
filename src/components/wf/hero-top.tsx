@@ -314,11 +314,13 @@ export type HeroBandProps = {
   cells: HeroBandCell[];
   /** `inline`: name and value on one line (Home's ED strip). `stacked`: name over value. */
   variant?: "inline" | "stacked";
+  /** Narrower gaps between cells on desktop, for a band with many cells (the bed board's eight). */
+  compact?: boolean;
   testId?: string;
 };
 
 /** One slim strip of cells on the slate, hairlines between; it scrolls sideways with a fade on a phone. */
-export function HeroBand({ title, aside, asideHref, cells, variant = "inline", testId }: HeroBandProps) {
+export function HeroBand({ title, aside, asideHref, cells, variant = "inline", compact, testId }: HeroBandProps) {
   "use no memo";
   const titleId = useId();
   const listRef = useRef<HTMLUListElement>(null);
@@ -346,6 +348,7 @@ export function HeroBand({ title, aside, asideHref, cells, variant = "inline", t
         className={styles.cells}
         aria-labelledby={titleId}
         data-variant={variant}
+        data-compact={compact ? "" : undefined}
         // A phone scrolls the band sideways. With no link or button in it, the list itself takes
         // focus then, so a keyboard can scroll it too (WCAG 2.1.1).
         // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex

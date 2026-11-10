@@ -553,7 +553,8 @@ a.cellBody {
   }
 
   button.cellBody,
-  a.cellBody {
+  a.cellBody,
+  .cells:has(button.cellBody, a.cellBody) .cellBody {
     justify-content: center;
     min-height: 40px;
   }
@@ -620,6 +621,22 @@ a.cellBody {
 
   .cellBody {
     padding: 0 20px;
+  }
+}
+
+/* Desktop: equal cells, but never narrower than their words, so a long value and its note
+   ("1 (1 also held up)" on the bed board) cannot run into the next cell (QA, 10 Nov 2026). */
+@media (min-width: 64rem) {
+  .cell {
+    min-width: max-content;
+  }
+
+  .cells[data-compact] .cellBody {
+    padding-inline: 14px;
+  }
+
+  .cells[data-compact] .cell:first-child .cellBody {
+    padding-left: 0;
   }
 }
 

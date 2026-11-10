@@ -826,6 +826,17 @@
   padding-inline: 6px;
 }
 
+/* Page tops QA (10 Nov 2026): the kind counts are quiet mono numbers, no grey badges, as the desktop
+ * tab-filter counts are (folder-tabs.module.css). The trailing span is the count. */
+.phoneKindBar.phoneKindBar > div > button > span:last-child {
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
 .phoneSearchRow {
   display: flex;
   align-items: center;

@@ -25,6 +25,8 @@ export function PatientCareJourneyStrip({
   extra?: ReactNode;
 }) {
   const current = steps.findIndex((step) => step.state === "now");
+  // Page tops (QA, 10 Nov 2026): the phone line names the current step and the next one.
+  const next = current >= 0 ? steps.slice(current + 1).find((step) => step.state === "next") : undefined;
   return (
     <div className={styles.wrap} data-testid="ward-patient-care-journey">
       <ol className={styles.steps} aria-label="Care steps">
@@ -54,12 +56,15 @@ export function PatientCareJourneyStrip({
           </li>
         ))}
       </ol>
-      {/* Phone: the line keeps its six marks and names only the current step underneath. */}
+      {/* Phone: the line keeps its six marks and names the current step, then the next, underneath. */}
       {current >= 0 ? (
         <p className={styles.phoneNow} aria-hidden="true">
           <strong>{steps[current]!.label}</strong>
           {steps[current]!.detail ? ` · ${steps[current]!.detail}` : null}
-          <span>{` · step ${current + 1} of ${steps.length}`}</span>
+          <span>
+            {` · step ${current + 1} of ${steps.length}`}
+            {next ? ` · next: ${next.label}` : null}
+          </span>
         </p>
       ) : null}
       {extra ??

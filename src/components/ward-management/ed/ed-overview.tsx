@@ -1,13 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Send, Tv, UserPlus } from "lucide-react";
+import { Send, Tv, UserPlus, Zap } from "lucide-react";
 import { bedMeetingTvHref, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { formatInstant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useSinceLastLookReview } from "@/components/ward-management/since-last-look-pill";
 
 import {
   Button,
@@ -44,7 +45,6 @@ type EdOverviewDepartment = {
 type EdOverviewChip = { id: string; label: string; value: number; tone?: WfTone; word?: string };
 
 type Props = {
-  sinceLastLook?: ReactNode;
   departmentId: string;
   departments: EdOverviewDepartment[];
   /** People on this department's psychiatry board: the first figure. */
@@ -79,7 +79,6 @@ const ICON = { size: 16, strokeWidth: 1.75, "aria-hidden": true } as const;
  */
 export function EdOverview({
   departmentId,
-  sinceLastLook,
   departments,
   onBoard,
   onBoardParts = [],
@@ -103,6 +102,9 @@ export function EdOverview({
   const barHasReferral = !isPhone && canOpen(WARD_REFERRAL_INTAKE_HREF);
   // The Demo pill reads the clock, as on every other page top ("Demo 10:42").
   const now = useWardFlowClock();
+  // Page tops (QA, 10 Nov 2026): the since-you-last-looked review is a hero chip, as on the ward
+  // ("Updates 2"); it shows only while there is something to review (Simplification A4).
+  const updates = useSinceLastLookReview(`ed:${departmentId}`);
   const current = departments.find((department) => department.id === departmentId);
   if (!current) return null;
 
@@ -191,9 +193,20 @@ export function EdOverview({
             <HeroQuickChips
               label="Board jobs"
               items={[
-                // "2 updates since 10:27" leads the row as one of its chips.
-                ...(sinceLastLook
-                  ? [{ id: "updates", label: "Updates", node: <span className={styles.updates}>{sinceLastLook}</span> }]
+                // The updates since you last looked lead the row: "Updates 2" on a phone, "Updates since
+                // 10:27 2" on a wider screen.
+                ...(updates.count > 0
+                  ? [
+                      {
+                        id: "updates",
+                        label: isPhone ? "Updates" : `Updates since ${formatInstantWithDay(updates.since, now)}`,
+                        icon: <Zap {...ICON} />,
+                        count: updates.count,
+                        countLabel: `${updates.count === 1 ? "update" : "updates"}${isPhone ? ` since ${formatInstantWithDay(updates.since, now)}` : ""}`,
+                        onClick: updates.open,
+                        testId: "ward-ed-updates",
+                      },
+                    ]
                   : []),
                 // New referral repeats the app bar's, which opens the same slide-out: so it shows only
                 // on a phone, and never on the ED desk (ED desk redesign, Josh 30 Oct 2026; deep
@@ -273,6 +286,7 @@ export function EdOverview({
           ) : null}
         </HeroTop>
       </Hero>
+      {updates.sheet}
       {tabs}
     </section>
   );
