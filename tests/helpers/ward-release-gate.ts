@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Locator, type Page, type TestInfo } from "playwright/test";
+import type { NodeResult, Result } from "axe-core";
 
 /**
  * Shared steps for the four release-gate journeys (`tests/release-gate-journeys.spec.ts`).
@@ -38,7 +39,7 @@ export async function expectAccessible(page: Page, testInfo: TestInfo, step: str
   const scan = async () => {
     const results = await new AxeBuilder({ page }).withTags(AXE_TAGS).disableRules(SCROLL_TOP_RULES).analyze();
     const atTop = await atScrollTop(page, () => new AxeBuilder({ page }).withRules(SCROLL_TOP_RULES).analyze());
-    results.violations.push(...atTop.violations);
+    results.violations.push(...(await withoutPinnedBarOverlap(page, atTop.violations)));
     const blocking = results.violations.filter((violation) => BLOCKING_IMPACTS.has(violation.impact ?? ""));
     return { results, blocking };
   };
@@ -181,6 +182,46 @@ export async function waitForAccessibleReadiness(page: Page) {
  * Runs `action` with the window and the work column (`[data-wf-scroller]`, which scrolls on a
  * phone) at the top, then puts both back where they were.
  */
+/**
+ * The bottom twin of the scroll-top rule above. A pinned bottom bar (Handover's Copy summary, the
+ * phone dock) always sits over whatever row is passing under it, at any scroll position, so axe
+ * counts that row's button as too small. Only a target whose size check failed solely because a
+ * `position: sticky` or `fixed` bar covers part of it is set aside; a target that is small, or
+ * covered by anything else, still fails.
+ */
+async function withoutPinnedBarOverlap(page: Page, violations: Result[]): Promise<Result[]> {
+  const kept: Result[] = [];
+  for (const violation of violations) {
+    if (violation.id !== "target-size") {
+      kept.push(violation);
+      continue;
+    }
+    const nodes: NodeResult[] = [];
+    for (const node of violation.nodes) {
+      const size = node.any.find((check) => check.id === "target-size");
+      const covers = (size?.relatedNodes ?? []).map((related) => related.target.join(" "));
+      const obscured = (size?.data as { messageKey?: string } | null)?.messageKey === "partiallyObscured";
+      const pinned =
+        obscured &&
+        covers.length > 0 &&
+        (await page.evaluate(
+          (selectors) =>
+            selectors.every((selector) => {
+              for (let el = document.querySelector(selector); el; el = el.parentElement) {
+                const position = getComputedStyle(el).position;
+                if (position === "sticky" || position === "fixed") return true;
+              }
+              return false;
+            }),
+          covers,
+        ));
+      if (!pinned) nodes.push(node);
+    }
+    if (nodes.length > 0) kept.push({ ...violation, nodes });
+  }
+  return kept;
+}
+
 async function atScrollTop<T>(page: Page, action: () => Promise<T>): Promise<T> {
   const saved = await page.evaluate(() => {
     const column = document.querySelector("[data-wf-scroller]");
