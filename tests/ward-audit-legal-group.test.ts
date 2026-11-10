@@ -95,6 +95,25 @@ describe("form moves on after examination or arrival (S-6)", () => {
     expect(formProgression({ ...arrived, legalStatus: "Voluntary" } as Movement)).toBeUndefined();
   });
 
+  it("still names Form 6A when a person on a community treatment order arrives (M117, D-123)", () => {
+    for (const code of ["5A", "5B"]) {
+      const arrivedOnCto = movement({
+        legalStatus: "Involuntary inpatient",
+        legalForm: { code },
+        closure: { at: NOW, outcome: "arrived", reason: "arrived" },
+      });
+      expect(formProgression(arrivedOnCto)).toEqual({ endedCode: code, endedWhen: "at arrival", nextCode: "6A" });
+    }
+    for (const code of ["6A", "6B", "6C"]) {
+      const arrivedOnOrder = movement({
+        legalStatus: "Involuntary inpatient",
+        legalForm: { code },
+        closure: { at: NOW, outcome: "arrived", reason: "arrived" },
+      });
+      expect(formProgression(arrivedOnOrder)).toBeUndefined();
+    }
+  });
+
   it("keeps an ended form's typed expiry as history on Forms and Delays, never in force or overdue", () => {
     const ended = movement({
       legalStatus: "Involuntary inpatient",

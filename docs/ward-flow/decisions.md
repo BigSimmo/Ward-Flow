@@ -142,6 +142,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-117](#d-117-care-plans-follow-up-frequent-presenter-count-tribunal-date-and-ward-flags-10-november-2026)                                             | Care plans follow-up: frequent presenter count, tribunal date, ward flags            | Active                                           |
 | [D-118](#d-118-page-tops-referrals-and-ward-phone-limits-up-to-8-kb-above-main-10-november-2026)                                                        | Page tops: Referrals and Ward phone limits up to 8 KB above main                     | Active                                           |
 | [D-119](#d-119-page-tops-phone-limits-raised-to-measured-sizes-trim-after-merge-10-november-2026)                                                       | Page tops: phone limits at measured sizes, trim after merge                          | Active                                           |
+| [D-123](#d-123-master-audit-list-answers-two-clinical-fixes-and-five-working-rules-10-november-2026)                                                    | Master audit list answers: two clinical fixes and five working rules                 | Active                                           |
 
 ---
 
@@ -1484,3 +1485,17 @@ is inferred.
 - **Decision:** PR #1581 sets each phone first-load limit to hosted CI's measured size plus about 0.2 KB, so it can merge without waiting for a trim. That puts Referrals about 10 KB and Capacity about 6.5 KB over main alone, beyond D-118's 8 KB and the 5 KB rule. A follow-up PR trims them back.
 - **Why:** after #1578 merged, webpack began copying the shared `next/link` and `next/dynamic` code into page chunks on Referrals, Capacity and one ED (about 9 KB loaded twice). The follow-up adds a named shared chunk for that code and lowers the limits.
 - **Boundary:** this PR only; layout and download size only, no clinical change. Approves no release.
+
+## D-123. Master audit list answers: two clinical fixes and five working rules (10 November 2026)
+
+- **Date:** 10 November 2026, 1:41 PM AWST (05:41 UTC). **Decided by:** Josh, in the Ward Flow project thread "Perfect the master audit list": "Go ahead with all recommendations now please", answering the six questions in the revised master audit list (Claude Doc, 10 November 2026). D-120 is claimed by PR #1583 and D-121 and D-122 by the documentation audit.
+- **Decision:**
+  1. **Forms 5A and 5B (audit M117):** they are community treatment orders in the register, not inpatient orders. A person on one who arrives on the ward, or is examined and placed on an inpatient order, gets the "Record Form 6A" prompt like any other non-inpatient form. Only 6A, 6B and 6C count as authorising an inpatient stay. Whether leave and return forms (7A to 7D) and the 4B extension should be recordable is not decided here.
+  2. **Aboriginal and Torres Strait Islander identity (audit M119):** the search record preview shows the identity as recorded ("Aboriginal", "Torres Strait Islander" or "Aboriginal and Torres Strait Islander"), and nothing for "Neither", "Not stated" or no answer. It replaces a fixed "Aboriginal (ATSI)" tag shown for any answer.
+  3. **Protected safety tests (audit M131):** for a named list of safety test files, a removed or loosened assertion should fail CI unless the PR says why and Josh approves. This narrows the Prototype Operating Mode's advisory test-deletion guard for those files only. Built when that audit item is run.
+  4. **Independent review on safety paths (audit M129):** a PR that changes the engine, access scope, database rules or legal wording gets one review by a different thread before auto-merge. Built when that audit item is run.
+  5. **Monthly read-only provider checks (audits M81 to M83):** a standing yes to read-only checks of the live schema, Supabase advisors and plan limits once a month. No writes, setting changes or spending.
+  6. **Cultural safety review (audit M122):** the Aboriginal cultural safety review the charter calls mandatory joins the real-data gate, beside D-111 item 8 and D-87.
+  7. **Audit numbering:** the master audit list numbers items M1 to M156 and supersedes the 84-item plan. D-111 and issues #1564 to #1577 use the plan's numbers (File A). In the master list, D-111 item 8's gate items 16, 33, 34, 35, 42, 43 and 44 are M65, M3, M60, M61, M62, M63 and M64; its items 52, 55 and 80 are M69, M72 and M85. Write M12 or A12, never a bare number.
+- **Why:** the review found items 1 and 2 as probable defects while reading the code, and items 3 to 7 close gaps that let safety checks weaken quietly or let rulings be misread.
+- **Boundary:** synthetic data only. Items 1 and 2 are clinical display rules built in a held PR. Item 5 authorises reads only. Approves no release.

@@ -12,3 +12,19 @@ export const ABORIGINAL_OR_TORRES_STRAIT_ISLANDER_STATUSES = [
 ] as const;
 
 export type AboriginalOrTorresStraitIslanderStatus = (typeof ABORIGINAL_OR_TORRES_STRAIT_ISLANDER_STATUSES)[number];
+
+/**
+ * M119 (master audit list, D-123): the short identity label a record preview may show, worded as
+ * recorded. Only the three statuses that record an identity get a label; "Neither", "Not stated",
+ * an empty answer or any unknown text show nothing, so the app never shortens an answer into a
+ * different meaning.
+ */
+const IDENTITY_LABELS: Readonly<Partial<Record<string, string>>> = {
+  "Aboriginal, not Torres Strait Islander": "Aboriginal",
+  "Torres Strait Islander, not Aboriginal": "Torres Strait Islander",
+  "Aboriginal and Torres Strait Islander": "Aboriginal and Torres Strait Islander",
+};
+
+export function aboriginalOrTorresStraitIslanderIdentityLabel(status: string | undefined): string | undefined {
+  return status === undefined ? undefined : IDENTITY_LABELS[status];
+}

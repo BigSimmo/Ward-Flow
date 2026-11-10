@@ -20,8 +20,12 @@ export type FormProgression = {
   nextCode: "6A";
 };
 
-/** Forms that authorise an inpatient stay already: nothing to move on to. */
-const INPATIENT_ORDER_CODES: readonly string[] = ["6A", "6B", "6C", "5A", "5B"];
+/**
+ * Forms that authorise an inpatient stay already: nothing to move on to. Forms 5A and 5B are
+ * community treatment orders in the register, not inpatient orders, so a person on one who
+ * arrives on the ward still gets the "Record Form 6A" prompt (M117, D-123).
+ */
+const INPATIENT_ORDER_CODES: readonly string[] = ["6A", "6B", "6C"];
 
 export function formProgression(movement: Movement | undefined): FormProgression | undefined {
   const code = movement?.legalForm?.code;
