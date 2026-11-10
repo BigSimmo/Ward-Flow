@@ -877,9 +877,9 @@
     --wf-band-right: var(--wf-band-phone-x, var(--wf-s-3));
   }
 
+  :where(:global([data-wf-scroller])) .hero[data-wf-hero="band"]:where(:not([data-band])),
   .hero[data-band="on"],
-  .hero[data-band="off"],
-  :where(:global([data-wf-scroller])) .hero[data-wf-hero="band"]:where(:not([data-band])) {
+  .hero[data-band="off"] {
     position: relative;
     margin-top: calc(-1 * var(--wf-band-top, 0px));
     margin-left: calc(-1 * var(--wf-band-left, 0px));
@@ -901,9 +901,9 @@
     background-repeat: no-repeat;
   }
 
+  :where(:global([data-wf-scroller])) .hero[data-wf-hero="band"]:where(:not([data-band]))::after,
   .hero[data-band="on"]::after,
-  .hero[data-band="off"]::after,
-  :where(:global([data-wf-scroller])) .hero[data-wf-hero="band"]:where(:not([data-band]))::after {
+  .hero[data-band="off"]::after {
     content: "";
     position: absolute;
     left: 0;
