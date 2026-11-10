@@ -90,7 +90,7 @@ const INTAKE = {
   referrer: {
     name: "Synthetic referrer",
     email: "referrer@example.invalid",
-    phone: "Synthetic-phone-0001",
+    phone: "08 5550 0001",
     role: "Registrar",
     location: "Synthetic ED",
   },
@@ -156,15 +156,42 @@ describe("M39 hostile input", () => {
     expectInert(container);
   });
 
-  it("keeps an unsafe referrer phone inside a tel: link and shows it as text", () => {
-    const hostileIntake = {
-      ...INTAKE,
-      reasonForReferral: HOSTILE[0],
-      referrer: { name: HOSTILE[1], role: HOSTILE[2], location: HOSTILE[5], phone: HOSTILE[3], email: HOSTILE[4] },
-    };
-    // A direct command, as a hostile client would send it: the engine stores the text as typed.
-    const { referral } = savedReferral("Synthetic history", hostileIntake);
-    expect(referral.intake?.referrer.phone).toBe(HOSTILE[3]);
+  it("refuses a referrer phone that is not a phone number, at the engine", () => {
+    // Audit M39 (Josh, 10 Nov 2026): a direct command, as a hostile client would send it.
+    for (const phone of [HOSTILE[3], HOSTILE[0], "Synthetic-phone-0001", "no digits"]) {
+      const hostileIntake = { ...INTAKE, referrer: { ...INTAKE.referrer, phone } };
+      const result = applyCommand(
+        seedWorld(at),
+        {
+          ...RECEIVE_REFERRAL_CANDIDATE,
+          type: "RECEIVE_REFERRAL",
+          role: "community",
+          now: 642,
+          history: "Synthetic history",
+          intake: hostileIntake,
+        },
+        at,
+      );
+      expect(result.outcome, phone).not.toBe("accepted");
+      expect(JSON.stringify(result)).toContain("Enter a phone number in digits, or leave it blank.");
+    }
+    // Blank and part-typed numbers still send (FORM-REF warns about them, never blocks).
+    for (const phone of ["", "0412"]) {
+      const { referral } = savedReferral("Synthetic history", { ...INTAKE, referrer: { ...INTAKE.referrer, phone } });
+      expect(referral.intake?.referrer.phone).toBe(phone);
+    }
+  });
+
+  it("keeps an unsafe referrer phone from an older record inside a tel: link and shows it as text", () => {
+    // Stored referrals are not re-checked, so one saved before M39 still renders inert.
+    const { referral: saved } = savedReferral("Synthetic history", { ...INTAKE, reasonForReferral: HOSTILE[0] });
+    const referral = {
+      ...saved,
+      intake: {
+        ...saved.intake!,
+        referrer: { name: HOSTILE[1], role: HOSTILE[2], location: HOSTILE[5], phone: HOSTILE[3], email: HOSTILE[4] },
+      },
+    } as Referral;
     const { container } = render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <PatientTab referral={referral} now={NOW_ANCHOR} personName={HOSTILE[6]} readOnly />
