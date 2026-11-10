@@ -30,7 +30,8 @@ const JSON_LENGTH_DEPTH = 128;
 const isRawJson = Object.getOwnPropertyDescriptor(JSON, "isRawJSON")?.value;
 
 /**
- * The native serializer owns every escape; avoid splitting a surrogate pair across chunks.
+ * The native serializer owns every escape; avoid splitting a surrogate pair across chunks. Counts
+ * UTF-8 bytes (audit M162): JSON.stringify escapes lone surrogates, so each chunk is well formed.
  * @param {string} value
  */
 function quotedJsonLength(value) {
@@ -40,7 +41,7 @@ function quotedJsonLength(value) {
     const last = value.charCodeAt(end - 1);
     const next = value.charCodeAt(end);
     if (end < value.length && last >= 0xd800 && last <= 0xdbff && next >= 0xdc00 && next <= 0xdfff) end -= 1;
-    length += JSON.stringify(value.slice(start, end)).length - 2;
+    length += Buffer.byteLength(JSON.stringify(value.slice(start, end)), "utf8") - 2;
     if (length > bufferConstants.MAX_STRING_LENGTH) return null;
     start = end;
   }
@@ -99,12 +100,14 @@ function dataJsonLength(value, ancestors, depth) {
 }
 
 /**
- * Exact legacy JSON.stringify(value).length, in UTF-16 code units, without a joined JSON string
- * for ordinary immutable JSON data. Unsupported shapes use the original native operation once.
+ * Exact UTF-8 byte length of JSON.stringify(value), without a joined JSON string for ordinary
+ * immutable JSON data. Unsupported shapes use the original native operation once. Bytes, not
+ * UTF-16 characters (audit M162): the 8 MiB cap and the 6 MiB pressure line are byte limits, as
+ * PostgreSQL's `octet_length` counts them, so accented or emoji text cannot slip under them.
  */
-export function jsonCharacterLength(value) {
+export function jsonByteLength(value) {
   const length = dataJsonLength(value, new Set(), 0);
-  return typeof length === "number" ? length : JSON.stringify(value).length;
+  return typeof length === "number" ? length : Buffer.byteLength(JSON.stringify(value), "utf8");
 }
 
 const MARKER = "$records";
