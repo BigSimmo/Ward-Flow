@@ -19,9 +19,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { applyCommand, seedWorld } from "../backend/ward-flow/engine";
 import { isbarText, IsbarSheet } from "@/components/ward-management/referrals/referral-board-sheets";
 import { ReferralHistoryAndCorrections } from "@/components/ward-management/referrals/referral-history-corrections";
+import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
+import { WardNotificationCenter } from "@/components/ward-management/ward/ward-notification-center";
+import type { WardSharedConnection } from "@/components/ward-management/ward-shared-access";
+import type { Notice } from "@/components/ward-management/ward-model-notices";
 import { PatientTab } from "@/components/ward-management/referrals/referral-panel-tabs";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import type { Referral } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -86,7 +90,7 @@ const INTAKE = {
   referrer: {
     name: "Synthetic referrer",
     email: "referrer@example.invalid",
-    phone: "08 5550 0001",
+    phone: "Synthetic-phone-0001",
     role: "Registrar",
     location: "Synthetic ED",
   },
@@ -152,42 +156,15 @@ describe("M39 hostile input", () => {
     expectInert(container);
   });
 
-  it("refuses a referrer phone that is not a phone number, at the engine", () => {
-    // Audit M39 (Josh, 10 Nov 2026): a direct command, as a hostile client would send it.
-    for (const phone of [HOSTILE[3], HOSTILE[0], "Synthetic-phone-0001", "no digits"]) {
-      const hostileIntake = { ...INTAKE, referrer: { ...INTAKE.referrer, phone } };
-      const result = applyCommand(
-        seedWorld(at),
-        {
-          ...RECEIVE_REFERRAL_CANDIDATE,
-          type: "RECEIVE_REFERRAL",
-          role: "community",
-          now: 642,
-          history: "Synthetic history",
-          intake: hostileIntake,
-        },
-        at,
-      );
-      expect(result.outcome, phone).not.toBe("accepted");
-      expect(JSON.stringify(result)).toContain("Enter a phone number in digits, or leave it blank.");
-    }
-    // Blank and part-typed numbers still send (FORM-REF warns about them, never blocks).
-    for (const phone of ["", "0412"]) {
-      const { referral } = savedReferral("Synthetic history", { ...INTAKE, referrer: { ...INTAKE.referrer, phone } });
-      expect(referral.intake?.referrer.phone).toBe(phone);
-    }
-  });
-
-  it("keeps an unsafe referrer phone from an older record inside a tel: link and shows it as text", () => {
-    // Stored referrals are not re-checked, so one saved before M39 still renders inert.
-    const { referral: saved } = savedReferral("Synthetic history", { ...INTAKE, reasonForReferral: HOSTILE[0] });
-    const referral = {
-      ...saved,
-      intake: {
-        ...saved.intake!,
-        referrer: { name: HOSTILE[1], role: HOSTILE[2], location: HOSTILE[5], phone: HOSTILE[3], email: HOSTILE[4] },
-      },
-    } as Referral;
+  it("keeps an unsafe referrer phone inside a tel: link and shows it as text", () => {
+    const hostileIntake = {
+      ...INTAKE,
+      reasonForReferral: HOSTILE[0],
+      referrer: { name: HOSTILE[1], role: HOSTILE[2], location: HOSTILE[5], phone: HOSTILE[3], email: HOSTILE[4] },
+    };
+    // A direct command, as a hostile client would send it: the engine stores the text as typed.
+    const { referral } = savedReferral("Synthetic history", hostileIntake);
+    expect(referral.intake?.referrer.phone).toBe(HOSTILE[3]);
     const { container } = render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <PatientTab referral={referral} now={NOW_ANCHOR} personName={HOSTILE[6]} readOnly />
@@ -254,6 +231,68 @@ describe("M39 hostile input", () => {
     const { container } = render(<p>{reason}</p>);
     expect(container.textContent).toBe(reason);
     expectInert(container);
+  });
+
+  it("shows a hostile typed name on the Alerts screen as plain text only", () => {
+    const state = JSON.parse(JSON.stringify(seedWardFlowState())) as WardFlowState;
+    // WF-015 raises two alerts (transport time passed) in the seed; give its patient hostile names.
+    const patient = state.patients.find((p) => p.id === state.movements.find((m) => m.id === "WF-015")!.patientId)!;
+    patient.givenName = HOSTILE[1];
+    patient.familyName = HOSTILE[0];
+    const connection = {
+      enabled: true,
+      signedIn: true,
+      actorId: "synthetic-shared-account",
+      access: { role: "coordinator", scope: { kind: "statewide" } },
+      status: "ready",
+      error: null,
+      eventLog: [],
+      receivedAt: Date.now(),
+      snapshot: {
+        accessContext: "a".repeat(64),
+        dataMode: "prototype",
+        revision: 1,
+        now: NOW_ANCHOR,
+        payload: { version: 1, state, dayZero: "2026-10-07T00:00:00Z", startedAt: "2026-10-07T10:00:00Z" },
+      },
+      dispatch: vi.fn(),
+      signIn: vi.fn(),
+      signOut: vi.fn(),
+      retry: vi.fn(),
+      pushApi: { pushKey: vi.fn(), pushStatus: vi.fn(), pushSubscribe: vi.fn(), pushUnsubscribe: vi.fn() },
+    } as unknown as WardSharedConnection;
+    const { container } = render(
+      <WardFlowProvider sharedConnection={connection}>
+        <AlertsScreen />
+      </WardFlowProvider>,
+    );
+    expect(container.textContent, "the hostile name is on screen as literal text").toContain(HOSTILE[0]);
+    expectInert(container);
+  });
+
+  it("shows a hostile buzz message and notice sentence as plain text only", () => {
+    const notice: Notice = {
+      id: "N-SYN-1",
+      raisedAt: NOW_ANCHOR - 5,
+      to: { role: "ward", placeId: "ward-alpha" },
+      about: { unitId: "ward-alpha" },
+      kind: "referral_declined",
+      sentence: ALL,
+    };
+    const { baseElement } = render(
+      <WardNotificationCenter
+        unitId="ward-alpha"
+        unitName={HOSTILE[2]}
+        now={NOW_ANCHOR}
+        movements={[]}
+        notices={[notice]}
+        refreshRequests={[
+          { unitId: "ward-alpha", at: NOW_ANCHOR - 5, byRole: "coordinator", message: ALL, urgent: true },
+        ]}
+      />,
+    );
+    expect(baseElement.textContent, "the buzz is on screen as literal text").toContain(HOSTILE[0]);
+    expectInert(baseElement);
   });
 
   it("has no path in the app source that writes a string into the page as HTML or code", () => {

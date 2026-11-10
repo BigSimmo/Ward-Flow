@@ -10,11 +10,18 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { applyCommand, seedWorld } from "../backend/ward-flow/engine";
+import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
+import { WardBoard } from "@/components/ward-management/board/ward-board";
+import { EdScreen } from "@/components/ward-management/ed/ed-screen";
+import { HandoverPage } from "@/components/ward-management/handover/handover-page";
+import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import type { WardSharedConnection } from "@/components/ward-management/ward-shared-access";
 import { isbarText } from "@/components/ward-management/referrals/referral-board-sheets";
 import { ReferralHistoryAndCorrections } from "@/components/ward-management/referrals/referral-history-corrections";
+import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
@@ -22,7 +29,7 @@ import {
   REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS,
   REFERRAL_HISTORY_LIMITS,
 } from "@/components/ward-management/ward-model-referral-parts";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { RECEIVE_REFERRAL_CANDIDATE } from "./helpers/ward-legal-figure-sweep";
 
 vi.mock("next/navigation", () => ({
@@ -167,5 +174,123 @@ describe("M38 boundary figures on the Bed board", () => {
     const counts = bedStates(unit, [], [], []);
     sane(counts, 6);
     expect(counts.ready).toBe(0);
+  });
+});
+
+describe("M38 extreme content: 60 patients with long names and many alerts", () => {
+  const COUNT = 60;
+  const LONG = "Wolfeschlegelsteinhausenbergerdorff-Ñandú-東京-עברית".repeat(2);
+  const ED = "arm-ed";
+  const NAMES = Array.from({ length: COUNT }, (_, i) => ({
+    given: `Given${String(i).padStart(2, "0")}`,
+    family: `${LONG}${String(i).padStart(2, "0")}`,
+  }));
+
+  function extremeState(): { state: WardFlowState; unitId: string } {
+    const state = JSON.parse(JSON.stringify(seedWardFlowState())) as WardFlowState;
+    const template = state.movements.find((m) => !m.closure && m.originEdId === ED)!;
+    const alerting = state.movements.find((m) => m.id === "WF-015")!;
+    const stay = state.admissions.find((a) => a.state === "occupied" && a.patientId)!;
+    const unit = state.units.find((u) => u.id === stay.unitId)!;
+    const patientTemplate = state.patients.find((p) => p.id === template.patientId)!;
+    NAMES.forEach((name, i) => {
+      const patientId = `PT-SYN-${i}` as const;
+      state.patients.push({
+        ...patientTemplate,
+        id: patientId,
+        umrn: `UM9${String(i).padStart(5, "0")}`,
+        givenName: name.given,
+        familyName: name.family,
+        preferredName: undefined,
+      });
+      state.movements.push({ ...structuredClone(template), id: `WF-SYN-${i}`, patientId });
+      // A second, alerting movement per patient (transport booked and its time passed), so the
+      // alerts screen holds 120 rows.
+      state.movements.push({ ...structuredClone(alerting), id: `WF-SYN-A-${i}`, patientId });
+      state.admissions.push({ ...structuredClone(stay), id: `ADM-SYN-${i}`, patientId, bedNumber: undefined });
+    });
+    unit.beds = Math.max(unit.beds, COUNT + 20);
+    return { state, unitId: unit.id };
+  }
+
+  function connection(state: WardFlowState): WardSharedConnection {
+    return {
+      enabled: true,
+      signedIn: true,
+      actorId: "synthetic-shared-account",
+      access: { role: "coordinator", scope: { kind: "statewide" } },
+      status: "ready",
+      error: null,
+      eventLog: [],
+      receivedAt: Date.now(),
+      snapshot: {
+        accessContext: "a".repeat(64),
+        dataMode: "prototype",
+        revision: 1,
+        now: NOW_ANCHOR,
+        payload: { version: 1, state, dayZero: "2026-10-07T00:00:00Z", startedAt: "2026-10-07T10:00:00Z" },
+      },
+      dispatch: vi.fn(),
+      signIn: vi.fn(),
+      signOut: vi.fn(),
+      retry: vi.fn(),
+      pushApi: { pushKey: vi.fn(), pushStatus: vi.fn(), pushSubscribe: vi.fn(), pushUnsubscribe: vi.fn() },
+    } as unknown as WardSharedConnection;
+  }
+
+  // A render that throws or logs a React error (a key clash, an invalid value) fails the test.
+  let errors: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+  afterEach(() => {
+    const logged = errors.mock.calls.map((call: unknown[]) => String(call[0]).slice(0, 200));
+    errors.mockRestore();
+    expect(logged).toEqual([]);
+  });
+
+  const noBrokenFigures = (root: HTMLElement) => {
+    const text = root.textContent ?? "";
+    expect(text).not.toMatch(/\bNaN\b|\bundefined\b|\bInfinity\b|\[object Object\]/u);
+  };
+
+  function mount(ui: ReactNode, state: WardFlowState) {
+    return render(<WardFlowProvider sharedConnection={connection(state)}>{ui}</WardFlowProvider>);
+  }
+
+  it("the ED list shows every one of the 60 rows", () => {
+    const { state } = extremeState();
+    const { container } = mount(<EdScreen edId={ED} />, state);
+    const text = container.textContent ?? "";
+    for (const name of NAMES) expect(text, name.given).toContain(name.family);
+    noBrokenFigures(container);
+  });
+
+  it("the Bed board shows all 60 extra stays", () => {
+    const { state, unitId } = extremeState();
+    const { container } = mount(<WardBoard unitId={unitId} />, state);
+    const text = container.textContent ?? "";
+    for (const name of NAMES) expect(text, name.given).toContain(name.family.slice(0, 20));
+    noBrokenFigures(container);
+  });
+
+  it("the alerts screen lists every open referral and shows no broken figure", () => {
+    const { state } = extremeState();
+    const { container } = mount(<AlertsScreen />, state);
+    const items = buildActionInbox(state.movements.filter(isOpen), NOW_ANCHOR, allUnits()).filter((item) =>
+      item.movementId.startsWith("WF-SYN-A-"),
+    );
+    expect(items.length, "the extreme state really raises many alerts").toBeGreaterThanOrEqual(COUNT * 2);
+    const text = container.textContent ?? "";
+    for (const name of NAMES) expect(text, name.given).toContain(name.family.slice(0, 20));
+    noBrokenFigures(container);
+  });
+
+  it("the handover print page lists every patient", () => {
+    const { state } = extremeState();
+    const { container } = mount(<HandoverPage />, state);
+    const text = container.textContent ?? "";
+    for (const name of NAMES) expect(text, name.given).toContain(name.family.slice(0, 20));
+    noBrokenFigures(container);
   });
 });

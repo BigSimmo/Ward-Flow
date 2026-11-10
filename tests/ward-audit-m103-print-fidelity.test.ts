@@ -116,21 +116,37 @@ function keepsRowsWhole(css: string): boolean {
 type Property = "print time" | "second identifier" | "rows kept whole";
 
 /**
- * What the static read could not find, per sheet, on 10 Nov 2026. Some are false leads (a part
- * drawn from another folder, or a sheet with no patient names), so each needs a person or a
- * rendered print test to confirm. Exact: take a line off when it is fixed or confirmed not needed.
+ * Gaps the static read reports that the rendered pages prove are NOT gaps, with the reason. Each is
+ * checked on the rendered page in ward-audit-m103-print-fidelity.dom.test.tsx (10 Nov 2026).
+ */
+const FALSE_LEADS: Readonly<Record<string, readonly Property[]>> = {
+  // "Prepared 10:42" is on the page; the words are not in the static read's list of print words.
+  "Call sheet": ["print time"],
+  // The shift brief names nobody, so needs no second identifier.
+  "Ward daily sheet": ["second identifier"],
+  // "Draft 10:42 AWST" is on the letter.
+  "Referral letter": ["print time"],
+  // "As of Tue 10 Nov 2026, 10:42 AWST" is on the list.
+  "Discharge board": ["print time"],
+  // "Generated Tue 10 Nov 2026, 10:42 AWST" is on the page.
+  "Patient chronology": ["print time"],
+  // "Generated ... AWST" is on the page and the report names nobody.
+  "Weekly report": ["print time", "second identifier"],
+};
+
+/**
+ * What is still open after that (10 Nov 2026). "rows kept whole" is a page-break rule in CSS, which a
+ * DOM render cannot prove, so those stay as leads for a person or a browser print test. The Capacity and
+ * Bed meeting sheets are real gaps (names with no UMRN, shown by the rendered page). The Bed meeting run
+ * summary has not been rendered. A real gap the static read cannot see (the call sheet prints no UMRN)
+ * is pinned as a DEFECT in the DOM file. Exact: take a line off when it is fixed or confirmed not needed.
  */
 const GAPS: Readonly<Record<string, readonly Property[]>> = {
-  "Call sheet": ["print time"],
   "Community referral letter": ["rows kept whole"],
-  "Ward daily sheet": ["second identifier"],
   "Patient handover pack": ["rows kept whole"],
-  "Referral letter": ["print time", "rows kept whole"],
+  "Referral letter": ["rows kept whole"],
   "Bed meeting run": ["print time", "second identifier", "rows kept whole"],
   "Handover print sheet": ["rows kept whole"],
-  "Discharge board": ["print time"],
-  "Patient chronology": ["print time"],
-  "Weekly report": ["print time", "second identifier"],
   "Capacity meeting sheet": ["second identifier"],
   "Bed meeting sheet": ["second identifier"],
 };
@@ -154,8 +170,17 @@ describe("M103: each printed sheet's time, second identifier and whole rows (sta
     expect(found["Ward bed list"]).toEqual([]);
   });
 
+  it("lists only false leads the static read really reports", () => {
+    for (const [name, properties] of Object.entries(FALSE_LEADS))
+      for (const property of properties) expect(found[name], `${name}: ${property}`).toContain(property);
+  });
+
   it("matches the recorded gaps exactly", () => {
-    const actual = Object.fromEntries(Object.entries(found).filter(([, missing]) => missing.length > 0));
+    const actual = Object.fromEntries(
+      Object.entries(found)
+        .map(([name, missing]) => [name, missing.filter((property) => !FALSE_LEADS[name]?.includes(property))] as const)
+        .filter(([, missing]) => missing.length > 0),
+    );
     expect(actual, "a sheet lost or gained a print property: fix it, or update GAPS after checking").toEqual(GAPS);
   });
 });

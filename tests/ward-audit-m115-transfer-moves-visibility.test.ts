@@ -120,7 +120,6 @@ describe("M115: a transfer from ward A to ward B moves the record between the tw
     }
   });
 
-  // Not provable offline here: the open patient drawer on ward A's screen closing on that poll. The
-  // drawer reads the scoped snapshot, so it needs a two-desk browser or shared-provider DOM test.
-  it.todo("closes an open patient drawer on ward A within one poll after the patient arrives on ward B");
+  // The open-drawer half is proven in ward-audit-m115-drawer-closes.dom.test.tsx (shared-provider DOM test):
+  // the Bed board drawer on ward A closes on the next snapshot that moves the stay off the ward.
 });
