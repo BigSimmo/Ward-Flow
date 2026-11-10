@@ -109,7 +109,7 @@ import * as desk from "./handover-desk";
 import { HandoverBeds } from "./handover-beds";
 import { LongStaySummary } from "./long-stay-summary";
 // Closing-the-loop package A (24 Oct 2026): open promises and callbacks carried over.
-import { HandoverOpenPromises, promisesHeroAct, promisesPhoneAct } from "./handover-open-promises";
+import { HandoverOpenPromises, promisesHeroAct, promisesPhoneAct, useCarerDue } from "./handover-open-promises";
 import {
   HandoverMeetingChip,
   HandoverShiftMenu,
@@ -136,6 +136,7 @@ import {
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { HandoverDigestSlot, useHandoverDigestOpen } from "./handover-digest-slot";
 import { handoverSinceItems } from "./handover-since-items";
+import { useDigestNight } from "./handover-digest-first-look";
 
 export {
   handoverScopeLabel,
@@ -226,6 +227,7 @@ export function HandoverPage() {
     "staffRequests",
   );
   const now = useWardFlowClock();
+  const carerDue = useCarerDue(now).length; // batch 3 item 23: carer call backs join the promises count
   const partialDisplay = useWardPartialDisplay();
   const partialHost = useWardPartialDisplayHost();
   const access = useEffectiveWardAccess();
@@ -400,6 +402,7 @@ export function HandoverPage() {
     () => handoverSinceItems({ admissions, wards, units, rows, scopeKind: scope.kind, newSince, now, edDesk }),
     [admissions, wards, units, rows, scope.kind, newSince, now, edDesk],
   );
+  const night = useDigestNight(digestOpen, sinceItems, { admissions, wards, units, rows, scope, now, edDesk });
   // L1 (site review, 12 Oct 2026): the chip counts each change once. "New act now" rows are already
   // among "new on the sheet", so adding them again made the chip read 35 beside a strip of 0, 1, 32.
   const copySince = useCallback(() => {
@@ -861,7 +864,7 @@ export function HandoverPage() {
               cutoff,
               sinceAt: newSince,
               scopeLabel,
-              sinceItems,
+              ...night, // item 11: since items, widened to the night on the first morning read
               counts,
               referrals,
               units,
@@ -930,7 +933,7 @@ export function HandoverPage() {
           onOpenDigest={() => setDigestOpen(true)}
           history={<HandoverHistory {...historyProps} />}
           siteSignOff={siteSignOff}
-          promisesAct={promisesPhoneAct(referrals, now)}
+          promisesAct={promisesPhoneAct(referrals, now, carerDue)}
           onPill={togglePill}
         />
         {digestSheet}
@@ -965,7 +968,7 @@ export function HandoverPage() {
   const checksDone = signChecks.filter((check) => check.done).length;
   /* Page tops (Josh, 9 Nov 2026). NA2-01: the title counts Act now, Flagged urgent and Due by, as the
    * phone title does. Sign off stays in the top on every tab (3 Nov) and opens the checklist drawer. */
-  const promisesAct = sheetOpen ? undefined : promisesHeroAct(referrals, now, promisesOpen, setPromisesOpen);
+  const promisesAct = sheetOpen ? undefined : promisesHeroAct(referrals, now, promisesOpen, setPromisesOpen, carerDue);
   const handoverCount = counts.act + counts.urg + counts.due;
   const hero = (
     <Hero
@@ -1472,9 +1475,7 @@ export function HandoverPage() {
       {hero}
       {/* The folder tabs rise out of the hero, so they come straight after it. */}
       {sheetOpen ? null : toolbar}
-      {sheetOpen || !promisesOpen ? null : (
-        <HandoverOpenPromises referrals={referrals} units={units} now={now} layout="page" />
-      )}
+      {sheetOpen ? null : <HandoverOpenPromises referrals={referrals} units={units} now={now} open={promisesOpen} />}
       {pastBanner}
       {sheetOpen || tab !== "pts" ? null : siteSignOff}
       {body}

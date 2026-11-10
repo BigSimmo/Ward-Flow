@@ -40,6 +40,16 @@ export type SortInventoryEntry = {
 };
 
 export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
+  // ---------------------------------------------------------------- batch 3 item 23 (10 Nov 2026)
+  {
+    file: "handover/handover-work-model.ts",
+    match: "(left, right) => left.bestAfter - right.bestAfter",
+    list: "patients",
+    key: "the carer's typed best-after time, earliest first",
+    order: "wait order",
+    reason:
+      "Carer call backs due at handover list by the time the carer asked to be rung after, a recorded clock order like the ward replies beside them. 'best' is part of the field name bestAfter, not a quality; nothing ranks a person, ward or bed.",
+  },
   // ---------------------------------------------------------------- ruled by Josh (D-126)
   {
     file: "wards/ward-index.tsx",

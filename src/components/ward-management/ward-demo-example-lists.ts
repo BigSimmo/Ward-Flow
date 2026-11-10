@@ -28,6 +28,7 @@ import { completeSyntheticReferralIntake } from "./ward-referral-intake-seed";
 import { wardReferralInboxEntries } from "./referrals/referral-inbox";
 import { currentShiftStartInstant } from "./ward-board-time-features";
 import type { StaffRequestRecord } from "./staffing/staff-requests";
+import { seededHandoverWork } from "./handover/handover-work-demo";
 import type { WardIncident, WardIncidentCategory } from "./restrictive-practice/ward-restrictive-practice";
 
 const FAMILY = [
@@ -267,7 +268,8 @@ export function applyExampleListsOverlay(state: WardFlowState, anchor: Instant):
   addRestrictivePractice(draft, anchor);
   addFinishedStays(draft, people, anchor);
   addReadmissionAndHoldUpLog(draft, anchor);
-  return { ...state, ...draft, ...seededStaffRequest(state, anchor) };
+  // Batch 3 items 21 and 23: a carer call back owed, and one handed on and not accepted yet.
+  return { ...state, ...draft, ...seededStaffRequest(state, anchor), ...seededHandoverWork(draft, anchor) };
 }
 
 /** Staff needed (feature 10): one synthetic open request, so the tag shows in the demo. */

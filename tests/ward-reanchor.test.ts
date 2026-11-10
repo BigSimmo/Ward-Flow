@@ -51,6 +51,8 @@ const MODEL_FILES = [
   "src/components/ward-management/ward-discharge-checklist.ts",
   // Staff needed (feature 10, 9 Nov 2026): a request's shift start, asked, updated and closed times.
   "src/components/ward-management/staffing/staff-requests.ts",
+  // Batch 3 items 21 and 23 (10 Nov 2026): a hand-over's times, and a carer callback's best-after time.
+  "src/components/ward-management/handover/handover-work-events.ts",
 ];
 
 /**

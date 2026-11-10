@@ -198,6 +198,14 @@ function wholeStay(context: Context, admissionId: string): boolean {
   return context.admissionIds.has(admissionId) && !context.scoped.datesOnlyAdmissionIds.has(admissionId);
 }
 
+/** Batch 3 items 21 and 23: a record about one stay or bed request goes only with that stay or request. */
+function stayOrRequestVisible(context: Context, record: { admissionId?: string; movementId?: string }): boolean {
+  if (record.admissionId !== undefined) return wholeStay(context, record.admissionId);
+  return (
+    record.movementId !== undefined && context.scoped.movements.some((movement) => movement.id === record.movementId)
+  );
+}
+
 /**
  * Who may see each field of the saved workspace. Every field is listed, so the typecheck fails when
  * a new one arrives unclassified. "keep" fields describe places, settings or counters, never people.
@@ -315,6 +323,24 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   directoryChecks: (context) => context.state.directoryChecks ?? [],
   // Staff needed (feature 10): a ward, a shift, a count and chosen reasons. Each desk keeps its wards'.
   staffRequests: (context) => (context.state.staffRequests ?? []).filter((record) => context.unitIn(record.unitId)),
+  // Batch 3 item 23: a carer callback goes where its stay or bed request goes. No name, no number.
+  carerCallbacks: (context) =>
+    (context.state.carerCallbacks ?? []).filter((record) => stayOrRequestVisible(context, record)),
+  // Batch 3 item 21: a hand-over goes with the record its item is on, so it names nobody a desk cannot see.
+  handedItems: (context) =>
+    (context.state.handedItems ?? []).filter((record) =>
+      record.item.kind === "referral"
+        ? context.scoped.referrals.some(
+            (referral) => referral.id === (record.item as { referralId: string }).referralId,
+          )
+        : record.item.kind === "callback"
+          ? (context.state.carerCallbacks ?? []).some(
+              (callback) =>
+                callback.id === (record.item as { callbackId: string }).callbackId &&
+                stayOrRequestVisible(context, callback),
+            )
+          : stayOrRequestVisible(context, record.item),
+    ),
   // Closing-the-loop (package E): the coordinator's return plan, as repatriations below.
   homeServiceReturns: (context) =>
     context.coordinator
@@ -429,6 +455,8 @@ export function scopeWardFlowState(
   if (state.returnEarlyFlags === undefined) delete next.returnEarlyFlags;
   if (state.triages === undefined) delete next.triages;
   if (state.staffRequests === undefined) delete next.staffRequests;
+  if (state.handedItems === undefined) delete next.handedItems;
+  if (state.carerCallbacks === undefined) delete next.carerCallbacks;
   if ((next.returnEarlyNotices as unknown[]).length === 0) delete next.returnEarlyNotices;
   return {
     state: closeReferences(next as WardFlowState, scoped.datesOnlyAdmissionIds, state, access.role !== "executive"),

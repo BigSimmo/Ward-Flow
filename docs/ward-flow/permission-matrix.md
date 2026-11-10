@@ -18,12 +18,13 @@ and the reducer still limit each desk to records in its own place.
 | Backend  | `deskCommand`, the role clause of `validSharedCommand` and `commandRefusal` (`backend/ward-flow/engine.ts`); no role is refused 403 in `shared-http.mjs`                                 | Called per cell                                     |
 | Database | Row level security policies and grants in `backend/ward-flow/migrations/` and `infra/`                                                                                                   | SQL read as text                                    |
 
-**193 actions x 10 desks = 1930 cells.**
+**197 actions x 10 desks = 1970 cells.**
 
 ## Matrix
 
 | Action                                      | Coordinator (statewide) | Coordinator (one service) | Transport officer | Ward user | Site bed manager | ED clinician | Community team | Executive | Access admin | No role |
 | ------------------------------------------- | :---------------------: | :-----------------------: | :---------------: | :-------: | :--------------: | :----------: | :------------: | :-------: | :----------: | :-----: |
+| `ACCEPT_HANDED_ITEM`                        |            Y            |             Y             |         -         |     Y     |        -         |      Y       |       Y        |     -     |      -       |    -    |
 | `ACCEPT_IN_PRINCIPLE`                       |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `ACCEPT_REFERRAL`                           |            Y            |             Y             |         -         |     Y     |        -         |      Y       |       Y        |     -     |      -       |    -    |
 | `ACKNOWLEDGE_BROADCAST_ALERT`               |            Y            |             Y             |         Y         |     Y     |        Y         |      Y       |       Y        |     -     |      -       |    -    |
@@ -73,10 +74,12 @@ and the reducer still limit each desk to records in its own place.
 | `FLAG_REFERRAL_TURNAROUND_PRIORITY`         |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `FLAG_RETURN_EARLY`                         |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `HANDOVER_READY`                            |            Y            |             Y             |         -         |     -     |        -         |      Y       |       Y        |     -     |      -       |    -    |
+| `HAND_OVER_ITEM`                            |            Y            |             Y             |         -         |     Y     |        -         |      Y       |       Y        |     -     |      -       |    -    |
 | `HOLD_REFERRAL_BED`                         |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `LOG_REFERRAL_CONTACT`                      |            Y            |             Y             |         -         |     -     |        -         |      Y       |       Y        |     -     |      -       |    -    |
 | `MARK_ACCEPTANCE_CONDITION_MET`             |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `MARK_CANCELLED_MOVE_CHECK`                 |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
+| `MARK_CARER_CALLBACK_MADE`                  |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `MARK_CLOSURE_TRANSITION_ITEM`              |            Y            |             Y             |         -         |     Y     |        Y         |      -       |       -        |     -     |      -       |    -    |
 | `MARK_NOTICE_READ`                          |            Y            |             Y             |         Y         |     Y     |        Y         |      Y       |       Y        |     -     |      -       |    -    |
 | `MARK_REFERRAL_INFORMATION_MET`             |            Y            |             Y             |         -         |     Y     |        -         |      Y       |       Y        |     -     |      -       |    -    |
@@ -101,6 +104,7 @@ and the reducer still limit each desk to records in its own place.
 | `RECORD_ARRIVED_IN_DEPARTMENT`              |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_AWAY_AT_EMERGENCY_DEPARTMENT`       |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_BED_MEETING_ACTION`                 |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
+| `RECORD_CARER_CALLBACK`                     |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_CARE_PLAN`                          |            Y            |             Y             |         -         |     Y     |        -         |      Y       |       Y        |     -     |      -       |    -    |
 | `RECORD_CLINICAL_CONTACT`                   |            Y            |             Y             |         -         |     -     |        -         |      -       |       Y        |     -     |      -       |    -    |
 | `RECORD_COMMUNITY_TREATMENT_ORDER`          |            Y            |             Y             |         -         |     -     |        -         |      -       |       Y        |     -     |      -       |    -    |
