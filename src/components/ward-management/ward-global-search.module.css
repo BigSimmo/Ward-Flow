@@ -1029,13 +1029,13 @@ button.option {
   cursor: pointer;
 }
 
-.groupItem[data-goto] .option {
+.groupItem[data-group="goto"] .option {
   min-height: 52px;
   background: var(--wf-selected);
   box-shadow: inset 0 0 0 1px var(--wf-line-2);
 }
 
-.groupItem[data-goto] .resultTitle {
+.groupItem[data-group="goto"] .resultTitle {
   font-size: var(--wf-fs-15, 15px);
 }
 
@@ -1153,18 +1153,18 @@ a.askChip {
 }
 
 /* Go to row: the key fact gets its own line, never cut off behind the title. */
-.groupItem[data-goto] .resultContent {
+.groupItem[data-group="goto"] .resultContent {
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
 }
 
-.groupItem[data-goto] .resultMeta {
+.groupItem[data-group="goto"] .resultMeta {
   white-space: normal;
   color: var(--wf-ink-2);
 }
 
-.groupItem[data-goto] .resultTitle {
+.groupItem[data-group="goto"] .resultTitle {
   max-width: 100%;
   white-space: normal;
 }
@@ -1255,14 +1255,14 @@ a.askChip {
 }
 
 /* The best match: a soft blue glass card with a white icon tile, not a bold block. */
-.popup:not([data-start]) .groupItem[data-goto] .option {
+.popup:not([data-start]) .groupItem[data-group="goto"] .option {
   min-height: 60px;
   border-radius: 14px;
   background: color-mix(in srgb, var(--wf-accent-tint) 72%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-accent) 16%, transparent);
 }
 
-.popup:not([data-start]) .groupItem[data-goto] .itemIconBox {
+.popup:not([data-start]) .groupItem[data-group="goto"] .itemIconBox {
   flex-basis: 40px;
   width: 40px;
   height: 40px;
@@ -1271,21 +1271,21 @@ a.askChip {
   box-shadow: 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 8%, transparent);
 }
 
-.popup:not([data-start]) .groupItem[data-goto] .resultTitle {
+.popup:not([data-start]) .groupItem[data-group="goto"] .resultTitle {
   font-size: var(--wf-fs-16);
   line-height: var(--wf-lh-16, 22px);
   font-weight: 600;
 }
 
 /* Before typing, Go to is a row of tiles. */
-.popup[data-start] .groupItem[data-goto] .groupList {
+.popup[data-start] .groupItem[data-group="goto"] .groupList {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(4.25rem, 1fr));
   gap: 8px;
   padding: 2px 2px 8px;
 }
 
-.popup[data-start] .groupItem[data-goto] .option {
+.popup[data-start] .groupItem[data-group="goto"] .option {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
@@ -1298,11 +1298,11 @@ a.askChip {
   text-align: center;
 }
 
-.popup[data-start] .groupItem[data-goto] :is(.resultMeta, .actionHint, .resultKind) {
+.popup[data-start] .groupItem[data-group="goto"] :is(.resultMeta, .actionHint, .resultKind) {
   display: none;
 }
 
-.popup[data-start] .groupItem[data-goto] .resultContent {
+.popup[data-start] .groupItem[data-group="goto"] .resultContent {
   flex: none;
   width: 100%;
   align-items: center;
@@ -1310,13 +1310,13 @@ a.askChip {
   text-align: center;
 }
 
-.popup[data-start] .groupItem[data-goto] .resultTitle {
+.popup[data-start] .groupItem[data-group="goto"] .resultTitle {
   max-width: 100%;
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
 }
 
-.popup[data-start] .groupItem[data-goto] .itemIconBox {
+.popup[data-start] .groupItem[data-group="goto"] .itemIconBox {
   flex-basis: 36px;
   width: 36px;
   height: 36px;
@@ -1429,12 +1429,12 @@ a.askChip {
     background: color-mix(in srgb, var(--wf-ink-1) 7%, transparent);
   }
 
-  .popup[data-start] .groupItem[data-goto] .option::after,
-  .popup:not([data-start]) .groupItem[data-goto] .option::after {
+  .popup[data-start] .groupItem[data-group="goto"] .option::after,
+  .popup:not([data-start]) .groupItem[data-group="goto"] .option::after {
     display: none;
   }
 
-  .popup:not([data-start]) .groupItem[data-goto] .option {
+  .popup:not([data-start]) .groupItem[data-group="goto"] .option {
     min-height: 66px;
     padding: 10px 12px;
     border-radius: 16px;
@@ -1460,7 +1460,569 @@ a.askChip {
 }
 
 /* The arrow keys' choice stays visible on the Top hit card and the Go to tiles. */
-.popup.popup .groupItem[data-goto] .option[data-active] {
+.popup.popup .groupItem[data-group="goto"] .option[data-active] {
   background: color-mix(in srgb, var(--wf-accent) 14%, transparent);
   box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--wf-accent) 45%, transparent);
+}
+
+/*
+ * ── Phone search start screen polish (Josh, 10 Nov 2026, "Polish the phone search screen") ────────
+ * Before anything is typed. Everything sits straight on the glass on one 14px edge (the capsule's),
+ * sections 24px apart. Go to is four equal columns that always fit, so it never scrolls sideways.
+ * Each alert's glyph keeps its own tone. Full patient search sits on a soft fade, so the page never
+ * shows through behind it.
+ */
+@media (max-width: 46.4375rem) {
+  .popup[data-start] .listPane {
+    padding: 4px 14px 20px;
+  }
+
+  .popup[data-start] .list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .popup[data-start] .groupItem:not(:first-child) {
+    margin-top: 0;
+    padding-top: 0;
+  }
+
+  .popup[data-start] .askRow {
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+  }
+
+  .popup[data-start] .askChips,
+  .popup[data-start] .commandList {
+    gap: 6px;
+    padding: 0;
+  }
+
+  .popup[data-start] .quickCommands {
+    gap: 6px;
+    margin-top: 24px;
+    padding: 0;
+  }
+
+  .popup[data-start] .askChip:focus-visible,
+  .popup[data-start] .commandBtn:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* Go to always fits the width: four equal columns, so it never scrolls sideways. */
+  .popup[data-start] .groupItem[data-group="goto"] .groupList {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: 0;
+    overflow: visible;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .popup[data-start] .groupItem[data-group="goto"] .option {
+    min-height: 0;
+    border-radius: 14px;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  /* Rows sit straight on the glass; long details wrap whole. */
+  .popup[data-start] .groupItem:not([data-group="goto"]) .groupList {
+    overflow: visible;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .popup[data-start] .groupItem:not([data-group="goto"]) .resultMeta {
+    flex-wrap: wrap;
+    white-space: normal;
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-3);
+  }
+
+  .popup[data-start] .groupItem:not([data-group="goto"]) .resultMeta > span {
+    overflow: visible;
+  }
+
+  .popup[data-start] .groupItem:not([data-group="goto"]) .resultTitle {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  /* An alert's glyph keeps its own tone; blue stays for things you tap. */
+  .popup[data-start] .itemIconBox:has([data-wf-glyph="danger"]) {
+    background: color-mix(in srgb, var(--wf-danger) 12%, transparent);
+  }
+
+  .popup[data-start] .itemIconBox:has([data-wf-glyph="warning"]) {
+    background: color-mix(in srgb, var(--wf-warning) 14%, transparent);
+  }
+
+  /* Full patient search: the list fades out under it, so the page never shows through. */
+  .popup .resultsFooter {
+    position: relative;
+    padding: 0 16px;
+    border-top: 0;
+    background: color-mix(in srgb, var(--wf-canvas) 92%, transparent);
+  }
+
+  .popup .resultsFooter::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    height: 28px;
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--wf-canvas) 92%, transparent));
+    pointer-events: none;
+  }
+
+  .popup .fullSearch {
+    margin-left: auto;
+    font: 600 var(--wf-fs-14) / 1 var(--wf-font);
+  }
+
+  /* ── Option A, "Glass rows": the original's soft tiles, refined and aligned. ── */
+  .popup[data-start] .group {
+    height: 24px;
+    margin-bottom: 4px;
+    padding: 0 2px;
+    font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+    color: var(--wf-ink-3);
+  }
+
+  .popup[data-start] .group .showAll {
+    min-height: 24px;
+    padding: 0 2px;
+    font-size: var(--wf-fs-13);
+  }
+
+  /* Drawn at the heading's height, tapped at 48px (HOW-WE-WORK §6). */
+  .popup[data-start] .group .showAll {
+    position: relative;
+  }
+
+  .popup[data-start] .group .showAll::after {
+    content: "";
+    position: absolute;
+    inset: -20px -4px -4px; /* 48px tall; grows into the gap above, never over the first alert */
+  }
+
+  .popup[data-start] .askChip,
+  .popup[data-start] .commandBtn {
+    height: 32px;
+    gap: 7px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--wf-surface) 55%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-ink-1) 8%, transparent);
+    color: var(--wf-ink-1);
+    font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+  }
+
+  .popup[data-start] .commandBtn {
+    color: var(--wf-ink-2);
+  }
+
+  .popup[data-start] .askChip .kindCount {
+    color: var(--wf-ink-3);
+    font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+    opacity: 1;
+  }
+
+  /* Five compact square tiles on the same left edge as every other section; the gap is 20px and
+     narrows on small phones so all five always fit. Labels sit centred under them. */
+  .popup[data-start] .groupItem[data-group="goto"] .groupList {
+    grid-template-columns: repeat(5, 54px);
+    justify-content: start;
+    gap: 0 min(20px, calc((100% - 270px) / 4));
+  }
+
+  .popup[data-start] .groupItem[data-group="goto"] .option {
+    gap: 8px;
+    padding: 2px 0;
+  }
+
+  .popup[data-start] .groupItem[data-group="goto"] .itemIconBox {
+    flex: 0 0 auto;
+    align-self: center;
+    width: 54px;
+    height: 54px;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--wf-accent-tint) 78%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-accent) 9%, transparent);
+    color: var(--wf-accent);
+    transition: background var(--wf-m-fast) var(--wf-ease);
+  }
+
+  .popup[data-start] .groupItem[data-group="goto"] .itemIconBox svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .popup[data-start] .groupItem[data-group="goto"] .resultContent {
+    overflow: visible;
+  }
+
+  .popup[data-start] .groupItem[data-group="goto"] .resultTitle {
+    overflow: visible;
+    font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    color: var(--wf-ink-2);
+  }
+
+  .popup[data-start] .groupItem[data-group="goto"] .option:active .itemIconBox {
+    background: color-mix(in srgb, var(--wf-accent) 18%, transparent);
+  }
+
+  .popup[data-start] .groupItem:not([data-group="goto"]) .option {
+    gap: 12px;
+    min-height: 56px;
+    padding: 8px 2px;
+    border-radius: 12px;
+  }
+
+  .popup[data-start] .groupItem:not([data-group="goto"]) .optionItem + .optionItem .option::after {
+    left: 50px;
+    right: 0;
+  }
+
+  .popup[data-start] .groupItem:not([data-group="goto"]) .itemIconBox {
+    flex-basis: 36px;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--wf-accent-tint) 78%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-accent) 9%, transparent);
+  }
+
+  .popup[data-start] .groupItem:not([data-group="goto"]) .itemIconBox:has([data-wf-glyph="danger"]) {
+    background: color-mix(in srgb, var(--wf-danger) 12%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-danger) 14%, transparent);
+  }
+
+  .popup[data-start] .groupItem:not([data-group="goto"]) .itemIconBox:has([data-wf-glyph="warning"]) {
+    background: color-mix(in srgb, var(--wf-warning) 14%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-warning) 16%, transparent);
+  }
+
+  .popup[data-start] .groupItem:not([data-group="goto"]) .itemIconBox svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .popup[data-start] .groupItem:not([data-group="goto"]) .itemIconBox:has([data-wf-glyph]) svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  .popup[data-start] .groupItem:not([data-group="goto"]) .resultContent {
+    gap: 1px;
+  }
+
+  .popup[data-start] .groupItem:not([data-group="goto"]) .resultTitle {
+    font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+    letter-spacing: -0.006em;
+  }
+
+  /* Pressed and keyboard states: a soft wash, and the system focus ring. */
+  .popup[data-start] .groupItem:not([data-group="goto"]) .option:active {
+    background: color-mix(in srgb, var(--wf-ink-1) 5%, transparent);
+  }
+
+  .popup[data-start] .option:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: -2px;
+  }
+
+  .popup[data-start] .askChip:active,
+  .popup[data-start] .commandBtn:active {
+    background: color-mix(in srgb, var(--wf-accent) 10%, transparent);
+  }
+
+  @media (max-width: 22.4375rem) {
+    .popup[data-start] .groupItem[data-group="goto"] .groupList {
+      grid-template-columns: repeat(5, auto);
+      justify-content: space-between;
+      gap: 0 8px;
+    }
+
+    .popup[data-start] .groupItem[data-group="goto"] .itemIconBox {
+      width: 48px;
+      height: 48px;
+    }
+
+    /* 12 px is the text floor (D-3). Each column is as wide as its tile or label, whichever is
+       wider, and the spare room goes between them, so "Movements" fits inside the 14 px edge. */
+    .popup[data-start] .groupItem[data-group="goto"] .resultTitle {
+      max-width: none;
+      font-size: 12px;
+      letter-spacing: -0.02em;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .popup[data-start] .groupItem[data-group="goto"] .itemIconBox {
+      transition: none;
+    }
+  }
+
+  .popup[data-start] .groupItem[data-group="do"] .option {
+    min-height: 52px;
+  }
+}
+
+/* A touch-only phone has no keyboard, so the Keyboard shortcuts command is hidden there. */
+@media (max-width: 46.4375rem) and (hover: none) and (pointer: coarse) {
+  .popup[data-start] [data-testid="ward-global-search-cmd-shortcuts"] {
+    display: none;
+  }
+}
+
+/* Go to and screen results carry their screen's count on the icon's corner, as the phone dock does. */
+.itemIconBox:has(.viewCount) {
+  position: relative;
+  overflow: visible;
+}
+
+.viewCount {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--wf-accent-ink);
+  box-shadow: 0 0 0 2px var(--wf-canvas);
+  color: var(--wf-surface);
+  font: 600 12px / 20px var(--wf-font);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/*
+ * ── Phone search while typing (Josh, 10 Nov 2026, "polish all the other components and activity
+ * during search"): results, the best match and No matches share the start screen's language. Rows sit
+ * on the glass on the same 14px edge, with the same soft icon tiles, headings and hairlines. The best
+ * match is a soft wash, not a ringed card. Match highlights are a light tint, and Full patient search
+ * stays at the foot of the sheet.
+ */
+@media (max-width: 46.4375rem) {
+  /* The results fill the sheet, so Full patient search stays at its foot however few rows match. */
+  .popup:not([data-start]) .split {
+    flex: 1 1 auto;
+  }
+
+  .popup:not([data-start]) .listPane {
+    padding: 4px 14px 20px;
+  }
+
+  /* "First 40 matches" sits under its heading as a quiet note. */
+  .popup:not([data-start]) .groupItem .group + .emptyDescription {
+    max-width: none;
+    margin: -2px 2px 6px;
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-3);
+  }
+
+  .popup:not([data-start]) .list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .popup:not([data-start]) .groupItem:not(:first-child) {
+    margin-top: 0;
+    padding-top: 0;
+  }
+
+  .popup:not([data-start]) .group {
+    height: 24px;
+    margin-bottom: 4px;
+    padding: 0 2px;
+    font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+    color: var(--wf-ink-3);
+  }
+
+  .popup:not([data-start]) .group .showAll {
+    position: relative;
+    min-height: 24px;
+    padding: 0 2px;
+    font-size: var(--wf-fs-13);
+  }
+
+  .popup:not([data-start]) .group .showAll::after {
+    content: "";
+    position: absolute;
+    inset: -20px -4px -4px; /* 48px tall; grows into the gap above, never over the first row */
+  }
+
+  .popup:not([data-start]) .groupList {
+    overflow: visible;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .popup:not([data-start]) .option {
+    gap: 12px;
+    min-height: 56px;
+    padding: 8px 2px;
+    border-radius: 12px;
+  }
+
+  .popup:not([data-start]) .optionItem + .optionItem .option::after {
+    left: 50px;
+    right: 0;
+  }
+
+  .popup:not([data-start]) .itemIconBox {
+    flex-basis: 36px;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--wf-accent-tint) 78%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-accent) 9%, transparent);
+  }
+
+  .popup:not([data-start]) .itemIconBox svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .popup:not([data-start]) .itemIconBox:has([data-wf-glyph="danger"]) {
+    background: color-mix(in srgb, var(--wf-danger) 12%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-danger) 14%, transparent);
+  }
+
+  .popup:not([data-start]) .itemIconBox:has([data-wf-glyph="warning"]) {
+    background: color-mix(in srgb, var(--wf-warning) 14%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-warning) 16%, transparent);
+  }
+
+  .popup:not([data-start]) .itemIconBox:has([data-wf-glyph]) svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  .popup:not([data-start]) .resultContent {
+    gap: 1px;
+  }
+
+  .popup:not([data-start]) .resultTitle {
+    font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+    letter-spacing: -0.006em;
+  }
+
+  /* Details wrap whole instead of cutting a ward's name mid-word. */
+  .popup:not([data-start]) .resultMeta {
+    flex-wrap: wrap;
+    white-space: normal;
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-3);
+  }
+
+  .popup:not([data-start]) .resultMeta > span {
+    overflow: visible;
+  }
+
+  /* The best match: the same row, lifted by a soft wash. No ring and no Enter key on a phone. */
+  .popup.popup:not([data-start]) .groupItem[data-group="goto"] .option,
+  .popup.popup:not([data-start]) .option[data-active] {
+    min-height: 60px;
+    padding: 10px 10px;
+    margin: 0 -8px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--wf-accent-tint) 70%, transparent);
+    box-shadow: none;
+  }
+
+  .popup:not([data-start]) .groupItem[data-group="goto"] .itemIconBox {
+    flex-basis: 40px;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--wf-surface);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 8%, transparent);
+  }
+
+  .popup:not([data-start]) .groupItem[data-group="goto"] .resultTitle {
+    font: 600 var(--wf-fs-15, 15px) / var(--wf-lh-15, 20px) var(--wf-font);
+  }
+
+  .popup:not([data-start]) .option[data-active]::after,
+  .popup:not([data-start]) .option[data-active] + .option::after {
+    display: none;
+  }
+
+  /* Match highlights: a light tint that reads as a hint, not a block. */
+  .popup:not([data-start]) .option mark {
+    padding: 0 1px;
+    margin: 0 -1px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--wf-accent) 13%, transparent);
+    color: var(--wf-ink-1);
+    font-weight: inherit;
+    box-decoration-break: clone;
+  }
+
+  /* Pressed and keyboard states, as on the start screen. */
+  .popup:not([data-start]) .option:active {
+    background: color-mix(in srgb, var(--wf-ink-1) 5%, transparent);
+  }
+
+  .popup:not([data-start]) .option:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: -2px;
+  }
+
+  /* No matches: left-aligned on the same edge, with the suggestions as a tidy chip row. */
+  .popup:not([data-start]) .empty {
+    align-items: flex-start;
+    padding: 20px 2px 8px;
+    text-align: left;
+  }
+
+  .popup:not([data-start]) .emptyIcon {
+    width: 36px;
+    height: 36px;
+    padding: 9px;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--wf-accent-tint) 78%, transparent);
+    color: var(--wf-accent);
+  }
+
+  .popup:not([data-start]) .emptyTitle {
+    margin-top: 12px;
+    font: 600 var(--wf-fs-16) / var(--wf-lh-16, 22px) var(--wf-font);
+  }
+
+  .popup:not([data-start]) .emptyDescription {
+    max-width: 34ch;
+    font-size: var(--wf-fs-13);
+    color: var(--wf-ink-3);
+  }
+
+  .popup:not([data-start]) .emptyTry {
+    justify-content: flex-start;
+    gap: 6px;
+    margin-top: 16px;
+  }
+}
+
+/* A phone has no Enter key to show. */
+@media (max-width: 46.4375rem) {
+  .popup.popup .actionHint {
+    display: none;
+  }
 }
