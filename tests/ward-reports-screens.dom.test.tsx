@@ -681,7 +681,22 @@ describe("read-only report screens", () => {
   });
 
   it("shows no absence line when nobody is absent", () => {
-    inProvider(<DowntimePackScreen />);
+    // PR #1583 seeds one demo patient absent without leave for the Leave page, so this uses a
+    // remembered pack with no absences instead of the live demo.
+    const remembered: DowntimePack = {
+      ...OLD_PACK,
+      wards: [
+        {
+          unitId: "U1",
+          name: "Sample ward",
+          service: "Sample service",
+          beds: 4,
+          counts: { ready: 1, pulled: 0, closed: 0, occupied: 3, beingMadeReady: 0, onLeave: 1 },
+          pendingPreparation: 0,
+        },
+      ],
+    };
+    inProvider(<DowntimePackScreen />, { pack: remembered });
     expect(screen.queryByTestId("ward-downtime-awol")).toBeNull();
   });
 

@@ -196,11 +196,12 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       if (bed1Btn.getAttribute("aria-pressed") !== "true") fireEvent.click(bed1Btn);
 
       // Long-stay occupant drawer must show the discharge barrier select
-      const barrierSelect = screen.getByLabelText(/Main discharge hold-up/i);
+      const barrierSelect = screen.getByLabelText(/Long-stay barrier/i);
       expect(barrierSelect).toBeDefined();
-      expect(screen.getByText(/Accommodation \/ Housing/i)).toBeDefined();
-      expect(screen.getByText(/NDIS/i)).toBeDefined();
-      expect(screen.getByText(/SAT \/ Public Guardian/i)).toBeDefined();
+      // Within the hold-up select: the clinically ready "Why not gone" list (item 5) offers the same reasons.
+      expect(within(barrierSelect).getByText(/Accommodation \/ Housing/i)).toBeDefined();
+      expect(within(barrierSelect).getByText(/NDIS/i)).toBeDefined();
+      expect(within(barrierSelect).getByText(/SAT \/ Public Guardian/i)).toBeDefined();
 
       // Step-down toggle button must also be present
       const stepDownToggle = screen.getByTestId("ward-board-stepdown-toggle");
@@ -221,7 +222,7 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       fireEvent.click(bed2Btn);
 
       // Short-stay occupant drawer must NOT show the discharge barrier select
-      expect(screen.queryByLabelText(/Main discharge hold-up/i)).toBeNull();
+      expect(screen.queryByLabelText(/Long-stay barrier/i)).toBeNull();
     });
   });
 

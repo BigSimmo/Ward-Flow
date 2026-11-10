@@ -216,6 +216,8 @@ export const WARD_ALERTS_HREF = "/ward-flow/alerts";
 export const WARD_CAPACITY_HREF = "/ward-flow/capacity";
 export const WARD_COMMAND_HREF = "/ward-flow/command";
 export const WARD_ED_HREF = "/ward-flow/ed";
+/** Feature 23 (Josh, 9 Nov 2026): everyone on leave across the desk's wards. */
+export const WARD_LEAVE_HREF = "/ward-flow/leave";
 /** The bed meeting TV view (`bed-meeting/bed-meeting-tv.tsx`), behind the `bed-meeting-tv` flag. */
 export const WARD_BED_MEETING_TV_HREF = "/ward-flow/bed-meeting";
 
@@ -575,6 +577,10 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
   [
     "/ward-flow/reports/chronology",
     "The PIR patient chronology (Reports build, 9 Oct 2026). Reached from the Tools sheet's Print and share group (tools/ward-tools-sheet.tsx).",
+  ],
+  [
+    WARD_LEAVE_HREF,
+    "Everyone on leave across the desk's wards (feature 23). Reached from the Tools sheet's Leave due tool, 'See all leave' (tools/ward-tool-leave-due.tsx).",
   ],
   // WF-42: typed URLs open the shell panel then replace home.
   ["/ward-flow/activity", "Shell panel redirect — not a page."],

@@ -468,7 +468,9 @@ describe("who may raise which event", () => {
     SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward", "community"],
     SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
     RECORD_WARD_DIAGNOSIS: ["ward", "coordinator"],
+    MARK_WEEKEND_DISCHARGE_REVIEWED: ["ward", "coordinator"],
     SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
+    SET_CLINICALLY_READY: ["ward", "coordinator"],
     SET_DISCHARGE_CRITERIA: ["ward", "coordinator"],
     RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
     RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator"],
@@ -517,6 +519,7 @@ describe("who may raise which event", () => {
     EXTEND_BROADCAST_ALERT: ["coordinator", "bed_manager"],
     ADD_BROADCAST_ALERT_UNITS: ["coordinator", "bed_manager"],
     RAISE_PULL_NOW: ["coordinator"],
+    EXTEND_PULL: ["coordinator", "ward"],
     REPLY_BROADCAST_ALERT: ["ward", "bed_manager", "coordinator"],
     UPDATE_EXPECTED_DISCHARGE: ["ward", "coordinator"],
     // Stream D planned admissions, 9 Oct 2026: booked and managed by the coordinator, bed manager
@@ -530,6 +533,8 @@ describe("who may raise which event", () => {
     SEND_RELEASE_SUPPORT_NOTICE: ["ward", "coordinator"],
     RECORD_DISCHARGE_DEPENDENCY: ["ward", "coordinator"],
     RECORD_DISCHARGE_PLAN_CHANGE: ["ward", "coordinator"],
+    RECORD_DISCHARGE_CHECK: ["ward", "coordinator"],
+    RECORD_FOLLOW_UP_REPLY: ["community", "coordinator"],
     RECORD_ARRIVAL_CHECK: ["ed", "coordinator"],
     // v10 pass 2 (Josh, 10 Oct 2026): Undo and the ward Bed board. The reducer narrows the referral
     // undo to the role that decided (a ward to its own unit) or the coordinator.

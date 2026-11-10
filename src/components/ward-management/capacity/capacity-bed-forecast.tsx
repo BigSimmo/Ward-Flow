@@ -12,6 +12,7 @@ import type { ForecastLever } from "@/components/ward-management/forecast/foreca
 import type { HorizonDay } from "@/components/ward-management/forecast/forecast-horizon";
 
 import { DayBars, type DayBar } from "./capacity-day-bars";
+import { ExpectedOccupancyTable } from "./capacity-expected-occupancy-lazy";
 import { HowWorkedOut, Legend } from "./capacity-how-worked-out";
 import { gapWords } from "./capacity-range-line";
 import { ShowMoreRow } from "@/components/wf";
@@ -60,7 +61,7 @@ export function BedForecast({
   const { forecast, gapTotals, days, week, forecastModel, sourceSummary, now, networkRows } = model;
   // WF-FIG-018: this view is the one that records "since you looked" when it is left.
   useForecastChange(forecastModel, now, { remember: true });
-  const [tomorrow, twoDays] = forecast.horizons;
+  const [tomorrow, twoDays, threeDays] = forecast.horizons;
   const bars: DayBar[] = days.map((day, index) => ({
     key: day.offset,
     label: day.label,
@@ -141,10 +142,21 @@ export function BedForecast({
         {twoDays ? (
           <Kpi
             label="In 2 days"
-            value={`Likely ${gapWords(twoDays.likely)}`}
+            value={gapWords(twoDays.likely)}
             tone={twoDays.likely}
             soft
-            sub={`${gapWords(twoDays.low)} to ${gapWords(twoDays.high)}`}
+            sub={`Likely; could be ${gapWords(twoDays.low)} to ${gapWords(twoDays.high)}`}
+          />
+        ) : null}
+        {/* Feature 21 (Josh, 9 Nov 2026): the third day, 72 hours out, read as softly as the second. Polish
+            (9 Nov): the likely figure alone sits in the value, so all five tiles share one figure size. */}
+        {threeDays ? (
+          <Kpi
+            label="In 3 days"
+            value={gapWords(threeDays.likely)}
+            tone={threeDays.likely}
+            soft
+            sub={`Likely; could be ${gapWords(threeDays.low)} to ${gapWords(threeDays.high)}`}
           />
         ) : null}
         <Kpi
@@ -198,6 +210,13 @@ export function BedForecast({
           )}
         </div>
       </div>
+      <ExpectedOccupancyTable
+        units={model.gapUnits}
+        bedReleases={model.bedReleases}
+        now={now}
+        stacked={stacked}
+        totalName={siteName}
+      />
       <LeverPopup
         item={openItem}
         now={now}
@@ -228,10 +247,7 @@ export function BedForecast({
             and subtracts the people already waiting and the admissions already booked. Held-up and overdue discharges
             only widen the range.
           </p>
-          <p>
-            Days after tomorrow are hatched because dates that far out often move. On Fridays and before WA public
-            holidays the forecast adds a third day.
-          </p>
+          <p>Days after tomorrow are hatched because dates that far out often move.</p>
           {BEDS_FORECAST_LIMITS.map((line) => (
             <p key={line}>{line}</p>
           ))}

@@ -85,7 +85,9 @@ const SIGNED_BY_JOSH_21_OCT = { status: "signed", signedBy: "Josh (product owner
 const SIGNED_BY_JOSH_23_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-23" } as const;
 /**
  * D-106 (Josh, 9 Nov 2026): he kept the medical trip bed review at 24 hours and signed the General
- * observation interval (D-72 item 5). He also signed the medical clearance tracker's defaults that day (D-110).
+ * observation interval (D-72 item 5). He also signed the medical clearance tracker's defaults that day (D-110),
+ * and the longest pull, transport accept delay and discharge date slip values (decision card, discharge
+ * and capacity review page).
  */
 const SIGNED_BY_JOSH_9_NOV = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-11-09" } as const;
 
@@ -307,6 +309,21 @@ export const CLINICAL_VALUES = {
     value: 10,
     unit: "minutes",
   },
+  // Discharge and capacity features: Josh signed both on 9 Nov 2026 (decision card, review page).
+  pullHoldMaxTotal: {
+    ...SIGNED_BY_JOSH_9_NOV,
+    name: "Longest a bed can stay pulled, extensions included",
+    group: "Alerts and holds",
+    value: 12 * MINUTES_PER_HOUR,
+    unit: "minutes",
+  },
+  transportAcceptDelay: {
+    ...SIGNED_BY_JOSH_9_NOV,
+    name: "Transport job shown as delayed if not accepted after",
+    group: "Alerts and holds",
+    value: 30,
+    unit: "minutes",
+  },
   redRowSnoozeCap: {
     // Added to the register 9 Nov 2026 (D-106); no clinical decision yet.
     status: "synthetic",
@@ -495,6 +512,14 @@ export const CLINICAL_VALUES = {
     name: "Readmission flag, discharged from a ward within",
     group: "Discharge, leave and absence",
     value: 28,
+    unit: "days",
+  },
+  eddSlipFlag: {
+    // Discharge and capacity features: Josh signed this on 9 Nov 2026 (decision card, review page).
+    ...SIGNED_BY_JOSH_9_NOV,
+    name: "Discharge date flagged as slipping, later than first set by more than",
+    group: "Discharge, leave and absence",
+    value: 3,
     unit: "days",
   },
   // ---- Access and privacy (role access plan, Josh's go, 15 Oct 2026) ------------------------

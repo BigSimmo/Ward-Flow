@@ -330,7 +330,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     questions: [
       {
         question: "What order are the jobs in?",
-        answer: "Late jobs first, then forms to upload, then furthest along.",
+        answer: "Late or delayed jobs first, then forms to upload, then furthest along.",
       },
       {
         question: "Why can't I book transport?",

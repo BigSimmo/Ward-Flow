@@ -551,6 +551,33 @@
   font-weight: 600;
 }
 
+/* Feature 25: the Delayed tag on its own line under the stage. */
+.stageDelayed {
+  display: flex;
+  flex-basis: 100%;
+  margin-top: 2px;
+}
+
+/* The booked time keeps together and wraps under the stage time when the column is narrow. */
+.stageBookedAt {
+  white-space: nowrap;
+}
+
+@media (min-width: 46.5rem) {
+  .stageFor:has(.stageBookedAt) {
+    display: inline-flex;
+    flex-wrap: wrap;
+    column-gap: var(--wf-s-2);
+    white-space: normal;
+  }
+}
+
+/* Words in the stage-time line are in the text face; the figures stay mono. */
+.stageBooked {
+  font-family: var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
 /* ---- History: delivered today, refused and cancelled ---- */
 
 .historyHead {
@@ -600,6 +627,24 @@
   flex: none;
   margin-top: 2px;
   color: var(--wf-ink-2);
+}
+
+/* Polish (9 Nov 2026): the Delayed filter's note sits on the list's inset, like the order note. */
+.delayedNote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  margin: 0;
+  padding: 0 var(--wf-s-4) var(--wf-s-2);
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.phoneFilters {
+  display: flex;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-1) 0;
 }
 
 .panelNote {
@@ -1474,6 +1519,11 @@
 
   .stageCell {
     flex-wrap: nowrap;
+  }
+
+  /* Feature 25: the Delayed tag still takes its own line under the stage on a phone. */
+  .stageCell:has(.stageDelayed) {
+    flex-wrap: wrap;
   }
 
   .stageFor {

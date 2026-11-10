@@ -232,7 +232,8 @@ describe("bed release model", () => {
     // D-23 (Josh, 26 September 2026, "Yes both"): a leave bed MAY also carry its kind (off-ward or
     // medical trip) and the time the 24-hour open warning was raised. Both are optional on the type,
     // so they are allowed, never required; any other key still fails.
-    const OPTIONAL_LEAVE_BED_FIELDS = ["kind", "openWarningAt"];
+    // absentWithoutLeave: the seed holds one recorded absence (WL-RD07) so the Leave page shows the status.
+    const OPTIONAL_LEAVE_BED_FIELDS = ["kind", "openWarningAt", "absentWithoutLeave"];
 
     const seeded = seedWardFlowState();
     const occupant = seeded.admissions.find(

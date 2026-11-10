@@ -43,8 +43,12 @@ describe("random engine run coverage (audit 24-1 E-19)", () => {
       for (let step = 0; step < STEPS; step += 1) {
         const event = nextEvent(state, random, step, seed, STEPS);
         const next = wardFlowReducer(state, event);
-        // As the safety test counts it: an accepted event adds no rejection.
-        if (next.rejections.length === state.rejections.length) accepted.add(event.type);
+        // As the safety test counts it: an accepted event adds no rejection. An accepted
+        // RESET_SCENARIO or SET_SCENARIO starts a fresh world, so it may also clear earlier ones
+        // (9 Nov 2026: with EXTEND_PULL added, a reset was only ever drawn after a refusal).
+        const resets = event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO";
+        const added = next.rejections.length - state.rejections.length;
+        if (added === 0 || (resets && added < 0)) accepted.add(event.type);
         state = next;
       }
       lastSeedRun = seed;

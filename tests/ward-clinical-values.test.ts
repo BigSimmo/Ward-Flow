@@ -93,6 +93,9 @@ describe("clinical values file", () => {
       downtimePackStale: 60,
       preparingBedStale: 61,
       bookingEstimatePassed: 10,
+      // Discharge and capacity features: signed by Josh on 9 Nov 2026.
+      pullHoldMaxTotal: 720,
+      transportAcceptDelay: 30,
       // D-106 (Josh, 9 Nov 2026): moved into the register, synthetic, no clinical decision yet.
       redRowSnoozeCap: 60,
       supportNotificationLookback: 4320,
@@ -121,6 +124,7 @@ describe("clinical values file", () => {
       longStayPrompt: 7,
       delayedDischargeEscalation: 72,
       readmissionWindow: 28,
+      eddSlipFlag: 3,
       // Role access plan (Josh, 15 Oct 2026): new synthetic access and privacy values.
       breakGlassWindow: 60,
       breakGlassPerShift: 3,
@@ -312,6 +316,11 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
   { file: "ward-operational-defaults.ts", name: "READY_AT_AHEAD_LIMIT_MINUTES", why: "input bound on a typed time" },
   {
     file: "ward-operational-defaults.ts",
+    name: "WEEKEND_REVIEW_REACH_MINUTES",
+    why: "input bound: how far from now a weekend discharge review tick may name its weekend; flags nothing",
+  },
+  {
+    file: "ward-operational-defaults.ts",
     name: "DEFAULT_BROADCAST_DURATION_MINUTES",
     why: "how long a broadcast shows",
   },
@@ -321,7 +330,7 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
     why: "broadcast extension step",
   },
   { file: "delays/delays-board-model.ts", name: "CHART_BIN_MINUTES", why: "chart bin width" },
-  { file: "discharges/discharge-board.tsx", name: "CHART_DAYS_AHEAD", why: "chart window" },
+  { file: "discharges/discharge-chart-days.ts", name: "CHART_DAYS_AHEAD", why: "chart window" },
   { file: "legal-forms/legal-forms-screen.tsx", name: "CHART_WINDOW_MINUTES", why: "chart window" },
   { file: "on-call/on-call-checks.ts", name: "CHECK_DUE_DAYS", why: "when a directory entry is re-checked" },
   { file: "ward-admissions.ts", name: "PLANNED_ADMISSION_MAX_STAY_DAYS", why: "input bound on a typed date" },

@@ -9,9 +9,23 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 const MOVED_THIS_SHIFT = "AD-RPHS-06";
 
 export function withDischargeMoveDemo(admissions: Admission[]): Admission[] {
-  return admissions.map((admission) =>
-    admission.id === MOVED_THIS_SHIFT && admission.dischargeDateMoves > 0 && admission.expectedDischargeAt !== null
-      ? { ...admission, dischargeDateSetAt: NOW_ANCHOR - 75 }
-      : admission,
-  );
+  return admissions.map((admission) => {
+    if (
+      admission.id !== MOVED_THIS_SHIFT ||
+      admission.dischargeDateMoves === 0 ||
+      admission.expectedDischargeAt === null
+    )
+      return admission;
+    const setAt = NOW_ANCHOR - 75;
+    const trail = admission.dischargeDateTrail;
+    // The date trail's last move is the same moment, so the two records of it agree.
+    const revisions = trail?.revisions.map((revision, index, all) =>
+      index === all.length - 1 ? { ...revision, at: setAt } : revision,
+    );
+    return {
+      ...admission,
+      dischargeDateSetAt: setAt,
+      ...(trail && revisions ? { dischargeDateTrail: { ...trail, revisions } } : {}),
+    };
+  });
 }

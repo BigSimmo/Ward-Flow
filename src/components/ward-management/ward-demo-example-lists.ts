@@ -14,10 +14,15 @@
  * first on screen). A live shared build swaps this module for the no-op in
  * `live-build/ward-no-demo-data.ts`, so a production-like build gains no invented record.
  */
+import type { Admission } from "./ward-admissions";
 import { MINUTES_PER_DAY, type Instant } from "./ward-clock";
+// The readmission window itself (`READMISSION_WINDOW_DAYS` in `ward-readmission.ts` reads the same value),
+// read here directly so the readmission flag code stays out of every screen's shared first load.
+import { CLINICAL_VALUES } from "./ward-clinical-values";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { Cohort, ReferralAddressing, ReferralSource, Unit } from "./ward-model";
 import { GENERAL_OBSERVATION } from "./ward-observation";
+import { createPatientResolver } from "./ward-patient-resolver";
 import type { Patient, PatientId } from "./ward-patients";
 import { completeSyntheticReferralIntake } from "./ward-referral-intake-seed";
 import { wardReferralInboxEntries } from "./referrals/referral-inbox";
@@ -261,6 +266,7 @@ export function applyExampleListsOverlay(state: WardFlowState, anchor: Instant):
   addInboxReferrals(draft, people, anchor);
   addRestrictivePractice(draft, anchor);
   addFinishedStays(draft, people, anchor);
+  addReadmissionAndHoldUpLog(draft, anchor);
   return { ...state, ...draft, ...seededStaffRequest(state, anchor) };
 }
 
@@ -277,4 +283,55 @@ function seededStaffRequest(state: WardFlowState, anchor: Instant): Pick<WardFlo
     requestedBy: "ward",
   };
   return { staffRequests: [request] };
+}
+
+/**
+ * Features 29 and 42 (Josh, 9 Nov 2026), synthetic only. One deliberate readmission: the first
+ * current inpatient with a linked person who arrived after one of the finished example stays ended,
+ * inside the readmission window, takes over that finished stay (and its recorded sex), so the 28 day
+ * flag shows on the ward board and in Statistics. And the first stay already held up gets a logged
+ * hold-up from two days ago, so the weekly delayed discharge grid shows a recorded hold-up. The
+ * person is found through the D-14-authorised resolver, as the readmission flag itself does, never
+ * by reading the patient link here.
+ */
+function addReadmissionAndHoldUpLog(state: Draft, anchor: Instant) {
+  const windowMinutes = CLINICAL_VALUES.readmissionWindow.value * MINUTES_PER_DAY;
+  const finished = state.admissions.filter((admission) => admission.id.startsWith("AD-EX-"));
+  const resolve = createPatientResolver({ patients: state.patients, referrals: state.referrals });
+  for (const current of state.admissions) {
+    if (current.state !== "occupied" || current.arrivedAt === null) continue;
+    const person = resolve(current).patient?.id;
+    if (!person) continue;
+    const arrivedAt = current.arrivedAt;
+    const earlier = finished.find(
+      (stay) =>
+        stay.unitId !== current.unitId &&
+        stay.leftAt !== null &&
+        stay.leftAt < arrivedAt &&
+        arrivedAt - stay.leftAt <= windowMinutes &&
+        sexFits(
+          state.units.find((unit) => unit.id === stay.unitId),
+          current.sex,
+        ),
+    );
+    if (!earlier) continue;
+    const index = state.admissions.indexOf(earlier);
+    state.admissions[index] = { ...earlier, patientId: person, sex: current.sex, gender: current.gender };
+    break;
+  }
+  const heldUp = state.admissions.findIndex((admission) => admission.state === "occupied" && admission.blockReason);
+  if (heldUp >= 0) {
+    const stay = state.admissions[heldUp]!;
+    state.admissions[heldUp] = {
+      ...stay,
+      stayBlockRecords: [{ at: anchor - 2 * MINUTES_PER_DAY, by: "ward", blocker: stay.blockReason! }],
+    };
+  }
+}
+
+function sexFits(unit: Unit | undefined, sex: Admission["sex"]): boolean {
+  if (!unit) return false;
+  if (unit.sexDesignation === "Female only") return sex === "Female";
+  if (unit.sexDesignation === "Male only") return sex === "Male";
+  return true;
 }

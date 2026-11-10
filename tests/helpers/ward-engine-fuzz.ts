@@ -7,6 +7,9 @@
  * sent under a role the event does not permit, or with a stale or invented id, so the refusal
  * paths are exercised as well as the success paths. Synthetic seeded worlds only.
  */
+import { PULL_HOLD_EXTENSION_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { upcomingWeekendWindow } from "@/components/ward-management/discharges/discharge-weekend-review";
+import { perthMidnight } from "@/components/ward-management/ward-clock";
 import { TRIBUNAL_OUTCOMES } from "@/components/ward-management/ward-patient-care-plans";
 import {
   CANCEL_TRANSPORT_REASONS,
@@ -28,6 +31,7 @@ import {
   WARD_INTAKE_CONSTRAINTS,
 } from "@/components/ward-management/ward-change-reasons";
 import {
+  DELAYED_DISCHARGE_REASONS,
   DISCHARGE_BARRIERS,
   FOLLOW_UP_STATES,
   LEAVING_DESTINATIONS,
@@ -74,7 +78,10 @@ import {
   BED_MEETING_ACTION_OWNERS,
 } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { WARD_CLOSURE_REASON_IDS, WARD_REOPEN_AFTER_HOURS } from "@/components/ward-management/capacity/ward-closure";
-import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
+import {
+  admissionBelongsToTeam,
+  COMMUNITY_TEAM_PAGES,
+} from "@/components/ward-management/community/community-derivations";
 import {
   BED_CALL_ANSWERS,
   BROADCAST_CATEGORIES,
@@ -531,6 +538,12 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
     3,
     movementEvent("RELEASE_PULL", ["pulled", "handover_ready", "moving"], (_state, random) => ({
       reason: pick(random, RELEASE_PULL_REASONS),
+    })),
+  ],
+  [
+    1,
+    movementEvent("EXTEND_PULL", ["pulled"], (_state, random) => ({
+      minutes: pick(random, PULL_HOLD_EXTENSION_MINUTES),
     })),
   ],
   [
@@ -1216,6 +1229,53 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       };
     },
   ],
+  // Features 37 and 13 (9 Nov 2026): a discharge checklist tick and a community follow-up reply.
+  [
+    1,
+    (state, random) => {
+      const stay = stayFor(state, random, occupied);
+      return {
+        type: "RECORD_DISCHARGE_CHECK",
+        admissionId: id(stay),
+        actingUnitId: stay?.unitId ?? MISSING_ID,
+        item: pick(random, ["community_follow_up", "medicines", "carer_told", "gp_letter"] as const),
+        state: pick(random, ["done", "not_needed", "outstanding"] as const),
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const stay = stayFor(state, random, occupied);
+      const reply = pick(random, ["awaiting", "accepted", "declined"] as const);
+      // The team the stay was referred to, when it has one, so a community reply can be accepted.
+      const team =
+        (stay && COMMUNITY_TEAM_PAGES.find((page) => admissionBelongsToTeam(stay, page, state.referrals))) ??
+        pick(random, COMMUNITY_TEAM_PAGES);
+      return {
+        type: "RECORD_FOLLOW_UP_REPLY",
+        admissionId: id(stay),
+        actingTeamId: team?.id ?? MISSING_ID,
+        reply,
+        ...(reply === "declined" ? { declineReason: "Outside catchment" as const } : {}),
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const stay = stayFor(state, random, occupied);
+      return {
+        type: "MARK_WEEKEND_DISCHARGE_REVIEWED",
+        admissionId: id(stay),
+        actingUnitId: stay?.unitId ?? MISSING_ID,
+        // As the card sends it: this weekend's first midnight; now and then one out of reach, refused.
+        weekendStart: chance(random, 0.85)
+          ? upcomingWeekendWindow(currentNow, perthMidnight(2026, 10, 12)).start
+          : currentNow + 8 * 1440,
+      };
+    },
+  ],
   [
     1,
     (state, random) => {
@@ -1226,6 +1286,24 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         admissionId: id(stay),
         actingUnitId: stay?.unitId ?? MISSING_ID,
         barrier: roll < 0.15 ? null : roll < 0.3 ? "None" : pick(random, DISCHARGE_BARRIERS),
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const stay = stayFor(state, random, occupied);
+      return {
+        type: "SET_CLINICALLY_READY",
+        admissionId: id(stay),
+        actingUnitId: stay?.unitId ?? MISSING_ID,
+        ready: chance(random, 0.2)
+          ? null
+          : {
+              // Now and then a day still to come, which is refused.
+              since: chance(random, 0.1) ? currentNow + 1440 : (stay?.arrivedAt ?? 0),
+              reason: pick(random, DELAYED_DISCHARGE_REASONS),
+            },
       };
     },
   ],
@@ -1676,6 +1754,24 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         ? subject.slice("patient:".length)
         : (pick(random, state.patients)?.id ?? MISSING_ID);
       return { type: "UNDO_PATIENT_RECORD", patientId, ...(record ? { role: record.role } : {}) };
+    },
+  ],
+  // 9 Nov 2026: the same for a bed release step. New events shifted the random runs so a release
+  // step's own Undo was never drawn; a sweep step now always sends it, aimed at the newest one.
+  [
+    1,
+    (state, random) => {
+      const record = (state.undoRecords ?? [])
+        .flatMap((candidate) =>
+          candidate.kind === "step" && candidate.undoType === "UNDO_RELEASE_STEP" ? [candidate] : [],
+        )
+        .at(-1);
+      return {
+        type: "UNDO_RELEASE_STEP",
+        ...(record ? { role: record.role, ...undoSubjectField(state, record.subjectId) } : {}),
+        ...(record?.unitId ? { actingUnitId: record.unitId } : {}),
+        ...(record ? {} : { movementId: pick(random, state.movements)?.id ?? MISSING_ID }),
+      };
     },
   ],
   // Movement facts: arrival details, flags, blockers, escalation, documents.

@@ -46,6 +46,10 @@ export type DischargeRecord = Readonly<
     | "followUp"
     | "careJourney"
     | "dischargeCriteria"
+    | "weekendDischargeReviews"
+    | "dischargeDateTrail"
+    | "dischargeChecks"
+    | "followUpReply"
   >
 >;
 
@@ -215,10 +219,15 @@ function project(state: WardFlowState, admission: Admission, actor: WardRecordAc
     leavingDestination: admission.leavingDestination,
     followUp: admission.followUp,
     careJourney: admission.careJourney,
+    weekendDischargeReviews: admission.weekendDischargeReviews,
     // Fixed-list criteria, typed patient specific criteria (D-65) and times. A community reader gets
     // placeholders for the typed ones (criteriaFor).
     dischargeCriteria: criteriaFor(actor, admission.dischargeCriteria),
     criteriaEligibility: admissionCriteriaEligibility(state, admission),
+    // Features 6, 37 and 13 (9 Nov 2026): times, listed values and roles only.
+    ...(admission.dischargeDateTrail ? { dischargeDateTrail: admission.dischargeDateTrail } : {}),
+    ...(admission.dischargeChecks ? { dischargeChecks: admission.dischargeChecks } : {}),
+    ...(admission.followUpReply ? { followUpReply: admission.followUpReply } : {}),
   });
 }
 

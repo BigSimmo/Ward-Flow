@@ -30,6 +30,13 @@ import {
   useStayJourneyIsMine,
 } from "@/components/ward-management/movements/sent-journey-changes";
 import { WardDischargeCriteriaCard, type DischargeCriteriaUpdate } from "./ward-discharge-criteria-card";
+import { WardDischargeChecklistCard } from "./ward-discharge-checklist-card";
+import {
+  dischargeChecklist,
+  outstandingDischargeChecks,
+  type DischargeCheckItem,
+  type DischargeCheckState,
+} from "@/components/ward-management/ward-discharge-checklist";
 import {
   criteriaLedDepartureNote,
   dischargeCriteriaStatus,
@@ -123,6 +130,8 @@ interface WardBedDossierDrawerProps {
   criteriaEligibility?: CriteriaEligibility;
   /** Records the stay's discharge criteria (`SET_DISCHARGE_CRITERIA`). Absent when the role cannot. */
   onSetCriteria?: (admissionId: string, update: DischargeCriteriaUpdate) => ReturnType<WardCommandDispatch>;
+  /** Feature 37: ticks one discharge checklist item (`RECORD_DISCHARGE_CHECK`). Absent when the role cannot. */
+  onRecordDischargeCheck?: (admissionId: string, item: DischargeCheckItem, state: DischargeCheckState) => void;
 }
 
 // WH1 (Josh, 3 Nov 2026): two tabs, Now and Leaving. The stay's recorded events moved from a third
@@ -190,6 +199,7 @@ export function WardBedDossierDrawer({
   onSetBarrier,
   criteriaEligibility,
   onSetCriteria,
+  onRecordDischargeCheck,
 }: WardBedDossierDrawerProps) {
   const { admissions, bedReleases, resolvePatientIdentity, movements } = useWardFlowSelect(
     "admissions",
@@ -336,7 +346,7 @@ export function WardBedDossierDrawer({
       : "Not yet confirmed";
 
   // Top 25 item 21: beside the discharge date when the ward has moved it several times.
-  const eddMoved = eddMovedBadge(bedItem?.dischargeDateMoves);
+  const eddMoved = eddMovedBadge(bedItem?.dischargeDateMoves, bedItem?.eddDriftDays);
   const expectedValue = eddMoved ? (
     <>
       {expectedPlan}{" "}
@@ -358,8 +368,10 @@ export function WardBedDossierDrawer({
       />
     ) : null;
 
+  // Polish (9 Nov 2026): once the Expected line carries the "Date moved N times" badge, the count
+  // is said there once, not again as its own row.
   const dateMoves =
-    typeof bedItem?.dischargeDateMoves === "number"
+    eddMoved === null && typeof bedItem?.dischargeDateMoves === "number"
       ? bedItem.dischargeDateMoves === 0
         ? "Not moved"
         : `Moved ${bedItem.dischargeDateMoves} time${bedItem.dischargeDateMoves === 1 ? "" : "s"}`
@@ -447,6 +459,29 @@ export function WardBedDossierDrawer({
         onChange={onSetCriteria ? (update) => onSetCriteria(admission.id, update) : undefined}
       />
     ) : null;
+  // Feature 37 (9 Nov 2026): the discharge checklist, beside the criteria card. Advisory only: the
+  // confirm step lists anything outstanding and records the discharge anyway.
+  const checklistRows =
+    admission?.state === "occupied"
+      ? dischargeChecklist({
+          dischargeChecks: admission.dischargeChecks,
+          followUp: admission.followUp,
+          followUpReply: admission.followUpReply,
+          dependencies: bedReleases.find(
+            (release) => release.admissionId === admission.id && release.state !== "discharged",
+          )?.dependencies,
+        })
+      : null;
+  const checklistCard =
+    checklistRows && admission ? (
+      <WardDischargeChecklistCard
+        rows={checklistRows}
+        onRecord={
+          onRecordDischargeCheck ? (item, state) => onRecordDischargeCheck(admission.id, item, state) : undefined
+        }
+      />
+    ) : null;
+  const outstandingChecks = checklistRows ? outstandingDischargeChecks(checklistRows) : [];
   // D-64: the criteria state beside "Record that they have left". It warns and never blocks.
   const criteriaRecord = criteriaCard && admission ? admission.dischargeCriteria : null;
   const criteriaDepartureNote =
@@ -592,6 +627,11 @@ export function WardBedDossierDrawer({
       }}
       data-testid="ward-drawer-confirm"
     >
+      {confirmStep === "leave" && outstandingChecks.length > 0 ? (
+        <p className={styles.meta} role="note" data-testid="ward-drawer-confirm-checklist">
+          Still outstanding: {outstandingChecks.join(", ")}. You can still record the discharge.
+        </p>
+      ) : null}
       <p className={styles.meta} data-testid="ward-drawer-confirm-identity">
         Check: {resolved ? patientIdentityLine(resolved) : `${occupantAlias} · ${bedItem?.umrn ?? "UMRN not recorded"}`}{" "}
         · {bedLabel}
@@ -751,7 +791,14 @@ export function WardBedDossierDrawer({
               </>
             ) : null
           }
-          planCriteria={criteriaCard}
+          planCriteria={
+            criteriaCard || checklistCard ? (
+              <>
+                {criteriaCard}
+                {checklistCard}
+              </>
+            ) : null
+          }
           sentJourney={sentJourneyControls}
           leavingCriteriaNote={criteriaDepartureNote}
           readyNote={readyNote}
@@ -1175,6 +1222,7 @@ export function WardBedDossierDrawer({
                   </Section>
                 ) : null}
                 {criteriaCard}
+                {checklistCard}
                 {sentJourneyControls ? (
                   <Section title="Movement this ward sent">
                     <div className={styles.cardInner}>{sentJourneyControls}</div>

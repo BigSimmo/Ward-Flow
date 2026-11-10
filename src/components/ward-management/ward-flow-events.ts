@@ -1,8 +1,8 @@
 import type { BedMeetingActionKind, BedMeetingActionOwner, BedMeetingSubject } from "./bed-meeting/bed-meeting-actions";
 import type { CareChange } from "./ward-care-journey";
+import type { ExtendPullEvent } from "./ward-bed-hold-extension";
 import type { OnBehalfReasonId } from "./ward-on-behalf-reason";
 import type {
-  DischargeBarrier,
   LeavingDestination,
   FollowUpState,
   PlannedAdmissionCancelReason,
@@ -10,6 +10,7 @@ import type {
 } from "@/components/ward-management/ward-admissions";
 import type { AdminDetailField, Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { ArchivePatientEvent } from "./ward-patient-archive";
+import type { DischargeReasonEvent } from "./ward-delayed-discharge";
 import type { PatientCarePlanEvent } from "./ward-patient-care-plan-events";
 import type { InboxWardFlowEvent } from "./ward-inbox-events";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -117,6 +118,7 @@ import type { RestrictivePracticeWardFlowEvent } from "@/components/ward-managem
 import type { LoopCheckWardFlowEvent } from "@/components/ward-management/loop-checks/ward-loop-checks";
 import type { ArrivalCheckEvent, ReleaseNoticeEvent } from "./ward-flow-release-notice-events";
 import type { RecordWardDiagnosisEvent } from "@/components/ward-management/ward-flow-diagnosis-events";
+import type { MarkWeekendDischargeReviewedEvent } from "@/components/ward-management/ward-flow-weekend-review-events";
 // The role table lives in its own file (line cap, 18 Oct 2026), re-exported here.
 export { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 
@@ -962,6 +964,8 @@ export type WardFlowEvent =
        */
       expectedPull?: { unitId: string; stageIndex: number };
     }
+  // Feature 11 (Josh, 9 Nov 2026): extend a pulled bed's Pull time limit, declared beside its rule.
+  | ExtendPullEvent
   | {
       /**
        * The sending team books the transport out — `TR-D1` (OWNER, 2026-08-30). Once a receiving
@@ -2093,14 +2097,8 @@ export type WardFlowEvent =
       admissionId: string;
       stepDownCandidate: boolean;
     }
-  | {
-      type: "SET_DISCHARGE_BARRIER";
-      role: WardFlowRole;
-      now: Instant;
-      actingUnitId?: string;
-      admissionId: string;
-      barrier: DischargeBarrier | "None" | null;
-    }
+  // SET_DISCHARGE_BARRIER and SET_CLINICALLY_READY, moved out to keep this file under its line cap.
+  | DischargeReasonEvent
   | {
       /** D-60: sets, ticks or clears a voluntary patient's discharge criteria. */
       type: "SET_DISCHARGE_CRITERIA";
@@ -2542,10 +2540,12 @@ export type WardFlowEvent =
   // #398, the arrival checklist (D-72) and Ask more wards (D-76): declared beside their reducer cases.
   | ReleaseNoticeEvent
   | ArrivalCheckEvent
-  // Closing-the-loop package B (24 Oct 2026): discharge dependencies and plan changes.
-  | import("./discharges/discharge-dependency-events").DischargeDependencyEvent
+  // Package B (24 Oct 2026) dependencies and plan changes; features 37 and 13 (9 Nov 2026) checklist and reply.
+  | import("./discharges/discharge-check-events").DischargeDeskEvent
   | ObservationLevelEvent
   | RecordWardDiagnosisEvent
+  // Feature 14 (Josh, 9 Nov 2026): the weekend discharge review tick.
+  | MarkWeekendDischargeReviewedEvent
   | import("./ward-flow-referral-ask-events").ReferralAskEvent
   // Closing-the-loop (package E): return requested vs home service agreed.
   | import("./out-of-area/home-service-return").HomeServiceReturnEvent

@@ -59,6 +59,8 @@ import {
   type HeroChipItem,
 } from "@/components/wf";
 import { transportLeg } from "@/components/ward-management/ward-derivations";
+import { transportDelay } from "@/components/ward-management/transport/transport-delay";
+import { OfficerStageCell } from "./officer-stage-cell";
 import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { formatDateOfBirth } from "@/components/ward-management/ward-patients";
 import {
@@ -119,7 +121,7 @@ import {
   stageStartedAt,
 } from "./officer-screen-helpers";
 import { renderArrivalsCard } from "./officer-arrivals-card";
-import { OfficerOrderNote } from "./officer-order-note";
+import { OfficerOrderNote, useOfficerDelayedFilter } from "./officer-order-note";
 import { type OfficerDetailTab, type OfficerJobDetailContext } from "./officer-job-detail";
 import { OfficerJobPanel, formsMissingNote } from "./officer-job-panel";
 import { OfficerDeliveredRow } from "./officer-history-row";
@@ -309,17 +311,20 @@ export function OfficerScreen() {
     setInvoluntaryHighlight(false);
   };
 
-  // Next action first: late, then forms still to upload, then the jobs furthest along.
+  // Next action first: late or delayed, then forms still to upload, then the jobs furthest along.
   const priority = (movement: Movement) => {
     // Audit round 2, A4-13 (phone): a job to accept is pinned to the top, oldest first, so a new
     // booking is the Next action rather than the last row.
     if (isPhone && readyToAccept(movement)) return -1;
-    if (late(movement)) return 0;
+    // Polish (9 Nov 2026): a Delayed job (past ETA or not accepted in time) leads with the late ones.
+    if (late(movement) || transportDelay(movement, now) !== null) return 0;
     if (packOutstanding(movement)) return 1;
     const leg = movement.transport ? officerLeg(movement.transport) : undefined;
     return 2 + (3 - (leg ? OFFICER_LEG_STEPS.indexOf(leg) : 0));
   };
-  const sortedJobs = [...jobs].sort((a, b) => {
+  // Feature 25: the one filter that hides jobs; its chip, phone row and note come with it.
+  const delayed = useOfficerDelayedFilter(jobs, now, isPhone);
+  const sortedJobs = [...delayed.jobs].sort((a, b) => {
     if (sortKey === "wait") return stageSince(a) - stageSince(b);
     if (sortKey === "eta") {
       return (
@@ -786,6 +791,7 @@ export function OfficerScreen() {
   const involuntaryCount = jobs.filter(jobIsInvoluntary).length;
   const highlightChips = (
     <>
+      {delayed.chip}
       <FilterChip pressed={escortHighlight} onPressedChange={setEscortHighlight} count={escortCount}>
         Escort
       </FilterChip>
@@ -1102,13 +1108,15 @@ export function OfficerScreen() {
                   </span>
                 </div>
 
+                {delayed.phoneRow}
                 {/* Audit 24-1 decision 5: the next-action order is said on screen (not on the officer's phone). */}
                 <OfficerOrderNote shown={jobs.length > 0 && sortKey === "next" && !(officerDesk && isPhone)} />
+                {delayed.note}
                 {jobs.length === 0 ? (
                   <p className={styles.placeholder} data-testid="ward-officer-empty">
                     No outstanding jobs: each has arrived or its movement has closed.
                   </p>
-                ) : (
+                ) : delayed.jobs.length === 0 ? null : (
                   <div className={styles.tableScroll}>
                     <table
                       className={`${tableClasses.table} ${styles.jobsTable}`}
@@ -1139,7 +1147,6 @@ export function OfficerScreen() {
                           const active = movement.id === selectedJob?.id;
                           const lit = anyHighlight && isHighlighted(movement);
                           const leg = officerLeg(transport);
-                          const legIndex = leg ? OFFICER_LEG_STEPS.indexOf(leg) : -1;
                           const step = nextStep(movement);
                           const stepStatusText = leg
                             ? step?.blocked
@@ -1211,31 +1218,18 @@ export function OfficerScreen() {
                               </td>
                               <td>
                                 {leg && stepStatusText ? (
-                                  <span className={styles.stageCell}>
-                                    <span
-                                      className={styles.stepper}
-                                      role="img"
-                                      aria-label={`Transport stage: ${leg}, ${stepStatusText}`}
-                                      data-testid={`ward-officer-stepper-${movement.id}`}
-                                    >
-                                      {OFFICER_LEG_STEPS.map((stepName, index) => (
-                                        <span
-                                          key={stepName}
-                                          className={styles.stageDot}
-                                          data-s={index < legIndex ? "done" : index === legIndex ? "now" : "todo"}
-                                        />
-                                      ))}
-                                    </span>
-                                    <p className={styles.stageLine}>
-                                      <strong>{leg}</strong>
-                                      <SrOnly>, {stepStatusText}</SrOnly>
-                                    </p>
-                                    {since !== undefined ? (
-                                      <span className={styles.stageFor}>{durMinutes(Math.max(0, now - since))}</span>
-                                    ) : null}
+                                  <OfficerStageCell
+                                    movementId={movement.id}
+                                    leg={leg}
+                                    stepStatusText={stepStatusText}
+                                    stageTime={since !== undefined ? durMinutes(Math.max(0, now - since)) : undefined}
+                                    bookedAt={transport.bookedAt}
+                                    now={now}
+                                    delay={transportDelay(movement, now)}
+                                  >
                                     {/* With the job panel open, the Forms column folds in here. */}
                                     {panelOpen && !isPhone && packRequired(movement) ? formsMissingNote(forms) : null}
-                                  </span>
+                                  </OfficerStageCell>
                                 ) : (
                                   transportLeg(transport)
                                 )}
