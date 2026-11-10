@@ -1449,5 +1449,5 @@ is inferred.
 - **Decision:**
   1. **Frequent presenter tag:** counts earlier ED presentations in the last 12 months only. The current presentation is not counted, so the tag reflects history rather than today. The threshold stays 4 (D-104 item 3, synthetic).
   2. **Tribunal hearing date:** stays typed text that the device copy does not keep. After a refresh, "Hearing date passed, outcome not recorded" cannot show until the date is entered again. This stands while the app uses synthetic data; changing it needs a privacy rule change.
-  3. **Risk flags on referral-backed bed requests:** wards still see none, because ward screens cannot read referral records (FD-23). This is separate work, listed in the [backlog](backlog.md).
+  3. **Risk flags on referral-backed bed requests:** the ward's bed request card receives no referral data today, so it shows no flags. A ward can still read the full referral sent to it (D-79), and never sees other destinations (FD-23). Showing the flags on the request card is separate work, listed in the [backlog](backlog.md).
 - **Boundary:** synthetic data only. Confirms what is built; changes no signed clinical value or clinical rule, and approves no merge or release.
