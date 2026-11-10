@@ -119,7 +119,7 @@ import {
 import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { DECLINE_REASON_LABELS, isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
-import { occupiedBeds } from "./statistics-occupancy";
+import { occupancyShare, occupiedBeds } from "./statistics-occupancy";
 import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { ForecastTrackRecordTiles } from "@/components/ward-management/forecast/forecast-track-record";
 import { FixedQuestionsCard, WaitingStagesCard } from "@/components/ward-management/reports/closing-loop-cards-lazy";
@@ -242,7 +242,7 @@ function ExecutiveStatisticsScreen() {
         totalBeds: beds.total,
         occupiedCount: beds.occupied,
         inUseCount: beds.inUse,
-        occupiedPct: beds.total ? Math.round((beds.inUse / beds.total) * 100) : 0,
+        occupiedPct: beds.total ? Math.round((beds.inUse / beds.total) * 100) : null,
         availableNow: beds.ready,
         pendingPreparation: data.capacity.pendingPreparation,
         waitingCount: people.waitingInEd,
@@ -333,7 +333,8 @@ function OperationalStatisticsScreen({
   const inUseCount = occupancy.inUse;
   // One decimal place, the precision Home, Overview and Wards print (audit stats-20: 85.2%, not 85%).
   // Whole percent, the one rule for every percentage (Josh, 5 Nov 2026, CL-9).
-  const occupiedPct = occupancy.beds > 0 ? Math.round((occupancy.inUse / occupancy.beds) * 100) : 0;
+  // Audit M6: with no beds counted the share is unknown, never 0%, as Home leaves its ring out.
+  const occupiedPct = occupancy.beds > 0 ? Math.round((occupancy.inUse / occupancy.beds) * 100) : null;
   // Audit 6 (Josh, 20 Oct 2026): the one ready figure, leaving out beds pulled for an incoming patient.
   const availableNow = totalReadyBedsNow(siteUnits, sourceAdmissions, sourceBedReleases);
   // Ready beds still being cleaned count as ready (the owner's ruling); the label says how many.
@@ -616,7 +617,7 @@ function StatisticsSummaryView({
       ["Beds", totalBeds],
       ["Occupied", occupiedCount],
       ["Beds in use (occupied or pulled)", inUseCount],
-      ["Occupancy percent", occupiedPct],
+      ["Occupancy percent", occupiedPct ?? "unknown"],
       ["Being made ready", pendingPreparation],
       // Issue #618: counts of people follow the executive's small number rule; beds stay exact.
       ["Discharged today", small(dischargesCount)],
@@ -1009,7 +1010,7 @@ function StatisticsSummaryView({
                         id: "in-use",
                         value: inUseCount,
                         unit: <> / {totalBeds}</>,
-                        label: `in use, ${occupiedPct}%`,
+                        label: `in use, ${occupancyShare(occupiedPct)}`,
                       },
                       { id: "ready", value: availableNow, label: availableNow === 1 ? "bed ready" : "beds ready" },
                       ...(notShown(waitingCount)

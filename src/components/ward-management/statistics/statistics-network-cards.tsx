@@ -703,7 +703,7 @@ export type SummaryModel = {
   totalBeds: number;
   occupiedCount: number;
   inUseCount: number;
-  occupiedPct: number;
+  occupiedPct: number | null;
   availableNow: number;
   pendingPreparation: number;
   waitingCount: StatisticsCount;
