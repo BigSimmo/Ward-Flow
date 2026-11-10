@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 
 import { dayOf, DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { durMinutes } from "@/components/wf/format";
-import { isOpen, shortlistCandidates } from "@/components/ward-management/ward-derivations";
+import { isOpen, shortlistCandidates, wardServiceOrder } from "@/components/ward-management/ward-derivations";
+import { edHealthService } from "@/components/ward-management/ward-service-scope";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { causeOf, MovementsScreen } from "@/components/ward-management/movements/movements-screen";
 import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/delays-derivations";
@@ -761,18 +762,44 @@ describe("the Corridors strip", () => {
     const pairCount = new Set(expected.map((row) => JSON.stringify([row.originEdId, row.acceptedUnitId]))).size;
     expect(pairCount).toBeLessThan(expected.length);
     expect(within(strip).getByRole("button", { name: `Accepted ${pairCount}` })).toBeInTheDocument();
-    // Movements redesign (1 Nov 2026): the routes are grouped under their ED, busiest first.
-    const rail = within(strip).getByRole("complementary", { name: "Ranked corridors" });
+    // Movements redesign (1 Nov 2026): the routes are grouped under their ED (D-126: in a fixed
+    // health service then ED name order, pinned in the next test).
+    const rail = within(strip).getByRole("complementary", { name: "Corridors" });
     expect(rail).toHaveTextContent(`${pairCount} routes`);
     const edCount = new Set(expected.map((row) => row.originEdId)).size;
-    expect(within(rail).getByRole("list", { name: "Accepted corridors by ED, busiest first" }).children).toHaveLength(
-      edCount,
-    );
+    expect(within(rail).getByRole("list", { name: "Accepted corridors by ED" }).children).toHaveLength(edCount);
 
     const busiest = expected[0];
     const ed = edById(busiest.originEdId);
     expect(ed, "the busiest corridor names an unresolvable department — pick a different assertion").toBeDefined();
     expect(strip).toHaveTextContent(String(ed?.name));
+  });
+
+  it("lists the EDs in a fixed health service then ED name order, never busiest first (D-126)", () => {
+    const rows = corridorCounts(seededMovements);
+    const totals = new Map<string, number>();
+    for (const row of rows) totals.set(row.originEdId, (totals.get(row.originEdId) ?? 0) + row.count);
+    const name = (edId: string) => edById(edId)?.name ?? edId;
+    const serviceRank = (edId: string) => {
+      const service = edHealthService(edId);
+      return service === undefined ? wardServiceOrder.length : wardServiceOrder.indexOf(service);
+    };
+    const fixed = [...totals.keys()]
+      .sort((a, b) => serviceRank(a) - serviceRank(b) || name(a).localeCompare(name(b)))
+      .map(name);
+    const busiestFirst = [...totals.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([id]) => name(id));
+    // Non-vacuity: in the seed the busiest ED is not first in the fixed order, so the old
+    // busiest-first sort would fail this test.
+    expect(busiestFirst, "the seed cannot tell a fixed order from busiest first").not.toEqual(fixed);
+
+    renderScreen();
+    showTimeline();
+    const strip = screen.getByRole("region", { name: "Today’s traffic" });
+    const list = within(strip).getByRole("list", { name: "Accepted corridors by ED" });
+    const shown = [...list.children].map((item) => item.querySelector("button")?.getAttribute("title"));
+    expect(shown).toEqual(fixed);
   });
 
   it("shows only actual same-day declined corridors and does not assign them a journey stage", () => {

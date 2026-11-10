@@ -19,6 +19,22 @@ const PUSH_SERVICE_HOSTS = Object.freeze([
 ]);
 export const ALERTS_PATH = "/ward-flow/alerts";
 const PUSH_TOPIC = "wardflowactnow";
+/**
+ * Audit M158: the Web Push Topic per notification tag. A push service replaces a message still
+ * waiting for an offline phone with a newer one of the same topic, so each kind has its own and a
+ * transport job never displaces an undelivered red alert. Unknown tags use the act-now topic.
+ */
+const PUSH_TOPICS = Object.freeze({
+  "ward-flow-act-now": PUSH_TOPIC,
+  "ward-flow-jobs": "wardflowjobs",
+  "ward-flow-team": "wardflowteam",
+});
+
+/** The Web Push Topic for a payload: its kind's own, or the act-now topic. */
+export function pushTopic(payload) {
+  const tag = payload?.tag;
+  return typeof tag === "string" && Object.hasOwn(PUSH_TOPICS, tag) ? PUSH_TOPICS[tag] : PUSH_TOPIC;
+}
 const MAX_SUBSCRIPTIONS_PER_ACCOUNT = 10;
 
 function decodedLength(value) {
@@ -232,7 +248,7 @@ export function createPushSender(config, webpush) {
       await webpush.sendNotification(
         { endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } },
         JSON.stringify(payload),
-        { vapidDetails, TTL: 3600, urgency: "high", topic: PUSH_TOPIC, timeout: 5000 },
+        { vapidDetails, TTL: 3600, urgency: "high", topic: pushTopic(payload), timeout: 5000 },
       );
       return { outcome: "sent" };
     } catch (error) {

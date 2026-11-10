@@ -445,7 +445,8 @@ export function WardTasksDrawer({
   }
 
   function acknowledgeAllFacts(ids: readonly string[]) {
-    ids.forEach((inboxItemId) => dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId }));
+    // D-125: the outcomes let a sign-out or role switch wait for these to be confirmed.
+    return ids.map((inboxItemId) => dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId }));
   }
 
   // Snoozed rows leave the active list and come back by themselves when their time passes.

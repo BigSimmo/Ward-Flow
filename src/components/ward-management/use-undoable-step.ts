@@ -43,6 +43,8 @@ type Pending = {
   /** A refusal is already said inline by the page; see `UndoableStep.refusalShownInline`. */
   refusalShownInline?: boolean;
   onRefused?: (reason: string) => void;
+  /** Who the step is for; see `UndoableStep.who`. */
+  who?: string;
   /** The record number already kept for this undo and subject before the step, if any. */
   priorSeq?: number;
   /**
@@ -80,7 +82,17 @@ export type UndoableStep = {
   refusalShownInline?: boolean;
   /** Told the engine's own reason when the step is refused, so the page can say it beside its control. */
   onRefused?: (reason: string) => void;
+  /**
+   * Audit M2: who the step is for, as the success message names them. A refusal names them too
+   * (Josh, 26 Sept 2026), because a shared-board refusal never names the patient (P058).
+   */
+  who?: string;
 };
+
+/** The refusal's words, led by the person's name when the words do not already name them. */
+function namedRefusal(who: string | undefined, reason: string): string {
+  return who && !reason.includes(who) ? `${who}: ${reason}` : reason;
+}
 
 export type UndoableStepOptions = {
   dispatch: WardCommandDispatch;
@@ -162,7 +174,7 @@ export function useUndoableStep({
           continue;
         const said =
           pending.outcome.status === "refused"
-            ? `Not recorded: ${sayRefusal ? sayRefusal(pending.outcome.message ?? "The action was refused.") : (pending.outcome.message ?? "The action was refused.")}`
+            ? `Not recorded: ${namedRefusal(pending.who, sayRefusal ? sayRefusal(pending.outcome.message ?? "The action was refused.") : (pending.outcome.message ?? "The action was refused."))}`
             : (pending.outcome.message ?? SAVE_NOT_CONFIRMED);
         if (sink) sink.push({ tone: "warning", title: said });
         else onMessage?.(said, "warning");
@@ -170,7 +182,7 @@ export function useUndoableStep({
       }
       if (refused) {
         if (pending.refusalShownInline) continue;
-        const said = `Not recorded: ${sayRefusal ? sayRefusal(refused.reason) : refused.reason}. Nothing was changed.`;
+        const said = `Not recorded: ${namedRefusal(pending.who, sayRefusal ? sayRefusal(refused.reason) : refused.reason)}. Nothing was changed.`;
         if (sink) sink.push({ tone: "warning", title: said });
         else onMessage?.(said, "warning");
         continue;

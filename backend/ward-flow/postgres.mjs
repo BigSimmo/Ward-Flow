@@ -19,7 +19,7 @@ import {
   conflictingCollection,
   conflictRecordType,
   coveredRecords,
-  jsonCharacterLength,
+  jsonbTextByteLength,
   staleReason,
   markerKind,
   planSave,
@@ -167,8 +167,11 @@ function canonical(value) {
   return value;
 }
 
-/** The legacy JSON character count of a world, measured once per save (audit PS-12). */
-const worldBytes = jsonCharacterLength;
+/**
+ * The UTF-8 byte size of a world as the database's jsonb text measures it, once per save (audits
+ * PS-12, M162): the 8 MiB limit is the old `octet_length(payload::text)` CHECK on the whole world.
+ */
+const worldBytes = jsonbTextByteLength;
 
 /**
  * The audit row's `changes` as stored. A reset or new scenario replaces the whole board, so the

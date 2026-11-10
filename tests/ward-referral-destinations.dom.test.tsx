@@ -98,12 +98,13 @@ describe("Referral destinations — the option list itself", () => {
     expect(REFERRAL_DESTINATION_KINDS.length).toBeLessThanOrEqual(PARALLEL_REFERRAL_CAP);
   });
 
-  it("orders by catchment, then by name", () => {
-    expect(optionsFor({ suburb: reviewedSuburb() }).map((option) => option.label)).toEqual([
-      "Community team",
-      "Emergency department",
-      "Psychiatric ward",
-    ]);
+  it("lists the kinds in the fixed Ward, Community team, ED order whatever the catchment (D-126)", () => {
+    const fixed = ["Psychiatric ward", "Community team", "Emergency department"];
+    // A suburb the table places with a community team used to lift that option first; it no longer
+    // moves anything. Neither does an unknown, contested or missing suburb.
+    for (const suburb of [reviewedSuburb(), contestedSuburb(), "Nowhere In The Table", null]) {
+      expect(optionsFor({ suburb }).map((option) => option.label)).toEqual(fixed);
+    }
   });
 
   it("carries no rank, score, weight or percentage on any option", () => {
@@ -111,6 +112,8 @@ describe("Referral destinations — the option list itself", () => {
       expect(Object.keys(option)).not.toContain("score");
       expect(Object.keys(option)).not.toContain("rank");
       expect(Object.keys(option)).not.toContain("weight");
+      // D-71/D-126: no destination is flagged as suggested.
+      expect(Object.keys(option)).not.toContain("suggested");
       for (const sentence of [option.catchment.sentence, ...option.figures, ...option.reasons]) {
         expect(sentence, `${option.kind} shows a percentage: ${sentence}`).not.toMatch(/%/);
         expect(sentence, `${option.kind} shows a rank or score: ${sentence}`).not.toMatch(/\b(score|rank|rating)\b/i);
@@ -120,14 +123,14 @@ describe("Referral destinations — the option list itself", () => {
 });
 
 describe("Referral destinations — catchment, said rather than guessed", () => {
-  it("names the team the source table places this suburb with, and suggests that option", () => {
+  it("names the team the source table places this suburb with, without flagging it suggested", () => {
     const suburb = reviewedSuburb();
     const option = optionFor("community_team", { suburb });
 
     expect(option.catchment.placedBySourceTable).toBe(true);
     expect(option.catchment.outsideTheTable).toBe(false);
     expect(option.catchment.sentence).toContain(suburb);
-    expect(option.suggested).toBe(true);
+    expect(option).not.toHaveProperty("suggested");
     expect(option.reasons.join(" ")).toMatch(/serves this patient's suburb/i);
   });
 
@@ -144,7 +147,7 @@ describe("Referral destinations — catchment, said rather than guessed", () => 
       expect(option.catchment.sentence).toContain(reading.clinics.join(" or "));
     }
     // NOT auto-selected: a contested suburb does not route.
-    expect(option.suggested).toBe(false);
+    expect(option).not.toHaveProperty("suggested");
   });
 
   it("says so when the suburb is not in the source table, and does not suggest a team", () => {
@@ -152,7 +155,7 @@ describe("Referral destinations — catchment, said rather than guessed", () => 
 
     expect(option.catchment.placedBySourceTable).toBe(false);
     expect(option.catchment.outsideTheTable).toBe(true);
-    expect(option.suggested).toBe(false);
+    expect(option).not.toHaveProperty("suggested");
   });
 
   it("claims no catchment at all when no suburb has been chosen", () => {
@@ -161,7 +164,7 @@ describe("Referral destinations — catchment, said rather than guessed", () => 
     expect(option.catchment.placedBySourceTable).toBe(false);
     // Nothing is known, so nothing is outside anything: an unanswered question is not a deviation.
     expect(option.catchment.outsideTheTable).toBe(false);
-    expect(option.suggested).toBe(false);
+    expect(option).not.toHaveProperty("suggested");
   });
 
   it("says plainly that a ward and an emergency department have no catchment in these sources", () => {

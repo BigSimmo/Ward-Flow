@@ -56,7 +56,9 @@ import { renewFrontDoorPass } from "@/components/ward-management/front-door/fron
 import {
   SIGNED_OUT_NOTICE,
   SIGNED_OUT_UNCONFIRMED_NOTICE,
+  UNSENT_CHANGES_DROPPED_NOTICE,
 } from "@/components/ward-management/front-door/front-door-notice";
+import { heldActionsWaiting, sendHeldActions } from "./ward-held-actions";
 
 /** #805, #839: fetch the shared client and every chunk its first read awaits (state checks and the
  * scenario wards) while the sign-in is checked, not one after another once it is. */
@@ -226,6 +228,8 @@ export function useWardSupabaseShared(
   }
   const connection = useRef<SharedWorkspaceClient | null>(null);
   const publishedEpoch = useRef<number | undefined>(undefined);
+  /** The latest published view's `unconfirmedSave`, read after sign-out waits for held actions. */
+  const unconfirmedNow = useRef(false);
   const actions = useRef<{
     signUp: (email: string, password: string) => Promise<void>;
     signIn: (email: string, password: string) => Promise<void>;
@@ -282,6 +286,7 @@ export function useWardSupabaseShared(
       connection.current?.dispose();
       connection.current = null;
       publishedEpoch.current = undefined;
+      unconfirmedNow.current = false;
       if (!closed) {
         setOwnership((owner) => (owner ? { ...owner, view: null, client: null, actorId: null } : null));
         setSignedIn(false);
@@ -324,14 +329,17 @@ export function useWardSupabaseShared(
       const instance = auth;
       let landed = false;
       let latestEpoch: number | undefined;
+      // The last published view had a save in flight or queued, which a forced sign-out drops.
+      let waitingBefore = false;
       const client = new SharedWorkspaceClient({
         baseUrl: baseUrl.replace(/\/$/, ""),
         token: (options) => instance.token(options),
         workingAs,
         recoveryStorage: tabStorage,
         authenticatedActorId: () => instance.userId,
-        changed: (next) => {
+        changed: (published) => {
           if (closed || connection.current !== client) return;
+          let next = published;
           if (instance.userId !== actorId) {
             disconnect();
             setView({
@@ -351,7 +359,12 @@ export function useWardSupabaseShared(
             setActNowAppBadge(0);
             releasePhoneAlerts(baseUrl, token, workingAs.get(), actorId);
             void instance.signOut().catch(() => {});
+            // D-125 (audit M8 gap A): forced expiry never waits, so say that what was still waiting
+            // on this page, or held in an Undo window, was not saved. No record is named.
+            if (waitingBefore || heldActionsWaiting())
+              next = { ...next, error: [next.error, UNSENT_CHANGES_DROPPED_NOTICE].filter(Boolean).join(" ") };
           }
+          waitingBefore = unconfirmedNow.current = !!next.unconfirmedSave;
           // The state and this ownership receipt must match in the very render that publishes data.
           // An effect that clears the previous account after rendering would be one frame too late.
           setOwnership({ auth: instance, view: next, client, actorId });
@@ -754,7 +767,8 @@ export function useWardSupabaseShared(
         void actions.current?.signOut(why, undefined, why !== undefined);
         return true;
       };
-      if (why === undefined && view.unconfirmedSave) {
+      const guarded = (pending: boolean) => {
+        if (!pending) return void finish();
         void import("./ward-sign-out-guard")
           .then(({ allowWardSignOut }) => allowWardSignOut(true, false))
           .then(
@@ -767,7 +781,15 @@ export function useWardSupabaseShared(
               if (finish()) setFarewell(SIGNED_OUT_UNCONFIRMED_NOTICE);
             },
           );
-      } else finish();
+      };
+      if (why !== undefined) return void finish();
+      // D-125: actions held in an Undo window are sent first, and sign-out waits for them. A refused
+      // or failed one keeps the person signed in; the holding screen says why.
+      if (!heldActionsWaiting()) return guarded(!!view.unconfirmedSave);
+      void sendHeldActions("sign-out").then((sent) => {
+        // Read after the wait: another save may still be waiting, which asks as before.
+        if (sent) guarded(unconfirmedNow.current);
+      });
     },
     retry: () => actions.current?.retry(),
     restoreNotice,
@@ -776,7 +798,14 @@ export function useWardSupabaseShared(
     /** Work as one of this account's roles, when it holds more than one. */
     chooseRole: (id: string) => connection.current?.chooseRole(id),
     /** Forget the role worked as, so the account's roles are listed again. */
-    switchRole: () => connection.current?.switchRole(),
+    switchRole: () => {
+      // D-125: as for sign-out, held Undo-window actions are sent and confirmed before the desk changes.
+      const owner = connection.current;
+      if (!heldActionsWaiting()) return owner?.switchRole();
+      void sendHeldActions("switch-role").then((sent) => {
+        if (sent && connection.current === owner) owner?.switchRole();
+      });
+    },
     /** The step-up sign-in with the account's own password. */
     reauthenticate: async (password: string) => {
       if (!actions.current) throw new WardAuthError("session", "Sign in again to carry on.");

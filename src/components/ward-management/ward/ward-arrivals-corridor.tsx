@@ -200,6 +200,7 @@ export function WardArrivalsCorridor({
       },
       {
         success: `Arrival recorded for ${resolvePatientIdentity(movement).displayName}.`,
+        who: resolvePatientIdentity(movement).displayName,
         undo: (at) => ({
           type: "UNDO_TRANSPORT_STEP",
           role: "ward",

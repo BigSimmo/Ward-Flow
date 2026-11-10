@@ -143,6 +143,40 @@ test("an officer's jobs and a team's updates get their own words, with no record
       assert.equal(JSON.stringify(payload).includes(value), false, `payload must not contain ${value}`);
 });
 
+test("M158: a red alert, a transport job and a team update each use their own slot and topic, name-free", async () => {
+  const kinds = {
+    "act-now": pushPayload([{ id: "bed-pull-WF-004", site: "Royal Perth Hospital", kind: "act-now" }]),
+    job: pushPayload([{ id: "job:WF-005:abc", site: "Royal Perth Hospital", kind: "job" }]),
+    community: pushPayload([{ id: "admitted:AD-01", site: "Royal Perth Hospital", kind: "community" }]),
+  };
+  // A phone shows one notification per tag, so three kinds must be three tags, never one shared.
+  const tags = Object.values(kinds).map((payload) => payload.tag);
+  assert.deepEqual(tags, ["ward-flow-act-now", "ward-flow-jobs", "ward-flow-team"]);
+  // A push service keeps one waiting message per topic for an offline phone: one topic per kind too.
+  const calls = [];
+  const send = createPushSender(readPushConfig(env), {
+    sendNotification: async (...args) => {
+      calls.push(args);
+      return { statusCode: 201 };
+    },
+  });
+  const subscription = { endpoint: "https://fcm.googleapis.com/fcm/send/abc", ...browserKeys };
+  for (const payload of Object.values(kinds)) assert.deepEqual(await send(subscription, payload), { outcome: "sent" });
+  const topics = calls.map(([, , options]) => options.topic);
+  assert.deepEqual(topics, ["wardflowactnow", "wardflowjobs", "wardflowteam"]);
+  // RFC 8030: a topic is at most 32 characters of the URL-safe base64 alphabet.
+  for (const topic of topics) assert.match(topic, /^[A-Za-z0-9_-]{1,32}$/);
+  // Anything without a known tag keeps the act-now topic.
+  await send(subscription, { title: "x", body: "y", url: ALERTS_PATH });
+  assert.equal(calls.at(-1)?.[2].topic, "wardflowactnow");
+  // Counts and place only: no record id, kind id or name reaches any of them.
+  for (const [, body] of calls.slice(0, 3)) {
+    assert.deepEqual(Object.keys(JSON.parse(body)).sort(), ["body", "tag", "title", "url"]);
+    for (const value of ["WF-004", "WF-005", "AD-01", "bed-pull", "job:", "admitted:"])
+      assert.equal(body.includes(value), false, `payload must not contain ${value}`);
+  }
+});
+
 test("no patient name, UMRN, Ward Flow id, alert text or typed text reaches the payload", async () => {
   const engine = await import("./dist/engine.mjs");
   const at = new Date("2026-10-10T10:00:00Z");

@@ -9,7 +9,7 @@ import { gunzipSync } from "node:zlib";
 import * as engine from "./dist/engine.mjs";
 import { LATEST_MIGRATION } from "./migrations.mjs";
 import { createWorkspaceStore, storedAuditChanges } from "./postgres.mjs";
-import { jsonCharacterLength, planSave } from "./records.mjs";
+import { jsonByteLength, jsonbTextByteLength, planSave } from "./records.mjs";
 import { withoutRecordDetail } from "./record-detail.mjs";
 import { LruCache, gzipSegments, jsonResponse, registerPart, replySegments, segmentBytes } from "./reply-cache.mjs";
 import { listen, processCacheNotice } from "./server.mjs";
@@ -18,6 +18,22 @@ const start = new Date("2026-10-25T04:00:00Z");
 const actorId = "11111111-1111-4111-8111-111111111111";
 const workspaceId = "22222222-2222-4222-8222-222222222222";
 const refresh = (unitId) => ({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", unitId });
+/** The size oracle: UTF-8 bytes of the native JSON text (audit M162), not UTF-16 characters. */
+const utf8JsonBytes = (value) => Buffer.byteLength(JSON.stringify(value), "utf8");
+/**
+ * The world size oracle: UTF-8 bytes of the text PostgreSQL prints for the value as jsonb, which the
+ * size CHECKs measure (`octet_length(payload::text)`): ", " between entries and ": " after a key.
+ * Built as text, independently of the streaming measure. Numbers here never need an exponent.
+ */
+function jsonbText(value) {
+  if (Array.isArray(value)) return `[${value.map(jsonbText).join(", ")}]`;
+  if (value && typeof value === "object")
+    return `{${Object.entries(value)
+      .map(([key, entry]) => `${JSON.stringify(key)}: ${jsonbText(entry)}`)
+      .join(", ")}}`;
+  return JSON.stringify(value);
+}
+const utf8JsonbBytes = (value) => Buffer.byteLength(jsonbText(JSON.parse(JSON.stringify(value))), "utf8");
 
 /** A workspace held in memory, answering the statements the store sends. */
 function memoryDatabase(world) {
@@ -684,7 +700,7 @@ test("a revision-only save measures its world without serialising a whole-world 
   const world = engine.seedWorld(start);
   const unit = world.state.units[0];
   const expected = engine.applyCommand(world, refresh(unit.id), start).world;
-  const expectedLength = JSON.stringify(expected).length;
+  const expectedLength = utf8JsonbBytes(expected);
   const windows = [];
   const alerts = [];
   const watching = {
@@ -719,12 +735,12 @@ test("a revision-only save measures its world without serialising a whole-world 
   const reloaded = await store.read(actorId);
   assert.equal(reloaded.revision, saved.body.commandRevision);
   assert.deepEqual(reloaded.payload, withoutRecordDetail(expected));
-  assert.deepEqual(windows, [], "the exact native JSON character length is not above its pressure threshold");
+  assert.deepEqual(windows, [], "the exact UTF-8 JSON byte size is not above its pressure threshold");
   assert.equal(alerts.length, 0);
   assert.equal(wholeWorldSerialisations, 0, "size measurement must not join a whole-world JSON string");
 });
 
-test("JSON character counting matches native UTF-16 lengths with bounded native string pieces", () => {
+test("JSON byte counting matches native UTF-8 byte sizes with bounded native string pieces", () => {
   const controls = String.fromCharCode(...Array.from({ length: 32 }, (_, index) => index));
   const shared = { nested: [1, { text: "é😀" }] };
   const longKey = "x".repeat(16_383) + "😀" + '\\"\n';
@@ -755,7 +771,7 @@ test("JSON character counting matches native UTF-16 lengths with bounded native 
     { omitted: undefined, empty: {}, array: [undefined, null], [longKey]: "é😀" },
     { first: shared, second: shared },
   ];
-  const expected = cases.map((value) => JSON.stringify(value).length);
+  const expected = cases.map((value) => utf8JsonBytes(value));
   const stringify = JSON.stringify;
   let largestStringPiece = 0;
   let containerSerialisations = 0;
@@ -766,18 +782,49 @@ test("JSON character counting matches native UTF-16 lengths with bounded native 
   };
   let actual;
   try {
-    actual = cases.map((value) => jsonCharacterLength(value));
+    actual = cases.map((value) => jsonByteLength(value));
   } finally {
     JSON.stringify = stringify;
   }
   assert.deepEqual(actual, expected);
   assert.equal(containerSerialisations, 0, "ordinary JSON containers must not be joined into native JSON text");
   assert.equal(largestStringPiece <= 16_384, true, "native escaping receives bounded UTF-16 string pieces");
-  assert.notEqual(
-    jsonCharacterLength("é😀"),
-    Buffer.byteLength(JSON.stringify("é😀")),
-    "legacy size counts UTF-16, not UTF-8",
-  );
+  // M162: "é" is 1 UTF-16 unit but 2 UTF-8 bytes; "😀" is 2 units but 4 bytes.
+  assert.equal(jsonByteLength("é😀"), 8, "size counts UTF-8 bytes");
+  assert.notEqual(jsonByteLength("é😀"), JSON.stringify("é😀").length, "size does not count UTF-16 characters");
+});
+
+test("the world size counts jsonb's text form, as the database's size CHECKs measure it", () => {
+  // Each value's length was read from PostgreSQL 16: SELECT octet_length(($1)::jsonb::text).
+  /** @type {[unknown, number, string?][]} */
+  const cases = [
+    [{ a: 1, b: [1, 2] }, 21, '{"a": 1, "b": [1, 2]}'],
+    [[], 2],
+    [{}, 2],
+    [[[], {}, [{}], { x: [] }], 25],
+    [{ "é😀": "é😀", s: "a, b: c", q: 'say "hi", ok: \\ yes' }, 67],
+    [
+      [1e21, -1e-7, 1.25e-9, 1e-6, 0.1, -0],
+      69,
+      "[1000000000000000000000, -0.0000001, 0.00000000125, 0.000001, 0.1, 0]",
+    ],
+    [{ list: [undefined, null, true, false], omitted: undefined }, 35],
+    [{ when: new Date("2026-11-05T00:00:00Z"), nested: { tags: new Set([1]) } }, 60],
+  ];
+  for (const [value, bytes, text] of cases) {
+    assert.equal(jsonbTextByteLength(value), bytes, JSON.stringify(value));
+    if (text) assert.equal(Buffer.byteLength(text), bytes);
+  }
+  // The streaming measure agrees with the text-built oracle on a whole seed world, which is longer
+  // than compact JSON by a byte per comma and per key.
+  const world = engine.seedWorld(start);
+  assert.equal(jsonbTextByteLength(world), utf8JsonbBytes(world));
+  assert.ok(jsonbTextByteLength(world) > jsonByteLength(world));
+  // Past the streaming depth the native fallback is measured the same way.
+  /** @type {object} */
+  let deep = { v: 1 };
+  for (let level = 0; level < 160; level++) deep = { n: deep, list: [1, 2] };
+  assert.equal(jsonbTextByteLength(deep), utf8JsonbBytes(deep));
 });
 
 test("unsupported JSON shapes retain the native root fallback and callback context", () => {
@@ -791,9 +838,9 @@ test("unsupported JSON shapes retain the native root fallback and callback conte
       },
     }),
   };
-  const getterLength = JSON.stringify(getter).length;
+  const getterLength = utf8JsonBytes(getter);
   getterCalls = 0;
-  assert.equal(jsonCharacterLength(getter), getterLength);
+  assert.equal(jsonByteLength(getter), getterLength);
   assert.equal(getterCalls, 1);
 
   let toJsonCalls = 0;
@@ -805,9 +852,9 @@ test("unsupported JSON shapes retain the native root fallback and callback conte
       },
     },
   };
-  const toJsonLength = JSON.stringify(toJson).length;
+  const toJsonLength = utf8JsonBytes(toJson);
   toJsonCalls = 0;
-  assert.equal(jsonCharacterLength(toJson), toJsonLength);
+  assert.equal(jsonByteLength(toJson), toJsonLength);
   assert.equal(toJsonCalls, 1, "toJSON receives its original nested key exactly once");
 
   let indexCalls = 0;
@@ -819,9 +866,9 @@ test("unsupported JSON shapes retain the native root fallback and callback conte
       return "😀";
     },
   });
-  const indexLength = JSON.stringify(indexed).length;
+  const indexLength = utf8JsonBytes(indexed);
   indexCalls = 0;
-  assert.equal(jsonCharacterLength(indexed), indexLength);
+  assert.equal(jsonByteLength(indexed), indexLength);
   assert.equal(indexCalls, 1);
 
   let proxyGets = 0;
@@ -834,10 +881,10 @@ test("unsupported JSON shapes retain the native root fallback and callback conte
       },
     },
   );
-  const proxyLength = JSON.stringify(proxy).length;
+  const proxyLength = utf8JsonBytes(proxy);
   const nativeGets = proxyGets;
   proxyGets = 0;
-  assert.equal(jsonCharacterLength(proxy), proxyLength);
+  assert.equal(jsonByteLength(proxy), proxyLength);
   assert.equal(proxyGets, nativeGets, "proxy classification must not trigger extra source reads");
 
   const sparse = new Array(3);
@@ -857,11 +904,11 @@ test("unsupported JSON shapes retain the native root fallback and callback conte
   ];
   const rawJson = Object.getOwnPropertyDescriptor(JSON, "rawJSON")?.value;
   if (typeof rawJson === "function") fallbackCases.push({ value: rawJson("123456") });
-  for (const value of fallbackCases) assert.equal(jsonCharacterLength(value), JSON.stringify(value).length);
+  for (const value of fallbackCases) assert.equal(jsonByteLength(value), utf8JsonBytes(value));
   const cycle = {};
   cycle.self = cycle;
   for (const value of [undefined, () => {}, Symbol("synthetic"), 1n, cycle]) {
-    const nativeLength = () => JSON.stringify(value).length;
+    const nativeLength = () => utf8JsonBytes(value);
     let nativeError;
     try {
       nativeLength();
@@ -869,17 +916,17 @@ test("unsupported JSON shapes retain the native root fallback and callback conte
       nativeError = error;
     }
     assert.ok(nativeError instanceof Error);
-    assert.throws(() => jsonCharacterLength(value), { name: nativeError.name });
+    assert.throws(() => jsonByteLength(value), { name: nativeError.name });
   }
 });
 
-test("command size pressure uses the exact native JSON character boundary", async () => {
+test("command size pressure uses the exact UTF-8 JSON byte boundary", async () => {
   for (const offset of [-1, 0, 1]) {
     const seed = engine.seedWorld(start);
     const world = { ...seed, state: { ...seed.state, syntheticSizeProbe: "é😀\u0000" } };
     const unit = world.state.units[0];
     const expected = engine.applyCommand(world, refresh(unit.id), start).world;
-    const oracleLength = JSON.stringify(expected).length;
+    const oracleLength = utf8JsonbBytes(expected);
     const windows = [];
     const alerts = [];
     const { store } = storeFor(world, {
@@ -905,16 +952,21 @@ test("command size pressure uses the exact native JSON character boundary", asyn
   }
 });
 
-test("the existing maximum world character boundary accepts equality and refuses one character more", async () => {
+test("M162: the maximum world byte boundary accepts equality and refuses one jsonb text byte more", async () => {
   const limit = 8_388_608;
   for (const extra of [0, 1]) {
     const seed = engine.seedWorld(start);
     const world = { ...seed, state: { ...seed.state, syntheticSizeProbe: "" } };
     const unit = world.state.units[0];
     const base = engine.applyCommand(world, refresh(unit.id), start).world;
-    world.state.syntheticSizeProbe = "x".repeat(limit + extra - JSON.stringify(base).length);
+    const remaining = limit + extra - utf8JsonbBytes(base);
+    // Two-byte "é" keeps the character count far under the limit while the byte size reaches it.
+    world.state.syntheticSizeProbe = "é".repeat(Math.floor(remaining / 2)) + "x".repeat(remaining % 2);
     const expected = engine.applyCommand(world, refresh(unit.id), start).world;
-    assert.equal(JSON.stringify(expected).length, limit + extra);
+    assert.equal(utf8JsonbBytes(expected), limit + extra);
+    assert.ok(JSON.stringify(expected).length < limit, "the character count alone would let this save through");
+    // The limit is the database's own measure: compact JSON is under it, jsonb's text form is not.
+    assert.ok(utf8JsonBytes(expected) < limit, "compact JSON alone would let this save through");
     const { store, db } = storeFor(world, {
       engine: { ...engine, archiveClosed: (value) => ({ world: value, archived: [] }) },
     });

@@ -1,13 +1,48 @@
 # Real patient data: go/no-go checklist
 
-_Created 2026-11-03 - Q378 (Josh, 3 Nov 2026); checked against main `cd66be7a` and the Ward Flow Supabase project; Documentation owns._
+_Updated 2026-11-10 - audit M127: section 0 makes this page the one real-data gate tracker for D-87 and D-111 item 8, with owners and the File A to master-list crosswalk; Documentation owns._
 
 Ward Flow runs on synthetic data only. This page lists everything that must be true before the
 first real patient record is entered. It is a checklist, not an approval. The answer is **no-go**
 until every row below is ticked with evidence, and the named owners in section 5 have signed.
 
-The wider evidence register is [PRODUCTION-READINESS.md](PRODUCTION-READINESS.md). The database
-of record is in [DATABASE.md](../DATABASE.md).
+This is the **one tracker** for the real-data gate. Do not keep a second list elsewhere; link
+here. The wider evidence register is [PRODUCTION-READINESS.md](PRODUCTION-READINESS.md). The
+database of record is in [DATABASE.md](../DATABASE.md). The rulings are in
+[decisions.md](../decisions.md) (D-84, D-87, D-111 item 8, D-123 item 6). D-123 is recorded in
+PR #1591, pending merge.
+
+## 0. Gate conditions (D-87 and D-111 item 8)
+
+Every condition D-87 and D-111 item 8 set, in one place. "To be named" means nobody holds the
+role yet; naming them is Josh's call. Nothing in this table is done.
+
+| #   | Condition                                                                                                                            | Source                   | Owner       | Status   | Tracked in                           |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------ | ----------- | -------- | ------------------------------------ |
+| G1  | A named sponsor for the real-data pilot.                                                                                             | D-87                     | Josh        | Not done | This row                             |
+| G2  | A named clinical safety owner, who reviews and accepts the hazard log.                                                               | D-87                     | Josh        | Not done | S2                                   |
+| G3  | A named privacy officer.                                                                                                             | D-87                     | Josh        | Not done | P1                                   |
+| G4  | Privacy impact assessment signed.                                                                                                    | D-87; D-111 item 8 (M60) | To be named | Not done | P2 to P6                             |
+| G5  | Privacy review of patient names shown on every screen, print and copy (D-83).                                                        | D-87                     | To be named | Not done | P2, P6                               |
+| G6  | Health-service IT approval of the host, and the D-84 hosting revisit (Railway Singapore today; move once IT names an approved host). | D-87; D-84               | Josh        | Not done | S1; section 4                        |
+| G7  | The repository made private before any real data, its history checked for anything that must not be public.                          | D-87                     | Josh        | Not done | This row                             |
+| G8  | Supabase paid plan with point-in-time backup, and a restore proven by a hosted drill.                                                | D-87                     | Josh        | Not done | Section 4; S3                        |
+| G9  | Intended purpose statement signed.                                                                                                   | D-87                     | To be named | Not done | This row                             |
+| G10 | Aboriginal cultural safety review held, including how Aboriginal status is shown or used (hazard H-24).                              | D-123 item 6             | To be named | Not done | This row                             |
+| G11 | Hazard log linked to tests and accepted (audit M65; drafting done, sign-off open).                                                   | D-111 item 8 (A16)       | To be named | Drafted  | S2; Clinical Safety Case section 7.3 |
+| G12 | Database rules stand alone: row-level security alone blocks other wards and roles (audit M3).                                        | D-111 item 8 (A33)       | Josh        | Not done | This row                             |
+| G13 | Data residency and provider map (audit M61).                                                                                         | D-111 item 8 (A35)       | To be named | Not done | Section 4                            |
+| G14 | Written view on TGA software-as-a-medical-device classification (audit M62).                                                         | D-111 item 8 (A42)       | To be named | Not done | This row                             |
+| G15 | Breach response plan with one tabletop rehearsal (audit M63).                                                                        | D-111 item 8 (A43)       | To be named | Not done | B1 to B4                             |
+| G16 | Independent penetration test, all high findings fixed (audit M64).                                                                   | D-111 item 8 (A44)       | To be named | Not done | This row                             |
+
+**Crosswalk.** D-111 item 8 names items from the 84-item File A plan; the 9 Nov master audit
+list renumbered them. Use the M number in new work.
+
+| File A (D-111 item 8) | A16 | A33 | A34 | A35 | A42 | A43 | A44 |
+| --------------------- | --- | --- | --- | --- | --- | --- | --- |
+| Master audit list     | M65 | M3  | M60 | M61 | M62 | M63 | M64 |
+| Row here              | G11 | G12 | G4  | G13 | G14 | G15 | G16 |
 
 ## 1. Code changes needed first
 

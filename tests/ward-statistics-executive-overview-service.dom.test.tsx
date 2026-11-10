@@ -15,6 +15,7 @@ import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/w
 import { StatisticsOverviewScreen } from "@/components/ward-management/statistics/statistics-overview-screen";
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
 import { StatisticsServiceScreen } from "@/components/ward-management/statistics/statistics-service-screen";
+import { ExecutiveNetworkOverviewCards } from "@/components/ward-management/statistics/statistics-network-cards";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
@@ -239,5 +240,37 @@ describe("one health service on the executive desk, counts only", () => {
     expect(text("ward-statistics-service-placement-not-yet")).toBe("17"); // 15 -> 17 (3 Nov 2026): two S6 example referrals from East Metro sites, declined, not placed
     expect(within(screen.getByTestId("ward-statistics-service-repatriation")).getByRole("table")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-statistics-people-not-listed")).toBeNull();
+  });
+});
+
+describe("executive occupancy by health service (audit M6)", () => {
+  it("reads a service with no beds counted as a dash, never 0%", () => {
+    asDesk("executive", true);
+    const state = seedWardFlowState();
+    const data = projectExecutiveReportingFoundation(
+      state,
+      { role: "executive", scope: { kind: "statewide" } },
+      {
+        now: NOW_ANCHOR,
+        dayZero: "2026-10-24T00:00:00.000Z",
+        startedAt: "2026-10-24T00:00:00.000Z",
+        places: wardPlaceLookup(state.units),
+      },
+    );
+    const [empty, counted] = data.services;
+    expect(empty && counted).toBeTruthy();
+    const none = { ...empty!.beds, total: 0, occupied: 0, inUse: 0, pulled: 0, ready: 0, closed: 0 };
+    const services = [{ ...empty!, beds: none, wardsOverOccupancyLine: 0 }, ...data.services.slice(1)];
+    render(
+      <ToastProvider>
+        <ExecutiveNetworkOverviewCards part="occupancy" data={{ ...data, services }} />
+      </ToastProvider>,
+    );
+    const tiles = screen.getAllByTestId(/^ward-statistics-service-tile-/u);
+    expect(tiles.length).toBeGreaterThan(1);
+    expect(tiles[0]!.textContent).toContain("—");
+    expect(tiles[0]!.textContent).not.toMatch(/(^|\D)0%/u);
+    // A counted service still shows its whole percent, so the dash is not every tile's.
+    expect(tiles[1]!.textContent).toMatch(/\d+%/u);
   });
 });
