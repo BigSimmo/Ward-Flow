@@ -281,7 +281,7 @@ export function toHandoverRow(
     legalStatus: movement.legalStatus,
     formCode: movement.legalForm?.code,
     formDueAt: currentLegalDueAt(movement),
-    formEnded: movement.legalForm?.endedBy !== undefined || formProgression(movement) !== undefined,
+    formEnded: movement.legalForm?.endedBy !== undefined || formProgression(movement)?.ended === true,
     destinationStatus:
       accepted === undefined && movement.referredUnitIds.length === 0
         ? sender === null
