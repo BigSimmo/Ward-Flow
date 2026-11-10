@@ -40,6 +40,9 @@ import dynamic from "next/dynamic";
 import { preloadWhenIdle } from "../preload-when-idle";
 // The arrival-time dialog has no initial-page content. Load it only after its action is opened.
 // (Document details load through the cancellable UploadFormsModal below.)
+// Care and safety (Josh, 9 Nov 2026) sits below the first screen of the Now tab, so its code loads
+// on its own rather than with the patient page's first load.
+const PatientCarePlansCard = dynamic(() => import("./patient-care-plans-card").then((m) => m.PatientCarePlansCard));
 const ArrivalTimeModal = dynamic(() => import("../referrals/arrival-time-modal").then((m) => m.ArrivalTimeModal));
 // F-10: transit operations only draw inside the Destination sheet, so their code loads on its own,
 // fetched once the page is idle, rather than with the patient page.
@@ -99,7 +102,12 @@ import { resolvePatientNowRecord } from "./patient-now-adapter";
 import { PATIENT_MODES, patientMode } from "./patient-mode";
 import { dayLabel, type PatientStatusContext } from "./patient-status-card";
 import type { LeaveKind, WardChangeForm } from "./patient-ward-change-card";
-import { calendarDateOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import {
+  calendarDateOf,
+  formatInstantWithDay,
+  perthClockTime,
+  perthIsoDay,
+} from "@/components/ward-management/ward-clock";
 import type { TransportBookingAnswers } from "@/components/ward-management/ward-transport-checks";
 import {
   BLANK_TRANSPORT_BOOKING,
@@ -1221,6 +1229,21 @@ export function PatientNowScreen({
               />
               <PatientTriageCard patientId={livePatient?.id} />
               {nowPanel}
+              {/* Care plans and safety flags (Josh, 9 Nov 2026): the plan, hearing date, carer told
+                  and cultural support, on the record's own facts. */}
+              {livePatient ? (
+                <PatientCarePlansCard
+                  patient={livePatient}
+                  role={routeRole}
+                  now={now}
+                  todayIso={perthIsoDay(displayToday)}
+                  nowClock={perthClockTime(displayToday)}
+                  hasCarer={(extras?.supports.length ?? 0) > 0}
+                  episodes={extras?.episodes}
+                  gate={gate}
+                  run={(event, success, onRefused) => runStep(event, { success, onRefused })}
+                />
+              ) : null}
             </div>
 
             {/* Tab 2: HISTORY */}

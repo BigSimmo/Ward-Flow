@@ -261,7 +261,9 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
   "WF-017": {
     reasonForReferral:
       "Relapse of schizophrenia after missing two depot injections. Threatened to kill his brother, whom he believes is controlling his thoughts. Assaulted a security officer in the ED overnight. Made involuntary. Needs a locked bed.",
-    riskFlags: ["aggression", "absconding"],
+    // Synthetic: this referral records the security escort flag (Josh, 9 Nov 2026, care plans and
+    // safety flags thread: defaults approved).
+    riskFlags: ["aggression", "absconding", "securityEscort"],
     risk: [
       { label: "Suicide", detail: "Low. Denies thoughts of self harm." },
       { label: "Aggression", detail: "High. Assault in ED, specific threats to his brother." },

@@ -28,6 +28,7 @@ import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
+import { CardSafetyTags } from "@/components/ward-management/patients/card-safety-tags";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import {
@@ -131,6 +132,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     rejections,
     resolvePatientIdentity,
     configuration,
+    dayZero,
   } = useWardFlowSelect(
     "movements",
     "units",
@@ -141,6 +143,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     "rejections",
     "resolvePatientIdentity",
     "configuration",
+    "dayZero",
   );
   const now = useWardFlowClock();
   const raise = useWardRaise("ward");
@@ -923,6 +926,19 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             </div>
                           </div>
                         )}
+                        {/* Referral risk flags (H10) and an interpreter need. FD-23: a ward-only view
+                            holds no referral records, so a referral-backed request shows "not shared"
+                            (nothing); a journey whose referral letter rides on the movement shows the
+                            flags this ward's referral detail already shows. */}
+                        <div className={styles.safetyTagsRow}>
+                          <CardSafetyTags
+                            movement={activeMovement}
+                            referrals={[]}
+                            patient={resolvePatientIdentity(activeMovement).patient}
+                            dayZero={dayZero}
+                            testId={`ward-answer-safety-tags-${activeMovement.id}`}
+                          />
+                        </div>
 
                         {/* SBAR Narrative Sections */}
                         {isPhone ? null : sbarSections}

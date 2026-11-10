@@ -1243,6 +1243,29 @@ function candidatesForMovements(
       return [...state.patients]
         .reverse()
         .map((patient) => ({ type, role, now, patientId: patient.id, reason: "test" }));
+    // Care plans and safety flags (Josh, 9 Nov 2026). One candidate per patient: a plan, a typed
+    // hearing date and outcome, and a cultural support request each hold fixed lists, typed dates
+    // and short text, never a legal figure.
+    case "RECORD_CARE_PLAN":
+      return state.patients.map((patient) => ({
+        type,
+        role,
+        now,
+        patientId: patient.id,
+        plan: { type: "Crisis/safety plan", agreedBy: "Ward team", agreedOn: "2026-11-01", helps: ["Quiet space"] },
+      }));
+    case "RECORD_TRIBUNAL_HEARING":
+      return state.patients.map((patient) => ({ type, role, now, patientId: patient.id, date: "2026-11-20" }));
+    case "RECORD_TRIBUNAL_OUTCOME":
+      return state.patients.map((patient) => ({ type, role, now, patientId: patient.id, outcome: "Held" }));
+    case "SET_CULTURAL_SUPPORT_REQUEST":
+      return state.patients.map((patient) => ({
+        type,
+        role,
+        now,
+        patientId: patient.id,
+        request: "Aboriginal liaison officer",
+      }));
     case "WITHDRAW_REFERRAL":
       // One candidate per movement, unconditioned. The reducer's own guards decide which are
       // refused — a movement that has closed, one already accepted, one holding no live referral —
