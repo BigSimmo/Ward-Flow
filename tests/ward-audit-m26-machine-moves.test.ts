@@ -241,34 +241,12 @@ const CREATION_MOVES: Record<string, string> = {
  * Engine and diagram disagree on these pairs. Each is a question for Josh, not a verdict: either
  * the diagram is wrong (fix machines.json) or the engine is (a clinical-behaviour change he rules on).
  * Key: "<from> <ACTION>". Value: what the engine does instead, and the question.
+ *
+ * Empty since 10 Nov 2026 (D-125): the 15 pairs found by the audit (Q1-Q5 in its report: step back,
+ * withdraw referral, ED outcome and community order from every open stage the engine allows, and
+ * withdraw acceptance from Bed pulled) were diagram gaps, and machines.json now draws them.
  */
-const Q1 =
-  "Q1 step back: the diagram draws one arrow (moving -> placement_requested, labelled 'to ANY strictly earlier stage'); the engine accepts a step back from every later stage. Should machines.json draw it from every stage?";
-const Q2 =
-  "Q2 withdraw referral: the diagram draws this exit from Bed pulled only; the engine closes the movement from every open stage after placement_requested. Which is right?";
-const Q3 =
-  "Q3 ED outcome: the diagram draws this exit from Bed pulled only; the engine closes the movement from every open stage before moving. Which is right?";
-const Q4 =
-  "Q4 community order: the diagram draws this exit from Bed pulled only; the engine also closes on a community order before a bed is pulled. Which is right?";
-const Q5 =
-  "Q5 withdraw acceptance: the arrow starts at accepted_awaiting_bed only, but its guard text and the engine also allow it from Bed pulled (the held bed is released). Should the diagram add the arrow?";
-const KNOWN_DISAGREEMENTS: Record<string, string> = {
-  "destination_review STEP_BACK_STAGE": Q1,
-  "accepted_awaiting_bed STEP_BACK_STAGE": Q1,
-  "pulled STEP_BACK_STAGE": Q1,
-  "handover_ready STEP_BACK_STAGE": Q1,
-  "destination_review WITHDRAW_REFERRAL": Q2,
-  "accepted_awaiting_bed WITHDRAW_REFERRAL": Q2,
-  "handover_ready WITHDRAW_REFERRAL": Q2,
-  "placement_requested RECORD_ED_OUTCOME": Q3,
-  "destination_review RECORD_ED_OUTCOME": Q3,
-  "accepted_awaiting_bed RECORD_ED_OUTCOME": Q3,
-  "handover_ready RECORD_ED_OUTCOME": Q3,
-  "placement_requested RECORD_EXAMINATION": Q4,
-  "destination_review RECORD_EXAMINATION": Q4,
-  "accepted_awaiting_bed RECORD_EXAMINATION": Q4,
-  "pulled WITHDRAW_ACCEPTANCE": Q5,
-};
+const KNOWN_DISAGREEMENTS: Record<string, string> = {};
 
 type Outcome = { accepted: boolean; to: string; reason?: string };
 

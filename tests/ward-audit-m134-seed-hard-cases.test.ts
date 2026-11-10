@@ -1,14 +1,20 @@
 // M134: the synthetic seed contains every hard case.
 // Audits and demos that pass "on the seed" prove nothing for a case the seed lacks. This file is
-// the checked-in scenario list: each case names how it is found in the default (standard) seed.
-// Cases the seed does not hold yet are listed in KNOWN_GAPS; that list may only shrink, and a case
-// must leave it in the same change that adds its synthetic record.
+// the checked-in scenario list: each case names how it is found in the hard-cases seed, the
+// standard seed with the opt-in hard-cases overlay (`ward-hard-cases-demo.ts`, kept out of the
+// default seed so no existing count moves). Cases that seed does not hold are listed in KNOWN_GAPS;
+// that list may only shrink, and a case must leave it in the same change that adds its record.
 //
 // Adding a record: synthetic names and identifiers only (the real-identifier guards stay), and no
 // change to a clinical rule, threshold or verdict; a seed record is data, not behaviour.
 import { describe, expect, it } from "vitest";
 
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import {
+  isValidStoredWardFlowState,
+  storedStateRestoreProblem,
+} from "@/components/ward-management/ward-flow-storage-validation";
+import { applyHardCasesOverlay, HARD_CASE_IDS } from "@/components/ward-management/ward-hard-cases-demo";
 import { ADMISSION_STATES } from "@/components/ward-management/ward-admissions";
 import { MOVEMENT_STAGES } from "@/components/ward-management/ward-model-vocabulary";
 import { observationStaff } from "@/components/ward-management/ward-observation";
@@ -144,25 +150,13 @@ const SCENARIOS: Record<string, (state: State) => number> = {
   ),
 };
 
-// Not in the default seed on 10 Nov 2026 (M134 audit). Each is a seed PR for Josh's go-ahead.
-const KNOWN_GAPS = [
-  // The one AWOL record (WL-RD07) is on a stay with no legal status recorded, so D-115's
-  // "AWOL shown everywhere" cannot be seen for either legal status on the default demo.
-  "absent without leave, voluntary",
-  "absent without leave, involuntary",
-  // Form 5A appears on one movement, but no admitted inpatient holds it.
-  "inpatient on Form 5A",
-  "two-staff observation (2:1)",
-  // Every admitted stay is on general observation; the 1:1 levels are only on ED movements.
-  "one-to-one or two-to-one observation on an admitted stay",
-  "ward with 0 beds",
-  // People share family names, but no two share a family name and a given-name initial, the
-  // closest wrong-patient risk.
-  "look-alike names (same family name and given-name initial)",
-];
+// The hard-cases overlay (M134, 10 Nov 2026) closed every gap the audit found in the default seed:
+// AWOL on a voluntary and an involuntary stay, an inpatient on Form 5A, 1:1 and 2:1 observation on
+// admitted stays, a ward with 0 beds and look-alike names. Add a case here only with its question.
+const KNOWN_GAPS: string[] = [];
 
 describe("M134 the synthetic seed holds every hard case", () => {
-  const state = seedWardFlowState();
+  const state = applyHardCasesOverlay(seedWardFlowState(), NOW_ANCHOR);
   const counts = Object.fromEntries(Object.entries(SCENARIOS).map(([name, find]) => [name, find(state)]));
 
   it("lists the cases the audit named", () => {
@@ -175,6 +169,19 @@ describe("M134 the synthetic seed holds every hard case", () => {
       .filter(([name, n]) => n === 0 && !KNOWN_GAPS.includes(name))
       .map(([name]) => name);
     expect(missing).toEqual([]);
+  });
+
+  it("the hard-cases seed is a world the app would save and restore", () => {
+    const stored = JSON.parse(JSON.stringify(state)) as unknown;
+    expect(isValidStoredWardFlowState(stored)).toBe(true);
+    expect(storedStateRestoreProblem(stored)).toBeUndefined();
+  });
+
+  it("the default seed stays as it was: the overlay is opt-in", () => {
+    const standard = seedWardFlowState();
+    expect(standard.units.map((unit) => unit.id)).not.toContain(HARD_CASE_IDS.zeroBedUnit);
+    expect(standard.leaveBeds.map((bed) => bed.id)).not.toContain(HARD_CASE_IDS.involuntaryAwolLeaveBed);
+    expect(standard.admissions.map((admission) => admission.id)).not.toContain(HARD_CASE_IDS.form5aAdmission);
   });
 
   it("each known gap is still a gap; remove it once the seed holds the case", () => {

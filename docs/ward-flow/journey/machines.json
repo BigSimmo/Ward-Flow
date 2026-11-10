@@ -115,13 +115,13 @@
       "name": "A movement",
       "subject": "The separate bed-search record created by RAISE_REFERRAL, or created already arrived by an admitted-ward transfer. Front-door acceptance alone creates no movement. Seven stages plus a separate closure.",
       "width": 3122,
-      "height": 600,
+      "height": 900,
       "states": [
         {
           "id": "start",
           "kind": "start",
           "x": 20,
-          "y": 250,
+          "y": 370,
           "w": 230,
           "h": 60,
           "label": "Movement created"
@@ -130,7 +130,7 @@
           "id": "placement_requested",
           "kind": "normal",
           "x": 20,
-          "y": 60,
+          "y": 180,
           "w": 230,
           "h": 86,
           "label": "Placement requested",
@@ -140,7 +140,7 @@
           "id": "destination_review",
           "kind": "normal",
           "x": 492,
-          "y": 60,
+          "y": 180,
           "w": 230,
           "h": 86,
           "label": "Destination review",
@@ -150,7 +150,7 @@
           "id": "accepted_awaiting_bed",
           "kind": "normal",
           "x": 964,
-          "y": 60,
+          "y": 180,
           "w": 230,
           "h": 86,
           "label": "Accepted, awaiting bed",
@@ -160,7 +160,7 @@
           "id": "pulled",
           "kind": "normal",
           "x": 1436,
-          "y": 60,
+          "y": 180,
           "w": 230,
           "h": 86,
           "label": "Bed pulled",
@@ -170,7 +170,7 @@
           "id": "handover_ready",
           "kind": "normal",
           "x": 1908,
-          "y": 60,
+          "y": 180,
           "w": 230,
           "h": 86,
           "label": "Handover ready",
@@ -180,7 +180,7 @@
           "id": "moving",
           "kind": "normal",
           "x": 2380,
-          "y": 60,
+          "y": 180,
           "w": 230,
           "h": 86,
           "label": "Moving",
@@ -190,7 +190,7 @@
           "id": "arrived",
           "kind": "terminal",
           "x": 2852,
-          "y": 60,
+          "y": 180,
           "w": 230,
           "h": 86,
           "label": "Arrived",
@@ -200,7 +200,7 @@
           "id": "closed",
           "kind": "terminal",
           "x": 1396,
-          "y": 420,
+          "y": 760,
           "w": 310,
           "h": 90,
           "label": "Closed — did not proceed",
@@ -370,13 +370,144 @@
           "to": "placement_requested",
           "action": "STEP_BACK_STAGE",
           "route": "above",
-          "offset": 80,
+          "offset": 130,
           "kind": "back",
           "label": "to ANY strictly earlier stage",
           "guard": "refused once arrived; touches nothing but the stage — no bed given back, no transport cancelled"
+        },
+        {
+          "from": "destination_review",
+          "to": "placement_requested",
+          "action": "STEP_BACK_STAGE",
+          "route": "above",
+          "offset": 90,
+          "kind": "back",
+          "guard": "the same step back as from Moving: to any strictly earlier stage, touching nothing but the stage"
+        },
+        {
+          "from": "accepted_awaiting_bed",
+          "to": "placement_requested",
+          "action": "STEP_BACK_STAGE",
+          "route": "above",
+          "offset": 100,
+          "kind": "back",
+          "guard": "the same step back as from Moving: to any strictly earlier stage, touching nothing but the stage"
+        },
+        {
+          "from": "pulled",
+          "to": "placement_requested",
+          "action": "STEP_BACK_STAGE",
+          "route": "above",
+          "offset": 110,
+          "kind": "back",
+          "guard": "the same step back as from Moving: to any strictly earlier stage, touching nothing but the stage"
+        },
+        {
+          "from": "handover_ready",
+          "to": "placement_requested",
+          "action": "STEP_BACK_STAGE",
+          "route": "above",
+          "offset": 120,
+          "kind": "back",
+          "guard": "the same step back as from Moving: to any strictly earlier stage, touching nothing but the stage"
+        },
+        {
+          "from": "pulled",
+          "to": "destination_review",
+          "action": "WITHDRAW_ACCEPTANCE",
+          "route": "below",
+          "offset": 120,
+          "kind": "back",
+          "guard": "the held bed is released in the same write; cancel a live transport job first"
+        },
+        {
+          "from": "placement_requested",
+          "to": "closed",
+          "action": "RECORD_ED_OUTCOME",
+          "route": "exit",
+          "offset": 150,
+          "kind": "exit"
+        },
+        {
+          "from": "placement_requested",
+          "to": "closed",
+          "action": "RECORD_EXAMINATION",
+          "route": "exit",
+          "offset": 174,
+          "kind": "exit",
+          "label": "community order",
+          "guard": "a community order before a bed is pulled closes the journey"
+        },
+        {
+          "from": "destination_review",
+          "to": "closed",
+          "action": "WITHDRAW_REFERRAL",
+          "route": "exit",
+          "offset": 198,
+          "kind": "exit"
+        },
+        {
+          "from": "destination_review",
+          "to": "closed",
+          "action": "RECORD_ED_OUTCOME",
+          "route": "exit",
+          "offset": 222,
+          "kind": "exit"
+        },
+        {
+          "from": "destination_review",
+          "to": "closed",
+          "action": "RECORD_EXAMINATION",
+          "route": "exit",
+          "offset": 246,
+          "kind": "exit",
+          "label": "community order",
+          "guard": "a community order before a bed is pulled closes the journey"
+        },
+        {
+          "from": "accepted_awaiting_bed",
+          "to": "closed",
+          "action": "WITHDRAW_REFERRAL",
+          "route": "exit",
+          "offset": 270,
+          "kind": "exit"
+        },
+        {
+          "from": "accepted_awaiting_bed",
+          "to": "closed",
+          "action": "RECORD_ED_OUTCOME",
+          "route": "exit",
+          "offset": 294,
+          "kind": "exit"
+        },
+        {
+          "from": "accepted_awaiting_bed",
+          "to": "closed",
+          "action": "RECORD_EXAMINATION",
+          "route": "exit",
+          "offset": 318,
+          "kind": "exit",
+          "label": "community order",
+          "guard": "a community order before a bed is pulled closes the journey"
+        },
+        {
+          "from": "handover_ready",
+          "to": "closed",
+          "action": "WITHDRAW_REFERRAL",
+          "route": "exit",
+          "offset": 342,
+          "kind": "exit"
+        },
+        {
+          "from": "handover_ready",
+          "to": "closed",
+          "action": "RECORD_ED_OUTCOME",
+          "route": "exit",
+          "offset": 366,
+          "kind": "exit"
         }
       ],
-      "note": "STEP_BACK_STAGE records a strictly earlier stage with a reason, leaving bed and transport intact. It refuses a closure, an arrived stage or a delivered transport leg. WITHDRAW_ACCEPTANCE can release an uncollected hold atomically after cancelling a live job. The separate scoped UNDO_TRANSPORT_STEP route may reverse the latest recorded arrival while its time-window, unchanged-snapshot, actor and restored-bed checks pass."
+      "note": "STEP_BACK_STAGE records a strictly earlier stage with a reason, leaving bed and transport intact. It refuses a closure, an arrived stage or a delivered transport leg. WITHDRAW_ACCEPTANCE can release an uncollected hold atomically after cancelling a live job. The separate scoped UNDO_TRANSPORT_STEP route may reverse the latest recorded arrival while its time-window, unchanged-snapshot, actor and restored-bed checks pass. Withdrawing the referral (after placement is requested), an ED outcome (before Moving) and a community order (before a bed is pulled) close the movement from every open stage the engine allows, not only from Bed pulled; tests/ward-audit-m26-machine-moves.test.ts checks every arrow against the engine."
     },
     {
       "id": "admission",

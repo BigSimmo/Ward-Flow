@@ -30,6 +30,6 @@ Each needs a test that fails on the planted defect. None changes a clinical rule
 
 ## Still to do (a person or a later PR)
 
-- One agent PR reviews the four survivors above and adds a test for each (M87 part b).
+- ~~One agent PR reviews the four survivors above and adds a test for each (M87 part b).~~ Done 10 Nov 2026: `tests/ward-mutation-survivors.test.ts` has one test per survivor. Planting E2, E3, S2 and S4 one at a time in an isolated worktree made that file fail each time, and it passes unmutated. The full sample was not rerun, so the dated score above stands until the next quarterly run.
 - Josh: approve a quarterly scheduled run (a workflow that runs this script on a hosted runner uses CI minutes). Until then a person reruns it each quarter and adds a dated file here.
 - Every PR adding a tier 1 test says which planted defect it was shown to fail on (the line in `.github/pull_request_template.md`).
