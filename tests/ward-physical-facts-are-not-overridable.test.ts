@@ -264,7 +264,7 @@ describe("specialling capacity refuses, and a recorded reason answers it (owner 
  * looks full but is not". No reason typed into a form creates a bed, and the two tests above this
  * one are what hold that line.
  *
- * See `docs/ward-flow/owner-rulings-2026-09-02-staleness-and-legal-status.md`.
+ * See `docs/history/archive/dated-notes/owner-rulings-2026-09-02-staleness-and-legal-status.md`.
  */
 describe("a stale bed count refuses, and a recorded reason answers it (owner ruling 2026-09-02)", () => {
   function benchStale(): WardFlowState {

@@ -120,7 +120,9 @@ function OperationalCompareScreen({
   admissions?: Admission[];
 } = {}) {
   const live = useStatisticsLive();
-  const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases } = live.state;
+  const { units: liveUnits, admissions: liveAdmissions, movements, referrals, bedReleases } = live.state;
+  // D-115: a bed named for an accepted referral is not ready.
+  const namedHolds = [...movements, ...referrals];
   const now = live.now;
   const asAt = formatSheetMoment(now, live.state.dayZero, { includeYearAndZone: true });
   const admissions = admissionsOverride ?? liveAdmissions;
@@ -129,7 +131,7 @@ function OperationalCompareScreen({
 
   const totalBeds = units.reduce((sum, u) => sum + u.beds, 0);
   // Audit 6 (Josh, 20 Oct 2026): the one ready figure, leaving out beds pulled for an incoming patient.
-  const readyBeds = totalReadyBedsNow(units, admissions, bedReleases);
+  const readyBeds = totalReadyBedsNow(units, admissions, bedReleases, namedHolds);
   const pendingPreparationBeds = units.reduce((sum, u) => sum + bedsPendingPreparation(u.id, bedReleases), 0);
 
   const wardStats = allWardStatistics(units, admissions, now);
@@ -156,7 +158,7 @@ function OperationalCompareScreen({
       group: wardGroup(unit),
       // L1: the one occupancy count, Occupied + Pulled (`wardBedsInUse`, `ward-occupancy.ts`).
       occupancy: unit.beds > 0 ? Math.round((wardBedsInUse(unit, admissions, bedReleases) / unit.beds) * 100) : 0,
-      readyNow: readyBedsNow(unit, admissions, bedReleases),
+      readyNow: readyBedsNow(unit, admissions, bedReleases, namedHolds),
       awaitingAnswer: wardReferralTally(openMovements, unit.id).askedAndWaiting,
     };
   });

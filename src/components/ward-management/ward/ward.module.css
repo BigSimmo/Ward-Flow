@@ -2141,6 +2141,7 @@
   align-items: center;
   gap: 2px;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
   margin: 0;
   padding: 0;
@@ -3686,6 +3687,7 @@
     flex-wrap: nowrap;
     width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
     padding-inline-end: var(--wf-s-4);
     scrollbar-width: none;
     border-top: 1px solid var(--wf-line);
@@ -4353,4 +4355,20 @@
 .folderTabList.folderTabList.folderTabList.folderTabList.folderTabList > * > .tabLabel:only-child {
   color: inherit;
   font: inherit;
+}
+
+/* Phone (10 Nov 2026): the folder tabs pin under the header while the page scrolls, as Home's do
+   (home-flow.module.css .nav) and as the ward's old segmented tabs did. */
+@media (max-width: 46.4375rem) {
+  .folderTabsPinned {
+    position: sticky;
+    top: var(--wf-header-height, 3.5rem);
+    z-index: 6;
+    margin-bottom: var(--wf-s-2);
+    padding-block: var(--wf-s-2);
+    background: var(--wf-canvas);
+    box-shadow:
+      var(--wf-s-4) 0 0 var(--wf-canvas),
+      calc(-1 * var(--wf-s-4)) 0 0 var(--wf-canvas);
+  }
 }

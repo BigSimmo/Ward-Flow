@@ -6,7 +6,7 @@
 /**
  * Ratchet: the count of `--text-3xs` and `--text-2xs` uses in ward CSS may FALL, never RISE.
  *
- * WHY THIS EXISTS (owner ruling D-3, `docs/ward-flow/owner-decisions-2026-09-1x.md`, 2026-09-10).
+ * WHY THIS EXISTS (owner ruling D-3, `docs/history/archive/dated-notes/owner-decisions-2026-09-1x.md`, 2026-09-10).
  *
  * The ward design standard says nothing on screen is set below 12px. The app's type scale reaches
  * 10px (`--text-3xs`, defined in `src/app/globals.css`) and 11px (`--text-2xs`) — both below that

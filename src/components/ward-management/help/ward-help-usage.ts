@@ -5,10 +5,17 @@
  * against the known answers on read, so typed words never reach storage (archived D-11; D-18). The key carries
  * the `ward_flow_choice_` prefix that `ward-browser-data.ts` keeps at sign-out: it holds nothing about
  * a person, and counts that reset at every sign-in would show nothing.
+ *
+ * "Recently opened" (9 Nov 2026) keeps its own list of ids, newest last, under
+ * `HELP_RECENT_STORAGE_KEY`. The counts record cannot carry it: before 9 Nov its pairs were kept in
+ * the order first used, and a saved record has no mark saying which order it is in, so reading an
+ * old record as last-used put the wrong answers first (audit F-52). An old record now only gives
+ * counts, and Recently opened fills from the next answer opened.
  */
 import { createBrowserStore } from "@/lib/client-store-factory";
 
 export const HELP_USED_STORAGE_KEY = "ward_flow_choice_help_used";
+export const HELP_RECENT_STORAGE_KEY = "ward_flow_choice_help_recent";
 const helpUsedChangeEvent = "ward-flow-help-used-change";
 const MAX_COUNT = 9999;
 
@@ -23,21 +30,39 @@ export function parseHelpUsed(raw: string, known: ReadonlySet<string>): Readonly
   return used;
 }
 
-function readRaw(): string {
+/** Comma-separated ids, oldest first: known ids only, each once (its latest place wins). */
+export function parseHelpRecent(raw: string, known: ReadonlySet<string>): readonly string[] {
+  const recent: string[] = [];
+  for (const id of raw.split(",")) {
+    if (!id || !known.has(id)) continue;
+    const at = recent.indexOf(id);
+    if (at !== -1) recent.splice(at, 1);
+    recent.push(id);
+  }
+  return recent;
+}
+
+function readKey(key: string): string {
   try {
-    return window.localStorage.getItem(HELP_USED_STORAGE_KEY) ?? "";
+    return window.localStorage.getItem(key) ?? "";
   } catch {
     return "";
   }
 }
 
-function writeRaw(next: string): void {
+function writeKey(key: string, next: string): void {
   try {
-    if (next) window.localStorage.setItem(HELP_USED_STORAGE_KEY, next);
-    else window.localStorage.removeItem(HELP_USED_STORAGE_KEY);
+    if (next) window.localStorage.setItem(key, next);
+    else window.localStorage.removeItem(key);
   } catch {
     // Without storage nothing is counted.
   }
+}
+
+const readRaw = () => readKey(HELP_USED_STORAGE_KEY);
+const readRecentRaw = () => readKey(HELP_RECENT_STORAGE_KEY);
+
+function announce(): void {
   window.dispatchEvent(new Event(helpUsedChangeEvent));
 }
 
@@ -45,17 +70,19 @@ function writeRaw(next: string): void {
 export function recordHowToUsed(id: string, known: ReadonlySet<string>): void {
   if (!known.has(id)) return;
   const used = new Map(parseHelpUsed(readRaw(), known));
-  const count = Math.min((used.get(id) ?? 0) + 1, MAX_COUNT);
-  // The pairs are kept in the order last used (newest at the end), so Help can offer "Recently
-  // opened" from the same ids and counts, with no time or typed words stored (9 Nov 2026).
-  used.delete(id);
-  used.set(id, count);
-  writeRaw([...used].map(([key, count]) => `${key}:${count}`).join(","));
+  used.set(id, Math.min((used.get(id) ?? 0) + 1, MAX_COUNT));
+  writeKey(HELP_USED_STORAGE_KEY, [...used].map(([key, count]) => `${key}:${count}`).join(","));
+  // Recently opened: the same id moved to the end, with no time or typed words stored (9 Nov 2026).
+  const recent = parseHelpRecent(readRecentRaw(), known).filter((each) => each !== id);
+  writeKey(HELP_RECENT_STORAGE_KEY, [...recent, id].join(","));
+  announce();
 }
 
-/** Forgets every count on this device. */
+/** Forgets every count, and the recently opened list, on this device. */
 export function clearHelpUsed(): void {
-  writeRaw("");
+  writeKey(HELP_USED_STORAGE_KEY, "");
+  writeKey(HELP_RECENT_STORAGE_KEY, "");
+  announce();
 }
 
 function subscribeHelpUsed(onChange: () => void) {
@@ -69,6 +96,7 @@ function subscribeHelpUsed(onChange: () => void) {
 
 // The raw string is the snapshot, so it keeps its identity between reads; the server reads "".
 const useHelpUsedRaw = createBrowserStore(subscribeHelpUsed, readRaw, "");
+const useHelpRecentRaw = createBrowserStore(subscribeHelpUsed, readRecentRaw, "");
 
 /** This device's counts, most used first. */
 export function useHelpUsed(known: ReadonlySet<string>): readonly { id: string; count: number }[] {
@@ -78,9 +106,9 @@ export function useHelpUsed(known: ReadonlySet<string>): readonly { id: string; 
     .sort((left, right) => right.count - left.count);
 }
 
-/** The answers this device opened most recently, newest first: ids only, from the same record. */
+/** The answers this device opened most recently, newest first: ids only. */
 export function useRecentHowTos(known: ReadonlySet<string>, limit?: number): readonly string[] {
-  const raw = useHelpUsedRaw();
-  const newestFirst = [...parseHelpUsed(raw, known).keys()].reverse();
+  const raw = useHelpRecentRaw();
+  const newestFirst = [...parseHelpRecent(raw, known)].reverse();
   return limit === undefined ? newestFirst : newestFirst.slice(0, limit);
 }

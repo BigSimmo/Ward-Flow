@@ -49,7 +49,7 @@ export type LastLookSnapshot = {
    * count was used, whose Ready figures are then never compared (a stale basis would invent or
    * hide a freed bed).
    */
-  readyBasis?: "readyBedsNow";
+  readyBasis?: "readyBedsNow" | "readyBedsNowNamedHolds";
   /** `movementId:cause` for every open movement sitting in a delay group. */
   delayKeys: string[];
   escalatedMovementIds: string[];
@@ -160,7 +160,10 @@ export function takeLastLookSnapshot(
   const open = world.movements.filter(isOpen);
   const readyByUnit: Record<string, number> = {};
   for (const unit of world.units) {
-    readyByUnit[unit.id] = readyBedsNow(unit, world.admissions ?? [], world.bedReleases);
+    readyByUnit[unit.id] = readyBedsNow(unit, world.admissions ?? [], world.bedReleases, [
+      ...world.movements,
+      ...world.referrals,
+    ]);
   }
   const delayKeys: string[] = [];
   for (const group of delayGroups(open, [...world.units], now, thresholds)) {
@@ -176,7 +179,8 @@ export function takeLastLookSnapshot(
     referralIds: world.referrals.map((referral) => referral.id),
     movementIds: world.movements.map((movement) => movement.id),
     readyByUnit,
-    readyBasis: "readyBedsNow",
+    // D-115: named holds now leave Ready, so an older picture is a different basis and is not compared.
+    readyBasis: "readyBedsNowNamedHolds",
     delayKeys,
     escalatedMovementIds: open.filter((movement) => movement.escalation !== undefined).map((movement) => movement.id),
     // Coordinator picture only: a scoped Ward/ED picture compares its own records instead.
@@ -386,7 +390,7 @@ function snapshotReadyCountsInvalid(v: Record<string, unknown>): boolean {
     countMapInvalid(v.readyByUnit) ||
     (v.acceptanceWithdrawnByMovement !== undefined && countMapInvalid(v.acceptanceWithdrawnByMovement)) ||
     (v.dischargeMovesByAdmission !== undefined && countMapInvalid(v.dischargeMovesByAdmission)) ||
-    (v.readyBasis !== undefined && v.readyBasis !== "readyBedsNow")
+    (v.readyBasis !== undefined && v.readyBasis !== "readyBedsNow" && v.readyBasis !== "readyBedsNowNamedHolds")
   );
 }
 function parsedSnapshot(value: unknown): LastLookSnapshot | undefined {

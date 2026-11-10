@@ -4,7 +4,8 @@ name: Ward Flow scheduled-job keep-alive
 # activity, which would silently stop the daily release, uptime check and living-page reminder. Once a
 # week this re-enables every workflow in this folder that has a schedule (itself included), which
 # resets that 60-day clock. It leaves alone any workflow the owner switched off by hand. It reads
-# only the workflow files: no install, no provider and no secrets. Free GitHub-hosted runner.
+# the workflow files and writes only their enabled state through the API: no install, no outside
+# provider and no secrets. Free GitHub-hosted runner.
 on:
   schedule:
     # Sundays 23:00 UTC = Mondays 7 am Perth.

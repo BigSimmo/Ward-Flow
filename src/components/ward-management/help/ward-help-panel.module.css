@@ -813,6 +813,7 @@
   margin: -4px -16px;
   padding: 4px 16px 6px;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
   mask-image: linear-gradient(90deg, black calc(100% - 28px), transparent);
 }
@@ -2064,11 +2065,12 @@
 
 /* ── phone sizes: 40px faces, 48px tap areas ────────────────────────────────────────────────── */
 @media (max-width: 46.4375rem) {
-  /* Upward only: a tab's tap area reaches 48px into the slate above it (the chosen one needs none). */
+  /* Upward only: a tab's tap area reaches 48px into the slate above it (the chosen one needs none).
+     The tab sits on the slate's foot, so the whole 8px gap goes above it. */
   .tabs > button:not([aria-selected="true"])::after {
     content: "";
     position: absolute;
-    inset: calc(-1 * var(--wf-phone-pill-hit)) 0 0;
+    inset: min(-8px, calc(-2 * var(--wf-phone-pill-hit))) 0 0;
   }
 
   .chip {

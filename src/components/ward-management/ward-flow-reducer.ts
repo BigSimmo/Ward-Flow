@@ -682,7 +682,7 @@ export const SUITABILITY_GATES: readonly EligibilityGate[] = [
   // Added by owner ruling: the only gate moved out of the world-fact group. A stale bed count is
   // information, and "I have confirmed the current bed state with the ward directly" is a named
   // person taking responsibility. It buys past a stale count, never past `allocatable_bed`. See
-  // docs/ward-flow/owner-rulings-2026-09-02-staleness-and-legal-status.md.
+  // docs/history/archive/dated-notes/owner-rulings-2026-09-02-staleness-and-legal-status.md.
   "capacity_freshness",
 ] as const satisfies readonly Exclude<EligibilityGate, "gender_designation">[];
 

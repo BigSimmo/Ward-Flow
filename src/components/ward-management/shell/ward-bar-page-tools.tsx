@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import styles from "./ward-bar-page-tools.module.css";
@@ -27,4 +27,41 @@ export function WardBarPageTools({ label, children }: { label: string; children:
     </div>,
     host,
   );
+}
+
+/**
+ * A page's own name for the bar while one of its views is open (page tops, 10 Nov 2026: Legal
+ * forms' Seclusion tab names the bar "Seclusion"). The name carries the path it was set on, so a
+ * name left behind never shows on another page. Wording only: nothing else in the bar changes.
+ */
+type PageTitle = { pathname: string; title: string };
+let pageTitle: PageTitle | undefined;
+const titleListeners = new Set<() => void>();
+const setPageTitle = (next: PageTitle | undefined) => {
+  pageTitle = next;
+  titleListeners.forEach((listener) => listener());
+};
+const subscribeTitle = (listener: () => void) => {
+  titleListeners.add(listener);
+  return () => titleListeners.delete(listener);
+};
+const readTitle = () => pageTitle;
+const noTitleOnServer = () => undefined;
+
+/** Page side: name the bar `title` while mounted on `pathname`; `undefined` keeps the route's name. */
+export function useWardBarPageTitle(pathname: string, title: string | undefined) {
+  useEffect(() => {
+    if (title === undefined) return;
+    const own = { pathname, title };
+    setPageTitle(own);
+    return () => {
+      if (pageTitle === own) setPageTitle(undefined);
+    };
+  }, [pathname, title]);
+}
+
+/** Bar side: the page's own name for `pathname`, if the page set one. */
+export function useWardBarPageTitleFor(pathname: string): string | undefined {
+  const current = useSyncExternalStore(subscribeTitle, readTitle, noTitleOnServer);
+  return current?.pathname === pathname ? current.title : undefined;
 }

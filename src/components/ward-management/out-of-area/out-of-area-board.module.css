@@ -267,6 +267,7 @@
   gap: var(--wf-s-2);
   min-width: 0;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -422,6 +423,7 @@
    half, and eighteen rows do not need an inner scroll. */
 .tableScroll {
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 /* Padding comes from the wf table (12px inner, 16px edges, the same on headers and cells). */
@@ -2054,5 +2056,21 @@ fieldset.formRow {
     position: sticky;
     top: var(--wf-header-height, 3.5rem);
     z-index: 6;
+  }
+}
+
+/* Page tops QA (10 Nov 2026): on a phone the Days away band is four equal cells across, inside the
+   gutter, with no sideways scroll (the shared band scrolls, so this page sets its own). */
+@media (max-width: 46.4375rem) {
+  .screen :global([data-testid="ward-out-of-area-days-away"]) > ul {
+    margin-inline: 0;
+    padding: 0;
+    overflow-x: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .screen :global([data-testid="ward-out-of-area-days-away"]) > ul > li {
+    flex: 1 1 0;
   }
 }

@@ -12,7 +12,9 @@
  * meaning "someone checked this page against current main on that date". This script compares
  * that date with the date of the HEAD commit (not the clock, so results are reproducible and it
  * works on shallow clones) and reports pages older than --days (default 14) or missing the
- * marker. Refresh a page by checking it against the app and updating the date.
+ * marker. A listed page that no longer exists, and a marker date that is not a real date or is
+ * after HEAD, are reported too (audit F-49). Refresh a page by checking it against the app and
+ * updating the date.
  *
  * Some pages carry a shorter limit of their own (PAGE_DAYS): the status page must be re-checked every
  * 7 days (documentation audit, approved by Josh 7 November 2026). A page's own limit applies when it
@@ -57,15 +59,38 @@ export function readLastChecked(text) {
   return match ? match[1] : null;
 }
 
-/** Classify one page: "ok", "stale" or "missing". */
+/** A real calendar date in YYYY-MM-DD form (rejects 2026-02-30 and the like), as epoch ms, or NaN. */
+function calendarDate(text) {
+  const parsed = Date.parse(`${text}T00:00:00Z`);
+  return Number.isFinite(parsed) && new Date(parsed).toISOString().slice(0, 10) === text ? parsed : Number.NaN;
+}
+
+/**
+ * Classify one page: "ok", "stale", "missing" (no marker), or "invalid" (a marker date that is not a
+ * real date, or is after the reference date). Audit F-49: an invalid or future date used to count
+ * as fresh, so a typo kept a page out of the re-check list for good.
+ */
 export function assess({ lastChecked, reference, days }) {
   if (!lastChecked) return { status: "missing", ageDays: null };
-  const ageDays = Math.floor((Date.parse(reference) - Date.parse(lastChecked)) / DAY_MS);
+  const checked = calendarDate(lastChecked);
+  if (Number.isNaN(checked)) return { status: "invalid", ageDays: null };
+  const ageDays = Math.floor((Date.parse(reference) - checked) / DAY_MS);
+  if (ageDays < 0) return { status: "invalid", ageDays };
   return { status: ageDays > days ? "stale" : "ok", ageDays };
 }
 
+/** One line on what is wrong with a page, for the console, annotations and the weekly issue. */
+export function problemDetail(result) {
+  if (result.status === "absent") return "listed as a living page, but the file is gone";
+  if (result.status === "missing") return "no <!-- last-checked: YYYY-MM-DD --> marker";
+  if (result.status === "invalid")
+    return `last-checked date ${result.lastChecked} is not a real date on or before the reference date`;
+  return `last checked ${result.lastChecked} (${result.ageDays} days; limit ${result.limit})`;
+}
+
+/** Every living page, listed ones included even when missing: a listed page that is gone is reported. */
 export function listLivingDocs(root) {
-  const files = LIVING_DOCS.filter((path) => existsSync(join(root, path)));
+  const files = [...LIVING_DOCS];
   for (const dir of LIVING_DIRS) {
     if (!existsSync(join(root, dir))) continue;
     for (const name of readdirSync(join(root, dir)).sort()) {
@@ -85,11 +110,15 @@ function headCommitDate(root) {
 
 export function run({ root = DEFAULT_ROOT, days = 14, reference = headCommitDate(root) } = {}) {
   const results = listLivingDocs(root).map((path) => {
-    const lastChecked = readLastChecked(readFileSync(join(root, path), "utf8"));
     const limit = Math.min(days, PAGE_DAYS[path] ?? days);
+    if (!existsSync(join(root, path))) return { path, lastChecked: null, limit, status: "absent", ageDays: null };
+    const lastChecked = readLastChecked(readFileSync(join(root, path), "utf8"));
     return { path, lastChecked, limit, ...assess({ lastChecked, reference, days: limit }) };
   });
-  return { reference, days, results, problems: results.filter((r) => r.status !== "ok") };
+  const problems = results
+    .filter((r) => r.status !== "ok")
+    .map((result) => ({ ...result, detail: problemDetail(result) }));
+  return { reference, days, results, problems };
 }
 
 function main(argv) {
@@ -111,10 +140,7 @@ function main(argv) {
   } else {
     console.log(`living docs needing a re-check (HEAD ${report.reference}, limit ${days} days):`);
     for (const p of report.problems) {
-      const detail =
-        p.status === "missing"
-          ? "no <!-- last-checked: YYYY-MM-DD --> marker"
-          : `last checked ${p.lastChecked} (${p.ageDays} days; limit ${p.limit})`;
+      const detail = p.detail;
       console.log(`  ${p.path}: ${detail}`);
       if (argv.includes("--annotate")) {
         console.log(`::warning file=${p.path},title=Living page needs a re-check::${p.path}: ${detail}`);

@@ -1,6 +1,6 @@
 # Ward Flow — roadmap
 
-_Updated 2026-11-09 - D-80 is built; earlier programmes moved to history (D-107); Documentation owns._
+_Updated 2026-11-10 - D-80 is built; the sign-in test has no set date (Q390); earlier programmes moved to history (D-107); Documentation owns._
 
 ## Current programme — 3 November 2026
 
@@ -38,7 +38,7 @@ No real patient data until the real-data gate in [D-87](decisions.md#d-87-d-36-a
 1. **Go/no-go checklist (Q378).** [REAL-DATA-GO-NO-GO.md](governance/REAL-DATA-GO-NO-GO.md) is the one list of every real-data blocker, including session drafts kept in the browser, a Secure session cookie, the privacy impact assessment, a breach plan and the list of subprocessors.
 2. **Sign-in and front door (Q371, Q372).** Harden the demo-code rate limit and make production fail closed when the front door is off.
 3. **Hosting (D-84, Q370).** The app and backend are on Railway Singapore and the database in Sydney. Q370 (move to Sydney) is not answered; D-84 says to revisit with the health service's IT before real data.
-4. **Owner tasks (Q379).** Sign-in renewal test before about 16 November, database migration 13, invite-only sign-up, and naming the privacy officer and clinical safety owner. The list is in STATUS.md.
+4. **Owner tasks (Q379).** Sign-in renewal test (no set date, Q390), database migration 13, invite-only sign-up, and naming the privacy officer and clinical safety owner. The list is in STATUS.md.
 5. ~~**D-80 item 17.**~~ Built 8 November (`24e75284`).
 6. **Outside reviews.** The six reviews in historical milestone 6 ([roadmap history](../history/roadmap-2026-10.md#6-pilot-readiness)) still stand: TGA check, clinical safety officer, privacy, WA legal advice on the forms, approved catchment and reference data, and post-incident review. The two open pilot questions also stand: run beside the whiteboard first or switch straight away, and who sponsors it in EMHS.
 7. **Done when:** the real-data gate is signed and Josh approves a controlled pilot. A synthetic demonstration is a different milestone.

@@ -3,7 +3,6 @@
 // Fork of src/components/ward-management/shell/ward-rail.tsx: the mock-ups' rail, with Josh's 30 Oct 2026 fixes.
 
 import { WardRailFrame } from "@/components/ward-management/shell/ward-chrome-frame";
-
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { goToPageForShortcut, resetGoToShortcut } from "@/components/ward-management/shell/ward-goto-shortcuts";
 import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
@@ -20,10 +19,8 @@ import {
   SunMoon,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-
 import { Sheet } from "@/components/wf/sheet";
 import { Tooltip } from "@/components/wf/tooltip";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
@@ -47,7 +44,10 @@ import type { HealthService } from "@/components/ward-management/ward-model";
 import { edById } from "@/components/ward-management/ward-sites";
 import { WARD_CAPACITY_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
-import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
+import {
+  HANDOVER_DUE_PROMPT_MINUTES,
+  OPERATIONAL_DEFAULT_LABEL,
+} from "@/components/ward-management/ward-operational-defaults";
 import { shiftAtMinute } from "@/components/ward-management/ward-board-time-features";
 import { Dot, SrOnly, durMinutes, useIsPhone } from "@/components/wf";
 import { setGlarePreference, setThemePreference } from "@/lib/theme-client";
@@ -1474,7 +1474,7 @@ export function computeShiftProgress(nowInput?: number | Date): ShiftProgress {
   const elapsedMins = elapsedTotal % 60;
   const percent = Math.min(100, Math.max(0, Math.round((elapsedTotal / shiftDuration) * 100)));
   const dashOffset = Number((CIRCUMFERENCE * (1 - percent / 100)).toFixed(2));
-  const handoverDue = remainingTotal <= 15;
+  const handoverDue = remainingTotal <= HANDOVER_DUE_PROMPT_MINUTES;
 
   let countdownStr: string;
   if (handoverDue) {

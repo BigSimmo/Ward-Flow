@@ -45,6 +45,7 @@
   gap: var(--wf-s-2);
   min-width: 0;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -1073,6 +1074,7 @@ button.runwayCardRow:focus-visible {
   gap: var(--wf-s-2);
   min-width: 0;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -1538,6 +1540,7 @@ button.runwayCardRow:focus-visible {
 
 .meetingScroll {
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .meetingTable {

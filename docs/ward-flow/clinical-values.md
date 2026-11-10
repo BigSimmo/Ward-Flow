@@ -28,6 +28,11 @@ governance sign-off before real patient use (D-54).
   `OBSERVATION_LEVEL_NAMES` in the same source file; change them there and every screen follows.
   The staff counts and intervals are in the table below. Nothing scores, suggests or places from a
   level (D-71).
+- **Forecast alerts and the handover prompt (D-122):** on 10 Nov 2026 Josh ruled that this page lists
+  every value that flags or escalates. The three forecast alert rules and the rail's "Handover Due"
+  prompt joined the table at the figures they already ran on, synthetic until signed.
+- **Dormant (D-122):** `bedHoldReview` (2 hours) is signed but nothing in the app reads it. It is kept
+  and marked dormant in its source, not deleted.
 - Mental Health Act periods are not here, and Ward Flow holds none (D-70, which replaced D-29). The
   only form due time is the one a person records. Legal form titles come from the Chief Psychiatrist
   register, not from this list.
@@ -61,7 +66,7 @@ governance sign-off before real patient use (D-54).
 | Alerts and holds | Pull now stays live, if nobody pulls or stands it down, for | 4 hours | Signed for the prototype by Josh (product owner), 2026-10-15 | Global alerts option A, 10 Oct 2026 | None recorded | `pullNowLive` |
 | Alerts and holds | Pull time limit on an accepting bed | 4 hours, default, changeable in Settings | Signed for the prototype by Josh (product owner), 2026-10-15 | Owner answer 35, 17 Sep 2026 (ward-model.ts provenance) | None recorded | `pullHold` |
 | Alerts and holds | Extra-travel pull time adds | 1 hour | Signed for the prototype by Josh (product owner), 2026-10-21 | Josh, 21 Oct 2026, D-75 item 5 (ward-model.ts provenance) | None recorded | `extraTravelHold` |
-| Alerts and holds | Pulled bed without a confirmed dispatch flagged for review after | 2 hours | Signed for the prototype by Josh (product owner), 2026-10-15 | Josh, 26 Sep 2026, his default | None recorded | `bedHoldReview` |
+| Alerts and holds | Pulled bed without a confirmed dispatch flagged for review after | 2 hours | Signed for the prototype by Josh (product owner), 2026-10-15 | Josh, 26 Sep 2026, his default. Dormant (D-122, 10 Nov 2026): signed, but no operational code uses it (only this reference list shows it); kept, not deleted | None recorded | `bedHoldReview` |
 | Alerts and holds | Ward bed count named as not checked after | 1 hour | Signed for the prototype by Josh (product owner), 2026-10-16 | D-63 (16 Oct 2026), local workflow choice, no external source | None recorded | `bedCountFresh` |
 | Alerts and holds | Downtime pack shown as stale after | 1 hour | Signed for the prototype by Josh (product owner), 2026-10-16 | D-63 (16 Oct 2026), local workflow choice; each health service's business continuity plan sets downtime report refresh | None recorded | `downtimePackStale` |
 | Alerts and holds | Bed left as preparing or cleaning flagged after | 61 minutes | Signed for the prototype by Josh (product owner), 2026-10-16 | D-63 (16 Oct 2026), more than an hour, local workflow choice | None recorded | `preparingBedStale` |
@@ -70,6 +75,10 @@ governance sign-off before real patient use (D-54).
 | Alerts and holds | Transport job shown as delayed if not accepted after | 30 minutes | Signed for the prototype by Josh (product owner), 2026-11-09 | D-120 (Josh, 9 Nov 2026, decision card on the discharge and capacity review page): signed 30 minutes (feature 25) | None recorded | `transportAcceptDelay` |
 | Alerts and holds | A red (act now) alert or task can be snoozed for at most | 1 hour | Synthetic value | Added to the register 9 Nov 2026 (D-106); no clinical decision yet | None recorded | `redRowSnoozeCap` |
 | Alerts and holds | Carer, PSP and MHAS notification task stays listed, after an involuntary admission, transfer or discharge, for | 72 hours | Synthetic value | Added to the register 9 Nov 2026 (D-106); no clinical decision yet | None recorded | `supportNotificationLookback` |
+| Alerts and holds | Forecast alert raised when a bed type is likely this many beds short tomorrow | 3, default, changeable in Settings | Synthetic value | Forecasting build (Josh, 23 Oct 2026, per the forecast source comments; no decision entry), labelled default; added to the register 10 Nov 2026 (D-122) | None recorded | `forecastShortAlert` |
+| Alerts and holds | Forecast alert raised when someone in ED will pass the access target within | 12 hours, default, changeable in Settings | Synthetic value | Forecasting build (Josh, 23 Oct 2026, per the forecast source comments; no decision entry), labelled default; added to the register 10 Nov 2026 (D-122) | None recorded | `forecastEdRiskLead` |
+| Alerts and holds | Forecast alert raised when tomorrow's likely free beds dropped since the last look by | 2, default, changeable in Settings | Synthetic value | Forecasting build (Josh, 23 Oct 2026, per the forecast source comments; no decision entry), labelled default; added to the register 10 Nov 2026 (D-122) | None recorded | `forecastWorseAlert` |
+| Alerts and holds | Rail shows Handover Due once the shift has this long or less to run | 15 minutes | Synthetic value | Shift ring on the rail, in the 27 Sep 2026 source snapshot with no decision recorded; added to the register 10 Nov 2026 (D-122) | None recorded | `handoverDuePrompt` |
 | Arrivals and answers | Arrival counted as late, past the estimate, after | 1 hour | Signed for the prototype by Josh (product owner), 2026-10-15 | D-22 (26 Sep 2026), labelled default | None recorded | `lateArrivalGrace` |
 | Arrivals and answers | Ward that has not answered a referral, first reminder after | 2 hours | Signed for the prototype by Josh (product owner), 2026-10-15 | D-22 (26 Sep 2026), labelled default | None recorded | `silentWardFirstReminder` |
 | Arrivals and answers | Ward that has not answered a referral, second reminder after | 4 hours | Signed for the prototype by Josh (product owner), 2026-10-15 | D-22 (26 Sep 2026), labelled default | None recorded | `silentWardSecondReminder` |

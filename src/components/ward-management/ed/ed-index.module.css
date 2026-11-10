@@ -24,6 +24,7 @@
   gap: var(--wf-s-2);
   min-width: 0;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -1472,4 +1473,13 @@
     top: var(--wf-header-height, 3.5rem);
     z-index: 6;
   }
+}
+
+/* Page tops QA (10 Nov 2026): the health service filters beside the tabs sit unboxed, as Home's
+   stage filters do; the chosen one keeps the folder row's soft fill. */
+.serviceTabs.serviceTabs {
+  padding-inline: 0;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
 }

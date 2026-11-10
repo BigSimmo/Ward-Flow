@@ -28,6 +28,7 @@
 
 .scroll {
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 /* Two-line cells (name over UMRN, ward over bed) get vertical room; nothing is cut short. */

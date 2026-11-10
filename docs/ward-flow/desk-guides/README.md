@@ -2,7 +2,7 @@
 
 <!-- last-checked: 2026-10-26 -->
 
-_Updated 2026-10-30 — role wording checked against source at `b6aa5cde`; browser coverage above is unchanged._
+_Updated 2026-11-10 - the four every-desk guides added to the index; role wording last checked against source at `b6aa5cde` (30 October)._
 
 One printable page for each desk. Each guide says what the desk sees first, the jobs it does most,
 what it cannot do, and how to tell that a change was saved.
@@ -23,6 +23,15 @@ Re-check every guide after clinician testing, and whenever a step on screen chan
 | Executive (read only)               | [executive.md](executive.md)                       | Statistics  |
 | Access admin                        | [access-admin.md](access-admin.md)                 | Settings    |
 | Bed meeting TV board (display only) | [tv-board.md](tv-board.md)                         | Bed meeting |
+
+For every desk:
+
+| Topic                                      | Guide                                      |
+| ------------------------------------------ | ------------------------------------------ |
+| Colour code, display settings and keyboard | [accessibility.md](accessibility.md)       |
+| Keys and interactions                      | [interactions.md](interactions.md)         |
+| Common questions                           | [common-questions.md](common-questions.md) |
+| Why can't I open this?                     | [why-cant-i.md](why-cant-i.md)             |
 
 > [!NOTE]
 > **Eight staff accounts, nine desks:** The eight staff desks have individual accounts seeded in Supabase (`*@stoicable.com`). The ninth desk (Bed meeting TV board) is a shared kiosk display opened from Capacity or direct URL `/ward-flow/bed-meeting`. It requires no dedicated account; sign in using a Coordinator or Site Bed Manager account. TV Unlock requires the account's password.

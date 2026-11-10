@@ -1,8 +1,9 @@
 # Figma sync
 
 Push code changes to the Figma file "Ward Flow v6 live", or pull Figma edits back into code. The
-repository ships no `.claude` or `.agents` folder, so this procedure lives here; a personal Claude
-skill named `figma-sync` can point at it.
+repository ships no skills folder (`.claude` holds only `settings.json` with the memory hooks, and
+there is no `.agents` folder), so this procedure lives here; a personal Claude skill named
+`figma-sync` can point at it.
 
 Code is the source of truth. Figma Professional has no Code Connect or Variables REST API, so
 Claude runs the sync on request through the Figma MCP (`use_figma`, `get_variable_defs`,

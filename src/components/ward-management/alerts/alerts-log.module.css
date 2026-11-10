@@ -65,6 +65,7 @@
   .filterChips {
     flex-wrap: nowrap;
     overflow-x: auto;
+    overflow-y: hidden;
     padding: 0 var(--wf-s-3);
     scrollbar-width: none;
   }

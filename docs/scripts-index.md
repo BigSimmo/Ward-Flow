@@ -1,8 +1,8 @@
 # Ward Flow scripts inventory
 
-_Updated 2026-10-24 - CI section names every workflow and the two unlisted `ward-ci-public` scripts; Documentation owns._
+_Updated 2026-11-10 - added the identifier scan and the 5 KB raise cap scripts; Documentation owns._
 
-Curated map of `scripts/` (161 files) and the `package.json` script surface (87 entries),
+Curated map of `scripts/` (164 files) and the `package.json` script surface (87 entries),
 grouped by what each part protects. `package.json` is the command surface; this page says why
 each group exists. `npm run docs:check-inventory` compares the two counts above exactly,
 and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs
@@ -57,11 +57,13 @@ result on main), `changed-checks.mjs` (format, lint and the test-deletion guard 
 `check-contracts.mjs` and `check-policy-contracts.mjs` (the workflow's own contracts),
 `install-chromium.mjs`, `apt-archive-cache.mjs` (the release gate's cached WebKit system packages), and
 `bot-author-policy.mjs` for the bot author workflow, `merge-latest-main.mjs` (merges current main
-before the production build measures the phone script budget) and `budget-recheck.mjs` (run by
-`.github/workflows/ward-flow-budget-recheck.yml` to re-measure armed pull requests when main moves),
-and `main-measured.mjs` (lets the budget gate reuse main's saved measurements instead of building main again).
+before the production build measures the phone script budget) and `budget-recheck.mjs` (for
+`.github/workflows/ward-flow-budget-recheck.yml`, which would re-measure armed pull requests when main moves; its job is switched off with `if: false`),
+`main-measured.mjs` (lets the budget gate reuse main's saved measurements instead of building main again),
+`identifier-scan.mjs` (runs the pre-commit secret and patient-identifier scan on a pull request's added lines, D-122) and
+`budget-raise-cap.mjs` (fails a phone limit raised more than 5 KB unless the PR's budget history records Josh's approval, D-121).
 The other workflows need no script here: `release-tag.yml` tags each CI-passed main commit
-`release-YYYY-MM-DD-<sha>`, and `backend-uptime.yml` checks the hosted backend's `/healthz` every
+`release-YYYY-MM-DD-<short sha>` (the full commit id if a different same-day commit already holds the short one), and `backend-uptime.yml` checks the hosted backend's `/healthz` every
 10 minutes, signs in as the synthetic monitor account to load `/v1/workspace`, and opens an issue
 for the owner when either stays down. `ward-flow-nightly-browsers.yml` runs the nightly image
 baselines and the 834px tablet checks through `run-playwright.mjs` (front-end audit TE-01, TE-02),

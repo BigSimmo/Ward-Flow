@@ -140,6 +140,7 @@
   align-self: flex-start;
   max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 /* Foot: why Add patient is not ready yet on the left, Reset and the one primary on the right. */
@@ -676,6 +677,7 @@
     height: auto;
     padding-block: var(--wf-phone-pill-hit);
     overflow-x: auto;
+    overflow-y: hidden;
   }
 
   .segmented.segmented > button {

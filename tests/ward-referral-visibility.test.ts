@@ -1560,7 +1560,7 @@ describe("FD-23 — a ward cannot see where else a patient has been referred", (
   /**
    * ⚠️ **OWNER RULING R-2026-09-04-B — AN EMERGENCY DEPARTMENT *MAY* SEE OTHER REFERRAL
    * DESTINATIONS.** Asked whether an ED may see that a patient was also referred to a ward, the owner
-   * answered *"Yes can see."* (`docs/ward-flow/owner-rulings-2026-09-04.md`.)
+   * answered *"Yes can see."* (`docs/history/archive/dated-notes/owner-rulings-2026-09-04.md`.)
    *
    * **So this block is the only one in this file whose job is partly to prove a DISCLOSURE happens.**
    * The ward and community blocks above assert absence; here the destination list must be PRESENT,

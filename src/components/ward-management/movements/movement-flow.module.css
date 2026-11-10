@@ -48,6 +48,7 @@
   gap: var(--wf-s-2);
   min-width: 0;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -757,6 +758,7 @@
     flex-wrap: nowrap;
     width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
   }
 
@@ -1079,6 +1081,7 @@
     gap: var(--wf-s-2);
     margin: 0 0 var(--wf-s-3);
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
     /* DR-13: a stage reached by Tab scrolls fully into view with a little room beside it. */
     scroll-padding-inline: var(--wf-s-4);

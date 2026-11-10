@@ -50,6 +50,7 @@ import {
   FolderTabs,
   Hero,
   HeroAct,
+  HeroBand,
   HeroFigures,
   HeroQuickChips,
   HeroTop,
@@ -60,12 +61,14 @@ import {
   TextInput,
   buttonClass,
   cx,
+  durMinutes,
   folderTabClasses,
   foldLimit,
   phoneRows,
   useIsPhone,
 } from "@/components/wf";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
+import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import pageTop from "../page-top-hero.module.css";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { MovementDrawer } from "./movement-drawer";
@@ -979,6 +982,34 @@ export function MovementsScreen() {
                           : document.getElementById("movements-traffic")?.scrollIntoView({ block: "start" }),
                     },
                   ]}
+                />
+              }
+              // Page tops (v6 mock-up, QA 10 Nov 2026): each stage's count and longest wait, the same
+              // figures and wait colours as the Journey stages strip below (StagePipeline).
+              band={
+                <HeroBand
+                  title="Journey stages"
+                  aside="longest wait"
+                  testId="movements-stage-band"
+                  cells={openStages
+                    .filter((stage) => stage.id !== "arrived")
+                    .map((stage) => {
+                      const wait = stage.movements[0] ? Math.max(0, now - stage.movements[0].openedAt) : undefined;
+                      return {
+                        id: stage.id,
+                        label: STAGE_SHORT[stage.id],
+                        value: stage.movements.length,
+                        sub: wait === undefined ? "none waiting" : durMinutes(wait),
+                        subTone:
+                          wait === undefined
+                            ? undefined
+                            : wait >= accessTarget
+                              ? ("danger" as const)
+                              : wait >= ED_SEVERE_PRESSURE_WAIT_MINUTES
+                                ? ("warning" as const)
+                                : undefined,
+                      };
+                    })}
                 />
               }
             />
