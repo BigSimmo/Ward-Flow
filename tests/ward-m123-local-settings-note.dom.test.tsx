@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { LocalSettingsNote } from "@/components/ward-management/settings/local-settings-note";
+import { LocalSettingsNote } from "@/components/ward-management/shell/local-settings-note";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 

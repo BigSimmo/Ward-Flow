@@ -31,6 +31,7 @@ The test fails when a test mocks a module not in this list. Add it here, and to 
 ```text
 ../scripts/playwright-base-url
 ../scripts/ward-flow/test-preparation-profile.mjs
+@/app/mockups/ward-flow-redesign/_preview/preview-world
 @/components/ward-management/coordinator/home-layout
 @/components/ward-management/ed/ed-preview
 @/components/ward-management/ed/ed-screen

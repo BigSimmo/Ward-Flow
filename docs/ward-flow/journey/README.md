@@ -247,3 +247,14 @@ Source digests were re-reviewed file by file before being re-recorded:
 - `patients/add-patient.tsx`: the duplicate check's tier order, wording and input rule moved to shared helpers in `ward-patients.ts` with the same behaviour. `ADD_PATIENT`'s dispatch, role and payload are unchanged.
 
 The other command models citing these files had only their digests re-recorded, because none of their handlers, guards, roles or payloads changed.
+
+## Source review — 10 Nov 2026 (master audit fix batches, D-125)
+
+Source digests were re-reviewed file by file before being re-recorded:
+
+- `ward-flow-referral-answer-events.ts`: `RECEIVE_REFERRAL` now also refuses a typed referrer phone that is not a phone number (audit M39, `referrerPhoneError`); a blank one is still accepted. Its `needs` note says so and its `reviewedOn` is 10 Nov 2026. One import line changed; no cited line moved.
+- `referrals/use-ward-referral-drawer-state.ts`: the drawer's Send check calls `referralContactSendError` (the same limits plus the phone check). The `RECEIVE_REFERRAL` dispatch line did not move.
+- `ward-undo.ts`: `CONFIRM_BED_RELEASE` is now an undoable step, filed against its bed release (`release:<releaseId>`), so a Ward Decisions sign-off can be taken back by `UNDO_RELEASE_STEP` (M37). The `UNDO_RELEASE_STEP` model and the `CONFIRM_BED_RELEASE` `changes` note say so. Later citations moved down by two to nine lines; no other undo kind changed.
+- `ward/ward-screen.tsx`: the sign-off now builds its short Undo (`ward-sign-off-undo.ts`) from the outcome; one import line added. The dispatches cited for twelve events moved down by one to three lines, unchanged in role, payload and guard.
+- `ward-tasks-drawer.tsx`: Acknowledge visible sends one `ACKNOWLEDGE_INBOX_ITEM` per row and names each alert (M13). The event, its role and payload are unchanged; `RECORD_ESCALATION` moved from line 671 to 672.
+- `governance-registers.tsx`: Governance's review list also shows each cover given (M58); `REVIEW_AUDIT_EVENT` moved from line 543 to 546, unchanged.

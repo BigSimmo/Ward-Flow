@@ -25,7 +25,7 @@ const PICTURE_BLOCK_PX = 14;
 export const PICTURE_FILENAME = "ward-flow-synthetic-report-screen.png";
 
 /** M124: drawn across the foot of the picture, so it stays marked wherever it is pasted. */
-export const PICTURE_MARKER = "Synthetic prototype";
+const PICTURE_MARKER = "Synthetic prototype";
 
 /** The marker's band, in CSS pixels; its words are 13px, above the 12px floor. */
 const MARKER_BAND_PX = 24;

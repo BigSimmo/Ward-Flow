@@ -30,7 +30,7 @@ import { reportWeek, weeklyOperationsReport, type WeeklyReport, type ReportWeek 
 import { useOwnUnits } from "./use-own-units";
 import { WeeklyDelayHeatmap, preloadWeeklyDelayHeatmap } from "./weekly-delay-heatmap-lazy";
 import { createReadmissionIndex, readmissionsArrivedIn } from "@/components/ward-management/ward-readmission";
-import { LocalSettingsNote } from "@/components/ward-management/settings/local-settings-note";
+import { LocalSettingsNote } from "@/components/ward-management/shell/local-settings-note";
 import styles from "./reports.module.css";
 import weekly from "./weekly-report.module.css";
 
@@ -513,7 +513,7 @@ function WeeklyReportView({
           heatmap={heatmap?.(isPhone)}
           delayedReasons={delayedReasons}
         />
-        {/* M123: on paper the shell's print footer carries the same line, so it is not printed twice. */}
+        {/* M123: on paper the shell's print footer carries the same line, so paper shows it once. */}
         <div data-print-hide>
           <LocalSettingsNote className={styles.disclosure} testId="ward-weekly-local-settings" />
         </div>

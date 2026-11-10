@@ -39,6 +39,8 @@ function harness() {
     baseUrl: "https://synthetic.invalid",
     token: async () => "synthetic-token",
     manageDrafts: false,
+    // Back online reads at once: the spread across desks (ward-shared-pacing.ts, M69) is fixed at zero.
+    random: () => 0,
     changed: (next) => {
       view = next;
     },

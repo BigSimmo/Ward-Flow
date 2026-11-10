@@ -14,7 +14,7 @@ const LIMIT_WAIT_DEFAULT_S = 10;
 const LIMIT_WAIT_MAX_S = 120;
 
 /** The wait a 429 asks for, in milliseconds: Retry-After in seconds or as a date. */
-export function retryAfterMs(response: Response, now = Date.now()): number {
+function retryAfterMs(response: Response, now = Date.now()): number {
   const header = response.headers.get("retry-after")?.trim() ?? "";
   const seconds = /^\d+$/u.test(header)
     ? Number(header)

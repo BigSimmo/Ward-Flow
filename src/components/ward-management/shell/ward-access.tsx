@@ -99,7 +99,7 @@ import { UnscopedWardFlowContext, useUnscopedWardFlow } from "./ward-access-cont
 import { announceToWardShell } from "./ward-live-region";
 import { forgetStepUp, useStepUp } from "./ward-step-up";
 import { accessPlaceLabel } from "./ward-access-labels";
-import { LocalSettingsNote } from "../settings/local-settings-note";
+import { LocalSettingsNote } from "./local-settings-note";
 import { SharedAccessContext } from "./ward-shared-access-context";
 import { SharedSessionContext } from "./ward-shared-session-context";
 import styles from "./ward-access.module.css";

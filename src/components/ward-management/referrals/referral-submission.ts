@@ -237,7 +237,7 @@ export function referralContactError(contact: ReferralContact): string | null {
  * still missing for the warning. Only the shape and the length limits refuse a send, here and at the
  * engine boundary.
  */
-export function referralContactLimitError(contact: ReferralContact): string | null {
+function referralContactLimitError(contact: ReferralContact): string | null {
   if (
     !onlyFields(contact, ["name", "email", "phone", "role", "location"]) ||
     [contact.name, contact.email, contact.phone, contact.role, contact.location].some(

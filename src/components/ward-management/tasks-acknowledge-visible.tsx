@@ -63,9 +63,7 @@ const names = (rows: readonly Settled[]) => rows.map((entry) => named(entry.row)
  * a confirmed save counts as done, and the message names each alert that was not acknowledged, as
  * Sign off N does (Q93). `null` when no save gave an answer (a legacy dispatch): the rows say.
  */
-export function acknowledgeVisibleReport(
-  results: readonly Settled[],
-): { tone: "success" | "warning"; title: string } | null {
+function acknowledgeVisibleReport(results: readonly Settled[]): { tone: "success" | "warning"; title: string } | null {
   if (results.length === 0 || results.every((entry) => entry.state === "unknown")) return null;
   const n = results.length;
   const done = results.filter((entry) => entry.state === "done");

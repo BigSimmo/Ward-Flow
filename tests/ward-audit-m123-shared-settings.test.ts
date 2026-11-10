@@ -25,7 +25,7 @@ import {
   FORECAST_WORSE_ALERT_RANGE_BEDS,
 } from "@/components/ward-management/ward-operational-defaults";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
-import { localSettingsInUse } from "@/components/ward-management/settings/local-settings-note";
+import { localSettingsInUse } from "@/components/ward-management/shell/local-settings-note";
 import { ruleChanges } from "@/components/ward-management/settings/settings-rule-catalogue";
 
 type Bounds = { readonly min: number; readonly max: number; readonly step: number };

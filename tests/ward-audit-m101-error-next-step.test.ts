@@ -22,8 +22,8 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 const INVENTORY = "docs/ward-flow/evidence/error-message-inventory-2026-11-10.md";
-/** "No" rows on 10 Nov 2026. Exact: lower it when one is fixed; never raise it. */
-const NO_NEXT_STEP_BASELINE = 108;
+/** "No" rows on 10 Nov 2026 (107 once save-problem pairs were read whole). Exact: lower it when one is fixed; never raise it. */
+const NO_NEXT_STEP_BASELINE = 107;
 
 const ROOTS = ["src/app", "src/components/wf", "src/components/ward-management"];
 /** Not failure messages: seed narratives, Help and tour text, and approved mock-up copies (D-91). */
@@ -55,6 +55,17 @@ function texts(path: string): string[] {
   const found: string[] = [];
   const visit = (node: ts.Node): void => {
     if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) return;
+    // A save problem is a [what happened, what to do now] pair of sentences shown joined
+    // (ward-save-failure.ts `saveProblem`), so the pair is read as the one message it is.
+    if (ts.isArrayLiteralExpression(node) && node.elements.length === 2) {
+      const [happened, doNow] = node.elements.map((element) =>
+        ts.isStringLiteral(element) || ts.isNoSubstitutionTemplateLiteral(element) ? element.text : undefined,
+      );
+      if (happened && doNow && /[.!]$/.test(happened) && /^[A-Z]/.test(doNow)) {
+        found.push(`${happened} ${doNow}`);
+        return;
+      }
+    }
     if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isJsxText(node))
       found.push(node.text);
     else if (ts.isTemplateExpression(node))

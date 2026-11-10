@@ -7,7 +7,7 @@
  * desk reads the whole archive again instead.
  */
 
-export const ARCHIVED_COLLECTIONS = ["movements", "referrals", "broadcastAlerts"] as const;
+const ARCHIVED_COLLECTIONS = ["movements", "referrals", "broadcastAlerts"] as const;
 export type ArchivedCollection = (typeof ARCHIVED_COLLECTIONS)[number];
 
 type ArchiveEntry = {

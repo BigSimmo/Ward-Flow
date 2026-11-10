@@ -3,7 +3,7 @@
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { defaultWardConfiguration, type WardConfiguration } from "@/components/ward-management/ward-configuration";
 
-import { ruleChanges } from "./settings-rule-catalogue";
+import { ruleChanges } from "../settings/settings-rule-catalogue";
 
 /**
  * Audit M123 (Josh, 10 Nov 2026): a shared view (TV, print, weekly report) says when any of the
