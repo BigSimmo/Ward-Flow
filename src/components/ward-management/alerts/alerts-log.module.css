@@ -66,7 +66,10 @@
     flex-wrap: nowrap;
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 0 var(--wf-s-3);
+    /* The kit's top and bottom padding holds each chip's tap band inside the row (the negative
+       margin keeps the row's place), so iPhone Safari has nothing to drag up and down. */
+    margin-block: calc(-1 * var(--wf-phone-pill-hit));
+    padding: var(--wf-phone-pill-hit) var(--wf-s-3);
     scrollbar-width: none;
   }
 

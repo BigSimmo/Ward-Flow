@@ -4,7 +4,7 @@
 
 Written 24 October 2026 from repository docs and config; not tested against the live services.
 
-_Updated 2026-11-07 — weekly keep-alive for scheduled workflows; 2026-11-06 — one rollback route with a release pause switch (front-end audit CB-2); 2026-11-05 — health diagnostics and release identities reconciled against source; Documentation owns. No live service check was performed._
+_Updated 2026-11-10 — checked-in local restore drill (audit M40); 2026-11-07 — weekly keep-alive for scheduled workflows; 2026-11-06 — one rollback route with a release pause switch (front-end audit CB-2); 2026-11-05 — health diagnostics and release identities reconciled against source; Documentation owns. No live service check was performed._
 
 **Who this is for:** whoever looks after the hosted synthetic prototype. **Status:** current
 guidance, pulled together from the dated records linked below. Those records hold the detail and
@@ -240,6 +240,12 @@ What the repo knows, from [RETENTION-AND-BACKUP.md](RETENTION-AND-BACKUP.md#back
   it offline.
 - After any restore, the `wardflow_backend` password must be reset and the backend setting
   updated. Daily backups do not keep custom role passwords.
+- In the same backend settings, set `WARD_RESTORE_MARKER` to a new value (for example the restore
+  date and a number, `2026-11-10-1`; letters, digits, `.`, `_` and `-` only). Open tabs then drop
+  the board they hold and load the restored one. Without it a tab keeps showing saves the restore
+  lost as current. Saves still waiting in a tab are refused as out of date and must be checked.
+- Tell staff: phone alerts sent between the backup and the restore may be sent again. Check the
+  board before acting on an alert.
 - A manual backup schema, `ward_flow_backup_20261019`, exists in the live database (reported by
   the owner, not recorded elsewhere in the repo). **Keep it until the shared pilot has run for a
   week.** Deleting it needs Josh's explicit yes.
@@ -264,6 +270,12 @@ yes first. Steps that create a new Supabase project are billable and need spendi
 
 Aim: prove a copy of the live `ward_flow` data can be brought back somewhere safe, and time it.
 It never writes to the live database.
+
+**Repeatable local drill (10 November 2026, audit M40).** `backend/ward-flow/restore-drill.test.mjs`
+runs the same `pg_dump -Fc` and `pg_restore --exit-on-error` on synthetic data against a loopback
+PostgreSQL (CI's backend job runs it too), and holds the queries for step 3's counts, the pass
+checks below and a replay and duplicate-audit check. Run it before a hosted drill. Dated results and
+the other drills are in [OPERATIONS-DRILLS.md](OPERATIONS-DRILLS.md).
 
 **Before starting**
 

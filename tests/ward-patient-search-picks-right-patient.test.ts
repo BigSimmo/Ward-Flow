@@ -73,7 +73,7 @@ describe("a partial or initials query never puts a non-matching name above a mat
 
   // D-113 item 3: typed initials without full stops ("AM") do not match a patient by initials, so a
   // loose initials match cannot open the wrong person. "AM" is read as letters inside a name only.
-  it.each(["AM", "am"])("%s does not find anyone by initials (D-113)", (query) => {
+  it.each(["AM", "am", "aM"])("%s does not find anyone by initials (D-113)", (query) => {
     const found = people(query);
     const byInitialsOnly = LOOKALIKES.filter(
       (patient) =>

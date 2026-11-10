@@ -58,6 +58,9 @@ const FIXTURE_PATHS = new Set([
   "docs/ward-flow/deleted.md",
   "docs/ward-flow/incoming.md",
   "docs/ward-flow/last.md",
+  // Master audit tests (D-129): a made-up missing page and a made-up budget-history note.
+  "docs/ward-flow/no-such-file.md",
+  "docs/script-budget-history/2026-11-10-pr9999-example.md",
   "docs/ward-flow/probe.md",
   "docs/ward-flow/renamed-probe.md",
   "docs/ward-flow/admission-probe.md",

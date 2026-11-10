@@ -25,12 +25,14 @@
 // 10 Nov 2026 (PR #1583): PR #1578 took main to 2550, so with the same six lines the cap is 2560.
 // 10 Nov 2026 (batch 3 items 21 and 23): two state fields, a guard import and one dispatch line take
 // the reducer to 2565, and one union line takes ward-flow-events to 2751; the logic is a lazy slice.
+// 10 Nov 2026 (PR #1598): main reached 2574 of ward-screen's 2575; the D-129 sign-off Undo adds three
+// lines (its logic lives in ward-sign-off-undo.ts), so the cap is 2580.
 export const MAX_LINES_DEFAULT = 1500;
 export const MAX_LINES_HEADROOM = 300;
 
 export const MAX_LINES_BASELINE = {
   "src/components/ward-management/ward-flow-reducer.ts": 2565,
-  "src/components/ward-management/ward/ward-screen.tsx": 2575,
+  "src/components/ward-management/ward/ward-screen.tsx": 2580,
   "src/components/ward-management/ward-model.ts": 1900,
   "src/components/ward-management/ward-movements.ts": 2070,
   "src/components/ward-management/ward-flow-events.ts": 2751,

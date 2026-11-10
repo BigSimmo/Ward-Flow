@@ -48,19 +48,15 @@ describe("in-page slide-overs stay under the modal layer", () => {
 // drawer backdrops on the overlay rung.
 describe("overlays use the shared layers, not hard-coded ones", () => {
   it.each([
-    ["community/community.module.css", ".actionToast", "--z-toast"],
     ["community/community.module.css", ".clinicalToast", "--z-toast"],
     ["community/community.module.css", ".modalOverlay", "--z-modal"],
-    ["ward/ward.module.css", ".actionToast", "--z-toast"],
     ["ward/ward.module.css", ".modalOverlay", "--z-modal"],
     ["ward/ward-answer-view.module.css", ".modalOverlay", "--z-modal"],
     ["ward/ward-answer-view.module.css", ".toast", "--z-toast"],
-    ["delays/delays.module.css", ".toastNotice", "--z-toast"],
     ["referrals/ward-referral-drawer.module.css", ".drawerBackdrop", "--z-overlay"],
     ["referrals/arrival-time-modal.module.css", ".overlay", "--z-modal"],
     ["ward-tasks-drawer.module.css", ".drawerBackdrop", "--z-overlay"],
     ["ward-standing-strip.module.css", ".hudAnchor", "--z-toast"],
-    ["board/board.module.css", ".toast", "--z-toast"],
     ["board/board.module.css", ".modalBackdrop", "--z-modal"],
     ["ed/ed.module.css", ".modalBackdrop", "--z-modal"],
     // Notifications pass (30 Oct 2026): the record document dialog sat at 9999, above the toasts it

@@ -495,8 +495,10 @@
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
-    margin-inline: calc(-1 * var(--wf-s-4));
-    padding-inline: var(--wf-s-4);
+    /* 4px top and bottom holds the chips' tap band (and the nested chip row's own 4px) inside the
+       row, so iPhone Safari has nothing to drag up and down; the negative margin keeps its place. */
+    margin: -4px calc(-1 * var(--wf-s-4));
+    padding: 4px var(--wf-s-4);
   }
 }
 
