@@ -10,7 +10,7 @@ import { transportPendingFor, waitingForTransport } from "../src/components/ward
 
 /*
  * Item 18 on the ward board: the seeded person who left the ward waiting for transport is listed
- * with a Collected button, and a discharge due today that waits on transport offers "Left the ward".
+ * with a Collected button, and "They have left" on a discharge still waiting on transport asks whether they are waiting for it.
  */
 const NOW = WARD_ADMISSIONS_ANCHOR + 40;
 
@@ -37,23 +37,27 @@ describe("ward board: Left the ward, waiting for transport (item 18)", () => {
     expect(screen.queryByTestId("ward-board-transport-wait")).toBeNull();
   });
 
-  it("offers Left the ward only on a due discharge still waiting on transport", () => {
+  it("They have left asks about transport only on a due discharge still waiting on it", () => {
     const state = seedWardFlowState();
-    const units = new Set(
-      state.admissions
-        .filter((admission) => transportPendingFor(admission, state.bedReleases))
-        .map((admission) => admission.unitId),
-    );
-    let offered = 0;
+    const units = [
+      ...new Set(
+        state.admissions
+          .filter((admission) => transportPendingFor(admission, state.bedReleases))
+          .map((admission) => admission.unitId),
+      ),
+    ];
+    let asked = 0;
     for (const unitId of units) {
       const view = renderBoard(unitId);
-      offered += screen.queryAllByRole("button", { name: "Left the ward" }).length;
+      // The row keeps its two actions: no separate "Left the ward" button.
+      expect(screen.queryAllByRole("button", { name: "Left the ward" })).toHaveLength(0);
+      if (openTransportDialog()) asked += 1;
       view.unmount();
     }
-    expect(offered, "a seeded discharge due today waits on transport").toBeGreaterThan(0);
+    expect(asked, "a seeded discharge due today waits on transport").toBeGreaterThan(0);
   });
 
-  it("Left the ward asks where they are going, then lists them as waiting for transport", () => {
+  it("asks where they are going and whether transport came, then lists them as waiting", () => {
     const state = seedWardFlowState();
     const unitId = [
       ...new Set(
@@ -63,20 +67,36 @@ describe("ward board: Left the ward, waiting for transport (item 18)", () => {
       ),
     ].find((candidate) => {
       const view = renderBoard(candidate);
-      const found = screen.queryAllByRole("button", { name: "Left the ward" }).length > 0;
+      const found = openTransportDialog();
       view.unmount();
       return found;
     })!;
     renderBoard(unitId);
     const before = screen.queryAllByRole("button", { name: /^Collected/ }).length;
-    fireEvent.click(screen.getAllByRole("button", { name: "Left the ward" })[0]!);
+    expect(openTransportDialog()).toBe(true);
     const dialog = screen.getByRole("dialog", { name: "Confirm left the ward" });
     const proceed = within(dialog).getByTestId("ward-board-confirm-proceed") as HTMLButtonElement;
     expect(proceed.disabled, "no destination is chosen for the ward").toBe(true);
     fireEvent.change(within(dialog).getByTestId("ward-board-confirm-destination"), {
       target: { value: "discharged-to-the-community" },
     });
+    expect(proceed.disabled, "transport is never defaulted").toBe(true);
+    expect((within(dialog).getByTestId("ward-board-confirm-transport") as HTMLSelectElement).value).toBe("");
+    fireEvent.change(within(dialog).getByTestId("ward-board-confirm-transport"), { target: { value: "waiting" } });
     fireEvent.click(proceed);
     expect(screen.getAllByRole("button", { name: /^Collected/ })).toHaveLength(before + 1);
   });
 });
+
+/** Presses each "They have left" until one opens the transport question; true when one did. */
+function openTransportDialog(): boolean {
+  const buttons = screen.queryAllByRole("button", { name: "They have left" });
+  for (const button of buttons) {
+    if (!button.isConnected) continue;
+    fireEvent.click(button);
+    if (screen.queryByTestId("ward-board-confirm-transport")) return true;
+    const cancel = screen.queryByTestId("ward-board-confirm-cancel");
+    if (cancel) fireEvent.click(cancel);
+  }
+  return false;
+}

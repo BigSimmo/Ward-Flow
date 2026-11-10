@@ -5,7 +5,7 @@ import { useUndoableStep } from "@/components/ward-management/use-undoable-step"
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { useIsPhone, useModalFocus } from "@/components/wf";
+import { Select, useIsPhone, useModalFocus } from "@/components/wf";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import {
@@ -182,7 +182,9 @@ export function WardBoard({
     identity?: string;
     item?: ShiftTileItem;
     admissionId?: string;
-    /** Item 18: "Left the ward", still on site waiting for transport. */
+    /** Item 18: transport is still pending, so the dialog asks whether they are waiting for it. */
+    offerTransport?: boolean;
+    /** Item 18: left the ward, still on site waiting for transport. Unset until chosen. */
     awaitingTransport?: boolean;
   } | null>(null);
   const dialogTriggerRef = useRef<HTMLElement | null>(null);
@@ -802,12 +804,6 @@ export function WardBoard({
         text: `${isConfirmed ? "Confirmed out" : "Expected out"} today, still here.${blockerPhrase}`,
         acts: [
           { word: "They have left", say: "would release this bed and make it ready" },
-          // Item 18: still waiting on transport, so the person can leave the ward and the bed be Ready now.
-          ...(admissions.some(
-            (admission) => admission.id === occupant.key && transportPendingFor(admission, liveBedReleases),
-          )
-            ? [{ word: "Left the ward", say: "would free this bed now and list them as waiting for transport" }]
-            : []),
           { word: "Record hold-up", tone: "warn", say: "would record what is holding this discharge up" },
         ],
       });
@@ -890,6 +886,7 @@ export function WardBoard({
       const admissionId = pendingConfirm.admissionId || pendingConfirm.item?.selectableKey;
       const leavingDestination = destinationFor(admissionId);
       if (!admissionId || leavingDestination === "") return;
+      if (pendingConfirm.offerTransport && pendingConfirm.awaitingTransport === undefined) return;
       const awaitingTransport = pendingConfirm.awaitingTransport === true;
       recordDepartureAndReport(
         () =>
@@ -929,19 +926,23 @@ export function WardBoard({
   };
 
   const handleShiftAction = (item: ShiftTileItem, word: string) => {
-    if (word === "Left the ward") {
-      // Item 18: always confirmed, because where they went is chosen here and never defaulted.
-      setPendingConfirm({
-        kind: "leaving",
-        who: item.who || nameFor(item.selectableKey),
-        identity: identityFor(item.selectableKey),
-        item,
-        admissionId: item.selectableKey,
-        awaitingTransport: true,
-      });
-      return;
-    }
     if (word === "They have left") {
+      // Item 18: with transport still pending, the confirmation also asks whether they are waiting
+      // for it (never defaulted), so one button covers both and the row keeps its two actions.
+      const offerTransport = admissions.some(
+        (admission) => admission.id === item.selectableKey && transportPendingFor(admission, liveBedReleases),
+      );
+      if (offerTransport) {
+        setPendingConfirm({
+          kind: "leaving",
+          who: item.who || nameFor(item.selectableKey),
+          identity: identityFor(item.selectableKey),
+          item,
+          admissionId: item.selectableKey,
+          offerTransport: true,
+        });
+        return;
+      }
       const leavingDestination = destinationFor(item.selectableKey);
       const executeLeaving = (leavingDestination: LeavingDestination) => {
         recordDepartureAndReport(
@@ -1344,7 +1345,7 @@ export function WardBoard({
             <div className={styles.confirmDialogPanel}>
               <div className={styles.modalHeader}>
                 <h3 id="confirm-dialog-title" className={styles.confirmDialogTitle}>
-                  {pendingConfirm.awaitingTransport
+                  {pendingConfirm.offerTransport
                     ? "Confirm left the ward"
                     : pendingConfirm.kind === "leaving"
                       ? "Confirm discharge"
@@ -1413,6 +1414,35 @@ export function WardBoard({
                 />
               ) : null}
 
+              {pendingConfirm.offerTransport ? (
+                <>
+                  <label className={styles.leavingLabel} htmlFor="ward-board-confirm-transport">
+                    Transport
+                  </label>
+                  <Select
+                    id="ward-board-confirm-transport"
+                    data-testid="ward-board-confirm-transport"
+                    required
+                    value={
+                      pendingConfirm.awaitingTransport === undefined
+                        ? ""
+                        : pendingConfirm.awaitingTransport
+                          ? "waiting"
+                          : "collected"
+                    }
+                    onChange={(changed) =>
+                      setPendingConfirm({ ...pendingConfirm, awaitingTransport: changed.target.value === "waiting" })
+                    }
+                  >
+                    <option value="" disabled>
+                      Choose
+                    </option>
+                    <option value="waiting">Still waiting for transport</option>
+                    <option value="collected">Gone with transport</option>
+                  </Select>
+                </>
+              ) : null}
+
               <div className={styles.modalActions}>
                 <button
                   type="button"
@@ -1428,7 +1458,10 @@ export function WardBoard({
                   data-testid="ward-board-confirm-proceed"
                   className={styles.detailPrimaryBtn}
                   // Native `disabled`: transient inertness until where they went is chosen (CS3-07).
-                  disabled={pendingConfirm.kind === "leaving" && destinationFor(confirmAdmissionId) === ""}
+                  disabled={
+                    (pendingConfirm.kind === "leaving" && destinationFor(confirmAdmissionId) === "") ||
+                    (pendingConfirm.offerTransport === true && pendingConfirm.awaitingTransport === undefined)
+                  }
                   data-tone={pendingConfirm.kind === "leaving" ? "warn" : undefined}
                 >
                   {pendingConfirm.awaitingTransport
