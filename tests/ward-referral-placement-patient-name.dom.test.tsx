@@ -32,6 +32,7 @@ function openReferral(referralId: string) {
   const row = decide.querySelector<HTMLElement>(`[data-referral-id="${referralId}"]`);
   if (!row) throw new Error(`${referralId} is not listed under Referrals to decide`);
   fireEvent.click(within(row).getByRole("button", { name: /^Open referral for / }));
+  // Item 6a (9 Nov 2026): the coordinator's panel holds the decision itself, named for the person.
   return screen.getByTestId("ward-referral-placement-decide").getAttribute("aria-label") ?? "";
 }
 

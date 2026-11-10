@@ -287,7 +287,9 @@ export function resolveAlertSubject(
 }
 
 /** The row's one forward action: where the coordinator goes to resolve it. */
-export type AlertAction = { kind: "link"; label: string; href: string } | { kind: "release"; label: string };
+export type AlertAction =
+  /** `bookingsUnitId`: an "Open bookings" link, which opens that ward's bookings in a pop-up (item 6b). */
+  { kind: "link"; label: string; href: string; bookingsUnitId?: string } | { kind: "release"; label: string };
 
 export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAction {
   const patientHref = subject.patientHref ?? "/ward-flow/movements";
@@ -319,6 +321,7 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
         href: item.plannedAdmission?.unitId
           ? `${unitHref(item.plannedAdmission.unitId)}?bookings=1`
           : (item.href ?? "/ward-flow/capacity"),
+        ...(item.plannedAdmission?.unitId ? { bookingsUnitId: item.plannedAdmission.unitId } : {}),
       };
     case "duplicate":
       return { kind: "link", label: "Open oldest request", href: item.href ?? "/ward-flow/referrals" };

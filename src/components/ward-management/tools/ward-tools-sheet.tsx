@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
@@ -77,6 +78,11 @@ import { ToolRemindMe, useReminderCount } from "./ward-tool-remind-me";
 import { ToolCallLog } from "./ward-tool-call-log";
 import styles from "./ward-tools-sheet-v3.module.css";
 
+// Log a delay loads when it is first opened, so the shell's first download does not grow.
+const ToolLogDelay = dynamic(() => import("./ward-tool-log-delay").then((m) => m.ToolLogDelay), {
+  loading: () => <p role="status">Loading…</p>,
+});
+
 const root = "/ward-flow";
 
 export type ToolsSheetToolId =
@@ -93,12 +99,12 @@ export type ToolsSheetToolId =
   | "form-times"
   | "messages"
   | "quick-actions"
+  | "log-delay"
   | "demo";
 
 type EntryKey =
   | ToolsSheetToolId
   | "new-referral"
-  | "log-delay"
   | "legal-forms"
   | "out-of-area"
   | "handover"
@@ -690,8 +696,9 @@ function ToolsSheetView({
             detail: "Log a transfer",
             href: canOpen(`${root}/transport/officer`) ? `${root}/transport/officer` : `${root}/movements`,
           },
+    // Friction pass item 6c (Josh, 9 Nov 2026): a short form here in place of the Waiting page.
     "log-delay": canLogDelay
-      ? { key: "log-delay", icon: Clock3, name: "Log a delay", detail: "Patient and reason", href: `${root}/waiting` }
+      ? { key: "log-delay", icon: Clock3, name: "Log a delay", detail: "Patient and reason", body: <ToolLogDelay /> }
       : null,
     feed:
       !executive && (role === "coordinator" || role === "bed_manager" || role === "ward")

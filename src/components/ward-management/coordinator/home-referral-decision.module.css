@@ -1,0 +1,7 @@
+/* Item 6a (9 Nov 2026): on a phone the drawer body has no side padding of its own, so the
+   decision keeps the same 16px gutter as the facts above it. */
+@media (max-width: 46.4375rem) {
+  .decision {
+    padding-inline: var(--wf-s-4);
+  }
+}

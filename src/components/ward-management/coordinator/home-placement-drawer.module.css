@@ -179,7 +179,8 @@
   background: var(--wf-surface-2);
 }
 
-/* The one primary in the band: Move or release, Pull the bed, Book transport, Refer, Decide. */
+/* The one primary in the band: Move or release, Pull the bed, Book transport, Refer, Decide, and
+   the referral's own Accept when the coordinator decides here (item 6a, 9 Nov 2026). */
 .foot.foot
   .slot
   :is(
@@ -187,7 +188,9 @@
     [data-testid="ward-shortlist-hold-bed"],
     [data-testid="ward-shortlist-book-transport"],
     [data-testid="ward-shortlist-refer"],
-    [data-testid="ward-referral-placement-decide"]
+    [data-testid="ward-referral-placement-decide"],
+    [data-testid^="ward-referral-match-accept"],
+    [data-testid="ward-referral-match-phone-accept"]
   ) {
   flex: 2 1 0;
   color: var(--wf-on-accent);
@@ -202,7 +205,9 @@
     [data-testid="ward-shortlist-hold-bed"],
     [data-testid="ward-shortlist-book-transport"],
     [data-testid="ward-shortlist-refer"],
-    [data-testid="ward-referral-placement-decide"]
+    [data-testid="ward-referral-placement-decide"],
+    [data-testid^="ward-referral-match-accept"],
+    [data-testid="ward-referral-match-phone-accept"]
   ):hover:not([aria-disabled="true"]) {
   background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-1));
 }
