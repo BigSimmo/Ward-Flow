@@ -930,6 +930,18 @@ function candidatesForMovements(
           expectedRevision: state.units.find((unit) => unit.id === unitId)!.allocatable.revision ?? 0,
         })),
       );
+    // Feature item 13: tonight's intake hours, set from the next hour then cleared. Information only.
+    case "SET_INTAKE_WINDOW":
+      return unitIds.flatMap((unitId) =>
+        [{ from: now + 60, to: now + 180 }, null].map((intake) => ({
+          type,
+          role,
+          now,
+          unitId,
+          actingUnitId: unitId,
+          intake,
+        })),
+      );
     case "RECORD_WARD_INTAKE_CONSTRAINTS":
       // Same claim-not-proof discipline as CONFIRM_CAPACITY above: `actingUnitId` mirrors
       // `unitId`. Owner Answer 18 (second round, 2026-09-17) — `codes` may be empty (nothing

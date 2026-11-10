@@ -596,7 +596,10 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
   const demo = network ? seed : applyLoopChecksDemoOverlay(applyRulingsDemoOverlay(seed, NOW_ANCHOR), NOW_ANCHOR);
   // Feature item 13: a few synthetic intake windows set this morning.
   const withWindows = network ? demo : applyIntakeWindowDemoOverlay(demo, NOW_ANCHOR);
-  return applyExampleListsOverlay(network ? withWindows : applyWaitlistDemoOverlay(withWindows, NOW_ANCHOR), NOW_ANCHOR);
+  return applyExampleListsOverlay(
+    network ? withWindows : applyWaitlistDemoOverlay(withWindows, NOW_ANCHOR),
+    NOW_ANCHOR,
+  );
 }
 
 /**

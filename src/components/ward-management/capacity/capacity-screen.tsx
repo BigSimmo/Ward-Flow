@@ -330,7 +330,11 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
                 one card, full width. Josh's fifth notes (8 Nov 2026): the row under it is gone; the
                 shift figures are in the hero and an unchanged count on its ward card. */}
             {planned}
-            <CapacityIntakeWindowsCard units={mapModel.networkRows.map((row) => row.unit)} now={now} onWard={openWard} />
+            <CapacityIntakeWindowsCard
+              units={mapModel.networkRows.map((row) => row.unit)}
+              now={now}
+              onWard={openWard}
+            />
           </>
         )}
         <WardPrototypeFooter

@@ -3,6 +3,7 @@
 // The ward screen's Home tab section. Split out of `ward-screen.tsx` (18 October 2026) to keep that
 // file under the line cap.
 
+import { WardIntakeWindowControl } from "./ward-intake-window-control";
 import { Clock, LayoutPanelLeft } from "lucide-react";
 import { capacityConfirmer } from "@/components/ward-management/capacity/capacity-confirmer";
 import type { FormEvent } from "react";
@@ -247,6 +248,8 @@ export function WardScreenHomeSection({
           isPhone ? (
             <>
               {wardHeroFoot}
+              {/* Feature item 13: tonight's intake hours, information only. */}
+              <WardIntakeWindowControl unit={unit} now={now} />
               {wardHeroFootAside}
             </>
           ) : undefined

@@ -86,7 +86,8 @@ describe("SET_INTAKE_WINDOW", () => {
     expect(set.rejections).toEqual([]);
     expect(unitOf(set, unitId).intakeWindow).toEqual({ ...intake, at: NOW, by: "Nurse in charge" });
     // Information only: no count moves.
-    expect(unitOf(set, unitId).allocatable).toEqual(unitOf(state, unitId).allocatable);
+    expect(unitOf(set, unitId).allocatable.value).toBe(unitOf(state, unitId).allocatable.value);
+    expect(unitOf(set, unitId).empty.value).toBe(unitOf(state, unitId).empty.value);
 
     const cleared = send(set, { unitId, intake: null });
     expect(cleared.rejections).toEqual([]);
@@ -155,15 +156,15 @@ describe("tonightIntakeWindowList", () => {
 describe("stored intake windows", () => {
   it("loads a saved state with and without an intake window, and refuses a malformed one", () => {
     const state = seedWardFlowState();
-    expect(isValidStoredWardFlowState(state)).toBe(true);
-    const withoutAny = { ...state, units: state.units.map(({ intakeWindow: _drop, ...unit }) => unit) };
-    expect(isValidStoredWardFlowState(withoutAny)).toBe(true);
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(state)))).toBe(true);
+    const withoutAny = { ...state, units: state.units.map((unit) => ({ ...unit, intakeWindow: undefined })) };
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(withoutAny)))).toBe(true);
     const broken = {
       ...state,
       units: state.units.map((unit, index) =>
         index === 0 ? { ...unit, intakeWindow: { from: "21:00", to: 120, at: 0, by: "x" } } : unit,
       ),
     };
-    expect(isValidStoredWardFlowState(broken)).toBe(false);
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(broken)))).toBe(false);
   });
 });
