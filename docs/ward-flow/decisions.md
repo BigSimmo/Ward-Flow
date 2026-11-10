@@ -1542,7 +1542,7 @@ is inferred.
 
 ## D-127. Neutral wording for a community treatment order at arrival (10 November 2026)
 
-- **Date:** 10 November 2026, 5:59 PM AWST (09:59 UTC). **Decided by:** Josh, choosing "Neutral wording" on a decision card in the Ward Flow project thread, after a review question on PR #1591 about D-123 item 1. D-124 to D-126 are claimed by PR #1593.
+- **Date:** 10 November 2026, 5:59 PM AWST (09:59 UTC). **Decided by:** Josh, choosing "Neutral wording" on a decision card in the Ward Flow project thread, after a review question on PR #1591 about D-123 item 1. D-124, D-125 and D-126 are claimed by PR #1593.
 - **Decision:** when a person on Form 5A or 5B (a community treatment order) arrives on the ward, screens no longer say the form "ended at arrival". They say "On Form 5A at arrival; Form 6A to record" (or 5B), and short rows say "On this form at arrival". The "Record Form 6A" prompt from D-123 stays. Other forms that move on at arrival (for example 4C) still say "ended at arrival", and any form followed by an inpatient order at examination still says "ended at the examination". The arrival record keeps hiding the form's typed expiry exactly as before.
 - **Why:** arrival on the ward does not by itself end a community treatment order, so "ended" overstated the legal position.
 - **Boundary:** wording only; no timing, count or prompt changes. Synthetic data only. Approves no release.
