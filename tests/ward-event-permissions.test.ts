@@ -529,7 +529,7 @@ describe("who may raise which event", () => {
     CANCEL_PLANNED_ADMISSION: ["coordinator", "bed_manager", "ward"],
     CONVERT_PLANNED_ADMISSION: ["ward", "coordinator"],
     // Advisory carer/PSP/MHAS checklist, 9 Oct 2026 (stream B): recorded where the move completes.
-    RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
+    RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator", "ed"],
     SEND_RELEASE_SUPPORT_NOTICE: ["ward", "coordinator"],
     RECORD_DISCHARGE_DEPENDENCY: ["ward", "coordinator"],
     RECORD_DISCHARGE_PLAN_CHANGE: ["ward", "coordinator"],

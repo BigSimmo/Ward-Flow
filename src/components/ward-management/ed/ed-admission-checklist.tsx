@@ -32,12 +32,7 @@ import styles from "./ed-admission-checklist.module.css";
  */
 export function EdAdmissionChecklist({ movement, referrals }: { movement: Movement; referrals: readonly Referral[] }) {
   const raise = useWardRaise("ed");
-  const records = useOptionalWardFlowSelect(
-    "patients",
-    "movements",
-    "plannedAdmissions",
-    "supportNotifications",
-  );
+  const records = useOptionalWardFlowSelect("patients", "movements", "plannedAdmissions", "supportNotifications");
   const now = useWardFlowClock(0);
   const patient = useMemo(
     () => (records ? createPatientResolver({ ...records, referrals })(movement).patient : undefined),
