@@ -96,8 +96,8 @@ describe("patient-linked discharge transition", () => {
     const movementId = state.movements.at(-1)!.id;
     const unitId = "scgh-adult-open";
     send({ type: "REFER_TO_UNITS", role: "coordinator", now: NOW_ANCHOR, movementId, unitIds: [unitId] });
-    send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", now: NOW_ANCHOR, movementId, unitId });
-    send({ type: "PULL_PATIENT", role: "ward", now: NOW_ANCHOR, movementId, unitId });
+    send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", now: NOW_ANCHOR, movementId, unitId, actingUnitId: unitId });
+    send({ type: "PULL_PATIENT", role: "ward", now: NOW_ANCHOR, movementId, unitId, actingUnitId: unitId });
     send({ type: "RECORD_TRANSPORT_NEED", role: "coordinator", now: NOW_ANCHOR, movementId, needed: false });
     expect(state.rejections).toEqual([]);
     const admissionId = state.movements.at(-1)!.admissionId!;

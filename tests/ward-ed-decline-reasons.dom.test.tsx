@@ -123,6 +123,7 @@ describe("ED decline reasons kept to the coordinator (D-80)", () => {
       now: NOW_ANCHOR + 1,
       movementId,
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
       reason: "belongs_to_another_service",
     });
     expect(world.rejections).toHaveLength(0);

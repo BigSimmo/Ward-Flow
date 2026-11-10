@@ -71,15 +71,22 @@ test.describe("real-worker recovery and update ownership @mockup", () => {
     // The first install claims an already loaded document. A real controlled reload populates assets.
     await page.reload({ waitUntil: "domcontentloaded" });
     await ready(page);
-    await page.evaluate(() => fetch("/api/health"));
+    await page.evaluate(async () => {
+      await fetch("/api/health");
+      // A screen's page data, fetched the way the app router asks for it.
+      await fetch("/ward-flow/capacity?_rsc=m160", { headers: { RSC: "1" } });
+    });
     const cached = () =>
       page.evaluate(async () => {
         const names = (await caches.keys()).filter((name) => name.startsWith("ward-flow-static-"));
         const requests = (await Promise.all(names.map(async (name) => (await caches.open(name)).keys()))).flat();
-        return requests.map((request) => new URL(request.url).pathname);
+        return requests.map((request) => request.url);
       });
-    await expect.poll(async () => (await cached()).some((url) => url.startsWith("/_next/static/"))).toBe(true);
-    const paths = await cached();
+    await expect
+      .poll(async () => (await cached()).some((url) => new URL(url).pathname.startsWith("/_next/static/")))
+      .toBe(true);
+    const urls = await cached();
+    const paths = urls.map((url) => new URL(url).pathname);
     expect(paths).toContain("/ward-flow-offline.html");
     expect(
       paths.every(
@@ -92,7 +99,10 @@ test.describe("real-worker recovery and update ownership @mockup", () => {
           url === "/manifest.webmanifest",
       ),
     ).toBe(true);
-    expect(paths.some((url) => url === "/api/health" || url === "/ward-flow")).toBe(false);
+    // M160: never a Ward Flow page, a React Server Components payload or an API response.
+    expect(paths.filter((path) => path === "/ward-flow" || path.startsWith("/ward-flow/"))).toEqual([]);
+    expect(paths.filter((path) => path === "/api" || path.startsWith("/api/"))).toEqual([]);
+    expect(urls.filter((url) => new URL(url).searchParams.has("_rsc"))).toEqual([]);
     await context.setOffline(true);
     try {
       await page.goto(`${pwa.origin}/ward-flow/capacity`, {

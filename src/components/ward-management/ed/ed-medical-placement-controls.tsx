@@ -145,7 +145,11 @@ export function EdMedicalPlacementControls({
       const result = confirmedWardCommand(
         confirmation.kind === "deterioration"
           ? raise("RECORD_ED_MEDICAL_DETERIORATION", { movementId, actingPlaceId })
-          : raise("RECORD_MOVEMENT_MEDICAL_CLEARANCE", { movementId, cleared: confirmation.kind === "cleared" }),
+          : raise("RECORD_MOVEMENT_MEDICAL_CLEARANCE", {
+              movementId,
+              cleared: confirmation.kind === "cleared",
+              actingPlaceId,
+            }),
       );
       if ("then" in result)
         void result.then(

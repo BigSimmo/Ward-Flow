@@ -32,6 +32,9 @@ describe("legal sweep candidate generation", () => {
         now: NOW_ANCHOR,
         movementId: movement.id,
         ...(type === "REFER_TO_UNITS" ? { unitIds: [unit.id] } : { unitId: unit.id }),
+        ...(type === "ACCEPT_IN_PRINCIPLE" || type === "PULL_PATIENT" || type === "DECLINE"
+          ? { actingUnitId: unit.id }
+          : {}),
         ...(type === "FLAG_LEGAL_MISMATCH" ? { kind: "involuntary_on_voluntary_ward" } : {}),
         ...(type === "DECLINE" ? { reason: DECLINE_REASONS[0] } : {}),
         ...(type === "WITHDRAW_WARD_REQUEST" ? { reason: WARD_REQUEST_WITHDRAWAL_REASONS[0] } : {}),

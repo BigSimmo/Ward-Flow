@@ -41,8 +41,8 @@ function pulledJourney() {
   });
   const movementId = state.movements.at(-1)!.id;
   send({ type: "REFER_TO_UNITS", role: "coordinator", movementId, unitIds: [unitId] });
-  send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId, unitId });
-  send({ type: "PULL_PATIENT", role: "ward", movementId, unitId });
+  send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId, unitId, actingUnitId: unitId });
+  send({ type: "PULL_PATIENT", role: "ward", movementId, unitId, actingUnitId: unitId });
   expect(state.rejections).toEqual([]);
   const admissionId = state.movements.find((m) => m.id === movementId)!.admissionId!;
   expect(admissionId).toBeTruthy();

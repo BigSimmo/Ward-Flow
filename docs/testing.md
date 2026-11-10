@@ -83,13 +83,13 @@ export PLAYWRIGHT_KEEP_BUILD_ROOT=true
 | `npm run test:backend:coverage`               | Backend discovery with separate `coverage/backend/lcov.info`, without an invented coverage floor.             |
 | `npm run test:ci-workflows`                   | Selected offline cache, runner, lock parity, backend-CI and audit-CI contracts.                               |
 | `npm run test:live`                           | Explicit provider suite; needs separate authority and `ALLOW_PROVIDER_TESTS=true`.                            |
-| `npm run test:e2e:pr`                         | Production Chromium CSRF spec, excluding `@mockup` and legacy `@quarantine` tags.                             |
+| `npm run test:e2e:pr`                         | Production Chromium CSRF spec plus the full Ward journey and the real phone-worker lane (M160).               |
 | `npm run test:e2e:ward-journeys`              | Synthetic Ward Chromium journeys.                                                                             |
 | `npm run test:e2e:release-gate`               | Dedicated desktop Chromium and phone WebKit release journeys/axe checks.                                      |
 | `npm run test:e2e:advisory`                   | Tag-filtered mockup/legacy `@quarantine` selections; no waiver from required journeys.                        |
 | `npm run verify:cheap`                        | Broad offline local static, lint, typecheck and unit gate.                                                    |
 | `npm run verify:pr-local`                     | Risk-routed local readiness; inspect `-- --dry-run` against the actual changed set.                           |
-| `npm run verify:ui`                           | Lock parity plus the production Chromium selection, not the complete Ward journey suite.                      |
+| `npm run verify:ui`                           | Lock parity plus `test:e2e:pr`: the CSRF spec and two Ward journeys, not the complete Ward journey suite.     |
 | `npm run check:coverage-inventory`            | Verify the declared executable-file population against produced LCOV.                                         |
 | `npm run docs:maintain:check`                 | Read-only document, index, organisation and reference-pack integrity aggregate.                               |
 

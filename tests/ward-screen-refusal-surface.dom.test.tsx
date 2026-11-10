@@ -98,7 +98,7 @@ function TriggerDoubleAccept({ movementId, unitId }: { movementId: string; unitI
       type="button"
       data-testid="trigger-double-accept"
       onClick={() => {
-        dispatch({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", now, movementId, unitId });
+        dispatch({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", now, movementId, unitId, actingUnitId: unitId });
         // Q93: the ward's own accept is the named dialog's Confirm, opened before this trigger.
         Array.from(document.querySelectorAll<HTMLButtonElement>('[data-testid="ward-accept-dialog"] button'))
           .find((button) => button.textContent === "Confirm acceptance")

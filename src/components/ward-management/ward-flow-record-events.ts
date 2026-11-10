@@ -1278,6 +1278,9 @@ export function reduceRecordedFactEvent(
           `role ${event.role} cannot record movement medical clearance; only ed or coordinator may record clearance`,
         );
       }
+      // M2: an ED records clearance only for a journey it sent, as for the deterioration above.
+      if (event.role === "ed" && (!event.actingPlaceId || event.actingPlaceId !== movement.originEdId))
+        return reject(state, event, "Only the originating ED may record medical clearance for this journey.");
 
       if (finiteInstant(event.now) === null || typeof event.cleared !== "boolean")
         return reject(state, event, "Medical clearance needs a valid timestamp and recorded answer.");

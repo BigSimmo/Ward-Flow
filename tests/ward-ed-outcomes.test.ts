@@ -120,8 +120,8 @@ describe("RECORD_ED_OUTCOME — P1-4 (Ward Lead audit, 2026-09-17): tells the wa
     };
     for (const event of [
       { type: "REFER_TO_UNITS", role: "coordinator", unitIds: ["rph-adult-secure"] },
-      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure" },
-      { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure" },
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
+      { type: "PULL_PATIENT", role: "ward", unitId: "rph-adult-secure", actingUnitId: "rph-adult-secure" },
       {
         type: "BOOK_TRANSPORT",
         role: "ed",

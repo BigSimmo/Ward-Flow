@@ -1184,6 +1184,8 @@ function RaiseRefuseThenAcceptHarness({ acceptedBy }: { acceptedBy: "psychiatric
             now,
             referralId: created.id,
             destinationKind: "psychiatric_ward",
+            unitId: "scgh-adult-open",
+            actingUnitId: "scgh-adult-open",
             reason: "no_suitable_bed",
           })
         }
@@ -1205,6 +1207,7 @@ function RaiseRefuseThenAcceptHarness({ acceptedBy }: { acceptedBy: "psychiatric
             // the reducer, which is the rule this board's own "the destination is the whole
             // answer" branch mirrors.
             unitId: acceptedBy === "psychiatric_ward" ? acceptingUnit?.id : undefined,
+            actingUnitId: acceptedBy === "psychiatric_ward" ? acceptingUnit?.id : undefined,
           })
         }
       >

@@ -1459,6 +1459,13 @@
       "after": 24,
       "reason": "The seven cases that rendered the old WardCatchmentResolver view go with the view (ward-catchment-resolver.tsx), which the Tools overhaul (#1316, Josh 2 Nov 2026) replaced with the shared SuburbLookupCard (D-91). Josh approved deleting the replaced pieces (Q353, and again on 3 Nov 2026). Five re-pointed at SuburbLookupCard in this file: opens empty and a quick pick answers, a postcode lists every suburb with Show more, a contested suburb names no single team and draws no team actions, Not found and an unfiled postcode, and Clear. Two dropped because the card has no such feature: the resolver's own heading and the Copy summary button (formatCatchmentSummary keeps its two engine cases here). The engine cases now import ward-catchment-query.ts directly. Under the per-file ceiling, so this is a record rather than a gate condition.",
       "approvedOn": "2026-11-03"
+    },
+    {
+      "path": "tests/ward-ci-budget-recheck.test.ts",
+      "before": 26,
+      "after": 0,
+      "reason": "Retired with the code it tested. Josh ruled to delete the switched-off budget recheck job (D-128 item 6, 10 Nov 2026), so .github/workflows/ward-flow-budget-recheck.yml and scripts/ward-ci-public/budget-recheck.mjs are deleted in the same change. The job had run with if: false, so these cases guarded nothing that ran. Budget prevention still lives in merge-latest-main.mjs and the production build's budget gate, tested by their own suites.",
+      "approvedOn": "2026-11-10"
     }
   ]
 }

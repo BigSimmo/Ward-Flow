@@ -180,6 +180,7 @@ describe("waitlistStands", () => {
       now: NOW_ANCHOR,
       movementId,
       unitId: unit.id,
+      actingUnitId: unit.id,
       reason: "no_suitable_bed",
     });
     const waitlisted = state.movements.find((movement) => movement.id === movementId)!;

@@ -299,6 +299,7 @@ export function PatientTransitOperations({
                       now,
                       movementId: movement.id,
                       unitId,
+                      ...(routeRole === "ward" ? { actingUnitId: unitId } : {}),
                       overrideReason: reason,
                     });
                   }
@@ -309,6 +310,7 @@ export function PatientTransitOperations({
                       now,
                       movementId: movement.id,
                       unitId,
+                      ...(routeRole === "ward" ? { actingUnitId: unitId } : {}),
                       overrideReason: reason,
                     });
                   }
@@ -409,6 +411,7 @@ export function PatientTransitOperations({
                             now,
                             movementId: movement.id,
                             unitId: unit.id,
+                            ...(routeRole === "ward" ? { actingUnitId: unit.id } : {}),
                           });
                         }}
                       >
@@ -567,6 +570,7 @@ export function PatientTransitOperations({
                       now,
                       movementId: movement.id,
                       unitId: destination.id,
+                      ...(routeRole === "ward" ? { actingUnitId: destination.id } : {}),
                     },
                     {
                       success: "Bed pulled",

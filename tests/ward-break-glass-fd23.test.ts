@@ -18,6 +18,7 @@ const state = wardFlowReducer(seed, {
   now: NOW_ANCHOR,
   movementId: target.id,
   unitId: declining,
+  actingUnitId: declining,
   reason: "no_suitable_bed",
 });
 // A ward the journey never touched.

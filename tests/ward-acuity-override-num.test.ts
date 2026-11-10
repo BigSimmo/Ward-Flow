@@ -115,6 +115,7 @@ function pull(
     now: PULL_NOW,
     movementId,
     unitId: UNIT_ID,
+    actingUnitId: UNIT_ID,
     overrideReason,
     numConsulted,
   });
@@ -150,6 +151,7 @@ describe("the high-acuity override needs both a reason and the nurse unit manage
       now: PULL_NOW,
       movementId: "WF-ACN-SECOND",
       unitId: UNIT_ID,
+      actingUnitId: UNIT_ID,
       // A plausible sentence that is not on the owner's list — the same discipline every other
       // override site in this reducer is held to.
       overrideReason: "Ward manager agreed on the phone" as never,

@@ -1,5 +1,7 @@
 // @ts-check
-// Phone push for new act-now (red) items. Off unless all three VAPID settings are present.
+// Phone push for three kinds of new item: act-now (red) rows, an officer's transport jobs and a
+// community team's updates, each in its own notification slot (tag). Off unless all three VAPID settings are
+// present.
 //
 // Lock screens are visible to anyone nearby, so a push carries a count, the hospital site and a
 // fixed page path only: never a patient name, UMRN, Ward Flow id, diagnosis, alert detail or

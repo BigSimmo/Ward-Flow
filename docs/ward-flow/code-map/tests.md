@@ -941,9 +941,9 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
   anything.
 - **The `chromium-mockups` project is advisory, and always was.** It is deliberately kept separate
   "so a red mockup can never mask a production-journey regression" (the config file's own
-  comment). A red here does not fail the production browser gate (`npm run verify:ui`), and — per
-  the top-level code map's Known Gaps section — nothing in routine CI runs it automatically; it is
-  reached only through the explicit `npm run test:e2e:ward-journeys` at fold time.
+  comment). `npm run verify:ui` runs only the Ward journeys `test:e2e:pr` names (the full journey and
+  the real phone-worker lane, M160, 10 Nov 2026); hosted PR CI runs every Ward journey through
+  `npm run test:e2e:ward-journeys` when the plan's browser flag is set.
 - **`scripts/check-ward-expected-reds.mjs` does not take the heavy-run lock** (deliberately, so a
   cached gate-receipt pass elsewhere cannot satisfy it) — running it at the same time as another
   heavy Vitest invocation in the same worktree risks resource contention neither run's own

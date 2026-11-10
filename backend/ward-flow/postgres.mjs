@@ -235,6 +235,10 @@ export function createWorkspaceStore(
     slowCommandMs = 500,
     retryAfterMs = 60_000,
     demoEvents = false,
+    // M113: the bootstrap coordinators at a time (auth.mjs `bootstrapCoordinators`), so a
+    // bootstrap account's archive and audit reads are re-checked under the lock as a membership
+    // is. The HTTP server always passes it; the store's own tests may leave it out.
+    bootstrapCoordinatorIds = /** @type {((atMs: number) => string[]) | null} */ (null),
   },
 ) {
   /**
@@ -1559,6 +1563,9 @@ export function createWorkspaceStore(
       return snapshot(row, now, current, undefined, client);
     });
   }
+  /** A signed-in bootstrap coordinator's view (no membership), once the server names the list. */
+  const bootstrapView = (view) =>
+    bootstrapCoordinatorIds !== null && typeof view?.actorId === "string" && !view.membershipId;
   /** Detail/history reads share the same authority boundary as a full scoped snapshot. */
   async function currentRecordRead(view, send, recordAccess = false) {
     return transaction(async (client, at) => {
@@ -1576,7 +1583,9 @@ export function createWorkspaceStore(
         current = await resolveViewer(view.actorId, { workingAs: view.membershipId }, client, at, view.version);
         if (current.status !== "ok") throw new Error("role-ended");
         Object.assign(view, current);
-      }
+      } else if (bootstrapView(view) && !bootstrapCoordinatorIds?.(at.getTime()).includes(view.actorId))
+        // M113: a bootstrap account past its end date, or taken off the list, stops here too.
+        throw new Error("role-ended");
       return send(client, at, current, row);
     });
   }
@@ -1881,6 +1890,33 @@ export function createWorkspaceStore(
       },
     });
     return rows[0];
+  }
+  /**
+   * M58: an opening or cover sent with a request key is done once, kept as a receipt beside the
+   * board's command receipts. A retry or double tap of the same request finds the first answer,
+   * so it adds no row and no audit line; the same key on a different request is refused.
+   */
+  const requestFingerprint = (value) =>
+    createHash("sha256")
+      .update(JSON.stringify(canonical(value)))
+      .digest("hex");
+  async function earlierAnswer(client, actorId, intentKey, fingerprint) {
+    if (intentKey === undefined) return null;
+    const { rows } = await client.query(
+      "SELECT fingerprint, status, result FROM ward_flow.commands WHERE workspace_id=$1 AND actor_id=$2 AND command_id=$3",
+      [workspaceId, actorId, intentKey],
+    );
+    if (!rows.length) return null;
+    if (rows[0].fingerprint !== fingerprint)
+      return { refusal: refused(422, "That request was already used for a different change.") };
+    return { result: rows[0].result };
+  }
+  async function keepAnswer(client, actorId, intentKey, fingerprint, result) {
+    if (intentKey === undefined) return;
+    await client.query(
+      "INSERT INTO ward_flow.commands(workspace_id, actor_id, command_id, fingerprint, status, result) VALUES ($1,$2,$3,$4,$5,$6)",
+      [workspaceId, actorId, intentKey, fingerprint, 200, { outcome: "accepted", ...result }],
+    );
   }
   /** Who may hear phone alerts as this desk: a whole-network bootstrap, or a role from 9 on. */
   function pushByRole(view) {
@@ -2325,8 +2361,26 @@ export function createWorkspaceStore(
       const shape = request.scope ? engine.coverAccess(request.scope) : null;
       const cover = shape ? engine.parseAccess(shape.role, request.scope) : null;
       if (!cover) return refused(400, "Cover is for one ward or one ED.");
+      const fingerprint = requestFingerprint({
+        kind: "cover",
+        membershipId: view.membershipId ?? null,
+        actorId: request.actorId,
+        scope: cover.scope,
+        minutes: request.minutes,
+      });
       return transaction(async (client, at) => {
         const row = await lock(client, view.actorId, at, view);
+        const earlier = await earlierAnswer(client, view.actorId, request.intentKey, fingerprint);
+        if (earlier?.refusal) return earlier.refusal;
+        if (earlier) {
+          const { rows: given } = await client.query(
+            "SELECT * FROM ward_flow.memberships WHERE id=$1 AND workspace_id=$2",
+            [earlier.result.membershipId, workspaceId],
+          );
+          return given.length
+            ? { status: 200, body: { membership: presentMembership(given[0], at) } }
+            : refused(409, "That cover was already given. Reload the list.");
+        }
         const giver = view.ownAccess === undefined ? view.access : view.ownAccess;
         if (!giver) return refused(403, "Cover cannot be passed on. Ask the ward's nurse in charge or a coordinator.");
         // D-80: only a colleague who already holds a ward or ED role, still in use, may be given cover.
@@ -2353,6 +2407,7 @@ export function createWorkspaceStore(
           at,
           "ACCESS_COVER",
         );
+        await keepAnswer(client, view.actorId, request.intentKey, fingerprint, { membershipId: given.id });
         return { status: 200, body: { membership: presentMembership(given, at) } };
       });
     },
@@ -2794,15 +2849,40 @@ export function createWorkspaceStore(
     /**
      * Opens one patient's record, read only, outside this desk's care for a set time, with a
      * reason. Each opening is kept as the "who looked" record and audited. More than the set
-     * number in one shift is marked as a pattern for the coordinator.
+     * number in one shift is marked as a pattern for the coordinator. `intentKey`: the browser's
+     * key for this one opening (M58), so a retry of it is not a second opening.
+     * @param {any} view @param {string} patientId @param {string} reason @param {string} [intentKey]
      */
-    async breakGlass(view, patientId, reason) {
+    async breakGlass(view, patientId, reason, intentKey = undefined) {
       if (!engine.BREAK_GLASS_REASON_IDS.includes(reason)) return refused(400, "A reason from the list is required.");
+      const fingerprint = requestFingerprint({
+        kind: "break-glass",
+        membershipId: view.membershipId ?? null,
+        patientId,
+        reason,
+      });
       return transaction(async (client, at) => {
         const row = await lock(client, view.actorId, at, view);
         const refusal = view.membershipId ? engine.breakGlassRefusal(row.payload, view.access, patientId, at) : null;
         if (refusal || !view.membershipId)
           return refused(422, refusal ?? "Opening a record outside your care is not part of your role.");
+        // M58: a retry of the same opening answers as the first did, with no second row or audit line.
+        const earlier = await earlierAnswer(client, view.actorId, intentKey, fingerprint);
+        if (earlier?.refusal) return earlier.refusal;
+        if (earlier) {
+          const kept = new Date(earlier.result.until);
+          if (!(kept > at)) return refused(409, "That opening has ended. Open the record again.");
+          const opened = { ...view, grants: [...view.grants, { patientId, until: kept }] };
+          await prepareReviewAuthority(client, row, opened);
+          return {
+            status: 200,
+            body: {
+              until: kept.toISOString(),
+              pattern: earlier.result.pattern === true,
+              snapshot: await snapshot(row, at, opened, undefined, client),
+            },
+          };
+        }
         const until = new Date(at.getTime() + engine.BREAK_GLASS_MINUTES * 60_000);
         await client.query(
           "INSERT INTO ward_flow.break_glass(workspace_id, actor_id, membership_id, patient_id, reason, opened_at, until) VALUES ($1,$2,$3,$4,$5,$6,$7)",
@@ -2815,6 +2895,7 @@ export function createWorkspaceStore(
         const pattern = rows[0].count > engine.BREAK_GLASS_PER_SHIFT;
         const revision = Number(row.revision);
         await audit(client, view, view.actorId, {
+          ...(intentKey === undefined ? {} : { commandId: intentKey }),
           action: "BREAK_GLASS",
           outcome: "accepted",
           priorRevision: revision,
@@ -2829,6 +2910,7 @@ export function createWorkspaceStore(
             openedAt: at.toISOString(),
           },
         });
+        await keepAnswer(client, view.actorId, intentKey, fingerprint, { until: until.toISOString(), pattern });
         const opened = { ...view, grants: [...view.grants, { patientId, until }] };
         await prepareReviewAuthority(client, row, opened);
         return {
@@ -3230,7 +3312,7 @@ export function createWorkspaceStore(
     store[name] = async (view, ...args) => {
       const originalScope = JSON.stringify(view?.access);
       const result = await readProtected(view, ...args);
-      if (!view?.membershipId) return result;
+      if (!view?.membershipId && !bootstrapView(view)) return result;
       return currentRecordRead(view, async (_client, _at, current) => {
         if (JSON.stringify(current.access) !== originalScope) throw new Error("role-ended");
         return result;

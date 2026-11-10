@@ -435,6 +435,7 @@ describe("ACCEPT_REFERRAL", () => {
       now: NOW,
       referralId: created.id,
       unitId: "scgh-adult-open",
+      actingUnitId: "scgh-adult-open",
     });
     expect(after.rejections, "a ward may accept a referral addressed to it since FD-25").toEqual([]);
     const decided = referral(after, created.id);
@@ -1247,6 +1248,7 @@ describe("a referral addressed to several destinations", () => {
       referralId: created.id,
       destinationKind: "psychiatric_ward",
       unitId: "scgh-adult-open",
+      actingUnitId: "scgh-adult-open",
     });
     expect(accepted.rejections).toEqual([]);
 
@@ -1290,6 +1292,7 @@ describe("a referral addressed to several destinations", () => {
       referralId: created.id,
       destinationKind: "psychiatric_ward",
       unitId: "scgh-adult-open",
+      actingUnitId: "scgh-adult-open",
     });
     const twice = wardFlowReducer(once, {
       type: "ACCEPT_REFERRAL",
@@ -1314,6 +1317,8 @@ describe("a referral addressed to several destinations", () => {
       now: NOW + 3,
       referralId: created.id,
       destinationKind: "psychiatric_ward",
+      unitId: "scgh-adult-open",
+      actingUnitId: "scgh-adult-open",
       reason: "no_suitable_bed",
     });
     expect(declined.rejections).toEqual([]);
@@ -1346,6 +1351,8 @@ describe("a referral addressed to several destinations", () => {
       now: NOW + 3,
       referralId: created.id,
       destinationKind: "psychiatric_ward",
+      unitId: "scgh-adult-open",
+      actingUnitId: "scgh-adult-open",
       reason: "no_suitable_bed",
     });
     const accepted = wardFlowReducer(declined, {
@@ -1403,7 +1410,7 @@ describe("a referral addressed to several destinations", () => {
     // And the ward arm still REQUIRES one, so this is not simply ignoring `unitId` everywhere.
     const missing = wardFlowReducer(after, {
       type: "ACCEPT_REFERRAL",
-      role: "ward",
+      role: "coordinator",
       now: NOW + 2,
       referralId: created.id,
       destinationKind: "psychiatric_ward",
@@ -1435,6 +1442,8 @@ describe("a referral addressed to several destinations", () => {
       now: NOW + 3,
       referralId: created.id,
       destinationKind: "psychiatric_ward",
+      unitId: "scgh-adult-open",
+      actingUnitId: "scgh-adult-open",
       reason: "no_suitable_bed",
     });
     expect(referralState(one.referrals.find((c) => c.id === created.id)!)).toBe("queued");
@@ -1492,6 +1501,7 @@ describe("a referral addressed to several destinations", () => {
         referralId: created.id,
         destinationKind: "psychiatric_ward",
         unitId: "scgh-adult-open",
+        actingUnitId: "scgh-adult-open",
       });
       expect(wardAlsoAccepts.rejections).toEqual([]);
       expect(referralState(wardAlsoAccepts.referrals.find((c) => c.id === created.id)!)).toBe("accepted");
@@ -1507,6 +1517,7 @@ describe("a referral addressed to several destinations", () => {
         referralId: created.id,
         destinationKind: "psychiatric_ward",
         unitId: "scgh-adult-open",
+        actingUnitId: "scgh-adult-open",
       });
       expect(wardAccepted.rejections).toEqual([]);
 

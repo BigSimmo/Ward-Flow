@@ -44,7 +44,14 @@ function acceptedAt(unitId: string, movementId: string): WardFlowState {
     movementId,
     unitIds: [unitId],
   });
-  state = wardFlowReducer(state, { type: "ACCEPT_IN_PRINCIPLE", role: "ward", now: NOW, movementId, unitId });
+  state = wardFlowReducer(state, {
+    type: "ACCEPT_IN_PRINCIPLE",
+    role: "ward",
+    now: NOW,
+    movementId,
+    unitId,
+    actingUnitId: unitId,
+  });
   return state;
 }
 
@@ -86,6 +93,7 @@ describe("a patient cannot be pulled to a bed that is not ready", () => {
       now: NOW,
       movementId: MOVEMENT,
       unitId: UNIT,
+      actingUnitId: UNIT,
     });
 
     expect(next.rejections).toHaveLength(0);
@@ -106,6 +114,7 @@ describe("a patient cannot be pulled to a bed that is not ready", () => {
       now: NOW,
       movementId: MOVEMENT,
       unitId: UNIT,
+      actingUnitId: UNIT,
     });
 
     expect(next.rejections).toHaveLength(1);
@@ -129,6 +138,7 @@ describe("a patient cannot be pulled to a bed that is not ready", () => {
       now: NOW,
       movementId: MOVEMENT,
       unitId: UNIT,
+      actingUnitId: UNIT,
     });
     const after = unitOf(next, UNIT);
 

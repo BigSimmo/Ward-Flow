@@ -89,6 +89,7 @@ function WorkflowHarness() {
             now,
             movementId: movement.id,
             unitId: "scgh-adult-open",
+            actingUnitId: "scgh-adult-open",
           })
         }
       >
@@ -96,7 +97,14 @@ function WorkflowHarness() {
       </button>
       <button
         onClick={() =>
-          dispatch({ type: "PULL_PATIENT", role: "ward", now, movementId: movement.id, unitId: "scgh-adult-open" })
+          dispatch({
+            type: "PULL_PATIENT",
+            role: "ward",
+            now,
+            movementId: movement.id,
+            unitId: "scgh-adult-open",
+            actingUnitId: "scgh-adult-open",
+          })
         }
       >
         pull
@@ -204,7 +212,14 @@ describe("record preview shares current bed hold truth", () => {
     });
     const movementId = state.movements.at(-1)!.id;
     send({ type: "REFER_TO_UNITS", role: "coordinator", now: NOW_ANCHOR, movementId, unitIds: ["scgh-adult-open"] });
-    send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", now: NOW_ANCHOR, movementId, unitId: "scgh-adult-open" });
+    send({
+      type: "ACCEPT_IN_PRINCIPLE",
+      role: "ward",
+      now: NOW_ANCHOR,
+      movementId,
+      unitId: "scgh-adult-open",
+      actingUnitId: "scgh-adult-open",
+    });
     const { rerender } = render(
       <RecordPreview
         selection={{ kind: "person", patient }}
@@ -219,7 +234,14 @@ describe("record preview shares current bed hold truth", () => {
     );
     expect(screen.getByTestId("ward-patient-search-preview")).toHaveTextContent("Accepted, awaiting bed");
     expect(screen.getByTestId("ward-patient-search-preview")).not.toHaveTextContent("Bed pulled");
-    send({ type: "PULL_PATIENT", role: "ward", now: NOW_ANCHOR, movementId, unitId: "scgh-adult-open" });
+    send({
+      type: "PULL_PATIENT",
+      role: "ward",
+      now: NOW_ANCHOR,
+      movementId,
+      unitId: "scgh-adult-open",
+      actingUnitId: "scgh-adult-open",
+    });
     rerender(
       <RecordPreview
         selection={{ kind: "person", patient }}

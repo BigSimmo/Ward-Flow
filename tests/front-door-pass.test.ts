@@ -12,7 +12,7 @@ import {
   safeNextPath,
   verifyPass,
 } from "@/lib/front-door-pass";
-import { edgeAddress, resetWrongTriesForTests } from "@/lib/demo-code-tries";
+import { edgeAddress, reserveDemoTry, resetWrongTriesForTests } from "@/lib/demo-code-tries";
 import { frontDoorVerdict } from "../src/proxy";
 
 // Synthetic secrets only: these values exist for this test file.
@@ -467,6 +467,26 @@ describe("POST /api/session", () => {
     for (let attempt = 0; attempt < 9; attempt += 1)
       expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.61"))).status).toBe(429);
     expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.61"))).status).toBe(429);
+  });
+
+  it("checks the code before a full address table refuses, so the right code from a new address opens (M53)", async () => {
+    vi.stubEnv("WARD_FRONT_DOOR", "required");
+    vi.stubEnv("WARD_PASS_SECRET", SECRET);
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
+    // Fill the 5,000-address table with wrong tries 9.5 minutes ago, so each is still counted while
+    // the 200-try window across all addresses (opened by an earlier try) has already passed.
+    const opened = Date.now() - 10.5 * 60_000;
+    const first = reserveDemoTry("10.9.9.9", opened);
+    const address = (index: number) => `10.${index >> 16}.${(index >> 8) & 255}.${index & 255}`;
+    for (let index = 0; index < 4_999; index += 1)
+      expect(reserveDemoTry(address(index), opened + 60_000)).not.toBeNull();
+    first?.release();
+    expect(reserveDemoTry(address(4_999), opened + 60_000)).not.toBeNull();
+    expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.70"))).status).toBe(204);
+    // The table being full still pauses a wrong code from a new address, without forgetting anyone.
+    expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.71"))).status).toBe(429);
+    expect(reserveDemoTry(address(0), Date.now())).toMatchObject({ overCap: false });
   });
 
   it("never opens the signed-in site with a demo code", async () => {

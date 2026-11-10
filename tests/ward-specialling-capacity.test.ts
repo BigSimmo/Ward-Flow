@@ -252,6 +252,7 @@ function pull(
     now: NOW,
     movementId,
     unitId: UNIT_ID,
+    actingUnitId: UNIT_ID,
     overrideReason,
   });
 }

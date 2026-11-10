@@ -986,6 +986,39 @@ test("M162: the maximum world byte boundary accepts equality and refuses one jso
   }
 });
 
+test("the 8 MiB cap counts UTF-8 bytes, so accented text under it in characters is still refused (M162)", async () => {
+  const limit = 8_388_608;
+  const seed = engine.seedWorld(start);
+  const world = { ...seed, state: { ...seed.state, syntheticSizeProbe: "" } };
+  const unit = world.state.units[0];
+  const base = engine.applyCommand(world, refresh(unit.id), start).world;
+  // "é" is one character but two bytes: a world just under the cap in characters, well over in bytes.
+  world.state.syntheticSizeProbe = "é".repeat(limit - JSON.stringify(base).length);
+  const expected = engine.applyCommand(world, refresh(unit.id), start).world;
+  assert.equal(JSON.stringify(expected).length, limit);
+  assert.ok(Buffer.byteLength(JSON.stringify(expected), "utf8") > limit);
+  const { store, db } = storeFor(world, {
+    engine: { ...engine, archiveClosed: (value) => ({ world: value, archived: [] }) },
+  });
+  await store.viewer(actorId, {}).catch(() => {});
+  const first = await store.read(actorId);
+  await assert.rejects(
+    store.command(actorId, crypto.randomUUID(), first.revision, refresh(unit.id), { revisionOnly: true }),
+    { name: "WorkspaceTooLargeError" },
+  );
+  assert.equal(db.revision, first.revision);
+});
+
+test("the byte count matches the native JSON's UTF-8 length for accented, emoji and escaped text (M162)", () => {
+  for (const value of [
+    "é😀\u0000",
+    { name: "Zoë Ngā", note: ["café", "naïve", "\ud800", "x".repeat(40_000) + "ü"] },
+    { clé: "é".repeat(20_000) + "😀".repeat(9_000) },
+    [1, true, null, -0, 1e21, undefined, "Ōtautahi"],
+  ])
+    assert.equal(jsonByteLength(value), Buffer.byteLength(JSON.stringify(value), "utf8"));
+});
+
 test("PS-12 and PS-02: one size measurement per save; past the threshold the short window and a limited alert", async () => {
   const world = engine.seedWorld(start);
   const units = world.state.units.map((unit) => unit.id);

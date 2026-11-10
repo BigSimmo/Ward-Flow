@@ -5,8 +5,7 @@
  *
  * Main has no merge queue and the ruleset does not require branches to be up to date, so two PRs
  * that each fit the budget alone could otherwise land together over it. This step makes every
- * measurement current; `.github/workflows/ward-flow-budget-recheck.yml` re-runs it on armed PRs
- * whenever main moves. A conflict with main fails the build: the PR must merge main first.
+ * measurement current. A conflict with main fails the build: the PR must merge main first.
  */
 import { execFileSync } from "node:child_process";
 import { appendFileSync } from "node:fs";

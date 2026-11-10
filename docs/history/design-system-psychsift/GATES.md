@@ -98,6 +98,11 @@ ESLint and wrong about enforcement, which is the more expensive error of the two
 30 July **[verified: package.json]**. They are hard-zero gates with no baseline, unlike the
 ratcheting design-system contract.
 
+⚠️ **Corrected 10 Nov 2026 (M109, Ward Flow).** In the Ward Flow repository neither script was in
+`verify:cheap` or any CI job: both had a `package.json` entry and no caller. They now run in the
+unit suite through `tests/type-and-icon-scale-gates.test.ts`, which runs each with `--strict` on
+the real `src` tree and proves each still fails on a fixture.
+
 **Enforced:** arbitrary font-size and icon-size utilities (`text-[12px]`, `text-[1.45rem]`)
 fail the build. `text-[color:var(--…)]` is the sanctioned token form and is deliberately not
 flagged.

@@ -159,6 +159,7 @@ describe("Advanced clinical coordination features & behaviors", () => {
         now,
         movementId: movement.id,
         cleared: true,
+        actingPlaceId: movement.originEdId,
       });
 
       const updatedMovement = result.movements.find((m) => m.id === movement.id)!;

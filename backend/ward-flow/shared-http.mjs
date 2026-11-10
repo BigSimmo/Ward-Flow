@@ -592,11 +592,20 @@ export function createSharedHandler({
       if (path.startsWith("/v1/workspace/access/") || path === "/v1/workspace/break-glass") {
         const { body, refusal } = await json();
         if (refusal) return refusal;
+        // M58: an opening or cover may carry the browser's key for that one intent, so a retry is not done twice.
+        // (`requestId` on /access/decide is the access request answered, not this key.)
+        const keyed = path === "/v1/workspace/break-glass" || path === "/v1/workspace/access/cover";
+        if (keyed && body?.intentKey !== undefined && !UUID.test(body.intentKey))
+          return reply(400, { error: "The request key is not valid" });
+        const intentKey = keyed && body?.intentKey !== undefined ? body.intentKey.toLowerCase() : undefined;
         let result;
         if (path === "/v1/workspace/break-glass") {
           if (typeof body?.patientId !== "string" || body.patientId.length > 100)
             return reply(400, { error: "A patient is required" });
-          result = await store.breakGlass(view, body.patientId, body.reason);
+          result =
+            intentKey === undefined
+              ? await store.breakGlass(view, body.patientId, body.reason)
+              : await store.breakGlass(view, body.patientId, body.reason, intentKey);
         } else if (path === "/v1/workspace/access/grant") {
           const expiresAt = requestedAccessEnd(body);
           if (
@@ -624,6 +633,7 @@ export function createSharedHandler({
             actorId: body.actorId.toLowerCase(),
             scope: body.scope,
             minutes: body.minutes,
+            ...(intentKey === undefined ? {} : { intentKey }),
           });
         } else if (path === "/v1/workspace/access/decide") {
           const expiresAt = requestedAccessEnd(body);

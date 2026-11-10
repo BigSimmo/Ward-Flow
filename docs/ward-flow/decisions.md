@@ -150,6 +150,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-125](#d-125-top-10-audit-follow-ups-approved-10-november-2026)                                                                                       | Top 10 audit follow-ups: refusal toast, sign-out waits, executive report, ranked lists | Active                                           |
 | [D-126](#d-126-ranked-lists-neutral-orders-approved-10-november-2026)                                                                                   | Ranked lists: neutral orders on 11 lists, lists 9 and 12 kept                          | Active                                           |
 | [D-127](#d-127-neutral-wording-for-a-community-treatment-order-at-arrival-10-november-2026)                                                             | Neutral wording for a community treatment order at arrival                             | Active                                           |
+| [D-128](#d-128-final-master-audit-nine-answers-10-november-2026)                                                                                        | Final master audit: nine answers                                                       | Active                                           |
 
 ---
 
@@ -1587,3 +1588,18 @@ is inferred.
 - **Decision:** when a person on Form 5A or 5B (a community treatment order) arrives on the ward, screens no longer say the form "ended at arrival". They say "On Form 5A at arrival; Form 6A to record" (or 5B), and short rows say "On this form at arrival". The "Record Form 6A" prompt from D-123 stays. Other forms that move on at arrival (for example 4C) still say "ended at arrival", and any form followed by an inpatient order at examination still says "ended at the examination". The arrival record keeps hiding the form's typed expiry exactly as before.
 - **Why:** arrival on the ward does not by itself end a community treatment order, so "ended" overstated the legal position.
 - **Boundary:** wording only; no timing, count or prompt changes. Synthetic data only. Approves no release.
+
+## D-128. Final master audit: nine answers (10 November 2026)
+
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, answering yes to all nine questions in the final master audit thread. Numbered D-128 because D-123 to D-127 were taken by PRs #1591 and #1593, merged first.
+- **Decision:**
+  1. **Legal-form continuation:** only the accepted ward and the coordinator may record a legal-form continuation.
+  2. **ED spreadsheet export:** says "Not recorded" when no form exists.
+  3. **Handover:** stays non-blocking. The outstanding search, medication chart and legal-form list shows beside the Handover button.
+  4. **Transport identity tick:** stays optional while the data is synthetic. It is decided with the clinical sponsor before real data.
+  5. **Acting-ward check:** is strict.
+  6. **Budget recheck job:** delete the switched-off budget recheck job. The dead-code check refused its script's exports (common names, file under 30 days old), so Josh approved one owner override run on a decision card the same day.
+  7. **CodeQL:** add CodeQL code scanning, failing only on new findings (ones a pull request introduces).
+  8. **Accessibility:** moderate accessibility findings stay non-blocking; serious and critical still block.
+  9. **New features:** none from the proposed list until #1564 to #1577 close.
+- **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge or release.

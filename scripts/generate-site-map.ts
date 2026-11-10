@@ -43,6 +43,7 @@ const publicRouteHandlerDescriptions: Record<string, string> = {
 };
 
 const apiDescriptions: Record<string, string> = {
+  "/api/client-error": "Name-free browser error counts (TE-04).",
   "/api/health": "Railway deployment healthcheck.",
   "/api/local-project-id": "Local project identity guard.",
 };
