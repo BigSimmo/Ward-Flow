@@ -143,6 +143,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-118](#d-118-page-tops-referrals-and-ward-phone-limits-up-to-8-kb-above-main-10-november-2026)                                                        | Page tops: Referrals and Ward phone limits up to 8 KB above main                     | Active                                           |
 | [D-119](#d-119-page-tops-phone-limits-raised-to-measured-sizes-trim-after-merge-10-november-2026)                                                       | Page tops: phone limits at measured sizes, trim after merge                          | Active                                           |
 | [D-120](#d-120-discharge-and-capacity-values-pull-limit-transport-delay-and-discharge-date-slip-9-november-2026)                                        | Discharge and capacity values: pull limit, transport delay, date slip                | Active                                           |
+| [D-124](#d-124-final-master-audit-nine-answers-10-november-2026)                                                                                        | Final master audit: nine answers                                                     | Active                                           |
 
 ---
 
@@ -1494,3 +1495,18 @@ is inferred.
   2. **Transport delay:** a transport job not accepted within 30 minutes shows as delayed (feature 25, `transportAcceptDelay`).
   3. **Discharge date slip:** a stay whose expected discharge date has moved more than 3 days is flagged as slipping (feature 6, `eddSlipFlag`).
 - **Boundary:** synthetic data only. Sets these three values; approves no merge or release.
+
+## D-124. Final master audit: nine answers (10 November 2026)
+
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, answering yes to all nine questions in the final master audit thread. Numbered D-124 because D-121 to D-123 are claimed elsewhere.
+- **Decision:**
+  1. **Legal-form continuation:** only the accepted ward and the coordinator may record a legal-form continuation.
+  2. **ED spreadsheet export:** says "Not recorded" when no form exists.
+  3. **Handover:** stays non-blocking. The outstanding search, medication chart and legal-form list shows beside the Handover button.
+  4. **Transport identity tick:** stays optional while the data is synthetic. It is decided with the clinical sponsor before real data.
+  5. **Acting-ward check:** is strict.
+  6. **Budget recheck job:** delete the switched-off budget recheck job.
+  7. **CodeQL:** add CodeQL code scanning, failing only on new findings (ones a pull request introduces).
+  8. **Accessibility:** moderate accessibility findings stay non-blocking; serious and critical still block.
+  9. **New features:** none from the proposed list until #1564 to #1577 close.
+- **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge or release.
