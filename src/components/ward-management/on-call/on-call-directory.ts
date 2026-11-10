@@ -92,7 +92,20 @@ export type DirectoryEntry = {
   checkedBy: WardFlowRole;
   /** True when a line's hours come from the on-call roster. */
   rostered: boolean;
+  /**
+   * Escalation calls (item 3, D-133): the desk that fixes this entry when its number is stale. A
+   * role, never a person: a site's own lines are its site bed manager's, a community team's are the
+   * team's, and service-wide and statewide lines are the bed coordinator's. Shown quietly on the card.
+   */
+  ownerRole: WardFlowRole;
 };
+
+/** The desk that keeps an entry up to date (D-133), from where the entry sits in the directory. */
+export function directoryOwnerRole(entry: Pick<DirectoryEntry, "section" | "siteCode">): WardFlowRole {
+  if (entry.section === "community") return "community";
+  if (entry.section === "hospitals" && entry.siteCode) return "bed_manager";
+  return "coordinator";
+}
 
 // Defined beside the check engine so the shared engine never loads this directory.
 export { CHECK_DUE_DAYS } from "./on-call-checks";
@@ -227,7 +240,7 @@ export function buildOnCallDirectory(sites: readonly Site[] = wardSites): Direct
   const add = (
     entry: Omit<
       DirectoryEntry,
-      "checkedDaysAgo" | "checkedBy" | "email" | "emailWindow" | "sendWith" | "note" | "rostered"
+      "checkedDaysAgo" | "checkedBy" | "email" | "emailWindow" | "sendWith" | "note" | "rostered" | "ownerRole"
     > &
       Partial<Pick<DirectoryEntry, "email" | "emailWindow" | "sendWith" | "note" | "rostered">>,
   ) => {
@@ -240,6 +253,7 @@ export function buildOnCallDirectory(sites: readonly Site[] = wardSites): Direct
       ...entry,
       checkedDaysAgo: (hash(`${entry.id}c`) % 52) + 1,
       checkedBy: SEEDED_CHECKERS[hash(`${entry.id}b`) % SEEDED_CHECKERS.length]!,
+      ownerRole: directoryOwnerRole(entry),
     });
   };
 

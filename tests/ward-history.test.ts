@@ -68,8 +68,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // RECORD_TRIBUNAL_OUTCOME and SET_CULTURAL_SUPPORT_REQUEST.
       // Review tracker and wait list (9 Nov 2026) add REQUEST_PSYCH_REVIEW, RECORD_PSYCH_REVIEW_SEEN
       // and MARK_WARD_READY_FOR_NEXT. Staff needed (9 Nov 2026) adds REQUEST_WARD_STAFF and
-      // CLOSE_WARD_STAFF_REQUEST.
-      expect(allEventTypes.length).toBe(193);
+      // CLOSE_WARD_STAFF_REQUEST. Escalation calls (item 3, D-133) add RECORD_ESCALATION_CALL.
+      expect(allEventTypes.length).toBe(194);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

@@ -29,6 +29,7 @@ import { alternativesConsideredError } from "./referrals/referral-alternatives";
 import { REFERRAL_INFORMATION_NEED_IDS } from "./referrals/referral-information-needs";
 import { REFERRAL_CONTACT_OUTCOME_IDS, REFERRAL_OWNER_DESKS } from "./referrals/referral-owner-and-calls";
 import { REFERRAL_COMMITMENT_STEP_IDS } from "./referrals/referral-commitments";
+import { storedEscalationCalls } from "./escalation/escalation-calls-schema";
 import {
   MOVEMENT_STAGES,
   COHORTS,
@@ -182,6 +183,7 @@ const NESTED_KEY_RULES = new Map<string, z.ZodMiniType>([
   ["medicalClearance", medicalClearanceRule],
   ["transportNeed", z.looseObject({ needed: bool, at: finite })],
   ["psychReview", z.strictObject({ requestedAt: finite, registrarSeenAt: maybeAt, consultantSeenAt: maybeAt })],
+  ["escalationCalls", storedEscalationCalls], // Escalation calls (D-133): fixed lists, a time and a desk.
   ["closure", closureRule],
   ...[
     "legalClock",

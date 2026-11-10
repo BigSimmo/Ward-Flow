@@ -143,6 +143,10 @@ import {
   RETURN_PREREQUISITES,
 } from "@/components/ward-management/out-of-area/home-service-return";
 import { buildOnCallDirectory } from "@/components/ward-management/on-call/on-call-directory";
+import {
+  ESCALATION_CALL_OUTCOMES,
+  ESCALATION_STEP_ROLE,
+} from "@/components/ward-management/escalation/escalation-calls";
 
 /** mulberry32: a tiny, well-mixed 32-bit generator. Same seed, same sequence, on every machine. */
 export function seededRandom(seed: number) {
@@ -1805,6 +1809,18 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       (movement) => movement.psychReview !== undefined,
       (_state, random) => ({ grade: pick(random, ["registrar", "consultant"] as const) }),
     ),
+  ],
+  // Escalation calls (item 3, D-133).
+  [
+    1,
+    movementEvent("RECORD_ESCALATION_CALL", undefined, (_state, random) => {
+      const step = pick(random, [1, 2, 3, 4] as const)!;
+      return {
+        step,
+        roleCalled: ESCALATION_STEP_ROLE[step],
+        outcome: pick(random, ESCALATION_CALL_OUTCOMES),
+      };
+    }),
   ],
   [1, movementEvent("CLEAR_MOVEMENT_URGENT_FLAG", (movement) => Boolean(movement.flaggedUrgent))],
   [1, movementEvent("RECORD_MOVEMENT_BLOCKER", undefined, () => ({ blocker: SYNTHETIC_NOTE }))],

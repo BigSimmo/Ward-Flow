@@ -950,6 +950,12 @@ export type Movement = MovementBase & {
    */
   psychReview?: PsychReview;
   /**
+   * Escalation calls (item 3, D-133): the latest recorded call per ED wait step, with its fixed
+   * outcome, time and desk (`RECORD_ESCALATION_CALL`). Never a person, never typed text. The queue
+   * order, the steps and their hours do not read it.
+   */
+  escalationCalls?: import("@/components/ward-management/escalation/escalation-calls").EscalationCallRecord[];
+  /**
    * Earlier examination records this movement has outgrown, oldest first. Owner item 7
    * (2026-09-17): a repeat examination is a NEW record, not an edit to the old one, so the
    * superseded record is kept rather than overwritten. Populated only when the CURRENT

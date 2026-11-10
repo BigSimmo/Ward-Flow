@@ -18,7 +18,7 @@ and the reducer still limit each desk to records in its own place.
 | Backend  | `deskCommand`, the role clause of `validSharedCommand` and `commandRefusal` (`backend/ward-flow/engine.ts`); no role is refused 403 in `shared-http.mjs`                                 | Called per cell                                     |
 | Database | Row level security policies and grants in `backend/ward-flow/migrations/` and `infra/`                                                                                                   | SQL read as text                                    |
 
-**193 actions x 10 desks = 1930 cells.**
+**194 actions x 10 desks = 1940 cells.**
 
 ## Matrix
 
@@ -114,6 +114,7 @@ and the reducer still limit each desk to records in its own place.
 | `RECORD_ED_OUTCOME`                         |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_ED_PRESENTATION`                    |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_ESCALATION`                         |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
+| `RECORD_ESCALATION_CALL`                    |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_EXAMINATION`                        |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_FOLLOW_UP_REPLY`                    |            Y            |             Y             |         -         |     -     |        -         |      -       |       Y        |     -     |      -       |    -    |
 | `RECORD_HANDOVER_SIGN_OFF`                  |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |

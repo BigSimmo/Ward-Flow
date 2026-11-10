@@ -560,6 +560,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // Psychiatry review tracker and ward wait list (Josh, 9 Nov 2026).
   REQUEST_PSYCH_REVIEW: ["ed", "coordinator"],
   RECORD_PSYCH_REVIEW_SEEN: ["ed", "coordinator"],
+  // Escalation calls (item 3, D-133): the ED and the coordinator record who they called and what happened.
+  RECORD_ESCALATION_CALL: ["ed", "coordinator"],
   MARK_WARD_READY_FOR_NEXT: ["ward", "coordinator"],
   RAISE_EXPECT_FLAG: ["ward", "coordinator", "ed", "community"],
   FLAG_LEGAL_MISMATCH: ["ward", "coordinator"],

@@ -684,6 +684,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // Staff needed (feature 10): a ward asks for staff, and the request is closed. Nobody is refused.
     REQUEST_WARD_STAFF: false,
     CLOSE_WARD_STAFF_REQUEST: false,
+    // Escalation calls (item 3, D-133): records who was called and what happened. Not a refusal.
+    RECORD_ESCALATION_CALL: false,
     // Out of area "Flag early" (3 Nov 2026): records that a return may come sooner. Not a refusal.
     FLAG_RETURN_EARLY: false,
     SET_DISCHARGE_BARRIER: false,

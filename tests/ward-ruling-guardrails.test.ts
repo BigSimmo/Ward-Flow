@@ -15,6 +15,7 @@ import { describe, expect, it } from "vitest";
  * - D-71: no ranked or suggested wards, beds or patients.
  * - D-72 item 2: the downtime pack is print or saved file only; no board data kept in the browser.
  * - R-2026-09-04-A: risk flags (and diagnosis and medication) stay off the patient record.
+ * - D-108: the ED wait steps keep their signed-off wording and hours; escalation calls add no clock.
  */
 
 const ROOT = process.cwd();
@@ -45,6 +46,14 @@ const GUARDS: Guard[] = [
     source: "docs/history/archive/dated-notes/owner-rulings-2026-09-04.md",
     entry: /^#+ R-2026-09-04-A\b/mu,
     guards: ["tests/ward-patient-model.test.ts"],
+  },
+  // Escalation calls (item 3, D-133) build on D-108's ED wait steps: the step wording and hours stay
+  // as signed off, and a recorded call adds no clock, countdown or overdue colour.
+  {
+    ruling: "D-108",
+    source: "docs/ward-flow/decisions.md",
+    entry: /^## D-108\. /mu,
+    guards: ["tests/ward-escalation-calls.test.ts"],
   },
 ];
 

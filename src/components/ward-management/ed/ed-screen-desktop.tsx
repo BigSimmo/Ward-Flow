@@ -19,6 +19,10 @@ import {
 import { noFormWords as formNotHeldWords } from "@/components/ward-management/ward-legal-status";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edWaitStep } from "@/components/ward-management/ward-ed-wait-steps";
+import {
+  EscalationLastOutcome,
+  EscalationStepCall,
+} from "@/components/ward-management/escalation/escalation-step-call";
 import { buttonClass, StatusGlyph } from "@/components/wf";
 import { CardSafetyTagsLazy as CardSafetyTags } from "@/components/ward-management/patients/card-safety-tags-lazy";
 import { EdActionsMenu } from "./ed-board-controls";
@@ -282,6 +286,7 @@ export function renderEdBoardTableRow(
             title={edWaitStep(minutesInDepartment)?.label}
           >
             Step {edWaitStep(minutesInDepartment)?.step}
+            <EscalationLastOutcome movement={movement} step={edWaitStep(minutesInDepartment)!.step} now={now} />
           </span>
         ) : null}
         {/* Six features build (Josh's sign-off, 9 Nov 2026): the step's suggested next step, as a prompt. */}
@@ -294,6 +299,16 @@ export function renderEdBoardTableRow(
             <span aria-hidden="true">{edWaitStep(minutesInDepartment)?.nextStepShort}</span>
             <span className="sr-only">Suggested next step: {edWaitStep(minutesInDepartment)?.nextStep}</span>
           </span>
+        ) : null}
+        {/* Escalation calls (item 3, D-133): who to call at this step, and what happened. */}
+        {edWaitStep(minutesInDepartment) ? (
+          <EscalationStepCall
+            movement={movement}
+            step={edWaitStep(minutesInDepartment)!.step}
+            minutesInDepartment={minutesInDepartment}
+            patientName={patientInfo.formalName}
+            now={now}
+          />
         ) : null}
         <span
           className={overTarget ? handover.overTarget : "sr-only"}

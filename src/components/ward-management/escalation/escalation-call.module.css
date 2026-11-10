@@ -1,0 +1,69 @@
+/* Escalation calls (item 3, D-133): who to call at an ED wait step and what happened. */
+.checked {
+  grid-column: 1 / -1;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1);
+  font: 400 var(--wf-fs-12) / 1.4 var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.note {
+  grid-column: 1 / -1;
+  font: 600 var(--wf-fs-12) / 1.4 var(--wf-font);
+  color: var(--wf-warning-ink);
+}
+
+.outcomes {
+  margin-top: var(--wf-s-3);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.head {
+  margin: 0;
+  font: 600 var(--wf-fs-14) / 1.3 var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.last {
+  margin: var(--wf-s-1) 0 var(--wf-s-2);
+  font: 400 var(--wf-fs-13) / 1.4 var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+/* The row's quiet "Who to call" link and the last outcome beside the step. */
+.trigger {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  min-height: var(--wf-target);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.lastOutcome {
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+@media (max-width: 46.4375rem) {
+  .trigger {
+    min-height: 40px;
+  }
+}

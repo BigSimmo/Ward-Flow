@@ -163,8 +163,7 @@ import {
   type Admission,
   type PlannedAdmission,
 } from "@/components/ward-management/ward-admissions";
-import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
-import type { Patient } from "@/components/ward-management/ward-patients";
+import { activeCommunityTreatmentOrder, type Patient } from "@/components/ward-management/ward-patients";
 import { combineWardPatients } from "@/components/ward-management/ward-patients-seed";
 import {
   generatedOccupantPatients,
@@ -2213,6 +2212,7 @@ export function reduceClinicalEvent(
       return replaceMovement(state, movement.id, updated);
     }
 
+    case "RECORD_ESCALATION_CALL": // Escalation calls (item 3, D-133), forwarded on to escalation-calls.ts.
     case "REQUEST_PSYCH_REVIEW":
     case "RECORD_PSYCH_REVIEW_SEEN":
     case "MARK_WARD_READY_FOR_NEXT":

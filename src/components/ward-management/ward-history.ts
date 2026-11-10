@@ -134,6 +134,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   RAISE_EXPECT_FLAG: { category: "patient", plainWording: "Expected patient flag raised" },
   REQUEST_PSYCH_REVIEW: { category: "patient", plainWording: "Psychiatric review asked for" },
   RECORD_PSYCH_REVIEW_SEEN: { category: "patient", plainWording: "Psychiatric review seen" },
+  RECORD_ESCALATION_CALL: { category: "patient", plainWording: "Escalation call recorded" },
   FLAG_LEGAL_MISMATCH: { category: "patient", plainWording: "Statutory placement mismatch flagged" },
 
   // 2.5 Capacity and bed release

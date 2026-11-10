@@ -784,6 +784,16 @@ function candidatesForMovements(
       return movementIds.flatMap((movementId) =>
         (["registrar", "consultant"] as const).map((grade) => ({ type, role, now, movementId, grade })),
       );
+    case "RECORD_ESCALATION_CALL":
+      return movementIds.map((movementId) => ({
+        type,
+        role,
+        now,
+        movementId,
+        step: 2,
+        roleCalled: "site_bed_manager",
+        outcome: "no_answer",
+      }));
     case "RAISE_EXPECT_FLAG":
       return movementIds.map((movementId) => ({ type, role, now, movementId, kind: "voluntary_48h" }));
     case "FLAG_LEGAL_MISMATCH":

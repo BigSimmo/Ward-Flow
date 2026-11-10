@@ -489,6 +489,7 @@ describe("who may raise which event", () => {
     CLEAR_EXPECT_FLAG: ["ward", "coordinator", "ed", "community"],
     REQUEST_PSYCH_REVIEW: ["ed", "coordinator"],
     RECORD_PSYCH_REVIEW_SEEN: ["ed", "coordinator"],
+    RECORD_ESCALATION_CALL: ["ed", "coordinator"],
     MARK_WARD_READY_FOR_NEXT: ["ward", "coordinator"],
     RAISE_EXPECT_FLAG: ["ward", "coordinator", "ed", "community"],
     FLAG_LEGAL_MISMATCH: ["ward", "coordinator"],
