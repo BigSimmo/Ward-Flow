@@ -5,7 +5,7 @@
 
 See also [`site-map.md`](../site-map.md), the full list of app routes.
 
-**70 mockups · 61 routes · 44 screen folders.**
+**70 mockups · 62 routes · 45 screen folders.**
 
 ⚠️ The PAIRING is hand-authored — no rule derives that `command-third-edition.html` is route `/`.
 **COMPLETENESS is not**: everything is discovered from disk, so a new or renamed file shows up as
@@ -96,7 +96,7 @@ UNMAPPED rather than disappearing.
 
 ## What the checks found
 
-### ⚠️ ROUTE WITH NO MOCKUP — undrawn, or needs an entry — 26
+### ⚠️ ROUTE WITH NO MOCKUP — undrawn, or needs an entry — 27
 
 - `/activity`
 - `/bed-meeting`
@@ -110,6 +110,7 @@ UNMAPPED rather than disappearing.
 - `/exceptions`
 - `/help`
 - `/hub/catchments`
+- `/leave`
 - `/movements/[movementId]`
 - `/people/[patientId]/triage`
 - `/queue`

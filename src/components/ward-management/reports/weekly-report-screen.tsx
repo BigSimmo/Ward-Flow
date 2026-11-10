@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { CalendarDays, Printer } from "lucide-react";
 
 import { Button, HeroStat, Menu, SrOnly, buttonClass, useIsPhone } from "@/components/wf";
@@ -11,6 +11,8 @@ import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { ShortLabel } from "@/components/ward-management/statistics/redesign/statistics-redesign-parts";
 import { WeeklyBody } from "@/components/ward-management/statistics/redesign/statistics-redesign-weekly";
+import { DelayedReasonsCard } from "@/components/ward-management/statistics/redesign/statistics-redesign-delayed-reasons";
+import { delayedBedDaysByReason } from "@/components/ward-management/ward-delayed-discharge";
 import { dateOf } from "../statistics/statistics-dates";
 import { StatisticsHero, useStatisticsLive } from "../statistics/statistics-hero";
 
@@ -26,6 +28,8 @@ import {
 import { useOperationalPilot, usePilotFigures, type WeeklyPilot } from "./pilot-measures-section";
 import { reportWeek, weeklyOperationsReport, type WeeklyReport, type ReportWeek } from "./weekly-report";
 import { useOwnUnits } from "./use-own-units";
+import { WeeklyDelayHeatmap, preloadWeeklyDelayHeatmap } from "./weekly-delay-heatmap-lazy";
+import { createReadmissionIndex, readmissionsArrivedIn } from "@/components/ward-management/ward-readmission";
 import styles from "./reports.module.css";
 import weekly from "./weekly-report.module.css";
 
@@ -151,6 +155,7 @@ function OperationalWeeklyReport({ offset, setOffset }: WeekPicker) {
   const { movements, referrals, admissions, patients, bedReleases, leaveBeds, configuration, dayZero } = state;
   // Beds are the desk's own wards only (issue #628), so its occupancy is its stays over its beds.
   const units = useOwnUnits(state.units);
+  useEffect(preloadWeeklyDelayHeatmap, []);
 
   const week = useMemo(() => reportWeek(offset, now, dayZero), [offset, now, dayZero]);
   const pilot = useOperationalPilot(
@@ -195,6 +200,29 @@ function OperationalWeeklyReport({ offset, setOffset }: WeekPicker) {
       week,
     ],
   );
+  // Item 5: delayed bed days by reason, the desk's own wards, over the counted week.
+  const delayedReasons = useMemo(
+    () =>
+      delayedBedDaysByReason(
+        admissions,
+        units.map((unit) => unit.id),
+        { from: week.start, to: week.countedEnd },
+      ),
+    [admissions, units, week],
+  );
+
+  // Feature 29 (Josh, 9 Nov 2026): stays arriving in the week that carry the 28 day readmission flag.
+  const readmissions = useMemo(
+    () =>
+      readmissionsArrivedIn(
+        admissions.filter((admission) => units.some((unit) => unit.id === admission.unitId)),
+        movements,
+        createReadmissionIndex({ admissions, patients, referrals, movements, units: state.units }),
+        week.start,
+        week.countedEnd,
+      ),
+    [admissions, patients, referrals, movements, units, state.units, week],
+  );
 
   return (
     <WeeklyReportView
@@ -206,10 +234,32 @@ function OperationalWeeklyReport({ offset, setOffset }: WeekPicker) {
       now={now}
       paused={paused}
       togglePause={togglePause}
+      readmissions={readmissions}
+      heatmap={(isPhone) => (
+        // Feature 42 (Josh, 9 Nov 2026): bed days lost to delayed discharge, ward by day.
+        <WeeklyDelayHeatmap
+          units={units}
+          admissions={admissions}
+          bedReleases={bedReleases}
+          week={week}
+          now={now}
+          dayZero={dayZero}
+          isPhone={isPhone}
+          // Pressure this week counts every stay in view, so it is compared only when the grid's
+          // wards are all of them; a scoped desk's grid covers its own wards alone.
+          pressureBedDays={units.length === state.units.length ? report.delayedDischarge.bedDays : undefined}
+        />
+      )}
       admissionLabel={(movementId) =>
         admissions.find((admission) => admission.movementId === movementId)?.id ?? "Not yet admitted"
       }
       pilot={pilot}
+      delayedReasons={
+        <DelayedReasonsCard
+          data={delayedReasons}
+          wardName={(unitId) => units.find((unit) => unit.id === unitId)?.name ?? unitId}
+        />
+      }
     />
   );
 }
@@ -226,7 +276,11 @@ function WeeklyReportView({
   togglePause,
   admissionLabel,
   scopeLabel,
+  readmissions,
+  heatmap,
+  delayedReasons,
 }: WeekPicker & {
+  delayedReasons?: ReactNode;
   week: ReportWeek;
   report: WeeklyViewReport;
   pilot: WeeklyPilot;
@@ -236,6 +290,9 @@ function WeeklyReportView({
   togglePause: (() => void) | null;
   admissionLabel?: (movementId: string) => string;
   scopeLabel?: string;
+  /** Operational desks only: the executive weekly carries neither (features 29 and 42). */
+  readmissions?: { arrivals: number; readmitted: number };
+  heatmap?: (isPhone: boolean) => ReactNode;
 }) {
   const isPhone = useIsPhone();
   const figures = usePilotFigures(pilot);
@@ -451,6 +508,9 @@ function WeeklyReportView({
           week={{ value: String(offset), onChange: (next) => setOffset(Number(next)) }}
           onPrint={print}
           printLines={printLines}
+          readmissions={readmissions}
+          heatmap={heatmap?.(isPhone)}
+          delayedReasons={delayedReasons}
         />
         <WardPrototypeFooter testId="ward-weekly-footer" note="Synthetic data" />
       </main>

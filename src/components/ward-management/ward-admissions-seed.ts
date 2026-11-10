@@ -1,6 +1,7 @@
 import { DISCHARGE_ROLE_LABELS } from "@/components/ward-management/ward-admissions";
 import type {
   Admission,
+  DelayedDischargeReason,
   FollowUpRecord,
   LeavingDestination,
   PlannedAdmission,
@@ -67,6 +68,21 @@ import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observati
  * moves with it in the same change.
  */
 export const WARD_ADMISSIONS_ANCHOR: Instant = 10 * 60 + 42;
+
+/**
+ * Polish (9 Nov 2026, Weekend discharges): a date a whole number of days ahead gets a varied
+ * synthetic time, so lists such as the weekend review do not repeat one time. Within the 72 hour
+ * forecast it is a morning time no later than the anchor's (08:00 to 10:42), so a date stays inside
+ * every horizon (`<= now + N days`) it was in; beyond it, 08:00 to 15:30. Always the same day, so
+ * no day count moves.
+ */
+const MORNING_OFFSETS = [-162, -132, -102, -72, -42, -12, 0] as const;
+const DAY_OFFSETS = [-162, -102, -42, 0, 78, 198, 288] as const;
+function dischargeTimeOffset(dischargeInDays: number, tag: string, index: number): number {
+  if (!Number.isInteger(dischargeInDays) || dischargeInDays < 1) return 0;
+  const offsets = dischargeInDays > 3 ? DAY_OFFSETS : MORNING_OFFSETS;
+  return offsets[(index + tag.charCodeAt(tag.length - 1)) % offsets.length]!;
+}
 
 /**
  * How long before somebody arrives the bed was given away, in minutes.
@@ -251,6 +267,8 @@ type OccupantExtras = {
     readonly setHoursAgo: number;
     readonly items: readonly (readonly [DischargeCriterion, number | null])[];
   };
+  /** Item 5: clinically ready this many whole days before the anchor's day, and why not gone. Synthetic. */
+  readonly ready?: { readonly daysAgo: number; readonly reason: DelayedDischargeReason };
 };
 
 /**
@@ -347,9 +365,21 @@ function unitOccupants(
       arrivedAt,
       awayAtEmergencyDepartmentSince:
         extras?.awayAtEdHoursAgo === undefined ? null : WARD_ADMISSIONS_ANCHOR - extras.awayAtEdHoursAgo * 60,
-      expectedDischargeAt: hasDate ? WARD_ADMISSIONS_ANCHOR + dischargeInDays * MINUTES_PER_DAY : null,
+      expectedDischargeAt: hasDate
+        ? WARD_ADMISSIONS_ANCHOR + dischargeInDays * MINUTES_PER_DAY + dischargeTimeOffset(dischargeInDays, tag, index)
+        : null,
       dischargeDateMoves: hasDate ? index % 3 : 0,
-      dischargeDateSetAt: hasDate ? WARD_ADMISSIONS_ANCHOR - (6 + (index % 5) * 5) * 60 : null,
+      // A date that has moved was set in the last day. One that never moved was set a week before it
+      // falls (or the morning after arrival, if later), so a stay past its date counts as delayed for
+      // the whole time since, not only since yesterday (polish pass, 9 Nov 2026, Weekly heatmap).
+      dischargeDateSetAt: hasDate
+        ? index % 3 === 0
+          ? Math.min(
+              WARD_ADMISSIONS_ANCHOR - (6 + (index % 5) * 5) * 60,
+              Math.max(arrivedAt + 18 * 60, WARD_ADMISSIONS_ANCHOR + (dischargeInDays - 7) * MINUTES_PER_DAY),
+            )
+          : WARD_ADMISSIONS_ANCHOR - (6 + (index % 5) * 5) * 60
+        : null,
       dischargeDateSetBy: hasDate ? DISCHARGE_DATE_SETTERS[index % DISCHARGE_DATE_SETTERS.length] : null,
       dischargeConfirmedAt: isConfirmed ? WARD_ADMISSIONS_ANCHOR - confirmedHoursAgo * 60 : null,
       // Owner ruling 5 (2026-09-01) leaves this field family with exactly one role spelling, so
@@ -362,6 +392,14 @@ function unitOccupants(
       leavingDestination: null,
       leftAt: null,
       followUp: null,
+      ...(extras?.ready
+        ? {
+            // The Perth midnight of the ready day, as the board's date box records it.
+            clinicallyReadySince:
+              (Math.floor(WARD_ADMISSIONS_ANCHOR / MINUTES_PER_DAY) - extras.ready.daysAgo) * MINUTES_PER_DAY,
+            delayedDischargeReason: extras.ready.reason,
+          }
+        : {}),
       ...(extras?.criteria
         ? {
             dischargeCriteria: {
@@ -521,7 +559,12 @@ const occupiedBeds: Admission[] = [
       "South West",
       34,
       -2,
-      { blockReason: "Awaiting accommodation", confirmedHoursAgo: 26, patientId: "PT-G-AD-RPHS-01" },
+      {
+        blockReason: "Awaiting accommodation",
+        confirmedHoursAgo: 26,
+        patientId: "PT-G-AD-RPHS-01",
+        ready: { daysAgo: 5, reason: "Accommodation / Housing" },
+      },
     ],
     // Confirmed and NOT blocked, so the blocked cross-cut above is compared against something.
     ["Male", "Mid West", 5, 3, { confirmedHoursAgo: 4, patientId: "PT-028" }],
@@ -534,7 +577,7 @@ const occupiedBeds: Admission[] = [
     ["Female", "Perth Metropolitan", 3, null, { awayAtEdHoursAgo: 6, patientId: "PT-G-AD-RPHS-04" }],
     ["Male", "Great Southern", 12, 4, { awayAtEdHoursAgo: 1, patientId: "PT-029" }],
     ["Female", "Perth Metropolitan", 45, 6, { patientId: "PT-032" }],
-    ["Male", "Perth Metropolitan", 130, -2, { patientId: "PT-033" }],
+    ["Male", "Perth Metropolitan", 130, -2, { patientId: "PT-033", ready: { daysAgo: 12, reason: "NDIS" } }],
     ["Female", "Perth Metropolitan", 5, 9, { patientId: "PT-035" }],
     ["Male", "Perth Metropolitan", 20, 2, { patientId: "PT-034" }],
     ["Female", "Pilbara", 60, 8, { patientId: "PT-G-AD-RPHS-10" }],
@@ -586,7 +629,7 @@ const occupiedBeds: Admission[] = [
   ]),
   ...unitOccupants("rph-older-adult", "RPHO", OLDER_ADULT_DIAGNOSES, [
     ["Female", "Peel", 9, null, { patientId: "PT-030" }],
-    ["Male", "Pilbara", 115, 1, { patientId: "PT-G-AD-RPHO-02" }],
+    ["Male", "Pilbara", 115, 1, { patientId: "PT-G-AD-RPHO-02", ready: { daysAgo: 9, reason: "RACF / Aged Care" } }],
     ["Female", "Peel", 40, -1, { patientId: "PT-G-AD-RPHO-03" }],
     ["Male", "Wheatbelt", 1, 7, { patientId: "PT-G-AD-RPHO-04" }],
     ["Female", "Gascoyne", 26, 3, { patientId: "PT-G-AD-RPHO-05" }],
@@ -622,7 +665,13 @@ const occupiedBeds: Admission[] = [
     ["Male", "Mid West", null, 6, { patientId: "PT-G-AD-SCGA-19" }],
   ]),
   ...unitOccupants("scgh-older-adult", "SCGO", OLDER_ADULT_DIAGNOSES, [
-    ["Female", "Perth Metropolitan", 130, -2, { patientId: "PT-040" }],
+    [
+      "Female",
+      "Perth Metropolitan",
+      130,
+      -2,
+      { patientId: "PT-040", ready: { daysAgo: 20, reason: "SAT / Public Guardian" } },
+    ],
     ["Male", "South West", 5, 9, { patientId: "PT-G-AD-SCGO-02" }],
     ["Female", "Goldfields-Esperance", 20, 2, { patientId: "PT-G-AD-SCGO-03" }],
     ["Male", "Pilbara", 60, 8, { patientId: "PT-G-AD-SCGO-04" }],
@@ -645,7 +694,8 @@ const occupiedBeds: Admission[] = [
     ["Male", "Perth Metropolitan", 3, null, { patientId: "PT-G-AD-FSHS-04" }],
     ["Male", "Great Southern", 12, 4, { patientId: "PT-G-AD-FSHS-05" }],
     ["Male", "Mid West", null, 6, { patientId: "PT-G-AD-FSHS-06" }],
-    ["Male", "Kimberley", 130, -2, { patientId: "PT-G-AD-FSHS-07" }],
+    // Polish pass (9 Nov 2026): 4 days past the date, so the Weekly heatmap spreads across the week.
+    ["Male", "Kimberley", 130, -4, { patientId: "PT-G-AD-FSHS-07" }],
     ["Male", "South West", 5, 9, { patientId: "PT-G-AD-FSHS-08" }],
     ["Male", "Goldfields-Esperance", 20, 2, { patientId: "PT-G-AD-FSHS-09" }],
     ["Male", "Pilbara", 60, 8, { patientId: "PT-G-AD-FSHS-10" }],
@@ -677,7 +727,8 @@ const occupiedBeds: Admission[] = [
       { blockReason: "Awaiting receiving-service acceptance", referralId: "RF-ARMA-02", patientId: "PT-096" },
     ],
     ["Female", "Mid West", 45, 6, { patientId: "PT-G-AD-ARMA-03" }],
-    ["Male", "Kimberley", 130, -2, { patientId: "PT-G-AD-ARMA-04" }],
+    // Polish pass (9 Nov 2026): 6 days past the date, so the Weekly heatmap spreads across the week.
+    ["Male", "Kimberley", 130, -6, { patientId: "PT-G-AD-ARMA-04" }],
     ["Female", "South West", 5, 9, { patientId: "PT-G-AD-ARMA-05" }],
     ["Male", "Goldfields-Esperance", 20, 2, { patientId: "PT-G-AD-ARMA-06" }],
     ["Female", "Pilbara", 60, 8, { patientId: "PT-G-AD-ARMA-07" }],
@@ -727,7 +778,8 @@ const occupiedBeds: Admission[] = [
     ["Female", "Mid West", 45, 6, { patientId: "PT-G-AD-RGHS-13" }],
   ]),
   ...unitOccupants("fre-adult-open", "FREA", ADULT_OPEN_DIAGNOSES, [
-    ["Female", "Kimberley", 130, -2, { patientId: "PT-G-AD-FREA-01" }],
+    // Polish pass (9 Nov 2026): 5 days past the date, so the Weekly heatmap spreads across the week.
+    ["Female", "Kimberley", 130, -5, { patientId: "PT-G-AD-FREA-01" }],
     ["Male", "South West", 5, 9, { patientId: "PT-G-AD-FREA-02" }],
     ["Female", "Goldfields-Esperance", 20, 2, { patientId: "PT-G-AD-FREA-03" }],
     ["Male", "Pilbara", 60, 8, { patientId: "PT-G-AD-FREA-04" }],
@@ -1037,7 +1089,75 @@ const waitlist: Admission[] = [
 
 /** Pulled beds held by routineMovements-generated WF-304/311/318/325 (stageFields admissionId). */
 
-export const wardAdmissions: Admission[] = [...occupiedBeds, ...departures, ...waitlist];
+/**
+ * Features 6, 37 and 13 (9 Nov 2026): a few synthetic stays carry a discharge date trail, ticked
+ * checklist items and a community team's follow-up reply, so each shows in the demo. Applied by id
+ * over the stays above; every figure is invented. A trail's moves match the stay's own
+ * `dischargeDateMoves`, and its last date is the stay's current expected date.
+ */
+const DAY = MINUTES_PER_DAY;
+type SeedTrail = { firstDaysEarlier: number; moves: readonly number[] };
+const SEED_DATE_TRAILS: Readonly<Record<string, SeedTrail>> = {
+  // Moved twice, now six days later than first set: listed under "Discharge dates slipping".
+  "AD-RPHS-06": { firstDaysEarlier: 6, moves: [3, 6] },
+  // Moved twice, now five days later.
+  "AD-SCGA-06": { firstDaysEarlier: 5, moves: [2, 5] },
+  // Moved once, four days later: still over the three-day flag.
+  "AD-FSHS-02": { firstDaysEarlier: 4, moves: [4] },
+  // Moved once by a day: a trail, but under the flag.
+  "AD-ARMA-14": { firstDaysEarlier: 1, moves: [1] },
+};
+const SEED_CHECKS: Readonly<Record<string, Admission["dischargeChecks"]>> = {
+  "AD-RPHS-02": {
+    medicines: { state: "done", at: WARD_ADMISSIONS_ANCHOR - 5 * 60, by: "ward" },
+    carer_told: { state: "done", at: WARD_ADMISSIONS_ANCHOR - 4 * 60, by: "ward" },
+  },
+  "AD-SJGA-05": {
+    community_follow_up: { state: "done", at: WARD_ADMISSIONS_ANCHOR - 20 * 60, by: "ward" },
+    gp_letter: { state: "not_needed", at: WARD_ADMISSIONS_ANCHOR - 19 * 60, by: "ward" },
+  },
+};
+const SEED_REPLIES: Readonly<Record<string, Admission["followUpReply"]>> = {
+  "AD-SJGA-05": { state: "accepted", at: WARD_ADMISSIONS_ANCHOR - 22 * 60, by: "community" },
+  "AD-FSHS-01": {
+    state: "declined",
+    reason: "GP follow-up instead",
+    at: WARD_ADMISSIONS_ANCHOR - 9 * 60,
+    by: "community",
+  },
+  "AD-RPHS-14": { state: "awaiting", at: WARD_ADMISSIONS_ANCHOR - 3 * 60, by: "community" },
+  "AD-LEFT-01": { state: "accepted", at: WARD_ADMISSIONS_ANCHOR - 30 * 60, by: "community" },
+};
+
+function withSeedFollowThrough(admission: Admission): Admission {
+  const trail = SEED_DATE_TRAILS[admission.id];
+  const checks = SEED_CHECKS[admission.id];
+  const reply = SEED_REPLIES[admission.id];
+  let next = admission;
+  if (trail && admission.expectedDischargeAt !== null) {
+    const first = admission.expectedDischargeAt - trail.firstDaysEarlier * DAY;
+    const dates = [first, ...trail.moves.map((days) => first + days * DAY)];
+    // The last move is when the current date was set, so the trail and `dischargeDateSetAt` agree.
+    const lastMoveAt = admission.dischargeDateSetAt ?? WARD_ADMISSIONS_ANCHOR - DAY;
+    next = {
+      ...next,
+      dischargeDateMoves: trail.moves.length,
+      dischargeDateTrail: {
+        firstExpectedAt: first,
+        revisions: trail.moves.map((_, index) => ({
+          at: lastMoveAt - (trail.moves.length - 1 - index) * DAY,
+          previousExpectedAt: dates[index]!,
+          expectedAt: dates[index + 1]!,
+        })),
+      },
+    };
+  }
+  if (checks) next = { ...next, dischargeChecks: checks };
+  if (reply) next = { ...next, followUpReply: reply };
+  return next;
+}
+
+export const wardAdmissions: Admission[] = [...occupiedBeds, ...departures, ...waitlist].map(withSeedFollowThrough);
 
 /**
  * Three synthetic planned admissions for the calendar (stream D, 9 October 2026), authored against

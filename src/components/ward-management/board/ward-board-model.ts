@@ -2,6 +2,7 @@
 // flow-tab vocabularies, shift-tile types and tile class names. Split out of ward-board.tsx to keep
 // that file under the line cap; ward-board.tsx re-exports movementForBoardArrival and
 // boardArrivalAllowed.
+import { dischargeDateSlipDays } from "@/components/ward-management/ward-discharge-date-trail";
 import {
   admissionsForUnit,
   bedIsOccupied,
@@ -14,6 +15,7 @@ import {
   type DischargeBarrier,
 } from "@/components/ward-management/ward-admissions";
 import { tentativeDiagnosisPhrase, type TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
+import { clinicallyReadyOf, type ClinicallyReadyLine } from "@/components/ward-management/ward-delayed-discharge";
 import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import {
   formatInstantWithDay,
@@ -322,12 +324,16 @@ export type Occupant = {
    *  when nobody has set one. */
   expectedDays: number | null;
   dischargeDateMoves: number;
+  /** Feature 6: whole days the date sits after the first one set; `null` with no date trail. */
+  dischargeDriftDays: number | null;
   dischargeDateSetBy: string | null;
   confirmed: boolean;
   dischargeConfirmedBy: string | null;
   blockReason: string | null;
   admissionId: string;
   dischargeBarrier: DischargeBarrier | null;
+  /** Item 5: clinically ready since a day, why not gone, and days delayed; null when not recorded. */
+  clinicallyReady: ClinicallyReadyLine | null;
   stepDownCandidate: boolean;
   /** D-115 item 4: absent without leave (D-38), so the person panel says so in red. */
   absentWithoutLeave?: boolean;
@@ -418,6 +424,7 @@ export function buildOccupants(
           : Math.max(0, Math.floor((now - admission.awayAtEmergencyDepartmentSince) / 60)),
       expectedDays: daysUntilExpected(admission, now),
       dischargeDateMoves: admission.dischargeDateMoves,
+      dischargeDriftDays: dischargeDateSlipDays(admission),
       dischargeDateSetBy: admission.dischargeDateSetBy,
       // Read as a decision that was TAKEN, never inferred from how close the date is, how long ago
       // it was set, or how often it moved — `ward-discharge-dates.ts` records at length why each
@@ -428,6 +435,7 @@ export function buildOccupants(
       blockReason: admission.blockReason,
       admissionId: admission.id,
       dischargeBarrier: admission.dischargeBarrier ?? null,
+      clinicallyReady: clinicallyReadyOf(admission, now),
       stepDownCandidate: Boolean(admission.stepDownCandidate),
       ...(absentIds.has(admission.id) ? { absentWithoutLeave: true } : {}),
     }));

@@ -69,6 +69,8 @@ import { WardBoardGridColumn } from "./ward-board-grid-column";
 import { LeavingDestinationField, WardBoardDetailPanel } from "./ward-board-detail-panel";
 import { WardBoardWorkBand } from "./ward-board-work-band";
 import { WardBoardPrintSections } from "./ward-board-print-sections";
+import { createReadmissionIndex } from "@/components/ward-management/ward-readmission";
+import { stayReadmissionCopy } from "@/components/ward-management/ward-readmission-copy";
 import { SAVE_NOT_CONFIRMED, saveProblem } from "@/components/ward-management/ward-save-failure";
 import { refusalReasonText } from "@/components/ward-management/ward-refusal-words";
 export { boardArrivalAllowed, movementForBoardArrival } from "./ward-board-model";
@@ -500,6 +502,20 @@ export function WardBoard({
   /* Scoped inside `buildOccupants` with the same `admissionsForUnit(...)` + `bedIsOccupied` pair
    * `buildTiles` uses — see that function's own comment for the defect this prevents. */
   const occupants = buildOccupants(unit, admissions, now, leaveBeds);
+  // Feature 29 (Josh, 9 Nov 2026): the 28 day readmission flag on each inpatient's tile, as the
+  // ward's own copy (discharge time only). Referrals stay out: a ward screen never reads them, so
+  // identity goes through the provider's projection, as names do, and a referral-linked stay resolves.
+  const readmissionIndex = createReadmissionIndex(
+    { admissions, patients, referrals: [], movements, units: liveUnits },
+    resolvePatientIdentity,
+  );
+  const readmissionByAdmission = new Map(
+    occupants.flatMap((occupant) => {
+      const admission = admissions.find((candidate) => candidate.id === occupant.admissionId);
+      const flag = admission ? stayReadmissionCopy(admission, movements, readmissionIndex) : null;
+      return flag ? [[occupant.admissionId, flag] as const] : [];
+    }),
+  );
   /** The person's name for a board message, never their admission id (walkthrough D10). */
   const nameFor = (admissionId: string | undefined): string => {
     const admission = admissions.find((a) => a.id === admissionId);
@@ -1028,6 +1044,7 @@ export function WardBoard({
       filteredTiles={filteredTiles}
       cardNameByKey={cardNameByKey}
       occupantByKey={occupantByKey}
+      readmissionByAdmission={readmissionByAdmission}
       occupants={occupants}
       orderedTiles={orderedTiles}
       selectedKey={selectedKey}

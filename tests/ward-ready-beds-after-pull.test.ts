@@ -75,7 +75,7 @@ describe("beds ready agrees on every screen after a pull", () => {
     }
     expect(checked).toBeGreaterThan(500);
     expect(oldFormulaSplit, "the run reaches a pull the old formula counted as ready").toBeGreaterThan(0);
-    // D-115 (10 Nov 2026): every screen now also scans named holds, so this 3,000-step replay takes
-    // about 13 s alone and passed 30 s on a busy CI shard. The time limit is not part of the check.
+    // 10 Nov 2026 (PR #1583): about 9 s locally, but 450 replayed fuzz runs passed 30 s twice on a
+    // loaded CI shard once the discharge events joined the engine, so it gets the fuzz tests' 90 s.
   }, 90_000);
 });

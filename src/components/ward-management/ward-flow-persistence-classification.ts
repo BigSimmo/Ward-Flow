@@ -172,6 +172,9 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "RECORD_DISCHARGE_DEPENDENCY",
   "RECORD_DISCHARGE_PLAN_CHANGE",
   "RECORD_ARRIVAL_CHECK",
+  // Features 37 and 13 (9 Nov 2026): an admission id, a team id and listed values. No typed text.
+  "RECORD_DISCHARGE_CHECK",
+  "RECORD_FOLLOW_UP_REPLY",
   "CLEAR_MOVEMENT_BLOCKER",
   "CLEAR_MOVEMENT_URGENT_FLAG",
   "CLOSE_WARD_TO_ADMISSIONS",
@@ -292,6 +295,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "RELEASE_HELD_BED",
   "RELEASE_DIVERTED_BED",
   "RELEASE_PULL",
+  // Feature 11: ids, the role and `minutes` from a fixed list. No typed text.
+  "EXTEND_PULL",
   "REOPEN_INBOX_ITEM",
   // Stream A, 9 Oct 2026: `inboxItemId` is an id (reviewed above), `until` a number and `reason` a
   // closed union (`InboxSnoozeReason`) offered by a `<select>`, never typed text.
@@ -323,6 +328,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // FD-10: an admission id and one block from TENTATIVE_DIAGNOSIS_BLOCKS, membership-checked by
   // the reducer. No typed text.
   "RECORD_WARD_DIAGNOSIS",
+  // Feature 14: an admission id, a unit id and instants. No typed text.
+  "MARK_WEEKEND_DISCHARGE_REVIEWED",
   // Closing-the-loop (package E): an admission id, a site code, closed lists and instants. No typed text.
   "RECORD_HOME_SERVICE_RETURN",
   // Closing-the-loop (package E): a directory entry id only. No typed text.
@@ -333,6 +340,9 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // Out of area "Flag early" (3 Nov 2026): an admission id and a site code the reducer checks. No typed text.
   "FLAG_RETURN_EARLY",
   "SET_DISCHARGE_BARRIER",
+  // Item 5: an admission id, a day's instant and one reason from DELAYED_DISCHARGE_REASONS,
+  // membership-checked by the reducer. No typed text.
+  "SET_CLINICALLY_READY",
   // D-60: criteria are a closed list chosen from checkboxes. D-65 adds typed patient specific
   // criteria, so a dispatch naming any criterion off that list locks storage at payload level
   // (`eventCarriesTypedTextPayload` below). A save or tick of fixed criteria only stays safe.

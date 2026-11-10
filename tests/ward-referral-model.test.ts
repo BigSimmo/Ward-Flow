@@ -593,6 +593,7 @@ describe("front-door contract — an ED may close to all admissions, never refus
     CHANGE_URGENCY: false,
     CHANGE_LEGAL_STATUS: false,
     RELEASE_PULL: false,
+    EXTEND_PULL: false,
     // Books a transport job; refuses nothing and names no subject.
     BOOK_TRANSPORT: false,
     // Adds a CAD number to a job booked with "CAD to follow"; refuses nothing.
@@ -674,6 +675,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     SET_STEP_DOWN_CANDIDATE: false,
     // FD-10: the ward's own diagnosis block. Records an assessment, refuses nobody.
     RECORD_WARD_DIAGNOSIS: false,
+    // Feature 14: records that a desk reviewed a weekend discharge. Not a refusal.
+    MARK_WEEKEND_DISCHARGE_REVIEWED: false,
     // Closing-the-loop (package E): records a return request and the home service's answer. Not a refusal.
     RECORD_HOME_SERVICE_RETURN: false,
     // Closing-the-loop (package E): records that a directory entry was checked. Not a refusal.
@@ -684,6 +687,7 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // Out of area "Flag early" (3 Nov 2026): records that a return may come sooner. Not a refusal.
     FLAG_RETURN_EARLY: false,
     SET_DISCHARGE_BARRIER: false,
+    SET_CLINICALLY_READY: false,
     SET_DISCHARGE_CRITERIA: false,
     // D-34 cancels an accepted psychiatric allocation; it does not decline admission to ED.
     RECORD_ED_MEDICAL_DETERIORATION: false,
@@ -745,6 +749,10 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // Closing-the-loop package B (24 Oct 2026): discharge logistics decline nobody.
     RECORD_DISCHARGE_DEPENDENCY: false,
     RECORD_DISCHARGE_PLAN_CHANGE: false,
+    // Features 37 and 13 (9 Nov 2026): a checklist tick and a community follow-up reply. A decline
+    // there answers follow-up after discharge; it refuses no referral or placement.
+    RECORD_DISCHARGE_CHECK: false,
+    RECORD_FOLLOW_UP_REPLY: false,
     // v10 pass 2: undo restores the state before a decision (a queued referral, a review or a bed),
     // and a bed move changes which bed a current stay is in. None of the four declines anybody.
     UNDO_REFERRAL_DECISION: false,

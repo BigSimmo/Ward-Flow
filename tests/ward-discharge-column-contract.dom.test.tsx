@@ -131,8 +131,9 @@ describe("the discharges board's column contract", () => {
       } else {
         expect(blockerCell.querySelector('[class*="blockerTag"]')).toBeNull();
         if (key === "discharged-today") expect(blockerCell.textContent).toBe("");
-        // The criteria led tag (D-64, flag on in tests) may follow in the same cell.
-        else expect(blockerCell.textContent).toMatch(/^Not held up(, CLD|$)/);
+        // The criteria led tag (D-64, flag on in tests) and the discharge checklist tally (feature
+        // 37) may follow in the same cell.
+        else expect(blockerCell.textContent).toMatch(/^Not held up(, CLD|, discharge checklist|$)/);
       }
       fireEvent.click(within(row).getAllByRole("button")[0]);
       // Drawer review (6 Nov 2026): the chosen release opens in the kit drawer (PanelDrawer).
