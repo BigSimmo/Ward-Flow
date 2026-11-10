@@ -588,12 +588,18 @@ test("an opening or cover passes the browser's intent key to the store, checked 
   });
   const key = "77777777-7777-4777-8777-777777777777";
   const opening = { patientId: "p-1", reason: "handover", intentKey: key.toUpperCase() };
-  const cover = { actorId: other, scope: { kind: "ward", unitIds: ["unit-a"] }, minutes: 60, intentKey: key };
+  const cover = {
+    actorId: other,
+    scope: { kind: "ward", unitIds: ["unit-a"] },
+    minutes: 60,
+    reason: "night-weekend",
+    intentKey: key,
+  };
   assert.equal((await handler(request("/break-glass", opening))).status, 200);
   assert.equal((await handler(request("/access/cover", cover))).status, 200);
   assert.deepEqual(seen, [
     ["breakGlass", "p-1", "handover", key],
-    ["giveCover", { actorId: other, scope: cover.scope, minutes: 60, intentKey: key }],
+    ["giveCover", { actorId: other, scope: cover.scope, minutes: 60, reason: "night-weekend", intentKey: key }],
   ]);
   assert.equal((await handler(request("/break-glass", { ...opening, intentKey: "again" }))).status, 400);
   assert.equal((await handler(request("/access/cover", { ...cover, intentKey: 7 }))).status, 400);

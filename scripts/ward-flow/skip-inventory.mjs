@@ -330,7 +330,7 @@ function report({ sites, quarantine }) {
     "| File | Line | Kind | Test | Reason |",
     "| --- | --- | --- | --- | --- |",
   ];
-  const cell = (text) => (text ?? "").replace(/\|/gu, "\\|").slice(0, 160);
+  const cell = (text) => (text ?? "").replace(/\\/gu, "\\\\").replace(/\|/gu, "\\|").slice(0, 160);
   for (const s of sites) {
     lines.push(
       `| ${s.file} | ${s.line} | ${s.kind} | ${cell(s.title)} | ${s.reason ? cell(s.reason) : "**NO REASON**"} |`,

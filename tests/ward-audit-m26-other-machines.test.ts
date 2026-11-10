@@ -103,6 +103,7 @@ function journey() {
       now: t(20),
       movementId: MOVE,
       unitId: UNIT_DECLINED,
+      actingUnitId: UNIT_DECLINED,
       reason: "capability_mismatch",
     },
     "decline",
@@ -110,12 +111,26 @@ function journey() {
   const s3 = step(s2, refer(UNIT_ACCEPTED, t(30)), "re-refer");
   const accepted = step(
     s3,
-    { type: "ACCEPT_IN_PRINCIPLE", role: "ward", now: t(40), movementId: MOVE, unitId: UNIT_ACCEPTED },
+    {
+      type: "ACCEPT_IN_PRINCIPLE",
+      role: "ward",
+      now: t(40),
+      movementId: MOVE,
+      unitId: UNIT_ACCEPTED,
+      actingUnitId: UNIT_ACCEPTED,
+    },
     "accept",
   );
   const pulled = step(
     accepted,
-    { type: "PULL_PATIENT", role: "ward", now: t(50), movementId: MOVE, unitId: UNIT_ACCEPTED },
+    {
+      type: "PULL_PATIENT",
+      role: "ward",
+      now: t(50),
+      movementId: MOVE,
+      unitId: UNIT_ACCEPTED,
+      actingUnitId: UNIT_ACCEPTED,
+    },
     "pull",
   );
   const booked = step(

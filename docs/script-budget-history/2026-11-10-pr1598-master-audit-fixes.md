@@ -7,7 +7,8 @@ Bed meeting 590.1, so those three are set to the measurement plus 0.2 KB (Bed me
 main's 585.5 limit).
 After `main` moved again to `a6e405b22` (#1594 raised Home, Referrals and Statistics by 0.2 to 0.7 KB),
 the same increase per route was re-applied: Home 574.0, Referrals 583.4, Statistics 632.6; the rest
-are unchanged.
+are unchanged. The merged build then read Ward and Bed meeting just over 612.2 and 590.3, so those
+two are 612.4 and 590.4 (Bed meeting is 4.9 KB over main's 585.5 limit).
 
 Measured on hosted CI (merged branch against main alone, KB gzipped): Home 573.4 / 570.1, Referrals
 586.9 / 584.3, ED 532.8 / 530.1, Ward 612.0 / 608.9, Movement detail 607.5 / 605.5, Capacity

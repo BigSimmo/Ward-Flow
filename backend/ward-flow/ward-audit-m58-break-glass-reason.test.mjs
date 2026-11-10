@@ -19,7 +19,7 @@ test("break glass without a listed reason is refused before the database is touc
     grants: [],
   };
   for (const reason of [undefined, "", "because", "Other", 42]) {
-    const answer = await store.breakGlass(view, "PT-SYN-1", reason);
+    const answer = await store.breakGlass(view, "PT-SYN-1", /** @type {any} */ (reason));
     assert.equal(answer.status, 400, String(reason));
   }
   assert.ok(engine.BREAK_GLASS_REASON_IDS.length > 1);
