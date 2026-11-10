@@ -1534,7 +1534,7 @@ is inferred.
   3. **Handover:** stays non-blocking. The outstanding search, medication chart and legal-form list shows beside the Handover button.
   4. **Transport identity tick:** stays optional while the data is synthetic. It is decided with the clinical sponsor before real data.
   5. **Acting-ward check:** is strict.
-  6. **Budget recheck job:** delete the switched-off budget recheck job.
+  6. **Budget recheck job:** delete the switched-off budget recheck job. The dead-code check refused its script's exports (common names, file under 30 days old), so Josh approved one owner override run on a decision card the same day.
   7. **CodeQL:** add CodeQL code scanning, failing only on new findings (ones a pull request introduces).
   8. **Accessibility:** moderate accessibility findings stay non-blocking; serious and critical still block.
   9. **New features:** none from the proposed list until #1564 to #1577 close.
