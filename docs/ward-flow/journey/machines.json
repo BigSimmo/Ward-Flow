@@ -88,6 +88,16 @@
           "guard": "the reason must come from this destination kind's own list"
         },
         {
+          "from": "declined",
+          "to": "accepted",
+          "action": "ACCEPT_REFERRAL",
+          "route": "below",
+          "offset": 0,
+          "kind": "back",
+          "label": "on clinical reassessment",
+          "guard": "only as an explicit clinical reassessment of this destination"
+        },
+        {
           "from": "queued",
           "to": "cancelled",
           "action": "ACCEPT_REFERRAL",
@@ -747,16 +757,6 @@
           "label": "Arrived"
         },
         {
-          "id": "cancelled",
-          "kind": "terminal",
-          "x": 829,
-          "y": 260,
-          "w": 260,
-          "h": 86,
-          "label": "Deleted",
-          "sub": "The job is removed, not marked. Nothing is rebooked."
-        },
-        {
           "id": "stopped",
           "kind": "terminal",
           "x": 1683,
@@ -803,26 +803,27 @@
         },
         {
           "from": "booked",
-          "to": "cancelled",
+          "to": "none",
           "action": "CANCEL_TRANSPORT",
-          "route": "exit",
+          "route": "below",
           "offset": 0,
-          "kind": "exit"
+          "kind": "exit",
+          "label": "the job is deleted, not marked"
         },
         {
           "from": "accepted",
-          "to": "cancelled",
+          "to": "none",
           "action": "CANCEL_TRANSPORT",
-          "route": "exit",
-          "offset": 0,
+          "route": "below",
+          "offset": 20,
           "kind": "exit"
         },
         {
           "from": "enroute",
-          "to": "cancelled",
+          "to": "none",
           "action": "CANCEL_TRANSPORT",
-          "route": "exit",
-          "offset": 0,
+          "route": "below",
+          "offset": 40,
           "kind": "exit",
           "guard": "The booking ward/team must match the supplied acting place; an ED claim is checked against the recorded booking place when both are present. Coordinator access remains subject to the authenticated access boundary."
         },
@@ -842,7 +843,7 @@
       "name": "A bed release",
       "subject": "A ward's plan for a bed coming free. It names the stay it belongs to, and nothing else about the person leaving.",
       "width": 1709,
-      "height": 426,
+      "height": 566,
       "states": [
         {
           "id": "none",
@@ -887,21 +888,21 @@
           "id": "blocked",
           "kind": "flag",
           "x": 428,
-          "y": 250,
+          "y": 420,
           "w": 280,
           "h": 86,
           "label": "Stuck — a flag, not a stage",
-          "sub": "One of nine reasons. Sits on top of expected or confirmed."
+          "sub": "One of nine reasons. Sits on top of expected or confirmed; either can be flagged."
         },
         {
           "id": "preparing",
           "kind": "flag",
-          "x": 901,
-          "y": 250,
+          "x": 1250,
+          "y": 420,
           "w": 300,
           "h": 86,
           "label": "Being made ready — a flag",
-          "sub": "Cleaning or repair is a separate flag. It does not rewrite the ward count, but a new pull refuses when every free bed is still being prepared."
+          "sub": "Cleaning or repair is a separate flag. It can be set on an expected, confirmed or discharged release, and recording the departure (or a ward transfer arriving) sets it too. It does not rewrite the ward count, but a new pull refuses when every free bed is still being prepared."
         }
       ],
       "transitions": [
@@ -967,6 +968,14 @@
           "kind": "side"
         },
         {
+          "from": "confirmed",
+          "to": "blocked",
+          "action": "BLOCK_BED_RELEASE",
+          "route": "exit",
+          "offset": 90,
+          "kind": "side"
+        },
+        {
           "from": "blocked",
           "to": "expected",
           "action": "CLEAR_BED_RELEASE_BLOCK",
@@ -979,8 +988,61 @@
           "to": "preparing",
           "action": "SET_BED_PREPARATION",
           "route": "exit",
-          "offset": 0,
+          "offset": 110,
           "kind": "side"
+        },
+        {
+          "from": "confirmed",
+          "to": "preparing",
+          "action": "SET_BED_PREPARATION",
+          "route": "exit",
+          "offset": 130,
+          "kind": "side"
+        },
+        {
+          "from": "discharged",
+          "to": "preparing",
+          "action": "SET_BED_PREPARATION",
+          "route": "exit",
+          "offset": 150,
+          "kind": "side",
+          "label": "made ready after the person leaves"
+        },
+        {
+          "from": "expected",
+          "to": "preparing",
+          "action": "RECORD_LEAVING",
+          "route": "exit",
+          "offset": 170,
+          "kind": "side",
+          "label": "the departure also marks the bed"
+        },
+        {
+          "from": "confirmed",
+          "to": "preparing",
+          "action": "RECORD_LEAVING",
+          "route": "exit",
+          "offset": 190,
+          "kind": "side",
+          "label": "the departure also marks the bed"
+        },
+        {
+          "from": "expected",
+          "to": "preparing",
+          "action": "RECORD_ADMISSION_CARE",
+          "route": "exit",
+          "offset": 210,
+          "kind": "side",
+          "label": "a ward transfer arriving also marks the bed"
+        },
+        {
+          "from": "confirmed",
+          "to": "preparing",
+          "action": "RECORD_ADMISSION_CARE",
+          "route": "exit",
+          "offset": 230,
+          "kind": "side",
+          "label": "a ward transfer arriving also marks the bed"
         }
       ],
       "note": "Being stuck used to be a fourth stage and was deliberately removed on 28 August 2026, because each stage says only how certain the discharge is. Stuck-ness and cleaning are two separate flags sitting on top."
@@ -1052,6 +1114,15 @@
           "action": "RECORD_MEDICAL_CLEARANCE",
           "route": "straight",
           "kind": "side"
+        },
+        {
+          "from": "expected",
+          "to": "cleared",
+          "action": "RECORD_MEDICAL_CLEARANCE",
+          "route": "below",
+          "offset": 0,
+          "kind": "side",
+          "label": "clearance can come first"
         }
       ],
       "note": "The owner's own words for this, quoted in the model: “When expects arrive and are marked as arrived, they become referrals.” Being marked present is the only door between the two lists."
@@ -1314,7 +1385,7 @@
           "w": 300,
           "h": 96,
           "label": "Acknowledged",
-          "sub": "Somebody has seen it. The row stays exactly where it was."
+          "sub": "Somebody has seen a fact row. The row stays exactly where it was. A commitment is never acknowledged."
         },
         {
           "id": "ticked",
@@ -1345,21 +1416,23 @@
           "guard": "hides nothing and removes nothing; a second person acknowledging is a second real fact"
         },
         {
-          "from": "acknowledged",
+          "from": "showing",
           "to": "ticked",
           "action": "COMPLETE_INBOX_ITEM",
           "route": "exit",
           "offset": 0,
           "kind": "side",
-          "guard": "Only commitment IDs; daily-check IDs require the day-N shape, and an already-complete history refuses. Facts remain until their underlying situation changes."
+          "label": "commitments only",
+          "guard": "Only commitment IDs; daily-check IDs require the day-N shape, and an already-complete history refuses. A commitment is completed straight from Showing and is never acknowledged. Facts remain until their underlying situation changes."
         },
         {
           "from": "ticked",
-          "to": "acknowledged",
+          "to": "showing",
           "action": "REOPEN_INBOX_ITEM",
-          "route": "exit",
-          "offset": 40,
-          "kind": "exit"
+          "route": "above",
+          "offset": 0,
+          "kind": "back",
+          "label": "back to showing"
         }
       ],
       "note": "Acknowledgement, ownership, snoozing and completion are separate histories. Real fact rows are never completed by COMPLETE_INBOX_ITEM. The daily check uses a day-shaped identifier rather than a movement; bed-meeting actions use COMPLETE_BED_MEETING_ACTION. CANCEL_TRANSPORT appends a returned snooze and a released ownership entry to the job's awaiting-departure and booking-estimate-passed rows. Completion validates category and day syntax, not whether the day is the current day."
@@ -1423,6 +1496,15 @@
           "action": "RECORD_LEGAL_FORM_EXPIRY",
           "route": "straight",
           "kind": "side"
+        },
+        {
+          "from": "not",
+          "to": "expiry",
+          "action": "RECORD_LEGAL_FORM_EXPIRY",
+          "route": "above",
+          "offset": 0,
+          "kind": "side",
+          "label": "before a receipt"
         }
       ],
       "note": "Receipt correction appends its reason and clears the receipt without erasing history. Expiry entry need not wait for a receipt: it requires a recorded form. The admitted ward may record a typed expiry on an arrived/closed movement; a checked correction and a later extension are distinct paths."

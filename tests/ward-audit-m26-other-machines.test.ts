@@ -1006,7 +1006,8 @@ function compare(spec: Spec) {
 /**
  * Engine and diagram disagree on these pairs. Each is a question for Josh, not a verdict: either
  * the diagram is wrong (fix machines.json) or the engine is (a clinical-behaviour change he rules on).
- * Key: "<from> <ACTION>". Value: the question.
+ * Key: "<from> <ACTION>". Value: the question. Josh answered Z1 to Z12 on 10 Nov 2026 (D-131): the
+ * diagram follows the engine, so only Z7 (note only, by design) is still listed below.
  */
 const Z = {
   reassess:
@@ -1034,25 +1035,13 @@ const Z = {
 } as const;
 
 const KNOWN: Record<string, Record<string, string>> = {
-  referral: { "declined ACCEPT_REFERRAL": Z.reassess },
+  referral: {},
   admission: {},
-  transport: {
-    "booked CANCEL_TRANSPORT": Z.cancel,
-    "accepted CANCEL_TRANSPORT": Z.cancel,
-    "enroute CANCEL_TRANSPORT": Z.cancel,
-  },
-  bedrelease: {
-    "expected RECORD_LEAVING": Z.prepare,
-    "expected RECORD_ADMISSION_CARE": Z.prepare,
-    "confirmed RECORD_LEAVING": Z.prepare,
-    "confirmed RECORD_ADMISSION_CARE": Z.prepare,
-    "blocked RECORD_LEAVING": Z.prepare,
-    "blocked RECORD_ADMISSION_CARE": Z.prepare,
-    "confirmed BLOCK_BED_RELEASE": Z.flagOnConfirmed,
-    "confirmed SET_BED_PREPARATION": Z.prepareFromOther,
-    "discharged SET_BED_PREPARATION": Z.prepareFromOther,
-  },
-  expects: { "expected RECORD_MEDICAL_CLEARANCE": Z.clearance },
+  transport: {},
+  bedrelease: {},
+  expects: {},
+  // Z7 stays listed: Josh ruled the note is the statement and no more arrows are drawn (D-131,
+  // 10 Nov 2026). The four arrows are examples, so the engine's other pairs still read as extra here.
   legalstatus: {
     "voluntary CHANGE_LEGAL_STATUS": Z.legalPairs,
     "referred CHANGE_LEGAL_STATUS": Z.legalPairs,
@@ -1061,12 +1050,8 @@ const KNOWN: Record<string, Record<string, string>> = {
   },
   examination: {},
   notice: {},
-  inbox: {
-    "showing COMPLETE_INBOX_ITEM": Z.completeFromShowing,
-    "acknowledged COMPLETE_INBOX_ITEM": Z.ackThenTick,
-    "ticked REOPEN_INBOX_ITEM": Z.reopen,
-  },
-  legalform: { "not RECORD_LEGAL_FORM_EXPIRY": Z.expiryBeforeReceipt },
+  inbox: {},
+  legalform: {},
 };
 
 const SPECS: Spec[] = [

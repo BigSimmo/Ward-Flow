@@ -2,9 +2,11 @@
 
 _Created 2026-11-10 - audit item M26, approved as a list by Josh (D-130); Documentation owns._
 
-**Status:** Josh approved every recommendation (D-131, 10 Nov 2026); the diagram is being corrected. The movement diagram
-(`docs/ward-flow/journey/machines.json`) and the engine disagree on the moves below. The test
-`tests/ward-audit-m26-other-machines.test.ts` names each one, so a new mismatch fails the build.
+**Status:** Done. Josh approved every recommendation (D-131, 10 Nov 2026), and the movement diagram
+(`docs/ward-flow/journey/machines.json`) now draws each one. The engine is unchanged. The test
+`tests/ward-audit-m26-other-machines.test.ts` lists only Z7, because the diagram states "any value to
+any other" in its note rather than drawing every pair. A new mismatch still fails the build. The
+table below is the record of what differed.
 
 For each, either the diagram is wrong (a docs change) or the engine is (a clinical behaviour change
 Josh rules on). The recommendation keeps the engine as it is and corrects the diagram, unless noted.

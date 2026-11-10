@@ -2654,7 +2654,7 @@ Source-contract SHA256: 0dd5d0653f6130d44495353d08a0b2f0b77f1e031d1b02c24ca94e00
 - A referral destination: states = raised | Waiting | Accepted | Declined | Cancelled | Withdrawn — a flag, not a state
 - A movement: states = Movement created | Placement requested | Destination review | Accepted, awaiting bed | Bed pulled | Handover ready | Moving | Arrived | Closed — did not proceed
 - An admission: states = No admission | Held | Occupied | Departed | Removed — not a state | Waitlisted
-- A transport job: states = No job | Booked | Crew accepted | En route | Collected | Arrived | Deleted | Stopped
+- A transport job: states = No job | Booked | Crew accepted | En route | Collected | Arrived | Stopped
 - A bed release: states = Not flagged | Expected | Confirmed | Discharged | Stuck — a flag, not a stage | Being made ready — a flag
 - The front door — an expect becomes a referral: states = Raised | Expected to arrive | In the department | Medically cleared — or not
 - A patient's legal status: states = Voluntary | Referred for psychiatric examination | Detained awaiting examination | Involuntary inpatient
