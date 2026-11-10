@@ -1041,8 +1041,7 @@ export class SharedWorkspaceClient {
     if (this.busy || this.disposed) return;
     this.busy = true;
     const generation = this.viewGeneration;
-    // Audit M10: a refusal earlier in this run stays on the board while later, unrelated saves go.
-    let refusal: string | null = null;
+    let refusal: string | null = null; // Audit M10: kept on the board (see `joinNotes`).
     try {
       while (!this.disposed && (this.pending || this.queue.length)) {
         if (!this.pending) {
@@ -1171,11 +1170,7 @@ export class SharedWorkspaceClient {
           return;
         }
         if (!response.ok) {
-          // Audit M10: a definite refusal (a named conflict, or the workflow's own 422) stops only the
-          // queued saves on its own record; the server still checks each of the others when it goes.
-          const scoped =
-            (response.status === 409 && conflict.namedConflict(value)) ||
-            (response.status === 422 && value?.code !== "role-ended");
+          const scoped = conflict.definiteRefusal(response.status, value);
           if (scoped) this.cancelQueuedOn(command.event, value);
           else this.cancelQueued();
           if (response.status === 409) {
@@ -1214,13 +1209,8 @@ export class SharedWorkspaceClient {
         const partly = value.outcome === "partly" && typeof value.error === "string" ? value.error : undefined;
         this.settle(command.commandId, "accepted", undefined, value.snapshot?.payload.state.undoRecords, value, partly);
         // Audit E-05: the board's message line names the ward that was not asked, as the local refusal note does.
-        this.publish({
-          status: "ready",
-          error:
-            [refusal, partly ? `Sent to the suitable wards only. ${sentence(partly)}` : null]
-              .filter(Boolean)
-              .join(" ") || null,
-        });
+        const note = partly ? `Sent to the suitable wards only. ${sentence(partly)}` : null;
+        this.publish({ status: "ready", error: conflict.joinNotes(refusal, note) });
       }
     } catch {
       if (generation === this.viewGeneration) {

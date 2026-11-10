@@ -82,3 +82,13 @@ export function keepBasis<S extends { revision: number; records: Map<string, num
   }
   return kept;
 }
+
+/**
+ * Audit M10: a definite refusal (a named conflict, or the workflow's own 422) stops only the queued
+ * saves on its own record; the server still checks each of the others when it goes.
+ */
+export const definiteRefusal = (status: number, value: { code?: unknown } | null | undefined): boolean =>
+  (status === 409 && namedConflict(value)) || (status === 422 && value?.code !== "role-ended");
+
+/** Audit M10: the board's message line keeps an earlier refusal beside any later note. */
+export const joinNotes = (...notes: (string | null)[]): string | null => notes.filter(Boolean).join(" ") || null;
