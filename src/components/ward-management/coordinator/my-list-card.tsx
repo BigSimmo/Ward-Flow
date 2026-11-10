@@ -3,7 +3,8 @@
 // Home's "My list" (approved Home mock-up v7, 22 Oct 2026): the Alerts queue rows and
 // the referrals awaiting a decision, in one card, built from the real Alerts row components.
 
-import { useState, type ReactNode } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -230,6 +231,21 @@ export function MyListCard({
   referralCap?: number;
 }) {
   const [allReferrals, setAllReferrals] = useState(false);
+  // Friction pass item 6a (Josh, 9 Nov 2026): the coordinator decides in Home's panel, so a plain
+  // click on Decide opens the referral there. The href stays for a new tab or middle click, and
+  // every other desk still goes to the Referrals board.
+  const decidesHere = useRouteRole() === "coordinator";
+  const decideHere = (referralId: string) =>
+    decidesHere
+      ? {
+          "aria-haspopup": "dialog" as const,
+          onClick: (event: MouseEvent<HTMLAnchorElement>) => {
+            if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            event.preventDefault();
+            onSelectReferral(referralId);
+          },
+        }
+      : {};
   const shownReferrals = referralCap === undefined || allReferrals ? referrals : referrals.slice(0, referralCap);
   const [allWaiting, setAllWaiting] = useState(false);
   const [callSheetOpen, setCallSheetOpen] = useState(false);
@@ -289,6 +305,7 @@ export function MyListCard({
                 href={decideHref(referral.id)}
                 className={buttonClass({ size: "sm" })}
                 aria-label={`Decide referral for ${name}`}
+                {...decideHere(referral.id)}
               >
                 Decide
               </Link>
@@ -307,6 +324,7 @@ export function MyListCard({
                 href={decideHref(referral.id)}
                 className={buttonClass({ size: "sm" })}
                 aria-label={`Decide referral for ${name}`}
+                {...decideHere(referral.id)}
               >
                 Decide
               </Link>
