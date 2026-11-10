@@ -17,6 +17,7 @@
 .scroll {
   max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
 }
 .scroll:focus-visible {
   outline: 2px solid var(--wf-focus-ring);

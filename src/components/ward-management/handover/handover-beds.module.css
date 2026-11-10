@@ -298,6 +298,7 @@
    does, instead of a 560px box. Below 1024px it scrolls only sideways. */
 .tableWrap {
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .caption {

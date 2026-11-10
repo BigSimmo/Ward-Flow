@@ -968,6 +968,7 @@
 .heroFigures {
   display: flex;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 .heroFigure {

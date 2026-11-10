@@ -74,6 +74,7 @@
 .tableWrap {
   min-width: 0;
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .tableWrap:focus-visible {
@@ -298,6 +299,7 @@
   display: flex;
   gap: var(--wf-s-2);
   overflow-x: auto;
+  overflow-y: hidden;
   padding: var(--wf-s-2) 0;
   background: var(--wf-canvas);
   scrollbar-width: none;
@@ -570,6 +572,7 @@
    row pin under the top bar while the page scrolls. */
 .chronoScroll {
   overflow-x: auto;
+  overflow-y: hidden;
   min-width: 0;
 }
 

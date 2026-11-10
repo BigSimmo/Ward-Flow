@@ -353,6 +353,7 @@
 .bedTableWrap {
   padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .bedTable {
@@ -1183,6 +1184,7 @@ label.todoMain:has(.todoTick:focus-visible) {
   .headTools > div {
     min-width: 0;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
   }
 
@@ -1223,6 +1225,7 @@ label.todoMain:has(.todoTick:focus-visible) {
 @media (max-width: 46.4375rem) {
   .flowSwitch > div {
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
   }
 
