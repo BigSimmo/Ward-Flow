@@ -43,6 +43,17 @@ describe("M48 C6: the browser adopts prototype data only", () => {
   it("accepts a prototype executive report and refuses the same report labelled live", () => {
     const actor = "synthetic-executive";
     const state = seedWardFlowStateAt(0);
+    // Projected once: the projection is the slow part, and both reports carry the same figures.
+    const projected = projectExecutiveReportingFoundation(
+      state,
+      { role: "executive", scope: { kind: "statewide" } },
+      {
+        now: 642,
+        dayZero: "2026-10-24T00:00:00Z",
+        startedAt: "2026-10-24T00:00:00Z",
+        places: wardPlaceLookup(state.units),
+      },
+    );
     const report = (dataMode: string) => ({
       kind: "executive-aggregate",
       dataMode,
@@ -52,16 +63,7 @@ describe("M48 C6: the browser adopts prototype data only", () => {
       accessUntil: Date.now() + 120_000,
       now: 642,
       demoControls: false,
-      report: projectExecutiveReportingFoundation(
-        state,
-        { role: "executive", scope: { kind: "statewide" } },
-        {
-          now: 642,
-          dayZero: "2026-10-24T00:00:00Z",
-          startedAt: "2026-10-24T00:00:00Z",
-          places: wardPlaceLookup(state.units),
-        },
-      ),
+      report: projected,
     });
     const outer = {
       actorId: actor,
