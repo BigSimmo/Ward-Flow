@@ -647,6 +647,7 @@ a.cellBody {
 @media (min-width: 46.5rem) and (max-width: 63.99rem) {
   .cells {
     overflow-x: auto;
+    overflow-y: hidden;
     overscroll-behavior-x: contain;
     scrollbar-width: none;
   }
