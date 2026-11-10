@@ -11,7 +11,12 @@ import { expect, type Locator, type Page, type TestInfo } from "playwright/test"
  * 390x844, which is its own design rather than a squeezed desktop.
  */
 
-/** WCAG 2.2 A and AA. Best-practice rules are left out: the gate fails on standards, not taste. */
+/**
+ * WCAG 2.0 and 2.1 A and AA, plus WCAG 2.2 AA. There is no `wcag22a` tag: axe-core 4.14 has no rule
+ * tagged with it (its one WCAG 2.2 rule, target-size, is `wcag22aa`), so WCAG 2.2 A adds nothing to
+ * scan for (checked 10 Nov 2026, M159). Best-practice rules are left out: the gate fails on
+ * standards, not taste.
+ */
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 /**
  * Target size (WCAG 2.5.8) is scanned with the screen scrolled to the top. Mid-scroll, the pinned
@@ -25,7 +30,7 @@ const BLOCKING_IMPACTS = new Set(["serious", "critical"]);
 
 /**
  * Runs axe on the page as it stands and fails on any serious or critical WCAG 2.2 AA violation
- * (the tags in `AXE_TAGS` include 2.0, 2.1 and 2.2 A and AA).
+ * (the tags in `AXE_TAGS`: 2.0 and 2.1 A and AA, and 2.2 AA).
  * Moderate and minor findings are attached to the report but never fail the gate. The full result
  * is attached per step, so a red run says which rule failed on which element at which step.
  */
