@@ -384,6 +384,7 @@
     margin-inline: -4px;
     padding: 2px 4px;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
   }
 

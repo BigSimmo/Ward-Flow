@@ -2332,6 +2332,7 @@
 
 .filterChipsTrack {
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: thin;
   scroll-padding-inline: 0.375rem;
 }

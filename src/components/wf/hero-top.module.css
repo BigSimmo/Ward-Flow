@@ -512,6 +512,8 @@ a.cellBody {
     margin-inline: -16px;
     padding: 0 24px 0 16px;
     overflow-x: auto;
+    /* Sideways only: the chips' taller tap band must not let the row drag up and down. */
+    overflow-y: hidden;
     overscroll-behavior-x: contain;
     scroll-padding-left: 16px;
     scroll-snap-type: x proximity;

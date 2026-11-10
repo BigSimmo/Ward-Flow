@@ -151,6 +151,7 @@ export function WardBoard({
     rejections,
     dayZero,
     dispatch,
+    wardReferralInbox,
   } = useWardFlowSelect(
     "units",
     "admissions",
@@ -163,6 +164,7 @@ export function WardBoard({
     "rejections",
     "dayZero",
     "dispatch",
+    "wardReferralInbox",
   );
   const now = useWardFlowClock();
   // D-80: a site bed manager blocks a release in its own name; the scope check keeps it to its wards.
@@ -463,7 +465,10 @@ export function WardBoard({
    */
   const bedReleases = derivedBedReleases([...admissions], now);
 
-  const available = headlineAvailable(unit, admissions, bedReleases, [...leaveBeds], now);
+  // D-115 item 3: beds named for an open journey or an accepted referral are spoken for, as on Home,
+  // Statistics, the TV and print. The ward-scoped inbox, never the full referral array.
+  const namedHolds = [...movements, ...(wardReferralInbox?.(unit.id) ?? [])];
+  const available = headlineAvailable(unit, admissions, bedReleases, [...leaveBeds], now, namedHolds);
   // 🔴 THE FIGURE ABOVE IS CORRECT AND MUST NOT CHANGE. `availableNow` deliberately subtracts
   // nothing for a preparation note: asked in September whether a bed being cleaned should drop the
   // ward's number or merely refuse the pull, the owner chose the refusal, because the ward has not
@@ -475,8 +480,8 @@ export function WardBoard({
   // Walkthrough D7 (25 Sept 2026): read the LIVE releases, because a preparation note is recorded
   // on a release in state; the rebuilt list above never carries one, so "being cleaned" never showed.
   const pendingPreparation = bedsPendingPreparation(unit.id, [...(liveBedReleases ?? [])]);
-  const constraint = constraintSentence(unit, admissions, bedReleases, [...leaveBeds], now);
-  const tiles = buildTiles(unit, admissions, bedReleases, now);
+  const constraint = constraintSentence(unit, admissions, bedReleases, [...leaveBeds], now, namedHolds);
+  const tiles = buildTiles(unit, admissions, bedReleases, now, { leaveBeds, holds: namedHolds });
   // Read straight back out, purely to say how many closed tiles are on screen in the footnote below
   // — never re-derived. `buildTiles` already clamped this into the physically-empty pool; the
   // footnote must describe exactly what got drawn, not a second, unclamped copy of the figure.
@@ -496,7 +501,7 @@ export function WardBoard({
   const targets = arrowTargets(admissionsForUnit(admissions, unit.id), now);
   /* Scoped inside `buildOccupants` with the same `admissionsForUnit(...)` + `bedIsOccupied` pair
    * `buildTiles` uses — see that function's own comment for the defect this prevents. */
-  const occupants = buildOccupants(unit, admissions, now);
+  const occupants = buildOccupants(unit, admissions, now, leaveBeds);
   // Feature 29 (Josh, 9 Nov 2026): the 28 day readmission flag on each inpatient's tile, as the
   // ward's own copy (discharge time only). Referrals stay out: a ward screen never reads them, so
   // identity goes through the provider's projection, as names do, and a referral-linked stay resolves.
@@ -556,7 +561,7 @@ export function WardBoard({
   const breakdown = capacityBreakdown(unit, [...bedReleases], [...leaveBeds], now);
   // The ruled Closed figure (`ward-bed-states.ts`), the same call `buildTiles` draws its closed
   // tiles from. `breakdown.held` is NOT this figure: it still counts a live pull's empty bed.
-  const states = bedStates(unit, admissions, [...bedReleases], [...leaveBeds]);
+  const states = bedStates(unit, admissions, [...bedReleases], [...leaveBeds], namedHolds);
   const incoming = buildIncoming(unit, admissions, movements, now);
   const outgoing = outgoingToday(unit, bedReleases, outgoingBasis, now);
   /*

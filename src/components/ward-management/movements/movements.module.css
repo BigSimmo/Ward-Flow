@@ -2047,6 +2047,7 @@
     min-width: 0;
     padding: 2px;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
   }
 

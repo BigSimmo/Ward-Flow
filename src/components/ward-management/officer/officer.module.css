@@ -93,6 +93,7 @@
   margin: -4px;
   padding: 4px;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -283,6 +284,7 @@
 .tableScroll {
   min-width: 0;
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .jobsTable {
@@ -1833,6 +1835,7 @@
     /* Room for the chips' 48px tap covers inside the sideways scroller. */
     padding-block: 4px;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
   }
 
