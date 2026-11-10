@@ -21,6 +21,11 @@ import {
   type Unit,
 } from "@/components/ward-management/ward-model";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
+import {
+  PULL_HOLD_EXTENSION_MINUTES,
+  PULL_HOLD_MAX_TOTAL_MINUTES,
+} from "@/components/ward-management/ward-operational-defaults";
+import { extendedPullExpiry, pullExtensionChoices } from "@/components/ward-management/ward-bed-hold-extension";
 import { movementBedReservation, pendingNumberedReservations } from "./ward-movement-bed-hold";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import type { PlacementEventHelpers, WardFlowState } from "./ward-flow-reducer";
@@ -35,6 +40,7 @@ export type PlacementEvent = Extract<
   {
     type:
       | "PULL_PATIENT"
+      | "EXTEND_PULL"
       | "RELEASE_PULL"
       | "RELEASE_HELD_BED"
       | "RELEASE_DIVERTED_BED"
@@ -188,6 +194,7 @@ export function reducePlacementEvent(
           stage: "pulled",
           waitlistedUnitIds: undefined,
           pullExpiresAt: event.now + pullHoldMinutesFor(state, movement, event.unitId),
+          pullExtensions: undefined,
           allocatedBed: movement.allocatedBed ?? held.id,
           stageChanges: [
             ...movement.stageChanges,
@@ -424,6 +431,7 @@ export function reducePlacementEvent(
         stage: "pulled",
         waitlistedUnitIds: undefined,
         pullExpiresAt: event.now + pullHoldMinutesFor(state, movement, event.unitId),
+        pullExtensions: undefined,
         allocatedBed: admission.id,
         // The join `RELEASE_PULL` needs to undo exactly this record, and `PATIENT_ARRIVED` needs to
         // mark exactly this one as having arrived. See `Movement.admissionId`.
@@ -441,6 +449,45 @@ export function reducePlacementEvent(
       decision.reasonCode = "none";
       decision.overrideFactRecorded = updatedMovement.overrides.length > movement.overrides.length;
       return replaceMovement(withPerson, movement.id, updatedMovement);
+    }
+
+    case "EXTEND_PULL": {
+      // Feature 11 (Josh, 9 Nov 2026): more time on a pulled bed's hold, from a fixed list, capped.
+      const movement = findMovement(state, event.movementId);
+      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      if (movement.closure) {
+        return reject(state, event, `cannot extend a pull for a closed movement (${movement.closure.reason})`);
+      }
+      if (movement.stage !== "pulled" || movement.pullExpiresAt === undefined) {
+        return reject(state, event, "EXTEND_PULL needs a bed that is pulled now");
+      }
+      if (movement.transport?.collectedAt !== undefined) {
+        return reject(state, event, `movement ${movement.id}'s patient has already been collected`);
+      }
+      if (event.role === "ward" && event.actingUnitId !== movement.acceptedUnitId) {
+        return reject(
+          state,
+          event,
+          `EXTEND_PULL was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is pulled at ${movement.acceptedUnitId}`,
+        );
+      }
+      if (!(PULL_HOLD_EXTENSION_MINUTES as readonly number[]).includes(event.minutes)) {
+        return reject(state, event, "EXTEND_PULL minutes must be chosen from PULL_HOLD_EXTENSION_MINUTES");
+      }
+      // The same rule the "Extend hold" chips read (`ward-bed-hold-extension.ts`). A lapsed hold is extended
+      // from now, so the added time is never already spent.
+      if (!pullExtensionChoices(movement, event.now, state.configuration.pullHoldMinutes).includes(event.minutes)) {
+        return reject(
+          state,
+          event,
+          `EXTEND_PULL would keep the bed pulled past ${PULL_HOLD_MAX_TOTAL_MINUTES / 60} hours from the pull`,
+        );
+      }
+      return replaceMovement(state, movement.id, {
+        ...movement,
+        pullExpiresAt: extendedPullExpiry(movement.pullExpiresAt, event.minutes, event.now),
+        pullExtensions: [...(movement.pullExtensions ?? []), { at: event.now, by: event.role, minutes: event.minutes }],
+      });
     }
 
     case "RELEASE_PULL": {

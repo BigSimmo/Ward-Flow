@@ -46,6 +46,7 @@ import {
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { pullBlockedReason } from "./ward-pull-blocked";
+import { ExtendHoldControl } from "@/components/ward-management/ward-extend-hold";
 import { observationSummary } from "@/components/ward-management/ward-observation";
 import { communityOriginLabel, originName } from "@/components/ward-management/ward-movement-origin";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
@@ -462,6 +463,11 @@ export function WardArrivalsCorridor({
                         </span>
                       ) : null}
                     </div>
+                  ) : null}
+
+                  {/* Feature 11: more time on the hold, beside the hold's countdown. */}
+                  {movement.stage === "pulled" ? (
+                    <ExtendHoldControl movement={movement} dispatch={dispatch} rejections={rejections} now={now} />
                   ) : null}
 
                   {canRelease ? (

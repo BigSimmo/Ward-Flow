@@ -1,0 +1,103 @@
+/* Feature 6 (9 Nov 2026): discharge dates slipping. Calm card, no coloured edge. */
+.card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-bottom: var(--wf-s-4);
+  padding: 0;
+  overflow: hidden;
+}
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+.title {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-font);
+}
+.summary {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.list > li + li {
+  border-top: 1px solid var(--wf-line-2);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+}
+button.row {
+  cursor: pointer;
+}
+button.row:hover {
+  background: var(--wf-surface-2);
+}
+button.row:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.name {
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.meta {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.days {
+  flex: none;
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-13);
+  font-variant-numeric: tabular-nums;
+}
+.more {
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line-2);
+}
+.figure {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Features 37 and 13: the checklist and team reply tags wrap inside a narrow cell, never clipped. */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 100%;
+  margin-top: 4px;
+  white-space: normal;
+}
+.tags:empty {
+  display: none;
+}

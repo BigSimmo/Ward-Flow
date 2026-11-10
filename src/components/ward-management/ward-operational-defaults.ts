@@ -68,6 +68,23 @@ export const ED_TREND_STEP_MINUTES = 2 * MINUTES_PER_HOUR;
 /** Minutes past the estimated arrival before a screen names a person as late. */
 export const LATE_ARRIVAL_GRACE_MINUTES = CLINICAL_VALUES.lateArrivalGrace.value;
 
+/**
+ * Transport list (feature 25, Josh 9 Nov 2026): a requested job nobody has accepted after this long
+ * is shown as Delayed. It flags work, so its figure is a synthetic clinical value (not a legal limit).
+ */
+export const TRANSPORT_ACCEPT_DELAY_MINUTES = CLINICAL_VALUES.transportAcceptDelay.value;
+
+/**
+ * Bed hold extension (feature 11, Josh 9 Nov 2026). The amounts are operational settings, not clinical or
+ * legal limits. A ward or coordinator can add one of these amounts to a pulled bed's Pull time limit
+ * (`EXTEND_PULL`), as long as the whole hold, from the pull to the new limit, stays within
+ * `PULL_HOLD_MAX_TOTAL_MINUTES`.
+ */
+export const PULL_HOLD_EXTENSION_MINUTES = [60, 120, 240] as const;
+export type PullHoldExtensionMinutes = (typeof PULL_HOLD_EXTENSION_MINUTES)[number];
+/** The longest a pulled bed can be held in all, extensions included: a synthetic clinical value. */
+export const PULL_HOLD_MAX_TOTAL_MINUTES = CLINICAL_VALUES.pullHoldMaxTotal.value;
+
 /** ED pressure on the side rail: amber once the longest wait reaches this. */
 export const ED_ELEVATED_PRESSURE_WAIT_MINUTES = CLINICAL_VALUES.edElevatedPressure.value;
 /** ED pressure on the side rail: red once the longest wait reaches this. */
@@ -235,9 +252,29 @@ function hoursText(minutes: number): string {
 /** The second waiting band on the statistics screens (twice the long-wait default, unsigned). */
 export const VERY_LONG_WAIT_MINUTES = CLINICAL_VALUES.veryLongWait.value;
 
+/**
+ * Feature 6 (9 Nov 2026): a stay is listed under "Discharge dates slipping" on the Discharges board
+ * once its expected discharge date sits more than this many days after the first date the ward set.
+ * It flags a stay and colours its bed, so its figure is a synthetic clinical value (not a legal limit).
+ */
+export const EDD_SLIP_FLAG_DAYS = CLINICAL_VALUES.eddSlipFlag.value;
+
+/**
+ * Feature 14 (9 Nov 2026): how far from now a weekend discharge review may name its weekend. The
+ * board's weekend starts at most about five days ahead (from its Monday) and a few days back (a long
+ * weekend in progress), so six days keeps it in reach while the following weekend, a full week after
+ * one in progress, stays out. The reducer holds no calendar, so this is a bound, not the board's own
+ * window. An input bound on the tick, never a clinical limit.
+ */
+export const WEEKEND_REVIEW_REACH_MINUTES = 6 * 24 * MINUTES_PER_HOUR;
+
 /** This group's entries for the settings list; `OPERATIONAL_DEFAULTS` below includes them. */
 const OPERATIONAL_DEFAULTS_FIX: readonly OperationalDefault[] = [
   { name: "Wait shown as very long from", display: hoursText(VERY_LONG_WAIT_MINUTES) },
+  {
+    name: "Discharge date flagged as slipping after",
+    display: `more than ${EDD_SLIP_FLAG_DAYS} days later than first set`,
+  },
 ];
 
 /** The list the settings screen shows, read-only, in the order a coordinator meets them. */
@@ -275,6 +312,11 @@ export const OPERATIONAL_DEFAULTS: readonly OperationalDefault[] = [
     display: `${hoursText(EXPECT_FLAG_VOLUNTARY_MINUTES)} (voluntary), 7 days (involuntary)`,
   },
   { name: "Expected referral flagged to reconsider after", display: hoursText(EXPECT_RECONSIDER_AFTER_MINUTES) },
+  { name: "Longest a bed can stay pulled", display: hoursText(PULL_HOLD_MAX_TOTAL_MINUTES) },
+  {
+    name: "Transport job shown as delayed if not accepted after",
+    display: `${TRANSPORT_ACCEPT_DELAY_MINUTES} minutes`,
+  },
   { name: "Morning handover", display: "08:00" },
   { name: "Discharge board's Tonight group", display: "16:00 until midnight; later days show under Tomorrow" },
   {

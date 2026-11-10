@@ -55,13 +55,13 @@ function admission(overrides: Partial<Admission>): Admission {
   return { ...occupiedAdmission, unitId: unit.id, ...overrides } as Admission;
 }
 
-function horizon(forecast: ReturnType<typeof bedsForecast>, hours: 24 | 48) {
+function horizon(forecast: ReturnType<typeof bedsForecast>, hours: 24 | 48 | 72) {
   return forecast.horizons.find((entry) => entry.hours === hours)!;
 }
 
 describe("bedsForecast", () => {
   it.each(["expected", "confirmed"] as const)(
-    "removes a rescheduled %s discharge from both horizons and its source list",
+    "removes a rescheduled %s discharge from every horizon and its source list",
     (state) => {
       const flagged = release({ admissionId: "AD-MOVED", state, expectedAt: NOW + 60 });
       const stay = admission({ id: flagged.admissionId, expectedDischargeAt: NOW + 60 });
@@ -70,7 +70,7 @@ describe("bedsForecast", () => {
       const forecast = bedsForecast(
         [unit],
         [flagged],
-        [{ ...stay, expectedDischargeAt: NOW + 3 * MINUTES_PER_DAY }],
+        [{ ...stay, expectedDischargeAt: NOW + 4 * MINUTES_PER_DAY }],
         [],
         NOW,
       );
@@ -289,12 +289,14 @@ describe("bedsForecast", () => {
 
   it("runs on the seeded network and keeps low <= likely <= high", () => {
     const forecast = bedsForecast(allUnits(), bedReleases, wardAdmissions, wardMovements, NOW);
-    expect(forecast.horizons.map((entry) => entry.hours)).toEqual([24, 48]);
+    // Feature 21 (Josh, 9 Nov 2026): a third day, 72 hours out.
+    expect(forecast.horizons.map((entry) => entry.hours)).toEqual([24, 48, 72]);
     for (const entry of forecast.horizons) {
       expect(entry.low).toBeLessThanOrEqual(entry.likely);
       expect(entry.likely).toBeLessThanOrEqual(entry.high);
     }
     expect(horizon(forecast, 48).likely).toBeGreaterThanOrEqual(horizon(forecast, 24).likely);
+    expect(horizon(forecast, 72).likely).toBeGreaterThanOrEqual(horizon(forecast, 48).likely);
   });
 });
 

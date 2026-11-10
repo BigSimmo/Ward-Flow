@@ -115,6 +115,7 @@ export type WardScreenId =
   | "alerts"
   | "on-call"
   | "seclusion"
+  | "leave"
   | "settings";
 
 export const WARD_SCREEN_IDS: readonly WardScreenId[] = [
@@ -152,6 +153,7 @@ export const WARD_SCREEN_IDS: readonly WardScreenId[] = [
   "alerts",
   "on-call",
   "seclusion",
+  "leave",
   "settings",
 ];
 
@@ -194,6 +196,8 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     "on-call": "all",
     // D-72: the operational seclusion and restraint view, for the site's own wards.
     seclusion: "own",
+    // Feature 23: everyone on leave on the site's own wards.
+    leave: "own",
     settings: "own",
   },
   // Josh, 5 Nov 2026 (WF-10, replaces Q154): the ward, ED and community desks no longer open the
@@ -222,6 +226,8 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     "on-call": "all",
     // D-72: the ward's own seclusion room, restraint in use and incidents.
     seclusion: "own",
+    // Feature 23: everyone on leave from the ward's own beds.
+    leave: "own",
     // D-80: its own ward's statistics only, as counts (`OWN_STATISTICS_SECTION`).
     statistics: "counts",
     settings: "own",
@@ -407,6 +413,7 @@ export function screenForPath(pathname: string): ScreenAddress | undefined {
     case "alerts":
     case "on-call":
     case "seclusion":
+    case "leave":
     case "settings":
       return second === undefined ? { screen: first } : undefined;
     case "ward":

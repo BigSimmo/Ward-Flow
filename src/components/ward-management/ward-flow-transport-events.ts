@@ -812,6 +812,7 @@ export function reduceTransportEvent(
             : {}),
           transportLegalStatus: event.transportLegalStatus,
           ...(event.estimatedAt === undefined ? {} : { estimatedAt: event.estimatedAt }),
+          bookedAt: event.now,
           ...(bookingException ? { exceptions: [bookingException] } : {}),
           // Carried forward from RECORD_TRANSPORT_NEED so the "no transport needed" branches read a
           // runtime-booked job as they read a seeded one.

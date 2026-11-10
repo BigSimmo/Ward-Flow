@@ -3,11 +3,12 @@
 import { useMemo } from "react";
 
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { dayOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { bedStates } from "@/components/ward-management/ward-bed-states";
-import type { Admission } from "@/components/ward-management/ward-admissions";
-import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
+import Link from "next/link";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { leaveBedLabels, leaveDueToday } from "@/components/ward-management/leave/leave-tracker";
+import { WARD_LEAVE_HREF } from "@/components/ward-management/ward-nav";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { EmptyState, StatusGlyph } from "@/components/wf";
 import { wardNames } from "./ward-tool-remind-store";
 import styles from "./ward-tool-leave-due.module.css";
@@ -15,36 +16,7 @@ import styles from "./ward-tool-leave-due.module.css";
 type DueRow = { id: string; bedLabel: string; dueAt: Instant; overdue: boolean };
 type DueWard = { unitId: string; name: string; rows: DueRow[] };
 
-/**
- * Leave beds due back by the end of today, and any already overdue. An absence without leave is
- * left out: that bed is not "due back", and the ward's own page carries it.
- */
-function dueToday(leave: LeaveBed, now: Instant): boolean {
-  return !leave.absentWithoutLeave && dayOf(leave.expectedReturn) <= dayOf(now);
-}
-
-/**
- * The bed a leave record holds. The ward's recorded bed number when it has one; otherwise the bed
- * board's own order (ready beds first, then each leave record), so the label matches the board.
- */
-function leaveBedLabels(
-  unit: Unit,
-  unitLeave: readonly LeaveBed[],
-  admissions: readonly Admission[],
-  bedReleases: BedRelease[],
-  leaveBeds: readonly LeaveBed[],
-): Map<string, string> {
-  const ready = bedStates(unit, admissions, bedReleases, leaveBeds).ready;
-  const labels = new Map<string, string>();
-  unitLeave.forEach((leave, index) => {
-    const recorded = admissions.find((admission) => admission.id === leave.admissionId)?.bedNumber;
-    const number = recorded ?? ready + index + 1;
-    labels.set(leave.id, `Bed ${String(number).padStart(2, "0")}`);
-  });
-  return labels;
-}
-
-function useLeaveDue(): DueWard[] {
+function useLeaveDue(): { wards: DueWard[]; absent: number } {
   const { leaveBeds, units, admissions, bedReleases } = useWardFlowSelect(
     "leaveBeds",
     "units",
@@ -59,7 +31,7 @@ function useLeaveDue(): DueWard[] {
     const wards: DueWard[] = [];
     for (const unit of units) {
       const unitLeave = leaveBeds.filter((leave) => leave.unitId === unit.id);
-      const due = unitLeave.filter((leave) => dueToday(leave, now));
+      const due = unitLeave.filter((leave) => leaveDueToday(leave, now));
       if (due.length === 0) continue;
       const labels = leaveBedLabels(unit, unitLeave, admissions, bedReleases, leaveBeds);
       wards.push({
@@ -75,22 +47,50 @@ function useLeaveDue(): DueWard[] {
           .sort((left, right) => left.dueAt - right.dueAt),
       });
     }
+    // An absence without leave is not "due back"; the panel says how many it leaves to the Leave page.
+    const absent = leaveBeds.filter((leave) => leave.absentWithoutLeave).length;
     // A ward desk's own ward first, then the rest in network order.
-    return wards.sort((left, right) => Number(own.has(right.unitId)) - Number(own.has(left.unitId)));
+    return {
+      wards: wards.sort((left, right) => Number(own.has(right.unitId)) - Number(own.has(left.unitId))),
+      absent,
+    };
   }, [leaveBeds, units, admissions, bedReleases, now, access]);
 }
 
 /** Leave beds due back today, for the Tools row count. */
 export function useLeaveDueCount(): number {
-  return useLeaveDue().reduce((sum, ward) => sum + ward.rows.length, 0);
+  return useLeaveDue().wards.reduce((sum, ward) => sum + ward.rows.length, 0);
 }
 
 /** Q326: who is due back from leave today, by ward. Beds only, never a name. */
 export function ToolLeaveDue({ onNavigate }: { onNavigate: () => void }) {
-  void onNavigate;
-  const wards = useLeaveDue();
+  const { wards, absent } = useLeaveDue();
   const now = useWardFlowClock();
-  if (wards.length === 0) return <EmptyState title="Nobody due back today." />;
+  // An ED desk has this panel but not the Leave page, so it is not offered a link that would refuse it.
+  const canOpenHref = useCanOpenHref();
+  // Feature 23: the full Leave page, everyone on leave with their status. Polish (9 Nov 2026): the
+  // page also lists anyone absent without leave, so the panel says why its count is smaller.
+  const seeAll = (
+    <>
+      {absent > 0 ? (
+        <p className={styles.absentNote} data-testid="tool-leave-due-absent">
+          {absent} absent without leave, not counted here.
+        </p>
+      ) : null}
+      {canOpenHref(WARD_LEAVE_HREF) ? (
+        <Link href={WARD_LEAVE_HREF} className={styles.seeAll} onClick={onNavigate}>
+          See all leave
+        </Link>
+      ) : null}
+    </>
+  );
+  if (wards.length === 0)
+    return (
+      <div className={styles.tool}>
+        <EmptyState title="Nobody due back today." />
+        {seeAll}
+      </div>
+    );
   return (
     <div className={styles.tool}>
       {wards.map((ward) => (
@@ -119,6 +119,7 @@ export function ToolLeaveDue({ onNavigate }: { onNavigate: () => void }) {
           </ul>
         </section>
       ))}
+      {seeAll}
     </div>
   );
 }

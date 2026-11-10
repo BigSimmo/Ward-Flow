@@ -3605,3 +3605,76 @@ button.searchBox:hover {
   color: var(--wf-ink-3);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
+
+/* Feature 13 (9 Nov 2026): the team's follow-up reply on an expected-back or discharged card. */
+.followUpReply {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  margin-top: var(--wf-s-2);
+}
+.followUpReply > * {
+  flex: 1 1 12rem;
+  max-inline-size: 18rem;
+}
+.followUpReplyLabel {
+  display: block;
+  margin-bottom: var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+.followUpReplies {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0 var(--wf-s-4);
+  list-style: none;
+}
+/* One row per person: name, UMRN, ward and date on the left; the reply in a fixed-width column on the
+ * right so every row's chips line up, with the decline reasons (when shown) stacked under the reply.
+ * The field names stay for screen readers (the card title already says what the choices are). */
+.followUpReplies > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 21rem;
+  align-items: start;
+  column-gap: var(--wf-s-3);
+  padding: var(--wf-s-3) 0;
+}
+.followUpPerson {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.followUpPerson .personMeta {
+  margin-top: 0;
+}
+.followUpReplies > li > .followUpReply {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: var(--wf-s-2);
+  margin-top: 0;
+}
+.followUpReplies .followUpReply > * {
+  flex: none;
+  max-inline-size: none;
+}
+.followUpReplies .followUpReply label,
+.followUpReplies .followUpReply .followUpReplyLabel {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (max-width: 46.4375rem) {
+  .followUpReplies > li {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--wf-s-2);
+  }
+}
+.followUpReplies > li + li {
+  border-top: 1px solid var(--wf-line);
+}

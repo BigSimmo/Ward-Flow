@@ -1,5 +1,6 @@
 import { validDischargeRequestNamespace } from "./ward-discharge-records";
 import { isOnBehalfReason } from "./ward-on-behalf-reason";
+import { dischargeFollowThroughFields } from "./ward-discharge-follow-through-storage";
 import { restoreRuleProblem, storedPlacementInvariants } from "./ward-flow-storage-invariants";
 import { hasDuplicateRetainedUmrns } from "./ward-retained-umrn";
 import {
@@ -12,6 +13,7 @@ import * as z from "zod/mini";
 import { validCareJourney, validCareChange } from "./ward-care-journey";
 import type { WardFlowState } from "./ward-flow-reducer";
 import {
+  isDelayedDischargeReason,
   isDischargeBarrier,
   isLeavingDestination,
   isPlannedAdmissionCancelReason,
@@ -69,6 +71,7 @@ import { REPATRIATION_MODES } from "./ward-flow-events";
 import { HOME_SERVICE_ANSWERS, RETURN_PREREQUISITES } from "./out-of-area/home-service-return";
 import { isDirectoryEntryId } from "./on-call/on-call-checks";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
+import { PULL_HOLD_EXTENSION_MINUTES } from "./ward-operational-defaults";
 import { legalFormExpiryCorrection } from "./ward-flow-storage-legal-form-rules";
 import { STORED_PATIENT_CARE_PLAN_FIELDS } from "./ward-patient-care-plans-storage";
 import {
@@ -79,15 +82,13 @@ import {
 import { isSnoozeReason } from "./ward-inbox-snooze";
 import { scenarioWardNetwork, WARD_SCENARIOS } from "./ward-scenarios";
 import { communityTeamById } from "./community/community-derivations";
-import { syntheticGovernanceAuditEvents, withSeededReviewIds } from "./ward-governance-seed";
+import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
 import { isBreakGlassReviewId } from "./ward-break-glass-review-id";
 import { UNDO_STEP_ACTIONS } from "./ward-undo";
 import { BED_RELEASE_BLOCKERS } from "./ward-change-reasons";
 import { dischargeLogisticsFields } from "./discharges/discharge-dependency-validation";
 import { numberedBedKind } from "./ward-bed-designation";
 import { isObservation, type Observation } from "./ward-observation";
-import { upgradeLegacyDeclineReasons } from "./ward-decline-legacy";
-import { upgradeLegacyObservationRows } from "./ward-observation-legacy";
 import { isTentativeDiagnosisBlock } from "./ward-diagnosis";
 import { isCommunityReferralPurpose } from "./ward-model-referral-parts";
 import { storedStaffRequests } from "./staffing/staff-requests-schema";
@@ -535,6 +536,16 @@ const movement = z
     referralSourceAdmissionId: z.optional(id),
     acceptedUnitId: link,
     pullExpiresAt: z.optional(finite),
+    // Feature 11: each Extend hold on the current pull, only as EXTEND_PULL writes it (role, listed amount).
+    pullExtensions: z.optional(
+      z.array(
+        z.strictObject({
+          at: finite,
+          by: z.enum(Object.keys(WARD_FLOW_ROLE_LABELS) as [string, ...string[]]),
+          minutes: z.custom((value) => (PULL_HOLD_EXTENSION_MINUTES as readonly unknown[]).includes(value)),
+        }),
+      ),
+    ),
     extendedHoldAt: z.optional(finite),
     closure: z.optional(closureRule),
     // D-74: the community purpose that closed this record is one of the two listed values, or absent.
@@ -563,55 +574,66 @@ const movement = z
     }),
   );
 
-const admission = z.looseObject({
-  id,
-  unitId: text,
-  meetingActions: z.optional(z.array(meetingAction)),
-  state: z.enum(["waitlisted", "pulled", "occupied", "departed"]),
-  observation: observationRule,
-  observationChanges: z.optional(z.array(observationChangeRule)),
-  highAcuity: bool,
-  sex: text,
-  // R7 / counts follow gender (25 September 2026): optional; absent in older saves, which load as they are.
-  gender: z.optional(z.enum(REFERRAL_GENDERS)),
-  dischargeDateMoves: counter,
-  // v10 pass 2 (Bed board): optional, a whole bed on the stay's own unit when present.
-  bedNumber: z.optional(bed),
-  pulledAt: nullableFinite,
-  arrivedAt: nullableFinite,
-  awayAtEmergencyDepartmentSince: nullableFinite,
-  expectedDischargeAt: nullableFinite,
-  dischargeDateSetAt: nullableFinite,
-  dischargeConfirmedAt: nullableFinite,
-  leftAt: nullableFinite,
-  patientId: nullableText,
-  referralId: nullableText,
-  movementId: nullableText,
-  plannedLegalStatus: z.optional(z.custom(isPlannedAdmissionLegalStatus)),
-  homeRegion: nullableText,
-  dischargeDateSetBy: nullableText,
-  dischargeConfirmedBy: nullableText,
-  blockReason: z.nullable(z.enum(BED_RELEASE_BLOCKERS)),
-  stayBlockRecords: z.optional(z.custom(isStayBlockRecords)), // absent in older saves.
-  leavingDestination: z.nullable(z.custom(isLeavingDestination)),
-  // A stored barrier is a list value or absent; free text would be typed text restored (finding A2-2).
-  dischargeBarrier: z.optional(z.nullable(z.custom(isDischargeBarrier))),
-  // FD-10: the ward's own block, a listed block with a finite time, or absent in older saves.
-  wardDiagnosis: z.optional(
-    z.looseObject({
-      block: z.custom((value) => typeof value === "string" && isTentativeDiagnosisBlock(value)),
-      recordedAt: finite,
-      recordedBy: text,
-    }),
-  ),
-  // Browser storage holds fixed-list criteria with finite times. A typed patient specific criterion
-  // is held only as the device copy's stand-in, never its words (D-60, D-65, D-72).
-  dischargeCriteria: z.optional(z.nullable(z.custom(isDeviceCopyDischargeCriteriaRecord))),
-  careJourney: z.optional(z.custom(validCareJourney)),
-  followUp: z.nullable(
-    z.looseObject({ state: z.enum(["arranged", "not_arranged"]), recordedAt: finite, recordedBy: text }),
-  ),
-});
+const admission = z
+  .looseObject({
+    id,
+    unitId: text,
+    meetingActions: z.optional(z.array(meetingAction)),
+    state: z.enum(["waitlisted", "pulled", "occupied", "departed"]),
+    observation: observationRule,
+    observationChanges: z.optional(z.array(observationChangeRule)),
+    highAcuity: bool,
+    sex: text,
+    // R7 / counts follow gender (25 September 2026): optional; absent in older saves, which load as they are.
+    gender: z.optional(z.enum(REFERRAL_GENDERS)),
+    dischargeDateMoves: counter,
+    // v10 pass 2 (Bed board): optional, a whole bed on the stay's own unit when present.
+    bedNumber: z.optional(bed),
+    pulledAt: nullableFinite,
+    arrivedAt: nullableFinite,
+    awayAtEmergencyDepartmentSince: nullableFinite,
+    expectedDischargeAt: nullableFinite,
+    dischargeDateSetAt: nullableFinite,
+    dischargeConfirmedAt: nullableFinite,
+    leftAt: nullableFinite,
+    patientId: nullableText,
+    referralId: nullableText,
+    movementId: nullableText,
+    plannedLegalStatus: z.optional(z.custom(isPlannedAdmissionLegalStatus)),
+    homeRegion: nullableText,
+    dischargeDateSetBy: nullableText,
+    dischargeConfirmedBy: nullableText,
+    blockReason: z.nullable(z.enum(BED_RELEASE_BLOCKERS)),
+    stayBlockRecords: z.optional(z.custom(isStayBlockRecords)), // absent in older saves.
+    ...dischargeFollowThroughFields, // Features 6, 37, 13 and 14 (9 Nov 2026); absent in older saves.
+    leavingDestination: z.nullable(z.custom(isLeavingDestination)),
+    // A stored barrier is a list value or absent; free text would be typed text restored (finding A2-2).
+    dischargeBarrier: z.optional(z.nullable(z.custom(isDischargeBarrier))),
+    // Item 5: a day's instant and a listed reason, or absent in older saves.
+    clinicallyReadySince: z.optional(nullableFinite),
+    delayedDischargeReason: z.optional(z.nullable(z.custom(isDelayedDischargeReason))),
+    // FD-10: the ward's own block, a listed block with a finite time, or absent in older saves.
+    wardDiagnosis: z.optional(
+      z.looseObject({
+        block: z.custom((value) => typeof value === "string" && isTentativeDiagnosisBlock(value)),
+        recordedAt: finite,
+        recordedBy: text,
+      }),
+    ),
+    // Browser storage holds fixed-list criteria with finite times. A typed patient specific criterion
+    // is held only as the device copy's stand-in, never its words (D-60, D-65, D-72).
+    dischargeCriteria: z.optional(z.nullable(z.custom(isDeviceCopyDischargeCriteriaRecord))),
+    careJourney: z.optional(z.custom(validCareJourney)),
+    followUp: z.nullable(
+      z.looseObject({ state: z.enum(["arranged", "not_arranged"]), recordedAt: finite, recordedBy: text }),
+    ),
+  })
+  .check(
+    // Item 5: SET_CLINICALLY_READY sets and clears the day and its reason together, never one alone.
+    z.refine(
+      (stay) => ((stay.clinicallyReadySince ?? null) === null) === ((stay.delayedDischargeReason ?? null) === null),
+    ),
+  );
 
 // A destination is one of three kinds, each holding its own facts; any other kind is refused.
 const referralDestination = z.discriminatedUnion("kind", [
@@ -1459,42 +1481,10 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
   return parsed.success && consistent(parsed.data, value) && typedRecordsResolve(value as unknown as WardFlowState);
 }
 
-/**
- * A validated stored state with the stream A inbox records filled in when the save predates them,
- * reviews of seeded governance entries moved to ids that name their subject, and decline reasons
- * saved before the one decline list read as merged ones (D-78, `ward-decline-legacy.ts`).
- * Call after `isValidStoredWardFlowState` on every restore path.
- */
-export function withInboxStreamADefaults<T extends WardFlowState>(state: T): T {
-  const stored = state as T & Partial<Pick<WardFlowState, "inboxOwnership" | "inboxSnoozes">>;
-  return withSeededReviewIds({
-    ...upgradeLegacyDeclineReasons(state),
-    inboxOwnership: stored.inboxOwnership ?? {},
-    inboxSnoozes: stored.inboxSnoozes ?? {},
-  });
-}
-
-/**
- * The stored state version this build writes. A save at an older version restores only through
- * `migrateStoredWardFlowState`; every other mismatch is refused.
- */
-export const WARD_FLOW_STORED_STATE_VERSION = 7;
-
-/**
- * Brings a stored state saved at `fromVersion` up to the current shape, or returns null when no
- * migration exists. The result still goes through `isValidStoredWardFlowState`: a migration adds
- * the newer version's fields, it never repairs or vouches for anything the save already held.
- *
- * v6 -> v7 (Josh, 9 October 2026: "No, fix this."): v7 added planned admissions and their id
- * sequence and nothing else. A v6 save keeps every record it holds and gains an empty booking list
- * and a sequence of nought, the state of a world with no bookings. Fixture bookings are not added:
- * a restored day holds only what was saved. A "v6" save that already carries either field is not
- * a v6 shape and is refused rather than overwritten.
- */
-export function migrateStoredWardFlowState(state: unknown, fromVersion: unknown): unknown {
-  // Fix plan item 10: a save from before observation levels reads its yes/no flag as a level.
-  if (fromVersion === WARD_FLOW_STORED_STATE_VERSION) return upgradeLegacyObservationRows(state);
-  if (fromVersion !== 6 || !object(state)) return null;
-  if ("plannedAdmissions" in state || "plannedAdmissionSequence" in state) return null;
-  return upgradeLegacyObservationRows({ ...state, plannedAdmissions: [], plannedAdmissionSequence: 0 });
-}
+// The restore-path upgrades (stream A inbox defaults, the stored state version and its migration)
+// live in their own module to keep this file under its line cap; re-exported so importers are unchanged.
+export {
+  migrateStoredWardFlowState,
+  WARD_FLOW_STORED_STATE_VERSION,
+  withInboxStreamADefaults,
+} from "./ward-flow-stored-state-migration";

@@ -1,5 +1,6 @@
 import { DISCHARGE_ROLE_LABELS, type Admission } from "./ward-admissions";
 import type { Instant } from "./ward-clock";
+import { nextDischargeDateTrail } from "./ward-discharge-date-trail";
 import type { WardFlowRole } from "./ward-flow-roles";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { replaceAdmission } from "./ward-flow-state-records";
@@ -13,8 +14,16 @@ export function updateExpectedDischargeDate(
   role: WardFlowRole,
 ): WardFlowState {
   const moved = admission.expectedDischargeAt !== null && admission.expectedDischargeAt !== expectedAt;
+  // Feature 6: keep the first date and each move, so the board can say how far the plan slipped.
+  const dischargeDateTrail = nextDischargeDateTrail(
+    admission.dischargeDateTrail,
+    admission.expectedDischargeAt,
+    expectedAt,
+    now,
+  );
   const withDate = replaceAdmission(state, admission.id, {
     ...admission,
+    ...(dischargeDateTrail ? { dischargeDateTrail } : {}),
     expectedDischargeAt: expectedAt,
     dischargeDateMoves: admission.dischargeDateMoves + (moved ? 1 : 0),
     dischargeDateSetAt: now,

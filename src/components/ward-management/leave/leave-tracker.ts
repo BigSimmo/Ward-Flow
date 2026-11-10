@@ -1,0 +1,111 @@
+import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
+import { bedStates } from "@/components/ward-management/ward-bed-states";
+import type { Admission } from "@/components/ward-management/ward-admissions";
+import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
+
+/**
+ * Leave, shared by the Tools sheet's "Leave due" and the Leave page (feature 23, Josh 9 Nov 2026).
+ *
+ * No new clinical threshold: a leave is Overdue once its recorded expected return has passed, Due
+ * back today when that return falls on today, and Absent without leave while the ward's absence
+ * record stands. These are the same reads the Leave due tool already made.
+ */
+
+/** Due back by the end of today, or already overdue. An absence without leave is not "due back". */
+export function leaveDueToday(leave: LeaveBed, now: Instant): boolean {
+  return !leave.absentWithoutLeave && dayOf(leave.expectedReturn) <= dayOf(now);
+}
+
+/**
+ * The bed a leave record holds. The ward's recorded bed number when it has one; otherwise the bed
+ * board's own order (ready beds first, then each leave record), so the label matches the board.
+ */
+export function leaveBedLabels(
+  unit: Unit,
+  unitLeave: readonly LeaveBed[],
+  admissions: readonly Admission[],
+  bedReleases: BedRelease[],
+  leaveBeds: readonly LeaveBed[],
+): Map<string, string> {
+  const ready = bedStates(unit, admissions, bedReleases, leaveBeds).ready;
+  const labels = new Map<string, string>();
+  unitLeave.forEach((leave, index) => {
+    const recorded = admissions.find((admission) => admission.id === leave.admissionId)?.bedNumber;
+    const number = recorded ?? ready + index + 1;
+    labels.set(leave.id, `Bed ${String(number).padStart(2, "0")}`);
+  });
+  return labels;
+}
+
+export type LeaveStatus = "absent" | "overdue" | "due_today" | "on_leave";
+
+export const LEAVE_STATUS_LABEL: Record<LeaveStatus, string> = {
+  absent: "Absent without leave",
+  overdue: "Overdue",
+  due_today: "Due back today",
+  on_leave: "On leave",
+};
+
+const STATUS_ORDER: Record<LeaveStatus, number> = { absent: 0, overdue: 1, due_today: 2, on_leave: 3 };
+
+export function leaveStatus(leave: LeaveBed, now: Instant): LeaveStatus {
+  if (leave.absentWithoutLeave) return "absent";
+  if (leave.expectedReturn < now) return "overdue";
+  if (dayOf(leave.expectedReturn) === dayOf(now)) return "due_today";
+  return "on_leave";
+}
+
+const LEAVE_KIND_LABEL: Record<NonNullable<LeaveBed["kind"]>, string> = {
+  off_ward: "Off-ward leave",
+  medical_trip: "Medical trip",
+};
+
+export type LeaveTrackerRow = {
+  id: string;
+  unitId: string;
+  wardName: string;
+  bedLabel: string;
+  admission: Admission | undefined;
+  kind: string;
+  leftAt: Instant;
+  expectedReturn: Instant;
+  status: LeaveStatus;
+};
+
+/** Everyone on leave on the given wards: the most pressing first, then by expected return. */
+export function leaveTrackerRows(
+  input: {
+    leaveBeds: readonly LeaveBed[];
+    units: readonly Unit[];
+    admissions: readonly Admission[];
+    bedReleases: BedRelease[];
+  },
+  now: Instant,
+  includeUnit: (unitId: string) => boolean,
+  wardName: (unit: Unit) => string = (unit) => unit.name,
+): LeaveTrackerRow[] {
+  const rows: LeaveTrackerRow[] = [];
+  for (const unit of input.units) {
+    if (!includeUnit(unit.id)) continue;
+    const unitLeave = input.leaveBeds.filter((leave) => leave.unitId === unit.id);
+    if (unitLeave.length === 0) continue;
+    const labels = leaveBedLabels(unit, unitLeave, input.admissions, input.bedReleases, input.leaveBeds);
+    for (const leave of unitLeave) {
+      rows.push({
+        id: leave.id,
+        unitId: unit.id,
+        wardName: wardName(unit),
+        bedLabel: labels.get(leave.id) ?? "Bed on leave",
+        admission: input.admissions.find((admission) => admission.id === leave.admissionId),
+        kind: LEAVE_KIND_LABEL[leave.kind ?? "off_ward"],
+        leftAt: leave.confirmedAt,
+        expectedReturn: leave.expectedReturn,
+        status: leaveStatus(leave, now),
+      });
+    }
+  }
+  return rows.sort(
+    (left, right) =>
+      STATUS_ORDER[left.status] - STATUS_ORDER[right.status] || left.expectedReturn - right.expectedReturn,
+  );
+}

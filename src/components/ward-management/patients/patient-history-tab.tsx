@@ -276,6 +276,13 @@ function movementEvents(movement: Movement, unitName: (id: string) => string | u
       tone: "info",
       text: `${STAGES.find((stage) => stage.id === change.to)?.label ?? change.to}, by ${change.by}`,
     });
+  // Feature 11: each extension of the current pull's hold.
+  for (const extension of movement.pullExtensions ?? [])
+    events.push({
+      at: extension.at,
+      tone: "info",
+      text: `Bed pull extended by ${extension.minutes / 60} h, by ${extension.by}`,
+    });
   // Q16: a withdrawal that also released a held bed records both, so both are listed.
   for (const unwind of movement.unwinds) {
     if (unwind.kind !== "pull_released" && unwind.kind !== "acceptance_withdrawn") continue;

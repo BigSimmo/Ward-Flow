@@ -40,6 +40,7 @@ import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { PersonEntry } from "./ward-board-person-entry";
 import { WardDiagnosisControl } from "./ward-board-ward-diagnosis";
+import { ClinicallyReadyControl } from "./ward-board-clinically-ready";
 import { plural } from "@/components/ward-management/ward-plural";
 import { WardStepDownRequest } from "@/components/ward-management/referrals/step-down-request";
 
@@ -525,7 +526,7 @@ export function WardBoardDetailPanel({
                         htmlFor="ward-board-barrier-select"
                         className={cx(styles.leavingLabel, redesign.fieldLabel)}
                       >
-                        Main discharge hold-up (stay: {plural(occupied.days, "day", "days")})
+                        Long-stay barrier (stay: {plural(occupied.days, "day", "days")})
                       </label>
                       <Select
                         id="ward-board-barrier-select"
@@ -540,11 +541,11 @@ export function WardBoardDetailPanel({
                                 admissionId: occupied.key,
                                 barrier: val === "None" ? null : (val as DischargeBarrier),
                               }),
-                            `Hold-up for ${nameFor(occupied.key)}: ${val}`,
+                            `Long-stay barrier for ${nameFor(occupied.key)}: ${val}`,
                           );
                         }}
                       >
-                        <option value="None">None / Clear hold-up</option>
+                        <option value="None">None</option>
                         {DISCHARGE_BARRIERS.map((barrier) => (
                           <option key={barrier} value={barrier}>
                             {barrier}
@@ -552,6 +553,19 @@ export function WardBoardDetailPanel({
                         ))}
                       </Select>
                     </div>
+                  )}
+                  {occupied.days !== null && (
+                    <ClinicallyReadyControl
+                      key={`${occupied.key}-${occupied.clinicallyReady?.since ?? ""}-${occupied.clinicallyReady?.reason ?? ""}`}
+                      occupant={occupied}
+                      arrivedAt={admissions.find((a) => a.id === occupied.key)?.arrivedAt ?? null}
+                      unitId={unit.id}
+                      now={now}
+                      dayZero={dayZero}
+                      raise={raise}
+                      dispatchAndReport={dispatchAndReport}
+                      nameFor={nameFor}
+                    />
                   )}
                 </section>
               )}

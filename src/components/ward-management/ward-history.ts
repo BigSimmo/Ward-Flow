@@ -61,7 +61,9 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   RECORD_OBSERVATION_LEVEL: { category: "patient", plainWording: "Observation level changed" },
   SET_STEP_DOWN_CANDIDATE: { category: "patient", plainWording: "Step-down pathway candidate status updated" },
   RECORD_WARD_DIAGNOSIS: { category: "patient", plainWording: "Ward's tentative diagnosis recorded" },
+  MARK_WEEKEND_DISCHARGE_REVIEWED: { category: "patient", plainWording: "Weekend discharge reviewed" },
   SET_DISCHARGE_BARRIER: { category: "patient", plainWording: "Discharge hold-up recorded" },
+  SET_CLINICALLY_READY: { category: "patient", plainWording: "Clinically ready date recorded" },
   SET_DISCHARGE_CRITERIA: { category: "patient", plainWording: "Discharge criteria updated" },
   RECORD_REPATRIATION: { category: "patient", plainWording: "Repatriation transfer arrangements logged" },
   // Closing-the-loop (package E).
@@ -99,6 +101,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   PATIENT_ARRIVED: { category: "both", plainWording: "Patient arrived at ward bed" },
   RECORD_ESCALATION: { category: "patient", plainWording: "Bed placement escalated to coordinator" },
   RELEASE_PULL: { category: "both", plainWording: "Allocated bed released back to ward" },
+  EXTEND_PULL: { category: "both", plainWording: "Pull time limit extended" },
   REFER_TO_COMMUNITY_TEAM: { category: "patient", plainWording: "Patient diverted to Community Mental Health" },
   RECORD_LEFT_DEPARTMENT: { category: "patient", plainWording: "Patient departed Emergency Department" },
   STEP_BACK_STAGE: { category: "patient", plainWording: "Movement stepped back to earlier stage" },
@@ -238,6 +241,9 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   // Closing-the-loop package B (24 Oct 2026).
   RECORD_DISCHARGE_DEPENDENCY: { category: "bed", plainWording: "Discharge dependency recorded" },
   RECORD_DISCHARGE_PLAN_CHANGE: { category: "bed", plainWording: "Discharge plan changed" },
+  // Features 37 and 13 (9 Nov 2026).
+  RECORD_DISCHARGE_CHECK: { category: "patient", plainWording: "Discharge checklist item recorded" },
+  RECORD_FOLLOW_UP_REPLY: { category: "patient", plainWording: "Community team follow-up reply recorded" },
   RECORD_ARRIVAL_CHECK: { category: "patient", plainWording: "Arrival checklist item recorded" },
   // v10 pass 2 (10 Oct 2026): Undo and the ward Bed board.
   UNDO_REFERRAL_DECISION: { category: "patient", plainWording: "Referral decision undone" },
