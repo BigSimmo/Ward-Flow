@@ -26,6 +26,6 @@ function CountedView({ id, spoken }: Props) {
   const { counts } = useNextNavCounts();
   const count = counts[id as keyof typeof counts];
   if (!spoken) return <CountChip value={count?.value} className={styles.viewCount} />;
-  if (!count?.value) return null;
+  if (!count) return null;
   return <span className="sr-only">{`, ${count.value} ${count.noun}`}</span>;
 }
