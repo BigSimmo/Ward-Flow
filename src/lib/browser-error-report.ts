@@ -7,7 +7,7 @@
 // (src/app/api/client-error/route.ts) checks each field against its allow-list again.
 
 /** Where reports go. Same origin, so the CSP and the proxy's CSRF guard already cover it. */
-export const CLIENT_ERROR_PATH = "/api/client-error";
+const CLIENT_ERROR_PATH = "/api/client-error";
 /** At most this many reports a minute, and each type on each screen once per page load. */
 export const CLIENT_REPORTS_PER_MINUTE = 3;
 
@@ -51,7 +51,7 @@ function deskRole(storage: Pick<Storage, "getItem"> | undefined): string {
   }
 }
 
-export type ClientErrorReport = { type: string; route: string; release: string; role: string };
+type ClientErrorReport = { type: string; route: string; release: string; role: string };
 
 /** Listens for uncaught errors and rejections and reports each, rate-limited. Returns the clean-up. */
 export function installBrowserErrorReport(

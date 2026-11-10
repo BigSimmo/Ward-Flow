@@ -32,6 +32,7 @@ export function isChunkLoadError(error: unknown): boolean {
  * True while a mounted leave guard (an unfinished form, an unsent or queued change, or local work
  * not yet written) would cancel a reload. Asks the page's own beforeunload listeners, without
  * leaving, so a reload Ward Flow starts itself can wait instead of losing that work.
+ * @public Kept exported so this copy stays identical to its Ward Flow twin, which is imported.
  */
 export function unsavedWorkHoldsReload(): boolean {
   return !window.dispatchEvent(new Event("beforeunload", { cancelable: true }));

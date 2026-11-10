@@ -97,10 +97,10 @@ const BODY_BYTES = 512;
 export const CLIENT_ERROR_LINES_PER_MINUTE = 30;
 const KINDS_KEPT = 200;
 
-export type ClientErrorFields = Record<(typeof FIELDS)[number], string>;
+type ClientErrorFields = Record<(typeof FIELDS)[number], string>;
 
 /** The four allow-listed fields, or null for anything else. An unlisted screen becomes `other`. */
-export function parseClientErrorReport(value: unknown): ClientErrorFields | null {
+function parseClientErrorReport(value: unknown): ClientErrorFields | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const keys = Object.keys(value);
   if (keys.length !== FIELDS.length || !FIELDS.every((field) => keys.includes(field))) return null;
@@ -117,7 +117,7 @@ let linesThisWindow = 0;
 const lastLogged = new Map<string, number>();
 
 /** True when this kind may be logged now: under the per-minute cap and not logged in the last minute. */
-export function allowClientErrorLine(kind: string, at: number = Date.now()): boolean {
+function allowClientErrorLine(kind: string, at: number = Date.now()): boolean {
   if (at - windowStart >= 60_000) {
     windowStart = at;
     linesThisWindow = 0;
