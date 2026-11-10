@@ -141,7 +141,7 @@ import { WardScreenHomeSection } from "./ward-screen-home-section";
 import { WardAcceptDialog, WardScreenDecisionJobs } from "./ward-on-demand";
 import type { DecisionReport } from "./ward-decisions-cockpit";
 import { formatDateOfBirth } from "@/components/ward-management/ward-patients";
-import { notRecordedMessage, WardScreenBedDrawer } from "./ward-screen-overlays";
+import { namedNotRecordedMessage, notRecordedMessage, WardScreenBedDrawer } from "./ward-screen-overlays";
 import { WardScreenTabSections } from "./ward-screen-tab-sections";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 
@@ -889,17 +889,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           }
         : (refusal as Rejection | undefined);
     setLastActionRejection(refused);
+    // Each message names its person, surname first (audit CS3-16, stacked Undo toasts, D-125).
+    const who = resolvePatientIdentity(movements.find((movement) => movement.id === check.movementId)).formalName;
+    if (refused && check.attempted === "ACCEPT_IN_PRINCIPLE") warnToast(namedNotRecordedMessage(refused.reason, who));
     // Design audit DA-11 (main): a pull says it worked, and focus stays with the arrival it changed.
-    // Audit CS3-16: the message names who the bed was pulled for.
     if (!refused && check.attempted === "PULL_PATIENT") {
-      const who = resolvePatientIdentity(movements.find((movement) => movement.id === check.movementId)).formalName;
       toast?.push({ tone: "success", title: `Bed pulled for ${who}.` });
       focusWardArrival(check.movementId);
     }
     if (!refused && check.undo && toast) {
       const undo = check.undo;
-      // Each toast names its person (surname first), so stacked toasts never undo the wrong one.
-      const who = resolvePatientIdentity(movements.find((movement) => movement.id === undo.movementId)).formalName;
       const recordSeq = wardCommandUndoSeq(check.outcome, "UNDO_ACCEPT_IN_PRINCIPLE", undo.movementId);
       const undoLimit =
         roleLimitReason(routeRole, "UNDO_ACCEPT_IN_PRINCIPLE") ??
