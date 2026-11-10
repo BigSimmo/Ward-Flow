@@ -175,7 +175,7 @@ describe("WardPwaRegistration", () => {
     // Intercept only the reload operation, after the real update action has requested it.
     const originalWindow = window;
     const reload = vi.fn();
-    vi.stubGlobal("window", { location: { reload } });
+    vi.stubGlobal("window", { location: { reload }, dispatchEvent: () => true });
     try {
       browser.emit("controllerchange");
       browser.emit("controllerchange");

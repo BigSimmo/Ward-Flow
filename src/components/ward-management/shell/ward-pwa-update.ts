@@ -7,6 +7,7 @@
  */
 import type { ToastInput } from "@/components/wf";
 
+import { unsavedWorkHoldsReload } from "../ward-chunk-load-error";
 import { PHONE_PUSH_SCOPE, PHONE_PUSH_WORKER_URL } from "./ward-phone-push";
 
 /** The page's notices (its toast region), or null outside one. */
@@ -14,6 +15,12 @@ type Notices = { push: (toast: ToastInput) => string; dismiss: (id: string) => v
 
 /** Scopes registered before Ward Flow left /mockups (19 October 2026); the slashed one is pre-F-11. */
 export const LEGACY_PWA_SCOPES = ["/mockups/ward-flow", "/mockups/ward-flow/"] as const;
+
+/** Shown instead of reloading while unsaved or unsent work would be lost (#1577). */
+export const UPDATE_HELD_NOTICE = {
+  title: "Finish your changes first",
+  body: "Nothing was lost. Tap Reload once your changes are saved or sent.",
+} as const;
 
 /** The one-time notice when removing the old registration ended this phone's alerts. */
 export const PHONE_ALERTS_MOVED_NOTICE = {
@@ -61,27 +68,35 @@ export function watchWardPwaWorker(container: ServiceWorkerContainer, notices: (
 
   const reloadIfRequested = () => {
     if (cancelled || !reloadRequested) return;
-    // Consume the request even when unsaved work cancels this navigation. Later controller
-    // events must never replay it.
+    // Consume the request even when unsaved work holds this reload. Later controller events must
+    // never replay it.
     reloadRequested = false;
+    // #1577: the same check the crash reload makes (`useReloadWhenOnline`). A form, an unsent or
+    // queued change, or unwritten local work holds the reload and offers it again for later.
+    if (offered && unsavedWorkHoldsReload()) {
+      show(offered, true);
+      return;
+    }
     window.location.reload();
   };
 
-  const offer = (registration: ServiceWorkerRegistration, worker: ServiceWorker | null) => {
-    // Only an update waits: a first install has no active worker yet and takes over at once.
+  const show = (worker: ServiceWorker, held: boolean) => {
     const toasts = notices();
-    if (cancelled || !worker || !registration.active || registration.active === worker) return;
-    if (offered === worker || !toasts) return;
-    offered = worker;
+    if (!toasts) return;
     if (noticeId) toasts.dismiss(noticeId);
     noticeId = toasts.push({
-      tone: "info",
-      title: "New version of Ward Flow ready",
+      ...(held
+        ? { tone: "warning", ...UPDATE_HELD_NOTICE }
+        : { tone: "info", title: "New version of Ward Flow ready" }),
       skipOfflineNote: true,
       action: {
         label: "Reload",
         onAction: () => {
           if (cancelled) return;
+          if (unsavedWorkHoldsReload()) {
+            show(worker, true);
+            return;
+          }
           reloadRequested = true;
           // Another tab may already have activated this update. Its controllerchange has
           // happened, so this explicit tap must reload without waiting for another one.
@@ -95,6 +110,14 @@ export function watchWardPwaWorker(container: ServiceWorkerContainer, notices: (
         },
       },
     });
+  };
+
+  const offer = (registration: ServiceWorkerRegistration, worker: ServiceWorker | null) => {
+    // Only an update waits: a first install has no active worker yet and takes over at once.
+    if (cancelled || !worker || !registration.active || registration.active === worker) return;
+    if (offered === worker || !notices()) return;
+    offered = worker;
+    show(worker, false);
   };
 
   container.addEventListener("controllerchange", reloadIfRequested);
