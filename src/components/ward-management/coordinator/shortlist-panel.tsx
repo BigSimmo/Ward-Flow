@@ -490,8 +490,7 @@ export function ShortlistPanel({
   const [genderPlacementChecked, setGenderPlacementChecked] = useState(false);
   const [confirmationMovementId, setConfirmationMovementId] = useState(movement?.id);
   // Task 5/RA1: new referral picks are separate from selectedUnitId (the inspected ward); live requests stay
-  // locked and REFER_TO_UNITS adds to them. Finding 188: the parallel cap warns but does not block
-  // (D-122: waiting wards are capped at three, while a referral past three warns and asks for a reason).
+  // locked and REFER_TO_UNITS adds to them. Finding 188, D-122: past three wards warns, asks a reason, never blocks.
   const [referTargets, setReferTargets] = useState<string[]>([]);
   // RA1: the withdrawal opening and reason belong to one genuinely live ward request.
   const [withdrawUnitId, setWithdrawUnitId] = useState<string | undefined>(undefined);

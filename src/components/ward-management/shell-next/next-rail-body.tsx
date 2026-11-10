@@ -3,7 +3,6 @@
 // Fork of src/components/ward-management/shell/ward-rail.tsx: the mock-ups' rail, with Josh's 30 Oct 2026 fixes.
 
 import { WardRailFrame } from "@/components/ward-management/shell/ward-chrome-frame";
-
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { goToPageForShortcut, resetGoToShortcut } from "@/components/ward-management/shell/ward-goto-shortcuts";
 import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
@@ -20,10 +19,8 @@ import {
   SunMoon,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-
 import { Sheet } from "@/components/wf/sheet";
 import { Tooltip } from "@/components/wf/tooltip";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
