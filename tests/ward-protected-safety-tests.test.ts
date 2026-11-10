@@ -24,11 +24,11 @@ const SAFETY_SPEC = [
   'import { describe, expect, it } from "vitest";',
   'describe("guard", () => {',
   '  it("keeps the bed on the right patient", () => {',
-  "    expect(1).toBe(1);",
-  "    expect(2).toBe(2);",
+  "    expect(one()).toBe(1);",
+  "    expect(two()).toBe(2);",
   "  });",
   '  it("refuses a stale save", () => {',
-  "    expect(3).toBe(3);",
+  "    expect(three()).toBe(3);",
   "  });",
   "});",
   "",
@@ -40,7 +40,7 @@ describe("measureTestSource", () => {
   });
 
   it("treats a commented-out assertion as removed", () => {
-    const loosened = SAFETY_SPEC.replace("    expect(2).toBe(2);", "    // expect(2).toBe(2);");
+    const loosened = SAFETY_SPEC.replace("    expect(two()).toBe(2);", "    // expect(two()).toBe(2);");
     expect(measureTestSource(loosened).assertions).toBe(2);
   });
 
@@ -128,7 +128,7 @@ describe("evaluate against a real git history", () => {
 
   it("fails a loosened assertion until the approval line is committed", () => {
     const base = seed();
-    write("tests/ward-guard.test.ts", SAFETY_SPEC.replace("    expect(2).toBe(2);\n", ""));
+    write("tests/ward-guard.test.ts", SAFETY_SPEC.replace("    expect(two()).toBe(2);\n", ""));
     git("commit", "--quiet", "-am", "test: tidy");
 
     const blocked = evaluate({ base, root });
