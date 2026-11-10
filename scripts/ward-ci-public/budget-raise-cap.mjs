@@ -10,7 +10,7 @@
 //   WARD_BASE_SHA=<pr base> node scripts/ward-ci-public/budget-raise-cap.mjs
 //   node scripts/ward-ci-public/budget-raise-cap.mjs --base origin/main   (locally)
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -66,7 +66,7 @@ function git(args) {
   return execFileSync("git", args, { cwd: root, encoding: "utf8", timeout: 30_000 });
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   const argBase = process.argv.includes("--base") ? process.argv[process.argv.indexOf("--base") + 1] : undefined;
   const base = argBase ?? process.env.WARD_BASE_SHA;
   if (!base) {

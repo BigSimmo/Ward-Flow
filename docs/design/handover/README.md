@@ -28,7 +28,7 @@ Port the mock-up's components and tokens as they are; don't rebuild them. Compar
 ## Rules in short
 
 - Build only approved designs, mock-up first. Synthetic data only.
-- Mark a PR ready once CI is green and it matches the mock-up. Auto-merge counts as Josh's yes. Each thread arms auto-merge on its own PRs, re-arms it after a switch-off, fixes their merge conflicts and merges its own green PR by hand if GitHub won't arm it (Josh, 3 Nov). Never turn auto-merge off or merge another thread's PR.
+- Mark a PR ready once the draft checks are green and it matches the mock-up ("Ward Flow required" fails on a draft by design). Auto-merge counts as Josh's yes. Each thread arms auto-merge on its own PRs, re-arms it after a switch-off, fixes their merge conflicts and merges its own green PR by hand if GitHub won't arm it (Josh, 3 Nov). Never turn auto-merge off or merge another thread's PR.
 - To hold a PR, add the `hold` label (Q373); never write an auto-merge note. Base every PR on `main`; never stack PRs.
 - Your branch and its open PR are your claim (Q374); check open PRs for overlap before editing.
 - Hosted CI is the full gate. No repeat test runs.

@@ -20,7 +20,7 @@
  * stale for reasons that change nothing. Search the file for the title.
  */
 
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import * as prettier from "prettier";
@@ -277,5 +277,6 @@ async function main() {
   console.log(`wrote ${OUT} (${text.match(/^Total: (\d+)/m)[1]} entries).`);
 }
 
-const invokedDirectly = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+// realpath: Node resolves the entry module through symlinks, so compare real paths or `--check` could skip main().
+const invokedDirectly = process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href;
 if (invokedDirectly) await main();

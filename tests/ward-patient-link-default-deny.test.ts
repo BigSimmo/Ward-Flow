@@ -635,6 +635,32 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     ).toBe(true);
   });
 
+  // D-122 item 7: patient search reads patient links through the resolver's `recordLinksPatient`
+  // helper, where this guard can see them. The helper itself reads `.patientId` inside an
+  // allowlisted file, so a new caller would otherwise slip past the text scan above. Each caller
+  // is named here; a new one needs the same owner permission as a new allowlist entry.
+  const RECORD_LINKS_PATIENT_CALLERS: ReadonlyArray<{ file: string; reason: string }> = [
+    {
+      file: "search/patient-search-model.ts",
+      reason: "D-122 item 7: patient search finds one person's own open movement and queued referral.",
+    },
+  ];
+
+  it("refuses any recordLinksPatient caller not named with its permission", () => {
+    const resolver = resolve(WARD_DIR, "ward-patient-resolver.ts");
+    const callers = collectWardManagementFiles(WARD_DIR)
+      .filter((file) => file !== resolver)
+      .filter((file) => /\brecordLinksPatient\b/.test(withoutComments(readFileSync(file, "utf8"))))
+      .map((file) => relative(WARD_DIR, file).split("\\").join("/"))
+      .sort();
+    expect(
+      callers,
+      "a new caller of recordLinksPatient reads the patient link through the resolver; name it with " +
+        "its owner permission in RECORD_LINKS_PATIENT_CALLERS, or hand it back to Josh",
+    ).toEqual(RECORD_LINKS_PATIENT_CALLERS.map((entry) => entry.file).sort());
+    for (const { reason } of RECORD_LINKS_PATIENT_CALLERS) expect(reason.length).toBeGreaterThan(20);
+  });
+
   it("refuses every ward-management file outside the allowlist that reads the patient link", () => {
     const files = collectWardManagementFiles(WARD_DIR);
     const allowlisted = new Set(ALLOWLIST.map((entry) => entry.file));

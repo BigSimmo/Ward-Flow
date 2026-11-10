@@ -151,4 +151,16 @@ describe("live docs do not cite a replaced decision as current", () => {
     });
     expect(problems).toEqual([]);
   });
+
+  it("keeps each held-clinical exemption in use", () => {
+    // Once the held clinical PR lands these files stop citing D-37; a leftover entry would then
+    // hide a new wrong citation, so drop the entry as soon as this fails.
+    for (const [held, id] of HELD_CLINICAL_FIXES) {
+      const hits = staleCitations(readFileSync(join(root, "src", held), "utf8"), replaced);
+      expect(
+        hits.some((hit) => hit.includes(`cites ${id} `)),
+        `src/${held} no longer cites ${id}; remove it from HELD_CLINICAL_FIXES`,
+      ).toBe(true);
+    }
+  });
 });

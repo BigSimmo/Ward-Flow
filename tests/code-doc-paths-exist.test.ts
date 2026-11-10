@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { basename, join, relative } from "node:path";
+import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -22,9 +22,6 @@ const TREES = ["src", "tests", "scripts"];
 const SCANNED = /\.(?:[cm]?[jt]sx?|json|css|sh|ps1|ya?ml)$/u;
 const SKIP_DIRS = new Set(["node_modules", ".next", "coverage", "test-results"]);
 const DOC_PATH = /(?<![\w/.-])(?:\.\.\/)*(docs\/[A-Za-z0-9_./-]*?\.md)\b/gu;
-
-/** Pages moving into docs/history/ right now (D-121 item 6): either location counts until the move lands. */
-const MOVING_TO_HISTORY = ["search-chrome-behaviour.md", "owner-answers-2026-10-21.md"];
 
 const FIXTURE_PATHS = new Set([
   // Synthetic inputs to checker tests and self-tests (temporary repos, path classifiers, diff parsers).
@@ -123,9 +120,7 @@ function citedDocPaths(text: string): { path: string; line: number }[] {
 }
 
 function exists(path: string): boolean {
-  if (existsSync(join(root, path))) return true;
-  const name = basename(path);
-  return path === `docs/history/${name}` && MOVING_TO_HISTORY.includes(name) && existsSync(join(root, "docs", name));
+  return existsSync(join(root, path));
 }
 
 describe("doc paths cited in code exist (D-121 item 5)", () => {

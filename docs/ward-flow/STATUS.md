@@ -99,7 +99,9 @@ gone. The 16 November date for the sign-in test was dropped (Q390). Items 4 to 1
    force-push or deletion (D-121 item 1).
 2. If not done yet, add the Actions event policy for `pull_request_target` before GitHub's second
    brownout on 16 November 2026 (D-114). GitHub blocks it by default from 2 December.
-3. Check the held clinical PR for D-122 when it opens. It merges only after you check it.
+3. Check the held clinical PR for D-122 when it opens. It merges only after you check it. Also add
+   `Ward Flow hold` as a required check in the main ruleset, so the `hold` label really blocks a merge
+   (Q384, not re-checked in GitHub).
 4. Sign-in renewal test (Q390): sign in with a test account in the morning, and make one save after
    lunch without signing in again.
 5. In Supabase: turn off "Allow new users to sign up", and turn off the organisation's AI SQL, log and
