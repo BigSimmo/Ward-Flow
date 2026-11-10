@@ -1,6 +1,6 @@
 # Ward Flow — local first run
 
-<!-- last-checked: 2026-10-26 -->
+<!-- last-checked: 2026-11-10 -->
 
 _Updated 2026-10-26 - signed-in desks and the first-run tour need the role access flag locally; Documentation owns._
 
@@ -77,10 +77,11 @@ $env:WARD_FLOW_URL = "<printed-origin>"; node scripts/ward-flow/audit-all-screen
 
 ## Sign-out log
 
-Before editing, claim files in the coordinating group's append-only sign-out log.
-`WARD_SIGNOUT_FILE` selects its exact path; otherwise `WARD_FLOW_LOGS/sign-out.md`, then
-`D:/Repos/ward-flow-logs/sign-out.md` on Windows or `~/ward-flow-logs/sign-out.md` elsewhere applies.
-Missing or unreadable logs fail closed. Follow [HOW-WE-WORK §2](HOW-WE-WORK.md#2-branches-and-worktrees)
+Your branch and its open pull request are your claim, so you need no sign-out line of your own.
+An optional shared sign-out log records other branches' holds, and the commit hook blocks a file
+another branch holds there. `WARD_SIGNOUT_FILE` selects its exact path; otherwise
+`WARD_FLOW_LOGS/sign-out.md`, then `D:/Repos/ward-flow-logs/sign-out.md` on Windows or
+`~/ward-flow-logs/sign-out.md` elsewhere applies. A missing log means no holds. Follow [HOW-WE-WORK §2](HOW-WE-WORK.md#2-branches-and-worktrees)
 for ownership, Cloud coordination and the limited single-user exception.
 
 ## Current checkout vs base

@@ -1,18 +1,30 @@
 #!/usr/bin/env node
-// PR policy: bot-authored sensitive changes (owner rule, 2026-10-18).
+// PR policy: bot-authored sensitive changes (owner rule, 2026-10-18), plus a warn-only coding-agent tier.
 //
-// Fails when a commit in the pull request was AUTHORED by a bot account (any `[bot]` login or
-// noreply address, or a known review/coding bot such as qodo) and that commit's own files touch
-// `supabase/**`, backend SQL (forward migrations and `infra/` rollbacks), the backend sign-in,
-// engine and command-schema files, or a clinical or legal-logic path. Such PRs would otherwise pass CI and
-// could auto-merge with no human review. Dependabot only edits dependency manifests, lockfiles and
-// action pins, none of which match, so its PRs are unaffected. Human commits are never judged here.
+// BOT tier (fails): a commit in the pull request AUTHORED by a bot account (any `[bot]` login or
+// noreply address, or a known review/coding bot such as qodo) whose own files touch `supabase/**`,
+// backend SQL (forward migrations and `infra/` rollbacks), the backend sign-in, engine and
+// command-schema files, a clinical or legal-logic path, the CI workflows and public CI scripts, or
+// the protected safety tests (scripts/ward-flow/protected-safety-tests.json and every file it lists).
+// Such PRs would otherwise pass CI and could auto-merge with no human review. Dependabot only edits
+// dependency manifests, lockfiles and action pins, none of which match, so its PRs are unaffected.
+//
+// AGENT tier (warns only, A6-F02): commits authored by a coding agent (Claude `claude` /
+// noreply@anthropic.com, Cursor `cursoragent`, Codex `codex` / `chatgpt-codex-connector`) that touch
+// the same sensitive paths are reported as `::warning::` annotations and in the step summary, but do
+// not fail the check. Agents author most Ward Flow commits and there is no separate approval
+// identity yet, so failing them would block all work. This tier becomes a failure once agents commit
+// under their own identity and an owner-review step exists to approve their sensitive changes.
+//
+// Human commits are never judged here.
 //
 // CI usage: .github/workflows/bot-author-policy.yml runs MAIN's copy of this script under
 // pull_request_target (never PR code). GITHUB_TOKEN, GITHUB_REPOSITORY and WARD_PR_NUMBER are read from
-// the environment. Missing or unreadable commit data fails closed.
+// the environment. Missing or unreadable commit data fails closed for bot commits; for agent commits it
+// is a warning.
+import { appendFileSync, readFileSync } from "node:fs";
 import process from "node:process";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 export const knownBotLogins = new Set([
   "qodo-merge",
@@ -29,18 +41,35 @@ export const knownBotLogins = new Set([
   "renovate",
 ]);
 
+function authorIdentity(author) {
+  const login = String(author?.login ?? "")
+    .trim()
+    .toLowerCase();
+  const email = String(author?.email ?? "")
+    .trim()
+    .toLowerCase();
+  const emailLogin = email.match(/^(?:\d+\+)?([^@]+)@users\.noreply\.github\.com$/u)?.[1] ?? "";
+  return { login, email, emailLogin };
+}
+
 export function isBotAuthor(author) {
   if (!author) return false;
-  const login = String(author.login ?? "")
-    .trim()
-    .toLowerCase();
-  const email = String(author.email ?? "")
-    .trim()
-    .toLowerCase();
+  const { login, email, emailLogin } = authorIdentity(author);
   if (login.endsWith("[bot]") || knownBotLogins.has(login)) return true;
   if (/\[bot\]@users\.noreply\.github\.com$/u.test(email)) return true;
-  const emailLogin = email.match(/^(?:\d+\+)?([^@]+)@users\.noreply\.github\.com$/u)?.[1];
   return Boolean(emailLogin && knownBotLogins.has(emailLogin));
+}
+
+// Coding agents that author commits directly (warn tier). `[bot]` logins such as `cursor[bot]` or
+// `chatgpt-codex-connector[bot]` stay in the bot tier above.
+export const knownAgentLogins = new Set(["claude", "cursoragent", "codex", "chatgpt-codex-connector"]);
+export const knownAgentEmails = new Set(["noreply@anthropic.com", "cursoragent@cursor.com"]);
+
+/** A coding-agent author that is not already a bot (bots keep failing). */
+export function isAgentAuthor(author) {
+  if (!author || isBotAuthor(author)) return false;
+  const { login, email, emailLogin } = authorIdentity(author);
+  return knownAgentLogins.has(login) || knownAgentEmails.has(email) || knownAgentLogins.has(emailLogin);
 }
 
 // Clinical paths: the clinical values, MHA 2014 reference data, clinical governance documents,
@@ -62,7 +91,55 @@ export const sensitivePathPatterns = [
   /^data\/mha-[^/]*$/iu,
   /^docs\/ward-flow\/governance\//u,
   /^(?:src|data|docs|backend)\/(?:.*\/)?[^/]*clinic[^/]*(?:\/|$)/iu,
+  // CI itself: the workflows, the public CI scripts (this file included) and the protected-test list.
+  /^\.github\/workflows\//u,
+  /^scripts\/ward-ci-public\//u,
+  /^scripts\/ward-flow\/protected-safety-tests\.json$/u,
 ];
+
+const PROTECTED_SAFETY_TESTS_URL = new URL("../ward-flow/protected-safety-tests.json", import.meta.url);
+let protectedSafetyTestPaths;
+
+export const PROTECTED_SAFETY_TESTS_PATH = "scripts/ward-flow/protected-safety-tests.json";
+
+/** Parse the protected-safety-tests list text and use it for isSensitivePath. Malformed text throws. */
+export function loadProtectedSafetyTests(text) {
+  const list = JSON.parse(text);
+  if (!Array.isArray(list?.files)) throw new Error("protected-safety-tests.json has no files list");
+  protectedSafetyTestPaths = new Set(list.files.map((entry) => normalizePath(entry?.path)).filter(Boolean));
+  return protectedSafetyTestPaths;
+}
+
+/**
+ * The test files listed in scripts/ward-flow/protected-safety-tests.json (D-123 item 3), read once
+ * from this script's own checkout unless main() already loaded it from the PR base. An unreadable
+ * or malformed list throws, so the check fails closed.
+ */
+export function protectedSafetyTests() {
+  if (!protectedSafetyTestPaths) {
+    loadProtectedSafetyTests(readFileSync(fileURLToPath(PROTECTED_SAFETY_TESTS_URL), "utf8"));
+  }
+  return protectedSafetyTestPaths;
+}
+
+// The CI job sparse-checks-out this script and the list from main; if the list is absent, it is read
+// from the PR's base commit through the API (never PR code). Any failure throws (fails closed).
+async function ensureProtectedSafetyTests({ repository, prNumber, token, api = "https://api.github.com" }) {
+  try {
+    protectedSafetyTests();
+    return;
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+  const pr = await githubJson(`${api}/repos/${repository}/pulls/${prNumber}`, token);
+  const ref = pr.base?.sha;
+  if (!ref) throw new Error("PR base is missing; cannot read the protected safety tests list");
+  const content = await githubJson(
+    `${api}/repos/${repository}/contents/${PROTECTED_SAFETY_TESTS_PATH}?ref=${ref}`,
+    token,
+  );
+  loadProtectedSafetyTests(Buffer.from(String(content.content ?? ""), "base64").toString("utf8"));
+}
 
 function normalizePath(filePath) {
   return String(filePath ?? "")
@@ -73,7 +150,8 @@ function normalizePath(filePath) {
 
 export function isSensitivePath(filePath) {
   const file = normalizePath(filePath);
-  return Boolean(file) && sensitivePathPatterns.some((pattern) => pattern.test(file));
+  if (!file) return false;
+  return sensitivePathPatterns.some((pattern) => pattern.test(file)) || protectedSafetyTests().has(file);
 }
 
 // commits: [{ sha, author: { login, email }, files: [path, ...] }]
@@ -95,6 +173,27 @@ export function botSensitiveCommitViolations(commits) {
     }
   }
   return violations;
+}
+
+// Same input shape as botSensitiveCommitViolations. Warnings only: agent commits never fail the check.
+export function agentSensitiveCommitWarnings(commits) {
+  const warnings = [];
+  for (const commit of commits ?? []) {
+    if (!isAgentAuthor(commit?.author)) continue;
+    const who = commit.author.login || commit.author.email || "unknown agent";
+    const sha = String(commit.sha ?? "").slice(0, 12) || "unknown";
+    if (!Array.isArray(commit.files)) {
+      warnings.push(`Agent-authored commit ${sha} (${who}) could not have its files verified; review it by hand.`);
+      continue;
+    }
+    const sensitive = commit.files.filter(isSensitivePath);
+    if (sensitive.length > 0) {
+      warnings.push(
+        `Agent-authored commit ${sha} (${who}) touches protected paths (${sensitive.slice(0, 5).join(", ")}${sensitive.length > 5 ? ", …" : ""}). Warning only until agents have their own identity and owner review; Josh should review these files.`,
+      );
+    }
+  }
+  return warnings;
 }
 
 async function githubJson(url, token) {
@@ -165,12 +264,13 @@ export async function collectPullRequestCommits({ repository, prNumber, token, a
   const commits = [];
   for (const item of listed) {
     const author = { login: item.author?.login ?? "", email: item.commit?.author?.email ?? "" };
-    if (!isBotAuthor(author)) continue;
+    const bot = isBotAuthor(author);
+    if (!bot && !isAgentAuthor(author)) continue;
     let files;
     try {
       files = await collectCommitFiles({ repository, sha: item.sha, token, api });
     } catch (error) {
-      console.warn(`Unable to read files of bot commit ${item.sha}: ${error.message}`);
+      console.warn(`Unable to read files of ${bot ? "bot" : "agent"} commit ${item.sha}: ${error.message}`);
     }
     commits.push({ sha: item.sha, author, files });
   }
@@ -184,13 +284,34 @@ async function main() {
     process.exitCode = 1;
     return;
   }
-  const violations = botSensitiveCommitViolations(await collectPullRequestCommits({ repository, prNumber, token }));
+  await ensureProtectedSafetyTests({ repository, prNumber, token });
+  const commits = await collectPullRequestCommits({ repository, prNumber, token });
+  const violations = botSensitiveCommitViolations(commits);
+  const warnings = agentSensitiveCommitWarnings(commits);
+  for (const warning of warnings) console.log(`::warning::${warning}`);
+  writeStepSummary(violations, warnings);
   if (violations.length > 0) {
     for (const violation of violations) console.error(`::error::${violation}`);
     process.exitCode = 1;
     return;
   }
-  console.log("bot-author-policy: no bot-authored commits touch supabase, backend infra SQL or clinical paths.");
+  console.log(
+    `bot-author-policy: no bot-authored commits touch protected paths${warnings.length > 0 ? `; ${warnings.length} agent-authored commit warning(s)` : ""}.`,
+  );
+}
+
+function writeStepSummary(violations, warnings) {
+  const summaryFile = process.env.GITHUB_STEP_SUMMARY;
+  if (!summaryFile || (violations.length === 0 && warnings.length === 0)) return;
+  const lines = ["## Bot-author policy", ""];
+  if (violations.length > 0) lines.push("**Failures (bot-authored):**", ...violations.map((v) => `- ${v}`), "");
+  if (warnings.length > 0)
+    lines.push("**Warnings (agent-authored, not failing):**", ...warnings.map((w) => `- ${w}`), "");
+  try {
+    appendFileSync(summaryFile, `${lines.join("\n")}\n`);
+  } catch (error) {
+    console.warn(`bot-author-policy: could not write the step summary: ${error.message}`);
+  }
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {

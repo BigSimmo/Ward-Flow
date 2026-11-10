@@ -70,16 +70,40 @@ function hostOfUrl(value: string): string | null {
   }
 }
 
+/** A bare host (or URL) value, lowercased with any scheme and path dropped, or null. */
+function hostOfConfiguredValue(value: string | null | undefined): string | null {
+  const candidate = value?.trim();
+  if (!candidate) return null;
+  return hostOfUrl(candidate.includes("://") ? candidate : `https://${candidate}`);
+}
+
+/**
+ * The public host(s) the deployment is configured to serve: `NEXT_PUBLIC_SITE_URL`
+ * (the canonical origin) and Railway's provider-supplied `RAILWAY_PUBLIC_DOMAIN`, the
+ * same two sources `src/lib/metadata-base.ts` trusts. Read at call time so no module
+ * state is kept; an absent `process` (or unset variables) yields an empty list.
+ */
+export function configuredPublicHosts(): string[] {
+  const env = typeof process === "undefined" ? undefined : process.env;
+  return [env?.NEXT_PUBLIC_SITE_URL, env?.RAILWAY_PUBLIC_DOMAIN]
+    .map(hostOfConfiguredValue)
+    .filter((host): host is string => Boolean(host));
+}
+
 /**
  * Every host this request may legitimately have been addressed to.
  *
- * `requestHost` is the proxy's own view of the URL. `Host` and `X-Forwarded-Host`
- * are included because Railway terminates TLS in front of the app, so the URL the
- * browser used (and therefore the Origin it sends) is the forwarded host rather
- * than the internal one. `X-Forwarded-Host` may be a comma-separated chain; the
- * first entry is the original client-facing host.
+ * `requestHost` is the proxy's own view of the URL and `Host` is the header the
+ * server received; neither can be set by a cross-origin page. The configured public
+ * host(s) count too, because Railway terminates TLS in front of the app, so the
+ * Origin a browser sends names the public domain rather than the internal one.
+ *
+ * `X-Forwarded-Host` is deliberately not trusted on its own (A4-08): any client can
+ * send it, so trusting it would let a request vouch for whatever Origin it likes.
+ * A forwarded host equal to a configured public host is already in the set, so the
+ * legitimate Railway path still passes without reading it.
  */
-function addressedHosts(headers: Headers, requestHost: string): Set<string> {
+function addressedHosts(headers: Headers, requestHost: string, publicHosts: Iterable<string>): Set<string> {
   const hosts = new Set<string>();
   const add = (value: string | null | undefined) => {
     const normalized = value?.split(",")[0]?.trim().toLowerCase();
@@ -87,17 +111,22 @@ function addressedHosts(headers: Headers, requestHost: string): Set<string> {
   };
   add(requestHost);
   add(headers.get("host"));
-  add(headers.get("x-forwarded-host"));
+  for (const host of publicHosts) add(hostOfConfiguredValue(host));
   return hosts;
 }
 
 /**
  * Whether a state-changing API request may proceed.
  *
- * `requestHost` is the host from the request URL; `Host` / `X-Forwarded-Host` are
- * read from `headers` and count too.
+ * `requestHost` is the host from the request URL; the `Host` header and the
+ * configured public host(s) count too. `publicHosts` defaults to
+ * `configuredPublicHosts()`; tests pass it explicitly. `X-Forwarded-Host` is ignored.
  */
-export function apiMutationCsrfVerdict(headers: Headers, requestHost: string): ApiMutationCsrfVerdict {
+export function apiMutationCsrfVerdict(
+  headers: Headers,
+  requestHost: string,
+  publicHosts: Iterable<string> = configuredPublicHosts(),
+): ApiMutationCsrfVerdict {
   const csrfHeader = headers.get(WARD_FLOW_CSRF_HEADER);
   if (csrfHeader !== null && !isValidCsrfHeaderValue(csrfHeader)) {
     return { allowed: false, reason: "invalid_csrf_header" };
@@ -106,7 +135,7 @@ export function apiMutationCsrfVerdict(headers: Headers, requestHost: string): A
   const secFetchSite = headers.get("sec-fetch-site")?.trim().toLowerCase() ?? null;
   if (secFetchSite === "cross-site") return { allowed: false, reason: "cross_site" };
 
-  const hosts = addressedHosts(headers, requestHost);
+  const hosts = addressedHosts(headers, requestHost, publicHosts);
 
   // Present on every cross-origin state-changing browser request, including the
   // `same-site` ones Fetch Metadata vouches for. An opaque `null` Origin (sandboxed

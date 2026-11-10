@@ -9,11 +9,24 @@
 // --require-bundle (CI, after `next build`): a missing or empty `.next/static` fails instead of
 // passing with only the source scan, so the built-chunk scan cannot be skipped silently (H-0295).
 
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
-const SECRET_PATTERNS = [
+// The role claim of a JWT payload segment (base64url JSON), or null when it does not decode.
+function jwtRole(payloadSegment) {
+  try {
+    return JSON.parse(Buffer.from(payloadSegment, "base64url").toString("utf8"))?.role ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// `verify`, when present, must also accept the match: the Supabase JWT rule flags only a
+// service_role (or supabase_admin) token, so the public anon key a client bundle legitimately
+// carries does not fail the scan.
+export const SECRET_PATTERNS = [
   { name: "OpenAI Secret Key", regex: /\bsk-[a-zA-Z0-9]{20,}\b/g },
   { name: "Anthropic API Key", regex: /\bsk-ant-[a-zA-Z0-9_-]{20,}\b/g },
   { name: "AWS Access Key", regex: /\bAKIA[0-9A-Z]{16}\b/g },
@@ -24,102 +37,123 @@ const SECRET_PATTERNS = [
     regex: /\b(?:postgres|postgresql|mysql|mongodb):\/\/[^:]+:[^@]+@[a-zA-Z0-9.-]+/g,
   },
   { name: "Private RSA/PEM Key Block", regex: /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/g },
+  { name: "Supabase Secret Key", regex: /\bsb_secret_[A-Za-z0-9_-]{20,}/g },
+  {
+    name: "Supabase service-role JWT",
+    regex: /\beyJ[A-Za-z0-9_-]{10,}\.(eyJ[A-Za-z0-9_-]{10,})\.[A-Za-z0-9_-]{10,}/g,
+    verify: (match) => ["service_role", "supabase_admin"].includes(jwtRole(match[1])),
+  },
+  { name: "Slack Token", regex: /\bxox[abprs]-[A-Za-z0-9-]{10,}/g },
+  { name: "Stripe Live Secret or Restricted Key", regex: /\b(?:sk|rk)_live_[A-Za-z0-9]{16,}/g },
+  { name: "Sentry Auth Token", regex: /\bsntrys_[A-Za-z0-9+/=_-]{20,}/g },
 ];
 
-// Eligible tracked source files; these can include server code as well as client code.
-const files = execFileSync("git", ["ls-files", "-z", "--", "src"], { encoding: "utf8" })
-  .split("\0")
-  .filter((f) => f && /\.(tsx?|jsx?|json|css|mjs)$/.test(f))
-  .filter((f) => !/\.test\.(tsx?|jsx?|mjs)$/.test(f));
-
-const violations = [];
-const unreadable = [];
-let audited = 0;
-
-for (const file of files) {
-  let text;
-  try {
-    text = readFileSync(file, "utf8");
-  } catch {
-    unreadable.push(file);
-    continue;
-  }
-
-  // Skip files that test or validate synthetic secret patterns
-  if (file.includes("synthetic-data-guard") || file.includes("secret-guard")) {
-    continue;
-  }
-  audited += 1;
-
-  const lines = text.split("\n");
-  lines.forEach((line, index) => {
-    // Ignore comment lines noting safe examples or dummy test keys
-    if (line.includes("test-dummy") || line.includes("example-only") || line.includes("synthetic-only")) {
-      return;
-    }
-
-    for (const pattern of SECRET_PATTERNS) {
-      pattern.regex.lastIndex = 0;
-      if (pattern.regex.test(line)) {
-        violations.push({
-          file,
-          line: index + 1,
-          rule: pattern.name,
-        });
-      }
-    }
-  });
-}
-
-// Built client chunks: what the browser actually receives. No comment-marker exceptions apply here,
-// because one minified line can hold a whole module.
-const BUNDLE_DIR = path.join(".next", "static");
-const chunks = existsSync(BUNDLE_DIR)
-  ? readdirSync(BUNDLE_DIR, { recursive: true, withFileTypes: true })
-      .filter((entry) => entry.isFile() && /\.(?:js|mjs)$/.test(entry.name))
-      .map((entry) => path.join(entry.parentPath, entry.name).split(path.sep).join("/"))
-  : [];
-for (const chunk of chunks) {
-  let text;
-  try {
-    text = readFileSync(chunk, "utf8");
-  } catch {
-    unreadable.push(chunk);
-    continue;
-  }
-  // Whole-chunk matching: a template literal can split a credential URL across lines.
+/**
+ * Every credential-pattern match in `text`, as `{ rule, index }`. Pure: no filesystem access.
+ */
+export function findSecretMatches(text) {
+  const matches = [];
   for (const pattern of SECRET_PATTERNS) {
-    for (const match of text.matchAll(pattern.regex)) {
-      const line = text.slice(0, match.index).split("\n").length;
-      violations.push({ file: chunk, line, rule: pattern.name });
+    for (const match of String(text).matchAll(pattern.regex)) {
+      if (pattern.verify && !pattern.verify(match)) continue;
+      matches.push({ rule: pattern.name, index: match.index });
     }
   }
+  return matches;
 }
-if (process.argv.includes("--require-bundle") && chunks.length === 0) {
-  console.error(
-    `[check-client-bundle-secrets] FAILED: --require-bundle was given but no built client chunks were found in ${BUNDLE_DIR}. Run it after next build.`,
-  );
-  process.exit(1);
-}
-const bundleSummary =
-  chunks.length > 0
-    ? `${chunks.length} built client chunks in ${BUNDLE_DIR} scanned.`
-    : `Built bundles were not scanned (no ${BUNDLE_DIR}; run after next build to include them).`;
 
-if (violations.length === 0 && unreadable.length === 0) {
-  console.log(
-    `[check-client-bundle-secrets] Clean: ${audited} tracked source files scanned for known credential patterns; ${files.length - audited} synthetic guard files excluded. No pattern matches found. ${bundleSummary}`,
-  );
-  process.exit(0);
-} else {
-  console.error(
-    `[check-client-bundle-secrets] FAILED: ${violations.length} credential-pattern matches; ${unreadable.length} tracked source files unreadable:`,
-  );
-  for (const file of unreadable) {
-    console.error(`  - ${file} [unable to read ${file.startsWith(".next/") ? "built chunk" : "tracked source"}]`);
+function main() {
+  // Eligible tracked source files; these can include server code as well as client code.
+  const files = execFileSync("git", ["ls-files", "-z", "--", "src"], { encoding: "utf8" })
+    .split("\0")
+    .filter((f) => f && /\.(tsx?|jsx?|json|css|mjs)$/.test(f))
+    .filter((f) => !/\.test\.(tsx?|jsx?|mjs)$/.test(f));
+
+  const violations = [];
+  const unreadable = [];
+  let audited = 0;
+
+  for (const file of files) {
+    let text;
+    try {
+      text = readFileSync(file, "utf8");
+    } catch {
+      unreadable.push(file);
+      continue;
+    }
+
+    // Skip files that test or validate synthetic secret patterns
+    if (file.includes("synthetic-data-guard") || file.includes("secret-guard")) {
+      continue;
+    }
+    audited += 1;
+
+    const lines = text.split("\n");
+    lines.forEach((line, index) => {
+      // Ignore comment lines noting safe examples or dummy test keys
+      if (line.includes("test-dummy") || line.includes("example-only") || line.includes("synthetic-only")) {
+        return;
+      }
+
+      // One finding per rule per line, as before.
+      for (const rule of new Set(findSecretMatches(line).map((match) => match.rule))) {
+        violations.push({ file, line: index + 1, rule });
+      }
+    });
   }
-  for (const v of violations) {
-    console.error(`  - ${v.file}:${v.line} [${v.rule}] (value redacted)`);
+
+  // Built client chunks: what the browser actually receives. No comment-marker exceptions apply here,
+  // because one minified line can hold a whole module.
+  const BUNDLE_DIR = path.join(".next", "static");
+  const chunks = existsSync(BUNDLE_DIR)
+    ? readdirSync(BUNDLE_DIR, { recursive: true, withFileTypes: true })
+        .filter((entry) => entry.isFile() && /\.(?:js|mjs)$/.test(entry.name))
+        .map((entry) => path.join(entry.parentPath, entry.name).split(path.sep).join("/"))
+    : [];
+  for (const chunk of chunks) {
+    let text;
+    try {
+      text = readFileSync(chunk, "utf8");
+    } catch {
+      unreadable.push(chunk);
+      continue;
+    }
+    // Whole-chunk matching: a template literal can split a credential URL across lines.
+    for (const match of findSecretMatches(text)) {
+      const line = text.slice(0, match.index).split("\n").length;
+      violations.push({ file: chunk, line, rule: match.rule });
+    }
   }
-  process.exit(1);
+  if (process.argv.includes("--require-bundle") && chunks.length === 0) {
+    console.error(
+      `[check-client-bundle-secrets] FAILED: --require-bundle was given but no built client chunks were found in ${BUNDLE_DIR}. Run it after next build.`,
+    );
+    process.exit(1);
+  }
+  const bundleSummary =
+    chunks.length > 0
+      ? `${chunks.length} built client chunks in ${BUNDLE_DIR} scanned.`
+      : `Built bundles were not scanned (no ${BUNDLE_DIR}; run after next build to include them).`;
+
+  if (violations.length === 0 && unreadable.length === 0) {
+    console.log(
+      `[check-client-bundle-secrets] Clean: ${audited} tracked source files scanned for known credential patterns; ${files.length - audited} synthetic guard files excluded. No pattern matches found. ${bundleSummary}`,
+    );
+    process.exit(0);
+  } else {
+    console.error(
+      `[check-client-bundle-secrets] FAILED: ${violations.length} credential-pattern matches; ${unreadable.length} tracked source files unreadable:`,
+    );
+    for (const file of unreadable) {
+      console.error(`  - ${file} [unable to read ${file.startsWith(".next/") ? "built chunk" : "tracked source"}]`);
+    }
+    for (const v of violations) {
+      console.error(`  - ${v.file}:${v.line} [${v.rule}] (value redacted)`);
+    }
+    process.exit(1);
+  }
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
+  main();
 }

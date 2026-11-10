@@ -5,8 +5,9 @@ name: Ward Flow bot-author policy
 # base repository's context, so this workflow must NEVER check out or execute pull-request code:
 # it checks out only the base commit (main's copy of the script) and reads PR metadata, commit
 # authors and changed files through the GitHub API. No secrets beyond GITHUB_TOKEN are used.
-# merge_group: the merge queue needs this required check reported on its temporary
-# gh-readonly-queue ref. There the policy is re-run for EVERY pull request in the group (each
+# merge_group: dormant. No merge queue is in use; PRs merge directly once required checks pass
+# (D-107). The trigger is kept so a queue, if turned on, gets this required check reported on its
+# temporary gh-readonly-queue ref. There the policy is re-run for EVERY pull request in the group (each
 # "Merge pull request #N" commit between the group's base and head, plus the PR named in the
 # queue ref), from the protected main tip (merge_group.base_ref, never an earlier queued
 # group commit, which can carry queued PR changes); no group PR found fails closed.
@@ -37,7 +38,9 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_ref || 'main' }}
           persist-credentials: false
-          sparse-checkout: scripts/ward-ci-public/bot-author-policy.mjs
+          sparse-checkout: |
+            scripts/ward-ci-public/bot-author-policy.mjs
+            scripts/ward-flow/protected-safety-tests.json
           sparse-checkout-cone-mode: false
       - name: Check bot-authored commits on protected paths
         if: ${{ github.event_name == 'pull_request_target' }}

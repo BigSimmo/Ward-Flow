@@ -88,6 +88,28 @@ describe("Remind me (Q323)", () => {
     expect(within(yours).getByText("None set.")).toBeTruthy();
     expect(count).toBe(0);
   });
+
+  it("stores a movement reminder with a place label only (go/no-go C3)", () => {
+    withFlow(<ToolRemindMe onNavigate={vi.fn()} />);
+    const movementKind =
+      screen.queryByRole("radio", { name: "Movement" }) ?? screen.getByRole("button", { name: "Movement" });
+    fireEvent.click(movementKind);
+    const moves = within(screen.getByRole("list", { name: "Which movement" })).getAllByRole("button");
+    fireEvent.click(moves[0]!);
+    fireEvent.click(within(screen.getByRole("group", { name: "Reason" })).getByRole("button", { name: "Call back" }));
+    fireEvent.click(screen.getByRole("button", { name: "Set reminder" }));
+
+    const stored = JSON.parse(window.localStorage.getItem("wf-mock-tools-reminders") ?? "[]") as Record<
+      string,
+      unknown
+    >[];
+    expect(stored).toHaveLength(1);
+    // Only list-picked fields are kept: no free text and no patient detail.
+    expect(Object.keys(stored[0]!).sort()).toEqual(["dueAt", "id", "kind", "reason", "targetId", "targetLabel"]);
+    expect(stored[0]!.kind).toBe("movement");
+    // The label names where the movement starts, never the person (D-39).
+    expect(stored[0]!.targetLabel).toMatch(/^Movement from [^\d,]+$/u);
+  });
 });
 
 describe("Due back (Q326)", () => {

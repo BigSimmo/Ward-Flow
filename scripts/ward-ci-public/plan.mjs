@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { appendFileSync, readFileSync } from "node:fs";
+import { appendFileSync, readdirSync, readFileSync } from "node:fs";
 import { legalSweepInputs, needsLegalSweep } from "./legal-sweep-scope.mjs";
 
 const ORGANISATION_REGISTRY = "docs/ward-flow/organisation/registry.json";
@@ -43,6 +43,43 @@ export const policyContractTests = [
 export function isMaintainedPolicy(file) {
   return maintainedPolicyRoots.has(file) || /^docs\/agents\/[^/]+\.md$/u.test(file);
 }
+
+const TESTS_ROOT = new URL("../../tests/", import.meta.url);
+const docPathPattern = /^(?:README\.md|docs\/(?:ward-flow|history)\/.*)$/u;
+/**
+ * The documents unit tests read, found by scanning test source for path text at plan time, so the
+ * list cannot go stale. `exact` holds whole `.md` paths ("docs/ward-flow/decisions.md"); `prefixes`
+ * holds directories a test builds a path under (`docs/ward-flow/desk-guides/${file}` or
+ * join("docs", "ward-flow", "desk-guides", file)). Over-matching only runs the unit job more often.
+ * Not seen: a test that walks the whole docs tree (tests/replaced-decision-citations.test.ts).
+ */
+export function scanTestReadDocs(root = TESTS_ROOT) {
+  const exact = new Set();
+  const prefixes = new Set();
+  const add = (path) => {
+    const clean = path.replace(/^\.\//u, "");
+    if (!docPathPattern.test(clean)) return;
+    if (clean.endsWith(".md")) exact.add(clean);
+    else if (clean.endsWith("/") && /^docs\/(?:ward-flow|history)\/[^/]+\//u.test(clean)) prefixes.add(clean);
+  };
+  for (const name of readdirSync(root, { recursive: true })) {
+    const file = String(name);
+    if (!/\.tsx?$/u.test(file)) continue;
+    const source = readFileSync(new URL(file.replaceAll("\\", "/"), root), "utf8");
+    for (const [, path] of source.matchAll(/["'`]((?:\.\/)?(?:README\.md|docs\/[^"'`\s$]*))["'`]/gu)) add(path);
+    for (const [, path] of source.matchAll(/`((?:\.\/)?docs\/[^`\s$]*\/)\$\{/gu)) add(path);
+    for (const [, parts] of source.matchAll(/"docs"((?:\s*,\s*"[^"\s/]+")+)/gu)) {
+      const segments = [...parts.matchAll(/"([^"]+)"/gu)].map(([, part]) => part);
+      const path = ["docs", ...segments].join("/");
+      add(path.endsWith(".md") ? path : `${path}/`);
+    }
+  }
+  return { exact, prefixes: [...prefixes] };
+}
+let testReadDocsCache;
+const defaultTestReadDocs = () => (testReadDocsCache ??= scanTestReadDocs());
+const readByTests = (file, docs) => docs.exact.has(file) || docs.prefixes.some((prefix) => file.startsWith(prefix));
+
 const dependencyManifest = (file) => /(^|\/)(?:package(?:-lock)?\.json|npm-shrinkwrap\.json)$/u.test(file);
 
 // The backend has root-unit consumers (shared engine, schemas and access contracts).
@@ -54,8 +91,10 @@ const unitTest = (file) => /^tests\/.+\.test\.tsx?$/u.test(file);
 /**
  * Which jobs a PR needs. `full` gates root installs; the remaining flags gate their named work.
  * Anything not positively recognised runs all executable checks (fail closed).
+ * A document a unit test reads is not documentation only: changing it runs the unit job.
+ * Maintained policy files keep their own policy contract tests instead.
  */
-export function classifyChanges(entries) {
+export function classifyChanges(entries, { testReadDocs } = {}) {
   const flags = (values, reason) => ({
     full: false,
     unit: false,
@@ -72,10 +111,22 @@ export function classifyChanges(entries) {
   if (!entries.length) return all("empty diff");
   if (entries.some(({ status }) => status !== "M" && status !== "A")) return all("deleted or renamed file");
   const files = entries.map(({ file }) => file);
+  let docs;
+  const testRead = (file) =>
+    docsOnly(file) && !isMaintainedPolicy(file) && readByTests(file, (docs ??= testReadDocs ?? defaultTestReadDocs()));
   if (files.some(isMaintainedPolicy) && files.every((file) => isMaintainedPolicy(file) || docsOnly(file))) {
-    return flags({ full: true, policy: true }, "maintained policy contracts and documentation only");
+    const unit = files.some(testRead);
+    return flags(
+      { full: true, policy: true, unit },
+      unit
+        ? "maintained policy contracts and documentation, some read by unit tests"
+        : "maintained policy contracts and documentation only",
+    );
   }
-  if (files.every(docsOnly)) return flags({}, "Ward documentation only");
+  if (files.every(docsOnly)) {
+    if (!files.some(testRead)) return flags({}, "Ward documentation only");
+    return flags({ full: true, unit: true }, "Ward documentation, some read by unit tests");
+  }
   if (files.every((file) => docsOnly(file) || backendOnly(file))) {
     return flags(
       { full: true, unit: true, backend: true, build: true, frontend_static: true },

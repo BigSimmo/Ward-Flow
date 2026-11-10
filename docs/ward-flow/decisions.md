@@ -151,6 +151,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-126](#d-126-ranked-lists-neutral-orders-approved-10-november-2026)                                                                                   | Ranked lists: neutral orders on 11 lists, lists 9 and 12 kept                          | Active                                           |
 | [D-127](#d-127-neutral-wording-for-a-community-treatment-order-at-arrival-10-november-2026)                                                             | Neutral wording for a community treatment order at arrival                             | Active                                           |
 | [D-128](#d-128-final-master-audit-nine-answers-10-november-2026)                                                                                        | Final master audit: nine answers                                                       | Active                                           |
+| [D-132](#d-132-audit-fixes-group-1-docs-and-ci-guards-10-november-2026)                                                                                 | Audit fixes group 1: docs and CI guards; Claude-authored sensitive changes warn        | Active                                           |
 
 ---
 
@@ -1603,3 +1604,12 @@ is inferred.
   8. **Accessibility:** moderate accessibility findings stay non-blocking; serious and critical still block.
   9. **New features:** none from the proposed list until #1564 to #1577 close.
 - **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge or release.
+
+## D-132. Audit fixes group 1: docs and CI guards (10 November 2026)
+
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, in the Ward Flow project thread "Fix confirmed 10 Nov audit issues": he picked the confirmed audit items to fix, chose three PRs (docs and CI, app and backend, held clinical), and said "go ahead" for group 1. Numbered D-132 because the three numbers before it are held by another PR. D-129 is claimed by open PR #1598. D-130 is claimed by open PR #1598. D-131 is claimed by open PR #1598.
+- **Decision:**
+  1. Group 1 fixes the stale STATUS asks, the merge-queue comments, docs-only PRs skipping tests that read those docs, the bundle secret patterns, the CSRF forwarded-host trust, the testing guide counts, go/no-go row C3, guard scripts with no CI caller, and the runbook and desk guide freshness (blocking for those pages).
+  2. Coding agents (Claude, Cursor, Codex) are added to the bot-author policy as a **warning tier**: an agent-authored change to a sensitive path is reported, not failed, until a separate agent identity and an owner review exist (audit decisions 6 and 7, not yet taken). Workflows, CI scripts and the protected-test list become sensitive paths.
+- **Why:** these were the confirmed, low-risk audit findings; failing agent commits now would block almost every engine or legal PR, because no approval route exists yet.
+- **Boundary:** synthetic data only. No clinical rule, signed value or release changes. D-82 (5 KB phone limit raises) and D-107 (no merge queue) stand.
