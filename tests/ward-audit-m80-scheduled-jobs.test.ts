@@ -136,7 +136,15 @@ beforeAll(async () => {
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", () => resolve()));
   backend = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 });
-afterAll(() => new Promise<void>((resolve) => server.close(() => resolve())));
+// Drop any kept-alive curl connection first: close() otherwise waits for it, and on a busy CI runner
+// that wait outlasted the hook timeout and failed the whole file outside any test.
+afterAll(
+  () =>
+    new Promise<void>((resolve) => {
+      server.closeAllConnections();
+      server.close(() => resolve());
+    }),
+);
 
 const healthy = { status: 200, body: { service: "ward-flow-backend", database: "ok" } };
 const noDatabase = { status: 200, body: { service: "ward-flow-backend", database: "unavailable" } };
