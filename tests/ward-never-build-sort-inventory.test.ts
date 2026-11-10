@@ -295,11 +295,12 @@ describe("never-build sort inventory (D-71, audit M116)", () => {
       expect.arrayContaining([
         "handover/handover-beds.tsx",
         "handover/handover-phone.tsx",
-        "wards/ward-index.tsx",
         "statistics/statistics-map-view.tsx",
         "movements/movement-horizon-gantt.tsx",
       ]),
     );
+    // D-126 (Josh, 10 Nov 2026): the Wards index orders are neutral and its hero names no ward.
+    expect(needsJosh).not.toContain("wards/ward-index.tsx");
   });
 
   it("the ED wall TV's ready wards are A to Z once Josh ruled (D-126)", () => {

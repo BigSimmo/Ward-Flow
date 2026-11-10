@@ -61,21 +61,12 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
   {
     file: "wards/ward-index.tsx",
     match:
-      'if (order === "most-ready") return b.ready - a.ready || serviceRank(a) - serviceRank(b); if (order === "fullest") return b.occupancy - a.occupancy',
+      'if (order === "a-z") return a.unit.name.localeCompare(b.unit.name); return serviceRank(a) - serviceRank(b);',
     list: "wards",
-    key: "user choice: service (default), 'Most ready' (ready beds, most first) or 'Fullest' (occupancy)",
-    order: "NEEDS JOSH",
+    key: "user choice: health service order (default) or ward name A to Z",
+    order: "fixed order",
     reason:
-      "The Wards index offers an Order choice labelled 'Most ready' that re-sorts the ward cards a person opens wards from by ready beds; the default is health service order.",
-  },
-  {
-    file: "wards/ward-index.tsx",
-    match: "b.ready - a.ready || a.unit.name.localeCompare(b.unit.name)",
-    list: "wards",
-    key: "ready beds, most first; then ward name; first row only",
-    order: "NEEDS JOSH",
-    reason:
-      "Picks one ward for the Wards hero chip 'Most ready: <ward>', a one-tap link to that ward: a single named ward headlined by free beds.",
+      "D-126 (10 Nov 2026): the Wards index Order choice keeps only neutral orders, Service (default) and A to Z; 'Most ready' and 'Fullest' were removed, and the hero's 'Most ready: <ward>' chip and its sort became a 'Has ready' filter chip counting the wards with a ready bed.",
   },
   {
     file: "statistics/statistics-map-view.tsx",
