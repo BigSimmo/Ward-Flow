@@ -164,7 +164,11 @@ export function reduceObservationLevelEvent(
   }
   const sequence = latestSequence + 1;
   if (!Number.isSafeInteger(sequence))
-    return reject(state, event, "Observation history is full. This change cannot be saved.");
+    return reject(
+      state,
+      event,
+      "Observation history is full, so this change cannot be saved. Tell the bed coordinator.",
+    );
   const changed = <T extends Movement | Admission>(row: T): T => ({
     ...row,
     observation: level,

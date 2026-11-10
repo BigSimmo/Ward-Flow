@@ -802,7 +802,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
           <Link
             href={deskHome}
             className={styles.brandLink}
-            aria-label="Ward Flow WA — home"
+            aria-label="Ward Flow WA, home"
             title="Ward Flow Western Australia"
           >
             <span className={styles.brandEmblem} aria-hidden="true">

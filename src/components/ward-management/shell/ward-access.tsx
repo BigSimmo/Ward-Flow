@@ -917,10 +917,15 @@ function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: s
 }
 
 /** Break glass: warn, ask why, then open one record read only for a set time (plan section 7). */
-function BreakGlassForm({ access, patientId }: { access: WardAccess; patientId: string }) {
+/** Exported for its DOM test (`tests/ward-break-glass-in-flight.dom.test.tsx`). */
+export function BreakGlassForm({ access, patientId }: { access: WardAccess; patientId: string }) {
   const { now, units } = useUnscopedWardFlow();
   const [reason, setReason] = useState<BreakGlassReasonId | null>(null);
   const [other, setOther] = useState("");
+  // A2-04 (10 Nov 2026): the button stays off from the tap until the reply, so a double tap sends
+  // one request. The ref stops a second tap that lands before React redraws the button.
+  const [sending, setSending] = useState(false);
+  const sendingRef = useRef(false);
   const minutes = CLINICAL_VALUES.breakGlassWindow.value;
   const ready = reason !== null && (reason !== "other" || other.trim().length > 0);
   // Opening a record outside your care needs a recent sign-in (feature 9).
@@ -961,10 +966,12 @@ function BreakGlassForm({ access, patientId }: { access: WardAccess; patientId: 
       </fieldset>
       <Button
         variant="danger"
-        disabled={!ready}
+        disabled={!ready || sending}
         data-testid="ward-break-glass-open"
-        onClick={() =>
-          reason &&
+        onClick={() => {
+          if (!reason || sendingRef.current) return;
+          sendingRef.current = true;
+          setSending(true);
           void guard(async () => {
             // In the shared workspace the server opens the record, asks for a fresh sign-in and
             // keeps the review record (the reason from the list only, never the typed words).
@@ -982,8 +989,11 @@ function BreakGlassForm({ access, patientId }: { access: WardAccess; patientId: 
             }) || shared
               ? null
               : "Not opened.";
-          })
-        }
+          }).finally(() => {
+            sendingRef.current = false;
+            setSending(false);
+          });
+        }}
       >
         Open read only
       </Button>
