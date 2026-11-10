@@ -1,3 +1,5 @@
+import { bedMapCells } from "@/components/ward-management/statistics/statistics-bed-map";
+import { networkUnitRows } from "@/components/ward-management/statistics/statistics-network-cards";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -6,14 +8,15 @@ import {
   tvHealthServices,
   wardTvSheet,
 } from "@/components/ward-management/bed-meeting/tv-derivations";
-import { buildIncoming, outgoingToday } from "@/components/ward-management/board/ward-board-model";
+import { buildIncoming, buildTiles, outgoingToday } from "@/components/ward-management/board/ward-board-model";
 import { bedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
 import { edOpenSummaries, isUnderAForm } from "@/components/ward-management/ed/ed-home-derivations";
 import { occupiedBeds } from "@/components/ward-management/statistics/statistics-occupancy";
 import { bedStates, totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { headlineAvailable } from "@/components/ward-management/ward-board-derivations";
 import { DEFAULT_DUE_SOON_THRESHOLDS, type Instant } from "@/components/ward-management/ward-clock";
-import { seedWardFlowState, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { wardReferralInboxEntries } from "@/components/ward-management/referrals/referral-inbox";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
@@ -63,11 +66,16 @@ function homeEdTile(state: WardFlowState, now: Instant, edId: string) {
 
 /** The ward board's hero for one ward, as `WardBoard` computes it. */
 function boardFigures(state: WardFlowState, now: Instant, unit: Unit) {
-  const states = bedStates(unit, state.admissions, [...state.bedReleases], [...state.leaveBeds]);
+  // D-115: the board's named holds, from the ward-scoped referral inbox it selects.
+  const holds = [...state.movements, ...wardReferralInboxEntries(state.referrals, unit.id)];
+  const states = bedStates(unit, state.admissions, [...state.bedReleases], [...state.leaveBeds], holds);
   const incoming = buildIncoming(unit, state.admissions, state.movements, now);
   return {
-    readyNow: headlineAvailable(unit, state.admissions, state.bedReleases, state.leaveBeds, now),
+    readyNow: headlineAvailable(unit, state.admissions, state.bedReleases, state.leaveBeds, now, holds),
     readyFigure: states.ready,
+    readyTiles: buildTiles(unit, state.admissions, state.bedReleases, now, { holds }).filter(
+      (tile) => tile.kind === "empty",
+    ).length,
     occupied: states.occupied,
     pulledNotArrived: incoming.filter((person) => person.state === "pulled").length,
   };
@@ -125,7 +133,10 @@ function printFigures(state: WardFlowState, now: Instant) {
 function statisticsFigures(state: WardFlowState, now: Instant) {
   const occupancy = occupiedBeds(state.units, state.admissions, state.bedReleases, state.leaveBeds);
   return {
-    bedsReady: totalReadyBedsNow(state.units, state.admissions, state.bedReleases),
+    bedsReady: totalReadyBedsNow(state.units, state.admissions, state.bedReleases, [
+      ...state.movements,
+      ...state.referrals,
+    ]),
     occupied: occupancy.occupied,
     pulled: occupancy.pulled,
     inUse: occupancy.inUse,
@@ -349,15 +360,75 @@ describe("one number, one answer across Home, the board, the TV, Statistics and 
 
   /*
    * 3. "Beds ready now" after a referral is accepted into a named bed (`ACCEPT_REFERRAL` with
-   *    `bedNumber`, the ward board's "Place here"). D-115: that bed is ready on no screen. The TV and
-   *    print subtract the hold (WF-FIG-017); Home, the ward board, Statistics, Handover and Referrals
-   *    still call `readyBedsNow`/`totalReadyBedsNow` without it. Seed + RF-005 accepted into
-   *    rph-older-adult bed 1: Home, board and Statistics 26, TV and print 25. Not fixed yet: the board
-   *    passes no journeys or referrals (`board/ward-board.tsx`, held by open PRs).
+   *    `bedNumber`, the ward board's "Place here"). D-115: that bed is ready on no screen. Before
+   *    this, seed + RF-005 accepted into rph-older-adult bed 1 read 26 on Home, the board and
+   *    Statistics, but 25 on the TV and print (WF-FIG-017).
    */
-  it.todo(
-    "Beds ready now (D-115): Home, the board and Statistics subtract a referral's named bed hold, as the TV and print do",
-  );
+  it("Beds ready now (D-115): a referral's named bed is ready on no screen", () => {
+    const unitId = "rph-older-adult";
+    const accepted = wardFlowReducer(state, {
+      type: "ACCEPT_REFERRAL",
+      role: "ward",
+      now,
+      referralId: "RF-005",
+      destinationKind: "psychiatric_ward",
+      unitId,
+      actingUnitId: unitId,
+      bedNumber: 1,
+    } as Parameters<typeof wardFlowReducer>[1]);
+    expect(accepted.rejections.length, "the acceptance was taken").toBe(state.rejections.length);
+    const after = {
+      home: homeFigures(accepted, now),
+      tv: networkTvFigures(accepted, now),
+      print: printFigures(accepted, now),
+      statistics: statisticsFigures(accepted, now),
+      boards: accepted.units.map((unit) => boardFigures(accepted, now, unit)),
+    };
+    expect(after.tv.bedsReady, "the named bed left the TV's ready count").toBe(tv.bedsReady - 1);
+    expectOneAnswer("beds ready now, after a named acceptance", [
+      { screen: "Home hero", value: after.home.bedsReady },
+      { screen: "ward boards, summed", value: after.boards.reduce((sum, board) => sum + board.readyNow, 0) },
+      {
+        screen: "ward board Ready tiles, summed",
+        value: after.boards.reduce((sum, board) => sum + board.readyTiles, 0),
+      },
+      { screen: "TV, all services", value: after.tv.bedsReady },
+      { screen: "Statistics", value: after.statistics.bedsReady },
+      { screen: "printed sheet", value: after.print.bedsReady },
+    ]);
+    const unit = accepted.units.find((candidate) => candidate.id === unitId)!;
+    const board = boardFigures(accepted, now, unit);
+    // The named bed is drawn as a bed spoken for, a bed class the drawer never reads as a stay.
+    const holds = [...accepted.movements, ...wardReferralInboxEntries(accepted.referrals, unit.id)];
+    expect(
+      buildTiles(unit, accepted.admissions, accepted.bedReleases, now, { holds }).filter(
+        (tile) => tile.kind === "waiting" && tile.reserved === true,
+      ),
+    ).toHaveLength(1);
+    const wardTv = wardTvSheet({ ...tvInputs(accepted, now), unit, thresholds });
+    expect(
+      mismatches([
+        { screen: "board headline", value: board.readyNow },
+        { screen: "board figure row", value: board.readyFigure },
+        { screen: "board Ready tiles", value: board.readyTiles },
+        { screen: "ward TV", value: wardTv.capacity.ready },
+      ]),
+    ).toEqual([]);
+    // Statistics' ward bed map and the network rows (Overview, phone band, ward matrix) agree too,
+    // while the occupancy rate stays the beds taken by a stay.
+    const allHolds = [...accepted.movements, ...accepted.referrals];
+    const map = bedMapCells(unit, accepted.admissions, accepted.bedReleases, accepted.leaveBeds, now, allHolds);
+    const row = networkUnitRows([unit], accepted.admissions, accepted.bedReleases, accepted.leaveBeds, allHolds)[0]!;
+    const unheld = networkUnitRows([unit], accepted.admissions, accepted.bedReleases, accepted.leaveBeds)[0]!;
+    expect(
+      mismatches([
+        { screen: "board headline", value: board.readyNow },
+        { screen: "Statistics bed map Ready and preparing", value: map.counts.ready + map.counts.prep },
+        { screen: "Statistics network row", value: row.states.ready },
+      ]),
+    ).toEqual([]);
+    expect(row.inUse, "occupancy ignores the named bed").toBe(unheld.inUse);
+  });
 });
 
 /*

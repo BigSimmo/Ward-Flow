@@ -185,7 +185,7 @@ Use Lucide's current names, never the old aliases: `TriangleAlert` not `AlertTri
 
 **Lists and panels.** A list-and-panel page opens on the first useful item (Home's Placement panel is the exception). Group repeats into one row with one action ("Chase all"). Checklists: one head line with counts, a bulk action and Hide, then one-line cards three across, first nine shown.
 
-**Chips.** Filter and highlight chips sit in one row. A chip with nobody in it is hidden.
+**Chips.** Filter and highlight chips sit in one row. A chip with nobody in it is hidden. A row that scrolls sideways scrolls only sideways: it sets `overflow-y: hidden` beside its `overflow-x: auto`, so a chip's tap band never lets the row drag up and down (10 Nov 2026; `tests/css-sideways-rows-scroll-sideways-only.test.ts` checks every stylesheet).
 
 **Pop-ups and side panels.** The name, a small status tag beside it, one quiet context line. Close takes focus; no second Back link. Open on a short Summary; long lists go behind tabs with counts. Facts are label and value pairs, three to five per titled group. Notes are one compact list with icons. Actions pinned at the foot, one filled. Documents are chips that open a marked synthetic preview. Forms open blank. Tab stays inside an open panel (Q300). On short screens the header scrolls and the footer unpins (Q288).
 

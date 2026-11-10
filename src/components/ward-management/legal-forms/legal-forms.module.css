@@ -1164,6 +1164,7 @@ button.taskLabel[aria-pressed="true"] {
 
   .heroFilters {
     overflow-x: auto;
+    overflow-y: hidden;
     padding: 2px;
     scrollbar-width: none;
   }
@@ -1308,6 +1309,7 @@ button.taskLabel[aria-pressed="true"] {
     flex-direction: row;
     flex-wrap: nowrap;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
   }
 

@@ -244,7 +244,16 @@ function OperationalWardScreen({
 }) {
   const live = useStatisticsLive();
   const { countsOnly } = useStatisticsCounts();
-  const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases, leaveBeds } = live.state;
+  const {
+    units: liveUnits,
+    admissions: liveAdmissions,
+    movements,
+    referrals: liveReferrals,
+    bedReleases,
+    leaveBeds,
+  } = live.state;
+  // D-115: a bed named for an open journey or an accepted referral is not Ready on this page either.
+  const namedHolds = useMemo(() => [...movements, ...liveReferrals], [movements, liveReferrals]);
   const now = live.now;
   const { dayZero } = live.state;
   const units = unitsOverride ?? liveUnits;
@@ -261,8 +270,10 @@ function OperationalWardScreen({
   const statistics = useMemo(() => (unit ? wardStatistics(unit.id, admissions, now) : null), [unit, admissions, now]);
   const capacity = useMemo(
     () =>
-      unit ? { ...unitCapacity(unit, bedReleases), available: readyBedsNow(unit, admissions, bedReleases) } : null,
-    [unit, admissions, bedReleases],
+      unit
+        ? { ...unitCapacity(unit, bedReleases), available: readyBedsNow(unit, admissions, bedReleases, namedHolds) }
+        : null,
+    [unit, admissions, bedReleases, namedHolds],
   );
   const pendingPreparation = useMemo(
     () => (unit ? bedsPendingPreparation(unit.id, bedReleases) : 0),
@@ -270,8 +281,8 @@ function OperationalWardScreen({
   );
   const openBeds = useMemo(() => (unit ? openBedsNow(unit, bedReleases) : 0), [unit, bedReleases]);
   const bedMap = useMemo(
-    () => (unit ? bedMapCells(unit, admissions, bedReleases, leaveBeds, now) : null),
-    [unit, admissions, bedReleases, leaveBeds, now],
+    () => (unit ? bedMapCells(unit, admissions, bedReleases, leaveBeds, now, namedHolds) : null),
+    [unit, admissions, bedReleases, leaveBeds, now, namedHolds],
   );
   const wardOccupancy = useMemo(
     () => (unit ? occupiedBeds([unit], admissions, bedReleases, leaveBeds) : null),

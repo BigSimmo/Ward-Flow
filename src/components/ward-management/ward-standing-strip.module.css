@@ -52,6 +52,7 @@
    * value or sub ever demands a wider minimum than that, the strip scrolls in place rather than
    * pushing the page wide — never the other way round. */
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 /*

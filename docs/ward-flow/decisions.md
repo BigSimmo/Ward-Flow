@@ -1449,7 +1449,7 @@ is inferred.
   5. **Downtime pack:** adds a line naming anyone absent without leave on each ward. The pack stays print or saved file only (D-72).
   6. **Executive statistics:** counts an absence without leave separately from approved leave (D-38).
 - **Also in the same PR:** the Statistics ward rosters show "Absent without leave", not "On leave" (D-38, no new ruling needed).
-- **Built so far (PR #1579):** items 1, 2 and 5. Items 3, 4 and 6 wait until PRs #1581 and #1583 merge, because those PRs hold the ward board and access-scope files the changes need; each is pinned as a to-do test in the audit files.
+- **Built:** items 1, 2 and 5 in PR #1579; items 3, 4 and 6 in the follow-up PR from the same thread (Josh, 10 November 2026: "Complete this"). Item 3 passes the named holds (open journeys and accepted referrals; the ward board uses its ward-scoped referral inbox) to the "beds ready now" figures on Home, the rail, the ward board, Statistics (hero, Overview cards, map, compare, journey), Handover, Referrals and the executive figures. A named bed moves from Ready to Pulled in the four bed boxes; occupancy and the 85% line still count only beds taken by a stay. Item 6 follows the signed small-number line: an absence count below it is hidden, and so is the approved leave count beside it, because the held-bed total is already printed.
 - **Boundary:** synthetic data only. Changes display counts and labels; changes no signed clinical value or clinical rule, and approves no merge or release.
 
 ## D-116. Page tops: the PR #1581 recommendations stand (9 November 2026)

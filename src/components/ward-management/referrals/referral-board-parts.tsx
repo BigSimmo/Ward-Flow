@@ -4,14 +4,15 @@ import { wardAddressing } from "@/components/ward-management/ward-eligibility";
 import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
-import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { readyBedsNow, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
+import { numberedReservationBeds } from "@/components/ward-management/ward-movement-bed-hold";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { FileText } from "lucide-react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import type { Referral, Unit } from "@/components/ward-management/ward-model";
+import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import {
@@ -346,11 +347,19 @@ export type BedsReadySummary = {
   oldestUpdateMinutes: number | undefined;
 };
 
+/** The kinds of this ward's beds named for an incoming patient (the same rule as `bedStates`). */
+function namedHeldKinds(unit: Unit, admissions: readonly Admission[], holds: readonly ReservationReferral[]) {
+  const movements = holds.filter((row): row is Movement => "stage" in row);
+  const others = holds.filter((row): row is Exclude<ReservationReferral, Movement> => !("stage" in row));
+  return numberedReservationBeds(unit, admissions, movements, others).values();
+}
+
 export function bedsReadySummary(
   units: Unit[],
   admissions: readonly Admission[],
   bedReleases: BedRelease[],
   now: Instant,
+  holds: readonly ReservationReferral[] = [],
 ): BedsReadySummary {
   const totals = { Adult: 0, "Older adult": 0, Youth: 0, Locked: 0 };
   let total = 0;
@@ -359,11 +368,13 @@ export function bedsReadySummary(
   for (const unit of units) {
     // Every unit counts: a unit without authorisation still takes voluntary admissions. The shared
     // per-unit ready figure, so the cohort cells add up to the same total every other page shows.
-    const ready = readyBedsNow(unit, admissions, bedReleases);
+    const ready = readyBedsNow(unit, admissions, bedReleases, holds);
     total += ready;
     totals[unit.cohort] += ready;
     // Locked is the ready locked portion of any ward, mixed wards included.
-    totals.Locked += Math.min(ready, lockedBedsFree(unit));
+    // D-115: a locked bed named for an incoming patient is not a ready locked bed.
+    const heldLocked = [...namedHeldKinds(unit, admissions, holds)].filter((kind) => kind === "locked").length;
+    totals.Locked += Math.min(ready, Math.max(0, lockedBedsFree(unit) - heldLocked));
     preparing += bedsPendingPreparation(unit.id, bedReleases);
     const age = Math.max(0, now - unit.allocatable.confirmedAt);
     oldest = oldest === undefined ? age : Math.max(oldest, age);
