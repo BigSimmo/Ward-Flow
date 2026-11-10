@@ -14,7 +14,7 @@ function fixture({
   many = false,
   existingCover = false,
   version = 16,
-  bootstrapCoordinatorIds = undefined,
+  bootstrapCoordinatorIds = /** @type {((atMs: number) => string[]) | undefined} */ (undefined),
 } = {}) {
   const world = engine.seedWorld(at);
   const access = { role: "admin", scope: { kind: "statewide" } };
