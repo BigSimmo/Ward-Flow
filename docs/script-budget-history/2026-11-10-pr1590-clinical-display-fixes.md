@@ -11,3 +11,7 @@ Trim tried: the growth is 0.1 to 0.2 KB of register data that D-122 requires; no
 ## Second raise, same day (on `main` at `29352cd`)
 
 Hosted CI on head `39e13c5` measured this PR over five limits after the second main merge and the review fixes: home `/ward-flow` 570.2 KB (main alone 569.6), ED 529.6 (main alone 529.5), bed meeting 584.3 (main alone 584.1), and referrals and movements at their limits of 583.6 and 605.1 once unrounded. Raised home 570.0 to 570.4, referrals 583.6 to 583.8, ED 529.6 to 529.8, movements 605.1 to 605.3 and bed meeting 584.1 to 584.5, each the measurement plus 0.2 KB. Statistics is left alone: main alone is already over its limit, and the budget trim issue tracks that. The growth is the same shared register text as above; no safe trim was found.
+
+## Third raise, same day (on `main` at `9c06e96`)
+
+After #1592 merged, main's home limit is 570.2 KB (home measured 570.0 there). This PR alone measured home 0.6 KB over main, so the combined home limit is set to 570.8 (about main plus this PR's growth plus 0.2). Re-measure on hosted CI and lower if it reads lower.

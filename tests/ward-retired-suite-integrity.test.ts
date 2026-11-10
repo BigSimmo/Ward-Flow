@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 /**
  * 🔴 **TWELVE `describe.skip` SUITES ARE RECORDED, AND TWELVE ARE DECLARED UNREACHABLE, AND
- * NOTHING TIES THE THREE FACTS TOGETHER.** `docs/ward-flow/retired-coverage-record-2026-09-06.md`
+ * NOTHING TIES THE THREE FACTS TOGETHER.** `docs/history/archive/dated-notes/retired-coverage-record-2026-09-06.md`
  * writes down what each retired suite covered, in its own words, before anything was retired —
  * that is the recoverability contract. `tests/ward-component-reachability.test.ts`'s
  * `DECLARED_UNREACHABLE` separately says which components a coordinator's browser cannot reach.
@@ -42,7 +42,7 @@ import { describe, expect, it } from "vitest";
  * ## What is checked, for every file in the population
  *
  * 1. **Named in the record, as its own path token.** The file's own basename must appear in
- *    `docs/ward-flow/retired-coverage-record-2026-09-06.md` bounded by anything OTHER than a
+ *    `docs/history/archive/dated-notes/retired-coverage-record-2026-09-06.md` bounded by anything OTHER than a
  *    filename-continuation character (a word character, `.`, or `-`) — not a bare
  *    `recordText.includes(file)`, which would count `old-ward-x.test.tsx` or
  *    `ward-x.test.tsx.bak` as naming `ward-x.test.tsx` when neither one actually does. A `/`

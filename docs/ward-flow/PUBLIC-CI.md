@@ -198,9 +198,10 @@ Main has no merge queue (the workflows' `merge_group` triggers are dormant) and 
 phone script budget can land together over it. Before 4 November 2026 that turned every open PR's
 required production build red until someone raised the limit by hand. Three parts now handle it:
 
-- **Prevention.** The build merges the latest main before measuring (`merge-latest-main.mjs`), and
-  `ward-flow-budget-recheck.yml` re-runs that build on armed PRs when relevant main inputs move.
-  The build records the exact measured main revision; a matching latest-attempt receipt avoids a
+- **Prevention.** The build merges the latest main before measuring (`merge-latest-main.mjs`).
+  `ward-flow-budget-recheck.yml`, which would re-run that build on armed PRs when relevant main
+  inputs move, is switched off (its job has `if: false`), so today nothing re-checks an armed PR
+  when main moves. The build records the exact measured main revision; a matching latest-attempt receipt avoids a
   redundant rerun even when the recheck starts late. Contradictory receipts override timestamps;
   missing legacy receipts retain the conservative timing fallback. Annotation errors cannot
   establish a match, and the existing ten-minute wait bound remains.

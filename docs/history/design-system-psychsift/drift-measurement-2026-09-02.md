@@ -86,7 +86,7 @@ new token needed.
 3. **`dashboard-nav.tsx` safe-area bypass** — `dashboard-nav.tsx:248,278` use raw
    `env(safe-area-inset-right/bottom)` where `globals.css` already declares `--safe-area-right`/
    `--safe-area-bottom` for exactly this. 2 sites, real shipped navigation component, and this is the
-   exact class of drift `docs/search-chrome-behaviour.md`'s phone-chrome contract exists to prevent.
+   exact class of drift `docs/history/search-chrome-behaviour.md`'s phone-chrome contract exists to prevent.
 4. **`--radius-sm`/`--radius-xs` literals reached for instead of the token** — `borderBottomRightRadius:6`
    (answer-chat perfected + redesign, `--radius-sm` exact), `borderRadius:4` (chat-v2 line 1259 and
    loading-redesign line 354 — an **identical duplicated `ProseSkeleton` style**, `--radius-xs` exact),

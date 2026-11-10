@@ -36,7 +36,7 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * the product's word for the quantity was an open question, and cited `board/ward-board.tsx`
  * rendering "beds you can fill today" as the rival term. **OWNER RULING R-B-09, 2026-09-04:
  * "Ready", everywhere** — one word replacing seven renderings of `min(allocatable, empty)`
- * (`docs/ward-flow/owner-rulings-2026-09-04-decision-batch.md`). The board now renders "ready
+ * (`docs/history/archive/dated-notes/owner-rulings-2026-09-04-decision-batch.md`). The board now renders "ready
  * bed(s)"; the old phrase survives only in prose describing what its header used to say, which is
  * history and not a competing live term.
  *

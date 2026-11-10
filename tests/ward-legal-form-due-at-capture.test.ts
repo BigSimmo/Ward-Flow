@@ -122,7 +122,7 @@ describe("every selectable code keeps a typed expiry now, per owner answer 1 (20
    * supplied due time silently, on the product owner's instruction of 2026-08-23 — *"please can
    * you leave the legal part and just start a clock once the patient arrives to ED. Keep it simple
    * for now."* That instruction forbade COMPUTING a statutory duration; it never forbade recording
-   * one a human types. Owner answer 1, 2026-09-17 (`docs/ward-flow/owner-answers-2026-09-17.md`):
+   * one a human types. Owner answer 1, 2026-09-17 (`docs/history/archive/dated-notes/owner-answers-2026-09-17.md`):
    * *"the timer that starts when a patient arrives is separate to forms. One records time in ED
    * and the other is a forms category."* Read with the rest of item 1, his instruction is that the
    * clinician types the expiry written on whichever form they hold — of any code — and this model
