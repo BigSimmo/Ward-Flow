@@ -223,6 +223,8 @@ function ExecutiveResults({ filters, onNavigate }: { filters: Filters; onNavigat
     .filter(
       (ward) =>
         !ward.isClosed &&
+        // A forensic ward is never offered (D7), here as in the operational finder (M118).
+        !ward.forensic &&
         ward.cohort === filters.cohort &&
         (filters.legalStatus !== "involuntary" || ward.authorised) &&
         (filters.sex === "any" || sexDesignationAccepts(ward.sexDesignation, filters.sex)),

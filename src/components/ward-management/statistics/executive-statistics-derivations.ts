@@ -202,6 +202,7 @@ export function executiveWardSummary(ward: PublicWard, input: ExecutivePrivateIn
     ...ward,
     cohort: unit.cohort,
     authorised: unit.authorised,
+    forensic: unit.forensic === true,
     lockedBeds: unit.lockedBeds,
     // Public inventory facts preserve the existing bed-finder controls without a Unit record.
     isClosed: unit.isClosed === true,
