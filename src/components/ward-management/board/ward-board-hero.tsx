@@ -247,6 +247,7 @@ export function WardBoardHero(props: {
               <HeroBand
                 title="Also on this ward"
                 testId="ward-board-triage"
+                compact
                 aside={isPhone ? "today and tomorrow" : `today and tomorrow · ${designationSummary(unit)}`}
                 cells={cells}
               />
