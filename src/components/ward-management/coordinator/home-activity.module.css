@@ -257,7 +257,8 @@
   }
   .panelTabs > [role="tablist"] {
     gap: 0;
-    padding: 6px 12px 0 0;
+    /* 8px top so the scrolling tablist does not clip the tabs' 8px upward tap extension. */
+    padding: 8px 12px 0 0;
     border-bottom: 0;
   }
   .panelTabs [role="tab"] {
@@ -289,11 +290,11 @@
     background: var(--wf-surface);
     color: var(--wf-ink-1);
   }
-  /* A tab's tap area reaches 48px into the slate above it. */
+  /* A tab's tap area reaches 48px into the slate above it: the 40px tab plus the whole 8px gap. */
   .panelTabs [role="tab"]:not([aria-selected="true"])::after {
     content: "";
     position: absolute;
-    inset: -6px 0 0;
+    inset: min(-8px, calc(-2 * var(--wf-phone-pill-hit))) 0 0;
   }
   /* The chosen tab's concave feet, so it flows into the body. */
   .panelTabs [role="tab"][aria-selected="true"]::before,

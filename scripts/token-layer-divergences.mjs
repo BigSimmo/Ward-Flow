@@ -7,7 +7,7 @@
  * paints and the globals.css declaration is dead — editing it changes nothing,
  * silently, with no lint, no type error and no failing screenshot.
  *
- * The v2 migration is deliberate and unfinished (see docs/design-system/TOKENS.md),
+ * The v2 migration is deliberate and unfinished (see docs/history/design-system-psychsift/TOKENS.md),
  * so divergence is not banned. It is PINNED: the set below is the reviewed set,
  * and any name that starts diverging, or stops, fails until the pin is updated.
  * That turns an invisible trap into a deliberate, reviewable one.

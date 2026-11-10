@@ -10,7 +10,7 @@ import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-mornin
  *
  * `min(allocatable, empty)` is the beds a coordinator can actually put somebody in. It was rendered
  * seven different ways across this product, and the owner replaced all seven with one word:
- * `docs/ward-flow/owner-rulings-2026-09-04-decision-batch.md` R-B-09, census in
+ * `docs/history/archive/dated-notes/owner-rulings-2026-09-04-decision-batch.md` R-B-09, census in
  * `docs/ward-flow/bed-figure-wording-census-2026-09-04.md` §2.
  *
  * ⚠️ **THE RENAME FOLLOWED THE LABEL CONSTANT, SO IT MOVED EVERY LABEL AND NO SENTENCE.**

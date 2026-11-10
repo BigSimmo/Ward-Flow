@@ -5,7 +5,9 @@ name: Ward Flow living-page reminder
 # scripts/check-living-docs-freshness.mjs) against their last-checked dates. When any page is past
 # its limit (7 days for the status page, 14 for the rest), it opens one `docs-stale` issue that
 # @mentions the owner, so GitHub emails him, or updates the open one. When every page is fresh again,
-# it closes that issue. It reads the repository only: no install, no provider and no secrets.
+# it closes that issue. It reads the repository and writes only that one issue and its `docs-stale`
+# label (`gh label create` makes or updates the label; issues: write):
+# no install, no outside provider and no secrets.
 # Public repository: free. GitHub turns scheduled workflows off after 60 days without repository
 # activity.
 on:
@@ -51,7 +53,7 @@ jobs:
             fi
             exit 0
           fi
-          list=$(printf '%s' "$report" | jq -r '.problems[] | "- `\(.path)`: " + (if .status == "missing" then "no last-checked marker" else "last checked \(.lastChecked), \(.ageDays) days ago (limit \(.limit))" end)')
+          list=$(printf '%s' "$report" | jq -r '.problems[] | "- `\(.path)`: \(.detail)"')
           body=$(printf '@%s These Ward Flow pages describe the app as it is now and are past their re-check date:\n\n%s\n\nCheck each page against current `main`, then update its `<!-- last-checked: YYYY-MM-DD -->` date. The status page lists merges since a date with `node scripts/ward-flow/merged-since.mjs --since <date> --ref origin/main`.\n' "$OWNER" "$list")
           gh label create "$LABEL" --color FBCA04 --description "A living documentation page is past its re-check date" --force
           if [ -n "$open" ]; then

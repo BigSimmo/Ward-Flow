@@ -74,7 +74,7 @@ function withoutComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
 }
 
-/** A read of the patient link. Five shapes, alternated:
+/** A read of the patient link. Six shapes, alternated:
  *  1. `.patientId` (dot) or `["patientId"]` (bracket) access, on anything.
  *  2. A `const`/`let`/`var` destructuring declaration binding `patientId` with no nesting —
  *     `const { patientId } = r`, `let { patientId: id } = r`.
@@ -82,6 +82,9 @@ function withoutComments(source: string): string {
  *  4. An unannotated destructured arrow-callback parameter — `({ patientId }) => …`.
  *  5. An unannotated destructured `function` parameter, named or not — `function ({ patientId })
  *     { … }` / `function f({ patientId }) { … }`.
+ *  6. A reflective read — `Reflect.get(record, "patientId")`, where the first argument may hold
+ *     one level of parentheses (`Reflect.get(resolveRecord(), "patientId")`) (audit F-08, D-122 item 7: patient
+ *     search once read the link this way, out of this guard's sight).
  *  Shapes 4 and 5 stop at the TYPE ANNOTATION, not at "parameter vs declaration": `({ patientId }:
  *  Props) =>` and `function f({ patientId }: Props)` are excluded because an annotation sits
  *  between `}` and `)`, not because a parameter can never be a read — an unannotated parameter
@@ -93,7 +96,7 @@ function withoutComments(source: string): string {
  *  unrelated same-named URL parameter is handled by naming it in the allowlist with its own
  *  reason, not by narrowing this pattern. */
 const PATIENT_LINK_READ =
-  /\.patientId\b|(?<!\b[A-Z][A-Za-z0-9_]*)\[\s*["']patientId["']\s*\]|\b(?:const|let|var)\b\s*\{[^}]*\bpatientId\b[^}]*\}\s*=|\b(?:const|let|var)\b\s*\{[^{}]*\{[^{}]*\bpatientId\b[^{}]*\}[^{}]*\}\s*=|\(\s*\{[^}]*\bpatientId\b[^}]*\}\s*\)\s*=>|\bfunction\b\s*\w*\s*\(\s*\{[^}]*\bpatientId\b[^}]*\}\s*\)/;
+  /\.patientId\b|(?<!\b[A-Z][A-Za-z0-9_]*)\[\s*["']patientId["']\s*\]|\b(?:const|let|var)\b\s*\{[^}]*\bpatientId\b[^}]*\}\s*=|\b(?:const|let|var)\b\s*\{[^{}]*\{[^{}]*\bpatientId\b[^{}]*\}[^{}]*\}\s*=|\(\s*\{[^}]*\bpatientId\b[^}]*\}\s*\)\s*=>|\bfunction\b\s*\w*\s*\(\s*\{[^}]*\bpatientId\b[^}]*\}\s*\)|\bReflect\s*\.\s*get\s*\((?:[^,()]|\([^()]*\))*,\s*["'`]patientId["'`]/;
 
 /**
  * Every file permitted to contain a read of `.patientId`, and why. See this file's own header for
@@ -539,6 +542,15 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     expect(PATIENT_LINK_READ.test('type Id = Movement["patientId"];')).toBe(false);
     expect(PATIENT_LINK_READ.test('function f(id: Referral["patientId"]) {}')).toBe(false);
     expect(PATIENT_LINK_READ.test("const x = referral?.patientId ?? null;")).toBe(true);
+    // REFLECTIVE POSITIVE CONTROL (F-08, D-122 item 7): Reflect.get reads the field without a dot,
+    // bracket or destructure, so it needs its own alternative.
+    expect(PATIENT_LINK_READ.test('return Reflect.get(item, "patientId") === id;')).toBe(true);
+    expect(PATIENT_LINK_READ.test("Reflect.get(item, 'patientId')")).toBe(true);
+    expect(PATIENT_LINK_READ.test('Reflect.get(item, "id")')).toBe(false);
+    // The record may come from a call, with its own parentheses and commas (one level of nesting).
+    expect(PATIENT_LINK_READ.test('Reflect.get(resolveRecord(), "patientId")')).toBe(true);
+    expect(PATIENT_LINK_READ.test('Reflect.get(pick(list, 0), "patientId")')).toBe(true);
+    expect(PATIENT_LINK_READ.test('Reflect.get(resolveRecord(), "id")')).toBe(false);
     // DESTRUCTURING POSITIVE CONTROLS. `const { patientId } = r` and `let { patientId: id } = r`
     // both read the field off `r` without ever writing a dot or a bracket, so the two alternatives
     // above alone would miss them — this is the gap this task closes.
@@ -621,6 +633,32 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
       PATIENT_LINK_READ.test(strippedRecordPreview),
       "record-preview.tsx no longer reads .patientId — the allowlist entry may be stale",
     ).toBe(true);
+  });
+
+  // D-122 item 7: patient search reads patient links through the resolver's `recordLinksPatient`
+  // helper, where this guard can see them. The helper itself reads `.patientId` inside an
+  // allowlisted file, so a new caller would otherwise slip past the text scan above. Each caller
+  // is named here; a new one needs the same owner permission as a new allowlist entry.
+  const RECORD_LINKS_PATIENT_CALLERS: ReadonlyArray<{ file: string; reason: string }> = [
+    {
+      file: "search/patient-search-model.ts",
+      reason: "D-122 item 7: patient search finds one person's own open movement and queued referral.",
+    },
+  ];
+
+  it("refuses any recordLinksPatient caller not named with its permission", () => {
+    const resolver = resolve(WARD_DIR, "ward-patient-resolver.ts");
+    const callers = collectWardManagementFiles(WARD_DIR)
+      .filter((file) => file !== resolver)
+      .filter((file) => /\brecordLinksPatient\b/.test(withoutComments(readFileSync(file, "utf8"))))
+      .map((file) => relative(WARD_DIR, file).split("\\").join("/"))
+      .sort();
+    expect(
+      callers,
+      "a new caller of recordLinksPatient reads the patient link through the resolver; name it with " +
+        "its owner permission in RECORD_LINKS_PATIENT_CALLERS, or hand it back to Josh",
+    ).toEqual(RECORD_LINKS_PATIENT_CALLERS.map((entry) => entry.file).sort());
+    for (const { reason } of RECORD_LINKS_PATIENT_CALLERS) expect(reason.length).toBeGreaterThan(20);
   });
 
   it("refuses every ward-management file outside the allowlist that reads the patient link", () => {

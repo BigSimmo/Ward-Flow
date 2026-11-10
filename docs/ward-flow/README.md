@@ -5,11 +5,7 @@
 **This is the product and design overview.** Use the [documentation portal](../README.md) to find the
 page for your task; [`AGENTS.md`](../../AGENTS.md) remains the repository instruction root.
 
-_Updated 2026-11-08 - added the shadow pilot pack to the reader table; Documentation owns._
-
-_Updated 2026-10-24 - daily loop type check works on any OS; gate-tsc cache warning; Documentation owns._
-
-_Updated 2026-10-24 - added desk guides, staff notes and demo script to the reader table; Documentation owns._
+_Updated 2026-11-08 - added the shadow pilot pack to the reader table. Earlier (24 October): desk guides, staff notes and demo script added to the reader table; the daily loop type check works on any OS; gate-tsc cache warning. Documentation owns._
 
 | Reader or task                      | Next page                                                                                |
 | ----------------------------------- | ---------------------------------------------------------------------------------------- |

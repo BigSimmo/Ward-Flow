@@ -439,7 +439,9 @@ test("instruction adapters and policy pointers preserve one authority and scoped
   const agents = readFileSync(path.join(root, "AGENTS.md"), "utf8");
   const publication = readFileSync(path.join(root, "docs/agents/git-publication.md"), "utf8");
   const nested = readFileSync(path.join(root, "src/components/ward-management/CLAUDE.md"), "utf8");
-  assert.match(nested, /@\.\.\/\.\.\/\.\.\/AGENTS\.md/);
+  // The root CLAUDE.md already imports AGENTS.md; the nested adapter links to it instead of importing it twice (10 Nov 2026 audit).
+  assert.match(nested, /\[AGENTS\.md\]\(\.\.\/\.\.\/\.\.\/AGENTS\.md\)/);
+  assert.doesNotMatch(nested, /^@\.\.\/\.\.\/\.\.\/AGENTS\.md/m);
   assert.doesNotMatch(nested, /where\s+they differ, they win/);
   assert.match(agents, /git-publication\.md#bare-pr-publication-is-not-readiness-work/);
   assert.match(publication, /SKIP_PRECOMMIT_READINESS=1 git commit/);

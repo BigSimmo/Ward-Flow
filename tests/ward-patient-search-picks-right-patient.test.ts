@@ -71,9 +71,24 @@ describe("a partial or initials query never puts a non-matching name above a mat
     expect(ids(people("a. morgan"))).toEqual(["PT-LA-09"]);
   });
 
-  // Finding, not fixed here: initials typed without a stop ("AM") are matched as letters inside a
-  // name, so they find Sam Alexander and not Alex Morgan. Matching initials is a product decision.
-  it.todo("AM finds Alex Morgan by initials (needs Josh's ruling on initials search)");
+  // D-113 item 3: typed initials without full stops ("AM") do not match a patient by initials, so a
+  // loose initials match cannot open the wrong person. "AM" is read as letters inside a name only.
+  it.each(["AM", "am"])("%s does not find anyone by initials (D-113)", (query) => {
+    const found = people(query);
+    const byInitialsOnly = LOOKALIKES.filter(
+      (patient) =>
+        patient.givenName.toLowerCase().startsWith("a") &&
+        patient.familyName.toLowerCase().startsWith("m") &&
+        !`${patient.givenName} ${patient.familyName}`.toLowerCase().includes("am"),
+    );
+    expect(byInitialsOnly.length).toBeGreaterThan(0);
+    for (const id of ids(byInitialsOnly)) expect(ids(found)).not.toContain(id);
+    // Not vacuous: the one look-alike whose name holds "am" as letters (Sam Alexander) is still found.
+    expect(ids(found)).toContain("PT-LA-11");
+    for (const patient of found) {
+      expect(`${patient.givenName} ${patient.familyName}`.toLowerCase()).toContain("am");
+    }
+  });
 });
 
 describe("every People row carries a second identifier and opens its own record", () => {

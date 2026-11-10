@@ -10,7 +10,7 @@ the owner can correct it rather than discover it.
 
 ---
 
-## R-2026-09-04-A — The patient record may hold the placement field set
+## R-2026-09-04-A — The patient record may hold the placement field set (partly replaced by D-105)
 
 > **Partly replaced by [D-105](../../../ward-flow/decisions.md) (8 November 2026):** next of kin, a nominated person or carer and the other optional administrative details a clerk records (22 in all) may now be optional record-only fields, beyond this ruling's two-field limit. Risk flags, diagnosis and medication stay off the record.
 
