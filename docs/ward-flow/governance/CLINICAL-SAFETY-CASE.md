@@ -8,7 +8,7 @@
 > [!NOTE]
 > **Prototype Operating Mode (`AGENTS.md`, 3 October 2026):** Ward Flow executes exclusively on **100% synthetic data** with zero live EHR connections and zero real patient information. This Clinical Safety Case serves as presentation reference material for WA Health stakeholders alongside automated legal-language (`scripts/ward-flow/check-ward-legal-language.mjs`) and synthetic-data (`scripts/ward-flow/check-clinical-governance-gate.mjs`) verification gates, rather than a live clinical deployment sign-off.
 
-_Updated 2026-10-26 (late) - H-01 and H-08 status traced to fix commits on main at `0aaabf38` plus #830, with a proposed residual of 3 for each awaiting the clinical safety owner; tests not re-run and no browser replay for this update; DCB0129 title corrected; Documentation owns._
+_Updated 2026-11-10 - audit M65: section 7.3 links each hazard to its control and guarding tests, marks gaps and lists candidate new hazards; drafting only, no rating changed and nothing signed; Documentation owns._
 
 _Updated 2026-10-26 - A-01 Find a bed marked fixed by `b9a6f598` (never-build audit NB-26-10); 2026-10-24 - merged the 24 Oct shared-folder safety case and hazard log drafts; this repository copy is canonical (Josh, 24 Oct 2026); Documentation owns._
 
@@ -369,6 +369,63 @@ Shares the H-01 controls. B-10 open. **Risk 3** until UMRN shows on place-mode t
 #### H-24 Cultural safety: Aboriginal status shown or used inappropriately
 
 The field is stored. Its display is not settled, pending the Aboriginal health review. The Aboriginal Cultural Safety Charter is reference material. **Risk 2.** Re-open if the field is displayed.
+
+### 7.3 Hazard to test traceability (draft, audit M65)
+
+Drafted 10 November 2026 for issue #1574 from file names and test titles on main `3f4b9571`. The
+tests were not re-run for this table, and a listed test guards part of a hazard, not the whole of
+it. Ratings above are unchanged. Nothing here is signed: the clinical safety owner's review and
+acceptance (go/no-go row S2) stays open. **Gap** means no test was found for the named control.
+Files marked † are protected safety tests: removing or loosening one fails CI without Josh's
+approval (D-123 item 3; list in `scripts/ward-flow/protected-safety-tests.json`). All paths are
+under `tests/`.
+
+| Hazard | Control (from section 7.2)                                                                               | Guarding tests                                                                                                                                                                     |
+| ------ | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| H-01   | Each action bound to the patient captured when it opened; re-sorts under the finger act on the aimed row | `ward-wrong-patient-binding.dom.test.tsx`†, `ward-live-resort-target.dom.test.tsx`†, `ward-switch-stale-action.dom.test.tsx`. **Gap:** D-04 and the browser replay                 |
+| H-02   | Booking or pull onto a ward not authorised for the legal status is refused                               | `ward-audit24-1-planned-booking-authorised.test.ts`, `ward-locked-not-authorised.test.ts`                                                                                          |
+| H-03   | Bed matching counts recorded sex only; acuity gate advises where staffing is missing                     | `ward-bed-matching-recorded-sex.test.ts`, `ward-acuity-gate.test.ts`                                                                                                               |
+| H-04   | "Not recorded" where nothing is recorded; no invented figures                                            | `ward-unlinked-movement-says-not-recorded.dom.test.tsx`, `ward-no-invented-screen-figures.test.ts`, `ward-clinical-values.test.ts`†. **Gap:** A-03, A-04 open                      |
+| H-05   | Each count shows when it was recorded; a silent connection turns the board stale                         | `ward-silent-connection-stale.dom.test.tsx`†, `ward-downtime-last-sync.dom.test.tsx`                                                                                               |
+| H-06   | A lapsed pull time limit keeps showing and is never called cleared                                       | `ward-audit24-1-arrival-pull-time-limit.dom.test.tsx`, `ward-clinical-values.test.ts`†                                                                                             |
+| H-07   | Confirm or undo on consequential steps                                                                   | `ward-tier1-undo.test.ts`, `ward-undo-steps.test.ts`. **Gap:** D-02, B-06 to B-09 open                                                                                             |
+| H-08   | A conflicting save is refused, not silently applied                                                      | `ward-board-concurrent-saves.dom.test.tsx`, `ward-conflict-scope.test.ts`. **Gap:** hosted two-desk replay                                                                         |
+| H-09   | Legal form times shown only as typed, never as a countdown; time order checked                           | `ward-legal-as-typed-guard.test.ts`†, `ward-legal-form-time-order.dom.test.tsx`, `ward-ruling-guardrails.test.ts`† (D-93)                                                          |
+| H-10   | No ranked or suggested ward, bed or patient; wards listed A to Z                                         | `ward-ruling-guardrails.test.ts`† (D-71), `ward-audit24-1-find-a-bed.dom.test.tsx`                                                                                                 |
+| H-11   | Rows that move under the finger still act on the aimed patient                                           | `ward-live-resort-target.dom.test.tsx`†. **Gap:** no test that a re-ordered waiting patient stays visible                                                                          |
+| H-12   | CAD number plausibility before a booking counts                                                          | `ward-transit-booking-cad-validity.dom.test.tsx`, `ward-cad-number.test.ts`. Phone confirmation is a process control                                                               |
+| H-13   | Prototype and synthetic disclosure on every screen; synthetic data only                                  | `ward-prototype-footer.dom.test.tsx`, `ward-synthetic-data-guard.test.ts`. Paper record is a process control                                                                       |
+| H-14   | Act-now rows never dimmed                                                                                | `ward-alerts-safety-rules.dom.test.tsx`. **Gap:** CS-17 thresholds not reviewed; no test bounds red-marker volume                                                                  |
+| H-15   | Perth time whatever the device zone; midnight handled                                                    | `ward-clock-perth-zone.test.ts`, `ward-audit-planned-actor-midnight.dom.test.tsx`                                                                                                  |
+| H-16   | Unfinished work guarded before it is lost                                                                | `ward-desk-unsaved-navigation.dom.test.tsx`. **Gap:** sibling forms open                                                                                                           |
+| H-17   | One number across Home, the board, the TV, Statistics and print                                          | `ward-one-number-across-screens.test.ts`†, `ward-one-number-across-screens.dom.test.tsx`†                                                                                          |
+| H-18   | Downtime pack printable, with its last sync time, and nothing kept on the device                         | `ward-downtime-pack-device-storage.dom.test.tsx`†, `ward-downtime-last-sync.dom.test.tsx`, `ward-ruling-guardrails.test.ts`† (D-72 item 2). **Gap:** no point-in-time backup drill |
+| H-19   | One permission matrix across screen and backend; access withdrawn mid-shift                              | `ward-permission-matrix.test.ts`†, `ward-permission-drift.dom.test.tsx`†. **Gap:** database rules alone (audit M3)                                                                 |
+| H-20   | Copies and prints stamped synthetic, with provenance                                                     | `ward-printable-disclosures.dom.test.tsx`, `ward-output-csv-provenance.dom.test.tsx`. Names in copies await D-71 item 7                                                            |
+| H-21   | A recorded action that frees a pulled bed is confirmed and undoable                                      | `ward-audit24-1-revoked-exam-keeps-bed.test.ts`, `ward-release-pull-undo-guard.test.ts`                                                                                            |
+| H-22   | Undo restores exactly; random event runs keep the bed picture possible                                   | `ward-engine-safety.test.ts`†, `ward-audit24-1-fuzz-coverage.test.ts`, `ward-undo-dependent-records.test.ts`                                                                       |
+| H-23   | Look-alike names flagged on the bed board                                                                | `ward-bed-board-lookalike.dom.test.tsx`, plus the H-01 tests. **Gap:** B-10 (UMRN on place-mode tiles and phone rows)                                                              |
+| H-24   | Aboriginal status not displayed pending review                                                           | **Gap:** no test that the field stays off screens, prints and exports                                                                                                              |
+
+**Candidate new hazards.** Tier 1 items of the 9 Nov master audit list with no hazard above. Each
+needs the clinical safety owner to accept, merge or reject it; none is rated here.
+
+- M5 shared-device session isolation: the next user on a shared device sees the last user's patients.
+- M6 no false "all clear": failed, partial or unknown data shown as zero or green (wider than H-05).
+- M9 one intent, one change: a retried or double-tapped action recorded twice.
+- M10 safe offline replay: a queued action applied to a patient since transferred or discharged.
+- M12 bed double allocation: two patients committed to one bed (H-08 covers overwrites only).
+- M13 partly completed actions: a multi-record move left half done.
+- M14 absent and missing patients: a missing patient not shown on every screen and alert.
+- M16 signed clinical values drift: a threshold in code differing from the signed value.
+- M19 handover accountability: "sent" or "viewed" read as an accepted transfer of care.
+- M20 critical alert delivery: an undelivered alert read as delivered.
+- M21 alert privacy: an alert reaching a former role holder or showing a name.
+
+The other tier 1 items map to hazards above: M1 and M22 (H-01, H-23), M2 (H-08), M3, M4 and M11
+(H-19), M7 (H-05), M8 (H-16), M15 (H-09, H-10, H-18), M17 (H-09), M18 (H-15), M23 (H-22) and M24
+(H-17). Items M113 to M119 were not in the copy of the master list this draft used, so they are
+not checked here.
 
 ---
 
