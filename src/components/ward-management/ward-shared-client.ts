@@ -82,6 +82,7 @@ function loadSharedStateCheck(): Promise<void> {
 }
 
 import type { SharedSnapshot, SharedView, SharedChangeResult, WardCommandOutcome } from "./ward-shared-client-types";
+import { SharedIntentKeys } from "./shared-intent-keys";
 export type {
   SharedSnapshot,
   SharedRoleChoice,
@@ -218,13 +219,13 @@ export class SharedWorkspaceClient {
   }
   /** Offline: queued saves stay, pinned to the board they were made on (`pinToBoard`), and say so. */
   private holdQueued() {
-    this.offlineHold = true;
-    pinToBoard(this.queue, this.sheetSeen, this.held());
+    this.offlineHold = this.pendingOffline = true;
+    pinToBoard(this.queue, this.sheetSeen, this.held(), true);
     for (const queued of this.queue) this.settle(queued.commandId, "failed", saveProblem("heldOffline"));
   }
   /** P058: a conflict cancels only the queued actions on its own record; the rest still go. */
-  private cancelQueuedOn(event: WardFlowEvent, value: unknown) {
-    const hit = this.queue.filter((queued) => conflict.sameConflictRecord(event, queued.event));
+  private cancelQueuedOn(event: WardFlowEvent, value: unknown, exact: boolean) {
+    const hit = this.queue.filter((queued) => conflict.sameConflictRecord(event, queued.event, exact));
     this.queue = this.queue.filter((queued) => !hit.includes(queued));
     for (const queued of hit) this.settle(queued.commandId, "cancelled", conflict.queuedNotSentText(hit.length, value));
     this.syncUnloadWarning();
@@ -275,8 +276,8 @@ export class SharedWorkspaceClient {
   private saveAnswered = false;
   /** #817: the poll in flight, which a new save stops so the save is not held behind it. */
   private pollAbort: AbortController | null = null;
-  /** Requests stay with the desk that started them, even while waiting for a token. */
-  private viewGeneration = 0;
+  private viewGeneration = 0; // Requests stay with the desk that started them, even while waiting for a token.
+  private intentKeys = new SharedIntentKeys();
   /** Polls started before a grant must not replace the newly opened view. */
   private grantGeneration = 0;
   private needsRefresh = false;
@@ -290,6 +291,7 @@ export class SharedWorkspaceClient {
   private sheetSeen = new WeakMap<object, SheetSeen>();
   /** The popups the command in flight was asked for from, while it is in flight. */
   private pendingSheets: readonly object[] | undefined;
+  private pendingOffline = false; // The command in flight waited offline (audit M10).
   private readonly stopWatchingSheets = subscribeToSheetStack(() => this.noteOpenSheets());
   private worldEpoch = 0;
   /** When this desk last read the whole workspace (its own part of it), for `FULL_READ_EVERY_MS`. */
@@ -587,8 +589,7 @@ export class SharedWorkspaceClient {
       const payload = reuseUnchangedPayload(held?.payload, this.withArchive(raw, snapshot.accessContext));
       if (this.options.manageDrafts !== false && snapshot.accessContext !== undefined)
         bindReferralDraftAccessContext(snapshot.accessContext);
-      // A missing, malformed or stale sibling clears the previous display on this adoption.
-      // The outer response supplies the lifetime; metadata cannot authenticate itself.
+      // A missing, malformed or stale sibling clears the display; only the outer response sets the lifetime.
       const partialView =
         bindSharedPartialView?.(snapshot.partialView, {
           revision: snapshot.revision,
@@ -1030,7 +1031,8 @@ export class SharedWorkspaceClient {
     });
     // Made while offline: pinned now, before a resend can adopt a newer board.
     this.recoveryWrite(commandId, "queued");
-    if (this.offlineHold) pinToBoard(this.queue.slice(-1), this.sheetSeen, this.held());
+    if (this.offlineHold)
+      pinToBoard(this.queue.slice(-1), this.sheetSeen, this.held(), this.view.status === "unavailable");
     // #817: a poll in flight is stopped (reads change nothing) so the save goes now, not after it.
     this.pollAbort?.abort();
     this.publish({});
@@ -1041,6 +1043,7 @@ export class SharedWorkspaceClient {
     if (this.busy || this.disposed) return;
     this.busy = true;
     const generation = this.viewGeneration;
+    let refusal: string | null = null; // Audit M10: kept on the board (see `joinNotes`).
     try {
       while (!this.disposed && (this.pending || this.queue.length)) {
         if (!this.pending) {
@@ -1053,6 +1056,7 @@ export class SharedWorkspaceClient {
           }
           const basis = this.basis(queued.sheets);
           this.pendingSheets = basis ? queued.sheets : undefined;
+          this.pendingOffline = !!queued.offline;
           this.pending = {
             classification: "synthetic",
             dataMode: "prototype",
@@ -1063,7 +1067,7 @@ export class SharedWorkspaceClient {
             ...(this.queue.length && !queued.confirmed ? { reply: "revision" as const } : {}),
           };
         }
-        this.publish({ status: "saving", error: null });
+        this.publish({ status: "saving", error: refusal });
         const command = this.pending;
         const grantGeneration = this.grantGeneration;
         const epoch = this.roleEpoch;
@@ -1095,8 +1099,7 @@ export class SharedWorkspaceClient {
               response.ok ? value.snapshot.payload.state.undoRecords : undefined,
               response.ok ? value : undefined,
             );
-            // Keep the definitive result but read the newly granted view; a concurrent grant
-            // retries this read with the new generation (the command ID is retained).
+            // Keep the definitive result but read the newly granted view (a concurrent grant retries it).
             try {
               let latest: Awaited<ReturnType<typeof this.request>>;
               for (;;) {
@@ -1169,8 +1172,8 @@ export class SharedWorkspaceClient {
           return;
         }
         if (!response.ok) {
-          const scoped = response.status === 409 && conflict.namedConflict(value);
-          if (scoped) this.cancelQueuedOn(command.event, value);
+          const scoped = conflict.definiteRefusal(response.status, value);
+          if (scoped) this.cancelQueuedOn(command.event, value, response.status === 422);
           else this.cancelQueued();
           if (response.status === 409) {
             // The person has been told; open popups are checked against the board from here on.
@@ -1183,7 +1186,7 @@ export class SharedWorkspaceClient {
             error:
               response.status === 409
                 ? scoped
-                  ? conflict.changedFirstText(value)
+                  ? conflict.changedFirstText(value, this.pendingOffline)
                   : saveProblem("changedMeanwhile")
                 : value?.code === "scope" && typeof value.error === "string"
                   ? `${value.error} Nothing was changed.`
@@ -1199,6 +1202,7 @@ export class SharedWorkspaceClient {
                           : saveProblem("refused"),
           });
           this.settle(command.commandId, "refused", this.view.error ?? "The action was not applied.");
+          refusal = this.view.error;
           if (scoped && this.queue.length) continue;
           break;
         }
@@ -1207,10 +1211,8 @@ export class SharedWorkspaceClient {
         const partly = value.outcome === "partly" && typeof value.error === "string" ? value.error : undefined;
         this.settle(command.commandId, "accepted", undefined, value.snapshot?.payload.state.undoRecords, value, partly);
         // Audit E-05: the board's message line names the ward that was not asked, as the local refusal note does.
-        this.publish({
-          status: "ready",
-          error: partly ? `Sent to the suitable wards only. ${sentence(partly)}` : null,
-        });
+        const note = partly ? `Sent to the suitable wards only. ${sentence(partly)}` : null;
+        this.publish({ status: "ready", error: conflict.joinNotes(refusal, note) });
       }
     } catch {
       if (generation === this.viewGeneration) {
@@ -1354,11 +1356,14 @@ export class SharedWorkspaceClient {
     if (requestingRole && this.view.status === "no-role") return true;
     return !!this.view.snapshot && ["ready", "saving"].includes(this.view.status);
   }
+  private keyedRequest(path: string, d: Record<string, unknown>) {
+    return this.intentKeys.send([this.viewGeneration, path], d, this.options.commandId, (b) => this.request(path, b));
+  }
   /** A change on an access route: done, a fresh sign-in first, or the server's reason. */
-  private async change(path: string, body: Record<string, unknown>): Promise<SharedChangeResult> {
+  private async change(path: string, body: Record<string, unknown>, keyed = false): Promise<SharedChangeResult> {
     if (!this.accessChangeAllowed(path === "/v1/workspace/access/request"))
       return "Shared access changes are unavailable. Reconnect and finish checking any uncertain save first.";
-    const { response, value } = await this.request(path, body);
+    const { response, value } = await (keyed ? this.keyedRequest(path, body) : this.request(path, body));
     if (response.ok) return null;
     if (response.status === 401 && value?.code === "step-up") return "step-up";
     if (response.status >= 500) throw new Error("Change not confirmed");
@@ -1398,19 +1403,15 @@ export class SharedWorkspaceClient {
     return Array.isArray(value.covers) ? value.covers : [];
   }
   grantAccess(input: { actorId: string; role: string; scope: unknown; expiresInMinutes: number }) {
-    return this.change("/v1/workspace/access/grant", {
-      actorId: input.actorId,
-      role: input.role,
-      scope: input.scope,
-      expiresInMinutes: input.expiresInMinutes,
-    });
+    const { actorId, role, scope, expiresInMinutes } = input;
+    return this.change("/v1/workspace/access/grant", { actorId, role, scope, expiresInMinutes });
   }
   /** Removes a role, or ends cover early (its giver may too). */
   revokeAccess(membershipId: string) {
     return this.change("/v1/workspace/access/revoke", { membershipId });
   }
   giveCover(input: { actorId: string; scope: unknown; minutes: number }) {
-    return this.change("/v1/workspace/access/cover", input);
+    return this.change("/v1/workspace/access/cover", input, true);
   }
   decideRequest(requestId: string, decision: "approved" | "declined", expiresInMinutes: number) {
     return this.change("/v1/workspace/access/decide", { requestId, decision, expiresInMinutes });
@@ -1422,7 +1423,7 @@ export class SharedWorkspaceClient {
       return "Opening records is unavailable. Reconnect and finish checking any uncertain save first.";
     const generation = this.viewGeneration;
     const grantGeneration = this.grantGeneration;
-    const { response, value } = await this.request("/v1/workspace/break-glass", { patientId, reason });
+    const { response, value } = await this.keyedRequest("/v1/workspace/break-glass", { patientId, reason });
     if (generation !== this.viewGeneration) return "The working view changed; open the record again.";
     if (response.ok) {
       this.grantGeneration += 1;

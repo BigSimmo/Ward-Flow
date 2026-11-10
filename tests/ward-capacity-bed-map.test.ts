@@ -188,7 +188,14 @@ describe("bedMapWards — the bed map's per-ward figures", () => {
       movementId,
       unitIds: [unitId],
     });
-    state = wardFlowReducer(state, { type: "ACCEPT_IN_PRINCIPLE", role: "ward", now: NOW, movementId, unitId });
+    state = wardFlowReducer(state, {
+      type: "ACCEPT_IN_PRINCIPLE",
+      role: "ward",
+      now: NOW,
+      movementId,
+      unitId,
+      actingUnitId: unitId,
+    });
     const unit = () => state.units.find((candidate) => candidate.id === unitId)!;
     const confirm = (value: number) => {
       state = wardFlowReducer(state, {
@@ -202,7 +209,14 @@ describe("bedMapWards — the bed map's per-ward figures", () => {
       });
     };
     confirm(1);
-    state = wardFlowReducer(state, { type: "PULL_PATIENT", role: "ward", now: NOW, movementId, unitId });
+    state = wardFlowReducer(state, {
+      type: "PULL_PATIENT",
+      role: "ward",
+      now: NOW,
+      movementId,
+      unitId,
+      actingUnitId: unitId,
+    });
     expect(state.rejections).toEqual([]);
     expect(unit().allocatable.value).toBe(0);
     expect(

@@ -6,12 +6,13 @@ import { createWorkspaceStore } from "./postgres.mjs";
 import { withoutRecordDetail } from "./record-detail.mjs";
 
 // Production store and reporting engine; the double only schedules the locked SQL reads.
-/** @param {{ archived?: any[], count?: number, deadline?: number, project?: (...args: any[]) => any }} [options] */
+/** @param {{ archived?: any[], count?: number, deadline?: number, project?: (...args: any[]) => any, service?: string }} [options] */
 function executiveBoundary({
   archived = [],
   count = archived.length,
   deadline,
   project = engine.executiveReport,
+  service = "North Metro",
 } = {}) {
   let time = at.getTime();
   let expiry = deadline ?? time + 3_600_000;
@@ -21,7 +22,7 @@ function executiveBoundary({
   let locked = false;
   let receipt;
   let world = engine.seedWorld(at);
-  const access = { role: "executive", scope: { kind: "service", service: "North Metro" } };
+  const access = { role: "executive", scope: { kind: "service", service } };
   const membershipId = "55555555-5555-4555-8555-555555555555";
   const view = { actorId, membershipId, access, version: 14, grants: [], accessUntil: expiry };
   const query = async (sql, values = []) => {
@@ -188,6 +189,23 @@ test("executive archive hydration precedes service scope, prefers live ids and r
   }
 });
 
+// D-125 (audit M113): a service executive's report refused with "Executive reporting is
+// unavailable" (503) once the demo had run a day. A lone request in the new reporting week was
+// protected, but the release's proof search tried only one count changing at a time, so it found
+// no alternative and refused the whole report. Seeded at this file's fixed time, East Metro failed
+// from 12 hours on and Private from the start.
+test("a service executive's report is still drawn after the demo's first day", async () => {
+  for (const service of ["East Metro", "Private"])
+    for (const hours of [0, 24, 48]) {
+      const boundary = executiveBoundary({ service, deadline: at.getTime() + 72 * 3_600_000 });
+      boundary.advance(hours * 60);
+      const snapshot = await boundary.store.read(actorId, boundary.view);
+      assertExecutiveSnapshot(snapshot);
+      assert.deepEqual(snapshot.report.network.scope, { kind: "service", service }, `${service} +${hours}h`);
+      assert.equal(JSON.stringify(snapshot).includes(boundary.world.state.patients[0].id), false);
+    }
+});
+
 test("executive membership lifetime is finite and rechecked after expensive projection", async () => {
   for (const deadline of [Infinity, NaN, at.getTime() - 1]) {
     const boundary = executiveBoundary({ deadline });
@@ -268,6 +286,7 @@ function fixture(answer = "declined") {
       role: "ward",
       movementId: id,
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
       reason: "belongs_to_another_service",
     });
   if (answer === "accepted")
@@ -276,6 +295,7 @@ function fixture(answer = "declined") {
       role: "ward",
       movementId: id,
       unitId: "rph-adult-secure",
+      actingUnitId: "rph-adult-secure",
     });
   const places = engine.accessPlaces(world);
   const siteCode = places.edSiteCode("jhc-ed");
@@ -597,6 +617,7 @@ test("refused commands and replay use the same bound response factory without pe
     role: "ward",
     movementId: id,
     unitId: "rph-adult-secure",
+    actingUnitId: "rph-adult-secure",
     reason: "belongs_to_another_service",
   };
   const first = await store.command(actorId, "synthetic-refused-command", 7, event, { view });
@@ -627,6 +648,7 @@ function senderAlertFixture() {
       role: "ward",
       movementId: id,
       unitId,
+      actingUnitId: unitId,
       reason: "belongs_to_another_service",
     });
   }

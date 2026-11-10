@@ -286,16 +286,15 @@ export function WardBoardHero(props: {
 }
 
 /**
- * Ward home and Bed board as the folder tabs (page tops, 9 Nov 2026), route links marked as tabs so
- * the folder can find the chosen one.
+ * Ward home and Bed board as the folder tabs (page tops, 9 Nov 2026). They are route links, so they
+ * stay plain links (no tablist without arrow keys); the folder finds the chosen one by
+ * `aria-current="page"`, and the folder's nav already carries the "<ward> screens" name.
  */
 function WardBoardScreenNav({ unit, beds }: { unit: Unit; beds?: number }) {
   return (
-    <div className={cx(folderTabClasses.switch, styles.boardTabs)} role="tablist" aria-label={`${unit.name} screens`}>
-      <Link href={unitHref(unit.id)} role="tab" aria-selected={false}>
-        Ward home
-      </Link>
-      <Link href={wardBoardHref(unit.id)} role="tab" aria-selected aria-current="page">
+    <div className={cx(folderTabClasses.switch, styles.boardTabs)}>
+      <Link href={unitHref(unit.id)}>Ward home</Link>
+      <Link href={wardBoardHref(unit.id)} aria-current="page">
         <span>Bed board</span>
         {beds !== undefined ? (
           <>

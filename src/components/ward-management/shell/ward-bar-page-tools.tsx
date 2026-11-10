@@ -51,13 +51,26 @@ const noTitleOnServer = () => undefined;
 /** Page side: name the bar `title` while mounted on `pathname`; `undefined` keeps the route's name. */
 export function useWardBarPageTitle(pathname: string, title: string | undefined) {
   useEffect(() => {
-    if (title === undefined) return;
+    if (title === undefined) {
+      // A name handed over for this path (`presetWardBarPageTitle`) does not outlive its view.
+      if (pageTitle?.pathname === pathname) setPageTitle(undefined);
+      return;
+    }
     const own = { pathname, title };
     setPageTitle(own);
     return () => {
       if (pageTitle === own) setPageTitle(undefined);
     };
   }, [pathname, title]);
+}
+
+/**
+ * A route that hands over to `pathname` names its bar ahead of the page (phone load audit, 10 Nov
+ * 2026: the old Seclusion address flipped the bar Seclusion, Legal forms, Seclusion). Not cleared
+ * on unmount: the page takes the name over, or drops it, when it mounts.
+ */
+export function presetWardBarPageTitle(pathname: string, title: string) {
+  setPageTitle({ pathname, title });
 }
 
 /** Bar side: the page's own name for `pathname`, if the page set one. */

@@ -282,7 +282,7 @@ test("real PostgreSQL: shared commands, last-bed contention, retry, audit and re
           genderPlacementReason: "A single room is available on this ward",
           genderPlacementChecked: true,
         },
-        { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId },
+        { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId, actingUnitId: unitId },
       ]) {
         const result = engine.applyCommand(prepared, { ...event, movementId }, at);
         assert.equal(result.outcome, "accepted", "the fixture must be eligible before exercising concurrency");

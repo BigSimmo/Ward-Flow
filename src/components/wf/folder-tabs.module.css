@@ -87,7 +87,17 @@
   align-items: start;
 }
 
-/* The phone keeps the row sticky (home-flow.module.css); wider screens anchor the shape here. */
+/* Phone: every page's tab row pins under the header as Home's does (QA, 10 Nov 2026); a page whose
+   row sits in a short wrapper lets that wrapper step aside (display: contents) so the pin lasts. */
+@media (max-width: 46.4375rem) {
+  .nav.nav {
+    position: sticky;
+    top: var(--wf-header-height, 3.5rem);
+    z-index: 6;
+  }
+}
+
+/* Wider screens anchor the shape here. */
 @media (min-width: 46.5rem) {
   .nav.nav {
     position: relative;
@@ -113,6 +123,29 @@
 .shape {
   height: var(--wf-folder-rise, 70px);
   background: var(--wf-page-canvas, var(--wf-canvas));
+}
+
+/* Before the first measure (a server-drawn page waiting for its code on a slow phone), the outline
+   is drawn from CSS for the usual case, the first tab chosen: the sheet runs edge to edge from the
+   tabs' foot, and the chosen tab is a rounded lip of the same canvas. FolderShape then takes over. */
+.nav:not([data-folder-painted]) .shape {
+  left: calc(-1 * var(--wf-folder-bleed));
+  width: calc(100% + 2 * var(--wf-folder-bleed));
+  clip-path: inset(46px 0 0 0 round 0 20px 0 0);
+}
+
+.nav:not([data-folder-painted])
+  .switch.switch.switch.switch
+  > :is([aria-checked="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"]) {
+  border-radius: 12px 12px 0 0;
+  background: var(--wf-page-canvas, var(--wf-canvas));
+}
+
+@media (max-width: 46.4375rem) {
+  /* A phone page's side gutter (the server-drawn band's inset), until folder-tabs.tsx measures it. */
+  .nav.nav:not([data-folder-painted]) {
+    --wf-folder-bleed: var(--wf-band-phone-x, var(--wf-s-3));
+  }
 }
 
 /* Pinned under the header (phone): the row's own slate, edge to edge, then the sheet's canvas for a

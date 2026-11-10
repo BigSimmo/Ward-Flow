@@ -1,0 +1,44 @@
+name: Ward Flow CodeQL
+
+# M161 (final master audit; Josh, 10 Nov 2026, D-128 item 7): CodeQL scans the JavaScript and
+# TypeScript on every pull request into main and on every push to main. The job itself never fails
+# on a finding: it uploads its results to code scanning, and GitHub's "CodeQL" check on the pull
+# request fails only for alerts the pull request introduces, compared with main. Alerts already on
+# main stay listed in the Security tab and never block. The push to main keeps that comparison
+# current. No install, no build and no secrets: the extractor reads the source as it is
+# (build-mode none). Free for a public repository on a GitHub-hosted runner.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ward-codeql-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Ward Flow CodeQL (javascript-typescript)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Check out the source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Start CodeQL
+        uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          languages: javascript-typescript
+          build-mode: none
+      - name: Analyse and upload to code scanning
+        uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          category: /language:javascript-typescript

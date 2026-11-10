@@ -91,7 +91,14 @@ function bench(levels: readonly ObservationLevel[], staff: number): WardFlowStat
 }
 
 function pull(state: WardFlowState, movementId: string): WardFlowState {
-  return wardFlowReducer(state, { type: "PULL_PATIENT", role: "ward", now: NOW, movementId, unitId: UNIT_ID });
+  return wardFlowReducer(state, {
+    type: "PULL_PATIENT",
+    role: "ward",
+    now: NOW,
+    movementId,
+    unitId: UNIT_ID,
+    actingUnitId: UNIT_ID,
+  });
 }
 
 function admissionFor(state: WardFlowState, movementId: string): Admission | undefined {

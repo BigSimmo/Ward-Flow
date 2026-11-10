@@ -99,7 +99,7 @@
   }
 }
 
-/* Phone: one row of 36px chips (48px tap area) that runs to the screen's edges, scrolls sideways
+/* Phone: one row of 40px chips (48px tap area) that runs to the screen's edges, scrolls sideways
    under a soft fade and snaps per chip, as the shared HeroQuickChips do. */
 @media (max-width: 46.4375rem) {
   .bar {
@@ -114,6 +114,8 @@
     margin-inline: -16px;
     padding: 0 24px 0 16px;
     scroll-padding-left: 16px;
+    /* A control focused from the keyboard scrolls clear of the right-hand fade. */
+    scroll-padding-right: 48px;
     scroll-snap-type: x proximity;
     -webkit-mask-image: linear-gradient(90deg, black calc(100% - 36px), transparent);
     mask-image: linear-gradient(90deg, black calc(100% - 36px), transparent);
@@ -123,13 +125,17 @@
     scroll-snap-align: start;
   }
 
+  /* The house rule (Q295, Q377): every phone control is at least 40px, as the shared HeroQuickChips
+     grow to on a phone (hero-top.module.css); the tap area stays 48px. */
   .control {
     position: relative;
+    height: 40px;
+    min-height: 40px;
   }
 
   .control::after {
     content: "";
     position: absolute;
-    inset: -6px 0;
+    inset: -4px 0;
   }
 }

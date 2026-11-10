@@ -36,12 +36,12 @@ import { referralDestinationKindLabel } from "@/components/ward-management/ward-
  * they can argue with; a score is not — so the reasons are written as rules ("serves this patient's
  * suburb", "has a bed free that can hold someone involuntarily") and never as a verdict.
  *
- * **ORDER IS BY CATCHMENT, THEN BY NAME**, and by nothing else — `compareOptions` below. Ordering
- * by anything derived from the person is exactly the ranking this screen must not do. Worth saying
- * plainly: with today's three labels the catchment key never actually changes the order, because
- * the only option that can carry a catchment ("Community team") already sorts first by name. It is
- * written as two keys anyway so that the rule, not today's coincidence, is what a fourth
- * destination kind would be ordered by.
+ * **ORDER IS A FIXED TABLE: WARD, COMMUNITY TEAM, ED** (D-126, Josh, 10 Nov 2026), the same order
+ * as the referral drawer's Ward/Community/ED switch — `DESTINATION_ORDER` below. Nothing derived
+ * from the person, the catchment or any figure moves an option, and no option is flagged
+ * "suggested": D-71 (confirmed by D-106) means Ward Flow never suggests or ranks a destination.
+ * The catchment sentence still says what the source table says; it simply does not reorder or mark
+ * the list.
  *
  * **`referralEligibility` IS CALLED IN THE WARD ARM AND NOWHERE ELSE.** It takes the ward
  * DESTINATION deliberately (see its own doc comment), which is what makes "a community team cannot
@@ -96,12 +96,6 @@ export type DestinationOption = {
   readonly figures: readonly string[];
   /** Why this option is offered, as rules a clinician can disagree with. Not a rank. */
   readonly reasons: readonly string[];
-  /**
-   * Whether the catchment table itself points at this option. **A suggestion, never a selection**:
-   * nothing on this screen is chosen for the clinician, and a contested suburb suggests nothing at
-   * all (spec Part 5 — contested does not route).
-   */
-  readonly suggested: boolean;
 };
 
 export type DestinationOptionInputs = {
@@ -253,7 +247,7 @@ function catchmentFor(kind: ReferralDestinationKind, suburb: string | null): Des
   // "Contested must not route" lives once, in the exported predicates
   // `catchmentCanRouteAutomatically` / `catchmentRoutingDestinations` (ward-catchment.ts). This
   // screen calls them rather than re-deriving the rule from `lookup.state`, so its
-  // `suggested`/greyed decision cannot drift from the coordinator's routing.
+  // greyed decision cannot drift from the coordinator's routing.
   if (catchmentCanRouteAutomatically(lookup)) {
     const teams = catchmentRoutingDestinations(lookup) ?? [];
     // Both `reviewed` and `unreviewed` route. The sentence keeps the marker on the provisional
@@ -456,27 +450,19 @@ function reasonsFor(
  */
 
 /**
- * Catchment first, then name. Two keys, both stated, and NEITHER OF THEM A PERFORMANCE FIGURE.
+ * The fixed order every option is listed in (D-126): Ward, Community team, ED, matching the
+ * referral drawer's switch. A table of kinds, typed over every kind so a new one is a compile
+ * error here rather than a silent position.
  *
- * The obvious third key is the wait — order the shortest wait first and the list becomes useful
- * immediately. It is refused, and the refusal is a distinction rather than a preference. Nothing
- * may rank a PERSON; whether a SERVICE may be ranked is a different question, and nobody has ruled
- * on it. **It must never be inferred from the first.** Showing a wait is a fact about a service;
- * ordering the list by it is the screen saying, in the only way a list can, that this ward is
- * better than that one — which turns a placement tool into performance monitoring of named
- * services, a different product with real consequences.
- *
- * That it feels obviously more useful is the signal to stop, not to proceed.
- *
- * See this module's own header for the honest note that today's three labels make the first key
- * inert, and for why it is written as two keys anyway.
+ * NOTHING ELSE ORDERS THIS LIST. The wait is shown as a fact about a service; ordering by it (or
+ * by catchment, or by free beds) would be the screen saying one destination is better than
+ * another, which D-71 rules out.
  */
-function compareOptions(a: DestinationOption, b: DestinationOption): number {
-  if (a.catchment.placedBySourceTable !== b.catchment.placedBySourceTable) {
-    return a.catchment.placedBySourceTable ? -1 : 1;
-  }
-  return a.label.localeCompare(b.label);
-}
+const DESTINATION_ORDER: Readonly<Record<ReferralDestinationKind, number>> = {
+  psychiatric_ward: 0,
+  community_team: 1,
+  emergency_department: 2,
+};
 
 /** Every destination a referrer may choose, with what is known about each. Derived from
  *  `REFERRAL_DESTINATION_KINDS`, never a list written out here. */
@@ -496,8 +482,6 @@ export function destinationOptions(inputs: DestinationOptionInputs): Destination
       catchment,
       figures,
       reasons: reasonsFor(kind, catchment, inputs, bedFigures),
-      // A suggestion is never a selection, and a contested suburb suggests nothing.
-      suggested: catchment.placedBySourceTable,
     };
-  }).sort(compareOptions);
+  }).sort((a, b) => DESTINATION_ORDER[a.kind] - DESTINATION_ORDER[b.kind]);
 }

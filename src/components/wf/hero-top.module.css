@@ -516,6 +516,8 @@ a.cellBody {
     overflow-y: hidden;
     overscroll-behavior-x: contain;
     scroll-padding-left: 16px;
+    /* A chip focused from the keyboard scrolls clear of the right-hand fade. */
+    scroll-padding-right: 48px;
     scroll-snap-type: x proximity;
     scrollbar-width: none;
     -webkit-mask-image: linear-gradient(90deg, black calc(100% - 36px), transparent);
@@ -626,9 +628,9 @@ a.cellBody {
   }
 }
 
-/* Desktop: equal cells, but never narrower than their words, so a long value and its note
-   ("1 (1 also held up)" on the bed board) cannot run into the next cell (QA, 10 Nov 2026). */
-@media (min-width: 64rem) {
+/* Tablet and desktop: equal cells, but never narrower than their words, so a long value and its
+   note ("1 (1 also held up)" on the bed board) cannot run into the next cell (QA, 10 Nov 2026). */
+@media (min-width: 46.5rem) {
   .cell {
     min-width: max-content;
   }
@@ -639,6 +641,21 @@ a.cellBody {
 
   .cells[data-compact] .cell:first-child .cellBody {
     padding-left: 0;
+  }
+}
+
+/* Tablet: a band too long for the width (the bed board's eight cells at 820px) scrolls sideways,
+   as on a phone, rather than overflowing the hero. */
+@media (min-width: 46.5rem) and (max-width: 63.99rem) {
+  .cells {
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .cells::-webkit-scrollbar {
+    display: none;
   }
 }
 

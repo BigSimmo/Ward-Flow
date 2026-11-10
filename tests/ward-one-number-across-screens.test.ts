@@ -140,7 +140,8 @@ function statisticsFigures(state: WardFlowState, now: Instant) {
     occupied: occupancy.occupied,
     pulled: occupancy.pulled,
     inUse: occupancy.inUse,
-    occupancyPercent: occupancy.beds > 0 ? Math.round((occupancy.inUse / occupancy.beds) * 100) : 0,
+    // Audit M6: unknown (null) with no beds counted, as `StatisticsScreen` now prints "—".
+    occupancyPercent: occupancy.beds > 0 ? Math.round((occupancy.inUse / occupancy.beds) * 100) : null,
     openEdMovements: openEdJourneys(state.movements, now).total,
   };
 }
@@ -428,4 +429,37 @@ describe("one number, one answer across Home, the board, the TV, Statistics and 
     ).toEqual([]);
     expect(row.inUse, "occupancy ignores the named bed").toBe(unheld.inUse);
   });
+});
+
+/*
+ * AUDIT M6, NO FALSE "ALL CLEAR". The screens read one source, the shared snapshot. A failed or late
+ * read never reaches these selectors as zeros: the first read shows a spinner, not figures
+ * (`ward-cold-start-spinner`, `ward-reconnect-spinner`), a silent or failed refresh keeps the last
+ * figures and says "Stale. Last updated at…" on every screen (`ward-silent-connection-stale`,
+ * `ward-shared-save-status-bar`), and the TV freezes at its last live moment
+ * (`ward-tv-session-and-freeze`). What is left is a source that arrives empty or partial: a ward list
+ * with nothing in it for this desk. Occupancy then has no denominator and must read unknown.
+ */
+describe("a failed or partial ward source never reads as 0% in use (audit M6)", () => {
+  const state = seedWardFlowState();
+  const now = NOW_ANCHOR;
+
+  it("the seed has a share on Home and Statistics, so the empty case below is not 0 = 0", () => {
+    expect(homeFigures(state, now).occupancyPercent).toBeGreaterThan(0);
+    expect(statisticsFigures(state, now).occupancyPercent).toBeGreaterThan(0);
+  });
+
+  it("with no wards returned, Home and Statistics both say unknown (null), never 0", () => {
+    const empty: WardFlowState = { ...state, units: [] };
+    expect(homeFigures(empty, now).occupancyPercent, "Home ring").toBeNull();
+    expect(statisticsFigures(empty, now).occupancyPercent, "Statistics hero").toBeNull();
+  });
+
+  /*
+   * Beds ready, waiting in ED and the other counts read 0 with no wards or no movements, the same as
+   * a real "none". The snapshot carries no per-collection "incomplete" mark to tell them apart, so a
+   * screen cannot say "unknown" without one. Adding that mark to the server contract and choosing the
+   * words is a product decision for Josh, not a wording fix (open question in the M6 audit; no
+   * `it.todo` here, because this file is a protected safety test, D-123 item 3).
+   */
 });

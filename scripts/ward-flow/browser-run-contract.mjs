@@ -33,6 +33,7 @@ export const REQUIRED_RELEASE_JOURNEY_FILES = Object.freeze([
 // the desktop ED menus and layout-shift cases; every other check must pass exactly once.
 const RELEASE_CHECK_ROUTES = Object.freeze([
   "",
+  "/activity",
   "/alerts",
   "/bed-meeting",
   "/bed-meeting/agenda",
@@ -46,6 +47,7 @@ const RELEASE_CHECK_ROUTES = Object.freeze([
   "/ed/peel-ed",
   "/governance",
   "/handover",
+  "/help",
   "/hub",
   "/legal-forms",
   "/movements",
@@ -54,10 +56,12 @@ const RELEASE_CHECK_ROUTES = Object.freeze([
   "/out-of-area",
   "/people/new",
   "/people/196zcp26wet0",
+  "/people/196zcp26wet0/triage",
   "/referrals",
   "/referrals/new",
   "/reports/chronology",
   "/reports/downtime",
+  "/review",
   "/search",
   "/seclusion",
   "/settings",
@@ -74,6 +78,7 @@ const RELEASE_CHECK_ROUTES = Object.freeze([
   "/statistics/weekly",
   "/transport",
   "/transport/officer",
+  "/triage/new",
   "/ward/rph-adult-secure",
   "/ward/rph-adult-secure/answer",
   "/wards",
@@ -90,6 +95,50 @@ const RELEASE_DARK_CHECK_ROUTES = Object.freeze([
   "/transport/officer",
   "/ward/rph-adult-secure",
 ]);
+// M159 (10 Nov 2026): the same sweep run as each non-coordinator desk, on the routes it opens most.
+const RELEASE_DESK_CHECK_ROUTES = Object.freeze({
+  ward: Object.freeze([
+    "/ward/rph-adult-secure",
+    "/board/rph-adult-secure",
+    "/discharges",
+    "/referrals",
+    "/referrals/new",
+    "/people/new",
+    "/movements",
+    "/waiting",
+    "/legal-forms",
+    "/handover",
+    "/search",
+    "/settings",
+  ]),
+  ED: Object.freeze([
+    "/ed/peel-ed",
+    "/referrals",
+    "/referrals/new",
+    "/people/new",
+    "/triage/new",
+    "/movements",
+    "/waiting",
+    "/legal-forms",
+    "/handover",
+    "/search",
+    "/settings",
+  ]),
+  community: Object.freeze([
+    "/community/midland",
+    "/referrals",
+    "/referrals/new",
+    "/people/new",
+    "/triage/new",
+    "/movements",
+    "/legal-forms",
+    "/search",
+    "/alerts",
+    "/on-call",
+    "/settings",
+  ]),
+  "transport officer": Object.freeze(["/transport/officer", "/alerts", "/on-call", "/settings"]),
+});
 const RELEASE_SHIFT_ROUTES = Object.freeze([
   "",
   "/community/midland",
@@ -109,6 +158,9 @@ export function releaseGateCheckCases(project) {
   const phone = project === "release-gate-phone";
   const titles = [
     ...RELEASE_CHECK_ROUTES.map((route) => `axe: ${route || "/"} has no serious or critical violation`),
+    ...Object.entries(RELEASE_DESK_CHECK_ROUTES).flatMap(([desk, routes]) =>
+      routes.map((route) => `axe ${desk} desk: ${route} has no serious or critical violation`),
+    ),
     "axe: the header search palette with results open has no serious or critical violation",
     "axe: a ward's bed drawer when open has no serious or critical violation",
     "axe: the page tip card when showing has no serious or critical violation",

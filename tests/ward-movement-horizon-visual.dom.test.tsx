@@ -214,7 +214,7 @@ describe("48-Hour Bed Movement Horizon (Gantt Chart)", () => {
     const enlargeBtn = within(trafficPanel).getByRole("button", { name: "Enlarge" });
 
     expect(enlargeBtn).toHaveAttribute("aria-pressed", "false");
-    expect(within(trafficPanel).getByRole("complementary", { name: "Ranked corridors" })).toBeInTheDocument();
+    expect(within(trafficPanel).getByRole("complementary", { name: "Corridors" })).toBeInTheDocument();
 
     // Click Enlarge
     enlargeBtn.focus();
@@ -223,7 +223,7 @@ describe("48-Hour Bed Movement Horizon (Gantt Chart)", () => {
     expect(enlargeBtn).toHaveTextContent("Close full screen");
     const dialog = screen.getByRole("dialog", { name: "Full screen movement timeline" });
     expect(dialog).toHaveAttribute("aria-modal", "true");
-    expect(within(dialog).getByRole("complementary", { name: "Ranked corridors" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("complementary", { name: "Corridors" })).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Hide" })).toBeDisabled();
 
     // Restore
@@ -232,7 +232,7 @@ describe("48-Hour Bed Movement Horizon (Gantt Chart)", () => {
     expect(enlargeBtn).toHaveTextContent("Enlarge");
     expect(enlargeBtn).toHaveFocus();
     expect(screen.queryByRole("dialog", { name: "Full screen movement timeline" })).toBeNull();
-    expect(within(trafficPanel).getByRole("complementary", { name: "Ranked corridors" })).toBeInTheDocument();
+    expect(within(trafficPanel).getByRole("complementary", { name: "Corridors" })).toBeInTheDocument();
   });
 
   it("clicking any timeline event bar opens the MovementDrawer with real clinical context", () => {

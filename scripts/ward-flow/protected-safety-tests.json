@@ -1,0 +1,18 @@
+{
+  "ruling": "D-123 item 3 (Josh, 10 Nov 2026): a removed or loosened assertion in these files fails CI unless the pull request says why and Josh approves. Narrows the prototype-mode advisory test-deletion guard for these files only.",
+  "marker": "Protected-test-change: approved by Josh",
+  "files": [
+    { "path": "tests/ward-ruling-guardrails.test.ts", "guards": "owner-ruling guardrails" },
+    { "path": "tests/ward-wrong-patient-binding.dom.test.tsx", "guards": "wrong-patient binding" },
+    { "path": "tests/ward-live-resort-target.dom.test.tsx", "guards": "live re-sort keeps the action on its target" },
+    { "path": "tests/ward-permission-matrix.test.ts", "guards": "permission matrix" },
+    { "path": "tests/ward-permission-drift.dom.test.tsx", "guards": "permission drift between matrix and screens" },
+    { "path": "tests/ward-one-number-across-screens.test.ts", "guards": "one number across screens" },
+    { "path": "tests/ward-one-number-across-screens.dom.test.tsx", "guards": "one number across screens (rendered)" },
+    { "path": "tests/ward-clinical-values.test.ts", "guards": "signed clinical values" },
+    { "path": "tests/ward-engine-safety.test.ts", "guards": "engine safety" },
+    { "path": "tests/ward-legal-as-typed-guard.test.ts", "guards": "legal figures shown as typed" },
+    { "path": "tests/ward-downtime-pack-device-storage.dom.test.tsx", "guards": "downtime pack device storage" },
+    { "path": "tests/ward-silent-connection-stale.dom.test.tsx", "guards": "silent connection marked stale" }
+  ]
+}

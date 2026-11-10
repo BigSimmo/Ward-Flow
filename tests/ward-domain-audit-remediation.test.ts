@@ -46,8 +46,8 @@ function journey(atsCategory?: number) {
   });
   const movementId = state.movements.at(-1)!.id;
   send({ type: "REFER_TO_UNITS", role: "coordinator", movementId, unitIds: [unitId] });
-  send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId, unitId });
-  send({ type: "PULL_PATIENT", role: "ward", movementId, unitId });
+  send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId, unitId, actingUnitId: unitId });
+  send({ type: "PULL_PATIENT", role: "ward", movementId, unitId, actingUnitId: unitId });
   expect(state.rejections).toEqual([]);
   return {
     get state() {
@@ -105,7 +105,7 @@ describe("audit domain regressions — valid producers and complete recovery", (
     expect(f.state.units.find((u) => u.id === f.unitId)!.allocatable.value).toBe(unit.allocatable.value);
     for (const event of [
       { type: "REFER_TO_UNITS", role: "coordinator", unitIds: [f.unitId] },
-      { type: "PULL_PATIENT", role: "ward", unitId: f.unitId },
+      { type: "PULL_PATIENT", role: "ward", unitId: f.unitId, actingUnitId: f.unitId },
       {
         type: "BOOK_TRANSPORT",
         role: "ed",
@@ -127,16 +127,29 @@ describe("audit domain regressions — valid producers and complete recovery", (
       movementId: f.movementId,
       cleared: true,
       now: now + 1,
+      actingPlaceId: f.state.movements.find((m) => m.id === f.movementId)!.originEdId,
     });
     f.send({ type: "REFER_TO_UNITS", role: "coordinator", movementId: f.movementId, unitIds: [f.unitId] });
-    f.send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: f.movementId, unitId: f.unitId });
-    f.send({ type: "PULL_PATIENT", role: "ward", movementId: f.movementId, unitId: f.unitId });
+    f.send({
+      type: "ACCEPT_IN_PRINCIPLE",
+      role: "ward",
+      movementId: f.movementId,
+      unitId: f.unitId,
+      actingUnitId: f.unitId,
+    });
+    f.send({ type: "PULL_PATIENT", role: "ward", movementId: f.movementId, unitId: f.unitId, actingUnitId: f.unitId });
     expect(f.state.movements.find((m) => m.id === f.movementId)!.stage).toBe("pulled");
     expect(valid(f.state)).toBe(true);
   });
   it("allows explicit no-transport deterioration but does not reinterpret an ordinary unknown clearance", () => {
     const f = journey();
-    f.send({ type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE", role: "ed", movementId: f.movementId, cleared: false });
+    f.send({
+      type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
+      role: "ed",
+      movementId: f.movementId,
+      cleared: false,
+      actingPlaceId: f.state.movements.find((m) => m.id === f.movementId)!.originEdId,
+    });
     expect(f.state.movements.find((m) => m.id === f.movementId)!.admissionId).toBeDefined();
     deterioration(f);
     expect(f.state.movements.find((m) => m.id === f.movementId)!.admissionId).toBeUndefined();
@@ -312,7 +325,13 @@ describe("medical clearance and recorded category boundaries", () => {
     const f = journey();
     const units = f.state.units;
     const admission = f.state.movements.find((m) => m.id === f.movementId)!.admissionId;
-    f.send({ type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE", role: "ed", movementId: f.movementId, cleared: false });
+    f.send({
+      type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
+      role: "ed",
+      movementId: f.movementId,
+      cleared: false,
+      actingPlaceId: f.state.movements.find((m) => m.id === f.movementId)!.originEdId,
+    });
     const before = f.state.rejections.length;
     f.book();
     expect(f.state.rejections.length).toBe(before + 1);

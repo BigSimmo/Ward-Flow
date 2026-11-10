@@ -115,6 +115,7 @@ function pullThrough(state: WardFlowState, movement: Movement): WardFlowState {
     now: NOW,
     movementId: movement.id,
     unitId: UNIT_ID,
+    actingUnitId: UNIT_ID,
   });
 }
 

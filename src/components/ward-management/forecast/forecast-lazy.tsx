@@ -15,8 +15,13 @@ import "./forecast.module.css";
  */
 const loadEdAccessRisk = () => import("./ed-access-risk-card");
 
-export const EdAccessRiskCard = dynamic(() => loadEdAccessRisk().then((m) => m.EdAccessRiskCard), {
-  loading: () => null,
-});
+/*
+ * Phone load audit (10 Nov 2026): no `loading` here, so no Suspense boundary of its own. With an
+ * empty fallback, arriving on an ED page by a tap drew the board first and the card popped in above
+ * it about 2 s later on slow signal, pushing the list down (layout shift 0.29). Now the page waits
+ * on the card under the route's loading placeholder and lands whole. A first load is unchanged: the
+ * server draws the card and preloads its code.
+ */
+export const EdAccessRiskCard = dynamic(() => loadEdAccessRisk().then((m) => m.EdAccessRiskCard));
 
 preloadWhenIdle(loadEdAccessRisk);

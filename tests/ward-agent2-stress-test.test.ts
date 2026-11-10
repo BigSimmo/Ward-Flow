@@ -199,6 +199,7 @@ describe("Agent 2 Stress Test Suite", () => {
       now: 110,
       movementId,
       unitId: femaleOnlyUnit.id,
+      actingUnitId: femaleOnlyUnit.id,
     });
 
     // Ward pulls patient (stage -> pulled)
@@ -208,6 +209,7 @@ describe("Agent 2 Stress Test Suite", () => {
       now: 120,
       movementId,
       unitId: femaleOnlyUnit.id,
+      actingUnitId: femaleOnlyUnit.id,
     });
     expect(state.movements.find((m) => m.id === movementId)?.stage).toBe("pulled");
 
@@ -288,6 +290,7 @@ describe("Agent 2 Stress Test Suite", () => {
       now: 110,
       movementId,
       unitId: femaleOnlyUnit.id,
+      actingUnitId: femaleOnlyUnit.id,
     });
 
     // Pull patient
@@ -297,6 +300,7 @@ describe("Agent 2 Stress Test Suite", () => {
       now: 120,
       movementId,
       unitId: femaleOnlyUnit.id,
+      actingUnitId: femaleOnlyUnit.id,
     });
 
     // Book transport

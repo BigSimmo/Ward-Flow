@@ -220,7 +220,7 @@ push calls (key, status, subscribe, unsubscribe), `ward-shared-access.tsx` provi
 holds the sign-out release and ownership receipts, `shell/ward-phone-push-switch.ts` holds the
 Settings-only per-device switch, and Settings > Alerts shows it inside the one **Alerts on this
 device** switch with browser notifications (S7, 3 Nov 2026; `deviceAlertsRow` in
-`settings/settings-panes.tsx`, greyed with a reason only when neither can alert). `public/ward-flow-push-sw.js` shows the notification and opens Alerts; it has
+`settings/settings-panes.tsx`, greyed with a reason only when neither can alert). `public/ward-flow-push-sw.js` shows the notification in its own slot (the payload's tag: act now, transport jobs or team updates, M158) and opens its page; it has
 no fetch handler. Tests: `backend/ward-flow/push.test.mjs`, the push case in `postgres.test.mjs`
 and `tests/ward-phone-push.dom.test.tsx`. Setup is in the shared setup guide's phone alerts section.
 

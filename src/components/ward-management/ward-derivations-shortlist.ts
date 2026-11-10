@@ -318,7 +318,7 @@ export function shortlistCandidates(movement: Movement, units: Unit[], now: Inst
 }
 
 /** The one fixed, neutral order inside a group: health service, then ward name. Nothing is ranked. */
-function byServiceThenName(a: Unit, b: Unit): number {
+export function byServiceThenName(a: Unit, b: Unit): number {
   const service = (unit: Unit) => siteByCode(unit.siteCode)?.service ?? "";
   return service(a).localeCompare(service(b)) || a.name.localeCompare(b.name);
 }

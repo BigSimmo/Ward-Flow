@@ -1179,7 +1179,7 @@ describe("provider-safe test environment", () => {
     expect(preflight).toContain("PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH");
     expect(preflight).toContain("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD");
     expect(runner).toContain("process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = preinstalledChromium.path");
-    expect(packageJson.scripts["test:e2e:pr"]).toContain('--grep-invert "@quarantine|@mockup"');
+    expect(packageJson.scripts["test:e2e:pr"]).toContain("--grep-invert @quarantine");
     expect(baseUrl.indexOf("if (!allowEnsure)")).toBeLessThan(baseUrl.indexOf("findExistingLocalProjectUrl();"));
     expect(playwrightConfig).toContain("release-gate-journeys");
   });

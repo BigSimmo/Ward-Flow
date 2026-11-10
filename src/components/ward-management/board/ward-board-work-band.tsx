@@ -38,7 +38,7 @@ export function WardBoardWorkBand({
   blockerDialogItem: ShiftTileItem | null;
   blockerDialogRef: RefObject<HTMLDivElement | null>;
   closeBlockerDialog: () => void;
-  dispatchAndReport: (record: () => ReturnType<WardCommandDispatch>, success: string) => void;
+  dispatchAndReport: (record: () => ReturnType<WardCommandDispatch>, success: string, who?: string) => void;
   handleShiftAction: (item: ShiftTileItem, word: string) => void;
   liveBedReleases: BedRelease[];
   nameFor: (admissionId: string | undefined) => string;

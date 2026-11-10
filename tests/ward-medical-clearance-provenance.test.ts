@@ -48,8 +48,8 @@ function journey(linked = false) {
   const movementId = state.movements.at(-1)!.id;
   const unitId = "scgh-adult-open";
   send({ type: "REFER_TO_UNITS", role: "coordinator", movementId, unitIds: [unitId] });
-  send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId, unitId });
-  send({ type: "PULL_PATIENT", role: "ward", movementId, unitId });
+  send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId, unitId, actingUnitId: unitId });
+  send({ type: "PULL_PATIENT", role: "ward", movementId, unitId, actingUnitId: unitId });
   const book = () =>
     send({
       type: "BOOK_TRANSPORT",
@@ -95,7 +95,13 @@ describe("recorded medical clearance provenance and physical arrival", () => {
       j.send({ ...event, movementId: j.movementId });
     expect(j.state.rejections).toHaveLength(0);
     expect(j.state.movements.at(-1)!.transport?.collectedAt).toBe(NOW_ANCHOR);
-    j.send({ type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE", role: "ed", movementId: j.movementId, cleared: false });
+    j.send({
+      type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
+      role: "ed",
+      movementId: j.movementId,
+      cleared: false,
+      actingPlaceId: "jhc-ed",
+    });
     j.send({ type: "PATIENT_ARRIVED", role: "ward", movementId: j.movementId, actingUnitId: j.unitId });
     expect(j.state.rejections).toHaveLength(0);
     expect(j.state.movements.at(-1)!.stage).toBe("arrived");

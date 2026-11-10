@@ -30,7 +30,8 @@ const JSON_LENGTH_DEPTH = 128;
 const isRawJson = Object.getOwnPropertyDescriptor(JSON, "isRawJSON")?.value;
 
 /**
- * The native serializer owns every escape; avoid splitting a surrogate pair across chunks.
+ * The native serializer owns every escape; avoid splitting a surrogate pair across chunks. Counts
+ * UTF-8 bytes (audit M162): JSON.stringify escapes lone surrogates, so each chunk is well formed.
  * @param {string} value
  */
 function quotedJsonLength(value) {
@@ -40,7 +41,7 @@ function quotedJsonLength(value) {
     const last = value.charCodeAt(end - 1);
     const next = value.charCodeAt(end);
     if (end < value.length && last >= 0xd800 && last <= 0xdbff && next >= 0xdc00 && next <= 0xdfff) end -= 1;
-    length += JSON.stringify(value.slice(start, end)).length - 2;
+    length += Buffer.byteLength(JSON.stringify(value.slice(start, end)), "utf8") - 2;
     if (length > bufferConstants.MAX_STRING_LENGTH) return null;
     start = end;
   }
@@ -48,17 +49,37 @@ function quotedJsonLength(value) {
 }
 
 /**
+ * A JSON number as PostgreSQL's jsonb prints it: its `numeric` text, which never uses an exponent
+ * (`1e+21` is `1000000000000000000000`, `1e-7` is `0.0000001`). JSON.stringify only writes an
+ * exponent below 1e-6 or from 1e21, and never a trailing zero, so the plain form is otherwise the same.
+ * @param {string} text
+ */
+function numericTextLength(text) {
+  const match = /^(-?)(\d)(?:\.(\d+))?e([+-]\d+)$/u.exec(text);
+  if (!match) return text.length;
+  const digits = match[2].length + (match[3]?.length ?? 0);
+  const point = 1 + Number(match[4]);
+  const sign = match[1].length;
+  if (point <= 0) return sign + 2 - point + digits;
+  return sign + (point >= digits ? point : digits + 1);
+}
+
+/**
  * `undefined` is an omitted value; `null` asks the caller to use the original native operation.
+ * `spaced` measures jsonb's text form instead (`jsonbTextByteLength`).
  * @param {unknown} value
  * @param {Set<object>} ancestors
  * @param {number} depth
+ * @param {boolean} [spaced]
  * @returns {number | undefined | null}
  */
-function dataJsonLength(value, ancestors, depth) {
+function dataJsonLength(value, ancestors, depth, spaced = false) {
   if (value === undefined) return undefined;
   if (value === null) return 4;
   if (typeof value === "string") return quotedJsonLength(value);
-  if (typeof value === "boolean" || typeof value === "number") return JSON.stringify(value).length;
+  if (typeof value === "boolean") return value ? 4 : 5;
+  if (typeof value === "number")
+    return spaced ? numericTextLength(JSON.stringify(value)) : JSON.stringify(value).length;
   if (typeof value !== "object" || depth >= JSON_LENGTH_DEPTH || types.isProxy(value)) return null;
   if (typeof isRawJson === "function" && isRawJson(value)) return null;
   const array = Array.isArray(value);
@@ -82,13 +103,15 @@ function dataJsonLength(value, ancestors, depth) {
       const key = array ? String(index) : keys[index];
       const descriptor = Object.getOwnPropertyDescriptor(value, key);
       if (!descriptor || !Object.hasOwn(descriptor, "value")) return null;
-      const part = dataJsonLength(descriptor.value, ancestors, depth + 1);
+      const part = dataJsonLength(descriptor.value, ancestors, depth + 1, spaced);
       if (part === null) return null;
-      if (array) length += (count++ ? 1 : 0) + (part ?? 4);
+      // jsonb's text form writes ", " between entries and ": " after a key.
+      const separator = spaced ? 2 : 1;
+      if (array) length += (count++ ? separator : 0) + (part ?? 4);
       else if (part !== undefined) {
         const keyLength = quotedJsonLength(key);
         if (keyLength === null) return null;
-        length += (count++ ? 1 : 0) + keyLength + 1 + part;
+        length += (count++ ? separator : 0) + keyLength + separator + part;
       }
       if (length > bufferConstants.MAX_STRING_LENGTH) return null;
     }
@@ -99,12 +122,50 @@ function dataJsonLength(value, ancestors, depth) {
 }
 
 /**
- * Exact legacy JSON.stringify(value).length, in UTF-16 code units, without a joined JSON string
- * for ordinary immutable JSON data. Unsupported shapes use the original native operation once.
+ * Exact UTF-8 byte length of JSON.stringify(value), without a joined JSON string for ordinary
+ * immutable JSON data. Unsupported shapes use the original native operation once. Bytes, not
+ * UTF-16 characters (audit M162): the 8 MiB cap and the 6 MiB pressure line are byte limits, as
+ * PostgreSQL's `octet_length` counts them, so accented or emoji text cannot slip under them.
  */
-export function jsonCharacterLength(value) {
+export function jsonByteLength(value) {
   const length = dataJsonLength(value, new Set(), 0);
-  return typeof length === "number" ? length : JSON.stringify(value).length;
+  return typeof length === "number" ? length : Buffer.byteLength(JSON.stringify(value), "utf8");
+}
+
+/**
+ * The UTF-8 byte length of `value` as stored jsonb prints it, which is what every size CHECK in the
+ * migrations measures (`octet_length(payload::text)` on a jsonb column). jsonb's text form puts a
+ * space after each comma and colon and prints numbers without an exponent, so it is longer than
+ * JSON.stringify; measuring compact JSON let a world over 8 MiB in the database's terms through.
+ * Key order and duplicate keys do not change the length: a JavaScript object has no duplicates.
+ */
+export function jsonbTextByteLength(value) {
+  const length = dataJsonLength(value, new Set(), 0, true);
+  if (typeof length === "number") return length;
+  const text = JSON.stringify(value);
+  return Buffer.byteLength(text, "utf8") + jsonbExtraLength(text);
+}
+
+/**
+ * What jsonb's text form adds to compact JSON text: a space per structural comma and colon, and
+ * each exponent number's longer plain form.
+ * @param {string} text
+ */
+function jsonbExtraLength(text) {
+  let extra = 0;
+  for (let at = 0; at < text.length; at++) {
+    const code = text.charCodeAt(at);
+    if (code === 34) {
+      // Past the string, its escapes included.
+      for (at++; at < text.length && text.charCodeAt(at) !== 34; at++) if (text.charCodeAt(at) === 92) at++;
+    } else if (code === 44 || code === 58) extra++;
+    else if (code === 45 || (code >= 48 && code <= 57)) {
+      const number = /^-?[\d.]+(?:e[+-]\d+)?/u.exec(text.slice(at, at + 32))?.[0] ?? "";
+      extra += numericTextLength(number) - number.length;
+      at += Math.max(number.length - 1, 0);
+    }
+  }
+  return extra;
 }
 
 const MARKER = "$records";

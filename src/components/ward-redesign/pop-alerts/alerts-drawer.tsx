@@ -22,7 +22,8 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState, type Dispatch, type MouseEvent, type RefObject } from "react";
+import { useEffect, useId, useRef, useState, type MouseEvent, type RefObject } from "react";
+import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import { WARD_ALERTS_HREF, WARD_HOME_HREF, WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -37,7 +38,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
-import type { WardFlowEvent, WardFlowRole } from "@/components/ward-management/ward-flow-events";
+import type { WardFlowRole } from "@/components/ward-management/ward-flow-events";
 import {
   inboxItemCompletionState,
   type InboxAcknowledgement,
@@ -78,7 +79,7 @@ type AlertsDrawerProps = {
   configuration?: WardConfiguration;
   role: WardFlowRole;
   now: Instant;
-  dispatch: Dispatch<WardFlowEvent>;
+  dispatch: WardCommandDispatch;
   onClose: () => void;
   /** The shell consults this drawer's own draft decision before closing its outer Sheet. */
   dismissalGuardRef?: RefObject<((retry?: () => void) => boolean) | null>;
@@ -481,7 +482,8 @@ export function AlertsDrawer({
   }
 
   function acknowledgeAllFacts(ids: readonly string[]) {
-    ids.forEach((inboxItemId) => dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId }));
+    // D-125: the outcomes let a sign-out or role switch wait for these to be confirmed.
+    return ids.map((inboxItemId) => dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId }));
   }
 
   // Snoozed rows leave the active list and come back by themselves when their time passes.

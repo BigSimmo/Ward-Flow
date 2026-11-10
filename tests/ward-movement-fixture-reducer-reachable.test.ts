@@ -363,6 +363,7 @@ function buildSteppedBackMovement(): Movement {
     now: NOW_ANCHOR + 20,
     movementId: MOVEMENT_ID,
     unitId: UNIT_ACCEPTED,
+    actingUnitId: UNIT_ACCEPTED,
   });
   expect(s2.rejections.length, "ACCEPT_IN_PRINCIPLE must not be rejected").toBe(s1.rejections.length);
   const s3 = wardFlowReducer(s2, {

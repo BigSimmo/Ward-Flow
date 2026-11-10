@@ -321,6 +321,9 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
                     before();
                     raise("RECORD_LEGAL_FORM_CONTINUATION", {
                       movementId: movement.id,
+                      ...(routeRole === "ward" && movement.acceptedUnitId
+                        ? { actingUnitId: movement.acceptedUnitId }
+                        : {}),
                       formCode: form,
                       startedAt: started,
                       ...(expiry ? { paperExpiresAt: due } : {}),

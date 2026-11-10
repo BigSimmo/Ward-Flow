@@ -46,7 +46,7 @@
     "test:live": "node scripts/run-live-tests.mjs",
     "test:coverage": "node scripts/run-vitest.mjs run --coverage --coverage.reportOnFailure=true && npm run check:coverage-inventory",
     "test:e2e": "node scripts/run-playwright.mjs",
-    "test:e2e:pr": "node scripts/run-playwright.mjs --project=chromium --grep-invert \"@quarantine|@mockup\"",
+    "test:e2e:pr": "node scripts/run-playwright.mjs --project=chromium --project=chromium-mockups --grep-invert @quarantine api-csrf-proxy ui-ward-full-journey ui-ward-pwa-lifecycle",
     "check:playwright-browser-revision": "node scripts/check-playwright-browser-revision.mjs",
     "test:e2e:ward-journeys": "node scripts/run-playwright.mjs --project=chromium-mockups ui-ward-",
     "test:e2e:release-gate": "node scripts/run-playwright.mjs --project=release-gate-desktop --project=release-gate-phone --require-release-gate",

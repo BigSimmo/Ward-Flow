@@ -199,9 +199,8 @@ phone script budget can land together over it. Before 4 November 2026 that turne
 required production build red until someone raised the limit by hand. Three parts now handle it:
 
 - **Prevention.** The build merges the latest main before measuring (`merge-latest-main.mjs`).
-  `ward-flow-budget-recheck.yml`, which would re-run that build on armed PRs when relevant main
-  inputs move, is switched off (its job has `if: false`), so today nothing re-checks an armed PR
-  when main moves. The build records the exact measured main revision; a matching latest-attempt receipt avoids a
+  The old armed-PR recheck job was deleted (D-128), so nothing re-checks an armed PR when main
+  moves. The build records the exact measured main revision; a matching latest-attempt receipt avoids a
   redundant rerun even when the recheck starts late. Contradictory receipts override timestamps;
   missing legacy receipts retain the conservative timing fallback. Annotation errors cannot
   establish a match, and the existing ten-minute wait bound remains.
@@ -251,8 +250,7 @@ with publication.
 On pull requests the scope plan job merges the current main as its last step
 (`merge-latest-main.mjs`), so a conflicted PR fails there, before any other job starts, and
 `Ward Flow required` fails with it. The production build merges main again before it measures the
-phone script budget. `ward-flow-budget-recheck.yml` re-runs armed PRs' production builds only after
-a main push that touched what the build or its budget reads (not after docs-only merges).
+phone script budget.
 
 The scheduled full main run starts at 18:00 UTC (02:00 AWST). It selects a reproducible UTC-day engine
 fuzz window: 16 sequences of 100 steps, with the exact first/last seeds and event budget written to

@@ -810,6 +810,20 @@ export function toHandoverWard(
   };
 }
 
+/**
+ * D-126 (Josh, 10 Nov 2026): handover lists wards by health service, each service's wards A to Z by
+ * name, never most ready beds first. Desktop and phone handover both read this, so they match.
+ */
+export function wardsByService<W extends Pick<HandoverWard, "name" | "service">>(
+  wards: readonly W[],
+): { service: W["service"]; wards: W[] }[] {
+  const services = [...new Set(wards.map((ward) => ward.service))];
+  return services.map((service) => ({
+    service,
+    wards: wards.filter((ward) => ward.service === service).sort((a, b) => a.name.localeCompare(b.name)),
+  }));
+}
+
 export const wardIsStale = (ward: HandoverWard, now: Instant) => now - ward.confirmedAt > ward.staleAfter;
 
 export type HeldDischarge = {

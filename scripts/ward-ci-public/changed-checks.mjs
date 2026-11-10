@@ -1,5 +1,5 @@
-// Fast checks on the files a Ward Flow PR changes: Prettier, ESLint (errors only) and the
-// test-deletion guard. Source/lint checks use the PR diff. Formatting policy changes (including
+// Fast checks on the files a Ward Flow PR changes: Prettier, ESLint (errors only), the
+// test-deletion guard and the protected safety tests (D-123 item 3). Source/lint checks use the PR diff. Formatting policy changes (including
 // removals) require a whole-tree read-only check because they affect existing files too.
 //
 //   WARD_BASE_SHA=<pr base> node scripts/ward-ci-public/changed-checks.mjs
@@ -81,5 +81,12 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     );
   }
   results.push(run("Test-deletion guard", process.execPath, ["scripts/check-diff-integrity.mjs", "--base", base]));
+  results.push(
+    run("Protected safety tests", process.execPath, [
+      "scripts/ward-flow/check-protected-safety-tests.mjs",
+      "--base",
+      base,
+    ]),
+  );
   process.exit(results.every(Boolean) ? 0 : 1);
 }

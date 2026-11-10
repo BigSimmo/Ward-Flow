@@ -158,12 +158,16 @@ export function ReferralMatchView({
   // Josh, 31 Oct 2026 (answer 33): the community desk does not see the community arm's Accept and
   // Decline, because they record the answer as the coordinator's. Its own team page is unchanged.
   const communityDeskView = access.role === "community";
+  // M4 (strict): a ward always names itself. A demonstration ward desk with no ward scope names the
+  // ward it answers for; the shared server checks that claim against the desk's scope.
   const actingUnitId = (unitId: string | undefined) =>
-    deskRole === "ward" && access.scope.kind === "ward"
-      ? unitId && access.scope.unitIds.includes(unitId)
-        ? unitId
-        : access.scope.unitIds[0]
-      : undefined;
+    deskRole !== "ward"
+      ? undefined
+      : access.scope.kind === "ward"
+        ? unitId && access.scope.unitIds.includes(unitId)
+          ? unitId
+          : access.scope.unitIds[0]
+        : unitId;
   const s = useReferralMatchState({ referral, rejections, dispatch, now });
   const localBedFocus = useRef(false);
   // Fix plan item 16 (D-76): asking more wards about an open community referral.

@@ -765,6 +765,7 @@ export function ReferralBoard({
         ) : null}
         {coordinatorTop ? (
           <ReferralCoordinatorTop
+            level={2}
             testId={phoneLayout ? undefined : "ward-referral-kpis"}
             isPhone={phoneLayout}
             className={a.heroA}
