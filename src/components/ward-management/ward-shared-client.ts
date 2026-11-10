@@ -438,9 +438,8 @@ export class SharedWorkspaceClient {
       const { held, value } = reply;
       const records: ArchivedRecords = { movements: [], referrals: [], broadcastAlerts: [] };
       for (const entry of folded.entries) records[entry.collection].push(entry.body);
-      // The sender progress for these records is trusted only as the live sibling is: bound to the
-      // reply's own revision and this desk's access view, and not older than what was held when
-      // the read was asked. A reply without a valid one still shows the records.
+      // Sender progress is trusted only if bound to this reply's revision and access view, and not
+      // older than when the read was asked; a reply without a valid one still shows the records.
       const sibling =
         value.partialView !== undefined && Number.isSafeInteger(value.revision) && value.revision >= askedAtRevision
           ? bindSharedPartialView?.(value.partialView, {
@@ -778,9 +777,8 @@ export class SharedWorkspaceClient {
     // Or it was signed out, here or on another tab: the server refuses its tokens at once.
     if (response.status === 401 && (value?.code === "session-limit" || value?.code === "signed-out"))
       throw denied(typeof value.error === "string" ? value.error : "Signed out. Sign in again to carry on.");
-    // Audit 4 A4-02: only the Ward Flow server's own refusal (JSON with its reason) ends the session.
-    // Its first 401 is asked once more with a fresh token, in case a refresh raced it; a command
-    // keeps its id, so it cannot run twice. A proxy's own 401 or 403 page is a lost connection.
+    // A4-02: only the server's own JSON refusal ends the session. A first 401 is retried once with a
+    // fresh token (a command keeps its id, so it can't run twice); a proxy's 401/403 is lost network.
     if (response.status === 401 || response.status === 403) {
       if (typeof value?.error !== "string") throw new Error("Workspace unavailable");
       if (response.status === 401 && !retried) throw FRESH_TOKEN;
@@ -838,9 +836,8 @@ export class SharedWorkspaceClient {
     try {
       const current = this.view.executiveSnapshot ?? this.view.snapshot;
       const epoch = this.roleEpoch;
-      // The poll names the revision it holds; an unchanged workspace answers with its clock only.
-      // A desk's access context lets the server say "not modified" to a member desk too (audit
-      // F-04). It is left out once a minute, so time-limited records drop off on a full read.
+      // The poll names its revision; unchanged answers clock only. The access context lets members get
+      // "not modified" too (F-04); left out once a minute so time-limited records drop off.
       const context =
         current?.accessContext && Date.now() - this.fullReadAt < FULL_READ_EVERY_MS
           ? `&context=${current.accessContext}`
@@ -1123,9 +1120,8 @@ export class SharedWorkspaceClient {
             }
           }
         } else if (response.ok && Number.isSafeInteger(value.commandRevision)) {
-          // A command sent against an older revision can land on top of other desks' saves. This
-          // tab has not seen those, so it moves its base on only when nothing came in between;
-          // otherwise the server keeps checking later commands against what this tab last saw.
+          // A command on an older revision can land on saves this tab hasn't seen, so its base moves
+          // on only when nothing came in between; else later commands check against what it saw.
           if (value.commandRevision === command.expectedRevision + 1)
             this.headRevision = Math.max(this.headRevision, value.commandRevision);
           else this.needsRefresh = true;
