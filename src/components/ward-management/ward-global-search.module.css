@@ -1554,6 +1554,7 @@ a.askChip {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
   /* An alert's glyph keeps its own tone; blue stays for things you tap. */
@@ -1612,7 +1613,7 @@ a.askChip {
   .popup[data-start] .group .showAll::after {
     content: "";
     position: absolute;
-    inset: -12px -4px;
+    inset: -20px -4px -4px; /* 48px tall; grows into the gap above, never over the first alert */
   }
 
   .popup[data-start] .askChip,
