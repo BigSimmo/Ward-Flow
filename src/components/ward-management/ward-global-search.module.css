@@ -1638,11 +1638,11 @@ a.askChip {
     opacity: 1;
   }
 
-  /* Four compact square tiles, centred as one cluster with even 20px gaps; labels centred under them. */
+  /* Compact square tiles on the same left edge as every other section, even 20px gaps; labels centred under them. */
   .popup[data-start] .groupItem[data-group="goto"] .groupList {
-    grid-template-columns: repeat(4, 74px);
-    justify-content: center;
-    gap: 0;
+    grid-template-columns: repeat(4, 54px);
+    justify-content: start;
+    gap: 20px;
   }
 
   .popup[data-start] .groupItem[data-group="goto"] .option {
