@@ -184,7 +184,12 @@ test("offline: an unkeyed opening after the retry window, or for another reason,
 test("offline: two unkeyed covers give one membership; a different length or a later one is new", async () => {
   const { access, unitId } = wardOutsideCare();
   const { store, view, memberships, audits, advance } = offline(access);
-  const request = { actorId: colleague, scope: { kind: "ward", unitIds: [unitId] }, minutes: 60 };
+  const request = {
+    actorId: colleague,
+    scope: { kind: "ward", unitIds: [unitId] },
+    minutes: 60,
+    reason: engine.COVER_REASON_IDS[0],
+  };
   const first = await store.giveCover(view, request);
   assert.equal(first.status, 200, JSON.stringify(first.body?.error));
   advance(3_000);
@@ -308,7 +313,7 @@ test("real PostgreSQL: unkeyed retried openings and covers add one row each", { 
       kind: "ward",
       unitIds: [world.state.units.find((u) => !own.includes(u.id)).id],
     };
-    const request = { actorId: colleagueId, scope: coverScope, minutes: 60 };
+    const request = { actorId: colleagueId, scope: coverScope, minutes: 60, reason: engine.COVER_REASON_IDS[0] };
     const cover = await store.giveCover(leadView, request);
     assert.equal(cover.status, 200, JSON.stringify(cover.body?.error));
     at = new Date(at.getTime() + 3_000);
