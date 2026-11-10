@@ -3396,7 +3396,7 @@
         {
           "path": "src/components/ward-management/board/ward-board-detail-panel.tsx",
           "line": 249,
-          "sha256": "018feea972a1d5fa56b034f9d0403c88eacb038223c39e7ab37192dcfdb9f2b3"
+          "sha256": "042d8da6ee9e1e51ce4f10e0a1e35e3ab4a12533a7dbb1ef3ec5110083e40536"
         },
         {
           "path": "src/components/ward-management/board/ward-board.tsx",
@@ -3475,7 +3475,7 @@
         {
           "path": "src/components/ward-management/board/ward-board-detail-panel.tsx",
           "line": 433,
-          "sha256": "018feea972a1d5fa56b034f9d0403c88eacb038223c39e7ab37192dcfdb9f2b3"
+          "sha256": "042d8da6ee9e1e51ce4f10e0a1e35e3ab4a12533a7dbb1ef3ec5110083e40536"
         },
         {
           "path": "src/components/ward-management/board/ward-board.tsx",
@@ -3554,7 +3554,7 @@
         {
           "path": "src/components/ward-management/board/ward-board-detail-panel.tsx",
           "line": 464,
-          "sha256": "018feea972a1d5fa56b034f9d0403c88eacb038223c39e7ab37192dcfdb9f2b3"
+          "sha256": "042d8da6ee9e1e51ce4f10e0a1e35e3ab4a12533a7dbb1ef3ec5110083e40536"
         },
         {
           "path": "src/components/ward-management/board/ward-board.tsx",
@@ -5637,7 +5637,7 @@
         {
           "path": "src/components/ward-management/board/ward-board-detail-panel.tsx",
           "line": 494,
-          "sha256": "018feea972a1d5fa56b034f9d0403c88eacb038223c39e7ab37192dcfdb9f2b3"
+          "sha256": "042d8da6ee9e1e51ce4f10e0a1e35e3ab4a12533a7dbb1ef3ec5110083e40536"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
@@ -5706,7 +5706,7 @@
         {
           "path": "src/components/ward-management/board/ward-board-detail-panel.tsx",
           "line": 534,
-          "sha256": "018feea972a1d5fa56b034f9d0403c88eacb038223c39e7ab37192dcfdb9f2b3"
+          "sha256": "042d8da6ee9e1e51ce4f10e0a1e35e3ab4a12533a7dbb1ef3ec5110083e40536"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
@@ -5791,7 +5791,7 @@
         {
           "path": "src/components/ward-management/board/ward-board-detail-panel.tsx",
           "line": 374,
-          "sha256": "018feea972a1d5fa56b034f9d0403c88eacb038223c39e7ab37192dcfdb9f2b3"
+          "sha256": "042d8da6ee9e1e51ce4f10e0a1e35e3ab4a12533a7dbb1ef3ec5110083e40536"
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",

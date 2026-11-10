@@ -68,7 +68,13 @@ export type Tile =
       absentWithoutLeave?: boolean;
       who?: string;
     }
-  | { kind: "waiting"; key: string }
+  | {
+      kind: "waiting";
+      key: string;
+      /** D-115: a bed named for an accepted referral or open journey, with no stay yet. A bed
+       *  class, not a person: the drawer must not read it as an admission record. */
+      reserved?: true;
+    }
   | { kind: "blocked"; key: string }
   | { kind: "closed"; key: string }
   | { kind: "empty"; key: string };
@@ -250,7 +256,7 @@ export function buildTiles(
           ),
         );
   for (let index = 0; index < namedCount; index += 1) {
-    tiles.push({ kind: "waiting", key: `named-${index}` });
+    tiles.push({ kind: "waiting", key: `named-${index}`, reserved: true });
   }
 
   const emptyCount = Math.max(0, emptyPoolCount - closedCount - namedCount);

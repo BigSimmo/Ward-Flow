@@ -395,6 +395,13 @@ describe("one number, one answer across Home, the board, the TV, Statistics and 
     ]);
     const unit = accepted.units.find((candidate) => candidate.id === unitId)!;
     const board = boardFigures(accepted, now, unit);
+    // The named bed is drawn as a bed spoken for, a bed class the drawer never reads as a stay.
+    const holds = [...accepted.movements, ...wardReferralInboxEntries(accepted.referrals, unit.id)];
+    expect(
+      buildTiles(unit, accepted.admissions, accepted.bedReleases, now, { holds }).filter(
+        (tile) => tile.kind === "waiting" && tile.reserved === true,
+      ),
+    ).toHaveLength(1);
     const wardTv = wardTvSheet({ ...tvInputs(accepted, now), unit, thresholds });
     expect(
       mismatches([

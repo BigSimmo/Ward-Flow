@@ -53,6 +53,7 @@ const FOOT_SECONDARY = buttonClass({ variant: "sec" });
 
 /** The drawer's title for a tile that stands for a class of bed rather than a person. */
 function bedClassTitle(kind: Tile["kind"]): string {
+  if (kind === "waiting") return "A bed spoken for";
   if (kind === "empty") return "An empty bed";
   if (kind === "closed") return "A closed bed";
   return "A bed out of service";
@@ -64,7 +65,8 @@ function recordTag(tile: Tile, occupant: Occupant | null): ReactNode {
   if (tile.kind === "closed") return <StatusPill tone="closed">Closed</StatusPill>;
   if (tile.kind !== "occupied" && tile.kind !== "waiting")
     return <StatusPill tone="neutral">Out of service</StatusPill>;
-  if (tile.kind === "waiting") return <StatusPill tone="neutral">Not arrived</StatusPill>;
+  if (tile.kind === "waiting")
+    return <StatusPill tone="neutral">{tile.reserved ? "Spoken for" : "Not arrived"}</StatusPill>;
   if (occupant === null) return null;
   // The passed discharge date was a red "PAST DATE" badge; it is the head's status pill now.
   if (occupant.pastDate) return <StatusPill tone="warning">Past date</StatusPill>;
@@ -165,7 +167,9 @@ export function WardBoardDetailPanel({
   // Nothing chosen: no drawer. The bed grid itself is the prompt (drawer review, 6 Nov 2026).
   if (selectedTile === null) return null;
 
-  const isPerson = selectedTile.kind === "occupied" || selectedTile.kind === "waiting";
+  // D-115: a named bed with no stay yet is a bed class, never an unreadable admission record.
+  const isPerson =
+    selectedTile.kind === "occupied" || (selectedTile.kind === "waiting" && selectedTile.reserved !== true);
   const tileWho = selectedTile.kind === "occupied" ? selectedTile.who : undefined;
   // Walkthrough D9: a referral-linked stay read "Unknown Patient". Resolved through the ward-scoped
   // identity projection (never the full referral array); still unresolved means the name is not
@@ -581,11 +585,13 @@ export function WardBoardDetailPanel({
         ) : (
           <div data-testid="ward-board-detail-bed-class">
             <p className={styles.detailLead}>
-              {selectedTile.kind === "empty"
-                ? `Free bed, one of ${emptyTileCount}.`
-                : selectedTile.kind === "closed"
-                  ? `Closed bed, one of ${closedTileCount}.`
-                  : `Out of service, one of ${blockedTileCount}.`}
+              {selectedTile.kind === "waiting"
+                ? "Named for an accepted referral or an incoming patient. Not ready for anyone else."
+                : selectedTile.kind === "empty"
+                  ? `Free bed, one of ${emptyTileCount}.`
+                  : selectedTile.kind === "closed"
+                    ? `Closed bed, one of ${closedTileCount}.`
+                    : `Out of service, one of ${blockedTileCount}.`}
             </p>
             {/* The constraint the header already carries, repeated here only where it bites: a
                 reader looking at a fillable bed is exactly the reader who needs to know what will
