@@ -3,10 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import {
-  WARD_FEATURE_FLAGS,
-  type WardFeatureFlagDefinition,
-} from "@/components/ward-management/ward-feature-flags";
+import { WARD_FEATURE_FLAGS, type WardFeatureFlagDefinition } from "@/components/ward-management/ward-feature-flags";
 import {
   SITE_PROTECTED_FEATURES,
   SITE_SWITCHABLE_FEATURES,
