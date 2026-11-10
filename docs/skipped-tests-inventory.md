@@ -11,7 +11,7 @@ own, so its row names the test it sits in; a title passed through a helper names
 Indirect registrations such as `(cond ? it.skip : it)(…)` are listed by condition. The reason column is the
 skip's own condition or message; read the comment above the call for the why.
 
-Total: 24
+Total: 25
 
 | Location                                                  | Kind                  | Title                                                                                                          | Condition or message                                                                                           |
 | --------------------------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -32,6 +32,7 @@ Total: 24
 | `tests/ward-agent-admission.test.ts`                      | it.skip by condition  | `name` of each test(…) call (26 in this file)                                                                  | when `options.skip`                                                                                            |
 | `tests/ward-audit-6-missing-patient-every-screen.test.ts` | it.todo               | executive statistics (projectExecutiveNetworkStatistics): count an absence without leave apart from On leave … | -                                                                                                              |
 | `tests/ward-audit-6-missing-patient-every-screen.test.ts` | it.todo               | ward board (/ward-flow/board/[unitId]): tiles and the person panel (buildTiles, buildOccupants) take no held … | -                                                                                                              |
+| `tests/ward-commit-time-checks.dom.test.tsx`              | it.todo               | names the patient when an accept in principle is refused after its referral row has gone (SM2-11)              | -                                                                                                              |
 | `tests/ward-executive-statistics-projector.test.ts`       | it.runIf              | records bounded current-seed projection timings without imposing a machine-dependent budget                    | runs only when `process.env.WF_EXECUTIVE_MEASURE === "1"`                                                      |
 | `tests/ward-executive-statistics-projector.test.ts`       | it.runIf              | profiles current-seed release traversal with metadata only                                                     | runs only when `process.env.WF_EXECUTIVE_PROFILE === "1"`                                                      |
 | `tests/ward-flow-remote-boundary.test.ts`                 | it.runIf              | enforces destination identity through the Git hook                                                             | runs only when `existsSync(shell)`                                                                             |

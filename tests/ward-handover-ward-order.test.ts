@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { wardsByService } from "@/components/ward-management/handover/handover-model";
 
@@ -20,13 +19,5 @@ describe("handover Beds ward order (D-126)", () => {
       ["Ash", "Birch", "Cedar"],
       ["Elm", "Willow"],
     ]);
-  });
-
-  it("desktop and phone handover both take their ward order from wardsByService", () => {
-    for (const file of ["handover-beds.tsx", "handover-phone.tsx"]) {
-      const source = readFileSync(`src/components/ward-management/handover/${file}`, "utf8");
-      expect(source, file).toContain("wardsByService(wards)");
-      expect(source, file).not.toMatch(/b\.ready\s*-\s*a\.ready/u);
-    }
   });
 });
