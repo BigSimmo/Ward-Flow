@@ -81,8 +81,13 @@ describe("ward board: Left the ward, waiting for transport (item 18)", () => {
       target: { value: "discharged-to-the-community" },
     });
     expect(proceed.disabled, "transport is never defaulted").toBe(true);
-    expect((within(dialog).getByTestId("ward-board-confirm-transport") as HTMLSelectElement).value).toBe("");
-    fireEvent.change(within(dialog).getByTestId("ward-board-confirm-transport"), { target: { value: "waiting" } });
+    const transport = within(dialog).getByTestId("ward-board-confirm-transport");
+    expect(
+      within(transport)
+        .getAllByRole("radio")
+        .filter((radio) => (radio as HTMLInputElement).checked),
+    ).toHaveLength(0);
+    fireEvent.click(within(transport).getByRole("radio", { name: "No, still waiting for transport" }));
     fireEvent.click(proceed);
     expect(screen.getAllByRole("button", { name: /^Collected/ })).toHaveLength(before + 1);
   });

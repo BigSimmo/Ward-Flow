@@ -151,6 +151,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-126](#d-126-ranked-lists-neutral-orders-approved-10-november-2026)                                                                                   | Ranked lists: neutral orders on 11 lists, lists 9 and 12 kept                          | Active                                           |
 | [D-127](#d-127-neutral-wording-for-a-community-treatment-order-at-arrival-10-november-2026)                                                             | Neutral wording for a community treatment order at arrival                             | Active                                           |
 | [D-128](#d-128-final-master-audit-nine-answers-10-november-2026)                                                                                        | Final master audit: nine answers                                                       | Active                                           |
+| [D-134](#d-134-ward-arrival-and-beds-batch-how-to-hold-advocate-line-night-list-and-the-feature-freeze-10-november-2026)                                | Ward arrival and beds batch: held split, advocate line, night list, feature freeze     | Active                                           |
 
 ---
 
@@ -1606,7 +1607,7 @@ is inferred.
 
 ## D-134. Ward arrival and beds batch: how to hold, advocate line, night list and the feature freeze (10 November 2026)
 
-- **Date:** 10 November 2026, about 1:02 AM to 1:08 AM AWST on 11 November (17:02 to 17:08 UTC on 10 November). **Decided by:** Josh, on two decision cards in the Ward Flow project thread "Build ward arrival and bed features", then "Yes to all recommendations please" to the thread's numbered questions. Numbered D-134 because D-128 to D-133 are claimed by PRs #1594, #1598, #1599 and the ED and referral flow batch.
+- **Date:** 10 November 2026, about 1:02 AM to 1:08 AM AWST on 11 November (17:02 to 17:08 UTC on 10 November). **Decided by:** Josh, on two decision cards in the Ward Flow project thread "Build ward arrival and bed features", then "Yes to all recommendations please" to the thread's numbered questions. Numbered D-134 because the numbers before it were taken first. D-129 is claimed by PR #1598. D-130 is claimed by PR #1598. D-131 is claimed by PR #1598. D-132 is claimed by PR #1601. D-133 is claimed by the ED and referral flow batch PR.
 - **Decision:**
   1. **Held split:** items 6 (bed closure review time), 7 (plan staffing for an arrival), 13 (overnight intake window) and 18 (left the ward, waiting for transport) go in one PR that may merge once green. Items 4 (young person on an adult ward) and 15 (interpreter, Aboriginal liaison and advocate lines at arrival) go in a second PR with the `hold` label until Josh signs them off.
   2. **Advocate line (item 15):** "Mental Health Advocacy Service told" shows on the arrival checklist for every patient the app already treats as detained, the same group the existing support and advocacy notification checklist covers, and reuses that record.

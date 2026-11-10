@@ -26,6 +26,16 @@ const WARD_DIR = "src/components/ward-management";
  */
 const MAY_ASSERT_TODAY = new Map([
   [
+    "intake.from",
+    "Tonight's intake window (item 13, 10 Nov 2026): the line or card heading says Tonight, and the event keeps the window inside one intake day.",
+  ],
+  [
+    "intake.to",
+    "Tonight's intake window (item 13): the closing end of the same window, read under the same Tonight label.",
+  ],
+  ["next.from", "Ward intake window control (item 13): the confirmation line ends with the word tonight."],
+  ["next.to", "Ward intake window control (item 13): the closing end of the same line."],
+  [
     "expectedAt",
     "Weekend discharges (feature 14, 9 Nov 2026): the clock face follows perthDayLabel(expectedAt), which names the day.",
   ],
