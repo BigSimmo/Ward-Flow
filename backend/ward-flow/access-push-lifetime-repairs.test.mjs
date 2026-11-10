@@ -235,7 +235,7 @@ test(
     try {
       f.setAge(engine.ACCESS_MAX_TERM_MINUTES * 60_000 + 1);
       assert.equal((await f.legacyView()).status, "none");
-      const request = { scope: f.scope, minutes: 60 };
+      const request = { scope: f.scope, minutes: 60, reason: "staff-away" };
       const refused = await f.store.giveCover(f.leadView, { ...request, actorId: f.legacyActor });
       assert.equal(refused.status, 422);
       const accepted = await f.store.giveCover(f.leadView, { ...request, actorId: f.activeActor });
@@ -275,6 +275,7 @@ test(
         actorId: f.activeActor,
         scope: { kind: "ward", unitIds: [target.unit.id] },
         minutes: 30,
+        reason: "busy",
       });
       assert.equal(cover.status, 200);
       await f.pool.query("INSERT INTO ward_flow.push_deliveries(subscription_id,item_id) VALUES($1,$2)", [
@@ -319,6 +320,7 @@ test(
         actorId: f.activeActor,
         scope: { kind: "ward", unitIds: [target.unit.id] },
         minutes: 30,
+        reason: "busy",
       });
       assert.equal(cover.status, 200);
       await f.pool.query("INSERT INTO ward_flow.push_deliveries(subscription_id,item_id) VALUES($1,$2)", [

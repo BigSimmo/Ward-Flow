@@ -30,6 +30,7 @@ import { CLINICAL_VALUES } from "../../src/components/ward-management/ward-clini
 import { demoDayZero } from "../../src/components/ward-management/ward-clock";
 import {
   BREAK_GLASS_REASONS,
+  COVER_REASONS,
   STATEWIDE_COORDINATOR,
   WARD_ACCESS_ROLES,
   accessIsValid,
@@ -820,6 +821,8 @@ export function scopedActNowAlerts(world: SharedWorld, access: WardAccess, at: D
 }
 
 export const BREAK_GLASS_REASON_IDS: readonly string[] = BREAK_GLASS_REASONS.map((reason) => reason.id);
+/** M58: cover is given with one of these reasons; the store refuses any other before the database. */
+export const COVER_REASON_IDS: readonly string[] = COVER_REASONS.map((reason) => reason.id);
 export const BREAK_GLASS_MINUTES = CLINICAL_VALUES.breakGlassWindow.value;
 export const BREAK_GLASS_PER_SHIFT = CLINICAL_VALUES.breakGlassPerShift.value;
 export const BREAK_GLASS_SHIFT_HOURS = CLINICAL_VALUES.breakGlassShift.value;

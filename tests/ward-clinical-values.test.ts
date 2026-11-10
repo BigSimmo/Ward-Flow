@@ -252,6 +252,11 @@ function typedThresholdsIn(file: string, source: string): string[] {
  */
 const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> = [
   {
+    file: "handover/handover-model.ts",
+    name: "JUST_HELD_HANDOVER_MINUTES",
+    why: "how long after a handover starts the Handover page still opens on it (master audit M19, D-129); which page opens, never a clinical limit",
+  },
+  {
     file: "review/todays-review-derivations.ts",
     name: "REPEAT_DECLINE_THRESHOLD",
     why: "how many same-reason declines from one ward in a day Today's review raises for the bed meeting; a review prompt, never a clinical limit",

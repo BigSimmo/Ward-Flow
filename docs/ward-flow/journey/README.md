@@ -266,3 +266,16 @@ Source digests were re-reviewed after these edits, and every cited line was re-m
 - `patients/patient-now-screen.tsx`, `patients/patient-transit-operations.tsx` and `referrals/referral-match.tsx`: dispatches now pass the acting ward or ED. Event names, roles and guards are unchanged.
 
 After `main` was merged in (10 Nov 2026), this PR's ruling became D-128 because main had used D-124. The comment-only renumbering in `ward-access-state.ts`, `ward-flow-events.ts`, `ward-flow-record-legal-events.ts` and `ward-flow-reducer.ts` changed no line, so only their digests were re-recorded. Citations in files only `main` changed keep `main`'s reviewed lines and digests.
+
+## Source review — 10 Nov 2026 (master audit fix batches, D-129)
+
+Source digests were re-reviewed file by file before being re-recorded:
+
+- `ward-flow-referral-answer-events.ts`: `RECEIVE_REFERRAL` now also refuses a typed referrer phone that is not a phone number (audit M39, `referrerPhoneError`); a blank one is still accepted. Its `needs` note says so and its `reviewedOn` is 10 Nov 2026. One import line changed; no cited line moved.
+- `referrals/use-ward-referral-drawer-state.ts`: the drawer's Send check calls `referralContactSendError` (the same limits plus the phone check). The `RECEIVE_REFERRAL` dispatch line did not move.
+- `ward-undo.ts`: `CONFIRM_BED_RELEASE` is now an undoable step, filed against its bed release (`release:<releaseId>`), so a Ward Decisions sign-off can be taken back by `UNDO_RELEASE_STEP` (M37). The `UNDO_RELEASE_STEP` model and the `CONFIRM_BED_RELEASE` `changes` note say so. Later citations moved down by two to nine lines; no other undo kind changed.
+- `ward/ward-screen.tsx`: the sign-off now builds its short Undo (`ward-sign-off-undo.ts`) from the outcome; one import line added. The dispatches cited for twelve events moved down by one to three lines, unchanged in role, payload and guard.
+- `ward-tasks-drawer.tsx`: Acknowledge visible sends one `ACKNOWLEDGE_INBOX_ITEM` per row and names each alert (M13). The event, its role and payload are unchanged; `RECORD_ESCALATION` moved from line 671 to 672.
+- `governance-registers.tsx`: Governance's review list also shows each cover given (M58); `REVIEW_AUDIT_EVENT` moved from line 543 to 546, unchanged.
+
+After `main` (D-121 to D-127) was merged into this branch (10 Nov 2026), `ward/ward-screen.tsx` and `ward-tasks-drawer.tsx` hold both sides' edits. Each cited line was found again by its text, unchanged in role, payload and guard: the twelve `ward-screen.tsx` citations moved down by three to seven lines, and `RECORD_ESCALATION` in `ward-tasks-drawer.tsx` moved to line 673 (one comment line added beside the D-125 sign-out wait). Only lines and digests were re-recorded. This thread's rulings were then renumbered D-129 and D-130, a comment-only change in the cited files, so those digests (in `actions.json`, `event-dispositions.json` and `machines.json`) were re-recorded with no line moved.

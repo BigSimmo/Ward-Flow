@@ -79,36 +79,54 @@ sub-labels under those four, in order: **Referred**, **Review**, **Accepted**, *
 
 ## People, services and short forms
 
-| Say               | Means                                                                                |
-| ----------------- | ------------------------------------------------------------------------------------ |
-| **ECT**           | Electroconvulsive therapy.                                                           |
-| **NIC**           | Nurse in charge.                                                                     |
-| **NUM**           | Nurse unit manager.                                                                  |
-| **CAHS**          | Child and Adolescent Health Service.                                                 |
-| **EMHS**          | East Metropolitan Health Service.                                                    |
-| **NMHS**          | North Metropolitan Health Service.                                                   |
-| **SMHS**          | South Metropolitan Health Service.                                                   |
-| **WACHS**         | WA Country Health Service.                                                           |
-| **ED**            | Emergency department, after first use.                                               |
-| **AWOL**          | Absent without leave. On screen, written in full where there is room.                |
-| **CTO**           | Community treatment order.                                                           |
-| **EDD**           | Expected date of discharge.                                                          |
-| **ETA**           | Estimated time of arrival, as quoted by the transport provider or the ward.          |
-| **MDT**           | Multidisciplinary team.                                                              |
-| **MHA**           | The Mental Health Act, the WA law the legal forms are named from. Never "MHA 2014".  |
-| **ATS**           | Australasian Triage Scale category, as recorded at ED triage.                        |
-| **RAMP**          | Risk Assessment and Management Plan, the WA mental health form.                      |
-| **PSP**           | Personal support person: a carer, close family member, nominated person or guardian. |
-| **MHAS**          | Mental Health Advocacy Service.                                                      |
-| **GP**            | General practitioner.                                                                |
-| **BPSD**          | Behavioural and psychological symptoms of dementia.                                  |
-| **AWST**          | Australian Western Standard Time, Perth time. Every time in Ward Flow is in AWST.    |
-| **CAMHS**         | Child and Adolescent Mental Health Service.                                          |
-| **HDU**           | High dependency unit: a ward area for patients who need closer care.                 |
-| **KPI**           | Key performance indicator, such as the national seven-day follow-up measure.         |
-| **MHERL**         | Mental Health Emergency Response Line, the WA crisis phone line.                     |
-| **PIR**           | Post-incident review. The PIR chronology lists one patient's events in time order.   |
-| Sign in, sign out | Never log in or log out.                                                             |
+| Say               | Means                                                                                 |
+| ----------------- | ------------------------------------------------------------------------------------- |
+| **ECT**           | Electroconvulsive therapy.                                                            |
+| **NIC**           | Nurse in charge.                                                                      |
+| **NUM**           | Nurse unit manager.                                                                   |
+| **CAHS**          | Child and Adolescent Health Service.                                                  |
+| **EMHS**          | East Metropolitan Health Service.                                                     |
+| **NMHS**          | North Metropolitan Health Service.                                                    |
+| **SMHS**          | South Metropolitan Health Service.                                                    |
+| **WACHS**         | WA Country Health Service.                                                            |
+| **ED**            | Emergency department, after first use.                                                |
+| **AWOL**          | Absent without leave. On screen, written in full where there is room.                 |
+| **CTO**           | Community treatment order.                                                            |
+| **EDD**           | Expected date of discharge.                                                           |
+| **ETA**           | Estimated time of arrival, as quoted by the transport provider or the ward.           |
+| **MDT**           | Multidisciplinary team.                                                               |
+| **MHA**           | The Mental Health Act, the WA law the legal forms are named from. Never "MHA 2014".   |
+| **ATS**           | Australasian Triage Scale category, as recorded at ED triage.                         |
+| **RAMP**          | Risk Assessment and Management Plan, the WA mental health form.                       |
+| **PSP**           | Personal support person: a carer, close family member, nominated person or guardian.  |
+| **MHAS**          | Mental Health Advocacy Service.                                                       |
+| **GP**            | General practitioner.                                                                 |
+| **BPSD**          | Behavioural and psychological symptoms of dementia.                                   |
+| **AWST**          | Australian Western Standard Time, Perth time. Every time in Ward Flow is in AWST.     |
+| **CAMHS**         | Child and Adolescent Mental Health Service.                                           |
+| **HDU**           | High dependency unit: a ward area for patients who need closer care.                  |
+| **KPI**           | Key performance indicator, such as the national seven-day follow-up measure.          |
+| **MHERL**         | Mental Health Emergency Response Line, the WA crisis phone line.                      |
+| **PIR**           | Post-incident review. The PIR chronology lists one patient's events in time order.    |
+| **ATSI**          | Aboriginal and Torres Strait Islander.                                                |
+| **CMHT**          | Community mental health team.                                                         |
+| **CNS**           | Clinical nurse specialist.                                                            |
+| **DOB**           | Date of birth.                                                                        |
+| **ECG**           | Electrocardiogram, a recording of the heart's rhythm.                                 |
+| **EMR**           | Electronic medical record.                                                            |
+| **FDV**           | Family and domestic violence. The FDV951 is WA Health's screening form.               |
+| **HMDC**          | Hospital Morbidity Data Collection, WA Health's record of hospital stays.             |
+| **ISBAR**         | Identify, Situation, Background, Assessment, Recommendation: the order of a handover. |
+| **MBBS**          | Bachelor of Medicine, Bachelor of Surgery, a medical degree.                          |
+| **MHERT**         | Mental health emergency response team.                                                |
+| **MHN**           | Mental health nurse.                                                                  |
+| **NICE**          | National Institute for Health and Care Excellence, the UK guideline body.             |
+| **PAS**           | Patient administration system, the hospital's admissions and bed record.              |
+| **PSOLIS**        | Psychiatric Services Online Information System, WA's mental health record.            |
+| **RN**            | Registered nurse.                                                                     |
+| **SMHMR**         | State Mental Health Medical Record, WA's standard mental health forms.                |
+| **SW**            | Social worker.                                                                        |
+| Sign in, sign out | Never log in or log out.                                                              |
 
 **Bed coordinator** is the coordinator's name on every screen (Josh, 26 October 2026, A19). Do not say
 "flow coordinator" or "bed manager" for this role. "Bed flow coordinator" stays only as an on-call title.

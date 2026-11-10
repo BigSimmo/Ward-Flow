@@ -75,6 +75,7 @@ import {
 import {
   HANDOVER_CHIPS,
   defaultHandoverShift,
+  openingHandoverShift,
   groupOf,
   groupRows,
   currentHeldHandover,
@@ -253,7 +254,7 @@ export function HandoverPage() {
 
   /* which handover */
   // Audit TC2-02: held as the instant it meant when chosen, so midnight cannot move it.
-  const [heldChoice, setHeldChoice] = useState<HeldHandover>(() => holdHandover(defaultHandoverShift(now), now));
+  const [heldChoice, setHeldChoice] = useState<HeldHandover>(() => holdHandover(openingHandoverShift(now), now));
   const { id: shift, at: shiftAt } = currentHeldHandover(heldChoice, now);
   const setShift = (id: HandoverShiftId) => setHeldChoice(holdHandover(id, now));
   const shiftInfo = handoverShift(shift);
