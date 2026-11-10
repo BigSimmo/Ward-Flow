@@ -20,6 +20,7 @@ import { recordExtrasFor } from "./patient-record-extras";
 import { handoverPackAvailable, type HandoverContact, type HandoverPackInput } from "./patient-handover-pack";
 import { PatientHandoverPackButton } from "./patient-handover-pack-button";
 import { PatientHoursBreakdown } from "./patient-hours-breakdown";
+import { PatientCarerPageButton } from "../movements/patient-carer-page";
 
 function ageSexWords(patient: Patient | undefined, dayZero: Date, now: Instant): string {
   if (!patient) return "";
@@ -46,7 +47,7 @@ export function PatientJourneyExtras({
   riskFlags: HandoverPackInput["riskFlags"];
   now: Instant;
 }) {
-  const { referrals, dayZero } = useWardFlowSelect("referrals", "dayZero");
+  const { referrals, dayZero, units } = useWardFlowSelect("referrals", "dayZero", "units");
   let pack: HandoverPackInput | undefined;
   if (handoverPackAvailable(movement)) {
     const edContacts: HandoverContact[] = callRows(
@@ -90,6 +91,7 @@ export function PatientJourneyExtras({
     <>
       <PatientHoursBreakdown movement={movement} now={now} />
       {pack ? <PatientHandoverPackButton input={pack} dayZero={dayZero} /> : null}
+      <PatientCarerPageButton movement={movement} units={units} />
     </>
   );
 }
