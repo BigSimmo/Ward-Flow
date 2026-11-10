@@ -210,7 +210,7 @@ export function WardBoardHero(props: {
                           value: expected.value,
                           label: (
                             <>
-                              expected out
+                              expected
                               <SrOnly>{` (${expected.label}${expected.led ? ", shown in Going out" : ""})`}</SrOnly>
                             </>
                           ),

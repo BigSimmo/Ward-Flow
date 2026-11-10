@@ -174,6 +174,9 @@ export function GovernancePhone({
     setPhoneAdvance(true);
     setAnnouncement("Recording review…");
   };
+  // Page tops (10 Nov 2026): the row says "Coordinator", the desktop By column's word, so the line
+  // does not wrap to an orphan. The review sheet keeps the full desk name.
+  const rowRoleLabel = (label: string) => (label === "Bed coordinator" ? "Coordinator" : label);
   // v10 phone row: the action, the person, then the outcome and who; the clock time and how long
   // ago at the end. The whole row opens the review sheet, so it carries no separate button.
   const phoneEventRow = (event: AuditEvent) => {
@@ -194,7 +197,7 @@ export function GovernancePhone({
               <StatusGlyph tone={tone} size={9} />
               {event.action === "BREAK_GLASS" && event.details.desk
                 ? `${reasonLabel(event.details.reason)} · ${shortDeskLabel(event.details.desk)}, ${event.details.place}`
-                : `${categoryLabels[event.category]} · ${outcomeLabels[event.outcome]}${event.actor.role ? ` · ${deskRoleLabel(event.actor.role)}` : ""}`}
+                : `${categoryLabels[event.category]} · ${outcomeLabels[event.outcome]}${event.actor.role ? ` · ${rowRoleLabel(deskRoleLabel(event.actor.role))}` : ""}`}
             </span>
             {isPattern(event) ? (
               <span className={thirdEdition.phoneMetaLine}>
