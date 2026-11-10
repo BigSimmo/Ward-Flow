@@ -14,6 +14,7 @@ function fixture({
   many = false,
   existingCover = false,
   version = 16,
+  bootstrapCoordinatorIds = undefined,
 } = {}) {
   const world = engine.seedWorld(at);
   const access = { role: "admin", scope: { kind: "statewide" } };
@@ -98,10 +99,25 @@ function fixture({
   };
   const store = createWorkspaceStore(
     { query, connect: async () => ({ query, release() {} }) },
-    { workspaceId: "33333333-3333-4333-8333-333333333333", engine, clock: () => new Date(now) },
+    {
+      workspaceId: "33333333-3333-4333-8333-333333333333",
+      engine,
+      clock: () => new Date(now),
+      ...(bootstrapCoordinatorIds ? { bootstrapCoordinatorIds } : {}),
+    },
   );
   const view = { status: "ok", actorId, membershipId, access, version, grants: [], accessUntil: expiry.getTime() };
-  return { store, view, queries, isLocked: () => locked };
+  const bootstrap = {
+    status: "ok",
+    actorId,
+    membershipId: null,
+    access: engine.STATEWIDE,
+    ownAccess: engine.STATEWIDE,
+    version,
+    grants: [],
+    accessUntil: Infinity,
+  };
+  return { store, view, bootstrap, expiry, queries, isLocked: () => locked };
 }
 
 test("audit read refuses membership ending while the protected result is built", async () => {
@@ -117,6 +133,25 @@ test("audit read keeps a legitimate result after rechecking under the workspace 
   assert.equal((await store.auditPage(view)).events.length, 1);
   assert.equal(isLocked(), true);
 });
+// M113: a bootstrap coordinator (no membership) gets the same locked re-check as a member.
+test("audit read keeps a bootstrap coordinator's result while it is still on the list", async () => {
+  const { store, bootstrap, isLocked } = fixture({ bootstrapCoordinatorIds: () => [actorId] });
+  assert.equal((await store.auditPage(bootstrap)).events.length, 1);
+  assert.equal(isLocked(), true);
+});
+test("audit read refuses a bootstrap coordinator whose end date passes during the read", async () => {
+  const expiry = at.getTime() + 3600000;
+  const { store, bootstrap } = fixture({
+    expireDuringRead: true,
+    bootstrapCoordinatorIds: (atMs) => (atMs < expiry ? [actorId] : []),
+  });
+  await assert.rejects(store.auditPage(bootstrap), /role-ended/);
+});
+test("audit read refuses a bootstrap view for an account not on the list", async () => {
+  const { store, bootstrap } = fixture({ bootstrapCoordinatorIds: () => [] });
+  await assert.rejects(store.auditPage(bootstrap), /role-ended/);
+});
+
 test("a membership beyond the first twenty remains selectable", async () => {
   const { store } = fixture({ many: true });
   const view = await store.viewer(actorId, { workingAs: membershipId });

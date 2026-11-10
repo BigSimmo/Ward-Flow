@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { edActingPlaceId } from "@/components/ward-management/ward-role-access";
 import { useWardFormSave } from "../use-ward-form-save";
 import { resolveSubjectPatient } from "../ward-patient-resolver";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
@@ -204,7 +205,8 @@ export function PatientNowScreen({
   const deskSwitch = useDeskRoleSwitch();
   // WF-21 (live test, 4 Nov 2026): as in `useRoleGate`, only a coordinator's desk can switch desks
   // (a shared session offers its own desk chooser instead).
-  const accessRole = useEffectiveWardAccess().role;
+  const access = useEffectiveWardAccess();
+  const accessRole = access.role;
   const canSwitchDesk = deskSwitch.shared ? deskSwitch.canSwitch : accessRole === "coordinator";
   // A CTO is logged under the viewer's own role, never borrowed as the community team's.
   const routeRole = useRouteRole();
@@ -1414,6 +1416,7 @@ export function PatientNowScreen({
                 now,
                 movementId: liveMovement.id,
                 cleared: clearanceDraft === "cleared",
+                ...(routeRole === "ed" ? { actingPlaceId: edActingPlaceId(access, liveMovement.originEdId) } : {}),
               }),
             () => setShowClearanceModal(false),
           );

@@ -232,6 +232,10 @@ export function createWorkspaceStore(
     slowCommandMs = 500,
     retryAfterMs = 60_000,
     demoEvents = false,
+    // M113: the bootstrap coordinators at a time (auth.mjs `bootstrapCoordinators`), so a
+    // bootstrap account's archive and audit reads are re-checked under the lock as a membership
+    // is. The HTTP server always passes it; the store's own tests may leave it out.
+    bootstrapCoordinatorIds = /** @type {((atMs: number) => string[]) | null} */ (null),
   },
 ) {
   /**
@@ -1556,6 +1560,9 @@ export function createWorkspaceStore(
       return snapshot(row, now, current, undefined, client);
     });
   }
+  /** A signed-in bootstrap coordinator's view (no membership), once the server names the list. */
+  const bootstrapView = (view) =>
+    bootstrapCoordinatorIds !== null && typeof view?.actorId === "string" && !view.membershipId;
   /** Detail/history reads share the same authority boundary as a full scoped snapshot. */
   async function currentRecordRead(view, send, recordAccess = false) {
     return transaction(async (client, at) => {
@@ -1573,7 +1580,9 @@ export function createWorkspaceStore(
         current = await resolveViewer(view.actorId, { workingAs: view.membershipId }, client, at, view.version);
         if (current.status !== "ok") throw new Error("role-ended");
         Object.assign(view, current);
-      }
+      } else if (bootstrapView(view) && !bootstrapCoordinatorIds?.(at.getTime()).includes(view.actorId))
+        // M113: a bootstrap account past its end date, or taken off the list, stops here too.
+        throw new Error("role-ended");
       return send(client, at, current, row);
     });
   }
@@ -3300,7 +3309,7 @@ export function createWorkspaceStore(
     store[name] = async (view, ...args) => {
       const originalScope = JSON.stringify(view?.access);
       const result = await readProtected(view, ...args);
-      if (!view?.membershipId) return result;
+      if (!view?.membershipId && !bootstrapView(view)) return result;
       return currentRecordRead(view, async (_client, _at, current) => {
         if (JSON.stringify(current.access) !== originalScope) throw new Error("role-ended");
         return result;

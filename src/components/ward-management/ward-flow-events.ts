@@ -2137,6 +2137,8 @@ export type WardFlowEvent =
       now: Instant;
       movementId: string;
       cleared: boolean;
+      /** An ED names itself, and must be the journey's origin ED (M2). The coordinator sends none. */
+      actingPlaceId?: string;
     }
   | {
       type: "UPLOAD_PATIENT_FORM";

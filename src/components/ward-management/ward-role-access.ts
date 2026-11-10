@@ -77,6 +77,15 @@ export function accessIsWholeNetwork(access: WardAccess): boolean {
 }
 
 /**
+ * The ED an ED-desk action on a journey is recorded as (M2): the desk's own department when it has
+ * one, otherwise (a demonstration desk with no ED scope) the journey's origin ED. The reducer refuses
+ * an ED that is not the origin, and the shared server checks the claim against the desk's scope.
+ */
+export function edActingPlaceId(access: WardAccess, originEdId: string | undefined): string | undefined {
+  return access.role === "ed" && access.scope.kind === "ed" ? access.scope.edId : originEdId;
+}
+
+/**
  * Every screen, by what it is rather than by its address. Old addresses that only redirect
  * (`command`, `constellation`, `queue`, `exceptions`, `escalation`, `transport`) resolve to their
  * target so they can never be a way round the table.
