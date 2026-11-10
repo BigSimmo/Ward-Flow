@@ -23,3 +23,16 @@ Measured locally with `next build --webpack` and `scripts/check-script-budget.mj
 | bed meeting | 576.7   | 575.2              | 576.9     |
 | statistics  | 616.5   | 615.5              | 616.7     |
 | ED arm-ed   | 658.2   | 659.3              | 659.3     |
+
+## 10 Nov 2026 follow-up (review fixes)
+
+The review fixes (shared duplicate-check helpers, escalation wording, a restored-role check) added
+under 0.1 KB to four routes. The hosted build on `b71af274d` measured them at their old limits or
+just over, so each limit is now that measurement plus 0.2 KB:
+
+| Route       | Hosted build | Old limit | New limit |
+| ----------- | ------------ | --------- | --------- |
+| referrals   | 570.6        | 570.6     | 570.8     |
+| ward        | 604.9        | 604.9     | 605.1     |
+| movement    | 598.7        | 598.7     | 598.9     |
+| bed meeting | 577.0        | 576.9     | 577.2     |
