@@ -13,4 +13,8 @@ Why it grew: shared code gained the D-125 and D-130 fixes. The TV and legal line
 full and say "Recorded as ended", wait bands read the signed values, sheets print initials and UMRN,
 and the bed finder and out-of-area lists carry their notes.
 
+After the shared ended-form words and forecast line moved to the ward root (`17ea7fc`), CI read
+Referrals at its 583.4 limit and ED, Ward and Bed meeting within 0.1 KB, so those are 583.6, 535.4,
+613.8 and 591.9 (Referrals is 0.2 KB over main).
+
 Trim tried: none. The additions are short strings and value reads in code every route loads.
