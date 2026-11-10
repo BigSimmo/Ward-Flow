@@ -26,5 +26,6 @@ const IDENTITY_LABELS: Readonly<Partial<Record<string, string>>> = {
 };
 
 export function aboriginalOrTorresStraitIslanderIdentityLabel(status: string | undefined): string | undefined {
-  return status === undefined ? undefined : IDENTITY_LABELS[status];
+  // Own keys only, so a malformed status such as "toString" never reaches the screen.
+  return status !== undefined && Object.hasOwn(IDENTITY_LABELS, status) ? IDENTITY_LABELS[status] : undefined;
 }

@@ -103,6 +103,16 @@ describe("form moves on after examination or arrival (S-6)", () => {
         closure: { at: NOW, outcome: "arrived", reason: "arrived" },
       });
       expect(formProgression(arrivedOnCto)).toEqual({ endedCode: code, endedWhen: "at arrival", nextCode: "6A" });
+      const examinedOnCto = movement({
+        legalStatus: "Involuntary inpatient",
+        legalForm: { code },
+        examination: { at: NOW, outcome: "inpatient_order" },
+      });
+      expect(formProgression(examinedOnCto)).toEqual({
+        endedCode: code,
+        endedWhen: "at the examination",
+        nextCode: "6A",
+      });
     }
     for (const code of ["6A", "6B", "6C"]) {
       const arrivedOnOrder = movement({

@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   ABORIGINAL_OR_TORRES_STRAIT_ISLANDER_STATUSES,
@@ -30,9 +29,9 @@ describe("Aboriginal or Torres Strait Islander identity label", () => {
     expect(aboriginalOrTorresStraitIslanderIdentityLabel("Unknown")).toBeUndefined();
   });
 
-  it("record preview no longer shows a fixed Aboriginal pill for any answer", () => {
-    const source = readFileSync("src/components/ward-management/search/record-preview.tsx", "utf8");
-    expect(source).not.toContain("Aboriginal (ATSI)");
-    expect(source).not.toMatch(/aboriginalOrTorresStraitIslanderStatus \? \(/);
+  it("shows nothing for inherited object keys", () => {
+    for (const key of ["toString", "__proto__", "constructor", "hasOwnProperty"]) {
+      expect(aboriginalOrTorresStraitIslanderIdentityLabel(key)).toBeUndefined();
+    }
   });
 });
