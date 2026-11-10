@@ -84,6 +84,8 @@ function anAdmission(overrides: Partial<Admission> = {}): Admission {
     weekendDischargeReviews: [],
     leavingDestination: null,
     leftAt: null,
+    // Item 18 (10 Nov 2026), so the built fixture carries every field.
+    waitingForTransport: { since: DAY_ZERO, by: "ward" },
     followUp: null,
     careJourney: { contacts: [], plan: {}, documents: {}, episodes: [] },
     dischargeBarrier: null,
@@ -632,6 +634,8 @@ describe("Admission privacy — structural", () => {
     "weekendDischargeReviews",
     "leavingDestination",
     "leftAt",
+    // Item 18: left the ward, waiting for transport. A time and a role, no free text.
+    "waitingForTransport",
     "followUp",
     "careJourney",
     // Features 37 and 13 (9 Nov 2026): listed checklist states and a listed reply, each with a time and role.
@@ -691,6 +695,7 @@ describe("Admission privacy — structural", () => {
       weekendDischargeReviews: [],
       leavingDestination: "discharged-to-the-community",
       leftAt: DAY_ZERO + 30 * MINUTES_PER_DAY,
+      waitingForTransport: { since: DAY_ZERO + 30 * MINUTES_PER_DAY, by: "ward" },
       // Populated for the same reason the ED timestamp above is: a null here would make the new
       // field indistinguishable from an absent one, which is exactly what this fixture exists to tell
       // apart.

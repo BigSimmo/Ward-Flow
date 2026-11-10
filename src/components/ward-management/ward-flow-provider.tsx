@@ -156,6 +156,8 @@ type WardFlowContextValue = closingLoop.ClosingLoopContext & {
     actingUnitId: string,
     leavingDestination: LeavingDestination,
     actingRole?: "ward" | "coordinator",
+    /** Item 18: "Left the ward", still on site waiting for transport (the bed is Ready at once). */
+    options?: { awaitingTransport?: boolean },
   ): ReturnType<WardCommandDispatch>;
   readDischargeRecords(actor: WardRecordActor, unitId?: string): RecordRead<readonly DischargeRecord[]>;
   openDischargeRecord(actor: WardRecordActor, admissionId: string, reason?: OnBehalfReasonId): DischargeOpenHandle;
@@ -1207,7 +1209,8 @@ function WardFlowWorld({
   const stateBound = useMemo(
     () =>
       ({
-        recordWardDeparture: (admissionId, actingUnitId, leavingDestination, actingRole = "ward") => {
+        recordWardDeparture: (admissionId, actingUnitId, leavingDestination, actingRole = "ward", options) => {
+          const awaiting = options?.awaitingTransport === true ? { awaitingTransport: true as const } : {};
           const read = selectDischargeRecord(
             state,
             actingRole === "coordinator" ? { role: "coordinator" } : { role: "ward", actingUnitId },
@@ -1221,6 +1224,7 @@ function WardFlowWorld({
               admissionId,
               actingUnitId,
               leavingDestination,
+              ...awaiting,
             });
           }
           // A stay that cannot be read, or whose patient link cannot be checked, is not recorded
@@ -1243,6 +1247,7 @@ function WardFlowWorld({
             patientId: read.value.identity.patient.id,
             expectedGeneration: state.worldGeneration,
             expectedRevision: state.dischargeRevisions[admissionId] ?? 0,
+            ...awaiting,
           });
         },
         readDischargeRecords: (actor, unitId) => selectDischargeRecords(shown, actor, unitId),

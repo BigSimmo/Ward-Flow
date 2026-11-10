@@ -460,6 +460,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     RECORD_ADMISSION_FOLLOW_UP: false,
     RECORD_PATIENT_DISCHARGE: false,
     RECORD_LEAVING: false,
+    // Item 18: the end of a wait for transport home. Not a refusal of anyone.
+    MARK_TRANSPORT_COLLECTED: false,
     RECORD_LEFT_DEPARTMENT: false,
     // RB3, item 19: the department recording that a patient no longer needs a bed search (going
     // home, or needing community follow-up instead). Not a refusal by a RECEIVING unit — no unit

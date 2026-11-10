@@ -226,6 +226,8 @@ describe("who may raise which event", () => {
      * about that ward's own beds - see `RECORD_LEAVING` in the reducer, which refuses any acting
      * unit other than the one holding the admission. */
     RECORD_LEAVING: ["ward", "coordinator"],
+    // Item 18: Collected ends a wait for transport; whoever may record the departure may record it.
+    MARK_TRANSPORT_COLLECTED: ["ward", "coordinator"],
     /* ADDED 2026-09-01. Two new events, one fact: a ward records that one of its own occupants has
      * gone out to an emergency department, and that they are back. Ward-only for the reason
      * `RECORD_LEAVING` directly above is — it is a statement about that ward's own bed, and the

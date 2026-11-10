@@ -70,6 +70,7 @@ import {
   recordedMoment,
   recordedDate,
   matchesHighlight,
+  recordGoingTo,
 } from "./discharge-board-model";
 import { DischargePopulationSwitch, DischargeFilterCard } from "./discharge-board-filters";
 import {
@@ -1045,10 +1046,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                             <td data-label="Left" className={pageStyles.timingCell}>
                               <strong className={pageStyles.due}>{recordedMoment(record.leftAt, dayZero)}</strong>
                             </td>
-                            <td data-label="Going to">
-                              {LEAVING_DESTINATIONS.find((item) => item.id === record.leavingDestination)?.label ??
-                                "Not recorded"}
-                            </td>
+                            <td data-label="Going to">{recordGoingTo(record, dayZero)}</td>
                             <td data-label="7 day follow-up">
                               <span className={releaseList.followUp} data-warning={check.warning || undefined}>
                                 <StatusGlyph tone={check.warning ? "warning" : "success"} size={9} />

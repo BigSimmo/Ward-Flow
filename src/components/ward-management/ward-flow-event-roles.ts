@@ -218,6 +218,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // know that somebody walked out of a building, and a coordinator recording a discharge it
   // cannot observe is the shape this project refuses everywhere else.
   RECORD_LEAVING: ["ward", "coordinator"],
+  // Item 18: whoever may record the departure may record the collection that ends the wait.
+  MARK_TRANSPORT_COLLECTED: ["ward", "coordinator"],
   // The ward that holds the bed, and nobody else. A ward is the only party that observes one of
   // its own occupants leaving the building for an emergency department and coming back, and it is
   // the party still holding the bed while they are gone. The coordinator is excluded on exactly

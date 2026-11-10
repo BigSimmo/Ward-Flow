@@ -69,7 +69,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // Review tracker and wait list (9 Nov 2026) add REQUEST_PSYCH_REVIEW, RECORD_PSYCH_REVIEW_SEEN
       // and MARK_WARD_READY_FOR_NEXT. Staff needed (9 Nov 2026) adds REQUEST_WARD_STAFF and
       // CLOSE_WARD_STAFF_REQUEST.
-      expect(allEventTypes.length).toBe(193);
+      // Item 18 (10 Nov 2026) adds MARK_TRANSPORT_COLLECTED.
+      expect(allEventTypes.length).toBe(194);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];
