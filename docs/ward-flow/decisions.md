@@ -146,6 +146,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-121](#d-121-working-rules-guards-and-your-pc-from-the-10-november-2026-audit-10-november-2026)                                                       | Working rules, guards and PC tidy from the 10 Nov audit                              | Active                                           |
 | [D-122](#d-122-clinical-and-privacy-answers-from-the-10-november-2026-audit-10-november-2026)                                                           | Clinical and privacy answers from the 10 Nov audit                                   | Active                                           |
 | [D-123](#d-123-master-audit-list-answers-two-clinical-fixes-and-five-working-rules-10-november-2026)                                                    | Master audit list answers: two clinical fixes and five working rules                 | Active                                           |
+| [D-127](#d-127-neutral-wording-for-a-community-treatment-order-at-arrival-10-november-2026)                                                             | Neutral wording for a community treatment order at arrival                           | Active                                           |
 
 ---
 
@@ -1538,3 +1539,10 @@ is inferred.
   7. **Audit numbering:** the master audit list numbers items M1 to M156 and supersedes the 84-item plan. D-111 and issues #1564 to #1577 use the plan's numbers (File A). In the master list, D-111 item 8's gate items 16, 33, 34, 35, 42, 43 and 44 are M65, M3, M60, M61, M62, M63 and M64; its items 52, 55 and 80 are M69, M72 and M85. Write M12 or A12, never a bare number. The full File A to M crosswalk is kept in the master audit list's change log (Claude Doc, "Ward Flow master audit list"), not copied here.
 - **Why:** the review found items 1 and 2 as probable defects while reading the code, and items 3 to 7 close gaps that let safety checks weaken quietly or let rulings be misread.
 - **Boundary:** synthetic data only. Items 1 and 2 are clinical display rules built in a held PR. Item 5 authorises reads only. Approves no release.
+
+## D-127. Neutral wording for a community treatment order at arrival (10 November 2026)
+
+- **Date:** 10 November 2026, 5:59 PM AWST (09:59 UTC). **Decided by:** Josh, choosing "Neutral wording" on a decision card in the Ward Flow project thread, after a review question on PR #1591 about D-123 item 1. D-124 to D-126 are claimed by PR #1593.
+- **Decision:** when a person on Form 5A or 5B (a community treatment order) arrives on the ward, screens no longer say the form "ended at arrival". They say "On Form 5A at arrival; Form 6A to record" (or 5B), and short rows say "On this form at arrival". The "Record Form 6A" prompt from D-123 stays. Other forms that move on at arrival (for example 4C) still say "ended at arrival", and any form followed by an inpatient order at examination still says "ended at the examination". The arrival record keeps hiding the form's typed expiry exactly as before.
+- **Why:** arrival on the ward does not by itself end a community treatment order, so "ended" overstated the legal position.
+- **Boundary:** wording only; no timing, count or prompt changes. Synthetic data only. Approves no release.

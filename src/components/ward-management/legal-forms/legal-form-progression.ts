@@ -18,7 +18,26 @@ export type FormProgression = {
   endedWhen: string;
   /** The form to record next. */
   nextCode: "6A";
+  /**
+   * Whether the record shows the form ended. A community treatment order (5A, 5B) is not shown as
+   * ended at arrival: arrival alone does not end it, so screens use neutral wording (D-127).
+   */
+  ended: boolean;
 };
+
+const COMMUNITY_ORDER_CODES: readonly string[] = ["5A", "5B"];
+
+/** "Form 4C ended at arrival", or for a community treatment order "On Form 5A at arrival" (D-127). */
+export function formProgressionPhrase(progression: FormProgression): string {
+  return progression.ended
+    ? `Form ${progression.endedCode} ended ${progression.endedWhen}`
+    : `On Form ${progression.endedCode} ${progression.endedWhen}`;
+}
+
+/** The short form of the same: "Ended at arrival", or "On this form at arrival" (D-127). */
+export function formProgressionShort(progression: FormProgression): string {
+  return progression.ended ? `Ended ${progression.endedWhen}` : `On this form ${progression.endedWhen}`;
+}
 
 /**
  * Forms that authorise an inpatient stay already: nothing to move on to. Forms 5A and 5B are
@@ -31,9 +50,10 @@ export function formProgression(movement: Movement | undefined): FormProgression
   const code = movement?.legalForm?.code;
   if (!movement || code === undefined || INPATIENT_ORDER_CODES.includes(code)) return undefined;
   if (movement.legalStatus === "Voluntary") return undefined;
-  if (movement.closure?.outcome === "arrived") return { endedCode: code, endedWhen: "at arrival", nextCode: "6A" };
   if (movement.examination?.outcome === "inpatient_order")
-    return { endedCode: code, endedWhen: "at the examination", nextCode: "6A" };
+    return { endedCode: code, endedWhen: "at the examination", nextCode: "6A", ended: true };
+  if (movement.closure?.outcome === "arrived")
+    return { endedCode: code, endedWhen: "at arrival", nextCode: "6A", ended: !COMMUNITY_ORDER_CODES.includes(code) };
   return undefined;
 }
 
