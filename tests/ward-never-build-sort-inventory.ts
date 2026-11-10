@@ -40,7 +40,7 @@ export type SortInventoryEntry = {
 };
 
 export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
-  // ---------------------------------------------------------------- NEEDS JOSH
+  // ---------------------------------------------------------------- ruled by Josh (D-126)
   {
     file: "wards/ward-index.tsx",
     match:
@@ -70,31 +70,13 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
       "D-126 (10 Nov 2026): the Capacity mismatch pop-up's 'Ready beds that fit' list uses the fixed fit-list order (health service then ward name, as D-71 and D-110), not most fitting beds first.",
   },
   {
-    file: "referrals/referral-destination-options.ts",
-    match: "compareOptions",
-    list: "places",
-    key: "catchment-placed destination kind first, flagged 'suggested'; then label",
-    order: "NEEDS JOSH",
-    reason:
-      "Orders the referral destination kinds (ward, ED, community team) catchment-first and marks that one 'suggested'; no screen calls it today, so nothing is shown yet.",
-  },
-  {
     file: "referrals/ward-referral-drawer-placement-step.tsx",
     match: "Number(b === catchmentTeam) - Number(a === catchmentTeam) || a.localeCompare(b)",
     list: "places",
     key: "the patient's catchment community team first; then A to Z",
-    order: "NEEDS JOSH",
+    order: "fixed order",
     reason:
-      "The referral drawer's community team pick list puts the catchment team first, above a cut-off list of teams; teams are not wards, so D-71 may not reach it.",
-  },
-  {
-    file: "movements/movement-horizon-gantt.tsx",
-    match: "b.total - a.total || a.originEdId.localeCompare(b.originEdId)",
-    list: "places",
-    key: "patients on the corridor, most first; then ED id",
-    order: "NEEDS JOSH",
-    reason:
-      "The Movements horizon side rail is labelled 'Ranked corridors' (its aria-label) and lists ED-to-ward corridors busiest first.",
+      "D-126 (10 Nov 2026): kept as it is by Josh. The community team pick list puts the catchment team first, then A to Z; teams are not wards and no bed figure orders it.",
   },
 
   // ---------------------------------------------------------------- capacity display
@@ -282,6 +264,25 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
   },
 
   // ---------------------------------------------------------------- fixed order
+  {
+    file: "referrals/referral-destination-options.ts",
+    match: "DESTINATION_ORDER[a.kind] - DESTINATION_ORDER[b.kind]",
+    list: "places",
+    key: "a fixed table of destination kinds: Ward, Community team, ED",
+    order: "fixed order",
+    reason:
+      "D-126 (Josh, 10 Nov 2026): referral destination kinds in the drawer switch's fixed order, with no catchment-first tier and no 'suggested' flag.",
+  },
+  {
+    file: "movements/movement-horizon-gantt.tsx",
+    match:
+      "serviceRank(a.originEdId) - serviceRank(b.originEdId) || edName(a.originEdId).localeCompare(edName(b.originEdId))",
+    list: "places",
+    key: "health service, then ED name",
+    order: "fixed order",
+    reason:
+      "D-126 (Josh, 10 Nov 2026): the Movements Corridors rail lists EDs in a fixed service-then-name order, never busiest first, and is labelled 'Corridors'.",
+  },
   {
     file: "bed-meeting/tv-derivations.ts",
     match: "a.unit.name.localeCompare(b.unit.name)",

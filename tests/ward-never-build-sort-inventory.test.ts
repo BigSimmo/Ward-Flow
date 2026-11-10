@@ -289,15 +289,11 @@ describe("never-build sort inventory (D-71, audit M116)", () => {
     }
   });
 
-  it("the flagged lists stay listed for Josh until he rules (D-71)", () => {
+  it("no list is left waiting for Josh once he ruled on all of them (D-126)", () => {
+    // D-126 (Josh, 10 Nov 2026): every flagged list took a neutral order or was kept as it is.
+    // A new capacity-ordered list beside a pick must be classed NEEDS JOSH and brought to him.
     const needsJosh = SORT_INVENTORY.filter((entry) => entry.order === "NEEDS JOSH").map((entry) => entry.file);
-    expect(needsJosh).toEqual(
-      expect.arrayContaining([
-        "movements/movement-horizon-gantt.tsx",
-      ]),
-    );
-    // D-126 (Josh, 10 Nov 2026): the Wards index orders are neutral and its hero names no ward.
-    expect(needsJosh).not.toContain("wards/ward-index.tsx");
+    expect(needsJosh).toEqual([]);
   });
 
   it("the ED wall TV's ready wards are A to Z once Josh ruled (D-126)", () => {
