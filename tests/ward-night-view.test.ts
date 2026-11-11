@@ -7,7 +7,7 @@ import {
   nightOnTheWay,
   nightReadyBeds,
 } from "@/components/ward-management/night-view-figures";
-import { buildOnCallDirectory, KEY_LINE_IDS } from "@/components/ward-management/on-call/on-call-directory";
+import { KEY_LINE_IDS } from "@/components/ward-management/on-call/on-call-directory";
 import { DEFAULT_DUE_SOON_THRESHOLDS, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { recordedEdDeparture } from "@/components/ward-management/ward-ed-presence";
 import { edWaitStep } from "@/components/ward-management/ward-ed-wait-steps";
@@ -90,7 +90,6 @@ describe("Night view figures match the day screens", () => {
   });
 
   it("on call is the On-call page's key lines, in its order", () => {
-    const directory = buildOnCallDirectory(wardSites);
     const contacts = nightContacts(wardSites, minuteOfDay(now));
     expect(contacts.map((contact) => contact.entry.id)).toEqual([...KEY_LINE_IDS]);
     for (const contact of contacts) expect(contact.number ?? "").not.toMatch(/^(?!08 0000)\d/);

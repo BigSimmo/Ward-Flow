@@ -141,8 +141,7 @@ type TvTileProps = {
   meter?: { value: number; max: number };
   /** A second line under the detail: when the figure was last confirmed (`bedCountText`), or a note. */
   age?: string;
-  /** Plan item 43 (D-137): "Changed 14:32" while the figure's change mark lasts. */
-  changed?: string | null;
+  changed?: string | null; // Plan item 43 (D-137): "Changed 14:32" while the figure's mark lasts.
   testId: string;
 };
 
@@ -647,7 +646,6 @@ export function WardTvView({
   const { capacity, incoming, discharges } = sheet;
   const going = discharges.heldUp + discharges.confirmed + discharges.expected;
   const changed = useWardTvChangeMarks(sheet, scenario, now, frozen);
-
   const stuck = [
     ...sheet.heldUp.map((person) => ({ person, note: `Held up: ${person.blockReason ?? ""}`.trim() })),
     ...sheet.overdue
