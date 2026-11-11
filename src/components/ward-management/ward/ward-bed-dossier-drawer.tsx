@@ -24,6 +24,7 @@ import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { BlockerEditor, useBlockerSave } from "./ward-bed-blocker-editor";
 import { BedClosureControls, type BedClosureActions } from "./ward-bed-closure-controls";
+import { wardClosureReasonLabel } from "../capacity/ward-closure";
 import {
   openJourneyFromStay,
   SentJourneyChanges,
@@ -539,8 +540,19 @@ export function WardBedDossierDrawer({
         tone: "success",
         label: `Hold-up cleared: ${cleared.blocker}, by ${roleLabel(cleared.by)}`,
       });
-    timeline.sort((left, right) => right.at - left.at);
   }
+  // Live audit item 13 (11 Nov 2026): this bed's own closures (`Unit.closedBeds`), closed and reopened,
+  // with who and why. They belong to the bed, so they show with or without anyone in it.
+  for (const mark of unit.closedBeds ?? []) {
+    if (mark.bedNumber !== selectedBed) continue;
+    timeline.push({
+      at: mark.at,
+      tone: "warning",
+      label: `Bed closed${mark.reason ? `: ${wardClosureReasonLabel(mark.reason)}` : ""}, by ${mark.by}`,
+    });
+    if (mark.reopenedAt !== undefined) timeline.push({ at: mark.reopenedAt, tone: "success", label: "Bed reopened" });
+  }
+  timeline.sort((left, right) => right.at - left.at);
 
   const openBlockerEditor = () => {
     const opening = !quickBlockerOpen;
@@ -869,6 +881,20 @@ export function WardBedDossierDrawer({
       </dl>
     </section>
   );
+  const historyToggle = (
+    <button
+      type="button"
+      className={styles.historyButton}
+      aria-expanded={historyOpen}
+      aria-controls={`${TAB_PREFIX}-history`}
+      data-testid="bed-drawer-history-toggle"
+      onClick={toggleHistory}
+    >
+      <Icon icon={HistoryIcon} size={14} />
+      History
+      <span className={styles.historyCount}>{timeline.length}</span>
+    </button>
+  );
   const history = (
     <section
       ref={historyRef}
@@ -1036,6 +1062,13 @@ export function WardBedDossierDrawer({
               </dl>
               {readyNote}
             </section>
+            {/* Live audit item 13: an empty bed's History holds its closures, so it shows when there are any. */}
+            {timeline.length > 0 ? (
+              <>
+                {historyToggle}
+                {history}
+              </>
+            ) : null}
           </>
         ) : (
           <>
@@ -1067,18 +1100,7 @@ export function WardBedDossierDrawer({
                   );
                 })}
               </div>
-              <button
-                type="button"
-                className={styles.historyButton}
-                aria-expanded={historyOpen}
-                aria-controls={`${TAB_PREFIX}-history`}
-                data-testid="bed-drawer-history-toggle"
-                onClick={toggleHistory}
-              >
-                <Icon icon={HistoryIcon} size={14} />
-                History
-                <span className={styles.historyCount}>{timeline.length}</span>
-              </button>
+              {historyToggle}
             </div>
             {panel(
               "now",

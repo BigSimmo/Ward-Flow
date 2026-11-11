@@ -131,6 +131,33 @@ describe("rail account menu (DK1)", () => {
     const menu = openAccountMenu();
     expect(itemNames(menu)).toEqual(["Settings", expect.stringMatching(/^Help/u), "Sign out"]);
   });
+
+  // Live audit item 22 (11 Nov 2026): on a front-door site the public demo offers Leave the demo,
+  // which ends the demo code's pass through DELETE /api/session and opens the sign-in page.
+  it("on a front-door demo site offers Leave the demo, which ends the pass", async () => {
+    document.cookie = "wf_door=1; path=/";
+    const fetchMock = vi.fn(async () => new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const replace = vi.fn();
+    vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, replace } as Location);
+    try {
+      renderRail();
+      const menu = openAccountMenu();
+      expect(itemNames(menu)).toEqual([
+        "Settings",
+        expect.stringMatching(/^Help/u),
+        "Try another desk (demo)",
+        "Leave the demo",
+      ]);
+      fireEvent.click(within(menu).getByRole("menuitem", { name: "Leave the demo" }));
+      await vi.waitFor(() => expect(replace).toHaveBeenCalledWith("/sign-in"));
+      expect(fetchMock).toHaveBeenCalledWith("/api/session", expect.objectContaining({ method: "DELETE" }));
+    } finally {
+      document.cookie = "wf_door=; path=/; max-age=0";
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    }
+  });
 });
 
 function renderPhoneMenu(signedIn: SharedSession | null = null) {

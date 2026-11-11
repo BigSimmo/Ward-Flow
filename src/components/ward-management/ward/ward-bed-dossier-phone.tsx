@@ -160,6 +160,17 @@ export function PhoneBedSheet({
     .filter(Boolean)
     .join(" · ");
   const admissionId = bedItem?.admissionId;
+  const timelineList = (
+    <ul className={styles.timeline}>
+      {timeline.map((event) => (
+        <li key={`${event.label}-${event.at}`}>
+          <StatusGlyph tone={event.tone} />
+          <span className={styles.timelineAt}>{formatInstantWithDay(event.at, now)}</span>
+          <span className={styles.ell}>{event.label}</span>
+        </li>
+      ))}
+    </ul>
+  );
   return (
     <>
       <div
@@ -230,6 +241,13 @@ export function PhoneBedSheet({
                 {bedItem?.designation ? <Row label="Bed">{bedItem.designation}</Row> : null}
               </dl>
               {readyNote}
+              {/* Live audit item 13: an empty bed's closures and reopenings, when it has any. */}
+              {timeline.length > 0 ? (
+                <>
+                  <h3 className={styles.phoneSec}>History</h3>
+                  {timelineList}
+                </>
+              ) : null}
             </>
           ) : (
             <>
@@ -294,15 +312,7 @@ export function PhoneBedSheet({
               ) : null}
               <h3 className={styles.phoneSec}>History</h3>
               {timeline.length > 0 ? (
-                <ul className={styles.timeline}>
-                  {timeline.map((event) => (
-                    <li key={`${event.label}-${event.at}`}>
-                      <StatusGlyph tone={event.tone} />
-                      <span className={styles.timelineAt}>{formatInstantWithDay(event.at, now)}</span>
-                      <span className={styles.ell}>{event.label}</span>
-                    </li>
-                  ))}
-                </ul>
+                timelineList
               ) : (
                 <p className={styles.phoneEmpty}>Nothing recorded for this stay yet.</p>
               )}
