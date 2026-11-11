@@ -28,6 +28,8 @@
   overflow-y: hidden;
   scrollbar-width: none;
   overscroll-behavior-x: contain;
+  /* iPhone: no up-and-down bounce either (the row only ever scrolls sideways). */
+  overscroll-behavior-y: none;
 }
 
 .list::-webkit-scrollbar {
@@ -35,6 +37,8 @@
 }
 
 .list > li {
+  /* A flex item, not a line of text: the li is exactly its chip's height on every phone's fonts. */
+  display: flex;
   flex: 0 0 auto;
 }
 

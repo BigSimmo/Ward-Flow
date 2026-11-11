@@ -248,6 +248,8 @@
     padding-inline: 16px;
     overflow-x: auto;
     overflow-y: hidden;
+    /* iPhone: no up-and-down bounce either (the strip only ever scrolls sideways). */
+    overscroll-behavior-y: none;
     scrollbar-width: none;
     -webkit-mask-image: linear-gradient(to right, black 88%, transparent);
     mask-image: linear-gradient(to right, black 88%, transparent);
