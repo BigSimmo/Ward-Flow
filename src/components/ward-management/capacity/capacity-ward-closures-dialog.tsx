@@ -12,6 +12,8 @@ import type { Unit } from "@/components/ward-management/ward-model";
 import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
 import { wardStaySeats } from "@/components/ward-management/ward/ward-bed-layout";
 
+import { bedReviewLine } from "../ward-bed-closure-review";
+import { ClosureChoice, REVIEW_AFTER_CHOICES, reviewAtFrom } from "../ward-closure-choice";
 import { WARD_CLOSURE_REASONS, wardClosureReasonLabel, type WardClosureReason } from "./ward-closure";
 import { WardClosurePanel, type FootAction } from "./ward-closure-panel";
 import styles from "./capacity-page.module.css";
@@ -39,6 +41,8 @@ export function WardClosuresDialog({
   const raise = useWardRaise(actor.role);
   const [bed, setBed] = useState<number | null>(null);
   const [reason, setReason] = useState<WardClosureReason | null>(null);
+  // Item 6: "Review in", "Not known" by default. The time only prompts; reopening needs a person.
+  const [reviewAfter, setReviewAfter] = useState("");
   // The whole-ward close is the dialog's one primary action, in its foot (stress test, 3 Nov 2026).
   const [closeWard, setCloseWard] = useState<FootAction | null>(null);
   const closed = activeClosedBeds(unit);
@@ -56,13 +60,14 @@ export function WardClosuresDialog({
   const empty = Array.from({ length: unit.beds }, (_, index) => index + 1).filter(
     (number) => !taken.has(number) && !closedNumbers.has(number),
   );
-  const setBedClosed = (bedNumber: number, close: boolean, why?: WardClosureReason) =>
+  const setBedClosed = (bedNumber: number, close: boolean, why?: WardClosureReason, reviewAt?: Instant) =>
     raise("SET_BED_CLOSED", {
       unitId: unit.id,
       actingUnitId: unit.id,
       bedNumber,
       closed: close,
       ...(close && why ? { reason: why } : {}),
+      ...(close && reviewAt !== undefined ? { reviewAt } : {}),
     });
   return (
     <Dialog
@@ -109,6 +114,13 @@ export function WardClosuresDialog({
                   </FilterChip>
                 ))}
               </ChipGroup>
+              <ClosureChoice
+                label="Review in"
+                testId="capacity-close-bed-review"
+                value={reviewAfter}
+                items={REVIEW_AFTER_CHOICES}
+                onChange={setReviewAfter}
+              />
               <div className={styles.popFoot}>
                 <Button
                   size="sm"
@@ -116,9 +128,10 @@ export function WardClosuresDialog({
                   disabled={bed === null || reason === null}
                   onClick={() => {
                     if (bed === null || reason === null) return;
-                    setBedClosed(bed, true, reason);
+                    setBedClosed(bed, true, reason, reviewAtFrom(reviewAfter, now));
                     setBed(null);
                     setReason(null);
+                    setReviewAfter("");
                   }}
                 >
                   {bed === null ? "Choose a bed" : `Close bed ${bed}`}
@@ -135,7 +148,12 @@ export function WardClosuresDialog({
                     <span className={styles.popMain}>
                       <span className={styles.popName}>Bed {mark.bedNumber} closed</span>
                       <span className={styles.mutedXs}>
-                        {"reason" in mark && mark.reason ? wardClosureReasonLabel(mark.reason) : "Reason not recorded"}
+                        {[
+                          "reason" in mark && mark.reason ? wardClosureReasonLabel(mark.reason) : "Reason not recorded",
+                          bedReviewLine(mark, now),
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </span>
                     </span>
                   </span>

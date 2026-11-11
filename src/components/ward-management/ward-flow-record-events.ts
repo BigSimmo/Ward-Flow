@@ -75,6 +75,7 @@ export type RecordedFactEvent = Extract<
       | "RECORD_LEFT_DEPARTMENT"
       | "RECORD_EXAMINATION"
       | "RECORD_LEAVING"
+      | "MARK_TRANSPORT_COLLECTED"
       | "RECORD_MOVEMENT_BLOCKER"
       | "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT"
       | "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT"
@@ -1341,6 +1342,7 @@ export function reduceRecordedFactEvent(
     // A person's stay on the ward: leaving, trips to an emergency department, discharge blockers,
     // leave, absence, handover, repatriation, clinical contact and support notifications.
     case "RECORD_LEAVING":
+    case "MARK_TRANSPORT_COLLECTED":
     case "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT":
     case "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT":
     case "RECORD_STAY_DISCHARGE_BLOCKER":

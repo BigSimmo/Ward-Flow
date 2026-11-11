@@ -771,6 +771,14 @@ export type Admission = {
   /** When they went. `null` until then. */
   leftAt: Instant | null;
   /**
+   * Item 18, "Left the ward, waiting for transport": set when the ward records that a discharged
+   * person has left the ward but is still on site waiting for transport home. The departure itself
+   * already freed the bed (`departAdmission`), so Ready counts it at once; this only keeps the person
+   * on the ward's "Waiting for transport" list until "Collected" clears it. A time and a role, never
+   * a name or typed text. Absent on every other stay and on older saves.
+   */
+  waitingForTransport?: { readonly since: Instant; readonly by: WardFlowRole };
+  /**
    * WHETHER ANYBODY ARRANGED FOLLOW-UP, AND WHETHER ANYBODY SAID.
    *
    * ⚠️ **THREE STATES, NOT TWO, AND THE THIRD IS THE WHOLE REASON THIS FIELD EXISTS.** `null` means
@@ -866,6 +874,7 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   chiefPsychiatristNotice: true,
   leavingDestination: true,
   leftAt: true,
+  waitingForTransport: true,
   followUp: true,
   careJourney: true,
   dischargeChecks: true,

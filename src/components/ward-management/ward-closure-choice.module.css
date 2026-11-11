@@ -1,0 +1,18 @@
+/* A closure choice: its label over a row of kit chips. */
+.choice {
+  display: grid;
+  gap: var(--wf-s-1);
+}
+
+/* Panels and drawers are narrow, so the chips wrap rather than scroll sideways. */
+.chips.chips {
+  flex-wrap: wrap;
+  overflow-x: visible;
+}
+
+.subheading {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}

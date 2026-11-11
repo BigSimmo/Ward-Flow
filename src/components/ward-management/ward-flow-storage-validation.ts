@@ -45,6 +45,7 @@ import {
 import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
 import { WARD_CLOSURE_REASONS, type WardClosureReason } from "./capacity/ward-closure";
+import { unitBedFields } from "./ward-flow-storage-bed-fields";
 import { storedTriageRecords } from "./triage/triage-record-schema";
 import {
   ACCEPTANCE_CONDITION_AGREED_WITH,
@@ -376,21 +377,7 @@ const unit = z
     ),
     isClosed: z.optional(bool),
     readyForNextAt: maybeAt, // Ward wait list (9 Nov 2026): when the ward said it is ready for its next patient.
-    // H-0978: one bed closed (`SET_BED_CLOSED`), a chosen reason, never typed text; optional for older saves.
-    closedBeds: z.optional(
-      z.array(
-        z.looseObject({
-          bedNumber: counter.check(z.gte(1)),
-          at: finite,
-          by: text,
-          reason: z.optional(
-            z.enum(WARD_CLOSURE_REASONS.map((entry) => entry.id) as [WardClosureReason, ...WardClosureReason[]]),
-          ),
-          // A reopened mark stays as seat history; it reopened no earlier than it closed.
-          reopenedAt: z.optional(finite),
-        }),
-      ),
-    ),
+    ...unitBedFields, // closedBeds (H-0978, item 6) and intakeWindow (item 13)
     // Smart features idea 7: a chosen reason, never typed text.
     admissionsClosure: z.optional(
       z.looseObject({
@@ -608,7 +595,7 @@ const admission = z
     dischargeConfirmedBy: nullableText,
     blockReason: z.nullable(z.enum(BED_RELEASE_BLOCKERS)),
     stayBlockRecords: z.optional(z.custom(isStayBlockRecords)), // absent in older saves.
-    ...dischargeFollowThroughFields, // Features 6, 37, 13 and 14 (9 Nov 2026); absent in older saves.
+    ...dischargeFollowThroughFields, // Features 6, 37, 13 and 14 (9 Nov 2026), item 18; absent in older saves.
     leavingDestination: z.nullable(z.custom(isLeavingDestination)),
     // A stored barrier is a list value or absent; free text would be typed text restored (finding A2-2).
     dischargeBarrier: z.optional(z.nullable(z.custom(isDischargeBarrier))),
@@ -636,6 +623,8 @@ const admission = z
     z.refine(
       (stay) => ((stay.clinicallyReadySince ?? null) === null) === ((stay.delayedDischargeReason ?? null) === null),
     ),
+    // Item 18: only somebody who has left can be waiting for transport, so the list never shows a bed holder.
+    z.refine((stay) => stay.waitingForTransport === undefined || stay.state === "departed"),
   );
 
 // A destination is one of three kinds, each holding its own facts; any other kind is refused.

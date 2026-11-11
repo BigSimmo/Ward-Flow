@@ -126,6 +126,7 @@ import { useWardShellValues } from "./ward-flow-shell-values";
 import { ExecutiveStatisticsUnavailable } from "./statistics/statistics-small-numbers";
 import {
   broadcastDispatchEvent,
+  danglingReferralIds,
   getOrCreateBroadcastInstanceId,
   nextOpenRequestSequence,
 } from "./ward-flow-provider-helpers";
@@ -161,6 +162,8 @@ type WardFlowContextValue = closingLoop.ClosingLoopContext & {
     actingUnitId: string,
     leavingDestination: LeavingDestination,
     actingRole?: "ward" | "coordinator",
+    /** Item 18: "Left the ward", still on site waiting for transport (the bed is Ready at once). */
+    options?: { awaitingTransport?: boolean },
   ): ReturnType<WardCommandDispatch>;
   readDischargeRecords(actor: WardRecordActor, unitId?: string): RecordRead<readonly DischargeRecord[]>;
   openDischargeRecord(actor: WardRecordActor, admissionId: string, reason?: OnBehalfReasonId): DischargeOpenHandle;
@@ -1212,7 +1215,8 @@ function WardFlowWorld({
   const stateBound = useMemo(
     () =>
       ({
-        recordWardDeparture: (admissionId, actingUnitId, leavingDestination, actingRole = "ward") => {
+        recordWardDeparture: (admissionId, actingUnitId, leavingDestination, actingRole = "ward", options) => {
+          const awaiting = options?.awaitingTransport === true ? { awaitingTransport: true as const } : {};
           const read = selectDischargeRecord(
             state,
             actingRole === "coordinator" ? { role: "coordinator" } : { role: "ward", actingUnitId },
@@ -1226,6 +1230,7 @@ function WardFlowWorld({
               admissionId,
               actingUnitId,
               leavingDestination,
+              ...awaiting,
             });
           }
           // A stay that cannot be read, or whose patient link cannot be checked, is not recorded
@@ -1248,6 +1253,7 @@ function WardFlowWorld({
             patientId: read.value.identity.patient.id,
             expectedGeneration: state.worldGeneration,
             expectedRevision: state.dischargeRevisions[admissionId] ?? 0,
+            ...awaiting,
           });
         },
         readDischargeRecords: (actor, unitId) => selectDischargeRecords(shown, actor, unitId),
@@ -1462,14 +1468,7 @@ export function useCommunitySentReferrals(): ReturnType<typeof communitySentView
  */
 export function useDanglingReferralIds(admissions: readonly Admission[]): ReadonlySet<string> {
   const { referrals } = useWardFlowSelect("referrals");
-  return useMemo(() => {
-    const known = new Set(referrals.map((referral) => referral.id));
-    return new Set(
-      admissions.flatMap((admission) =>
-        admission.referralId !== null && !known.has(admission.referralId) ? [admission.referralId] : [],
-      ),
-    );
-  }, [admissions, referrals]);
+  return useMemo(() => danglingReferralIds(admissions, referrals), [admissions, referrals]);
 }
 
 export function useWardFlowClock(fallback?: Instant): Instant {

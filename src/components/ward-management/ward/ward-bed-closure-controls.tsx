@@ -1,7 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Button } from "@/components/wf";
+import { ClosureChoice, REVIEW_AFTER_CHOICES } from "../ward-closure-choice";
 import styles from "./ward-bed-dossier-drawer.module.css";
 
 /**
@@ -14,17 +15,23 @@ import styles from "./ward-bed-dossier-drawer.module.css";
  * The ward screen decides which taps exist (a ready bed that isn't held may close, a bed closed by
  * number may reopen) and leaves both out for a desk that may not raise the event. Each is raised from the
  * tap here and never from an effect or a timer. Kept in its own file so the bed drawer stays small.
+ *
+ * Item 6 (10 Nov 2026): closing offers "Review in", "Not known" by default, so the bed is looked at
+ * again. The time only prompts ("Review 14:00", "Review overdue"); reopening is always this tap.
  */
 export type BedClosureActions = {
-  /** Set only for a ready bed this desk may close. */
-  onCloseBed?: () => void;
+  /** Set only for a ready bed this desk may close. `reviewAfter` is the "Review in" id ("" for Not known). */
+  onCloseBed?: (reviewAfter: string) => void;
   /** Set only for a bed closed by number that this desk may reopen. */
   onReopenBed?: () => void;
+  /** On a bed closed by number: "Review 14:00" or "Review overdue", when a review time was chosen. */
+  reviewLine?: string | null;
 };
 
 export function BedClosureControls({
   onCloseBed,
   onReopenBed,
+  reviewLine,
   size,
   children,
 }: BedClosureActions & {
@@ -33,9 +40,19 @@ export function BedClosureControls({
   /** The phone sheet's role-lock note, which always shows straight after these taps. */
   children?: ReactNode;
 }) {
+  const [reviewAfter, setReviewAfter] = useState("");
   if (!onCloseBed && !onReopenBed) return <>{children}</>;
   return (
     <>
+      {onCloseBed ? (
+        <ClosureChoice
+          label="Review in"
+          testId="ward-drawer-close-bed-review"
+          value={reviewAfter}
+          items={REVIEW_AFTER_CHOICES}
+          onChange={setReviewAfter}
+        />
+      ) : null}
       {onCloseBed ? (
         <Button
           variant="sec"
@@ -43,7 +60,10 @@ export function BedClosureControls({
           className={styles.pill}
           data-testid="ward-drawer-close-bed"
           aria-describedby="ward-drawer-close-bed-note"
-          onClick={onCloseBed}
+          onClick={() => {
+            onCloseBed(reviewAfter);
+            setReviewAfter("");
+          }}
         >
           Close this bed
         </Button>
@@ -66,8 +86,8 @@ export function BedClosureControls({
         </p>
       ) : null}
       {onReopenBed ? (
-        <p className={styles.meta} id="ward-drawer-reopen-bed-note">
-          Reopening offers this bed again.
+        <p className={styles.meta} id="ward-drawer-reopen-bed-note" data-testid="ward-drawer-reopen-bed-note">
+          {reviewLine ? `${reviewLine}. ` : ""}Reopening offers this bed again.
         </p>
       ) : null}
       {children}

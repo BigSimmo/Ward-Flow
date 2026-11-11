@@ -460,6 +460,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     RECORD_ADMISSION_FOLLOW_UP: false,
     RECORD_PATIENT_DISCHARGE: false,
     RECORD_LEAVING: false,
+    // Item 18: the end of a wait for transport home. Not a refusal of anyone.
+    MARK_TRANSPORT_COLLECTED: false,
     RECORD_LEFT_DEPARTMENT: false,
     // RB3, item 19: the department recording that a patient no longer needs a bed search (going
     // home, or needing community follow-up instead). Not a refusal by a RECEIVING unit — no unit
@@ -559,6 +561,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // A ward restating what is currently limiting its own intake, from a fixed list. Not a
     // refusal of any named referral or placement — it carries no subject at all.
     RECORD_WARD_INTAKE_CONSTRAINTS: false,
+    // Feature item 13: tonight's intake hours, information only, never a refusal of anyone.
+    SET_INTAKE_WINDOW: false,
     // Smart features idea 7: closes a whole ward to everyone, never one named patient.
     CLOSE_WARD_TO_ADMISSIONS: false,
     REOPEN_WARD_TO_ADMISSIONS: false,

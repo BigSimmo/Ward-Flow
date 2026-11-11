@@ -212,6 +212,8 @@ describe("who may raise which event", () => {
     // Owner Answer 18 (second round, 2026-09-17): the ward's own answer to what is currently
     // limiting its intake, same role as CONFIRM_CAPACITY above.
     RECORD_WARD_INTAKE_CONSTRAINTS: ["ward", "coordinator"],
+    // Feature item 13: tonight's intake hours, the ward for itself or the coordinator.
+    SET_INTAKE_WINDOW: ["ward", "coordinator"],
     RECORD_NO_REFERRAL: ["ed", "coordinator"],
     RECORD_LEAVE_BED: ["ward", "coordinator"],
     // D-38 (9 Oct 2026): the ward records an absence and its steps; the community team a CTO.
@@ -227,6 +229,8 @@ describe("who may raise which event", () => {
      * about that ward's own beds - see `RECORD_LEAVING` in the reducer, which refuses any acting
      * unit other than the one holding the admission. */
     RECORD_LEAVING: ["ward", "coordinator"],
+    // Item 18: Collected ends a wait for transport; whoever may record the departure may record it.
+    MARK_TRANSPORT_COLLECTED: ["ward", "coordinator"],
     /* ADDED 2026-09-01. Two new events, one fact: a ward records that one of its own occupants has
      * gone out to an emergency department, and that they are back. Ward-only for the reason
      * `RECORD_LEAVING` directly above is — it is a statement about that ward's own bed, and the

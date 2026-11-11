@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
-import { Button, ChipGroup, Dialog, DisabledReason, FilterChip, StatusGlyph } from "@/components/wf";
+import { Button, Dialog, DisabledReason, StatusGlyph } from "@/components/wf";
 
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
@@ -24,6 +24,7 @@ import {
   wardReopeningDue,
   type WardClosureReason,
 } from "./ward-closure";
+import { ClosureChoice } from "../ward-closure-choice";
 import styles from "./ward-closure-panel.module.css";
 // Closing the loop, package D (24 Oct 2026): restriction reviews and the closure transition list.
 import { ClosureTransitionChecklist, WardRestrictionReviews } from "../loop-checks/loop-checks-lazy";
@@ -376,40 +377,6 @@ function ClosureAlert({
       >
         {CLOSE_CONFLICT_DRAFT_WORDING.tryAgain}
       </Button>
-    </div>
-  );
-}
-
-/** One closure choice as kit chips; the chosen id rides on `data-value` for the page and its tests. */
-function ClosureChoice({
-  label,
-  testId,
-  value,
-  items,
-  onChange,
-}: {
-  label: string;
-  testId: string;
-  value: string;
-  items: { id: string; label: string }[];
-  onChange: (next: string) => void;
-}) {
-  return (
-    <div className={styles.choice} data-testid={testId} data-value={value}>
-      <p className={styles.subheading} aria-hidden="true">
-        {label}
-      </p>
-      <ChipGroup label={label} className={styles.chips}>
-        {items.map((item) => (
-          <FilterChip
-            key={item.id}
-            pressed={item.id === value}
-            onPressedChange={(pressed) => onChange(pressed ? item.id : "")}
-          >
-            {item.label}
-          </FilterChip>
-        ))}
-      </ChipGroup>
     </div>
   );
 }

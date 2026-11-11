@@ -4959,6 +4959,11 @@
     box-shadow: var(--wf-e1);
   }
 
+  /* Item 18: "Waiting for transport" is a second work card under Before handover, not on top of it. */
+  .screen .workZone + .workZone {
+    grid-row: 3;
+  }
+
   .screen .flowColumn {
     grid-column: 2;
     grid-row: 2;
@@ -5303,6 +5308,10 @@
 
   .screen .workZone {
     order: 3;
+  }
+
+  .screen .workZone + .workZone {
+    grid-row: auto;
   }
 
   .screen .flowColumn {
@@ -6108,4 +6117,16 @@
   font-size: var(--t-0);
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+/* Item 18: the "Waiting for transport" list's heading, laid out like the work band's summary but not
+   a control, so it has no cursor or tap cover. */
+.transportWaitHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ward-space-4) var(--ward-space-12);
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
 }

@@ -52,6 +52,8 @@ export interface BedItem {
   isPulled?: boolean;
   isSelected?: boolean;
   isClosed?: boolean;
+  /** Item 6: on a bed closed by number with a review time, "Review 14:00" or "Review overdue". */
+  closedReview?: string;
   podId?: string;
   podLabel?: string;
   designation?: string;
