@@ -82,6 +82,7 @@ import flow from "./movement-flow.module.css";
 import styles from "./movements.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { MovementsPhoneNav } from "./movements-phone-nav";
+import { MovementsListTools } from "./movements-list-tools";
 import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace } from "../use-return-to-place";
 import { ShapeOfTheDay } from "./movements-shape-of-day";
 import { MovementPeopleSheet, corridorPeople, type MovementPeopleList } from "./movement-people-sheet";
@@ -144,15 +145,17 @@ const worklistRow = (id: string) => rowWithAttribute("data-record-key", id, "li"
 export function MovementsScreen() {
   const returned = useReturnedView<MovementsPlace>(MOVEMENTS_ROUTE);
   const thresholds = useDueSoonThresholds();
-  const { movements, units, referrals, patients, dispatch, configuration, setFocusMovementId } = useWardFlowSelect(
-    "movements",
-    "units",
-    "referrals",
-    "patients",
-    "dispatch",
-    "configuration",
-    "setFocusMovementId",
-  );
+  const { movements, units, referrals, patients, dispatch, configuration, setFocusMovementId, dayZero } =
+    useWardFlowSelect(
+      "movements",
+      "units",
+      "referrals",
+      "patients",
+      "dispatch",
+      "configuration",
+      "setFocusMovementId",
+      "dayZero",
+    );
   const now = useWardFlowClock();
   // Task 6 of the audit-wiring plan, 2026-09-16: StageRow's wait-meter bar and its "of N hours"
   // caption are read against the coordinator-configured ED access target, not a bare 24h literal.
@@ -1225,6 +1228,13 @@ export function MovementsScreen() {
                   aria-label="Find movements by name, UMRN or ED"
                   boxClassName={flow.search}
                 />
+                {isPhone ? null : (
+                  <MovementsListTools
+                    {...{ patients, referrals, units, now, dayZero, resolved: boardTab === "resolved" }}
+                    movements={boardTab === "resolved" ? worklistClosedToday : worklistMovements}
+                    disabled={(boardTab === "resolved" ? worklistClosedToday : worklistMovements).length === 0}
+                  />
+                )}
               </div>
 
               {/* Column heads for the rows below. The rows are list items, so these are a visual

@@ -23,6 +23,7 @@ import { siteDirectory } from "@/components/ward-management/ward-sites";
 import type { SiteIdentity } from "@/components/ward-management/ward-sites";
 
 import type { WardTourRole } from "./ward-help-store";
+import { MORE_PAGE_HELP } from "./ward-help-pages-more";
 
 /** The Give button's own words, from the value it grants (D-122: help never types a threshold). */
 const GIVE_FOR = `Give for ${formatClinicalFigure(CLINICAL_VALUES.accessGrantDefault.value, CLINICAL_VALUES.accessGrantDefault.unit)}`;
@@ -604,6 +605,7 @@ type PageHelp = ScreenHelp & {
 
 /** Detail and stand-alone pages. Listed most specific first; the first match wins. */
 const PAGE_HELP: readonly PageHelp[] = [
+  ...MORE_PAGE_HELP,
   {
     id: "ward-answer",
     path: /^\/ward-flow\/ward\/[^/]+\/answer$/u,
