@@ -18,6 +18,7 @@ import { useEffectiveWardAccess } from "./shell/ward-access-store";
 import eventList from "./governance-event-list.module.css";
 import type { WardCommandOutcome } from "./ward-shared-client";
 import type { AuditCategory, AuditEvent, AuditReview } from "./ward-audit";
+import { reviewHistoryLookup } from "./governance-review-history";
 import { UNDO_TOAST_MS } from "./ward-operational-defaults";
 import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF, WEEKLY_REPORT_HREF } from "./reports/report-routes";
 import {
@@ -305,8 +306,7 @@ function GovernanceSession({
         ...coverEvents(accessReview.covers, api?.worldGeneration ?? 0),
       ].sort((a, b) => (a.at ?? Number.MAX_SAFE_INTEGER) - (b.at ?? Number.MAX_SAFE_INTEGER))
     : events;
-  const historyFor = (event: AuditEvent) =>
-    reviews.filter((review) => review.eventId === event.id && review.generation === event.generation);
+  const historyFor = reviewHistoryLookup(reviews);
   const reviewState = (event: AuditEvent) => historyFor(event).at(-1)?.decision ?? "unreviewed";
   const reviewable = rows.filter((event) => event.category !== "review");
   const toReview = reviewable.filter((event) => reviewState(event) !== "reviewed").reverse();
@@ -342,7 +342,7 @@ function GovernanceSession({
     setAutoOpened(false);
     setSelection(undefined);
   }
-  const history = selected ? historyFor(selected) : [];
+  const history = selected ? [...historyFor(selected)] : [];
   const reviewAttempt = pending
     ? [...events]
         .reverse()
