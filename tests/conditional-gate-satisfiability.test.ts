@@ -146,6 +146,8 @@ const DECLARED_UNDECIDABLE: Readonly<Record<string, string>> = {
     "depends on whether a bash or sh executable exists on the system to run the git hook",
   "tests/ward-travel-bands.test.ts :: !TRAVEL_BANDS_ARE_INVENTED":
     "a module constant about the fixture's provenance, not an environment fact",
+  "tests/ward-audit-m135-todos-tracked-to-closure.test.ts :: merged !== null":
+    "depends on whether the checkout's local Git history holds merge commits (a shallow clone may not)",
 };
 
 /**

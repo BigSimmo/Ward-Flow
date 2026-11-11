@@ -151,6 +151,9 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-126](#d-126-ranked-lists-neutral-orders-approved-10-november-2026)                                                                                   | Ranked lists: neutral orders on 11 lists, lists 9 and 12 kept                          | Active                                           |
 | [D-127](#d-127-neutral-wording-for-a-community-treatment-order-at-arrival-10-november-2026)                                                             | Neutral wording for a community treatment order at arrival                             | Active                                           |
 | [D-128](#d-128-final-master-audit-nine-answers-10-november-2026)                                                                                        | Final master audit: nine answers                                                       | Active                                           |
+| [D-129](#d-129-master-audit-findings-every-recommendation-approved-10-november-2026)                                                                    | Master audit findings: every recommendation approved                                   | Active                                           |
+| [D-130](#d-130-audit-follow-ups-every-remaining-recommendation-approved-10-november-2026)                                                               | Audit follow-ups: every remaining recommendation approved                              | Active                                           |
+| [D-131](#d-131-hard-case-demo-data-allowed-and-the-movement-diagram-follows-the-engine-10-november-2026)                                                | Hard-case demo data allowed, and the movement diagram follows the engine               | Active                                           |
 | [D-134](#d-134-ward-arrival-and-beds-batch-how-to-hold-advocate-line-night-list-and-the-feature-freeze-10-november-2026)                                | Ward arrival and beds batch: held split, advocate line, night list, feature freeze     | Active                                           |
 
 ---
@@ -1605,9 +1608,84 @@ is inferred.
   9. **New features:** none from the proposed list until #1564 to #1577 close.
 - **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge or release.
 
+## D-129. Master audit findings: every recommendation approved (10 November 2026)
+
+- **Date:** 10 November 2026. **Decided by:** Josh, in the "Run the remaining master list audits" thread: "Approve all recommendations" (07:38Z), after the audit swarm's findings. Numbered D-129 because D-121 to D-127 landed from other threads and D-128 is claimed by open PR #1594.
+- **Decision:** the audit swarm's recommendations are approved. The fixes follow:
+  1. **Clinical, in a held PR:**
+     - The triage "Reviewed time" uses Perth time.
+     - The Tools bed finder leaves out forensic wards and names the rules it skips.
+     - An ended legal form reads the same on the TV, the downtime pack and print, with its full name on the TV (D-93).
+     - Typed 8-hour waits read the signed value.
+     - The ED "May pass" card drops names, UMRN and "Find a bed", and forecasts carry "From recorded waits and releases. Not a prediction."
+     - Occupancy percentages use in-use beds (L1), and a ward with no beds shows "No beds".
+  2. **Non-clinical, in this thread's PR:**
+     - **Restore:** a restore tells open tabs to reload, and the runbook warns that phone alerts may repeat.
+     - **Acknowledge visible:**
+       - Its confirm lists each patient with UMRN.
+       - It names any refusals.
+       - It writes one audit row per alert.
+     - **Sign off N** gets a short Undo.
+     - **Handover:**
+       - For 30 minutes after each handover, the Handover page opens on the handover just held.
+       - Printed handover and shift brief say "Not updating since HH:MM" while reads are frozen.
+     - **Cover** asks for a reason and appears on the review list.
+     - **Error events** carry the request ID, role and screen, and handled server errors are sent.
+     - **Migrations** get a 5-second lock timeout.
+     - **Uptime check:** it raises a "monitor not set up" issue.
+     - **Saves and reconnects:**
+       - Queued saves are held and resent on a 429.
+       - Saves get a per-account limit.
+       - Reconnect reads are spread.
+     - **Phone toasts** sit above the floating bar.
+     - **Show me** says it's offline instead of leaving the app.
+     - **Report-a-problem picture** carries a synthetic marker.
+     - **Shared views** say when a non-default threshold is in use.
+     - **Chronology CSV** drops the name.
+     - **Glossary:** the Help glossary gains 18 abbreviations.
+     - **Referrer phone:** the server checks its format.
+     - **Seed and tests:**
+       - The seed gains the hard cases.
+       - Four surviving mutants get tests.
+       - The movement diagram follows the engine.
+  3. **Other approvals:**
+     - **Phone alerts** stay a prompt only (M20 option A).
+     - **Handover** has no acceptance step (M19 option A).
+     - **Old open tabs** are supported one release back (M33).
+     - **Idle lock** stays at 15 minutes until the pilot site's policy is known (M50).
+     - **Surge beds and ward renaming** are not prototype features (M36).
+     - **Sign-in front door:** switch it on for both sites.
+     - **Tier 7:** the plan is approved, starting with change hotspots (M142), the import map (M139) and the mockup check (M149).
+- **Boundary:** synthetic data only. Hosted, billable and provider steps still need their own yes: the Railway variable rename, the receipt clean-up secret, Dependabot security updates, the hosted database check, live post-release runs, the penetration test and the TGA adviser. Approves no merge of the held clinical PR and no release.
+
+## D-130. Audit follow-ups: every remaining recommendation approved (10 November 2026)
+
+- **Date:** 10 November 2026. **Decided by:** Josh, in the "Run the remaining master list audits" thread: "Go ahead with all recommendations for things you are able to do" (12:53Z).
+- **Decision:**
+  1. **Held clinical PR** (labelled `hold`, Josh reviews before merge):
+     - The Call sheet and the bed and capacity meeting sheets show initials and UMRN only.
+     - The Map counts a ward transfer out as a move, not a discharge.
+     - Referral declines and arrivals write an audit row.
+     - The unsigned time numbers are signed as they stand today: leave due back within 12 hours, "Referred and not yet seen" after 60 minutes, the 4 and 12 hour statistics bands, the 4 hour bed board referral chip, and the under 18 and 65+ age bands.
+     - "Of beds" is renamed "In use", now that it counts pulled beds.
+  2. **No change:** the save limit stays at 600 per 5 minutes per account. Toasts already lead with what happened.
+  3. **Machine-test mismatches (M26):** listed on one page for Josh to rule on; nothing changes yet.
+  4. **Front door:** seen on the public demo on 10 November (demo-code page). No Railway change needed (Josh, 12:07Z).
+- **Open:** the glossary meanings of MHERT and SMHMR wait on Josh.
+- **Boundary:** approves no merge of the held clinical PR, no hosted step and no release.
+
+## D-131. Hard-case demo data allowed, and the movement diagram follows the engine (10 November 2026)
+
+- **Date:** 10 November 2026. **Decided by:** Josh, in the "Run the remaining master list audits" thread: "Yes go ahead with all recommendations" (14:13Z).
+- **Decision:**
+  1. **Hard-case demo data:** as Ward Lead, Josh allows `ward-hard-cases-demo.ts` (the M134 synthetic hard-case overlay) to read the patient link, like the earlier seed builders. It is added to the default-deny allowlist with that reason.
+  2. **Movement diagram (M26):** every recommendation in [the mismatch list](evidence/2026-11-10-machine-test-mismatches.md) is approved. The engine stays as it is and `machines.json` is corrected to match it (Z1 to Z12).
+- **Open:** the glossary meanings of MHERT and SMHMR still wait on Josh.
+- **Boundary:** no clinical behaviour change; approves no merge of the held clinical PR and no release.
+
 ## D-134. Ward arrival and beds batch: how to hold, advocate line, night list and the feature freeze (10 November 2026)
 
-- **Date:** 10 November 2026, about 1:02 AM to 1:08 AM AWST on 11 November (17:02 to 17:08 UTC on 10 November). **Decided by:** Josh, on two decision cards in the Ward Flow project thread "Build ward arrival and bed features", then "Yes to all recommendations please" to the thread's numbered questions. Numbered D-134 because the numbers before it were taken first. D-129 is claimed by PR #1598. D-130 is claimed by PR #1598. D-131 is claimed by PR #1598. D-132 is claimed by PR #1601. D-133 is claimed by the ED and referral flow batch PR.
+- **Date:** 10 November 2026, about 1:02 AM to 1:08 AM AWST on 11 November (17:02 to 17:08 UTC on 10 November). **Decided by:** Josh, on two decision cards in the Ward Flow project thread "Build ward arrival and bed features", then "Yes to all recommendations please" to the thread's numbered questions. Numbered D-134 because the numbers before it were taken first. D-132 is claimed by PR #1601. D-133 is claimed by the ED and referral flow batch PR.
 - **Decision:**
   1. **Held split:** items 6 (bed closure review time), 7 (plan staffing for an arrival), 13 (overnight intake window) and 18 (left the ward, waiting for transport) go in one PR that may merge once green. Items 4 (young person on an adult ward) and 15 (interpreter, Aboriginal liaison and advocate lines at arrival) go in a second PR with the `hold` label until Josh signs them off.
   2. **Advocate line (item 15):** "Mental Health Advocacy Service told" shows on the arrival checklist for every patient the app already treats as detained, the same group the existing support and advocacy notification checklist covers, and reuses that record.
@@ -1615,5 +1693,10 @@ is inferred.
   4. **Night list (item 13):** a "Tonight's intake windows" card on the Capacity page, beside "Closed beds past review", in the neutral service-then-name order (D-126).
   5. **Feature freeze:** Josh's instruction to begin the feature batches replaces D-128 item 9 for the 27 items he chose on 10 November. Other features stay frozen until #1564 to #1577 close.
   6. **Design review first:** Josh approves the batch's design review page before its PR is opened (D-74, D-107).
-- **Addendum, 11 November 2026, about 10:19 AM AWST (02:19 UTC):** Josh wrote "Go ahead with all recommendations now for me" in the project thread "Perfect the ranked feature list", and the same words two minutes later in this batch's thread "Build ward arrival and bed features". They answer this batch's two open cards with their recommended options, and the item 4 design that thread drew: 7. **Design approval:** the review page for items 6, 7, 13 and 18 is approved as drawn (version 3: "Has their transport come?" is two buttons, not a drop-down). 8. **ED may record the advocate line (item 15):** ED can record "Mental Health Advocacy Service told" on an accepted move of a detained patient before arrival. The ward sees it and can change it after arrival. It uses the one existing advocacy record. 9. **Item 4 wording and behaviour (replaces item 3):** the patient card of a patient under 18 on a ward that is not a youth ward shows "Under 18 on an adult ward. Check the Mental Health Act 2014 requirements for a child on an adult ward, including notifying the Chief Psychiatrist." It shows automatically from the date of birth and the ward type. It has one optional typed field, "Chief Psychiatrist notified at", never pre-filled (D-93). Once a time is entered it stays visible but goes quiet. It goes away at 18 or on a move to a youth ward. It never blocks a bed offer and never pre-selects anything. It quotes no section number or time limit, because neither has been verified. It stays in the held PR.
+- **Addendum, 11 November 2026, about 10:19 AM AWST (02:19 UTC):** Josh wrote "Go ahead with all recommendations now for me" in the project thread "Perfect the ranked feature list", and the same words two minutes later in this batch's thread "Build ward arrival and bed features". They answer this batch's two open cards with their recommended options, and the item 4 design that thread drew:
+
+  7. **Design approval:** the review page for items 6, 7, 13 and 18 is approved as drawn (version 3: "Has their transport come?" is two buttons, not a drop-down).
+  8. **ED may record the advocate line (item 15):** ED can record "Mental Health Advocacy Service told" on an accepted move of a detained patient before arrival. The ward sees it and can change it after arrival. It uses the one existing advocacy record.
+  9. **Item 4 wording and behaviour (replaces item 3):** the patient card of a patient under 18 on a ward that is not a youth ward shows "Under 18 on an adult ward. Check the Mental Health Act 2014 requirements for a child on an adult ward, including notifying the Chief Psychiatrist." It shows automatically from the date of birth and the ward type. It has one optional typed field, "Chief Psychiatrist notified at", never pre-filled (D-93). Once a time is entered it stays visible but goes quiet. It goes away at 18 or on a move to a youth ward. It never blocks a bed offer and never pre-selects anything. It quotes no section number or time limit, because neither has been verified. It stays in the held PR.
+
 - **Boundary:** synthetic data only. Information and prompts only: nothing ranks or recommends a ward or bed (D-71), and no clinical value changes. Approves no merge or release.

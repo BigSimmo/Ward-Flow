@@ -7,7 +7,10 @@ import {
   CardHead,
   CountBubble,
   Icon,
+  isNotUpdating,
+  notUpdatingWords,
   StatusGlyph,
+  useLiveFreshness,
   useModalFocus,
   type WfTone,
 } from "@/components/wf";
@@ -30,6 +33,7 @@ import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-mornin
 
 import styles from "./ward-daily-sheet.module.css";
 import { WardShiftSummaryCard } from "./ward-shift-summary-card";
+import { LocalSettingsNote } from "@/components/ward-management/shell/local-settings-note";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /**
@@ -185,6 +189,11 @@ export function asAtStamp(now: Instant, dayZero?: Date): { time: string | null; 
         ? "synthetic figures — not a record of any real day"
         : `day ${day} of this demonstration — synthetic figures, not a record of any real day`,
   };
+}
+
+/** Master audit M7 (D-129): the stamp's line while the shared reads are frozen. */
+function staleStampWords(since: number | undefined): string {
+  return `${notUpdatingWords(since)}. Figures may be out of date.`;
 }
 
 const TNUM = { fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' } as const;
@@ -477,6 +486,9 @@ export function WardDailySheet({
   const incomingTotal = resolvedIncomingPulled + resolvedIncomingWaitlisted;
 
   const resolvedTimestamp = shiftTimestamp ?? (now !== undefined ? asAtStamp(now, liveFlow?.dayZero).time : null);
+  // Master audit M7 (D-129): the standalone sheet's stamp says so too while reads are frozen.
+  const freshness = useLiveFreshness(!isEmbedded);
+  const staleLine = !isEmbedded && isNotUpdating(freshness) ? staleStampWords(freshness.since) : null;
 
   return (
     <section
@@ -493,6 +505,11 @@ export function WardDailySheet({
       {resolvedTimestamp && !isEmbedded ? (
         <p className={styles.stamp} data-testid="ward-daily-sheet-shift-timestamp" style={TNUM}>
           Shift timestamp: <span style={TNUM}>{resolvedTimestamp}</span>
+        </p>
+      ) : null}
+      {staleLine ? (
+        <p className={styles.stamp} data-testid="ward-daily-sheet-not-updating" style={TNUM}>
+          <strong>{staleLine}</strong>
         </p>
       ) : null}
 
@@ -764,10 +781,18 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
   const wardName = sheetProps.unit?.name ?? null;
   const title = wardName === null ? "Shift brief" : `${wardName} shift brief`;
   const stamp = sheetProps.now !== undefined ? asAtStamp(sheetProps.now, flow?.dayZero) : null;
+  // Master audit M7 (D-129): while the shared reads are frozen, the printed brief says since when.
+  const freshness = useLiveFreshness();
+  const staleLine = isNotUpdating(freshness) ? staleStampWords(freshness.since) : null;
   const stampLine =
     stamp === null || stamp.time === null
       ? null
-      : [`As at ${stamp.time}`, stamp.dayNote, sheetProps.shiftTimestamp ?? null].filter(Boolean).join(" · ");
+      : [
+          [`As at ${stamp.time}`, stamp.dayNote, sheetProps.shiftTimestamp ?? null].filter(Boolean).join(" · "),
+          staleLine,
+        ]
+          .filter(Boolean)
+          .join("\n");
   // One short line on screen; the full stamp is its tooltip, and the copied brief keeps it word for word.
   const shortStamp = stamp === null || stamp.time === null ? null : `As at ${stamp.time} · synthetic figures`;
 
@@ -844,6 +869,13 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
                 {shortStamp}
               </span>
             ) : null}
+            {staleLine ? (
+              <strong className={styles.dialogStamp} data-testid="ward-daily-sheet-not-updating" style={TNUM}>
+                {staleLine}
+              </strong>
+            ) : null}
+            {/* M123: printing the brief hides the shell's footer, so its head carries the line. */}
+            <LocalSettingsNote as="span" className={styles.dialogStamp} testId="ward-daily-sheet-local-settings" />
           </div>
           <div className={styles.dialogActions}>
             {canCopy ? (

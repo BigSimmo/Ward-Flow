@@ -115,6 +115,8 @@ export const UNDO_STEP_ACTIONS = {
     "CANCEL_TRANSPORT",
     "WITHDRAW_WARD_REQUEST",
     "CANCEL_PLANNED_ADMISSION",
+    // M37 (D-129, 10 Nov 2026): a discharge signed off from Ward Decisions, filed against its bed release.
+    "CONFIRM_BED_RELEASE",
   ],
   UNDO_PATIENT_RECORD: ["RECORD_COMMUNITY_TREATMENT_ORDER", "END_COMMUNITY_TREATMENT_ORDER", "ARCHIVE_PATIENT"],
 } as const;
@@ -150,6 +152,7 @@ export function undoStepSubjectId(event: object): string {
     leaveBedId?: unknown;
     bedNumber?: unknown;
     plannedAdmissionId?: unknown;
+    releaseId?: unknown;
   };
   // Tier 1 item 6 (4 Nov 2026): these steps are filed against the bed, leave record or booking they
   // change, so each one's Undo takes back only its own subject. Patient record steps are filed in
@@ -160,6 +163,12 @@ export function undoStepSubjectId(event: object): string {
     if (typeof fields.unitId === "string" && typeof fields.bedNumber === "number")
       return `bed:${fields.unitId}:${fields.bedNumber}`;
   }
+  if (
+    (type === "CONFIRM_BED_RELEASE" || type === "UNDO_RELEASE_STEP") &&
+    typeof fields.releaseId === "string" &&
+    fields.releaseId.length > 0
+  )
+    return `release:${fields.releaseId}`;
   if (
     (type === "CANCEL_PLANNED_ADMISSION" || type === "UNDO_RELEASE_STEP") &&
     typeof fields.plannedAdmissionId === "string" &&

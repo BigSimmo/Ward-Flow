@@ -30,13 +30,13 @@ import { bindReferralDraftAccessContext, clearReferralDraftSession } from "./ref
 import type { BoundWardPartialView, WardPartialView } from "./ward-partial-view-contract";
 import { boardNotRefreshed, saveProblem } from "./ward-save-failure";
 import {
-  ARCHIVED_COLLECTIONS,
   foldArchiveReply,
+  withArchivedRecords,
   type ArchivedCollection,
   type HeldArchive,
 } from "./ward-shared-archive-delta";
 import { reuseUnchangedPayload } from "./ward-shared-client-reuse";
-import type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
+import type { SharedRecordAccess, SharedRecordView } from "./ward-shared-record-access-types";
 import { RecordDetailHold } from "./ward-shared-record-detail";
 import {
   bindWorkspaceReply,
@@ -51,7 +51,7 @@ export type { ExecutiveAggregateSnapshot, SharedWorkspaceSnapshot } from "./ward
 import * as conflict from "./ward-conflict-scope";
 import * as push from "./ward-shared-push-api";
 import type { SharedAsk } from "./ward-shared-push-api";
-export type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
+export type { SharedBreakGlassOpening, SharedCoverGiven, SharedRecordView } from "./ward-shared-record-access-types";
 import type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
 import {
   markOwnSave,
@@ -62,24 +62,13 @@ import {
   type SheetSeen,
 } from "./ward-shared-pending-command";
 export type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
-
-// Lazy schema keeps the phone budget; adopt refuses snapshots until validation has loaded.
-let isValidSharedState: ((value: unknown) => boolean) | undefined;
-let bindSharedPartialView: typeof import("./ward-partial-view-contract").bindWardPartialView | undefined;
-let mergeSharedPartialView: typeof import("./ward-partial-view-contract").mergeArchivedWardPartialView | undefined;
-function loadSharedStateCheck(): Promise<void> {
-  if (isValidSharedState && bindSharedPartialView && mergeSharedPartialView) return Promise.resolve();
-  // A shared world may be a demonstration scenario, whose wards its check and screens read.
-  return Promise.all([
-    import("./ward-shared-state-validation"),
-    import("./ward-partial-view-contract"),
-    import("./ward-scenario-networks"),
-  ]).then(([state, partialView]) => {
-    isValidSharedState = state.isValidSharedWardFlowState;
-    bindSharedPartialView = partialView.bindWardPartialView;
-    mergeSharedPartialView = partialView.mergeArchivedWardPartialView;
-  });
-}
+import {
+  bindSharedPartialView,
+  isValidSharedState,
+  loadSharedStateCheck,
+  mergeSharedPartialView,
+} from "./ward-shared-state-check";
+import { SharedPacing } from "./ward-shared-pacing";
 
 import type { SharedSnapshot, SharedView, SharedChangeResult, WardCommandOutcome } from "./ward-shared-client-types";
 import { SharedIntentKeys } from "./shared-intent-keys";
@@ -287,6 +276,8 @@ export class SharedWorkspaceClient {
   private workingAsOverride: string | null | undefined;
   /** The revision this tab's own accepted revision-only commands reached, ahead of its snapshot. */
   private headRevision = 0;
+  /** Drill 4: the server's restore marker last read; undefined before the first read. */
+  private restoreMarker: string | null | undefined;
   /** CS-19: popup opening revisions let the server refuse stale edits after another desk changed the record. */
   private sheetSeen = new WeakMap<object, SheetSeen>();
   /** The popups the command in flight was asked for from, while it is in flight. */
@@ -297,10 +288,9 @@ export class SharedWorkspaceClient {
   /** When this desk last read the whole workspace (its own part of it), for `FULL_READ_EVERY_MS`. */
   private fullReadAt = 0;
   private readonly lifetime = new AbortController();
-  /** Back online: read the board, which sends any held saves (`offlineHold`). */
-  private readonly watchOnline = globalThis.window?.addEventListener("online", () => void this.refresh(), {
-    signal: this.lifetime.signal,
-  });
+  private readonly pacing = new SharedPacing(() => (this.options.random ?? Math.random)());
+  /** Back online: read the board, which sends any held saves (`offlineHold`), spread across desks. */
+  private readonly watchOnline = this.pacing.onOnline(() => void this.refresh(), this.lifetime.signal);
   /** Refused, or waiting on the person: no polling or saving until they act. */
   private gated() {
     return ["not-authorised", "choose-role", "no-role"].includes(this.view.status);
@@ -333,6 +323,7 @@ export class SharedWorkspaceClient {
       workingAs?: { get: () => string | null; set: (id: string | null) => void };
       /** Actual current Auth identity; required before an executive report may be adopted. */
       authenticatedActorId?: () => string | null;
+      random?: () => number; // In [0, 1), for spreading reads (ward-shared-pacing.ts); tests fix it.
     },
   ) {}
   private held() {
@@ -384,18 +375,7 @@ export class SharedWorkspaceClient {
     payload: SharedSnapshot["payload"],
     accessContext: SharedSnapshot["accessContext"],
   ): SharedSnapshot["payload"] {
-    payload = this.recordDetail.apply(payload, accessContext);
-    const archive = this.archive;
-    if (!archive || archive.generation !== payload.state.worldGeneration || archive.accessContext !== accessContext)
-      return payload;
-    const state = { ...payload.state } as Record<string, unknown>;
-    for (const collection of ARCHIVED_COLLECTIONS) {
-      const live = payload.state[collection] as { id: string }[];
-      if (!archive.records[collection].length) continue;
-      const ids = new Set(live.map((record) => record.id));
-      state[collection] = [...archive.records[collection].filter((record) => !ids.has(record.id)), ...live];
-    }
-    return { ...payload, state: state as WardFlowState };
+    return withArchivedRecords(this.recordDetail.apply(payload, accessContext), this.archive, accessContext);
   }
   /** The live display with the archive's progress beside it, for the same access view and world
    * generation only. Archived progress that is missing or invalid is simply left out. */
@@ -459,9 +439,8 @@ export class SharedWorkspaceClient {
       const { held, value } = reply;
       const records: ArchivedRecords = { movements: [], referrals: [], broadcastAlerts: [] };
       for (const entry of folded.entries) records[entry.collection].push(entry.body);
-      // The sender progress for these records is trusted only as the live sibling is: bound to the
-      // reply's own revision and this desk's access view, and not older than what was held when
-      // the read was asked. A reply without a valid one still shows the records.
+      // Sender progress is trusted only if bound to this reply's revision and access view, and not
+      // older than when the read was asked; a reply without a valid one still shows the records.
       const sibling =
         value.partialView !== undefined && Number.isSafeInteger(value.revision) && value.revision >= askedAtRevision
           ? bindSharedPartialView?.(value.partialView, {
@@ -799,9 +778,8 @@ export class SharedWorkspaceClient {
     // Or it was signed out, here or on another tab: the server refuses its tokens at once.
     if (response.status === 401 && (value?.code === "session-limit" || value?.code === "signed-out"))
       throw denied(typeof value.error === "string" ? value.error : "Signed out. Sign in again to carry on.");
-    // Audit 4 A4-02: only the Ward Flow server's own refusal (JSON with its reason) ends the session.
-    // Its first 401 is asked once more with a fresh token, in case a refresh raced it; a command
-    // keeps its id, so it cannot run twice. A proxy's own 401 or 403 page is a lost connection.
+    // A4-02: only the server's own JSON refusal ends the session. A first 401 is retried once with a
+    // fresh token (a command keeps its id, so it can't run twice); a proxy's 401/403 is lost network.
     if (response.status === 401 || response.status === 403) {
       if (typeof value?.error !== "string") throw new Error("Workspace unavailable");
       if (response.status === 401 && !retried) throw FRESH_TOKEN;
@@ -859,9 +837,8 @@ export class SharedWorkspaceClient {
     try {
       const current = this.view.executiveSnapshot ?? this.view.snapshot;
       const epoch = this.roleEpoch;
-      // The poll names the revision it holds; an unchanged workspace answers with its clock only.
-      // A desk's access context lets the server say "not modified" to a member desk too (audit
-      // F-04). It is left out once a minute, so time-limited records drop off on a full read.
+      // The poll names its revision; unchanged answers clock only. The access context lets members get
+      // "not modified" too (F-04); left out once a minute so time-limited records drop off.
       const context =
         current?.accessContext && Date.now() - this.fullReadAt < FULL_READ_EVERY_MS
           ? `&context=${current.accessContext}`
@@ -875,6 +852,10 @@ export class SharedWorkspaceClient {
       if (!response.ok) throw new Error("Workspace unavailable");
       const workspaceId =
         typeof value.workspaceId === "string" && value.workspaceId.trim() ? value.workspaceId : undefined;
+      // Drill 4: a new restore marker (a database restore): read the board whole; waiting saves get a 409.
+      const restoreMarker = typeof value.restoreMarker === "string" ? value.restoreMarker : null;
+      const restored = this.restoreMarker !== undefined && restoreMarker !== this.restoreMarker;
+      this.restoreMarker = restoreMarker;
       if (this.view.snapshot && workspaceId !== this.view.workspaceId) {
         // The endpoint may have been rebound to another workspace at the same revision. Retire
         // its commands, openings and receipt before asking for that workspace's full board.
@@ -889,6 +870,11 @@ export class SharedWorkspaceClient {
           error: null,
         });
         return;
+      }
+      if (restored && (this.view.snapshot || this.view.executiveSnapshot)) {
+        pinToBoard(this.queue, this.sheetSeen, this.held(), false);
+        [this.headRevision, this.needsRefresh] = [0, true];
+        return this.publish({ snapshot: null, workspaceId, status: "loading", error: null });
       }
       const bound = await bindWorkspaceReply(
         {
@@ -929,7 +915,7 @@ export class SharedWorkspaceClient {
         /* Storage unavailable. */
       }
       this.publish({
-        ...(this.pending
+        ...(this.pending && !this.pacing.limited // M53: in a 429's wait the save sends itself; stay ready.
           ? {
               status: "unavailable" as const,
               boardCurrent: true,
@@ -1040,7 +1026,7 @@ export class SharedWorkspaceClient {
     return completion;
   }
   private async drain() {
-    if (this.busy || this.disposed) return;
+    if (this.busy || this.disposed || this.pacing.limited) return;
     this.busy = true;
     const generation = this.viewGeneration;
     let refusal: string | null = null; // Audit M10: kept on the board (see `joinNotes`).
@@ -1076,6 +1062,19 @@ export class SharedWorkspaceClient {
         // An ended role is this command's own definitive answer, though it also bumps the generation.
         if (generation !== this.viewGeneration && value?.code !== "role-ended") return;
         if (response.status >= 500) throw new Error("Save not confirmed");
+        if (response.status === 429) {
+          // M53: refused before any work, so every save is kept and sent again after Retry-After.
+          this.sentCommandId = null;
+          this.pacing.holdFor(
+            response,
+            () => void this.drain(),
+            () => this.busy,
+          );
+          for (const kept of [...(this.pending ? [this.pending] : []), ...this.queue])
+            this.settle(kept.commandId, "failed", saveProblem("busy"));
+          this.publish({ status: "ready", error: saveProblem("busy") });
+          break;
+        }
         if (value.responseBindingChanged) {
           this.sentCommandId = null;
           this.clearRecovery(command.commandId);
@@ -1122,9 +1121,8 @@ export class SharedWorkspaceClient {
             }
           }
         } else if (response.ok && Number.isSafeInteger(value.commandRevision)) {
-          // A command sent against an older revision can land on top of other desks' saves. This
-          // tab has not seen those, so it moves its base on only when nothing came in between;
-          // otherwise the server keeps checking later commands against what this tab last saw.
+          // A command on an older revision can land on saves this tab hasn't seen, so its base moves
+          // on only when nothing came in between; else later commands check against what it saw.
           if (value.commandRevision === command.expectedRevision + 1)
             this.headRevision = Math.max(this.headRevision, value.commandRevision);
           else this.needsRefresh = true;
@@ -1197,8 +1195,8 @@ export class SharedWorkspaceClient {
                       : response.status === 422 && typeof value?.error === "string" && value.error.trim()
                         ? // Audit F-08: the workflow's own reason, as the local board shows it.
                           `${sentence(value.error)} Nothing was changed.`
-                        : response.status === 429
-                          ? saveProblem("busy")
+                        : response.status === 413 && value?.code === "workspace-full"
+                          ? saveProblem("boardFull")
                           : saveProblem("refused"),
           });
           this.settle(command.commandId, "refused", this.view.error ?? "The action was not applied.");
@@ -1266,13 +1264,14 @@ export class SharedWorkspaceClient {
       return false; // Logged on the next opening; the page itself is unaffected.
     }
   }
-  /** D-80 item 14: the record views of the last 7 days and the break glass openings, for a coordinator. */
-  async readRecordAccess(): Promise<{ views: SharedRecordView[]; openings: SharedBreakGlassOpening[] }> {
+  /** D-80 item 14: the last 7 days' record views, break glass openings and covers given (M58). */
+  async readRecordAccess(): Promise<SharedRecordAccess> {
     const { response, value } = await this.request("/v1/workspace/record-access");
     if (!response.ok) throw new Error("Record access could not be read");
     return {
       views: Array.isArray(value?.views) ? value.views : [],
       openings: Array.isArray(value?.openings) ? value.openings : [],
+      covers: Array.isArray(value?.covers) ? value.covers : [],
     };
   }
   /**
@@ -1410,7 +1409,7 @@ export class SharedWorkspaceClient {
   revokeAccess(membershipId: string) {
     return this.change("/v1/workspace/access/revoke", { membershipId });
   }
-  giveCover(input: { actorId: string; scope: unknown; minutes: number }) {
+  giveCover(input: { actorId: string; scope: unknown; minutes: number; reason: string }) {
     return this.change("/v1/workspace/access/cover", input, true);
   }
   decideRequest(requestId: string, decision: "approved" | "declined", expiresInMinutes: number) {
@@ -1492,6 +1491,7 @@ export class SharedWorkspaceClient {
     // Detached sign-out cleanup belongs to the outgoing account, never the replacement desk.
     if (this.options.manageDrafts !== false) forgetDowntimePack();
     clearTimeout(this.accessTimer);
+    this.pacing.stop();
     this.syncUnloadWarning();
     this.lifetime.abort();
     this.cancelAll(saveProblem("connectionClosed"));

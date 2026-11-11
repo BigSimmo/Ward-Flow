@@ -2329,6 +2329,7 @@ export function undoOf(
     unitId?: string;
     bedNumber?: number;
     plannedAdmissionId?: string;
+    releaseId?: string;
     patientId?: string;
   };
   const actingUnitId =
@@ -2351,6 +2352,8 @@ export function undoOf(
     ...(undoType === "UNDO_RELEASE_STEP" && fields.plannedAdmissionId !== undefined
       ? { plannedAdmissionId: fields.plannedAdmissionId }
       : {}),
+    // M37 (D-129): a discharge sign-off's Undo names its bed release.
+    ...(undoType === "UNDO_RELEASE_STEP" && fields.releaseId !== undefined ? { releaseId: fields.releaseId } : {}),
     ...(undoType === "UNDO_PATIENT_RECORD" ? { patientId: fields.patientId } : {}),
     ...(event.type === "COMPLETE_BED_MEETING_ACTION" || event.type === "RECORD_BED_MEETING_ACTION"
       ? { subject: event.subject, action: event.action }

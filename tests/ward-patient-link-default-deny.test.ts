@@ -221,6 +221,13 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
       "screen.",
   },
   {
+    file: "ward-hard-cases-demo.ts",
+    reason:
+      "Audit M134 synthetic hard-case overlay (Josh as Ward Lead, 10 Nov 2026, D-131): tests and " +
+      "demos opt into it; it joins seeded admissions and arrivals to their synthetic person to build " +
+      "the hard cases. Consumes it for no screen.",
+  },
+  {
     file: "ward-movements.ts",
     reason:
       "D-14 seed authoring: builds generatedMovementPatients from each generated movement's own " +
@@ -511,7 +518,8 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 49 → 51 on 2026-10-24: Josh as Ward Lead allowed two synthetic seed builders (PR #657).
     // 51 → 52 on 2026-10-26: F-17 moved the seeded referrals out of ward-movements.ts unchanged. No new reader.
     // 53 → 58 on 2026-11-07: Josh as Ward Lead allowed the five triage and risk files (PR #1500).
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(58);
+    // 58 → 59 on 2026-11-10: Josh as Ward Lead allowed the M134 hard-case seed overlay (PR #1598, D-131).
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(59);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);
