@@ -682,7 +682,8 @@ jobs:
   release-gate:
     name: Ward Flow release gate ${{ matrix.pair }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    # 25 -> 35 (11 Nov 2026): with about ten PRs at once, passing phone runs were cut off at 25 min.
+    timeout-minutes: 35
     # Desktop Chromium and phone WebKit each split the release gate into three parts (journeys,
     # referrals, checks) that partition the release-gate files without overlap
     # (scripts/ward-flow/browser-run-contract.mjs). The six suites run as two jobs of three, one
