@@ -9,6 +9,7 @@ import { gunzipSync } from "node:zlib";
 import * as engine from "./dist/engine.mjs";
 import { LATEST_MIGRATION } from "./migrations.mjs";
 import { createWorkspaceStore, storedAuditChanges } from "./postgres.mjs";
+import { throughSteps } from "./writable-with.test-support.mjs";
 import { jsonByteLength, jsonbTextByteLength, planSave } from "./records.mjs";
 import { withoutRecordDetail } from "./record-detail.mjs";
 import { LruCache, gzipSegments, jsonResponse, registerPart, replySegments, segmentBytes } from "./reply-cache.mjs";
@@ -134,7 +135,8 @@ function memoryDatabase(world) {
     if (/^INSERT INTO ward_flow\.commands/.test(sql)) return { rows: [], rowCount: 1 };
     assert.fail(`Unexpected query: ${sql.slice(0, 90)}`);
   }
-  return { db, pool: { query, connect: async () => ({ query, release() {} }) } };
+  const split = throughSteps(query);
+  return { db, pool: { query: split, connect: async () => ({ query: split, release() {} }) } };
 }
 
 function storeFor(world, options = {}) {
@@ -1125,4 +1127,99 @@ test("PS-15: a Railway replica says once at startup that caches are per process"
     true,
   );
   assert.deepEqual(lines, [{ event: "ward_backend_process_cache_notice", caches: "per_process", expectedReplicas: 1 }]);
+});
+
+/** A store over the in-memory database that also records each statement it sends, unsplit. */
+function recordingStore(world, options = {}) {
+  const { db, pool } = memoryDatabase(world);
+  const sent = /** @type {string[]} */ ([]);
+  const fail = options.fail ?? (() => false);
+  const send = async (sql, values) => {
+    sent.push(sql);
+    if (fail(sql)) throw Object.assign(new Error("synthetic failure"), { code: "XX000" });
+    return pool.query(sql, values);
+  };
+  const logs = /** @type {any[]} */ ([]);
+  const store = createWorkspaceStore(
+    { query: send, connect: async () => ({ query: send, release() {} }) },
+    {
+      workspaceId,
+      engine,
+      clock: () => new Date(start),
+      log: (entry) => logs.push(entry),
+      alert: () => {},
+      demoEvents: true,
+      ...(options.push ? { push: options.push } : {}),
+    },
+  );
+  return { db, store, sent, logs };
+}
+
+test("a save sends its workspace and record writes as one statement, and its audit row with its receipt as another", async () => {
+  const world = engine.seedWorld(start);
+  const { db, store, sent } = recordingStore(world);
+  await store.read(actorId);
+  sent.length = 0;
+  const auditsBefore = db.audits.length;
+  const reply = await store.command(actorId, crypto.randomUUID(), db.revision, refresh(world.state.units[0].id), {
+    revisionOnly: true,
+  });
+  assert.equal(reply.status, 200);
+  const inside = sent.slice(sent.indexOf("BEGIN"), sent.indexOf("COMMIT") + 1);
+  const writes = inside.filter((sql) =>
+    /UPDATE ward_flow\.workspaces|INSERT INTO ward_flow\.workspace_records/.test(sql),
+  );
+  assert.equal(writes.length, 1, "the workspace row and its changed records are one round trip");
+  assert.match(
+    writes[0],
+    /^WITH step0 AS \(UPDATE ward_flow\.workspaces .*\) INSERT INTO ward_flow\.workspace_records/,
+  );
+  const receipts = inside.filter((sql) => /INSERT INTO ward_flow\.(audit|commands)/.test(sql));
+  assert.equal(receipts.length, 1, "the audit row and the receipt are one round trip, so neither commits alone");
+  assert.match(receipts[0], /^WITH audited AS \(INSERT INTO ward_flow\.audit\(.*\) INSERT INTO ward_flow\.commands\(/);
+  assert.equal(db.audits.length, auditsBefore + 1);
+  assert.equal(db.audits.at(-1).action, "REQUEST_CAPACITY_REFRESH");
+  // BEGIN, the workspace lock, the receipt lookup, the save, the audit with receipt, COMMIT.
+  assert.equal(inside.length, 6, inside.map((sql) => sql.slice(0, 40)).join("\n"));
+});
+
+test("a failed audit row or receipt fails the whole save: the transaction rolls back and never commits", async () => {
+  const world = engine.seedWorld(start);
+  const { db, store, sent } = recordingStore(world, {
+    fail: (sql) => sql.includes("INSERT INTO ward_flow.commands"),
+  });
+  await store.read(actorId);
+  sent.length = 0;
+  await assert.rejects(
+    store.command(actorId, crypto.randomUUID(), db.revision, refresh(world.state.units[0].id)),
+    /synthetic failure/,
+  );
+  assert.equal(sent.includes("COMMIT"), false);
+  assert.equal(sent.at(-1), "ROLLBACK");
+});
+
+test("a failed phone push check rolls back to its savepoint and the save still commits with its audit row", async () => {
+  const world = engine.seedWorld(start);
+  const { db, store, sent, logs } = recordingStore(world, {
+    push: { coordinatorIds: [actorId], maxPerAccount: 5, send: async () => ({}), payload: () => ({}) },
+    fail: (sql) => sql.includes("ward_flow.push_baselines"),
+  });
+  await store.read(actorId);
+  sent.length = 0;
+  const auditsBefore = db.audits.length;
+  const reply = await store.command(actorId, crypto.randomUUID(), db.revision, refresh(world.state.units[0].id), {
+    revisionOnly: true,
+  });
+  assert.equal(reply.status, 200);
+  const savepoint = sent.indexOf("SAVEPOINT push_evaluation");
+  assert.ok(savepoint > 0);
+  assert.equal(sent[savepoint + 2], "ROLLBACK TO SAVEPOINT push_evaluation");
+  assert.equal(sent.includes("RELEASE SAVEPOINT push_evaluation"), false, "COMMIT releases the savepoint");
+  assert.ok(sent.indexOf("COMMIT") > savepoint);
+  assert.ok(
+    sent.findIndex((sql) => sql.includes("INSERT INTO ward_flow.commands")) > savepoint,
+    "the receipt is written after the push check, inside the same transaction",
+  );
+  assert.equal(db.audits.length, auditsBefore + 1);
+  assert.equal(logs.filter((entry) => entry.event === "ward_backend_push_evaluation_failure").length, 1);
 });

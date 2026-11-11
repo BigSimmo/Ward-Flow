@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createWorkspaceStore, MAX_DELIVERY_ATTEMPTS, singleFlight } from "./postgres.mjs";
+import { throughSteps } from "./writable-with.test-support.mjs";
 import { LATEST_MIGRATION } from "./migrations.mjs";
 
 test("sweeps retire an interrupted final push claim only after its lease, without sending again (mock pool)", async () => {
@@ -69,7 +70,7 @@ test("command receipts retain their opaque completion across revision-only repli
   const row = { data_mode: "prototype", revision: 1, payload: { state: { secretUndoSnapshots: true } } };
   let receipt;
   let applications = 0;
-  const query = async (sql, values = []) => {
+  const query = throughSteps(async (sql, values = []) => {
     if (sql.includes("FROM ward_flow.workspaces")) return { rows: [structuredClone(row)], rowCount: 1 };
     if (sql.startsWith("SELECT fingerprint")) return { rows: receipt ? [receipt] : [], rowCount: receipt ? 1 : 0 };
     if (sql.startsWith("UPDATE ward_flow.workspaces")) {
@@ -79,7 +80,7 @@ test("command receipts retain their opaque completion across revision-only repli
       receipt = { fingerprint: values[3], status: values[4], result: structuredClone(values[5]) };
     else assert.ok(["BEGIN", "COMMIT"].includes(sql) || sql.startsWith("INSERT INTO ward_flow.audit"), sql);
     return { rows: [], rowCount: 0 };
-  };
+  });
   const store = createWorkspaceStore(
     { query, connect: async () => ({ query, release() {} }) },
     {
