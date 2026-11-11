@@ -402,6 +402,9 @@ export function reduceTransportEvent(
             `transport for movement ${movement.id} was already delivered; the receiving ward confirms arrival`,
           );
         }
+        // M35 (Josh, 10 Nov 2026): every arrival step leaves an audit row, as the other events do.
+        decision.outcome = "accepted";
+        decision.reasonCode = "none";
         return replaceMovement(state, movement.id, {
           ...movement,
           transport: movement.transport && { ...movement.transport, arrivedAt: event.now },
@@ -643,6 +646,8 @@ export function reduceTransportEvent(
           });
         }
       }
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
       return replaceMovement(withPerson, movement.id, updatedMovement);
     }
 

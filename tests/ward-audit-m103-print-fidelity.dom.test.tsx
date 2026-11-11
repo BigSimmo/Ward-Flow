@@ -19,6 +19,7 @@ import { ReferralLetterPreview } from "@/components/ward-management/referrals/wa
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
+import { resolveSubjectPatient, sheetPatientLabel } from "@/components/ward-management/ward-patient-resolver";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -54,6 +55,8 @@ function Letter() {
 }
 
 function meetingSheet() {
+  const seed = seedWardFlowState();
+  const lookup = { patients: seed.patients, referrals: seed.referrals, movements: seed.movements };
   return bedMeetingSheet({
     units: allUnits(),
     movements: wardMovements,
@@ -63,7 +66,8 @@ function meetingSheet() {
     now: NOW_ANCHOR,
     thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     service: null,
-    nameOf: (movement: { id: string }) => `Person ${movement.id}`,
+    // Built the way the screens build it (D-130): initials and UMRN.
+    nameOf: (movement) => sheetPatientLabel(resolveSubjectPatient(movement, lookup)),
   });
 }
 
@@ -121,19 +125,17 @@ describe("M103 rendered sheets: second identifier beside a name", () => {
     expect(text(container)).toMatch(UMRN);
   });
 
-  // REAL GAP (found by this render, not by the static read): the call sheet names people and prints
-  // no UMRN beside any of them, which D-113 asks for on a printed sheet that carries a name.
-  it.fails("the call sheet shows a UMRN beside each name (DEFECT: it shows none)", () => {
+  // Fixed 10 Nov 2026 (D-130): the call sheet prints initials and UMRN, as D-113 asks.
+  it("the call sheet shows a UMRN beside each name", () => {
     const { container } = render(inProvider(<CallSheet />));
     expect(text(container)).toMatch(UMRN);
   });
 
-  // REAL GAP: the bed meeting sheet's rows carry a name from `nameOf` and no UMRN.
-  it.fails("the bed meeting sheet shows a UMRN beside each name (DEFECT: it shows none)", () => {
+  // Fixed 10 Nov 2026 (D-130): the screens pass initials and UMRN as each row's name.
+  it("the bed meeting sheet shows a UMRN beside each name", () => {
     const { baseElement } = render(
       inProvider(<BedMeetingSheetDialog open onClose={() => {}} sheet={meetingSheet()} now={NOW_ANCHOR} />),
     );
-    expect(text(baseElement)).toContain("Person WF-");
     expect(text(baseElement)).toMatch(UMRN);
   });
 });

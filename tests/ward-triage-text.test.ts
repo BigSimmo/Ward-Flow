@@ -124,7 +124,8 @@ describe("headings", () => {
 });
 
 describe("reviewed time", () => {
-  const now = new Date(2026, 10, 6, 12, 0).getTime();
+  // 12:00 Perth (AWST, UTC+8) on 6 Nov 2026: the reviewed time is read on the Perth clock (M18).
+  const now = Date.UTC(2026, 10, 6, 4, 0);
 
   it("accepts DD/MM/YYYY HH:MM in the past", () => {
     expect(checkReviewTime("06/11/2026 09:42", now)).toEqual({ ok: true, message: "", future: false });
@@ -145,7 +146,7 @@ describe("reviewed time", () => {
   });
 
   it("stamps Now with the full date", () => {
-    expect(reviewTimeStamp(new Date(2026, 10, 6, 9, 5))).toBe("06/11/2026 09:05");
+    expect(reviewTimeStamp(new Date(Date.UTC(2026, 10, 6, 1, 5)))).toBe("06/11/2026 09:05");
   });
 });
 

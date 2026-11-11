@@ -1,6 +1,6 @@
 // M120 (master audit list, 10 Nov 2026): forecasts stay honest. A fixed synthetic history checks the
 // track-record arithmetic by hand; a read-through of every forecast surface finds no "will get"
-// wording; D-108's "Not a prediction" stays on Home's tomorrow line. Gaps found are todos for Josh.
+// wording; D-108's "Not a prediction" stays on Home's tomorrow line. The method-line gaps it found are fixed (D-125).
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -75,9 +75,29 @@ describe("M120 forecast wording read-through", () => {
   it("D-108: Home's tomorrow line still says Not a prediction", () => {
     expect(read("src/components/ward-management/coordinator/planned-list.tsx")).toContain("Not a prediction.");
   });
-  it.todo(
-    "DEFECT M120 (Josh): the ED 'May pass' card states no method or limits, and lists named people with UMRN, time left and a Find a bed button (ed-access-risk-card.tsx)",
-  );
-  it.todo("DEFECT M120 (Josh): the bed meeting TV 'Tomorrow' column and brief state no method or limits");
-  it.todo("DEFECT M120 (Josh): forecast alerts ('May pass the ED access target') state no method or limits");
+  // Fixed (Josh approved, D-125, 10 Nov 2026). The rendered checks are in
+  // tests/ward-audit-m120-forecast-card.dom.test.tsx; these pin the source so a copy cannot drift.
+  const METHOD = "From recorded waits and releases. Not a prediction.";
+  it("M120 fixed: one method line, in plain words", () => {
+    expect(read("src/components/ward-management/ward-forecast-method.ts")).toContain(`"${METHOD}"`);
+  });
+  it("M120 fixed: the ED 'May pass' card names nobody, has no Find a bed button and carries the method line", () => {
+    // Code only: the header comment explains what was taken out.
+    const card = read("src/components/ward-management/forecast/ed-access-risk-card.tsx").replace(/^\s*\/\/.*$/gm, "");
+    expect(card).not.toMatch(/usePatientOf|formalName|umrn|Find a bed|movementHref/);
+    expect(card).toContain("{FORECAST_METHOD_LINE}");
+  });
+  it("M120 fixed: the bed meeting TV Tomorrow column and brief carry the method line", () => {
+    expect(read("src/components/ward-management/bed-meeting/bed-meeting-tv.tsx")).toMatch(
+      /bed-meeting-tv-tomorrow-method[^>]*>\s*Tomorrow: \{FORECAST_METHOD_LINE\}/,
+    );
+    expect(read("src/components/ward-management/forecast/forecast-brief-panel.tsx")).toContain(
+      "{FORECAST_METHOD_LINE}",
+    );
+  });
+  it("M120 fixed: forecast alerts ('May pass the ED access target') carry the method line", () => {
+    expect(read("src/components/ward-management/forecast/forecast-alerts-group.tsx")).toContain(
+      "{FORECAST_METHOD_LINE}",
+    );
+  });
 });
