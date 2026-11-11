@@ -4,6 +4,21 @@ import type { WardFlowState } from "@/components/ward-management/ward-flow-reduc
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { EdWaitStep } from "@/components/ward-management/ward-ed-wait-steps";
 import type { Movement } from "@/components/ward-management/ward-model";
+import {
+  ESCALATION_CALL_OUTCOMES,
+  ESCALATION_CONTACT_ROLES,
+  type EscalationCallOutcome,
+  type EscalationCallRecord,
+  type EscalationContactRole,
+} from "./escalation-call-record";
+
+export {
+  ESCALATION_CALL_OUTCOMES,
+  ESCALATION_CONTACT_ROLES,
+  type EscalationCallOutcome,
+  type EscalationCallRecord,
+  type EscalationContactRole,
+};
 
 /**
  * Escalation: who to call and what happened (item 3, D-133, a shared record). Each ED wait step
@@ -16,15 +31,6 @@ import type { Movement } from "@/components/ward-management/ward-model";
  * 🔒 **NO TYPED TEXT.** A call holds a step, a role from the fixed list, an outcome from the fixed
  * list, a time and the desk. Never a person's name and never free text.
  */
-
-/** The on-call role each step names. Fixed: a role, never a person. */
-export const ESCALATION_CONTACT_ROLES = [
-  "service_bed_coordinator",
-  "site_bed_manager",
-  "state_bed_desk",
-  "executive_on_call",
-] as const;
-export type EscalationContactRole = (typeof ESCALATION_CONTACT_ROLES)[number];
 
 export const ESCALATION_CONTACT_ROLE_LABELS: Readonly<Record<EscalationContactRole, string>> = {
   service_bed_coordinator: "Bed coordinator",
@@ -46,10 +52,6 @@ export const ESCALATION_STEP_ROLE: Readonly<Record<EdWaitStep["step"], Escalatio
   4: "executive_on_call",
 };
 
-/** The four outcomes, in the order the buttons show. None is pre-selected. */
-export const ESCALATION_CALL_OUTCOMES = ["agreed_plan", "no_bed", "no_answer", "left_message"] as const;
-export type EscalationCallOutcome = (typeof ESCALATION_CALL_OUTCOMES)[number];
-
 export const ESCALATION_CALL_OUTCOME_LABELS: Readonly<Record<EscalationCallOutcome, string>> = {
   agreed_plan: "Agreed a plan",
   no_bed: "No bed",
@@ -70,15 +72,6 @@ function isEscalationContactRole(value: unknown): value is EscalationContactRole
 function isEscalationStep(value: unknown): value is EdWaitStep["step"] {
   return typeof value === "number" && (STEPS as readonly number[]).includes(value);
 }
-
-/** One recorded call on `Movement.escalationCalls`: the latest per step. Never a person, never typed text. */
-export type EscalationCallRecord = {
-  step: EdWaitStep["step"];
-  roleCalled: EscalationContactRole;
-  outcome: EscalationCallOutcome;
-  at: Instant;
-  by: WardFlowRole;
-};
 
 export type EscalationCallEvent = {
   type: "RECORD_ESCALATION_CALL";

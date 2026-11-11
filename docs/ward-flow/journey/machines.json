@@ -1899,7 +1899,7 @@
       {
         "path": "src/components/ward-management/ward-model.ts",
         "line": 1,
-        "sha256": "ee21eb3126d0c951d27c10bc2a4068649fde7692e84deee3d6090efca06d90f5"
+        "sha256": "d0c91106b25bacf440661635c892c800822ca25ba24e1195a0ff0294e911641a"
       },
       {
         "path": "src/components/ward-management/ward-patient-registration-reducer.ts",

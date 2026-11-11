@@ -1473,7 +1473,7 @@ Source-contract SHA256: 46563a4c2c3ea7e71012baf55e50efb4b892883bc9735daf8faa919f
   effects: Does not change the step, its hours, the queue order (D-71), beds or any patient stage
   tests: tests/ward-escalation-calls.test.ts
   tests: tests/ward-event-permissions.test.ts
-  Reviewed source: src/components/ward-management/escalation/escalation-calls.ts:100; SHA256 10bb3982d709decb0e8f735e48843ac574b63cb4e303800e55513f19f989b431
+  Reviewed source: src/components/ward-management/escalation/escalation-calls.ts:93; SHA256 7c8fbf4a2e3c85466519240e9b9193ee5c30d387e526c71039e8ba77fe4006fe
   Reviewed source: src/components/ward-management/ward-flow-review-ready-events.ts:58; SHA256 5cca0ed3af64cbb191c326720a629279f0faaaebecee685b026910c203e2668d
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2215; SHA256 f1fdbc9915f0f8108720af16786907d82fc8faa543a5624a1e5189ce47c881e6
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:568; SHA256 0abfafadccb7d195736d6b51bebca10a07896e4b0fa3785fdf5b466783d609fc
