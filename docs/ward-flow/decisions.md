@@ -156,6 +156,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-131](#d-131-hard-case-demo-data-allowed-and-the-movement-diagram-follows-the-engine-10-november-2026)                                                | Hard-case demo data allowed, and the movement diagram follows the engine               | Active                                           |
 | [D-132](#d-132-audit-fixes-group-1-docs-and-ci-guards-10-november-2026)                                                                                 | Audit fixes group 1: docs and CI guards; Claude-authored sensitive changes warn        | Active                                           |
 | [D-138](#d-138-phone-alert-urgency-by-kind-10-november-2026)                                                                                            | Phone alert urgency by kind                                                            | Active                                           |
+| [D-143](#d-143-mhert-is-mherl-in-the-glossary-smhmr-deferred-11-november-2026)                                                                          | MHERT is MHERL in the glossary; SMHMR deferred                                         | Active                                           |
 
 ---
 
@@ -1699,3 +1700,11 @@ is inferred.
 - **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, picking item 23 of the audit fix build plan (Ward Flow project thread "Fix audit app and backend issues", audit fix group 2), which counts as his yes to audit decision 20. Numbered D-138 because D-132 to D-137 belong to other threads. D-133 is claimed by open PR #1606. D-134 is claimed by open PR #1608, and D-135 is claimed by open PR #1603, and D-136 is claimed by open PR #1605, and D-137 is claimed by open PR #1607. On 11 November 2026 Josh told every thread to go ahead with its recommendations, which approved the Settings line as drawn in the design review.
 - **Decision:** act-now phone alerts stay high urgency and buzz again when replaced. Jobs and team alerts go out at normal urgency and replace their earlier alert quietly. Settings shows when this device last received an alert, from the time only (never the alert's words).
 - **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge or release.
+
+## D-143. MHERT is MHERL in the glossary; SMHMR deferred (11 November 2026)
+
+- **Date:** 11 November 2026, 10:45 AM AWST (02:45 UTC). **Decided by:** Josh, in the Ward Flow project thread "Run the remaining master list audits": "MHERL (mental health emergency response line) and defer SMHMR as I don't know what that is", answering the D-131 open item. D-139 is claimed by open PR #1600. D-140 is claimed by open PR #1606. D-141 is claimed by open PR #1606. D-142 is claimed by open PR #1603.
+- **Decision:**
+  1. **MHERT:** the term is MHERL, the Mental Health Emergency Response Line, which the glossary already lists. The MHERT glossary entry is removed, and the two synthetic community demo lines now read "MHERL / WA Police co-response".
+  2. **SMHMR:** its meaning is deferred. The existing glossary wording stays until Josh confirms it.
+- **Boundary:** wording only; no clinical behaviour change.
