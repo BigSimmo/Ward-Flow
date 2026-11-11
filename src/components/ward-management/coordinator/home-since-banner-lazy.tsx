@@ -1,13 +1,15 @@
 "use client";
 
-import { earlyHomeCard } from "./home-early-card";
+import { loadEarly } from "../load-early";
 
 /**
  * Phone budget: the "since you were last here" line brings the last-look comparison and its sheet
- * with it. It renders nothing until something is new, so it stays off Home's first load and is
- * fetched as soon as Home's code runs, so it draws in Home's first frame and never pushes My list
- * down as it arrives (home-early-card.tsx).
+ * with it, so it stays off Home's first load. It is on screen at rest (before any review it counts
+ * from the start of the shift), so it is fetched as soon as Home's code runs and Home holds its
+ * columns until it arrives (`useHomeCardsSettled`): arriving late, it pushed My list down (layout
+ * shift on Home, 11 Nov 2026).
  */
-const loadSinceBanner = () => import("./home-since-banner");
+export const sinceBanner = loadEarly(() => import("./home-since-banner").then((m) => m.HomeSinceBanner));
+export const HomeSinceBanner = sinceBanner.Card;
 
-export const HomeSinceBanner = earlyHomeCard(() => loadSinceBanner().then((m) => m.HomeSinceBanner));
+sinceBanner.start();

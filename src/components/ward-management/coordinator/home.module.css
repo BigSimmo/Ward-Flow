@@ -316,6 +316,12 @@
   min-width: 0;
 }
 
+/* Layout shift on Home (11 Nov 2026): held hidden, still taking its space, until the cards at the
+   top of each column have arrived (useHomeCardsSettled), so nothing lands on rows already shown. */
+.grid[data-cards-pending] {
+  visibility: hidden;
+}
+
 @media (min-width: 62.5625rem) {
   /* Three equal columns at one height, a little under a window tall (the shell's rail height less
      room for the hero), each scrolling inside itself, so the page itself barely scrolls. Tablet
