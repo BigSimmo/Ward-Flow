@@ -19,6 +19,7 @@ it("reserves the address budget before admitting asynchronous code comparisons",
   vi.stubEnv("WARD_FRONT_DOOR", "required");
   vi.stubEnv("WARD_PASS_SECRET", "synthetic-audit-reservation-secret-0123456789"); // gitleaks:allow
   vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
+  vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "*");
   const finish: Array<() => void> = [];
   vi.mocked(demoCodeMatches).mockImplementation(
     () => new Promise<boolean>((resolve) => finish.push(() => resolve(false))),
@@ -63,6 +64,7 @@ it("does not exhaust the wrong-code budget with successful presenter sign-ins", 
   vi.stubEnv("WARD_FRONT_DOOR", "required");
   vi.stubEnv("WARD_PASS_SECRET", "synthetic-audit-reservation-secret-0123456789"); // gitleaks:allow
   vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
+  vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "*");
   vi.mocked(demoCodeMatches).mockResolvedValue(true);
   for (let i = 0; i < 20; i++) {
     const response = await POST(
