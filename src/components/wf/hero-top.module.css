@@ -481,6 +481,11 @@ a.cellBody {
   color: var(--wf-hero-ink);
 }
 
+.cells[data-variant="wrap"] .cellValue {
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+}
+
 .cellValue {
   font: 600 var(--wf-fs-15) / 20px var(--wf-mono);
   font-variant-numeric: tabular-nums;
@@ -732,6 +737,11 @@ a.cellBody {
   .cells[data-variant="wrap"] .cellBody {
     padding: 0;
     border-left: 0;
+  }
+
+  /* Only the Show more cell is a 40px control; the time rows keep their own line. */
+  .cells[data-variant="wrap"] span.cellBody {
+    min-height: 0;
   }
 
   .cells[data-variant="wrap"] .cellTop {

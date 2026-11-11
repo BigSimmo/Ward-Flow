@@ -67,7 +67,7 @@ import { originName } from "@/components/ward-management/ward-movement-origin";
 import { declineTargetLeftNote } from "./decline-target-left";
 import { useBusiestFlowTabDefault } from "./ward-flow-busiest";
 import { WardPhoneRoundList } from "./ward-phone-round-list";
-import { NOT_CONFIRMED_SINCE_OUTAGE, useWardOutageCatchUp } from "@/components/ward-management/use-outage-catch-up";
+import { NOT_CONFIRMED_SINCE_OUTAGE, OutageMeta, useWardOutageCatchUp } from "./ward-outage-tags";
 import {
   canSubmitDecline,
   DECLINE_SUBMIT_UNAVAILABLE_REASON,
@@ -1751,7 +1751,7 @@ export function WardHomeTab({
               className={styles.bedsHead}
               icon={BedSingle}
               title="Every bed"
-              meta={liveMark}
+              meta={<OutageMeta on={outageTags}>{liveMark}</OutageMeta>}
               action={
                 <span className={styles.headTools}>
                   <WardPlaceOrMove variant="head" waiting={boardWaitingCount} onOpen={onOpenBoard} />

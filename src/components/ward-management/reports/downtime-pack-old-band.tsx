@@ -6,6 +6,7 @@ import { HeroBand, foldHidden, foldLimit, useIsPhone, type HeroBandCell } from "
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
+import styles from "./downtime-pack-outage.module.css";
 import { PACK_OLD_AFTER_MINUTES, wardsWithOldPack, type DowntimePackPrintRecord } from "./downtime-pack-prints";
 
 /** Old packs the band shows before "Show more". */
@@ -52,7 +53,12 @@ export function DowntimeOldPacksBand({ now }: { now: Instant }) {
   const cells: HeroBandCell[] = old.slice(0, shown).map((ward) => ({
     id: ward.unitId,
     label: units.find((unit) => unit.id === ward.unitId)?.name ?? ward.unitId,
-    value: ward.lastPrintedAt === null ? NEVER_PRINTED : formatInstantWithDay(ward.lastPrintedAt, now),
+    value:
+      ward.lastPrintedAt === null ? (
+        <span className={styles.never}>{NEVER_PRINTED}</span>
+      ) : (
+        formatInstantWithDay(ward.lastPrintedAt, now)
+      ),
     tone: "warning",
     testId: `ward-downtime-old-pack-${ward.unitId}`,
   }));
