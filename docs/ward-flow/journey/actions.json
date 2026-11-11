@@ -18,12 +18,7 @@
       "srcEd",
       "srcGp"
     ],
-    "roles": [
-      "community",
-      "ed",
-      "ward",
-      "coordinator"
-    ],
+    "roles": ["community", "ed", "ward", "coordinator"],
     "does": "Creates a front-door referral to the chosen destinations, bounded by the configured parallel-referral cap. Distinct named wards may be asked together; duplicate recipients and a broad ward arm mixed with named ward arms are refused.",
     "needs": "A known patient and source, valid destination/intake answers and a unique submission id when supplied. An ED uses ed_medical; a ward uses psychiatric_ward and its own origin ward, and must carry that ward's site. Form rule (design audit FORM-REF, 5 Nov 2026): the home region may be left out (it warns in the drawer and shows as not recorded), and the engine also accepts a referral with no origin site, though the drawer fills an ED or community referral's location and referring service from the sending desk and blocks Send when it cannot (Josh, 5 Nov 2026); one that is given must be listed, and a supplied originSiteCode must resolve in the world's state.scenario network, including a fictional-network scenario. The intake may carry an unconfirmed catchment, a pending clearance with no expected time or contact, and blank referrer contact details, but a referrer phone that is typed must be a phone number (digits and the form's own characters; audit M39, 10 Nov 2026); the legal status, clearance answer, age band, urgency and gender still block in the drawer.",
     "changes": "Creates the referral with every destination set to waiting.",
@@ -146,23 +141,12 @@
     "name": "Add a person who is not on file",
     "group": "At the front door",
     "lane": "record",
-    "nodes": [
-      "raised",
-      "rkDuplicate",
-      "rkIntakeLost"
-    ],
-    "roles": [
-      "ed",
-      "community",
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["raised", "rkDuplicate", "rkIntakeLost"],
+    "roles": ["ed", "community", "ward", "coordinator"],
     "does": "Registers somebody with no referral, movement or bed record yet — the “searched, nobody came up, so add them” record.",
     "needs": "A unique nonblank UMRN, given and family names, a real date of birth from 1900 through the applicable Perth day, and valid optional sex, gender, Indigenous-status and source-desk values. Optional preferred name, address, general practitioner, catchment community team, interpreter language and the 22 optional administrative details (ADMIN_DETAIL_FIELDS: contacts, next of kin and support person, Medicare and funding, planning) are trimmed; blank means not recorded.",
     "changes": "Creates a new patient record, including any optional typed details given.",
-    "reasons": [
-      "GENDERS"
-    ],
+    "reasons": ["GENDERS"],
     "refuses": [
       {
         "when": "Gender not from the list",
@@ -204,15 +188,8 @@
     "name": "Record whether they are medically cleared",
     "group": "At the front door",
     "lane": "record",
-    "nodes": [
-      "addressed",
-      "rkClearance",
-      "edArrived"
-    ],
-    "roles": [
-      "ed",
-      "coordinator"
-    ],
+    "nodes": ["addressed", "rkClearance", "edArrived"],
+    "roles": ["ed", "coordinator"],
     "does": "Records the current medical-clearance answer on a referral and synchronises its matching linked movements. Fresh positive clearance resumes a recorded medical-deterioration pause.",
     "needs": "An existing referral, finite recording time and boolean answer. Re-clearance must be later than any unresolved linked deterioration.",
     "changes": "Replaces the referral answer and the matching movements’ clearance. Positive re-clearance stamps resumedAt and restates their blocker; it does not restore a released bed or booking.",
@@ -275,16 +252,8 @@
     "name": "Mark that an expected patient has turned up",
     "group": "At the front door",
     "lane": "record",
-    "nodes": [
-      "addressed",
-      "edExpected",
-      "edArrived",
-      "edNeverArrives"
-    ],
-    "roles": [
-      "ed",
-      "coordinator"
-    ],
+    "nodes": ["addressed", "edExpected", "edArrived", "edNeverArrives"],
+    "roles": ["ed", "coordinator"],
     "does": "Marks that a patient the department was expecting has physically arrived.",
     "needs": "The referral exists. The first recorded arrival wins; a later call leaves it unchanged rather than taking the minimum supplied timestamp.",
     "changes": "Stamps the arrival time, once.",
@@ -347,19 +316,11 @@
       "dForced",
       "dNonBinary"
     ],
-    "roles": [
-      "ward",
-      "coordinator",
-      "ed",
-      "community"
-    ],
+    "roles": ["ward", "coordinator", "ed", "community"],
     "does": "A ward, emergency department or community team says yes to the destination addressed to it. The first yes automatically cancels every other destination still waiting — except a community arm, which never competes for the bed.",
     "needs": "The destination was addressed to the acting desk and has not been withdrawn. Normally it is queued. An explicit reassessment can turn a decline into acceptance; updates on an already accepted arm add history rather than accepting twice. Ward eligibility and bed criteria still apply. At the shared authenticated boundary, a scoped caller must be authorised for the stored receiving ED or community team (including a community team in its scoped service); outbound visibility alone does not authorise the answer. The statewide coordinator retains whole-network authority. On the referral match screen the coordinator answers any arm and a desk answers only its own kind; a ward desk answers only when working in a ward scope, dispatching as ward with its acting ward.",
     "changes": "Marks that destination accepted, cancels the other waiting non-community destinations, notifies the referrer and the receiving ward. No bed is pulled and no movement is created.",
-    "reasons": [
-      "GENDER_PLACEMENT_REASONS",
-      "OVERRIDE_REASONS"
-    ],
+    "reasons": ["GENDER_PLACEMENT_REASONS", "OVERRIDE_REASONS"],
     "override": true,
     "refuses": [
       {
@@ -481,28 +442,12 @@
     "name": "Decline the referral",
     "group": "At the front door",
     "lane": "stall",
-    "nodes": [
-      "wardAnswers",
-      "wardDeclined",
-      "cmhtAnswers",
-      "cmhtDeclined",
-      "edAnswers",
-      "edDeclined",
-      "cmhtNothing"
-    ],
-    "roles": [
-      "ward",
-      "coordinator",
-      "ed",
-      "community"
-    ],
+    "nodes": ["wardAnswers", "wardDeclined", "cmhtAnswers", "cmhtDeclined", "edAnswers", "edDeclined", "cmhtNothing"],
+    "roles": ["ward", "coordinator", "ed", "community"],
     "does": "Records the destination’s answer. A substantive decline closes that arm; bed-unavailable reasons on a ward arm waitlist it and keep it live. Gender mismatch is not a decline reason.",
     "needs": "A known addressed destination, matching desk kind/place and a valid reason. Re-answering a decided arm requires the documented reassessment path. At the shared authenticated boundary, a scoped caller must be authorised for the stored receiving ED or community team (including a community team in its scoped service); outbound visibility alone does not authorise the answer. The statewide coordinator retains whole-network authority. On the referral match screen the coordinator answers any arm and a desk answers only its own kind; a ward desk answers only when working in a ward scope, dispatching as ward with its acting ward.",
     "changes": "Records a decline or waitlist history entry and the corresponding notices, retaining other arms.",
-    "reasons": [
-      "REFERRAL_DECLINE_REASONS",
-      "COMMUNITY_DECLINE_REASONS"
-    ],
+    "reasons": ["REFERRAL_DECLINE_REASONS", "COMMUNITY_DECLINE_REASONS"],
     "refuses": [
       {
         "when": "Guard: event.destinationKind !== \"community_team\" && referralState(referral) === \"accepted\"",
@@ -584,25 +529,12 @@
     "name": "The referrer takes the referral back",
     "group": "At the front door",
     "lane": "stall",
-    "nodes": [
-      "wardAnswers",
-      "cmhtWithdrawn",
-      "wardNothing",
-      "cmhtNothing",
-      "wardWithdrawn"
-    ],
-    "roles": [
-      "coordinator",
-      "community",
-      "ed",
-      "ward"
-    ],
+    "nodes": ["wardAnswers", "cmhtWithdrawn", "wardNothing", "cmhtNothing", "wardWithdrawn"],
+    "roles": ["coordinator", "community", "ed", "ward"],
     "does": "The referring party withdraws — either just the community half, leaving the bed request standing, or the whole referral, which also gives back any held bed and cancels any transport.",
     "needs": "The recorded sender desk/place or coordinator. Whole-referral withdrawal requires waiting non-withdrawn arms and no accepted placement or collected linked journey. The separately scoped community-arm path has its own reason and state checks.",
     "changes": "Stamps the withdrawal on every still-waiting destination; closes any linked open movement as “did not proceed”.",
-    "reasons": [
-      "WARD_REQUEST_WITHDRAWAL_REASONS"
-    ],
+    "reasons": ["WARD_REQUEST_WITHDRAWAL_REASONS"],
     "refuses": [
       {
         "when": "Guard: event.reason === undefined || !WARD_REQUEST_WITHDRAWAL_REASONS.includes(event.reason)",
@@ -705,16 +637,8 @@
     "name": "Add a correction to a referral",
     "group": "At the front door",
     "lane": "record",
-    "nodes": [
-      "wardAnswers",
-      "addressed"
-    ],
-    "roles": [
-      "community",
-      "ed",
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["wardAnswers", "addressed"],
+    "roles": ["community", "ed", "ward", "coordinator"],
     "does": "Adds a dated, attributed note correcting something on a referral, at any point in its life. What was said before stays readable.",
     "needs": "An existing referral and a nonblank note within the correction limit. It can be at any stage, but sender-kind/place restrictions apply to ward, ED and community desks.",
     "changes": "Appends the note. Never overwrites.",
@@ -777,13 +701,8 @@
     "name": "Record that a bed closer to home was looked for",
     "group": "At the front door",
     "lane": "record",
-    "nodes": [
-      "wardAnswers",
-      "addressed"
-    ],
-    "roles": [
-      "coordinator"
-    ],
+    "nodes": ["wardAnswers", "addressed"],
+    "roles": ["coordinator"],
     "does": "Records that somebody looked for a bed nearer the person's home before sending them further. It never gates an acceptance — it exists so the search can be shown to have happened.",
     "needs": "The referral is still undecided and no earlier local-bed search is already recorded.",
     "changes": "Stamps the search and who did it.",
@@ -846,23 +765,12 @@
     "name": "Start a bed search from a department",
     "group": "Finding a bed",
     "lane": "expected",
-    "nodes": [
-      "seam",
-      "placement",
-      "edRaise"
-    ],
-    "roles": [
-      "ed",
-      "community",
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["seam", "placement", "edRaise"],
+    "roles": ["ed", "community", "ward", "coordinator"],
     "does": "Creates the movement that tracks placement. An ED journey may link its addressed referral; an accepting ward or coordinator may continue an accepted direct ED/community referral. pullBed requests an atomic raise-and-pull through both ordinary checks.",
     "needs": "Valid draft facts and a real ED unless continuing an accepted direct community referral. A linked referral and destination must match, be live and fund no other open movement; direct continuation has its own accepting-ward checks. A community continuation needs its referring service and location on the referral (the drawer fills them from the sending desk and blocks Send without them) and is refused without either, never starting at an empty site. A supplied patientId, or one inherited from the linked referral, must still name a current patient; an omitted identity remains supported.",
     "changes": "Creates a placement_requested movement, or accepted_awaiting_bed for a valid direct continuation. Captures typed legal-paper facts; pullBed also reserves the bed only when both steps succeed.",
-    "reasons": [
-      "REFERRAL_GENDERS"
-    ],
+    "reasons": ["REFERRAL_GENDERS"],
     "refuses": [
       {
         "when": "Guard: !raisedFrom",
@@ -970,20 +878,12 @@
     "name": "Ask one or more wards",
     "group": "Finding a bed",
     "lane": "expected",
-    "nodes": [
-      "asked",
-      "dForced"
-    ],
-    "roles": [
-      "coordinator"
-    ],
+    "nodes": ["asked", "dForced"],
+    "roles": ["coordinator"],
     "does": "Adds new wards to an open placement request without dropping live requests. The configured cap warns and records an over-cap act; it does not prohibit asking more wards.",
     "needs": "An open referrable stage, real new wards, valid optional reasons, eligibility and any required recorded gender-placement check. Already-live wards are not rechecked or counted twice.",
     "changes": "Adds those wards to the live list and moves the record to destination review.",
-    "reasons": [
-      "OVERRIDE_REASONS",
-      "GENDER_PLACEMENT_REASONS"
-    ],
+    "reasons": ["OVERRIDE_REASONS", "GENDER_PLACEMENT_REASONS"],
     "override": true,
     "refuses": [
       {
@@ -1079,15 +979,8 @@
     "name": "A ward accepts in principle",
     "group": "Finding a bed",
     "lane": "expected",
-    "nodes": [
-      "inPrinciple",
-      "dForced",
-      "dGenderHard"
-    ],
-    "roles": [
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["inPrinciple", "dForced", "dGenderHard"],
+    "roles": ["ward", "coordinator"],
     "does": "A ward formally accepts the patient and becomes the destination. Every other ward asked is withdrawn automatically. Still no bed is set aside.",
     "needs": "An open movement at destination_review, a live request to the acting ward, no earlier acceptance, current ward availability and eligibility. A supplied bed number must be valid, suitable and neither occupied nor held; required gender/override records must exist.",
     "changes": "Records the accepting ward, clears every other live request, and tells the referring department.",
@@ -1187,19 +1080,12 @@
     "name": "A ward declines the bed search",
     "group": "Finding a bed",
     "lane": "stall",
-    "nodes": [
-      "sWardDecline"
-    ],
-    "roles": [
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["sWardDecline"],
+    "roles": ["ward", "coordinator"],
     "does": "A ward records a substantive decline or a bed-unavailable waitlist answer. A waitlist keeps the ward request live; gender mismatch does not decline it.",
     "needs": "The record is at destination review and this ward holds a live request.",
     "changes": "A substantive decline removes that ward and appends history and a referrer notice. A waitlist keeps the request, records waitlisted history and notifies the referrer; the stage remains destination_review.",
-    "reasons": [
-      "DECLINE_REASONS"
-    ],
+    "reasons": ["DECLINE_REASONS"],
     "refuses": [
       {
         "when": "Guard: movement.stage !== \"destination_review\"",
@@ -1276,19 +1162,12 @@
     "name": "Take back one ward's request",
     "group": "Finding a bed",
     "lane": "stall",
-    "nodes": [
-      "asked",
-      "sWithdrawWard"
-    ],
-    "roles": [
-      "coordinator"
-    ],
+    "nodes": ["asked", "sWithdrawWard"],
+    "roles": ["coordinator"],
     "does": "Withdraws the request from one named ward only. Every other ward asked carries on considering.",
     "needs": "That ward holds a live request.",
     "changes": "Removes that one ward and tells it why.",
-    "reasons": [
-      "WARD_REQUEST_WITHDRAWAL_REASONS"
-    ],
+    "reasons": ["WARD_REQUEST_WITHDRAWAL_REASONS"],
     "refuses": [
       {
         "when": "Guard: !movement.referredUnitIds.includes(event.unitId)",
@@ -1347,18 +1226,12 @@
     "name": "Undo a ward's acceptance",
     "group": "Finding a bed",
     "lane": "stall",
-    "nodes": [
-      "sAcceptWithdrawn"
-    ],
-    "roles": [
-      "coordinator"
-    ],
+    "nodes": ["sAcceptWithdrawn"],
+    "roles": ["coordinator"],
     "does": "Withdraws an acceptance before handover, including a pulled bed or a movement stepped back while retaining its held admission. A matching bed is released in the same act.",
     "needs": "An open movement at accepted_awaiting_bed, pulled, or an earlier stepped-back stage with a held admission, plus a listed correction reason. Cancel a live booking first; collection refuses withdrawal.",
     "changes": "Clears the accepting ward and time and any released hold fields (including the referral arm's numbered bed hold), appends withdrawal/release history and notices. Ordinarily returns to destination_review; an earlier stepped-back stage stays as found. It does not re-refer the ward. For an agreed return identified by sourceAdmissionId, the bed-release notice goes to that source stay's sending ward rather than its ED alias.",
-    "reasons": [
-      "STEP_BACK_REASONS"
-    ],
+    "reasons": ["STEP_BACK_REASONS"],
     "refuses": [
       {
         "when": "Guard: holdsBed && movement.transport?.collectedAt !== undefined",
@@ -1430,15 +1303,8 @@
     "name": "Abandon the bed search",
     "group": "Finding a bed",
     "lane": "end",
-    "nodes": [
-      "sAbandoned"
-    ],
-    "roles": [
-      "ed",
-      "community",
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["sAbandoned"],
+    "roles": ["ed", "community", "ward", "coordinator"],
     "does": "Cancels the search outright — either pulling it from every ward still being asked, or, once accepted, revoking the acceptance and giving back any held bed.",
     "needs": "An open movement and the recorded sending desk/place or coordinator. After acceptance this path is restricted to the originating ED or coordinator and refuses after collection; other sending desks cannot revoke an accepted movement here. Execution uses canonical actingPlaceId, or a ward's actingUnitId, before the legacy placeId fallback; a supplied legacy alias that disagrees with the canonical claim is refused. Shared scope validates legacy placeId as an authority claim too.",
     "changes": "Closes the movement as “did not proceed”, releases any held bed, cancels any live transport.",
@@ -1537,14 +1403,8 @@
     "name": "Send them to a community team instead",
     "group": "Finding a bed",
     "lane": "diversion",
-    "nodes": [
-      "edToCommunity",
-      "cmhtFromSearch"
-    ],
-    "roles": [
-      "ed",
-      "coordinator"
-    ],
+    "nodes": ["edToCommunity", "cmhtFromSearch"],
+    "roles": ["ed", "coordinator"],
     "does": "Instead of admitting, refers the patient straight to a named community team — ends the bed search, creates or reuses a real community referral, and tells everybody involved.",
     "needs": "The record is open and transport has not collected the patient. If they are on a legal form, a conclusive examination outcome must already be recorded.",
     "changes": "Gives back any held bed, cancels transport, withdraws live ward requests, closes the movement, and raises or reuses the community arm. When creating a new community referral, the movement's origin ED site is looked up within state.scenario, preserving the fictional-network origin when available; queued-arm reuse is unchanged.",
@@ -1633,14 +1493,8 @@
     "name": "The department decides they need no bed",
     "group": "Finding a bed",
     "lane": "end",
-    "nodes": [
-      "edOutcome",
-      "edAnswers"
-    ],
-    "roles": [
-      "ed",
-      "coordinator"
-    ],
+    "nodes": ["edOutcome", "edAnswers"],
+    "roles": ["ed", "coordinator"],
     "does": "Records that the patient no longer needs a psychiatric bed — going home, or to community follow-up — and unwinds everything already in motion.",
     "needs": "The record is open and transport has not collected the patient. For “for discharge” on a legal form, a conclusive examination outcome must already be recorded.",
     "changes": "Releases a held bed, cancels an uncollected transport job, drops live ward requests, closes the movement, and notifies every ward affected.",
@@ -1716,14 +1570,8 @@
     "name": "Record that nobody referred them",
     "group": "Finding a bed",
     "lane": "record",
-    "nodes": [
-      "placement",
-      "edRaise"
-    ],
-    "roles": [
-      "ed",
-      "coordinator"
-    ],
+    "nodes": ["placement", "edRaise"],
+    "roles": ["ed", "coordinator"],
     "does": "Records that, on checking, nobody actually referred this patient in.",
     "needs": "The record is open and is not already linked to a referral.",
     "changes": "Stamps the absence and its reason.",
@@ -1786,19 +1634,12 @@
     "name": "Record an escalation",
     "group": "Finding a bed",
     "lane": "record",
-    "nodes": [
-      "asked",
-      "rkEscalate"
-    ],
-    "roles": [
-      "coordinator"
-    ],
+    "nodes": ["asked", "rkEscalate"],
+    "roles": ["coordinator"],
     "does": "Records that the search was escalated — which wards were tried, and who was contacted.",
     "needs": "The record is open.",
     "changes": "Stamps the escalation, the wards tried and the contact, and adds it to the journey's escalation history (item 28, 9 Nov 2026).",
-    "reasons": [
-      "ESCALATION_CONTACTS"
-    ],
+    "reasons": ["ESCALATION_CONTACTS"],
     "refuses": [
       {
         "when": "Guard: !movement",
@@ -1867,20 +1708,12 @@
     "name": "Correct the record backwards",
     "group": "Finding a bed",
     "lane": "record",
-    "nodes": [
-      "asked",
-      "inPrinciple",
-      "pulled"
-    ],
-    "roles": [
-      "coordinator"
-    ],
+    "nodes": ["asked", "inPrinciple", "pulled"],
+    "roles": ["coordinator"],
     "does": "Moves the record back to an earlier point. A pure record correction — it deliberately releases no bed and cancels no transport.",
     "needs": "An open, unarrived movement, an earlier valid stage and listed correction reason. A stage-only seeded bed hold cannot be stepped back before pulled because that would lose its reservation.",
     "changes": "Moves the stage and logs the correction. Nothing else is touched at all.",
-    "reasons": [
-      "STEP_BACK_REASONS"
-    ],
+    "reasons": ["STEP_BACK_REASONS"],
     "refuses": [
       {
         "when": "Guard: movement.stage === \"arrived\" || movement.transport?.arrivedAt !== undefined",
@@ -1944,23 +1777,12 @@
     "name": "Take the bed",
     "group": "Holding the bed",
     "lane": "expected",
-    "nodes": [
-      "pulled",
-      "dRepull",
-      "dForced",
-      "dGenderHard",
-      "dNoLongerSuits"
-    ],
-    "roles": [
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["pulled", "dRepull", "dForced", "dGenderHard", "dNoLongerSuits"],
+    "roles": ["ward", "coordinator"],
     "does": "The ward claims the bed it accepted, and an admission record is created marked held — not occupied. A patient is not arrived until the ward says they have arrived.",
     "needs": "An open movement at accepted_awaiting_bed and the accepting ward, consistent reservation/identity, current capacity (the Ready figure counts live pulled admissions, and beds still being made ready must not use up all of it), eligibility, bed-kind/gender/legal checks and no conflicting active placement. Other journeys' pending numbered bed reservations at the ward (a held bed number on another movement or referral arm) also come off Ready and off the free locked and open counts, so a pull cannot take a bed another record was promised.",
     "changes": "Reserves an allocatable bed, creates or consistently adopts the held admission and starts the configured hold timer. The bed is held rather than occupied.",
-    "reasons": [
-      "OVERRIDE_REASONS"
-    ],
+    "reasons": ["OVERRIDE_REASONS"],
     "override": true,
     "refuses": [
       {
@@ -2082,19 +1904,12 @@
     "name": "Give the held bed back",
     "group": "Holding the bed",
     "lane": "stall",
-    "nodes": [
-      "sPullReleased"
-    ],
-    "roles": [
-      "coordinator",
-      "ward"
-    ],
+    "nodes": ["sPullReleased"],
+    "roles": ["coordinator", "ward"],
     "does": "A ward gives back a bed it was holding before the patient arrived. The admission record is deleted outright — nobody was ever in this bed.",
     "needs": "An open movement at pulled, a listed release reason, an authorised holding ward/coordinator and no physical collection. Cancel a live booking first. An Undo carrying expectedPull must still name this exact pull.",
     "changes": "Returns the bed to the ward, deletes the admission, sends the record back to “accepted, awaiting bed”, and tells the department. For a return movement with sourceAdmissionId, the in-app release/withdrawal notice targets the actual sending stay ward. Ordinary ED/community origins retain their existing recipient paths; no external-provider delivery is implied. The movement's and its referral arm's held bed numbers are cleared with the pull. A release that matches no releasable bed reservation is refused rather than recorded.",
-    "reasons": [
-      "RELEASE_PULL_REASONS"
-    ],
+    "reasons": ["RELEASE_PULL_REASONS"],
     "refuses": [
       {
         "when": "Guard: movement.stage !== \"pulled\"",
@@ -2184,14 +1999,8 @@
     "name": "Release a bed left held by a stopped journey",
     "group": "Holding the bed",
     "lane": "stall",
-    "nodes": [
-      "sStopTransport"
-    ],
-    "roles": [
-      "coordinator",
-      "ward",
-      "ed"
-    ],
+    "nodes": ["sStopTransport"],
+    "roles": ["coordinator", "ward", "ed"],
     "does": "Releases the bed that stopping a transport deliberately left held, once it is decided the patient is not coming after all. The only way to give that bed back.",
     "needs": "The journey was stopped after collection, and a bed is still held.",
     "changes": "Releases the bed and deletes the admission.",
@@ -2272,16 +2081,8 @@
     "name": "Record whether transport is needed",
     "group": "The journey",
     "lane": "record",
-    "nodes": [
-      "booked",
-      "dNoTransport"
-    ],
-    "roles": [
-      "ed",
-      "ward",
-      "community",
-      "coordinator"
-    ],
+    "nodes": ["booked", "dNoTransport"],
+    "roles": ["ed", "ward", "community", "coordinator"],
     "does": "Records whether the patient will need help getting to the ward. Answering “no” is what lets them be marked arrived with no journey at all.",
     "needs": "An open movement. The ward must be the sending ward; a supplied ED place must match the origin. Cancel a live booking before recording that transport is not needed.",
     "changes": "Sets or replaces the answer.",
@@ -2344,22 +2145,12 @@
     "name": "Book the transport",
     "group": "The journey",
     "lane": "expected",
-    "nodes": [
-      "booked"
-    ],
-    "roles": [
-      "ed",
-      "ward",
-      "community",
-      "coordinator"
-    ],
+    "nodes": ["booked"],
+    "roles": ["ed", "ward", "community", "coordinator"],
     "does": "Logs an already arranged booking: provider, explicit escort and transport-legal-status answers, an optional estimate, and optional typed CAD number. It calls no transport service.",
     "needs": "An open movement at pulled or handover_ready with an accepted destination or admission and no live booking. Desk/place must match sender or coordinator; global medical-clearance/deterioration guards apply. A blank CAD is permitted for later recording. A blank estimated time is permitted too (W32, 5 Nov 2026: it warns in the form); one that is given must be a finite time. In the patient workspace, an exceptional record opening is read only: patient-scoped UI gates do not offer this mutation. An ordinary authorised caller retains its own route role and the relevant stay/receiving-ward claim; a desk-switch hint grants no authority.",
     "changes": "Creates the transport job and records who booked it — which decides who may later cancel it.",
-    "reasons": [
-      "TRANSPORT_PROVIDERS",
-      "TRANSPORT_LEGAL_STATUSES"
-    ],
+    "reasons": ["TRANSPORT_PROVIDERS", "TRANSPORT_LEGAL_STATUSES"],
     "refuses": [
       {
         "when": "Guard: movement.stage !== \"pulled\" && movement.stage !== \"handover_ready\"",
@@ -2490,15 +2281,8 @@
     "name": "Confirm handover is ready",
     "group": "The journey",
     "lane": "expected",
-    "nodes": [
-      "handover",
-      "dNoLongerSuits"
-    ],
-    "roles": [
-      "ed",
-      "community",
-      "coordinator"
-    ],
+    "nodes": ["handover", "dNoLongerSuits"],
+    "roles": ["ed", "community", "coordinator"],
     "does": "Confirms the patient is ready for the booked crew to collect.",
     "needs": "An open movement at pulled, the sending desk or coordinator, and either a booked job or recorded no-transport answer. Explicit negative medical clearance or unresolved deterioration, gender/legal bed issues refuse onward movement.",
     "changes": "Moves the record to handover ready.",
@@ -2561,14 +2345,8 @@
     "name": "The crew accepts the job",
     "group": "The journey",
     "lane": "expected",
-    "nodes": [
-      "enroute",
-      "dNoLongerSuits"
-    ],
-    "roles": [
-      "officer",
-      "coordinator"
-    ],
+    "nodes": ["enroute", "dNoLongerSuits"],
+    "roles": ["officer", "coordinator"],
     "does": "Records that the transport provider has accepted the collection job.",
     "needs": "An open handover-ready movement, a booked job with no existing acceptance and current medical, gender and legal checks. A revoked/community-order examination while a bed is held must be resolved.",
     "changes": "Stamps the acceptance.",
@@ -2636,13 +2414,8 @@
     "name": "The crew sets off",
     "group": "The journey",
     "lane": "expected",
-    "nodes": [
-      "enroute"
-    ],
-    "roles": [
-      "officer",
-      "coordinator"
-    ],
+    "nodes": ["enroute"],
+    "roles": ["officer", "coordinator"],
     "does": "Records that an accepted provider has set off towards the patient. Global medical pause/clearance and examination-held-bed blockers apply; this event does not itself rerun the held-unit gender or legal-authorisation helpers.",
     "needs": "An open handover-ready movement, an accepted job not already en route, and no unresolved medical or examination/held-bed restriction.",
     "changes": "Stamps the departure.",
@@ -2710,14 +2483,8 @@
     "name": "The patient is picked up",
     "group": "The journey",
     "lane": "expected",
-    "nodes": [
-      "collected",
-      "dNoLongerSuits"
-    ],
-    "roles": [
-      "officer",
-      "coordinator"
-    ],
+    "nodes": ["collected", "dNoLongerSuits"],
+    "roles": ["officer", "coordinator"],
     "does": "Records that the patient has physically been collected and the journey has begun. After this, cancelling is no longer possible — only stopping.",
     "needs": "An open handover-ready movement with a booked en-route job and current medical, gender and legal checks. A valid supplied exception/identity-check record is retained; collection can restore moving after a stage correction without replacing its original physical time. No restrictive practice may still be recorded as in use for the patient at the sending ward.",
     "changes": "Moves the record to moving and stamps the collection.",
@@ -2793,15 +2560,8 @@
     "name": "The ward says they have arrived",
     "group": "The journey",
     "lane": "expected",
-    "nodes": [
-      "arrived",
-      "dNoTransport"
-    ],
-    "roles": [
-      "officer",
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["arrived", "dNoTransport"],
+    "roles": ["officer", "ward", "coordinator"],
     "does": "The officer records delivery of the transport leg only. The receiving ward or coordinator confirms physical arrival, occupies the reserved bed and closes the movement. Physical arrival is irreversible.",
     "needs": "An open movement with collection recorded at moving, or no transport needed and no live job at pulled/handover_ready. The receiving ward must identify itself. Ward arrival additionally checks the matching reservation, identity, bed eligibility and any source stay.",
     "changes": "Officer: stamps transport.arrivedAt and leaves moving open. Ward/coordinator: occupies the held admission, adjusts bed figures and closes arrived; a linked source stay is departed on transfer arrival. When linked journey/stay observation levels diverge, retained accepted-edit sequence decides which is later, including same-minute edits and new edits against legacy history. If neither entry has sequence, the existing timestamp fallback remains (journey wins ties); a winning journey level appends reconciliation history to the stay. A winning journey observation sequence is retained in the stay reconciliation history; genuinely unordered legacy ties retain the existing timestamp/journey fallback.",
@@ -2897,22 +2657,12 @@
     "name": "Cancel the transport before collection",
     "group": "The journey",
     "lane": "stall",
-    "nodes": [
-      "sCancelTransport",
-      "dCancelLie"
-    ],
-    "roles": [
-      "coordinator",
-      "ed",
-      "ward",
-      "community"
-    ],
+    "nodes": ["sCancelTransport", "dCancelLie"],
+    "roles": ["coordinator", "ed", "ward", "community"],
     "does": "Cancels an uncollected live booking, recording its identity and CAD in unwind history. The coordinator may act; ward/community must match their booked sender and a supplied ED place must match booking provenance. Nothing is rebooked.",
     "needs": "An open movement with a live uncollected, undelivered job, an authorised booking desk/place and a listed cancellation reason.",
     "changes": "Deletes the job entirely. The stage does not move and the bed stays held. The job's awaiting-departure and booking-estimate-passed inbox rows get a returned snooze entry and a released ownership entry appended, keeping their earlier history.",
-    "reasons": [
-      "CANCEL_TRANSPORT_REASONS"
-    ],
+    "reasons": ["CANCEL_TRANSPORT_REASONS"],
     "refuses": [
       {
         "when": "Guard: movement.transport.arrivedAt !== undefined",
@@ -3015,20 +2765,12 @@
     "name": "Stop the journey after collection",
     "group": "The journey",
     "lane": "diversion",
-    "nodes": [
-      "sStopTransport"
-    ],
-    "roles": [
-      "coordinator",
-      "ed"
-    ],
+    "nodes": ["sStopTransport"],
+    "roles": ["coordinator", "ed"],
     "does": "Stops a journey with the patient already in the vehicle. Somebody must say where the patient now is. The movement closes and the bed deliberately stays held.",
     "needs": "The patient has been collected, and has not arrived or already been stopped.",
     "changes": "Stamps the stop, its reason and the whereabouts; closes the movement; leaves the bed held until it is separately released.",
-    "reasons": [
-      "STOP_TRANSPORT_REASONS",
-      "TRANSPORT_WHEREABOUTS"
-    ],
+    "reasons": ["STOP_TRANSPORT_REASONS", "TRANSPORT_WHEREABOUTS"],
     "refuses": [
       {
         "when": "Guard: movement.transport.collectedAt === undefined",
@@ -3100,13 +2842,8 @@
     "name": "Record that they have left the department",
     "group": "The journey",
     "lane": "record",
-    "nodes": [
-      "edLeft"
-    ],
-    "roles": [
-      "ed",
-      "coordinator"
-    ],
+    "nodes": ["edLeft"],
+    "roles": ["ed", "coordinator"],
     "does": "Records the time the patient physically left the emergency department.",
     "needs": "An outcome has already been recorded, and this has not been recorded before.",
     "changes": "Stamps the departure time.",
@@ -3169,15 +2906,8 @@
     "name": "Record an examination outcome",
     "group": "Legal status and examinations",
     "lane": "breach",
-    "nodes": [
-      "dRevoked",
-      "rkExam",
-      "sAbandoned"
-    ],
-    "roles": [
-      "ed",
-      "coordinator"
-    ],
+    "nodes": ["dRevoked", "rkExam", "sAbandoned"],
+    "roles": ["ed", "coordinator"],
     "does": "Records an examination or a permitted repeat. Inpatient/further-examination outcomes record facts only. Revocation while any bed is held retains that bed for a person to release, even before transport commitment. A community order before commitment may close and release.",
     "needs": "The record is open. A second examination is only allowed if the last one ordered a further examination.",
     "changes": "Keeps superseded examinations. After collection or at handover_ready/moving, community-order/revocation records a blocker without refund or closure; revocation with any held bed does the same and tells its ward. Otherwise community-order/revocation closes the search, releases any matching hold, cancels uncollected transport and withdraws requests.",
@@ -3240,23 +2970,12 @@
     "name": "Change the legal status",
     "group": "Legal status and examinations",
     "lane": "record",
-    "nodes": [
-      "occupied",
-      "asked",
-      "rkLegalStatus"
-    ],
-    "roles": [
-      "coordinator",
-      "ed",
-      "ward",
-      "community"
-    ],
+    "nodes": ["occupied", "asked", "rkLegalStatus"],
+    "roles": ["coordinator", "ed", "ward", "community"],
     "does": "Changes the patient's status under the Mental Health Act, recording who changed it and why. It never reacts on its own — even if this makes an already-accepted bed unlawful, that only surfaces for a human to look at.",
     "needs": "An open movement, sender-kind permission and a listed legal-status-change reason; signed/shared scope further binds the actual sender.",
     "changes": "Sets the status and logs the change.",
-    "reasons": [
-      "LEGAL_STATUS_CHANGE_REASONS"
-    ],
+    "reasons": ["LEGAL_STATUS_CHANGE_REASONS"],
     "refuses": [
       {
         "when": "Guard: movement.closure",
@@ -3315,16 +3034,8 @@
     "name": "Mark a form as physically received",
     "group": "Legal status and examinations",
     "lane": "record",
-    "nodes": [
-      "occupied",
-      "rkForm"
-    ],
-    "roles": [
-      "ed",
-      "ward",
-      "community",
-      "coordinator"
-    ],
+    "nodes": ["occupied", "rkForm"],
+    "roles": ["ed", "ward", "community", "coordinator"],
     "does": "Marks that a patient's legal form has physically arrived. Any of the nine forms with a legal clock (1A, 3A, 3C, 3D, 5A, 5B, 6A, 6B, 6C) can be marked, not only Form 1A (owner ruling D-16).",
     "needs": "An open movement sent by this desk kind or coordinator, a supported recorded legal-clock form and no previous receipt. Signed/shared scope further limits the actual sender. An optional typed received time must not be later than now.",
     "changes": "Stamps the receipt: the typed received time when given (marked as typed), otherwise now.",
@@ -3408,22 +3119,12 @@
     "name": "Undo a form receipt",
     "group": "Legal status and examinations",
     "lane": "record",
-    "nodes": [
-      "occupied",
-      "rkForm"
-    ],
-    "roles": [
-      "ed",
-      "ward",
-      "community",
-      "coordinator"
-    ],
+    "nodes": ["occupied", "rkForm"],
+    "roles": ["ed", "ward", "community", "coordinator"],
     "does": "Undoes a receipt logged by mistake, keeping a record that a correction happened and why.",
     "needs": "An open movement sent by this desk kind, an existing receipt and a listed correction reason; signed/shared scope further binds the actual sender.",
     "changes": "Clears the receipt, and its typed-time mark, and appends the correction.",
-    "reasons": [
-      "LEGAL_FORM_RECEIPT_CORRECTION_REASONS"
-    ],
+    "reasons": ["LEGAL_FORM_RECEIPT_CORRECTION_REASONS"],
     "refuses": [
       {
         "when": "Guard: movement.closure",
@@ -3482,16 +3183,8 @@
     "name": "Record or extend a form's expiry",
     "group": "Legal status and examinations",
     "lane": "record",
-    "nodes": [
-      "occupied",
-      "rkForm",
-      "rkExpiryShut"
-    ],
-    "roles": [
-      "ed",
-      "coordinator",
-      "ward"
-    ],
+    "nodes": ["occupied", "rkForm", "rkExpiryShut"],
+    "roles": ["ed", "coordinator", "ward"],
     "does": "Records typed paper expiry or a later extension. An explicit correction may move it earlier only with a reason and matching expected paper facts. No statutory duration is computed.",
     "needs": "An existing form and finite typed expiry on an open movement, or the admitting ward’s admitted-stay path. An extension is strictly later; a correction must differ and match the current code, written time and previous expiry.",
     "changes": "Stores the typed expiry, clears any calculated legacy clock, appends basis/author/time history tagged with the zero-based form instance (the count of earlier forms) and, for a correction, its previous facts and reason.",
@@ -3572,20 +3265,12 @@
     "name": "Correct the recorded gender",
     "group": "Legal status and examinations",
     "lane": "record",
-    "nodes": [
-      "asked",
-      "pulled"
-    ],
-    "roles": [
-      "ed",
-      "coordinator"
-    ],
+    "nodes": ["asked", "pulled"],
+    "roles": ["ed", "coordinator"],
     "does": "Corrects the gender recorded on an open record and, if a ward already holds or has accepted the bed, tells the coordinator to check the placement still suits.",
     "needs": "The record is open and the new value differs from what is there.",
     "changes": "Sets the gender, logs the change, and raises a notice where a bed is involved.",
-    "reasons": [
-      "REFERRAL_GENDERS"
-    ],
+    "reasons": ["REFERRAL_GENDERS"],
     "refuses": [
       {
         "when": "Guard: movement.closure",
@@ -3644,22 +3329,8 @@
     "name": "Record that the patient has left",
     "group": "On the ward",
     "lane": "expected",
-    "nodes": [
-      "personLeaves",
-      "bedReleased",
-      "end0",
-      "end1",
-      "end2",
-      "end3",
-      "end4",
-      "end5",
-      "end6",
-      "end7"
-    ],
-    "roles": [
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["personLeaves", "bedReleased", "end0", "end1", "end2", "end3", "end4", "end5", "end6", "end7"],
+    "roles": ["ward", "coordinator"],
     "does": "Records physical departure from an occupied stay and retains the departed admission. It is distinct from the protected revision-checked RECORD_PATIENT_DISCHARGE path.",
     "needs": "The caller names the stay’s ward and a listed destination at a finite time no earlier than arrival. No active transit, restrictive-practice or open return-movement conflict. An involuntary community/against-advice departure needs a recorded permitted paper transition.",
     "changes": "Ends the admission and raises the ward's empty and allocatable counts by one (only the timestamps move if this person's release had already been completed), gives back a locked bed, adjusts the sex mix, ends any leave bed, and completes this person's pending bed release.",
@@ -3755,13 +3426,8 @@
     "name": "Record that they are away at an ED",
     "group": "On the ward",
     "lane": "diversion",
-    "nodes": [
-      "dAway"
-    ],
-    "roles": [
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["dAway"],
+    "roles": ["ward", "coordinator"],
     "does": "Notes that an admitted patient has gone to an emergency department for a medical problem, while the ward keeps their bed.",
     "needs": "An occupied stay on the named acting ward, no existing ED absence, and no simultaneous leave or absence-without-leave record. In the patient workspace, an exceptional record opening is read only: patient-scoped UI gates do not offer this mutation. An ordinary authorised caller retains its own route role and the relevant stay/receiving-ward claim; a desk-switch hint grants no authority.",
     "changes": "Stamps the absence. No bed figure moves at all.",
@@ -3839,13 +3505,8 @@
     "name": "Record that they are back",
     "group": "On the ward",
     "lane": "diversion",
-    "nodes": [
-      "dAway"
-    ],
-    "roles": [
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["dAway"],
+    "roles": ["ward", "coordinator"],
     "does": "Notes that a patient who went to an emergency department is back on the ward, in the bed that was kept for them.",
     "needs": "The named acting ward owns the stay and it is recorded away at ED. The handler does not additionally require occupied state, so a recorded absence can be cleared. In the patient workspace, an exceptional record opening is read only: patient-scoped UI gates do not offer this mutation. An ordinary authorised caller retains its own route role and the relevant stay/receiving-ward claim; a desk-switch hint grants no authority.",
     "changes": "Clears the absence.",
@@ -3923,13 +3584,8 @@
     "name": "Record a bed as on leave",
     "group": "On the ward",
     "lane": "diversion",
-    "nodes": [
-      "dAway"
-    ],
-    "roles": [
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["dAway"],
+    "roles": ["ward", "coordinator"],
     "does": "Records that a bed is held for somebody on approved leave, with an expected return. It does not go back into circulation while they are away.",
     "needs": "A real occupied admission on the named acting ward, no existing leave/absence and no current ED absence. In the patient workspace, an exceptional record opening is read only: patient-scoped UI gates do not offer this mutation. An ordinary authorised caller retains its own route role and the relevant stay/receiving-ward claim; a desk-switch hint grants no authority.",
     "changes": "Creates the leave record.",
@@ -3992,13 +3648,8 @@
     "name": "End a bed's leave",
     "group": "On the ward",
     "lane": "diversion",
-    "nodes": [
-      "dAway"
-    ],
-    "roles": [
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["dAway"],
+    "roles": ["ward", "coordinator"],
     "does": "Ends a bed's recorded leave period.",
     "needs": "The leave record exists and belongs to this ward. In the patient workspace, an exceptional record opening is read only: patient-scoped UI gates do not offer this mutation. An ordinary authorised caller retains its own route role and the relevant stay/receiving-ward claim; a desk-switch hint grants no authority.",
     "changes": "Removes the leave record. The step can be taken back by UNDO_BED_STEP within the Undo window.",
@@ -4071,22 +3722,12 @@
     "name": "Flag a bed as coming free",
     "group": "The bed coming free",
     "lane": "expected",
-    "nodes": [
-      "bedReleased",
-      "ready"
-    ],
-    "roles": [
-      "ward",
-      "bed_manager",
-      "coordinator"
-    ],
+    "nodes": ["bedReleased", "ready"],
+    "roles": ["ward", "bed_manager", "coordinator"],
     "does": "A ward flags an upcoming discharge for a named occupying admission, saying when and what it is waiting on.",
     "needs": "The ward may only flag a stay on its own ward, with no other live release for that stay.",
     "changes": "Creates the bed release at “expected”.",
-    "reasons": [
-      "BED_RELEASE_WAITING_ON",
-      "BED_RELEASE_BLOCKERS"
-    ],
+    "reasons": ["BED_RELEASE_WAITING_ON", "BED_RELEASE_BLOCKERS"],
     "refuses": [
       {
         "when": "Guard: event.actingUnitId !== event.unitId",
@@ -4140,15 +3781,8 @@
     "name": "Confirm the discharge is going ahead",
     "group": "The bed coming free",
     "lane": "expected",
-    "nodes": [
-      "bedReleased",
-      "ready"
-    ],
-    "roles": [
-      "ward",
-      "bed_manager",
-      "coordinator"
-    ],
+    "nodes": ["bedReleased", "ready"],
+    "roles": ["ward", "bed_manager", "coordinator"],
     "does": "Confirms an expected discharge is now decided. It does not free the bed — that is a separate step.",
     "needs": "The release is currently expected.",
     "changes": "Moves expected to confirmed, clears waitingOn and records the linked admission’s discharge decision. A blocker survives; no bed is freed. A sign-off from Ward Decisions can be taken back for a short time by UNDO_RELEASE_STEP on the same release (M37, D-129).",
@@ -4211,22 +3845,12 @@
     "name": "Put a confirmed discharge back to expected",
     "group": "The bed coming free",
     "lane": "stall",
-    "nodes": [
-      "bedReleased",
-      "bedStuck",
-      "ready"
-    ],
-    "roles": [
-      "ward",
-      "bed_manager",
-      "coordinator"
-    ],
+    "nodes": ["bedReleased", "bedStuck", "ready"],
+    "roles": ["ward", "bed_manager", "coordinator"],
     "does": "Reverses a confirmed discharge decision, restating what it is now waiting on. The only step of the three that goes backwards.",
     "needs": "The release is currently confirmed.",
     "changes": "Moves confirmed to expected with listed waitingOn and clears the linked admission’s discharge decision. The blocker survives.",
-    "reasons": [
-      "BED_RELEASE_WAITING_ON"
-    ],
+    "reasons": ["BED_RELEASE_WAITING_ON"],
     "refuses": [
       {
         "when": "Guard: event.actingUnitId !== release.unitId",
@@ -4293,20 +3917,12 @@
     "name": "Flag a discharge as stuck",
     "group": "The bed coming free",
     "lane": "stall",
-    "nodes": [
-      "bedStuck"
-    ],
-    "roles": [
-      "ward",
-      "bed_manager",
-      "coordinator"
-    ],
+    "nodes": ["bedStuck"],
+    "roles": ["ward", "bed_manager", "coordinator"],
     "does": "Flags that a discharge — expected or confirmed — is currently stuck, and says why. Being stuck is a flag, not a stage.",
     "needs": "The bed has not already been released.",
     "changes": "Stores the listed blocker and actor/time on the release and linked stay. The release stage remains unchanged.",
-    "reasons": [
-      "BED_RELEASE_BLOCKERS"
-    ],
+    "reasons": ["BED_RELEASE_BLOCKERS"],
     "refuses": [
       {
         "when": "Guard: event.actingUnitId !== release.unitId",
@@ -4378,14 +3994,8 @@
     "name": "Clear the stuck flag",
     "group": "The bed coming free",
     "lane": "expected",
-    "nodes": [
-      "bedStuck"
-    ],
-    "roles": [
-      "ward",
-      "bed_manager",
-      "coordinator"
-    ],
+    "nodes": ["bedStuck"],
+    "roles": ["ward", "bed_manager", "coordinator"],
     "does": "Clears the stuck flag once whatever was holding the discharge up has been resolved.",
     "needs": "There is a flag to clear.",
     "changes": "Clears the release and linked stay blocker; retains clearance time/role, prior blocker and any supplied listed clearance reason.",
@@ -4453,21 +4063,12 @@
     "name": "Mark a bed as being made ready",
     "group": "The bed coming free",
     "lane": "record",
-    "nodes": [
-      "bedReleased",
-      "rkPrep"
-    ],
-    "roles": [
-      "ward",
-      "bed_manager",
-      "coordinator"
-    ],
+    "nodes": ["bedReleased", "rkPrep"],
+    "roles": ["ward", "bed_manager", "coordinator"],
     "does": "Marks a bed as being cleaned or awaiting repair. This is information only — it never stops the bed being counted as available or offered to somebody.",
     "needs": "The ward may only set it on its own release.",
     "changes": "Sets the note. No capacity figure moves.",
-    "reasons": [
-      "BED_PREPARATION_NOTES"
-    ],
+    "reasons": ["BED_PREPARATION_NOTES"],
     "refuses": [
       {
         "when": "Guard: event.actingUnitId !== release.unitId",
@@ -4526,14 +4127,8 @@
     "name": "Restate how many beds a ward has",
     "group": "The ward's own numbers",
     "lane": "record",
-    "nodes": [
-      "asked"
-    ],
-    "roles": [
-      "ward",
-      "bed_manager",
-      "coordinator"
-    ],
+    "nodes": ["asked"],
+    "roles": ["ward", "bed_manager", "coordinator"],
     "does": "A ward restates how many beds it can currently allocate. This does move a real bed count.",
     "needs": "The ward may only restate its own, with a current revision and a nonnegative whole number no greater than its bed count.",
     "changes": "Sets the allocatable figure, marks it as ward-sourced, and stamps the time.",
@@ -4601,19 +4196,12 @@
     "name": "Record what is restricting a ward's intake",
     "group": "The ward's own numbers",
     "lane": "record",
-    "nodes": [
-      "asked"
-    ],
-    "roles": [
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["asked"],
+    "roles": ["ward", "coordinator"],
     "does": "A ward records the restrictions it is currently operating under — staffing, infection control, a closed bay, and so on.",
     "needs": "The ward may only record its own.",
     "changes": "Replaces its constraint list.",
-    "reasons": [
-      "WARD_INTAKE_CONSTRAINTS"
-    ],
+    "reasons": ["WARD_INTAKE_CONSTRAINTS"],
     "refuses": [
       {
         "when": "Guard: event.actingUnitId !== event.unitId",
@@ -4667,12 +4255,8 @@
     "name": "Ask a ward to refresh its numbers",
     "group": "The ward's own numbers",
     "lane": "record",
-    "nodes": [
-      "asked"
-    ],
-    "roles": [
-      "coordinator"
-    ],
+    "nodes": ["asked"],
+    "roles": ["coordinator"],
     "does": "Records that somebody asked a ward to refresh its bed numbers. It changes no bed count itself.",
     "needs": "The ward exists.",
     "changes": "Logs the request.",
@@ -4732,23 +4316,12 @@
     "name": "Change how urgent it is",
     "group": "Urgency and blockers",
     "lane": "record",
-    "nodes": [
-      "asked",
-      "rkUrgent"
-    ],
-    "roles": [
-      "coordinator",
-      "ed",
-      "ward",
-      "community"
-    ],
+    "nodes": ["asked", "rkUrgent"],
+    "roles": ["coordinator", "ed", "ward", "community"],
     "does": "Changes the urgency, recording who changed it and why. It triggers no re-sorting or re-referral on its own.",
     "needs": "An open movement, sender-kind permission and a listed urgency level. A supplied reason must be listed; omission is recorded as not_given. Signed/shared scope further binds the actual sender.",
     "changes": "Sets the urgency and logs the change.",
-    "reasons": [
-      "URGENCY_CHANGE_REASONS",
-      "URGENCY_LEVELS"
-    ],
+    "reasons": ["URGENCY_CHANGE_REASONS", "URGENCY_LEVELS"],
     "refuses": [
       {
         "when": "Guard: !URGENCY_LEVELS.includes(event.urgency as (typeof URGENCY_LEVELS)[number])",
@@ -4807,22 +4380,12 @@
     "name": "Flag it urgent",
     "group": "Urgency and blockers",
     "lane": "record",
-    "nodes": [
-      "asked",
-      "pulled",
-      "rkUrgent",
-      "rkQueue"
-    ],
-    "roles": [
-      "coordinator",
-      "ed"
-    ],
+    "nodes": ["asked", "pulled", "rkUrgent", "rkQueue"],
+    "roles": ["coordinator", "ed"],
     "does": "Marks the patient urgent so they sit above every urgency level in the coordinator's queue, recording who and why.",
     "needs": "The record is open and not already flagged.",
     "changes": "Sets the flag and opens a history entry.",
-    "reasons": [
-      "URGENT_MARK_REASONS"
-    ],
+    "reasons": ["URGENT_MARK_REASONS"],
     "refuses": [
       {
         "when": "Guard: movement.flaggedUrgent",
@@ -4886,15 +4449,8 @@
     "name": "Clear the urgent flag",
     "group": "Urgency and blockers",
     "lane": "record",
-    "nodes": [
-      "asked",
-      "pulled",
-      "rkUrgent"
-    ],
-    "roles": [
-      "coordinator",
-      "ed"
-    ],
+    "nodes": ["asked", "pulled", "rkUrgent"],
+    "roles": ["coordinator", "ed"],
     "does": "Removes the urgent flag once it is no longer needed.",
     "needs": "It is currently flagged. Deliberately allowed even on a closed record.",
     "changes": "Clears the flag and closes the history entry.",
@@ -4962,18 +4518,8 @@
     "name": "Say what is holding this up",
     "group": "Urgency and blockers",
     "lane": "record",
-    "nodes": [
-      "asked",
-      "pulled",
-      "handover"
-    ],
-    "roles": [
-      "ed",
-      "community",
-      "ward",
-      "coordinator",
-      "officer"
-    ],
+    "nodes": ["asked", "pulled", "handover"],
+    "roles": ["ed", "community", "ward", "coordinator", "officer"],
     "does": "Free text describing what is actually holding the patient up. The only free-text field of its kind in the engine.",
     "needs": "An open movement and nonblank text. An unresolved revoked-examination or diversion hold cannot be overwritten; a case-only variant of a no-blocker sentinel refuses and directs to CLEAR_MOVEMENT_BLOCKER.",
     "changes": "Replaces the blocker text.",
@@ -5036,24 +4582,12 @@
     "name": "Say nothing is holding it up",
     "group": "Urgency and blockers",
     "lane": "record",
-    "nodes": [
-      "asked",
-      "pulled",
-      "handover"
-    ],
-    "roles": [
-      "ed",
-      "community",
-      "ward",
-      "coordinator",
-      "officer"
-    ],
+    "nodes": ["asked", "pulled", "handover"],
+    "roles": ["ed", "community", "ward", "coordinator", "officer"],
     "does": "Records that nothing is holding the patient up any more — which is a different statement from nobody ever having recorded one.",
     "needs": "An open movement with an active blocker, and no unresolved revoked-examination or diversion hold. The explicit hold must be resolved through reassessment/release rather than cleared as prose.",
     "changes": "Writes “None — cleared”.",
-    "reasons": [
-      "BLOCKERS_MEANING_NOTHING_IS_BLOCKING"
-    ],
+    "reasons": ["BLOCKERS_MEANING_NOTHING_IS_BLOCKING"],
     "refuses": [
       {
         "when": "Guard: !movement",
@@ -5112,17 +4646,8 @@
     "name": "Mark a notice read",
     "group": "The coordinator's inbox",
     "lane": "record",
-    "nodes": [
-      "rkNotice"
-    ],
-    "roles": [
-      "coordinator",
-      "ed",
-      "ward",
-      "officer",
-      "community",
-      "bed_manager"
-    ],
+    "nodes": ["rkNotice"],
+    "roles": ["coordinator", "ed", "ward", "officer", "community", "bed_manager"],
     "does": "Marks a notice as read by the person or team it was actually addressed to.",
     "needs": "You are the addressee, exactly, and it is not already marked.",
     "changes": "Stamps who read it and when.",
@@ -5195,12 +4720,8 @@
     "name": "Acknowledge an inbox row",
     "group": "The coordinator's inbox",
     "lane": "record",
-    "nodes": [
-      "rkInbox"
-    ],
-    "roles": [
-      "coordinator"
-    ],
+    "nodes": ["rkInbox"],
+    "roles": ["coordinator"],
     "does": "Records that the coordinator has seen a row and is on top of it, without removing or hiding it.",
     "needs": "The row names a real category and a real record.",
     "changes": "Logs the acknowledgement. Touches nothing else.",
@@ -5268,12 +4789,8 @@
     "name": "Tick off an inbox row",
     "group": "The coordinator's inbox",
     "lane": "record",
-    "nodes": [
-      "rkInbox"
-    ],
-    "roles": [
-      "coordinator"
-    ],
+    "nodes": ["rkInbox"],
+    "roles": ["coordinator"],
     "does": "Records completion of a classified human commitment. The current commitment is the coordinator’s daily check, whose id must name a signed integer day. Live fact rows cannot be ticked away.",
     "needs": "A nonblank classified commitment id, a valid daily-check day suffix and no current completion. This is a daily-check record, not proof that any patient/bed action was performed.",
     "changes": "Appends completed role/time history without mutating patient, movement or unit facts.",
@@ -5354,12 +4871,8 @@
     "name": "Reopen a completed row",
     "group": "The coordinator's inbox",
     "lane": "record",
-    "nodes": [
-      "rkInbox"
-    ],
-    "roles": [
-      "coordinator"
-    ],
+    "nodes": ["rkInbox"],
+    "roles": ["coordinator"],
     "does": "Undoes a completed row, while keeping the fact that it was once completed.",
     "needs": "It is currently complete.",
     "changes": "Logs the reopening.",
@@ -5422,12 +4935,8 @@
     "name": "Move the demonstration clock",
     "group": "Running the demonstration",
     "lane": "record",
-    "nodes": [
-      "rkClock"
-    ],
-    "roles": [
-      "demo"
-    ],
+    "nodes": ["rkClock"],
+    "roles": ["demo"],
     "does": "Adds a finite nonnegative simulation offset to the app clock. Ordinary provider time follows wall time, refreshing at minute boundaries while visible and catching up on return; initialNow pins deterministic test/render time.",
     "needs": "The demo role and finite nonnegative minutes; coordinator is not in this event’s permission list.",
     "changes": "Increases clockOffsetMinutes; it does not itself create a legal expiry or resolve a timed task. In the local provider, command acceptance precedes device durability: the saved-on-device flag remains false until the matching committed safe copy is written, and owned unsaved work is protected on unload. These persistence indicators do not add an engine transition.",
@@ -5493,9 +5002,7 @@
     "group": "Running the demonstration",
     "lane": "record",
     "nodes": [],
-    "roles": [
-      "demo"
-    ],
+    "roles": ["demo"],
     "does": "Restores the currently loaded recognised scenario, falling back to standard for a damaged scenario value.",
     "needs": "Nothing.",
     "changes": "Re-seeds all board state around the current visible time and clears the simulation offset, preserving the visible clock rather than always selecting the standard scenario. A genuine accepted reseed advances worldGeneration exactly once; wrong-role/rejected reseeds do not. A non-safe or exhausted generation refuses replacement by retaining the old state, so generation is never wrapped or reused. Reset also invalidates older asynchronous local scenario-file import requests. A newer import, reset, changed world generation or retired provider lifetime prevents an older read from replacing the current day. Imported local state is not reported durable before its device copy is written.",
@@ -5537,15 +5044,11 @@
     "group": "Running the demonstration",
     "lane": "record",
     "nodes": [],
-    "roles": [
-      "demo"
-    ],
+    "roles": ["demo"],
     "does": "Switches to a different pre-built simulated night, resetting every patient, ward and record.",
     "needs": "A recognised scenario.",
     "changes": "Replaces the whole state. A genuine accepted reseed advances worldGeneration exactly once; wrong-role/rejected reseeds do not. A non-safe or exhausted generation refuses replacement by retaining the old state, so generation is never wrapped or reused.",
-    "reasons": [
-      "WARD_SCENARIOS"
-    ],
+    "reasons": ["WARD_SCENARIOS"],
     "refuses": [
       {
         "when": "Guard: !WARD_SCENARIOS.includes(event.scenario)",
@@ -5596,12 +5099,8 @@
     "name": "Change the coordinator's settings",
     "group": "Running the demonstration",
     "lane": "record",
-    "nodes": [
-      "rkSettings"
-    ],
-    "roles": [
-      "coordinator"
-    ],
+    "nodes": ["rkSettings"],
+    "roles": ["coordinator"],
     "does": "Saves the tunable settings the rest of the system reads — access-time targets, the parallel referral cap, how long a bed hold lasts.",
     "needs": "A validated complete configuration and, when supplied, a valid baseline. Conflicting edits since that baseline refuse; non-conflicting draft fields merge. Signed/shared access also enforces coordinator scope.",
     "changes": "Applies the validated configuration or field merge atomically. It does not silently overwrite a conflicting baseline.",
@@ -5637,14 +5136,8 @@
     "name": "Record a patient’s physical departure",
     "group": "Not wired up here",
     "lane": "record",
-    "nodes": [
-      "rkDischarge",
-      "personLeaves"
-    ],
-    "roles": [
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["rkDischarge", "personLeaves"],
+    "roles": ["ward", "coordinator"],
     "does": "The protected discharge handler records physical departure of a linked occupied admission. It runs before the generic reducer switch; the later grouped switch case is not the behaviour.",
     "needs": "Permitted ward/coordinator actor, finite time, current world generation and discharge revision, matching linked patient/stay, lawful destination and no active transit/restrictive-practice/open-return conflict.",
     "changes": "Departs the stay through the shared departure helper, adjusts resources, retains audit and a bounded step-undo record. A stale or inaccessible request refuses.",
@@ -5694,15 +5187,8 @@
     "name": "Open an authorised discharge record",
     "group": "Not wired up here",
     "lane": "record",
-    "nodes": [
-      "rkDischarge"
-    ],
-    "roles": [
-      "coordinator",
-      "ward",
-      "community",
-      "bed_manager"
-    ],
+    "nodes": ["rkDischarge"],
+    "roles": ["coordinator", "ward", "community", "bed_manager"],
     "does": "Checks actor access to a discharge record and appends its protected open/read audit receipt. It runs before the generic switch.",
     "needs": "A valid actor, current generation, valid request id/optional namespace and an accessible admission. A coordinator must also give an on-behalf-of-the-ward reason from the closed `ON_BEHALF_REASONS` list (D-80 item 17); any other desk sends none. A repeated matching receipt is reused only while that read remains allowed.",
     "changes": "Records an accepted read audit event, carrying the coordinator's listed reason as `onBehalfReason`; changes no admission or bed figure.",
@@ -5748,9 +5234,7 @@
     "group": "Not wired up here",
     "lane": "record",
     "nodes": [],
-    "roles": [
-      "coordinator"
-    ],
+    "roles": ["coordinator"],
     "does": "The coordinator records one listed review decision against an accessible audit event, including supported synthetic governance entries. It runs before the generic switch.",
     "needs": "Coordinator, finite time, current generation and expected review count, a non-review audit entry in this generation and safe counters.",
     "changes": "Appends a uniquely sequenced review and its audit record. A later review changes the expected count; UNDO_AUDIT_REVIEW is a separate recorded action.",
@@ -5786,19 +5270,12 @@
     "name": "Divert a journey already under way",
     "group": "The journey",
     "lane": "diversion",
-    "nodes": [
-      "rkDiversion"
-    ],
-    "roles": [
-      "officer",
-      "coordinator"
-    ],
+    "nodes": ["rkDiversion"],
+    "roles": ["officer", "coordinator"],
     "does": "Records that a patient already in the vehicle was taken somewhere other than the ward expecting them, with a reason and the place they went.",
     "needs": "A transport job that has been collected, on a movement that is open, not arrived, not already stopped or cancelled, and not already diverted.",
     "changes": "Marks the movement diverted and records where the patient is. The held bed is NOT given back by this act.",
-    "reasons": [
-      "DIVERSION_REASONS"
-    ],
+    "reasons": ["DIVERSION_REASONS"],
     "refuses": [
       {
         "when": "Guard: movement.transport.collectedAt === undefined",
@@ -5901,14 +5378,8 @@
     "name": "Give back the bed a diverted patient was holding",
     "group": "Holding the bed",
     "lane": "record",
-    "nodes": [
-      "rkDiversion"
-    ],
-    "roles": [
-      "coordinator",
-      "ward",
-      "ed"
-    ],
+    "nodes": ["rkDiversion"],
+    "roles": ["coordinator", "ward", "ed"],
     "does": "Releases the bed still held for a movement that was diverted. Separate from the diversion itself, deliberately: diverting somebody does not decide what happens to their bed.",
     "needs": "A movement that really was diverted, and that still holds a bed.",
     "changes": "Returns the bed to the ward's figures.",
@@ -5994,15 +5465,8 @@
     "name": "Record how and when they are expected",
     "group": "The journey",
     "lane": "record",
-    "nodes": [
-      "edExpected"
-    ],
-    "roles": [
-      "coordinator",
-      "ed",
-      "ward",
-      "community"
-    ],
+    "nodes": ["edExpected"],
+    "roles": ["coordinator", "ed", "ward", "community"],
     "does": "Records the way the patient is travelling, any tracking number, and the time they are expected.",
     "needs": "An open movement with an accepted ward. A ward names itself and matches that receiving ward; coordinator may also act.",
     "changes": "Stores arrival mode, optional tracking and estimate, retaining first-record author/time and later update provenance. Keeps the pull-expiry timer. An already-late estimate can send one-time ED/ward notices; it reserves no bed and moves no stage.",
@@ -6065,14 +5529,8 @@
     "name": "Work out whether an expected arrival is late",
     "group": "The journey",
     "lane": "record",
-    "nodes": [
-      "edExpected"
-    ],
-    "roles": [
-      "coordinator",
-      "ed",
-      "ward"
-    ],
+    "nodes": ["edExpected"],
+    "roles": ["coordinator", "ed", "ward"],
     "does": "Compares the expected arrival time against the clock and records whether it has passed.",
     "needs": "A movement, and a role allowed to ask.",
     "changes": "When late, stamps the movement and sends notices to the emergency department and ward. When on time, leaves it unchanged. No journey stage moves.",
@@ -6135,13 +5593,8 @@
     "name": "Mark somebody as a step-down candidate",
     "group": "On the ward",
     "lane": "record",
-    "nodes": [
-      "rkDischargePlan"
-    ],
-    "roles": [
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["rkDischargePlan"],
+    "roles": ["ward", "coordinator"],
     "does": "Records that this admission could move to a lower level of care.",
     "needs": "An existing admission. A ward must name that admission’s ward; coordinator permission is separate.",
     "changes": "Sets the flag, and nothing else. No bed figure moves.",
@@ -6204,13 +5657,8 @@
     "name": "Record what is holding a discharge up",
     "group": "On the ward",
     "lane": "record",
-    "nodes": [
-      "rkDischargePlan"
-    ],
-    "roles": [
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["rkDischargePlan"],
+    "roles": ["ward", "coordinator"],
     "does": "Records the single thing in the way of this discharge, or that nothing is.",
     "needs": "An existing admission, the acting ward when role is ward, and a listed barrier or None/null. The reducer does not impose a seven-day minimum.",
     "changes": "Replaces the discharge-barrier field, with None normalised to null. It records a reason; it does not free or reserve a bed.",
@@ -6278,13 +5726,8 @@
     "name": "Record clinically ready and why not gone",
     "group": "On the ward",
     "lane": "record",
-    "nodes": [
-      "rkDischargePlan"
-    ],
-    "roles": [
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["rkDischargePlan"],
+    "roles": ["ward", "coordinator"],
     "does": "Records the day a patient on the ward became clinically ready for discharge and the one reason they have not gone, or clears both (Josh, 9 Nov 2026).",
     "needs": "An occupied admission, the acting ward when role is ward, a day from arrival to today and a reason from DELAYED_DISCHARGE_REASONS (the long-stay list less Clinical / Treatment), or null to clear.",
     "changes": "Sets or clears clinicallyReadySince and delayedDischargeReason together. Delayed bed days by reason are derived from them; no bed is freed or reserved.",
@@ -6361,13 +5804,8 @@
     "name": "Set or move the expected discharge date",
     "group": "On the ward",
     "lane": "record",
-    "nodes": [
-      "rkDischargePlan"
-    ],
-    "roles": [
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["rkDischargePlan"],
+    "roles": ["ward", "coordinator"],
     "does": "Sets when this admission is expected to leave. Moving a date already set counts as one more move.",
     "needs": "An admission that has not already left. A ward can only set it for its own patients. In the patient workspace, an exceptional record opening is read only: patient-scoped UI gates do not offer this mutation. An ordinary authorised caller retains its own route role and the relevant stay/receiving-ward claim; a desk-switch hint grants no authority.",
     "changes": "Sets the expected time, increments date-move count only when an existing date differs, and stamps when. A ward setter is Nurse in charge; coordinator setter is null. Pending linked bed-release dates follow; completed release dates stay historical.",
@@ -6471,14 +5909,8 @@
     "name": "Record care journey fact",
     "group": "On the ward",
     "lane": "record",
-    "nodes": [
-      "rkDischargePlan"
-    ],
-    "roles": [
-      "ward",
-      "coordinator",
-      "community"
-    ],
+    "nodes": ["rkDischargePlan"],
+    "roles": ["ward", "coordinator", "community"],
     "does": "Records a care journey fact (such as a transfer, transport, clinical plan or document) against an admission on the discharge board.",
     "needs": "Current generation/revision, permitted ward/coordinator/community actor and accessible linked occupied/departed stay. Community writes only its allowed care kinds for its own team; transfer acceptance and cancellation are coordinator-only, and an accepted or handover transfer step needs a linked placement record (a ward referral or agreed repatriation). Change-kind validation and sequence-specific guards apply. A transfer recorded as arrived also needs a Ready bed at the receiving ward once its live pulls are counted.",
     "changes": "Appends or updates the care journey record. Moves no bed figure — except a transfer recorded as arrived, which also ends this admission as transferred, opens a new occupied admission and an arrived movement at the receiving ward, completes any live bed release for the leaver, and moves both wards' bed figures.",
@@ -6567,13 +5999,8 @@
     "name": "Record follow-up arrangement",
     "group": "On the ward",
     "lane": "record",
-    "nodes": [
-      "rkDischargePlan"
-    ],
-    "roles": [
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["rkDischargePlan"],
+    "roles": ["ward", "coordinator"],
     "does": "Records follow-up contact arrangements against an admission on the discharge board.",
     "needs": "Current generation/revision, permitted ward/coordinator actor and accessible linked occupied/departed stay. The listed follow-up state cannot be recorded after death on the ward, or before arrival.",
     "changes": "Updates the follow-up arrangement on the admission. Moves no bed figure.",
@@ -6614,13 +6041,8 @@
     "name": "Record medical clearance against the movement",
     "group": "Finding a bed",
     "lane": "record",
-    "nodes": [
-      "rkClearance"
-    ],
-    "roles": [
-      "ed",
-      "coordinator"
-    ],
+    "nodes": ["rkClearance"],
+    "roles": ["ed", "coordinator"],
     "does": "Records clearance on a movement and synchronises its matching linked referral. Fresh positive clearance resumes a recorded deterioration pause.",
     "needs": "An existing movement, ED/coordinator role, finite recording time and boolean answer; an ED must name itself and be the journey's origin ED (M2); positive re-clearance must follow the recorded deterioration. In the patient workspace, an exceptional record opening is read only: patient-scoped UI gates do not offer this mutation. An ordinary authorised caller retains its own route role and the relevant stay/receiving-ward claim; a desk-switch hint grants no authority.",
     "changes": "Replaces clearance on the movement, matching linked referral and matching sibling movements. Positive fresh clearance records resumedAt for satisfied pauses; it does not restore released resources.",
@@ -6696,16 +6118,8 @@
     "name": "Attach a file to the movement",
     "group": "Legal status and examinations",
     "lane": "record",
-    "nodes": [
-      "rkLegalWritten"
-    ],
-    "roles": [
-      "coordinator",
-      "ed",
-      "ward",
-      "community",
-      "officer"
-    ],
+    "nodes": ["rkLegalWritten"],
+    "roles": ["coordinator", "ed", "ward", "community", "officer"],
     "does": "Records document type, recognised file type and byte size as attachment metadata. The selected file’s name and bytes are not stored by this event.",
     "needs": "An existing movement, nonblank document type, recognised file type and positive safe-integer byte size. Legacy filenames are read only to derive their type.",
     "changes": "Appends generated document id, formName, fileType, sizeBytes and role/time metadata; no file body or original filename is retained.",
@@ -6773,14 +6187,8 @@
     "name": "Record that a legal form was written",
     "group": "Legal status and examinations",
     "lane": "record",
-    "nodes": [
-      "rkLegalWritten"
-    ],
-    "roles": [
-      "ed",
-      "coordinator",
-      "ward"
-    ],
+    "nodes": ["rkLegalWritten"],
+    "roles": ["ed", "coordinator", "ward"],
     "does": "Records which form was written, with typed start and expiry times.",
     "needs": "A supported form, finite typed written time and any typed expiry. A ward requires an admitted stay; ED requires an open movement, while an admitted stay permits the coordinator/ward path after arrival. 3C after3D refuses; this event cannot shorten existing same-form paper expiry.",
     "changes": "Stores current paper facts and history, preserves matching same-form paper facts on a time edit, and clears a calculated legacy clock. A different form clears the old receipt. A same-form time edit also keeps the details typed from that paper and the typed receipt mark; a different form clears them.",
@@ -6856,15 +6264,8 @@
     "name": "Record that a form was continued",
     "group": "Legal status and examinations",
     "lane": "record",
-    "nodes": [
-      "rkLegalWritten"
-    ],
-    "roles": [
-      "ed",
-      "coordinator",
-      "ward",
-      "community"
-    ],
+    "nodes": ["rkLegalWritten"],
+    "roles": ["ed", "coordinator", "ward", "community"],
     "does": "Records a continuation with typed times. A 5B continues a 5A; other supported forms can replace paper facts without a prior form.",
     "needs": "An open movement, supported form and valid typed start and expiry times. On a ward desk only the ward that accepted the person may record it (D-128); the app checks the named ward and the shared server checks it is the caller's own place.",
     "changes": "Stores the paper form and typed expiry, clears the old legal clock and the typed receipt mark.",
@@ -6935,13 +6336,8 @@
     "name": "Record a typed country Form 1A extension",
     "group": "Legal status and examinations",
     "lane": "record",
-    "nodes": [
-      "rkLegalWritten"
-    ],
-    "roles": [
-      "ed",
-      "coordinator"
-    ],
+    "nodes": ["rkLegalWritten"],
+    "roles": ["ed", "coordinator"],
     "does": "For an eligible open country Form1A, forwards the clinician’s typed paper expiry through RECORD_LEGAL_FORM_EXPIRY. It computes no statutory deadline.",
     "needs": "An existing open movement carrying current Form1A with paper region country, a finite paperExpiresAt and the ordinary expiry extension rules.",
     "changes": "Records the typed expiry and expiry history through the standard expiry handler, clearing any calculated legacy clock.",
@@ -7004,13 +6400,8 @@
     "name": "Flag that the ward's authority does not match",
     "group": "Legal status and examinations",
     "lane": "record",
-    "nodes": [
-      "rkLegalMismatch"
-    ],
-    "roles": [
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["rkLegalMismatch"],
+    "roles": ["ward", "coordinator"],
     "does": "Records one of two mismatches: an involuntary patient on a voluntary ward, or a voluntary patient on a locked one.",
     "needs": "An open movement and real ward. The submitted mismatch kind must match the current patient legal status and ward authority/bed configuration.",
     "changes": "Raises the flag. It does not stop anything by itself.",
@@ -7073,15 +6464,8 @@
     "name": "Start a forty-eight-hour or seven-day clock by hand",
     "group": "Urgency and blockers",
     "lane": "record",
-    "nodes": [
-      "rkExpectFlag"
-    ],
-    "roles": [
-      "ward",
-      "coordinator",
-      "ed",
-      "community"
-    ],
+    "nodes": ["rkExpectFlag"],
+    "roles": ["ward", "coordinator", "ed", "community"],
     "does": "Raises one of two hand-set clocks against a movement.",
     "needs": "An open movement with no uncleared flag and kind voluntary_48h or involuntary_7d.",
     "changes": "Records the current manually raised flag. Replacing a previously cleared flag keeps that prior record in expectFlagHistory; no automatic state transition is implied.",
@@ -7144,15 +6528,8 @@
     "name": "Clear that hand-set clock",
     "group": "Urgency and blockers",
     "lane": "record",
-    "nodes": [
-      "rkExpectFlag"
-    ],
-    "roles": [
-      "ward",
-      "coordinator",
-      "ed",
-      "community"
-    ],
+    "nodes": ["rkExpectFlag"],
+    "roles": ["ward", "coordinator", "ed", "community"],
     "does": "Clears the flag raised above.",
     "needs": "An open movement with an uncleared expect flag.",
     "changes": "Stamps clearedAt and clearedBy on the flag; it is retained rather than removed.",
@@ -7215,19 +6592,12 @@
     "name": "Give the bed back and reopen the search, in one act",
     "group": "Holding the bed",
     "lane": "stall",
-    "nodes": [
-      "sPullReleased"
-    ],
-    "roles": [
-      "coordinator",
-      "ward"
-    ],
+    "nodes": ["sPullReleased"],
+    "roles": ["coordinator", "ward"],
     "does": "Releases the held bed AND puts the movement back into the bed search together, rather than as two separate steps.",
     "needs": "An open movement at pulled or accepted_awaiting_bed, a listed release reason and no live booking; a ward must match the accepting ward. A bed need not already be held on the accepted-only branch.",
     "changes": "Returns any matching held bed, clears acceptance/hold/requests/transport and moves to placement_requested. Logs pull release when held, otherwise acceptance withdrawal. For a return movement with sourceAdmissionId, the in-app release/withdrawal notice targets the actual sending stay ward. Ordinary ED/community origins retain their existing recipient paths; no external-provider delivery is implied.",
-    "reasons": [
-      "RELEASE_PULL_REASONS"
-    ],
+    "reasons": ["RELEASE_PULL_REASONS"],
     "refuses": [
       {
         "when": "Guard: movement.closure",
@@ -7312,14 +6682,8 @@
     "name": "Confirm the ward's morning count",
     "group": "The ward's own numbers",
     "lane": "record",
-    "nodes": [
-      "rkWardDay"
-    ],
-    "roles": [
-      "ward",
-      "bed_manager",
-      "coordinator"
-    ],
+    "nodes": ["rkWardDay"],
+    "roles": ["ward", "bed_manager", "coordinator"],
     "does": "A ward confirming how many discharges it expects that morning.",
     "needs": "The acting ward must match the target; the count must be a nonnegative safe integer.",
     "changes": "Records the confirmed number against the ward.",
@@ -7382,13 +6746,8 @@
     "name": "Send a message to a ward",
     "group": "The ward's own numbers",
     "lane": "record",
-    "nodes": [
-      "rkWardDay"
-    ],
-    "roles": [
-      "coordinator",
-      "bed_manager"
-    ],
+    "nodes": ["rkWardDay"],
+    "roles": ["coordinator", "bed_manager"],
     "does": "Records a ward refresh request with a listed message and optional urgent boolean. It sends no external message.",
     "needs": "A real unit, a message from WARD_BUZZ_MESSAGES and, if supplied, a boolean urgent answer. Blank/unlisted messages refuse.",
     "changes": "Appends a refresh-request record with role/time, message and urgency; moves no bed figure.",
@@ -7451,13 +6810,8 @@
     "name": "Sweep the beds held during leave",
     "group": "The ward's own numbers",
     "lane": "record",
-    "nodes": [
-      "rkWardDay"
-    ],
-    "roles": [
-      "ward",
-      "coordinator"
-    ],
+    "nodes": ["rkWardDay"],
+    "roles": ["ward", "coordinator"],
     "does": "Works out which beds being held while somebody is on leave are worth warning about.",
     "needs": "Nothing but the clock — it takes no patient and no ward.",
     "changes": "For each leave bed over the open-warning threshold that has not been warned, records openWarningAt and sends a ward notice. It does not release the bed or move capacity.",
@@ -7493,19 +6847,12 @@
     "name": "Log a repatriation arranged by phone",
     "group": "The journey",
     "lane": "record",
-    "nodes": [
-      "dRepat"
-    ],
-    "roles": [
-      "coordinator"
-    ],
+    "nodes": ["dRepat"],
+    "roles": ["coordinator"],
     "does": "Logs a repatriation already arranged off the system: the home hospital, whether its ward agreed, road or flight, and voluntary or involuntary, with the provider, the CAD or tracking number and an estimated time when known (W13, 5 Nov 2026: each left out warns, and a blank CAD is CAD to follow; a typed depart time the form cannot read blocks the plan form rather than recording without it). It books nothing.",
     "needs": "A non-departed admission with valid home hospital, mode and legal status. A provider, if given, must be listed; a typed CAD must pass the CAD rule; an estimate, if given, must be finite. An unanswered prior plan may later be agreed once; an agreed plan cannot be agreed again while its return remains open; after a did_not_proceed closure a distinct new attempt may be agreed. An involuntary stay cannot be logged as a voluntary return. Any still-open return for the source stay refuses another plan. A retained agreed plan may start a distinct new attempt only after its linked return closed did_not_proceed; this retry qualification does not allow duplicate live returns or duplicate agreement of an active plan.",
     "changes": "Creates or updates the telephone plan. Each distinct plan’s first agreement creates an open placement_requested return movement linked to the source stay; it does not itself book transport or transfer the patient. A retry preserves its prior closed journey and a flat earlier plan snapshot while replacing the single current plan for that stay. Agreed return origin site/ED lookup follows the saved scenario network. Local restore validates flat prior records and retains typed CAD values only as the redaction placeholder. An agreement that does not repeat the plan's provider or estimated time keeps the plan's own; a value it gives wins.",
-    "reasons": [
-      "TRANSPORT_PROVIDERS",
-      "TRANSPORT_LEGAL_STATUSES"
-    ],
+    "reasons": ["TRANSPORT_PROVIDERS", "TRANSPORT_LEGAL_STATUSES"],
     "refuses": [
       {
         "when": "Guard: !admission",
@@ -7616,13 +6963,8 @@
     "name": "Sign off the shift handover",
     "group": "The ward's own numbers",
     "lane": "record",
-    "nodes": [
-      "rkWardDay"
-    ],
-    "roles": [
-      "coordinator",
-      "ward"
-    ],
+    "nodes": ["rkWardDay"],
+    "roles": ["coordinator", "ward"],
     "does": "Records that the shift handover was signed off.",
     "needs": "A permitted role and, when supplied, a real ward. A sign-off cannot name both a ward and the whole network; signed/shared scope further limits the acting desk.",
     "changes": "Appends role/time plus the selected ward id or network flag. It records no personal name/note and makes no claim that a sheet was sent.",
@@ -7685,13 +7027,8 @@
     "name": "Record that a team was contacted",
     "group": "The coordinator's inbox",
     "lane": "record",
-    "nodes": [
-      "rkNotice"
-    ],
-    "roles": [
-      "community",
-      "coordinator"
-    ],
+    "nodes": ["rkNotice"],
+    "roles": ["community", "coordinator"],
     "does": "Records that somebody contacted a community team. This is the contact itself, not a message sent through the system.",
     "needs": "A community team that exists.",
     "changes": "Stores the team, the time and the role.",
@@ -7741,13 +7078,8 @@
     "name": "Send a network-wide alert",
     "group": "The coordinator's inbox",
     "lane": "record",
-    "nodes": [
-      "rkNotice"
-    ],
-    "roles": [
-      "coordinator",
-      "bed_manager"
-    ],
+    "nodes": ["rkNotice"],
+    "roles": ["coordinator", "bed_manager"],
     "does": "Sends an alert to wards and emergency departments across the network, with a severity, a category, who it is aimed at and how long it lasts.",
     "needs": "Nonblank title/message; listed severity/category/scope; finite positive duration; directive or bed_call kind; any explicit recipients must be real ward/ED desks. A bed call requires at least one targeted ward.",
     "changes": "Adds the alert as active, with nobody yet acknowledging it. It belongs to no patient.",
@@ -7810,17 +7142,8 @@
     "name": "Acknowledge a network-wide alert",
     "group": "The coordinator's inbox",
     "lane": "record",
-    "nodes": [
-      "rkNotice"
-    ],
-    "roles": [
-      "coordinator",
-      "ward",
-      "ed",
-      "officer",
-      "community",
-      "bed_manager"
-    ],
+    "nodes": ["rkNotice"],
+    "roles": ["coordinator", "ward", "ed", "officer", "community", "bed_manager"],
     "does": "Records that one ward or desk has seen a network-wide alert.",
     "needs": "An active alert and known ward/ED desk not already acknowledged; the special coordinator desk id requires coordinator role. Signed access must match the actor’s actual desk.",
     "changes": "Adds the unit to the alert's acknowledged list.",
@@ -7883,13 +7206,8 @@
     "name": "Stand down a network-wide alert",
     "group": "The coordinator's inbox",
     "lane": "record",
-    "nodes": [
-      "rkNotice"
-    ],
-    "roles": [
-      "coordinator",
-      "bed_manager"
-    ],
+    "nodes": ["rkNotice"],
+    "roles": ["coordinator", "bed_manager"],
     "does": "Ends a network-wide alert once the pressure has passed.",
     "needs": "An alert that exists and has not already been stood down.",
     "changes": "Marks the alert stood down, with the time and who did it.",
