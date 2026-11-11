@@ -15,12 +15,12 @@ import {
   type ReferralContactOutcome,
 } from "../referrals/referral-owner-and-calls";
 import { minutesAgoLabel } from "../referrals/referral-owner-and-calls-model";
-import { usePatientNameDisplay } from "../settings/discreet-names";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import type { Unit } from "../ward-model";
 import { usePatientOf } from "../ward-patient-name";
+import { sheetPatientLabel } from "../ward-patient-resolver";
 import { useRoleGate } from "../ward-role-gate";
 
 import { useHoldOpenForm } from "../use-hold-open-form";
@@ -141,7 +141,6 @@ function WardGroup({
 }) {
   const baseId = useId();
   const patientOf = usePatientOf();
-  const nameFor = usePatientNameDisplay();
   const raise = useWardRaise("coordinator");
   const gate = useRoleGate();
   const [outcome, setOutcome] = useState<ReferralContactOutcome | "">("");
@@ -295,7 +294,8 @@ function WardGroup({
     return (
       <li key={item.referral.id}>
         <Link href={referralBoardHref(item.referral.id)} className={styles.link}>
-          {nameFor(who.formalName, who.umrn)}
+          {/* M103 (Josh, 10 Nov 2026): the call sheet shows initials and UMRN only. */}
+          {sheetPatientLabel(who)}
         </Link>{" "}
         <span className={styles.note}>
           Tier {item.referral.urgency}, raised {formatInstantWithDay(item.referral.raisedAt, now)}

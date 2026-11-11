@@ -197,7 +197,12 @@ the action's operational perspective; the authenticated shared role and place sc
 records and operations the account may access.
 
 `backend/ward-flow/engine.ts` bundles the domain engine for the shared backend. `postgres.mjs`
-executes versioned shared commands, receipts and audit in one transaction. From migration 10,
+executes versioned shared commands, receipts and audit in one transaction. Its areas live beside it
+(Tier 7 audit A5-05): `workspace-access.mjs` (who a desk works as, roles, cover, requests, sign-outs
+and break glass), `workspace-push.mjs` (phone alert queueing, delivery and subscriptions),
+`workspace-record-views.mjs` (audit pages, record openings and review lists),
+`workspace-review-authority.mjs` (which openings and covers a coordinator may review) and
+`workspace-shared.mjs`. From migration 10,
 `records.mjs` splits the workspace into one row per referral, bed, movement and other record, so a
 save writes only what it changed and clashes only with another change to the same record. The provider, its
 adapters and how to change it are recorded in [DATABASE.md](../DATABASE.md), and set-up is in
@@ -209,7 +214,7 @@ Source and local tests do not establish hosted identity, database or deployment 
 Feature 4, off by default. `ward-act-now-items.ts` is now the one pure definition of the active
 act-now (red) rows; `shell/ward-act-now-notifier.tsx` (open-tab alerts) and the backend's
 `engine.ts` `actNowAlerts` both read it. `backend/ward-flow/push.mjs` holds the VAPID settings
-check, subscription validation, the identifier-free payload and the sender; `postgres.mjs`
+check, subscription validation, the identifier-free payload and the sender; `workspace-push.mjs`
 compares the act-now list with the last announced one after each committed command and from the
 five-minute `wardFlowPushSweep` timer (inside a savepoint, so an error never costs the command)
 and queues pending rows in the `push_deliveries` outbox in the same transaction. Delivery claims

@@ -50,6 +50,8 @@ export const categoryLabels: Record<AuditCategory, string> = {
   undo: "Undo",
   "bed-placement": "Bed move",
   "patient-record": "Patient record",
+  "referral-answer": "Referral answer",
+  arrival: "Arrival",
 };
 export const outcomeLabels = {
   accepted: "Accepted",
@@ -75,6 +77,9 @@ export const actionLabels: Record<AuditEvent["action"], string> = {
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
   ACCEPT_REFERRAL: "Accept referral",
   HOLD_REFERRAL_BED: "Hold referral bed",
+  DECLINE: "Decline referral",
+  DECLINE_REFERRAL: "Decline referral",
+  PATIENT_ARRIVED: "Record arrival",
   CHANGE_LEGAL_STATUS: "Change legal status",
   RAISE_REFERRAL: "Record legal form",
   // T2 (2026-09-17 build plan). Covers both the first typed expiry and a later extension — see

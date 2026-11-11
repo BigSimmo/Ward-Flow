@@ -1,6 +1,6 @@
 # Desk guide: Community team
 
-<!-- last-checked: 2026-10-26 -->
+<!-- last-checked: 2026-11-10 -->
 
 _Updated 2026-10-30 — role wording checked against source at `b6aa5cde`; browser coverage above is unchanged._
 
@@ -13,11 +13,11 @@ saved before then say **Community service** and are kept as they are.
 ## What you see first
 
 **My team**: referrals waiting for your team's answer, people in a bed, and your caseload. Your
-main menu: **My team, Referrals, New referral**. **Movements**, under **More**, shows your own
-journeys.
+main menu: **My team, Referrals**. **New referral** is the button in the header. **Movements**,
+under **More**, shows your own journeys.
 
-On a phone, the bar at the bottom has **My team, Referrals, Create, Alerts, Activity**. **Create**
-holds **New referral**, and **Movements** is under **Menu**.
+On a phone, the bar at the bottom has **My team, Referrals, Create, Alerts, Movements**. **Create**
+holds **New referral**, and **Activity** is under **Menu**.
 
 ## Jobs you do most
 

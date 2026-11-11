@@ -46,6 +46,7 @@ import { acceptedAddressing, referralState } from "@/components/ward-management/
 
 // Moved to `ward-access-scope-records.ts` (F-17); re-exported so existing importers keep working.
 export {
+  auditDetailWardInScope,
   coordinatorRecordScope,
   scopeBroadcastAlerts,
   SMALL_NUMBER_NOT_SHOWN,

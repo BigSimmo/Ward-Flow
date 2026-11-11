@@ -2,7 +2,14 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { assess, LIVING_DOCS, readLastChecked, run } from "../scripts/check-living-docs-freshness.mjs";
+import {
+  assess,
+  exitCodeFor,
+  isBlocking,
+  LIVING_DOCS,
+  readLastChecked,
+  run,
+} from "../scripts/check-living-docs-freshness.mjs";
 
 describe("check-living-docs-freshness", () => {
   it("reads the last-checked marker", () => {
@@ -75,5 +82,41 @@ describe("check-living-docs-freshness", () => {
       status: "ok",
       ageDays: 0,
     });
+  });
+  it("blocks on a stale runbook or desk guide and stays advisory for other pages (A8-10)", () => {
+    expect(isBlocking("docs/ward-flow/OPERATIONS-RUNBOOK.md")).toBe(true);
+    expect(isBlocking("docs/ward-flow/desk-guides/ward.md")).toBe(true);
+    expect(isBlocking("docs/ward-flow/DEMO-SCRIPT.md")).toBe(false);
+    expect(isBlocking("README.md")).toBe(false);
+
+    const root = mkdtempSync(join(tmpdir(), "living-docs-"));
+    for (const path of LIVING_DOCS) {
+      mkdirSync(join(root, path, ".."), { recursive: true });
+      writeFileSync(join(root, path), "<!-- last-checked: 2026-11-01 -->\n");
+    }
+    mkdirSync(join(root, "docs/ward-flow/desk-guides"), { recursive: true });
+    writeFileSync(join(root, "docs/ward-flow/desk-guides/ward.md"), "<!-- last-checked: 2026-11-01 -->\n");
+    const fresh = run({ root, days: 14, reference: "2026-11-02" });
+    expect(exitCodeFor(fresh)).toBe(0);
+
+    // A stale advisory page alone does not fail, unless --strict.
+    writeFileSync(join(root, "docs/ward-flow/DEMO-SCRIPT.md"), "<!-- last-checked: 2026-10-01 -->\n");
+    const advisoryOnly = run({ root, days: 14, reference: "2026-11-02" });
+    expect(advisoryOnly.problems).toEqual([
+      expect.objectContaining({ path: "docs/ward-flow/DEMO-SCRIPT.md", status: "stale", blocking: false }),
+    ]);
+    expect(exitCodeFor(advisoryOnly)).toBe(0);
+    expect(exitCodeFor(advisoryOnly, { strict: true })).toBe(1);
+
+    // A stale desk guide or runbook fails by default; --advisory turns that off.
+    writeFileSync(join(root, "docs/ward-flow/desk-guides/ward.md"), "# Ward\n");
+    writeFileSync(join(root, "docs/ward-flow/OPERATIONS-RUNBOOK.md"), "<!-- last-checked: 2026-10-01 -->\n");
+    const blocking = run({ root, days: 14, reference: "2026-11-02" });
+    expect(blocking.problems.filter((p) => p.blocking).map((p) => p.path)).toEqual([
+      "docs/ward-flow/OPERATIONS-RUNBOOK.md",
+      "docs/ward-flow/desk-guides/ward.md",
+    ]);
+    expect(exitCodeFor(blocking)).toBe(1);
+    expect(exitCodeFor(blocking, { advisory: true })).toBe(0);
   });
 });

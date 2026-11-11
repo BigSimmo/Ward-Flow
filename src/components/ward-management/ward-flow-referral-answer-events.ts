@@ -286,6 +286,9 @@ export function reduceReferralAnswerEvent(
           ],
         };
         const next = replaceMovement(state, movement.id, updated);
+        // M35 (Josh, 10 Nov 2026): the answer leaves an audit row, as the other decisions do.
+        decision.outcome = "accepted";
+        decision.reasonCode = "none";
         return appendNotices(next, [
           makeNotice(
             event.now,
@@ -340,6 +343,8 @@ export function reduceReferralAnswerEvent(
             : movement.blocker,
       };
       const next = replaceMovement(state, movement.id, updated);
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
       // Addendum §1.3: the referring emergency department is told this unit said no. Shares
       // `NoticeKind` "referral_declined" with `DECLINE_REFERRAL`.
       return appendNotices(next, [
@@ -1246,6 +1251,8 @@ export function reduceReferralAnswerEvent(
           event.reason !== "no_suitable_bed"
         )
           return reject(state, event, "Only a named ward can waitlist a referral for no suitable bed.");
+        decision.outcome = "accepted";
+        decision.reasonCode = "none";
         return replaceReferral(state, referral.id, {
           ...referral,
           destinations: referral.destinations.map((candidate) =>
@@ -1267,6 +1274,8 @@ export function reduceReferralAnswerEvent(
           : candidate,
       );
       const next = replaceReferral(state, referral.id, { ...referral, destinations });
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
       // Addendum §1.3 and FD-23: the decline reason reaches that referral's referrer and no other
       // team; no notice is safer than a wrongly-addressed one. Shares `NoticeKind`
       // "referral_declined" with `DECLINE`.

@@ -37,7 +37,6 @@ Old lists that may still hold open work. Check each item against source before a
 
 Agreed by Josh or required by a decision, with no build or check yet.
 
-- Josh adds `Ward Flow hold` as a required check in the main ruleset, so the `hold` label blocks merges (Q384). Not re-checked in GitHub. ([design handover](../design/handover/README.md#q382-to-q389-threads-started-3-november-2026))
 - Clinical values still synthetic (six added since D-63, four more under D-106) need a sourced value and Josh's signature. ([clinical-values.md](clinical-values.md))
 - Review the per-client sign-in limits before any real user signs in (D-97 item 6, WF-B008). ([decisions.md](decisions.md#d-97-owner-answers-on-seven-open-items-n21-n25-n26-n29-n40-n41-and-wf-b008-8-november-2026))
 - Desk walk, part 2: Patient, movement and referral detail pages, break glass, cover, the phone layout and the shared signed-in server. ([desk walk](evidence/desk-walk-2026-11-08.md))
@@ -61,6 +60,7 @@ Agreed by Josh or required by a decision, with no build or check yet.
 - Legal times kept as typed with no countdowns (D-93), and the outage copy stays print or saved file only (D-72); ED long-wait next steps worded (D-108, #1560).
 - Q383 (check the Railway front-door settings before #1345 merged): not kept as open work; #1345 merged.
 - Ward risk flags on bed requests (D-117 item 3): the ward's request card now reads the referrals sent to that ward (its inbox, FD-23), and shows "Plan staffing for this arrival" when the referral records aggression or absconding. Movement and referral only, never the patient record (R-2026-09-04-A). ([decisions.md](decisions.md#d-117-care-plans-follow-up-frequent-presenter-count-tribunal-date-and-ward-flags-10-november-2026))
+- Q384 done: `Ward Flow hold` has been a required check in the "Protections" ruleset since 3 November, so the `hold` label blocks merges (audit A8-08). ([design handover](../design/handover/README.md#q382-to-q389-threads-started-3-november-2026))
 
 Merged into `main` in the last two weeks (26 October to 9 November 2026).
 

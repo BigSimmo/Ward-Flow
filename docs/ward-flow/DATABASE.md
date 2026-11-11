@@ -1,6 +1,6 @@
 # Ward Flow database: the one source of truth
 
-<!-- last-checked: 2026-10-24 -->
+<!-- last-checked: 2026-11-10 -->
 
 _Updated 2026-11-03 - migration capabilities and recovery references checked against source at `a6d8a0fd`; historical hosted-schema observations remain unreconciled; Documentation owns._
 
@@ -97,6 +97,7 @@ The backend accepts a database at migration 5 through <!-- fact:latest-migration
 | 14        | Closed records older than 30 days move to an archive     | Live workspace keeps growing toward its 8 MB limit, so loads and saves slow down |
 | 15        | Whole-list and TV reads are recorded in access history   | List and TV opens are not logged by that feature                                 |
 | 16        | Forecast snapshots and miss reasons shared between desks | Each browser keeps its own forecast history                                      |
+| 17        | Help memory (tours and tips seen) kept per account       | Each browser keeps its own Help memory                                           |
 
 **Historical observation, not current schema:** the 26 October 2026 access-test note recorded
 migration 12. The [26 October restore drill](RETENTION-AND-BACKUP.md) separately recorded a live

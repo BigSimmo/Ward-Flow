@@ -1,6 +1,6 @@
 # Ward Flow operations runbook
 
-<!-- last-checked: 2026-10-24 -->
+<!-- last-checked: 2026-11-10 -->
 
 Written 24 October 2026 from repository docs and config; not tested against the live services.
 
@@ -111,7 +111,7 @@ Weekly, or before a demonstration. All read-only.
 6. **Quiet periods.** Two things stop by themselves when nobody is working on Ward Flow:
    - GitHub turns off every scheduled workflow after 60 days without repository activity:
      backend uptime, the daily release, receipt pruning, the dependency audit and the scheduled CI
-     run. `.github/workflows/workflow-keepalive.yml` re-enables them every Sunday night to reset
+     run. `.github/workflows/workflow-keepalive.yml` re-enables them every Monday at 7 am Perth to reset
      that clock, and leaves alone any you switched off by hand. If its own weekly run stops, check
      each workflow's Actions page for recent scheduled runs. Turn back on only a workflow GitHub
      disabled for inactivity; leave one that was switched off on purpose alone. (To hold releases,

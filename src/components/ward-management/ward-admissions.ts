@@ -260,6 +260,15 @@ export const LEAVING_DESTINATIONS: readonly {
   { id: "did-not-return", label: "Did not return", countsAsStatewideRelease: true },
 ];
 
+/**
+ * M35 (Josh, 10 Nov 2026): a stay that ended because the person moved to another psychiatric ward.
+ * That is a move, not a discharge, so a "discharged" or "gone today" count leaves it out (as
+ * `ward-readmission.ts` already does).
+ */
+export function endedInWardTransfer(admission: Pick<Admission, "leavingDestination">): boolean {
+  return admission.leavingDestination === "transferred-to-another-psychiatric-ward";
+}
+
 /** Fixed operational vocabulary, shared by commands, pickers and storage recovery. */
 export function isLeavingDestination(value: unknown): value is LeavingDestination {
   return typeof value === "string" && LEAVING_DESTINATIONS.some((destination) => destination.id === value);
