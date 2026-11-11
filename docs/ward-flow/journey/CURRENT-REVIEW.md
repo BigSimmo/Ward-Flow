@@ -127,3 +127,15 @@ fields; it still raises one ADD_PATIENT with the same required payload. The ADD_
 guard prose were updated, and the whole-file digests for these four files refreshed in `actions.json`,
 `event-dispositions.json` and `machines.json`. Evidence: `tests/ward-add-patient.dom.test.tsx` and
 `tests/ward-patient-model.test.ts`, run locally. A later review fix only adds `aria-controls` to Add patient's Open all button (and its import); its digest was refreshed again.
+
+## 11 November 2026 — feature build batch 5 (PR #1607)
+
+Two cited review sources changed, compared line by line with main `5b08a5eb`. `board/ward-board.tsx` only makes
+the hero figures tappable (plan item 5, D-137): it reads the lists those figures were already counted from
+(`capacityBreakdownLists`) and hands them to the count breakdown panel, with each person's name and patient link.
+The PATIENT_ARRIVED, RECORD_LEAVING, RECORD_AWAY_AT_EMERGENCY_DEPARTMENT, RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT
+and END_LEAVE_BED `raise()` calls, payloads and guards are unchanged; they moved down 9 or 51 lines.
+`settings/settings-screen.tsx` adds the ward desk QR card (plan item 42) beside the drafts card; the
+SET_CONFIGURATION save is unchanged and moved down one line. The six whole-file digests and lines in
+`actions.json` were refreshed. Evidence: `tests/ward-count-breakdown.dom.test.tsx` and `tests/ward-desk-qr.test.ts`,
+run locally.

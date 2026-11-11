@@ -19,6 +19,8 @@ import {
 } from "@/components/wf";
 import { formatWardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { PageLiveChip } from "@/components/ward-management/ward-page-live";
+import { CountBreakdown } from "@/components/ward-management/count-breakdown";
+import { wardReadyBreakdownRows } from "@/components/ward-management/count-breakdown-rows";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { PAGE_OWNERS } from "@/components/ward-management/ward-page-owners";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
@@ -217,6 +219,23 @@ export function CapacityHero({
                 unit: `/ ${totals.beds}`,
                 label: totals.ready === 1 ? "bed ready" : "beds ready",
                 testId: "capacity-hero-ready",
+                // Item 5: the wards the figure sums (`networkTotals` over these rows), each with its ready beds.
+                renderPress: (press) => (
+                  <CountBreakdown
+                    value={totals.ready}
+                    noun={totals.ready === 1 ? "bed ready" : "beds ready"}
+                    kind="beds"
+                    scope={executive ? "aggregate" : "own"}
+                    countedAt={now}
+                    rows={() => wardReadyBreakdownRows(model.networkRows, canOpen)}
+                    className={press.className}
+                    id={press.id}
+                    labelledBy={press.labelledBy}
+                    testId="capacity-hero-ready-breakdown"
+                  >
+                    {press.children}
+                  </CountBreakdown>
+                ),
               },
               {
                 id: "gap",

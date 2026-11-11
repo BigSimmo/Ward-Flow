@@ -225,28 +225,37 @@ export function openBedsNow(unit: Unit, releases: BedRelease[]): number {
   return Math.max(0, available - bedsPendingPreparation(unit.id, releases));
 }
 
-export function capacityBreakdown(
+export type CapacityBreakdownLists = {
+  confirmedToday: BedRelease[];
+  expectedToday: BedRelease[];
+  blockedToday: BedRelease[];
+  confirmedHeldUpToday: BedRelease[];
+  onLeave: LeaveBed[];
+  excludedBeyondToday: number;
+};
+
+/**
+ * Item 5 (count breakdown): the records behind `capacityBreakdown`'s day figures for one ward. The
+ * figures are these lists' lengths, so a breakdown that lists them always adds up to the figure.
+ */
+export function capacityBreakdownLists(
   unit: Unit,
-  releases: BedRelease[],
-  leave: LeaveBed[],
+  releases: readonly BedRelease[],
+  leave: readonly LeaveBed[],
   now: Instant,
-): CapacityBreakdown {
-  // Shared with the five-state bed grid so stale counts cannot make this screen disagree.
-  const { available: availableNow, held } = boundedBedAvailability(unit);
-
-  const unitReleases = releases.filter((release) => release.unitId === unit.id);
-
-  let confirmedToday = 0;
-  let expectedToday = 0;
-  let blockedToday = 0;
-  let confirmedHeldUpToday = 0;
-  let excludedBeyondToday = 0;
-
-  for (const release of unitReleases) {
-    if (release.state === "discharged") continue;
-    const band = releaseBand(release, now);
-    if (band === "beyond-today") {
-      excludedBeyondToday += 1;
+): CapacityBreakdownLists {
+  const lists: CapacityBreakdownLists = {
+    confirmedToday: [],
+    expectedToday: [],
+    blockedToday: [],
+    confirmedHeldUpToday: [],
+    onLeave: leave.filter((bed) => bed.unitId === unit.id),
+    excludedBeyondToday: 0,
+  };
+  for (const release of releases) {
+    if (release.unitId !== unit.id || release.state === "discharged") continue;
+    if (releaseBand(release, now) === "beyond-today") {
+      lists.excludedBeyondToday += 1;
       continue;
     }
     // The bed-model rework's whole point (2026-08-28). `state` now carries ONLY how certain the
@@ -256,22 +265,31 @@ export function capacityBreakdown(
     // count. A blocked-but-confirmed bed is counted as confirmed here, deliberately, and the
     // block is reported alongside rather than instead. Do not re-introduce a `blocker` test into
     // this if/else — that is the defect, not a refinement of it.
-    if (release.state === "confirmed") confirmedToday += 1;
-    else expectedToday += 1;
-    if (release.blocker !== null) blockedToday += 1;
-    if (release.blocker !== null && release.state === "confirmed") confirmedHeldUpToday += 1;
+    if (release.state === "confirmed") lists.confirmedToday.push(release);
+    else lists.expectedToday.push(release);
+    if (release.blocker !== null) lists.blockedToday.push(release);
+    if (release.blocker !== null && release.state === "confirmed") lists.confirmedHeldUpToday.push(release);
   }
+  return lists;
+}
 
-  const onLeave = leave.filter((bed) => bed.unitId === unit.id).length;
-
+export function capacityBreakdown(
+  unit: Unit,
+  releases: BedRelease[],
+  leave: LeaveBed[],
+  now: Instant,
+): CapacityBreakdown {
+  // Shared with the five-state bed grid so stale counts cannot make this screen disagree.
+  const { available: availableNow, held } = boundedBedAvailability(unit);
+  const lists = capacityBreakdownLists(unit, releases, leave, now);
   return {
     availableNow,
-    confirmedToday,
-    expectedToday,
-    blockedToday,
-    confirmedHeldUpToday,
+    confirmedToday: lists.confirmedToday.length,
+    expectedToday: lists.expectedToday.length,
+    blockedToday: lists.blockedToday.length,
+    confirmedHeldUpToday: lists.confirmedHeldUpToday.length,
     held,
-    onLeave,
-    excludedBeyondToday,
+    onLeave: lists.onLeave.length,
+    excludedBeyondToday: lists.excludedBeyondToday,
   };
 }

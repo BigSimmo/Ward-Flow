@@ -1,0 +1,107 @@
+/* Ward desk QR code page (ward-desk-qr-card.tsx). Screen: a paper preview that follows the theme,
+ * with the code always dark on white so it scans. Paper: A4, ink on white, the code large. */
+
+.paper {
+  display: grid;
+  justify-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+  text-align: center;
+}
+
+.ward {
+  margin: 0;
+  font-size: var(--wf-fs-20);
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.hospital {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-15);
+}
+
+.code {
+  display: grid;
+  place-items: center;
+  width: min(100%, 15rem);
+  aspect-ratio: 1;
+  margin: var(--wf-s-2) 0;
+}
+
+.code svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.wait {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
+.say {
+  margin: 0;
+  font-size: var(--wf-fs-15);
+}
+
+.url {
+  margin: 0;
+  max-width: 100%;
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  overflow-wrap: anywhere;
+}
+
+.foot {
+  margin: var(--wf-s-2) 0 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+@media print {
+  .paper {
+    gap: 5mm;
+    padding: 20mm 0 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--wf-print-ink);
+  }
+
+  .ward {
+    font-size: 28pt;
+  }
+
+  .hospital,
+  .say {
+    font-size: 15pt;
+  }
+
+  .hospital,
+  .url,
+  .foot {
+    color: var(--wf-print-muted);
+  }
+
+  .code {
+    width: 110mm;
+    margin: 6mm 0;
+  }
+
+  .url {
+    font-size: 10pt;
+  }
+
+  .foot {
+    font-size: 9pt;
+  }
+}

@@ -150,7 +150,7 @@ describe("Statistics phone polish (batch 4)", () => {
     asPhone();
     renderInProvider(<StatisticsWardScreen unitId="rph-adult-secure" />);
     const label = screen.getByText(/^in use, \d+%$/u);
-    expect(label.closest("p")?.textContent).toMatch(/^\d+\s*\/\s*\d+ in use, \d+%$/u);
+    expect(label.closest("[data-wf-hero-figure]")?.textContent).toMatch(/^\d+\s*\/\s*\d+ in use, \d+%$/u);
   });
 
   it("draws no trend line on the EDs phone rows (stats-19)", () => {
