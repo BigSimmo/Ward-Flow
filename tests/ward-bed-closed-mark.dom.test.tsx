@@ -73,4 +73,27 @@ describe("closing the exact bed from the bed drawer", () => {
     expect(card(bed)).toHaveAttribute("data-state", "ready");
     expect(bedsIn("ready")).toHaveLength(ready.length);
   });
+
+  // Live audit item 13 (11 Nov 2026): the bed's History lists its closure and its reopening.
+  it("lists the closure and the reopening in the bed's History", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <Grab />
+          <WardScreen unitId={UNIT} />
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    const bed = Math.min(...bedsIn("ready"));
+    fireEvent.click(card(bed));
+    fireEvent.click(screen.getByTestId("ward-drawer-close-bed"));
+    fireEvent.click(screen.getByTestId("ward-drawer-reopen-bed"));
+    const toggle = screen.getByTestId("bed-drawer-history-toggle");
+    fireEvent.click(toggle);
+    const history = document.getElementById(toggle.getAttribute("aria-controls")!)!;
+    expect(history).toBeVisible();
+    expect(history).toHaveTextContent(/Bed closed, by /u);
+    expect(history).toHaveTextContent("Bed reopened");
+    expect(toggle).toHaveTextContent("History2");
+  });
 });
