@@ -401,8 +401,7 @@ const unit = z
       }),
     ),
     restrictionReviews: z.optional(z.array(restrictionReviewRule)),
-    // Feature item 13: two typed times read to instants, when and by which desk. Optional, so a state
-    // saved before intake windows existed still loads.
+    // Item 13: typed times read to instants, when and by which desk. Absent in older saves.
     intakeWindow: z.optional(z.looseObject({ from: finite, to: finite, at: finite, by: text })),
     // D-72: fixed-list choices, ids and typed times already read to instants. No typed text.
     restrictivePractice: z.optional(

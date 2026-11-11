@@ -1,6 +1,5 @@
 "use client";
 
-import { intakeWindowLine, tonightIntakeWindow } from "@/components/ward-management/capacity/ward-intake-window";
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { currentLegalDueAt, formProgression, formProgressionPhrase } from "../legal-forms/legal-form-progression";
@@ -37,7 +36,6 @@ import {
   WARD_REQUEST_WITHDRAWAL_REASONS,
   wardRequestWithdrawalReasonLabels,
   type WardRequestWithdrawalReason,
-  wardIntakeConstraintLabels,
 } from "@/components/ward-management/ward-change-reasons";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
@@ -110,6 +108,7 @@ import { openWardHelp } from "@/components/ward-management/help/ward-help-events
 import styles from "./coordinator.module.css";
 import drawer from "@/components/ward-management/movements/movement-drawer.module.css";
 import shortlistStyles from "./shortlist-panel.module.css";
+import { WardDetailIntakeNotes } from "./shortlist-ward-intake-notes";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { FIT_LABEL, fitGroups, type FitKind } from "./home-fit";
 import { NextWardAfterRefusal } from "./next-ward-after-refusal";
@@ -2172,27 +2171,7 @@ export function ShortlistPanel({
                     still being made ready
                   </span>
                 ) : null}
-                {/* Owner Answer 18 (second round, 2026-09-17): the ward's own fixed-list answer to
-                what is currently limiting who it can accept — the coordinator's ward-detail view
-                this ruling names. Chosen labels only, never a code. */}
-                {activeUnit.intakeConstraints !== undefined && activeUnit.intakeConstraints.length > 0 ? (
-                  <span
-                    className={styles.diagramBeingMadeReady}
-                    data-testid={`ward-shortlist-ward-detail-constraints-${activeUnit.id}`}
-                  >
-                    Limiting intake:{" "}
-                    {activeUnit.intakeConstraints.map((code) => wardIntakeConstraintLabels[code]).join(", ")}
-                  </span>
-                ) : null}
-                {/* Feature item 13: tonight's intake hours, information only. */}
-                {tonightIntakeWindow(activeUnit, now) ? (
-                  <span
-                    className={styles.diagramBeingMadeReady}
-                    data-testid={`ward-shortlist-ward-detail-intake-window-${activeUnit.id}`}
-                  >
-                    {intakeWindowLine(tonightIntakeWindow(activeUnit, now))}
-                  </span>
-                ) : null}
+                <WardDetailIntakeNotes unit={activeUnit} now={now} className={styles.diagramBeingMadeReady} />
               </div>
             ) : null}
             {/* The security gate below will read "Met — Secure ward meets an open requirement" for this
