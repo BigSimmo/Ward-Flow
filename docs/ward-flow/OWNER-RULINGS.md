@@ -304,7 +304,7 @@ safe global key across 30 files.
 | `D-131` | `decisions.md`:1679 | D-131. Hard-case demo data allowed, and the movement diagram follows the engine (10 November 2026) |
 | `D-132` | `decisions.md`:1688 | D-132. Audit fixes group 1: docs and CI guards (10 November 2026) |
 | `D-138` | `decisions.md`:1698 | D-138. Phone alert urgency by kind (10 November 2026) |
-| `D-144` | `decisions.md`:1704 | D-144. Performance audit fixes and the phone speed target (11 November 2026) |
+| `D-146` | `decisions.md`:1704 | D-146. Performance audit fixes and the phone speed target (11 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -748,7 +748,7 @@ safe global key across 30 files.
 - `D-131` — line 1679, heading: "D-131. Hard-case demo data allowed, and the movement diagram follows the engine (10 November 2026)"
 - `D-132` — line 1688, heading: "D-132. Audit fixes group 1: docs and CI guards (10 November 2026)"
 - `D-138` — line 1698, heading: "D-138. Phone alert urgency by kind (10 November 2026)"
-- `D-144` — line 1704, heading: "D-144. Performance audit fixes and the phone speed target (11 November 2026)"
+- `D-146` — line 1704, heading: "D-146. Performance audit fixes and the phone speed target (11 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 
