@@ -207,7 +207,7 @@ export function passOpensSite(pass: FrontDoorPass, sharedEnabled: boolean): bool
 }
 
 /** The shortest demo code that opens the site, counted after spaces and dashes are removed. */
-export const DEMO_CODE_MIN_LENGTH = 12;
+const DEMO_CODE_MIN_LENGTH = 12;
 
 /** The demo code's own form: capitals, with spaces and dashes ignored, so "ward 7q4k" still opens. */
 function normaliseDemoCode(code: string): string {
