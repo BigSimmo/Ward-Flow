@@ -127,9 +127,13 @@ export function WardSharedSaveStatus({
   const inFlight = connection.status === "saving";
   const slow = useSaveSlow(inFlight);
   // Item 8: a save once left waiting (failed, or held while offline) keeps the full warning through
-  // its retry, until nothing is left unconfirmed.
+  // its retry, until nothing is left unconfirmed. A save only queued behind a refresh has not failed
+  // (PR #1626 review), so it keeps the calm "Saving…".
   const [failedBefore, setFailedBefore] = useState(false);
-  const waitingAfterFailure = !!save?.unconfirmedSave && !inFlight;
+  const waitingAfterFailure =
+    !!save?.unconfirmedSave &&
+    !inFlight &&
+    (connection.status === "unavailable" || !!connection.error || (connection.waiting ?? 0) > 0);
   if (waitingAfterFailure && !failedBefore) setFailedBefore(true);
   if (!save?.unconfirmedSave && !inFlight && failedBefore) setFailedBefore(false);
   // A save in flight with no error stays calm until it is slow or the browser is offline.

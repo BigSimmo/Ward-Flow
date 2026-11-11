@@ -104,6 +104,7 @@ The test fails when a test mocks a module not in this list. Add it here, and to 
 @/components/ward-management/ward/ward-screen-lazy
 @/components/wf
 @/components/wf/dialog
+@/components/wf/toast-choices
 @/components/wf/use-is-phone
 @/lib/copy-to-clipboard
 @/lib/front-door-pass

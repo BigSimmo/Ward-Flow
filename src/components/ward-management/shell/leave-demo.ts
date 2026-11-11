@@ -14,12 +14,20 @@ import { SharedSessionContext } from "./ward-shared-session-context";
  */
 const noChange = () => () => {};
 
+/**
+ * PR #1626 review: a pass end that the server confirms after the deadline still removes the marker,
+ * so this page remembers having seen it. Leave the demo then stays on offer to try again.
+ */
+let markerSeen = false;
+
 function markerPresent(): boolean {
+  if (markerSeen) return true;
   try {
-    return document.cookie.split(/;\s*/).includes("wf_door=1");
+    markerSeen = document.cookie.split(/;\s*/).includes("wf_door=1");
   } catch {
-    return false;
+    // Cookies blocked: no marker to read.
   }
+  return markerSeen;
 }
 
 /**

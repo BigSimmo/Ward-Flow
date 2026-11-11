@@ -82,6 +82,39 @@ describe("bed closure reason on the toast (D-148)", () => {
     expect(within(again).queryByTestId("toast-choices")).toBeNull();
   });
 
+  // PR #1626 review: leaving the page before the Undo's reply must not lose the chosen reason.
+  it("still closes again with the reason when the page has gone before the Undo is accepted", async () => {
+    let acceptUndo: (outcome: WardCommandOutcome) => void = () => {};
+    const dispatch = vi
+      .fn<(event: WardFlowEvent) => Promise<WardCommandOutcome>>()
+      .mockResolvedValueOnce({ commandId: "close", status: "accepted", undoStep: stepRecord(3) })
+      .mockImplementationOnce(() => new Promise((resolve) => (acceptUndo = resolve)))
+      .mockResolvedValueOnce({ commandId: "again", status: "accepted", undoStep: stepRecord(5) });
+    const view = render(
+      <ToastProvider>
+        <Page dispatch={dispatch} />
+      </ToastProvider>,
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByText("Close this bed"));
+    });
+    const choose = await within(screen.getByTestId("toast")).findByTestId("toast-choices");
+    await act(async () => {
+      fireEvent.click(choose);
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("menuitem", { name: "Staffing" }));
+    });
+    expect(dispatch).toHaveBeenCalledTimes(2);
+    view.rerender(<ToastProvider>{null}</ToastProvider>);
+    await act(async () => {
+      acceptUndo({ commandId: "undo", status: "accepted" });
+    });
+    expect(dispatch).toHaveBeenCalledTimes(3);
+    expect(dispatch.mock.calls[2][0]).toMatchObject({ type: "SET_BED_CLOSED", closed: true, reason: "staffing" });
+    expect(await screen.findByText(/^Bed 4 closed: Staffing\./u)).toBeInTheDocument();
+  });
+
   it("does not close again when the undo is refused", async () => {
     const dispatch = vi
       .fn<(event: WardFlowEvent) => Promise<WardCommandOutcome>>()

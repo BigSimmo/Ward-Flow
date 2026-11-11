@@ -115,6 +115,10 @@ describe("Midland on the signed-in shared workspace", () => {
       expect(screen.queryByTestId("community-top-duty")).toBeNull();
       expect(screen.queryByText("3 need someone today")).toBeNull();
       expect(screen.getByTestId("ward-community-screen")).toBeInTheDocument();
+      // PR #1626 review: the team's own page, drawn from the board's referrals, not the unresolved page
+      // (which shares the screen's test id).
+      expect(screen.queryByText("Community team not found")).toBeNull();
+      expect(screen.getByText("No referral naming this team is currently waiting for an answer.")).toBeInTheDocument();
     } finally {
       vi.unstubAllEnvs();
     }

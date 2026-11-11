@@ -183,6 +183,42 @@ describe("rail account menu (DK1)", () => {
     }
   });
 
+  // Review of PR #1626: a pass end the server confirms after the deadline removes the marker; the
+  // page still offers Leave the demo, so trying again needs no reload.
+  it("keeps Leave the demo on offer when the pass ends after the deadline", async () => {
+    document.cookie = "wf_door=1; path=/";
+    let reply: (response: Response) => void = () => {};
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>((resolve) => (reply = resolve))),
+    );
+    const replace = vi.fn();
+    vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, replace } as Location);
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      renderRail();
+      fireEvent.click(within(openAccountMenu()).getByRole("menuitem", { name: "Leave the demo" }));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(8_000);
+      });
+      expect(screen.getByText("The demo could not end")).toBeInTheDocument();
+      // The late reply ends the pass and removes the marker.
+      document.cookie = "wf_door=; path=/; max-age=0";
+      await act(async () => {
+        reply(new Response(null, { status: 204 }));
+      });
+      cleanup();
+      renderRail();
+      expect(itemNames(openAccountMenu())).toContain("Leave the demo");
+      expect(replace).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+      document.cookie = "wf_door=; path=/; max-age=0";
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    }
+  });
+
   it("never offers Leave the demo in a signed-in session, even on a front-door site", () => {
     document.cookie = "wf_door=1; path=/";
     try {

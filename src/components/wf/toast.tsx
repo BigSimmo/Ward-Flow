@@ -48,7 +48,7 @@ type ToastTimeout = {
 
 /**
  * An optional follow-up choice on the toast, such as a reason for the step just taken (D-148). A
- * kit menu of the choices opens from one button (shown once its code has loaded); choosing closes the toast.
+ * kit menu of the choices opens from one button (a plain list until its code has loaded); choosing closes the toast.
  */
 export type ToastChoices = {
   /** The menu's accessible name and the button's words. */
@@ -58,8 +58,34 @@ export type ToastChoices = {
   onChoose: (id: string) => void | false;
 };
 
+/**
+ * PR #1626 review: until the menu's code arrives, or if it cannot load, a plain native list keeps
+ * the choice open within the Undo window.
+ */
+function PlainChoices({ choices, onDone }: { choices: ToastChoices; onDone?: () => void }) {
+  return (
+    <select
+      aria-label={choices.label}
+      className={styles.toastAction}
+      value=""
+      onChange={(event) => {
+        if (event.target.value && choices.onChoose(event.target.value) !== false) onDone?.();
+      }}
+    >
+      <option value="" disabled>
+        {choices.label}
+      </option>
+      {choices.items.map((item) => (
+        <option key={item.id} value={item.id}>
+          {item.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 /** Loaded only when a toast offers choices (D-148), so the kit menu is off every first load. */
-const ToastChoicesMenu = lazy(() => import("./toast-choices"));
+const ToastChoicesMenu = lazy(() => import("./toast-choices").catch(() => ({ default: PlainChoices })));
 
 export type ToastNextStep = {
   label: string;
@@ -305,7 +331,7 @@ export function ToastView({
         )
       ) : null}
       {choices && (!undo || phase === "running") ? (
-        <Suspense fallback={null}>
+        <Suspense fallback={<PlainChoices choices={choices} onDone={onClose} />}>
           <ToastChoicesMenu choices={choices} onDone={onClose} />
         </Suspense>
       ) : null}

@@ -324,7 +324,13 @@ export function useUndoableStep({
   function runStep(event: WardFlowEvent, step: UndoableStep) {
     const offered = step.undo?.(nowRef.current);
     const priorSeq = offered ? undoRecordSeqFor(undoRecords, offered.type, stepUndoSubjectId(offered)) : undefined;
-    submit(event, { prior: rejectionCountRef.current, ...step, priorSeq });
+    // Run after the page has gone (a toast choice's second step): its outcome is said on the layout toast.
+    submit(event, {
+      prior: rejectionCountRef.current,
+      ...step,
+      priorSeq,
+      ...(mountedRef.current ? {} : { sayAfterLeaving: true }),
+    });
   }
 
   function submit(event: WardFlowEvent, pending: Pending, record?: () => ReturnType<WardCommandDispatch>) {
@@ -345,7 +351,15 @@ export function useUndoableStep({
     let saidAfterLeaving = false;
     const publish = (outcome: WardCommandOutcome | void) => {
       if (!mountedRef.current) {
-        if (!saidAfterLeaving) saidAfterLeaving = sayAfterLeaving(pending, outcome || undefined);
+        if (saidAfterLeaving) return;
+        // PR #1626 review: a toast choice's second step (D-148's reasoned close) still runs after
+        // the page has gone, once its Undo is accepted, so the chosen reason is not lost.
+        if (pending.then && outcome?.status === "accepted" && !(outcome.isCurrent && !outcome.isCurrent())) {
+          saidAfterLeaving = true;
+          pending.then();
+          return;
+        }
+        saidAfterLeaving = sayAfterLeaving(pending, outcome || undefined);
         return;
       }
       pendingRef.current.push(outcome ? { ...pending, outcome } : pending);

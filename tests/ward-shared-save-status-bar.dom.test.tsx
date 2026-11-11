@@ -149,4 +149,19 @@ describe("a save in flight", () => {
     render(withSave(<WardSharedSaveStatus deskLabel="Coordinator" connection={saving({ error: "Not saved." })} />));
     expect(screen.getByTestId("ward-shared-reload-warning")).toBeVisible();
   });
+
+  // PR #1626 review: only a save that failed or was held offline keeps the full warning through its
+  // retry; a save queued behind a refresh has not failed and stays calm once it sends.
+  it("stays calm for a save that was only queued, and keeps the warning after a failure", () => {
+    const queued = { ...connection("ready"), error: null } as unknown as WardSharedConnection;
+    const view = render(withSave(<WardSharedSaveStatus deskLabel="Coordinator" connection={queued} />));
+    view.rerender(withSave(<WardSharedSaveStatus deskLabel="Coordinator" connection={saving()} />));
+    expect(screen.getByTestId("ward-shared-status-bar")).toHaveTextContent(/^Saving…$/u);
+    view.unmount();
+
+    const failed = { ...connection("unavailable"), error: "Not saved." } as unknown as WardSharedConnection;
+    const again = render(withSave(<WardSharedSaveStatus deskLabel="Coordinator" connection={failed} />));
+    again.rerender(withSave(<WardSharedSaveStatus deskLabel="Coordinator" connection={saving()} />));
+    expect(screen.getByTestId("ward-shared-reload-warning")).toBeVisible();
+  });
 });
