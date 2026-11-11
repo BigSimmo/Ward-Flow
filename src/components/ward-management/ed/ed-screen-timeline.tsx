@@ -6,7 +6,7 @@ import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { WardFlowContextValue } from "@/components/ward-management/ward-flow-provider";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
-import { LONG_WAIT_MINUTES, LONG_WAIT_TEXT } from "@/components/ward-management/ward-operational-defaults";
+import { isLongWait, LONG_WAIT_TEXT } from "@/components/ward-management/ward-operational-defaults";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { movementMedicalClearance } from "./ed-screen-model";
@@ -97,25 +97,25 @@ export function edDepartmentTimelineEvents({
       movements,
     });
     if (now - m.openedAt <= 24 * 60 || isMovementOpen) {
-      const isLongWait = now - m.openedAt > LONG_WAIT_MINUTES && isMovementOpen;
+      const longWait = isLongWait(now - m.openedAt) && isMovementOpen;
       timelineEvents.push({
         id: `arrival-${m.id}-${m.openedAt}`,
         min: m.openedAt,
-        tone: isLongWait ? "warn" : "quiet",
+        tone: longWait ? "warn" : "quiet",
         category: "arrivals",
         categoryLabel: "Arrivals & Departures",
         patientName: patientInfo.displayName,
         movementId: m.id,
         badgeText: "Arrived",
-        badgeTone: isLongWait ? "warn" : "quiet",
+        badgeTone: longWait ? "warn" : "quiet",
         primaryText: "Arrived at Emergency Department",
-        detailText: isLongWait ? `Waiting ${splitDuration(now - m.openedAt)} (${LONG_WAIT_TEXT})` : undefined,
+        detailText: longWait ? `Waiting ${splitDuration(now - m.openedAt)} (${LONG_WAIT_TEXT})` : undefined,
         by: null,
         isOpenMovement: isMovementOpen,
         what: (
           <>
             <b>{patientInfo.displayName}</b> arrived at the department
-            {isLongWait && (
+            {longWait && (
               <span>
                 {" "}
                 &mdash; waiting {LONG_WAIT_TEXT} ({splitDuration(now - m.openedAt)})
