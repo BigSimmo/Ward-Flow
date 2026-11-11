@@ -1450,7 +1450,7 @@ Source-contract SHA256: 0596d6806d8b270c8de8a4b8395ebb29a1cfcf6979143bb3682e4512
   tests: tests/ward-psych-review-ready-next.test.ts
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/ward-flow-review-ready-events.ts:67; SHA256 5cca0ed3af64cbb191c326720a629279f0faaaebecee685b026910c203e2668d
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2217; SHA256 9c1070d69204d59729ce019fbf9edf8b3ff67eac83421f1eb04e3237828b2911
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2221; SHA256 9c1070d69204d59729ce019fbf9edf8b3ff67eac83421f1eb04e3237828b2911
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:567; SHA256 77b865d4619e74be8ea3dcac1b81c0201a1e48ec5e2502fe38ee9d3ab62e7275
 - RECORD_PSYCH_REVIEW_SEEN — modelled; event roles: ed, coordinator
   Reviewed command model (9 Nov 2026): records that the registrar or consultant saw the person for the review asked for; a time only.
@@ -1471,7 +1471,7 @@ Source-contract SHA256: 0596d6806d8b270c8de8a4b8395ebb29a1cfcf6979143bb3682e4512
   tests: tests/ward-psych-review-ready-next.test.ts
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/ward-flow-review-ready-events.ts:75; SHA256 5cca0ed3af64cbb191c326720a629279f0faaaebecee685b026910c203e2668d
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2218; SHA256 9c1070d69204d59729ce019fbf9edf8b3ff67eac83421f1eb04e3237828b2911
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2222; SHA256 9c1070d69204d59729ce019fbf9edf8b3ff67eac83421f1eb04e3237828b2911
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:568; SHA256 77b865d4619e74be8ea3dcac1b81c0201a1e48ec5e2502fe38ee9d3ab62e7275
 - RECORD_ESCALATION_CALL — modelled; event roles: ed, coordinator
   Reviewed command model (item 3, D-133): records who was called at an ED wait step and one outcome from a fixed list; a shared record, nothing dials.
@@ -1515,7 +1515,7 @@ Source-contract SHA256: 0596d6806d8b270c8de8a4b8395ebb29a1cfcf6979143bb3682e4512
   tests: tests/ward-psych-review-ready-next.test.ts
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/ward-flow-review-ready-events.ts:90; SHA256 5cca0ed3af64cbb191c326720a629279f0faaaebecee685b026910c203e2668d
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2219; SHA256 9c1070d69204d59729ce019fbf9edf8b3ff67eac83421f1eb04e3237828b2911
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2223; SHA256 9c1070d69204d59729ce019fbf9edf8b3ff67eac83421f1eb04e3237828b2911
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:571; SHA256 77b865d4619e74be8ea3dcac1b81c0201a1e48ec5e2502fe38ee9d3ab62e7275
 - RAISE_EXPECT_FLAG — diagram-reviewed; event roles: ward, coordinator, ed, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
@@ -1640,7 +1640,7 @@ Source-contract SHA256: 0596d6806d8b270c8de8a4b8395ebb29a1cfcf6979143bb3682e4512
   effects: Appends a triages record (codes only); the patient record's Now tab lists it. No Undo: it is a signed record. Typed text (assessment, mental state, formulation, plan) stays in the form and is never in the event.
   tests: tests/ward-triage-signed.test.ts
   tests: tests/ward-event-permissions.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2387; SHA256 9c1070d69204d59729ce019fbf9edf8b3ff67eac83421f1eb04e3237828b2911
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2388; SHA256 9c1070d69204d59729ce019fbf9edf8b3ff67eac83421f1eb04e3237828b2911
   Reviewed source: src/components/ward-management/triage/triage-signed-reducer.ts:46; SHA256 88ebffb9dc86dd544d9bdac7f561fcf4998a3af62d9a19ffe4211c5325142666
   Reviewed source: src/components/ward-management/ward-access-state.ts:394; SHA256 6749082a89387b340bc0b52cfe76a13f8375532e44cbbcdf17a85d696c94e703
 - REQUEST_WARD_STAFF — modelled; event roles: ward, coordinator, bed_manager
