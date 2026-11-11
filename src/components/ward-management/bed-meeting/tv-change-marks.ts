@@ -36,7 +36,7 @@ export function nextTvChangeMarks(
   now: Instant,
   frozen: boolean,
 ): TvChangeMarks {
-  if (previous !== null && frozen) return previous;
+  if (previous !== null && frozen && previous.screen === screen) return previous;
   const fresh = previous === null || previous.screen !== screen;
   let changed = fresh;
   const tiles: Record<string, { figure: TvTileFigure; changedAt: Instant | null }> = {};

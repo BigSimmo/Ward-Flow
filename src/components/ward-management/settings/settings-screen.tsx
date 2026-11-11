@@ -87,7 +87,7 @@ const WardHelpUsageCard = dynamic(() =>
   import("@/components/ward-management/help/ward-help-usage-card").then((m) => m.WardHelpUsageCard),
 );
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
+import { usePersonaDeskId, useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
 import { ROLE_SCREENS, type WardAccessRole } from "@/components/ward-management/ward-role-access";
 import { useConfigurationGate } from "@/components/ward-management/settings/settings-configuration-gate";
 import { AccessSettings, showsAccessTab } from "./access-settings";
@@ -214,6 +214,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   // Josh, 3 Nov 2026 (stress test, "yes to all"): with Role access off the access in force is the
   // whole view, so Settings follows the desk being tried in the demo, as the rail's person does.
   const personaRole = useShellPersonaRole();
+  const personaDeskId = usePersonaDeskId();
   const deskRole: WardAccessRole = !roleAccessOn && access.role === "coordinator" ? personaRole : access.role;
   const role: WardAccessRole = source.kind === "executive" ? "executive" : deskRole;
   const accessOn = roleAccessOn && showsAccessTab(access);
@@ -994,7 +995,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     <div className={rx.accessStack}>
       <SettingsProfileCard now={now} />
       {role === "executive" ? null : <SettingsDraftsCard />}
-      {role === "ward" ? <WardDeskQrCard /> : null}
+      {role === "ward" ? <WardDeskQrCard demoUnitId={roleAccessOn ? undefined : personaDeskId} /> : null}
       {role === "admin" ? null : accessPanels}
     </div>
   );

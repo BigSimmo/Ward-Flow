@@ -51,7 +51,11 @@ function useMountedCard() {
   }, []);
 }
 
-export function WardDeskQrCard() {
+/**
+ * `demoUnitId`: with role access off, the access in force is the whole network, so Settings passes
+ * the ward desk being tried in the demo ("Go to a desk"), and the card offers that ward only.
+ */
+export function WardDeskQrCard({ demoUnitId }: { demoUnitId?: string } = {}) {
   const access = useEffectiveWardAccess();
   const { units } = useWardFlowSelect("units");
   const printing = useSyncExternalStore(
@@ -60,11 +64,22 @@ export function WardDeskQrCard() {
     () => null,
   );
   useMountedCard();
-  if (access.role !== "ward" || access.scope.kind !== "ward") return null;
-  const held = new Set(access.scope.unitIds);
+  const heldIds =
+    access.role === "ward" && access.scope.kind === "ward"
+      ? access.scope.unitIds
+      : access.role === "coordinator" && demoUnitId !== undefined
+        ? [demoUnitId]
+        : [];
+  const held = new Set(heldIds);
+  // A ward that left the desk's scope (cover ended) while its page was open closes that page.
+  const stale = printing !== null && !held.has(printing.unit.id);
+  useEffect(() => {
+    if (stale) setPrinting(null);
+  }, [stale]);
   // The network's own fixed ward order (D-126), never the order the desk's scope lists them.
   const wards = units.filter((unit) => held.has(unit.id));
   if (wards.length === 0) return null;
+  const shown = stale ? null : printing;
 
   const openFor = (unit: Unit) => {
     const url = wardDeskUrl(window.location.origin, unit.id);
@@ -92,7 +107,7 @@ export function WardDeskQrCard() {
         </SettingRow>
       ))}
       <Dialog
-        open={printing !== null}
+        open={shown !== null}
         onClose={() => setPrinting(null)}
         title="Desk QR code"
         description="The code holds this ward's web address only. Ward Flow does not send it anywhere."
@@ -100,12 +115,12 @@ export function WardDeskQrCard() {
         primary={{
           label: "Print or save PDF",
           onAction: () => window.print(),
-          loading: printing !== null && !printing.matrix && !printing.failed,
-          disabledReason: printing?.failed ? "The code could not be made. Close and try again." : undefined,
+          loading: shown !== null && !shown.matrix && !shown.failed,
+          disabledReason: shown?.failed ? "The code could not be made. Close and try again." : undefined,
         }}
         data-testid="ward-settings-desk-qr-dialog"
       >
-        {printing ? <DeskQrPaper printing={printing} /> : null}
+        {shown ? <DeskQrPaper printing={shown} /> : null}
       </Dialog>
     </Card>
   );

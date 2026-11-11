@@ -61,6 +61,8 @@ function breakdownPress(figure: BoardFigure | undefined, now: number, testId: st
         countedAt={now}
         rows={rows}
         className={press.className}
+        id={press.id}
+        labelledBy={press.labelledBy}
         anchorClassName={breakdownStyles.cellAnchor}
         testId={press.testId ?? testId}
       >

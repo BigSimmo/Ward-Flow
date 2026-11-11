@@ -60,6 +60,14 @@ describe("TV change marks", () => {
     expect(tvChangeMarkText(other, "ready", AT + 1)).toBeNull();
   });
 
+  it("starts again with no marks when the screen changes while frozen", () => {
+    const first = nextTvChangeMarks(null, "ward:a", { ready: 3 }, AT - 1, false);
+    const marked = nextTvChangeMarks(first, "ward:a", { ready: 4 }, AT, false);
+    const other = nextTvChangeMarks(marked, "ward:b", { ready: 7 }, AT + 1, true);
+    expect(other.screen).toBe("ward:b");
+    expect(tvChangeMarkText(other, "ready", AT + 1)).toBeNull();
+  });
+
   it("formats the time on the app's 24 hour clock, wrapping past midnight", () => {
     const first = nextTvChangeMarks(null, "s", { ed: 1 }, 1440 + 9 * 60 + 5 - 1, false);
     const marks = nextTvChangeMarks(first, "s", { ed: 2 }, 1440 + 9 * 60 + 5, false);

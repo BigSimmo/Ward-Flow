@@ -27,7 +27,14 @@ type Press = { href?: string; onClick?: () => void };
  * A pressable the page draws itself, in place of the figure's label or the band cell's body: a
  * count breakdown (feature plan item 5) passes its own button here. The kit gives it the look.
  */
-export type HeroRenderPress = (press: { className: string; children: ReactNode; testId?: string }) => ReactNode;
+export type HeroRenderPress = (press: {
+  className: string;
+  children: ReactNode;
+  testId?: string;
+  /** The button's own id and `aria-labelledby`, so a figure's name is its value and label ("2 ready now"). */
+  id?: string;
+  labelledBy?: string;
+}) => ReactNode;
 
 export type HeroFigureItem = Press & {
   id: string;
@@ -79,13 +86,18 @@ function HeroFigure({ item }: { item: HeroFigureItem }) {
   // so a screen reader hears the figure, not only its word.
   const named = { id: labelId, "aria-labelledby": `${valueId} ${labelId}` };
   return (
-    <p className={styles.fig} data-tone={item.tone} data-testid={item.testId}>
+    <div className={styles.fig} data-tone={item.tone} data-testid={item.testId} data-wf-hero-figure="">
       <b className={styles.figValue} id={valueId}>
         {item.value}
         {item.unit ? <small className={styles.figUnit}>{item.unit}</small> : null}
       </b>{" "}
       {item.renderPress ? (
-        item.renderPress({ className: cx(labelClass, styles.figLink, styles.figButton), children: item.label })
+        item.renderPress({
+          className: cx(labelClass, styles.figLink, styles.figButton),
+          children: item.label,
+          id: named.id,
+          labelledBy: named["aria-labelledby"],
+        })
       ) : item.href ? (
         <Link href={item.href} className={labelClass} data-testid={item.linkTestId} data-wf-fig-label="" {...named}>
           {item.label}
@@ -105,7 +117,7 @@ function HeroFigure({ item }: { item: HeroFigureItem }) {
       ) : (
         <span className={labelClass}>{item.label}</span>
       )}
-    </p>
+    </div>
   );
 }
 

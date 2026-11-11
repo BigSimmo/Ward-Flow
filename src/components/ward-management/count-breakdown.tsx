@@ -40,6 +40,9 @@ export type CountBreakdownProps = {
   className?: string;
   anchorClassName?: string;
   testId?: string;
+  /** The trigger's id and `aria-labelledby` (a hero figure passes its value and label ids). */
+  id?: string;
+  labelledBy?: string;
   children: ReactNode;
 };
 
@@ -53,6 +56,8 @@ export function CountBreakdown({
   className,
   anchorClassName,
   testId,
+  id,
+  labelledBy,
   children,
 }: CountBreakdownProps) {
   const isPhone = useIsPhone();
@@ -68,6 +73,8 @@ export function CountBreakdown({
           ref={phoneTriggerRef}
           type="button"
           className={className}
+          id={id}
+          aria-labelledby={labelledBy}
           aria-haspopup="dialog"
           aria-expanded={sheetOpen}
           data-testid={testId}
@@ -101,6 +108,8 @@ export function CountBreakdown({
           {...props}
           onKeyDown={onKeyDown}
           className={className}
+          id={id}
+          aria-labelledby={labelledBy}
           data-testid={testId}
           data-count-breakdown=""
           onPointerEnter={() => void loadPanel()}

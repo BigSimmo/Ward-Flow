@@ -396,6 +396,17 @@
   animation: deskPendingGiveUp 0s 8s forwards;
 }
 
+/* D-137 follow-up: the held cookie is shared by the browser's tabs, while the desk is kept per tab. A
+   ward tab reloaded after another tab chose the coordinator's desk sends "0", so the server draws the
+   coordinator's rail and top bar. While this tab's stored desk is still pending, they stay hidden
+   too (their shape kept, so nothing moves). On a held load they are the empty placeholder and
+   nothing, so this changes nothing there. */
+:global(html[data-wf-desk-pending]) .shellRow :global([data-testid="ward-rail"]),
+:global(html[data-wf-desk-pending]) .shellContent :global([data-testid="ward-bar"]) {
+  visibility: hidden;
+  animation: deskPendingGiveUp 0s 8s forwards;
+}
+
 @keyframes deskPendingGiveUp {
   to {
     visibility: visible;

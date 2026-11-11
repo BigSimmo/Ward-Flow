@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // The panel is fetched on first use; here it renders at once (first call: the pop-up body, second: the sheet).
@@ -15,6 +15,7 @@ vi.mock("next/dynamic", async () => {
 
 import { CountBreakdown } from "@/components/ward-management/count-breakdown";
 import type { BreakdownRow } from "@/components/ward-management/count-breakdown-model";
+import { WF_PHONE_QUERY } from "@/components/wf/use-is-phone";
 
 const rows: BreakdownRow[] = [
   { id: "m-1", label: "SYNTHETIC, Alex", detail: "Example ED", href: "/ward-flow/movements/m-1" },
@@ -73,5 +74,55 @@ describe("count breakdown", () => {
     });
     expect(screen.queryAllByTestId("count-breakdown-row")).toHaveLength(0);
     expect(screen.getByTestId("count-breakdown-withheld")).toHaveTextContent(/Names are not listed in this view/);
+  });
+
+  describe("on a phone (bottom sheet)", () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    function renderOnPhone() {
+      vi.spyOn(window, "matchMedia").mockImplementation(
+        (query) =>
+          ({
+            matches: query === WF_PHONE_QUERY,
+            media: query,
+            onchange: null,
+            addListener: vi.fn(),
+            removeListener: vi.fn(),
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            dispatchEvent: vi.fn(),
+          }) as unknown as MediaQueryList,
+      );
+      render(
+        <CountBreakdown value={3} noun="open ED movements" countedAt={0} rows={() => rows}>
+          3 open ED movements
+        </CountBreakdown>,
+      );
+      const button = screen.getByRole("button", { name: "3 open ED movements" });
+      act(() => {
+        fireEvent.click(button);
+      });
+      const sheet = screen.getByTestId("count-breakdown-sheet");
+      expect(within(sheet).getAllByTestId("count-breakdown-row")).toHaveLength(3);
+      return { button, sheet };
+    }
+
+    it("returns focus to the figure after Escape", async () => {
+      const { button, sheet } = renderOnPhone();
+      act(() => {
+        fireEvent.keyDown(sheet, { key: "Escape" });
+      });
+      expect(screen.queryByTestId("count-breakdown-sheet")).not.toBeInTheDocument();
+      await waitFor(() => expect(button).toHaveFocus());
+    });
+
+    it("returns focus to the figure after the close button", async () => {
+      const { button, sheet } = renderOnPhone();
+      act(() => {
+        fireEvent.click(within(sheet).getByRole("button", { name: "Close" }));
+      });
+      expect(screen.queryByTestId("count-breakdown-sheet")).not.toBeInTheDocument();
+      await waitFor(() => expect(button).toHaveFocus());
+    });
   });
 });

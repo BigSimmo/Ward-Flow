@@ -793,6 +793,8 @@ export function CoordinatorScreen() {
                           countedAt={now}
                           rows={() => movementBreakdownRows(edJourneys.people, breakdownPerson, now, canOpenHref)}
                           className={press.className}
+                          id={press.id}
+                          labelledBy={press.labelledBy}
                           testId="home-figure-ed-breakdown"
                         >
                           {press.children}
@@ -812,6 +814,8 @@ export function CoordinatorScreen() {
                           countedAt={now}
                           rows={() => wardReadyBreakdownRows(counts.capacity?.readyWards ?? [], canOpenHref)}
                           className={press.className}
+                          id={press.id}
+                          labelledBy={press.labelledBy}
                           testId="home-figure-beds-breakdown"
                         >
                           {press.children}

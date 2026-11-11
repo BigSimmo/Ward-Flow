@@ -229,6 +229,8 @@ export function CapacityHero({
                     countedAt={now}
                     rows={() => wardReadyBreakdownRows(model.networkRows, canOpen)}
                     className={press.className}
+                    id={press.id}
+                    labelledBy={press.labelledBy}
                     testId="capacity-hero-ready-breakdown"
                   >
                     {press.children}

@@ -22,7 +22,7 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import styles from "./night-view.module.css";
 
 const CAPACITY_HREF = "/ward-flow/capacity";
-const WAITING_HREF = "/ward-flow/delays";
+const WAITING_HREF = "/ward-flow/waiting";
 const MOVEMENTS_HREF = "/ward-flow/movements";
 const ON_CALL_HREF = "/ward-flow/on-call";
 
