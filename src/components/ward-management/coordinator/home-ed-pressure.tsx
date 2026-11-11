@@ -14,7 +14,7 @@ import { edLongestWaitTone, edPressure } from "@/components/ward-management/ward
 import { edHealthService, healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 import { edShortName, siteByCode } from "@/components/ward-management/ward-sites";
 import { WARD_ED_HREF } from "@/components/ward-management/ward-nav";
-import { EdCrewsWaitingLine } from "@/components/ward-management/ed/ed-crews-waiting-line";
+import { EdCrewsWaitingLine } from "@/components/ward-management/ed-crews-waiting-line";
 
 import heroStyles from "./home-hero.module.css";
 import styles from "./home.module.css";

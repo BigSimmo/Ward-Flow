@@ -4,10 +4,9 @@ import Link from "next/link";
 import { Copy } from "lucide-react";
 import { useMemo, useState, type RefObject } from "react";
 
-import { Badge, Button, Sheet, StatusGlyph } from "@/components/wf";
+import { Badge, Button, Sheet, StateLine, StatusGlyph } from "@/components/wf";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import { buildOnCallDirectory } from "@/components/ward-management/on-call/on-call-directory";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 import { useOptionalWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
@@ -27,7 +26,7 @@ import {
   lastEscalationCall,
   type EscalationCallOutcome,
 } from "./escalation-calls";
-import { escalationContact } from "./escalation-contact";
+import { buildOnCallDirectory, escalationContact } from "../escalation-contact";
 import contact from "../staffing/staffing.module.css";
 import styles from "./escalation-call.module.css";
 
@@ -216,11 +215,7 @@ function OutcomeButtons({
           </Button>
         ))}
       </div>
-      {save.error ? (
-        <span className={contact.status} role="alert">
-          {save.error}
-        </span>
-      ) : null}
+      {save.error ? <StateLine kind="error" compact title={save.error} /> : null}
       {done ? (
         <span className={contact.status} role="status">
           Recorded: {ESCALATION_CALL_OUTCOME_LABELS[done]}.

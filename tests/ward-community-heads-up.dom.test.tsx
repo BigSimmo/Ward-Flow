@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
-import { HomeTeamHeadsUpCard } from "@/components/ward-management/community/home-team-heads-up-card";
+import { HomeTeamHeadsUpCard } from "@/components/ward-management/home-team-heads-up-card";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 

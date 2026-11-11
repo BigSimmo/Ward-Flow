@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Button, Segmented, type ChoiceItem } from "@/components/wf";
+import { Button, Segmented, StateLine, type ChoiceItem } from "@/components/wf";
 import { crewArrivalMode, type CrewArrivalMode } from "@/components/ward-management/ward-crew-handover";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -73,9 +73,7 @@ export function EdBroughtBy({ movement, raise }: { movement: Movement; raise: Wa
         <p className={styles.note}>Optional. Mark it to type the crew&apos;s handover times.</p>
       ) : null}
       {save.error ? (
-        <p className={styles.error} role="alert">
-          {save.error}
-        </p>
+        <StateLine kind="error" compact title={save.error} />
       ) : status ? (
         <p className={styles.note} role="status">
           {status}

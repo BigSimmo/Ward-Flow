@@ -19,10 +19,7 @@ import {
 import { noFormWords as formNotHeldWords } from "@/components/ward-management/ward-legal-status";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edWaitStep } from "@/components/ward-management/ward-ed-wait-steps";
-import {
-  EscalationLastOutcome,
-  EscalationStepCall,
-} from "@/components/ward-management/escalation/escalation-step-call";
+import { EscalationLastOutcome, EscalationStepCall } from "@/components/ward-management/escalation-step-call";
 import { buttonClass, StatusGlyph } from "@/components/wf";
 import { CardSafetyTagsLazy as CardSafetyTags } from "@/components/ward-management/patients/card-safety-tags-lazy";
 import { EdActionsMenu } from "./ed-board-controls";

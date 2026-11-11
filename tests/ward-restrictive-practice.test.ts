@@ -5,8 +5,8 @@
 // moves a bed count, a stay or a legal record.
 import { describe, expect, it } from "vitest";
 
+import { pastInstantFromClockText } from "@/components/ward-management/ward-clock";
 import {
-  pastInstantFromClockText,
   recentIncidents,
   seclusionRoomView,
 } from "@/components/ward-management/restrictive-practice/restrictive-practice-view";

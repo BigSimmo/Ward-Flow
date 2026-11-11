@@ -13,7 +13,7 @@ import type { EdScreenContext } from "./ed-screen-context";
 import styles from "./ed.module.css";
 import { TierKey } from "../tier-key";
 import { EdHandoverBoard } from "./ed-handover-board";
-import { EdCrewsWaitingLine } from "./ed-crews-waiting-line";
+import { EdCrewsWaitingLine } from "@/components/ward-management/ed-crews-waiting-line";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
 

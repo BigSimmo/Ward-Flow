@@ -19,7 +19,7 @@ import {
 import { presentationDecidedAt, outcomeLabel } from "./referral-board-model";
 import { acceptedReferralsAwaitingPull, acceptedWardOf, type AcceptedAwaitingPull } from "./accepted-ward-referral";
 import { CopyNotesButton } from "./copy-notes-button";
-import { referralAcceptanceNotesText } from "./referral-notes-text";
+import { referralAcceptanceNotesText } from "@/components/ward-management/referral-notes-text";
 import { ChevronLeft, ChevronRight, FileText, ListOrdered, TriangleAlert, UserRound } from "lucide-react";
 
 import { formatSheetMoment } from "@/components/ward-management/ward-clock";

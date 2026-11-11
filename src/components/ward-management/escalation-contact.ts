@@ -2,6 +2,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { minuteOfDay } from "@/components/ward-management/ward-clock";
 import type { EdWaitStep } from "@/components/ward-management/ward-ed-wait-steps";
 import type { HealthService } from "@/components/ward-management/ward-model";
+export { buildOnCallDirectory } from "@/components/ward-management/on-call/on-call-directory";
 import {
   SERVICE_META,
   availability,
@@ -16,7 +17,7 @@ import {
   type DirectoryCheckRecord,
 } from "@/components/ward-management/on-call/on-call-checks";
 
-import { ESCALATION_STEP_ROLE, type EscalationContactRole } from "./escalation-calls";
+import { ESCALATION_STEP_ROLE, type EscalationContactRole } from "./escalation/escalation-calls";
 
 /**
  * Escalation calls (item 3, D-133): the on-call directory entry for a wait step's role. Every number

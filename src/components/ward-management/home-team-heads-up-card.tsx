@@ -7,10 +7,15 @@ import { Card, CardBody, CardHead } from "@/components/wf";
 import { recordExtrasFor } from "@/components/ward-management/patients/patient-record-extras";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import type { CommunityTeam } from "./community-derivations";
-import { homeTeamHeadsUps, homeTeamHeadsUpWho, type CommunityEpisodesOf, type UmrnOf } from "./home-team-heads-up";
-import styles from "../out-of-area/return-early-alerts.module.css";
-import headsUpStyles from "./home-team-heads-up.module.css";
+import type { CommunityTeam } from "./community/community-derivations";
+import {
+  homeTeamHeadsUps,
+  homeTeamHeadsUpWho,
+  type CommunityEpisodesOf,
+  type UmrnOf,
+} from "./community/home-team-heads-up";
+import styles from "./out-of-area/return-early-alerts.module.css";
+import headsUpStyles from "./community/home-team-heads-up.module.css";
 
 /** The patient record's community team episodes (the record's own list; mock-up data for now). */
 const recordedEpisodes: CommunityEpisodesOf = (patientId) => recordExtrasFor(patientId)?.community;

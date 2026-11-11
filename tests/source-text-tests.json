@@ -115,6 +115,7 @@
     "tests/ward-ed-raise-quick-answers.dom.test.tsx",
     "tests/ward-engine-rulings-wave1.test.ts",
     "tests/ward-error-boundaries.dom.test.tsx",
+    "tests/ward-escalation-calls.test.ts",
     "tests/ward-event-reachability.test.ts",
     "tests/ward-facade-agrees-with-screens.test.ts",
     "tests/ward-figure.dom.test.tsx",

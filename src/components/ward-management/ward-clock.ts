@@ -388,3 +388,14 @@ export function minuteOfDayFromClockText(text: string): number | undefined {
   if (hours > 23 || minutes > 59) return undefined;
   return hours * 60 + minutes;
 }
+
+/**
+ * A typed `HH:MM` (or "0930") as the latest such time at or before `now`, so "23:50" typed just
+ * after midnight means last night. `undefined` when the time cannot be read.
+ */
+export function pastInstantFromClockText(text: string, now: Instant): Instant | undefined {
+  const minute = minuteOfDayFromClockText(text);
+  if (minute === undefined) return undefined;
+  const today = Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY + minute;
+  return today > now ? today - MINUTES_PER_DAY : today;
+}

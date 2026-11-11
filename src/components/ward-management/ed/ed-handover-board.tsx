@@ -21,7 +21,7 @@ import { ListExportButton } from "../ward-list-export-button";
 import { renderEdBoardRow } from "./ed-screen-board-row";
 import { TierBarsKey } from "./ed-handover-cells";
 import handover from "./ed-handover.module.css";
-import { EdCrewsWaitingLine } from "./ed-crews-waiting-line";
+import { EdCrewsWaitingLine } from "@/components/ward-management/ed-crews-waiting-line";
 
 const COLUMNS = ["Patient", "In ED", "Bay", "Presentation", "Form", "Checks", "Referral", "Next"] as const;
 

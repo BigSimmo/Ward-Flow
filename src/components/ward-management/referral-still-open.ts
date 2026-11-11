@@ -3,8 +3,8 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { recordedMovementMedicalClearance } from "@/components/ward-management/ward-medical-clearance";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
-import { openInformationNeeds, referralInformationNeedLabel } from "./referral-information-needs";
-import { latestReferralForPerson } from "./referral-sheet-latest";
+import { openInformationNeeds, referralInformationNeedLabel } from "./referrals/referral-information-needs";
+import { latestReferralForPerson } from "./referrals/referral-sheet-latest";
 
 /**
  * "WHY A REFERRAL IS STUCK" (item 10, 10 Nov 2026): the Ready to send rail's short "Still open" list.

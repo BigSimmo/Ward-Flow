@@ -5,7 +5,7 @@ import { CopyNotesButton } from "@/components/ward-management/referrals/copy-not
 import {
   movementTransferNotesText,
   referralAcceptanceNotesText,
-} from "@/components/ward-management/referrals/referral-notes-text";
+} from "@/components/ward-management/referral-notes-text";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { SYNTHETIC_COPY_LINE } from "@/components/ward-management/ward-clipboard";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";

@@ -149,7 +149,7 @@ import { PatientNowPanel } from "./patient-now-panel";
 import { PatientNowSummary } from "./patient-now-summary";
 import { renderTransportSection } from "./patient-now-transport-section";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
-import { movementTransferNotesText } from "@/components/ward-management/referrals/referral-notes-text";
+import { movementTransferNotesText } from "@/components/ward-management/referral-notes-text";
 import { originName as movementOriginName } from "@/components/ward-management/ward-movement-origin";
 
 interface PatientNowScreenProps {

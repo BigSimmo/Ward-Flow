@@ -7,12 +7,14 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import type { EdWaitStep } from "@/components/ward-management/ward-ed-wait-steps";
 import type { Movement } from "@/components/ward-management/ward-model";
 
-import { escalationCallText, lastEscalationCall } from "./escalation-calls";
-import styles from "./escalation-call.module.css";
+import { escalationCallText, lastEscalationCall } from "./escalation/escalation-calls";
+import styles from "./escalation/escalation-call.module.css";
 
 // The sheet loads on its own: the on-call directory it reads is not otherwise on the ED page, and
 // the phone size limit for that page has no room for it in the first load.
-const EscalationCallSheet = dynamic(() => import("./escalation-call-sheet").then((m) => m.EscalationCallSheet));
+const EscalationCallSheet = dynamic(() =>
+  import("./escalation/escalation-call-sheet").then((m) => m.EscalationCallSheet),
+);
 
 /** Escalation calls (item 3, D-133): the last recorded outcome beside an ED wait step, "No answer 14:32". */
 export function EscalationLastOutcome({

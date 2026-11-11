@@ -2,7 +2,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { crewsWaiting } from "@/components/ward-management/ward-crew-handover";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { durMinutes } from "@/components/wf";
-import styles from "./ed-crew-times.module.css";
+import styles from "./ed/ed-crew-times.module.css";
 
 /**
  * "Crews waiting: 3, longest 1h 40m" for the ED board and Home's ED strip. Nothing when no crew is

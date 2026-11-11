@@ -10,7 +10,7 @@ import { DisabledReason, StatusGlyph } from "@/components/wf";
 import { sectionLabel } from "./ward-referral-drawer-model";
 import { drawerRailHeading } from "./referral-drawer-foot-status";
 import { sendWarningsLine } from "./referral-send-warnings";
-import { referralStillOpen } from "./referral-still-open";
+import { referralStillOpen } from "@/components/ward-management/referral-still-open";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
 /** v10 phone: opens and closes the send checklist. */

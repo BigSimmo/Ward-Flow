@@ -15,7 +15,7 @@ import {
   escalationCallText,
   lastEscalationCall,
 } from "@/components/ward-management/escalation/escalation-calls";
-import { escalationContact, escalationEntry } from "@/components/ward-management/escalation/escalation-contact";
+import { escalationContact, escalationEntry } from "@/components/ward-management/escalation-contact";
 import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 import { buildOnCallDirectory, MOCK_NUMBER_PREFIX } from "@/components/ward-management/on-call/on-call-directory";
 import { edWaitStep } from "@/components/ward-management/ward-ed-wait-steps";
@@ -126,9 +126,17 @@ describe("D-108 guard: escalation calls change no step, hour or order", () => {
   });
 
   it("adds no clock, countdown or overdue colour to the escalation files", () => {
-    const dir = join(process.cwd(), "src/components/ward-management/escalation");
-    for (const file of readdirSync(dir)) {
-      const source = readFileSync(join(dir, file), "utf8");
+    const root = join(process.cwd(), "src/components/ward-management");
+    const dir = join(root, "escalation");
+    // The contact lookup and the wait-step button sit at the ward root so other screens can load
+    // them without importing a screen folder; the same guard covers them.
+    const files = [
+      ...readdirSync(dir).map((file) => join(dir, file)),
+      join(root, "escalation-contact.ts"),
+      join(root, "escalation-step-call.tsx"),
+    ];
+    for (const file of files) {
+      const source = readFileSync(file, "utf8");
       expect(source, file).not.toMatch(/setInterval|setTimeout|useMinuteNow|minutesUntil|clockState|isClockBreached/u);
       expect(source, file).not.toMatch(/--wf-danger|tone="danger"|tone="warning"/u);
     }

@@ -16,12 +16,6 @@
   color: var(--wf-ink-2);
 }
 
-.error {
-  margin: var(--wf-s-2) 0 0;
-  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  color: var(--wf-danger-ink, var(--wf-ink-1));
-}
-
 .form {
   display: flex;
   flex-direction: column;

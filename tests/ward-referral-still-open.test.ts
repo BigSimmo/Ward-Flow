@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { referralStillOpen } from "@/components/ward-management/referrals/referral-still-open";
+import { referralStillOpen } from "@/components/ward-management/referral-still-open";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";

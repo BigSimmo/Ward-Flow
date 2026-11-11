@@ -99,7 +99,8 @@ describe("ruling guardrail register", () => {
 /*
  * D-71 and item 26 (More fit details). The More list under a ward card explains gates already
  * checked. Its order is fixed by the gate, never by the result, and it carries no ranking words.
- * The rendered ward order is proved in tests/ward-shortlist-fit-more.dom.test.tsx.
+ * The rendered ward order is proved in tests/ward-shortlist-fit-more.dom.test.tsx, and any
+ * capacity-keyed sort in ward-management is caught by tests/ward-never-build-sort-inventory.test.ts.
  */
 describe("More fit details stays explain-only (D-71)", () => {
   const gates: GateResult[] = [
@@ -125,7 +126,5 @@ describe("More fit details stays explain-only (D-71)", () => {
         /\b(best|top|rank\w*|score\w*|recommend\w*|suggest\w*)\b/iu,
       );
     }
-    const source = liveCode(read("src/components/ward-management/coordinator/shortlist-candidate-fit.tsx"));
-    expect(source).not.toMatch(/\.sort\(|toSorted\(/u);
   });
 });

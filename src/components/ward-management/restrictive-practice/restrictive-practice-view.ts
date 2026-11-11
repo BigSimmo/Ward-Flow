@@ -1,4 +1,4 @@
-import { MINUTES_PER_DAY, minuteOfDayFromClockText, type Instant } from "../ward-clock";
+import { MINUTES_PER_DAY, type Instant } from "../ward-clock";
 import {
   openEpisodes,
   type RestrictivePractice,
@@ -35,17 +35,6 @@ export function restrictivePracticeLabel(practice: string): string {
 
 export function wardIncidentLabel(category: string): string {
   return WARD_INCIDENT_CATEGORIES.find((entry) => entry.id === category)?.label ?? "Incident";
-}
-
-/**
- * A typed `HH:MM` (or "0930") as the latest such time at or before `now`, so "23:50" typed just
- * after midnight means last night. `undefined` when the time cannot be read.
- */
-export function pastInstantFromClockText(text: string, now: Instant): Instant | undefined {
-  const minute = minuteOfDayFromClockText(text);
-  if (minute === undefined) return undefined;
-  const today = Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY + minute;
-  return today > now ? today - MINUTES_PER_DAY : today;
 }
 
 type SeclusionRoomRecorded = { status: SeclusionRoomStatus; at: Instant; by: string };
