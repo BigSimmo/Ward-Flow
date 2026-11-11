@@ -107,7 +107,7 @@ describe("bed closure reason on the toast (D-148)", () => {
 // D-151: the beds a waiting save will change, for the tile's "Waiting to save" marker.
 describe("waiting bed keys (D-151)", () => {
   it("names each bed a waiting save changes, once, and nothing else", () => {
-    const bed = { type: "SET_BED_CLOSED", role: "ward", now: 1, ...close, closed: true } as WardFlowEvent;
+    const bed = { type: "SET_BED_CLOSED", now: 1, ...close, closed: true } as WardFlowEvent;
     const other = {
       type: "REQUEST_CAPACITY_REFRESH",
       role: "coordinator",

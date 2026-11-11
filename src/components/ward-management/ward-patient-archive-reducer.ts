@@ -21,5 +21,13 @@ export function reducePatientArchive(
   // patient sequence is kept, so no later record reuses the id.
   decision.outcome = "accepted";
   decision.reasonCode = "none";
-  return { ...state, patients: state.patients.filter((patient) => patient.id !== patientId) };
+  // D-149: the only referrals still naming the record are ones nobody answered. They stay, but no
+  // longer point at a record that has left the lists, so the stored workspace still checks out.
+  const referrals = state.referrals.map((referral) => {
+    if (referral.patientId !== patientId) return referral;
+    const { patientId: _archived, ...unlinked } = referral;
+    void _archived;
+    return unlinked;
+  });
+  return { ...state, patients: state.patients.filter((patient) => patient.id !== patientId), referrals };
 }

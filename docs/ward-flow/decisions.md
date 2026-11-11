@@ -1743,7 +1743,7 @@ is inferred.
 - **Date:** 11 November 2026. **Decided by:** Josh, approving decision item 9 of the live audit fix plan, as for D-148. This gives the 26 October rule (#816: "archive only, coordinator only, for records added in error") its D-number.
 - **Decision:**
   1. Archiving stays coordinator only, for a record added in error, and still never destroys anything.
-  2. A record can now be archived when the only things naming it are front-door referrals that nobody answered (every destination withdrawn by the referrer or cancelled), audit rows, and Undo records older than the Undo window. Any journey, stay, form, bed record, answered or open referral, or fact recorded on the person still keeps the record.
+  2. A record can now be archived when the only things naming it are front-door referrals that nobody answered (every destination withdrawn by the referrer or cancelled), audit rows, and Undo records older than the Undo window. Any journey, stay, form, bed record, answered or open referral, or fact recorded on the person still keeps the record. The withdrawn referral stays in the history but no longer links to the archived record.
   3. The coordinator's "Record added in error" card no longer hides when archive is not available. It says why in one line.
 - **Why:** the live audit's test patient could never be archived because a withdrawn referral and record-view audit rows named it, so test and mistaken records stayed on the board for good.
 - **Boundary:** synthetic data only. Archiving the live audit's test patient and the old TEST-Helper4 records is a live write that waits for Josh's yes after release.

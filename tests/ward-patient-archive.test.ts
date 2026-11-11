@@ -170,7 +170,6 @@ describe("ARCHIVE_PATIENT after a withdrawn referral (D-149)", () => {
       destinations: [
         {
           kind: "psychiatric_ward",
-          unitId: "dn-arm-acute",
           sex: "Male",
           secureBedNeeded: false,
           involuntaryBedNeeded: false,
@@ -186,8 +185,12 @@ describe("ARCHIVE_PATIENT after a withdrawn referral (D-149)", () => {
       ...FIXTURE_HISTORY,
     } as never);
     const referral = world.state.referrals.find((entry) => entry.patientId === world.patient.id);
-    expect(referral, "the referral was refused, so this suite would assert nothing").toBeDefined();
-    return { ...world, referralId: referral!.id };
+    expect(
+      referral,
+      `the referral was refused (${world.state.rejections.at(-1)?.reason}), so this suite would assert nothing`,
+    ).toBeDefined();
+    // Not a spread: `state` is a getter, and a spread would freeze it at this moment.
+    return Object.assign(world, { referralId: referral!.id });
   }
   const later = (minutes: number) => now + minutes;
 
@@ -198,12 +201,47 @@ describe("ARCHIVE_PATIENT after a withdrawn referral (D-149)", () => {
     expect(world.state.patients.some((patient) => patient.id === world.patient.id)).toBe(true);
   });
 
-  it("archives once the referrer withdrew it and the Undo window has passed", () => {
+  it("archives once the referrer withdrew it", () => {
     const world = referred();
     world.send({ type: "RECORD_REFERRER_WITHDRAWAL", role: "coordinator", referralId: world.referralId } as never);
-    // Inside the Undo window the withdrawal could still be taken back, so the record stays.
-    expect(patientArchiveProblem(world.state, world.patient.id, now)).toMatch(/can still be undone/);
-    const after = wardFlowReducer(world.state, {
+    const withdrawn = world.state.referrals.find((entry) => entry.id === world.referralId)!;
+    expect(
+      withdrawn.destinations.every((addressing) => addressing.withdrawnAt !== undefined),
+      `the withdrawal was refused (${world.state.rejections.at(-1)?.reason})`,
+    ).toBe(true);
+    // A referrer's withdrawal is not an Undo step, so nothing is left that could bring it back.
+    expect(patientArchiveProblem(world.state, world.patient.id, now)).toBeUndefined();
+    world.send({ type: "ARCHIVE_PATIENT", role: "coordinator", patientId: world.patient.id, reason: "test" });
+    expect(world.state.patients.some((patient) => patient.id === world.patient.id)).toBe(false);
+    // The withdrawn referral stays, no longer linked to the archived record, and the archived
+    // state is still one the server accepts.
+    const kept = world.state.referrals.find((entry) => entry.id === world.referralId);
+    expect(kept).toBeDefined();
+    expect(kept!.patientId).toBeUndefined();
+    expect(isValidSharedWardFlowState(JSON.parse(JSON.stringify(world.state)))).toBe(true);
+  });
+
+  it("waits out the Undo window while a step naming the record could still be taken back", () => {
+    const world = referred();
+    world.send({ type: "RECORD_REFERRER_WITHDRAWAL", role: "coordinator", referralId: world.referralId } as never);
+    const withUndo = {
+      ...world.state,
+      undoRecords: [
+        ...(world.state.undoRecords ?? []),
+        { kind: "step", undoType: "UNDO_BED_STEP", subjectId: world.patient.id, seq: 1, at: now },
+      ],
+    } as unknown as WardFlowState;
+    expect(patientArchiveProblem(withUndo, world.patient.id, now)).toMatch(/can still be undone/);
+    expect(patientArchiveProblem(withUndo, world.patient.id, later(UNDO_WINDOW_MINUTES))).toBeUndefined();
+    const inside = wardFlowReducer(withUndo, {
+      type: "ARCHIVE_PATIENT",
+      role: "coordinator",
+      now,
+      patientId: world.patient.id,
+      reason: "test",
+    });
+    expect(inside.patients.some((patient) => patient.id === world.patient.id)).toBe(true);
+    const after = wardFlowReducer(withUndo, {
       type: "ARCHIVE_PATIENT",
       role: "coordinator",
       now: later(UNDO_WINDOW_MINUTES + 1),
@@ -211,9 +249,6 @@ describe("ARCHIVE_PATIENT after a withdrawn referral (D-149)", () => {
       reason: "test",
     });
     expect(after.patients.some((patient) => patient.id === world.patient.id)).toBe(false);
-    // The withdrawn referral stays, and the archived state is still one the server accepts.
-    expect(after.referrals.some((entry) => entry.id === world.referralId)).toBe(true);
-    expect(isValidSharedWardFlowState(after)).toBe(true);
   });
 
   it("still refuses a referral a ward answered", () => {
