@@ -374,18 +374,27 @@ jobs:
           restore-keys: |
             ward-release-apt-${{ runner.os }}-chromium-${{ steps.shared-version.outputs.version }}-
             ward-release-apt-${{ runner.os }}-${{ steps.shared-version.outputs.version }}-
+      # WebKit's own packages, so the offline install covers both engines when the mirror is down.
+      - name: Restore release WebKit system packages
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ~/.cache/ward-release-apt-webkit
+          key: ward-release-apt-${{ runner.os }}-webkit-${{ steps.shared-version.outputs.version }}-${{ steps.shared-version.outputs.image }}
+          restore-keys: |
+            ward-release-apt-${{ runner.os }}-webkit-${{ steps.shared-version.outputs.version }}-
       - name: Seed release system packages
         if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
-        run: node scripts/ward-ci-public/apt-archive-cache.mjs seed "$HOME/.cache/ward-release-apt"
+        run: |
+          node scripts/ward-ci-public/apt-archive-cache.mjs seed "$HOME/.cache/ward-release-apt"
+          node scripts/ward-ci-public/apt-archive-cache.mjs seed "$HOME/.cache/ward-release-apt-webkit"
       - name: Install Chromium and WebKit for the shared-mode journeys
         id: shared-chromium
         timeout-minutes: 10
         if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
         env:
           PLAYWRIGHT_CACHE_HIT: ${{ steps.shared-cache.outputs.cache-hit }}
-        run: |
-          node scripts/ward-ci-public/install-chromium.mjs
-          node node_modules/playwright/cli.js install --with-deps webkit
+        run: node scripts/ward-ci-public/install-chromium.mjs chromium webkit
       - name: Run the shared-mode browser journey
         timeout-minutes: 20
         if: ${{ !cancelled() && steps.shared-chromium.outcome == 'success' }}
