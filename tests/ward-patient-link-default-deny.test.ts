@@ -432,7 +432,8 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
       "the Admission it creates. BOOK checks that patientId exists in state.patients and refuses a " +
       "second waiting booking or a person who holds a pulled or occupied stay; CONVERT refuses when " +
       "that person holds such a stay or is on an open movement; the forecast helper drops a linked " +
-      "booking already counted through a waiting movement. Each is a yes/no on ids: reads compare ids " +
+      "booking already counted through a waiting movement or through a bed that person already holds by number " +
+      "(Josh, 11 Nov 2026, D-145). Each is a yes/no on ids: reads compare ids " +
       "only, write state, render nothing and disclose no other stay, movement or referral.",
   },
   {

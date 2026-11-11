@@ -9,7 +9,11 @@
 import { closedToAdmissionsRefusal } from "./ward-closure";
 import { bedsPendingPreparation } from "../ward-bed-availability";
 import { lockedBedsFree, openBedsFree } from "../ward-bed-designation";
-import { pendingNumberedReservations } from "../ward-movement-bed-hold";
+import {
+  numberedReservationBeds,
+  pendingNumberedReservations,
+  type ReservationReferral,
+} from "../ward-movement-bed-hold";
 import { pulledBedAvailability } from "../ward-ready-beds";
 import {
   isPlannedAdmissionCancelReason,
@@ -171,6 +175,33 @@ function onAnOpenJourney(state: WardFlowState, patientId: string): boolean {
   return state.movements.some(
     (movement) => movement.patientId === patientId && !movement.closure && movement.stage !== "arrived",
   );
+}
+
+/**
+ * The people who already hold a numbered bed by name on one of `units`, by the same rule as
+ * `numberedReservationBeds`. Their bed is already out of Ready (and in a ward's Pulled count), so a
+ * booking for the same person must not be counted as fresh demand again (Josh, 11 Nov 2026).
+ */
+export function patientsHoldingANamedBed(
+  units: readonly Unit[],
+  admissions: readonly Admission[],
+  reservations: readonly (Movement | ReservationReferral)[],
+): Set<string> {
+  const holders = new Set<string>();
+  for (const row of reservations) {
+    if (!row.patientId || holders.has(row.patientId)) continue;
+    // Only a row carrying a bed number can hold one; the full rule then runs for that row alone.
+    const numbered =
+      "stage" in row
+        ? row.heldBedNumber !== undefined
+        : ("destinations" in row ? row.destinations : [row]).some((arm) => arm.heldBedNumber !== undefined);
+    if (!numbered) continue;
+    const asMovement = "stage" in row ? [row] : [];
+    const asReferral = "stage" in row ? [] : [row];
+    if (units.some((unit) => numberedReservationBeds(unit, admissions, asMovement, asReferral).size > 0))
+      holders.add(row.patientId);
+  }
+  return holders;
 }
 
 /**

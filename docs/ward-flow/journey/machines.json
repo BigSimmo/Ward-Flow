@@ -1738,8 +1738,8 @@
     "sources": [
       {
         "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
-        "line": 588,
-        "sha256": "f1c99b223cc7cbc847dcda57bd152e87ad32425c32f5a5a0db9ac7b66c4b1603"
+        "line": 619,
+        "sha256": "d91a5be952e2110e25d304edcac7c17bede49897d9115701033cc8be1e0c61df"
       },
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
