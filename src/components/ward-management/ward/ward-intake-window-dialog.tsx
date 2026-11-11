@@ -111,7 +111,9 @@ export function WardIntakeWindowDialog({
           />
         </Field>
       </div>
-      {refused ? <StateLine kind="error" compact title="Not saved." reason={refused} /> : null}
+      {refused ? (
+        <StateLine kind="error" compact title="Not saved. Check the hours and try again." reason={refused} />
+      ) : null}
     </Dialog>
   );
 }
