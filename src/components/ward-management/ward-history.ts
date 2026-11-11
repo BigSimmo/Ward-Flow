@@ -75,6 +75,11 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   RECORD_DIRECTORY_CHECK: { category: "neither", plainWording: "On-call directory entry checked" },
   REQUEST_WARD_STAFF: { category: "neither", plainWording: "Extra ward staff requested" },
   CLOSE_WARD_STAFF_REQUEST: { category: "neither", plainWording: "Ward staff request closed" },
+  // Batch 3 items 21 and 23 (10 Nov 2026).
+  HAND_OVER_ITEM: { category: "neither", plainWording: "Open work handed to another desk" },
+  ACCEPT_HANDED_ITEM: { category: "neither", plainWording: "Handed work accepted" },
+  RECORD_CARER_CALLBACK: { category: "patient", plainWording: "Carer asked for a call back" },
+  MARK_CARER_CALLBACK_MADE: { category: "patient", plainWording: "Carer called back" },
   // Out of area "Flag early" (Josh, 3 Nov 2026).
   FLAG_RETURN_EARLY: { category: "patient", plainWording: "Out of area return flagged early" },
 
