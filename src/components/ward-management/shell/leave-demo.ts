@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useContext, useSyncExternalStore } from "react";
-import { useOptionalToast } from "@/components/wf/toast-provider";
+import { useOptionalToast } from "@/components/wf";
 import { endWardFlowBrowserSessionAndPass } from "../ward-browser-data";
 import { SharedSessionContext } from "./ward-shared-session-context";
 

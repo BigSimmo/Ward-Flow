@@ -288,6 +288,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     file: /^help\/ward-help-account-memory\.tsx$/,
     name: /^SEND_AFTER_MS$/,
   },
+  {
+    id: "leave-demo-pass-deadline",
+    why: "Live audit item 22 (11 Nov 2026): how long Leave the demo waits for the server to end the front door's pass before saying it could not end; network deadline, never shown, not a clinical limit.",
+    file: /^front-door\/front-door-pass-client\.ts$/,
+    name: /^END_PASS_DEADLINE_MS$/,
+  },
 ];
 
 export const BREACH = /\bbreach(?:es|ed|ing)?\b/i;
