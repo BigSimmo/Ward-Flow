@@ -14,8 +14,8 @@
  * nurses' station line from the on-call directory (D-137, 11 Nov 2026), so it is a mock number too.
  */
 
-import { buildOnCallDirectory, lineAt } from "../on-call/on-call-directory";
-import type { Site, Unit } from "../ward-model";
+import { buildOnCallDirectory, lineAt } from "./on-call/on-call-directory";
+import type { Site, Unit } from "./ward-model";
 
 export const PATIENT_CARER_NOT_RECORDED = "Not recorded";
 

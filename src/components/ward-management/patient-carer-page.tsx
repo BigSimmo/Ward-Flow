@@ -19,8 +19,8 @@ import { Printer } from "lucide-react";
 
 import { Button, Dialog } from "@/components/wf";
 
-import type { Movement, Unit } from "../ward-model";
-import { siteByCode } from "../ward-sites";
+import type { Movement, Unit } from "./ward-model";
+import { siteByCode } from "./ward-sites";
 import { PATIENT_CARER_TEXT as T, patientCarerPageModel, type PatientCarerPage } from "./patient-carer-page-text";
 import styles from "./patient-carer-page.module.css";
 

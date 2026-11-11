@@ -7,11 +7,11 @@ import {
   PatientCarerPageButton,
   PatientCarerPaper,
   patientCarerPageFor,
-} from "@/components/ward-management/movements/patient-carer-page";
+} from "@/components/ward-management/patient-carer-page";
 import {
   PATIENT_CARER_NOT_RECORDED,
   PATIENT_CARER_TEXT,
-} from "@/components/ward-management/movements/patient-carer-page-text";
+} from "@/components/ward-management/patient-carer-page-text";
 import { MOCK_NUMBER_PREFIX } from "@/components/ward-management/on-call/on-call-directory";
 import { DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";

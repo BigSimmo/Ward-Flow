@@ -1,6 +1,8 @@
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import {
   availability,
+  buildOnCallDirectory,
+  hhmm,
   KEY_LINE_IDS,
   keyLineLabel,
   numberAt,
@@ -11,7 +13,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { readyBedsNow, totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { edWaitStep, type EdWaitStep } from "@/components/ward-management/ward-ed-wait-steps";
-import type { BedRelease, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, Movement, Referral, Site, Unit } from "@/components/ward-management/ward-model";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model-vocabulary";
 import {
   ED_ELEVATED_PRESSURE_WAIT_MINUTES,
@@ -123,7 +125,8 @@ export type NightContact = {
 };
 
 /** The On-call page's key lines, in its own order, with who answers at `minute`. */
-export function nightContacts(entries: readonly DirectoryEntry[], minute: number): NightContact[] {
+export function nightContacts(sites: readonly Site[], minute: number): NightContact[] {
+  const entries = buildOnCallDirectory(sites);
   return KEY_LINE_IDS.map((id) => entries.find((entry) => entry.id === id))
     .filter((entry): entry is DirectoryEntry => entry !== undefined)
     .map((entry) => ({
@@ -132,4 +135,13 @@ export function nightContacts(entries: readonly DirectoryEntry[], minute: number
       now: availability(entry, minute),
       number: numberAt(entry, minute),
     }));
+}
+
+/** What a key line is doing now, in plain words: "Answering until 17:00". */
+export function nightContactNowText(contact: NightContact): string {
+  const now = contact.now;
+  if (now.kind === "none") return "No line recorded";
+  if (now.kind === "off") return `Closed, opens ${hhmm(now.opens)}`;
+  if (now.allDay) return "Answering, all day";
+  return `Answering until ${hhmm(now.until)}`;
 }

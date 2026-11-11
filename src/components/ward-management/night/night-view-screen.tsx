@@ -5,29 +5,27 @@ import Link from "next/link";
 import { useMemo } from "react";
 
 import { Card, CardHead, EmptyState, Hero, HeroFigures, HeroTop, LiveChip, StatusGlyph } from "@/components/wf";
-import { buildOnCallDirectory, hhmm } from "@/components/ward-management/on-call/on-call-directory";
 import { movementHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { formatInstant, formatInstantWithDay, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
+import {
+  nightContactNowText,
+  nightContacts,
+  nightEdWaits,
+  nightOnTheWay,
+  nightReadyBeds,
+} from "@/components/ward-management/night-view-figures";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 
-import { nightContacts, nightEdWaits, nightOnTheWay, nightReadyBeds, type NightContact } from "./night-view-figures";
+
 import styles from "./night-view.module.css";
 
 const CAPACITY_HREF = "/ward-flow/capacity";
 const WAITING_HREF = "/ward-flow/delays";
 const MOVEMENTS_HREF = "/ward-flow/movements";
 const ON_CALL_HREF = "/ward-flow/on-call";
-
-function contactNowText(contact: NightContact): string {
-  const now = contact.now;
-  if (now.kind === "none") return "No line recorded";
-  if (now.kind === "off") return `Closed, opens ${hhmm(now.opens)}`;
-  if (now.allDay) return "Answering, all day";
-  return `Answering until ${hhmm(now.until)}`;
-}
 
 /**
  * Night view (feature plan item 29): the coordinator's overnight screen. Beds ready, ED waits by
@@ -53,8 +51,7 @@ export function NightViewScreen() {
   );
   const waits = useMemo(() => nightEdWaits(movements, now), [movements, now]);
   const onTheWay = useMemo(() => nightOnTheWay(movements, now), [movements, now]);
-  const directory = useMemo(() => buildOnCallDirectory(network.sites), [network.sites]);
-  const contacts = useMemo(() => nightContacts(directory, minuteOfDay(now)), [directory, now]);
+  const contacts = useMemo(() => nightContacts(network.sites, minuteOfDay(now)), [network.sites, now]);
   const unitName = (id: string | undefined) => units.find((unit) => unit.id === id)?.name;
   const atStep = waits.waiting - waits.underFirstStep;
 
@@ -232,7 +229,7 @@ export function NightViewScreen() {
             title={<span id="night-oncall-title">On call now</span>}
             icon={Phone}
             iconPlain
-            meta={`at ${hhmm(minuteOfDay(now))}`}
+            meta={`at ${formatInstant(now)}`}
             action={
               <Link href={ON_CALL_HREF} className={styles.headLink}>
                 On-call
@@ -246,7 +243,7 @@ export function NightViewScreen() {
                   <span className={styles.rowTitle}>{contact.label}</span>
                   <span className={styles.rowSub}>
                     <StatusGlyph tone={contact.now.kind === "on" ? "success" : "neutral"} size={9} />{" "}
-                    {contactNowText(contact)}
+                    {nightContactNowText(contact)}
                   </span>
                 </span>
                 <span className={styles.number}>{contact.number ?? "Not recorded"}</span>

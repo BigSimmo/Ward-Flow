@@ -32,9 +32,9 @@ import {
   type HeroBandCell,
   type HeroRenderPress,
 } from "@/components/wf";
-import { CountBreakdown } from "@/components/ward-management/count-breakdown/count-breakdown";
-import type { BreakdownRow } from "@/components/ward-management/count-breakdown/count-breakdown-model";
-import breakdownStyles from "@/components/ward-management/count-breakdown/count-breakdown.module.css";
+import { CountBreakdown } from "@/components/ward-management/count-breakdown";
+import type { BreakdownRow } from "@/components/ward-management/count-breakdown-model";
+import breakdownStyles from "@/components/ward-management/count-breakdown.module.css";
 
 import pageTop from "../page-top-hero.module.css";
 import styles from "./ward-board-hero.module.css";

@@ -19,8 +19,8 @@ import {
 } from "@/components/wf";
 import { formatWardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { PageLiveChip } from "@/components/ward-management/ward-page-live";
-import { CountBreakdown } from "@/components/ward-management/count-breakdown/count-breakdown";
-import { wardReadyBreakdownRows } from "@/components/ward-management/count-breakdown/count-breakdown-rows";
+import { CountBreakdown } from "@/components/ward-management/count-breakdown";
+import { wardReadyBreakdownRows } from "@/components/ward-management/count-breakdown-rows";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { PAGE_OWNERS } from "@/components/ward-management/ward-page-owners";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";

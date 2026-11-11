@@ -1232,6 +1232,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "KPI", meaning: "Key performance indicator, such as the national seven-day follow-up measure." },
   { term: "MHERL", meaning: "Mental Health Emergency Response Line, the WA crisis phone line." },
   { term: "PIR", meaning: "Post-incident review. The PIR chronology lists one patient's events in time order." },
+  { term: "QR code", meaning: "A square barcode a phone camera can read to open a link, such as a desk's Ward Flow link." },
 
   // Chronology (5 Nov 2026): the words on the patient chronology and its sources.
   {

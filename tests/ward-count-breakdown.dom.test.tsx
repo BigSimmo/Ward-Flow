@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 // The panel is fetched on first use; here it renders at once (first call: the pop-up body, second: the sheet).
 vi.mock("next/dynamic", async () => {
-  const panel = await import("@/components/ward-management/count-breakdown/count-breakdown-panel");
+  const panel = await import("@/components/ward-management/count-breakdown-panel");
   let calls = 0;
   return {
     default: () => {
@@ -13,8 +13,8 @@ vi.mock("next/dynamic", async () => {
   };
 });
 
-import { CountBreakdown } from "@/components/ward-management/count-breakdown/count-breakdown";
-import type { BreakdownRow } from "@/components/ward-management/count-breakdown/count-breakdown-model";
+import { CountBreakdown } from "@/components/ward-management/count-breakdown";
+import type { BreakdownRow } from "@/components/ward-management/count-breakdown-model";
 
 const rows: BreakdownRow[] = [
   { id: "m-1", label: "SYNTHETIC, Alex", detail: "Example ED", href: "/ward-flow/movements/m-1" },

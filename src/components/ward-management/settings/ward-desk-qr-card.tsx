@@ -67,7 +67,7 @@ export function WardDeskQrCard() {
           label: "Print or save PDF",
           onAction: () => window.print(),
           loading: printing !== null && !printing.matrix && !printing.failed,
-          disabledReason: printing?.failed ? "The code could not be made." : undefined,
+          disabledReason: printing?.failed ? "The code could not be made. Close and try again." : undefined,
         }}
         data-testid="ward-settings-desk-qr-dialog"
       >

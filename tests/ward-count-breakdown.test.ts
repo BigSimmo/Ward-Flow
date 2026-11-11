@@ -6,14 +6,14 @@ import {
   breakdownTotal,
   breakdownView,
   breakdownWithheld,
-} from "../src/components/ward-management/count-breakdown/count-breakdown-model";
+} from "../src/components/ward-management/count-breakdown-model";
 import {
   leaveStays,
   movementBreakdownRows,
   releaseStays,
   stayBreakdownRows,
   wardReadyBreakdownRows,
-} from "../src/components/ward-management/count-breakdown/count-breakdown-rows";
+} from "../src/components/ward-management/count-breakdown-rows";
 import { buildIncoming } from "../src/components/ward-management/board/ward-board-model";
 import { networkTotals, networkWardRows } from "../src/components/ward-management/capacity/capacity-derivations";
 import { wardPlaceLookup } from "../src/components/ward-management/ward-access-places";

@@ -20,7 +20,7 @@ import { recordExtrasFor } from "./patient-record-extras";
 import { handoverPackAvailable, type HandoverContact, type HandoverPackInput } from "./patient-handover-pack";
 import { PatientHandoverPackButton } from "./patient-handover-pack-button";
 import { PatientHoursBreakdown } from "./patient-hours-breakdown";
-import { PatientCarerPageButton } from "../movements/patient-carer-page";
+import { PatientCarerPageButton } from "../patient-carer-page";
 
 function ageSexWords(patient: Patient | undefined, dayZero: Date, now: Instant): string {
   if (!patient) return "";

@@ -61,7 +61,7 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
       "D-126 (10 Nov 2026): the Statistics finder's Wards tab, where a person picks a ward to open, lists wards A to Z by name, not most ready beds first.",
   },
   {
-    file: "night/night-view-figures.ts",
+    file: "night-view-figures.ts",
     match: "serviceRank(a.unit) - serviceRank(b.unit) || a.unit.name.localeCompare(b.unit.name)",
     list: "wards",
     key: "health service, then ward name",

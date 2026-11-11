@@ -39,12 +39,12 @@ import type { Movement, Referral } from "@/components/ward-management/ward-model
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import { CountBreakdown } from "@/components/ward-management/count-breakdown/count-breakdown";
+import { CountBreakdown } from "@/components/ward-management/count-breakdown";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import {
   movementBreakdownRows,
   wardReadyBreakdownRows,
-} from "@/components/ward-management/count-breakdown/count-breakdown-rows";
+} from "@/components/ward-management/count-breakdown-rows";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { queueOrder } from "@/components/ward-management/ward-priority";
 import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
