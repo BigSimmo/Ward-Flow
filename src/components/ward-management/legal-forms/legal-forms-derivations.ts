@@ -13,7 +13,7 @@ import type { LegalForm, Movement } from "@/components/ward-management/ward-mode
 import type { WardRecordTone } from "@/components/ward-management/ward-record-row";
 import { currentLegalDueAt, formProgression, formProgressionPhrase } from "./legal-form-progression";
 export { currentLegalDueAt } from "./legal-form-progression";
-import { typedTimePhrase } from "./legal-time-as-typed";
+import { typedClock, typedTimePhrase } from "./legal-time-as-typed";
 
 /**
  * LEGAL FORMS AND DEADLINES — pure derivations for `LegalFormsScreen`.
@@ -181,6 +181,14 @@ export function legalDeadlineText(movement: Movement, now: Instant): string {
     throw new Error(`legalDeadlineText called on movement ${movement.id}, which carries no legal form`);
   }
   const progression = formProgression(movement);
+  if (progression?.ended) return `${formProgressionPhrase(progression)}; Form ${progression.nextCode} to record`;
+  // A form a person recorded as ended keeps its typed expiry as history only (Josh, 11 Nov 2026):
+  // never "Form expiry ends 15:42 as typed" under "Ended", which reads as a live expiry.
+  if (legalForm.endedBy !== undefined) {
+    return legalForm.dueAt === undefined
+      ? "Form ended"
+      : `Form ended; expiry as typed was ${typedClock(legalForm.dueAt, now)}`;
+  }
   if (progression) return `${formProgressionPhrase(progression)}; Form ${progression.nextCode} to record`;
   if (legalForm.dueAt !== undefined) {
     // Legal times only as typed (31 Oct 2026): "Form expiry ends 15:42 as typed", never a count.
