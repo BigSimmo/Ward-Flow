@@ -161,6 +161,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-143](#d-143-mhert-is-mherl-in-the-glossary-smhmr-deferred-11-november-2026)                                                                          | MHERT is MHERL in the glossary; SMHMR deferred                                         | Active                                           |
 | [D-144](#d-144-chip-rows-move-only-sideways-on-a-phone-11-november-2026)                                                                                | Chip rows move only sideways on a phone                                                | Active                                           |
 | [D-145](#d-145-repository-review-fixes-features-and-code-health-approved-11-november-2026)                                                              | Repository review: fixes, features and code health approved                            | Active                                           |
+| [D-147](#d-147-demo-code-tries-keep-per-address-keying-until-a-trusted-proxy-is-set-11-november-2026)                                                   | Demo-code tries keep per-address keying until a trusted proxy is set                   | Active                                           |
 
 ---
 
@@ -1754,3 +1755,9 @@ is inferred.
 - **Clinical sign-off (11 November 2026, 05:51 UTC):** Josh wrote "I approve all of them to remove labels" in the thread "Get all open PRs merged", approving the item 1 fixes in PR #1621 as built, including the Legal forms wording "Form ended; expiry as typed was HH:MM".
 - **Why:** findings from the 11 November review, each checked against source; the clinical items were display bugs, not changes to signed values.
 - **Boundary:** synthetic data only. Changes no signed clinical value; clinical items merge only after Josh checks the held PR. Approves no release.
+
+## D-147. Demo-code tries keep per-address keying until a trusted proxy is set (11 November 2026)
+
+- **Date:** 11 November 2026, 2:37 PM AWST (06:37 UTC). **Decided by:** Josh, on a decision card in the Ward Flow project thread "Get all open PRs merged", choosing "Add a safe fallback, then merge" for PR #1615 (A4-02). Numbered D-147 because D-145 and D-146 belong to other threads. D-145 is claimed by open PR #1623. D-146 is claimed by open PR #1624.
+- **Decision:** while `WARD_TRUSTED_PROXY_ADDRESSES` names no proxy on the Next service, the front door's demo-code try limit keeps keying on the edge's `X-Real-IP`, else the last `X-Forwarded-For` hop, as it did before A4-02. Once it names a proxy (or `*`), A4-02's trusted-proxy rule applies. Reason: the Next session route has no socket address, so the strict rule alone would put every caller in one shared bucket, and ten wrong tries from anyone in ten minutes would refuse every presenter.
+- **Boundary:** no Railway or environment change; setting `WARD_TRUSTED_PROXY_ADDRESSES` stays a separate, approved provider action. The fallback logs nothing. Synthetic data only; changes no clinical value or rule, and approves no release.
