@@ -65,7 +65,7 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
     cover: "no form",
     why: "Seclusion follow-up: each Done or Not yet tap saves at once, with no fields held open.",
   },
-  "handover/carer-callback-card.tsx": {
+  "carer-callback-card.tsx": {
     cover: "page form",
     why: "Batch 3 item 23: the Best after box and Save call back sit in one form; Call made is one tap with no fields.",
   },

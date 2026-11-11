@@ -42,7 +42,7 @@ export type SortInventoryEntry = {
 export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
   // ---------------------------------------------------------------- batch 3 item 23 (10 Nov 2026)
   {
-    file: "handover/handover-work-model.ts",
+    file: "handover-work-model.ts",
     match: "(left, right) => left.bestAfter - right.bestAfter",
     list: "patients",
     key: "the carer's typed best-after time, earliest first",
