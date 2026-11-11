@@ -3,7 +3,7 @@
 The route is selective. Its action notes and the additional command models have source review evidence; source digests detect later edits. This does not establish runtime or clinical acceptance.
 
 ## 195 CURRENT ENGINE EVENTS
-Source-contract SHA256: edabc817cd117e9a1a510921ae2509db9938d8324c8726b366202cb68a576c63
+Source-contract SHA256: e10bf7ca3888feb80ca2bbd64941bed382d3ad4f8dd3e459e811b9debba19d91
 - RECORD_ADMISSION_CARE — diagram-reviewed; event roles: ward, coordinator, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:20
@@ -1732,7 +1732,7 @@ Source-contract SHA256: edabc817cd117e9a1a510921ae2509db9938d8324c8726b366202cb6
 - BOOK_PLANNED_ADMISSION — modelled; event roles: coordinator, bed_manager, ward
   Reviewed command model: New PA-* record in booked state, holding no bed.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:617
-  Event/dispatch reference: src/components/ward-management/capacity/planned-admissions-reducer.ts:74
+  Event/dispatch reference: src/components/ward-management/capacity/planned-admissions-reducer.ts:78
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2226
   Subject: A future planned admission
   Before: No booking for this linked patient, or an initials-only booking to create
@@ -1749,14 +1749,14 @@ Source-contract SHA256: edabc817cd117e9a1a510921ae2509db9938d8324c8726b366202cb6
   effects: Stores a required same-ward authorisation override. No bed count or admission changes until conversion; initials invoke the typed-text persistence boundary.
   tests: tests/ward-planned-admissions.test.ts
   tests: tests/ward-audit24-1-planned-booking-authorised.test.ts
-  Reviewed source: src/components/ward-management/capacity/planned-admissions-reducer.ts:299; SHA256 fcd8e3b7667a295dc58225efa80ca7dc36863ad203ca4b6873c535c7ae5a0eb3
-  Reviewed source: src/components/ward-management/capacity/planned-admissions-reducer.ts:263; SHA256 fcd8e3b7667a295dc58225efa80ca7dc36863ad203ca4b6873c535c7ae5a0eb3
+  Reviewed source: src/components/ward-management/capacity/planned-admissions-reducer.ts:334; SHA256 d91a5be952e2110e25d304edcac7c17bede49897d9115701033cc8be1e0c61df
+  Reviewed source: src/components/ward-management/capacity/planned-admissions-reducer.ts:298; SHA256 d91a5be952e2110e25d304edcac7c17bede49897d9115701033cc8be1e0c61df
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2450; SHA256 207ee16a0f423433ba0b35b7465a90d52d2ca6d46928fa7e7686871b6f901ba0
   Reviewed source: src/components/ward-management/ward-access-state.ts:659; SHA256 924e9e6ab48fddbf423e5cf988cc09b75df3ace0ce4f4465f379b143957e3d07
 - CHANGE_PLANNED_ADMISSION — modelled; event roles: coordinator, bed_manager, ward
   Reviewed command model: Still booked, with revised fields, changedAt and incremented changeCount.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:618
-  Event/dispatch reference: src/components/ward-management/capacity/planned-admissions-reducer.ts:388
+  Event/dispatch reference: src/components/ward-management/capacity/planned-admissions-reducer.ts:423
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2231
   Subject: An existing booked planned admission
   Before: booked plan with current ward/date/stay/reason/legal status/gender
@@ -1774,14 +1774,14 @@ Source-contract SHA256: edabc817cd117e9a1a510921ae2509db9938d8324c8726b366202cb6
   effects: Replaces planning fields, records changedAt/count and record-derived linked gender. No bed is held or released.
   tests: tests/ward-planned-admissions.test.ts
   tests: tests/ward-audit24-1-planned-booking-authorised.test.ts
-  Reviewed source: src/components/ward-management/capacity/planned-admissions-reducer.ts:383; SHA256 fcd8e3b7667a295dc58225efa80ca7dc36863ad203ca4b6873c535c7ae5a0eb3
-  Reviewed source: src/components/ward-management/capacity/planned-admissions-reducer.ts:263; SHA256 fcd8e3b7667a295dc58225efa80ca7dc36863ad203ca4b6873c535c7ae5a0eb3
+  Reviewed source: src/components/ward-management/capacity/planned-admissions-reducer.ts:418; SHA256 d91a5be952e2110e25d304edcac7c17bede49897d9115701033cc8be1e0c61df
+  Reviewed source: src/components/ward-management/capacity/planned-admissions-reducer.ts:298; SHA256 d91a5be952e2110e25d304edcac7c17bede49897d9115701033cc8be1e0c61df
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2507; SHA256 207ee16a0f423433ba0b35b7465a90d52d2ca6d46928fa7e7686871b6f901ba0
   Reviewed source: src/components/ward-management/ward-access-state.ts:659; SHA256 924e9e6ab48fddbf423e5cf988cc09b75df3ace0ce4f4465f379b143957e3d07
 - CANCEL_PLANNED_ADMISSION — modelled; event roles: coordinator, bed_manager, ward
   Reviewed command model: cancelled with cancel reason and time.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:619
-  Event/dispatch reference: src/components/ward-management/capacity/planned-admissions-reducer.ts:464
+  Event/dispatch reference: src/components/ward-management/capacity/planned-admissions-reducer.ts:499
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2236
   Subject: One booked planned admission
   Before: booked
@@ -1794,13 +1794,13 @@ Source-contract SHA256: edabc817cd117e9a1a510921ae2509db9938d8324c8726b366202cb6
   effects: No capacity refund occurs because booking held no bed. Cancelled plans no longer count as pending arrivals.
   effects: The step can be taken back by UNDO_RELEASE_STEP within the Undo window, filed against the booking.
   tests: tests/ward-planned-admissions.test.ts
-  Reviewed source: src/components/ward-management/capacity/planned-admissions-reducer.ts:459; SHA256 fcd8e3b7667a295dc58225efa80ca7dc36863ad203ca4b6873c535c7ae5a0eb3
+  Reviewed source: src/components/ward-management/capacity/planned-admissions-reducer.ts:494; SHA256 d91a5be952e2110e25d304edcac7c17bede49897d9115701033cc8be1e0c61df
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2507; SHA256 207ee16a0f423433ba0b35b7465a90d52d2ca6d46928fa7e7686871b6f901ba0
   Reviewed source: src/components/ward-management/ward-access-state.ts:659; SHA256 924e9e6ab48fddbf423e5cf988cc09b75df3ace0ce4f4465f379b143957e3d07
 - CONVERT_PLANNED_ADMISSION — modelled; event roles: ward, coordinator
   Reviewed command model: Plan arrived and linked to a new occupied admission.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:620
-  Event/dispatch reference: src/components/ward-management/capacity/planned-admissions-reducer.ts:488
+  Event/dispatch reference: src/components/ward-management/capacity/planned-admissions-reducer.ts:523
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:746
   Subject: A booked plan and its receiving ward
   Before: booked plan, no current linked bed/journey, ready eligible capacity
@@ -1816,7 +1816,7 @@ Source-contract SHA256: edabc817cd117e9a1a510921ae2509db9938d8324c8726b366202cb6
   effects: Marks plan arrived with convertedAt/admissionId; does not create a numbered bed assignment or admit merely because its date passed.
   tests: tests/ward-planned-admissions.test.ts
   tests: tests/ward-planned-arrival-closed-bed.test.ts
-  Reviewed source: src/components/ward-management/capacity/planned-admissions-reducer.ts:483; SHA256 fcd8e3b7667a295dc58225efa80ca7dc36863ad203ca4b6873c535c7ae5a0eb3
+  Reviewed source: src/components/ward-management/capacity/planned-admissions-reducer.ts:518; SHA256 d91a5be952e2110e25d304edcac7c17bede49897d9115701033cc8be1e0c61df
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2535; SHA256 207ee16a0f423433ba0b35b7465a90d52d2ca6d46928fa7e7686871b6f901ba0
   Reviewed source: src/components/ward-management/ward-access-state.ts:659; SHA256 924e9e6ab48fddbf423e5cf988cc09b75df3ace0ce4f4465f379b143957e3d07
 - RECORD_SUPPORT_NOTIFICATION — modelled; event roles: ward, coordinator

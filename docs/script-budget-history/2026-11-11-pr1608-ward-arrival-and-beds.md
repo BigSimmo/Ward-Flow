@@ -19,3 +19,5 @@ Measured by hosted CI on the PR head after merging `main` at `5b08a5e`: home 577
 Why it changed: items 6, 7, 13 and 18 add two events (`SET_INTAKE_WINDOW`, `MARK_TRANSPORT_COLLECTED`), the bed closure review time and the transport wait to the shared engine, storage checks and history words that every screen loads (about 1.5 to 2 KB). Capacity also carries the two new cards, and the ward screen the intake line and arrival staffing note.
 
 Trim tried: the ward hero's intake hours editor now loads as its own chunk when Edit is first pressed (`ward-intake-window-dialog.tsx`), which took the ward screen from 618.5 to 615.7 KB. The engine additions are the smallest that record and check the new facts. No other safe trim was found.
+
+After merging `main` at `35c7ccd`, which raised five of these screens by 0.3 to 0.4 KB, each limit is main's new limit plus this PR's same raise. No raise grew.

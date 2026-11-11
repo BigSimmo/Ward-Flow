@@ -10,7 +10,7 @@ import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { bedReleases } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
-import type { BedRelease, Movement } from "@/components/ward-management/ward-model";
+import type { BedRelease, Movement, Referral } from "@/components/ward-management/ward-model";
 
 const NOW = NOW_ANCHOR;
 const unit = allUnits()[0]!;
@@ -96,6 +96,67 @@ describe("expectedOccupancy", () => {
     expect(bedStates(unit, [], [], [], [journey]).pulled).toBe(1);
     expect(withHold.rows[0]!.takenNow).toBe(without.rows[0]!.takenNow + 1);
     expect(withHold.rows[0]!.horizons[0]!.high).toBe(without.rows[0]!.horizons[0]!.high + 1);
+  });
+
+  it("counts a booked person who already holds a named bed here once, not twice (Josh, 11 Nov 2026)", () => {
+    const booking = {
+      id: "PA-OC-HOLD",
+      unitId: unit.id,
+      patientId: "PT-OC-HOLD",
+      state: "booked",
+      expectedArrivalAt: NOW + 60,
+    } as unknown as PlannedAdmission;
+    const journey = {
+      id: "WF-OC-HOLD-BOOKED",
+      patientId: "PT-OC-HOLD",
+      stage: "accepted_awaiting_bed",
+      acceptedUnitId: unit.id,
+      heldBedNumber: 1,
+    } as unknown as Movement;
+    const referral = {
+      id: "RF-OC-HOLD-BOOKED",
+      patientId: "PT-OC-HOLD",
+      destinations: [
+        { state: "accepted", destination: { kind: "psychiatric_ward", unitId: unit.id }, heldBedNumber: 2 },
+      ],
+    } as unknown as Referral;
+    const empty = expectedOccupancy([unit], [], [] as Admission[], NOW);
+    for (const hold of [journey, referral]) {
+      const held = expectedOccupancy([unit], [], [] as Admission[], NOW, [booking], [hold]);
+      // The hold is in takenNow already; the booking for the same person adds nothing more.
+      expect(held.rows[0]!.takenNow).toBe(empty.rows[0]!.takenNow + 1);
+      for (const [index, horizon] of held.rows[0]!.horizons.entries()) {
+        expect(horizon.likely).toBe(empty.rows[0]!.horizons[index]!.likely + 1);
+        expect(horizon.high).toBe(empty.rows[0]!.horizons[index]!.high + 1);
+      }
+    }
+    // A booking for someone else still counts.
+    const other = { ...booking, id: "PA-OC-OTHER", patientId: "PT-OC-OTHER" } as PlannedAdmission;
+    const both = expectedOccupancy([unit], [], [] as Admission[], NOW, [booking, other], [journey]);
+    expect(both.rows[0]!.horizons[0]!.likely).toBe(empty.rows[0]!.horizons[0]!.likely + 2);
+  });
+
+  it("the network forecast does not count a named referral hold and its booking twice", () => {
+    const booking = {
+      id: "PA-NET-HOLD",
+      unitId: unit.id,
+      patientId: "PT-NET-HOLD",
+      state: "booked",
+      expectedArrivalAt: NOW + 60,
+    } as unknown as PlannedAdmission;
+    const referral = {
+      id: "RF-NET-HOLD",
+      patientId: "PT-NET-HOLD",
+      destinations: [
+        { state: "accepted", destination: { kind: "psychiatric_ward", unitId: unit.id }, heldBedNumber: 2 },
+      ],
+    } as unknown as Referral;
+    const without = bedsForecast([unit], [], [], [], NOW, [booking]);
+    const held = bedsForecast([unit], [], [], [], NOW, [booking], [referral]);
+    expect(without.horizons[0]!.plannedAdmissions).toBe(1);
+    expect(held.horizons[0]!.plannedAdmissions).toBe(0);
+    // One person, one bed: Ready drops by the hold, and the booking no longer takes another.
+    expect(held.horizons[0]!.readyNow).toBe(without.horizons[0]!.readyNow - 1);
   });
 
   it("says a percentage, or Not recorded with no beds", () => {
