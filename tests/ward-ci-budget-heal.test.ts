@@ -6,7 +6,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { removePathSync } from "../scripts/retryable-fs.mjs";
 
-import { judgeAgainstMain, MAIN_TOLERANCE_KB } from "../scripts/check-script-budget.mjs";
+import { judgeAgainstMain, MAIN_TOLERANCE_KB, MAX_INHERITED_OVERAGE_KB } from "../scripts/check-script-budget.mjs";
 import {
   ISSUE_LABEL,
   ISSUE_TITLE,
@@ -111,6 +111,31 @@ describe("budget gate: a PR is failed only for growth it caused", () => {
   it("fails a PR that pushes a within-budget main over, however small", () => {
     const { failing } = judgeAgainstMain({ "/a": 500.1, "/b": 570 }, { "/a": 499.9, "/b": 570 }, budgets);
     expect(failing.map(({ route }) => route)).toEqual(["/a"]);
+  });
+
+  it("does not let the tolerance stack PR after PR (performance audit WF-03)", () => {
+    // Each PR grows /b by the full tolerance and then becomes main for the next one.
+    let main = 572.7;
+    let passed = 0;
+    for (let pr = 0; pr < 20; pr += 1) {
+      const kb = Math.round((main + MAIN_TOLERANCE_KB) * 10) / 10;
+      if (judgeAgainstMain({ "/a": 490, "/b": kb }, { "/a": 490, "/b": main }, budgets).failing.length) break;
+      passed += 1;
+      main = kb;
+    }
+    expect(main).toBeLessThanOrEqual(budgets["/b"] + MAX_INHERITED_OVERAGE_KB);
+    expect(passed).toBeLessThan(3);
+  });
+
+  it("still passes a PR that measures no bigger than a main already far over", () => {
+    const { failing, inherited } = judgeAgainstMain({ "/a": 490, "/b": 580 }, { "/a": 490, "/b": 580 }, budgets);
+    expect(failing).toEqual([]);
+    expect(inherited.map(({ route }) => route)).toEqual(["/b"]);
+  });
+
+  it("fails growth within the tolerance once the route is past the overage ceiling", () => {
+    const { failing } = judgeAgainstMain({ "/a": 490, "/b": 580.5 }, { "/a": 490, "/b": 580 }, budgets);
+    expect(failing.map(({ route }) => route)).toEqual(["/b"]);
   });
 
   it("fails every over route when main could not be measured", () => {

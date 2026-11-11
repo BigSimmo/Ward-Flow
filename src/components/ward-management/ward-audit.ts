@@ -582,7 +582,14 @@ export function auditSubject(state: WardFlowState, event: WardFlowEvent): AuditS
     event.type === "SNOOZE_INBOX_ITEM" ||
     event.type === "UNSNOOZE_INBOX_ITEM"
   ) {
-    const movement = uniqueRecord(state.movements, inboxRowMovementId(state.movements, event.inboxItemId.trim()));
+    const movement = uniqueRecord(
+      state.movements,
+      inboxRowMovementId(
+        state.movements,
+        // A malformed event with no text id is refused by the reducer; never throw here (WF-50).
+        typeof event.inboxItemId === "string" ? event.inboxItemId.trim() : "",
+      ),
+    );
     if (movement)
       return {
         kind: "movement",
@@ -821,7 +828,7 @@ export function captureAuditEvent(
         category: "inbox",
         action: event.type,
         details: {
-          inboxItemId: event.inboxItemId.trim(),
+          inboxItemId: typeof event.inboxItemId === "string" ? event.inboxItemId.trim() : "",
           reason: event.type === "SNOOZE_INBOX_ITEM" && isSnoozeReason(event.reason) ? event.reason : null,
           until: event.type === "SNOOZE_INBOX_ITEM" && Number.isFinite(event.until) ? event.until : null,
         },
