@@ -47,7 +47,7 @@ import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle"
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 
 import { useWardDataMode } from "@/components/ward-management/ward-shared-access";
-import { leaveDemo, useCanLeaveDemo } from "@/components/ward-management/front-door/leave-demo";
+import { leaveDemo, useCanLeaveDemo } from "@/components/ward-management/shell/leave-demo";
 import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
 import { settingsHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";

@@ -21,7 +21,9 @@ const { freshAlerts, pushPayload } = (await import(new URL("../backend/ward-flow
   pushPayload: (alerts: readonly unknown[]) => PushPayload;
 };
 
-const AT = new Date("2026-10-10T10:00:00Z");
+// D-150 (11 Nov 2026): the shared world runs on real Perth time, so the walk starts at 10:42 Perth,
+// the seed's own opening minute in the day shift, as the scripted clock did before.
+const AT = new Date("2026-10-10T02:42:00Z");
 const STEP = 30; // minutes of demo clock per evaluation, about the phone push sweep's grain
 const STEPS = 48; // 24 hours
 const ROLES: readonly WardChromeRole[] = ["coordinator", "bed_manager", "ed", "ward", "community"];

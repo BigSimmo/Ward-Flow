@@ -24,7 +24,7 @@ import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { BlockerEditor, useBlockerSave } from "./ward-bed-blocker-editor";
 import { BedClosureControls, type BedClosureActions } from "./ward-bed-closure-controls";
-import { wardClosureReasonLabel } from "../capacity/ward-closure";
+import { wardClosureReasonLabel } from "./ward-bed-closure-reason";
 import {
   openJourneyFromStay,
   SentJourneyChanges,

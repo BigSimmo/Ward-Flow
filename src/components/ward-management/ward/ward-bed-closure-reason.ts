@@ -2,6 +2,9 @@ import { WARD_CLOSURE_REASONS, wardClosureReasonLabel, type WardClosureReason } 
 import type { WardFlowEvent } from "../ward-flow-events";
 import type { UndoStepChoices } from "../use-undoable-step";
 
+/** Re-exported for the bed's History, so the ward screen reads closure words through one file. */
+export { wardClosureReasonLabel };
+
 type BedClose = Extract<WardFlowEvent, { type: "SET_BED_CLOSED" }>;
 
 /**

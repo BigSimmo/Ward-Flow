@@ -106,20 +106,26 @@ describe("live audit item 19: sign-out leaves no readable Ward Flow cookie", () 
     ]);
   });
 
-  it("the sign-out sweep clears the desk cookie", () => {
-    const source = readFileSync(join(root, "src/components/ward-management/ward-browser-data.ts"), "utf8");
-    expect(source).toMatch(/clearWardFlowBrowserData\(\);\n\s*syncWardDeskHeldCookie\(null\);/u);
+  it("the sign-out sweep clears the desk cookie", async () => {
+    vi.resetModules();
+    const sync = vi.fn();
+    vi.doMock("@/components/ward-management/shell/ward-desk-early", () => ({ syncWardDeskHeldCookie: sync }));
+    try {
+      const { endWardFlowBrowserSession } = await import("@/components/ward-management/ward-browser-data");
+      endWardFlowBrowserSession();
+      expect(sync).toHaveBeenCalledWith(null);
+    } finally {
+      vi.doUnmock("@/components/ward-management/shell/ward-desk-early");
+    }
   });
 });
 
 describe("live audit item 23: zod builds no code in the browser", () => {
-  it("sets jitless before the executive statistics contract's first schema", () => {
-    const source = readFileSync(
-      join(root, "src/components/ward-management/statistics/executive-statistics-contract.ts"),
-      "utf8",
-    );
-    const jitless = source.indexOf("z.config({ jitless: true });");
-    expect(jitless).toBeGreaterThan(-1);
-    expect(jitless).toBeLessThan(source.indexOf("z.number()"));
+  it("the executive statistics contract turns zod's jitless mode on as it loads", async () => {
+    const { z } = await import("zod");
+    z.config({ jitless: false });
+    vi.resetModules();
+    await import("@/components/ward-management/statistics/executive-statistics-contract");
+    expect(z.config().jitless).toBe(true);
   });
 });
