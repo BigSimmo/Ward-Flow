@@ -141,7 +141,16 @@ export const BANNED = [
  * forbids. Kept deliberately short: every entry is a hole, and a long list here is how a guard
  * stops meaning anything.
  */
-export const ALLOWED_CONTEXTS = ["not a statutory", "no statutory", "not a legal", "never a legal"];
+export const ALLOWED_CONTEXTS = [
+  "not a statutory",
+  "no statutory",
+  "not a legal",
+  "never a legal",
+  // D-134 item 9 (Josh, 11 Nov 2026): his exact item 4 notice tells staff to check the Act, which is
+  // the opposite of the app claiming authority. Like every entry here, a match skips its whole
+  // source line, so the sentence sits alone in its own constant (`ward-under-18-adult-ward.ts`).
+  "check the mental health act 2014 requirements for a child on an adult ward",
+];
 
 const BLOCK_COMMENT = /\/\*[\s\S]*?\*\//g;
 const LINE_COMMENT = /(^|[^:])\/\/[^\n]*/g;

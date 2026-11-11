@@ -140,6 +140,8 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "leftAt",
   // Feature 14 (9 Nov 2026): the weekend a discharge review tick belongs to moves with the clock.
   "weekendStart",
+  // Item 4 (11 Nov 2026): the typed time the Chief Psychiatrist was notified (`Admission.chiefPsychiatristNotice`).
+  "notifiedAt",
   // Nested one level down, inside `Admission.followUp`. `shift` recurses, so a name is still all
   // it takes — but a nested instant is exactly the kind this set loses track of, which is why it is
   // named here rather than left for the reader to notice.

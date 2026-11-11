@@ -616,6 +616,15 @@ function candidatesForMovements(
         actingUnitId: admission.unitId,
         weekendStart: now,
       }));
+    case "RECORD_CHIEF_PSYCHIATRIST_NOTIFIED":
+      return state.admissions.map((admission) => ({
+        type,
+        role,
+        now,
+        admissionId: admission.id,
+        actingUnitId: admission.unitId,
+        notifiedAt: now,
+      }));
     case "SET_DISCHARGE_BARRIER":
       return state.admissions.map((admission) => ({
         type,

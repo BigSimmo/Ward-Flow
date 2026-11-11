@@ -46,7 +46,13 @@ export function PatientJourneyExtras({
   riskFlags: HandoverPackInput["riskFlags"];
   now: Instant;
 }) {
-  const { referrals, dayZero } = useWardFlowSelect("referrals", "dayZero");
+  // The desk's own scoped support records, so a recorded advocacy notice reads as recorded in the
+  // pack (CodeRabbit, #1609); a desk never sent a record still sees it as not recorded.
+  const { referrals, dayZero, supportNotifications } = useWardFlowSelect(
+    "referrals",
+    "dayZero",
+    "supportNotifications",
+  );
   let pack: HandoverPackInput | undefined;
   if (handoverPackAvailable(movement)) {
     const edContacts: HandoverContact[] = callRows(
@@ -82,7 +88,7 @@ export function PatientJourneyExtras({
       paperExpiryAt: currentLegalDueAt(movement),
       edContacts,
       careContacts,
-      checklist: admissionChecklist(movement, referrals),
+      checklist: admissionChecklist(movement, referrals, undefined, { patient, supportNotifications, now }),
       now,
     };
   }

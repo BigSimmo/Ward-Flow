@@ -62,6 +62,10 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   SET_STEP_DOWN_CANDIDATE: { category: "patient", plainWording: "Step-down pathway candidate status updated" },
   RECORD_WARD_DIAGNOSIS: { category: "patient", plainWording: "Ward's tentative diagnosis recorded" },
   MARK_WEEKEND_DISCHARGE_REVIEWED: { category: "patient", plainWording: "Weekend discharge reviewed" },
+  RECORD_CHIEF_PSYCHIATRIST_NOTIFIED: {
+    category: "patient",
+    plainWording: "Chief Psychiatrist notified time recorded",
+  },
   SET_DISCHARGE_BARRIER: { category: "patient", plainWording: "Discharge hold-up recorded" },
   SET_CLINICALLY_READY: { category: "patient", plainWording: "Clinically ready date recorded" },
   SET_DISCHARGE_CRITERIA: { category: "patient", plainWording: "Discharge criteria updated" },
