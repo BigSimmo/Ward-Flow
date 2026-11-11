@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 
 import { preloadWhenIdle } from "../preload-when-idle";
+import { loadBeforeHeldReveal } from "../shell/held-reveal-loaders";
 
 /**
  * Phone budget (31 Oct 2026, Home and Activity build): the Planned list brings the forecast model
@@ -16,3 +17,5 @@ const loadPlannedList = () => import("./planned-list");
 export const PlannedList = dynamic(() => loadPlannedList().then((m) => m.PlannedList), { loading: () => null });
 
 preloadWhenIdle(loadPlannedList);
+// A held first load draws this card with the page (D-137 follow-up, held-reveal-loaders.ts).
+loadBeforeHeldReveal(loadPlannedList);

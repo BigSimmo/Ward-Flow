@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 
 import { preloadWhenIdle } from "../preload-when-idle";
+import { loadBeforeHeldReveal } from "../shell/held-reveal-loaders";
 
 /**
  * Phone budget: the "since you were last here" line brings the last-look comparison and its sheet
@@ -16,3 +17,5 @@ export const HomeSinceBanner = dynamic(() => loadSinceBanner().then((m) => m.Hom
 });
 
 preloadWhenIdle(loadSinceBanner);
+// A held first load draws this card with the page (D-137 follow-up, held-reveal-loaders.ts).
+loadBeforeHeldReveal(loadSinceBanner);

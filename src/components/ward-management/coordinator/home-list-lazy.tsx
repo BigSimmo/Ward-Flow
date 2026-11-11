@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 
 import { preloadWhenIdle } from "../preload-when-idle";
+import { loadBeforeHeldReveal } from "../shell/held-reveal-loaders";
 // A1K-01 / DR-03 (26 Oct 2026): the server draws My list's rows before their code arrives, so their
 // styles load with Home. Without them the rows paint as plain text, then grow into cards and push
 // Home down (0.16 on a phone). My list itself now loads with the page (below).
@@ -36,3 +37,5 @@ preloadWhenIdle(loadBedsGapCard);
 export const HomeReleaseSheet = dynamic(() => import("./home-release-sheet").then((m) => m.HomeReleaseSheet), {
   loading: () => null,
 });
+// A held first load draws this card with the page (D-137 follow-up, held-reveal-loaders.ts).
+loadBeforeHeldReveal(loadBedsGapCard);

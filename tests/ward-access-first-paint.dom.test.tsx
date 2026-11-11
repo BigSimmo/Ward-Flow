@@ -4,6 +4,10 @@ import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 import { WardDeskHold, WardDeskPendingClear } from "@/components/ward-management/shell/ward-access-hold";
 import {
+  loadBeforeHeldReveal,
+  resetHeldRevealLoadersForTests,
+} from "@/components/ward-management/shell/held-reveal-loaders";
+import {
   WARD_DESK_EARLY_SCRIPT,
   WARD_DESK_HELD_COOKIE,
   WARD_DESK_PENDING_ATTRIBUTE,
@@ -129,6 +133,39 @@ describe("server page held for a desk other than the coordinator's", () => {
     expect(container.querySelector('[data-testid="page"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="placeholder"]')).toBeNull();
     act(() => root?.unmount());
+  });
+
+  it("keeps a held page's placeholder until the route's code-split cards have loaded (D-137 follow-up)", async () => {
+    let finish: () => void = () => undefined;
+    const card = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    loadBeforeHeldReveal(() => card);
+    try {
+      const tree = (
+        <WardDeskHold held placeholder={<p data-testid="placeholder">Loading page</p>}>
+          <p data-testid="page">Home</p>
+        </WardDeskHold>
+      );
+      const container = document.createElement("div");
+      container.innerHTML = renderToString(tree);
+      document.body.appendChild(container);
+      let root: ReturnType<typeof hydrateRoot> | undefined;
+      await act(async () => {
+        root = hydrateRoot(container, tree);
+      });
+      // The desk is known, but a card's code has not arrived: the page waits rather than jump.
+      expect(container.querySelector('[data-testid="placeholder"]')).not.toBeNull();
+      expect(container.querySelector('[data-testid="page"]')).toBeNull();
+      await act(async () => {
+        finish();
+        await card;
+      });
+      expect(container.querySelector('[data-testid="page"]')).not.toBeNull();
+      act(() => root?.unmount());
+    } finally {
+      resetHeldRevealLoadersForTests();
+    }
   });
 
   it("keeps the server's page only for the coordinator", () => {
