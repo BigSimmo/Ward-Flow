@@ -10,6 +10,10 @@ import {
 } from "@/components/ward-management/shell/ward-shell-public-context";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import {
+  SharedSessionContext,
+  type SharedSession,
+} from "@/components/ward-management/shell/ward-shared-session-context";
 
 const IDLE_MS = CLINICAL_VALUES.idleLock.value * 60_000;
 const POLL_MS = 3_000;
@@ -48,6 +52,27 @@ it("locks a signed-in desk after the idle time while the shared poll keeps re-re
     rerender(tree(polledAccess()));
   }
   expect(screen.getByRole("dialog")).toBeInTheDocument();
+});
+
+it("signs a signed-in desk out after the idle time while the shared poll keeps re-rendering (WF-22)", () => {
+  // One stable session, as the shared desk provides; each poll still hands over a fresh, equal access.
+  const signOut = vi.fn();
+  const session: SharedSession = { signOut, logRecordView: () => undefined, accountEmail: "desk@example.test" };
+  const tree = (access: WardAccess) => (
+    <SharedSessionContext.Provider value={session}>
+      <WardShellAuthorityProvider access={access}>
+        <WardIdleLock />
+      </WardShellAuthorityProvider>
+    </SharedSessionContext.Provider>
+  );
+  const { rerender } = render(tree(polledAccess()));
+  for (let elapsed = POLL_MS; elapsed <= IDLE_MS + POLL_MS; elapsed += POLL_MS) {
+    act(() => vi.advanceTimersByTime(POLL_MS));
+    rerender(tree(polledAccess()));
+  }
+  expect(signOut).toHaveBeenCalledTimes(1);
+  expect(signOut.mock.calls[0]?.[0]).toMatch(/^Signed out after \d+ minutes without use/u);
+  expect(screen.getByRole("dialog")).toHaveTextContent(/Signed out after \d+ minutes without use/u);
 });
 
 it("keeps one authority object while the access is equal and hands over a new one when it changes", () => {
