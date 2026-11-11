@@ -60,7 +60,11 @@ describe("Ward backend CI", () => {
       "needs.plan.outputs.backend == 'true' && needs.reuse.outputs.backend_verified != 'true'",
     );
     expect(backendJob?.text).toContain("needs.plan.result == 'success'");
-    expect(backendJob?.text).toMatch(/^\s*run: node scripts\/install-locked-dependencies\.mjs\s*$/mu);
+    // The root install runs inside the shared setup action, whose outcome is steps.install.
+    expect(backendJob?.text).toMatch(/^\s*id: install\n\s*uses: \.\/\.github\/actions\/ward-setup\s*$/mu);
+    expect(readFileSync(new URL("../.github/actions/ward-setup/action.yml", import.meta.url), "utf8")).toMatch(
+      /^\s*run: node scripts\/install-locked-dependencies\.mjs\s*$/mu,
+    );
     expect(backendJob?.text).toMatch(/^\s*image:\s*postgres:16@sha256:[0-9a-f]{64}\s*$/mu);
     expect(backendJob?.text).toMatch(/^\s*POSTGRES_DB:\s*wardflow_test\s*$/mu);
     expect(backendJob?.text).toMatch(/^\s*ports:\s*\[\s*"127\.0\.0\.1:5432:5432"\s*\]\s*$/mu);
