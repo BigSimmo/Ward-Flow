@@ -1,5 +1,6 @@
-import { render, screen } from "@testing-library/react";
-import { expect, it, vi } from "vitest";
+import { act, render, screen } from "@testing-library/react";
+import type React from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { clk } from "@/components/wf/format";
 import { publishLiveRefresh } from "@/components/wf/live";
@@ -101,4 +102,51 @@ it("stays quiet while the shared refresh is on time", () => {
   } finally {
     publishLiveRefresh(undefined);
   }
+});
+
+// Live audit item 8 (11 Nov 2026): a normal save shows a calm "Saving…" first. The full reload
+// warning comes only after 8 s, while offline, or once the save has failed.
+describe("a save in flight", () => {
+  const saving = (overrides: Partial<WardSharedConnection> = {}) =>
+    ({ ...connection("saving"), error: null, ...overrides }) as unknown as WardSharedConnection;
+  const withSave = (node: React.ReactNode) => (
+    <WardSharedSaveContext.Provider value={{ unconfirmedSave: true, status: "saving", error: null, retry: () => {} }}>
+      {node}
+    </WardSharedSaveContext.Provider>
+  );
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("shows a calm Saving… pill, then the full warning after 8 s", () => {
+    vi.useFakeTimers();
+    render(withSave(<WardSharedSaveStatus deskLabel="Coordinator" connection={saving()} />));
+    const status = screen.getByTestId("ward-shared-status-bar");
+    expect(status).toHaveTextContent(/^Saving…$/u);
+    expect(status.className).toMatch(/pill/u);
+    expect(screen.queryByTestId("ward-shared-reload-warning")).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
+    act(() => {
+      vi.advanceTimersByTime(7_999);
+    });
+    expect(screen.queryByTestId("ward-shared-reload-warning")).toBeNull();
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(screen.getByTestId("ward-shared-reload-warning")).toBeVisible();
+    expect(status).toHaveTextContent("Saving shared changes… Keep this page open until the save is confirmed.");
+  });
+
+  it("warns at once while the browser is offline", () => {
+    vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+    render(withSave(<WardSharedSaveStatus deskLabel="Coordinator" connection={saving()} />));
+    expect(screen.getByTestId("ward-shared-reload-warning")).toBeVisible();
+  });
+
+  it("warns at once when the save carries an error", () => {
+    render(withSave(<WardSharedSaveStatus deskLabel="Coordinator" connection={saving({ error: "Not saved." })} />));
+    expect(screen.getByTestId("ward-shared-reload-warning")).toBeVisible();
+  });
 });

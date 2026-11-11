@@ -61,6 +61,25 @@
 }
 
 /*
+ * Live audit item 8 (11 Nov 2026): a save in flight shows this small calm pill, not the warning
+ * strip. It floats, so the page never jumps on every save, and takes no taps.
+ */
+.pill {
+  position: fixed;
+  inset-block-end: var(--wf-s-4);
+  inset-inline-start: var(--wf-s-4);
+  z-index: 40;
+  padding: var(--wf-s-1) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: 999px;
+  color: var(--wf-ink-2);
+  background: var(--wf-surface);
+  font-size: var(--wf-fs-12);
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+/*
  * The strip above the app on the shared board, shown only when a lost connection or an unconfirmed
  * save needs action. One slim row in the shell's own tokens: what is wrong on the left, Retry and
  * Sign out on the right. Its height is published as
@@ -150,6 +169,10 @@
 
   .action {
     flex: none;
+  }
+
+  .pill {
+    inset-block-end: calc(var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + 0.5rem);
   }
 
   /* The reload warning must stay readable, so a strip carrying it wraps. */
