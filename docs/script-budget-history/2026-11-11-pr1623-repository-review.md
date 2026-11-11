@@ -7,3 +7,5 @@ Measured on hosted CI (production build of the PR head `883a3c1`, merged with ma
 Why it changed: Movements gained Print and spreadsheet Export (D-145 item 3). The CSV download helper moved to the ward root (`ward-csv.ts`) so Legal forms and Movements can share it without importing from the Statistics screen; Statistics now loads it through a thin wrapper.
 
 Trim tried: the export code only runs on a tap but is small and shares the existing download helper; splitting it into a lazy chunk would add more than it saves. No other safe trim was found.
+
+Later the same day (merged with main `c21e99a`, which had raised every route): the same two raises applied on top of main's values, so movements is 610.9 + 0.5 = 611.4 and statistics 633.6 + 0.3 = 633.9. Every other route takes main's value.
