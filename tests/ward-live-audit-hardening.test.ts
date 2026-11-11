@@ -36,7 +36,7 @@ describe("live audit item 14: the sign-in token wait has its own deadline", () =
 describe("live audit item 21: the access log says TV board only for a desk that opens it", () => {
   it("keeps the server's TV roles in step with the roles that open the bed meeting screen", () => {
     const source = readFileSync(join(root, "backend/ward-flow/shared-http.mjs"), "utf8");
-    const match = /export const TV_BOARD_ROLES = new Set\(\[([^\]]*)\]\)/u.exec(source);
+    const match = /const TV_BOARD_ROLES = new Set\(\[([^\]]*)\]\)/u.exec(source);
     expect(match).not.toBeNull();
     const server = [...match![1].matchAll(/"([a-z_]+)"/gu)].map((entry) => entry[1]).sort();
     const opens = WARD_ACCESS_ROLES.filter((role) => ROLE_SCREENS[role]["bed-meeting"] !== undefined).sort();
