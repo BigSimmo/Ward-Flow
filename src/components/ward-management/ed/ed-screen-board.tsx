@@ -13,6 +13,7 @@ import type { EdScreenContext } from "./ed-screen-context";
 import styles from "./ed.module.css";
 import { TierKey } from "../tier-key";
 import { EdHandoverBoard } from "./ed-handover-board";
+import { EdCrewsWaitingLine } from "@/components/ward-management/ed-crews-waiting-line";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
 
@@ -94,6 +95,7 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
             <b>{patients.length}</b> {patients.length === 1 ? "person" : "people"}
           </span>
         </div>
+        <EdCrewsWaitingLine movements={patients} now={now} wide />
       </div>
       {/* C1 (phone simplification, 19 Oct 2026): on a phone the chips fold into the Filter button
           beside Board, Needs you and Lists (ed-screen-phone.tsx). */}

@@ -269,6 +269,10 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // Item 18: an admission id, the acting unit id, a time and the caller's role. No typed text.
   "MARK_TRANSPORT_COLLECTED",
   "RECORD_LEFT_DEPARTMENT",
+  // Item 9 (10 Nov 2026): a movement id and up to three typed clock times. No typed text.
+  "RECORD_CREW_TIMES",
+  // D-141 (11 Nov 2026): a movement id and a fixed Police or Ambulance choice. No typed text.
+  "RECORD_ARRIVAL_MODE",
   "RECORD_LEGAL_FORM_EXPIRY",
   "RECORD_LEGAL_FORM_RECEIVED",
   "RECORD_LOCAL_BED_SOUGHT",
@@ -386,6 +390,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // Psychiatry review tracker and ward wait list (9 Nov 2026): ids, a fixed grade, a flag and instants only.
   "REQUEST_PSYCH_REVIEW",
   "RECORD_PSYCH_REVIEW_SEEN",
+  // Escalation calls (item 3, D-133): a movement id, a step, a fixed role and a fixed outcome. No typed text.
+  "RECORD_ESCALATION_CALL",
   "MARK_WARD_READY_FOR_NEXT",
   "RAISE_EXPECT_FLAG",
   "FLAG_LEGAL_MISMATCH",

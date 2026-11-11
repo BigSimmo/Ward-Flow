@@ -470,6 +470,10 @@ describe("who may raise which event", () => {
     // RB3, item 19: the department holding the patient records the outcome — same reasoning as
     // RECORD_LEFT_DEPARTMENT above.
     RECORD_ED_OUTCOME: ["ed", "coordinator"],
+    // Item 9 (10 Nov 2026): the department holding the patient types its police or ambulance crew times.
+    RECORD_CREW_TIMES: ["ed", "coordinator"],
+    // D-141 (11 Nov 2026): the same department marks an arrival brought by police or ambulance.
+    RECORD_ARRIVAL_MODE: ["ed", "coordinator"],
     SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward", "community"],
     SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
     RECORD_WARD_DIAGNOSIS: ["ward", "coordinator"],
@@ -495,6 +499,7 @@ describe("who may raise which event", () => {
     CLEAR_EXPECT_FLAG: ["ward", "coordinator", "ed", "community"],
     REQUEST_PSYCH_REVIEW: ["ed", "coordinator"],
     RECORD_PSYCH_REVIEW_SEEN: ["ed", "coordinator"],
+    RECORD_ESCALATION_CALL: ["ed", "coordinator"],
     MARK_WARD_READY_FOR_NEXT: ["ward", "coordinator"],
     // Batch 4 (Josh's plan, 10 Nov 2026): only admins switch a site feature: the statewide coordinator
     // and the statewide access admin (D-142), which sends it under the coordinator role; the server

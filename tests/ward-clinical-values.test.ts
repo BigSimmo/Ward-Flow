@@ -115,6 +115,8 @@ describe("clinical values file", () => {
       silentWardFirstReminder: 120,
       silentWardSecondReminder: 240,
       missedRequestWindow: 120,
+      // D-133 (Josh, 10 Nov 2026): the referral list's Not opened yet tag, signed.
+      referralNotOpened: 30,
       wardAnswerTarget: 120,
       transferAcceptanceTarget: 240,
       transportBookedTarget: 60,

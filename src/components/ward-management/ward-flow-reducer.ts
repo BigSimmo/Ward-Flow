@@ -157,8 +157,7 @@ import {
   type Admission,
   type PlannedAdmission,
 } from "@/components/ward-management/ward-admissions";
-import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
-import type { Patient } from "@/components/ward-management/ward-patients";
+import { activeCommunityTreatmentOrder, type Patient } from "@/components/ward-management/ward-patients";
 import { combineWardPatients } from "@/components/ward-management/ward-patients-seed";
 import {
   generatedOccupantPatients,
@@ -1784,6 +1783,8 @@ export function reduceClinicalEvent(
     case "RECORD_REPATRIATION":
     case "RECORD_CLINICAL_CONTACT":
     case "RECORD_SUPPORT_NOTIFICATION":
+    case "RECORD_CREW_TIMES":
+    case "RECORD_ARRIVAL_MODE":
       return reducerSlices().reduceRecordedFactEvent(state, event, decision, RECORDED_FACT_EVENT_HELPERS);
     case "RECORD_OBSERVATION_LEVEL":
       return reduceObservationLevelEvent(state, event, RECORDED_FACT_EVENT_HELPERS, decision);
@@ -1875,7 +1876,6 @@ export function reduceClinicalEvent(
         replaceAdmission,
         replaceMovement,
       });
-
     case "PULL_PATIENT":
     case "EXTEND_PULL":
     case "RELEASE_PULL":
@@ -1884,7 +1884,6 @@ export function reduceClinicalEvent(
     case "STEP_BACK_STAGE":
     case "RELEASE_AND_REOPEN_SEARCH":
       return reducerSlices().reducePlacementEvent(state, event, decision, PLACEMENT_EVENT_HELPERS);
-
     case "HANDOVER_READY":
     case "TRANSPORT_ACCEPTED":
     case "TRANSPORT_EN_ROUTE":
@@ -2104,6 +2103,7 @@ export function reduceClinicalEvent(
       return replaceMovement(state, movement.id, updated);
     }
 
+    case "RECORD_ESCALATION_CALL": // Escalation calls (item 3, D-133), forwarded on to escalation-calls.ts.
     case "REQUEST_PSYCH_REVIEW":
     case "RECORD_PSYCH_REVIEW_SEEN":
     case "MARK_WARD_READY_FOR_NEXT":

@@ -416,6 +416,10 @@ export const referrals: Referral[] = completeSyntheticReferralIntakes([
           },
           { unitId: "bty-youth", nextCallbackAt: NOW_ANCHOR + 20, at: NOW_ANCHOR - 24, by: "Bed coordinator" },
         ],
+        // D-141 (Josh, 11 Nov 2026), synthetic: when it acknowledged, the youth unit asked for the
+        // collateral history and nobody has ticked it off, so a New referral for this person shows
+        // item 10's "Still open: Ward asked for: collateral history" on the Ready to send rail.
+        informationNeeds: [{ need: "collateral_history", at: NOW_ANCHOR - 30, by: "Ward manager" }],
       },
     ],
     // Closing-the-loop package A, synthetic: two calls to the youth unit, so the chase count reads 3.

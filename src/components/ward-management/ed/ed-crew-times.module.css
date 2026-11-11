@@ -1,0 +1,80 @@
+/* Item 9 (police and ambulance handover times, D-93): typed crew times. Plain text in the record's
+   own style; no target, countdown or overdue colour. Times and counts in Geist Mono, tabular. */
+.mono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.notRecorded {
+  color: var(--wf-ink-2);
+}
+
+.waiting,
+.note {
+  margin: var(--wf-s-2) 0 0;
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  margin-top: var(--wf-s-3);
+}
+
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.legend {
+  margin-bottom: var(--wf-s-2);
+  padding: 0;
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 7.5rem;
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.field input {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.waitingLine {
+  margin: 0;
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.wide {
+  flex-basis: 100%;
+}
+
+/* D-141: "Brought by: Police / Ambulance". The kit segmented choice, 40px tall on a phone. */
+.broughtByRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+}
+
+@media (max-width: 46.4375rem) {
+  .broughtBy > button[role="radio"] {
+    min-height: 40px;
+  }
+}
