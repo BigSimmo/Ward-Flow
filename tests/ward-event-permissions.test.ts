@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { EVENT_ROLE, WARD_FLOW_ROLE_LABELS } from "../src/components/ward-management/ward-flow-events";
 import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
+import { commandRefusal, deskCommand, seedWorld } from "../backend/ward-flow/engine";
 
 /**
  * WHO MAY DO WHAT, written out by hand and compared for exact equality.
@@ -490,9 +491,10 @@ describe("who may raise which event", () => {
     REQUEST_PSYCH_REVIEW: ["ed", "coordinator"],
     RECORD_PSYCH_REVIEW_SEEN: ["ed", "coordinator"],
     MARK_WARD_READY_FOR_NEXT: ["ward", "coordinator"],
-    // Batch 4 (Josh's plan, 10 Nov 2026): only the statewide coordinator switches a site feature (the
-    // server narrows the coordinator role to it; D-80 keeps the executive and access admin out); the
-    // downtime pack desks record a print; a coordinator records an outage window.
+    // Batch 4 (Josh's plan, 10 Nov 2026): only admins switch a site feature: the statewide coordinator
+    // and the statewide access admin (D-142), which sends it under the coordinator role; the server
+    // narrows the coordinator role to those two. The downtime pack desks record a print; a coordinator
+    // records an outage window.
     SET_SITE_FEATURE_SWITCH: ["coordinator"],
     RECORD_DOWNTIME_PACK_PRINTED: ["coordinator", "bed_manager", "ward", "ed"],
     RECORD_OUTAGE_WINDOW: ["coordinator"],
@@ -612,6 +614,35 @@ describe("who may raise which event", () => {
       expect(roles as readonly string[], type).not.toContain("executive");
       expect(roles as readonly string[], type).not.toContain("admin");
     }
+  });
+
+  it("refuses the access admin every action on the server but the one D-142 names", () => {
+    // D-142 (Josh, 11 Nov 2026) amends D-80 for one action only: the statewide access admin switches a
+    // listed feature off at a site (`SET_SITE_FEATURE_SWITCH`). Every other action stays refused, and
+    // the executive's stay refused with no exception.
+    const D142_ACCESS_ADMIN_ACTIONS: readonly string[] = ["SET_SITE_FEATURE_SWITCH"];
+    const world = seedWorld(new Date("2026-11-11T02:00:00Z"));
+    const at = new Date("2026-11-11T02:00:00Z");
+    const admin = { role: "admin", scope: { kind: "statewide" } } as const;
+    const executive = { role: "executive", scope: { kind: "statewide" } } as const;
+    for (const type of Object.keys(EVENT_ROLE)) {
+      const sent = (access: typeof admin | typeof executive) =>
+        deskCommand(access, { type, role: "executive", now: NOW_ANCHOR, siteCode: "RPH" }) as Record<string, unknown>;
+      expect(commandRefusal(world, executive, sent(executive), at), type).not.toBeNull();
+      const refusal = commandRefusal(world, admin, sent(admin), at);
+      if (D142_ACCESS_ADMIN_ACTIONS.includes(type)) expect(refusal, type).toBeNull();
+      else expect(refusal, type).toBe("This change is not part of your role.");
+    }
+    // The exception is the access admin's statewide desk only, and its record names the access admin.
+    const switched = deskCommand(admin, { type: "SET_SITE_FEATURE_SWITCH", role: "executive", siteCode: "RPH" });
+    expect(switched).toMatchObject({ role: "coordinator", byAccessAdmin: true });
+    const serviceAdmin = { role: "admin", scope: { kind: "service", service: "East Metro" } } as const;
+    expect(
+      commandRefusal(world, serviceAdmin, deskCommand(serviceAdmin, switched) as Record<string, unknown>, at),
+    ).not.toBeNull();
+    // A browser cannot claim the access admin's name for another desk's switch.
+    const coordinator = { role: "coordinator", scope: { kind: "statewide" } } as const;
+    expect(deskCommand(coordinator, switched)).not.toHaveProperty("byAccessAdmin");
   });
 });
 

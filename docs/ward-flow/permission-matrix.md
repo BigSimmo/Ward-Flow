@@ -11,12 +11,12 @@ and the reducer still limit each desk to records in its own place.
 
 ## Layers
 
-| Layer    | Source of truth                                                                                                                                                                          | How it is asked                                     |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| Screen   | `dispatchPermission` (`ward-role-permissions.ts`) for the shell role (`chromeRoleForAccess`); demo controls from the server's `demoControls` flag; no role shows the ask-for-access gate | Called per cell                                     |
-| Engine   | `EVENT_ROLE` (`ward-flow-event-roles.ts`) as enforced by `wardFlowReducer`                                                                                                               | Reducer run on the synthetic seed with a bare event |
-| Backend  | `deskCommand`, the role clause of `validSharedCommand` and `commandRefusal` (`backend/ward-flow/engine.ts`); no role is refused 403 in `shared-http.mjs`                                 | Called per cell                                     |
-| Database | Row level security policies and grants in `backend/ward-flow/migrations/` and `infra/`                                                                                                   | SQL read as text                                    |
+| Layer    | Source of truth                                                                                                                                                                                                                                               | How it is asked                                     |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Screen   | `dispatchPermission` (`ward-role-permissions.ts`) for the shell role (`chromeRoleForAccess`); demo controls from the server's `demoControls` flag; the access admin's site switch from `mayChangeSiteFeatures` (D-142); no role shows the ask-for-access gate | Called per cell                                     |
+| Engine   | `EVENT_ROLE` (`ward-flow-event-roles.ts`) as enforced by `wardFlowReducer`                                                                                                                                                                                    | Reducer run on the synthetic seed with a bare event |
+| Backend  | `deskCommand`, the role clause of `validSharedCommand` and `commandRefusal` (`backend/ward-flow/engine.ts`); no role is refused 403 in `shared-http.mjs`                                                                                                      | Called per cell                                     |
+| Database | Row level security policies and grants in `backend/ward-flow/migrations/` and `infra/`                                                                                                                                                                        | SQL read as text                                    |
 
 **196 actions x 10 desks = 1960 cells.**
 
@@ -186,7 +186,7 @@ and the reducer still limit each desk to records in its own place.
 | `SET_DISCHARGE_CRITERIA`                    |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `SET_SCENARIO`                              |            Y            |             -             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `SET_SECLUSION_ROOM_STATUS`                 |            Y            |             Y             |         -         |     Y     |        Y         |      -       |       -        |     -     |      -       |    -    |
-| `SET_SITE_FEATURE_SWITCH`                   |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
+| `SET_SITE_FEATURE_SWITCH`                   |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      Y       |    -    |
 | `SET_STEP_DOWN_CANDIDATE`                   |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `SNOOZE_INBOX_ITEM`                         |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `STAND_DOWN_BROADCAST_ALERT`                |            Y            |             Y             |         -         |     -     |        Y         |      -       |       -        |     -     |      -       |    -    |

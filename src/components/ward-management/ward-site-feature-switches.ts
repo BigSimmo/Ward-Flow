@@ -15,10 +15,13 @@ import type { PlaceLookup, WardAccess } from "@/components/ward-management/ward-
  * `tests/ward-ruling-guardrails.test.ts` fails if one is ever added to the allow-list.
  *
  * 🔒 **ADMINS ONLY.** The engine role check admits the coordinator role. Who is actually an admin is
- * an access question, answered once by `mayChangeSiteFeatures`: the statewide coordinator, who also
- * grants roles (`managesAccess`). D-80 gives the access admin and the executive no workflow action at
- * all, so the access admin cannot take this one until Josh rules otherwise. The shared server refuses
- * every other desk, a service coordinator included, with `siteFeatureSwitchRefusal`.
+ * an access question, answered once by `mayChangeSiteFeatures`: the statewide access admin and the
+ * statewide coordinator, who also grants roles (`managesAccess`). D-80 gives the access admin and the
+ * executive no workflow action; D-142 (Josh, 11 Nov 2026) amends it for this one action, so the access
+ * admin sends it under the engine's coordinator role and the record names the access admin
+ * (`byAccessAdmin`, which the shared server sets from the desk's membership, never the browser). The
+ * shared server refuses every other desk, a service coordinator included, with
+ * `siteFeatureSwitchRefusal`.
  *
  * A record holds a site code, a listed feature name, a time and a role. Never typed text.
  */
@@ -59,13 +62,16 @@ function isSiteProtectedFeature(value: unknown): value is SiteProtectedFeature {
   return typeof value === "string" && Object.hasOwn(SITE_PROTECTED_FEATURES, value);
 }
 
+/** Who switched it: a workflow role, or the access admin (D-142). */
+export type SiteFeatureSwitchBy = WardFlowRole | "admin";
+
 /** One feature switched off at one site. Switching it back on removes the record. */
 export type SiteFeatureSwitchRecord = {
   siteCode: string;
   feature: SiteSwitchableFeature;
   /** When it was switched off. */
   at: Instant;
-  by: WardFlowRole;
+  by: SiteFeatureSwitchBy;
 };
 
 export type SiteFeatureSwitchEvent = {
@@ -77,6 +83,11 @@ export type SiteFeatureSwitchEvent = {
   feature: SiteSwitchableFeature;
   /** True switches the feature off at the site; false switches it back on. */
   off: boolean;
+  /**
+   * D-142: sent by the access admin's desk. The shared server sets or clears it from the desk's
+   * membership (`deskCommand`), so a browser cannot claim it.
+   */
+  byAccessAdmin?: boolean;
 };
 
 type SiteSwitchState = {
@@ -108,9 +119,13 @@ export function reduceSiteFeatureSwitch<S extends SiteSwitchState>(
   if (!event.off && !existing) return reject(state, "That feature is not switched off at this site");
   accept();
   const next = event.off
-    ? [...records, { siteCode: event.siteCode, feature, at: event.now, by: event.role }]
+    ? [...records, { siteCode: event.siteCode, feature, at: event.now, by: siteSwitchBy(event) }]
     : records.filter((record) => record !== existing);
   return { ...state, siteFeatureSwitches: next };
+}
+
+function siteSwitchBy(event: SiteFeatureSwitchEvent): SiteFeatureSwitchBy {
+  return event.byAccessAdmin === true ? "admin" : event.role;
 }
 
 /** The features switched off at one site. */
@@ -164,12 +179,16 @@ export function featuresOffForDesk(
 }
 
 /**
- * Who may switch a feature off at a site: the statewide coordinator, the one workflow desk that also
- * grants roles. The access admin has no workflow action under D-80 (Josh's call, D-135).
+ * Who may switch a feature off at a site: the statewide access admin (D-142, Josh, 11 Nov 2026,
+ * amending D-80 for this one action) and the statewide coordinator, the workflow desk that also
+ * grants roles (D-135). A service-wide admin or coordinator may not: a switch names any site.
  */
 export function mayChangeSiteFeatures(access: WardAccess): boolean {
-  return access.role === "coordinator" && access.scope.kind === "statewide";
+  return (access.role === "admin" || access.role === "coordinator") && access.scope.kind === "statewide";
 }
+
+/** The role the switch is sent under: the engine admits the coordinator role only (D-142). */
+export const SITE_FEATURE_SWITCH_ROLE = "coordinator" satisfies WardFlowRole;
 
 /** The shared server's check, or `null`: only an admin switches, and only a named site. */
 export function siteFeatureSwitchRefusal(access: WardAccess, command: Record<string, unknown>): string | null {

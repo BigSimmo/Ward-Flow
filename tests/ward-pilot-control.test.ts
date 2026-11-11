@@ -105,6 +105,12 @@ describe("item 20: switch a feature off at one site", () => {
     expect(guarded.find((flag) => flag.name === "awol-bed-hold-review")?.source).not.toBe("site");
   });
 
+  it("records the access admin as who switched it (D-142), and the stored state still restores", () => {
+    const state = switchOff(seed, { byAccessAdmin: true });
+    expect(state.siteFeatureSwitches).toEqual([{ siteCode: "RPH", feature: "help-ask", at: NOW_ANCHOR, by: "admin" }]);
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(state)))).toBe(true);
+  });
+
   it("refuses a protected or unlisted feature, an unknown site and a switch that changes nothing", () => {
     for (const feature of ["role-access", "safety-notices", "legal-times", "ruling-guards", "awol-bed-hold-review"]) {
       const state = switchOff(seed, { feature });
@@ -120,7 +126,7 @@ describe("item 20: switch a feature off at one site", () => {
   });
 
   it("only admins switch: the engine refuses clinical desks, and the access rule names admins only", () => {
-    // D-80: the executive (and the access admin, which reads as executive) takes no workflow action.
+    // D-80: the executive takes no workflow action (the access admin's desk sends the coordinator role, D-142).
     for (const role of ["ward", "ed", "bed_manager", "officer", "community", "executive"]) {
       const state = switchOff(seed, { role });
       expect(refused(seed, state), role).toBe(true);
@@ -134,8 +140,10 @@ describe("item 20: switch a feature off at one site", () => {
     expect(mayChangeSiteFeatures(serviceCoordinator)).toBe(false);
     expect(mayChangeSiteFeatures(siteManager)).toBe(false);
     expect(mayChangeSiteFeatures({ role: "executive", scope: { kind: "statewide" } })).toBe(false);
-    // D-80 keeps the access admin out of workflow actions until Josh rules otherwise.
-    expect(mayChangeSiteFeatures({ role: "admin", scope: { kind: "statewide" } })).toBe(false);
+    // D-142 (Josh, 11 Nov 2026) amends D-80 for this one action: the statewide access admin switches.
+    expect(mayChangeSiteFeatures({ role: "admin", scope: { kind: "statewide" } })).toBe(true);
+    expect(mayChangeSiteFeatures({ role: "admin", scope: { kind: "service", service: "East Metro" } })).toBe(false);
+    expect(siteFeatureSwitchRefusal({ role: "admin", scope: { kind: "statewide" } }, command)).toBeNull();
     expect(mayChangeSiteFeatures({ role: "ward", scope: { kind: "ward", unitIds: [RPH_WARD] } })).toBe(false);
     expect(siteFeatureSwitchRefusal(statewide, command)).toBeNull();
     expect(siteFeatureSwitchRefusal(statewide, { type: "SET_SITE_FEATURE_SWITCH" })).not.toBeNull();

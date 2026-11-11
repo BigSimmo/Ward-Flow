@@ -7,6 +7,8 @@ import { SITE_SWITCHABLE_FEATURES } from "./ward-site-feature-switches";
 const id = z.string().check(z.minLength(1));
 const at = z.number().check(z.refine(Number.isFinite));
 const role = z.enum(Object.keys(WARD_FLOW_ROLE_LABELS) as [string, ...string[]]);
+/** A site switch may also name the access admin (D-142). */
+const switchBy = z.enum(["admin", ...Object.keys(WARD_FLOW_ROLE_LABELS)] as [string, ...string[]]);
 
 /**
  * Stored Batch 4 records (10 Nov 2026), each absent in older saves. Strict objects, so a row carrying
@@ -15,7 +17,7 @@ const role = z.enum(Object.keys(WARD_FLOW_ROLE_LABELS) as [string, ...string[]])
 export const pilotControlStoredFields = {
   siteFeatureSwitches: z.optional(
     z
-      .array(z.strictObject({ siteCode: id, feature: z.enum(SITE_SWITCHABLE_FEATURES), at, by: role }))
+      .array(z.strictObject({ siteCode: id, feature: z.enum(SITE_SWITCHABLE_FEATURES), at, by: switchBy }))
       .check(z.refine((rows) => new Set(rows.map((row) => `${row.siteCode}|${row.feature}`)).size === rows.length)),
   ),
   downtimePackPrints: z.optional(z.array(z.strictObject({ unitId: id, at, by: role }))),

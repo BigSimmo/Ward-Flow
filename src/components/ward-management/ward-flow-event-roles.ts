@@ -590,10 +590,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // Not the executive, which changes nothing (D-80).
   REQUEST_WARD_STAFF: ["ward", "coordinator", "bed_manager"],
   CLOSE_WARD_STAFF_REQUEST: ["ward", "coordinator", "bed_manager"],
-  // Batch 4 item 20 (Josh's plan, 10 Nov 2026): a feature switched off at one site, admins only. D-80
-  // gives the executive and the access admin no action, so the admin here is the statewide
-  // coordinator (`mayChangeSiteFeatures`); the shared server refuses every other desk, a service
-  // coordinator too (`siteFeatureSwitchRefusal`). Whether the access admin may take it is Josh's call.
+  // Batch 4 item 20 (Josh's plan, 10 Nov 2026): a feature switched off at one site, admins only: the
+  // statewide coordinator and, by D-142 (Josh, 11 Nov 2026, amending D-80 for this one action), the
+  // statewide access admin, which sends it under this coordinator role (`mayChangeSiteFeatures`). The
+  // shared server refuses every other desk, a service coordinator too (`siteFeatureSwitchRefusal`).
   SET_SITE_FEATURE_SWITCH: ["coordinator"],
   // Batch 4 item 24: the desks that open the downtime pack record when they print it or save a PDF.
   RECORD_DOWNTIME_PACK_PRINTED: ["coordinator", "bed_manager", "ward", "ed"],
