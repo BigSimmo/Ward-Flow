@@ -2,7 +2,7 @@
 
 // The list behind a figure (feature plan item 5), fetched on first use by `count-breakdown.tsx`.
 import Link from "next/link";
-import { useMemo, type RefObject } from "react";
+import { useLayoutEffect, useMemo, type RefObject } from "react";
 import { ChevronRight } from "lucide-react";
 
 import { Sheet } from "@/components/wf";
@@ -28,6 +28,11 @@ type PanelProps = {
 
 export function CountBreakdownPanel({ value, noun, kind, scope, countedAt, rows }: PanelProps) {
   const view = useMemo(() => breakdownView({ value, kind, scope, rows: rows() }), [value, kind, scope, rows]);
+  // The popover measured its short loading line when it opened; it refits on a window resize, so
+  // ask it to refit now that the full list is in (a long list then gets its height cap and scroll).
+  useLayoutEffect(() => {
+    window.dispatchEvent(new Event("resize"));
+  }, []);
   return (
     <div className={styles.body} data-testid="count-breakdown-panel">
       <p className={styles.sentence}>{breakdownSentence(value, noun, countedAt)}</p>

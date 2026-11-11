@@ -7,7 +7,7 @@
  * screen after the normal sign-in. No token, code or patient detail is ever in it.
  */
 
-import { useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { Printer, QrCode } from "lucide-react";
 
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -22,10 +22,44 @@ import styles from "./ward-desk-qr-card.module.css";
 
 type Printing = { unit: Unit; url: string; matrix: QrMatrix | null; failed: boolean };
 
+/*
+ * The open print page, held in this tab's memory only. Settings draws separate phone and desktop
+ * trees, and printing can cross the phone width, which remounts this card; keeping the state here,
+ * not in the component, keeps the page in the dialog for print (as the patient or carer page does).
+ */
+let printingNow: Printing | null = null;
+const listeners = new Set<() => void>();
+function setPrinting(next: Printing | null | ((now: Printing | null) => Printing | null)) {
+  printingNow = typeof next === "function" ? next(printingNow) : next;
+  for (const listener of listeners) listener();
+}
+function subscribePrinting(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+let mountedCards = 0;
+/** Leaving Settings (no card left a moment later) closes the page. */
+function useMountedCard() {
+  useEffect(() => {
+    mountedCards += 1;
+    return () => {
+      mountedCards -= 1;
+      window.setTimeout(() => {
+        if (mountedCards === 0) setPrinting(null);
+      }, 1000);
+    };
+  }, []);
+}
+
 export function WardDeskQrCard() {
   const access = useEffectiveWardAccess();
   const { units } = useWardFlowSelect("units");
-  const [printing, setPrinting] = useState<Printing | null>(null);
+  const printing = useSyncExternalStore(
+    subscribePrinting,
+    () => printingNow,
+    () => null,
+  );
+  useMountedCard();
   if (access.role !== "ward" || access.scope.kind !== "ward") return null;
   const held = new Set(access.scope.unitIds);
   // The network's own fixed ward order (D-126), never the order the desk's scope lists them.
