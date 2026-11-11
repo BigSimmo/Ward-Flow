@@ -38,7 +38,7 @@ export function useCanLeaveDemo(): boolean {
  * (an error reply, no connection or the deadline): opening the sign-in page then would only show
  * the demo again, because the pass still opens the site.
  */
-export async function leaveDemo(): Promise<boolean> {
+async function leaveDemo(): Promise<boolean> {
   // The sweep a sign-out runs (D-88). It ends the front door's pass too, awaited here so the sign-in
   // page never opens while the pass is still good.
   let ended = false;
