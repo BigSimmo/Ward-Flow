@@ -12,6 +12,7 @@ import {
   PATIENT_CARER_NOT_RECORDED,
   PATIENT_CARER_TEXT,
 } from "@/components/ward-management/movements/patient-carer-page-text";
+import { MOCK_NUMBER_PREFIX } from "@/components/ward-management/on-call/on-call-directory";
 import { DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 
@@ -61,13 +62,15 @@ describe("patient and carer page (item 40)", () => {
     expect(patientCarerPageFor({ ...first, acceptedUnitId: undefined }, state.units)).toBeUndefined();
   });
 
-  it("names the receiving ward and hospital, and never invents an address or visiting hours", () => {
+  it("names the receiving ward, hospital and mock ward phone, and never invents an address or visiting hours", () => {
     for (const movement of accepted) {
       const unit = state.units.find((entry) => entry.id === movement.acceptedUnitId)!;
       const page = patientCarerPageFor(movement, state.units)!;
       expect(page.wardName).toBe(unit.name);
       expect(page.address).toBe(PATIENT_CARER_NOT_RECORDED);
       expect(page.visitingHours).toBe(PATIENT_CARER_NOT_RECORDED);
+      expect(page.phone.startsWith(MOCK_NUMBER_PREFIX), page.phone).toBe(true);
+      expect(textOf(movement)).toContain(page.phone);
       expect(textOf(movement)).toContain(unit.name);
     }
   });

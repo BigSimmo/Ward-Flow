@@ -70,6 +70,6 @@ describe("count breakdown", () => {
       fireEvent.click(screen.getByRole("button", { name: /show who/ }));
     });
     expect(screen.queryAllByTestId("count-breakdown-row")).toHaveLength(0);
-    expect(screen.getByTestId("count-breakdown-withheld")).toHaveTextContent(/Fewer than/);
+    expect(screen.getByTestId("count-breakdown-withheld")).toHaveTextContent(/Names are not listed in this view/);
   });
 });

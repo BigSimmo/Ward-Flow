@@ -150,9 +150,10 @@ describe("count breakdown: scope", () => {
 describe("count breakdown: small numbers and words", () => {
   const line = CLINICAL_VALUES.smallNumberHidden.value;
 
-  it("hides a list of people under the line only in an aggregate view", () => {
-    expect(breakdownWithheld("people", "aggregate", line - 1)).toBe(true);
-    expect(breakdownWithheld("people", "aggregate", line)).toBe(false);
+  it("hides a list of people at any count in an aggregate view (D-137)", () => {
+    expect(breakdownWithheld("people", "aggregate", 1)).toBe(true);
+    expect(breakdownWithheld("people", "aggregate", line)).toBe(true);
+    expect(breakdownWithheld("people", "aggregate", line * 10)).toBe(true);
     expect(breakdownWithheld("people", "aggregate", 0)).toBe(false);
     expect(breakdownWithheld("people", "own", 1)).toBe(false);
     expect(breakdownWithheld("beds", "aggregate", 1)).toBe(false);

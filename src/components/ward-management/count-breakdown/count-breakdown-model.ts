@@ -8,14 +8,13 @@
  * Rules kept:
  * - Scope: the rows come from the desk's own workspace (`scopeWorkspace`, applied by the provider),
  *   because they are the figure's own list. Nothing here reaches past what the figure counted.
- * - Small numbers: in an aggregate view (`scope: "aggregate"`: Statistics, the executive Capacity
- *   view) a count of people at or above 1 and under `CLINICAL_VALUES.smallNumberHidden` shows no
- *   list, only "fewer than N", as `smallNumberText` words the figure itself. A desk's own ward,
+ * - No names in aggregate views: in an aggregate view (`scope: "aggregate"`: Statistics, the
+ *   executive Capacity view) any count of people above 0 shows no list (D-137, 11 Nov 2026). The
+ *   figure itself still follows `smallNumberText`. A desk's own ward,
  *   team or ED (`scope: "own"`) is the desk's own work and always lists. Beds are never people, so
  *   a bed count always lists (as `smallNumberText`'s own note says: beds stay exact).
- * - Not on the wall TV: the TV screens never import this module (guard test).
+ * - Not on the wall TV: the TV screens never import this module.
  */
-import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 
 /** One line in a breakdown: a person, a movement or a ward. */
@@ -43,12 +42,12 @@ export function breakdownTotal(rows: readonly BreakdownRow[]): number {
 }
 
 /**
- * True when the list must stay hidden: a count of people under the small number line in an
- * aggregate view. Zero is not hidden (there is nobody to name).
+ * True when the list must stay hidden: any count of people in an aggregate (executive or
+ * statistics) view, whatever its size (D-137, 11 Nov 2026). Zero is not hidden (there is nobody to
+ * name).
  */
 export function breakdownWithheld(kind: BreakdownKind, scope: BreakdownScope, value: number): boolean {
-  if (kind !== "people" || scope !== "aggregate") return false;
-  return value > 0 && value < CLINICAL_VALUES.smallNumberHidden.value;
+  return kind === "people" && scope === "aggregate" && value > 0;
 }
 
 /** The figure's accessible name as a button: "6 waiting in ED, show who" (beds: "show where"). */
@@ -81,7 +80,7 @@ export function breakdownView(input: {
   if (breakdownWithheld(kind, scope, value)) {
     return {
       state: "withheld",
-      words: `Fewer than ${CLINICAL_VALUES.smallNumberHidden.value}. Names are not listed in this view.`,
+      words: "Names are not listed in this view.",
     };
   }
   if (breakdownTotal(rows) !== value) return { state: "mismatch" };

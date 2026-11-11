@@ -1612,5 +1612,11 @@ is inferred.
   1. **Count leak (plan question 1, item 1):** fixed first, before item 5. The server holds the page whenever it cannot be sure of the desk: only a browser that has said its desk is the whole-network coordinator's (cookie value `0`) gets the server's page. This changes H-0111 for a fresh device, which now sees a short loading page before its first page.
   2. **TV change mark (plan question 9, item 43):** "Changed 14:32" shows on a ward or bed meeting TV tile for 15 minutes after its figure changes. Signed for the prototype by Josh as `tvChangeMark` in clinical-values.md.
   3. **QR code library (plan question 11, item 42):** one small, well-known QR code library may be added as a dependency, loaded only where the desk QR code is drawn.
+  4. **Design approval and review answers (11 November 2026, 10:20 AM AWST, 02:20 UTC):** Josh chose "Approve all, with your answers" on the batch 5 approval card and wrote "Go ahead with all recommendations now for me." That approves the drawn parts on the batch's design review page (D-74) and these answers:
+     - No names in executive or statistics (aggregate) views at any count: a tapped count of people there lists nobody and says "Names are not listed in this view."
+     - The patient or carer page shows the receiving ward's mock nurses' station number from the on-call directory as "Ward phone".
+     - The patient or carer page wording stays marked as draft until consumer, carer and cultural review.
+     - The Night view's ready-bed heading reads "Beds ready now".
+     - This batch may change three files that held PR #1599 also changes (`bed-meeting-tv.tsx`, `ward-clinical-values.ts`, `ward-clinical-value-notes.ts`); this batch fixes any conflict.
 - **Note:** D-128 item 9 said no new features until #1564 to #1577 close. This batch builds because Josh chose the 27 items and asked for the batches to start on 10 November 2026; Josh may say otherwise on the PR.
 - **Boundary:** synthetic data only. Design approval for the drawn parts stays with the batch's design review page (D-74). Approves no merge or release.

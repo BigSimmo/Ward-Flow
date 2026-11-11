@@ -61,6 +61,10 @@ export function PatientCarerPaper({ page }: { page: PatientCarerPage }) {
           <dd>{page.address}</dd>
         </div>
         <div className={styles.fact}>
+          <dt>{T.phoneLabel}</dt>
+          <dd>{page.phone}</dd>
+        </div>
+        <div className={styles.fact}>
           <dt>{T.visitingLabel}</dt>
           <dd>{page.visitingHours}</dd>
         </div>

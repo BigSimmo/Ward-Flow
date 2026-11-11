@@ -10,9 +10,11 @@
  * takes the ward and its hospital only, so nothing about the person can reach the page.
  *
  * Ward Flow holds no ward address or visiting hours in its synthetic data, so both print as
- * "Not recorded" rather than an invented, real-looking address.
+ * "Not recorded" rather than an invented, real-looking address. The ward phone is the ward's mock
+ * nurses' station line from the on-call directory (D-137, 11 Nov 2026), so it is a mock number too.
  */
 
+import { buildOnCallDirectory, lineAt } from "../on-call/on-call-directory";
 import type { Site, Unit } from "../ward-model";
 
 export const PATIENT_CARER_NOT_RECORDED = "Not recorded";
@@ -27,6 +29,7 @@ export const PATIENT_CARER_TEXT = {
   eyebrow: "Information for you and the people who support you",
   titleLead: "You are going to",
   addressLabel: "Address",
+  phoneLabel: "Ward phone",
   visitingLabel: "Visiting hours",
   arriveHeading: "What happens when you arrive",
   arriveSteps: [
@@ -49,21 +52,29 @@ export type PatientCarerPage = {
   wardName: string;
   hospitalName: string;
   address: string;
+  phone: string;
   visitingHours: string;
 };
 
+/** The ward's mock nurses' station number from the on-call directory, or "Not recorded". */
+function wardPhone(unitId: string): string {
+  const entry = buildOnCallDirectory().find((item) => item.id === `${unitId}-nic`);
+  return (entry && lineAt(entry, 0)?.number) || PATIENT_CARER_NOT_RECORDED;
+}
+
 /**
- * The page's variable facts: the ward's name and its hospital, and nothing about the person. Address
- * and visiting hours are not in Ward Flow's data, so they read "Not recorded".
+ * The page's variable facts: the ward's name, its hospital and its mock phone, and nothing about the
+ * person. Address and visiting hours are not in Ward Flow's data, so they read "Not recorded".
  */
 export function patientCarerPageModel(
-  unit: Pick<Unit, "name">,
+  unit: Pick<Unit, "id" | "name">,
   site: Pick<Site, "name"> | undefined,
 ): PatientCarerPage {
   return {
     wardName: unit.name,
     hospitalName: site?.name ?? PATIENT_CARER_NOT_RECORDED,
     address: PATIENT_CARER_NOT_RECORDED,
+    phone: wardPhone(unit.id),
     visitingHours: PATIENT_CARER_NOT_RECORDED,
   };
 }
