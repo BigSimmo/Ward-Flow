@@ -1351,7 +1351,6 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
     meaning: "Identify, Situation, Background, Assessment, Recommendation: the order a clinical handover follows.",
   },
   { term: "MBBS", meaning: "Bachelor of Medicine, Bachelor of Surgery, a medical degree." },
-  { term: "MHERT", meaning: "Mental health emergency response team." },
   { term: "MHN", meaning: "Mental health nurse." },
   {
     term: "NICE",
