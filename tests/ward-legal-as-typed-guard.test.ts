@@ -120,6 +120,18 @@ describe("legal form times only as typed: source", () => {
     expect(found).toEqual([]);
   });
 
+  it("formats no leave return time as a duration (D-139: leave follows D-93)", () => {
+    const leaveDuration =
+      /\b(?:dur|formatRemaining|splitDuration|durText|durMinutes|minutesText|formatElapsed)\s*\([^)]*expectedReturn/;
+    expect(leaveDuration.test("value: dur(now - bed.expectedReturn)")).toBe(true);
+    const found = files.flatMap((file) =>
+      codeLines(readFileSync(file, "utf8"))
+        .filter(({ code }) => leaveDuration.test(code))
+        .map(({ line, code }) => `${relative(WARD_DIR, file)}:${line}: ${code.trim()}`),
+    );
+    expect(found).toEqual([]);
+  });
+
   it("draws no countdown timer on the legal forms screens", () => {
     const legalFiles = files.filter((file) => file.includes("legal-forms"));
     const timers = legalFiles.filter((file) => /direction="(?:left|in)"/.test(readFileSync(file, "utf8")));
