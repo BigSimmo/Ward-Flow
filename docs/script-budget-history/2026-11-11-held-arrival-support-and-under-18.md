@@ -30,6 +30,8 @@ Hosted CI's build after merging `main` at `b393351` (9b9ded4 plus main) measured
 | Capacity `/ward-flow/capacity`     | 654.3 | 655.5 | 1.2   |
 | Statistics `/ward-flow/statistics` | 632.6 | 633.6 | 1.0   |
 
+After merging `main` at `35c7ccd`, which raised five of these screens by 0.3 to 0.4 KB, each limit is main's new limit plus this PR's same total raise (0.2 to 1.2 KB). No raise grew.
+
 Why it changed: item 4 adds the `RECORD_CHIEF_PSYCHIATRIST_NOTIFIED` event, its storage check and history words to the shared engine, and item 15 adds the interpreter, Aboriginal liaison and advocate lines to the arrival checklist.
 
 Trim tried: the new event lives in its own small file and the notice renders only inside the bed drawer. No other safe trim was found.

@@ -17,7 +17,7 @@ import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-manageme
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
 import { bedsForecastSources, type BedsForecastSources } from "./beds-forecast-sources";
-import { plannedAdmissionsStillNeedingABed } from "./planned-admissions-reducer";
+import { patientsHoldingANamedBed, plannedAdmissionsStillNeedingABed } from "./planned-admissions-reducer";
 import { forecastReleaseAt } from "../forecast/forecast-release-date";
 
 /**
@@ -113,6 +113,8 @@ export function bedsForecast(
   const reservations = [...movements, ...referrals];
   const readyNow = openUnits.reduce((sum, unit) => sum + bedStates(unit, admissions, [], [], reservations).ready, 0);
   const openUnitIds = new Set(openUnits.map((unit) => unit.id));
+  // A booked person who already holds a named bed is out of Ready once; never count the booking too.
+  const namedBedHolders = patientsHoldingANamedBed(openUnits, admissions, reservations);
   const unitIds = new Set(units.map((unit) => unit.id));
   const admissionsById = new Map(admissions.map((admission) => [admission.id, admission]));
   const expectedAt = (release: BedRelease) => forecastReleaseAt(release, admissionsById.get(release.admissionId));
@@ -146,6 +148,7 @@ export function bedsForecast(
       until,
       waitingMovements,
       admissions,
+      namedBedHolders,
     ).length;
     const bedsNeeded = waitingForBed + planned;
     const low = readyNow + confirmed - bedsNeeded;

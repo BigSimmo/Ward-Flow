@@ -98,7 +98,7 @@ test("M74: a handled 500 is sent to Sentry with the reply's request ID, the role
   assert.ok(!JSON.stringify(reports).includes("SYNTHETIC-NAME"));
 });
 
-test("M74: a storage outage (503) and a refusal are not sent as server errors", async () => {
+test("M74 / A7-05: a storage outage (503) is reported as unavailable, not as a server error, and a refusal is not reported", async () => {
   const reports = [];
   const outage = handlerWith(
     async () => {
@@ -112,5 +112,8 @@ test("M74: a storage outage (503) and a refusal are not sent as server errors", 
     (event) => reports.push(event),
   );
   assert.equal((await stale(commandRequest())).status, 409);
-  assert.deepEqual(reports, []);
+  assert.deepEqual(
+    reports.map((report) => report.event),
+    ["ward_backend_service_unavailable"],
+  );
 });
