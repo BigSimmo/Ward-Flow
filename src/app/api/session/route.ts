@@ -14,6 +14,7 @@ import {
 import { edgeAddress, reserveDemoTry } from "@/lib/demo-code-tries";
 import { checkFrontDoorAccount } from "@/lib/front-door-admission";
 import { readFrontDoorBody } from "@/lib/front-door-body";
+import { signInStartedAt } from "@/lib/sign-in-started-at";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -32,15 +33,8 @@ const answer = (status: number, error?: string) =>
 
 /** When the sign-in's 12-hour limit ends, from the token's first sign-in time, as the backend counts it. */
 function signInEndsAt(token: string): number | null {
-  try {
-    const claims = JSON.parse(Buffer.from(token.split(".")[1] ?? "", "base64url").toString("utf8"));
-    const times = (Array.isArray(claims?.amr) ? claims.amr : [])
-      .map((entry: { timestamp?: unknown }) => entry?.timestamp)
-      .filter((value: unknown): value is number => Number.isFinite(value));
-    return times.length ? Math.min(...times) * 1000 + ACCOUNT_PASS_HOURS * 3_600_000 : null;
-  } catch {
-    return null;
-  }
+  const startedAt = signInStartedAt(token);
+  return startedAt === null ? null : startedAt + ACCOUNT_PASS_HOURS * 3_600_000;
 }
 
 /** Secure on any https request, and always in production, where Railway's edge ends https before the app. */
