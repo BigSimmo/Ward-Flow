@@ -25,6 +25,7 @@ import {
   FrontDoorStatusButton,
 } from "@/components/ward-management/front-door/front-door-lazy";
 import { PUSH_ROLES } from "./ward-access-shell-rules";
+import { WardSharedReceivedAtContext } from "./ward-shared-freshness";
 import { accessIsWholeNetwork, type WardAccess } from "./ward-role-access";
 import {
   markSignInLanding,
@@ -492,7 +493,11 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
                         readSource={displayReadSource}
                       >
                         <WardSharedWorkspaceContent connection={connection} access={serverAccess}>
-                          {children}
+                          <WardSharedReceivedAtContext.Provider
+                            value={connection.enabled ? connection.receivedAt : null}
+                          >
+                            {children}
+                          </WardSharedReceivedAtContext.Provider>
                         </WardSharedWorkspaceContent>
                       </WardPartialViewProvider>
                     </WardSharedSaveContext.Provider>

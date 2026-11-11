@@ -11,6 +11,7 @@ import { createWorkspaceStore } from "./postgres.mjs";
 import { createHandler, listen } from "./server.mjs";
 import { createSupabaseAuthenticator } from "./supabase-auth.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
+import { isMembershipRead } from "./viewer.test-support.mjs";
 
 const url = process.env.WARD_TEST_DATABASE_URL;
 if (url && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
@@ -544,7 +545,7 @@ test(
           await gate.stop();
         }
         const result = await connection.query(sql, parameters);
-        if (String(sql).startsWith("SELECT patient_id, opened_at, until FROM ward_flow.break_glass")) scopedResolved++;
+        if (isMembershipRead(sql)) scopedResolved++;
         return result;
       },
     });

@@ -125,20 +125,18 @@ if (
   playwrightArgs.push("--project=chromium-mockups-known");
 }
 // WARD_JOURNEY_GROUP="<index>/<count>" (public CI): run only group <index> of the same
-// duration-balanced split WARD_JOURNEY_SHARDS=<count> would make, on this run's single server. Each
-// CI runner then has a whole machine to itself; three shards sharing one 4-core runner made
-// timing-sensitive journeys fail (28 September 2026). The groups partition the selected spec files,
-// so the <count> runs together cover every spec once.
+// duration-balanced split WARD_JOURNEY_SHARDS=<count> would make. The groups partition the selected
+// spec files, so the <count> runs together cover every spec once. WARD_JOURNEY_SHARDS may then split
+// that group's files again across servers on the same runner. Keep it at 2 on a 4-vCPU runner: three
+// shards sharing one 4-core runner made timing-sensitive journeys fail (28 September 2026).
 const journeyGroup = process.env.WARD_JOURNEY_GROUP;
 if (journeyGroup) {
   const match = /^(\d+)\/(\d+)$/.exec(journeyGroup);
   const index = match ? Number(match[1]) : Number.NaN;
   const count = match ? Number(match[2]) : Number.NaN;
   const groups = index >= 1 && index <= count ? balancedShardGroups(playwrightArgs, count) : null;
-  if (!groups || process.env.WARD_JOURNEY_SHARDS) {
-    console.error(
-      `WARD_JOURNEY_GROUP must be "<index>/<count>" over spec-file filters, without WARD_JOURNEY_SHARDS; got "${journeyGroup}".`,
-    );
+  if (!groups) {
+    console.error(`WARD_JOURNEY_GROUP must be "<index>/<count>" over spec-file filters; got "${journeyGroup}".`);
     process.exit(2);
   }
   const flags = splitPlaywrightArguments(playwrightArgs).options;
@@ -823,7 +821,7 @@ try {
   const requiredProjects = advisoryRun ? [] : projects;
   const requiredCases = releaseGateCases(requiredReleaseGate, releaseGateProject, releaseGatePart);
 
-  // WARD_JOURNEY_SHARDS=N (off unless set; Ward Flow fold gate only, once proven): split the specs
+  // WARD_JOURNEY_SHARDS=N (off unless set; the fold gate, and 2 in CI's browser and release-gate jobs): split the specs
   // N ways with Playwright's --shard, each shard on its own `next start` from this same build and its
   // own output folder, all running at once. Ward Flow keeps no server-side state (every test's data
   // lives in its own browser context), so the shards cannot see each other's data. The exit code is
@@ -850,7 +848,11 @@ try {
     // is placed, longest first, into the group with the least measured time so far
     // (scripts/ward-flow/journey-durations.json; an unmeasured file counts as the median). Falls
     // back to --shard when the selection cannot be listed.
-    const shardGroups = balancedShardGroups(playwrightArgs, shardCount);
+    // A release-gate part is one to three spec files of independent tests (no shared hooks or
+    // module state), so it splits by test instead: --fully-parallel lets --shard divide a single
+    // file, and every shard still runs one worker against its own server.
+    const testLevelShards = Boolean(releaseGatePart);
+    const shardGroups = testLevelShards ? null : balancedShardGroups(playwrightArgs, shardCount);
     if (shardGroups) {
       shardGroups.forEach((group, index) =>
         console.log(`Shard ${index + 1}: ${Math.round(group.seconds)}s measured, ${group.files.join(", ")}`),
@@ -859,7 +861,7 @@ try {
     const shardArgsFor = (index) =>
       shardGroups
         ? [...splitPlaywrightArguments(reportArgs).options, ...shardGroups[index].files]
-        : [...reportArgs, `--shard=${index + 1}/${shardCount}`];
+        : [...reportArgs, ...(testLevelShards ? ["--fully-parallel"] : []), `--shard=${index + 1}/${shardCount}`];
     const codes = await Promise.all(
       shardUrls.map(
         (shardUrl, index) =>
