@@ -438,9 +438,10 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                         label: "Due back",
                         tone: "neutral" as const,
                       },
+                      // D-139: leave follows D-93, so no worked-out "Overdue 2h" or "From now 3h" figure.
                       now > stayLeaveBed.expectedReturn
-                        ? { key: "from", value: dur(now - stayLeaveBed.expectedReturn), label: "Overdue" }
-                        : { key: "from", value: dur(stayLeaveBed.expectedReturn - now), label: "From now" },
+                        ? { key: "from", value: "Passed", label: "Typed time", tone: "warning" as const }
+                        : { key: "from", value: "Not yet", label: "Typed time" },
                     ]
                   : mode === "awol" && stayLeaveBed?.absentWithoutLeave
                     ? [
