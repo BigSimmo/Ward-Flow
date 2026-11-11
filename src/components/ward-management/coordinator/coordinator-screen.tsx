@@ -74,6 +74,7 @@ import cards from "./home-cards.module.css";
 import styles from "./home.module.css";
 import { HomeEdPressure } from "./home-ed-pressure";
 import { PlannedList } from "./home-activity-lazy";
+import { useHomeCardsSettled } from "./home-cards-settled";
 import { useHomeLayout } from "./home-layout";
 import { BedsGapCard, HomePlacementDrawer, HomeReleaseSheet, MyListCard } from "./home-list-lazy";
 import list from "./home-list.module.css";
@@ -592,6 +593,8 @@ export function CoordinatorScreen() {
   // Plan item 2i: the hero's Act now is main's service-scoped Act now figure.
   const heroActNow = actNowCount;
   const chosenAlert = selectedAlertId ? alertEntries.find((entry) => entry.item.id === selectedAlertId) : undefined;
+  // Layout shift on Home (11 Nov 2026): the columns appear once the cards above My list and Later today have arrived.
+  const cardsSettled = useHomeCardsSettled(!isPhone && !chosenAlert);
   const releaseAlert = releaseAlertId ? alertEntries.find((entry) => entry.item.id === releaseAlertId) : undefined;
   const waitEntries = alertEntries.filter((entry) => entry.group === "wait");
   // Home flow mock-up (Q340): a waiting alert is a mark on its patient's Flow row.
@@ -974,6 +977,7 @@ export function CoordinatorScreen() {
             data-testid="ward-coordinator-region-grid"
             data-layout={layout}
             data-shortlist-open={hasPanelSubject}
+            data-cards-pending={cardsSettled ? undefined : "true"}
             ref={queueFocusRef}
           >
             <div className={`${styles.side} ${list.workCol}`}>
