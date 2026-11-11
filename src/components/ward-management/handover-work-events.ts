@@ -33,8 +33,6 @@ export type HandedItemRef =
   /** An open carer callback promise (item 23). */
   | { kind: "callback"; callbackId: string };
 
-export type HandedItemKind = HandedItemRef["kind"];
-
 /** One hand-over. Pending until `acceptedAt`; the item's own record says who owns it. */
 export type HandedItemRecord = {
   /** "HI-N", minted by the reducer. */

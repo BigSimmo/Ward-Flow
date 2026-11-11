@@ -113,7 +113,7 @@ export type HandoverDigestInput = {
  * Item 11: the window "What changed" reads. A first read whose window is this shift's start reads
  * from the previous shift's start; a chosen earlier handover or a later read keeps its own window.
  */
-export function digestSinceWindow(input: HandoverDigestInput): {
+function digestSinceWindow(input: HandoverDigestInput): {
   sinceAt: Instant;
   sinceItems: readonly DigestSinceItem[];
 } {

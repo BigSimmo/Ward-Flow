@@ -4267,12 +4267,12 @@
         {
           "path": "src/components/ward-management/handover-work-model.ts",
           "line": 157,
-          "sha256": "2232b8b19b7f5d20a8a503ce458131f5a538060389de44cda403501a02a4ccdc"
+          "sha256": "f0e8092ca8b273b4aad3bca707df73ebac8764caf0067fb0479c86948e577f59"
         },
         {
           "path": "src/components/ward-management/handover-work-events.ts",
           "line": 70,
-          "sha256": "6186b2c5070fd3ac2de2676fb251487b9f0188e3b3f1d22830201668078e47a9"
+          "sha256": "822cf66f714f89453b9c377faffdc8906a7544022bf30c895c34c144334b1241"
         }
       ],
       "tests": ["tests/ward-handover-own-work.test.ts", "tests/ward-event-permissions.test.ts"]
@@ -4307,7 +4307,7 @@
         {
           "path": "src/components/ward-management/handover-work-model.ts",
           "line": 173,
-          "sha256": "2232b8b19b7f5d20a8a503ce458131f5a538060389de44cda403501a02a4ccdc"
+          "sha256": "f0e8092ca8b273b4aad3bca707df73ebac8764caf0067fb0479c86948e577f59"
         }
       ],
       "tests": ["tests/ward-handover-own-work.test.ts", "tests/ward-event-permissions.test.ts"]
@@ -4343,7 +4343,7 @@
         {
           "path": "src/components/ward-management/handover-work-events.ts",
           "line": 90,
-          "sha256": "6186b2c5070fd3ac2de2676fb251487b9f0188e3b3f1d22830201668078e47a9"
+          "sha256": "822cf66f714f89453b9c377faffdc8906a7544022bf30c895c34c144334b1241"
         }
       ],
       "tests": ["tests/ward-handover-own-work.test.ts", "tests/ward-event-permissions.test.ts"]
@@ -4371,7 +4371,7 @@
         {
           "path": "src/components/ward-management/handover-work-model.ts",
           "line": 79,
-          "sha256": "2232b8b19b7f5d20a8a503ce458131f5a538060389de44cda403501a02a4ccdc"
+          "sha256": "f0e8092ca8b273b4aad3bca707df73ebac8764caf0067fb0479c86948e577f59"
         }
       ],
       "tests": ["tests/ward-handover-own-work.test.ts", "tests/ward-event-permissions.test.ts"]

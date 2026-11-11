@@ -16,7 +16,7 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
  * Item 11: when the Shift digest was last read, in this browser tab only. A board-clock instant,
  * no patient or record; a preview of another desk reads it but never writes it.
  */
-export const DIGEST_LAST_READ_KEY = "ward-flow-digest-last-read";
+const DIGEST_LAST_READ_KEY = "ward-flow-digest-last-read";
 
 function readLastRead(): Instant | null {
   try {
@@ -41,7 +41,7 @@ function writeLastRead(at: Instant): void {
  * Whether this opening of the digest is its first read this shift. Fixed when the digest opens, so
  * the read recorded at opening does not narrow the window while it is still open.
  */
-export function useDigestFirstLookOfShift(open: boolean, now: Instant): boolean {
+function useDigestFirstLookOfShift(open: boolean, now: Instant): boolean {
   const [held, setHeld] = useState<{ open: boolean; first: boolean }>({ open: false, first: false });
   if (held.open !== open) setHeld({ open, first: open ? !lookedThisShift(readLastRead(), now) : held.first });
   useEffect(() => {

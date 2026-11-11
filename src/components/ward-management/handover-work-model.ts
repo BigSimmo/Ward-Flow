@@ -57,7 +57,7 @@ type WorkState = Pick<WardFlowState, "referrals" | "movements" | "admissions"> &
 };
 
 /** A stable key per item, so a later hand-over of the same item replaces an earlier one. */
-export function handedItemKey(item: HandedItemRef): string {
+function handedItemKey(item: HandedItemRef): string {
   switch (item.kind) {
     case "referral":
       return `referral:${item.referralId}`;
@@ -71,7 +71,7 @@ export function handedItemKey(item: HandedItemRef): string {
 }
 
 /** Open carer callbacks: not yet made. Recorded order. */
-export function openCarerCallbacks(state: { carerCallbacks?: readonly CarerCallbackRecord[] }): CarerCallbackRecord[] {
+function openCarerCallbacks(state: { carerCallbacks?: readonly CarerCallbackRecord[] }): CarerCallbackRecord[] {
   return (state.carerCallbacks ?? []).filter((record) => record.madeAt === undefined);
 }
 

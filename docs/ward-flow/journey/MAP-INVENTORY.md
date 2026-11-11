@@ -3,7 +3,7 @@
 The route is selective. Its action notes and the additional command models have source review evidence; source digests detect later edits. This does not establish runtime or clinical acceptance.
 
 ## 197 CURRENT ENGINE EVENTS
-Source-contract SHA256: 6d59a3fad5e60b3423570e001eb498f41f0eb127ebbb145fe95411bcc76327d2
+Source-contract SHA256: d00c7d1d3053af974590d957f97062320a34eeeaba358895a4feda486c2c34a8
 - RECORD_ADMISSION_CARE — diagram-reviewed; event roles: ward, coordinator, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:20
@@ -1595,7 +1595,7 @@ Source-contract SHA256: 6d59a3fad5e60b3423570e001eb498f41f0eb127ebbb145fe95411bc
 - HAND_OVER_ITEM — modelled; event roles: coordinator, ward, ed, community
   Reviewed command model: a pending hand-over of one open item, owner unchanged.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:596
-  Event/dispatch reference: src/components/ward-management/handover-work-events.ts:70
+  Event/dispatch reference: src/components/ward-management/handover-work-events.ts:68
   Event/dispatch reference: src/components/ward-management/handover-work-reducer.ts:121
   Subject: One open item this desk owns: a referral it handles, a bed meeting chase or a carer callback
   Before: The item is open and owned by the sending desk
@@ -1610,12 +1610,12 @@ Source-contract SHA256: 6d59a3fad5e60b3423570e001eb498f41f0eb127ebbb145fe95411bc
   tests: tests/ward-handover-own-work.test.ts
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/handover-work-reducer.ts:121; SHA256 bd44b0a445cfcb26dca896529f3baab1189165187c218a6f18008c66f99add59
-  Reviewed source: src/components/ward-management/handover-work-model.ts:157; SHA256 2232b8b19b7f5d20a8a503ce458131f5a538060389de44cda403501a02a4ccdc
-  Reviewed source: src/components/ward-management/handover-work-events.ts:70; SHA256 6186b2c5070fd3ac2de2676fb251487b9f0188e3b3f1d22830201668078e47a9
+  Reviewed source: src/components/ward-management/handover-work-model.ts:157; SHA256 f0e8092ca8b273b4aad3bca707df73ebac8764caf0067fb0479c86948e577f59
+  Reviewed source: src/components/ward-management/handover-work-events.ts:70; SHA256 822cf66f714f89453b9c377faffdc8906a7544022bf30c895c34c144334b1241
 - ACCEPT_HANDED_ITEM — modelled; event roles: coordinator, ward, ed, community
   Reviewed command model: the receiving desk accepts, moving the owner on the item's own record.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:597
-  Event/dispatch reference: src/components/ward-management/handover-work-events.ts:82
+  Event/dispatch reference: src/components/ward-management/handover-work-events.ts:80
   Event/dispatch reference: src/components/ward-management/handover-work-reducer.ts:134
   Subject: One pending hand-over
   Before: A pending hand-over whose item is still open and still owned by the sender
@@ -1630,11 +1630,11 @@ Source-contract SHA256: 6d59a3fad5e60b3423570e001eb498f41f0eb127ebbb145fe95411bc
   tests: tests/ward-handover-own-work.test.ts
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/handover-work-reducer.ts:134; SHA256 bd44b0a445cfcb26dca896529f3baab1189165187c218a6f18008c66f99add59
-  Reviewed source: src/components/ward-management/handover-work-model.ts:173; SHA256 2232b8b19b7f5d20a8a503ce458131f5a538060389de44cda403501a02a4ccdc
+  Reviewed source: src/components/ward-management/handover-work-model.ts:173; SHA256 f0e8092ca8b273b4aad3bca707df73ebac8764caf0067fb0479c86948e577f59
 - RECORD_CARER_CALLBACK — modelled; event roles: ward, coordinator
   Reviewed command model: a carer wants a call back, best after a typed time; no name or number held.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:600
-  Event/dispatch reference: src/components/ward-management/handover-work-events.ts:90
+  Event/dispatch reference: src/components/ward-management/handover-work-events.ts:88
   Event/dispatch reference: src/components/ward-management/handover-work-reducer.ts:150
   Subject: One current stay or open bed request
   Before: No open carer callback for this person, or one with an earlier time
@@ -1648,11 +1648,11 @@ Source-contract SHA256: 6d59a3fad5e60b3423570e001eb498f41f0eb127ebbb145fe95411bc
   tests: tests/ward-handover-own-work.test.ts
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/handover-work-reducer.ts:150; SHA256 bd44b0a445cfcb26dca896529f3baab1189165187c218a6f18008c66f99add59
-  Reviewed source: src/components/ward-management/handover-work-events.ts:90; SHA256 6186b2c5070fd3ac2de2676fb251487b9f0188e3b3f1d22830201668078e47a9
+  Reviewed source: src/components/ward-management/handover-work-events.ts:90; SHA256 822cf66f714f89453b9c377faffdc8906a7544022bf30c895c34c144334b1241
 - MARK_CARER_CALLBACK_MADE — modelled; event roles: ward, coordinator
   Reviewed command model: the call back was made, which clears it from promises due.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:601
-  Event/dispatch reference: src/components/ward-management/handover-work-events.ts:101
+  Event/dispatch reference: src/components/ward-management/handover-work-events.ts:99
   Event/dispatch reference: src/components/ward-management/handover-work-reducer.ts:196
   Subject: One open carer callback
   Before: An open carer callback
@@ -1665,7 +1665,7 @@ Source-contract SHA256: 6d59a3fad5e60b3423570e001eb498f41f0eb127ebbb145fe95411bc
   tests: tests/ward-handover-own-work.test.ts
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/handover-work-reducer.ts:196; SHA256 bd44b0a445cfcb26dca896529f3baab1189165187c218a6f18008c66f99add59
-  Reviewed source: src/components/ward-management/handover-work-model.ts:79; SHA256 2232b8b19b7f5d20a8a503ce458131f5a538060389de44cda403501a02a4ccdc
+  Reviewed source: src/components/ward-management/handover-work-model.ts:79; SHA256 f0e8092ca8b273b4aad3bca707df73ebac8764caf0067fb0479c86948e577f59
 - RECORD_CLINICAL_CONTACT — diagram-reviewed; event roles: community, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:605
