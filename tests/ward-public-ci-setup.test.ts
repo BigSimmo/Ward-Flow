@@ -55,8 +55,7 @@ describe("bounded required Chromium setup", () => {
         log: () => {},
       }),
     ).toBe(1);
-    // Two attempts with the system packages, then one browser-only install before giving up.
-    expect(calls).toBe(3);
+    expect(calls).toBe(2);
   });
   it("waits for a leftover package manager before the retry", () => {
     const events: string[] = [];

@@ -45,7 +45,6 @@ export function installBrowsers({
         ["install", ...browsers],
       ]
     : [["install", "--with-deps", ...browsers]];
-  let depsFailed = false;
   for (const args of operations) {
     let installed = false;
     for (let attempt = 1; attempt <= 2; attempt++) {
@@ -63,47 +62,9 @@ export function installBrowsers({
       }
       log(`${label} setup attempt failed (${result.error?.code ?? result.signal ?? result.status ?? "unknown"}).`);
     }
-    if (installed) continue;
-    // The system packages come from the runner's apt mirror, which can be unreachable (11 Nov 2026:
-    // "Temporary failure resolving 'azure.archive.ubuntu.com'" for over an hour). The runner image
-    // usually has them already, so fetch the browsers alone and prove they launch before going on.
-    if (depsFailed || (args[0] !== "install-deps" && !args.includes("--with-deps"))) return 1;
-    depsFailed = true;
-    if (args[0] === "install-deps") {
-      log(`${label} setup: system packages unavailable; checking the runner's own after the browser install.`);
-      continue;
-    }
-    const remaining = deadline - now();
-    log(`${label} setup: system packages unavailable; installing the browsers alone.`);
-    const plain =
-      remaining > 0
-        ? execute(process.execPath, [cli, "install", ...browsers], Math.min(120_000, remaining))
-        : undefined;
-    if (!plain || plain.error || plain.status !== 0) {
-      log(`${label} setup failed: the browsers did not install without their system packages.`);
-      return 1;
-    }
+    if (!installed) return 1;
   }
-  if (!depsFailed) return 0;
-  return launchProbe({ browsers, execute, now, deadline, label, log });
-}
-
-/** Whether each browser starts with the packages already on the runner; the fallback's proof. */
-function launchProbe({ browsers, execute, now, deadline, label, log }) {
-  const remaining = deadline - now();
-  if (remaining <= 0) {
-    log(`${label} setup failed: six-minute installation budget exhausted.`);
-    return 1;
-  }
-  const playwright = JSON.stringify(resolve(root, "node_modules/playwright"));
-  const script = `const pw = require(${playwright}); (async () => { for (const name of ${JSON.stringify(browsers)}) { const browser = await pw[name].launch(); await browser.close(); } })().catch((error) => { console.error(error); process.exit(1); });`;
-  const result = execute(process.execPath, ["-e", script], Math.min(60_000, remaining));
-  if (!result.error && result.status === 0) {
-    log(`${label} setup: launched with the runner's own system packages.`);
-    return 0;
-  }
-  log(`${label} setup failed: it does not launch without its system packages.`);
-  return 1;
+  return 0;
 }
 
 // Existing consumers retain their default Chromium-only command and retry budget.
