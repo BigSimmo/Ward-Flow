@@ -1,0 +1,56 @@
+/* Feature item 4: the under 18 on an adult ward notice. Amber while nothing is recorded (red is act
+   now only, DESIGN-SYSTEM); neutral and quiet once a notified time is recorded. */
+.notice {
+  display: grid;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border: 1px solid color-mix(in srgb, var(--wf-warning) 45%, var(--wf-line));
+  border-radius: var(--wf-r-md);
+  background: color-mix(in srgb, var(--wf-warning) 10%, var(--wf-surface));
+  font-family: var(--wf-font);
+}
+
+.quiet {
+  border-color: var(--wf-line);
+  background: var(--wf-surface);
+}
+
+.text {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-1);
+}
+
+.quiet .text {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}
+
+.recorded {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}
+
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.form > :first-child {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.save {
+  flex: none;
+}
