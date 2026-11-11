@@ -61,7 +61,10 @@ import {
 import { InboxRowStatus, InboxSnoozeControl, snoozedLine } from "@/components/ward-management/inbox-snooze-control";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { DISCARD_ESCALATION, useEscalationDiscard } from "@/components/ward-management/use-escalation-discard";
-import { AcknowledgeVisibleButton } from "@/components/ward-management/tasks-acknowledge-visible";
+import {
+  AcknowledgeVisibleButton,
+  acknowledgeVisibleRow,
+} from "@/components/ward-management/tasks-acknowledge-visible";
 
 import styles from "@/components/ward-redesign/pop-alerts/alerts-drawer.module.css";
 import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
@@ -481,9 +484,8 @@ export function AlertsDrawer({
     dispatch({ type: "UNSNOOZE_INBOX_ITEM", role, now, inboxItemId });
   }
 
-  function acknowledgeAllFacts(ids: readonly string[]) {
-    // D-125: the outcomes let a sign-out or role switch wait for these to be confirmed.
-    return ids.map((inboxItemId) => dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId }));
+  function acknowledgeOne(inboxItemId: string) {
+    return dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId });
   }
 
   // Snoozed rows leave the active list and come back by themselves when their time passes.
@@ -1481,8 +1483,14 @@ export function AlertsDrawer({
             <span id={`${sectionId}-summary`}>Seen is not resolved</span>
           )}
           <AcknowledgeVisibleButton
-            ids={visibleUnacknowledged.map((item) => item.id)}
-            onAcknowledge={acknowledgeAllFacts}
+            rows={visibleUnacknowledged.map((item) => {
+              const subject =
+                records?.movements.find((row) => row.id === item.movementId) ??
+                (item.admissionId ? records?.admissions?.find((row) => row.id === item.admissionId) : undefined) ??
+                item.plannedAdmission;
+              return acknowledgeVisibleRow(item, records ? resolveSubjectPatient(subject, records) : undefined);
+            })}
+            onAcknowledge={acknowledgeOne}
             classes={styles}
           />
         </div>

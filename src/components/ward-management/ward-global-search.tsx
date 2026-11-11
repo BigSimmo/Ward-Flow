@@ -253,7 +253,7 @@ const ALERTS_WORD = { many: "Alerts", one: "Alert" } as const;
 const FULL_RESULTS_PER_GROUP = 40;
 
 /** The screens offered before anything is typed: the four a coordinator jumps to most. */
-const START_VIEW_KEYS = ["capacity", "delays", "referrals", "handover"] as const;
+const START_VIEW_KEYS = ["capacity", "delays", "referrals", "handover", "movements"] as const;
 
 const NEEDS_YOU_LIMIT = 3;
 
@@ -555,14 +555,14 @@ export function WardGlobalSearch({
     return counts;
   }, [allGroups]);
 
-  /** The four common screens: the start screen's Go to, and the empty state's Try. */
+  /** The five common screens (Movements added 10 Nov 2026): the start screen's Go to, and the empty state's Try. */
   const startViews = useMemo(() => {
     const views = accessNav(CORE_SEARCH_VIEWS.map((view) => ({ ...view, id: view.key, label: view.title })));
     const usual = START_VIEW_KEYS.flatMap((key) => {
       const view = views.find((candidate) => candidate.key === key);
       return view && canOpenHref(view.href) ? [view] : [];
     });
-    return usual.length ? usual : views.filter((view) => canOpenHref(view.href)).slice(0, 4);
+    return usual.length ? usual : views.filter((view) => canOpenHref(view.href)).slice(0, START_VIEW_KEYS.length);
   }, [accessNav, canOpenHref]);
 
   /** What someone sees before typing: live work, recent records, common screens and actions. */
@@ -1092,7 +1092,7 @@ export function WardGlobalSearch({
                   />
                 ) : null}
                 {groups.map((group) => (
-                  <div key={group.key} className={styles.groupItem} data-goto={group.key === "goto" || undefined}>
+                  <div key={group.key} className={styles.groupItem} data-group={group.key}>
                     <div>
                       <span className={styles.group} data-testid={`ward-global-search-group-${group.key}`}>
                         <span id={`${listId}-${group.key}-heading`}>

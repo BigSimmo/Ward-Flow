@@ -1762,18 +1762,65 @@ test(
       // Cover: a nurse in charge gives a colleague cover of their own ward, for one shift at most.
       // Longer than one shift (the synthetic cover length is 12 hours).
       const tooLong = 13 * 60;
-      assert.equal((await store.giveCover(aView, { actorId: nurseB, scope: wardA, minutes: tooLong })).status, 422);
-      assert.equal((await store.giveCover(aView, { actorId: nurseB, scope: wardB, minutes: 60 })).status, 422);
-      assert.equal((await store.giveCover(aView, { actorId: nurseA, scope: wardA, minutes: 60 })).status, 422);
-      const given = await store.giveCover(aView, { actorId: nurseB, scope: wardA, minutes: 480 });
+      assert.equal(
+        (await store.giveCover(aView, { actorId: nurseB, scope: wardA, minutes: tooLong, reason: "night-weekend" }))
+          .status,
+        422,
+      );
+      assert.equal(
+        (await store.giveCover(aView, { actorId: nurseB, scope: wardB, minutes: 60, reason: "night-weekend" })).status,
+        422,
+      );
+      assert.equal(
+        (await store.giveCover(aView, { actorId: nurseA, scope: wardA, minutes: 60, reason: "night-weekend" })).status,
+        422,
+      );
+      const given = await store.giveCover(aView, {
+        actorId: nurseB,
+        scope: wardA,
+        minutes: 480,
+        reason: "night-weekend",
+      });
       assert.equal(given.status, 200);
       assert.equal(given.body.membership.kind, "cover");
       assert.equal(given.body.membership.minutes.expires, 480);
+      // M58 (D-129): cover needs a reason from the list, and lands on the coordinator's review list.
+      assert.equal((await store.giveCover(aView, { actorId: nurseB, scope: wardA, minutes: 60 })).status, 400);
+      const coversListed = await store.coversGiven(leadView);
+      assert.equal(coversListed.length, 1);
+      assert.deepEqual(
+        {
+          reason: coversListed[0].reason,
+          scope: coversListed[0].scope,
+          role: coversListed[0].actor_role,
+          until: coversListed[0].minutes.until,
+        },
+        { reason: "night-weekend", scope: wardA, role: "ward", until: 480 },
+      );
+      const coverReview = (id) => ({
+        type: "REVIEW_AUDIT_EVENT",
+        role: "coordinator",
+        eventId: `audit-cover-${id}`,
+        expectedGeneration: 0,
+        expectedReviewCount: 0,
+        decision: "reviewed",
+      });
+      assert.equal(
+        (await store.command(lead, randomUUID(), 999, coverReview("999999"), { view: leadView })).body.code,
+        "scope",
+      );
+      assert.notEqual(
+        (await store.command(lead, randomUUID(), 999, coverReview(coversListed[0].id), { view: leadView })).body.code,
+        "scope",
+      );
       // The covered ward joins the colleague's own, and they cannot pass it on.
       const bView = await store.viewer(nurseB);
       assert.deepEqual(bView.access, { role: "ward", scope: { kind: "ward", unitIds: [unitB, unitA] } });
       assert.deepEqual(bView.ownAccess, { role: "ward", scope: wardB });
-      assert.equal((await store.giveCover(bView, { actorId: asker, scope: wardA, minutes: 60 })).status, 422);
+      assert.equal(
+        (await store.giveCover(bView, { actorId: asker, scope: wardA, minutes: 60, reason: "night-weekend" })).status,
+        422,
+      );
       assert.equal((await store.listCovers(aView)).body.covers.length, 1);
       assert.equal((await store.listCovers(bView)).body.covers.length, 1);
       // Only the giver (or an access admin) ends it, and then the colleague's desk is their own again.
@@ -1783,11 +1830,21 @@ test(
       // D-80: an account with no ward or ED role of its own is given no cover, so cover is never a
       // way in for a new account.
       const relief = randomUUID();
-      const refusedRelief = await store.giveCover(aView, { actorId: relief, scope: wardA, minutes: 60 });
+      const refusedRelief = await store.giveCover(aView, {
+        actorId: relief,
+        scope: wardA,
+        minutes: 60,
+        reason: "night-weekend",
+      });
       assert.equal(refusedRelief.status, 422);
       assert.equal(refusedRelief.body.error, engine.COVER_NEEDS_ROLE);
       assert.deepEqual(await store.viewer(relief), { status: "none" });
-      const reliefCover = await store.giveCover(aView, { actorId: nurseB, scope: wardA, minutes: 60 });
+      const reliefCover = await store.giveCover(aView, {
+        actorId: nurseB,
+        scope: wardA,
+        minutes: 60,
+        reason: "night-weekend",
+      });
       assert.equal(reliefCover.status, 200);
       // A coordinator for the ward's own service sees that cover and may end it, though not its giver.
       const service = ["North Metro", "South Metro", "East Metro", "WACHS", "CAHS", "Private"].find((name) =>
@@ -2290,6 +2347,7 @@ test(
               actorId: nurse,
               scope: { kind: "ward", unitIds: [unitB] },
               minutes: 60,
+              reason: "busy",
             })
           ).body.membership;
         const confirm = (snapshot) => {

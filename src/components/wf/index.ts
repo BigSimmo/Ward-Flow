@@ -97,6 +97,7 @@ export { ToastDeviceSaveContext, ToastProvider, useOptionalToast, useToast, type
 export {
   LiveChip,
   Timer,
+  isNotUpdating,
   notUpdatingWords,
   publishLiveClock,
   publishLiveRefresh,
