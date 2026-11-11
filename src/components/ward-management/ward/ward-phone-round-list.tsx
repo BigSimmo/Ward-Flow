@@ -12,6 +12,8 @@ import { ShowMoreRow, StatusGlyph, type WfTone } from "@/components/wf";
 import type { BedItem } from "./ward-bed-tone";
 import { CriteriaLedTag } from "./ward-criteria-led-tag";
 import styles from "./ward-home-tab.module.css";
+import outageTag from "./ward-outage-bed-tag.module.css";
+import { NOT_CONFIRMED_SINCE_OUTAGE } from "@/components/ward-management/use-outage-catch-up";
 import { WalkRoundRowMarks, WalkRoundTick, type WalkRoundMark } from "./ward-walk-round";
 
 /** Beds the phone round list shows before Show more. */
@@ -51,6 +53,7 @@ export function WardPhoneRoundList<Row extends PhoneRoundRow>({
   walkFrom,
   isLit,
   rowLabel,
+  outage = false,
 }: {
   rows: readonly Row[];
   unitName: string;
@@ -58,6 +61,8 @@ export function WardPhoneRoundList<Row extends PhoneRoundRow>({
   walkFrom: (bedNumber: number) => void;
   isLit: (row: Row) => boolean;
   rowLabel: (name: string, marks: WalkRoundMark) => string;
+  /** Batch 4 item 25 (D-142): every bed reads "Not confirmed since the outage" until the ward confirms. */
+  outage?: boolean;
 }) {
   const [showAll, setShowAll] = useState(false);
   const ordered = [...rows].sort((left, right) => Number(left.bed.bedNumber) - Number(right.bed.bedNumber));
@@ -111,6 +116,12 @@ export function WardPhoneRoundList<Row extends PhoneRoundRow>({
                       <span>{roundNote(row)}</span> {row.criteriaTag ? <CriteriaLedTag chip={row.criteriaTag} /> : null}
                     </span>
                   )}
+                  {outage ? (
+                    <>
+                      {" "}
+                      <span className={outageTag.row}>{NOT_CONFIRMED_SINCE_OUTAGE}</span>
+                    </>
+                  ) : null}
                 </span>{" "}
                 <span className={styles.phoneRowDays}>
                   {days}

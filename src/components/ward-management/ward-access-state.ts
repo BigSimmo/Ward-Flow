@@ -333,6 +333,13 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   directoryChecks: (context) => context.state.directoryChecks ?? [],
   // Staff needed (feature 10): a ward, a shift, a count and chosen reasons. Each desk keeps its wards'.
   staffRequests: (context) => (context.state.staffRequests ?? []).filter((record) => context.unitIn(record.unitId)),
+  // Batch 4 (10 Nov 2026): a site switch names a site and a listed feature, never a person, so every
+  // desk keeps them all (a switched-off feature is off for everyone at that site). Pack print times
+  // go to the desks of the wards they were printed for; an outage window is the whole workspace's.
+  siteFeatureSwitches: (context) => context.state.siteFeatureSwitches ?? [],
+  downtimePackPrints: (context) =>
+    (context.state.downtimePackPrints ?? []).filter((record) => context.unitIn(record.unitId)),
+  outageWindows: (context) => context.state.outageWindows ?? [],
   // Batch 3 item 23: a carer callback goes where its stay or bed request goes. No name, no number.
   carerCallbacks: (context) =>
     (context.state.carerCallbacks ?? []).filter((record) => stayOrRequestVisible(context, record)),
@@ -465,6 +472,9 @@ export function scopeWardFlowState(
   if (state.returnEarlyFlags === undefined) delete next.returnEarlyFlags;
   if (state.triages === undefined) delete next.triages;
   if (state.staffRequests === undefined) delete next.staffRequests;
+  if (state.siteFeatureSwitches === undefined) delete next.siteFeatureSwitches;
+  if (state.downtimePackPrints === undefined) delete next.downtimePackPrints;
+  if (state.outageWindows === undefined) delete next.outageWindows;
   if (state.handedItems === undefined) delete next.handedItems;
   if (state.carerCallbacks === undefined) delete next.carerCallbacks;
   if ((next.returnEarlyNotices as unknown[]).length === 0) delete next.returnEarlyNotices;

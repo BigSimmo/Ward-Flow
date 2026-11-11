@@ -8,6 +8,9 @@
  * an unknown name does not build.
  *
  * How a flag's value is decided, first match wins:
+ *   0. Batch 4 item 20 (10 Nov 2026): a feature an admin switched off at the desk's site
+ *      (`ward-site-feature-switches.ts`) is off, whatever the device or server says. Only the listed
+ *      features can be; a safeguard is never one of them.
  *   1. This device's choice (Settings, Data and about, Feature flags), or a demo link such as
  *      `?flags=bed-meeting-tv:on`. Ignored in production, where only the server decides.
  *   2. The server's `NEXT_PUBLIC_WARD_FLAGS` setting, for example `bed-meeting-tv=off,demo-reset=on`.
@@ -18,6 +21,7 @@
  *
  * A device choice holds only a flag name from this registry and on or off, never typed text.
  */
+import { isSiteSwitchableFeature } from "@/components/ward-management/ward-site-feature-switches";
 
 export type WardEnvironment = "development" | "demo" | "production";
 
@@ -97,7 +101,7 @@ export const WARD_FEATURE_FLAG_NAMES = Object.keys(WARD_FEATURE_FLAGS) as WardFe
 
 export type WardFeatureFlagOverrides = Partial<Record<WardFeatureFlag, boolean>>;
 
-export type WardFeatureFlagSource = "device" | "server" | "default";
+export type WardFeatureFlagSource = "site" | "device" | "server" | "default";
 
 export type ResolvedWardFeatureFlag = {
   name: WardFeatureFlag;
@@ -185,6 +189,8 @@ export function resolveWardFeatureFlags(input: {
   device: WardFeatureFlagOverrides;
   /** Safeguards locked on; production always, and an unnamed deployed build (`wardSafeguardsLocked`). */
   safeguardsLocked?: boolean;
+  /** Features switched off at the desk's site (`featuresOffForDesk`). Anything not on the allow-list is ignored. */
+  siteOff?: readonly string[];
 }): ResolvedWardFeatureFlag[] {
   const deviceCanChange = input.environment !== "production";
   const safeguardsLocked = input.safeguardsLocked === true || input.environment === "production";
@@ -194,6 +200,8 @@ export function resolveWardFeatureFlags(input: {
       return { name, definition, on: true, source: "default", deviceCanChange: false };
     if (definition.localOnly && input.environment !== "development")
       return { name, definition, on: false, source: "default", deviceCanChange: false };
+    if (isSiteSwitchableFeature(name) && input.siteOff?.includes(name))
+      return { name, definition, on: false, source: "site", deviceCanChange: false };
     const device = deviceCanChange ? input.device[name] : undefined;
     if (device !== undefined) return { name, definition, on: device, source: "device", deviceCanChange };
     const server = input.server[name];
@@ -208,6 +216,7 @@ export function serverWardFeatureFlags(): WardFeatureFlagOverrides {
 }
 
 export const WARD_FEATURE_FLAG_SOURCE_LABELS: Record<WardFeatureFlagSource, string> = {
+  site: "Switched off at this site",
   device: "Set on this device",
   server: "Set by the server",
   default: "Default",
