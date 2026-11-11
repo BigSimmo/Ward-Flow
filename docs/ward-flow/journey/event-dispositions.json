@@ -1476,12 +1476,12 @@
         {
           "path": "src/components/ward-management/ward-patient-archive.ts",
           "line": 32,
-          "sha256": "9677f94adeb0eedb1a1b2b9e8f0c3f4bc36236e91f95f97f5d9198f56f8d1324"
+          "sha256": "c831b3968284d3c5448d2ccd2e3b1201eef66a392ae084377c0fe0250b86f5ba"
         },
         {
           "path": "src/components/ward-management/ward-patient-archive.ts",
           "line": 54,
-          "sha256": "9677f94adeb0eedb1a1b2b9e8f0c3f4bc36236e91f95f97f5d9198f56f8d1324"
+          "sha256": "c831b3968284d3c5448d2ccd2e3b1201eef66a392ae084377c0fe0250b86f5ba"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
