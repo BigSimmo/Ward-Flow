@@ -21,6 +21,11 @@ import { describe, expect, it } from "vitest";
  *     age), or a time-shaped number (60 or more and a multiple of 30) compared with anything that is
  *     not a length, width, height, offset or retry count.
  *
+ * Fixed (Josh approved, D-125, 10 Nov 2026): the 8 h ED wait was typed as 480 or `8 * 60` in seven
+ * files. Each now reads `ED_SEVERE_PRESSURE_WAIT_MINUTES` (the signed `edSeverePressure`, 8 h), and
+ * the band labels are built from it. The rest were signed by Josh as they were on 10 Nov 2026
+ * (D-130) and now read their own values, so `SUSPECTED_DRIFT` is empty.
+ *
  * Every hit must be on an allowlist with a reason. An entry also pins how many times its expression
  * appears in its file, so a second copy of an allowed number is caught too. Hits that look like a
  * copy of a signed clinical value are listed separately under `SUSPECTED_DRIFT` and each one has an
@@ -396,125 +401,9 @@ type Drift = Allowed & { readonly signedValue: string };
  * DEFECTS for Josh: clinical, so they are reported and left as they are (no behaviour change).
  */
 const SUSPECTED_DRIFT: readonly Drift[] = [
-  {
-    file: "bed-meeting/tv-clinical-derivations.ts",
-    expr: "waitMinutes >= 480",
-    n: 1,
-    signedValue: "longWait (8 h)",
-    why: "TV ED band 'eight' types 480 instead of reading the values file",
-  },
-  {
-    file: "bed-meeting/tv-clinical-derivations.ts",
-    expr: "12 * 60",
-    n: 1,
-    signedValue: "none (unsigned)",
-    why: "TV shows a leave return due within 12 h; no signed value names this window",
-  },
-  {
-    file: "ed/ed-handover-board.tsx",
-    expr: "m >= 480",
-    n: 1,
-    signedValue: "longWait (8 h)",
-    why: "ED handover board 8 h band types 480",
-  },
-  {
-    file: "ed/ed-handover-board.tsx",
-    expr: "minutes < 480",
-    n: 1,
-    signedValue: "longWait (8 h)",
-    why: "ED handover board 'Under 8 hours' types 480",
-  },
-  {
-    file: "ed/ed-lists-desktop.tsx",
-    expr: "minutes >= 480",
-    n: 1,
-    signedValue: "longWait (8 h)",
-    why: "ED list warning tone types 480",
-  },
-  {
-    file: "ed/ed-screen-derivations.ts",
-    expr: "waited > 60",
-    n: 1,
-    signedValue: "none (unsigned)",
-    why: "'Referred and not yet seen' warning flag after 60 minutes is typed inline",
-  },
-  {
-    file: "delays/delays-derivations.ts",
-    expr: "8 * 60",
-    n: 2,
-    signedValue: "longWait (8 h)",
-    why: "delays summary 'Under 8 hours' / '8 to 24 hours' types 8 * 60 beside LONG_WAIT_MINUTES",
-  },
-  {
-    file: "delays/wait-bands.ts",
-    expr: "8 * 60",
-    n: 2,
-    signedValue: "longWait (8 h)",
-    why: "delays wait bands type 8 * 60 (and 24 * 60 for the very long wait)",
-  },
-  {
-    file: "statistics/statistics-ed-waits.ts",
-    expr: "4 * 60",
-    n: 1,
-    signedValue: "tierTwoOverdue / edAccessTarget (4 h)?",
-    why: "statistics ED wait bands are typed, not read",
-  },
-  {
-    file: "statistics/statistics-ed-waits.ts",
-    expr: "8 * 60",
-    n: 1,
-    signedValue: "longWait (8 h)",
-    why: "statistics ED wait bands are typed, not read",
-  },
-  {
-    file: "statistics/statistics-ed-waits.ts",
-    expr: "12 * 60",
-    n: 1,
-    signedValue: "none (unsigned)",
-    why: "statistics ED wait bands are typed, not read",
-  },
-  {
-    file: "ward/ward-bed-board.tsx",
-    expr: "referral.waitedMinutes >= 240",
-    n: 1,
-    signedValue: "none (unsigned; 4 h)",
-    why: "ward bed board referral chip turns warning at 4 h, typed inline",
-  },
-  {
-    file: "referrals/referral-age-band.ts",
-    expr: "age < 18",
-    n: 1,
-    signedValue: "none (age band rule)",
-    why: "age band edges are typed here and again in ward-patients.ts (see M118)",
-  },
-  {
-    file: "referrals/referral-age-band.ts",
-    expr: "age >= 65",
-    n: 1,
-    signedValue: "none (age band rule)",
-    why: "age band edges are typed here and again in ward-patients.ts (see M118)",
-  },
-  {
-    file: "referrals/referral-age-band.ts",
-    expr: "age <= 24",
-    n: 1,
-    signedValue: "none (youth note)",
-    why: "the 'youth up to 24' note edge is typed inline",
-  },
-  {
-    file: "ward-patients.ts",
-    expr: "age < 18",
-    n: 1,
-    signedValue: "none (age band rule)",
-    why: "second copy of the age band edges",
-  },
-  {
-    file: "ward-patients.ts",
-    expr: "age >= 65",
-    n: 1,
-    signedValue: "none (age band rule)",
-    why: "second copy of the age band edges",
-  },
+  // Empty since 10 Nov 2026: Josh signed the last ten as they were (D-130). The TV leave window, the
+  // ED "not yet seen" flag, the ED statistics 4 h and 12 h band edges, the bed board referral chip and
+  // the age bands now read their signed values (`ward-operational-defaults.ts`).
 ];
 
 // ---- The scanner ----------------------------------------------------------------------------------
@@ -670,6 +559,27 @@ describe("M16: hour, minute and day numbers in the ward code", () => {
   it("names a real file for every synthetic data exemption", () => {
     const files = new Set(wardFiles(WARD_DIR).map((full) => relative(WARD_DIR, full).replaceAll("\\", "/")));
     for (const file of Object.keys(SYNTHETIC_DATA_FILES)) expect(files.has(file), file).toBe(true);
+  });
+
+  it("M16 fixed: the 8 h ED wait reads the signed value in every screen that used to type it", () => {
+    const readers = [
+      "bed-meeting/tv-clinical-derivations.ts",
+      "bed-meeting/tv-clinical-views.tsx",
+      "ed/ed-handover-board.tsx",
+      "ed/ed-lists-desktop.tsx",
+      "delays/delays-derivations.ts",
+      "delays/wait-bands.ts",
+      "statistics/statistics-ed-waits.ts",
+    ];
+    for (const file of readers) {
+      const source = readFileSync(join(WARD_DIR, file), "utf8");
+      expect(source, file).toContain("ED_SEVERE_PRESSURE_WAIT_MINUTES");
+      const hits = timeNumbersIn(file, source).filter((expr) => /\b480\b|\b8 \* 60\b/.test(expr));
+      expect(hits, file).toEqual([]);
+      expect(source, file).not.toMatch(/"(?:Under 8|8 to \d+) hours"|`8 to \$\{/);
+    }
+    const values = readFileSync(join(WARD_DIR, VALUES_FILE), "utf8");
+    expect(values).toMatch(/edSeverePressure: \{\n    \.\.\.SIGNED_BY_JOSH,[\s\S]*?value: 8 \* MINUTES_PER_HOUR,/);
   });
 
   // DEFECTS for Josh (clinical): each should read its value from ward-clinical-values.ts, or be signed.

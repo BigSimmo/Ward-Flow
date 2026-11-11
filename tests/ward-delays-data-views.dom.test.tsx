@@ -294,15 +294,15 @@ describe("the Delays board's data views", () => {
     const nameOf = (id: string) => resolveSubjectPatient(ROWS.find((row) => row.movement.id === id)!.movement, state);
     const list = within(crossings).getByRole("list", { name: "Next 4 hours, in time order" });
     const items = within(list).getAllByRole("button");
-    const named = new Set(items.map((item) => (item.getAttribute("aria-label") ?? "").split(". ")[0]));
+    // The row's accessible name starts with its visible text (A6-F04), so read the bold name.
+    const nameIn = (item: HTMLElement) => item.querySelector("b")?.textContent ?? "";
+    const named = new Set(items.map(nameIn));
     expect(named).toEqual(new Set([...crossingIds].map((id) => nameOf(id).formalName)));
     // Legal times in the list are as typed, never a countdown.
     for (const item of items) expect(item).not.toHaveTextContent(/\b(left|overdue)\b/u);
 
     const target = [...crossingIds][0];
-    const item = items.find((candidate) =>
-      (candidate.getAttribute("aria-label") ?? "").startsWith(`${nameOf(target).formalName}. `),
-    )!;
+    const item = items.find((candidate) => nameIn(candidate) === nameOf(target).formalName)!;
     fireEvent.click(item);
     expect(screen.getByTestId(`delays-detail-${target}`)).toBeInTheDocument();
     // Someone who crosses 8h soon has waited under 8h, a band that starts folded. Opened the way a

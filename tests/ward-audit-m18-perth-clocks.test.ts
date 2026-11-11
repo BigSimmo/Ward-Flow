@@ -169,16 +169,25 @@ describe("M18: a Sydney-zone device on both changeover nights", () => {
     expect(formatInstant(shiftEndInstant(at(23, 30)))).toBe("07:00");
   });
 
-  // DEFECT for Josh (clinical: the triage review time feeds the see-by time). Not changed here.
-  it.todo(
-    "M18 defect: triage 'Reviewed time' Now button (reviewTimeStamp) and its check (checkReviewTime) use the device's zone, so a Sydney device stamps Sydney wall time (3 h ahead of Perth in AEDT) and the see-by time is read from it",
-  );
-
-  it("pins today's device-zone behaviour of the triage review time (flip the todo when fixed)", () => {
+  // Fixed 10 Nov 2026 (M18, D-125): the triage "Reviewed time" Now button and its future check read
+  // the Perth clock, so a Sydney device stamps and checks Perth wall time.
+  it("stamps and checks the triage reviewed time on the Perth clock on a Sydney device", () => {
     // 09:42 AWST on 6 Nov 2026 = 12:42 AEDT.
     const moment = new Date(Date.UTC(2026, 10, 6, 1, 42));
-    expect(reviewTimeStamp(moment)).toBe("06/11/2026 12:42");
-    // A Perth reviewed time 2 hours in the future is accepted on a Sydney device (read as 3 h earlier).
-    expect(checkReviewTime("06/11/2026 11:42", moment.getTime()).ok).toBe(true);
+    expect(reviewTimeStamp(moment)).toBe("06/11/2026 09:42");
+    expect(checkReviewTime(reviewTimeStamp(moment), moment.getTime()).ok).toBe(true);
+    // A Perth reviewed time 2 hours in the future is refused.
+    const future = checkReviewTime("06/11/2026 11:42", moment.getTime());
+    expect(future.ok).toBe(false);
+    expect(future.future).toBe(true);
+    // A minute's grace still holds; the Perth day boundary is Perth midnight.
+    expect(checkReviewTime("06/11/2026 09:43", moment.getTime()).ok).toBe(true);
+    expect(checkReviewTime("06/11/2026 09:44", moment.getTime()).ok).toBe(false);
+    const perthMidnightUtc = Date.UTC(2026, 10, 9, 16, 0); // 00:00 AWST 10 Nov = 03:00 AEDT
+    expect(reviewTimeStamp(new Date(perthMidnightUtc))).toBe("10/11/2026 00:00");
+    expect(reviewTimeStamp(new Date(perthMidnightUtc - MINUTE_MS))).toBe("09/11/2026 23:59");
+    // Impossible dates are still refused.
+    expect(checkReviewTime("31/02/2026 09:00", moment.getTime()).ok).toBe(false);
+    expect(checkReviewTime("06/11/2026 24:00", moment.getTime()).ok).toBe(false);
   });
 });

@@ -109,12 +109,7 @@ export function PortraitList({
                     data-selected={row.selected ? "true" : undefined}
                     data-dim={row.dim ? "true" : undefined}
                   >
-                    <button
-                      type="button"
-                      className={styles.rowButton}
-                      onClick={() => onOpen(row.id)}
-                      aria-label={`${row.name}${row.next ? `, next: ${row.next}` : ""}`}
-                    >
+                    <button type="button" className={styles.rowButton} onClick={() => onOpen(row.id)}>
                       <span className={styles.lead}>{row.tone ? <StatusGlyph tone={row.tone} size={9} /> : null}</span>
                       <span className={styles.who}>
                         <b className={styles.name}>{row.name}</b>
@@ -124,7 +119,16 @@ export function PortraitList({
                         <b className={styles.mono}>{row.figure}</b>
                         {row.figureNote ? <span className={styles.figureNote}>{row.figureNote}</span> : null}
                       </span>
-                      <span className={styles.next}>{row.next ?? ""}</span>
+                      {/* The button's name is its visible text, so voice control can say what it sees (axe
+                          label-content-name-mismatch, A6-F04); "next:" is read, not shown. */}
+                      <span className={styles.next}>
+                        {row.next ? (
+                          <>
+                            <span className="sr-only">, next: </span>
+                            {row.next}
+                          </>
+                        ) : null}
+                      </span>
                       <ChevronRight size={16} aria-hidden="true" className={styles.chevron} />
                     </button>
                   </li>

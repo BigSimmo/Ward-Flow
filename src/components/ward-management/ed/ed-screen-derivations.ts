@@ -16,6 +16,7 @@ import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edAnsweredReferralsFor, edArrivedFor, edExpectsFor } from "@/components/ward-management/ward-referrals";
 import { edById } from "@/components/ward-management/ward-sites";
 import {
+  ED_REFERRED_NOT_SEEN_MINUTES,
   ED_SEVERE_PRESSURE_WAIT_MINUTES,
   LATE_ARRIVAL_GRACE_MINUTES,
   LONG_WAIT_MINUTES,
@@ -488,7 +489,7 @@ export function deriveEdScreen({
 
   for (const { referral } of inbox) {
     const waited = Math.max(0, now - referral.raisedAt);
-    if (waited > 60) {
+    if (waited > ED_REFERRED_NOT_SEEN_MINUTES) {
       priorityFlags.push({
         tone: "warn",
         kind: "Referred and not yet seen",

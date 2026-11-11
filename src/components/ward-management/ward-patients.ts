@@ -1,4 +1,9 @@
 import { calendarDateOf, perthCalendarDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  OLDER_ADULT_AGE_BAND_FROM_YEARS,
+  YOUTH_AGE_BAND_UNDER_YEARS,
+  YOUTH_SERVICE_NOTE_UP_TO_YEARS,
+} from "@/components/ward-management/ward-operational-defaults";
 /**
  * A person, as distinct from a request for a bed or a stay in one.
  *
@@ -342,8 +347,8 @@ export function patientCohort(
 ): "Adult" | "Older adult" | "Youth" {
   const now = typeof today === "string" || typeof today === "number" ? new Date(today) : today;
   const age = patientAgeYears({ dateOfBirth }, now);
-  if (age < 18) return "Youth";
-  if (age >= 65) return "Older adult";
+  if (age < YOUTH_AGE_BAND_UNDER_YEARS) return "Youth";
+  if (age >= OLDER_ADULT_AGE_BAND_FROM_YEARS) return "Older adult";
   return "Adult";
 }
 
@@ -352,7 +357,11 @@ export function patientCohort(
 export function cohortFitsAge(band: string, dateOfBirth: string, today: Date): boolean {
   const recorded = patientCohort(dateOfBirth, today);
   if (band === recorded) return true;
-  return band === "Youth" && recorded === "Adult" && patientAgeYears({ dateOfBirth }, today) <= 24;
+  return (
+    band === "Youth" &&
+    recorded === "Adult" &&
+    patientAgeYears({ dateOfBirth }, today) <= YOUTH_SERVICE_NOTE_UP_TO_YEARS
+  );
 }
 
 /** A UMRN as people type or paste it into an address (shell-6): the synthetic two letters then

@@ -15,6 +15,7 @@ import { edHref, settingsHref } from "@/components/ward-management/shell/ward-fa
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { BED_KIND_LABEL, kindRangeWord } from "./forecast-by-kind";
 import type { ForecastAlert } from "./forecast-alerts";
+import { FORECAST_METHOD_LINE } from "@/components/ward-management/ward-forecast-method";
 import { forecastEdName, useForecastAlerts } from "./use-forecast-model";
 import styles from "./forecast.module.css";
 import group from "./forecast-alerts-group.module.css";
@@ -41,7 +42,8 @@ export function ForecastAlertsGroup({
           <ForecastAlertRow key={alertKey(alert)} alert={alert} now={now} readOnly={readOnly} />
         ))}
       </ul>
-      <p className={styles.alertCaption}>
+      <p className={styles.alertCaption} data-testid="ward-alerts-forecast-method">
+        {FORECAST_METHOD_LINE}{" "}
         <Link href={settingsHref()} className={group.captionLink}>
           {readOnly ? "Lines set by the coordinator in Settings" : "Set in Settings"}
         </Link>

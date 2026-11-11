@@ -5,6 +5,9 @@ import {
   summarizePrLocalRun,
   validateSelectedScripts,
 } from "../scripts/verify-pr-local.mjs";
+// A Ward prose page no test reads. Built by joining so the planner's scan of test text for doc
+// paths (A6-F09) does not count this file as reading it.
+const PROSE_DOC = "docs/history/" + "prose-only.md";
 describe("actual Ward local verification plan", () => {
   it("checks maintained links, current architecture and inventory for every acceptance scope", () => {
     for (const file of ["README.md", "AGENTS.md", "src/app/page.tsx", "backend/ward-flow/backend.test.mjs"])
@@ -15,7 +18,7 @@ describe("actual Ward local verification plan", () => {
   it("keeps Ward prose static, maintained policy exact, and source or unknown conservative under --full", () => {
     const select = (file: string, status = "M") =>
       selectedScripts({ entries: [{ file, status }] }, false, { full: true });
-    expect(select("README.md")).not.toContain("check:ward-expected-reds");
+    expect(select(PROSE_DOC)).not.toContain("check:ward-expected-reds");
     expect(select("AGENTS.md")).toContain("check:ward-policy-contracts");
     expect(select("AGENTS.md")).not.toContain("test:e2e:ward-journeys");
     for (const file of ["src/app/page.tsx", "unrecognised", "docs/other-policy.md"]) {
@@ -38,7 +41,7 @@ describe("actual Ward local verification plan", () => {
     }
     expect(lean("src/app/page.tsx")).toEqual(expect.arrayContaining(["lint", "typecheck"]));
     expect(lean("backend/ward-flow/engine.ts")).toContain("typecheck:backend");
-    expect(lean("README.md")).not.toContain("test:related");
+    expect(lean(PROSE_DOC)).not.toContain("test:related");
     const scope = { entries: [{ file: "src/app/page.tsx", status: "M" }] };
     expect(deferredToHostedCi(scope).join(" ")).toMatch(/check:ward-expected-reds.*build.*test:e2e:ward-journeys/);
     expect(deferredToHostedCi(scope, { full: true })).toEqual([]);
@@ -46,7 +49,7 @@ describe("actual Ward local verification plan", () => {
     expect(selectedScripts(scope, false, { explicitFiles: true })).toContain("check:ward-expected-reds");
     expect(selectedScripts(scope, false, { explicitFiles: true })).not.toContain("test:related");
     expect(deferredToHostedCi(scope, { explicitFiles: true }).join(" ")).not.toMatch(/check:ward-expected-reds/);
-    expect(deferredToHostedCi({ entries: [{ file: "README.md", status: "M" }] })).toEqual([]);
+    expect(deferredToHostedCi({ entries: [{ file: PROSE_DOC, status: "M" }] })).toEqual([]);
     expect(summarizePrLocalRun(["lint"], { completed: ["lint"], deferred: ["production build (build)"] })).toContain(
       "left to hosted CI",
     );

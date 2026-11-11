@@ -282,6 +282,15 @@ export function confirmedAgeText(minutes: number): string {
 }
 
 /**
+ * The notes under the closer-bed and home-region lists: each is a travel list, not a fit list, so it
+ * says what it leaves out (M118, 10 Nov 2026).
+ */
+export const CLOSER_BED_NOTE =
+  "Travel list, same cohort only. It does not check authorisation, sex designation or forensic wards.";
+export const HOME_REGION_BEDS_NOTE =
+  "Travel list, adult wards only. It does not check authorisation, sex designation or forensic wards.";
+
+/**
  * Units in this person's cohort at a site the band table records as shorter travel from their home
  * region than the bed they are in now. Shortest band first, then A to Z by ward name: never most beds
  * first, which would nudge towards one ward (never-build sweep, Josh 24 Oct 2026).

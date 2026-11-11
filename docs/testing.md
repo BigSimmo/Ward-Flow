@@ -49,14 +49,14 @@ Start with the cheapest check that can fail for the changed behavior. Add anothe
 
 Browser gates are expensive; select the affected checks before starting them. Prefer selection, duration-balanced groups, and within-session cache reuse over raising Playwright workers (`workers: 1`, `fullyParallel: false`, `retries: 0` stay required — see `#093` and the removed `docs/process-hardening.md`, recorded in [the history index](history/README.md#deleted-files-kept-in-git-history)).
 
-| Change type                           | Run this                                                                       | Avoid                                                     |
-| ------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------- |
-| Lib/helper, no UI                     | `npm run test:focused -- --files <a>,<b>` or one Vitest file                   | `verify:ui`                                               |
-| Component interaction                 | `.dom.test.tsx` + focused Vitest                                               | full Chromium                                             |
-| Phone chrome / scroll / composer      | Focused Ward journey; release-gate phone project where affected                | immediate `verify:ui`                                     |
-| Shared shell / header / `globals.css` | Inspect the local readiness plan; run affected Ward journeys                   | stacking `verify:cheap` + `verify:pr-local` + `verify:ui` |
-| Docs / ledger only                    | `npm run verify:pr-local -- --dry-run` (confirm docs route)                    | full unit + UI                                            |
-| PR ready                              | `npm run format -- --files <owned-paths>` (commit it) + `verify:pr-local` once | mid-CI pushes that cancel Production UI                   |
+| Change type                           | Run this                                                                                     | Avoid                                                     |
+| ------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Lib/helper, no UI                     | `npm run test:focused -- --files <a>,<b>` or one Vitest file                                 | `verify:ui`                                               |
+| Component interaction                 | `.dom.test.tsx` + focused Vitest                                                             | full Chromium                                             |
+| Phone chrome / scroll / composer      | `npm run test:e2e:ward-journeys`; `npm run test:e2e:release-gate` where phone WebKit matters | `verify:ui` (CSRF spec plus two journeys only)            |
+| Shared shell / header / `globals.css` | Inspect the local readiness plan; `npm run test:e2e:ward-journeys` for affected journeys     | stacking `verify:cheap` + `verify:pr-local` + `verify:ui` |
+| Docs / ledger only                    | `npm run verify:pr-local -- --dry-run` (confirm docs route)                                  | full unit + UI                                            |
+| PR ready                              | `npm run format -- --files <owned-paths>` (commit it) + `verify:pr-local` once               | mid-CI pushes that cancel Production UI                   |
 
 <!-- docs-script-refs:historical-end -->
 
@@ -111,7 +111,7 @@ requested projects must each execute a test across the reports; listing a projec
 or skipping all its tests is insufficient. Only the existing `test:e2e:advisory` selection may be
 empty. A diagnostic rerun cannot erase an initial shard failure. Browser preflight includes both
 mobile WebKit projects. The release accessibility sweep checks HTTP success, the intended final
-URL and screen identity before axe, including the bed-meeting phone fallback. The complete release gate requires all four named journeys on desktop Chromium and phone WebKit: eight passed cases, no skips and no retry recovery. Any serious or critical axe WCAG violation fails it; the runner does not rescan to turn an initial failure green.
+URL and screen identity before axe, including the bed-meeting phone fallback. The complete release gate requires all seven named journeys on desktop Chromium and phone WebKit: four in `release-gate-journeys.spec.ts` and three in their own spec files (`REQUIRED_RELEASE_JOURNEYS` and `REQUIRED_RELEASE_JOURNEY_FILES` in `scripts/ward-flow/browser-run-contract.mjs`). That is 14 passed journey cases, alongside the pinned release checks, with no skips and no retry recovery. Any serious or critical axe WCAG violation fails it; the runner does not rescan to turn an initial failure green.
 
 The script-budget check requires positive finite limits and complete measurements, counts queried
 Next script assets, and rejects missing/empty assets or unexpected redirects. The existing WF-001
@@ -181,7 +181,7 @@ not establish physical Safari or installed-PWA acceptance.
 | `chromium`                                                    | `test:e2e:pr` selects the production CSRF spec; CI invokes that spec explicitly in browser group 1.                                                                                                                                                                                                                                                                            |
 | `visual-desktop`, `visual-phone`                              | Nightly only (`ward-flow-nightly-browsers.yml`), `default: false`, so they run only when named: image baselines for ten key screens, desktop Chromium 1440 and phone WebKit 390, from `tests/visual-baselines/` (front-end audit TE-01).                                                                                                                                       |
 | `tablet-webkit`                                               | Nightly only (same workflow), `default: false`: the axe sweep and the responsive audit on iPad WebKit at 834x1112 (front-end audit TE-02).                                                                                                                                                                                                                                     |
-| `firefox-ward-responsive`, `webkit-ward-responsive`           | Manual/selective responsive checks through the existing wrapper.                                                                                                                                                                                                                                                                                                               |
+| `firefox-ward-responsive`, `webkit-ward-responsive`           | Nightly (same workflow): the responsive audit on desktop Firefox and desktop Safari. Also selectable by hand.                                                                                                                                                                                                                                                                  |
 | `firefox`, `webkit`, `mobile-webkit`, `mobile-pwa-standalone` | Available for explicit project selection; no general main/weekly release matrix invokes them in the current workflows.                                                                                                                                                                                                                                                         |
 
 The responsive projects select only `tests/ui-ward-responsive-audit.spec.ts` and require `@mockup`.
@@ -235,7 +235,7 @@ runtime inventory verification. Static work includes CI contracts, source safety
 commands, facts and the dependency-free reference-pack membership/hash check. Full local
 `docs:maintain:check` additionally checks generated indexes and organisation and needs dependencies
 for site-map generation. Scoped frontend checks retain whole-tree lint and route/source typecheck.
-Eight disjoint unit shards produce coverage blobs; the coverage job merges them, enforces unchanged
+Four disjoint unit shards produce coverage blobs; the coverage job merges them, enforces unchanged
 thresholds and validates declared executable files. Source-reading guards remain mandatory in
 focused selection even after import fan-out capping; capped/deferred evidence remains partial.
 
@@ -247,7 +247,7 @@ authentication. It checks signed-in saves, another desk's view, reload persisten
 server refusals and keyboard focus. Backend/root tests cannot substitute for that browser proof.
 
 One prepared browser build feeds two journey groups; group 1 runs the separate Chromium CSRF
-case on the same server. The release gate requires all eight named desktop/phone journey cases,
+case on the same server. The release gate requires all 14 named desktop/phone journey cases,
 zero retry recovery and no serious or critical axe WCAG violations, without a recovery rescan. The required job checks plan, static,
 backend, unit, prepared build, journeys, release, secret scan, build and coverage, and rejects
 unexpected skips. Main reuse retains the existing exact-tree/PR-run proof. On that path only the

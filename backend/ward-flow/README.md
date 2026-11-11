@@ -30,8 +30,9 @@ _Source checked 3 November 2026 at `a6d8a0fd`; no hosted configuration or notifi
   The monitor sends it in `x-ward-flow-uptime-token`. Provisioning or rotation is an authorised
   settings change; never paste its value into commands, tickets, logs, documentation or chat.
   An absent/mismatched token gets the ordinary liveness response, not a database answer.
-  `backend-uptime.yml` then warns **Database not checked**; a green run with that warning is not
-  database monitoring acceptance. After about a day (144 runs) of that warning, or of unset or
+  `backend-uptime.yml` then warns **Database not checked** and fails the run; that is not a
+  database outage (it does not open a **backend down** issue) and is not database monitoring
+  acceptance. After about a day (144 runs) of that warning, or of unset or
   unusable monitor account secrets, the workflow raises one **Uptime monitor not set up** issue
   (audit M72). Check the executed step and intended notification delivery
   separately. `database: unavailable` is an outage diagnostic even though HTTP status remains 200.
