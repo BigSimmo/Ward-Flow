@@ -51,7 +51,7 @@ describe("consolidated audit verification boundaries", () => {
 
   it.each(["release-gate-desktop", "release-gate-phone"])("requires every applicable checks case on %s", (project) => {
     const cases = releaseGateCases(true, project, "checks");
-    expect(cases).toHaveLength(project === "release-gate-desktop" ? 118 : 104);
+    expect(cases).toHaveLength(project === "release-gate-desktop" ? 140 : 126);
     const report = {
       config: { projects: [{ name: project }] },
       errors: [],

@@ -70,8 +70,13 @@ import { useMobileKeyboard } from "./use-mobile-keyboard";
 import { useRevealFocusedInRow } from "./use-reveal-focused-in-row";
 import { useOnlineStatus } from "../use-online-status";
 import { useServiceScope, setServiceScope } from "./ward-service-store";
-import { BedAlertMeter, capacityRowsSpoken, overLineLabel, type CapacityRow } from "./ward-rail-parts";
-import { compactPipPlace, RailOccupancyRing } from "../shell-next/next-rail-parts";
+import { BedAlertMeter, overLineLabel, type CapacityRow } from "./ward-rail-parts";
+import {
+  capacityRowsOver,
+  capacityRowsSpoken,
+  compactPipPlace,
+  RailOccupancyRing,
+} from "../shell-next/next-rail-parts";
 import { useBarScrolled, useBandScrolled } from "./ward-bar-scroll";
 import {
   BED_ALERT_THRESHOLD_PERCENT,
@@ -218,16 +223,18 @@ function executiveCapacity(report: ExecutiveReportingFoundation) {
 function CapacityRowLine({ row, title }: { row: CapacityRow; title?: string }) {
   return (
     <span className={rail.alertRow} title={title}>
-      <span className={rail.alertRowName}>{row.name}</span>
+      {/* R1-N01: spaces between the flex items (not drawn), so the visible words stay apart for
+          axe's label-in-name check ("Metro 86%", not "Metro86%"), as CB-3 did for the other rail. */}
+      <span className={rail.alertRowName}>{row.name}</span>{" "}
       {row.percent === null ? (
         <span className={rail.meter} aria-hidden="true" />
       ) : (
         <BedAlertMeter percent={row.percent} />
-      )}
+      )}{" "}
       <span className={rail.alertRowPercent}>
         {row.percent !== null && isBedAlert(row.percent) ? <Dot tone="warning" /> : null}
         {row.percent === null ? "—" : formatOccupancyPercent(row.percent)}
-      </span>
+      </span>{" "}
     </span>
   );
 }
@@ -296,7 +303,9 @@ function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }
   const firstRow = rows[0];
   // Bed alerts stay about capacity (Josh, 30 Oct 2026), as on the other desks' rail: occupancy rows
   // with their meters and the 85% tick, the count over the line in words, then the ready beds.
-  const spoken = `Bed alerts: ${overLine.label}. ${capacityRowsSpoken(rows)}. ${readyLabel}, ${note}.`;
+  // R1-N01 (axe label-content-name-mismatch): the name reads the card's visible words in order
+  // first, then which places are over the line, as the other desks' card does (CB-3).
+  const spoken = `Bed alerts: ${overLine.label}. ${capacityRowsSpoken(rows)}, ${readyLabel}, ${note}.${capacityRowsOver(rows)}`;
   return (
     <div className={rail.alertsContainer} ref={container}>
       <button
@@ -326,7 +335,7 @@ function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }
         {/* Live audit, 8 Nov 2026: the other desks' card (D7) so a long tag wraps and the chevron
             stays inside the card instead of over the sidebar's edge. */}
         <span className={railParts.capacityHead} aria-hidden="true">
-          <span className={rail.alertsEyebrow}>Bed alerts</span>
+          <span className={rail.alertsEyebrow}>Bed alerts</span>{" "}
           <span className={rail.alertsChip} data-alert={overLine.over > 0 ? "true" : undefined}>
             {overLine.over > 0 ? <Dot tone="warning" /> : null}
             {overLine.label}
@@ -334,12 +343,12 @@ function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }
           <span className={rail.capacityChevron} data-open={open ? "true" : undefined}>
             <ChevronDown aria-hidden="true" strokeWidth={1.75} />
           </span>
-        </span>
+        </span>{" "}
         <span className={rail.capacityRows} aria-hidden="true">
           {rows.map((row) => (
             <CapacityRowLine key={row.key} row={row} title={`${row.counts}, beds in use`} />
           ))}
-        </span>
+        </span>{" "}
         <span className={rail.capacityReady} aria-hidden="true">
           <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
         </span>
@@ -590,10 +599,10 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                   <ExecutiveMark />
                 </button>
               ) : (
-                <Link href={home} className={rail.brandLink} aria-label="Ward Flow WA — home">
+                <Link href={home} className={rail.brandLink} aria-label="Ward Flow WA, home">
                   <ExecutiveMark />
-                  <span className={rail.brandTitle}>Ward Flow</span>
-                  <span className={rail.brandStateText}>WA</span>
+                  {/* R1-N01: the space keeps "Ward Flow WA" apart for axe's label-in-name check. */}
+                  <span className={rail.brandTitle}>Ward Flow</span> <span className={rail.brandStateText}>WA</span>
                 </Link>
               )}
               <button

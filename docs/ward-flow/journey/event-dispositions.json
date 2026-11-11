@@ -338,7 +338,7 @@
         {
           "path": "src/components/ward-management/ward-flow-observation-events.ts",
           "line": 33,
-          "sha256": "275eabc8477f1bbfb0fff94c155c389a544304f1daebb6be8036d13c54ade72c"
+          "sha256": "7e10fb51b2f76135bdfacbcd7643473e686dd0eb797e9e7906e427cdf26563cd"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -348,7 +348,7 @@
         {
           "path": "src/components/ward-management/ward-flow-observation-events.ts",
           "line": 33,
-          "sha256": "275eabc8477f1bbfb0fff94c155c389a544304f1daebb6be8036d13c54ade72c"
+          "sha256": "7e10fb51b2f76135bdfacbcd7643473e686dd0eb797e9e7906e427cdf26563cd"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",

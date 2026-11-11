@@ -155,6 +155,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-130](#d-130-audit-follow-ups-every-remaining-recommendation-approved-10-november-2026)                                                               | Audit follow-ups: every remaining recommendation approved                              | Active                                           |
 | [D-131](#d-131-hard-case-demo-data-allowed-and-the-movement-diagram-follows-the-engine-10-november-2026)                                                | Hard-case demo data allowed, and the movement diagram follows the engine               | Active                                           |
 | [D-132](#d-132-audit-fixes-group-1-docs-and-ci-guards-10-november-2026)                                                                                 | Audit fixes group 1: docs and CI guards; Claude-authored sensitive changes warn        | Active                                           |
+| [D-138](#d-138-phone-alert-urgency-by-kind-10-november-2026)                                                                                            | Phone alert urgency by kind                                                            | Active                                           |
 
 ---
 
@@ -1692,3 +1693,9 @@ is inferred.
   3. **Later the same day (17:16 UTC), Josh answered "Yes to all recommendations"** to the open questions in that thread: the demo script is rewritten from the current app in this PR; the 5 KB phone limit allowance (D-82) stays, and red mains are fixed by trimming pages for headroom, not by a never-raise rule; the merge queue stays off (D-107); a separate agent identity with a required owner review becomes a gate before real data, not a change now; and one read-only pass of hosted settings (rulesets, bypass actors, the coordinator end date, main's green rate) is allowed.
 - **Why:** these were the confirmed, low-risk audit findings; failing agent commits now would block almost every engine or legal PR, because no approval route exists yet.
 - **Boundary:** synthetic data only. No clinical rule, signed value or release changes. D-82 (5 KB phone limit raises) and D-107 (no merge queue) stand.
+
+## D-138. Phone alert urgency by kind (10 November 2026)
+
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, picking item 23 of the audit fix build plan (Ward Flow project thread "Fix audit app and backend issues", audit fix group 2), which counts as his yes to audit decision 20. Numbered D-138 because D-132 to D-137 belong to other threads. D-133 is claimed by open PR #1606. D-134 is claimed by open PR #1608, and D-135 is claimed by open PR #1603, and D-136 is claimed by open PR #1605, and D-137 is claimed by open PR #1607. On 11 November 2026 Josh told every thread to go ahead with its recommendations, which approved the Settings line as drawn in the design review.
+- **Decision:** act-now phone alerts stay high urgency and buzz again when replaced. Jobs and team alerts go out at normal urgency and replace their earlier alert quietly. Settings shows when this device last received an alert, from the time only (never the alert's words).
+- **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge or release.

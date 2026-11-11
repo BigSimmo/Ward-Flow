@@ -460,9 +460,9 @@ Source-contract SHA256: 0189c905fbd46534abfd4525836059397e5bc345ff68575575f2f3cc
   tests: tests/ward-observation-expected-token.test.ts
   tests: tests/ward-audit-s2-observation-join.test.ts
   tests: tests/ward-consolidated-domain-20261104.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-observation-events.ts:33; SHA256 275eabc8477f1bbfb0fff94c155c389a544304f1daebb6be8036d13c54ade72c
+  Reviewed source: src/components/ward-management/ward-flow-observation-events.ts:33; SHA256 7e10fb51b2f76135bdfacbcd7643473e686dd0eb797e9e7906e427cdf26563cd
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:240; SHA256 01913e33459ff2e0c7dfce7de7e0e731cc155400a42b2537e1e6ad7a6c3c83eb
-  Reviewed source: src/components/ward-management/ward-flow-observation-events.ts:33; SHA256 275eabc8477f1bbfb0fff94c155c389a544304f1daebb6be8036d13c54ade72c
+  Reviewed source: src/components/ward-management/ward-flow-observation-events.ts:33; SHA256 7e10fb51b2f76135bdfacbcd7643473e686dd0eb797e9e7906e427cdf26563cd
   Reviewed source: src/components/ward-management/ward-access-state.ts:658; SHA256 d635256d069ca31d3c9693db54a067de04fd24cd7cc1ccd477c4bfbc73fe236c
   Reviewed source: src/components/ward-management/ward-observation.ts:48; SHA256 b714525f0d4c6d18d050f9a3600f38c8de4e9a013595a77844c5c492fbdc2e3c
 - RECORD_MOVEMENT_BLOCKER — diagram-reviewed; event roles: ed, community, ward, coordinator, officer
