@@ -729,14 +729,13 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           <Link
             href={deskHome}
             className={styles.brandLink}
-            aria-label="Ward Flow WA — home"
+            aria-label="Ward Flow WA, home"
             title="Ward Flow Western Australia"
           >
             <span className={styles.brandEmblem} aria-hidden="true">
               <WardFlowMark className={styles.emblemGlyph} />
             </span>
-            <span className={styles.brandTitle}>Ward Flow</span>
-            <span className={styles.brandStateText}>WA</span>
+            <span className={styles.brandTitle}>Ward Flow</span> <span className={styles.brandStateText}>WA</span>
           </Link>
         )}
         <button

@@ -155,6 +155,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-130](#d-130-audit-follow-ups-every-remaining-recommendation-approved-10-november-2026)                                                               | Audit follow-ups: every remaining recommendation approved                              | Active                                           |
 | [D-131](#d-131-hard-case-demo-data-allowed-and-the-movement-diagram-follows-the-engine-10-november-2026)                                                | Hard-case demo data allowed, and the movement diagram follows the engine               | Active                                           |
 | [D-136](#d-136-feature-batch-3-shift-change-and-follow-up-two-signed-values-10-november-2026)                                                           | Feature batch 3: two signed values (7-day diversion return, 30-minute handover list)   | Active                                           |
+| [D-138](#d-138-phone-alert-urgency-by-kind-10-november-2026)                                                                                            | Phone alert urgency by kind                                                            | Active                                           |
 
 ---
 
@@ -1694,3 +1695,9 @@ is inferred.
   5. **D-14 allowlist (11 November 2026):** `community/diversion-return-review.ts` joins the patient-link allowlist. It compares ids only, for one referral this team took and a later ED request, and shows the team that person's link and two times.
   6. **Item 21 placement (11 November 2026):** the "Your open work" list sits at the top of the Handover page.
 - **Boundary:** synthetic data only. Both values are prompts: neither blocks sign-out, ranks a person or judges the alternative. Approves no merge or release.
+
+## D-138. Phone alert urgency by kind (10 November 2026)
+
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, picking item 23 of the audit fix build plan (Ward Flow project thread "Fix audit app and backend issues", audit fix group 2), which counts as his yes to audit decision 20. Numbered D-138 because D-132 to D-137 belong to other threads. D-132 is claimed by open PR #1601. D-133 is claimed by open PR #1606. D-134 is claimed by open PR #1608, and D-135 is claimed by open PR #1603, and D-136 is claimed by open PR #1605, and D-137 is claimed by open PR #1607. On 11 November 2026 Josh told every thread to go ahead with its recommendations, which approved the Settings line as drawn in the design review.
+- **Decision:** act-now phone alerts stay high urgency and buzz again when replaced. Jobs and team alerts go out at normal urgency and replace their earlier alert quietly. Settings shows when this device last received an alert, from the time only (never the alert's words).
+- **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge or release.

@@ -185,6 +185,14 @@ const eslintConfig = defineConfig([
       "max-lines": ["error", { max: MAX_LINES_DEFAULT }],
     },
   },
+  // The backend's source files too (Tier 7 audit A5-05); its tests are left out, as src's are.
+  {
+    files: ["backend/ward-flow/*.mjs"],
+    ignores: ["backend/ward-flow/*.test.mjs", "backend/ward-flow/*.test-support.mjs"],
+    rules: {
+      "max-lines": ["error", { max: MAX_LINES_DEFAULT }],
+    },
+  },
   ...Object.entries(MAX_LINES_BASELINE).map(([file, max]) => ({
     files: [file],
     rules: {
