@@ -66,3 +66,44 @@ export function WardBoardTransportWait({
     </section>
   );
 }
+
+/** Item 18: the confirm text when someone has left the ward and is still waiting for transport. */
+export function TransportWaitConfirmText({ who, destination }: { who: string; destination?: string | null }) {
+  return (
+    <>
+      Record that <strong>{who}</strong> has left the ward and is waiting for transport? This records their discharge
+      and makes the bed ready now. They stay on the Waiting for transport list until collected.
+      {destination ? (
+        <span data-testid="ward-board-confirm-destination-text"> Where they are going: {destination}.</span>
+      ) : null}
+    </>
+  );
+}
+
+/** The confirm dialog's title and button for a discharge, an ED transfer or item 18's left-the-ward step. */
+export function leavingConfirmWords(confirm: { kind: string; offerTransport?: boolean; awaitingTransport?: boolean }) {
+  const leaving = confirm.kind === "leaving";
+  return {
+    title: confirm.offerTransport
+      ? "Confirm left the ward"
+      : leaving
+        ? "Confirm discharge"
+        : "Confirm emergency department transfer",
+    action: confirm.awaitingTransport ? "Record left ward" : leaving ? "Record discharge" : "Record ED transfer",
+  };
+}
+
+/** Item 18: the Collected step's message and Undo, for the board's undoable departure runner. */
+export function collectedStep(admissionId: string, actingUnitId: string, who: string) {
+  return {
+    success: `Collected: ${who} has gone.`,
+    undo: (at: Instant) => ({
+      type: "UNDO_DEPARTURE" as const,
+      role: "ward" as const,
+      now: at,
+      admissionId,
+      actingUnitId,
+    }),
+    undone: `Undone. ${who} is back on the Waiting for transport list.`,
+  };
+}
