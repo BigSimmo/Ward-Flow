@@ -198,10 +198,24 @@ describe("M72: the 10-minute uptime check, each failure injected offline", () =>
 
   // M72, fixed 10 Nov 2026: a hidden database check or an unset monitor account still leaves the
   // backend-down issue alone, but after about a day (144 runs) raises its own issue.
-  it("leaves the backend-down issue alone when the database check is hidden", async () => {
-    const result = await runStep(RAISE_STEP, { HEALTH: "unknown", WORKSPACE: "skipped", OPEN_ISSUE: "" });
-    expect(result.code).toBe(0);
-    expect(result.gh).not.toMatch(/issue create/u);
+  // A7-01, 11 Nov 2026: a hidden database check fails the run so it cannot look green while blind.
+  it("fails the run, without a backend-down issue, when the database check is hidden (A7-01)", async () => {
+    const hidden = await runStep(RAISE_STEP, { HEALTH: "unknown", WORKSPACE: "skipped", OPEN_ISSUE: "" });
+    expect(hidden.code).toBe(1);
+    expect(hidden.gh).not.toMatch(/issue (?:create|close|comment)/u);
+    expect(hidden.log).toMatch(/::error::Uptime check did not see the database: WARD_FLOW_UPTIME_TOKEN/u);
+    const open = await runStep(RAISE_STEP, { HEALTH: "unknown", WORKSPACE: "up", OPEN_ISSUE: "12" });
+    expect(open.code).toBe(1);
+    expect(open.gh).not.toMatch(/issue (?:create|close|comment)/u);
+    // A rate-limited or unset workspace, with the database itself checked, stays a warning only.
+    const workspaceOnly = await runStep(RAISE_STEP, {
+      HEALTH: "up",
+      WORKSPACE: "unknown",
+      WORKSPACE_DETAIL: "backend rate limited",
+      OPEN_ISSUE: "12",
+    });
+    expect(workspaceOnly.code).toBe(0);
+    expect(workspaceOnly.gh).not.toMatch(/issue (?:create|close|comment)/u);
   });
 
   const gapRun = (env: Record<string, string>) =>

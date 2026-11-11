@@ -93,7 +93,8 @@ describe("Ward Flow's isolated demo and shared-adapter boundary", () => {
     }
 
     expect(violations).toEqual([]);
-  });
+    // Parses every ward source file: about 3 s locally, but it passed 30 s on a busy CI shard.
+  }, 120_000);
 
   it("opens without an access gate and keeps its layout free of Clinical KB authentication", () => {
     // The developer-key gate was removed on 28 September 2026 at Josh's request. Ward Flow is
