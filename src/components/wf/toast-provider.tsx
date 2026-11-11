@@ -378,17 +378,7 @@ function ToastCard({
           : undefined
       }
       nextStep={toast.nextStep}
-      choices={
-        toast.choices
-          ? {
-              ...toast.choices,
-              onChoose: (id) => {
-                toast.choices?.onChoose(id);
-                onDismiss(toast.id);
-              },
-            }
-          : undefined
-      }
+      choices={toast.choices}
       undo={
         toast.undo
           ? {

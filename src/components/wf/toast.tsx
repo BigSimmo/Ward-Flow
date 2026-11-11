@@ -11,7 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Button, buttonClass } from "./button";
+import { Button } from "./button";
 import { cx } from "./cx";
 import styles from "./overlay.module.css";
 import { StatusGlyph, type WfTone } from "./status-glyph";
@@ -48,7 +48,7 @@ type ToastTimeout = {
 
 /**
  * An optional follow-up choice on the toast, such as a reason for the step just taken (D-148). A
- * kit menu of the choices opens from one button; choosing closes the toast.
+ * kit menu of the choices opens from one button (shown once its code has loaded); choosing closes the toast.
  */
 export type ToastChoices = {
   /** The menu's accessible name and the button's words. */
@@ -304,18 +304,8 @@ export function ToastView({
         )
       ) : null}
       {choices && (!undo || phase === "running") ? (
-        <Suspense
-          fallback={
-            <button
-              type="button"
-              disabled
-              className={cx(buttonClass({ variant: "ghost", size: "sm" }), styles.toastAction)}
-            >
-              {choices.label}
-            </button>
-          }
-        >
-          <ToastChoicesMenu choices={choices} />
+        <Suspense fallback={null}>
+          <ToastChoicesMenu choices={choices} onDone={onClose} />
         </Suspense>
       ) : null}
       {undo ? <UndoButton undo={undo} phase={phase} finish={finish} primary={primary === "undo"} /> : null}

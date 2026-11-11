@@ -10,7 +10,7 @@ import type { ToastChoices } from "./toast";
  * The toast's follow-up choice menu (D-148). Its own file, loaded only when a toast offers choices,
  * so the kit menu stays off the first load of every page that shows toasts.
  */
-export default function ToastChoicesMenu({ choices }: { choices: ToastChoices }) {
+export default function ToastChoicesMenu({ choices, onDone }: { choices: ToastChoices; onDone?: () => void }) {
   return (
     <Menu
       label={choices.label}
@@ -18,7 +18,10 @@ export default function ToastChoicesMenu({ choices }: { choices: ToastChoices })
       items={choices.items.map((item) => ({
         id: item.id,
         label: item.label,
-        onSelect: () => choices.onChoose(item.id),
+        onSelect: () => {
+          choices.onChoose(item.id);
+          onDone?.();
+        },
       }))}
       trigger={(props) => (
         <button

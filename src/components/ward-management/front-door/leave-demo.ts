@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { endWardFlowBrowserSessionAndPass } from "../ward-browser-data";
 
 /**
  * Live audit item 22 (11 Nov 2026): the public demo had no way to leave. Only a site with the front
@@ -25,19 +26,13 @@ export function useCanLeaveDemo(): boolean {
 }
 
 export async function leaveDemo(): Promise<void> {
+  // The sweep a sign-out runs (D-88). It ends the front door's pass too, awaited here so the sign-in
+  // page never opens while the pass is still good.
   try {
-    // Loaded on use: the shell does not carry the session-end sweep on every page.
-    const { endWardFlowBrowserSession } = await import("../ward-browser-data");
-    endWardFlowBrowserSession();
+    await endWardFlowBrowserSessionAndPass();
   } catch {
-    // Keep going: the pass below is what keeps this browser out.
+    // Keep going: the sign-in page still opens.
   }
-  // The front door's own call, awaited (the sweep above started it), so the sign-in page never opens
-  // while the pass is still good. Loaded on use too, like the sweep.
-  await import("./front-door-pass-client").then(
-    ({ endFrontDoorPass }) => endFrontDoorPass(),
-    () => {},
-  );
   // A full load, not a client navigation: the sign-in page must be drawn fresh, and Back must not
   // return to the demo.
   window.location.replace("/sign-in");

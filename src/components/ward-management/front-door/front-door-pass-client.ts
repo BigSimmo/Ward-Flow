@@ -70,27 +70,18 @@ export async function renewFrontDoorPass(token: () => Promise<string>): Promise<
   }
 }
 
-/** The pass ending now, so a second caller in the same moment waits on it rather than asking again. */
-let ending: Promise<void> | null = null;
-
 /**
  * At sign-out, an idle sign-out or the sign-in limit, end the pass too. Survives the page closing.
  * Resolves once the server has answered, so Leave the demo can wait before opening the sign-in page.
  */
 export function endFrontDoorPass(): Promise<void> {
   if (!frontDoorOn()) return Promise.resolve();
-  if (ending) return ending;
   try {
     // The server's reply removes the marker with the pass (live audit item 19).
-    ending = fetch("/api/session", { method: "DELETE", credentials: "same-origin", keepalive: true })
-      .then(
-        () => {},
-        () => {},
-      )
-      .finally(() => {
-        ending = null;
-      });
-    return ending;
+    return fetch("/api/session", { method: "DELETE", credentials: "same-origin", keepalive: true }).then(
+      () => {},
+      () => {},
+    );
   } catch {
     // No fetch here: the pass still ends at its own time.
     return Promise.resolve();

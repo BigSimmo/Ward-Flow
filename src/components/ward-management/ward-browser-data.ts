@@ -154,6 +154,11 @@ function fenceWardLeaveSaves(): void {
  * the storage. A failing reset never stops the others or the sweep.
  */
 export function endWardFlowBrowserSession(): void {
+  void endWardFlowBrowserSessionAndPass();
+}
+
+/** The same, resolving once the front door's pass has ended (Leave the demo waits on it). */
+export function endWardFlowBrowserSessionAndPass(): Promise<void> {
   fenceWardLeaveSaves();
   clearSessionDrafts();
   for (const reset of sessionEndResets) {
@@ -166,7 +171,7 @@ export function endWardFlowBrowserSession(): void {
   clearWardFlowBrowserData();
   syncWardDeskHeldCookie(null);
   // The front door's pass ends with the sign-in, so the next person at this browser starts outside.
-  void endFrontDoorPass();
+  return endFrontDoorPass();
 }
 
 /**
