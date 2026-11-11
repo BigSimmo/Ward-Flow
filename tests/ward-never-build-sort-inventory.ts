@@ -112,12 +112,19 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
   {
     file: "statistics/statistics-summary-phone.tsx",
     match: "b.ready - a.ready || b.percent - a.percent || a.name.localeCompare(b.name)",
-    occurrences: 2,
-    list: "wards",
+    list: "places",
     key: "ready beds, most first; then occupancy; then name",
     order: "capacity display",
     reason:
-      "Statistics phone summary lists hospitals and wards 'by beds ready', first eight then Show all; rows open statistics pages, not a placement.",
+      "Statistics phone summary, By hospital: hospitals 'by beds ready', first eight then Show all; rows open a hospital sheet, not a placement.",
+  },
+  {
+    file: "statistics/statistics-summary-phone.tsx",
+    match: "(a, b) => a.name.localeCompare(b.name)",
+    list: "wards",
+    key: "ward name, A to Z",
+    order: "fixed order",
+    reason: "Statistics phone summary, By ward: A to Z by ward name with every count kept (D-139, following D-126).",
   },
   {
     file: "statistics/statistics-summary-phone.tsx",
