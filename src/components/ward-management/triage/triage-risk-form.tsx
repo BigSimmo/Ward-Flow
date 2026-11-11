@@ -34,7 +34,7 @@ import {
   phoneRows,
 } from "@/components/wf";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
-import { calendarDateOf, perthCalendarDay, perthClockTime } from "@/components/ward-management/ward-clock";
+import { calendarDateOf } from "@/components/ward-management/ward-clock";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { confirmedWardCommand } from "@/components/ward-management/ward-command-completion";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -54,6 +54,7 @@ import {
   type SectionId,
 } from "./triage-risk-data";
 import { MentalStateBody } from "./triage-risk-mse";
+import { perthWallClockDate, reviewTimeStamp } from "./triage-risk-text";
 import { SectionCard, StatusMark, type FormApi } from "./triage-risk-parts";
 import { AssessmentBody, ReviewBody } from "./triage-risk-review";
 import { PlanBody, RiskBody } from "./triage-risk-risk";
@@ -112,25 +113,6 @@ const SUB: Readonly<Record<SectionId, string>> = {
 type Sheet = "sum" | "how" | "all" | null;
 
 const NOT_WIRED = "Not wired in this prototype.";
-
-/** "07/11/2026 10:42", the form's date and time, on the board's synthetic Perth clock whatever the device's zone. */
-/**
- * The board's moment as a Perth wall-clock Date: its local fields read the Perth day and time. The
- * reviewed time is typed and parsed as wall-clock text, so Now and the future check use the same
- * frame on any device.
- */
-function boardWallClock(boardNow: number, dayZero: Date): Date {
-  const moment = calendarDateOf(boardNow, dayZero);
-  const day = perthCalendarDay(moment);
-  const [hour = 0, minute = 0] = perthClockTime(moment).split(":").map(Number);
-  return new Date(day.year, day.monthIndex, day.day, hour, minute);
-}
-
-function stampOf(date: Date): string {
-  const two = (n: number) => String(n).padStart(2, "0");
-  const day = perthCalendarDay(date);
-  return `${two(day.day)}/${two(day.monthIndex + 1)}/${day.year} ${perthClockTime(date)}`;
-}
 
 const NOT_SIGNED = "Not signed. Try again.";
 
@@ -415,7 +397,8 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
   const [active, setActive] = useState<SectionId>("rev");
   // Josh (7 Nov 2026): the form runs on the board clock, as signing does. Now stamps it and the
   // future-time check measures against it, as Perth wall-clock time whatever the device's own zone.
-  const now = boardWallClock(boardNow, dayZero).getTime();
+  // M18 (10 Nov 2026): `now` is the real moment; the reviewed-time helpers read it on the Perth clock.
+  const now = calendarDateOf(boardNow, dayZero).getTime();
   const navLock = useRef(0);
   useFocusKeeper(state);
   const engagement = useEngagedSection();
@@ -480,7 +463,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
   const due = seeBy(
     state.urgency,
     state.text.revTime,
-    boardWallClock(boardNow, dayZero),
+    perthWallClockDate(now),
     state.urgency ? TIER_LONG[state.urgency] : "",
   );
   // Leaving drops typed text (it is never stored), so warn before any way out once something is entered.
@@ -537,7 +520,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
 
   const signedNow = () => {
     setSheet(null);
-    setSignedAt(stampOf(calendarDateOf(boardNow, dayZero)));
+    setSignedAt(reviewTimeStamp(calendarDateOf(boardNow, dayZero)));
     scrollPageTop();
     announceToWardShell(`Signed. Triage for ${person.name} is read-only.`);
   };

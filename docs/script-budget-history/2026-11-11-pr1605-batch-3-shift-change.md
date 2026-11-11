@@ -19,3 +19,5 @@ returned-to-ED card and the call back form load only on their screens.
 Trim: considered, none made. The returned-to-ED derivation in the provider is the first candidate to
 move behind the community screen's own load. Re-measure on hosted CI and set each limit to the
 measurement plus 0.2 KB if it reads lower.
+
+After main at `5b08a5ebe` raised six routes again (PR #1599), the second merge kept this PR's own raise on top of main's values: Home 576.5, Referrals 584.2, ED 536.9, Ward 615.0, Movement detail 611.5, Capacity 655.7 and Bed meeting 593.7.

@@ -1,6 +1,6 @@
 # Desk guide: Executive (read only)
 
-<!-- last-checked: 2026-10-26 -->
+<!-- last-checked: 2026-11-10 -->
 
 _Updated 2026-10-30 — role wording checked against source at `b6aa5cde`; browser coverage above is unchanged._
 

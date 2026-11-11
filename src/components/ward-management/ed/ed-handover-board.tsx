@@ -15,6 +15,7 @@ import type { EdScreenContext } from "./ed-screen-context";
 import styles from "./ed.module.css";
 import { recordedEdDeparture } from "@/components/ward-management/ward-ed-presence";
 import { formatSheetMoment, splitDuration } from "@/components/ward-management/ward-clock";
+import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 import { edStageLabel } from "./ed-referral-status";
 import { ListExportButton } from "../ward-list-export-button";
@@ -82,11 +83,15 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
     },
     {
       id: "eight",
-      title: `8 to ${Math.round(accessTarget / 60)} hours`,
+      title: `${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60} to ${Math.round(accessTarget / 60)} hours`,
       tone: "warning",
-      test: (m) => m >= 480 && m < accessTarget,
+      test: (m) => m >= ED_SEVERE_PRESSURE_WAIT_MINUTES && m < accessTarget,
     },
-    { id: "under", title: "Under 8 hours", test: (minutes) => minutes < 480 },
+    {
+      id: "under",
+      title: `Under ${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60} hours`,
+      test: (minutes) => minutes < ED_SEVERE_PRESSURE_WAIT_MINUTES,
+    },
   ];
 
   // Export (feature 44): everyone on the table (filters only highlight), never names; the builder

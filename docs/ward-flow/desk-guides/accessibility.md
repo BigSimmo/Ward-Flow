@@ -1,6 +1,6 @@
 # Desk guide: Seeing and using Ward Flow
 
-<!-- last-checked: 2026-10-27 -->
+<!-- last-checked: 2026-11-10 -->
 
 This guide is for every desk. It covers the colour code, the display settings and the keyboard.
 

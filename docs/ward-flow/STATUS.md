@@ -3,7 +3,7 @@
 <!-- last-checked: 2026-11-10 -->
 
 **The one page for where Ward Flow stands now.** Audience: Josh, staff testers and every builder.
-Owner: Documentation. Checked on 10 November 2026 against `main` at `b29dfaa76` (PR #1581) by reading
+Owner: Documentation. Checked on 10 November 2026 against `main` at `a6e405b2` (PR #1594) by reading
 the merged pull request titles and searching source. No browser, hosted or deployment check was run
 for this page. Work items live in the [backlog](backlog.md). Older status is in
 [the status history](../history/status-to-2026-11-03.md).
@@ -92,16 +92,16 @@ To list every merge since a date or revision:
 ### Waiting on Josh
 
 Re-checked on 10 November. D-108 settled the legal times and ED next-step questions, so they are
-gone. The 16 November date for the sign-in test was dropped (Q390). Items 4 to 13 are carried from
+gone. The 16 November date for the sign-in test was dropped (Q390). Two asks are done and removed
+(audit A8-08): `Ward Flow hold` has been a required check in the "Protections" ruleset since
+3 November (Q384), and Dependabot security updates are on. Items 4 to 12 are carried from
 3 November and not re-checked.
 
 1. Protect the `live` branch in GitHub so only the release workflow can update it, with no
    force-push or deletion (D-121 item 1).
 2. If not done yet, add the Actions event policy for `pull_request_target` before GitHub's second
    brownout on 16 November 2026 (D-114). GitHub blocks it by default from 2 December.
-3. Check the held clinical PR for D-122 when it opens. It merges only after you check it. Also add
-   `Ward Flow hold` as a required check in the main ruleset, so the `hold` label really blocks a merge
-   (Q384, not re-checked in GitHub).
+3. Check the held clinical PR for D-122 when it opens. It merges only after you check it.
 4. Sign-in renewal test (Q390): sign in with a test account in the morning, and make one save after
    lunch without signing in again.
 5. In Supabase: turn off "Allow new users to sign up", and turn off the organisation's AI SQL, log and
@@ -110,10 +110,9 @@ gone. The 16 November date for the sign-in test was dropped (Q390). Items 4 to 1
 7. Turn on Remote Control for the backup-restore drill and the hosted two-person run.
 8. Set limits on who can grant administrator access.
 9. Name the privacy officer and the clinical safety owner.
-10. Turn on Dependabot security updates in GitHub settings.
-11. Arrange the clinician trial.
-12. Keep or strike the decision entries marked "Source unverified" (D-28 and D-30 to D-35).
-13. Before any real data (deferred): the [real-data go/no-go checklist](governance/REAL-DATA-GO-NO-GO.md).
+10. Arrange the clinician trial.
+11. Keep or strike the decision entries marked "Source unverified" (D-28 and D-30 to D-35).
+12. Before any real data (deferred): the [real-data go/no-go checklist](governance/REAL-DATA-GO-NO-GO.md).
 
 ### Keeping this page true
 

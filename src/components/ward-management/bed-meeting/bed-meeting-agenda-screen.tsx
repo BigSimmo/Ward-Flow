@@ -58,6 +58,7 @@ import { WARD_FLOW_ROLE_LABELS } from "../ward-flow-roles";
 import { bedMeetingTvHref } from "../ward-nav";
 import { DONE_PAUSE_MS, LONG_WAIT_MINUTES, LONG_WAIT_TEXT } from "../ward-operational-defaults";
 import { usePatientOf } from "../ward-patient-name";
+import { sheetPatientLabel } from "../ward-patient-resolver";
 import { fieldsMatchEveryWord } from "../search/search-text";
 import { useRefocusAfterRowLeaves } from "../use-refocus-after-row-leaves";
 import {
@@ -209,7 +210,8 @@ function BedMeetingAgenda() {
       now,
       thresholds,
       service,
-      nameOf: (movement) => patientOf(movement).formalName,
+      // M103 (Josh, 10 Nov 2026): the printed sheet shows initials and UMRN only.
+      nameOf: (movement) => sheetPatientLabel(patientOf(movement)),
       referrals,
       referralLimitMinutes: configuration.referralDecisionTargetMinutes,
       // WF-FIG-017: named holds from the whole lists, so a group filter never frees a held bed.
@@ -560,7 +562,7 @@ function BedMeetingAgenda() {
                   buildSheet={buildSheet}
                   actions={actionRows.map((row) => ({
                     id: `${row.subject.id}-${row.action.kind}`,
-                    name: patientOf(row.record).formalName,
+                    name: sheetPatientLabel(patientOf(row.record)),
                     action: bedMeetingActionLabel(row.action.kind),
                     owner: ownerText(row.action),
                     due: `${row.action.dueAt < now ? "was due" : "due"} ${formatInstantWithDay(row.action.dueAt, now)}`,

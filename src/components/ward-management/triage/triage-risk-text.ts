@@ -7,8 +7,9 @@
  *   replaces "Not assessed". Matching is whole word, so "Oriented" never matches "Disoriented".
  * - Free-text boxes: headings ("Why now:"), the dot shortcuts (.all, .form, .plan) and the parse
  *   the summary reads. Only known headings count, in any case; any other "Word:" stays as text.
- * - Reviewed time: DD/MM/YYYY HH:MM, a real date, never in the future.
+ * - Reviewed time: DD/MM/YYYY HH:MM on the Perth clock, a real date, never in the future.
  */
+import { perthCalendarDay, perthClockTime, perthMidnight } from "../ward-clock";
 import { GUIDES, MSE, MSE_VS, type GuideGroup } from "./triage-risk-data";
 
 const NOT_ASSESSED = "Not assessed";
@@ -305,16 +306,30 @@ export function checkReviewTime(value: string, now: number): ReviewTimeCheck {
   const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/);
   if (!match) return { ok: false, message: "Use DD/MM/YYYY HH:MM, for example 06/11/2026 09:42.", future: false };
   const [day, month, year, hour, minute] = match.slice(1).map(Number);
-  const date = new Date(year, month - 1, day, hour, minute);
-  if (hour > 23 || minute > 59 || date.getDate() !== day || date.getMonth() !== month - 1)
+  // Read on the Perth clock, whatever the device's zone (M18, 10 Nov 2026).
+  const midnight = perthMidnight(year, month - 1, day);
+  const read = perthCalendarDay(midnight);
+  if (hour > 23 || minute > 59 || read.day !== day || read.monthIndex !== month - 1 || read.year !== year)
     return { ok: false, message: "That date or time does not exist. Use DD/MM/YYYY HH:MM.", future: false };
-  if (date.getTime() > now + 60_000)
+  if (midnight.getTime() + (hour * 60 + minute) * 60_000 > now + 60_000)
     return { ok: false, message: "That time is in the future. Enter when you reviewed.", future: true };
   return { ok: true, message: "", future: false };
 }
 
-/** Now, as a reviewed time: DD/MM/YYYY HH:MM. */
+/**
+ * A real moment as a Perth wall-clock Date: its local fields read the Perth day and time. Only for
+ * the helpers that count days from local fields (the see-by "today", the days since discharge).
+ */
+export function perthWallClockDate(moment: number): Date {
+  const date = new Date(moment);
+  const day = perthCalendarDay(date);
+  const [hour = 0, minute = 0] = perthClockTime(date).split(":").map(Number);
+  return new Date(day.year, day.monthIndex, day.day, hour, minute);
+}
+
+/** Now, as a reviewed time on the Perth clock: DD/MM/YYYY HH:MM, whatever the device's zone (M18). */
 export function reviewTimeStamp(date: Date): string {
   const two = (n: number) => String(n).padStart(2, "0");
-  return `${two(date.getDate())}/${two(date.getMonth() + 1)}/${date.getFullYear()} ${two(date.getHours())}:${two(date.getMinutes())}`;
+  const perth = perthCalendarDay(date);
+  return `${two(perth.day)}/${two(perth.monthIndex + 1)}/${perth.year} ${perthClockTime(date)}`;
 }

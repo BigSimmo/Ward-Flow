@@ -21,6 +21,7 @@ import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { OCCUPIED_CAPTION, ON_THE_WARD_NOUN } from "@/components/ward-management/ward-occupancy";
 
 import { StatisticsEdSwarm, type EdSwarmRow } from "./statistics-ed-swarm";
+import { occupancyText } from "./statistics-occupancy";
 import { LONG_WAIT_HOURS, edJourneyWaitFigures as edWaitFigures } from "./statistics-ed-waits";
 import { StatCard, useStatisticsLive } from "./statistics-hero";
 import { FlushRow, Follow } from "./statistics-layout";
@@ -112,12 +113,13 @@ export function journeyStages({
       return {
         beds: sum.beds + unit.beds,
         occupied: sum.occupied + states.occupied,
+        pulled: sum.pulled + states.pulled,
         ready: sum.ready + states.ready,
         onLeave: sum.onLeave + states.onLeave,
         absent: sum.absent + Math.min(absent, states.onLeave),
       };
     },
-    { beds: 0, occupied: 0, ready: 0, onLeave: 0, absent: 0 },
+    { beds: 0, occupied: 0, pulled: 0, ready: 0, onLeave: 0, absent: 0 },
   );
 
   const today = dayOf(now);
@@ -197,7 +199,8 @@ export function journeyStages({
       tone: "success",
       count: beds.occupied,
       breakdown: [
-        { label: "Of beds", value: `${beds.beds > 0 ? Math.round((beds.occupied / beds.beds) * 100) : 0}%` },
+        // M121 (L1 ruling, D-125): the one occupancy figure, in use (Occupied + Pulled), or "No beds".
+        { label: "In use", value: occupancyText({ beds: beds.beds, inUse: beds.occupied + beds.pulled }) },
         { label: "On leave", value: beds.onLeave - beds.absent },
         { label: "Absent without leave", value: beds.absent, tone: beds.absent > 0 ? "danger" : undefined },
         { label: "Ready beds", value: beds.ready },
