@@ -161,6 +161,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-139](#d-139-phone-statistics-ward-list-a-to-z-and-leave-return-times-as-typed-10-november-2026)                                                      | Phone Statistics ward list A to Z, and leave return times as typed                     | Active                                           |
 | [D-143](#d-143-mhert-is-mherl-in-the-glossary-smhmr-deferred-11-november-2026)                                                                          | MHERT is MHERL in the glossary; SMHMR deferred                                         | Active                                           |
 | [D-144](#d-144-chip-rows-move-only-sideways-on-a-phone-11-november-2026)                                                                                | Chip rows move only sideways on a phone                                                | Active                                           |
+| [D-147](#d-147-demo-code-tries-keep-per-address-keying-until-a-trusted-proxy-is-set-11-november-2026)                                                   | Demo-code tries keep per-address keying until a trusted proxy is set                   | Active                                           |
 
 ---
 
@@ -1756,3 +1757,9 @@ is inferred.
 - **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, on a decision card in the Ward Flow project thread "Stop chip rows dragging up and down", choosing "Lock rows to sideways only" over measuring on his iPhone first. Numbered D-144 because D-133 to D-143 belong to other threads. D-140 is claimed by open PR #1606, and D-141 is claimed by open PR #1606. D-142 is claimed by open PR #1603.
 - **Decision:** on a phone, the page-top quick-link chip rows, the Home quick bar, the shared phone chip row and Home's "Waiting in ED" strip take `touch-action: pan-x`. A finger on one of these rows can only move it sideways. The accepted trade-off is that a vertical swipe starting on one of these rows does not scroll the page. Reason: iPhone still slid the rows up and down after three layout fixes (#1596, #1602, #1610), and the cause could not be reproduced off the device.
 - **Boundary:** presentation only, synthetic data. Changes no clinical value or rule, and approves no merge or release.
+
+## D-147. Demo-code tries keep per-address keying until a trusted proxy is set (11 November 2026)
+
+- **Date:** 11 November 2026, 2:37 PM AWST (06:37 UTC). **Decided by:** Josh, on a decision card in the Ward Flow project thread "Get all open PRs merged", choosing "Add a safe fallback, then merge" for PR #1615 (A4-02). Numbered D-147 because D-145 and D-146 belong to other threads. D-145 is claimed by open PR #1623. D-146 is claimed by open PR #1624.
+- **Decision:** while `WARD_TRUSTED_PROXY_ADDRESSES` names no proxy on the Next service, the front door's demo-code try limit keeps keying on the edge's `X-Real-IP`, else the last `X-Forwarded-For` hop, as it did before A4-02. Once it names a proxy (or `*`), A4-02's trusted-proxy rule applies. Reason: the Next session route has no socket address, so the strict rule alone would put every caller in one shared bucket, and ten wrong tries from anyone in ten minutes would refuse every presenter.
+- **Boundary:** no Railway or environment change; setting `WARD_TRUSTED_PROXY_ADDRESSES` stays a separate, approved provider action. The fallback logs nothing. Synthetic data only; changes no clinical value or rule, and approves no release.

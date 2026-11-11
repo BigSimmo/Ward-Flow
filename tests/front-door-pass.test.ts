@@ -12,7 +12,12 @@ import {
   safeNextPath,
   verifyPass,
 } from "@/lib/front-door-pass";
-import { edgeAddress, reserveDemoTry, resetWrongTriesForTests } from "@/lib/demo-code-tries";
+import {
+  edgeAddress,
+  reserveDemoTry,
+  resetWrongTriesForTests,
+  trustedProxyAddressesFromEnv,
+} from "@/lib/demo-code-tries";
 import { frontDoorVerdict } from "../src/proxy";
 
 // Synthetic secrets only: these values exist for this test file.
@@ -429,6 +434,7 @@ describe("POST /api/session", () => {
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
     vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
+    vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "*");
     const right = await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.20"));
     expect(right.status).toBe(204);
     expect(right.headers.getSetCookie().find((line) => line.startsWith(FRONT_DOOR_PASS_COOKIE))).toContain(
@@ -439,19 +445,60 @@ describe("POST /api/session", () => {
     expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.30"))).status).toBe(429);
   });
 
-  it("counts wrong tries by the edge's address, not a caller-written forwarded-for", async () => {
-    expect(edgeAddress(new Headers({ "x-real-ip": "192.0.2.40", "x-forwarded-for": "198.51.100.1" }))).toBe(
-      "192.0.2.40",
-    );
-    expect(edgeAddress(new Headers({ "x-forwarded-for": "198.51.100.1, 192.0.2.41" }))).toBe("192.0.2.41");
-    expect(edgeAddress(new Headers())).toBe("unknown");
+  it("counts wrong tries by a trusted hop's address, not a caller-written forwarded-for (A4-02)", async () => {
+    const dual = new Headers({ "x-real-ip": "192.0.2.40", "x-forwarded-for": "198.51.100.1" });
+    const forwardedOnly = new Headers({ "x-forwarded-for": "198.51.100.1, 192.0.2.41" });
+    expect(edgeAddress(dual, ["*"])).toBe("192.0.2.40");
+    expect(edgeAddress(forwardedOnly, ["*"])).toBe("192.0.2.41");
+    expect(edgeAddress(dual, ["10.0.0.2"], "10.0.0.2")).toBe("192.0.2.40");
+    expect(edgeAddress(dual, ["10.0.0.2"], "::ffff:10.0.0.2")).toBe("192.0.2.40");
+    expect(edgeAddress(dual, ["10.0.0.2"], "198.51.100.8")).toBe("198.51.100.8");
+    expect(edgeAddress(dual, ["10.0.0.2"])).toBe("unknown");
+    expect(edgeAddress(new Headers(), ["*"])).toBe("unknown");
+    // D-147 fallback: with no trusted proxy configured, keying stays as before A4-02.
+    expect(edgeAddress(dual, [])).toBe("192.0.2.40");
+    expect(edgeAddress(forwardedOnly, [])).toBe("192.0.2.41");
+    expect(edgeAddress(new Headers(), [])).toBe("unknown");
+    expect(trustedProxyAddressesFromEnv({ WARD_TRUSTED_PROXY_ADDRESSES: "10.0.0.2, *, not-an-ip" })).toEqual([
+      "10.0.0.2",
+      "*",
+    ]);
+    expect(trustedProxyAddressesFromEnv({})).toEqual([]);
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
     vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
+    vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "*");
     for (let attempt = 0; attempt < 10; attempt += 1)
       expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.50", `198.51.100.${attempt}`))).status).toBe(401);
     expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.50", "198.51.100.99"))).status).toBe(429);
+  });
+
+  it("keeps per-address keying while no trusted proxy is configured (D-147)", async () => {
+    vi.stubEnv("WARD_FRONT_DOOR", "required");
+    vi.stubEnv("WARD_PASS_SECRET", SECRET);
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
+    vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "");
+    for (let attempt = 0; attempt < 10; attempt += 1)
+      expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.70"))).status).toBe(401);
+    expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.70"))).status).toBe(429);
+    // Another address keeps its own budget, so one guesser cannot refuse every presenter.
+    expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.71"))).status).toBe(401);
+    expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.72"))).status).toBe(204);
+  });
+
+  it("ignores a caller-sent address once a trusted proxy is configured but the socket is not it (A4-02)", async () => {
+    vi.stubEnv("WARD_FRONT_DOOR", "required");
+    vi.stubEnv("WARD_PASS_SECRET", SECRET);
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
+    vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "10.0.0.2");
+    for (let attempt = 0; attempt < 10; attempt += 1)
+      expect((await POST(post({ demoCode: "WRONG" }, `198.51.100.${attempt}`))).status).toBe(401);
+    // Rotating X-Real-IP does not open a new bucket: every request shares "unknown".
+    expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.99"))).status).toBe(429);
+    expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.98"))).status).toBe(429);
   });
 
   it("refuses wrong codes once tries across all addresses reach the cap, but still opens with the right code", async () => {
@@ -459,6 +506,7 @@ describe("POST /api/session", () => {
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
     vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
+    vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "*");
     for (let attempt = 0; attempt < 200; attempt += 1)
       expect((await POST(post({ demoCode: "WRONG" }, `10.0.${attempt >> 8}.${attempt & 255}`))).status).toBe(401);
     expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.61"))).status).toBe(429);
@@ -474,6 +522,7 @@ describe("POST /api/session", () => {
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
     vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
+    vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "*");
     // Fill the 5,000-address table with wrong tries 9.5 minutes ago, so each is still counted while
     // the 200-try window across all addresses (opened by an earlier try) has already passed.
     const opened = Date.now() - 10.5 * 60_000;
