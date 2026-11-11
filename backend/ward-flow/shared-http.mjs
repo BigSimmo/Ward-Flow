@@ -58,7 +58,7 @@ const SCREEN = "x-ward-screen";
  * "bed-meeting" for these only; `tests/ward-live-audit-hardening.test.ts` keeps them in step). Any
  * other desk's "tv" header is logged as the list it really is.
  */
-export const TV_BOARD_ROLES = new Set(["coordinator", "bed_manager", "ward"]);
+const TV_BOARD_ROLES = new Set(["coordinator", "bed_manager", "ward"]);
 /** Messages the pg pool and the workspace store use when the database, not the code, failed. */
 const STORAGE_MESSAGES =
   /^(?:Connection terminated|timeout exceeded when trying to connect|Client has encountered a connection error|Cannot use a pool after calling end|Shared schema unavailable|Workspace data mode mismatch|Stored workspace is incompatible)/;
