@@ -9,3 +9,5 @@ Why it changed: Movements gained Print and spreadsheet Export (D-145 item 3). Th
 Trim tried: the export code only runs on a tap but is small and shares the existing download helper; splitting it into a lazy chunk would add more than it saves. No other safe trim was found.
 
 Later the same day (merged with main `c21e99a`, which had raised every route): the same two raises applied on top of main's values, so movements is 610.9 + 0.5 = 611.4 and statistics 633.6 + 0.3 = 633.9. Every other route takes main's value.
+
+Then (PR head `9c7302e`, merged with main `c21e99a`): ED `/ward-flow/ed` raised 536.3 to 536.6. Hosted CI measured 536.3 KB, level with the limit after rounding; main alone could not be measured because of the dependency updates. The growth is most likely the shared helpers from D-145 item 2 (typed-time reader, pull-hold lapse check) that the ED screen loads; this was not measured route by route. Same trim reasoning as above.
