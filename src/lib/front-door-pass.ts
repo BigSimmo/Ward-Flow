@@ -113,10 +113,30 @@ function fromBase64Url(value: string): Uint8Array | null {
   }
 }
 
+/**
+ * Imported signing keys, one per secret, so a request does not import the same key again. Only a
+ * few secrets are ever live at once (the current one, and the old one during a change), so the
+ * oldest is dropped past that. A failed import is not kept.
+ */
+const signingKeys = new Map<string, Promise<CryptoKey>>();
+const SIGNING_KEYS_KEPT = 4;
+
+function signingKey(secret: string): Promise<CryptoKey> {
+  let key = signingKeys.get(secret);
+  if (!key) {
+    key = crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    const imported = key;
+    imported.catch(() => {
+      if (signingKeys.get(secret) === imported) signingKeys.delete(secret);
+    });
+    signingKeys.set(secret, imported);
+    while (signingKeys.size > SIGNING_KEYS_KEPT) signingKeys.delete(signingKeys.keys().next().value as string);
+  }
+  return key;
+}
+
 async function sign(secret: string, data: string): Promise<string> {
-  const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, [
-    "sign",
-  ]);
+  const key = await signingKey(secret);
   return toBase64Url(new Uint8Array(await crypto.subtle.sign("HMAC", key, encoder.encode(data))));
 }
 
