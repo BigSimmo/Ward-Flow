@@ -1,4 +1,5 @@
 // Feature item 15 (D-134): interpreter, Aboriginal liaison and advocacy service lines at arrival.
+import { supportNotificationsForDesk } from "../src/components/ward-management/ward-access-state";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -227,5 +228,36 @@ describe("the ED arrival checklist card", () => {
     expect(row.getByRole("button", { name: "Record done: interpreter booked" })).toBeTruthy();
     expect(card.querySelector('[data-item="mhas_told"]')).toBeNull();
     expect(card.querySelector('[data-item="aboriginal_liaison_offered"]')).toBeNull();
+  });
+});
+
+describe("what an emergency department desk is sent (CodeRabbit, #1609)", () => {
+  const record = (id: string, party: string, subjectId: string, occasion = "admission") => ({
+    id,
+    occasion,
+    subjectId,
+    party,
+  });
+  const desk = (movements: { id: string; closure?: unknown }[]) => ({
+    coordinator: false,
+    unitIn: () => false,
+    wholeNetwork: false,
+    role: "ed" as const,
+    movements,
+    wholeStay: () => false,
+  });
+
+  it("sees the advocacy notice on its own open move, so its checklist shows it done", () => {
+    const seen = supportNotificationsForDesk(
+      [
+        record("SN-1", "mhas", "WF-A"),
+        record("SN-2", "carer", "WF-A"),
+        record("SN-3", "mhas", "WF-OTHER"),
+        record("SN-4", "mhas", "WF-ARRIVED"),
+        record("SN-5", "mhas", "AD-1", "discharge"),
+      ],
+      desk([{ id: "WF-A" }, { id: "WF-ARRIVED", closure: { outcome: "arrived" } }]),
+    );
+    expect(seen.map((item) => item.id)).toEqual(["SN-1"]);
   });
 });

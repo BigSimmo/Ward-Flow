@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 
-import { Button, Field, StatusGlyph, TIME_FIELD_ERROR, TimeField, cx } from "@/components/wf";
+import { Button, Field, Segmented, StatusGlyph, TIME_FIELD_ERROR, TimeField, cx } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { calendarDateOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
@@ -20,6 +20,14 @@ import {
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 
 import styles from "./ward-under-18-notice.module.css";
+
+/** The day of the notification, so a time late yesterday is not read as later than now (CodeRabbit, #1609). */
+type NotifiedDay = "0" | "1" | "2";
+const DAY_ITEMS: { id: NotifiedDay; label: string }[] = [
+  { id: "0", label: "Today" },
+  { id: "1", label: "Yesterday" },
+  { id: "2", label: "2 days ago" },
+];
 
 /**
  * Feature item 4 (Josh, 11 Nov 2026): the under 18 on an adult ward notice on the bed record, the
@@ -42,6 +50,8 @@ export function WardUnder18Notice({
   const role = wardChromeRole(usePathname() ?? "");
   const [time, setTime] = useState("");
   const [typed, setTyped] = useState("");
+  // Nothing is pre-selected (item 4): no day picked reads as today, as the hint says.
+  const [day, setDay] = useState<NotifiedDay | "">("");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const { runRecorded } = useUndoableStep({ dispatch, rejections, now, routeRole: role, onMessage: setMessage });
@@ -53,7 +63,7 @@ export function WardUnder18Notice({
 
   function save() {
     if (!admission) return;
-    const notifiedAt = time === "" ? null : clockTextOnDay(time, 0, now);
+    const notifiedAt = time === "" ? null : clockTextOnDay(time, day === "" ? 0 : Number(day), now);
     if (notifiedAt === null) {
       setError(typed.trim() === "" ? "Type the time the Chief Psychiatrist was notified" : TIME_FIELD_ERROR);
       return;
@@ -76,6 +86,7 @@ export function WardUnder18Notice({
         const clear = () => {
           setTime("");
           setTyped("");
+          setDay("");
         };
         if (completion && "then" in completion)
           void completion.then((result) => {
@@ -116,7 +127,7 @@ export function WardUnder18Notice({
         >
           <Field
             label={notice.notifiedAt === undefined ? CHIEF_PSYCHIATRIST_NOTIFIED_LABEL : "Change the notified time"}
-            hint="Optional · HH:MM"
+            hint="Optional · HH:MM · today unless you pick a day"
             error={error ?? undefined}
           >
             <TimeField
@@ -126,6 +137,7 @@ export function WardUnder18Notice({
               data-testid="ward-under-18-notified-time"
             />
           </Field>
+          <Segmented<NotifiedDay> label="Day notified" items={DAY_ITEMS} value={day as NotifiedDay} onChange={setDay} />
           <Button type="submit" variant="sec" size="sm" className={styles.save}>
             Save
           </Button>

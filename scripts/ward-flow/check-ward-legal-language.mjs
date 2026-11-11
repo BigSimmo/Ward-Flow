@@ -147,7 +147,8 @@ export const ALLOWED_CONTEXTS = [
   "not a legal",
   "never a legal",
   // D-134 item 9 (Josh, 11 Nov 2026): his exact item 4 notice tells staff to check the Act, which is
-  // the opposite of the app claiming authority. Only this wording is let through.
+  // the opposite of the app claiming authority. Like every entry here, a match skips its whole
+  // source line, so the sentence sits alone in its own constant (`ward-under-18-adult-ward.ts`).
   "check the mental health act 2014 requirements for a child on an adult ward",
 ];
 

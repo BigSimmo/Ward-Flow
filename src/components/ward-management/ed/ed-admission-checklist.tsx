@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import { Badge, Button, Field, TextInput } from "@/components/wf";
 import { admissionChecklist, type AdmissionChecklistItem } from "@/components/ward-management/ward-admission-checklist";
@@ -103,6 +103,8 @@ function AdvocacyToldForm({
   const raise = useWardRaise("ed");
   const [open, setOpen] = useState(false);
   const [who, setWho] = useState("");
+  // Each open or edit bumps the draft, so a save that finishes late never closes a newer draft.
+  const draftRef = useRef(0);
   // Audit CS3-01: an open form is checked against the board it opened on.
   useHoldOpenForm(open);
   if (!open)
@@ -113,6 +115,7 @@ function AdvocacyToldForm({
         size="sm"
         aria-label="Record told: Mental Health Advocacy Service"
         onClick={() => {
+          draftRef.current += 1;
           setWho("");
           setOpen(true);
         }}
@@ -127,14 +130,22 @@ function AdvocacyToldForm({
       onSubmit={(event) => {
         event.preventDefault();
         if (who.trim() === "") return;
-        void raise("RECORD_SUPPORT_NOTIFICATION", {
+        const submitted = draftRef.current;
+        // Close only once the record is accepted, so a refused save keeps what was typed (CodeRabbit, #1609).
+        const closeIfAccepted = (status: string) => {
+          if (status !== "accepted" || draftRef.current !== submitted) return;
+          draftRef.current += 1;
+          setOpen(false);
+        };
+        const completion = raise("RECORD_SUPPORT_NOTIFICATION", {
           occasion: target.occasion,
           movementId,
           party: "mhas",
           outcome: "told",
           who,
         });
-        setOpen(false);
+        if (completion && "then" in completion) void completion.then((result) => closeIfAccepted(result.status));
+        else if (completion) closeIfAccepted(completion.status);
       }}
     >
       <Field label="Who was told">
@@ -142,7 +153,10 @@ function AdvocacyToldForm({
           value={who}
           maxLength={SUPPORT_NOTIFICATION_WHO_MAX_CHARACTERS}
           autoComplete="off"
-          onChange={(event) => setWho(event.target.value)}
+          onChange={(event) => {
+            draftRef.current += 1;
+            setWho(event.target.value);
+          }}
         />
       </Field>
       <div className={styles.formActions}>
