@@ -797,6 +797,11 @@ export function WardGlobalSearch({
     setActiveIndex(-1);
     setHoverIndex(-1);
   }
+  // D-150: the scripted clock is the public demo's; the signed-in site runs on real Perth time.
+  const advanceClock = () => {
+    if (wardFlow) wardFlow.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: now ?? wardFlow.now, minutes: 15 });
+    close();
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -1270,20 +1275,7 @@ export function WardGlobalSearch({
                 onToggleShortcuts={() => setShowShortcuts((previous) => !previous)}
                 savedHere={myViews.savedHere}
                 onToggleSaveView={myViews.toggleHere}
-                onAdvanceClock={
-                  wardFlow?.shared?.enabled
-                    ? undefined
-                    : () => {
-                        if (wardFlow)
-                          wardFlow.dispatch({
-                            type: "ADVANCE_CLOCK",
-                            role: "demo",
-                            now: now ?? wardFlow.now,
-                            minutes: 15,
-                          });
-                        close();
-                      }
-                }
+                onAdvanceClock={wardFlow?.shared?.enabled ? undefined : advanceClock}
                 onSwitchDesk={(role, href) => {
                   navigateWithDirtyGuard(() => {
                     if (deskSwitch.shared) {
