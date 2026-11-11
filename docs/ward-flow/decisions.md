@@ -1686,7 +1686,7 @@ is inferred.
 
 ## D-135. Batch 4, outages and pilot control: pack age and plan answers (10 November 2026)
 
-- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, choosing "Older than 24 hours" on a decision card in the Batch 4 thread (17:04 UTC), and saying "Go ahead with all your recommendations" for the feature build plan in the project chat (17:04 UTC). D-132 is claimed by open PR #1601. D-133 is claimed by open PR #1606 (Batch 1). D-134 is reserved for the Batch 2 PR, which was not open when this entry was written in PR #1603.
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, choosing "Older than 24 hours" on a decision card in the Batch 4 thread (17:04 UTC), and saying "Go ahead with all your recommendations" for the feature build plan in the project chat (17:04 UTC). D-132 is claimed by open PR #1601. D-133 is claimed by open PR #1606 (Batch 1). D-134 is claimed by open PR #1608 (Batch 2).
 - **Decision:**
   1. **Outage pack age (item 24):** a ward's downtime pack counts as old once its last print or PDF save is more than 24 hours ago (`PACK_OLD_AFTER_MINUTES`, clinical-values.md). The server keeps only the time and ward of each print, never the pack.
   2. **Site switch-off (item 20):** a fixed allow-list says which features can be switched off at one site. Safety notices, legal times, ruling guards, role access, the AWOL bed hold review, ward closure and the demo reset can never be switched off.
