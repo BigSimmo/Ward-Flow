@@ -113,11 +113,21 @@ export function overBudget(measured, budgets) {
 // Two builds of the same main measured 572.7 and 573.7 KB in CI on 4 November 2026.
 export const MAIN_TOLERANCE_KB = 1.5;
 
+// The most a route may stand over its own budget and still pass as inherited, measured against the
+// fixed budget rather than against main. Without it the tolerance compounded: each PR was compared
+// with a main that already held the previous PR's 1.5 KB, so 20 PRs in a row could add 30 KB with
+// every build green (performance audit WF-03, 11 November 2026). Twice the tolerance leaves room for
+// main's own build noise plus this PR's. A PR that measures no bigger than main still passes, so a
+// main that drifted further is never pinned on a PR that did not grow it.
+export const MAX_INHERITED_OVERAGE_KB = 2 * MAIN_TOLERANCE_KB;
+
 /**
  * Decides a pull request whose merged result is over budget, given what main alone measured.
  * A route fails when the PR pushed it over (main was within budget) or grew it further than
  * MAIN_TOLERANCE_KB past an already-over main. A route that was over only because main already was
  * is reported and passes: main's own breakage is tracked by the budget trim issue, not pinned on every other PR.
+ * Growth within the tolerance passes only while the route stays within MAX_INHERITED_OVERAGE_KB of its
+ * budget, so the tolerance cannot stack PR after PR; a PR measuring no bigger than main always passes.
  * No main measurement (main failed to build or measure) fails every over route, as before.
  */
 export function judgeAgainstMain(prMeasured, mainMeasured, budgets) {
@@ -127,7 +137,9 @@ export function judgeAgainstMain(prMeasured, mainMeasured, budgets) {
   for (const entry of over) {
     const main = mainMeasured?.[entry.route];
     const mainKnown = typeof main === "number" && Number.isFinite(main) && main > 0;
-    if (mainKnown && main > entry.limit && entry.kb <= main + MAIN_TOLERANCE_KB) inherited.push({ ...entry, main });
+    const withinNoise =
+      entry.kb <= main || (entry.kb <= main + MAIN_TOLERANCE_KB && entry.kb <= entry.limit + MAX_INHERITED_OVERAGE_KB);
+    if (mainKnown && main > entry.limit && withinNoise) inherited.push({ ...entry, main });
     else failing.push({ ...entry, main: mainKnown ? main : undefined });
   }
   return { failing, inherited };
