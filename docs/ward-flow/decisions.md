@@ -1695,7 +1695,7 @@ is inferred.
 
 ## D-142. Batch 4: design review and all twelve answers approved, D-80 amended for site features (11 November 2026)
 
-- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, writing "Go ahead with all recommendations now for me." in the Batch 4 thread (02:21 UTC), and confirming in the project chat that every thread should go ahead with all its recommendations (02:22 UTC). D-136 is claimed by open PR #1605, D-138 is claimed by open PR #1604 and D-139 is claimed by open PR #1600. D-140 and D-141 are claimed by open PR #1606 (Batch 1). D-137 is reserved for the Batch 5 PR, which was not open when this entry was written in PR #1603.
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, writing "Go ahead with all recommendations now for me." in the Batch 4 thread (02:21 UTC), and confirming in the project chat that every thread should go ahead with all its recommendations (02:22 UTC). D-136 is claimed by open PR #1605, D-138 is claimed by open PR #1604 and D-139 is claimed by open PR #1600. D-140 and D-141 are claimed by open PR #1606 (Batch 1). D-137 is claimed by open PR #1607 (Batch 5).
 - **Decision:**
   1. **Design review (D-74):** the Batch 4 screens are built as drawn in the review page.
   2. **Site switch-off (item 20):** the allow-list holds five features (bed meeting TV, Top 25 criteria-led discharge, referral opened receipts, referral information needs and Help ask). The card "Features at this site" sits in the access admin's Access tab. One tap switches a feature, with Undo.
