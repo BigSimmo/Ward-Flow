@@ -3331,9 +3331,9 @@
     "lane": "expected",
     "nodes": ["personLeaves", "bedReleased", "end0", "end1", "end2", "end3", "end4", "end5", "end6", "end7"],
     "roles": ["ward", "coordinator"],
-    "does": "Records physical departure from an occupied stay and retains the departed admission. It is distinct from the protected revision-checked RECORD_PATIENT_DISCHARGE path.",
+    "does": "Records physical departure from an occupied stay and retains the departed admission. The person may still be on site waiting for transport. It is distinct from the protected revision-checked RECORD_PATIENT_DISCHARGE path.",
     "needs": "The caller names the stay’s ward and a listed destination at a finite time no earlier than arrival. No active transit, restrictive-practice or open return-movement conflict. An involuntary community/against-advice departure needs a recorded permitted paper transition.",
-    "changes": "Ends the admission and raises the ward's empty and allocatable counts by one (only the timestamps move if this person's release had already been completed), gives back a locked bed, adjusts the sex mix, ends any leave bed, and completes this person's pending bed release.",
+    "changes": "Ends the admission and raises the ward's empty and allocatable counts by one (only the timestamps move if this person's release had already been completed), gives back a locked bed, adjusts the sex mix, ends any leave bed, and completes this person's pending bed release. With awaitingTransport it also puts them on the Waiting for transport list until collected, and the freed bed is ready at once.",
     "reasons": [],
     "refuses": [
       {

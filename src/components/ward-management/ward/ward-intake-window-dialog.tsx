@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import { Dialog, Field, StateLine, TextInput } from "@/components/wf";
 
@@ -32,6 +32,8 @@ export function WardIntakeWindowDialog({
   const [toText, setToText] = useState("");
   // A refused or unconfirmed save keeps the dialog and both typed times, and says why here.
   const [refused, setRefused] = useState<string | null>(null);
+  // Counts edits and saves, so an earlier save that lands late cannot close over newer typing.
+  const draft = useRef(0);
   const id = useId();
   const { dispatch, rejections } = useWardFlowSelect("dispatch", "rejections");
   // The live clock stamps the step; the page clock may be paused, kept for display only.
@@ -48,6 +50,7 @@ export function WardIntakeWindowDialog({
 
   const send = (next: { from: Instant; to: Instant } | null) => {
     setRefused(null);
+    const sent = ++draft.current;
     run(
       {
         type: "SET_INTAKE_WINDOW",
@@ -63,7 +66,9 @@ export function WardIntakeWindowDialog({
           : `${unit.name}: tonight's intake hours cleared.`,
         refusalShownInline: true,
         onRefused: (why) => setRefused(refusalReasonText(why)),
-        onAccepted: onClose,
+        onAccepted: () => {
+          if (draft.current === sent) onClose();
+        },
       },
     );
   };
@@ -96,7 +101,10 @@ export function WardIntakeWindowDialog({
             autoComplete="off"
             placeholder="HH:MM"
             value={fromText}
-            onChange={(event) => setFromText(event.target.value)}
+            onChange={(event) => {
+              draft.current += 1;
+              setFromText(event.target.value);
+            }}
             data-testid="ward-intake-window-from"
           />
         </Field>
@@ -106,7 +114,10 @@ export function WardIntakeWindowDialog({
             autoComplete="off"
             placeholder="HH:MM"
             value={toText}
-            onChange={(event) => setToText(event.target.value)}
+            onChange={(event) => {
+              draft.current += 1;
+              setToText(event.target.value);
+            }}
             data-testid="ward-intake-window-to"
           />
         </Field>

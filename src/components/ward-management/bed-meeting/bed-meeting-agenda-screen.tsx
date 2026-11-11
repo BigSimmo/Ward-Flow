@@ -49,7 +49,7 @@ import { referralQueueOrder } from "../ward-referrals";
 import { healthServiceAcronym, movementBelongsToService, unitHealthService } from "../ward-service-scope";
 import { siteByCode } from "../ward-sites";
 import { unitHref } from "../shell/ward-facade";
-import { useCanOpenHref } from "../shell/ward-access";
+import { useCanOpenHref, useDeskInScope } from "../shell/ward-access";
 import { referralBoardHref } from "../ed/ed-bed-search-step";
 import { askingForShort, waitWords } from "../referrals/referral-board-parts";
 import { WardPrototypeFooter } from "../shell/ward-prototype-footer";
@@ -248,11 +248,15 @@ function BedMeetingAgenda() {
       })
     : allSections;
   const fullSummary = meetingActionSummary(scopedMovements, scopedAdmissions, now);
-  // Item 6 (10 Nov 2026): beds, not people, so only the unfiltered agenda lists them. A ward the desk
-  // cannot open (another site's, for a site bed manager) is listed without its Open ward link.
+  // Item 6 (10 Nov 2026): beds, not people, so only the unfiltered agenda lists them. Decision 46: a
+  // site bed manager's agenda is its own site's, so another site's beds are left out; a listed ward the
+  // desk still cannot open shows no Open ward link.
   const canOpenHref = useCanOpenHref();
+  const deskInScope = useDeskInScope();
   const closedReview = closedBedsReviewSection(
-    service === null ? units : units.filter((unit) => unitHealthService(unit) === service),
+    units.filter(
+      (unit) => (service === null || unitHealthService(unit) === service) && (!deskInScope || deskInScope(unit.id)),
+    ),
     now,
   );
   // Offer every group the control can filter: the agenda lists, the actions from earlier meetings
