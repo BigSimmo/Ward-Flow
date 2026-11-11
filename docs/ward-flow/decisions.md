@@ -155,12 +155,15 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-130](#d-130-audit-follow-ups-every-remaining-recommendation-approved-10-november-2026)                                                               | Audit follow-ups: every remaining recommendation approved                              | Active                                           |
 | [D-131](#d-131-hard-case-demo-data-allowed-and-the-movement-diagram-follows-the-engine-10-november-2026)                                                | Hard-case demo data allowed, and the movement diagram follows the engine               | Active                                           |
 | [D-132](#d-132-audit-fixes-group-1-docs-and-ci-guards-10-november-2026)                                                                                 | Audit fixes group 1: docs and CI guards; Claude-authored sensitive changes warn        | Active                                           |
+| [D-133](#d-133-batch-1-ed-and-referral-flow-three-answers-10-november-2026)                                                                             | Batch 1: escalation record, 30 min not opened, home team heads-up                      | Active                                           |
 | [D-134](#d-134-ward-arrival-and-beds-batch-how-to-hold-advocate-line-night-list-and-the-feature-freeze-10-november-2026)                                | Ward arrival and beds batch: held split, advocate line, night list, feature freeze     | Active                                           |
 | [D-135](#d-135-batch-4-outages-and-pilot-control-pack-age-and-plan-answers-10-november-2026)                                                            | Batch 4, outages and pilot control: pack age and plan answers                          | Active                                           |
 | [D-136](#d-136-feature-batch-3-shift-change-and-follow-up-two-signed-values-10-november-2026)                                                           | Feature batch 3: two signed values (7-day diversion return, 30-minute handover list)   | Active                                           |
 | [D-137](#d-137-feature-build-batch-5-count-leak-first-tv-change-mark-and-qr-library-10-november-2026)                                                   | Feature build batch 5: count leak first, TV change mark 15 minutes, QR library         | Active                                           |
 | [D-138](#d-138-phone-alert-urgency-by-kind-10-november-2026)                                                                                            | Phone alert urgency by kind                                                            | Active                                           |
 | [D-139](#d-139-phone-statistics-ward-list-a-to-z-and-leave-return-times-as-typed-10-november-2026)                                                      | Phone Statistics ward list A to Z, and leave return times as typed                     | Active                                           |
+| [D-140](#d-140-feature-list-adopted-and-wave-1-begins-10-november-2026)                                                                                 | Feature list adopted, and Wave 1 begins                                                | Active                                           |
+| [D-141](#d-141-batch-1-ed-and-referral-flow-design-approved-with-eleven-answers-11-november-2026)                                                       | Batch 1 design approved, with eleven answers                                           | Active                                           |
 | [D-142](#d-142-batch-4-design-review-and-all-twelve-answers-approved-d-80-amended-for-site-features-11-november-2026)                                   | Batch 4: design review and all twelve answers approved, D-80 amended for site features | Active                                           |
 | [D-143](#d-143-mhert-is-mherl-in-the-glossary-smhmr-deferred-11-november-2026)                                                                          | MHERT is MHERL in the glossary; SMHMR deferred                                         | Active                                           |
 | [D-144](#d-144-chip-rows-move-only-sideways-on-a-phone-11-november-2026)                                                                                | Chip rows move only sideways on a phone                                                | Active                                           |
@@ -1712,6 +1715,16 @@ is inferred.
 - **Why:** these were the confirmed, low-risk audit findings; failing agent commits now would block almost every engine or legal PR, because no approval route exists yet.
 - **Boundary:** synthetic data only. No clinical rule, signed value or release changes. D-82 (5 KB phone limit raises) and D-107 (no merge queue) stand.
 
+## D-133. Batch 1 (ED and referral flow): three answers (10 November 2026)
+
+- **Date:** 10 November 2026, 17:02 UTC (1:02 AM AWST on 11 November). **Decided by:** Josh, on three decision cards in the Ward Flow project thread "Build ED and referral flow features", after asking at 17:00 UTC for Batches 1 and 2 of the feature build plan (Claude Doc "Ward Flow feature build plan: 27 chosen items") to begin. That request is his go-ahead for these items despite D-128 item 9. D-140 is in this PR.
+- **Decision:**
+  1. **Escalation call outcomes (item 3):** a shared record everyone can see (Agreed a plan, No bed, No answer, Left a message), not a browser-only log like the Tools call log.
+  2. **Referral not opened yet (item 16):** a sent referral that no ward has opened shows "Not opened yet" after 30 minutes. Signed into clinical-values.md.
+  3. **Home team heads-up (item 46):** an open community team episode's team is told the ED name and arrival time only, and nothing for closed episodes. No reason, diagnosis, risk or free text.
+- **Why:** item 3 exists to show that escalation was done, which a browser-only log can't; 30 minutes lets a busy ward look before chasing; the home team already holds the open episode.
+- **Boundary:** synthetic data only. Item 46 with real data still needs the D-87 privacy review. Approves no merge or release. D-74 still applies to anything drawn.
+
 ## D-134. Ward arrival and beds batch: how to hold, advocate line, night list and the feature freeze (10 November 2026)
 
 - **Date:** 10 November 2026, about 1:02 AM to 1:08 AM AWST on 11 November (17:02 to 17:08 UTC on 10 November). **Decided by:** Josh, on two decision cards in the Ward Flow project thread "Build ward arrival and bed features", then "Yes to all recommendations please" to the thread's numbered questions. Numbered D-134 because the numbers before it were taken first. D-133 is claimed by open PR #1606.
@@ -1787,6 +1800,37 @@ is inferred.
 - **Unchanged:** the time absent without leave still shows as a running figure, because it counts from when the absence was recorded, not from a typed return time. Leave lists still order by return time.
 - **Why:** a list that puts the most ready beds first reads as "send them here" (D-126). A return time comes from the leave form, which staff read against paper; a running figure beside it is a second, unchecked number, the reason D-93 exists.
 - **Boundary:** D-71 and D-93 stand. Order and wording only; no figure, clinical value or rule changes. Synthetic data only. Approves no merge or release.
+
+## D-140. Feature list adopted, and Wave 1 begins (10 November 2026)
+
+- **Date:** 10 November 2026, 10:09 PM AWST (14:09 UTC). **Decided by:** Josh, in the Ward Flow project thread "Perfect the ranked feature list": "Go ahead with all your recommendations", answering the six questions in the reviewed feature list (Claude Doc "Ward Flow feature list: reviewed and re-ranked", 10 November 2026). Numbered D-140 because D-132 to D-139 were taken first; D-133 is in the same PR. D-134 is claimed by open PR #1608. D-135 is claimed by open PR #1603. D-136 is claimed by open PR #1605. D-137 is claimed by open PR #1607. D-139 is claimed by open PR #1600.
+- **Decision:**
+  1. **Working list:** the reviewed list (39 build items in four waves, pilot items P1 to P3, ruling items R1 to R6) replaces the order in the 10 November feature handover. Each item is re-checked against `main` before it is built.
+  2. **Two-point ID:** rows, cards and toasts on signed-in screens show age and sex as recorded and the full UMRN beside the full name, the same UMRN format as D-113, and mark same-name clashes on a list. Never on the wall TV. Built in a held PR, after PR #1599.
+  3. **A person under 18 placed on an adult ward:** treated as clinical. Nothing is built until Josh gives the legal duty and wording.
+  4. **Left the ward, waiting for transport:** the bed counts as Ready as soon as the ward marks the person gone. There is no cleaning step; "Bed cleaned tap" stays on the do-not-build list.
+  5. **Wave 1:** items 1 to 7 are built in one thread, starting with the role-scope count leak (item 1); items 2 and 4 go in that thread's one held PR.
+  6. **Bed round:** wards stay in the fixed order (D-126); wards that have not answered "Please confirm your beds" get a tag and a filter, and are not moved to the top.
+- **Why:** the code check found several listed items already built, and six needed changes to stay within D-71, D-113, D-126 and the do-not-build list.
+- **Boundary:** synthetic data only. Changes no signed clinical value; approves no release. D-74 still applies to anything drawn.
+
+## D-141. Batch 1 (ED and referral flow) design approved, with eleven answers (11 November 2026)
+
+- **Date:** 11 November 2026, 02:19 UTC (10:19 AM AWST). **Decided by:** Josh, in the Ward Flow project thread "Build ED and referral flow features": "Approve all your recommendations", answering the eleven questions on the Batch 1 design review page (artifact "Batch 1 design review", v1). D-133 and D-140 are in the same PR.
+- **Decision:**
+  1. **Design:** Batch 1 (items 3, 9, 10, 16, 26, 27 and 46) is approved as built (D-74).
+  2. **New features:** Josh's request to begin Batches 1 and 2 (10 November, 17:00 UTC) overrides D-128 item 9 for Batch 1.
+  3. **Who to call:** desktop and tablet only; phone shows no wait step, so it has no link.
+  4. **Step 1 contact:** the service bed coordinator, as one contact, rather than each ward's nurse in charge.
+  5. **Escalation record:** keeps only the latest call outcome for each step.
+  6. **Privacy guard:** D-133 covers the home team heads-up's one extra reader of the patient link in the D-14 guard.
+  7. **Open episode:** the patient record's community list stands in for a stored community episode until one exists.
+  8. **Demo seed:** one unopened referral to a named ward and one with a ward's ask are added, so items 10 and 16 show without set-up.
+  9. **Brought by:** a new ED arrival can be marked "Brought by: Police" or "Ambulance", nothing pre-selected, so crew times can be recorded for it.
+  10. **Crews line on Home:** one total line across departments, not one per department tile.
+  11. **Heads-up identity:** the home team heads-up shows the UMRN, and still no name, reason, diagnosis, risk or free text.
+- **Also fixed:** the white strip between the ED board's hero and its Board tabs (Josh's screenshot, 11 November 2026).
+- **Boundary:** synthetic data only. Changes no signed clinical value. Item 46 with real data still needs the D-87 privacy review. Approves no release.
 
 ## D-142. Batch 4: design review and all twelve answers approved, D-80 amended for site features (11 November 2026)
 

@@ -27,7 +27,7 @@ import {
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { WardPrototypeFooter } from "../shell/ward-prototype-footer";
 import { wardPlaceLookup } from "../ward-access-places";
-import { formatInstantWithDay, MINUTES_PER_DAY, type Instant } from "../ward-clock";
+import { formatInstantWithDay, MINUTES_PER_DAY, pastInstantFromClockText, type Instant } from "../ward-clock";
 import type { WardFlowRole } from "../ward-flow-roles";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
@@ -41,7 +41,6 @@ import { useWardFormSave, type WardFormSave } from "../use-ward-form-save";
 import {
   RESTRICTIVE_PRACTICES,
   WARD_INCIDENT_CATEGORIES,
-  pastInstantFromClockText,
   recentIncidents,
   restrictivePracticeLabel,
   seclusionRoomView,

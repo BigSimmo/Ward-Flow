@@ -156,7 +156,27 @@ describe("E-03: a legal status change after a bed is held is re-checked before c
 describe("E-04: a referral with no recorded legal status needs an authorised bed", () => {
   it("refuses RF-RD06 into an unauthorised ward without a reason", () => {
     expect(unit(fresh(), "sjgs-adult-open").authorised).toBe(false);
-    const accept = send(fresh(), {
+    // D-141 (11 Nov 2026): the seed now sends RF-RD06 to one named ward (the SCGH Mental Health
+    // Unit), so a different ward would be refused as not addressed. This rule is about legal status,
+    // so the test opens the ward copy to any ward again, as RF-RD06 was seeded before.
+    const seeded = fresh();
+    const openToAnyWard: WardFlowState = {
+      ...seeded,
+      referrals: seeded.referrals.map((referral) =>
+        referral.id !== "RF-RD06"
+          ? referral
+          : {
+              ...referral,
+              destinations: referral.destinations.map((arm) => {
+                if (arm.destination.kind !== "psychiatric_ward") return arm;
+                const destination = { ...arm.destination };
+                delete destination.unitId;
+                return { ...arm, destination };
+              }),
+            },
+      ),
+    };
+    const accept = send(openToAnyWard, {
       type: "ACCEPT_REFERRAL",
       role: "coordinator",
       referralId: "RF-RD06",

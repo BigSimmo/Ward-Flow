@@ -899,6 +899,14 @@ export type Movement = MovementBase & {
   }[];
   /** How the patient reached the department. Police attendance is a real and invisible pressure. */
   arrivalMode?: "self" | "ambulance" | "police";
+  /**
+   * Item 9 (police and ambulance handover times, D-93): the crew's times as typed from the paper by
+   * `RECORD_CREW_TIMES`, only for a police or ambulance arrival. Each is absent until typed and is
+   * never filled in or worked out. A record saved before item 9 has none of them.
+   */
+  crewArrivedAt?: Instant;
+  crewHandedOverAt?: Instant;
+  crewReleasedAt?: Instant;
   /** When a pulled bed lapses. A pull cannot expire without a time to expire at. */
   pullExpiresAt?: Instant;
   /**
@@ -969,6 +977,12 @@ export type Movement = MovementBase & {
    * out from them and the ED list keeps its own order.
    */
   psychReview?: PsychReview;
+  /**
+   * Escalation calls (item 3, D-133): the latest recorded call per ED wait step, with its fixed
+   * outcome, time and desk (`RECORD_ESCALATION_CALL`). Never a person, never typed text. The queue
+   * order, the steps and their hours do not read it.
+   */
+  escalationCalls?: import("@/components/ward-management/escalation/escalation-call-record").EscalationCallRecord[];
   /**
    * Earlier examination records this movement has outgrown, oldest first. Owner item 7
    * (2026-09-17): a repeat examination is a NEW record, not an edit to the old one, so the

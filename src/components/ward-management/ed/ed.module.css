@@ -34,6 +34,9 @@
    * it follows the v6 day and night themes without a second copy of each rule. Soft status tints
    * map to plain surfaces: colour is a glyph or dot, never a fill. */
   --ground: var(--wf-canvas);
+  /* The hero's lip and the folder sheet take this page's ground, so no white strip sits between the
+   * slate hero and the Board tabs (Josh, 11 Nov 2026). Other screens set the same (on-call, referrals). */
+  --wf-page-canvas: var(--ground);
   --surface: var(--wf-surface);
   --surface-2: var(--wf-surface-2);
   --surface-3: var(--wf-hover);

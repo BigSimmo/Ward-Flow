@@ -29,6 +29,7 @@ import { alternativesConsideredError } from "./referrals/referral-alternatives";
 import { REFERRAL_INFORMATION_NEED_IDS } from "./referrals/referral-information-needs";
 import { REFERRAL_CONTACT_OUTCOME_IDS, REFERRAL_OWNER_DESKS } from "./referrals/referral-owner-and-calls";
 import { REFERRAL_COMMITMENT_STEP_IDS } from "./referrals/referral-commitments";
+import { storedEscalationCalls } from "./escalation/escalation-calls-schema";
 import {
   MOVEMENT_STAGES,
   COHORTS,
@@ -100,7 +101,6 @@ import { storedCarerCallbacks, storedHandedItems } from "@/components/ward-manag
 export function typedCriterionNotKept(n: number): string {
   return n === 1 ? TYPED_TEXT_NOT_KEPT : `${TYPED_TEXT_NOT_KEPT} (${n})`;
 }
-
 const CRITERION_STAND_INS: ReadonlySet<string> = new Set(
   Array.from({ length: PATIENT_SPECIFIC_CRITERIA_MAX }, (_, index) => typedCriterionNotKept(index + 1)),
 );
@@ -116,11 +116,9 @@ function isDeviceCopyDischargeCriteriaRecord(value: unknown): value is Discharge
 // Restore validates nested values, collection shapes, then cross-row consistency in order.
 // `nested` refuses undefined, so optional fields must be absent. Strict identity/care records
 // refuse unknown keys to prevent restoring free text.
-
 type RecordValue = Record<string, unknown>;
 const object = (v: unknown): v is RecordValue => typeof v === "object" && v !== null && !Array.isArray(v);
 const fits = (schema: z.ZodMiniType, value: unknown) => schema.safeParse(value).success;
-
 // zod 4 numbers refuse NaN and both infinities, and `z.int()` is a safe integer.
 const finite = z.number();
 const maybeAt = z.optional(finite); // Psychiatry review and ward wait list instants (9 Nov 2026).
@@ -185,6 +183,8 @@ const NESTED_KEY_RULES = new Map<string, z.ZodMiniType>([
   ["medicalClearance", medicalClearanceRule],
   ["transportNeed", z.looseObject({ needed: bool, at: finite })],
   ["psychReview", z.strictObject({ requestedAt: finite, registrarSeenAt: maybeAt, consultantSeenAt: maybeAt })],
+  ...["crewArrivedAt", "crewHandedOverAt", "crewReleasedAt"].map((key) => [key, maybeAt] as const), // Never null.
+  ["escalationCalls", storedEscalationCalls], // Escalation calls (D-133): fixed lists, a time and a desk.
   ["closure", closureRule],
   ...[
     "legalClock",

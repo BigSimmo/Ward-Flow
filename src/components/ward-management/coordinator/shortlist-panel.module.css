@@ -798,6 +798,46 @@
   color: var(--wf-ink-2);
 }
 
+/* More fit details (item 26): a quiet text toggle under the card, aligned with the card's words.
+   Explain only (D-71), so it takes no tone, tint or order. */
+.fitMore {
+  display: grid;
+  justify-items: start;
+  padding-left: 2.25rem;
+}
+
+.fitMore .fitMoreToggle {
+  min-height: var(--wf-target);
+  padding: 0 var(--wf-s-1);
+  border: 0;
+  border-radius: var(--wf-r-xs);
+  background: transparent;
+  color: var(--wf-accent-ink);
+  font-size: var(--wf-fs-12);
+  box-shadow: none;
+}
+
+.fitMore .fitMoreToggle:hover {
+  background: var(--wf-hover);
+}
+
+.fitMoreList {
+  display: grid;
+  gap: 0.125rem;
+  margin: 0 0 var(--wf-s-1);
+  padding: 0 var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  list-style: none;
+}
+
+@media (max-width: 46.4375rem), (pointer: coarse) {
+  .fitMore .fitMoreToggle {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+  }
+}
+
 .candidateNotice {
   justify-self: start;
   font-size: var(--wf-fs-12);

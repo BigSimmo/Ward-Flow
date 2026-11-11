@@ -196,6 +196,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RELEASE_DIVERTED_BED: ["coordinator", "ward", "ed"],
   REFER_TO_COMMUNITY_TEAM: ["ed", "coordinator"],
   RECORD_LEFT_DEPARTMENT: ["ed", "coordinator"],
+  // Item 9 (10 Nov 2026): the department holding the patient types its crew times; the coordinator too.
+  RECORD_CREW_TIMES: ["ed", "coordinator"],
+  // D-141 (11 Nov 2026): the same department marks who brought the person, Police or Ambulance.
+  RECORD_ARRIVAL_MODE: ["ed", "coordinator"],
   // D-80: the site's bed manager may move, block and prepare a release for its own wards too.
   // Chasing releases is its main job.
   FLAG_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
@@ -566,6 +570,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // Psychiatry review tracker and ward wait list (Josh, 9 Nov 2026).
   REQUEST_PSYCH_REVIEW: ["ed", "coordinator"],
   RECORD_PSYCH_REVIEW_SEEN: ["ed", "coordinator"],
+  // Escalation calls (item 3, D-133): the ED and the coordinator record who they called and what happened.
+  RECORD_ESCALATION_CALL: ["ed", "coordinator"],
   MARK_WARD_READY_FOR_NEXT: ["ward", "coordinator"],
   RAISE_EXPECT_FLAG: ["ward", "coordinator", "ed", "community"],
   FLAG_LEGAL_MISMATCH: ["ward", "coordinator"],

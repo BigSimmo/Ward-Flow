@@ -208,8 +208,10 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
     } as WardFlowEvent;
     renderBoard([receive]);
 
+    // Skip accepted chips and blocked ones: the seed's RF-RD06 is a transfer from another
+    // hospital, which only the coordinator accepts (D-141 addressed it to this ward).
     const chip = [...document.querySelectorAll<HTMLElement>("[data-testid^='ward-board-pick-']")].find(
-      (item) => !item.textContent?.includes("Accepted"),
+      (item) => !item.textContent?.includes("Accepted") && item.getAttribute("aria-disabled") !== "true",
     );
     expect(chip, "the received referral is waiting on the board").not.toBeNull();
     fireEvent.click(chip!);

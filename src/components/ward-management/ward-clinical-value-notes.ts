@@ -174,6 +174,9 @@ const CLINICAL_VALUE_NOTES = {
     source:
       "Product brief success measure 2 (25 Sep 2026); signed off by owner Josh, 07:02 AWST 20 Oct 2026, prototype",
   },
+  referralNotOpened: {
+    source: "D-133 (Josh, 10 Nov 2026): signed 30 minutes for the referral list's Not opened yet tag (item 16)",
+  },
   wardAnswerTarget: {
     source: "Stream A, 9 Oct 2026, labelled default",
   },

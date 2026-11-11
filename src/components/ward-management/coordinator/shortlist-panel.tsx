@@ -100,7 +100,7 @@ import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel, waitFactors } from "@/components/ward-management/ward-priority";
 import { referenceDistance } from "@/components/ward-management/reference/ward-reference-distances";
-import { CandidateFit } from "@/components/ward-management/coordinator/shortlist-candidate-fit";
+import { CandidateFit, CandidateItem } from "@/components/ward-management/coordinator/shortlist-candidate-fit";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { openWardHelp } from "@/components/ward-management/help/ward-help-events";
@@ -1151,7 +1151,7 @@ export function ShortlistPanel({
     // technology); only a live referral needs its word.
     const label = isLive ? "Referred" : undefined;
     return (
-      <li key={candidate.unit.id}>
+      <CandidateItem key={candidate.unit.id} unit={candidate.unit} gates={candidate.verdict.gates}>
         <button
           type="button"
           data-testid={`ward-shortlist-candidate-${candidate.unit.id}`}
@@ -1223,7 +1223,7 @@ export function ShortlistPanel({
             </span>
           ) : null}
         </button>
-      </li>
+      </CandidateItem>
     );
   }
 
@@ -1237,7 +1237,7 @@ export function ShortlistPanel({
     const reason = blocking?.detail ?? candidateReason(candidate.verdict);
     const describedBy = `ward-shortlist-unavailable-why-${candidate.unit.id}`;
     return (
-      <li key={candidate.unit.id}>
+      <CandidateItem key={candidate.unit.id} unit={candidate.unit} gates={candidate.verdict.gates}>
         <button
           type="button"
           data-testid={`ward-shortlist-unavailable-${candidate.unit.id}`}
@@ -1270,7 +1270,7 @@ export function ShortlistPanel({
             Unavailable: {reason}. No recorded reason can place this person here.
           </span>
         </button>
-      </li>
+      </CandidateItem>
     );
   }
 
