@@ -1445,8 +1445,9 @@ export function useCommunityScopedReferrals(): CommunityScopedReferral[] {
 
 /** Batch 3 item 28 (D-136): a team's "returned to ED" prompts, from the full record here (FD-23). */
 export function useDiversionReturnPrompts(matchesTeam: TeamMatch, windowMinutes: number): DiversionReturnPrompt[] {
-  const { referrals, movements, now } = useWardFlowSelect("referrals", "movements", "now");
-  return diversionReturnPrompts({ referrals, movements }, matchesTeam, windowMinutes, now);
+  // Shared mode (D-152): `diversionReturns` are the server's returns for this desk's own referrals.
+  const source = useWardFlowSelect("referrals", "movements", "diversionReturns", "now");
+  return diversionReturnPrompts(source, matchesTeam, windowMinutes, source.now);
 }
 
 /** Fix plan item 17 (D-74): referrals as the community team that sent them sees them, never the record. */

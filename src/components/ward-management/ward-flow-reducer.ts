@@ -423,11 +423,10 @@ export type WardFlowState = WardAuditState & {
   /** Batch 3 items 21 and 23 (`handover/handover-work-events.ts`): hand-overs of own work, and carer callbacks. */
   handedItems?: import("@/components/ward-management/handover-work-events").HandedItemRecord[];
   carerCallbacks?: import("@/components/ward-management/handover-work-events").CarerCallbackRecord[];
-  /**
-   * Shared mode only (Josh, 4 Nov 2026): nameless early-return notices for a desk that should hear a
-   * flag but cannot see the stay. Worked out when the desk's copy is scoped; never written by the reducer.
-   */
+  /** Shared mode only, set when a desk's copy is scoped and never by the reducer: nameless early-return notices
+   *  (Josh, 4 Nov 2026), and a community desk's returns to ED after a diversion (D-152). */
   returnEarlyNotices?: ReturnEarlyNotice[];
+  diversionReturns?: import("@/components/ward-management/community/diversion-return-review").DiversionReturnRecord[];
   /** Handover sign-offs — role and time only. `RECORD_HANDOVER_SIGN_OFF` appends here. */
   handoverSignOffs: HandoverSignOffRecord[];
   /**
