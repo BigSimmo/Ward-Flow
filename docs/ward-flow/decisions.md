@@ -159,6 +159,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-138](#d-138-phone-alert-urgency-by-kind-10-november-2026)                                                                                            | Phone alert urgency by kind                                                            | Active                                           |
 | [D-140](#d-140-feature-list-adopted-and-wave-1-begins-10-november-2026)                                                                                 | Feature list adopted, and Wave 1 begins                                                | Active                                           |
 | [D-141](#d-141-batch-1-ed-and-referral-flow-design-approved-with-eleven-answers-11-november-2026)                                                       | Batch 1 design approved, with eleven answers                                           | Active                                           |
+| [D-143](#d-143-mhert-is-mherl-in-the-glossary-smhmr-deferred-11-november-2026)                                                                          | MHERT is MHERL in the glossary; SMHMR deferred                                         | Active                                           |
 
 ---
 
@@ -1743,3 +1744,11 @@ is inferred.
   11. **Heads-up identity:** the home team heads-up shows the UMRN, and still no name, reason, diagnosis, risk or free text.
 - **Also fixed:** the white strip between the ED board's hero and its Board tabs (Josh's screenshot, 11 November 2026).
 - **Boundary:** synthetic data only. Changes no signed clinical value. Item 46 with real data still needs the D-87 privacy review. Approves no release.
+
+## D-143. MHERT is MHERL in the glossary; SMHMR deferred (11 November 2026)
+
+- **Date:** 11 November 2026, 10:45 AM AWST (02:45 UTC). **Decided by:** Josh, in the Ward Flow project thread "Run the remaining master list audits": "MHERL (mental health emergency response line) and defer SMHMR as I don't know what that is", answering the D-131 open item. D-139 is claimed by open PR #1600. D-140 is claimed by open PR #1606. D-141 is claimed by open PR #1606. D-142 is claimed by open PR #1603.
+- **Decision:**
+  1. **MHERT:** the term is MHERL, the Mental Health Emergency Response Line, which the glossary already lists. The MHERT glossary entry is removed, and the two synthetic community demo lines now read "MHERL / WA Police co-response".
+  2. **SMHMR:** its meaning is deferred. The existing glossary wording stays until Josh confirms it.
+- **Boundary:** wording only; no clinical behaviour change.

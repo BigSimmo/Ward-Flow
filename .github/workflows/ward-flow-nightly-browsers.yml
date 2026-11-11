@@ -5,6 +5,8 @@ name: Ward Flow nightly browsers
 # - TE-01: image baselines for ten key screens, desktop Chromium 1440 and phone WebKit 390
 #   (tests/ward-visual-baselines.spec.ts, baselines in tests/visual-baselines/).
 # - TE-02: the 834px tablet layout on iPad WebKit, through the axe sweep and the responsive audit.
+# - The responsive audit on desktop Firefox and desktop Safari (firefox-ward-responsive and
+#   webkit-ward-responsive), which no other workflow ran (audit follow-up, 11 Nov 2026).
 # Baselines must be made on this same hosted Linux runner: fonts and anti-aliasing differ between
 # machines. A manual run with "update_baselines" ticked writes fresh baselines and uploads them as
 # the ward-visual-baselines artifact; a person downloads it and commits tests/visual-baselines/ in a
@@ -80,16 +82,16 @@ jobs:
             ward-release-apt-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}-
       - name: Seed release system packages
         run: node scripts/ward-ci-public/apt-archive-cache.mjs seed "$HOME/.cache/ward-release-apt"
-      - name: Install Chromium and WebKit
+      - name: Install Chromium, WebKit and Firefox
         id: browsers
         timeout-minutes: 10
-        run: node scripts/ward-ci-public/install-chromium.mjs chromium webkit
-      - name: Compare image baselines and run the tablet checks
+        run: node scripts/ward-ci-public/install-chromium.mjs chromium webkit firefox
+      - name: Compare image baselines and run the tablet and cross-browser checks
         id: nightly
         if: ${{ inputs.update_baselines != true }}
         env:
           WARD_GATE_BUILD: "1"
-        run: npm run test:e2e -- --project=visual-desktop --project=visual-phone --project=tablet-webkit
+        run: npm run test:e2e -- --project=visual-desktop --project=visual-phone --project=tablet-webkit --project=firefox-ward-responsive --project=webkit-ward-responsive
       - name: Write new image baselines
         id: update
         if: ${{ inputs.update_baselines == true }}

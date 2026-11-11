@@ -125,7 +125,6 @@ export function NextCrossings({
                   type="button"
                   className={styles.nxRow}
                   aria-pressed={selectedId === item.row.movement.id}
-                  aria-label={`${patient.formalName}. ${what(item)}. Waited ${splitDuration(item.row.waited)}, ${desk.causeTitle(item.row.cause)}. Open their row`}
                   onClick={() => onPick(item.row.movement.id)}
                 >
                   <span className={styles.nxWho}>
@@ -145,6 +144,8 @@ export function NextCrossings({
                     <StatusGlyph tone={TONE[item.kind]} size={9} />
                     {what(item)}
                   </span>
+                  {/* Named by its visible text plus this (axe label-content-name-mismatch, A6-F04). */}
+                  <span className="sr-only">. Open their row</span>
                 </button>
               </li>
             );
