@@ -13,3 +13,5 @@ Trim tried: the hook is needed on the first render of the ward screen, so lazy l
 Main has since raised its own limits. This PR now keeps main's values for every screen except the ward, which goes from main's 614.1 to 614.8 (0.7 KB, within the 5 KB allowance). An earlier 0.2 KB raise to three screens is withdrawn.
 
 Measured locally with `npm run build` and `node scripts/check-script-budget.mjs --write`, main alone against this PR merged with main: the ward screen is 613.91 KB on main and 614.39 KB with this PR (+0.47 KB, the memoised figures hook). Every other phone screen is the same or about 0.06 KB smaller with this PR. The sign-in start helper keeps a Ward Flow copy so the ward's first load does not carry the front door's signing code.
+
+Later the same day `main` (at `f0db2be`) raised its limits again. This PR keeps main's values and adds only its own ward change on top: 615.0 to 615.7 (+0.7 KB, as above).
