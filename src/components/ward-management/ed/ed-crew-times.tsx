@@ -53,7 +53,7 @@ export function EdCrewTimes({ movement, now, raise }: { movement: Movement; now:
     Object.keys(typed).length === 0 && !unreadable
       ? "Type at least one time from the paper."
       : unreadable
-        ? "Type each time as a 24-hour clock time, for example 14:30."
+        ? "Type each time as hours and minutes, for example 14:30."
         : crewTimesRefusal(typed, recorded, now);
   const crew = mode === "police" ? "Police" : "Ambulance";
   const waiting = crewsWaiting([movement], now);
@@ -92,7 +92,7 @@ export function EdCrewTimes({ movement, now, raise }: { movement: Movement; now:
       ) : null}
       <form className={styles.form} onSubmit={submit} data-testid="ward-ed-crew-times-form">
         <fieldset className={styles.fields} disabled={save.pending}>
-          <legend className={styles.legend}>Type the times from the paper (24-hour, for example 14:30)</legend>
+          <legend className={styles.legend}>Type the times from the paper (for example 14:30)</legend>
           {CREW_TIME_FIELDS.map((field) => (
             <div key={field} className={styles.field}>
               <span aria-hidden="true">{CREW_TIME_LABELS[field]}</span>
