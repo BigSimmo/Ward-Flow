@@ -171,8 +171,7 @@ export function useReferralDraftAutosave<T>({
         keepReferralDraft(current.draft, ownerVersion, current.storageKey);
       }
     },
-    // `reopened` is fixed for the sheet's life.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Unmount only: `reopened`, `ownerVersion` and `sessionOwner` are fixed for the sheet's life.
     [],
   );
 

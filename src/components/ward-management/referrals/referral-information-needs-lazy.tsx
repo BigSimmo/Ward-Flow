@@ -84,7 +84,6 @@ export function useMarkReferralsOpened(
         if (outcome && outcome.status !== "accepted") forget();
       }, forget);
     }
-    // `raise` carries the time a referral first appears; a clock tick alone does not re-run this.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `raise` carries the time a referral first appears; a clock tick alone does not re-run this.
   }, [enabled, routeRole, actingUnitId, unitId, unopened]);
 }

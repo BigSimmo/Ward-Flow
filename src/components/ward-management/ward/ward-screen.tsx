@@ -563,8 +563,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             },
           }),
     });
-    // `toast`, `routeRole`, `dispatch` and `unitId` are stable for the screen's life; the token drives this.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `toast`, `routeRole`, `dispatch` and `unitId` are stable for the screen's life and the command helpers are read as they are now; the token drives this.
   }, [dischargeToken, rejections]);
 
   // Board feedback follows this command, including its Undo.
@@ -670,8 +669,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             }),
       });
     }
-    // `toast`, `routeRole` and `dispatch` are stable for the screen's life; the token drives this.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `toast`, `routeRole` and `dispatch` are stable for the screen's life and the command helpers are read as they are now; the token drives this.
   }, [boardToken, rejections]);
 
   useEffect(() => {
@@ -936,8 +934,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             }),
       });
     }
-    // Read the committed local fallback only after this command's completion.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Runs once per command completion (the token); `movements` and the helpers are read as committed then, not on every change.
   }, [rejections, checkToken]);
 
   const { pendingBedReleases, unitLeaveBeds, incoming, accepted, heldAfterStop, recentAnswers, withdrawn } =

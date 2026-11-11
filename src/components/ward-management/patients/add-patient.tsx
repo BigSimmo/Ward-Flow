@@ -312,8 +312,7 @@ export function AddPatientForm() {
       return input instanceof HTMLInputElement && input.value === "";
     });
     if (first) document.getElementById(`ward-add-patient-${first}`)?.focus();
-    // Only once, on open: later renders never take the cursor away from where someone put it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only once, on open (`isPhone` as first rendered): later renders never take the cursor away from where someone put it.
   }, []);
   const priorSubmissionRef = useRef<{
     patients: typeof patients;
@@ -525,8 +524,7 @@ export function AddPatientForm() {
       return;
     }
     router.push(patientHref(added.id));
-    // findAdded reads `patients`, which is listed.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `findAdded` reads `patients`, which is listed; `findAdded` and `formSnapshot` are new each render and read this render's form.
   }, [acceptedSubmission, patients, worldGeneration, router, toast, isDirty]);
 
   // Latest values for the outside-view timer, which must not restart on every snapshot.
@@ -561,8 +559,7 @@ export function AddPatientForm() {
       toast?.push({ tone: "success", title: saved, body: note });
     }, SHARED_REFRESH_MS);
     return () => window.clearTimeout(timer);
-    // clearForm and finishSubmission only set state; the timer starts once per accepted save.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `clearForm` and `finishSubmission` only set state; the timer starts once per accepted save.
   }, [acceptedSubmission, worldGeneration, toast]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
