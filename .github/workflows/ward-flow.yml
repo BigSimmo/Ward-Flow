@@ -377,15 +377,26 @@ jobs:
       - name: Seed release system packages
         if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
         run: node scripts/ward-ci-public/apt-archive-cache.mjs seed "$HOME/.cache/ward-release-apt"
+      # WebKit's own packages too, so the offline install covers both engines when the mirror is down.
+      # Same path as the save step, because the path is part of the cache version.
+      - name: Restore release WebKit system packages
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ~/.cache/ward-release-apt
+          key: ward-release-apt-${{ runner.os }}-webkit-${{ steps.shared-version.outputs.version }}-${{ steps.shared-version.outputs.image }}
+          restore-keys: |
+            ward-release-apt-${{ runner.os }}-webkit-${{ steps.shared-version.outputs.version }}-
+      - name: Seed release WebKit system packages
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
+        run: node scripts/ward-ci-public/apt-archive-cache.mjs seed "$HOME/.cache/ward-release-apt"
       - name: Install Chromium and WebKit for the shared-mode journeys
         id: shared-chromium
         timeout-minutes: 10
         if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
         env:
           PLAYWRIGHT_CACHE_HIT: ${{ steps.shared-cache.outputs.cache-hit }}
-        run: |
-          node scripts/ward-ci-public/install-chromium.mjs
-          node node_modules/playwright/cli.js install --with-deps webkit
+        run: node scripts/ward-ci-public/install-chromium.mjs chromium webkit
       - name: Run the shared-mode browser journey
         timeout-minutes: 20
         if: ${{ !cancelled() && steps.shared-chromium.outcome == 'success' }}
