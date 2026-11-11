@@ -36,4 +36,15 @@ describe("sideways scrolling rows", () => {
     }
     expect(offenders).toEqual([]);
   });
+
+  // D-144 (Josh, 11 Nov 2026): on a phone the quick-link chip rows move only sideways under a finger.
+  it.each([
+    "wf/hero-top.module.css",
+    "ward-management/quick-bar/ward-quick-bar.module.css",
+    "wf/phone-rows.module.css",
+    "ward-management/coordinator/home-hero.module.css",
+  ])("%s locks its phone chip row to sideways touch", (file) => {
+    const css = readFileSync(join(ROOT, "components", file), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(css).toMatch(/touch-action\s*:\s*pan-x/);
+  });
 });

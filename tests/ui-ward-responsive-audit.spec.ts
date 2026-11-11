@@ -117,7 +117,10 @@ test.describe("@mockup Ward phone scrolling", () => {
     expect(await page.evaluate(() => scrollY)).toBe(0);
   });
 
-  test("phone menu fills the available bottom edge and restores scrolling after viewport changes", async ({ page }) => {
+  test("phone menu fills the available bottom edge and restores scrolling after viewport changes", async ({
+    page,
+    isMobile,
+  }) => {
     test.setTimeout(120_000);
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.setViewportSize({ width: 390, height: 844 });
@@ -146,8 +149,19 @@ test.describe("@mockup Ward phone scrolling", () => {
     await menu.getByRole("button", { name: /close/i }).click();
     await expect(menu).not.toBeVisible();
     await expect.poll(() => columnScrollTop(page)).toBeCloseTo(before, 0);
-    await page.mouse.move(190, 400);
-    await page.mouse.wheel(0, 100);
+    if (isMobile) {
+      // Mobile WebKit has no mouse wheel (tablet-webkit nightly, A6-F04). Check the column is
+      // scrollable again, not locked by the closed menu, then move it the way a swipe would.
+      await expect
+        .poll(() =>
+          page.evaluate(() => getComputedStyle(document.querySelector<HTMLElement>("[data-wf-scroller]")!).overflowY),
+        )
+        .toMatch(/^(?:auto|scroll)$/u);
+      await scrollColumn(page, before + 100);
+    } else {
+      await page.mouse.move(190, 400);
+      await page.mouse.wheel(0, 100);
+    }
     await expect.poll(() => columnScrollTop(page)).toBeGreaterThan(before);
     expect(await page.evaluate(() => scrollY)).toBe(0);
   });

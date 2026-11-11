@@ -13,7 +13,7 @@ ruling here. Do not start new `owner-*.md` files; the existing ones stay as date
 decision in one or two sentences, and why. Never rewrite an old entry's decision; a wording or citation correction is allowed when a later entry discloses it (D-107). If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
 
-_Updated 2026-11-10 - added D-121 and D-122 and corrected the D-58, D-74, D-94 and D-100 status rows; Documentation owns. Earlier changes are in Git history._
+_Updated 2026-11-10 - added D-139, added D-121 and D-122 and corrected the D-58, D-74, D-94 and D-100 status rows; Documentation owns. Earlier changes are in Git history._
 
 ---
 
@@ -154,7 +154,11 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-129](#d-129-master-audit-findings-every-recommendation-approved-10-november-2026)                                                                    | Master audit findings: every recommendation approved                                   | Active                                           |
 | [D-130](#d-130-audit-follow-ups-every-remaining-recommendation-approved-10-november-2026)                                                               | Audit follow-ups: every remaining recommendation approved                              | Active                                           |
 | [D-131](#d-131-hard-case-demo-data-allowed-and-the-movement-diagram-follows-the-engine-10-november-2026)                                                | Hard-case demo data allowed, and the movement diagram follows the engine               | Active                                           |
+| [D-132](#d-132-audit-fixes-group-1-docs-and-ci-guards-10-november-2026)                                                                                 | Audit fixes group 1: docs and CI guards; Claude-authored sensitive changes warn        | Active                                           |
 | [D-138](#d-138-phone-alert-urgency-by-kind-10-november-2026)                                                                                            | Phone alert urgency by kind                                                            | Active                                           |
+| [D-139](#d-139-phone-statistics-ward-list-a-to-z-and-leave-return-times-as-typed-10-november-2026)                                                      | Phone Statistics ward list A to Z, and leave return times as typed                     | Active                                           |
+| [D-143](#d-143-mhert-is-mherl-in-the-glossary-smhmr-deferred-11-november-2026)                                                                          | MHERT is MHERL in the glossary; SMHMR deferred                                         | Active                                           |
+| [D-144](#d-144-chip-rows-move-only-sideways-on-a-phone-11-november-2026)                                                                                | Chip rows move only sideways on a phone                                                | Active                                           |
 
 ---
 
@@ -1683,8 +1687,42 @@ is inferred.
 - **Open:** the glossary meanings of MHERT and SMHMR still wait on Josh.
 - **Boundary:** no clinical behaviour change; approves no merge of the held clinical PR and no release.
 
+## D-132. Audit fixes group 1: docs and CI guards (10 November 2026)
+
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, in the Ward Flow project thread "Fix confirmed 10 Nov audit issues": he picked the confirmed audit items to fix, chose three PRs (docs and CI, app and backend, held clinical), and said "go ahead" for group 1.
+- **Decision:**
+  1. Group 1 fixes the stale STATUS asks, the merge-queue comments, docs-only PRs skipping tests that read those docs, the bundle secret patterns, the CSRF forwarded-host trust, the testing guide counts, go/no-go row C3, guard scripts with no CI caller, and the runbook and desk guide freshness (blocking for those pages).
+  2. Coding agents (Claude, Cursor, Codex) are added to the bot-author policy as a **warning tier**: an agent-authored change to a sensitive path is reported, not failed, until a separate agent identity and an owner review exist (item 3). The tier is advisory only: commit author names and emails are self-declared, so it is not an access control. Workflows, CI scripts and the protected-test list become sensitive paths; a Dependabot commit that only changes workflow `uses:` pins stays allowed, so action security updates still merge.
+  3. **Later the same day (17:16 UTC), Josh answered "Yes to all recommendations"** to the open questions in that thread: the demo script is rewritten from the current app in this PR; the 5 KB phone limit allowance (D-82) stays, and red mains are fixed by trimming pages for headroom, not by a never-raise rule; the merge queue stays off (D-107); a separate agent identity with a required owner review becomes a gate before real data, not a change now; and one read-only pass of hosted settings (rulesets, bypass actors, the coordinator end date, main's green rate) is allowed.
+- **Why:** these were the confirmed, low-risk audit findings; failing agent commits now would block almost every engine or legal PR, because no approval route exists yet.
+- **Boundary:** synthetic data only. No clinical rule, signed value or release changes. D-82 (5 KB phone limit raises) and D-107 (no merge queue) stand.
+
 ## D-138. Phone alert urgency by kind (10 November 2026)
 
-- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, picking item 23 of the audit fix build plan (Ward Flow project thread "Fix audit app and backend issues", audit fix group 2), which counts as his yes to audit decision 20. Numbered D-138 because D-132 to D-137 belong to other threads. D-132 is claimed by open PR #1601. D-133 is claimed by open PR #1606. D-134 is claimed by open PR #1608, and D-135 is claimed by open PR #1603, and D-136 is claimed by open PR #1605, and D-137 is claimed by open PR #1607. On 11 November 2026 Josh told every thread to go ahead with its recommendations, which approved the Settings line as drawn in the design review.
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, picking item 23 of the audit fix build plan (Ward Flow project thread "Fix audit app and backend issues", audit fix group 2), which counts as his yes to audit decision 20. Numbered D-138 because D-132 to D-137 belong to other threads. D-133 is claimed by open PR #1606. D-134 is claimed by open PR #1608, and D-135 is claimed by open PR #1603, and D-136 is claimed by open PR #1605, and D-137 is claimed by open PR #1607. On 11 November 2026 Josh told every thread to go ahead with its recommendations, which approved the Settings line as drawn in the design review.
 - **Decision:** act-now phone alerts stay high urgency and buzz again when replaced. Jobs and team alerts go out at normal urgency and replace their earlier alert quietly. Settings shows when this device last received an alert, from the time only (never the alert's words).
 - **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge or release.
+
+## D-139. Phone Statistics ward list A to Z, and leave return times as typed (10 November 2026)
+
+- **Date:** 10 November 2026 (`2026-11-10`), about 1:08 AM AWST on 11 November (17:08 UTC). **Decided by:** Josh, in the Ward Flow project. Item 1: launching audit fix group 3 ("Also launch group 2 and group 3 please"), which counts as his yes to audit decision 4. Item 2: choosing "Yes, typed time only" on a decision card in the thread "Fix held clinical audit items", and "Yes to all recommendations please" in the project chat. D-135 is claimed by open PR #1603. D-136 is claimed by open PR #1605. D-133 is claimed by open PR #1606. D-137 is claimed by open PR #1607. D-134 is claimed by open PR #1608.
+- **Decision:**
+  1. **Phone Statistics, "By ward" list** (audit fix list item 9): A to Z by ward name, with every count kept. It extends D-126 to a list that review did not cover. The "By hospital" list is unchanged.
+  2. **Leave return times** (item 26, audit A1-06): leave and medical trip return times follow D-93. They show only as the time the ward typed ("Due back 15:40 tomorrow", "Typed by the ward"), and once that time has gone by, "That time has passed" with the warning colour. Nothing is worked out from it: no "Overdue by 2h" or "In 3h" on the Patient page status card, and the Patient summary's second figure reads "Passed" or "Not yet" under "Typed time" instead of "Overdue 2h" or "From now 3h". `tests/ward-legal-as-typed-guard.test.ts` fails if a duration formatter takes a leave return time again.
+- **Unchanged:** the time absent without leave still shows as a running figure, because it counts from when the absence was recorded, not from a typed return time. Leave lists still order by return time.
+- **Why:** a list that puts the most ready beds first reads as "send them here" (D-126). A return time comes from the leave form, which staff read against paper; a running figure beside it is a second, unchecked number, the reason D-93 exists.
+- **Boundary:** D-71 and D-93 stand. Order and wording only; no figure, clinical value or rule changes. Synthetic data only. Approves no merge or release.
+
+## D-143. MHERT is MHERL in the glossary; SMHMR deferred (11 November 2026)
+
+- **Date:** 11 November 2026, 10:45 AM AWST (02:45 UTC). **Decided by:** Josh, in the Ward Flow project thread "Run the remaining master list audits": "MHERL (mental health emergency response line) and defer SMHMR as I don't know what that is", answering the D-131 open item. D-139 is claimed by open PR #1600. D-140 is claimed by open PR #1606. D-141 is claimed by open PR #1606. D-142 is claimed by open PR #1603.
+- **Decision:**
+  1. **MHERT:** the term is MHERL, the Mental Health Emergency Response Line, which the glossary already lists. The MHERT glossary entry is removed, and the two synthetic community demo lines now read "MHERL / WA Police co-response".
+  2. **SMHMR:** its meaning is deferred. The existing glossary wording stays until Josh confirms it.
+- **Boundary:** wording only; no clinical behaviour change.
+
+## D-144. Chip rows move only sideways on a phone (11 November 2026)
+
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, on a decision card in the Ward Flow project thread "Stop chip rows dragging up and down", choosing "Lock rows to sideways only" over measuring on his iPhone first. Numbered D-144 because D-133 to D-143 belong to other threads. D-140 is claimed by open PR #1606, and D-141 is claimed by open PR #1606. D-142 is claimed by open PR #1603.
+- **Decision:** on a phone, the page-top quick-link chip rows, the Home quick bar, the shared phone chip row and Home's "Waiting in ED" strip take `touch-action: pan-x`. A finger on one of these rows can only move it sideways. The accepted trade-off is that a vertical swipe starting on one of these rows does not scroll the page. Reason: iPhone still slid the rows up and down after three layout fixes (#1596, #1602, #1610), and the cause could not be reproduced off the device.
+- **Boundary:** presentation only, synthetic data. Changes no clinical value or rule, and approves no merge or release.

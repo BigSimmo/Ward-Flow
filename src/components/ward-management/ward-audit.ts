@@ -28,6 +28,10 @@ import type { Instant } from "./ward-clock";
 import {
   BED_RELEASE_STATES,
   BED_RELEASE_WAITING_ON,
+  COMMUNITY_DECLINE_REASONS,
+  DECLINE_REASONS,
+  ED_DECLINE_REASONS,
+  REFERRAL_DECLINE_REASONS,
   type BedRelease,
   type BedReleaseWaitingOn,
   type LegalStatus,
@@ -37,6 +41,7 @@ import {
 import { validateConfiguration, type WardConfiguration } from "./ward-configuration";
 import { SELECTABLE_LEGAL_FORMS, CONTINUATION_LEGAL_FORMS } from "./ward-legal-forms";
 import { LEGAL_CLOCK_FORM_CODES } from "./ward-legal-clock";
+import { LEGACY_DECLINE_REASONS } from "./ward-decline-legacy";
 import { PAPER_EXPIRY_CORRECTION_REASONS, type LegalFormExpiryCorrectionReason } from "./ward-model-vocabulary";
 
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
@@ -323,6 +328,19 @@ export type AuditEvent = AuditBase &
         details: { before: Observation | null; requested: Observation | null; after: Observation | null };
       }
     | {
+        // M35 (Josh, 10 Nov 2026): a ward's or destination's answer to a referral, so the report's
+        // decline count can be checked against the trail. Fixed-list reason and ward only.
+        category: "referral-answer";
+        action: "DECLINE" | "DECLINE_REFERRAL";
+        details: { answer: "declined" | "waitlisted" | null; unitId: string | null; reason: string | null };
+      }
+    | {
+        // M35 (Josh, 10 Nov 2026): a patient reaching the ward (or the officer's Delivered step).
+        category: "arrival";
+        action: "PATIENT_ARRIVED";
+        details: { step: "delivered" | "arrived"; unitId: string | null };
+      }
+    | {
         category: "configuration";
         action: "SET_CONFIGURATION";
         details: {
@@ -352,6 +370,20 @@ const legalStatuses: readonly LegalStatus[] = [
   "Involuntary inpatient",
 ];
 const destinations = LEAVING_DESTINATIONS.map((destination) => destination.id);
+/** Every fixed decline reason either decline event may carry, so a row never keeps typed text. */
+const declineAnswerReasons: readonly string[] = [
+  ...new Set<string>([
+    ...DECLINE_REASONS,
+    ...REFERRAL_DECLINE_REASONS,
+    ...ED_DECLINE_REASONS,
+    ...COMMUNITY_DECLINE_REASONS,
+  ]),
+];
+function declineAnswerReason(value: unknown): string | null {
+  const current =
+    typeof value === "string" && Object.hasOwn(LEGACY_DECLINE_REASONS, value) ? LEGACY_DECLINE_REASONS[value] : value;
+  return enumValue(declineAnswerReasons, current);
+}
 export const reviewDecision = (value: unknown) => enumValue(["reviewed", "follow-up-required"] as const, value);
 
 export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
@@ -412,6 +444,11 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
       return "bed-placement";
     case "SET_CONFIGURATION":
       return "configuration";
+    case "DECLINE":
+    case "DECLINE_REFERRAL":
+      return "referral-answer";
+    case "PATIENT_ARRIVED":
+      return "arrival";
     case "ARCHIVE_PATIENT":
     case "RECORD_OBSERVATION_LEVEL":
       return "patient-record";
@@ -991,6 +1028,41 @@ export function captureAuditEvent(
           before: enumValue(FOLLOW_UP_STATES, prior?.followUp?.state),
           requested: enumValue(FOLLOW_UP_STATES, event.followUpState),
           after: enumValue(FOLLOW_UP_STATES, next?.followUp?.state),
+        },
+      };
+      break;
+    }
+    case "DECLINE":
+    case "DECLINE_REFERRAL": {
+      const accepted = decision.outcome === "accepted";
+      // A ward that waitlists keeps its request open; a decline takes the ward off the request.
+      const waitlisted =
+        event.type === "DECLINE_REFERRAL"
+          ? event.waitlist === true
+          : (uniqueRecord(after.movements, event.movementId)?.referredUnitIds ?? []).includes(event.unitId);
+      captured = {
+        ...base,
+        category: "referral-answer",
+        action: event.type,
+        details: {
+          answer: accepted ? (waitlisted ? "waitlisted" : "declined") : null,
+          // A ward answer that names no ward is kept to the ward that sent it, so a refused row
+          // never falls out of ward scope.
+          unitId: uniqueRecord(before.units, event.unitId ?? event.actingUnitId)?.id ?? null,
+          reason: declineAnswerReason(event.reason),
+        },
+      };
+      break;
+    }
+    case "PATIENT_ARRIVED": {
+      const movement = mayResolveSubject ? uniqueRecord(before.movements, event.movementId) : undefined;
+      captured = {
+        ...base,
+        category: "arrival",
+        action: event.type,
+        details: {
+          step: event.role === "officer" ? "delivered" : "arrived",
+          unitId: uniqueRecord(before.units, movement?.acceptedUnitId)?.id ?? null,
         },
       };
       break;

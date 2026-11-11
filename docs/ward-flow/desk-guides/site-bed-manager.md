@@ -1,15 +1,15 @@
 # Desk guide: Site bed manager
 
-<!-- last-checked: 2026-10-26 -->
+<!-- last-checked: 2026-11-10 -->
 
 You look after bed flow for one hospital site. On **Capacity** and **Wards** you see your own site
 in detail and other sites as bed counts only.
 
 ## What you see first
 
-**Capacity**, for your site. Your main menu: **Capacity, Wards, Movements, Waiting, Handover**.
+**Capacity**, for your site. Your main menu: **Capacity, Wards, Movements, Waiting, Referrals, Handover**.
 
-On a phone, the bar at the bottom has **Capacity, Wards, Create, Alerts, Handover**. Other pages
+On a phone, the bar at the bottom has **Capacity, Wards, Create, Alerts, Waiting**. Other pages
 are under **Menu**.
 
 ## Jobs you do most
@@ -22,7 +22,7 @@ are under **Menu**.
 4. **Close or reopen a ward.** Choose a reason, then **Close [ward] to admissions**. Use
    **Reopen [ward] to admissions** when it can take patients again.
 5. **Bed meeting.** Use **Open on TV** on **Capacity** to show the board. The coordinator runs
-   the **Meeting agenda**; it is not on your menu.
+   the **Meeting agenda**; it is not on your menu. You can read your own site's agenda.
 6. **Alerts and notices.** Reply to a bed call and mark notices read.
 
 ## What you cannot do
@@ -31,7 +31,7 @@ are under **Menu**.
   the ward and the coordinator.
 - **Referrals** is read only for you. It lists your own wards' incoming referrals.
 - **Seclusion and restraint** shows what is in use and room status only. The ward records it.
-- Handover sign-off stays with the ward and coordinator in this build.
+- You sign off your own site's handover. A ward's handover sheet is signed by the ward or the coordinator.
 - Other sites show as counts, with no patient names.
 
 ## Saved, or not

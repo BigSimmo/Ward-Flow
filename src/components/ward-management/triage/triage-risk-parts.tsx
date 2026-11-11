@@ -41,7 +41,7 @@ export type FormApi = {
   say: (message: string) => void;
   isPhone: boolean;
   openSummary: (tab?: string) => void;
-  /** The time now, refreshed each minute: a reviewed time may not pass it. */
+  /** The real moment now (board clock), refreshed each minute: a reviewed time may not pass it. */
   now: number;
   /** Closes any slide-out and goes to a section, or to the field a target names. */
   jump: (section: SectionId, target?: Target) => void;

@@ -18,6 +18,7 @@ import {
 } from "./triage-psolis-lists";
 import { AHD, LEGAL, OUTCOMES, TIER_LONG, TIERS, WHO_TOLD, type Tier } from "./triage-risk-data";
 import { seeBy } from "./triage-see-by";
+import { perthWallClockDate } from "./triage-risk-text";
 import { FOLLOW_UP_CHOICES, followUpHint, followUpShown, recentDischargeFor } from "./triage-risk-safety";
 import { Choice, PickMany, Reveal, Row, type FormApi } from "./triage-risk-parts";
 import { acuteFlagNames, hasLegalForm } from "./triage-risk-state";
@@ -51,13 +52,13 @@ export function DecisionBody({ form }: { form: FormApi }) {
   const due = seeBy(
     state.urgency,
     state.text.revTime,
-    new Date(form.now),
+    perthWallClockDate(form.now),
     state.urgency ? TIER_LONG[state.urgency] : "",
   );
   const asked = state.person.referral?.urgency ?? null;
   // Follow-up (9 Nov 2026): a hint from marked current risk or a recent discharge on the record; never a choice.
   const followHint = followUpShown(state.outcome)
-    ? followUpHint(state, recentDischargeFor(state.person.id, new Date(form.now)))
+    ? followUpHint(state, recentDischargeFor(state.person.id, perthWallClockDate(form.now)))
     : null;
   const setActions = (actions: string[]) =>
     update((s) => {

@@ -3,7 +3,8 @@
 // A PR may raise a screen's limit in script-budget.json by up to 5 KB in total, added up across the
 // whole PR, without asking Josh. Above that it needs Josh's explicit yes, which the PR records in its
 // own docs/script-budget-history/ file (HOW-WE-WORK section 6, step 4) with words such as "Josh
-// approved" or "approved by Josh". This compares the PR's script-budget.json with the PR base and fails a raise above
+// approved" or "approved by Josh". This compares the PR's script-budget.json with current main (the test merge's first parent; see
+// pickJudgeBase) and fails a raise above
 // 5 KB unless a history file the PR adds or changes records that approval. It reads local git objects
 // only: the full-history checkout already holds the base commit, so it needs no network.
 //
@@ -62,6 +63,35 @@ export function judgeRaiseCap({ baseBudgets, headBudgets, historyTexts }) {
   return { ok: over.length === 0 || approved, over, approved };
 }
 
+/**
+ * The commit to judge against (A5-02). A pull_request run checks out GitHub's test merge of the PR
+ * into the current main, so that merge's first parent is main as it is now, which can be newer than
+ * the event's base SHA. Judging against it means a raise another PR already merged is not counted
+ * again, and two PRs that each raise from the same old base cannot both slip past the cap: the
+ * second is measured against main after the first. Elsewhere it is the merge base, as before.
+ */
+export function pickJudgeBase({ base, parents, isAncestor, mergeBase }) {
+  if (parents.length === 2 && isAncestor(base, parents[0])) return parents[0];
+  return mergeBase(base);
+}
+
+function judgeBase(base) {
+  const parents = git(["rev-list", "--parents", "-n", "1", "HEAD"]).trim().split(/\s+/u).slice(1);
+  return pickJudgeBase({
+    base,
+    parents,
+    isAncestor: (ancestor, commit) => {
+      try {
+        execFileSync("git", ["merge-base", "--is-ancestor", ancestor, commit], { cwd: root, timeout: 30_000 });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    mergeBase: (from) => git(["merge-base", from, "HEAD"]).trim(),
+  });
+}
+
 function git(args) {
   return execFileSync("git", args, { cwd: root, encoding: "utf8", timeout: 30_000 });
 }
@@ -73,7 +103,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.ar
     console.log("No PR base (manual or main run): no raise to judge.");
     process.exit(0);
   }
-  const mergeBase = git(["merge-base", base, "HEAD"]).trim();
+  const mergeBase = judgeBase(base);
   let baseBudgets = {};
   try {
     baseBudgets = JSON.parse(git(["show", `${mergeBase}:script-budget.json`])).budgets ?? {};
