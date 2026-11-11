@@ -20,10 +20,20 @@ import { test } from "node:test";
 import { drillDatabaseUrl, drillFixture } from "./ward-audit-drill.test-support.mjs";
 
 const USERS = 100;
+/**
+ * The next time this Perth shift change happens (UTC hour and minute). The server checks the
+ * 12-hour sign-in limit against the real clock, so a fixed past date stops working 12 hours later.
+ */
+const nextAt = (utcHour, utcMinute) => {
+  const at = new Date();
+  at.setUTCHours(utcHour, utcMinute, 0, 0);
+  if (at.getTime() < Date.now()) at.setUTCDate(at.getUTCDate() + 1);
+  return at.toISOString();
+};
 const SHIFTS = [
-  ["07:00", "2026-11-10T23:00:00Z"],
-  ["15:00", "2026-11-11T07:00:00Z"],
-  ["21:30", "2026-11-11T13:30:00Z"],
+  ["07:00", nextAt(23, 0)],
+  ["15:00", nextAt(7, 0)],
+  ["21:30", nextAt(13, 30)],
 ].slice(0, process.env.WARD_DRILL_ALL_SHIFTS === "1" ? 3 : 1);
 
 /** A TCP fault proxy: "up" pipes to the backend, "down" drops every connection, open ones too. */
