@@ -9,7 +9,8 @@ import {
   lastDowntimePack,
   rememberDowntimePack,
 } from "@/components/ward-management/reports/downtime-pack";
-import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { lastPackPrintedAt } from "@/components/ward-management/ward-downtime-pack-prints";
+import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /*
@@ -27,10 +28,26 @@ const STORAGE_APIS =
   /\b(?:localStorage|sessionStorage|indexedDB)\b|\bcaches\s*\??\.|\bdocument\s*\??\.\s*cookie\b|\bnavigator\s*\??\.\s*storage\b/u;
 const SYNTHETIC_NAME = "Synthetic person";
 
+/**
+ * Batch 4 items 24 and 25 (Josh approved the drawing 11 Nov 2026, D-142): the screens outside
+ * reports/ that read pack print times or the outage catch-up.
+ */
+const PACK_TIME_READERS = [
+  // The print time record sits at the ward root, shared by the coordinator, ward and reports screens.
+  "src/components/ward-management/ward-downtime-pack-prints.ts",
+  "src/components/ward-management/use-outage-catch-up.ts",
+  "src/components/ward-management/ward/ward-pack-printed-line.tsx",
+  "src/components/ward-management/ward/ward-outage-catch-up-card.tsx",
+  "src/components/ward-management/coordinator/home-outage-catch-up.tsx",
+].map((path) => join(process.cwd(), path));
+
 function downtimePackSources(): string[] {
-  return readdirSync(REPORTS_DIR)
-    .filter((name) => /^(downtime-pack[\w.-]*|use-take-downtime-pack)\.tsx?$/u.test(name))
-    .map((name) => join(REPORTS_DIR, name));
+  return [
+    ...readdirSync(REPORTS_DIR)
+      .filter((name) => /^(downtime-pack[\w.-]*|use-take-downtime-pack)\.tsx?$/u.test(name))
+      .map((name) => join(REPORTS_DIR, name)),
+    ...PACK_TIME_READERS,
+  ];
 }
 
 /** Drops block and line comments so only live code is scanned. */
@@ -76,7 +93,22 @@ afterEach(() => {
 describe("downtime pack keeps no board data on the device (D-72 item 2)", () => {
   it("finds the downtime pack's source files", () => {
     const names = downtimePackSources().map((path) => path.split(/[\\/]/u).pop());
-    expect(names).toEqual(expect.arrayContaining(["downtime-pack.ts", "use-take-downtime-pack.ts"]));
+    expect(names).toEqual(
+      expect.arrayContaining([
+        "downtime-pack.ts",
+        "use-take-downtime-pack.ts",
+        // Batch 4 item 24 (10 Nov 2026): the print time record and the hook that sends it.
+        "ward-downtime-pack-prints.ts",
+        "downtime-pack-print-hook.ts",
+        // D-142 (11 Nov 2026): the old packs band, Record an outage, and their readers elsewhere.
+        "downtime-pack-old-band.tsx",
+        "downtime-pack-record-outage.tsx",
+        "use-outage-catch-up.ts",
+        "ward-pack-printed-line.tsx",
+        "ward-outage-catch-up-card.tsx",
+        "home-outage-catch-up.tsx",
+      ]),
+    );
   });
 
   it("flags a storage call when one is written (non-vacuity)", () => {
@@ -115,5 +147,26 @@ describe("downtime pack keeps no board data on the device (D-72 item 2)", () => 
     expect(lastDowntimePack()).toBeNull();
     expect(localStorage.length).toBe(0);
     expect(sessionStorage.length).toBe(0);
+  });
+
+  // Batch 4 item 24 (10 Nov 2026): the shared record keeps only when each ward's pack was printed.
+  it("recording a print keeps ward ids and a time only, and writes nothing to the device", () => {
+    const before = { local: storedText(localStorage), session: storedText(sessionStorage) };
+    const pack = takePack();
+    rememberDowntimePack(pack);
+    const unitIds = pack.wards.map((ward) => ward.unitId);
+    const state = wardFlowReducer(seedWardFlowState(), {
+      type: "RECORD_DOWNTIME_PACK_PRINTED",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      unitIds,
+    });
+
+    expect(lastPackPrintedAt(state.downtimePackPrints, unitIds[0]!)).toBe(NOW_ANCHOR);
+    for (const record of state.downtimePackPrints ?? [])
+      expect(Object.keys(record).sort()).toEqual(["at", "by", "unitId"]);
+    expect(JSON.stringify(state.downtimePackPrints)).not.toContain(SYNTHETIC_NAME);
+    expect(storedText(localStorage)).toBe(before.local);
+    expect(storedText(sessionStorage)).toBe(before.session);
   });
 });

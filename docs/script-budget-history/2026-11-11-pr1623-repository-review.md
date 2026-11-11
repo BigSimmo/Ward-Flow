@@ -17,3 +17,5 @@ Merged again with main `cc755fa`, which raised every route: the same three raise
 Merged again after #1607 and #1628 (main `daacf218e`): main's values taken, plus this PR's deltas, giving ED 538.8, Movements 613.6 and Statistics 636.0.
 
 Then Home `/ward-flow` raised 580.5 to 581.1: hosted CI measured 580.8 KB on this merge (head `1190d68`), 0.3 KB over main's value. Main alone could not be measured because this PR changes dependencies. The likely source is the same shared helpers plus the new "leave" search entry; this was not measured route by route. Well within the 5 KB allowance.
+
+Merged again after #1603 (main `30abc7aee`): main's values taken, plus this PR's deltas, giving Home 584.1, ED 540.9, Movements 615.8 and Statistics 638.3.
