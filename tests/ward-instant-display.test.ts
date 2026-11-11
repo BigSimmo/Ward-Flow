@@ -31,6 +31,10 @@ const MAY_ASSERT_TODAY = new Map([
   ],
   ["countedAt", "Count breakdown (item 5): the time the figure was counted, which is now."],
   [
+    "lastNightStart",
+    'Night shift first look (batch 3 item 11, 10 Nov 2026): the words say "Since last night at", which name the day; the instant is always the previous night shift\'s start.',
+  ],
+  [
     "expectedAt",
     "Weekend discharges (feature 14, 9 Nov 2026): the clock face follows perthDayLabel(expectedAt), which names the day.",
   ],

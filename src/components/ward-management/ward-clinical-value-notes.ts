@@ -151,6 +151,12 @@ const CLINICAL_VALUE_NOTES = {
   tvChangeMark: {
     source: 'D-137 (Josh, 10 Nov 2026), plan item 43: TV "Changed HH:MM" mark on the ward and bed meeting TVs',
   },
+  handoverOwnWorkLead: {
+    source: "Feature build plan batch 3, item 21: Josh signed 30 minutes on a decision card, 10 Nov 2026 (D-136)",
+  },
+  diversionReturnReview: {
+    source: "Feature build plan batch 3, item 28: Josh signed 7 days on a decision card, 10 Nov 2026 (D-136)",
+  },
   lateArrivalGrace: {
     source: "D-22 (26 Sep 2026), labelled default",
   },

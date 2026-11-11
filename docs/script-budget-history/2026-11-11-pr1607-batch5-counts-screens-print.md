@@ -12,3 +12,5 @@ Later the same day (PR head `272e9c8`, merged with `main` at `35c7ccd`, which ca
 
 Later again (merging `main` at `c21e99a`, which carries PR #1609's raises): this PR's raise on each screen is added on top of main's new limit. That gives Home 579.2, referrals 585.5, ED 536.6, ward 615.3, movement 611.4, capacity 657.9, bed meeting 595.0 and statistics 634.2. Arm ED takes main's 667.6.
 Hosted CI on `143f097` measured ED at 536.7 KB, 0.1 KB over the summed limit, so ED is raised 536.6 to 537.0 (the measurement plus about 0.3).
+
+Later again (merging `main` at `cc755fa`, which carries PR #1605's limits): this PR's raise on each screen is again added on top of main's new limit. That gives Home 580.5, referrals 586.9, ED 538.5, ward 616.8, movement 613.1, capacity 659.3, bed meeting 596.5 and statistics 635.7. Arm ED takes main's 668.1.

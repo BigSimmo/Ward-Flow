@@ -6,11 +6,14 @@ import {
   dischargeChecklistTally,
   followUpReplyWords,
 } from "@/components/ward-management/ward-discharge-checklist";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { communityFirstContactWords } from "./community-first-contact";
 import styles from "./discharge-slipping-list.module.css";
 
 /**
  * Features 37 and 13 (9 Nov 2026) on a Discharges board row: how many of the four checklist items
- * are settled ("2 of 4"), and the community team's follow-up reply once it has given one.
+ * are settled ("2 of 4"), and the community team's follow-up reply once it has given one. Item 22:
+ * beside the reply, the date the community team first saw them, once it has recorded one.
  */
 export function DischargeChecklistTag({
   record,
@@ -23,6 +26,8 @@ export function DischargeChecklistTag({
 }) {
   const { settled, total } = dischargeChecklistTally(dischargeChecklist({ ...record, dependencies }));
   const reply = followUpReplyWords(record.followUpReply);
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
+  const firstSeen = dayZero ? communityFirstContactWords(record, dayZero) : null;
   return (
     <span className={styles.tags} data-testid={`ward-discharge-checklist-tag-${record.admissionId}`}>
       {showChecklist ? (
@@ -48,6 +53,12 @@ export function DischargeChecklistTag({
             {reply}
           </Badge>
         </>
+      ) : null}
+      {firstSeen ? (
+        <span className={styles.firstSeen} data-testid={`ward-discharge-first-contact-${record.admissionId}`}>
+          <SrOnly>, </SrOnly>
+          {firstSeen}
+        </span>
       ) : null}
     </span>
   );

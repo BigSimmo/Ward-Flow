@@ -4,6 +4,7 @@ import type { ReturnEarlyFlagRecord, ReturnEarlyNotice } from "./out-of-area/ret
 import type { SiteHandoverSignOffRecord } from "./site-sign-off/site-handover-sign-off";
 import type { TriageSignedRecord } from "./triage/triage-record";
 import type { StaffRequestRecord } from "./staffing/staff-requests";
+import type { CarerCallbackRecord, HandedItemRecord } from "@/components/ward-management/handover-work-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 
 /**
@@ -29,6 +30,10 @@ export type ClosingLoopContext = {
   triages?: TriageSignedRecord[];
   /** Staff needed (`REQUEST_WARD_STAFF`, feature 10): read through `openStaffRequests`. */
   staffRequests?: StaffRequestRecord[];
+  /** Batch 3 item 21 (`HAND_OVER_ITEM`): hand-overs of own work, read by the handover page. */
+  handedItems?: HandedItemRecord[];
+  /** Batch 3 item 23 (`RECORD_CARER_CALLBACK`): carer callback promises, read by handover and the patient page. */
+  carerCallbacks?: CarerCallbackRecord[];
 };
 
 export const CLOSING_LOOP_CONTEXT_KEYS = {
@@ -39,6 +44,8 @@ export const CLOSING_LOOP_CONTEXT_KEYS = {
   returnEarlyNotices: true,
   triages: true,
   staffRequests: true,
+  handedItems: true,
+  carerCallbacks: true,
 } as const;
 
 const NONE: never[] = [];
@@ -52,5 +59,7 @@ export function closingLoopContext(state: WardFlowState): Required<ClosingLoopCo
     returnEarlyNotices: Array.isArray(state.returnEarlyNotices) ? state.returnEarlyNotices : NONE,
     triages: Array.isArray(state.triages) ? state.triages : NONE,
     staffRequests: Array.isArray(state.staffRequests) ? state.staffRequests : NONE,
+    handedItems: Array.isArray(state.handedItems) ? state.handedItems : NONE,
+    carerCallbacks: Array.isArray(state.carerCallbacks) ? state.carerCallbacks : NONE,
   };
 }

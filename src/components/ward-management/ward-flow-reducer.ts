@@ -196,6 +196,7 @@ import { applyExampleListsOverlay } from "@/components/ward-management/ward-demo
 import { stepUndoSubjectId, subjectId } from "./ward-flow-subject-id";
 import { nextBedReleaseId, withFreshIds } from "./ward-runtime-ids";
 import { isPatientCarePlanEvent } from "./ward-patient-care-plan-events";
+import { isHandoverWorkEvent } from "@/components/ward-management/handover-work-events";
 export { UNLINKED_CARE_REFUSAL } from "./ward-flow-protected-record-events";
 
 /**
@@ -419,6 +420,9 @@ export type WardFlowState = WardAuditState & {
   triages?: TriageSignedRecord[];
   /** Staff needed (feature 10, 9 Nov 2026): ward, shift, count, chosen reasons, times and roles only. */
   staffRequests?: StaffRequestRecord[];
+  /** Batch 3 items 21 and 23 (`handover/handover-work-events.ts`): hand-overs of own work, and carer callbacks. */
+  handedItems?: import("@/components/ward-management/handover-work-events").HandedItemRecord[];
+  carerCallbacks?: import("@/components/ward-management/handover-work-events").CarerCallbackRecord[];
   /**
    * Shared mode only (Josh, 4 Nov 2026): nameless early-return notices for a desk that should hear a
    * flag but cannot see the stay. Worked out when the desk's copy is scoped; never written by the reducer.
@@ -2381,6 +2385,7 @@ export function reduceClinicalEvent(
     default: {
       if (isPatientCarePlanEvent(event))
         return reducerSlices().reducePatientCarePlanEvent(state, event, reject, decision);
+      if (isHandoverWorkEvent(event)) return reducerSlices().reduceHandoverWork(state, event, reject);
       const _exhaustive: never = event;
       void _exhaustive;
       return state;

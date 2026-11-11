@@ -78,6 +78,7 @@ describe("clinical values file", () => {
       edMedicalBedRelease: 24,
       // Medical clearance tracker (Josh sign-off, 9 Nov 2026): amber after six hours with none recorded.
       edClearanceNotRecorded: 6,
+      diversionReturnReview: 7,
       bedAlertLine: 85,
       occupancyAmber: 90,
       occupancySurge: 95,
@@ -107,6 +108,7 @@ describe("clinical values file", () => {
       handoverDuePrompt: 15,
       // D-137 (Josh, 10 Nov 2026): the TV change mark shows for 15 minutes, signed.
       tvChangeMark: 15,
+      handoverOwnWorkLead: 30,
       lateArrivalGrace: 60,
       silentWardFirstReminder: 120,
       silentWardSecondReminder: 240,
