@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { signInStartedAt } from "@/lib/sign-in-started-at";
+import { signInStartedAt } from "@/lib/front-door-pass";
 
 const token = (claims: unknown) => `x.${Buffer.from(JSON.stringify(claims)).toString("base64url")}.sig`;
 

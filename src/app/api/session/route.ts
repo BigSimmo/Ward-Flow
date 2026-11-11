@@ -10,11 +10,11 @@ import {
   frontDoorRequired,
   frontDoorSecret,
   issuePass,
+  signInStartedAt,
 } from "@/lib/front-door-pass";
 import { edgeAddress, reserveDemoTry } from "@/lib/demo-code-tries";
 import { checkFrontDoorAccount } from "@/lib/front-door-admission";
 import { readFrontDoorBody } from "@/lib/front-door-body";
-import { signInStartedAt } from "@/lib/sign-in-started-at";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";

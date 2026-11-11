@@ -52,7 +52,7 @@ import {
   UNSENT_CHANGES_DROPPED_NOTICE,
 } from "@/components/ward-management/front-door/front-door-notice";
 import { heldActionsWaiting, sendHeldActions } from "./ward-held-actions";
-import { signInStartedAt } from "@/lib/sign-in-started-at";
+import { signInStartedAt } from "@/lib/front-door-pass";
 
 /** #805, #839: fetch the shared client and every chunk its first read awaits (state checks and the
  * scenario wards) while the sign-in is checked, not one after another once it is. */
