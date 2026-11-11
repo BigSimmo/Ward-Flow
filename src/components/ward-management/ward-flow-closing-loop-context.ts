@@ -1,6 +1,7 @@
 import type { DirectoryCheckRecord } from "./on-call/on-call-checks";
 import type { HomeServiceReturnRecord } from "./out-of-area/home-service-return";
 import type { ReturnEarlyFlagRecord, ReturnEarlyNotice } from "./out-of-area/return-early";
+import type { DiversionReturnRecord } from "./community/diversion-return-review";
 import type { SiteHandoverSignOffRecord } from "./site-sign-off/site-handover-sign-off";
 import type { TriageSignedRecord } from "./triage/triage-record";
 import type { StaffRequestRecord } from "./staffing/staff-requests";
@@ -27,6 +28,8 @@ export type ClosingLoopContext = {
   returnEarlyFlags?: ReturnEarlyFlagRecord[];
   /** Shared mode nameless notices for a desk that cannot see the flagged stay (Josh, 4 Nov 2026). */
   returnEarlyNotices?: ReturnEarlyNotice[];
+  /** Shared mode returns to ED for a community desk's own diversions (D-152): referral id and time only. */
+  diversionReturns?: DiversionReturnRecord[];
   /** Signed triages (`RECORD_TRIAGE_SIGNED`, 7 Nov 2026): codes only, read by the triage form and the patient record. */
   triages?: TriageSignedRecord[];
   /** Staff needed (`REQUEST_WARD_STAFF`, feature 10): read through `openStaffRequests`. */
@@ -43,6 +46,7 @@ export const CLOSING_LOOP_CONTEXT_KEYS = {
   siteHandoverSignOffs: true,
   returnEarlyFlags: true,
   returnEarlyNotices: true,
+  diversionReturns: true,
   triages: true,
   staffRequests: true,
   siteFeatureSwitches: true,
@@ -61,6 +65,7 @@ export function closingLoopContext(state: WardFlowState): Required<ClosingLoopCo
     siteHandoverSignOffs: Array.isArray(state.siteHandoverSignOffs) ? state.siteHandoverSignOffs : NONE,
     returnEarlyFlags: Array.isArray(state.returnEarlyFlags) ? state.returnEarlyFlags : NONE,
     returnEarlyNotices: Array.isArray(state.returnEarlyNotices) ? state.returnEarlyNotices : NONE,
+    diversionReturns: Array.isArray(state.diversionReturns) ? state.diversionReturns : NONE,
     triages: Array.isArray(state.triages) ? state.triages : NONE,
     staffRequests: Array.isArray(state.staffRequests) ? state.staffRequests : NONE,
     siteFeatureSwitches: Array.isArray(state.siteFeatureSwitches) ? state.siteFeatureSwitches : NONE,

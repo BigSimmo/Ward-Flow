@@ -1076,6 +1076,7 @@ const storedState = z.looseObject({
   returnEarlyFlags: z.optional(z.array(z.strictObject({ admissionId: id, homeHospital: id, at: finite, by: role }))),
   // Shared mode nameless notices (4 Nov 2026): a key, a site and a time. No stay id, no name.
   returnEarlyNotices: z.optional(z.array(z.strictObject({ key: id, homeHospital: id, at: finite }))),
+  diversionReturns: z.optional(z.array(z.strictObject({ referralId: id, returnedAt: finite }))), // D-152, no person
   handoverSignOffs: z.array(stamped),
   // Triage and risk (7 Nov 2026): signed triages, absent in older saves. Codes only, no typed text.
   triages: z.optional(storedTriageRecords),
