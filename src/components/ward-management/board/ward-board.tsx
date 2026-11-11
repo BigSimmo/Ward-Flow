@@ -1130,6 +1130,9 @@ export function WardBoard({
       }
       setPendingConfirm={setPendingConfirm}
       setSelectedBlocker={setSelectedBlocker}
+      transportPending={admissions.some(
+        (admission) => admission.id === selectedTile?.key && transportPendingFor(admission, liveBedReleases),
+      )}
       unit={unit}
     />
   );

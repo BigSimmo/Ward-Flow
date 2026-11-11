@@ -120,6 +120,7 @@ export function WardBoardDetailPanel({
   setLeavingDestination,
   setPendingConfirm,
   setSelectedBlocker,
+  transportPending = false,
   unit,
 }: {
   admissions: Admission[];
@@ -161,9 +162,17 @@ export function WardBoardDetailPanel({
   >;
   setLeavingDestination: (destination: LeavingDestination) => void;
   setPendingConfirm: Dispatch<
-    SetStateAction<{ kind: "leaving" | "away_at_ed"; who: string; item?: ShiftTileItem; admissionId?: string } | null>
+    SetStateAction<{
+      kind: "leaving" | "away_at_ed";
+      who: string;
+      item?: ShiftTileItem;
+      admissionId?: string;
+      offerTransport?: boolean;
+    } | null>
   >;
   setSelectedBlocker: Dispatch<SetStateAction<BedReleaseBlocker>>;
+  /** Item 18: the selected stay's transport is still pending, so leaving asks about it (Codex, #1608). */
+  transportPending?: boolean;
   unit: Unit;
 }) {
   const [dateTimeWrong, setDateTimeWrong] = useState(false);
@@ -266,7 +275,8 @@ export function WardBoardDetailPanel({
             };
 
             // Audit CS3-07: with no destination chosen yet, the confirmation asks for one.
-            if (!requireConfirmation && leavingDestination !== "") {
+            // Item 18: with transport still pending, it always asks whether they are waiting for it.
+            if (!requireConfirmation && leavingDestination !== "" && !transportPending) {
               executeLeaving(leavingDestination);
               return;
             }
@@ -276,6 +286,7 @@ export function WardBoardDetailPanel({
               kind: "leaving",
               who: tileWho || nameFor(selectedTile.key),
               admissionId: selectedTile.key,
+              ...(transportPending ? { offerTransport: true } : {}),
             });
           }}
         >

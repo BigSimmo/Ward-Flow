@@ -91,6 +91,42 @@ describe("ward board: Left the ward, waiting for transport (item 18)", () => {
     fireEvent.click(proceed);
     expect(screen.getAllByRole("button", { name: /^Collected/ })).toHaveLength(before + 1);
   });
+
+  it("the bed drawer's Record that they have left asks about transport too (Codex, #1608)", () => {
+    const state = seedWardFlowState();
+    const units = [
+      ...new Set(
+        state.admissions
+          .filter((admission) => transportPendingFor(admission, state.bedReleases))
+          .map((admission) => admission.unitId),
+      ),
+    ];
+    let asked = 0;
+    for (const unitId of units) {
+      const view = renderBoard(unitId);
+      const tiles = within(screen.getByTestId("ward-board-beds"))
+        .getAllByRole("listitem")
+        .filter((tile) => tile.getAttribute("data-bed-kind") === "occupied");
+      for (const tile of tiles) {
+        if (!tile.isConnected) continue;
+        fireEvent.click(within(tile).getByRole("button"));
+        const submit = screen.queryByTestId("ward-board-record-leaving-submit");
+        if (!submit) continue;
+        fireEvent.change(screen.getByTestId("ward-board-leaving-destination"), {
+          target: { value: "discharged-to-the-community" },
+        });
+        // Board without confirmation: only a pending transport stops it recording at once.
+        fireEvent.click(screen.getByTestId("ward-board-record-leaving-submit"));
+        if (screen.queryByTestId("ward-board-confirm-transport")) {
+          asked += 1;
+          fireEvent.click(screen.getByTestId("ward-board-confirm-cancel"));
+          break;
+        }
+      }
+      view.unmount();
+    }
+    expect(asked, "a seeded discharge waiting on transport asks from the drawer").toBeGreaterThan(0);
+  });
 });
 
 /** Presses each "They have left" until one opens the transport question; true when one did. */
