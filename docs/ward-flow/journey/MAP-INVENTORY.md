@@ -3,7 +3,7 @@
 The route is selective. Its action notes and the additional command models have source review evidence; source digests detect later edits. This does not establish runtime or clinical acceptance.
 
 ## 203 CURRENT ENGINE EVENTS
-Source-contract SHA256: 79ffd024a08c37858e996cce67731721e71cc2677b1a339d512e339447b19098
+Source-contract SHA256: 6889e1452b82072233d8e1471280d4b72b6ca7f15e434ec4cf0817c7dd1ffd40
 - RECORD_ADMISSION_CARE — diagram-reviewed; event roles: ward, coordinator, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:20
@@ -1120,19 +1120,19 @@ Source-contract SHA256: 79ffd024a08c37858e996cce67731721e71cc2677b1a339d512e3394
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:531
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2082
   Event/dispatch reference: src/components/ward-management/ward-inbox-events.ts:71
-  Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:349
+  Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:350
 - REOPEN_INBOX_ITEM — diagram-reviewed; event roles: coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:532
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2083
   Event/dispatch reference: src/components/ward-management/ward-inbox-events.ts:99
-  Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:384
+  Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:385
 - TAKE_INBOX_ITEM_OWNERSHIP — modelled; event roles: coordinator
   Source-reviewed command model: Ownership history appended; current owner is acting role’s label.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:534
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2084
   Event/dispatch reference: src/components/ward-management/ward-inbox-events.ts:111
-  Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:402
+  Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:403
   Subject: A coordinator inbox row and its occurrence-specific history
   Before: Real current inbox row not already owned by this desk
   After: Ownership history appended; current owner is acting role’s label
@@ -1142,7 +1142,7 @@ Source-contract SHA256: 79ffd024a08c37858e996cce67731721e71cc2677b1a339d512e3394
   effects: Appends {at,by} to inboxOwnership; underlying row/fact and its visibility unchanged
   tests: tests/ward-inbox-snooze.test.ts
   tests: tests/ward-consolidated-census-20261104.test.ts
-  Reviewed source: src/components/ward-management/ward-inbox-reducer.ts:402; SHA256 4a7dde821d15d7032a38cb18333ed34872d78fb28e4be6efb382ad5e9095c81d
+  Reviewed source: src/components/ward-management/ward-inbox-reducer.ts:403; SHA256 08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:535; SHA256 7cd2adf10357bb43d848f6cea8573401e27631d61ea8ff6476afb73d6e917438
   Reviewed source: src/components/ward-management/ward-inbox-events.ts:111; SHA256 c3c63fd47887f9bbabdefc8aa6b6742f72848bc9f744afa55b2aa7efd80f037c
   Reviewed source: src/components/ward-management/ward-access-state.ts:709; SHA256 6749082a89387b340bc0b52cfe76a13f8375532e44cbbcdf17a85d696c94e703
@@ -1152,18 +1152,19 @@ Source-contract SHA256: 79ffd024a08c37858e996cce67731721e71cc2677b1a339d512e3394
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:535
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2085
   Event/dispatch reference: src/components/ward-management/ward-inbox-events.ts:121
-  Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:422
+  Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:423
   Subject: A coordinator inbox row and its occurrence-specific history
   Before: Ownership history’s current entry belongs to acting role, applying a current-row start when available
   After: Ownership history appended with kind=released; ownership relinquished
   Scope: Coordinator role only; shared authenticated scope must also permit the row’s subject. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority. Scoped state projection retains this metadata for permitted meeting-action subjects by parsing the encoded subject id; metadata for other subjects stays excluded.
   payload: inboxItemId trimmed before lookup; role and now
+  guards: A blank or non-text inboxItemId is refused before any history is read
   guards: Current owner must match acting role after filtering entries older than the row’s current occurrence, if a start is available; this branch does not independently require row existence
   effects: Appends released history entry; does not delete prior ownership, resolve fact or hide row
   tests: tests/ward-inbox-snooze.test.ts
   tests: tests/ward-alerts-release-ownership.dom.test.tsx
   tests: tests/ward-consolidated-census-20261104.test.ts
-  Reviewed source: src/components/ward-management/ward-inbox-reducer.ts:422; SHA256 4a7dde821d15d7032a38cb18333ed34872d78fb28e4be6efb382ad5e9095c81d
+  Reviewed source: src/components/ward-management/ward-inbox-reducer.ts:423; SHA256 08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:536; SHA256 7cd2adf10357bb43d848f6cea8573401e27631d61ea8ff6476afb73d6e917438
   Reviewed source: src/components/ward-management/ward-inbox-events.ts:121; SHA256 c3c63fd47887f9bbabdefc8aa6b6742f72848bc9f744afa55b2aa7efd80f037c
   Reviewed source: src/components/ward-management/ward-access-state.ts:709; SHA256 6749082a89387b340bc0b52cfe76a13f8375532e44cbbcdf17a85d696c94e703
@@ -1173,7 +1174,7 @@ Source-contract SHA256: 79ffd024a08c37858e996cce67731721e71cc2677b1a339d512e3394
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:536
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2086
   Event/dispatch reference: src/components/ward-management/ward-inbox-events.ts:133
-  Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:435
+  Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:439
   Subject: A coordinator inbox row and its occurrence-specific history
   Before: Real current inbox row visible or previously snoozed
   After: Latest snoozed entry hides row until chosen return time while fact remains
@@ -1185,7 +1186,7 @@ Source-contract SHA256: 79ffd024a08c37858e996cce67731721e71cc2677b1a339d512e3394
   effects: Current-occurrence selectors return row when until passes or a newer occurrence starts
   tests: tests/ward-inbox-snooze.test.ts
   tests: tests/ward-consolidated-census-20261104.test.ts
-  Reviewed source: src/components/ward-management/ward-inbox-reducer.ts:435; SHA256 4a7dde821d15d7032a38cb18333ed34872d78fb28e4be6efb382ad5e9095c81d
+  Reviewed source: src/components/ward-management/ward-inbox-reducer.ts:436; SHA256 08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:537; SHA256 7cd2adf10357bb43d848f6cea8573401e27631d61ea8ff6476afb73d6e917438
   Reviewed source: src/components/ward-management/ward-inbox-events.ts:133; SHA256 c3c63fd47887f9bbabdefc8aa6b6742f72848bc9f744afa55b2aa7efd80f037c
   Reviewed source: src/components/ward-management/ward-access-state.ts:709; SHA256 6749082a89387b340bc0b52cfe76a13f8375532e44cbbcdf17a85d696c94e703
@@ -1195,17 +1196,18 @@ Source-contract SHA256: 79ffd024a08c37858e996cce67731721e71cc2677b1a339d512e3394
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:537
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2087
   Event/dispatch reference: src/components/ward-management/ward-inbox-events.ts:142
-  Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:469
+  Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:473
   Subject: A coordinator inbox row and its occurrence-specific history
   Before: History has an active snooze, applying a current-row start when available
   After: Snooze history appended with kind=returned; active snooze ends now
   Scope: Coordinator role only; shared authenticated scope must also permit the row’s subject. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority. Scoped state projection retains this metadata for permitted meeting-action subjects by parsing the encoded subject id; metadata for other subjects stays excluded.
   payload: inboxItemId trimmed before lookup; role and now
+  guards: A blank or non-text inboxItemId is refused before any history is read
   guards: Active snooze must exist after occurrence filtering; expired or older-occurrence entry refused; this branch does not independently require row existence
   effects: Appends returned entry, retaining earlier history; an underlying row, if still present, returns to the active list without resolving its fact
   tests: tests/ward-inbox-snooze.test.ts
   tests: tests/ward-consolidated-census-20261104.test.ts
-  Reviewed source: src/components/ward-management/ward-inbox-reducer.ts:469; SHA256 4a7dde821d15d7032a38cb18333ed34872d78fb28e4be6efb382ad5e9095c81d
+  Reviewed source: src/components/ward-management/ward-inbox-reducer.ts:470; SHA256 08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:538; SHA256 7cd2adf10357bb43d848f6cea8573401e27631d61ea8ff6476afb73d6e917438
   Reviewed source: src/components/ward-management/ward-inbox-events.ts:142; SHA256 c3c63fd47887f9bbabdefc8aa6b6742f72848bc9f744afa55b2aa7efd80f037c
   Reviewed source: src/components/ward-management/ward-access-state.ts:709; SHA256 6749082a89387b340bc0b52cfe76a13f8375532e44cbbcdf17a85d696c94e703
