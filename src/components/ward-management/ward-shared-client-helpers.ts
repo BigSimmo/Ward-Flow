@@ -2,7 +2,7 @@ import type { WardFlowEvent } from "./ward-flow-events";
 import type { SharedSnapshot } from "./ward-shared-client-types";
 import { payloadUnchanged } from "./ward-shared-client-reuse";
 
-export { onDeviceClock } from "./ward-shared-clock";
+export { notModifiedUpdate, onDeviceClock } from "./ward-shared-clock";
 
 /**
  * H-0304: `AbortSignal.any` is missing from older Safari (before 17.4), where it threw and every

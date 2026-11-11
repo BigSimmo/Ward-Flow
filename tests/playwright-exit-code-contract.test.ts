@@ -72,12 +72,14 @@ async function runPhase({
   reports = [executionReport()],
   rerunCode = 0,
   groups = null,
+  releaseGatePart = null,
 }: {
   args?: string[];
   codes?: number[];
   reports?: (ReturnType<typeof executionReport> | null)[];
   rerunCode?: number;
   groups?: { seconds: number; files: string[] }[] | null;
+  releaseGatePart?: string | null;
 } = {}) {
   let exitCode: number | undefined;
   let shardIndex = 0;
@@ -128,7 +130,7 @@ async function runPhase({
       splitPlaywrightArguments,
       requiredReleaseGate: false,
       releaseGateProject: null,
-      releaseGatePart: null,
+      releaseGatePart,
       readJsonReport: readReport,
       readFileSync: (file: string) => JSON.stringify(readReport(file)),
       keepJourneyFailures: () => null,
@@ -172,6 +174,27 @@ describe("run-playwright post-build verdict", () => {
         ]),
       );
       expect(call[1]).not.toContain("ui-ward-");
+    }
+  });
+
+  it("splits a release-gate part by test, not by file, so a one-file part still uses every shard", async () => {
+    const result = await runPhase({
+      args: ["--project=chromium", "release-gate-axe-sweep.spec.ts"],
+      codes: [0, 0],
+      reports: [executionReport(), executionReport()],
+      groups: [
+        { seconds: 1, files: ["a.spec.ts"] },
+        { seconds: 1, files: ["b.spec.ts"] },
+      ],
+      releaseGatePart: "checks",
+    });
+    expect(result.exitCode).toBe(0);
+    expect(result.shardChild).toHaveBeenCalledTimes(2);
+    for (const [index, call] of result.shardChild.mock.calls.entries()) {
+      expect(call[1]).toEqual(
+        expect.arrayContaining(["release-gate-axe-sweep.spec.ts", "--fully-parallel", `--shard=${index + 1}/2`]),
+      );
+      expect(call[1]).not.toContain("a.spec.ts");
     }
   });
 

@@ -29,3 +29,5 @@ After merging `main` at `daacf21` (#1607 and #1628), each limit is again main's 
 Hosted CI on `145e4ea` measured referrals at 590.4 KB merged with `main` at `daacf21`, over its 589.6 limit. Main's own build failed in the gate, so it could not say whose growth it was. Referrals is now 590.8 (measurement plus 0.4), a raise of 3.9 KB over main's 586.9. That is within the 5 KB a PR may raise a screen. Trim tried: none safe beyond the earlier lazy intake dialog.
 
 After merging `main` at `30abc7a` (#1603), each limit is again main's new limit plus this PR's raise (referrals 3.9).
+
+After merging `main` at `e5a8191` (#1624), each limit is again main's new limit plus this PR's same raise. No raise grew.

@@ -72,14 +72,20 @@ describe("actual Ward local verification plan", () => {
       selectedScripts({ entries: [{ file: "tests/ward-waitlist.test.ts", status: "M" }] }, false, { full: true }),
     ).not.toContain("test:backend:integration");
   });
-  it("selects production builds under --full for every executable scope and skips them for documents and policy", () => {
+  it("selects production builds under --full for every app or backend scope and skips them for unit tests alone, documents and policy", () => {
     for (const entries of [
       [{ file: "src/app/page.tsx", status: "M" }],
       [],
-      [{ file: "tests/ward-waitlist.test.ts", status: "M" }],
       [{ file: "backend/ward-flow/engine.ts", status: "M" }],
     ])
       expect(selectedScripts({ entries }, false, { full: true })).toContain("build");
+    // Unit test files never reach the app bundle, so a change of unit tests alone runs them without
+    // a production build (D-146); the full unit gate still runs.
+    const testsOnly = selectedScripts({ entries: [{ file: "tests/ward-waitlist.test.ts", status: "M" }] }, false, {
+      full: true,
+    });
+    expect(testsOnly).not.toContain("build");
+    expect(testsOnly).toContain("check:ward-expected-reds");
     for (const file of ["README.md", "AGENTS.md"])
       expect(selectedScripts({ entries: [{ file, status: "M" }] }, false, { full: true })).not.toContain("build");
     expect(selectedScripts({ frontend_static: true })).toEqual(expect.arrayContaining(["lint", "typecheck"]));

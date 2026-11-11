@@ -142,9 +142,12 @@ export function classifyChanges(entries, { testReadDocs } = {}) {
       "backend contracts and documentation only",
     );
   }
+  // Unit test files never reach the app bundle (no app code imports tests/), and static's typecheck
+  // covers them, so a change of unit tests alone does not rebuild the app; backend input still does.
   if (files.every((file) => docsOnly(file) || backendOnly(file) || unitTest(file))) {
+    const backend = files.some(backendOnly);
     return flags(
-      { full: true, unit: true, backend: files.some(backendOnly), build: true, frontend_static: true },
+      { full: true, unit: true, backend, build: backend, frontend_static: true },
       "unit tests, backend and documentation only",
     );
   }
