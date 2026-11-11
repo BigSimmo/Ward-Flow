@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { installChromium } from "../scripts/ward-ci-public/install-chromium.mjs";
+import { installChromium, withoutDowngrades } from "../scripts/ward-ci-public/install-chromium.mjs";
 
 describe("bounded release browser setup", () => {
   it("installs both required engines on a cold runner", () => {
@@ -80,6 +80,26 @@ describe("bounded release browser setup", () => {
     ).toBe(0);
     expect(commands).toHaveLength(4);
     expect(commands[3].slice(2)).toEqual(["install", "--with-deps", "chromium"]);
+  });
+
+  it("leaves out a cached package older than the installed one, so apt is never asked to downgrade", () => {
+    const dir = "/var/cache/apt/archives";
+    const installed = new Map([
+      ["libnss3 amd64", "2:3.98-1build1"],
+      ["fonts-liberation all", "1:1.07.4-11"],
+    ]);
+    const older = (a: string, b: string) => a < b;
+    expect(
+      withoutDowngrades(
+        [
+          `${dir}/libnss3_2%3a3.90-1_amd64.deb`,
+          `${dir}/fonts-liberation_1%3a1.07.4-11_all.deb`,
+          `${dir}/libwoff1_1.0.2-2build1_amd64.deb`,
+        ],
+        installed,
+        older,
+      ),
+    ).toEqual([`${dir}/fonts-liberation_1%3a1.07.4-11_all.deb`, `${dir}/libwoff1_1.0.2-2build1_amd64.deb`]);
   });
 
   it("refuses an unsupported or empty engine selection without invoking a command", () => {

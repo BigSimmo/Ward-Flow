@@ -35,7 +35,7 @@ export function installBrowsers({
   now = Date.now,
   log = console.log,
   waitForIdle = execute === runBounded ? (deadline) => waitForPackageManager(deadline, now) : () => {},
-  cachedDebs = execute === runBounded ? archiveDebs() : [],
+  cachedDebs = execute === runBounded ? withoutDowngrades(archiveDebs()) : [],
 } = {}) {
   if (
     !browsers.length ||
@@ -82,6 +82,44 @@ export function archiveDebs(dir = APT_ARCHIVES) {
         .sort()
         .map((name) => join(dir, name))
     : [];
+}
+
+/** Each installed package's version, keyed by "name arch", read once from dpkg. */
+function installedVersions() {
+  const result = spawnSync("dpkg-query", ["-W", "-f", "${Package} ${Architecture} ${Version}\\n"], {
+    encoding: "utf8",
+  });
+  const versions = new Map();
+  for (const line of result.status === 0 ? result.stdout.split("\n") : []) {
+    const [name, arch, version] = line.split(" ");
+    if (version) versions.set(`${name} ${arch}`, version);
+  }
+  return versions;
+}
+
+/** True when dpkg orders version `a` before version `b`. */
+function olderThan(a, b) {
+  return spawnSync("dpkg", ["--compare-versions", a, "lt", b]).status === 0;
+}
+
+/**
+ * A cache saved on an older runner image can hold a package older than the one installed. Naming
+ * that file asks apt for a downgrade, which `-y` refuses, and the whole offline install fails. Leave
+ * such files out; archive names are `name_version_arch.deb`, with an epoch's colon written `%3a`.
+ */
+export function withoutDowngrades(debs, installed = installedVersions(), isOlder = olderThan) {
+  return debs.filter((path) => {
+    const parts = path
+      .split("/")
+      .pop()
+      .replace(/\.deb$/, "")
+      .split("_");
+    if (parts.length !== 3) return true;
+    const [name, rawVersion, arch] = parts;
+    const current = installed.get(`${name} ${arch}`);
+    const version = decodeURIComponent(rawVersion);
+    return !current || current === version || !isOlder(version, current);
+  });
 }
 
 /** A fixed script; the Playwright path and the engine names arrive as arguments, never as code. */
