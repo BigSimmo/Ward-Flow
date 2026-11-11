@@ -310,7 +310,8 @@ export function reduceInboxEvent(
     }
 
     case "ACKNOWLEDGE_INBOX_ITEM": {
-      const inboxItemId = event.inboxItemId.trim();
+      // A missing or non-text id is refused like a blank one, never thrown (performance audit WF-50).
+      const inboxItemId = typeof event.inboxItemId === "string" ? event.inboxItemId.trim() : "";
       if (inboxItemId.length === 0) {
         return reject(state, event, "ACKNOWLEDGE_INBOX_ITEM inboxItemId must name a row — a blank names nothing");
       }
@@ -347,7 +348,7 @@ export function reduceInboxEvent(
     }
 
     case "COMPLETE_INBOX_ITEM": {
-      const inboxItemId = event.inboxItemId.trim();
+      const inboxItemId = typeof event.inboxItemId === "string" ? event.inboxItemId.trim() : "";
       if (inboxItemId.length === 0) {
         return reject(state, event, "COMPLETE_INBOX_ITEM inboxItemId must name a row — a blank names nothing");
       }
@@ -382,7 +383,7 @@ export function reduceInboxEvent(
     }
 
     case "REOPEN_INBOX_ITEM": {
-      const inboxItemId = event.inboxItemId.trim();
+      const inboxItemId = typeof event.inboxItemId === "string" ? event.inboxItemId.trim() : "";
       if (inboxItemId.length === 0) {
         return reject(state, event, "REOPEN_INBOX_ITEM inboxItemId must name a row — a blank names nothing");
       }
@@ -400,7 +401,7 @@ export function reduceInboxEvent(
     }
 
     case "TAKE_INBOX_ITEM_OWNERSHIP": {
-      const inboxItemId = event.inboxItemId.trim();
+      const inboxItemId = typeof event.inboxItemId === "string" ? event.inboxItemId.trim() : "";
       if (!inboxRowExists(state, inboxItemId)) {
         return reject(
           state,
@@ -420,7 +421,7 @@ export function reduceInboxEvent(
     }
 
     case "RELEASE_INBOX_ITEM_OWNERSHIP": {
-      const inboxItemId = event.inboxItemId.trim();
+      const inboxItemId = typeof event.inboxItemId === "string" ? event.inboxItemId.trim() : "";
       const by = WARD_FLOW_ROLE_LABELS[event.role];
       const history = state.inboxOwnership[inboxItemId] ?? [];
       if (currentInboxOwner(history, inboxRowSince(state, inboxItemId))?.by !== by) {
@@ -433,7 +434,7 @@ export function reduceInboxEvent(
     }
 
     case "SNOOZE_INBOX_ITEM": {
-      const inboxItemId = event.inboxItemId.trim();
+      const inboxItemId = typeof event.inboxItemId === "string" ? event.inboxItemId.trim() : "";
       if (!inboxRowExists(state, inboxItemId)) {
         return reject(state, event, `SNOOZE_INBOX_ITEM inboxItemId ${inboxItemId} does not name a real inbox row`);
       }
@@ -467,7 +468,7 @@ export function reduceInboxEvent(
     }
 
     case "UNSNOOZE_INBOX_ITEM": {
-      const inboxItemId = event.inboxItemId.trim();
+      const inboxItemId = typeof event.inboxItemId === "string" ? event.inboxItemId.trim() : "";
       const history = state.inboxSnoozes[inboxItemId];
       if (!history || !activeSnooze(history, event.now, inboxRowSince(state, inboxItemId))) {
         return reject(state, event, `inbox row ${inboxItemId} is not snoozed, so there is nothing to return`);
