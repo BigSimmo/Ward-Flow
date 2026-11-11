@@ -1046,7 +1046,9 @@ export function captureAuditEvent(
         action: event.type,
         details: {
           answer: accepted ? (waitlisted ? "waitlisted" : "declined") : null,
-          unitId: uniqueRecord(before.units, event.unitId)?.id ?? null,
+          // A ward answer that names no ward is kept to the ward that sent it, so a refused row
+          // never falls out of ward scope.
+          unitId: uniqueRecord(before.units, event.unitId ?? event.actingUnitId)?.id ?? null,
           reason: declineAnswerReason(event.reason),
         },
       };

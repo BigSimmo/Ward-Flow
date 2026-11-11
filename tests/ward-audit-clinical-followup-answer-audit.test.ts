@@ -99,6 +99,46 @@ describe("referral answers and arrivals leave an audit row", () => {
     expect(rows.map((row) => [row.category, row.outcome])).toEqual([["referral-answer", "denied"]]);
   });
 
+  it("a refused ward answer that names no ward is still kept to the acting ward", () => {
+    const namedWard: ReferralDestination = {
+      kind: "psychiatric_ward",
+      unitId: "rgh-adult-secure",
+      sex: "Female",
+      gender: "Female",
+      secureBedNeeded: false,
+      involuntaryBedNeeded: false,
+      highAcuityNursingNeeded: false,
+    };
+    const seeded = send(seedWardFlowState(), {
+      type: "RECEIVE_REFERRAL",
+      role: "community",
+      now: at(0),
+      ageBand: "Adult",
+      destinations: [namedWard],
+      homeRegion: "Perth Metropolitan",
+      suburb: { kind: "named", name: "Armadale" },
+      source: "community",
+      urgency: 2,
+      originSiteCode: "SCGH",
+      transportNeeded: false,
+      ...FIXTURE_HISTORY,
+    } as WardFlowEvent);
+    expect(seeded.rejections).toEqual([]);
+    const after = send(seeded, {
+      type: "DECLINE_REFERRAL",
+      role: "ward",
+      now: at(1),
+      referralId: seeded.referrals.at(-1)!.id,
+      destinationKind: "psychiatric_ward",
+      actingUnitId: "rgh-adult-secure",
+      reason: "capability_mismatch",
+    } as WardFlowEvent);
+    expect(after.rejections.length).toBe(1);
+    expect(newRows(seeded, after)).toMatchObject([
+      { category: "referral-answer", outcome: "denied", details: { unitId: "rgh-adult-secure" } },
+    ]);
+  });
+
   it("a destination's decline of a referral writes one accepted row with its fixed-list reason", () => {
     const community: ReferralDestination = { kind: "community_team", teamName: "Inner City Clinic" };
     const seeded = send(seedWardFlowState(), {
