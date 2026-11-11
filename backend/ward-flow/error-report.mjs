@@ -16,8 +16,10 @@ const EVENTS = new Set([
   "ward_backend_push_sweep_failure",
   // The live workspace has passed its size alert threshold (audit PS-02, config.mjs).
   "ward_backend_workspace_size_alert",
-  // A request the shared API answered with a 500 (`server_error` in shared-http.mjs, audit M74).
+  // A request the shared API answered with a 500, 503 or 413 (shared-http.mjs, audit M74 / A7-05).
   "ward_backend_server_error",
+  "ward_backend_service_unavailable",
+  "ward_backend_payload_too_large",
 ]);
 const SAFE_VALUE = /^[A-Za-z0-9_.-]{1,64}$/;
 /** Audit M74: the request ID from the reply header and log line, so one ID links all three. */
