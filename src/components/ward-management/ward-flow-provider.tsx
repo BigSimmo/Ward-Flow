@@ -55,6 +55,7 @@ import {
 import { forgetDowntimePack } from "./reports/downtime-pack";
 
 import { sharedBoardNow } from "@/components/ward-management/ward-shared-clock";
+import { WardSharedReceivedAtContext } from "./ward-shared-freshness";
 import {
   absoluteWallClockMinutes,
   demoDayZero,
@@ -259,7 +260,8 @@ type WardFlowContextValue = closingLoop.ClosingLoopContext & {
   loadScenarioFile?: ScenarioFileLoader;
   /** False when the D-18 free-text privacy lock (or storage unavailability) has paused device saving. */
   savingOnDevice?: boolean;
-  /** Shared workspace status, error and receivedAt (device time of the last good read, 0 before one) for shared-save forms. */
+  /** Shared workspace status and error for shared-save forms. The provider leaves `receivedAt` out (it moves on every
+   *  poll); read `useWardSharedReceivedAt()`. Hand-built test contexts may still set it. */
   shared?: {
     enabled: boolean;
     status: WardSharedConnection["status"];
@@ -1284,9 +1286,9 @@ function WardFlowWorld({
     [state, shown, dispatch],
   );
 
-  // One object per change of status, so readers of `shared` do not wake on every clock tick.
-  const { enabled, status, error, receivedAt } = sharedConnection;
-  const sharedStatus = useMemo(() => ({ enabled, status, error, receivedAt }), [enabled, status, error, receivedAt]);
+  // One object per change of status, so readers of `shared` do not wake on every clock tick or poll.
+  const { enabled, status, error } = sharedConnection;
+  const sharedStatus = useMemo(() => ({ enabled, status, error }), [enabled, status, error]);
 
   const value = useMemo<WardFlowContextValue>(
     () => ({
@@ -1404,7 +1406,11 @@ function WardFlowWorld({
                   {/* Replaced access or restored sessions retire forms; ordinary saves retain edits. */}
                   <WardSharedAccess connection={sharedConnection}>
                     <TrainingSessionScope training={training}>
-                      <Fragment key={screenKey}>{previewChildren}</Fragment>
+                      <Fragment key={screenKey}>
+                        <WardSharedReceivedAtContext.Provider value={enabled ? sharedConnection.receivedAt : null}>
+                          {previewChildren}
+                        </WardSharedReceivedAtContext.Provider>
+                      </Fragment>
                     </TrainingSessionScope>
                   </WardSharedAccess>
                 </WardFlowClockContext.Provider>
