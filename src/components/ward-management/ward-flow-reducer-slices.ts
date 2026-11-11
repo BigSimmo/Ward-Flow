@@ -7,6 +7,7 @@ import { type DischargeCheckEvent, reduceDischargeCheckEvent } from "./discharge
 import { reduceBedClosureEvent } from "./ward-flow-bed-closure-events";
 import { reduceBedEvent } from "./ward-flow-bed-events";
 import { reduceBedMeetingEvent } from "./ward-flow-bed-meeting-events";
+import { reduceIntakeWindowEvent } from "./ward-flow-intake-window-events";
 import { reduceWardDiagnosis } from "./ward-flow-diagnosis-events";
 import { reduceLoopCheckEvent } from "./ward-flow-loop-check-events";
 import { reducePilotControlEvent } from "./ward-flow-pilot-control-events";
@@ -64,6 +65,7 @@ const slices = {
   reduceDischargeDependencyEvent,
   reduceDischargeFollowThroughEvent,
   reduceHandoverWork,
+  reduceIntakeWindowEvent,
   reduceLoopCheckEvent,
   reducePatientArchive,
   reducePatientCarePlanEvent,

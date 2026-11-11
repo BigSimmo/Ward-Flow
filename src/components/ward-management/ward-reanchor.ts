@@ -227,6 +227,12 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   // WS-15: when a closed bed was reopened. The mark keeps it so a stay seated during the closure
   // stays put.
   "reopenedAt",
+  // Item 6: when to look at a closed bed again, a prompt only.
+  "reviewAt",
+  // Item 13, tonight's intake window (`Unit.intakeWindow`), 10 Nov 2026. No other model field is a
+  // numeric `from` or `to`, so naming them here moves only the window's two ends.
+  "from",
+  "to",
 ]);
 
 /**

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
@@ -14,6 +14,7 @@ import { DischargeBoard } from "@/components/ward-management/discharges/discharg
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { ToastProvider } from "@/components/wf/toast-provider";
+import { transportPendingFor } from "@/components/ward-management/ward-left-ward";
 
 /*
  * A4-21 (audit 13 Oct 2026): a confirmed release records the departure from the Discharges sheet,
@@ -126,5 +127,78 @@ describe("Record departure from the release sheet", () => {
     const row = firstRecordRow(expected);
     fireEvent.click(row!);
     expect(screen.queryByTestId("ward-discharge-record-departure")).toBeNull();
+  });
+});
+
+/** Item 18: the confirmed releases still waiting on transport, and who is now waiting on site. */
+function TransportProbe() {
+  const { bedReleases, admissions, dispatch } = useWardFlow();
+  // Holds one confirmed release up on transport, once, so its departure has transport still to come.
+  const held = useRef(false);
+  useEffect(() => {
+    if (held.current) return;
+    held.current = true;
+    const release = bedReleases.find((candidate) => candidate.state === "confirmed" && !candidate.blocker);
+    if (release)
+      dispatch({
+        type: "BLOCK_BED_RELEASE",
+        role: "coordinator",
+        now: NOW_ANCHOR,
+        releaseId: release.id,
+        actingUnitId: release.unitId,
+        blocker: "Awaiting transport",
+      });
+  }, [bedReleases, dispatch]);
+  const pending = bedReleases.filter((release) => {
+    const stay = admissions.find((admission) => admission.id === release.admissionId);
+    return release.state === "confirmed" && stay !== undefined && transportPendingFor(stay, bedReleases);
+  });
+  const waiting = admissions.filter((admission) => admission.waitingForTransport !== undefined);
+  return (
+    <output data-testid="transport-probe">
+      {pending.map((release) => release.id).join(",")}|{waiting.map((admission) => admission.id).join(",")}
+    </output>
+  );
+}
+
+describe("Record discharge asks about transport while it is still to come (item 18, CodeRabbit #1608)", () => {
+  it("asks before recording, and a still-waiting answer puts the person on the Waiting for transport list", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <TransportProbe />
+        <DischargeBoard />
+      </WardFlowProvider>,
+    );
+    const [pendingIds] = screen.getByTestId("transport-probe").textContent!.split("|");
+    const releaseId = pendingIds!.split(",").filter(Boolean)[0];
+    expect(releaseId, "the seed has a confirmed release still waiting on transport").toBeDefined();
+    const row = document.querySelector(`[data-release-id="${releaseId}"]`) as HTMLElement;
+    fireEvent.click(row);
+    const record = screen.getByTestId("ward-discharge-record-departure");
+    // Nothing is chosen for them: the departure waits for an answer.
+    expect(record).toBeDisabled();
+    const transport = screen.getByTestId("ward-discharge-departure-transport");
+    fireEvent.click(within(transport).getByRole("radio", { name: "No, still waiting for transport" }));
+    expect(record).toBeEnabled();
+    const waitingBefore = screen.getByTestId("transport-probe").textContent!.split("|")[1]!;
+    fireEvent.click(record);
+    const waitingAfter = screen.getByTestId("transport-probe").textContent!.split("|")[1]!;
+    expect(waitingAfter.split(",").filter(Boolean).length).toBe(waitingBefore.split(",").filter(Boolean).length + 1);
+  });
+
+  it("does not ask for someone who did not return", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <TransportProbe />
+        <DischargeBoard />
+      </WardFlowProvider>,
+    );
+    const releaseId = screen.getByTestId("transport-probe").textContent!.split("|")[0]!.split(",")[0];
+    fireEvent.click(document.querySelector(`[data-release-id="${releaseId}"]`) as HTMLElement);
+    fireEvent.change(screen.getByTestId("ward-discharge-departure-destination"), {
+      target: { value: "did-not-return" },
+    });
+    expect(screen.queryByTestId("ward-discharge-departure-transport")).toBeNull();
+    expect(screen.getByTestId("ward-discharge-record-departure")).toBeEnabled();
   });
 });
