@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  breakdownButtonName,
   breakdownSentence,
   breakdownTotal,
   breakdownView,
@@ -161,9 +160,7 @@ describe("count breakdown: small numbers and words", () => {
     expect(breakdownView({ value: 1, kind: "people", scope: "aggregate", rows }).state).toBe("withheld");
   });
 
-  it("names the button and the panel in plain words", () => {
-    expect(breakdownButtonName(6, "waiting in ED", "people")).toBe("6 waiting in ED, show who");
-    expect(breakdownButtonName(4, "beds ready", "beds")).toBe("4 beds ready, show where");
+  it("names the panel in plain words", () => {
     expect(breakdownSentence(6, "open ED movements", 14 * 60 + 32)).toBe("6 open ED movements. Counted 14:32.");
   });
 });

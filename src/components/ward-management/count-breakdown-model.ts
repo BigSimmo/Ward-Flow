@@ -50,11 +50,6 @@ export function breakdownWithheld(kind: BreakdownKind, scope: BreakdownScope, va
   return kind === "people" && scope === "aggregate" && value > 0;
 }
 
-/** The figure's accessible name as a button: "6 waiting in ED, show who" (beds: "show where"). */
-export function breakdownButtonName(value: number, noun: string, kind: BreakdownKind): string {
-  return `${value} ${noun}, ${kind === "beds" ? "show where" : "show who"}`;
-}
-
 /** The panel's first line: "6 open ED movements. Counted 14:32." */
 export function breakdownSentence(value: number, noun: string, countedAt: Instant): string {
   return `${value} ${noun}. Counted ${formatInstant(countedAt)}.`;

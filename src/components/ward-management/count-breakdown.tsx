@@ -2,7 +2,7 @@
 
 /**
  * TAP A NUMBER TO SEE WHO IS IN IT (feature plan item 5). The figure stays where it is and becomes a
- * button ("6 open ED movements, show who"). On a wider screen it opens a small pop-up beside the
+ * button named by its own visible words (WCAG 2.5.3), with `aria-haspopup` saying it opens a list. On a wider screen it opens a small pop-up beside the
  * figure (the kit's `Popover`); on a phone, a bottom sheet (the kit's `Sheet`). The list inside is
  * fetched on first use, so phone first loads carry only this button.
  *
@@ -16,12 +16,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { Popover, useIsPhone } from "@/components/wf";
 import type { Instant } from "@/components/ward-management/ward-clock";
 
-import {
-  breakdownButtonName,
-  type BreakdownKind,
-  type BreakdownRow,
-  type BreakdownScope,
-} from "./count-breakdown-model";
+import { type BreakdownKind, type BreakdownRow, type BreakdownScope } from "./count-breakdown-model";
 import styles from "./count-breakdown.module.css";
 
 const loadPanel = () => import("./count-breakdown-panel");
@@ -63,7 +58,6 @@ export function CountBreakdown({
   const isPhone = useIsPhone();
   const [sheetOpen, setSheetOpen] = useState(false);
   const phoneTriggerRef = useRef<HTMLButtonElement>(null);
-  const name = breakdownButtonName(value, noun, kind);
   const panelProps = { value, noun, kind, scope, countedAt, rows };
   const title = kind === "beds" ? `Where the ${value} ${noun} are` : `Who is in ${value} ${noun}`;
 
@@ -74,7 +68,6 @@ export function CountBreakdown({
           ref={phoneTriggerRef}
           type="button"
           className={className}
-          aria-label={name}
           aria-haspopup="dialog"
           aria-expanded={sheetOpen}
           data-testid={testId}
@@ -108,7 +101,6 @@ export function CountBreakdown({
           {...props}
           onKeyDown={onKeyDown}
           className={className}
-          aria-label={name}
           data-testid={testId}
           data-count-breakdown=""
           onPointerEnter={() => void loadPanel()}

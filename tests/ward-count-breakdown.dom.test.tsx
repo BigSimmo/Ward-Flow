@@ -29,10 +29,12 @@ describe("count breakdown", () => {
   it("opens with one row per person counted, and Escape returns focus to the figure", () => {
     render(
       <CountBreakdown value={3} noun="open ED movements" countedAt={14 * 60 + 32} rows={() => rows} testId="fig">
-        open ED movements
+        3 open ED movements
       </CountBreakdown>,
     );
-    const button = screen.getByRole("button", { name: "3 open ED movements, show who" });
+    const button = screen.getByRole("button", { name: "3 open ED movements" });
+    // Named by its own visible words, so a voice user can say what they see (WCAG 2.5.3).
+    expect(button).toHaveAttribute("aria-haspopup", "dialog");
     act(() => {
       fireEvent.click(button);
     });
@@ -54,7 +56,7 @@ describe("count breakdown", () => {
       </CountBreakdown>,
     );
     act(() => {
-      fireEvent.click(screen.getByRole("button", { name: /show who/ }));
+      fireEvent.click(screen.getByRole("button"));
     });
     expect(screen.queryAllByTestId("count-breakdown-row")).toHaveLength(0);
     expect(screen.getByTestId("count-breakdown-mismatch")).toBeInTheDocument();
@@ -67,7 +69,7 @@ describe("count breakdown", () => {
       </CountBreakdown>,
     );
     act(() => {
-      fireEvent.click(screen.getByRole("button", { name: /show who/ }));
+      fireEvent.click(screen.getByRole("button"));
     });
     expect(screen.queryAllByTestId("count-breakdown-row")).toHaveLength(0);
     expect(screen.getByTestId("count-breakdown-withheld")).toHaveTextContent(/Names are not listed in this view/);
