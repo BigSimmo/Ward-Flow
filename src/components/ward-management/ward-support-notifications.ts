@@ -151,6 +151,24 @@ export function movementSupportNotificationSubject(
   };
 }
 
+/**
+ * Feature item 15 (D-134 item 2, 10 Nov 2026): the arrival checklist's "Mental Health Advocacy
+ * Service told" line lets the emergency department record the advocacy notice for an accepted,
+ * still-open move of an involuntary patient, before they reach the ward. It is the same record
+ * (occasion, the movement as subject, party `mhas`) the support checklist reads after arrival, so
+ * a tick in either place shows in both. Undefined when the move is closed or arrived, not yet
+ * accepted, or not involuntary.
+ */
+export function movementSupportNotificationBeforeArrival(
+  movement: Movement,
+  referrals: readonly Referral[],
+): Pick<SupportNotificationSubject, "occasion" | "subjectId"> | undefined {
+  if (movement.closure !== undefined || movement.acceptedUnitId === undefined) return undefined;
+  if (movement.stage === "arrived") return undefined;
+  if (!movementLegalStatusIsInvoluntary(movement.legalStatus)) return undefined;
+  return { occasion: arrivalIsTransfer(movement, referrals) ? "transfer" : "admission", subjectId: movement.id };
+}
+
 /** The discharge this checklist covers, for one admission, or undefined when it does not apply. */
 export function admissionSupportNotificationSubject(
   admission: Admission,

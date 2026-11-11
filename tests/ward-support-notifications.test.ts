@@ -173,10 +173,14 @@ describe("RECORD_SUPPORT_NOTIFICATION", () => {
     expect(next.supportNotifications?.[0]).toMatchObject({ subjectId: "AD-LEFT-01", contactedAt: NOW - 30 });
   });
 
-  it("refuses a role outside ward and coordinator", () => {
-    const next = wardFlowReducer(involuntarySeed(), told({ role: "ed" }));
+  it("refuses a role outside ward, coordinator and (advocacy only, before arrival) ED", () => {
+    const next = wardFlowReducer(involuntarySeed(), told({ role: "officer" }));
     expect(next.supportNotifications).toBeUndefined();
-    expect(lastRejection(next)).toMatch(/requires role ward or coordinator/);
+    expect(lastRejection(next)).toMatch(/requires role ward or coordinator or ed/);
+    // Item 15 (D-134): ED records only the advocacy notice, and only before arrival. WF-300 has arrived.
+    const edAfterArrival = wardFlowReducer(involuntarySeed(), told({ role: "ed", party: "mhas", who: "Advocate" }));
+    expect(edAfterArrival.supportNotifications).toBeUndefined();
+    expect(lastRejection(edAfterArrival)).toMatch(/only the advocacy service notice, before the patient arrives/);
   });
 
   it("refuses a voluntary or unfinished move, and the wrong occasion", () => {
