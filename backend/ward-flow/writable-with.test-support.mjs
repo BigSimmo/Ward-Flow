@@ -2,7 +2,9 @@
 // Test support for offline pool doubles. The store writes a save's steps in one statement (a
 // data-modifying WITH, so they commit or fail together in one round trip). A double written for
 // the separate statements splits it back here: each step comes out on its own, with its
-// placeholders renumbered from $1 in the order they had, and its own values.
+// placeholders renumbered from $1 in the order they had, and its own values. The split counts
+// brackets and does not skip quoted text, so a step with a bracket inside a string literal would
+// split wrongly; the store's write-first statements have none.
 
 /**
  * The steps of `WITH a AS (step), b AS (step) final`, or the statement itself when it is not one
