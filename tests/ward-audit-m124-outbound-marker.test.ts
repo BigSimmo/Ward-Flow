@@ -184,7 +184,7 @@ describe("M124 word read-through on outbound builders (Manual, reviewed hits onl
     "src/components/ward-management/search/census-export.ts",
     "src/components/ward-management/delays/delays-export.ts",
     "src/components/ward-management/legal-forms/legal-forms-export.ts",
-    "src/components/ward-management/movements/movements-export.ts",
+    "src/components/ward-management/ward-movements-export.ts",
     "src/components/ward-management/reports/patient-chronology.ts",
     "src/components/ward-management/reports/weekly-report.ts",
     "src/components/ward-management/ward-clipboard.ts",

@@ -96,6 +96,7 @@ const SIGNED_BY_JOSH_9_NOV = { status: "signed", signedBy: "Josh (product owner)
  * and age numbers screens used to type inline (M16): the TV leave window, the ED "not yet seen" flag,
  * the ED statistics band edges, the bed board referral chip and the age bands. He also signed the TV
  * change mark's length for the prototype (D-137).
+ * D-133 (Josh, 10 Nov 2026): he also signed the referral "Not opened yet" tag at 30 minutes.
  */
 /** Josh chose 24 hours for an old downtime pack on 10 Nov 2026 (decision card, Batch 4 item 24, D-135). */
 const SIGNED_BY_JOSH_10_NOV = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-11-10" } as const;
@@ -445,6 +446,14 @@ export const CLINICAL_VALUES = {
     name: "Bed request with no ward asked counted as missed after",
     group: "Arrivals and answers",
     value: 2 * MINUTES_PER_HOUR,
+    unit: "minutes",
+  },
+  referralNotOpened: {
+    // D-133 (Josh, 10 Nov 2026): a prompt only. It re-routes, re-sorts and escalates nothing.
+    ...SIGNED_BY_JOSH_10_NOV,
+    name: "Sent referral tagged Not opened yet when no ward has opened it after",
+    group: "Arrivals and answers",
+    value: 30,
     unit: "minutes",
   },
   wardAnswerTarget: {

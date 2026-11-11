@@ -143,6 +143,10 @@ import {
   RETURN_PREREQUISITES,
 } from "@/components/ward-management/out-of-area/home-service-return";
 import { buildOnCallDirectory } from "@/components/ward-management/on-call/on-call-directory";
+import {
+  ESCALATION_CALL_OUTCOMES,
+  ESCALATION_STEP_ROLE,
+} from "@/components/ward-management/escalation/escalation-calls";
 
 /** mulberry32: a tiny, well-mixed 32-bit generator. Same seed, same sequence, on every machine. */
 export function seededRandom(seed: number) {
@@ -2576,6 +2580,53 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       };
     },
   ],
+  // Escalation calls (item 3, D-133): weight 0 and last, the same convention, so the weighted
+  // draws of every other builder stay as they were.
+  [
+    0,
+    movementEvent("RECORD_ESCALATION_CALL", undefined, (_state, random) => {
+      const step = pick(random, [1, 2, 3, 4] as const)!;
+      return {
+        step,
+        roleCalled: ESCALATION_STEP_ROLE[step],
+        outcome: pick(random, ESCALATION_CALL_OUTCOMES),
+      };
+    }),
+  ],
+  // Item 9 (10 Nov 2026): weight 0 and last, so only the coverage sweep sends it and the weighted
+  // draws of every other builder stay as they were.
+  [
+    0,
+    (state, random) => {
+      // Item 9: a police or ambulance crew's typed times, sometimes out of order or in the future.
+      const movement = prefer(
+        random,
+        state.movements,
+        (m) => m.arrivalMode === "police" || m.arrivalMode === "ambulance",
+      );
+      const arrived = currentNow - int(random, 0, 240);
+      return {
+        type: "RECORD_CREW_TIMES",
+        movementId: id(movement),
+        ...(chance(random, 0.8) ? { crewArrivedAt: arrived } : {}),
+        ...(chance(random, 0.5) ? { crewHandedOverAt: arrived + int(random, -10, 60) } : {}),
+        ...(chance(random, 0.4) ? { crewReleasedAt: arrived + int(random, 0, 90) } : {}),
+      };
+    },
+  ],
+  // D-141 (11 Nov 2026): weight 0 and last, the same convention, so the weighted draws stay as they were.
+  [
+    0,
+    (state, random) => {
+      // D-141: "Brought by" on an ED arrival, sometimes on a journey that never was one.
+      const movement = prefer(random, state.movements, (m) => m.originEdId !== undefined);
+      return {
+        type: "RECORD_ARRIVAL_MODE",
+        movementId: id(movement),
+        arrivalMode: chance(random, 0.5) ? "police" : "ambulance",
+      };
+    },
+  ],
   // Item 18: Collected for the first stay waiting for transport. The ED return builder above sends it
   // only when someone is waiting, so merging main (11 Nov 2026) could leave it unsent. With nobody
   // waiting it still sends, naming a missing stay (refused), so the sweep always covers it.
@@ -2708,6 +2759,26 @@ export function nextEvent(
       role: justTold.role,
       now: currentNow,
       siteCode: justTold.subjectId.replace(/^site-handover:/, ""),
+    } as unknown as WardFlowEvent;
+  }
+  // The same for a governance review (11 Nov 2026): merging the ward arrival batch with Batch 1 moved
+  // the random runs so no seed drew the undo in time. Sometimes take the newest review back at once,
+  // as the coordinator. The draw is made only while one can be undone, so other runs do not move.
+  const lastReview = state.auditReviews.at(-1);
+  if (
+    !sweep &&
+    lastReview !== undefined &&
+    lastReview.generation === state.worldGeneration &&
+    currentNow - lastReview.at <= UNDO_WINDOW_MINUTES &&
+    chance(random, 0.5)
+  ) {
+    FUZZED_EVENT_TYPES.add("UNDO_AUDIT_REVIEW");
+    return {
+      type: "UNDO_AUDIT_REVIEW",
+      role: "coordinator",
+      now: currentNow,
+      reviewId: lastReview.id,
+      expectedGeneration: state.worldGeneration,
     } as unknown as WardFlowEvent;
   }
   // Aimed on 9 Nov 2026, when adding the staff request builders shifted the random runs: a reset is

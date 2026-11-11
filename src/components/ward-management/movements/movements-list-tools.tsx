@@ -3,7 +3,7 @@
 import type { ComponentProps } from "react";
 import { ListExportButton } from "@/components/ward-management/ward-list-export-button";
 import { ListPrintButton } from "@/components/ward-management/ward-list-print-button";
-import type { exportMovementsList } from "./movements-export";
+import type { exportMovementsList } from "@/components/ward-management/ward-movements-export";
 
 type ExportInput = Parameters<typeof exportMovementsList>[0];
 
@@ -17,7 +17,9 @@ export function MovementsListTools(props: ExportInput & Pick<ComponentProps<type
     <>
       <ListPrintButton disabled={disabled} testId="ward-movements-print" />
       <ListExportButton
-        load={async () => (await import("./movements-export")).exportMovementsList(input)}
+        load={async () =>
+          (await import("@/components/ward-management/ward-movements-export")).exportMovementsList(input)
+        }
         disabled={disabled}
         testId="ward-movements-export"
       />

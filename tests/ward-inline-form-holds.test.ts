@@ -58,6 +58,10 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
     cover: "held",
     why: "The MHAS told form (item 15) calls useHoldOpenForm while it is open.",
   },
+  "ed/ed-crew-times.tsx": {
+    cover: "page form",
+    why: "Item 9: the three crew time boxes and Save crew times sit in one form (D-93, D-141).",
+  },
   "ed/ed-screen-row-forms.tsx": { cover: "popup", why: "Row forms render in the person sheet (A2)." },
   "ed/ed-screen-row-menu.tsx": { cover: "popup" },
   "ed/ed-screen.tsx": { cover: "popup", why: "The person sheet holds the row forms." },

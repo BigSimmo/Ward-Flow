@@ -23,3 +23,5 @@ Merged again after #1603 (main `30abc7aee`): main's values taken, plus this PR's
 Merged again after #1624 and #1629 (main `51a474537`, which raised the ward route to 622.0): main's values taken, plus this PR's deltas, giving Home 584.1, ED 540.9, Movements 615.8 and Statistics 638.3. Main left those four routes unchanged since the last merge, so the totals are the same.
 
 Merged again after #1608 (main `0e2478133`): main's values taken, plus this PR's deltas, giving Home 586.6, ED 543.1, Movements 618.4 and Statistics 640.6. Then Referrals `/ward-flow/referrals` raised 593.4 to 593.8: hosted CI measured 593.5 KB on this merge (head `54dd212f6`), 0.1 KB over main's value. Main alone could not be measured because this PR changes dependencies. The likely source is the same shared helpers (typed-time reader, pull-hold lapse check) now also loaded by Referrals; this was not measured route by route. Same trim reasoning as above, and well within the 5 KB allowance.
+
+Merged again after #1606 (main `0b657ad3f`): main's values taken, plus this PR's deltas, giving Home 588.3, Referrals 594.7, ED 543.7, Movements 619.2 and Statistics 640.8.

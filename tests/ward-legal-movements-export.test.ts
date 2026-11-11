@@ -7,7 +7,7 @@ import {
   legalFormsExportLines,
 } from "@/components/ward-management/legal-forms/legal-forms-export";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
-import { MOVEMENTS_EXPORT_HEADER, movementsExportLines } from "@/components/ward-management/movements/movements-export";
+import { MOVEMENTS_EXPORT_HEADER, movementsExportLines } from "@/components/ward-management/ward-movements-export";
 import { searchCoreViews } from "@/components/ward-management/search/ward-smart-search";
 import { formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";

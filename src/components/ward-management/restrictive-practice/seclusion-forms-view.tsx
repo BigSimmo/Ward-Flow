@@ -21,7 +21,7 @@ import {
 } from "@/components/wf";
 
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
-import { formatInstantWithDay, MINUTES_PER_DAY, type Instant } from "../ward-clock";
+import { formatInstantWithDay, MINUTES_PER_DAY, pastInstantFromClockText, type Instant } from "../ward-clock";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import type { Unit } from "../ward-model";
@@ -31,7 +31,6 @@ import { useWardFormSave, type WardFormSave } from "../use-ward-form-save";
 import {
   RESTRICTIVE_PRACTICES,
   WARD_INCIDENT_CATEGORIES,
-  pastInstantFromClockText,
   restrictivePracticeLabel,
   wardIncidentLabel,
 } from "./restrictive-practice-view";

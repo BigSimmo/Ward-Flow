@@ -18,7 +18,7 @@ and the reducer still limit each desk to records in its own place.
 | Backend  | `deskCommand`, the role clause of `validSharedCommand` and `commandRefusal` (`backend/ward-flow/engine.ts`); no role is refused 403 in `shared-http.mjs`                                                                                                      | Called per cell                                     |
 | Database | Row level security policies and grants in `backend/ward-flow/migrations/` and `infra/`                                                                                                                                                                        | SQL read as text                                    |
 
-**203 actions x 10 desks = 2030 cells.**
+**206 actions x 10 desks = 2060 cells.**
 
 ## Matrix
 
@@ -102,6 +102,7 @@ and the reducer still limit each desk to records in its own place.
 | `RECORD_ADMISSION_CARE`                     |            Y            |             Y             |         -         |     Y     |        -         |      -       |       Y        |     -     |      -       |    -    |
 | `RECORD_ADMISSION_FOLLOW_UP`                |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_ARRIVAL_CHECK`                      |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
+| `RECORD_ARRIVAL_MODE`                       |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_ARRIVED_IN_DEPARTMENT`              |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_AWAY_AT_EMERGENCY_DEPARTMENT`       |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_BED_MEETING_ACTION`                 |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
@@ -111,6 +112,7 @@ and the reducer still limit each desk to records in its own place.
 | `RECORD_CLINICAL_CONTACT`                   |            Y            |             Y             |         -         |     -     |        -         |      -       |       Y        |     -     |      -       |    -    |
 | `RECORD_COMMUNITY_TREATMENT_ORDER`          |            Y            |             Y             |         -         |     -     |        -         |      -       |       Y        |     -     |      -       |    -    |
 | `RECORD_COUNTRY_EXTENSION`                  |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
+| `RECORD_CREW_TIMES`                         |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_DIRECTORY_CHECK`                    |            Y            |             Y             |         Y         |     Y     |        Y         |      Y       |       Y        |     -     |      -       |    -    |
 | `RECORD_DISCHARGE_CHECK`                    |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_DISCHARGE_DEPENDENCY`               |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
@@ -121,6 +123,7 @@ and the reducer still limit each desk to records in its own place.
 | `RECORD_ED_OUTCOME`                         |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_ED_PRESENTATION`                    |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_ESCALATION`                         |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
+| `RECORD_ESCALATION_CALL`                    |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_EXAMINATION`                        |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_FOLLOW_UP_REPLY`                    |            Y            |             Y             |         -         |     -     |        -         |      -       |       Y        |     -     |      -       |    -    |
 | `RECORD_HANDOVER_SIGN_OFF`                  |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |

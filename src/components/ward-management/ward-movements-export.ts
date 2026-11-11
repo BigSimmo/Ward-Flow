@@ -1,3 +1,4 @@
+// Lives at the ward root (not in movements/) so Movements reaching the legal-forms export words adds no screen-to-screen import (M139 import map).
 import { formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import { legalEndAsTyped, legalFormWords } from "@/components/ward-management/legal-forms/legal-forms-export";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";

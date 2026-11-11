@@ -10,6 +10,13 @@
   color: var(--wf-warning-ink);
 }
 
+/* Escalation calls (item 3, D-133): the entry's owner desk, quiet. */
+.owner {
+  flex-basis: 100%;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
 .status {
   color: var(--wf-ink-2);
 }

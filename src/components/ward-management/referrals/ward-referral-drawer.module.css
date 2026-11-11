@@ -2309,6 +2309,26 @@ details.refCard > summary {
   line-height: var(--wf-lh-12);
 }
 
+/* Item 10 (10 Nov 2026): what the record still holds open. A prompt, never a gate on Send. */
+.stillOpen {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stillOpen li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  overflow-wrap: anywhere;
+}
+
 /* Autosaved draft and its age: tab memory only (D-18). */
 .draftStatus {
   display: flex;

@@ -793,6 +793,16 @@ function candidatesForMovements(
       return movementIds.flatMap((movementId) =>
         (["registrar", "consultant"] as const).map((grade) => ({ type, role, now, movementId, grade })),
       );
+    case "RECORD_ESCALATION_CALL":
+      return movementIds.map((movementId) => ({
+        type,
+        role,
+        now,
+        movementId,
+        step: 2,
+        roleCalled: "site_bed_manager",
+        outcome: "no_answer",
+      }));
     case "RAISE_EXPECT_FLAG":
       return movementIds.map((movementId) => ({ type, role, now, movementId, kind: "voluntary_48h" }));
     case "FLAG_LEGAL_MISMATCH":
@@ -1394,6 +1404,17 @@ function candidatesForMovements(
       }));
     case "RECORD_LEFT_DEPARTMENT":
       return movementIds.map((movementId) => ({ type, role, now, movementId }));
+    // Item 9 (10 Nov 2026): a police or ambulance crew's typed arrival time. It writes no legal
+    // figure; unscoped, so any police or ambulance arrival in the swept state may take it.
+    case "RECORD_CREW_TIMES":
+      return state.movements
+        .filter((m) => m.arrivalMode === "police" || m.arrivalMode === "ambulance")
+        .map((m) => ({ type, role, now, movementId: m.id, crewArrivedAt: now - 30 }));
+    // D-141 (11 Nov 2026): marks an ED arrival brought by police. It writes no legal figure.
+    case "RECORD_ARRIVAL_MODE":
+      return state.movements
+        .filter((m) => m.originEdId !== undefined)
+        .map((m) => ({ type, role, now, movementId: m.id, arrivalMode: "police" as const }));
     case "WITHDRAW_WARD_REQUEST":
       return state.movements.flatMap((m) =>
         (m.referredUnitIds ?? []).map((unitId) => ({

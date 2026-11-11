@@ -463,6 +463,10 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // Item 18: the end of a wait for transport home. Not a refusal of anyone.
     MARK_TRANSPORT_COLLECTED: false,
     RECORD_LEFT_DEPARTMENT: false,
+    // Item 9: a police or ambulance crew's typed times. Records when a crew waited; refuses nobody.
+    RECORD_CREW_TIMES: false,
+    // D-141: marking who brought the person in. Refuses nobody.
+    RECORD_ARRIVAL_MODE: false,
     // RB3, item 19: the department recording that a patient no longer needs a bed search (going
     // home, or needing community follow-up instead). Not a refusal by a RECEIVING unit — no unit
     // is declining a placement, the department is stating its own disposition of the patient, the
@@ -690,6 +694,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // Staff needed (feature 10): a ward asks for staff, and the request is closed. Nobody is refused.
     REQUEST_WARD_STAFF: false,
     CLOSE_WARD_STAFF_REQUEST: false,
+    // Escalation calls (item 3, D-133): records who was called and what happened. Not a refusal.
+    RECORD_ESCALATION_CALL: false,
     // Batch 3 items 21 and 23: handing on own work and accepting it, and a carer callback asked for
     // and made. Each moves or ticks off a task; none refuses anybody.
     HAND_OVER_ITEM: false,
@@ -1342,8 +1348,13 @@ describe("Referral privacy — structural", () => {
     // commitments, each a ward id, a listed step or a time, an instant and a role label. Nothing
     // typed and no person; entry fields are pinned by ALLOWED_COMMITMENT_ENTRY_FIELDS below.
     "commitments",
+    // WIDENED 11 Nov 2026 (D-141): a seeded ward copy carries what the ward asked for ("What we
+    // still need"), each a listed need, an instant and a role label, and when ticked off the same
+    // again. Nothing typed and no person; entry fields are pinned by ALLOWED_INFORMATION_NEED_FIELDS.
+    "informationNeeds",
   ].sort();
   const ALLOWED_COMMITMENT_ENTRY_FIELDS = ["at", "by", "nextCallbackAt", "promisedFor", "step", "unitId"];
+  const ALLOWED_INFORMATION_NEED_FIELDS = ["at", "by", "metAt", "metBy", "need"];
 
   const ALLOWED_DESTINATION_FIELDS: Record<ReferralDestinationKind, string[]> = {
     // WIDENED ON PURPOSE, 2026-09-10 — owner ruling: high-acuity nursing is marked by the
@@ -1503,6 +1514,16 @@ describe("Referral privacy — structural", () => {
               by: "Bed coordinator",
             },
           ],
+          // D-141: a fully populated information need, so its keys are pinned too.
+          informationNeeds: [
+            {
+              need: "legal_form_copy",
+              at: NOW_ANCHOR + 1,
+              by: "Ward manager",
+              metAt: NOW_ANCHOR + 3,
+              metBy: "Bed coordinator",
+            },
+          ],
         },
       ],
       homeRegion: "Perth Metropolitan",
@@ -1583,6 +1604,9 @@ describe("Referral privacy — structural", () => {
     expect(Object.keys(canonical.ownerHistory[0]!).sort()).toEqual(ALLOWED_OWNER_ENTRY_FIELDS);
     expect(Object.keys(canonical.contactLog[0]!).sort()).toEqual(ALLOWED_CONTACT_ENTRY_FIELDS);
     expect(Object.keys(canonical.destinations[0].commitments![0]!).sort()).toEqual(ALLOWED_COMMITMENT_ENTRY_FIELDS);
+    expect(Object.keys(canonical.destinations[0].informationNeeds![0]!).sort()).toEqual(
+      ALLOWED_INFORMATION_NEED_FIELDS,
+    );
   });
 
   it("gives every real referral in the fixture only keys drawn from that same allowed set", () => {
@@ -1602,6 +1626,9 @@ describe("Referral privacy — structural", () => {
         // Closing-the-loop package A: one level further down, each commitment entry's own keys.
         for (const entry of addressing.commitments ?? []) {
           for (const key of Object.keys(entry)) expect(ALLOWED_COMMITMENT_ENTRY_FIELDS).toContain(key);
+        }
+        for (const entry of addressing.informationNeeds ?? []) {
+          for (const key of Object.keys(entry)) expect(ALLOWED_INFORMATION_NEED_FIELDS).toContain(key);
         }
         for (const key of Object.keys(addressing.destination)) {
           expect(

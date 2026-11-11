@@ -152,6 +152,7 @@ import { PatientNowPanel } from "./patient-now-panel";
 import { PatientNowSummary } from "./patient-now-summary";
 import { renderTransportSection } from "./patient-now-transport-section";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { movementTransferNotesText } from "@/components/ward-management/referral-notes-text";
 import { originName as movementOriginName } from "@/components/ward-management/ward-movement-origin";
 
 interface PatientNowScreenProps {
@@ -438,6 +439,12 @@ export function PatientNowScreen({
       () => undefined,
     );
   }
+
+  // Item 27 (10 Nov 2026): the transfer as plain recorded facts, for the notes, once a ward accepted.
+  const transferNotes = () =>
+    liveMovement
+      ? movementTransferNotesText(liveMovement, { patientName: displayName, units, admissions, now })
+      : undefined;
 
   // Keyboard navigation for tablist
   // Round 2 (Josh, 1 Nov 2026): Community shows only when community engagement is noted (a team
@@ -1180,6 +1187,7 @@ export function PatientNowScreen({
           expandedStageIndex={expandedStageIndex}
           focusedStageIndex={focusedStageIndex}
           handleCopySummary={handleCopySummary}
+          transferNotes={liveMovement?.acceptedUnitId ? transferNotes : undefined}
           isLiveBedflow={isLiveBedflow}
           isPhone={isPhone}
           lastStay={lastStay}

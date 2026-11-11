@@ -9,7 +9,7 @@ import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { useWardShellPublic } from "@/components/ward-management/shell/ward-shell-public-context";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
+import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 
 import { checkIsDue, lastCheckText, notCheckedNote, type LastCheck } from "./on-call-checks";
 import type { DirectoryEntry } from "./on-call-directory";
@@ -81,6 +81,10 @@ export function CheckFoot({ entry }: { entry: DirectoryEntry }) {
           {note}
         </span>
       ) : null}
+      {/* Escalation calls (item 3, D-133): who fixes this entry when its number is stale. Quiet text. */}
+      <span className={own.owner} data-testid="ward-on-call-owner">
+        Kept up to date by {WARD_FLOW_ROLE_LABELS[entry.ownerRole]}
+      </span>
       {canRecord && role !== null ? (
         <MarkChecked key={JSON.stringify([lifetime, entry.id, role])} entry={entry} role={role} />
       ) : null}
