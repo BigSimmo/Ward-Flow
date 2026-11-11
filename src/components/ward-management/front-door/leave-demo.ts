@@ -2,8 +2,6 @@
 
 import { useSyncExternalStore } from "react";
 
-import { endFrontDoorPass } from "./front-door-pass-client";
-
 /**
  * Live audit item 22 (11 Nov 2026): the public demo had no way to leave. Only a site with the front
  * door on has its readable marker cookie (`wf_door=1`), so "Leave the demo" shows only there, and
@@ -35,8 +33,11 @@ export async function leaveDemo(): Promise<void> {
     // Keep going: the pass below is what keeps this browser out.
   }
   // The front door's own call, awaited (the sweep above started it), so the sign-in page never opens
-  // while the pass is still good.
-  await endFrontDoorPass();
+  // while the pass is still good. Loaded on use too, like the sweep.
+  await import("./front-door-pass-client").then(
+    ({ endFrontDoorPass }) => endFrontDoorPass(),
+    () => {},
+  );
   // A full load, not a client navigation: the sign-in page must be drawn fresh, and Back must not
   // return to the demo.
   window.location.replace("/sign-in");
