@@ -1048,6 +1048,24 @@ export function WardBedDossierDrawer({
               </dl>
               {readyNote}
             </section>
+            {/* Live audit item 13: an empty bed's History holds its closures, so it shows when there are any. */}
+            {timeline.length > 0 ? (
+              <>
+                <button
+                  type="button"
+                  className={styles.historyButton}
+                  aria-expanded={historyOpen}
+                  aria-controls={`${TAB_PREFIX}-history`}
+                  data-testid="bed-drawer-history-toggle"
+                  onClick={toggleHistory}
+                >
+                  <Icon icon={HistoryIcon} size={14} />
+                  History
+                  <span className={styles.historyCount}>{timeline.length}</span>
+                </button>
+                {history}
+              </>
+            ) : null}
           </>
         ) : (
           <>

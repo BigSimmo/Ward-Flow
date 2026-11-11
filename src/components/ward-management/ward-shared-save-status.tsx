@@ -131,9 +131,14 @@ export function WardSharedSaveStatus({
   const [retrying, setRetrying] = useState(false);
   const inFlight = connection.status === "saving";
   const slow = useSaveSlow(inFlight);
-  // Item 8: a save in flight with no error stays calm until it is slow or the browser is offline.
-  // A save still waiting after a failure (status back to ready or unavailable) warns at once.
-  const calmSave = inFlight && !retrying && !slow && !connection.error;
+  // Item 8: a save once left waiting (failed, or held while offline) keeps the full warning through
+  // its retry, until nothing is left unconfirmed.
+  const [failedBefore, setFailedBefore] = useState(false);
+  const waitingAfterFailure = !!save?.unconfirmedSave && !inFlight;
+  if (waitingAfterFailure && !failedBefore) setFailedBefore(true);
+  if (!save?.unconfirmedSave && !inFlight && failedBefore) setFailedBefore(false);
+  // A save in flight with no error stays calm until it is slow or the browser is offline.
+  const calmSave = inFlight && !retrying && !slow && !failedBefore && !connection.error;
   // WF-07: one warning node reused in both strip layouts (was duplicated JSX).
   const reloadWarning =
     save?.unconfirmedSave && !calmSave ? (
