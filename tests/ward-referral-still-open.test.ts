@@ -134,3 +134,17 @@ describe("Still open: what a ward asked for", () => {
     expect(referralStillOpen({ ...base, personId: undefined, referrals: [], edMovement: undefined })).toEqual([]);
   });
 });
+
+describe("Still open in the demo seed (D-141, Josh 11 Nov 2026)", () => {
+  it("shows what the youth unit asked for on PT-079's latest referral (RF-001) without any set-up", () => {
+    const seeded = seedWardFlowState();
+    const words = referralStillOpen({
+      personId: "PT-079",
+      referrals: seeded.referrals,
+      edMovement: undefined,
+      formSaysDone: false,
+      now: Math.max(...seeded.referrals.map((referral) => referral.raisedAt)),
+    }).map((item) => item.words);
+    expect(words).toEqual(["Ward asked for: collateral history"]);
+  });
+});

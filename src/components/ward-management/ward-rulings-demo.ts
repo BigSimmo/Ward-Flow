@@ -340,6 +340,9 @@ export function rulingsDemoOverlay(now: Instant): RulingsDemoOverlay {
       {
         destination: {
           kind: "psychiatric_ward" as const,
+          // D-141 (Josh, 11 Nov 2026): sent to one named ward, the SCGH Mental Health Unit, which has not
+          // opened it 55 minutes on, so the Referrals board shows item 16's "Not opened yet" unprompted.
+          unitId: "scgh-adult-open",
           sex: "Female" as const,
           gender: "Female" as const, // R7 (25 Sept 2026): authored demo data, not derived at runtime
           secureBedNeeded: false,

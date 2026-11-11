@@ -11,6 +11,7 @@ import {
 } from "@/components/ward-management/referrals/referral-not-opened";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Referral, ReferralAddressing } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -94,5 +95,15 @@ describe("Not opened yet", () => {
       </WardFlowProvider>,
     );
     expect(screen.getByTestId("tag")).toHaveTextContent(NOT_OPENED_TAG);
+  });
+});
+
+describe("Not opened yet in the demo seed (D-141, Josh 11 Nov 2026)", () => {
+  it("tags RF-RD06, sent to the SCGH Mental Health Unit and not opened, without any set-up", () => {
+    const tagged = seedWardFlowState().referrals.flatMap((referral) => {
+      const unitIds = referralNotOpenedUnitIds(referral, NOW_ANCHOR);
+      return unitIds.length > 0 ? [[referral.id, unitIds]] : [];
+    });
+    expect(tagged).toEqual([["RF-RD06", ["scgh-adult-open"]]]);
   });
 });
