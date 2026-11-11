@@ -453,5 +453,6 @@ describe("no invented figures on a Ward Flow screen", () => {
       [...listed].filter((k) => !foundKeys.has(k)).sort(),
       "A to-do line no longer matches any hit: the figure has gone, so delete the line (the list only shrinks).",
     ).toEqual([]);
-  });
+    // Parses every ward screen with the TypeScript compiler: about 7 s locally, but it passed 30 s on a busy CI shard.
+  }, 120_000);
 });

@@ -75,6 +75,15 @@
   .tabs [data-testid="ward-referral-highlight-note"] {
     color: var(--wf-hero-ink-2);
     margin-inline-end: var(--wf-s-2);
+    /* The slate behind the row is the hero band's gradient, which a contrast check cannot see, so
+       the note carries the band's foot colour itself, as the folder tabs beside it do (A6-F04:
+       tablet axe read white on the page canvas). */
+    background-color: var(--wf-hero-2);
+  }
+
+  .tabs[data-docked] [data-testid="ward-referral-board-order-note"],
+  .tabs[data-docked] [data-testid="ward-referral-highlight-note"] {
+    background-color: color-mix(in srgb, var(--wf-hero-2) 94%, var(--wf-page-canvas, var(--wf-canvas)));
   }
 
   .tabs [data-testid="ward-referral-board-order-note"] b,
