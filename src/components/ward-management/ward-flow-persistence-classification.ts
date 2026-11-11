@@ -344,6 +344,14 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // Staff needed (feature 10): ward and request ids, closed lists and a whole count. No typed text.
   "REQUEST_WARD_STAFF",
   "CLOSE_WARD_STAFF_REQUEST",
+  // Batch 3 item 21: an item reference (ids and a closed bed meeting action kind, rebuilt by the
+  // reducer from its checked fields), a closed role, a reducer-minted "HI-N" id and a ward id.
+  "HAND_OVER_ITEM",
+  "ACCEPT_HANDED_ITEM",
+  // Batch 3 item 23: a stay or bed request id, an instant, a reducer-minted "CB-N" id and a ward id.
+  // No carer name or phone number: the event has no typed text field at all.
+  "RECORD_CARER_CALLBACK",
+  "MARK_CARER_CALLBACK_MADE",
   // Out of area "Flag early" (3 Nov 2026): an admission id and a site code the reducer checks. No typed text.
   "FLAG_RETURN_EARLY",
   "SET_DISCHARGE_BARRIER",
@@ -556,6 +564,10 @@ type WardFlowReviewedStringOrUnknownKey =
   // Staff needed (feature 10): `CLOSE_WARD_STAFF_REQUEST.requestId` names a reducer-minted "SR-N" id;
   // the reducer finds the request or refuses. Not about a person; never typed.
   | "requestId"
+  // Batch 3 items 21 and 23: `ACCEPT_HANDED_ITEM.handedItemId` and `MARK_CARER_CALLBACK_MADE.callbackId`
+  // name reducer-minted "HI-N" and "CB-N" ids; the reducer finds the record or refuses. Never typed.
+  | "handedItemId"
+  | "callbackId"
   // Optional reassessmentNote on `ACCEPT_REFERRAL`; checked at runtime in `eventCarriesTypedTextPayload`
   // so any dispatch carrying `reassessmentNote` locks persistence just like `overrideSignOff`.
   | "reassessmentNote";

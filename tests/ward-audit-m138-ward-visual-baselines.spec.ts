@@ -54,12 +54,16 @@ test.describe("dark theme", () => {
 test.describe("light theme extras", () => {
   test.use({ colorScheme: "light" });
 
-  test("picture: bed meeting TV (state view) matches its baseline", async ({ page }) => {
+  test("picture: bed meeting TV (state view) matches its baseline", async ({ page }, testInfo) => {
+    // A phone gets the larger-screen card over the TV until Show anyway (ward-phone-desktop-only).
+    test.skip(testInfo.project.name === "visual-phone", "The TV view is a larger-screen page");
     await openSettled(page, "/bed-meeting?service=all", "bed-meeting-tv");
     await expect(page).toHaveScreenshot("tv-bed-meeting-all.png", SHOT);
   });
 
-  test("picture: handover print preview matches its baseline", async ({ page }) => {
+  test("picture: handover print preview matches its baseline", async ({ page }, testInfo) => {
+    // A phone renders HandoverPhone, which has no printable sheet.
+    test.skip(testInfo.project.name === "visual-phone", "The printed handover sheet is not on a phone");
     await openSettled(page, "/handover", "ward-handover-page");
     await page.emulateMedia({ media: "print" });
     await expect(page.getByTestId("ward-handover-sheet")).toBeVisible({ timeout: 15_000 });

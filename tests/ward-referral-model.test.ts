@@ -692,6 +692,12 @@ describe("front-door contract — an ED may close to all admissions, never refus
     CLOSE_WARD_STAFF_REQUEST: false,
     // Escalation calls (item 3, D-133): records who was called and what happened. Not a refusal.
     RECORD_ESCALATION_CALL: false,
+    // Batch 3 items 21 and 23: handing on own work and accepting it, and a carer callback asked for
+    // and made. Each moves or ticks off a task; none refuses anybody.
+    HAND_OVER_ITEM: false,
+    ACCEPT_HANDED_ITEM: false,
+    RECORD_CARER_CALLBACK: false,
+    MARK_CARER_CALLBACK_MADE: false,
     // Out of area "Flag early" (3 Nov 2026): records that a return may come sooner. Not a refusal.
     FLAG_RETURN_EARLY: false,
     SET_DISCHARGE_BARRIER: false,

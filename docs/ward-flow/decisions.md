@@ -156,6 +156,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-131](#d-131-hard-case-demo-data-allowed-and-the-movement-diagram-follows-the-engine-10-november-2026)                                                | Hard-case demo data allowed, and the movement diagram follows the engine               | Active                                           |
 | [D-132](#d-132-audit-fixes-group-1-docs-and-ci-guards-10-november-2026)                                                                                 | Audit fixes group 1: docs and CI guards; Claude-authored sensitive changes warn        | Active                                           |
 | [D-133](#d-133-batch-1-ed-and-referral-flow-three-answers-10-november-2026)                                                                             | Batch 1: escalation record, 30 min not opened, home team heads-up                      | Active                                           |
+| [D-136](#d-136-feature-batch-3-shift-change-and-follow-up-two-signed-values-10-november-2026)                                                           | Feature batch 3: two signed values (7-day diversion return, 30-minute handover list)   | Active                                           |
 | [D-138](#d-138-phone-alert-urgency-by-kind-10-november-2026)                                                                                            | Phone alert urgency by kind                                                            | Active                                           |
 | [D-139](#d-139-phone-statistics-ward-list-a-to-z-and-leave-return-times-as-typed-10-november-2026)                                                      | Phone Statistics ward list A to Z, and leave return times as typed                     | Active                                           |
 | [D-140](#d-140-feature-list-adopted-and-wave-1-begins-10-november-2026)                                                                                 | Feature list adopted, and Wave 1 begins                                                | Active                                           |
@@ -1709,6 +1710,18 @@ is inferred.
   3. **Home team heads-up (item 46):** an open community team episode's team is told the ED name and arrival time only, and nothing for closed episodes. No reason, diagnosis, risk or free text.
 - **Why:** item 3 exists to show that escalation was done, which a browser-only log can't; 30 minutes lets a busy ward look before chasing; the home team already holds the open episode.
 - **Boundary:** synthetic data only. Item 46 with real data still needs the D-87 privacy review. Approves no merge or release. D-74 still applies to anything drawn.
+
+## D-136. Feature batch 3 (shift change and follow-up): two signed values (10 November 2026)
+
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, on two decision cards in the batch 3 build thread, and "Go ahead with all your recommendations" on the feature build plan the same day. Numbered D-136 by the coordinator's allocation. D-133 is claimed by PR #1606. D-134 is claimed by PR #1608. D-135 is claimed by PR #1603.
+- **Decision:**
+  1. **Diversion return (item 28):** a person offered an alternative to admission (D-110) who returns to ED within 7 days prompts the team that took them to review. Signed as `diversionReturnReview`.
+  2. **End-of-shift handover (item 21):** the handover page lists your own open work, with "Hand to", once the shift has 30 minutes or less to run. Signed as `handoverOwnWorkLead`.
+  3. **Batch scope:** batch 3 builds items 11, 12, 21, 22, 23 and 28 of the feature build plan. Josh's go-ahead on the plan, given after D-128 item 9, starts these features while #1564 to #1577 are still open.
+  4. **Design approved (11 November 2026):** the batch 3 design review page (six screens, D-74) is approved as built, by Josh's "go ahead with all your recommendations" relayed to this thread.
+  5. **D-14 allowlist (11 November 2026):** `community/diversion-return-review.ts` joins the patient-link allowlist. It compares ids only, for one referral this team took and a later ED request, and shows the team that person's link and two times.
+  6. **Item 21 placement (11 November 2026):** the "Your open work" list sits at the top of the Handover page.
+- **Boundary:** synthetic data only. Both values are prompts: neither blocks sign-out, ranks a person or judges the alternative. Approves no merge or release.
 
 ## D-138. Phone alert urgency by kind (10 November 2026)
 

@@ -11,7 +11,7 @@ own, so its row names the test it sits in; a title passed through a helper names
 Indirect registrations such as `(cond ? it.skip : it)(…)` are listed by condition. The reason column is the
 skip's own condition or message; read the comment above the call for the why.
 
-Total: 31
+Total: 33
 
 | Location                                                  | Kind                  | Title                                                                                                          | Condition or message                                                                                           |
 | --------------------------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -33,6 +33,8 @@ Total: 31
 | `tests/ward-audit-m118-ward-fit-surfaces.test.ts`         | it.todo               | M118 gap: the Tools bed finder's 'Ward for' choice offers Female and Male only, so a gender diverse or not-re… | -                                                                                                              |
 | `tests/ward-audit-m119-identity-as-recorded.dom.test.tsx` | it.todo               | M119 gap: the search record preview shows sex only ('Sex unrecorded' when absent), never the recorded gender;… | -                                                                                                              |
 | `tests/ward-audit-m135-todos-tracked-to-closure.test.ts`  | it.runIf              | each known stale to-do is still stale; remove its entry once it is closed                                      | runs only when `merged !== null`                                                                               |
+| `tests/ward-audit-m138-ward-visual-baselines.spec.ts`     | test.skip at run time | picture: bed meeting TV (state view) matches its baseline                                                      | when `testInfo.project.name === "visual-phone"`: The TV view is a larger-screen page                           |
+| `tests/ward-audit-m138-ward-visual-baselines.spec.ts`     | test.skip at run time | picture: handover print preview matches its baseline                                                           | when `testInfo.project.name === "visual-phone"`: The printed handover sheet is not on a phone                  |
 | `tests/ward-audit-m138-ward-visual-baselines.spec.ts`     | test.skip at run time | picture: phone floating bar (D-112) matches its baseline                                                       | when `testInfo.project.name !== "visual-phone"`: The floating bar is the phone dock (D-112)                    |
 | `tests/ward-audit-m16-time-number-scan.test.ts`           | it.todo               | ``M16 defect: ${drift.file} types \`${drift.expr}\` (${drift.signedValue}): ${drift.why}``                     | -                                                                                                              |
 | `tests/ward-audit-m17-legal-as-recorded.test.ts`          | it.todo               | M17 gap: the ED list download (ed-export.ts) writes 'Form 3A' with no written or typed end time; D-93 covers … | -                                                                                                              |

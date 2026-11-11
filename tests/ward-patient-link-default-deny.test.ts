@@ -486,6 +486,13 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
       "that person once and offer their triage, the same bounded read as search/patient-typeahead.tsx: " +
       "one person's own single linked referral, never a history across several.",
   },
+  {
+    file: "community/diversion-return-review.ts",
+    reason:
+      "Diversion return review (feature plan item 28, Josh, 11 Nov 2026, D-136): matches one referral " +
+      "this team took with a later ED request for the same person by comparing patientId only, within " +
+      "the signed 7-day window. It shows the taking team that person's link and two times, nothing else.",
+  },
 ].map((entry) => ({ ...entry, file: resolve(WARD_DIR, entry.file) }));
 
 const shortPath = (file: string) => relative(process.cwd(), file).replace(/\\/g, "/");
@@ -527,8 +534,9 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 51 → 52 on 2026-10-26: F-17 moved the seeded referrals out of ward-movements.ts unchanged. No new reader.
     // 53 → 58 on 2026-11-07: Josh as Ward Lead allowed the five triage and risk files (PR #1500).
     // 58 → 59 on 2026-11-10: Josh as Ward Lead allowed the M134 hard-case seed overlay (PR #1598, D-131).
-    // 59 → 60 on 2026-11-10: D-133, the home team heads-up (open episodes only, ED name and time only).
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(60);
+    // 59 → 60 on 2026-11-11: Josh allowed the item 28 diversion return review (PR #1605, D-136).
+    // 60 → 61 on 2026-11-11: D-133, the home team heads-up (open episodes only, ED name and time only).
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(61);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);

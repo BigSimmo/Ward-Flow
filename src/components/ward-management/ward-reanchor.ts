@@ -216,6 +216,11 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "lapsesAt",
   // Closing-the-loop (package E): a home service return's request, answer and review day.
   "requestedAt",
+  // Batch 3 items 21 and 23 (10 Nov 2026): when work was handed on, and a carer callback's
+  // best-after time and when it was made (`handover/handover-work-events.ts`).
+  "handedAt",
+  "bestAfter",
+  "madeAt",
   // Staff needed (feature 10): a request's shift start and when it was closed.
   "shiftStartAt",
   "closedAt",

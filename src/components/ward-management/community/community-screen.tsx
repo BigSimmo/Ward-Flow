@@ -1,6 +1,7 @@
 "use client";
 
 import { ReturnEarlyAlerts } from "@/components/ward-management/out-of-area/return-early-alerts";
+import { DiversionReturnReview } from "./diversion-return-review-lazy";
 import { HomeTeamHeadsUp } from "./home-team-heads-up-lazy";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -1227,6 +1228,8 @@ export function CommunityScreen(props: CommunityScreenProps) {
         <ReturnEarlyAlerts desk={{ role: "community" }} now={view.now} />
         {/* Home team heads-up (item 46, D-133): open-episode patients now in an ED. */}
         <HomeTeamHeadsUp team={view.team} now={view.now} />
+        {/* Batch 3 item 28 (D-136): only the team that took the person sees this review prompt. */}
+        <DiversionReturnReview team={view.team} now={view.now} />
 
         {isPhone ? null : (
           <div className={`${styles.contentWorkspace} ${v6.sections}`} data-community-section={teamSection}>

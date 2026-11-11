@@ -10,6 +10,11 @@
  * - Promises due by handover: open ward promises or callbacks due by the handover cutoff, earliest
  *   chase first (`promiseChaseTimes`, the card's own order), at most five.
  *
+ * Night shift on the morning look (item 11): the first read of a new shift, when the digest would
+ * read from this shift's start, reads from the previous shift's start instead, so the day
+ * coordinator's first read after the morning handover covers the whole night. A later read covers
+ * this shift only. `firstLookOfShift` and `sinceItemsFor` carry that; without them nothing changes.
+ *
  * Privacy: the digest holds no patient names or record numbers. Lines carry ward names, counts and
  * times, plus record ids only for in-app links; `handoverDigestText` drops the ids, so the copied
  * text is safe to paste into a message.
@@ -21,6 +26,9 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { openStaffRequests, type StaffRequestRecord } from "@/components/ward-management/staffing/staff-requests";
 import { durMinutes } from "@/components/wf";
+import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
+import { previousShiftStartInstant } from "@/components/ward-management/shift-first-look";
+import type { NightMovementChange } from "@/components/ward-management/night-movement-changes";
 
 import { openPromiseCounts, promiseChaseTimes } from "./handover-open-promises";
 import type { HandoverPill } from "./handover-model";
@@ -93,7 +101,28 @@ export type HandoverDigestInput = {
   wardIds?: readonly string[];
   /** A precomputed count, used when no records are passed. */
   staffRequests?: number;
+  /** Item 11: no earlier read of the digest this shift. */
+  firstLookOfShift?: boolean;
+  /** The hero's since items for another window start, so a widened window reads the same list. */
+  sinceItemsFor?: (since: Instant) => readonly DigestSinceItem[];
+  /** Item 11: absences without leave and transfers in a window, for the hero's wards. */
+  nightMovesFor?: (since: Instant) => readonly NightMovementChange[];
 };
+
+/**
+ * Item 11: the window "What changed" reads. A first read whose window is this shift's start reads
+ * from the previous shift's start; a chosen earlier handover or a later read keeps its own window.
+ */
+function digestSinceWindow(input: HandoverDigestInput): {
+  sinceAt: Instant;
+  sinceItems: readonly DigestSinceItem[];
+} {
+  const { sinceItemsFor } = input;
+  if (!input.firstLookOfShift || !sinceItemsFor || input.sinceAt !== currentShiftStartInstant(input.now))
+    return { sinceAt: input.sinceAt, sinceItems: input.sinceItems };
+  const sinceAt = previousShiftStartInstant(input.now);
+  return { sinceAt, sinceItems: sinceItemsFor(sinceAt) };
+}
 
 const PROMISES_SHOWN = 5;
 
@@ -101,12 +130,13 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
 export function buildHandoverDigest(input: HandoverDigestInput): HandoverDigest {
   const { now } = input;
+  const { sinceAt, sinceItems } = digestSinceWindow(input);
   const at = (instant: Instant) => formatInstantWithDay(instant, now);
   const wardName = (unitId: string) => input.units.find((unit) => unit.id === unitId)?.name ?? "Ward not recorded";
 
   /* What changed: the hero's since items, never their record-number detail. */
   const changed: HandoverDigestLine[] = [];
-  for (const item of input.sinceItems) {
+  for (const item of sinceItems) {
     if (item.value <= 0) continue;
     const wardDetail =
       (item.id === "admitted" || item.id === "discharged") && typeof item.detail === "string" ? item.detail : undefined;
@@ -127,11 +157,29 @@ export function buildHandoverDigest(input: HandoverDigestInput): HandoverDigest 
   }
   const escalations = changesSinceInstant(
     { referrals: [], movements: input.scopedMovements, admissions: input.admissions },
-    input.sinceAt,
+    sinceAt,
     now,
   ).newEscalationIds.length;
   if (escalations > 0)
     changed.push({ id: "escalated", value: escalations, text: plural(escalations, "escalation", "escalations") });
+  // Item 11: absences without leave and transfers, as counts by ward. Never a person.
+  const moves = input.nightMovesFor?.(sinceAt) ?? [];
+  for (const [kind, id, one, many] of [
+    ["absence", "absent", "absent without leave", "absent without leave"],
+    ["transfer", "transferred", "transfer out", "transfers out"],
+  ] as const) {
+    const rows = moves.filter((move) => move.kind === kind);
+    if (rows.length === 0) continue;
+    const byWard = new Map<string, number>();
+    for (const row of rows) byWard.set(wardName(row.unitId), (byWard.get(wardName(row.unitId)) ?? 0) + 1);
+    changed.push({
+      id,
+      value: rows.length,
+      text: plural(rows.length, one, many),
+      detail: [...byWard].map(([ward, n]) => `${n} ${ward}`).join(", "),
+      tone: kind === "absence" ? "warning" : undefined,
+    });
+  }
 
   /* Still pending: the hero's figures. */
   const pending: HandoverDigestLine[] = [];
@@ -225,7 +273,7 @@ export function buildHandoverDigest(input: HandoverDigestInput): HandoverDigest 
     shiftLabel: input.shiftLabel,
     shiftClock: at(input.shiftAt),
     scopeLabel: input.scopeLabel,
-    sinceClock: at(input.sinceAt),
+    sinceClock: at(sinceAt),
     dueClock: at(input.cutoff),
     changed,
     pending,

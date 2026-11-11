@@ -9,7 +9,7 @@ import type { GateResult } from "@/components/ward-management/ward-eligibility";
 /*
  * Ruling guardrail register (audit plan item 9, issue #1572; recorded in D-111).
  *
- * Four owner rulings protect patients from the app overreaching. Each already has a guard test;
+ * Five owner rulings protect patients from the app overreaching. Each already has a guard test;
  * this register makes sure each ruling's own entry is still recorded and each guard still exists,
  * still names the ruling and still holds real tests, so deleting or renaming a guard cannot pass
  * quietly. It does not judge what the tests assert: the behaviour is proved in the guard files.
@@ -17,6 +17,7 @@ import type { GateResult } from "@/components/ward-management/ward-eligibility";
  * - D-93: a legal form's time shows only as typed, never as a countdown.
  * - D-71: no ranked or suggested wards, beds or patients.
  * - D-72 item 2: the downtime pack is print or saved file only; no board data kept in the browser.
+ * - D-126: ranked lists take a neutral, fixed order (guarded here for the bed round answers, item 12).
  * - R-2026-09-04-A: risk flags (and diagnosis and medication) stay off the patient record.
  * - D-108: the ED wait steps keep their signed-off wording and hours; escalation calls add no clock.
  */
@@ -47,6 +48,12 @@ const GUARDS: Guard[] = [
     source: "docs/ward-flow/decisions.md",
     entry: /^## D-72\. /mu,
     guards: ["tests/ward-downtime-pack-device-storage.dom.test.tsx"],
+  },
+  {
+    ruling: "D-126",
+    source: "docs/ward-flow/decisions.md",
+    entry: /^## D-126\. /mu,
+    guards: ["tests/ward-bed-round-answers.test.ts"],
   },
   {
     ruling: "R-2026-09-04-A",

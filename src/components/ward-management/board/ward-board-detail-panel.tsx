@@ -43,6 +43,11 @@ import { WardDiagnosisControl } from "./ward-board-ward-diagnosis";
 import { ClinicallyReadyControl } from "./ward-board-clinically-ready";
 import { plural } from "@/components/ward-management/ward-plural";
 import { WardStepDownRequest } from "@/components/ward-management/referrals/step-down-request";
+import dynamic from "next/dynamic";
+// Batch 3 item 23: a carer call back, from the ward's bed record. Loaded with the open drawer.
+const CarerCallbackCard = dynamic(() =>
+  import("@/components/ward-management/carer-callback-card").then((m) => m.CarerCallbackCard),
+);
 
 /** Redesign: the record's buttons are the kit's, so the panel matches the rest of the page. */
 // Long labels ("Gone to an ED" and others) wrap inside the panel
@@ -532,6 +537,7 @@ export function WardBoardDetailPanel({
                       fullWidthClassName={styles.fullWidthBtn}
                     />
                   </div>
+                  <CarerCallbackCard admissionId={occupied.key} />
                   {occupied.days !== null && occupied.days >= CLINICAL_VALUES.longStayPrompt.value && (
                     <div
                       className={`${styles.barrierSelectGroup} ${styles.fullRowSpaced}`}

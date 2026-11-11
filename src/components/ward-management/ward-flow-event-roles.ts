@@ -598,6 +598,15 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // Not the executive, which changes nothing (D-80).
   REQUEST_WARD_STAFF: ["ward", "coordinator", "bed_manager"],
   CLOSE_WARD_STAFF_REQUEST: ["ward", "coordinator", "bed_manager"],
+  // Batch 3 item 21 (D-136): a desk that can own an open item (a referral, a bed meeting chase or a
+  // carer callback) hands it on, and the receiving desk accepts it. The reducer lets only the owner
+  // hand an item over and only the named desk accept it; a ward names its own ward.
+  HAND_OVER_ITEM: ["coordinator", "ward", "ed", "community"],
+  ACCEPT_HANDED_ITEM: ["coordinator", "ward", "ed", "community"],
+  // Batch 3 item 23: the ward or the coordinator records that a carer wants a call back, and ticks it
+  // off once made. A ward only for its own patients (reducer). No carer name or number is held.
+  RECORD_CARER_CALLBACK: ["ward", "coordinator"],
+  MARK_CARER_CALLBACK_MADE: ["ward", "coordinator"],
   // Contacting a team is this record. The team that made the call, or the coordinator logging it.
   // Decision 43 (Josh, 31 Oct 2026): the ED no longer holds it. It was unused: the only place to
   // record a contact is the community team page, which an ED desk cannot open.
