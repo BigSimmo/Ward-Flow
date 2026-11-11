@@ -166,6 +166,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-146](#d-146-performance-audit-fixes-and-the-phone-speed-target-11-november-2026)                                                                     | Performance audit fixes and the phone speed target                                     | Active                                           |
 | [D-147](#d-147-demo-code-tries-keep-per-address-keying-until-a-trusted-proxy-is-set-11-november-2026)                                                   | Demo-code tries keep per-address keying until a trusted proxy is set                   | Active                                           |
 | [D-152](#d-152-returned-to-ed-prompt-sees-every-return-in-shared-mode-11-november-2026)                                                                 | Returned to ED prompt sees every return in shared mode                                 | Active                                           |
+| [D-153](#d-153-keep-the-drawn-time-settle-check-and-defer-a-separate-agent-github-identity-11-november-2026)                                            | Keep the drawn-time settle check, and defer a separate agent GitHub identity           | Active                                           |
 
 ---
 
@@ -1802,3 +1803,11 @@ is inferred.
 - **Role access, kept narrow:** only a community desk scoped to one team receives `diversionReturns`, and only for referrals it took and is already sent. Ward, ED, officer, admin, executive and service coordinator copies never carry them. A statewide coordinator already holds the whole workspace. The record names no ED, movement or person, carries no typed text, and the reducer never writes it. A shared copy whose return names a referral the desk was not sent fails the shared-state check.
 - **D-14:** no new patient-link reader. The match still runs in `community/diversion-return-review.ts`, which D-136 item 5 allows.
 - **Boundary:** synthetic data only. A review prompt only, as D-136. Changes no signed clinical value or rule, and approves no merge or release.
+
+## D-153. Keep the drawn-time settle check, and defer a separate agent GitHub identity (11 November 2026)
+
+- **Date:** 11 November 2026, 11:41 PM AWST (15:41 UTC). **Decided by:** Josh, "Yes to all recommendations" in the Ward Flow project chat, answering the coordinator's list of five open questions. Two of those answers are rulings and are recorded here. The community desk ED heads-up answer is still unclear and will be recorded separately. The uptime monitor secrets and the GitHub and Railway settings are tasks for Josh, not rulings.
+- **Decision:**
+  1. **Phone release gate settle check:** the shared helper `waitForAccessibleReadiness` (`tests/helpers/ward-release-gate.ts`, changed in PR #1607) stays as it is. It counts a 100 ms tick against its 5-second settle budget only when the browser drew a frame in that tick, or while fonts load. A cold WebKit page held by D-137 can pause drawing after its first frame. Finite motion, or geometry that keeps changing while the browser draws, still fails after 5 seconds, and the test timeout still bounds a renderer that never recovers. The helper ignores infinite animations and the running Undo availability bar, so those can carry on while the page settles.
+  2. **A9-01, a separate GitHub identity for the agents:** deferred until after the pilot. Agents keep publishing as they do now.
+- **Boundary:** synthetic data only. Changes no clinical value or rule, weakens no release gate check, and approves no merge, release or settings change.
