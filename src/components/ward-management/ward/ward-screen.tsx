@@ -140,6 +140,7 @@ import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placemen
 import { WardScreenHomeSection } from "./ward-screen-home-section";
 import { WardAcceptDialog, WardScreenDecisionJobs } from "./ward-on-demand";
 import type { DecisionReport } from "./ward-decisions-cockpit";
+import { signOffUndo } from "./ward-sign-off-undo";
 import { formatDateOfBirth } from "@/components/ward-management/ward-patients";
 import { namedNotRecordedMessage, notRecordedMessage, WardScreenBedDrawer } from "./ward-screen-overlays";
 import { WardScreenTabSections } from "./ward-screen-tab-sections";
@@ -1683,7 +1684,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       (outcome) => {
         const failure = wardCommandFailure(outcome);
         if (failure) warnToast(failure);
-        report?.(outcome ? outcome.status === "accepted" : undefined);
+        // M37 (D-129): a recorded sign-off offers a short Undo from Ward Decisions.
+        const undo = signOffUndo(releaseId, outcome, { routeRole, unitId, raise, completeCommand, warnToast });
+        report?.(outcome ? outcome.status === "accepted" : undefined, undo);
       },
     );
     setNoticesForRelease(releaseId);

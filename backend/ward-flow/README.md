@@ -31,7 +31,9 @@ _Source checked 3 November 2026 at `a6d8a0fd`; no hosted configuration or notifi
   settings change; never paste its value into commands, tickets, logs, documentation or chat.
   An absent/mismatched token gets the ordinary liveness response, not a database answer.
   `backend-uptime.yml` then warns **Database not checked**; a green run with that warning is not
-  database monitoring acceptance. Check the executed step and intended notification delivery
+  database monitoring acceptance. After about a day (144 runs) of that warning, or of unset or
+  unusable monitor account secrets, the workflow raises one **Uptime monitor not set up** issue
+  (audit M72). Check the executed step and intended notification delivery
   separately. `database: unavailable` is an outage diagnostic even though HTTP status remains 200.
 - **Signed readiness:** `GET /readyz` requires a valid authorised sign-in bearer token. In shared
   mode HTTP 200 with `database: ready` confirms the store's readiness check; storage failure is

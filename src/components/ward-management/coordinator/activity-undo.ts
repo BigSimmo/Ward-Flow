@@ -85,6 +85,7 @@ export function activityUndo(
     case "UNDO_RELEASE_STEP":
       if (id.startsWith("planned:"))
         return { event: { ...base, type: record.undoType, plannedAdmissionId: id.slice(8) } };
+      if (id.startsWith("release:")) return { event: { ...base, type: record.undoType, releaseId: id.slice(8) } };
       if (movement) return { event: { ...base, type: record.undoType, movementId: id } };
       break;
     case "UNDO_PATIENT_RECORD":

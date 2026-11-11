@@ -24,6 +24,14 @@ name: Ward Flow backend uptime
 # step the account cannot do is a set-up problem: it warns and leaves any open issue alone, as the
 # hidden database does. Sign-in that does not answer, or a workspace that does not load, raises
 # the issue.
+#
+# Monitor coverage (audit M72, approved 10 November 2026). A hidden database answer, unset monitor
+# secrets or a monitor account that cannot sign in or read leaves every run green with a warning
+# nobody reads, so part of the check is silently off. After about a day of those (144 runs of this
+# workflow, counted by run number, so no clock is read), one "Uptime monitor not set up" issue
+# @mentions the owner. The run number the gap began at is kept in the monitor-not-set-up label's
+# description. A rate-limited check or an outage neither starts nor clears the count; a run where
+# the database and the signed-in workspace both answer clears it and closes the issue.
 # Public repository: free. GitHub turns scheduled workflows off after 60 days without repository
 # activity.
 on:
@@ -160,6 +168,56 @@ jobs:
           curl --silent --max-time 10 --output /dev/null --header "apikey: $PUBLISHABLE_KEY" \
             --header "authorization: Bearer $token" --data '' "$SUPABASE_URL/auth/v1/logout?scope=local" || true
           finish "$state" "$detail"
+      - name: Raise or close the monitor-not-set-up issue
+        if: ${{ !inputs.test_alert }}
+        env:
+          HEALTH: ${{ steps.check.outputs.state }}
+          WORKSPACE: ${{ steps.workspace.outputs.state }}
+          WORKSPACE_DETAIL: ${{ steps.workspace.outputs.detail }}
+          GAP_LABEL: monitor-not-set-up
+          # About a day of runs every 10 minutes.
+          GAP_RUNS: "144"
+        run: |
+          gap=""
+          if [ "$HEALTH" = "unknown" ]; then
+            gap="the database is not checked (WARD_FLOW_UPTIME_TOKEN is missing or does not match the backend's value)"
+          fi
+          case "$WORKSPACE" in
+            skipped) gap="${gap:+$gap; }the signed-in workspace is not checked (the monitor account secrets are not set)" ;;
+            unknown)
+              case "$WORKSPACE_DETAIL" in
+                *"rate limited"*) ;;
+                *) gap="${gap:+$gap; }the signed-in workspace is not checked (the monitor account cannot sign in or read: $WORKSPACE_DETAIL)" ;;
+              esac ;;
+          esac
+          clear=""
+          if [ "$HEALTH" = "up" ] && [ "$WORKSPACE" = "up" ]; then clear=yes; fi
+          # An outage or a rate limit says nothing about the set-up: leave the count alone.
+          if [ -z "$gap" ] && [ -z "$clear" ]; then echo "Monitor coverage: not known this run"; exit 0; fi
+          open=$(gh issue list --label "$GAP_LABEL" --state open --json number --jq '.[0].number // empty')
+          described=$(gh label list --search "$GAP_LABEL" --json name,description --jq ".[] | select(.name == \"$GAP_LABEL\") | .description")
+          since=$(printf '%s' "$described" | sed -n 's/.*since run \([0-9][0-9]*\).*/\1/p')
+          run="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          if [ -n "$clear" ]; then
+            echo "Monitor coverage: complete"
+            if [ -n "$since" ]; then
+              gh label create "$GAP_LABEL" --color FBCA04 --description "Uptime monitor not fully set up; clear" --force
+            fi
+            if [ -n "$open" ]; then
+              gh issue comment "$open" --body "@$OWNER The uptime check is checking the database and the signed-in workspace again ($run)."
+              gh issue close "$open"
+            fi
+            exit 0
+          fi
+          echo "Monitor coverage: gap, $gap"
+          if [ -z "$since" ]; then
+            since=$GITHUB_RUN_NUMBER
+            gh label create "$GAP_LABEL" --color FBCA04 --description "Uptime monitor not fully set up; since run $since" --force
+          fi
+          if [ -z "$open" ] && [ $((GITHUB_RUN_NUMBER - since)) -ge "$GAP_RUNS" ]; then
+            gh issue create --label "$GAP_LABEL" --title "Uptime monitor not set up" --body "@$OWNER For about a day the backend uptime check has not been able to check everything: $gap ($run). An outage of that part would not raise a backend-down issue. Set the named secret in the repository settings, or give the synthetic monitor account one executive role and no second step. This issue closes itself when the check is complete again."
+          fi
+          exit 0
       - name: Raise or close the backend-down issue
         if: ${{ !inputs.test_alert }}
         env:

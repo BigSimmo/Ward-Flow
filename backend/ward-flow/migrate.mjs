@@ -16,6 +16,10 @@ export async function migrate(pool, { afterMigrations } = {}) {
   try {
     await client.query("BEGIN");
     await client.query("SELECT pg_advisory_xact_lock(782322)");
+    // Audit M34: a step that waits more than 5 seconds for a table lock (live traffic holding it)
+    // fails and rolls back whole, rather than queueing every save behind it. Set after the runner's
+    // own lock, so a second runner still waits its turn instead of failing.
+    await client.query("SET LOCAL lock_timeout = '5s'");
     const { rows } = await client.query("SELECT to_regclass('ward_flow.migrations') AS relation");
     if (!rows[0].relation) await client.query(sql[0]);
     const version = (await client.query("SELECT max(version) AS version FROM ward_flow.migrations")).rows[0].version;
