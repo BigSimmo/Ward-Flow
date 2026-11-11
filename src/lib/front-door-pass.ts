@@ -3,7 +3,8 @@
  * switch `WARD_FRONT_DOOR=required` is set, no Ward Flow page or API answers until this browser
  * holds a signed pass. The pass is an HttpOnly cookie that `POST /api/session` sets after it has
  * checked a Supabase sign-in with Supabase itself, or a demo code on the public demo. It ends with
- * the 12-hour sign-in limit (8 hours for a demo code) and on sign-out.
+ * the 12-hour sign-in limit (8 hours for a demo code) and on sign-out. A demo pass also ends as
+ * soon as `WARD_DEMO_CODE` changes.
  *
  * The pass only opens the door. It never stands in for the sign-in: the shared workspace still
  * checks the account's own token on every request, so a pass without a sign-in shows the sign-in
@@ -91,6 +92,11 @@ export type FrontDoorPass = {
   kind: "account" | "demo";
   /** The Supabase account id for an account pass. */
   subject?: string;
+  /**
+   * A demo pass's fingerprint of the demo code it was opened with (`demoCodeFingerprint`), so
+   * changing `WARD_DEMO_CODE` closes every demo pass at once rather than up to 8 hours later.
+   */
+  code?: string;
   issuedAt: number;
   expiresAt: number;
 };
@@ -128,16 +134,39 @@ function sameText(a: string, b: string): boolean {
   return difference === 0;
 }
 
-/** A signed pass value and its cookie lifetime in seconds. */
+/**
+ * A demo pass's tie to the demo code now set: a keyed hash of the normalised code, so the cookie
+ * never shows the code itself. Any change to `WARD_DEMO_CODE` changes it.
+ */
+export async function demoCodeFingerprint(secret: string, env: Env = process.env): Promise<string> {
+  return (await sign(secret, `demo-code:${normaliseDemoCode(env.WARD_DEMO_CODE ?? "")}`)).slice(0, 22);
+}
+
+/**
+ * Whether a verified pass still stands against the settings now: an account pass always, a demo
+ * pass only while `WARD_DEMO_CODE` is the code it was opened with.
+ */
+export async function passMatchesDemoCode(
+  secret: string,
+  pass: FrontDoorPass,
+  env: Env = process.env,
+): Promise<boolean> {
+  if (pass.kind !== "demo") return true;
+  return typeof pass.code === "string" && sameText(pass.code, await demoCodeFingerprint(secret, env));
+}
+
+/** A signed pass value and its cookie lifetime in seconds. A demo pass carries the code's fingerprint. */
 export async function issuePass(
   secret: string,
-  pass: Omit<FrontDoorPass, "issuedAt" | "expiresAt"> & { hours: number; endsBy?: number | null },
+  pass: Omit<FrontDoorPass, "issuedAt" | "expiresAt" | "code"> & { hours: number; endsBy?: number | null },
   now = Date.now(),
+  env: Env = process.env,
 ): Promise<{ value: string; maxAge: number }> {
   const limit = now + pass.hours * 3_600_000;
   const expiresAt = pass.endsBy && pass.endsBy < limit ? pass.endsBy : limit;
   const body: FrontDoorPass = { kind: pass.kind, issuedAt: now, expiresAt };
   if (pass.subject) body.subject = pass.subject;
+  if (pass.kind === "demo") body.code = await demoCodeFingerprint(secret, env);
   const payload = toBase64Url(encoder.encode(JSON.stringify(body)));
   return {
     value: `${payload}.${await sign(secret, payload)}`,
