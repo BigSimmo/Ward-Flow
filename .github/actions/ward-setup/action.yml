@@ -1,0 +1,36 @@
+# The shared Node setup for the Ward Flow CI jobs that need installed packages
+# (.github/workflows/ward-flow.yml). The job checks out the repository first, so this local action exists.
+# Contracts: scripts/ward-ci-public/check-contracts.mjs. Every step is unconditional and pinned by commit.
+name: Ward Flow setup
+description: Select the pinned Node, provision the pinned npm, then restore and attest the locked install.
+outputs:
+  cache-hit:
+    description: Whether the exact installed-packages key was restored.
+    value: ${{ steps.node-modules.outputs.cache-hit }}
+  cache-primary-key:
+    description: The exact installed-packages key, for the main-only save in the build job.
+    value: ${{ steps.node-modules.outputs.cache-primary-key }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+      with:
+        node-version-file: .nvmrc
+        cache: npm
+    - name: Install and record the pinned npm toolchain
+      shell: bash
+      run: npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require('./package.json').packageManager")" && node --version && npm --version
+    # Installed packages come from a cache saved on main only (build job), straight after an attested
+    # install; install-locked-dependencies.mjs reuses an exact hit only when its post-install stamp matches.
+    - name: Restore installed packages
+      id: node-modules
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+      with:
+        path: node_modules
+        key: ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}
+    - name: Install locked dependencies
+      id: install
+      shell: bash
+      env:
+        WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
+      run: node scripts/install-locked-dependencies.mjs

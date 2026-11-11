@@ -4,14 +4,21 @@ import vm from "node:vm";
 import { describe, expect, it } from "vitest";
 
 const workflow = readFileSync(".github/workflows/ward-flow.yml", "utf8");
+// The install jobs' shared setup action, checked together with the workflow.
+const setupAction = readFileSync(".github/actions/ward-setup/action.yml", "utf8");
 const checker = readFileSync("scripts/ward-ci-public/check-contracts.mjs", "utf8");
-const start = checker.indexOf("function requireWorkflow(source) {");
-const end = checker.indexOf("\nrequireWorkflow(workflow);", start);
-const verify = vm.runInNewContext(`(${checker.slice(start, end).trim()})`, { assert }) as (source: string) => void;
+const start = checker.indexOf("function requireWorkflow(source, action) {");
+const end = checker.indexOf("\nrequireWorkflow(workflow, setupAction);", start);
+const verify = vm.runInNewContext(`(${checker.slice(start, end).trim()})`, { assert }) as (
+  source: string,
+  action: string,
+) => void;
 
 describe("CI remediation wiring", () => {
   it("accepts the complete enforcing workflow", () => {
-    expect(() => verify(workflow)).not.toThrow();
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    expect(() => verify(workflow, setupAction)).not.toThrow();
   });
 
   it("plans before allocating the unit and browser runner matrices", () => {
@@ -73,6 +80,15 @@ describe("CI remediation wiring", () => {
   ])("rejects silently disabling %s", (_label, mutate) => {
     const changed = mutate(workflow);
     expect(changed).not.toBe(workflow);
-    expect(() => verify(changed)).toThrow();
+    expect(() => verify(changed, setupAction)).toThrow();
+  });
+
+  it("rejects a shared setup action that stops attesting the install", () => {
+    const changed = setupAction.replace(
+      "run: node scripts/install-locked-dependencies.mjs",
+      "run: node scripts/install-locked-dependencies.mjs || true",
+    );
+    expect(changed).not.toBe(setupAction);
+    expect(() => verify(workflow, changed)).toThrow();
   });
 });

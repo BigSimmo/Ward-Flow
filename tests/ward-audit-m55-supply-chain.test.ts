@@ -10,6 +10,9 @@ const ROOT = path.resolve(__dirname, "..");
 const WORKFLOWS = path.join(ROOT, ".github/workflows");
 const workflowNames = readdirSync(WORKFLOWS).filter((name) => /\.ya?ml$/.test(name));
 const workflow = (name: string) => readFileSync(path.join(WORKFLOWS, name), "utf8");
+// Local composite actions the workflows call (`uses: ./.github/actions/...`) hold pins as well.
+const ACTIONS = path.join(ROOT, ".github/actions");
+const actionNames = readdirSync(ACTIONS).map((name) => `${name}/action.yml`);
 
 describe("M55 workflows pin actions and declare permissions", () => {
   it("reads every workflow", () => {
@@ -31,6 +34,20 @@ describe("M55 workflows pin actions and declare permissions", () => {
     expect(unpinned).toEqual([]);
   });
 
+  it("reads every local action", () => {
+    expect(actionNames).toContain("ward-setup/action.yml");
+  });
+
+  it.each(actionNames)("local action %s pins every action to a full commit", (name) => {
+    const refs = readFileSync(path.join(ACTIONS, name), "utf8")
+      .split("\n")
+      .map((line) => line.replace(/\s+#.*$/, ""))
+      .filter((line) => /^\s*(-\s+)?uses:/.test(line))
+      .map((line) => line.replace(/^\s*(-\s+)?uses:\s*/, "").trim());
+    expect(refs.length).toBeGreaterThan(0);
+    expect(refs.filter((ref) => !/^[\w.-]+\/[\w./-]+@[0-9a-f]{40}$/.test(ref))).toEqual([]);
+  });
+
   it.each(workflowNames)("%s declares its permissions at the top", (name) => {
     expect(workflow(name)).toMatch(/^permissions:/m);
     expect(workflow(name)).not.toMatch(/^\s*permissions:\s*write-all\b/m);
@@ -50,7 +67,7 @@ describe("M55 workflows pin actions and declare permissions", () => {
     const config = readFileSync(path.join(ROOT, ".github/dependabot.yml"), "utf8");
     expect(config).toMatch(/package-ecosystem: npm\s+directory: \/\n/);
     expect(config).toMatch(/package-ecosystem: npm\s+directory: \/backend\/ward-flow/);
-    expect(config).toMatch(/package-ecosystem: github-actions/);
+    expect(config).toMatch(/package-ecosystem: github-actions\s+directories: \["\/", "\/\.github\/actions\/\*"\]\n/);
   });
 });
 
