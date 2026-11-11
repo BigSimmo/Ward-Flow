@@ -48,8 +48,10 @@ export function expectedOccupancy(
     .map((unit): OccupancyRow => {
       const states = bedStates(unit, admissions, [...releases], [], reservations);
       const takenNow = states.occupied + states.pulled;
-      // The forecast for this ward alone, with nobody waiting: waiting people have no ward yet.
-      const forecast = bedsForecast([unit], [...releases], [...admissions], [], now, planned);
+      // The forecast for this ward alone, with nobody waiting: waiting people have no ward yet. The
+      // named holds go in too, so a booking for someone already holding a bed here (in `takenNow`)
+      // is not added a second time.
+      const forecast = bedsForecast([unit], [...releases], [...admissions], [], now, planned, reservations);
       return {
         unitId: unit.id,
         name: unit.name,

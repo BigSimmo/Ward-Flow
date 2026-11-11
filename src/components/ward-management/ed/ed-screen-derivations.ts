@@ -18,6 +18,7 @@ import { edById } from "@/components/ward-management/ward-sites";
 import {
   ED_REFERRED_NOT_SEEN_MINUTES,
   ED_SEVERE_PRESSURE_WAIT_MINUTES,
+  isLongWait,
   LATE_ARRIVAL_GRACE_MINUTES,
   LONG_WAIT_MINUTES,
   LONG_WAIT_TEXT,
@@ -474,7 +475,7 @@ export function deriveEdScreen({
         onAction: () => setArrivalPlanOpenFor(m.id),
       });
     }
-    if (m.originEdId === thisEdId && isWaitingInEd(m) && now - m.openedAt > LONG_WAIT_MINUTES) {
+    if (m.originEdId === thisEdId && isWaitingInEd(m) && isLongWait(now - m.openedAt)) {
       priorityFlags.push({
         tone: "quiet",
         kind: `Waiting ${LONG_WAIT_TEXT}`,
