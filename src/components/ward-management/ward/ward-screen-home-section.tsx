@@ -20,7 +20,7 @@ import type { BedItem } from "./ward-beds-matrix";
 import { type WardFlowTab, WardHomeTab, type WardShiftView } from "./ward-home-tab";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 import { shiftLine } from "./ward-screen-helpers";
-import { WardBedBoard } from "./ward-screen-lazy";
+import { WardBedBoard, WardOutageCatchUpCard } from "./ward-screen-lazy";
 import type { Dispatch, ReactElement, RefObject, SetStateAction } from "react";
 import type {
   BedRelease,
@@ -36,7 +36,6 @@ import type { WardCommandDispatch } from "@/components/ward-management/ward-shar
 import type { CapacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { wardLiveFormAlerts, type WardScreenBed } from "./ward-screen-derivations";
 import { ReturnEarlyAlerts } from "@/components/ward-management/out-of-area/return-early-alerts";
-import { WardOutageCatchUpCard } from "./ward-outage-catch-up-card";
 
 /** The Home tab section (Worth your attention), drawn from the ward screen's own state. */
 type WardScreenHomeSectionProps = {

@@ -224,7 +224,7 @@ describe("item 25: record an outage", () => {
 });
 
 describe("item 25: catch up after the outage", () => {
-  it("My ward shows the card and every bed's tag only after an outage, until the ward confirms", () => {
+  it("My ward shows the card and every bed's tag only after an outage, until the ward confirms", async () => {
     desk.role = "ward";
     renderIn(<WardScreen unitId={ward.id} />);
     expect(screen.queryByTestId("ward-outage-catch-up")).toBeNull();
@@ -232,7 +232,8 @@ describe("item 25: catch up after the outage", () => {
 
     printed([ward.id], OUTAGE.from - 30);
     outage();
-    const card = screen.getByTestId("ward-outage-catch-up");
+    // The card loads on its own chunk (phone budget), so it arrives a moment later.
+    const card = await screen.findByTestId("ward-outage-catch-up");
     expect(card).toHaveTextContent(
       `Since your pack at ${formatInstant(OUTAGE.from - 30)}, enter admissions, discharges, moves and bed changes done on paper.`,
     );
