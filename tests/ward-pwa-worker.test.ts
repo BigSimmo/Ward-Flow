@@ -317,11 +317,15 @@ describe("what a push may show (PS-13)", () => {
     return { title, body: options.body, url: options.data.url };
   }
 
-  async function notified(data: unknown) {
+  async function notified(data: unknown, extra: Record<string, unknown> = {}) {
     const listeners: Record<string, (event: unknown) => void> = {};
-    const notes: { title: string; options: { body: string; tag: string; data: { url: string } } }[] = [];
+    const notes: {
+      title: string;
+      options: { body: string; tag: string; renotify: boolean; data: { url: string } };
+    }[] = [];
     runInNewContext(WORKER_SOURCE, {
       URL,
+      ...extra,
       self: {
         location: { origin: ORIGIN },
         addEventListener: (type: string, listener: (event: unknown) => void) => {
@@ -340,6 +344,55 @@ describe("what a push may show (PS-13)", () => {
     expect(notes).toHaveLength(1);
     return notes[0];
   }
+
+  it("re-buzzes only for act-now; a job or team update replaces its slot quietly (A8-07)", async () => {
+    const renotify: Record<string, boolean> = {};
+    for (const kind of ["act-now", "job", "community"]) {
+      const payload = pushPayload([{ id: `synthetic-${kind}`, site: "Royal Perth Hospital", kind }]);
+      renotify[kind] = (await notified(payload)).options.renotify;
+    }
+    expect(renotify).toEqual({ "act-now": true, job: false, community: false });
+    // An unknown tag falls back to the act-now slot, so it re-buzzes as act-now does.
+    const good = pushPayload([{ id: "x", site: "Royal Perth Hospital", kind: "job" }]);
+    expect((await notified({ ...good, tag: "ward-flow-other" })).options.renotify).toBe(true);
+  });
+
+  it("records only the time and kind of each push for Settings, never its words (A8-07)", async () => {
+    const puts: { cache: string; key: string; record: unknown; type: string | null }[] = [];
+    const caches = {
+      open: async (cache: string) => ({
+        put: async (key: string, value: Response) =>
+          puts.push({ cache, key, record: await value.json(), type: value.headers.get("Content-Type") }),
+      }),
+    };
+    const before = Date.now();
+    await notified(pushPayload([{ id: "synthetic-job", site: "Royal Perth Hospital", kind: "job" }]), {
+      caches,
+      Response,
+    });
+    expect(puts).toHaveLength(1);
+    const [{ cache, key, record, type }] = puts;
+    expect(cache).toBe("ward-flow-last-push");
+    // Its own cache, outside CACHE_PREFIX, so activate never deletes it.
+    expect(cache.startsWith("ward-flow-static-")).toBe(false);
+    expect(key).toBe("/ward-flow/__last-push");
+    expect(type).toBe("application/json");
+    expect(Object.keys(record as object).sort()).toEqual(["at", "kind"]);
+    const { at, kind } = record as { at: string; kind: string };
+    expect(kind).toBe("jobs");
+    expect(Date.parse(at)).toBeGreaterThanOrEqual(before - 1000);
+    expect(JSON.stringify(record)).not.toMatch(/Royal Perth|synthetic-job|transport/i);
+  });
+
+  it("still shows the notification when the time cannot be recorded (A8-07)", async () => {
+    const caches = {
+      open: async () => {
+        throw new Error("QuotaExceededError");
+      },
+    };
+    const payload = pushPayload([{ id: "x", site: "Royal Perth Hospital" }]);
+    expect((await notified(payload, { caches, Response })).title).toBe(payload.title);
+  });
 
   it("shows each kind in its own slot, so a transport job never replaces a red alert (M158)", async () => {
     const tags: string[] = [];

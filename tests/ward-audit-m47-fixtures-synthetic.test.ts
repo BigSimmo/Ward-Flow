@@ -32,6 +32,10 @@ const FIXTURE_REGISTER: Record<string, string> = {
 const SAFE_EMAIL_DOMAIN =
   /(^|\.)(invalid|test|example|example\.com|example\.org|example\.net|example\.health)$|^(github\.com|users\.noreply\.github\.com|fcm\.googleapis\.com|health\.wa\.gov\.au|self\.example)$|(^|\.)ingest(\.de)?\.sentry\.io$/i;
 
+// Reviewed bot commit addresses, not people: the bot-author policy test checks that it recognises
+// the coding agents' own published commit identities (A6-F02, 11 Nov 2026).
+const SAFE_BOT_ADDRESSES = new Set(["noreply@anthropic.com", "cursoragent@cursor.com"]);
+
 describe("M47 fixtures hold only synthetic or public material", () => {
   it("every fixture and data file is on the reviewed register", () => {
     const found = [...files(path.join(ROOT, "tests/fixtures")), ...files(path.join(ROOT, "data"))].map(rel).sort();
@@ -61,7 +65,8 @@ describe("M47 fixtures hold only synthetic or public material", () => {
       for (const match of readFileSync(file, "utf8").matchAll(
         /[A-Za-z0-9._%+-]+@([A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,})/g,
       )) {
-        if (!SAFE_EMAIL_DOMAIN.test(match[1]!)) unsafe.push(`${rel(file)}: ${match[0]}`);
+        if (!SAFE_EMAIL_DOMAIN.test(match[1]!) && !SAFE_BOT_ADDRESSES.has(match[0]))
+          unsafe.push(`${rel(file)}: ${match[0]}`);
       }
     }
     expect(unsafe).toEqual([]);

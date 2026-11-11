@@ -53,7 +53,7 @@ import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
 import { FlushRow, Follow } from "./statistics-layout";
 import { useOptionalRouter } from "./statistics-nav";
-import { occupancyPercent, occupiedBeds } from "./statistics-occupancy";
+import { NO_BEDS_TEXT, occupancyPercent, occupiedBeds } from "./statistics-occupancy";
 import {
   PhoneBody,
   PhoneFacts,
@@ -615,7 +615,7 @@ function ServiceView({ model, slots }: { model: ServiceModel; slots: ServiceSlot
       }}
       phone={{
         eyebrow: `Health service · ${serviceSites.length} ${serviceSites.length === 1 ? "hospital" : "hospitals"}`,
-        sub: `${occupancyPct}% in use · ${wardCount} ${wardCount === 1 ? "ward" : "wards"}`,
+        sub: `${totalBedBase > 0 ? `${occupancyPct}% in use` : NO_BEDS_TEXT} · ${wardCount} ${wardCount === 1 ? "ward" : "wards"}`,
         stats: (
           <>
             <HeroStat value={totalBedBase} label="Beds" />
@@ -631,7 +631,11 @@ function ServiceView({ model, slots }: { model: ServiceModel; slots: ServiceSlot
             label="Beds"
           />
           <HeroStat
-            value={<span data-testid="ward-statistics-service-exec-occupancy">{occupancyPct}%</span>}
+            value={
+              <span data-testid="ward-statistics-service-exec-occupancy">
+                {totalBedBase > 0 ? `${occupancyPct}%` : NO_BEDS_TEXT}
+              </span>
+            }
             label="In use"
           />
           <HeroStat
@@ -841,10 +845,10 @@ function ServicePhone({
     .map((entry) => ({
       ...entry,
       // In use (Occupied + Pulled), the one occupancy count every page prints (ward-occupancy.ts).
-      rate:
-        entry.unit.beds > 0
-          ? Math.round(((entry.inUse ?? entry.states.occupied + entry.states.pulled) / entry.unit.beds) * 100)
-          : 0,
+      rate: occupancyPercent({
+        beds: entry.unit.beds,
+        inUse: entry.inUse ?? entry.states.occupied + entry.states.pulled,
+      }),
     }))
     .sort((a, b) => b.rate - a.rate || a.unit.name.localeCompare(b.unit.name));
   // On the executive desk a department worded as fewer than 5 sorts as nought, so the order cannot
@@ -884,7 +888,7 @@ function ServicePhone({
                 meta={
                   <span className={phone.flagged}>
                     {entry.rate >= BED_ALERT_THRESHOLD_PERCENT ? <StatusGlyph tone="warning" size={9} /> : null}
-                    {`${entry.rate}% in use`}
+                    {entry.unit.beds > 0 ? `${entry.rate}% in use` : NO_BEDS_TEXT}
                   </span>
                 }
                 value={entry.states.ready}

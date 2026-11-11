@@ -56,6 +56,7 @@ import {
 } from "./tv-derivations";
 import { ForecastBriefPanel } from "@/components/ward-management/forecast/forecast-brief-panel";
 import type { KindForecast } from "@/components/ward-management/forecast/forecast-by-kind";
+import { FORECAST_METHOD_LINE } from "@/components/ward-management/ward-forecast-method";
 import { useForecastModel } from "@/components/ward-management/forecast/use-forecast-model";
 import { TvLockControl, useTvLock } from "./tv-lock";
 import { TvFooterText, TvLeaveLink } from "./tv-leave-link";
@@ -372,40 +373,47 @@ function preparingSentence(pendingPreparation: number): string {
 
 function BedsThatFit({ gaps, tomorrow }: { gaps: BedKindGap[]; tomorrow?: readonly KindForecast[] }) {
   return (
-    <table className={styles.table}>
-      <thead>
-        <tr>
-          <th scope="col">Bed</th>
-          <th scope="col" className={styles.num}>
-            Waiting
-          </th>
-          <th scope="col" className={styles.numNarrow}>
-            Fit
-          </th>
-          <th scope="col" className={styles.numWide}>
-            Gap
-          </th>
-          {tomorrow ? (
-            <th scope="col" className={styles.numWide}>
-              Tomorrow
+    <>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th scope="col">Bed</th>
+            <th scope="col" className={styles.num}>
+              Waiting
             </th>
-          ) : null}
-        </tr>
-      </thead>
-      <tbody>
-        {gaps.map((row) => (
-          <tr key={row.id} data-short={row.gap < 0 || undefined}>
-            <th scope="row">{BED_KIND_SHORT[row.id]}</th>
-            <td className={styles.num}>{row.waiting}</td>
-            <td className={styles.num}>{row.bedsThatFit}</td>
-            <td className={styles.num}>{gapText(row.gap)}</td>
+            <th scope="col" className={styles.numNarrow}>
+              Fit
+            </th>
+            <th scope="col" className={styles.numWide}>
+              Gap
+            </th>
             {tomorrow ? (
-              <td className={styles.num}>{tomorrowText(tomorrow.find((kind) => kind.id === row.id))}</td>
+              <th scope="col" className={styles.numWide}>
+                Tomorrow
+              </th>
             ) : null}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {gaps.map((row) => (
+            <tr key={row.id} data-short={row.gap < 0 || undefined}>
+              <th scope="row">{BED_KIND_SHORT[row.id]}</th>
+              <td className={styles.num}>{row.waiting}</td>
+              <td className={styles.num}>{row.bedsThatFit}</td>
+              <td className={styles.num}>{gapText(row.gap)}</td>
+              {tomorrow ? (
+                <td className={styles.num}>{tomorrowText(tomorrow.find((kind) => kind.id === row.id))}</td>
+              ) : null}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {tomorrow ? (
+        <p className={styles.footer} data-testid="bed-meeting-tv-tomorrow-method">
+          Tomorrow: {FORECAST_METHOD_LINE}
+        </p>
+      ) : null}
+    </>
   );
 }
 

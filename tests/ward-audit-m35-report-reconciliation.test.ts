@@ -9,12 +9,11 @@
 //   - Weekly report overrides : weeklyOperationsReport(...).overrides   (reports/weekly-report)
 //   - Weekly report declines  : weeklyOperationsReport(...).declines
 //
-// Each figure's change is compared with the accepted audit rows of the matching kind. Three
-// findings are pinned, none changed here:
-//   1. "Discharged today" counts a ward transfer out as a discharge (the transfer's own audit row
-//      is a care change, not a departure), so the figure is departures plus transfers.
-//   2. Declines are not audited at all, so the report's decline count cannot be reconciled.
-//   3. Arrivals (admissions) are not audited either: no accepted row says a patient arrived.
+// Each figure's change is compared with the accepted audit rows of the matching kind. The three
+// findings first pinned here were fixed on 10 Nov 2026 (D-130):
+//   1. "Discharged today" no longer counts a ward transfer out (a care change, not a departure).
+//   2. A decline writes an accepted `referral-answer` audit row.
+//   3. An arrival writes an accepted `arrival` audit row.
 //
 // Synthetic data only.
 
@@ -198,7 +197,7 @@ describe("M35 report figures reconcile with the accepted audit rows", () => {
     }
   });
 
-  it("a ward transfer out is counted as a discharge by the Map; its audit row is a care change, not a departure", () => {
+  it("a ward transfer out is not counted as a discharge by the Map; its audit row is a care change, not a departure", () => {
     const seed = seedWardFlowState();
     const before = figures(seed);
     const source = seed.admissions.find(
@@ -218,8 +217,8 @@ describe("M35 report figures reconcile with the accepted audit rows", () => {
     );
     expect(transfers).toHaveLength(1);
     expect(departures).toHaveLength(0);
-    // The figure rises by the transfer, although no departure was recorded.
-    expect(after.dischargedTotal - before.dischargedTotal).toBe(departures.length + transfers.length);
+    // Fixed (D-130): a move to another psychiatric ward is a move, so the figure does not rise.
+    expect(after.dischargedTotal - before.dischargedTotal).toBe(departures.length);
     expect(state.admissions.find((a) => a.id === source.id)!.leavingDestination).toBe(
       "transferred-to-another-psychiatric-ward",
     );
@@ -255,40 +254,36 @@ describe("M35 report figures reconcile with the accepted audit rows", () => {
     expect(acceptedRows(refused, (row) => row.category === "override")).toHaveLength(0);
   });
 
-  // The two figures below cannot be reconciled today, because the event that changes them leaves no
-  // audit row. Each assertion states the reconciliation that SHOULD hold; it fails now, and flips
-  // to a plain passing test when an audit row is added. (Sibling audit files use the same pattern.)
-  it.fails(
-    "DEFECT M35: the weekly report's decline count equals the accepted decline rows (declines leave no audit row)",
-    () => {
-      const seed = seedWardFlowState();
-      const before = figures(seed);
-      let state = send(seed, {
-        type: "REFER_TO_UNITS",
-        role: "coordinator",
-        now: at(1),
-        movementId: "WF-012",
-        unitIds: ["rgh-adult-secure"],
-        genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
-        genderPlacementChecked: true,
-      } as WardFlowEvent);
-      state = send(state, {
-        type: "DECLINE",
-        role: "ward",
-        now: at(2),
-        movementId: "WF-012",
-        unitId: "rgh-adult-secure",
-        reason: "capability_mismatch",
-      } as WardFlowEvent);
-      expect(state.rejections.length).toBe(seed.rejections.length);
-      const after = figures(state);
-      expect(after.declines - before.declines).toBe(1);
-      const rows = acceptedRows(state, (row) => /DECLINE/.test(row.action));
-      expect(rows).toHaveLength(after.declines - before.declines);
-    },
-  );
+  // Fixed 10 Nov 2026 (D-130): declines and arrivals now write accepted audit rows.
+  it("M35: the weekly report's decline count equals the accepted decline rows", () => {
+    const seed = seedWardFlowState();
+    const before = figures(seed);
+    let state = send(seed, {
+      type: "REFER_TO_UNITS",
+      role: "coordinator",
+      now: at(1),
+      movementId: "WF-012",
+      unitIds: ["rgh-adult-secure"],
+      genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
+      genderPlacementChecked: true,
+    } as WardFlowEvent);
+    state = send(state, {
+      type: "DECLINE",
+      role: "ward",
+      now: at(2),
+      movementId: "WF-012",
+      unitId: "rgh-adult-secure",
+      actingUnitId: "rgh-adult-secure",
+      reason: "capability_mismatch",
+    } as WardFlowEvent);
+    expect(state.rejections.length).toBe(seed.rejections.length);
+    const after = figures(state);
+    expect(after.declines - before.declines).toBe(1);
+    const rows = acceptedRows(state, (row) => /DECLINE/.test(row.action));
+    expect(rows).toHaveLength(after.declines - before.declines);
+  });
 
-  it.fails("DEFECT M35: an arrival (an admission) is an accepted audit row (arrivals leave no audit row)", () => {
+  it("M35: an arrival (an admission) is an accepted audit row", () => {
     const seed = seedWardFlowState();
     const moving = seed.movements.find((m) => m.stage === "moving")!;
     const after = send(seed, {

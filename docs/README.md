@@ -1,6 +1,6 @@
 # Ward Flow documentation index
 
-<!-- last-checked: 2026-10-24 -->
+<!-- last-checked: 2026-11-10 -->
 
 _Updated 2026-11-09 - working rules audit (D-107): claims wording, design links point to DESIGN-SYSTEM.md, moved history paths; Documentation owns._
 

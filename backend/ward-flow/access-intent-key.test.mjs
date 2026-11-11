@@ -142,7 +142,9 @@ test("two genuine openings, each with its own key, still count twice", async () 
   assert.equal(audits.filter((row) => row.action === "BREAK_GLASS").length, 2);
 });
 
-test("an opening with no key behaves as before: each request is its own opening", async () => {
+// Unkeyed retries inside the short window are folded server side (retry-dedupe.test.mjs). This double
+// finds no earlier opening, so it checks only that an unkeyed opening keeps no receipt.
+test("an opening with no key keeps no receipt", async () => {
   const { access, patientId } = wardOutsideCare();
   const { store, view, openings, receipts } = setup(access);
   await store.breakGlass(view, patientId, "handover");

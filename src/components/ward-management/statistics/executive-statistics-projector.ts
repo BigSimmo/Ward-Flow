@@ -602,9 +602,14 @@ export function projectExecutiveReportingFoundation(
       weeks.map((week) => week.report.declines.placement),
     ),
   );
-  release.partition(
+  // Every stay that ended today, of which the sites' "Gone today" are the discharges: a transfer to
+  // another psychiatric ward ended a stay but is a move, not a discharge (M35, Josh, 10 Nov 2026).
+  release.subset(
     endedToday,
-    sites.map((site) => site.dischargedToday),
+    release.sum(
+      "sites:dischargedToday",
+      sites.map((site) => site.dischargedToday),
+    ),
   );
   release.partition(
     blockedTotal,

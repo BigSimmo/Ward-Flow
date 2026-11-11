@@ -32,6 +32,7 @@ import type { OutOfAreaEntry } from "@/components/ward-management/ward-referrals
 import { siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 
 import {
+  CLOSER_BED_NOTE,
   PLAN_STEPS,
   TRAVEL_SHORT,
   confirmedAgeText,
@@ -397,6 +398,7 @@ export function ReturnPlan({
                       </span>
                     </label>
                   ))}
+                  <p className={styles.planHint}>{CLOSER_BED_NOTE}</p>
                 </fieldset>
               ) : (
                 <p className={styles.planHint}>

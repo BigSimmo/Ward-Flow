@@ -35,6 +35,14 @@ const PUSH_BODIES = [
 const PUSH_TAGS = ["ward-flow-act-now", "ward-flow-jobs", "ward-flow-team"];
 // Must match WARD_PWA_OPEN_MESSAGE in shell/ward-pwa-registration.tsx.
 const OPEN_MESSAGE = "ward-flow-open";
+// Audit A8-07: only act-now buzzes again while an earlier one of its kind is still showing.
+const RENOTIFY_TAGS = ["ward-flow-act-now"];
+// Audit A8-07: when this device last received a push, for Settings > Alerts. Holds only the time and
+// the kind (act-now, jobs or team), never the payload words. Its own cache, without CACHE_PREFIX, so
+// activate never deletes it. Must match settings/settings-last-push.ts.
+const LAST_PUSH_CACHE = "ward-flow-last-push";
+const LAST_PUSH_KEY = "/ward-flow/__last-push";
+const PUSH_KINDS = { "ward-flow-act-now": "act-now", "ward-flow-jobs": "jobs", "ward-flow-team": "team" };
 
 // Bump CACHE_VERSION when the precache list or the caching rules change; activate deletes the rest.
 // OFFLINE_PAGE_REVISION is the first 12 hex digits of the SHA-256 of public/ward-flow-offline.html
@@ -248,6 +256,18 @@ self.addEventListener("fetch", (event) => {
   // Anything else: no respondWith, so the browser fetches it as if there were no worker.
 });
 
+/** Best effort: a failed write must never stop the notification showing. */
+async function recordPushReceived(tag) {
+  try {
+    if (typeof caches === "undefined") return;
+    const cache = await caches.open(LAST_PUSH_CACHE);
+    const record = JSON.stringify({ at: new Date().toISOString(), kind: PUSH_KINDS[tag] });
+    await cache.put(LAST_PUSH_KEY, new Response(record, { headers: { "Content-Type": "application/json" } }));
+  } catch {
+    // Settings then shows the previous time, or none.
+  }
+}
+
 self.addEventListener("push", (event) => {
   let data = {};
   try {
@@ -257,19 +277,24 @@ self.addEventListener("push", (event) => {
   }
   const title = pushText(data.title, FALLBACK.title, 120, PUSH_TITLES);
   const body = pushText(data.body, FALLBACK.body, 240, PUSH_BODIES);
+  // Audit M158: each kind keeps its own slot, so a transport job never replaces a red alert still
+  // showing. Only the server's known tags are used; anything else is the act-now slot.
+  const tag = PUSH_TAGS.includes(data.tag) ? data.tag : PUSH_TAGS[0];
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      icon: "/icons/icon-192",
-      badge: "/icons/monochrome-192",
-      // Audit M158: each kind keeps its own slot, so a transport job never replaces a red alert
-      // still showing. Only the server's known tags are used; anything else is the act-now slot.
-      tag: PUSH_TAGS.includes(data.tag) ? data.tag : PUSH_TAGS[0],
-      // A new item should buzz even when an earlier one of its kind is still showing. The server's
-      // outbox retries only the device whose send failed, so a retry never re-buzzes another one.
-      renotify: true,
-      data: { url: wardFlowPath(data.url) },
-    }),
+    Promise.all([
+      self.registration.showNotification(title, {
+        body,
+        icon: "/icons/icon-192",
+        badge: "/icons/monochrome-192",
+        tag,
+        // A new act-now item buzzes even when an earlier one is still showing; a job or team update
+        // replaces its slot quietly (A8-07). The server's outbox retries only the device whose send
+        // failed, so a retry never re-buzzes another one.
+        renotify: RENOTIFY_TAGS.includes(tag),
+        data: { url: wardFlowPath(data.url) },
+      }),
+      recordPushReceived(tag),
+    ]),
   );
 });
 

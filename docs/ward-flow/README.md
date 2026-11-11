@@ -1,6 +1,6 @@
 # Ward Flow — start here
 
-<!-- last-checked: 2026-10-24 -->
+<!-- last-checked: 2026-11-10 -->
 
 **This is the product and design overview.** Use the [documentation portal](../README.md) to find the
 page for your task; [`AGENTS.md`](../../AGENTS.md) remains the repository instruction root.

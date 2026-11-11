@@ -20,7 +20,11 @@ import { openEdJourneys } from "@/components/ward-management/ward-shared-figures
 import { formatInstant, minutesUntil, splitDuration } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
-import { occupancyPercent, occupiedBeds } from "@/components/ward-management/statistics/statistics-occupancy";
+import {
+  NO_BEDS_TEXT,
+  occupancyPercent,
+  occupiedBeds,
+} from "@/components/ward-management/statistics/statistics-occupancy";
 import {
   useExecutiveStatistics,
   useExecutiveStatisticsControl,
@@ -148,6 +152,11 @@ function operationalFigures(input: BedSummaryInput) {
   };
 }
 
+/** M121 (D-125): a group with no beds says so, never "0%". */
+function occupancyLine(percent: number, inUse: number, beds: number): string {
+  return beds > 0 ? `Occupancy: ${percent}% (${inUse} of ${beds} beds in use).` : `Occupancy: ${NO_BEDS_TEXT}.`;
+}
+
 function operationalMessage(id: Exclude<MessageId, "summary">, input: BedSummaryInput): Message {
   const f = operationalFigures(input);
   const readyLine = `Ready beds: ${f.readyTotal} of ${f.beds}${f.pending > 0 ? `, ${f.pending} pending preparation` : ""}.`;
@@ -159,7 +168,7 @@ function operationalMessage(id: Exclude<MessageId, "summary">, input: BedSummary
     return {
       title: `Mental health bed escalation at ${f.at} AWST`,
       groups: [
-        { heading: "Beds", lines: [`Occupancy: ${f.occupancy}% (${f.inUse} of ${f.beds} beds in use).`, readyLine] },
+        { heading: "Beds", lines: [occupancyLine(f.occupancy, f.inUse, f.beds), readyLine] },
         { heading: "ED", lines: [waitingLine, stillLine, longestLine] },
         { heading: "Flagged", lines: [`Flagged: ${f.flagged ?? "nothing"}.`] },
       ],
@@ -241,12 +250,13 @@ function executiveMessage(id: MessageId, report: ExecutiveReport): Message {
   );
   if (id === "escalation") {
     const occupancy = occupancyPercent({ beds: network.beds.total, inUse: network.beds.inUse });
+    const occupancyLineText = occupancyLine(occupancy, network.beds.inUse, network.beds.total);
     return {
       title: `${scope} bed escalation at ${at} AWST`,
       groups: [
         {
           heading: "Beds",
-          lines: [`Occupancy: ${occupancy}% (${network.beds.inUse} of ${network.beds.total} beds in use).`, readyLine],
+          lines: [occupancyLineText, readyLine],
         },
         { heading: "ED", lines: waitingLines },
       ],
