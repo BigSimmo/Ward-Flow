@@ -151,6 +151,16 @@ function messageOf(error) {
   return typeof error === "object" && error !== null && "message" in error ? error.message : undefined;
 }
 
+/** Closed Sentry event name for a handled 500, 503 or 413. Config "not set up" 503s are not failures. */
+export function handledFailureEvent(status, outcome) {
+  if (status === 500 || outcome === "server_error") return "ward_backend_server_error";
+  if (outcome === "storage_unavailable" || outcome === "verifier_unavailable" || outcome === "report_unavailable")
+    return "ward_backend_service_unavailable";
+  if (status === 413 || outcome === "workspace_full" || outcome === "request_too_large")
+    return "ward_backend_payload_too_large";
+  return null;
+}
+
 export function createSharedHandler({
   config,
   store,
@@ -165,7 +175,7 @@ export function createSharedHandler({
   pushSubscribeLimiter = createWindowLimiter(PUSH_SUBSCRIBE_LIMIT),
   // Audit M53: saves per account, checked before the body is read or anything is stored.
   commandLimiter = createWindowLimiter(COMMAND_LIMIT),
-  // Audit M74: a handled 500 is sent to Sentry too (off unless SENTRY_DSN is set, error-report.mjs).
+  // Audit M74 / A7-05: handled 500, 503 and 413 are sent to Sentry too (off unless SENTRY_DSN is set).
   report = reportFailure,
 }) {
   return async (request, meta = {}) => {
@@ -175,12 +185,13 @@ export function createSharedHandler({
     /** @type {{ outcome?: string, failure?: Record<string, unknown>, role?: string }} */
     const note = {};
     const response = await handle(request, path, requestId, note, meta);
-    if (note.outcome === "server_error")
+    const reported = handledFailureEvent(response.status, note.outcome);
+    if (reported)
       try {
         // Closed fields only (error-report.mjs checks each again): the same request ID as the reply
-        // header and log line, the desk role, the route and the screen. Never a name or payload.
+        // header and log line, the desk role, the route and the screen. Never a name, body or payload.
         report({
-          event: "ward_backend_server_error",
+          event: reported,
           requestId,
           route: ROUTES.get(path) ?? "unknown",
           ...(note.role ? { role: note.role } : {}),
@@ -775,7 +786,8 @@ export function createSharedHandler({
       try {
         body = await readBody(request);
       } catch (error) {
-        return reply(messageOf(error) === "too_large" ? 413 : 400, { error: "Invalid command" });
+        if (messageOf(error) === "too_large") return reply(413, { error: "Invalid command" }, "request_too_large");
+        return reply(400, { error: "Invalid command" });
       }
       if (
         !body ||
