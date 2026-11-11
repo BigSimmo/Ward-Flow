@@ -16,7 +16,7 @@ import type {
 import type { WardMode, WardNavId } from "@/components/ward-management/ward-nav";
 import { movementBelongsToService } from "@/components/ward-management/ward-service-scope";
 import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
-import { totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { readyBedsByWard } from "@/components/ward-management/ward-bed-states";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 
 /**
@@ -69,6 +69,11 @@ export type WardNavCount = {
    * screen does not lead with travels here, under its own noun, never in the badge.
    */
   need?: { value: number; noun: string };
+  /**
+   * Item 5 (count breakdown): for the ready figure, the wards it counts and each one's ready beds.
+   * `value` is their sum, so a breakdown of the figure always adds up to it.
+   */
+  readyWards?: readonly { unit: Unit; ready: number }[];
 };
 
 /**
@@ -140,13 +145,16 @@ function deriveWardNavCounts(input: WardNavCountInput): WardNavCounts {
     .filter((group) => SEVERE_CAUSES.includes(group.cause))
     .reduce((total, group) => total + group.movements.length, 0);
 
+  const readyWards = readyBedsByWard(units, admissions ?? [], bedReleases, [...movements, ...referrals]);
+
   const counts: WardNavCounts = {
     // Audit 6 (Josh, 20 Oct 2026): the one ready figure, which leaves out beds pulled for an incoming patient.
     // D-115 (Josh, 9 Nov 2026): and a bed named for an accepted referral, as the TV and print do.
     capacity: {
-      value: totalReadyBedsNow(units, admissions ?? [], bedReleases, [...movements, ...referrals]),
+      value: readyWards.reduce((sum, ward) => sum + ward.ready, 0),
       noun: "beds ready now",
       urgent: false,
+      readyWards,
     },
     movements: { value: open.length, noun: "still open", urgent: false },
     // Overall review, 20 Oct 2026: the badge is Waiting's own title figure, in its words. The severe
