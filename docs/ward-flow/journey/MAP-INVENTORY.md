@@ -316,7 +316,7 @@ Source-contract SHA256: 7f112e0ff5d74277bf8cb0ee13ea647ecf119d355c1cfe0777b9466d
   effects: Keeps the admission and bed occupancy; return is recorded separately through END_LEAVE_BED
   tests: tests/ward-absence-and-cto.test.ts
   tests: tests/ward-away-from-ward-exclusive.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:373; SHA256 22c8cf4905fa0043b38eb8353c92f3d760b835fd8830dc5e09eefee04b5ea866
+  Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:373; SHA256 c3710e57ffa74c56374fd19198b2dd25941ae342206abe440657000ee1aae939
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:213; SHA256 f9c4dd2aa18c14b7b98ab03b46946cf70c309a6281278d4eda668faa4011d423
   Reviewed source: src/components/ward-management/ward-flow-events.ts:1380; SHA256 d8442fce2033d8962bf2804c711834fa8c4c511d3e99ce2b429d1b18e8f96d1e
   Reviewed source: src/components/ward-management/ward-access-state.ts:659; SHA256 924e9e6ab48fddbf423e5cf988cc09b75df3ace0ce4f4465f379b143957e3d07
@@ -335,7 +335,7 @@ Source-contract SHA256: 7f112e0ff5d74277bf8cb0ee13ea647ecf119d355c1cfe0777b9466d
   guards: Step must be listed, not already recorded, and not earlier than absence.since
   effects: Appends {step,at} to absentWithoutLeave.steps; does not end absence, release a bed or contact anyone
   tests: tests/ward-absence-and-cto.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:425; SHA256 22c8cf4905fa0043b38eb8353c92f3d760b835fd8830dc5e09eefee04b5ea866
+  Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:425; SHA256 c3710e57ffa74c56374fd19198b2dd25941ae342206abe440657000ee1aae939
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:214; SHA256 f9c4dd2aa18c14b7b98ab03b46946cf70c309a6281278d4eda668faa4011d423
   Reviewed source: src/components/ward-management/ward-flow-events.ts:1389; SHA256 d8442fce2033d8962bf2804c711834fa8c4c511d3e99ce2b429d1b18e8f96d1e
   Reviewed source: src/components/ward-management/ward-access-state.ts:659; SHA256 924e9e6ab48fddbf423e5cf988cc09b75df3ace0ce4f4465f379b143957e3d07
@@ -412,7 +412,7 @@ Source-contract SHA256: 7f112e0ff5d74277bf8cb0ee13ea647ecf119d355c1cfe0777b9466d
   effects: Replaces admission.blockReason
   effects: For all linked releases not discharged, updates blocker, blockedBy, blockerRecordedAt and confirmedAt; moves no capacity figure or bed state
   tests: tests/ward-stay-discharge-blocker.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:265; SHA256 22c8cf4905fa0043b38eb8353c92f3d760b835fd8830dc5e09eefee04b5ea866
+  Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:265; SHA256 c3710e57ffa74c56374fd19198b2dd25941ae342206abe440657000ee1aae939
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:236; SHA256 f9c4dd2aa18c14b7b98ab03b46946cf70c309a6281278d4eda668faa4011d423
   Reviewed source: src/components/ward-management/ward-flow-events.ts:1838; SHA256 d8442fce2033d8962bf2804c711834fa8c4c511d3e99ce2b429d1b18e8f96d1e
   Reviewed source: src/components/ward-management/ward-access-state.ts:659; SHA256 924e9e6ab48fddbf423e5cf988cc09b75df3ace0ce4f4465f379b143957e3d07
@@ -1816,7 +1816,7 @@ Source-contract SHA256: 7f112e0ff5d74277bf8cb0ee13ea647ecf119d355c1cfe0777b9466d
   effects: Advisory recording only: neither calculates legal duties/deadlines nor blocks or advances the journey. Typed who/reason invokes typed-text persistence boundary.
   tests: tests/ward-support-notifications.test.ts
   tests: tests/ward-discharge-support-notification.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:672; SHA256 22c8cf4905fa0043b38eb8353c92f3d760b835fd8830dc5e09eefee04b5ea866
+  Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:672; SHA256 c3710e57ffa74c56374fd19198b2dd25941ae342206abe440657000ee1aae939
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2519; SHA256 d8442fce2033d8962bf2804c711834fa8c4c511d3e99ce2b429d1b18e8f96d1e
   Reviewed source: src/components/ward-management/ward-access-state.ts:887; SHA256 924e9e6ab48fddbf423e5cf988cc09b75df3ace0ce4f4465f379b143957e3d07
 - SEND_RELEASE_SUPPORT_NOTICE — modelled; event roles: ward, coordinator

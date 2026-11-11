@@ -690,6 +690,15 @@ export function reduceRecordedStayEvent(
       if (!SUPPORT_NOTIFICATION_OUTCOMES.includes(event.outcome))
         return reject(state, event, "RECORD_SUPPORT_NOTIFICATION outcome must be told or not applicable");
 
+      // Item 15 (D-134 item 2): the emergency department records only the advocacy notice on an
+      // arrival, never a discharge notice (Codex, #1609).
+      if (event.role === "ed" && (event.party !== "mhas" || event.occasion === "discharge"))
+        return reject(
+          state,
+          event,
+          "the emergency department records only the advocacy service notice, before the patient arrives",
+        );
+
       let subjectId: string;
       if (event.occasion === "discharge") {
         if (event.admissionId === undefined || event.movementId !== undefined)

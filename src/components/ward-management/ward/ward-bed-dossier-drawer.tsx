@@ -600,8 +600,11 @@ export function WardBedDossierDrawer({
   const person = resolved?.patient;
   const personHref = person ? patientHref(person.id) : null;
   // Feature item 4: under 18 on an adult ward, read from the date of birth and this ward's cohort.
+  // Keyed by the stay, so a typed time never carries over to the next bed (Codex, #1609).
   const under18Notice =
-    !isReady && admission ? <WardUnder18Notice patient={person} unit={unit} admission={admission} /> : null;
+    !isReady && admission ? (
+      <WardUnder18Notice key={admission.id} patient={person} unit={unit} admission={admission} />
+    ) : null;
 
   // The ward board's departure check (`board/ward-board.tsx`): name · UMRN · bed, and here the destination.
   const leavingLabel = LEAVING_DESTINATIONS.find((destination) => destination.id === drawerLeavingDestination)?.label;
