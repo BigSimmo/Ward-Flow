@@ -306,7 +306,7 @@ Do these in the Ward Flow project only, after checking the project name and ID m
 7. **Migration 11 and its grants (items 8 and 9).** Run the supported runner,
    `npm --prefix backend/ward-flow run migrate:supabase` (see
    [SETUP-SUPABASE.md](../../backend/ward-flow/SETUP-SUPABASE.md)). It applies every pending
-   migration through <!-- fact:latest-migration -->017-account-preferences<!-- /fact --> in one
+   migration through <!-- fact:latest-migration -->018-read-path-indexes<!-- /fact --> in one
    transaction and then reinstalls the runtime grants itself, so there is no separate grants step.
    Before migration 11 the backend can work, but opening a record is not logged and a sign-out
    takes effect only when its token expires. Later capabilities depend on their own migrations. For separately authorised undo, use the canonical

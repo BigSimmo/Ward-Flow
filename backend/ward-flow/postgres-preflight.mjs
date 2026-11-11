@@ -335,6 +335,9 @@ const indexes = [
   [16, "forecast_miss_reasons_workspace_mode", "forecast_miss_reasons", "workspace_id, data_mode", false],
   [17, "account_preferences_pkey", "account_preferences", "workspace_id, actor_id", true],
   [17, "account_preferences_workspace_mode", "account_preferences", "workspace_id, data_mode", false],
+  [18, "audit_break_glass_actor", "audit", "workspace_id, actor_id", false, "action = 'BREAK_GLASS'"],
+  [18, "audit_access_sequence", "audit", "workspace_id, sequence DESC", false, "action ~~ 'ACCESS\\_%'"],
+  [18, "record_access_workspace_viewed", "record_access", "workspace_id, viewed_at DESC", false],
 ];
 
 /** Each guard trigger function, the table it guards and the migration that added it. */

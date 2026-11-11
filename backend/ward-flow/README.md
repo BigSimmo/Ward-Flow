@@ -16,7 +16,7 @@ See [Health and monitor configuration](#health-and-monitor-configuration) for th
 The provider is chosen by
 `WARD_DATABASE_PROVIDER` and `WARD_AUTH_PROVIDER` (see DATABASE.md). Runtime never migrates the
 database and never substitutes an administrator login. Shared readiness requires migrations `001`
-to `005` and accepts later versions through <!-- fact:latest-migration -->017-account-preferences<!-- /fact -->.
+to `005` and accepts later versions through <!-- fact:latest-migration -->018-read-path-indexes<!-- /fact -->.
 These source files do not establish a current hosted connection or deployment.
 
 ## Health and monitor configuration
@@ -161,7 +161,7 @@ these source contracts; they do not establish the deployed token, database or al
   Use migration 11 or later when server-side sign-out and access-history guarantees are required;
   older schemas remain rollback compatibility, not evidence that those capabilities are present.
 - Browser settings template: `infra/frontend.env.example`.
-- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->017-account-preferences<!-- /fact -->):
+- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->018-read-path-indexes<!-- /fact -->):
   - `001-shared-workspace.sql`: `ward_flow` schema, migrations, workspaces, commands and append-only audit.
   - `002-workspace-data-mode.sql`: `data_mode` column and a trigger that blocks reclassification.
   - `003-push-subscriptions.sql`: push subscriptions, baselines and deliveries.
@@ -259,7 +259,13 @@ these source contracts; they do not establish the deployed token, database or al
     account's lists, so seen on any device counts as seen. Before 17 that route answers
     `shared: false` and each browser keeps its own Help memory.
     `infra/rollback-017-account-preferences.sql` drops the table. Reapply runtime grants after 17.
-    The backend accepts versions 5 to 17.
+  - `018-read-path-indexes.sql`: three indexes only, so nothing behaves differently before it. A
+    partial index on `audit(workspace_id, actor_id)` for `BREAK_GLASS` rows (the break glass
+    check), one on `audit(workspace_id, sequence DESC)` for `ACCESS_` rows (the access history)
+    and one on `record_access(workspace_id, viewed_at DESC)` (the record access list's review
+    window). Plain `CREATE INDEX`, since the runner applies every file in one transaction.
+    `infra/rollback-018-read-path-indexes.sql` drops them. No grants change.
+    The backend accepts versions 5 to 18.
 - `WARD_COORDINATOR_UNTIL` (optional, `YYYY-MM-DD`, at most a year ahead) ends the
   `WARD_COORDINATOR_USER_IDS` bootstrap coordinators at the end of that Perth day, without a
   restart (H-0057). Unset, they keep working and the shared server warns at startup.
