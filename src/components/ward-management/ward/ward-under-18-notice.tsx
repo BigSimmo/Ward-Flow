@@ -8,6 +8,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { calendarDateOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { canDispatch } from "@/components/ward-management/ward-role-permissions";
@@ -76,10 +77,11 @@ export function WardUnder18Notice({
     setError(null);
     runRecorded(
       () => {
-        const completion = dispatch({
-          type: "RECORD_CHIEF_PSYCHIATRIST_NOTIFIED",
+        const completion = wardRaise(
+          dispatch,
           role,
           now,
+        )("RECORD_CHIEF_PSYCHIATRIST_NOTIFIED", {
           actingUnitId: unit.id,
           admissionId: admission.id,
           notifiedAt,

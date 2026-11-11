@@ -1,6 +1,7 @@
 import type { Admission } from "./ward-admissions";
 import type { Instant } from "./ward-clock";
 import type { Unit } from "./ward-model";
+import { YOUTH_AGE_BAND_UNDER_YEARS } from "./ward-operational-defaults";
 import { patientAgeYears, type Patient } from "./ward-patients";
 
 /**
@@ -38,7 +39,7 @@ export function under18AdultWardNotice(
   if (!patient?.dateOfBirth || !/^\d{4}-\d{2}-\d{2}/.test(patient.dateOfBirth)) return null;
   if (!unit || unit.cohort === "Youth") return null;
   const age = patientAgeYears(patient, demoDay);
-  if (!Number.isFinite(age) || age < 0 || age >= 18) return null;
+  if (!Number.isFinite(age) || age < 0 || age >= YOUTH_AGE_BAND_UNDER_YEARS) return null;
   const notifiedAt = admission?.chiefPsychiatristNotice?.notifiedAt;
   return notifiedAt === undefined ? { tone: "loud" } : { tone: "quiet", notifiedAt };
 }
