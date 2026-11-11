@@ -426,9 +426,12 @@ describe("assertion 3 — drawer focus trap and Escape order", () => {
         getClientRectsSpy.mockRestore();
       }
       // Each drawer walks every control twice in both directions; the Tasks and Tools drawers take
-      // about 11 s on an idle machine, so a loaded CI shard can pass the 30 s default.
+      // about 11 s on an idle machine, so a loaded CI shard can pass the 30 s default. The trap scans
+      // every candidate on each press, so the cost grows with the square of the control count: since
+      // the first look of a shift covers the whole night (feature plan item 11), Activity holds about
+      // 145 controls in the demo world instead of about 50, and takes about 35 s idle.
     },
-    60_000,
+    180_000,
   );
 
   it("Escape closes the open drawer first (the documented order's first step) and returns focus to its trigger", async () => {
