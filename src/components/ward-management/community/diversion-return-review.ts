@@ -134,3 +134,12 @@ export function diversionReturnsForTeam(
     .map(({ referralId, returnedAt }) => ({ referralId, returnedAt }))
     .sort((a, b) => a.returnedAt - b.returnedAt || a.referralId.localeCompare(b.referralId));
 }
+
+/** D-152: a shared copy's returns each name a referral that copy holds, or the copy is refused. */
+export function diversionReturnsResolve(state: {
+  referrals?: readonly { id: string }[];
+  diversionReturns?: readonly DiversionReturnRecord[];
+}): boolean {
+  const held = new Set((state.referrals ?? []).map((referral) => referral.id));
+  return (state.diversionReturns ?? []).every((row) => held.has(row.referralId));
+}

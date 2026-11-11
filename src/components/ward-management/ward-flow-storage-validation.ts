@@ -1027,8 +1027,6 @@ const supportNotification = z.strictObject({
  */
 function typedRecordsResolve(
   state: Pick<WardFlowState, "admissions" | "movements" | "repatriations"> & {
-    referrals?: WardFlowState["referrals"];
-    diversionReturns?: WardFlowState["diversionReturns"];
     supportNotifications?: WardFlowState["supportNotifications"];
     homeServiceReturns?: WardFlowState["homeServiceReturns"];
     returnEarlyFlags?: WardFlowState["returnEarlyFlags"];
@@ -1044,8 +1042,6 @@ function typedRecordsResolve(
     (state.homeServiceReturns ?? []).every((row) => admissionIds.has(row.admissionId)) &&
     (state.returnEarlyFlags ?? []).every((row) => admissionIds.has(row.admissionId)) &&
     (state.triages ?? []).every((row) => patientIds.has(row.patientId)) &&
-    // D-152: a shared-mode return only ever names a referral the desk was sent.
-    (state.diversionReturns ?? []).every((row) => state.referrals?.some(({ id }) => id === row.referralId)) &&
     (state.supportNotifications ?? []).every(
       (row) =>
         (row.occasion === "discharge" ? admissionIds : movementIds).has(row.subjectId) &&
@@ -1091,8 +1087,7 @@ const storedState = z.looseObject({
   returnEarlyFlags: z.optional(z.array(z.strictObject({ admissionId: id, homeHospital: id, at: finite, by: role }))),
   // Shared mode nameless notices (4 Nov 2026): a key, a site and a time. No stay id, no name.
   returnEarlyNotices: z.optional(z.array(z.strictObject({ key: id, homeHospital: id, at: finite }))),
-  // Shared mode returns to ED (D-152): a referral id and a time. No ED, movement or person.
-  diversionReturns: z.optional(z.array(z.strictObject({ referralId: id, returnedAt: finite }))),
+  diversionReturns: z.optional(z.array(z.strictObject({ referralId: id, returnedAt: finite }))), // D-152, no person
   handoverSignOffs: z.array(stamped),
   // Triage and risk (7 Nov 2026): signed triages, absent in older saves. Codes only, no typed text.
   triages: z.optional(storedTriageRecords),
