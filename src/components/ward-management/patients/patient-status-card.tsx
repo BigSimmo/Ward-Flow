@@ -598,9 +598,8 @@ function statusFor(
           owner: "Nurse in charge",
           tone: overdue ? "warning" : "neutral",
           value: formatInstantWithDay(bed.expectedReturn, now),
-          sub: overdue
-            ? `Overdue by ${dur(now - bed.expectedReturn)}, typed by the ward`
-            : `In ${dur(bed.expectedReturn - now)}, typed by the ward`,
+          // D-139: leave times follow D-93, the typed time only, never a running "Overdue by" figure.
+          sub: overdue ? "Typed by the ward. That time has passed." : "Typed by the ward",
           action: {
             kind: "button",
             label: "Record return",
