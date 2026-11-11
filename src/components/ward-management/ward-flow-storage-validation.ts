@@ -93,6 +93,7 @@ import { isTentativeDiagnosisBlock } from "./ward-diagnosis";
 import { isCommunityReferralPurpose } from "./ward-model-referral-parts";
 import { storedStaffRequests } from "./staffing/staff-requests-schema";
 import { pilotControlRowsBelong, pilotControlStoredFields } from "./ward-flow-pilot-control-schema";
+import { storedCarerCallbacks, storedHandedItems } from "@/components/ward-management/handover-work-schema";
 
 // D-72: numbered device-copy stand-ins keep typed criteria distinct.
 export function typedCriterionNotKept(n: number): string {
@@ -1093,6 +1094,9 @@ const storedState = z.looseObject({
   staffRequests: z.optional(storedStaffRequests),
   // Batch 4 (10 Nov 2026): site feature switches, pack print times and outage windows, each optional.
   ...pilotControlStoredFields,
+  // Batch 3 items 21 and 23 (10 Nov 2026): absent in older saves. Ids, desks and times only.
+  handedItems: z.optional(storedHandedItems),
+  carerCallbacks: z.optional(storedCarerCallbacks),
   // Q61 (31 Oct 2026): site handover sign-offs, absent in older saves. Ids, times and a role only.
   siteHandoverSignOffs: z.optional(
     z.array(

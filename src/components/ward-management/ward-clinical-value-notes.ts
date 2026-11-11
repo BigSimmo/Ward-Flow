@@ -152,6 +152,12 @@ const CLINICAL_VALUE_NOTES = {
     source:
       "Shift ring on the rail, in the 27 Sep 2026 source snapshot with no decision recorded; added to the register 10 Nov 2026 (D-122)",
   },
+  handoverOwnWorkLead: {
+    source: "Feature build plan batch 3, item 21: Josh signed 30 minutes on a decision card, 10 Nov 2026 (D-136)",
+  },
+  diversionReturnReview: {
+    source: "Feature build plan batch 3, item 28: Josh signed 7 days on a decision card, 10 Nov 2026 (D-136)",
+  },
   lateArrivalGrace: {
     source: "D-22 (26 Sep 2026), labelled default",
   },

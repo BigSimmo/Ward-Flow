@@ -79,6 +79,11 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   SET_SITE_FEATURE_SWITCH: { category: "neither", plainWording: "Feature switched off or on at a site" },
   RECORD_DOWNTIME_PACK_PRINTED: { category: "neither", plainWording: "Downtime pack printed or saved" },
   RECORD_OUTAGE_WINDOW: { category: "neither", plainWording: "Outage window recorded" },
+  // Batch 3 items 21 and 23 (10 Nov 2026).
+  HAND_OVER_ITEM: { category: "neither", plainWording: "Open work handed to another desk" },
+  ACCEPT_HANDED_ITEM: { category: "neither", plainWording: "Handed work accepted" },
+  RECORD_CARER_CALLBACK: { category: "patient", plainWording: "Carer asked for a call back" },
+  MARK_CARER_CALLBACK_MADE: { category: "patient", plainWording: "Carer called back" },
   // Out of area "Flag early" (Josh, 3 Nov 2026).
   FLAG_RETURN_EARLY: { category: "patient", plainWording: "Out of area return flagged early" },
 

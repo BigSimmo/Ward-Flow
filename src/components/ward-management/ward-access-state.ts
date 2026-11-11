@@ -208,6 +208,14 @@ function wholeStay(context: Context, admissionId: string): boolean {
   return context.admissionIds.has(admissionId) && !context.scoped.datesOnlyAdmissionIds.has(admissionId);
 }
 
+/** Batch 3 items 21 and 23: a record about one stay or bed request goes only with that stay or request. */
+function stayOrRequestVisible(context: Context, record: { admissionId?: string; movementId?: string }): boolean {
+  if (record.admissionId !== undefined) return wholeStay(context, record.admissionId);
+  return (
+    record.movementId !== undefined && context.scoped.movements.some((movement) => movement.id === record.movementId)
+  );
+}
+
 /**
  * Who may see each field of the saved workspace. Every field is listed, so the typecheck fails when
  * a new one arrives unclassified. "keep" fields describe places, settings or counters, never people.
@@ -327,11 +335,29 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   staffRequests: (context) => (context.state.staffRequests ?? []).filter((record) => context.unitIn(record.unitId)),
   // Batch 4 (10 Nov 2026): a site switch names a site and a listed feature, never a person, so every
   // desk keeps them all (a switched-off feature is off for everyone at that site). Pack print times
-  // go to the desks of the wards printed for; an outage window is the whole workspace's.
+  // go to the desks of the wards they were printed for; an outage window is the whole workspace's.
   siteFeatureSwitches: (context) => context.state.siteFeatureSwitches ?? [],
   downtimePackPrints: (context) =>
     (context.state.downtimePackPrints ?? []).filter((record) => context.unitIn(record.unitId)),
   outageWindows: (context) => context.state.outageWindows ?? [],
+  // Batch 3 item 23: a carer callback goes where its stay or bed request goes. No name, no number.
+  carerCallbacks: (context) =>
+    (context.state.carerCallbacks ?? []).filter((record) => stayOrRequestVisible(context, record)),
+  // Batch 3 item 21: a hand-over goes with the record its item is on, so it names nobody a desk cannot see.
+  handedItems: (context) =>
+    (context.state.handedItems ?? []).filter((record) =>
+      record.item.kind === "referral"
+        ? context.scoped.referrals.some(
+            (referral) => referral.id === (record.item as { referralId: string }).referralId,
+          )
+        : record.item.kind === "callback"
+          ? (context.state.carerCallbacks ?? []).some(
+              (callback) =>
+                callback.id === (record.item as { callbackId: string }).callbackId &&
+                stayOrRequestVisible(context, callback),
+            )
+          : stayOrRequestVisible(context, record.item),
+    ),
   // Closing-the-loop (package E): the coordinator's return plan, as repatriations below.
   homeServiceReturns: (context) =>
     context.coordinator
@@ -449,6 +475,8 @@ export function scopeWardFlowState(
   if (state.siteFeatureSwitches === undefined) delete next.siteFeatureSwitches;
   if (state.downtimePackPrints === undefined) delete next.downtimePackPrints;
   if (state.outageWindows === undefined) delete next.outageWindows;
+  if (state.handedItems === undefined) delete next.handedItems;
+  if (state.carerCallbacks === undefined) delete next.carerCallbacks;
   if ((next.returnEarlyNotices as unknown[]).length === 0) delete next.returnEarlyNotices;
   return {
     state: closeReferences(next as WardFlowState, scoped.datesOnlyAdmissionIds, state, access.role !== "executive"),
@@ -618,6 +646,9 @@ const COMMAND_RECORD_FIELDS = {
   alertId: "broadcastAlerts",
   eventId: "auditEvents",
   reviewId: "auditReviews",
+  // Batch 3 items 21 and 23: a hand-over or call back is checked like the stay or request it is on.
+  handedItemId: "handedItems",
+  callbackId: "carerCallbacks",
 } as const;
 type CommandRecordCollection = (typeof COMMAND_RECORD_FIELDS)[keyof typeof COMMAND_RECORD_FIELDS] | "invalid";
 type CommandRecordReference = { collection: CommandRecordCollection; id: string };
@@ -943,7 +974,7 @@ export function commandScopeRefusal(
   for (const { collection, id } of references) {
     // Hidden and absent references fail identically. Never consult the whole world's id set:
     // doing so made a scoped refusal distinguish an existing hidden record from a missing one.
-    if (collection === "invalid" || !writableState[collection].some((record) => record.id === id)) {
+    if (collection === "invalid" || !(writableState[collection] ?? []).some((record) => record.id === id)) {
       // D-80 item 14: a coordinator also reviews break glass openings, which the workspace does not
       // hold. The shared server also checks the opening exists and is of a record in the
       // coordinator's own service (`breakGlassReviewRefusal` in backend/ward-flow/postgres.mjs).
