@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { crewIsWaiting, crewsWaiting } from "@/components/ward-management/ward-crew-handover";
+import { crewIsWaiting, crewsWaiting, type CrewHandoverEvent } from "@/components/ward-management/ward-crew-handover";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import type { Movement } from "@/components/ward-management/ward-model";
 
@@ -186,5 +186,12 @@ describe("RECORD_ARRIVAL_MODE (D-141)", () => {
     const reloaded = JSON.parse(JSON.stringify(f.state)) as WardFlowState;
     expect(isValidStoredWardFlowState(reloaded)).toBe(true);
     expect(reloaded.movements.find((m: Movement) => m.id === walkIn)?.arrivalMode).toBe("ambulance");
+  });
+});
+
+describe("crew handover events", () => {
+  it("are the crew times and the arrival mode, and nothing else", () => {
+    const types: CrewHandoverEvent["type"][] = ["RECORD_CREW_TIMES", "RECORD_ARRIVAL_MODE"];
+    expect(new Set(types).size).toBe(2);
   });
 });

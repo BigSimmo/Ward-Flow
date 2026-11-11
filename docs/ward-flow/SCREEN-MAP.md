@@ -5,7 +5,7 @@
 
 See also [`site-map.md`](../site-map.md), the full list of app routes.
 
-**70 mockups · 62 routes · 45 screen folders.**
+**70 mockups · 62 routes · 46 screen folders.**
 
 ⚠️ The PAIRING is hand-authored — no rule derives that `command-third-edition.html` is route `/`.
 **COMPLETENESS is not**: everything is discovered from disk, so a new or renamed file shows up as
