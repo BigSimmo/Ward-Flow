@@ -17,6 +17,19 @@ export function sharedBoardNow(snapshotNow: Instant, receivedAtMs: number, devic
 }
 
 /**
+ * A "not modified" poll answer as a view update. The receipt time always moves (the board clock and
+ * the staleness checks read it), but the snapshot keeps its identity unless the server's minute moved,
+ * so the provider and every reader of the board do not re-render on each three-second poll.
+ */
+export function notModifiedUpdate<S extends { now: Instant }>(
+  snapshot: S,
+  serverNow: Instant,
+  receivedAt: number,
+): { snapshot?: S; receivedAt: number } {
+  return serverNow === snapshot.now ? { receivedAt } : { snapshot: { ...snapshot, now: serverNow }, receivedAt };
+}
+
+/**
  * TC2-05 (audit 26 Oct 2026, H-0764): the server's access deadline, moved onto this device's clock.
  * The server sends `accessUntil` as a moment on its own clock and, from this change, its own time
  * (`serverTime`) in the same answer. Every check here compares the deadline with `Date.now()`, so a

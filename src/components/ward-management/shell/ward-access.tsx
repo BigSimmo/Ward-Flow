@@ -166,13 +166,13 @@ export function useIsBreakGlassRecord(): (record: { patientId?: string | null } 
 export function useDeskInScope(): ((deskId: string) => boolean) | undefined {
   const on = useWardAccessEnabled();
   const access = useEffectiveWardAccess();
-  const shell = useWardShellPublic();
+  // Only the place lookup: the shell value also carries the clock, which this answer does not need.
+  const places = useWardShellPublic()?.places;
   return useMemo(() => {
     if (!on || accessIsWholeNetwork(access)) return undefined;
-    const places = shell?.places;
     return (deskId: string) =>
       places !== undefined && (unitInScope(access.scope, deskId, places) || edInScope(access.scope, deskId, places));
-  }, [on, access, shell]);
+  }, [on, access, places]);
 }
 
 function sameItems(a: readonly unknown[], b: readonly unknown[]): boolean {
