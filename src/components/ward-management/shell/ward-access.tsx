@@ -47,6 +47,7 @@ import {
   smallNumberParts,
   smallNumberText,
 } from "@/components/ward-management/ward-access-scope";
+import type { HomeTeamHeadsUp } from "@/components/ward-management/community/home-team-heads-up";
 import type { AuditReview } from "@/components/ward-management/ward-audit";
 import { isBreakGlassReviewId } from "@/components/ward-management/ward-break-glass-review-id";
 import type { RecordRead, WardRecordActor } from "@/components/ward-management/ward-discharge-records";
@@ -151,6 +152,17 @@ const DatesOnlyStayContext = createContext<ReadonlySet<string>>(NO_IDS);
 export function useIsDatesOnlyStay(): (admissionId: string | undefined) => boolean {
   const ids = useContext(DatesOnlyStayContext);
   return useCallback((admissionId) => admissionId !== undefined && ids.has(admissionId), [ids]);
+}
+
+/** D-154: a community desk's own patients in ED now, or `undefined` on any other desk. */
+const CommunityEdArrivalsContext = createContext<readonly HomeTeamHeadsUp[] | undefined>(undefined);
+
+/**
+ * The community team desk's patients with an open episode who are in an ED now (UMRN, ED name and
+ * time only, D-154), or `undefined` when this desk is not a community team's.
+ */
+export function useCommunityEdArrivals(): readonly HomeTeamHeadsUp[] | undefined {
+  return useContext(CommunityEdArrivalsContext);
 }
 
 /**
@@ -328,6 +340,7 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     scoped: WardFlowContextValue;
     glass: ReadonlySet<string>;
     datesOnly: ReadonlySet<string>;
+    edArrivals?: readonly HomeTeamHeadsUp[];
   }>(() => {
     if (accessIsWholeNetwork(access) && activeGrants.length === 0)
       return { scoped: context, glass: NO_IDS, datesOnly: NO_IDS };
@@ -473,6 +486,7 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     return {
       glass: breakGlassPatientIds,
       datesOnly: scoped.datesOnlyAdmissionIds,
+      edArrivals: baseScoped.communityEdArrivals,
       scoped: {
         ...rest,
         dispatch,
@@ -565,7 +579,9 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
         <WardFlowOverride value={steadyScoped}>
           <BreakGlassContext.Provider value={value.glass}>
             <DatesOnlyStayContext.Provider value={value.datesOnly}>
-              <DowntimePackBoundary identity={packIdentity}>{children}</DowntimePackBoundary>
+              <CommunityEdArrivalsContext.Provider value={value.edArrivals}>
+                <DowntimePackBoundary identity={packIdentity}>{children}</DowntimePackBoundary>
+              </CommunityEdArrivalsContext.Provider>
             </DatesOnlyStayContext.Provider>
           </BreakGlassContext.Provider>
         </WardFlowOverride>
