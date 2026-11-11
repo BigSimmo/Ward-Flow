@@ -6,7 +6,7 @@ import { ToastProvider } from "@/components/wf";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
-import { bedClosureReasonChoices } from "@/components/ward-management/ward/ward-bed-closure-reason";
+import { bedClosureReasonChoices } from "@/components/ward-management/ward-bed-closure-reason";
 import { waitingBedKeys } from "@/components/ward-management/ward-shared-pending-command";
 
 // D-148 (Josh, 11 Nov 2026): closing a bed stays one tap with Undo, and the toast offers an optional

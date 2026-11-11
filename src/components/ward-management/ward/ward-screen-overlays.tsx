@@ -11,7 +11,7 @@ import { reviewAtFrom } from "../ward-closure-choice";
 import { admissionCriteriaEligibility } from "@/components/ward-management/ward-flow-reducer";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 import { useUndoableStep } from "../use-undoable-step";
-import { bedClosureReasonChoices } from "./ward-bed-closure-reason";
+import { bedClosureReasonChoices } from "../ward-bed-closure-reason";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { WardBedDossierDrawer } from "./ward-screen-lazy";
 import { wardSafeRejectionReason } from "./ward-rejection-text";
