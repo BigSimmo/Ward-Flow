@@ -89,7 +89,8 @@ export function SupportNotificationChecklist({
 }) {
   const routeRole = wardChromeRole(usePathname() ?? "");
   const role = roleOverride ?? routeRole;
-  const canRecord = canDispatch(role, "RECORD_SUPPORT_NOTIFICATION");
+  // ED may raise the event only for the arrival checklist's advocacy line before arrival (item 15).
+  const canRecord = role !== "ed" && canDispatch(role, "RECORD_SUPPORT_NOTIFICATION");
   const { movements, admissions, patients, referrals, supportNotifications, dispatch, rejections } = useWardFlowSelect(
     "movements",
     "admissions",

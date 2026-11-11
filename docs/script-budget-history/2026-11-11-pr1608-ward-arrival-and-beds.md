@@ -21,3 +21,5 @@ Why it changed: items 6, 7, 13 and 18 add two events (`SET_INTAKE_WINDOW`, `MARK
 Trim tried: the ward hero's intake hours editor now loads as its own chunk when Edit is first pressed (`ward-intake-window-dialog.tsx`), which took the ward screen from 618.5 to 615.7 KB. The engine additions are the smallest that record and check the new facts. No other safe trim was found.
 
 After merging `main` at `35c7ccd`, which raised five of these screens by 0.3 to 0.4 KB, each limit is main's new limit plus this PR's same raise. No raise grew.
+
+After merging `main` at `f0db2be`, which includes #1609 and raised these screens again, each limit is main's new limit plus this PR's same raise. No raise grew.

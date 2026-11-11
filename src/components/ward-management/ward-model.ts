@@ -1095,6 +1095,10 @@ export type Movement = MovementBase & {
   contrabandSearchDone?: boolean;
   /** Top 25 item 14: whether the pre-transfer medication chart is ready for the receiving ward. */
   medicationChartDone?: boolean;
+  /** Feature item 15: an interpreter booked for arrival. Offered only when the record needs one. */
+  interpreterBooked?: boolean;
+  /** Feature item 15: Aboriginal liaison offered at arrival. Offered, never assumed. */
+  aboriginalLiaisonOffered?: boolean;
 };
 
 /**

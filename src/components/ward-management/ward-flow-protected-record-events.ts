@@ -377,16 +377,19 @@ export function reduceProtectedRecordEvent(
         sexMix: adjustSexMix(receiving.sexMix, mixSexOf(admission.gender, admission.sex), 1),
       });
       // The receiving stay starts its own discharge date plan: the date, its trail and the weekend
-      // review ticks all belong to the sending ward's plan.
+      // review ticks all belong to the sending ward's plan. Item 4: the Chief Psychiatrist notified
+      // time belongs to the sending ward's stay too, so a new adult ward starts with the full notice.
       const {
         bedNumber: _sendingBedNumber,
         dischargeDateTrail: _sendingDateTrail,
         weekendDischargeReviews: _sendingWeekendReviews,
+        chiefPsychiatristNotice: _sendingChiefPsychiatristNotice,
         ...admissionWithoutBedNumber
       } = admission;
       void _sendingBedNumber;
       void _sendingDateTrail;
       void _sendingWeekendReviews;
+      void _sendingChiefPsychiatristNotice;
       next = {
         ...next,
         admissions: [

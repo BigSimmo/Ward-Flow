@@ -541,6 +541,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RECORD_WARD_DIAGNOSIS: ["ward", "coordinator"],
   // Feature 14 (Josh, 9 Nov 2026): the ward or coordinator ticks a weekend discharge as reviewed.
   MARK_WEEKEND_DISCHARGE_REVIEWED: ["ward", "coordinator"],
+  // Item 4 (11 Nov 2026): the ward or the coordinator records when the Chief Psychiatrist was notified.
+  RECORD_CHIEF_PSYCHIATRIST_NOTIFIED: ["ward", "coordinator"],
   SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
   // Item 5 (Josh, 9 Nov 2026): the same roles that record a discharge hold-up.
   SET_CLINICALLY_READY: ["ward", "coordinator"],
@@ -620,7 +622,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   CONVERT_PLANNED_ADMISSION: ["ward", "coordinator"],
   // Advisory carer/PSP/MHAS checklist (9 Oct 2026): recorded where the move is completed — the
   // ward (arrivals, discharges board) or the coordinator (movements).
-  RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
+  // Item 15 (D-134 item 2): ED records only the advocacy notice before arrival (reducer-checked).
+  RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator", "ed"],
   SEND_RELEASE_SUPPORT_NOTICE: ["ward", "coordinator"],
   // Closing-the-loop package B (24 Oct 2026): discharge logistics, recorded by the ward or the coordinator.
   RECORD_DISCHARGE_DEPENDENCY: ["ward", "coordinator"],

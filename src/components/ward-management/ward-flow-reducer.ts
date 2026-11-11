@@ -2238,12 +2238,12 @@ export function reduceClinicalEvent(
         return reject(state, event, `${event.type} reason must be chosen from the listed reasons`);
       return reducePlannedAdmission(state, event, decision);
     }
-    case "CONVERT_PLANNED_ADMISSION": {
+    case "CONVERT_PLANNED_ADMISSION":
       return reducePlannedAdmission(state, event, decision);
-    }
     case "RECORD_WARD_DIAGNOSIS":
       return reducerSlices().reduceWardDiagnosis(state, event, reject);
     case "MARK_WEEKEND_DISCHARGE_REVIEWED":
+    case "RECORD_CHIEF_PSYCHIATRIST_NOTIFIED":
     case "RECORD_DISCHARGE_CHECK":
     case "RECORD_FOLLOW_UP_REPLY":
       return reducerSlices().reduceDischargeFollowThroughEvent(state, event, reject);
