@@ -3993,7 +3993,8 @@
       "guards": [
         "Finite time; step 1 to 4; roleCalled must be the step's role (ESCALATION_STEP_ROLE)",
         "Outcome from the fixed list only; no typed text",
-        "Movement must exist and not be closed"
+        "Movement must exist, not be closed and be an ED wait (isEdOriginJourney)",
+        "The step must have been reached by now, timed as the ED board row times it; an earlier step stays recordable"
       ],
       "effects": [
         "Replaces the step's latest call on the movement; earlier calls are not kept on the record",
@@ -4002,8 +4003,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/escalation/escalation-calls.ts",
-          "line": 93,
-          "sha256": "7c8fbf4a2e3c85466519240e9b9193ee5c30d387e526c71039e8ba77fe4006fe"
+          "line": 94,
+          "sha256": "1e5e6bd8fc4b2a775653431ae515f6feeddb6ed51189be600247b87aa9b94ea7"
         },
         {
           "path": "src/components/ward-management/ward-flow-review-ready-events.ts",
@@ -4040,7 +4041,7 @@
       "scope": "ED or coordinator (EVENT_ROLE); shared command scope checks the movement.",
       "guards": [
         "Movement must exist, have come through an emergency department and have arrivalMode police or ambulance",
-        "At least one time; each typed time finite, not later than now and within the last 24 hours",
+        "A finite current time; at least one time; each typed time finite, not later than now and within the last 24 hours",
         "The recorded set must run in order: arrived, handed over, released"
       ],
       "effects": [
@@ -4050,8 +4051,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-crew-handover.ts",
-          "line": 121,
-          "sha256": "54dfd7478fdd03c04e1543a5818eafeccd16c29fbfc2dc30e7d05376552e33ae"
+          "line": 128,
+          "sha256": "e03c42feb71f228fbb2b07f987ddee2dfce355bcf900136aa81ef7369906ec2a"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -4099,8 +4100,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-crew-handover.ts",
-          "line": 146,
-          "sha256": "54dfd7478fdd03c04e1543a5818eafeccd16c29fbfc2dc30e7d05376552e33ae"
+          "line": 153,
+          "sha256": "e03c42feb71f228fbb2b07f987ddee2dfce355bcf900136aa81ef7369906ec2a"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",

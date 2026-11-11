@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { crewIsWaiting, crewsWaiting, type CrewHandoverEvent } from "@/components/ward-management/ward-crew-handover";
+import {
+  crewIsWaiting,
+  crewTimesRefusal,
+  crewsWaiting,
+  type CrewHandoverEvent,
+} from "@/components/ward-management/ward-crew-handover";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import type { Movement } from "@/components/ward-management/ward-model";
 
@@ -102,6 +107,22 @@ describe("crews waiting", () => {
     expect(crewsWaiting(f.state.movements, now)).toBeUndefined();
   });
 
+  it("keeps counting after the ED withdraws the referral, but not after the coordinator revokes it", () => {
+    const f = journey();
+    f.send({ type: "RECORD_CREW_TIMES", movementId: POLICE, crewArrivedAt: now - 30 });
+    const waiting = f.movement(POLICE);
+    const closedAs = (reason: string) => ({ ...waiting, closure: { reason, at: now - 1 } }) as Movement;
+    // The ED board keeps a patient whose referral this ED withdrew, so the crew is still there too.
+    expect(crewIsWaiting(closedAs("The referrer withdrew the referral"))).toBe(true);
+    expect(crewIsWaiting(closedAs("The coordinator revoked the accepted referral"))).toBe(false);
+  });
+
+  it("refuses crew times when the current time cannot be read", () => {
+    expect(crewTimesRefusal({ crewArrivedAt: now - 5 }, { crewArrivedAt: now - 5 }, Number.NaN)).toBe(
+      "The current time could not be read",
+    );
+  });
+
   it("shows nothing for the seed, where no crew time is typed", () => {
     expect(crewsWaiting(seedWardFlowState().movements, now)).toBeUndefined();
   });
@@ -123,6 +144,14 @@ describe("saved records", () => {
     expect(isValidStoredWardFlowState(reloaded)).toBe(true);
     const m = reloaded.movements.find((movement: Movement) => movement.id === POLICE)!;
     expect(m).toMatchObject({ crewArrivedAt: now - 50, crewHandedOverAt: now - 20 });
+  });
+
+  it("refuses a stored crew time of null, which would read as typed", () => {
+    for (const field of ["crewArrivedAt", "crewHandedOverAt", "crewReleasedAt"]) {
+      const stored = JSON.parse(JSON.stringify(seedWardFlowState())) as WardFlowState;
+      const movements = stored.movements.map((m) => (m.id === POLICE ? { ...m, [field]: null } : m));
+      expect(isValidStoredWardFlowState({ ...stored, movements }), field).toBe(false);
+    }
   });
 });
 

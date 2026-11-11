@@ -44,6 +44,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { CommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
 import { useState, type Dispatch, type JSX, type RefObject, type SetStateAction } from "react";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import type { CareStep } from "./patient-care-journey";
 import { PatientCareJourneyStrip, journeyToggleClass } from "./patient-care-journey-strip";
 import type { FormTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
@@ -304,9 +305,11 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
     void copyTextToClipboard(text).then(
       () => {
         setNotesCopied(true);
+        announceToWardShell("Copied for the notes");
         setTimeout(() => setNotesCopied(false), 2000);
       },
-      () => undefined,
+      // The same words as CopyNotesButton, so a refused copy never reads as done.
+      () => announceToWardShell("Copy unavailable in this browser"),
     );
   };
   const movementChips = movementTop ? (

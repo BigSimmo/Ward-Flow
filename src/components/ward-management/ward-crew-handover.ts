@@ -1,5 +1,9 @@
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
-import { isEdOriginJourney, recordedEdDeparture } from "@/components/ward-management/ward-ed-presence";
+import {
+  isEdInitiatedWithdrawal,
+  isEdOriginJourney,
+  recordedEdDeparture,
+} from "@/components/ward-management/ward-ed-presence";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { RecordedFactEventHelpers } from "@/components/ward-management/ward-flow-record-events";
@@ -74,6 +78,8 @@ export function crewTimesRefusal(
   recorded: Partial<Record<CrewTimeField, Instant>>,
   now: Instant,
 ): string | undefined {
+  // A NaN `now` would make both window checks false and let any finite time through.
+  if (!Number.isFinite(now)) return "The current time could not be read";
   for (const field of CREW_TIME_FIELDS) {
     const at = typed[field];
     if (at === undefined) continue;
@@ -90,7 +96,8 @@ export function crewTimesRefusal(
 /**
  * Whether this person's crew is still recorded as waiting: arrived is typed, released is not, and
  * the person is still in the department. A crew with no typed arrival is never counted, because
- * its wait would have to be guessed.
+ * its wait would have to be guessed. A closed movement still counts while the ED board keeps the
+ * patient: a recorded ED outcome, or the ED's own withdrawal of the referral.
  */
 export function crewIsWaiting(movement: Movement): boolean {
   return (
@@ -100,7 +107,7 @@ export function crewIsWaiting(movement: Movement): boolean {
     movement.crewReleasedAt === undefined &&
     movement.stage !== "arrived" &&
     recordedEdDeparture(movement) === undefined &&
-    (!movement.closure || movement.edOutcome !== undefined)
+    (!movement.closure || movement.edOutcome !== undefined || isEdInitiatedWithdrawal(movement))
   );
 }
 

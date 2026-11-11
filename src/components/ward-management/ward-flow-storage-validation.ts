@@ -119,7 +119,6 @@ function isDeviceCopyDischargeCriteriaRecord(value: unknown): value is Discharge
 type RecordValue = Record<string, unknown>;
 const object = (v: unknown): v is RecordValue => typeof v === "object" && v !== null && !Array.isArray(v);
 const fits = (schema: z.ZodMiniType, value: unknown) => schema.safeParse(value).success;
-
 // zod 4 numbers refuse NaN and both infinities, and `z.int()` is a safe integer.
 const finite = z.number();
 const maybeAt = z.optional(finite); // Psychiatry review and ward wait list instants (9 Nov 2026).
@@ -184,6 +183,7 @@ const NESTED_KEY_RULES = new Map<string, z.ZodMiniType>([
   ["medicalClearance", medicalClearanceRule],
   ["transportNeed", z.looseObject({ needed: bool, at: finite })],
   ["psychReview", z.strictObject({ requestedAt: finite, registrarSeenAt: maybeAt, consultantSeenAt: maybeAt })],
+  ...["crewArrivedAt", "crewHandedOverAt", "crewReleasedAt"].map((key) => [key, maybeAt] as const), // Never null.
   ["escalationCalls", storedEscalationCalls], // Escalation calls (D-133): fixed lists, a time and a desk.
   ["closure", closureRule],
   ...[

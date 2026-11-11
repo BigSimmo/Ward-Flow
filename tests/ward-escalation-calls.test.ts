@@ -19,6 +19,7 @@ import { escalationContact, escalationEntry } from "@/components/ward-management
 import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 import { buildOnCallDirectory, MOCK_NUMBER_PREFIX } from "@/components/ward-management/on-call/on-call-directory";
 import { edWaitStep } from "@/components/ward-management/ward-ed-wait-steps";
+import { isEdOriginJourney } from "@/components/ward-management/ward-ed-presence";
 import {
   ED_ELEVATED_PRESSURE_WAIT_MINUTES,
   ED_SEVERE_PRESSURE_WAIT_MINUTES,
@@ -35,9 +36,14 @@ const apply = (state: WardFlowState, event: WardFlowEvent) => wardFlowReducer(st
 const refusals = (before: WardFlowState, after: WardFlowState) =>
   after.rejections.slice(before.rejections.length).map((rejection) => rejection.reason);
 
+const stepAtAnchor = (movement: Movement) => edWaitStep(Math.max(NOW_ANCHOR - movement.openedAt, 0))?.step ?? 0;
+
+/** An open ED wait that has reached Step 4 at the anchor, so a call at any step is in time. */
 function openMovement(state: WardFlowState): Movement {
-  const movement = state.movements.find((candidate) => !candidate.closure);
-  if (!movement) throw new Error("seed has no open movement");
+  const movement = state.movements.find(
+    (candidate) => !candidate.closure && isEdOriginJourney(candidate) && stepAtAnchor(candidate) === 4,
+  );
+  if (!movement) throw new Error("seed has no open ED wait at Step 4");
   return movement;
 }
 
@@ -208,6 +214,23 @@ describe("RECORD_ESCALATION_CALL", () => {
     expect(refusals(seeded, wrongStep)).toEqual(["RECORD_ESCALATION_CALL step must be 1 to 4"]);
     const unknown = apply(seeded, call("MV-NOT-REAL"));
     expect(refusals(seeded, unknown)).toHaveLength(1);
+  });
+
+  it("refuses a step the wait has not reached yet, and a journey that is not an ED wait", () => {
+    const seeded = seedWardFlowState();
+    const early = seeded.movements.find(
+      (candidate) => !candidate.closure && isEdOriginJourney(candidate) && stepAtAnchor(candidate) === 1,
+    )!;
+    const tooSoon = apply(seeded, call(early.id, { step: 4, roleCalled: "executive_on_call" }));
+    expect(refusals(seeded, tooSoon)).toEqual(["That escalation step has not been reached yet."]);
+    // An earlier step than the current one stays recordable: a call made then can be noted late.
+    expect(refusals(seeded, apply(seeded, call(early.id, { step: 1, roleCalled: "service_bed_coordinator" })))).toEqual(
+      [],
+    );
+    const transfer = seeded.movements.find((candidate) => !candidate.closure && !isEdOriginJourney(candidate));
+    if (transfer) {
+      expect(refusals(seeded, apply(seeded, call(transfer.id)))).toEqual(["Escalation calls are for an ED wait only."]);
+    }
   });
 
   it("refuses a stored call with typed text or an outcome off the list", () => {

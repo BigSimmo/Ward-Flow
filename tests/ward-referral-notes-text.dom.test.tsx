@@ -50,6 +50,7 @@ function acceptedSeedMovement(): Movement {
     ...movement,
     blocker: TYPED[2],
     heldBedNumber: 4,
+    transport: undefined,
     arrivalDetails: {
       mode: "ambulance",
       modeOfArrival: TYPED[4],
@@ -110,9 +111,26 @@ describe("transfer notes", () => {
     expect(lines[1]).toBe("Ward Flow transfer: Synthetic, Person.");
     expect(lines[2]).toBe(`From ${edById(movement.originEdId)!.name} to ${ward.name}.`);
     expect(lines).toContain("Bed: bed 4 held.");
-    expect(lines).toContain(`Transport: Ambulance (St John), expected ${formatInstantWithDay(now + 45, now)}.`);
+    expect(lines).toContain("Transport: Not yet requested.");
+    expect(lines).toContain(`Arrival plan: Ambulance (St John), expected ${formatInstantWithDay(now + 45, now)}.`);
     expect(lines).toContain(`Legal status: ${movement.legalStatus}.`);
     expectNoTypedText(text);
+  });
+
+  it("reads transport from the job itself: booked with no arrival plan, then cancelled", () => {
+    const state = seedWardFlowState();
+    const context = { patientName: "Synthetic, Person", units: state.units, admissions: state.admissions, now };
+    const job = { id: "TJ-SYN-1", provider: "Ambulance service", escortRequired: false, requestedAt: now - 10 };
+    const booked = { ...acceptedSeedMovement(), arrivalDetails: undefined, transport: job } as Movement;
+    const bookedLines = movementTransferNotesText(booked, context)!.split("\n");
+    expect(bookedLines).toContain("Transport: Ambulance service requested.");
+    expect(bookedLines).toContain("Arrival plan: not recorded.");
+    const cancelled = { ...acceptedSeedMovement(), transport: { ...job, cancelledAt: now - 2 } } as Movement;
+    const cancelledLines = movementTransferNotesText(cancelled, context)!.split("\n");
+    expect(cancelledLines).toContain("Transport: Cancelled.");
+    expect(cancelledLines).toContain(
+      `Arrival plan: Ambulance (St John), expected ${formatInstantWithDay(now + 45, now)}.`,
+    );
   });
 
   it("starts a ward-to-ward transfer at the sending ward, not its routing ED", () => {

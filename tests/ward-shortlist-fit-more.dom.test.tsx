@@ -49,7 +49,7 @@ function wardOrder(): string[] {
 }
 
 function openReviewWards() {
-  const toggle = screen.queryByTestId("ward-shortlist-review-toggle");
+  const toggle = screen.queryByRole("button", { name: /need an override/u });
   if (toggle && toggle.getAttribute("aria-expanded") !== "true") fireEvent.click(toggle);
 }
 
@@ -62,7 +62,7 @@ describe("More fit details keeps the neutral ward order (D-71)", () => {
     );
     openReviewWards();
     const before = wardOrder();
-    const toggles = screen.queryAllByTestId(/^ward-shortlist-fit-more-/u);
+    const toggles = screen.queryAllByRole("button", { name: /^More fit details, /u });
     expect(before.length).toBeGreaterThan(1);
     expect(toggles.length).toBeGreaterThan(0);
     for (const toggle of toggles) {
@@ -86,7 +86,7 @@ describe("More fit details keeps the neutral ward order (D-71)", () => {
       </WardFlowProvider>,
     );
     openReviewWards();
-    for (const toggle of screen.queryAllByTestId(/^ward-shortlist-fit-more-/u)) fireEvent.click(toggle);
+    for (const toggle of screen.queryAllByRole("button", { name: /^More fit details, /u })) fireEvent.click(toggle);
     const lists = Array.from(document.querySelectorAll<HTMLElement>("[data-gate]")).map((row) => row.textContent);
     expect(lists.length).toBeGreaterThan(0);
     for (const text of lists) expect(text).not.toMatch(RANKING_WORDS);

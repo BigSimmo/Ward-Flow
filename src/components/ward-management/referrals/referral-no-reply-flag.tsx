@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge, StatusGlyph } from "@/components/wf";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -38,7 +39,8 @@ export function ReferralNoReplyFlag({
 /**
  * The "Not opened yet" tag (item 16, D-133): a ward sent this referral has no opened receipt after
  * the signed limit. A prompt only: the row keeps its place. Hidden while the receipts switch is off,
- * since no ward could then be shown as having opened it.
+ * since no ward could then be shown as having opened it. Hidden on a ward desk too: it is a prompt
+ * for the sender, and its title names every ward the referral went to, which one ward must not see.
  */
 export function ReferralNotOpenedTag({
   referral,
@@ -53,7 +55,8 @@ export function ReferralNotOpenedTag({
 }) {
   const flow = useOptionalWardFlowSelect("units");
   const enabled = useWardFeatureFlag("referral-opened-receipts");
-  if (!flow || !enabled) return null;
+  const wardDesk = useEffectiveWardAccess().role === "ward";
+  if (!flow || !enabled || wardDesk) return null;
   const unitIds = referralNotOpenedUnitIds(referral, now);
   if (!unitIds.length) return null;
   const wards = unitIds.map((id) => flow.units.find((unit) => unit.id === id)?.name ?? "A ward");

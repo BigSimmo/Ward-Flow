@@ -270,14 +270,14 @@ Source-contract SHA256: 4ced67f3b633d63b4bdd00c1f496fb6eb1feff09540602975fbd2b4b
   payload: movementId; optional crewArrivedAt, crewHandedOverAt and crewReleasedAt (typed clock times)
   payload: role and now
   guards: Movement must exist, have come through an emergency department and have arrivalMode police or ambulance
-  guards: At least one time; each typed time finite, not later than now and within the last 24 hours
+  guards: A finite current time; at least one time; each typed time finite, not later than now and within the last 24 hours
   guards: The recorded set must run in order: arrived, handed over, released
   effects: Sets only the typed times; never clears, fills in or derives a time
   effects: Does not change the stage, beds, queue order or any legal figure; no target, countdown or overdue state
   tests: tests/ward-crew-times.test.ts
   tests: tests/ward-ed-crew-times.dom.test.tsx
   tests: tests/ward-event-permissions.test.ts
-  Reviewed source: src/components/ward-management/ward-crew-handover.ts:121; SHA256 54dfd7478fdd03c04e1543a5818eafeccd16c29fbfc2dc30e7d05376552e33ae
+  Reviewed source: src/components/ward-management/ward-crew-handover.ts:128; SHA256 e03c42feb71f228fbb2b07f987ddee2dfce355bcf900136aa81ef7369906ec2a
   Reviewed source: src/components/ward-management/ward-flow-record-events.ts:1371; SHA256 41fbe5cfec478d74043479580c78fd1f773d0ffbb65ba5977fff172070dcf591
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1904; SHA256 903af9dae694c0f50ee9f79dc204683f93f624e3e9265a049f757a125a9b3d11
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:198; SHA256 77b865d4619e74be8ea3dcac1b81c0201a1e48ec5e2502fe38ee9d3ab62e7275
@@ -300,7 +300,7 @@ Source-contract SHA256: 4ced67f3b633d63b4bdd00c1f496fb6eb1feff09540602975fbd2b4b
   tests: tests/ward-crew-times.test.ts
   tests: tests/ward-ed-crew-times.dom.test.tsx
   tests: tests/ward-event-permissions.test.ts
-  Reviewed source: src/components/ward-management/ward-crew-handover.ts:146; SHA256 54dfd7478fdd03c04e1543a5818eafeccd16c29fbfc2dc30e7d05376552e33ae
+  Reviewed source: src/components/ward-management/ward-crew-handover.ts:153; SHA256 e03c42feb71f228fbb2b07f987ddee2dfce355bcf900136aa81ef7369906ec2a
   Reviewed source: src/components/ward-management/ward-flow-record-events.ts:1374; SHA256 41fbe5cfec478d74043479580c78fd1f773d0ffbb65ba5977fff172070dcf591
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1905; SHA256 903af9dae694c0f50ee9f79dc204683f93f624e3e9265a049f757a125a9b3d11
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:200; SHA256 77b865d4619e74be8ea3dcac1b81c0201a1e48ec5e2502fe38ee9d3ab62e7275
@@ -1486,12 +1486,13 @@ Source-contract SHA256: 4ced67f3b633d63b4bdd00c1f496fb6eb1feff09540602975fbd2b4b
   payload: role and now
   guards: Finite time; step 1 to 4; roleCalled must be the step's role (ESCALATION_STEP_ROLE)
   guards: Outcome from the fixed list only; no typed text
-  guards: Movement must exist and not be closed
+  guards: Movement must exist, not be closed and be an ED wait (isEdOriginJourney)
+  guards: The step must have been reached by now, timed as the ED board row times it; an earlier step stays recordable
   effects: Replaces the step's latest call on the movement; earlier calls are not kept on the record
   effects: Does not change the step, its hours, the queue order (D-71), beds or any patient stage
   tests: tests/ward-escalation-calls.test.ts
   tests: tests/ward-event-permissions.test.ts
-  Reviewed source: src/components/ward-management/escalation/escalation-calls.ts:93; SHA256 7c8fbf4a2e3c85466519240e9b9193ee5c30d387e526c71039e8ba77fe4006fe
+  Reviewed source: src/components/ward-management/escalation/escalation-calls.ts:94; SHA256 1e5e6bd8fc4b2a775653431ae515f6feeddb6ed51189be600247b87aa9b94ea7
   Reviewed source: src/components/ward-management/ward-flow-review-ready-events.ts:58; SHA256 5cca0ed3af64cbb191c326720a629279f0faaaebecee685b026910c203e2668d
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2221; SHA256 903af9dae694c0f50ee9f79dc204683f93f624e3e9265a049f757a125a9b3d11
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:570; SHA256 77b865d4619e74be8ea3dcac1b81c0201a1e48ec5e2502fe38ee9d3ab62e7275

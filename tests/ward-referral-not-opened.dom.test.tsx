@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { ReferralNotOpenedTag } from "@/components/ward-management/referrals/referral-no-reply-flag";
@@ -10,6 +10,8 @@ import {
   referralNotOpenedUnitIds,
 } from "@/components/ward-management/referrals/referral-not-opened";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Referral, ReferralAddressing } from "@/components/ward-management/ward-model";
@@ -19,7 +21,11 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * Item 16 (D-133, Josh 10 Nov 2026): "Not opened yet" on the coordinator's referral list when a ward
  * sent the referral has no "Opened by" receipt after 30 minutes. A prompt only. Synthetic records.
  */
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  setWardFeatureFlagOnDevice("role-access", null);
+  resetWardAccessStoreForTests();
+});
 
 const SENT = NOW_ANCHOR - 60;
 
@@ -95,6 +101,19 @@ describe("Not opened yet", () => {
       </WardFlowProvider>,
     );
     expect(screen.getByTestId("tag")).toHaveTextContent(NOT_OPENED_TAG);
+  });
+
+  it("shows nothing on a ward desk, whose tag title would name the other wards it went to", () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } });
+    });
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ReferralNotOpenedTag referral={sent()} now={SENT + 30} testId="tag" />
+      </WardFlowProvider>,
+    );
+    expect(screen.queryByTestId("tag")).not.toBeInTheDocument();
   });
 });
 

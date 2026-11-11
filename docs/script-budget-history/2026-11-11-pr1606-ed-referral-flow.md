@@ -5,7 +5,7 @@ Changed on top of `main` at `30abc7a` (after #1603, #1605, #1607, #1609, #1625 a
 - Home `/ward-flow`: 583.5 to 584.5
 - Referrals `/ward-flow/referrals`: 589.5 to 594.1
 - ED `/ward-flow/ed`: unchanged at 540.6
-- Ward `/ward-flow/ward/rph-adult-secure`: unchanged at 621.3
+- Ward `/ward-flow/ward/rph-adult-secure`: unchanged at 622. `main` raised it from 621.3 to 622 in another PR before `e5a8191` merged in here; this PR does not change it
 - Movement `/ward-flow/movements/WF-001`: 615.3 to 615.8
 - Capacity `/ward-flow/capacity`: unchanged at 661.8
 - ED site `/ward-flow/ed/arm-ed`: 673.3 to 674.3

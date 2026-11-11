@@ -6,6 +6,7 @@ import { ARRIVAL_MODE_LABELS } from "@/components/ward-management/ward-model-voc
 import { acceptedAddressing } from "@/components/ward-management/ward-referrals";
 import { originName, sourceWardName } from "@/components/ward-management/ward-movement-origin";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
+import { transportStatusLabel } from "@/components/ward-management/ward-derivations-transport";
 
 /**
  * "COPY TO NOTES, WIDER" (item 27, 10 Nov 2026). The referral letter's Copy to notes, as two more
@@ -70,7 +71,10 @@ export function movementTransferNotesText(
     `From ${from} to ${to}.`,
     `Stage: ${stageCopy[movement.stage].label}.`,
     `Bed: ${movement.heldBedNumber === undefined ? "no bed held yet" : `bed ${movement.heldBedNumber} held`}.`,
-    `Transport: ${
+    // The transport job and the arrival plan are separate records: a job can be booked with no
+    // plan, and a cancelled job leaves the plan in place, so each gets its own line.
+    `Transport: ${transportStatusLabel(movement.transport)}.`,
+    `Arrival plan: ${
       arrival
         ? `${ARRIVAL_MODE_LABELS[arrival.mode]}, expected ${formatInstantWithDay(arrival.estimatedArrivalAt, context.now)}`
         : NOT_RECORDED

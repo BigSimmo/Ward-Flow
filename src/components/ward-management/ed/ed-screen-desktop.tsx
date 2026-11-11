@@ -297,8 +297,9 @@ export function renderEdBoardTableRow(
             <span className="sr-only">Suggested next step: {edWaitStep(minutesInDepartment)?.nextStep}</span>
           </span>
         ) : null}
-        {/* Escalation calls (item 3, D-133): who to call at this step, and what happened. */}
-        {edWaitStep(minutesInDepartment) ? (
+        {/* Escalation calls (item 3, D-133): who to call at this step, and what happened. A closed
+            movement keeps its last outcome above but offers no call, which the engine would refuse. */}
+        {edWaitStep(minutesInDepartment) && !movement.closure ? (
           <EscalationStepCall
             movement={movement}
             step={edWaitStep(minutesInDepartment)!.step}

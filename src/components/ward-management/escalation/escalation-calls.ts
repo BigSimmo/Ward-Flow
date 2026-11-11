@@ -2,7 +2,8 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
-import type { EdWaitStep } from "@/components/ward-management/ward-ed-wait-steps";
+import { edWaitStep, type EdWaitStep } from "@/components/ward-management/ward-ed-wait-steps";
+import { isEdOriginJourney, recordedEdDeparture } from "@/components/ward-management/ward-ed-presence";
 import type { Movement } from "@/components/ward-management/ward-model";
 import {
   ESCALATION_CALL_OUTCOMES,
@@ -106,6 +107,13 @@ export function reduceEscalationCall(
   const movement = findMovement(state, event.movementId);
   if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
   if (movement.closure) return reject(state, event, "This movement is closed.");
+  if (!isEdOriginJourney(movement)) return reject(state, event, "Escalation calls are for an ED wait only.");
+  // The step must have been reached by now, timed the same way as the ED board row. An earlier step
+  // stays recordable, so a call made at step 2 can still be noted once the wait has reached step 3.
+  const waited = Math.max(Math.min(event.now, recordedEdDeparture(movement) ?? event.now) - movement.openedAt, 0);
+  const reached = edWaitStep(waited)?.step;
+  if (reached === undefined || event.step > reached)
+    return reject(state, event, "That escalation step has not been reached yet.");
   const record: EscalationCallRecord = {
     step: event.step,
     roleCalled: event.roleCalled,
