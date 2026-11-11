@@ -11,6 +11,7 @@
  */
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { SYNTHETIC_COPY_LINE } from "@/components/ward-management/ward-clipboard";
+import { FORM_RECORDED_ENDED, formRecordedEnded } from "@/components/ward-management/ward-legal-form-ended";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { legalStatusFull } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -184,8 +185,13 @@ export function handoverPackModel(input: HandoverPackInput): HandoverPack {
         letterRow(letter.key, "Legal status"),
         {
           label: "Paper expiry",
-          value: input.paperExpiryAt === undefined ? NOT_RECORDED : typedTimeLine(input.paperExpiryAt, now),
-          missing: input.paperExpiryAt === undefined,
+          // M17 (10 Nov 2026): a form recorded as ended reads the same as on the TV and downtime pack.
+          value: formRecordedEnded(input.movement)
+            ? FORM_RECORDED_ENDED
+            : input.paperExpiryAt === undefined
+              ? NOT_RECORDED
+              : typedTimeLine(input.paperExpiryAt, now),
+          missing: !formRecordedEnded(input.movement) && input.paperExpiryAt === undefined,
         },
       ],
     },

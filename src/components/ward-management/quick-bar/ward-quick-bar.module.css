@@ -35,6 +35,8 @@
 }
 
 .list > li {
+  /* A flex item, not a line of text: the li is exactly its chip's height on every phone's fonts. */
+  display: flex;
   flex: 0 0 auto;
 }
 

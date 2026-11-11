@@ -1,6 +1,6 @@
 # Desk guide: Bed coordinator
 
-<!-- last-checked: 2026-10-26 -->
+<!-- last-checked: 2026-11-10 -->
 
 _Updated 2026-11-05 — queue order, recorded-time and departure guidance reconciled against source. Other screen prose was not browser-rechecked._
 
@@ -9,15 +9,15 @@ patients moving from referral to arrival.
 
 ## What you see first
 
-**Home** opens the **My list** section. It shows **Act now**, **Since you last looked** and **Referrals to
+**Home** opens the **Needs you** tab. It shows **Act now**, **Since you last looked** and **Referrals to
 decide**. Waiting lists stay in wait order. Flags highlight a row but never move it. Nothing is
 pre-selected for you.
 
 Your main menu: **Home, Capacity, Movements, Waiting, All EDs, Referrals, Handover**. Other pages are under
 **More** (desktop) or **Menu** (phone).
 
-On a phone, the bar at the bottom has **Home, Referrals, Create, Alerts, Activity**. **Create**
-holds **New referral**.
+On a phone, the bar at the bottom has **Home, Capacity, Create, Alerts, Tools**. **Create**
+holds **New referral**. **Referrals** and **Activity** are under **Menu**.
 
 ## How lists and recorded times work
 

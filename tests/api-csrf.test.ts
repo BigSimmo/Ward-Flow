@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { apiMutationCsrfVerdict, isCsrfGuardedApiRequest } from "@/lib/api-csrf";
+import { apiMutationCsrfVerdict, configuredPublicHosts, isCsrfGuardedApiRequest } from "@/lib/api-csrf";
 
 // The proxy's CSRF guard for state-changing /api/* requests. Fetch Metadata is the
 // primary signal; when a browser omits it, or sends `same-site` for a sibling
@@ -111,13 +111,15 @@ describe("apiMutationCsrfVerdict", () => {
     ).toEqual({ allowed: false, reason: "origin_mismatch" });
   });
 
-  it("accepts the Host and X-Forwarded-Host headers as the addressed host", () => {
+  it("accepts the Host header and the configured public host as the addressed host", () => {
     expect(
       apiMutationCsrfVerdict(
         headersOf({ origin: "https://psychiatry.tools", host: "psychiatry.tools" }),
         "internal.railway.app",
+        [],
       ),
     ).toEqual({ allowed: true });
+    // Railway: the internal host differs, the forwarded host is the configured public host.
     expect(
       apiMutationCsrfVerdict(
         headersOf({
@@ -126,8 +128,73 @@ describe("apiMutationCsrfVerdict", () => {
           "x-forwarded-host": "psychiatry.tools",
         }),
         "internal.railway.app",
+        ["https://psychiatry.tools"],
       ),
     ).toEqual({ allowed: true });
+    // A bare domain (RAILWAY_PUBLIC_DOMAIN shape) works too, without any forwarded header.
+    expect(
+      apiMutationCsrfVerdict(
+        headersOf({ origin: "https://psychiatry.tools", host: "internal.railway.app" }),
+        "internal.railway.app",
+        ["psychiatry.tools"],
+      ),
+    ).toEqual({ allowed: true });
+  });
+
+  it("does not trust a client-sent X-Forwarded-Host (A4-08)", () => {
+    // Spoofed forwarded host matching a hostile Origin is refused.
+    expect(
+      apiMutationCsrfVerdict(
+        headersOf({ origin: "https://evil.example", host: "psychiatry.tools", "x-forwarded-host": "evil.example" }),
+        "psychiatry.tools",
+        ["psychiatry.tools"],
+      ),
+    ).toEqual({ allowed: false, reason: "origin_mismatch" });
+    // Same for a Referer-only request.
+    expect(
+      apiMutationCsrfVerdict(
+        headersOf({ referer: "https://evil.example/page", "x-forwarded-host": "evil.example" }),
+        "psychiatry.tools",
+        [],
+      ),
+    ).toEqual({ allowed: false, reason: "referer_mismatch" });
+    // With no configured public host, a forwarded host alone vouches for nothing.
+    expect(
+      apiMutationCsrfVerdict(
+        headersOf({
+          origin: "https://psychiatry.tools",
+          host: "internal.railway.app",
+          "x-forwarded-host": "psychiatry.tools",
+        }),
+        "internal.railway.app",
+        [],
+      ),
+    ).toEqual({ allowed: false, reason: "origin_mismatch" });
+    // Normal same-origin request still passes.
+    expect(
+      apiMutationCsrfVerdict(
+        headersOf({ origin: "https://psychiatry.tools", host: "psychiatry.tools", "sec-fetch-site": "same-origin" }),
+        "psychiatry.tools",
+        [],
+      ),
+    ).toEqual({ allowed: true });
+  });
+
+  it("reads the configured public hosts from NEXT_PUBLIC_SITE_URL and RAILWAY_PUBLIC_DOMAIN", () => {
+    const saved = { site: process.env.NEXT_PUBLIC_SITE_URL, railway: process.env.RAILWAY_PUBLIC_DOMAIN };
+    try {
+      process.env.NEXT_PUBLIC_SITE_URL = "https://Ward.Example.test/path";
+      process.env.RAILWAY_PUBLIC_DOMAIN = "ward-flow.up.railway.example";
+      expect(configuredPublicHosts()).toEqual(["ward.example.test", "ward-flow.up.railway.example"]);
+      delete process.env.NEXT_PUBLIC_SITE_URL;
+      delete process.env.RAILWAY_PUBLIC_DOMAIN;
+      expect(configuredPublicHosts()).toEqual([]);
+    } finally {
+      if (saved.site === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
+      else process.env.NEXT_PUBLIC_SITE_URL = saved.site;
+      if (saved.railway === undefined) delete process.env.RAILWAY_PUBLIC_DOMAIN;
+      else process.env.RAILWAY_PUBLIC_DOMAIN = saved.railway;
+    }
   });
 
   it("falls back to Referer when Fetch Metadata and Origin are both absent", () => {

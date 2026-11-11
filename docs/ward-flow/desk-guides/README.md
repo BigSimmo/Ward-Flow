@@ -1,6 +1,6 @@
 # Ward Flow desk guides
 
-<!-- last-checked: 2026-10-26 -->
+<!-- last-checked: 2026-11-10 -->
 
 _Updated 2026-11-10 - the four every-desk guides added to the index; role wording last checked against source at `b6aa5cde` (30 October)._
 
@@ -21,7 +21,7 @@ Re-check every guide after clinician testing, and whenever a step on screen chan
 | Community team                      | [community-team.md](community-team.md)             | My team     |
 | Transport officer                   | [transport-officer.md](transport-officer.md)       | My jobs     |
 | Executive (read only)               | [executive.md](executive.md)                       | Statistics  |
-| Access admin                        | [access-admin.md](access-admin.md)                 | Settings    |
+| Access admin                        | [access-admin.md](access-admin.md)                 | Governance  |
 | Bed meeting TV board (display only) | [tv-board.md](tv-board.md)                         | Bed meeting |
 
 For every desk:

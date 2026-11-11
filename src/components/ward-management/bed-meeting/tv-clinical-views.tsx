@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefO
 
 import { StatusGlyph } from "@/components/wf";
 import { splitDuration } from "@/components/ward-management/ward-clock";
+import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 import {
   HANDOVER_GROUPS,
@@ -307,8 +308,8 @@ export function EdClinicalTvView({
   const targetHours = Math.round(accessTargetMinutes / 60);
   const bandTitle: Record<EdClinicalRow["band"], string> = {
     over: `Over ${targetHours} hours, past the access target`,
-    eight: `8 to ${targetHours} hours`,
-    under: "Under 8 hours",
+    eight: `${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60} to ${targetHours} hours`,
+    under: `Under ${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60} hours`,
   };
   const body: ReactNode[] = [];
   shown.forEach((row, index) => {

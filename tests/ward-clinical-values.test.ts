@@ -156,6 +156,15 @@ describe("clinical values file", () => {
       triageUrgencyE: 14,
       // D-104 (Josh, 9 Nov 2026): approved default, quoted from memory, synthetic until checked.
       frequentPresenterEdPresentations: 4,
+      // M16 (Josh, 10 Nov 2026, D-130): numbers screens typed inline, signed as they were.
+      tvLeaveDueBack: 720,
+      edReferredNotSeen: 60,
+      edStatisticsFirstBandEdge: 240,
+      edStatisticsThirdBandEdge: 720,
+      bedBoardReferralWaitWarning: 240,
+      youthAgeBandUnder: 18,
+      olderAdultAgeBandFrom: 65,
+      youthServiceNoteUpTo: 24,
     });
     expect(unsignedClinicalValueCount()).toBe(
       CLINICAL_VALUE_LIST.filter((entry) => entry.status === "synthetic").length,

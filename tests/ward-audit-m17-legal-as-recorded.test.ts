@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { edClinicalRows } from "@/components/ward-management/bed-meeting/tv-clinical-derivations";
-import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
+import {
+  currentLegalDueAt,
+  FORM_RECORDED_ENDED,
+} from "@/components/ward-management/legal-forms/legal-form-progression";
 import { legalDeadlineText } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import {
   formTimeAsTyped,
@@ -35,7 +38,8 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * old time, and never a count. React screens are covered by the existing as-typed guard
  * (`tests/ward-legal-as-typed-guard.test.ts`), which reads every screen's source.
  *
- * Clinical: where an output disagrees, the case is `it.todo` and is reported as a DEFECT for Josh.
+ * Fixed 10 Nov 2026 (D-125): the TV names the form in full and an ended form reads the same on the
+ * TV, downtime pack and print. The ED list download stays an `it.todo` for Josh.
  */
 
 const MOVEMENT_ID = "WF-001";
@@ -61,6 +65,7 @@ type Outputs = {
   downtime: { form: string; madeAt: Instant | null; typedExpiryAt: Instant | null };
   printStatus: string;
   printExpiry: string;
+  downtimeEnded: boolean;
 };
 
 function outputsAt(state: WardFlowState, now: Instant): Outputs {
@@ -112,6 +117,7 @@ function outputsAt(state: WardFlowState, now: Instant): Outputs {
     },
     printStatus: legal.rows.find((row) => row.label === "Legal status")?.value ?? "(no row)",
     printExpiry: legal.rows.find((row) => row.label === "Paper expiry")?.value ?? "(no row)",
+    downtimeEnded: downtimeRow?.formEnded === true,
   };
 }
 
@@ -124,7 +130,7 @@ function expectAsRecorded(outputs: Outputs, movement: Movement, now: Instant, la
   const name = legalFormName(form);
   expect(outputs.page, `${label}: Legal forms page`).toBe(`Form expiry ${typedTimePhrase(dueAt, now)}`);
   expect(outputs.shared, `${label}: shared screen wording`).toBe(`${name} · ${typedTimePhrase(dueAt, now)}`);
-  expect(outputs.tv, `${label}: TV`).toContain(`Form ${form.code}`);
+  expect(outputs.tv, `${label}: TV`).toContain(name);
   expect(outputs.tv, `${label}: TV`).toContain(typedTimeLine(dueAt, now));
   expect(outputs.downtime, `${label}: downtime pack`).toEqual({
     form: name,
@@ -215,7 +221,9 @@ describe("M17: one form, edited, replaced and lapsed, reads the same on every ou
     expect(outputs.page).toContain("ended");
   });
 
-  it("after a form is recorded as ended, the print drops the expiry (currentLegalDueAt)", () => {
+  // Fixed 10 Nov 2026 (M17, D-125): once a form is recorded as ended, the TV wall, downtime pack and
+  // printed handover all read `legalForm.endedBy` and show the same words, never the old typed end.
+  it("after a form is recorded as ended, the TV, downtime pack and print all say 'Recorded as ended'", () => {
     const { second } = journey();
     const ended = apply(second, {
       type: "RECORD_LEGAL_FORM_DETAILS",
@@ -225,45 +233,27 @@ describe("M17: one form, edited, replaced and lapsed, reads the same on every ou
       formCode: "3A",
       endedBy: "revoked",
     });
+    const movement = movementOf(ended);
     const outputs = outputsAt(ended, NOW + 3);
-    expect(outputs.printExpiry).toBe("Not recorded");
+    const name = legalFormName(movement.legalForm!);
+    expect(currentLegalDueAt(movement)).toBeUndefined();
+    expect(outputs.printStatus).toBe(name);
+    expect(outputs.printExpiry).toBe(FORM_RECORDED_ENDED);
+    expect(outputs.tv.startsWith(`${name}, `)).toBe(true);
+    expect(outputs.tv.endsWith(`. ${FORM_RECORDED_ENDED}`)).toBe(true);
+    expect(outputs.tv).not.toContain(typedTimeLine(movement.legalForm!.dueAt!, NOW + 3));
+    expect(outputs.downtime.form).toBe(name);
+    expect(outputs.downtime.typedExpiryAt).toBeNull();
+    expect(outputs.downtimeEnded).toBe(true);
   });
 
-  // DEFECTS for Josh (clinical display; not changed here).
-  it.todo(
-    "M17 defect: after a form is recorded as ended (endedBy), the TV wall and downtime pack still show its typed end as current ('Ends HH:MM as typed' / typedExpiryAt), while the printed handover says 'Not recorded' (they read legalForm.dueAt, not currentLegalDueAt)",
-  );
-  it.todo(
-    "M17 defect: the TV wall names the form by bare code ('Form 3A, involuntary inpatient') where D-93 asks for the full name ('Form 3A (title)') used by every other output",
-  );
+  it("names the form on the TV wall by its full name (D-93), not the bare code", () => {
+    const { second } = journey();
+    const outputs = outputsAt(second, NOW + 2);
+    expect(outputs.tv.startsWith(`${legalFormName(movementOf(second).legalForm!)},`)).toBe(true);
+  });
+
   it.todo(
     "M17 gap: the ED list download (ed-export.ts) writes 'Form 3A' with no written or typed end time; D-93 covers screens, print, TV and the downtime pack, so Josh to say whether the export counts as print",
   );
-});
-
-describe("M17 defect probes (show the disagreement, do not change behaviour)", () => {
-  it("records that the TV and downtime pack keep an ended form's time today", () => {
-    const { second } = journey();
-    const ended = apply(second, {
-      type: "RECORD_LEGAL_FORM_DETAILS",
-      role: "ed",
-      now: NOW + 3,
-      movementId: MOVEMENT_ID,
-      formCode: "3A",
-      endedBy: "revoked",
-    });
-    const outputs = outputsAt(ended, NOW + 3);
-    const dueAt = movementOf(ended).legalForm!.dueAt!;
-    // Today's behaviour, pinned so a fix is noticed: when this flips, retire the todo above.
-    expect(outputs.tv).toContain(typedTimeLine(dueAt, NOW + 3));
-    expect(outputs.downtime.typedExpiryAt).toBe(dueAt);
-    expect(currentLegalDueAt(movementOf(ended))).toBeUndefined();
-  });
-
-  it("records that the TV wall uses the bare code today", () => {
-    const { second } = journey();
-    const outputs = outputsAt(second, NOW + 2);
-    expect(outputs.tv.startsWith("Form 3A,")).toBe(true);
-    expect(outputs.tv).not.toContain(legalFormName(movementOf(second).legalForm!));
-  });
 });

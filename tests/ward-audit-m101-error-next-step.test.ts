@@ -23,7 +23,7 @@ import { describe, expect, it } from "vitest";
 
 const INVENTORY = "docs/ward-flow/evidence/error-message-inventory-2026-11-10.md";
 /** "No" rows on 10 Nov 2026 (107 once save-problem pairs were read whole). Exact: lower it when one is fixed; never raise it. */
-const NO_NEXT_STEP_BASELINE = 107;
+const NO_NEXT_STEP_BASELINE = 103;
 
 const ROOTS = ["src/app", "src/components/wf", "src/components/ward-management"];
 /** Not failure messages: seed narratives, Help and tour text, and approved mock-up copies (D-91). */
