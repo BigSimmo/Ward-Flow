@@ -36,7 +36,14 @@ import {
   useIsPhone,
 } from "@/components/wf";
 import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstant,
+  formatInstantWithDay,
+  formatSheetMoment,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
+import { ListExportButton } from "@/components/ward-management/ward-list-export-button";
+import { ListPrintButton } from "@/components/ward-management/ward-list-print-button";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import {
   useDueSoonThresholds,
@@ -538,6 +545,16 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     if (!formCode) return;
     return raise("RECORD_LEGAL_FORM_DETAILS", { movementId: target.id, formCode, ...details });
   };
+  // Export (feature 44): everyone on a form, never names; legal times exactly as typed (D-93, D-102).
+  const exportList = async () =>
+    (await import("./legal-forms-export")).downloadLegalFormsList(
+      rows,
+      { umrnOf, edName: edNameOf, wardName: wardNameOf, now, dayZero },
+      {
+        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+        scope: "Legal forms; everyone on a form on the list, expiry typed first (highlights do not narrow it)",
+      },
+    );
   const addTimeTarget = rows.find((movement) => movement.id === addTimeId) ?? null;
   const addTimeRefusal = addTimeTarget
     ? rejections
@@ -1085,12 +1102,20 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   }
                   action={
                     // Page tops (Josh, 9 Nov 2026): Record a form, Record and tell and Copy for handover are
-                    // the top's chips; the list keeps its own Clear highlight.
-                    highlight ? (
-                      <Button variant="ghost" size="sm" onClick={() => setHighlight(null)}>
-                        Clear highlight
-                      </Button>
-                    ) : undefined
+                    // the top's chips; the list keeps its own Clear highlight, Print and Export.
+                    <>
+                      {highlight ? (
+                        <Button variant="ghost" size="sm" onClick={() => setHighlight(null)}>
+                          Clear highlight
+                        </Button>
+                      ) : null}
+                      {shownView === "history" ? null : (
+                        <>
+                          <ListPrintButton disabled={rows.length === 0} testId="ward-legal-print" />
+                          <ListExportButton load={exportList} disabled={rows.length === 0} testId="ward-legal-export" />
+                        </>
+                      )}
+                    </>
                   }
                 />
 
