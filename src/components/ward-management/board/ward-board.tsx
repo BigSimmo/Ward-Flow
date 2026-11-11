@@ -19,11 +19,7 @@ import {
   capacityBreakdownLists,
 } from "@/components/ward-management/ward-bed-availability";
 import type { BreakdownRow } from "@/components/ward-management/count-breakdown-model";
-import {
-  leaveStays,
-  releaseStays,
-  stayBreakdownRows,
-} from "@/components/ward-management/count-breakdown-rows";
+import { leaveStays, releaseStays, stayBreakdownRows } from "@/components/ward-management/count-breakdown-rows";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import {
   arrowTargets,

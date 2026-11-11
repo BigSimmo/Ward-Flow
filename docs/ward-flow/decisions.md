@@ -158,7 +158,6 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-137](#d-137-feature-build-batch-5-count-leak-first-tv-change-mark-and-qr-library-10-november-2026)                                                   | Feature build batch 5: count leak first, TV change mark 15 minutes, QR library         | Active                                           |
 | [D-138](#d-138-phone-alert-urgency-by-kind-10-november-2026)                                                                                            | Phone alert urgency by kind                                                            | Active                                           |
 
-
 ---
 
 ## D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)
@@ -1717,4 +1716,3 @@ is inferred.
 - **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, picking item 23 of the audit fix build plan (Ward Flow project thread "Fix audit app and backend issues", audit fix group 2), which counts as his yes to audit decision 20. Numbered D-138 because D-132 to D-137 belong to other threads. D-133 is claimed by open PR #1606. D-134 is claimed by open PR #1608, and D-135 is claimed by open PR #1603, and D-136 is claimed by open PR #1605, and D-137 is claimed by open PR #1607. On 11 November 2026 Josh told every thread to go ahead with its recommendations, which approved the Settings line as drawn in the design review.
 - **Decision:** act-now phone alerts stay high urgency and buzz again when replaced. Jobs and team alerts go out at normal urgency and replace their earlier alert quietly. Settings shows when this device last received an alert, from the time only (never the alert's words).
 - **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge or release.
-

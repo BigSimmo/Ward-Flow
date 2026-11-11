@@ -19,7 +19,6 @@ import {
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 
-
 import styles from "./night-view.module.css";
 
 const CAPACITY_HREF = "/ward-flow/capacity";
