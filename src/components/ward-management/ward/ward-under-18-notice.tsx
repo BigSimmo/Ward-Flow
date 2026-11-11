@@ -56,7 +56,8 @@ export function WardUnder18Notice({
   const [message, setMessage] = useState<string | null>(null);
   const { runRecorded } = useUndoableStep({ dispatch, rejections, now, routeRole: role, onMessage: setMessage });
 
-  const notice = under18AdultWardNotice(patient, unit, admission, calendarDateOf(now, dayZero));
+  // Age is read against the demo day; with no day zero (a partial store) there is no age to read.
+  const notice = dayZero ? under18AdultWardNotice(patient, unit, admission, calendarDateOf(now, dayZero)) : null;
   if (!notice || !admission) return null;
   const canRecord = canDispatch(role, "RECORD_CHIEF_PSYCHIATRIST_NOTIFIED");
   const quiet = notice.tone === "quiet";
