@@ -1,9 +1,17 @@
 "use client";
 
 import { X } from "lucide-react";
-import { type CSSProperties, type HTMLAttributes, type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  type HTMLAttributes,
+  type ReactNode,
+  Suspense,
+  lazy,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Button, buttonClass } from "./button";
-import { Menu } from "./menu";
 import { cx } from "./cx";
 import styles from "./overlay.module.css";
 import { StatusGlyph, type WfTone } from "./status-glyph";
@@ -48,6 +56,9 @@ export type ToastChoices = {
   items: readonly { id: string; label: string }[];
   onChoose: (id: string) => void;
 };
+
+/** Loaded only when a toast offers choices (D-148), so the kit menu is off every first load. */
+const ToastChoicesMenu = lazy(() => import("./toast-choices"));
 
 export type ToastNextStep = {
   label: string;
@@ -293,25 +304,19 @@ export function ToastView({
         )
       ) : null}
       {choices && (!undo || phase === "running") ? (
-        <Menu
-          label={choices.label}
-          align="end"
-          items={choices.items.map((item) => ({
-            id: item.id,
-            label: item.label,
-            onSelect: () => choices.onChoose(item.id),
-          }))}
-          trigger={(props) => (
+        <Suspense
+          fallback={
             <button
-              {...props}
               type="button"
+              disabled
               className={cx(buttonClass({ variant: "ghost", size: "sm" }), styles.toastAction)}
-              data-testid="toast-choices"
             >
               {choices.label}
             </button>
-          )}
-        />
+          }
+        >
+          <ToastChoicesMenu choices={choices} />
+        </Suspense>
       ) : null}
       {undo ? <UndoButton undo={undo} phase={phase} finish={finish} primary={primary === "undo"} /> : null}
       {onClose ? (

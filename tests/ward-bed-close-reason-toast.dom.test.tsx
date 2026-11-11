@@ -60,8 +60,10 @@ describe("bed closure reason on the toast (D-148)", () => {
     expect(dispatch.mock.calls[0][0]).not.toHaveProperty("reason");
     const toast = screen.getByTestId("toast");
     expect(within(toast).getByRole("button", { name: "Undo" })).toBeInTheDocument();
+    // The choice menu is loaded on use.
+    const choose = await within(toast).findByTestId("toast-choices");
     await act(async () => {
-      fireEvent.click(within(toast).getByTestId("toast-choices"));
+      fireEvent.click(choose);
     });
     await act(async () => {
       fireEvent.click(screen.getByRole("menuitem", { name: "Staffing" }));
@@ -93,8 +95,9 @@ describe("bed closure reason on the toast (D-148)", () => {
     await act(async () => {
       fireEvent.click(screen.getByText("Close this bed"));
     });
+    const choose = await within(screen.getByTestId("toast")).findByTestId("toast-choices");
     await act(async () => {
-      fireEvent.click(within(screen.getByTestId("toast")).getByTestId("toast-choices"));
+      fireEvent.click(choose);
     });
     await act(async () => {
       fireEvent.click(screen.getByRole("menuitem", { name: "Infection outbreak" }));
