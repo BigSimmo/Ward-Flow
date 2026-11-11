@@ -259,6 +259,11 @@ function typedThresholdsIn(file: string, source: string): string[] {
  */
 const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> = [
   {
+    file: "staffing/staff-requests.ts",
+    name: "STAFF_REQUEST_SHIFT_TOLERANCE_MINUTES",
+    why: "how many minutes a staff request may lag behind the shift start it names before the save is refused as already started (D-145); clock slack for a form, never a clinical limit",
+  },
+  {
     file: "handover/handover-model.ts",
     name: "JUST_HELD_HANDOVER_MINUTES",
     why: "how long after a handover starts the Handover page still opens on it (master audit M19, D-129); which page opens, never a clinical limit",
