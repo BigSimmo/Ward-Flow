@@ -7,8 +7,12 @@ import { describe, expect, it, vi } from "vitest";
 import { removePathSync } from "../scripts/retryable-fs.mjs";
 
 import {
+  formatReport,
   LEGACY_MOVEMENT_REDIRECT,
   overBudget,
+  pageAssets,
+  REPORT_ROUTES,
+  reportSizes,
   routeKb,
   scriptSources,
   validateBudgets,
@@ -308,5 +312,61 @@ describe("phone script budget", () => {
       await expect(routeKb(base, route)).rejects.toThrow(/answered 307|unexpected redirect destination/);
       expect(requests).toEqual([route]);
     });
+  });
+});
+
+// Performance audit WF-01, WF-02, WF-06 and WF-18 (11 November 2026): sizes the budget did not see,
+// reported beside it and never judged.
+describe("report-only sizes", () => {
+  it("lists stylesheets and preloaded script the script count leaves out", () => {
+    const html =
+      '<link rel="stylesheet" href="/_next/static/css/a.css" data-precedence="next">' +
+      '<link rel="stylesheet" href="/_next/static/css/a.css">' +
+      '<link rel="preload" as="script" href="/_next/static/chunks/p.js">' +
+      '<link rel="modulepreload" href="/_next/static/chunks/m.js">' +
+      '<link rel="preload" as="font" href="/_next/static/media/f.woff2">' +
+      '<link rel="stylesheet" href="https://example.test/x.css">';
+    expect(pageAssets(html)).toEqual({
+      stylesheets: ["/_next/static/css/a.css"],
+      preloads: ["/_next/static/chunks/p.js", "/_next/static/chunks/m.js"],
+    });
+  });
+
+  it("measures script, stylesheets, uncounted preloads and the shared shell, and records a failed page", async () => {
+    const css = "body{color:red}";
+    const shell = '<script src="/_next/static/chunks/a.js"></script>';
+    await withPages(
+      {
+        "/one": { body: `${shell}<link rel="stylesheet" href="/_next/static/css/a.css">` },
+        "/two": {
+          body: `${shell}<script src="/_next/static/chunks/b.js"></script><link rel="preload" as="script" href="/_next/static/chunks/a.js"><link rel="preload" as="script" href="/_next/static/chunks/p.js">`,
+        },
+        "/_next/static/chunks/a.js": asset,
+        "/_next/static/chunks/b.js": asset,
+        "/_next/static/chunks/p.js": asset,
+        "/_next/static/css/a.css": { type: "text/css", body: css },
+      },
+      async (base) => {
+        const report = await reportSizes(base, ["/one", "/two"], ["/missing"]);
+        const kb = (body: string) => Math.round((gzipSync(Buffer.from(body), { level: 9 }).length / 1024) * 10) / 10;
+        expect(report.routes["/one"]).toEqual({
+          budgeted: true,
+          scriptKb: kb(chunk),
+          cssKb: kb(css),
+          cssFiles: 1,
+          preloadKb: 0,
+          preloadFiles: 0,
+        });
+        expect(report.routes["/two"]).toMatchObject({ preloadFiles: 1, cssFiles: 0 });
+        expect(report.routes["/missing"]).toEqual({ budgeted: false, error: "/missing answered 404" });
+        expect(report.sharedScriptKb).toBe(kb(chunk));
+        expect(formatReport(report)).toContain("| /missing | no | not measured: /missing answered 404 | | |");
+      },
+    );
+  });
+
+  it("reports the heavy unbudgeted triage page", () => {
+    expect(REPORT_ROUTES).toContain("/ward-flow/people/PT-028/triage");
+    for (const route of REPORT_ROUTES) expect(Object.keys(scriptBudget.budgets)).not.toContain(route);
   });
 });

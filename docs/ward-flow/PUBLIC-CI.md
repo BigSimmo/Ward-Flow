@@ -1,6 +1,6 @@
 # Public Ward Flow PR checks
 
-_Updated 2026-11-11 - the inherited-overage ceiling (performance audit WF-03); 2026-11-09 - no merge queue is in use; the merge_group triggers are dormant (D-107); Documentation owns._
+_Updated 2026-11-11 - the inherited-overage ceiling and report-only sizes (performance audit); 2026-11-09 - no merge queue is in use; the merge_group triggers are dormant (D-107); Documentation owns._
 
 The `Ward Flow CI` workflow in `.github/workflows/ward-flow.yml` checks the public
 `BigSimmo/Ward-Flow` repository with pinned actions, locked dependencies, a read-only token and
@@ -212,6 +212,11 @@ required production build red until someone raised the limit by hand. Three part
   Inherited overage is a warning. It first reuses the
   measurements main's own push run saved for that commit (`main-measured.mjs`), so main is built a
   second time only when none exist. That build runs only when the merged result is over.
+- **Report-only sizes.** The same step prints, and saves in `measured.json` under `report`, each budgeted
+  route's stylesheet size, the preloaded script the budget does not count, the script every budgeted route
+  shares, and four heavy routes with no budget (`REPORT_ROUTES`, triage first). Nothing there can fail a
+  build; a limit on any of it is Josh's decision from a measured baseline (performance audit WF-01, WF-02,
+  WF-06 and WF-18, 11 November 2026).
 - **Trim issue, never an automatic raise.** Main's build saves its measurements as the
   `script-budget-measured` artifact. When a main run fails and those show a route over budget,
   `ward-flow-budget-heal.yml` opens one issue, "Phone script budget: main is over, trim needed",
