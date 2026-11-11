@@ -128,8 +128,7 @@ export function useFrontDoorAuth(next: string): { phase: Phase; form: WardCreden
       auth.current?.dispose();
       auth.current = null;
     };
-    // `next` is fixed for the page's life: the server read it from the address.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Once per page: `open` closes over `next`, which is fixed for the page's life (the server read it from the address).
   }, []);
 
   const run = async (step: (adapter: WardBrowserAuthAdapter) => Promise<void>) => {

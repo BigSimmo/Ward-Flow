@@ -198,8 +198,7 @@ export function SeclusionFormsView({
     const list = roomsRef.current;
     list?.scrollIntoView?.({ block: "start", behavior: "smooth" });
     list?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
-    // Only a new ask moves focus; the rooms list changing under it does not.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only a new ask (`ask.n`) moves focus; the rooms list or `onAskSeen` changing under it does not.
   }, [ask?.n]);
   // Ward desks cannot open Governance, so the last day's incidents stay readable here.
   const seesGovernance = ROLE_SCREENS[access.role].governance !== undefined;

@@ -261,8 +261,7 @@ export function WardWalkRound({
       }
       if (was !== undefined) headRef.current?.querySelector<HTMLButtonElement>("[data-walk-start]")?.focus();
     }
-    // Only a change of bed speaks; `allReviewed` is read as it is at that moment.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only a change of bed speaks; `allReviewed` is read as it is at that moment.
   }, [currentNumber]);
 
   // Integration QA (3 Nov 2026): Escape closes the card like the close button, and the effect

@@ -112,9 +112,7 @@ export function useEdInboxDecline({
     }
     pendingDeclineRef.current = undefined;
     priorRejectionCountRef.current = rejections.length;
-    // `offerStep` is read at the moment the check runs; the check itself is keyed
-    // on the dispatch token so it runs once per decline.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `offerStep` is read when the check runs; the check is keyed on the dispatch token so it runs once per decline.
   }, [rejections, declineCheckToken]);
 
   function toggleDecline(referralId: string) {
