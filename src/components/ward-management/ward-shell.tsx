@@ -40,12 +40,28 @@ export function WardGround({ children }: { children: ReactNode }) {
   const openers = useRef(new Map<string, OpenedLink>());
 
   useEffect(() => {
-    const onHistory = () => {
-      // Drawer history on the same page must not change the next route's scroll behaviour.
-      if (window.location.pathname !== currentPath.current) historyPath.current = window.location.pathname;
+    // Drawer history on the same page must not change the next route's scroll behaviour.
+    const markHistory = (path: string) => {
+      if (path !== currentPath.current) historyPath.current = path;
+    };
+    const onHistory = () => markHistory(window.location.pathname);
+    // Count leak (D-137): a held first load mounts this ground after hydration, and the route can then
+    // commit before `popstate` reaches it. The Navigation API's `navigate` event comes before either,
+    // so it marks Back and Forward where the browser has it; `popstate` stays for the others.
+    const navigation = (window as Window & { navigation?: EventTarget }).navigation;
+    const onNavigate = (event: Event) => {
+      const { navigationType, destination } = event as Event & {
+        navigationType?: string;
+        destination?: { url: string };
+      };
+      if (navigationType === "traverse" && destination) markHistory(new URL(destination.url).pathname);
     };
     window.addEventListener("popstate", onHistory);
-    return () => window.removeEventListener("popstate", onHistory);
+    navigation?.addEventListener("navigate", onNavigate);
+    return () => {
+      window.removeEventListener("popstate", onHistory);
+      navigation?.removeEventListener("navigate", onNavigate);
+    };
   }, []);
 
   useLayoutEffect(() => {
