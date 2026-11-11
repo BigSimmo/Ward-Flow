@@ -489,9 +489,10 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
   {
     file: "ward-patient-archive-reducer.ts",
     reason:
-      "D-149 (Josh, 11 Nov 2026): when the coordinator archives a record added in error, unlinks that " +
-      "one record's withdrawn front-door referrals by comparing patientId only; reads no other referral " +
-      "and shows nothing. Josh approved this entry on 11 Nov 2026 (PR #1626).",
+      "Archive reducer (D-149, Approved by Josh as Ward Lead, 11 Nov 2026, PR #1626): when a record is " +
+      "archived, the only referrals still naming it are withdrawn ones nobody answered. It compares each " +
+      "referral's patientId with the archived id and drops that link so no referral points at a record " +
+      "that has left the lists. Ids only; it writes state, renders nothing and discloses no other stay.",
   },
 ].map((entry) => ({ ...entry, file: resolve(WARD_DIR, entry.file) }));
 
@@ -535,7 +536,8 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 53 → 58 on 2026-11-07: Josh as Ward Lead allowed the five triage and risk files (PR #1500).
     // 58 → 59 on 2026-11-10: Josh as Ward Lead allowed the M134 hard-case seed overlay (PR #1598, D-131).
     // 59 → 60 on 2026-11-11: Josh allowed the item 28 diversion return review (PR #1605, D-136).
-    // 60 → 61 on 2026-11-11: Josh allowed the D-149 archive step's referral unlink (PR #1626, D-149).
+    // 60 → 61 on 2026-11-11: Approved by Josh as Ward Lead — the D-149 archive reducer unlinks
+    // withdrawn referrals from an archived record (PR #1626).
     expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(61);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
