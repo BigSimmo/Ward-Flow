@@ -1,5 +1,6 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
+import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import type { CapacityFigure } from "@/components/ward-management/ward-model-vocabulary";
 import {
   lastPackPrintedAt,
@@ -73,7 +74,8 @@ export function reduceOutageWindow<S extends OutageState>(
 }
 
 /**
- * The outage a ward catches up from: the recorded one that ended last, at or before now. `null`
+ * The outage a ward catches up from: the one recorded last (ended at or before now), so a coordinator's
+ * "Change times" correction replaces the earlier entry even when it moves the end earlier. `null`
  * when none is recorded, so no ward is ever asked to catch up from a guessed outage.
  */
 export function latestOutage(
@@ -82,21 +84,31 @@ export function latestOutage(
 ): OutageWindowRecord | null {
   let latest: OutageWindowRecord | null = null;
   for (const record of records ?? [])
-    if (record.to <= now && (latest === null || record.to > latest.to)) latest = record;
+    if (record.to <= now && (latest === null || record.recordedAt >= latest.recordedAt)) latest = record;
   return latest;
+}
+
+/**
+ * Who may record an outage: the statewide coordinator only. The record is network-wide (every ward's
+ * catch-up reads it), so a service coordinator, whose place is one service, may not send it.
+ */
+export function mayRecordOutage(access: WardAccess): boolean {
+  return access.role === "coordinator" && access.scope.kind === "statewide";
 }
 
 type CatchUpUnit = { id: string; beds: number; allocatable: CapacityFigure };
 
 /**
  * When the ward itself last confirmed its beds ("Beds still correct"), or `null`. A figure confirmed
- * by the bed manager or the coordinator is not the ward's confirmation. A figure recorded before
- * `confirmedBy` existed was the ward's own (`CapacityFigure.confirmedBy`).
+ * by the bed manager or the coordinator is not the ward's confirmation, and does not erase it:
+ * `CapacityFigure.wardConfirmedAt` keeps the ward's own last confirm. A figure recorded before either
+ * field existed, with no `confirmedBy`, was the ward's own.
  */
 function wardOwnConfirmationAt(unit: CatchUpUnit): Instant | null {
   const figure = unit.allocatable;
-  if (figure.source !== "ward" || (figure.confirmedBy ?? "ward") !== "ward") return null;
-  return figure.confirmedAt;
+  if (figure.source !== "ward") return null;
+  if (figure.wardConfirmedAt !== undefined) return figure.wardConfirmedAt;
+  return (figure.confirmedBy ?? "ward") === "ward" ? figure.confirmedAt : null;
 }
 
 /** True when the ward confirmed its beds at or after the outage ended. A confirm before the end does not count. */

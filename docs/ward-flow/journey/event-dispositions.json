@@ -196,8 +196,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 667,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 669,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -286,7 +286,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 247,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1821,8 +1821,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 753,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 755,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-discharge-criteria.ts",
@@ -2792,7 +2792,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 97,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -4348,9 +4348,9 @@
     "model": {
       "subject": "The workspace's recorded outage windows",
       "before": "Both times typed; the window is not already recorded",
-      "after": "outageWindows holds a new OUT-n record (from, to, recordedAt, role); a ward is caught up only once it confirms Beds still correct itself at or after the outage ended",
+      "after": "outageWindows holds a new OUT-n record (from, to, recordedAt, role); the most recently recorded window is the active one, so a correction replaces the earlier entry; a ward is caught up only once it confirms Beds still correct itself at or after the outage ended (CapacityFigure.wardConfirmedAt keeps that confirm when another desk confirms later)",
       "payload": ["from and to: whole times typed by the coordinator, never pre-filled", "role and now"],
-      "scope": "Coordinator only in EVENT_ROLE; the ward confirms with the existing CONFIRM_CAPACITY rather than recording the outage. Shared authenticated command scope additionally checks the permitted place. Executive and access admin change nothing (D-80).",
+      "scope": "Coordinator only in EVENT_ROLE, and on the shared server the statewide coordinator only: the record is network-wide, so commandRefusal refuses a service coordinator (D-142 review follow-up, 11 Nov 2026). The ward confirms with the existing CONFIRM_CAPACITY rather than recording the outage. Executive and access admin change nothing (D-80).",
       "guards": [
         "Refuse a missing or non-whole time, an end not after the start and an end later than now",
         "Refuse a window with the same start and end as one already recorded"
@@ -4372,8 +4372,8 @@
         },
         {
           "path": "src/components/ward-management/ward-outage-catch-up.ts",
-          "line": 50,
-          "sha256": "cb7039970f34fa555be21bf4d28f6d18829ef926dfea2eea196398371fe722cc"
+          "line": 51,
+          "sha256": "eda536beceed5d18ab57717139eff4b0cf1fa174dd4cc2278bf6374359344276"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",

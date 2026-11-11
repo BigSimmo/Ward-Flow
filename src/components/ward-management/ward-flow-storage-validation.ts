@@ -289,6 +289,7 @@ const capacityFigure = z.looseObject({
   revision: z.optional(counter),
   confirmations: z.optional(counter),
   confirmedBy: z.optional(z.enum(["ward", "bed_manager", "coordinator"])),
+  wardConfirmedAt: z.optional(finite),
 });
 // Closing the loop, package D (24 Oct 2026): fixed-list choices, ids, instants and role labels only.
 const closureTransitionMarkRule = z.strictObject({

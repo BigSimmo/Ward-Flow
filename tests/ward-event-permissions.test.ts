@@ -644,6 +644,24 @@ describe("who may raise which event", () => {
     const coordinator = { role: "coordinator", scope: { kind: "statewide" } } as const;
     expect(deskCommand(coordinator, switched)).not.toHaveProperty("byAccessAdmin");
   });
+
+  it("lets only the statewide coordinator record an outage, which every ward's catch-up reads", () => {
+    const world = seedWorld(new Date("2026-11-11T02:00:00Z"));
+    const at = new Date("2026-11-11T02:00:00Z");
+    const outage = {
+      type: "RECORD_OUTAGE_WINDOW",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      from: NOW_ANCHOR - 60,
+      to: NOW_ANCHOR - 5,
+    };
+    const statewide = { role: "coordinator", scope: { kind: "statewide" } } as const;
+    const service = { role: "coordinator", scope: { kind: "service", service: "East Metro" } } as const;
+    expect(commandRefusal(world, statewide, deskCommand(statewide, outage) as Record<string, unknown>, at)).toBeNull();
+    expect(commandRefusal(world, service, deskCommand(service, outage) as Record<string, unknown>, at)).toBe(
+      "This change is not part of your role.",
+    );
+  });
 });
 
 describe("PATIENT_ARRIVED destination ward permissions", () => {

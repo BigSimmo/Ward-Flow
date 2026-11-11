@@ -61,6 +61,8 @@ import {
   type DowntimePack,
   type DowntimeWard,
 } from "./downtime-pack";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { mayRecordOutage } from "@/components/ward-management/ward-outage-catch-up";
 import { useDowntimePackAccess } from "./downtime-pack-context";
 import { DowntimeOldPacksBand, lastPrintedByRole } from "./downtime-pack-old-band";
 import { DowntimeRecordOutage } from "./downtime-pack-record-outage";
@@ -189,6 +191,8 @@ export function DowntimePackScreen() {
   const isPhone = useIsPhone();
   const role = useRouteRole();
   const { owner, ready, unavailable } = useDowntimePackAccess();
+  // Item 25 (D-142): read before any early return, for the Record an outage chip below.
+  const outageAccess = useEffectiveWardAccess();
   // UX audit 21 Oct 2026: offline, the shell takes no pack because the data may be stale, so this
   // screen must not stamp a newer time on it either.
   const online = useOnlineStatus();
@@ -406,6 +410,8 @@ export function DowntimePackScreen() {
     role,
   );
   const isCoordinator = role === "coordinator";
+  // Item 25 (D-142): the outage record is network-wide, so only the statewide coordinator records one.
+  const canRecordOutage = isCoordinator && mayRecordOutage(outageAccess);
   const outageChip = {
     id: "outage",
     label: "Record an outage",
@@ -415,7 +421,7 @@ export function DowntimePackScreen() {
     testId: "ward-downtime-record-outage-chip",
   };
   const recordOutage =
-    recordingOutage && isCoordinator ? (
+    recordingOutage && canRecordOutage ? (
       <div data-print-hide>
         <DowntimeRecordOutage now={now} onDone={() => setRecordingOutage(false)} />
       </div>
@@ -484,7 +490,7 @@ export function DowntimePackScreen() {
               label="Pack actions"
               items={[
                 { id: "snapshot", label: "New snapshot", node: snapshotChip },
-                ...(isCoordinator ? [outageChip] : []),
+                ...(canRecordOutage ? [outageChip] : []),
               ]}
             />
             {isPhone ? null : (

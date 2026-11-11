@@ -19,6 +19,7 @@ import {
   bedNotConfirmedSinceOutage,
   bedsNotConfirmedSinceOutage,
   latestOutage,
+  mayRecordOutage,
   wardCatchUp,
   wardCaughtUp,
   wardsNotCaughtUp,
@@ -302,5 +303,56 @@ describe("item 25: catch-up after an outage", () => {
     expect(prompt.outage).toMatchObject({ from: FROM, to: TO });
     // A ward that never printed says so, rather than borrowing another ward's time.
     expect(wardCatchUp(unitOf(state, SCGH_WARD), state, NOW_ANCHOR)?.lastPackPrintedAt).toBeNull();
+  });
+});
+
+describe("item 25: review follow-ups (11 Nov 2026, D-142)", () => {
+  const seed = seedWardFlowState();
+  const FROM = NOW_ANCHOR - 120;
+  const TO = NOW_ANCHOR - 5;
+  const confirm = (state: WardFlowState, unitId: string, role: string, now: number) => {
+    const unit = state.units.find((candidate) => candidate.id === unitId)!;
+    return send(state, {
+      type: "CONFIRM_CAPACITY",
+      role,
+      now,
+      unitId,
+      actingUnitId: unitId,
+      value: unit.allocatable.value,
+      expectedRevision: unit.allocatable.revision ?? 0,
+    });
+  };
+
+  it("lets a corrected outage replace the earlier one, even when the end moves earlier", () => {
+    let state = send(seed, {
+      type: "RECORD_OUTAGE_WINDOW",
+      role: "coordinator",
+      now: NOW_ANCHOR - 2,
+      from: FROM,
+      to: TO,
+    });
+    state = send(state, { type: "RECORD_OUTAGE_WINDOW", role: "coordinator", from: FROM, to: TO - 30 });
+    expect(state.outageWindows).toHaveLength(2);
+    expect(latestOutage(state.outageWindows, NOW_ANCHOR)?.to).toBe(TO - 30);
+    // A ward that confirmed between the corrected and the original end is now caught up.
+    const confirmed = confirm(state, RPH_WARD, "ward", TO - 10);
+    expect(wardsNotCaughtUp(confirmed.units, confirmed.outageWindows, NOW_ANCHOR)).not.toContain(RPH_WARD);
+  });
+
+  it("keeps the ward's own confirm when another desk confirms after it", () => {
+    let state = send(seed, { type: "RECORD_OUTAGE_WINDOW", role: "coordinator", from: FROM, to: TO });
+    state = confirm(state, RPH_WARD, "ward", TO + 1);
+    expect(wardsNotCaughtUp(state.units, state.outageWindows, NOW_ANCHOR)).not.toContain(RPH_WARD);
+    const byCoordinator = confirm(state, RPH_WARD, "coordinator", TO + 2);
+    expect(refused(state, byCoordinator)).toBe(false);
+    expect(wardsNotCaughtUp(byCoordinator.units, byCoordinator.outageWindows, NOW_ANCHOR)).not.toContain(RPH_WARD);
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(byCoordinator)))).toBe(true);
+  });
+
+  it("lets only the statewide coordinator record an outage, which is network-wide", () => {
+    expect(mayRecordOutage({ role: "coordinator", scope: { kind: "statewide" } })).toBe(true);
+    expect(mayRecordOutage({ role: "coordinator", scope: { kind: "service", service: "East Metro" } })).toBe(false);
+    expect(mayRecordOutage({ role: "admin", scope: { kind: "statewide" } })).toBe(false);
+    expect(mayRecordOutage({ role: "bed_manager", scope: { kind: "site", siteCode: "RPH" } })).toBe(false);
   });
 });

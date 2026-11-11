@@ -3660,7 +3660,7 @@
         "message": "no leave bed found for id ${event.leaveBedId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 672
+          "line": 674
         }
       },
       {
@@ -3668,7 +3668,7 @@
         "message": "END_LEAVE_BED was raised acting as unit ${event.actingUnitId} but leave bed ${leaveBed.id} belongs to unit ${leaveBed.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 677
+          "line": 679
         }
       }
     ],
@@ -3686,8 +3686,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 654,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 656,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
@@ -3706,13 +3706,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 656,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 658,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 661,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 663,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         }
       ]
     }
@@ -3734,7 +3734,7 @@
         "message": "FLAG_BED_RELEASE was raised acting as unit ${event.actingUnitId} but targets unit ${event.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 398
+          "line": 400
         }
       },
       {
@@ -3742,7 +3742,7 @@
         "message": "FLAG_BED_RELEASE blocker must be chosen from BED_RELEASE_BLOCKERS",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 443
+          "line": 445
         }
       }
     ],
@@ -3760,18 +3760,18 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 370,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 372,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 377,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 379,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 422,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 424,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         }
       ]
     }
@@ -3793,7 +3793,7 @@
         "message": "CONFIRM_BED_RELEASE was raised acting as unit ${event.actingUnitId} but release ${release.id} belongs to unit ${release.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 492
+          "line": 494
         }
       },
       {
@@ -3801,7 +3801,7 @@
         "message": "cannot move release ${release.id} from ${release.state} to confirmed",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 498
+          "line": 500
         }
       }
     ],
@@ -3819,8 +3819,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 464,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 466,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
@@ -3829,13 +3829,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 473,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 475,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 479,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 481,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         }
       ]
     }
@@ -3857,7 +3857,7 @@
         "message": "REVERT_BED_RELEASE was raised acting as unit ${event.actingUnitId} but release ${release.id} belongs to unit ${release.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 531
+          "line": 533
         }
       },
       {
@@ -3865,7 +3865,7 @@
         "message": "cannot move release ${release.id} from ${release.state} to expected",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 537
+          "line": 539
         }
       },
       {
@@ -3873,7 +3873,7 @@
         "message": "REVERT_BED_RELEASE waitingOn must be chosen from BED_RELEASE_WAITING_ON",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 542
+          "line": 544
         }
       }
     ],
@@ -3891,23 +3891,23 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 503,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 505,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 512,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 514,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 518,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 520,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 523,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 525,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         }
       ]
     }
@@ -3929,7 +3929,7 @@
         "message": "BLOCK_BED_RELEASE was raised acting as unit ${event.actingUnitId} but release ${release.id} belongs to unit ${release.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 568
+          "line": 570
         }
       },
       {
@@ -3937,7 +3937,7 @@
         "message": "BLOCK_BED_RELEASE requires a blocker chosen from BED_RELEASE_BLOCKERS",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 574
+          "line": 576
         }
       },
       {
@@ -3945,7 +3945,7 @@
         "message": "cannot block release ${release.id} because it is already released",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 581
+          "line": 583
         }
       }
     ],
@@ -3963,8 +3963,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 542,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 544,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/board/ward-board-blocker-dialog.tsx",
@@ -3973,18 +3973,18 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 549,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 551,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 555,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 557,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 562,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 564,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         }
       ]
     }
@@ -4006,7 +4006,7 @@
         "message": "CLEAR_BED_RELEASE_BLOCK was raised acting as unit ${event.actingUnitId} but release ${release.id} belongs to unit ${release.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 605
+          "line": 607
         }
       },
       {
@@ -4014,7 +4014,7 @@
         "message": "release ${release.id} carries no blocked flag to clear",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 611
+          "line": 613
         }
       }
     ],
@@ -4032,8 +4032,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 582,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 584,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
@@ -4047,13 +4047,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 589,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 591,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 595,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 597,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         }
       ]
     }
@@ -4075,7 +4075,7 @@
         "message": "SET_BED_PREPARATION was raised acting as unit ${event.actingUnitId} but release ${release.id} belongs to unit ${release.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 645
+          "line": 647
         }
       },
       {
@@ -4083,7 +4083,7 @@
         "message": "SET_BED_PREPARATION note must be chosen from BED_PREPARATION_NOTES",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 653
+          "line": 655
         }
       }
     ],
@@ -4101,8 +4101,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 619,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 621,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen-overlays.tsx",
@@ -4111,13 +4111,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 629,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 631,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 637,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 639,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         }
       ]
     }
@@ -4166,7 +4166,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 298,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
@@ -4181,12 +4181,12 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 308,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 329,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         }
       ]
     }
@@ -4267,7 +4267,7 @@
         "message": "no unit found for id ${event.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 702
+          "line": 704
         }
       }
     ],
@@ -4285,8 +4285,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 682,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 684,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/hub/hub-screen.tsx",
@@ -4305,8 +4305,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 686,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 688,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         }
       ]
     }
@@ -5605,7 +5605,7 @@
         "message": "no admission found for id ${event.admissionId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 720
+          "line": 722
         }
       },
       {
@@ -5613,7 +5613,7 @@
         "message": "SET_STEP_DOWN_CANDIDATE was raised acting as unit ${event.actingUnitId} but admission ${admission.id} is at ${admission.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 726
+          "line": 728
         }
       }
     ],
@@ -5631,8 +5631,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 702,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 704,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/board/ward-board-detail-panel.tsx",
@@ -5641,13 +5641,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 704,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 706,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 710,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 712,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         }
       ]
     }
@@ -5669,7 +5669,7 @@
         "message": "no admission found for id ${event.admissionId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 743
+          "line": 745
         }
       },
       {
@@ -5677,7 +5677,7 @@
         "message": "SET_DISCHARGE_BARRIER was raised acting as unit ${event.actingUnitId} but admission ${admission.id} is at ${admission.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 748
+          "line": 750
         }
       }
     ],
@@ -5695,8 +5695,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 725,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 727,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen-overlays.tsx",
@@ -5710,13 +5710,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 727,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 729,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 732,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 734,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         }
       ]
     }
@@ -5738,7 +5738,7 @@
         "message": "no admission found for id ${event.admissionId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 759
+          "line": 761
         }
       },
       {
@@ -5746,7 +5746,7 @@
         "message": "SET_CLINICALLY_READY was raised acting as unit ${event.actingUnitId} but admission ${admission.id} is at ${admission.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 764
+          "line": 766
         }
       },
       {
@@ -5754,7 +5754,7 @@
         "message": "SET_CLINICALLY_READY applies only to a patient on the ward",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 768
+          "line": 770
         }
       },
       {
@@ -5762,7 +5762,7 @@
         "message": "SET_CLINICALLY_READY reason must be chosen from DELAYED_DISCHARGE_REASONS",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 774
+          "line": 776
         }
       },
       {
@@ -5770,7 +5770,7 @@
         "message": "SET_CLINICALLY_READY date must fall between arrival and today",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 782
+          "line": 784
         }
       }
     ],
@@ -5788,8 +5788,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 757,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 759,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/board/ward-board-clinically-ready.tsx",
@@ -5859,7 +5859,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 224,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward/ward-drawer-discharge-date.tsx",
@@ -5884,22 +5884,22 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 227,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 230,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 236,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 240,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         }
       ]
     }
@@ -6130,7 +6130,7 @@
         "message": "no movement found for id ${event.movementId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 789
+          "line": 791
         }
       },
       {
@@ -6138,7 +6138,7 @@
         "message": "Document details need a recognised file type.",
         "source": {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 800
+          "line": 802
         }
       }
     ],
@@ -6156,8 +6156,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 771,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 773,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/officer/officer-forms-pack.tsx",
@@ -6171,13 +6171,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 777,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 779,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 788,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 790,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         }
       ]
     }
@@ -6831,8 +6831,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 819,
-          "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+          "line": 821,
+          "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
         },
         {
           "path": "src/components/ward-management/movements/movement-workflow-actions.tsx",

@@ -3,7 +3,7 @@
 The route is selective. Its action notes and the additional command models have source review evidence; source digests detect later edits. This does not establish runtime or clinical acceptance.
 
 ## 196 CURRENT ENGINE EVENTS
-Source-contract SHA256: 48a58c622e0adb010ed4fa45a606404b61c8764e1fd69a3639534898728ce45f
+Source-contract SHA256: a7bc053211008e6d4e920aea356c032b4dff65357c8e6a1536be0ca22788621b
 - RECORD_ADMISSION_CARE — diagram-reviewed; event roles: ward, coordinator, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:20
@@ -261,32 +261,32 @@ Source-contract SHA256: 48a58c622e0adb010ed4fa45a606404b61c8764e1fd69a3639534898
 - FLAG_BED_RELEASE — diagram-reviewed; event roles: ward, bed_manager, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:199
-  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:372
+  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:374
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1777
 - CONFIRM_BED_RELEASE — diagram-reviewed; event roles: ward, bed_manager, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:200
-  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:466
+  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:468
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1778
 - REVERT_BED_RELEASE — diagram-reviewed; event roles: ward, bed_manager, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:204
-  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:505
+  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:507
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1779
 - BLOCK_BED_RELEASE — diagram-reviewed; event roles: ward, bed_manager, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:205
-  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:544
+  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:546
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1780
 - CLEAR_BED_RELEASE_BLOCK — diagram-reviewed; event roles: ward, bed_manager, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:206
-  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:584
+  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:586
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1781
 - SET_BED_PREPARATION — diagram-reviewed; event roles: ward, bed_manager, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:207
-  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:621
+  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:623
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1782
 - RECORD_LEAVE_BED — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
@@ -297,7 +297,7 @@ Source-contract SHA256: 48a58c622e0adb010ed4fa45a606404b61c8764e1fd69a3639534898
 - END_LEAVE_BED — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:209
-  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:656
+  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:658
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1783
 - RECORD_ABSENT_WITHOUT_LEAVE — modelled; event roles: ward, coordinator
   Source-reviewed command model: Leave-bed record carries absentWithoutLeave {since,steps:[]}; stay remains occupied.
@@ -363,7 +363,7 @@ Source-contract SHA256: 48a58c622e0adb010ed4fa45a606404b61c8764e1fd69a3639534898
 - END_COMMUNITY_TREATMENT_ORDER — modelled; event roles: community, coordinator
   Source-reviewed command model: Same order retained with endedAt=now.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:216
-  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:669
+  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:671
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1784
   Subject: A patient’s current community treatment order
   Before: Order exists and has no endedAt
@@ -374,7 +374,7 @@ Source-contract SHA256: 48a58c622e0adb010ed4fa45a606404b61c8764e1fd69a3639534898
   effects: Adds endedAt; retains the order and earlier history; no timer or automatic end
   effects: The step can be taken back by UNDO_PATIENT_RECORD within the Undo window, filed against the patient record.
   tests: tests/ward-absence-and-cto.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:667; SHA256 be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113
+  Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:669; SHA256 09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:216; SHA256 5f50dbdcf02115512ea7ff7f9bbb5c43157baf4a9260eb2d34307faec551f5a5
   Reviewed source: src/components/ward-management/ward-flow-events.ts:1405; SHA256 c03c76626f084952f5d19140f6d139498b9de5304a920cb7b1f4d237700e95bc
   Reviewed source: src/components/ward-management/ward-access-state.ts:669; SHA256 26413899ec65edeb466ba6aa50a94dfdfdd933c5ad648a8e09062c900ddbd012
@@ -432,7 +432,7 @@ Source-contract SHA256: 48a58c622e0adb010ed4fa45a606404b61c8764e1fd69a3639534898
   effects: If a same-ward nondischarged release has the same blocker, clears its blocker/blockedBy and appends clearance history there; otherwise appends stayBlockClearances
   effects: Does not release the bed or change admission state
   tests: tests/ward-stay-discharge-blocker.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:247; SHA256 be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113
+  Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:247; SHA256 09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:237; SHA256 5f50dbdcf02115512ea7ff7f9bbb5c43157baf4a9260eb2d34307faec551f5a5
   Reviewed source: src/components/ward-management/ward-flow-events.ts:1855; SHA256 c03c76626f084952f5d19140f6d139498b9de5304a920cb7b1f4d237700e95bc
   Reviewed source: src/components/ward-management/ward-access-state.ts:669; SHA256 26413899ec65edeb466ba6aa50a94dfdfdd933c5ad648a8e09062c900ddbd012
@@ -971,7 +971,7 @@ Source-contract SHA256: 48a58c622e0adb010ed4fa45a606404b61c8764e1fd69a3639534898
 - REQUEST_CAPACITY_REFRESH — diagram-reviewed; event roles: coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:376
-  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:684
+  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:686
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1785
 - RECEIVE_REFERRAL — diagram-reviewed; event roles: community, ed, ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
@@ -1179,7 +1179,7 @@ Source-contract SHA256: 48a58c622e0adb010ed4fa45a606404b61c8764e1fd69a3639534898
 - SET_STEP_DOWN_CANDIDATE — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:535
-  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:704
+  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:706
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1786
 - RECORD_WARD_DIAGNOSIS — modelled; event roles: ward, coordinator
   Reviewed command model: Latest ward diagnosis block with recording time and desk.
@@ -1218,17 +1218,17 @@ Source-contract SHA256: 48a58c622e0adb010ed4fa45a606404b61c8764e1fd69a3639534898
 - SET_DISCHARGE_BARRIER — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:540
-  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:727
+  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:729
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1787
 - SET_CLINICALLY_READY — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:542
-  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:757
+  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:759
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1788
 - SET_DISCHARGE_CRITERIA — modelled; event roles: ward, coordinator
   Reviewed command model: Criteria set/reviewed, cleared, or one stored criterion ticked/unticked.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:543
-  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:800
+  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:802
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1789
   Subject: An occupied admission's criteria-led discharge record
   Before: Unset, current, paused or lapsed criteria
@@ -1242,7 +1242,7 @@ Source-contract SHA256: 48a58c622e0adb010ed4fa45a606404b61c8764e1fd69a3639534898
   effects: Writes admission.dischargeCriteria; review resets its validity time and review-bound/lapsed ticks, while retained applicable ticks persist.
   effects: No departure, bed release or clinical eligibility decision is performed; typed patient-specific payloads follow the typed-text persistence boundary.
   tests: tests/ward-criteria-led-discharge.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:753; SHA256 be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113
+  Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:755; SHA256 09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954
   Reviewed source: src/components/ward-management/ward-discharge-criteria.ts:271; SHA256 70e720fb09a6a8bd9ab6952b29e786e949b7c635b3eded6a97c9be8582648c5b
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2114; SHA256 c03c76626f084952f5d19140f6d139498b9de5304a920cb7b1f4d237700e95bc
   Reviewed source: src/components/ward-management/ward-access-state.ts:669; SHA256 26413899ec65edeb466ba6aa50a94dfdfdd933c5ad648a8e09062c900ddbd012
@@ -1274,7 +1274,7 @@ Source-contract SHA256: 48a58c622e0adb010ed4fa45a606404b61c8764e1fd69a3639534898
 - UPLOAD_PATIENT_FORM — diagram-reviewed; event roles: coordinator, ed, ward, community, officer
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:546
-  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:818
+  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:820
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1790
 - RECORD_LEGAL_FORM_WRITTEN — diagram-reviewed; event roles: ed, coordinator, ward
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
@@ -1441,7 +1441,7 @@ Source-contract SHA256: 48a58c622e0adb010ed4fa45a606404b61c8764e1fd69a3639534898
 - EVALUATE_LEAVE_BED_WARNINGS — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:566
-  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:862
+  Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:864
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1791
 - CONFIRM_MORNING_ROLLUP — diagram-reviewed; event roles: ward, bed_manager, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
@@ -1645,8 +1645,8 @@ Source-contract SHA256: 48a58c622e0adb010ed4fa45a606404b61c8764e1fd69a3639534898
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2382
   Subject: The workspace's recorded outage windows
   Before: Both times typed; the window is not already recorded
-  After: outageWindows holds a new OUT-n record (from, to, recordedAt, role); a ward is caught up only once it confirms Beds still correct itself at or after the outage ended
-  Scope: Coordinator only in EVENT_ROLE; the ward confirms with the existing CONFIRM_CAPACITY rather than recording the outage. Shared authenticated command scope additionally checks the permitted place. Executive and access admin change nothing (D-80).
+  After: outageWindows holds a new OUT-n record (from, to, recordedAt, role); the most recently recorded window is the active one, so a correction replaces the earlier entry; a ward is caught up only once it confirms Beds still correct itself at or after the outage ended (CapacityFigure.wardConfirmedAt keeps that confirm when another desk confirms later)
+  Scope: Coordinator only in EVENT_ROLE, and on the shared server the statewide coordinator only: the record is network-wide, so commandRefusal refuses a service coordinator (D-142 review follow-up, 11 Nov 2026). The ward confirms with the existing CONFIRM_CAPACITY rather than recording the outage. Executive and access admin change nothing (D-80).
   payload: from and to: whole times typed by the coordinator, never pre-filled
   payload: role and now
   guards: Refuse a missing or non-whole time, an end not after the start and an end later than now
@@ -1658,7 +1658,7 @@ Source-contract SHA256: 48a58c622e0adb010ed4fa45a606404b61c8764e1fd69a3639534898
   tests: tests/ward-outage-catch-up-screens.dom.test.tsx
   Reviewed source: src/components/ward-management/ward-flow-pilot-control-events.ts:55; SHA256 bdd8a6e00ebe08750497e083d9e58b225b5803e45015caa5ab388a681418e8a2
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2382; SHA256 5862eab5ec1e88f45374c07fe8d09f531b449b03d7e1774f664dfdfc52909416
-  Reviewed source: src/components/ward-management/ward-outage-catch-up.ts:50; SHA256 cb7039970f34fa555be21bf4d28f6d18829ef926dfea2eea196398371fe722cc
+  Reviewed source: src/components/ward-management/ward-outage-catch-up.ts:51; SHA256 eda536beceed5d18ab57717139eff4b0cf1fa174dd4cc2278bf6374359344276
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:601; SHA256 5f50dbdcf02115512ea7ff7f9bbb5c43157baf4a9260eb2d34307faec551f5a5
 - RECORD_CLINICAL_CONTACT — diagram-reviewed; event roles: community, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
@@ -2043,7 +2043,7 @@ Source-contract SHA256: 48a58c622e0adb010ed4fa45a606404b61c8764e1fd69a3639534898
   effects: Captures the exact bed-placement Undo snapshot including prior kind, capacity revision and linked holds.
   tests: tests/ward-undo-and-bed-board.test.ts
   tests: tests/ward-release-pull-undo-guard.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:97; SHA256 be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113
+  Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:97; SHA256 09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2594; SHA256 c03c76626f084952f5d19140f6d139498b9de5304a920cb7b1f4d237700e95bc
   Reviewed source: src/components/ward-management/ward-access-state.ts:669; SHA256 26413899ec65edeb466ba6aa50a94dfdfdd933c5ad648a8e09062c900ddbd012
 - UNDO_PLACE_IN_BED — modelled; event roles: ward, coordinator
