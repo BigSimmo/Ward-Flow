@@ -76,3 +76,20 @@ test("each failure kind is sent at most once per interval and send errors are sw
   assert.deepEqual(JSON.parse(itemHeader), { type: "event" });
   assert.equal(JSON.parse(payload).environment, "shared-pilot");
 });
+
+test("handled 503 and 413 event names stay closed and drop request bodies", () => {
+  for (const name of ["ward_backend_service_unavailable", "ward_backend_payload_too_large"]) {
+    const event = failureEvent(
+      {
+        event: name,
+        errorName: "WorkspaceTooLargeError",
+        message: "Synthetic Patient UMRN 1234567",
+        request: { body: "typed text" },
+      },
+      { environment: "production", now: 1_000_000 },
+    );
+    assert.equal(event.message.formatted, name);
+    assert.equal(event.tags.errorName, "WorkspaceTooLargeError");
+    assert.doesNotMatch(JSON.stringify(event), /Synthetic|UMRN|typed text/);
+  }
+});
