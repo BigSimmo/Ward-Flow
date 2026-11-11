@@ -12,6 +12,7 @@ import {
   incomingHandOvers,
   itemOwner,
   nextClockInstant,
+  openCarerCallbackFor,
   ownWorkItems,
   ownWorkListOpen,
   pendingHandOver,
@@ -22,9 +23,12 @@ import {
   referralClosedForFollowUp,
 } from "@/components/ward-management/referrals/referral-owner-and-calls-model";
 import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
+import { commandScopeRefusal } from "@/components/ward-management/ward-access-state";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
+import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const demo = seedWardFlowState();
@@ -262,6 +266,53 @@ describe("carer callback (item 23)", () => {
     });
     expect(moved.carerCallbacks).toHaveLength(1);
     expect(moved.carerCallbacks![0]!.bestAfter).toBe(NOW_ANCHOR + 120);
+  });
+
+  it("keeps one promise when a call back asked for on the bed request gains a stay", () => {
+    // The stay that came from a bed request (synthetic: the first seed movement).
+    const linked = { ...stay, movementId: seed.movements[0]!.id };
+    const asked: WardFlowState = {
+      ...seed,
+      admissions: seed.admissions.map((admission) => (admission.id === stay.id ? linked : admission)),
+      carerCallbacks: [
+        {
+          id: "CB-1",
+          movementId: linked.movementId!,
+          unitId: linked.unitId,
+          bestAfter: NOW_ANCHOR + 30,
+          recordedAt: NOW_ANCHOR,
+          recordedBy: "coordinator",
+          owner: coordinatorDesk,
+        },
+      ],
+    };
+    expect(openCarerCallbackFor(asked, { admissionId: linked.id, movementId: linked.movementId! })?.id).toBe("CB-1");
+    const again = apply(asked, {
+      type: "RECORD_CARER_CALLBACK",
+      role: "coordinator",
+      now: NOW_ANCHOR + 1,
+      admissionId: linked.id,
+      bestAfter: NOW_ANCHOR + 90,
+    });
+    expect(again.carerCallbacks).toHaveLength(1);
+    expect(again.carerCallbacks![0]).toMatchObject({ id: "CB-1", bestAfter: NOW_ANCHOR + 90 });
+  });
+
+  it("refuses a desk that names a call back or hand-over outside its place, as any other record", () => {
+    const state = withCallback();
+    const places = wardPlaceLookup(state.units);
+    const own: WardAccess = { role: "ward", scope: { kind: "ward", unitIds: [WARD] } };
+    const other: WardAccess = { role: "ward", scope: { kind: "ward", unitIds: [otherWard] } };
+    const tick = { type: "MARK_CARER_CALLBACK_MADE", callbackId: state.carerCallbacks![0]!.id };
+    const accept = { type: "ACCEPT_HANDED_ITEM", handedItemId: "HI-404" };
+    const options = { now: NOW_ANCHOR, places };
+    expect(commandScopeRefusal(state, own, { ...tick, actingUnitId: WARD }, options)).toBeNull();
+    expect(commandScopeRefusal(state, other, { ...tick, actingUnitId: otherWard }, options)).toMatch(
+      /outside your role's place/,
+    );
+    expect(commandScopeRefusal(state, own, { ...accept, actingUnitId: WARD }, options)).toMatch(
+      /outside your role's place/,
+    );
   });
 });
 

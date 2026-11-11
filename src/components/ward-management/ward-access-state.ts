@@ -626,6 +626,9 @@ const COMMAND_RECORD_FIELDS = {
   alertId: "broadcastAlerts",
   eventId: "auditEvents",
   reviewId: "auditReviews",
+  // Batch 3 items 21 and 23: a hand-over or call back is checked like the stay or request it is on.
+  handedItemId: "handedItems",
+  callbackId: "carerCallbacks",
 } as const;
 type CommandRecordCollection = (typeof COMMAND_RECORD_FIELDS)[keyof typeof COMMAND_RECORD_FIELDS] | "invalid";
 type CommandRecordReference = { collection: CommandRecordCollection; id: string };
@@ -951,7 +954,7 @@ export function commandScopeRefusal(
   for (const { collection, id } of references) {
     // Hidden and absent references fail identically. Never consult the whole world's id set:
     // doing so made a scoped refusal distinguish an existing hidden record from a missing one.
-    if (collection === "invalid" || !writableState[collection].some((record) => record.id === id)) {
+    if (collection === "invalid" || !(writableState[collection] ?? []).some((record) => record.id === id)) {
       // D-80 item 14: a coordinator also reviews break glass openings, which the workspace does not
       // hold. The shared server also checks the opening exists and is of a record in the
       // coordinator's own service (`breakGlassReviewRefusal` in backend/ward-flow/postgres.mjs).

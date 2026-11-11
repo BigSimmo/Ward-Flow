@@ -152,11 +152,13 @@ export function reduceHandoverWork(state: WardFlowState, event: HandoverWorkEven
       if (hasAdmission === (typeof event.movementId === "string"))
         return reject(state, event, "A carer callback names one stay or one bed request");
       let unitId: string | undefined;
+      let requestId: string | undefined;
       if (hasAdmission) {
         const admission = state.admissions.find((candidate) => candidate.id === event.admissionId);
         if (!admission || admission.state === "departed")
           return reject(state, event, `no current stay found for id ${event.admissionId}`);
         unitId = admission.unitId;
+        requestId = admission.movementId ?? undefined;
       } else {
         const movement = state.movements.find((candidate) => candidate.id === event.movementId);
         if (!movement || movement.closure || movement.stage === "arrived")
@@ -174,7 +176,8 @@ export function reduceHandoverWork(state: WardFlowState, event: HandoverWorkEven
       const records = state.carerCallbacks ?? [];
       const subject = hasAdmission ? { admissionId: event.admissionId } : { movementId: event.movementId };
       // One open callback per person: asking again moves its time rather than adding a second.
-      const existing = openCarerCallbackFor(state, subject);
+      // A call back first asked for on the bed request is the same promise once the stay exists.
+      const existing = openCarerCallbackFor(state, { ...subject, ...(requestId ? { movementId: requestId } : {}) });
       if (existing)
         return {
           ...state,

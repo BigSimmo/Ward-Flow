@@ -46,7 +46,13 @@ export function CarerCallbackCard({ admissionId, movementId }: { admissionId?: s
   const canRecord =
     !previewing &&
     (routeRole === "coordinator" || (routeRole === "ward" && ownWard !== undefined && ownWard.id === ward));
-  const open = openCarerCallbackFor({ carerCallbacks: flow.carerCallbacks ?? NONE }, subject);
+  // A call back asked for on the bed request still shows, once, after the person has a stay.
+  const requestId =
+    movementId ?? flow.admissions.find((admission) => admission.id === admissionId)?.movementId ?? undefined;
+  const open = openCarerCallbackFor(
+    { carerCallbacks: flow.carerCallbacks ?? NONE },
+    { ...subject, ...(requestId ? { movementId: requestId } : {}) },
+  );
   if (!open && !canRecord) return null;
   const acting = routeRole === "ward" && ownWard ? { actingUnitId: ownWard.id } : {};
   const minute = time ? minuteOfDayFromClockText(time) : undefined;

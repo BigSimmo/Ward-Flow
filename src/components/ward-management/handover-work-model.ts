@@ -90,10 +90,11 @@ export function openCarerCallbackFor(
   state: { carerCallbacks?: readonly CarerCallbackRecord[] },
   subject: { admissionId?: string; movementId?: string },
 ): CarerCallbackRecord | undefined {
-  return openCarerCallbacks(state).find((record) =>
-    subject.admissionId !== undefined
-      ? record.admissionId === subject.admissionId
-      : subject.movementId !== undefined && record.movementId === subject.movementId,
+  // A call back asked for on the bed request stays the same promise once the person has a stay.
+  return openCarerCallbacks(state).find(
+    (record) =>
+      (subject.admissionId !== undefined && record.admissionId === subject.admissionId) ||
+      (subject.movementId !== undefined && record.movementId === subject.movementId),
   );
 }
 
