@@ -88,6 +88,19 @@ export function installBrowsers({
   return launchProbe({ browsers, execute, now, deadline, label, log });
 }
 
+/** A fixed script; the Playwright path and the engine names arrive as arguments, never as code. */
+const LAUNCH_PROBE = `const [playwright, ...names] = process.argv.slice(1);
+const pw = require(playwright);
+(async () => {
+  for (const name of names) {
+    const browser = await pw[name].launch();
+    await browser.close();
+  }
+})().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});`;
+
 /** Whether each browser starts with the packages already on the runner; the fallback's proof. */
 function launchProbe({ browsers, execute, now, deadline, label, log }) {
   const remaining = deadline - now();
@@ -95,9 +108,11 @@ function launchProbe({ browsers, execute, now, deadline, label, log }) {
     log(`${label} setup failed: six-minute installation budget exhausted.`);
     return 1;
   }
-  const playwright = JSON.stringify(resolve(root, "node_modules/playwright"));
-  const script = `const pw = require(${playwright}); (async () => { for (const name of ${JSON.stringify(browsers)}) { const browser = await pw[name].launch(); await browser.close(); } })().catch((error) => { console.error(error); process.exit(1); });`;
-  const result = execute(process.execPath, ["-e", script], Math.min(60_000, remaining));
+  const result = execute(
+    process.execPath,
+    ["-e", LAUNCH_PROBE, resolve(root, "node_modules/playwright"), ...browsers],
+    Math.min(60_000, remaining),
+  );
   if (!result.error && result.status === 0) {
     log(`${label} setup: launched with the runner's own system packages.`);
     return 0;
