@@ -158,6 +158,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-135](#d-135-batch-4-outages-and-pilot-control-pack-age-and-plan-answers-10-november-2026)                                                            | Batch 4, outages and pilot control: pack age and plan answers                          | Active                                           |
 | [D-138](#d-138-phone-alert-urgency-by-kind-10-november-2026)                                                                                            | Phone alert urgency by kind                                                            | Active                                           |
 | [D-142](#d-142-batch-4-design-review-and-all-twelve-answers-approved-d-80-amended-for-site-features-11-november-2026)                                   | Batch 4: design review and all twelve answers approved, D-80 amended for site features | Active                                           |
+| [D-143](#d-143-mhert-is-mherl-in-the-glossary-smhmr-deferred-11-november-2026)                                                                          | MHERT is MHERL in the glossary; SMHMR deferred                                         | Active                                           |
 
 ---
 
@@ -1722,3 +1723,11 @@ is inferred.
   5. **Catch-up (item 25):** the outage start is a blank Today or Yesterday choice. Each bed not confirmed since the outage shows "Not confirmed since the outage" in full. Catch-up starts only after the coordinator records the outage, and only the ward's own confirm counts.
 - **Later the same day (04:13 UTC):** Josh chose "Mark ready now" on a decision card, so this PR was marked ready past the five-PR cap.
 - **Boundary:** synthetic data only. Approves the screens and the D-80 amendment only; no release.
+
+## D-143. MHERT is MHERL in the glossary; SMHMR deferred (11 November 2026)
+
+- **Date:** 11 November 2026, 10:45 AM AWST (02:45 UTC). **Decided by:** Josh, in the Ward Flow project thread "Run the remaining master list audits": "MHERL (mental health emergency response line) and defer SMHMR as I don't know what that is", answering the D-131 open item. D-139 is claimed by open PR #1600. D-140 is claimed by open PR #1606. D-141 is claimed by open PR #1606. D-142 is claimed by open PR #1603.
+- **Decision:**
+  1. **MHERT:** the term is MHERL, the Mental Health Emergency Response Line, which the glossary already lists. The MHERT glossary entry is removed, and the two synthetic community demo lines now read "MHERL / WA Police co-response".
+  2. **SMHMR:** its meaning is deferred. The existing glossary wording stays until Josh confirms it.
+- **Boundary:** wording only; no clinical behaviour change.

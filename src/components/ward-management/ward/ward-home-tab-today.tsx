@@ -103,7 +103,7 @@ export function WardHomeTodayStrip({
             className={buttonClass({ variant: "sec", size: "sm" })}
             aria-haspopup="dialog"
             aria-expanded={shiftSheetOpen}
-            aria-label={`Open This shift, ${shiftSummary}`}
+            aria-label={`Open to do, this shift: ${shiftSummary}`}
             data-testid="ward-shift-summary"
             onClick={onOpenShift}
           >
