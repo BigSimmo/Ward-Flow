@@ -207,9 +207,9 @@ describe("the bed meeting TV view", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Bed meeting · All services");
     // The state screen reads in handover order: waiting, beds, discharges, movements; the longest
     // wait sits on the act row's right.
-    const labels = within(screen.getByRole("group", { name: "Figures" }))
-      .getAllByRole("paragraph")
-      .map((item) => item.querySelector("span")?.textContent);
+    const labels = Array.from(
+      screen.getByRole("group", { name: "Figures" }).querySelectorAll("[data-wf-hero-figure]"),
+    ).map((item) => item.querySelector("span")?.textContent);
     expect(labels).toEqual(["waiting in ED", "beds ready", "discharges due", "open movements"]);
     const longest = sheet.ed.longestWaits[0];
     if (!longest) throw new Error("expected someone waiting");
