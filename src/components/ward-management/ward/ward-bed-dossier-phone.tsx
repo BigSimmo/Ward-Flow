@@ -96,6 +96,8 @@ interface PhoneBedSheetProps {
   leavingCriteriaNote?: string | null;
   /** Top 25: a short note on a bed being made ready (flagged). */
   readyNote?: ReactNode;
+  /** Feature item 4: the under 18 on an adult ward notice, under the four facts. */
+  safetyNote?: ReactNode;
   /** WT-02: the paper an involuntary stay needs first; while shown, "Record that they have left" waits. */
   leavePaper?: ReactNode;
   /** The expected leaving line as plain words, for the not-left notice. */
@@ -147,6 +149,7 @@ export function PhoneBedSheet({
   sentJourney,
   leavingCriteriaNote,
   readyNote,
+  safetyNote,
   leavePaper,
   actions,
   mainId,
@@ -241,6 +244,7 @@ export function PhoneBedSheet({
                 <FactTile label="Observation" value={observationShort} />
               </div>
               <NotLeftNotice bedItem={bedItem} expectedPlan={notLeftPlan} isOccupied={isOccupied} />
+              {safetyNote}
               <h3 className={styles.phoneSec}>This person</h3>
               <dl className={styles.phoneKv}>
                 {bedItem?.preferredName ? <Row label="Known as">{bedItem.preferredName}</Row> : null}

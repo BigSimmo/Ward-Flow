@@ -19,8 +19,15 @@ export type SupportServiceType = (typeof SUPPORT_SERVICE_TYPES)[number];
 /**
  * D-72 (21 Oct 2026): the arrival checklist items the emergency department records with
  * `RECORD_ARRIVAL_CHECK`, onto `Movement.contrabandSearchDone` and `Movement.medicationChartDone`.
+ * Feature item 15 (D-134): `interpreter_booked` and `aboriginal_liaison_offered`, onto
+ * `Movement.interpreterBooked` and `Movement.aboriginalLiaisonOffered`, offered only when they apply.
  */
-export const ARRIVAL_CHECKS = ["contraband_search", "medication_chart"] as const;
+export const ARRIVAL_CHECKS = [
+  "contraband_search",
+  "medication_chart",
+  "interpreter_booked",
+  "aboriginal_liaison_offered",
+] as const;
 export type ArrivalCheck = (typeof ARRIVAL_CHECKS)[number];
 
 /**

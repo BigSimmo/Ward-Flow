@@ -28,6 +28,7 @@ import {
   reduceWeekendDischargeReview,
 } from "./ward-flow-weekend-review-events";
 import { reduceWardClosureEvent } from "./ward-flow-ward-closure-events";
+import { type ChiefPsychiatristNotifiedEvent, reduceChiefPsychiatristNotified } from "./ward-flow-under-18-events";
 import { reducePatientArchive } from "./ward-patient-archive-reducer";
 import { reducePatientCarePlanEvent } from "./ward-patient-care-plan-reducer";
 import { reducePatientRegistration } from "./ward-patient-registration-reducer";
@@ -37,15 +38,17 @@ import { reduceHandoverWork } from "@/components/ward-management/handover-work-r
 // A local command can seed a demonstration scenario, so its networks load with the slices.
 import "./ward-scenario-networks";
 
-/** Features 14, 37 and 13 (9 Nov 2026): the weekend discharge review, discharge checklist and follow-up reply. */
+/** Features 14, 37 and 13 (9 Nov 2026): the weekend discharge review, discharge checklist and follow-up reply.
+ *  Item 4 (11 Nov 2026): the Chief Psychiatrist notified time for a person under 18 on an adult ward. */
 // Types come from the slice itself: this file may import only slices (ward-reducer-lazy-slices test).
 type CheckSliceArgs = Parameters<typeof reduceDischargeCheckEvent>;
 
 function reduceDischargeFollowThroughEvent(
   state: CheckSliceArgs[0],
-  event: DischargeCheckEvent | MarkWeekendDischargeReviewedEvent,
+  event: DischargeCheckEvent | MarkWeekendDischargeReviewedEvent | ChiefPsychiatristNotifiedEvent,
   reject: CheckSliceArgs[2],
 ): ReturnType<typeof reduceDischargeCheckEvent> {
+  if (event.type === "RECORD_CHIEF_PSYCHIATRIST_NOTIFIED") return reduceChiefPsychiatristNotified(state, event, reject);
   return event.type === "MARK_WEEKEND_DISCHARGE_REVIEWED"
     ? reduceWeekendDischargeReview(state, event, reject)
     : reduceDischargeCheckEvent(state, event, reject);

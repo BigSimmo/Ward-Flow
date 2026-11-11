@@ -176,16 +176,25 @@ function notifiesOnArrival(
 /**
  * The support notifications one desk sees: a discharge note only for a stay it is sent in full, an
  * arrival note only from a ward it covers. The scoped state and the browser shell share this rule.
+ * An emergency department sees only the advocacy notice on a move it can see that has not yet
+ * arrived, the one record it may make (item 15, D-134), so its checklist shows it as done.
  */
-export function supportNotificationsForDesk<R extends { occasion: string; subjectId: string }>(
+export function supportNotificationsForDesk<R extends { occasion: string; subjectId: string; party: string }>(
   records: readonly R[] | undefined,
   desk: Pick<Context, "coordinator" | "unitIn"> & {
     readonly wholeNetwork: boolean;
     readonly role: WardAccess["role"];
-    readonly movements: readonly { id: string; acceptedUnitId?: string | null }[];
+    readonly movements: readonly { id: string; acceptedUnitId?: string | null; closure?: unknown }[];
     readonly wholeStay: (admissionId: string) => boolean;
   },
 ): R[] {
+  if (desk.role === "ed")
+    return (records ?? []).filter(
+      (record) =>
+        record.occasion === "admission" &&
+        record.party === "mhas" &&
+        desk.movements.some((movement) => movement.id === record.subjectId && movement.closure === undefined),
+    );
   if (!desk.coordinator && desk.role !== "ward") return [];
   return (records ?? []).filter((record) =>
     record.occasion === "discharge"

@@ -27,3 +27,5 @@ The production build on that merge (`0384eb1df`) measured four routes just over 
 After main at `35c7ccd91` raised five routes by 0.3 to 0.4 KB, the third merge kept this PR's raise on top of main's values: Home 577.0, Referrals 585.3, ED 537.2, Ward 615.6, Movement detail 611.5 and Capacity 656.1. Ward gets 0.2 KB more rounding room, because the build on `50ee20680` measured it at exactly its limit, and that counted as over.
 
 The build on `47311d11b` measured Statistics at 633.9 KB, 1.4 KB above main alone. It is set to 634.1, up 1.5 KB from main's 632.6.
+
+After main at `f0db2beec` raised every route again (PR #1609), the fourth merge kept this PR's raise on top of main's values: Home 578.2, Referrals 586.5, ED 537.8, Ward 616.5, Movement detail 612.6, Capacity 657.3, Bed meeting 594.8 and Statistics 635.1. Arm ED stays at main's 667.6.

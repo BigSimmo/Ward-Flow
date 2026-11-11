@@ -469,6 +469,7 @@ describe("who may raise which event", () => {
     SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
     RECORD_WARD_DIAGNOSIS: ["ward", "coordinator"],
     MARK_WEEKEND_DISCHARGE_REVIEWED: ["ward", "coordinator"],
+    RECORD_CHIEF_PSYCHIATRIST_NOTIFIED: ["ward", "coordinator"],
     SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
     SET_CLINICALLY_READY: ["ward", "coordinator"],
     SET_DISCHARGE_CRITERIA: ["ward", "coordinator"],
@@ -534,7 +535,7 @@ describe("who may raise which event", () => {
     CANCEL_PLANNED_ADMISSION: ["coordinator", "bed_manager", "ward"],
     CONVERT_PLANNED_ADMISSION: ["ward", "coordinator"],
     // Advisory carer/PSP/MHAS checklist, 9 Oct 2026 (stream B): recorded where the move completes.
-    RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
+    RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator", "ed"],
     SEND_RELEASE_SUPPORT_NOTICE: ["ward", "coordinator"],
     RECORD_DISCHARGE_DEPENDENCY: ["ward", "coordinator"],
     RECORD_DISCHARGE_PLAN_CHANGE: ["ward", "coordinator"],

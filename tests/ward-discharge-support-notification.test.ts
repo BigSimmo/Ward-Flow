@@ -26,6 +26,25 @@ describe("discharge support notification reducer and subject derivation", () => 
     });
   });
 
+  it("refuses every discharge notification from the emergency department, MHAS included (Codex, #1609)", () => {
+    const state = seedWardFlowStateAt(NOW_ANCHOR);
+    for (const party of ["carer", "personal_support_person", "mhas"] as const) {
+      const next = wardFlowReducer(state, {
+        type: "RECORD_SUPPORT_NOTIFICATION",
+        role: "ed",
+        now: NOW_ANCHOR,
+        occasion: "discharge",
+        admissionId: "AD-LEFT-01",
+        party,
+        outcome: "told",
+        who: "Synthetic contact",
+        contactedAt: NOW_ANCHOR - 15,
+      });
+      expect(next.supportNotifications ?? [], party).toEqual(state.supportNotifications ?? []);
+      expect(next.rejections.at(-1)?.reason, party).toMatch(/only the advocacy service notice/);
+    }
+  });
+
   it("records carer, personal support person and MHAS discharge notifications via RECORD_SUPPORT_NOTIFICATION", () => {
     let state = seedWardFlowStateAt(NOW_ANCHOR);
 
