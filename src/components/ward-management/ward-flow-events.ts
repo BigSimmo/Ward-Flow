@@ -2578,6 +2578,8 @@ export type WardFlowEvent =
   | import("./triage/triage-record").TriageSignedEvent
   // Staff needed (feature 10, 9 Nov 2026); batch 3 items 21 and 23 (handing on own work, carer callbacks).
   | import("./staffing/staff-requests").StaffRequestEvent
+  // Batch 4 (10 Nov 2026): a site feature switch, a downtime pack print time and an outage window.
+  | import("./ward-flow-pilot-control-events").PilotControlEvent
   | import("@/components/ward-management/handover-work-events").HandoverWorkEvent
   /*
    * v10 pass 2 (Josh, 10 Oct 2026): the build guide's "Toast with Undo". Each undo is a proper,

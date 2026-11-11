@@ -1,0 +1,74 @@
+/* Home's Catch-up after the outage card (Batch 4 item 25, D-142): compact rows, as Home's Pinned
+   card. Kit card and Show more; tokens only; 12px floor. */
+
+.card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: center;
+  column-gap: var(--wf-s-3);
+  min-height: 48px;
+  padding: var(--wf-s-1) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.name {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  overflow-wrap: break-word;
+}
+
+.detail {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.pack {
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.foot {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+/* Home's Checking line pointer to the downtime pack screen (item 24): a link on the hero. */
+.pointer {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--wf-hero-ink-3);
+  text-underline-offset: 2px;
+}
+
+.pointer:hover {
+  color: var(--wf-hero-ink);
+}
+
+.pointer:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

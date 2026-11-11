@@ -1,0 +1,15 @@
+/* "Not confirmed since the outage" on each bed (Batch 4 item 25, D-142): quiet words, in full, under
+   the tile's state line or the phone row's note. Tokens only; 12px floor. */
+
+.tile,
+.row {
+  display: block;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.tile {
+  padding-top: 2px;
+}

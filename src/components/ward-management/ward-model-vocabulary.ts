@@ -573,6 +573,11 @@ export type CapacityFigure = {
    * (D-80). Absent on figures recorded before it existed, which were the ward's own.
    */
   confirmedBy?: CapacityConfirmer;
+  /**
+   * When the ward itself last confirmed (Batch 4 item 25, D-142): kept when the bed manager or the
+   * coordinator confirms after it, so the ward's outage catch-up stays done.
+   */
+  wardConfirmedAt?: Instant;
 };
 
 /** The desks that may confirm a ward's bed figure, as `EVENT_ROLE.CONFIRM_CAPACITY` allows. */

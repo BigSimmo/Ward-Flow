@@ -10,6 +10,7 @@ import { reduceBedMeetingEvent } from "./ward-flow-bed-meeting-events";
 import { reduceIntakeWindowEvent } from "./ward-flow-intake-window-events";
 import { reduceWardDiagnosis } from "./ward-flow-diagnosis-events";
 import { reduceLoopCheckEvent } from "./ward-flow-loop-check-events";
+import { reducePilotControlEvent } from "./ward-flow-pilot-control-events";
 import { reducePlacementEvent } from "./ward-flow-placement-events";
 import { reduceProtectedRecordEvent } from "./ward-flow-protected-record-events";
 import { reduceRecordedFactEvent } from "./ward-flow-record-events";
@@ -69,6 +70,7 @@ const slices = {
   reducePatientArchive,
   reducePatientCarePlanEvent,
   reducePatientRegistration,
+  reducePilotControlEvent,
   reducePlacementEvent,
   reduceProtectedRecordEvent,
   reduceRecordedFactEvent,

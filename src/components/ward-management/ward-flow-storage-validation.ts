@@ -45,6 +45,7 @@ import {
 import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
 import { WARD_CLOSURE_REASONS, type WardClosureReason } from "./capacity/ward-closure";
+import { unitBedFields } from "./ward-flow-storage-bed-fields";
 import { storedTriageRecords } from "./triage/triage-record-schema";
 import {
   ACCEPTANCE_CONDITION_AGREED_WITH,
@@ -92,6 +93,7 @@ import { isObservation, type Observation } from "./ward-observation";
 import { isTentativeDiagnosisBlock } from "./ward-diagnosis";
 import { isCommunityReferralPurpose } from "./ward-model-referral-parts";
 import { storedStaffRequests } from "./staffing/staff-requests-schema";
+import { pilotControlRowsBelong, pilotControlStoredFields } from "./ward-flow-pilot-control-schema";
 import { storedCarerCallbacks, storedHandedItems } from "@/components/ward-management/handover-work-schema";
 
 // D-72: numbered device-copy stand-ins keep typed criteria distinct.
@@ -289,6 +291,7 @@ const capacityFigure = z.looseObject({
   revision: z.optional(counter),
   confirmations: z.optional(counter),
   confirmedBy: z.optional(z.enum(["ward", "bed_manager", "coordinator"])),
+  wardConfirmedAt: z.optional(finite),
 });
 // Closing the loop, package D (24 Oct 2026): fixed-list choices, ids, instants and role labels only.
 const closureTransitionMarkRule = z.strictObject({
@@ -374,23 +377,7 @@ const unit = z
     ),
     isClosed: z.optional(bool),
     readyForNextAt: maybeAt, // Ward wait list (9 Nov 2026): when the ward said it is ready for its next patient.
-    // H-0978: one bed closed (`SET_BED_CLOSED`), a chosen reason, never typed text; optional for older saves.
-    closedBeds: z.optional(
-      z.array(
-        z.looseObject({
-          bedNumber: counter.check(z.gte(1)),
-          at: finite,
-          by: text,
-          reason: z.optional(
-            z.enum(WARD_CLOSURE_REASONS.map((entry) => entry.id) as [WardClosureReason, ...WardClosureReason[]]),
-          ),
-          // Item 6: when to look at it again, a prompt only. Optional, so older marks still load.
-          reviewAt: z.optional(finite),
-          // A reopened mark stays as seat history; it reopened no earlier than it closed.
-          reopenedAt: z.optional(finite),
-        }),
-      ),
-    ),
+    ...unitBedFields, // closedBeds (H-0978, item 6) and intakeWindow (item 13)
     // Smart features idea 7: a chosen reason, never typed text.
     admissionsClosure: z.optional(
       z.looseObject({
@@ -402,8 +389,6 @@ const unit = z
       }),
     ),
     restrictionReviews: z.optional(z.array(restrictionReviewRule)),
-    // Item 13: typed times read to instants, when and by which desk. Absent in older saves.
-    intakeWindow: z.optional(z.looseObject({ from: finite, to: finite, at: finite, by: text })),
     // D-72: fixed-list choices, ids and typed times already read to instants. No typed text.
     restrictivePractice: z.optional(
       z.looseObject({
@@ -638,9 +623,9 @@ const admission = z
     z.refine(
       (stay) => ((stay.clinicallyReadySince ?? null) === null) === ((stay.delayedDischargeReason ?? null) === null),
     ),
-  )
-  // Item 18: only somebody who has left can be waiting for transport, so the list never shows a bed holder.
-  .check(z.refine((stay) => stay.waitingForTransport === undefined || stay.state === "departed"));
+    // Item 18: only somebody who has left can be waiting for transport, so the list never shows a bed holder.
+    z.refine((stay) => stay.waitingForTransport === undefined || stay.state === "departed"),
+  );
 
 // A destination is one of three kinds, each holding its own facts; any other kind is refused.
 const referralDestination = z.discriminatedUnion("kind", [
@@ -1096,6 +1081,8 @@ const storedState = z.looseObject({
   triages: z.optional(storedTriageRecords),
   // Staff needed (feature 10, 9 Nov 2026): absent in older saves. Ids, closed lists, times and roles only.
   staffRequests: z.optional(storedStaffRequests),
+  // Batch 4 (10 Nov 2026): site feature switches, pack print times and outage windows, each optional.
+  ...pilotControlStoredFields,
   // Batch 3 items 21 and 23 (10 Nov 2026): absent in older saves. Ids, desks and times only.
   handedItems: z.optional(storedHandedItems),
   carerCallbacks: z.optional(storedCarerCallbacks),
@@ -1465,6 +1452,7 @@ function consistent(state: StoredState, value: RecordValue): boolean {
   for (const key of Object.keys(state.morningRollupConfirmations)) if (!unitIds.has(key)) return false;
   // Staff needed (feature 10): every request names a ward in this world.
   for (const row of state.staffRequests ?? []) if (!unitIds.has(row.unitId)) return false;
+  if (!pilotControlRowsBelong(value as unknown as WardFlowState, state.units)) return false;
   // H-IMPORT (#1455): live absence, active stays and numbered beds must each have one owner.
   return storedPlacementInvariants(value as unknown as WardFlowState, activePatientStays(state.admissions));
 }

@@ -102,7 +102,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-77](#d-77-the-ten-bigger-ux-changes-approved-for-build-22-october-2026)                                                                              | The ten bigger UX changes approved for build                                           | Partly replaced by D-98                          |
 | [D-78](#d-78-one-decline-list-for-wards-and-coordinators-22-october-2026)                                                                               | One decline list for wards and coordinators                                            | Active                                           |
 | [D-79](#d-79-wards-see-the-full-referral-with-name-and-umrn-before-they-answer-23-october-2026)                                                         | Wards see the full referral before answering                                           | Active                                           |
-| [D-80](#d-80-role-access-plan-version-2-all-17-recommendations-23-october-2026)                                                                         | Role access plan version 2: all 17 recommendations                                     | Partly replaced by D-86                          |
+| [D-80](#d-80-role-access-plan-version-2-all-17-recommendations-23-october-2026)                                                                         | Role access plan version 2: all 17 recommendations                                     | Partly replaced by D-86 and D-142                |
 | [D-81](#d-81-pulled-with-a-pull-time-limit-for-a-bed-kept-for-an-incoming-patient-24-october-2026)                                                      | Pulled, with a pull time limit, for a bed kept for an incoming patient                 | Active                                           |
 | [D-82](#d-82-a-pr-may-raise-a-phone-size-limit-by-up-to-5-kb-per-screen-without-asking-26-october-2026)                                                 | A PR may raise a phone size limit by up to 5 KB per screen without asking              | Active                                           |
 | [D-83](#d-83-patient-names-stay-in-full-on-every-screen-copy-and-tv-privacy-work-must-not-make-the-app-less-useful-26-october-2026)                     | Patient names in full                                                                  | Partly replaced by D-102                         |
@@ -156,10 +156,12 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-131](#d-131-hard-case-demo-data-allowed-and-the-movement-diagram-follows-the-engine-10-november-2026)                                                | Hard-case demo data allowed, and the movement diagram follows the engine               | Active                                           |
 | [D-132](#d-132-audit-fixes-group-1-docs-and-ci-guards-10-november-2026)                                                                                 | Audit fixes group 1: docs and CI guards; Claude-authored sensitive changes warn        | Active                                           |
 | [D-134](#d-134-ward-arrival-and-beds-batch-how-to-hold-advocate-line-night-list-and-the-feature-freeze-10-november-2026)                                | Ward arrival and beds batch: held split, advocate line, night list, feature freeze     | Active                                           |
+| [D-135](#d-135-batch-4-outages-and-pilot-control-pack-age-and-plan-answers-10-november-2026)                                                            | Batch 4, outages and pilot control: pack age and plan answers                          | Active                                           |
 | [D-136](#d-136-feature-batch-3-shift-change-and-follow-up-two-signed-values-10-november-2026)                                                           | Feature batch 3: two signed values (7-day diversion return, 30-minute handover list)   | Active                                           |
 | [D-137](#d-137-feature-build-batch-5-count-leak-first-tv-change-mark-and-qr-library-10-november-2026)                                                   | Feature build batch 5: count leak first, TV change mark 15 minutes, QR library         | Active                                           |
 | [D-138](#d-138-phone-alert-urgency-by-kind-10-november-2026)                                                                                            | Phone alert urgency by kind                                                            | Active                                           |
 | [D-139](#d-139-phone-statistics-ward-list-a-to-z-and-leave-return-times-as-typed-10-november-2026)                                                      | Phone Statistics ward list A to Z, and leave return times as typed                     | Active                                           |
+| [D-142](#d-142-batch-4-design-review-and-all-twelve-answers-approved-d-80-amended-for-site-features-11-november-2026)                                   | Batch 4: design review and all twelve answers approved, D-80 amended for site features | Active                                           |
 | [D-143](#d-143-mhert-is-mherl-in-the-glossary-smhmr-deferred-11-november-2026)                                                                          | MHERT is MHERL in the glossary; SMHMR deferred                                         | Active                                           |
 | [D-144](#d-144-chip-rows-move-only-sideways-on-a-phone-11-november-2026)                                                                                | Chip rows move only sideways on a phone                                                | Active                                           |
 | [D-147](#d-147-demo-code-tries-keep-per-address-keying-until-a-trusted-proxy-is-set-11-november-2026)                                                   | Demo-code tries keep per-address keying until a trusted proxy is set                   | Active                                           |
@@ -1724,6 +1726,15 @@ is inferred.
 
 - **Boundary:** synthetic data only. Information and prompts only: nothing ranks or recommends a ward or bed (D-71), and no clinical value changes. Approves no merge or release.
 
+## D-135. Batch 4, outages and pilot control: pack age and plan answers (10 November 2026)
+
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, choosing "Older than 24 hours" on a decision card in the Batch 4 thread (17:04 UTC), and saying "Go ahead with all your recommendations" for the feature build plan in the project chat (17:04 UTC). D-132 is claimed by open PR #1601. D-133 is claimed by open PR #1606 (Batch 1). D-134 is claimed by open PR #1608 (Batch 2).
+- **Decision:**
+  1. **Outage pack age (item 24):** a ward's downtime pack counts as old once its last print or PDF save is more than 24 hours ago (`PACK_OLD_AFTER_MINUTES`, clinical-values.md). The server keeps only the time and ward of each print, never the pack.
+  2. **Site switch-off (item 20):** a fixed allow-list says which features can be switched off at one site. Safety notices, legal times, ruling guards, role access, the AWOL bed hold review, ward closure and the demo reset can never be switched off.
+  3. **Catch-up after an outage (item 25):** a prompt only. It starts when the coordinator types "We were down from __ to __", nothing is filled in or guessed from the device, and a ward is caught up only when it confirms "Beds still correct" after the outage ended.
+- **Boundary:** the screens for items 20, 24 and 25 wait for Josh's approval of the Batch 4 design review (D-74). Until he rules on D-80, only the statewide coordinator can switch a site feature. Synthetic data only. Approves no merge or release.
+
 ## D-136. Feature batch 3 (shift change and follow-up): two signed values (10 November 2026)
 
 - **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, on two decision cards in the batch 3 build thread, and "Go ahead with all your recommendations" on the feature build plan the same day. Numbered D-136 by the coordinator's allocation. D-133 is claimed by PR #1606. D-134 is claimed by PR #1608. D-135 is claimed by PR #1603.
@@ -1767,6 +1778,18 @@ is inferred.
 - **Unchanged:** the time absent without leave still shows as a running figure, because it counts from when the absence was recorded, not from a typed return time. Leave lists still order by return time.
 - **Why:** a list that puts the most ready beds first reads as "send them here" (D-126). A return time comes from the leave form, which staff read against paper; a running figure beside it is a second, unchecked number, the reason D-93 exists.
 - **Boundary:** D-71 and D-93 stand. Order and wording only; no figure, clinical value or rule changes. Synthetic data only. Approves no merge or release.
+
+## D-142. Batch 4: design review and all twelve answers approved, D-80 amended for site features (11 November 2026)
+
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, writing "Go ahead with all recommendations now for me." in the Batch 4 thread (02:21 UTC), and confirming in the project chat that every thread should go ahead with all its recommendations (02:22 UTC). D-136 is claimed by open PR #1605, D-138 is claimed by open PR #1604 and D-139 is claimed by open PR #1600. D-140 and D-141 are claimed by open PR #1606 (Batch 1). D-137 is claimed by open PR #1607 (Batch 5).
+- **Decision:**
+  1. **Design review (D-74):** the Batch 4 screens are built as drawn in the review page.
+  2. **Site switch-off (item 20):** the allow-list holds five features (bed meeting TV, Top 25 criteria-led discharge, referral opened receipts, referral information needs and Help ask). The card "Features at this site" sits in the access admin's Access tab. One tap switches a feature, with Undo.
+  3. **D-80 amended:** the access admin may switch site features as well as the statewide coordinator. Protected features still cannot be switched off by anyone.
+  4. **Pack age (item 24):** the old-pack list lives on the Downtime screen, with a pointer on Home. A ward that has never printed is listed as old. Print times may sit in the device's cleaned copy of the state.
+  5. **Catch-up (item 25):** the outage start is a blank Today or Yesterday choice. Each bed not confirmed since the outage shows "Not confirmed since the outage" in full. Catch-up starts only after the coordinator records the outage, and only the ward's own confirm counts.
+- **Later the same day (04:13 UTC):** Josh chose "Mark ready now" on a decision card, so this PR was marked ready past the five-PR cap.
+- **Boundary:** synthetic data only. Approves the screens and the D-80 amendment only; no release.
 
 ## D-143. MHERT is MHERL in the glossary; SMHMR deferred (11 November 2026)
 

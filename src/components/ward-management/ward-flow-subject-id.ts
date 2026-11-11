@@ -216,6 +216,12 @@ export function subjectId(event: WardFlowEvent): string {
     case "REQUEST_WARD_STAFF":
     case "CLOSE_WARD_STAFF_REQUEST":
       return event.unitId;
+    // Batch 4 (10 Nov 2026): a site switch against its site; a pack print and an outage name no one record.
+    case "SET_SITE_FEATURE_SWITCH":
+      return event.siteCode;
+    case "RECORD_DOWNTIME_PACK_PRINTED":
+    case "RECORD_OUTAGE_WINDOW":
+      return "none";
     // Batch 3 items 21 and 23: a hand-over is filed against its item, an accept against itself, a
     // carer callback against its stay or bed request, and its tick against itself.
     case "HAND_OVER_ITEM":

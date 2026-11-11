@@ -67,6 +67,7 @@ import { originName } from "@/components/ward-management/ward-movement-origin";
 import { declineTargetLeftNote } from "./decline-target-left";
 import { useBusiestFlowTabDefault } from "./ward-flow-busiest";
 import { WardPhoneRoundList } from "./ward-phone-round-list";
+import { NOT_CONFIRMED_SINCE_OUTAGE, OutageMeta, useWardOutageCatchUp } from "./ward-outage-tags";
 import {
   canSubmitDecline,
   DECLINE_SUBMIT_UNAVAILABLE_REASON,
@@ -551,6 +552,8 @@ export function WardHomeTab({
       accessibleName,
     };
   });
+  // Batch 4 item 25 (D-142): each bed says so in full until the ward confirms after a recorded outage.
+  const outageTags = useWardOutageCatchUp(unit, now)?.caughtUp === false;
   const [innerBedFilter, setInnerBedFilter] = useState<WardBedFilter>("all");
   const bedFilter = bedFilterProp ?? innerBedFilter;
   const setBedFilter = onBedFilterChange ?? setInnerBedFilter;
@@ -621,6 +624,7 @@ export function WardHomeTab({
       walkFrom={walkFrom}
       isLit={isLit}
       rowLabel={walkRowLabel}
+      outage={outageTags}
     />
   );
 
@@ -1751,7 +1755,7 @@ export function WardHomeTab({
               className={styles.bedsHead}
               icon={BedSingle}
               title="Every bed"
-              meta={liveMark}
+              meta={<OutageMeta on={outageTags}>{liveMark}</OutageMeta>}
               action={
                 <span className={styles.headTools}>
                   <WardPlaceOrMove variant="head" waiting={boardWaitingCount} onOpen={onOpenBoard} />
@@ -1859,7 +1863,7 @@ export function WardHomeTab({
                     data-lit={highlighting && isLit(row) ? "true" : undefined}
                     data-dim={isLit(row) ? undefined : "true"}
                     aria-haspopup="dialog"
-                    aria-label={row.tileName}
+                    aria-label={outageTags ? `${row.tileName}, ${NOT_CONFIRMED_SINCE_OUTAGE}` : row.tileName}
                     title={row.accessibleName}
                     onClick={() => {
                       onSelectBed?.(Number(row.bed.bedNumber));
@@ -1876,6 +1880,7 @@ export function WardHomeTab({
                       label={row.name}
                       note={row.shownNote}
                       days={row.days}
+                      outage={outageTags}
                     />
                   </button>
                 </li>

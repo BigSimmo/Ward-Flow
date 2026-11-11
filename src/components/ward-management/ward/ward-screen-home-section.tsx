@@ -21,7 +21,7 @@ import type { BedItem } from "./ward-beds-matrix";
 import { type WardFlowTab, WardHomeTab, type WardShiftView } from "./ward-home-tab";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 import { shiftLine } from "./ward-screen-helpers";
-import { WardBedBoard } from "./ward-screen-lazy";
+import { WardBedBoard, WardOutageCatchUpCard } from "./ward-screen-lazy";
 import type { Dispatch, ReactElement, RefObject, SetStateAction } from "react";
 import type {
   BedRelease,
@@ -229,6 +229,24 @@ export function WardScreenHomeSection({
       aria-labelledby="tabBtn-attn"
       data-active={activeTab === "attn" || activeTab === "board"}
     >
+      {/* Batch 4 item 25 (D-142): after a recorded outage, until this ward confirms its beds. Each
+          row opens the ward's existing place for that work. */}
+      <WardOutageCatchUpCard
+        unit={unit}
+        now={now}
+        actions={{
+          onAdmissions: () => {
+            setPhonePanel(null);
+            selectActiveTab("coming");
+          },
+          onDischarges: openDischargesTab,
+          onMoves: () => {
+            selectActiveTab("board");
+            focusWhenShown('[aria-labelledby="ward-bed-board-title"] button');
+          },
+          onBedChanges: () => selectActiveTab("beds"),
+        }}
+      />
       {/* Out of area "Flag early" (3 Nov 2026): this ward's site is the home hospital. In-app only. */}
       <ReturnEarlyAlerts desk={{ role: "ward", siteCode: unit.siteCode }} now={now} />
       <WardHomeTab
