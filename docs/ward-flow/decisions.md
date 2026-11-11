@@ -171,6 +171,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-151](#d-151-a-bed-tile-says-when-a-change-is-waiting-to-save-11-november-2026)                                                                       | A bed tile says when a change is waiting to save                                       | Active                                           |
 | [D-152](#d-152-returned-to-ed-prompt-sees-every-return-in-shared-mode-11-november-2026)                                                                 | Returned to ED prompt sees every return in shared mode                                 | Active                                           |
 | [D-155](#d-155-check-the-live-clock-offset-before-clearing-it-11-november-2026)                                                                         | Check the live clock offset before clearing it                                         | Active                                           |
+| [D-156](#d-156-reset-the-synthetic-live-world-after-the-clock-fix-11-november-2026)                                                                     | Reset the synthetic live world after the clock fix                                     | Active                                           |
 
 ---
 
@@ -1847,3 +1848,10 @@ is inferred.
 - **Decision:** D-150 keeps `clockOffsetMinutes` on purpose, because test servers use it to move the clock. After this PR is released, the live shared world's stored offset is read once, read-only, and reported to Josh. If it is not 0, nothing is written: clearing it is a live write that waits for Josh's own yes.
 - **Why:** under D-150 a leftover offset would keep the signed-in site's clock ahead of real Perth time by that amount. Reading the value is harmless, and Josh decides on the live write once the number is known.
 - **Boundary:** synthetic data only. No code change, and no live write is approved. Changes no clinical rule or signed value, and approves no merge or release.
+
+## D-156. Reset the synthetic live world after the clock fix (11 November 2026)
+
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, choosing "Reset the synthetic live world" on the decision card in the Ward Flow project thread for PR #1626 (18:07 UTC), about the times stored before D-150's clock change.
+- **Decision:** after PR #1626 is released, the live shared world is reset to a fresh synthetic seed, so every stored time is on the new clock. Its current demo history goes, PT-A06 and TEST-Helper4 included, which also covers the D-149 archive of those records. This supersedes D-155's "clearing it waits for Josh's own yes": the reset clears any stored clock offset as well, so no separate offset write is needed. D-155's text stands as recorded.
+- **Why:** the live world holds synthetic data only, so a reset is the simplest fix. It leaves no lasting skew from D-150's clock change: without it, times stored before release stay about 48 minutes ahead of the new clock, so waits recorded before release read short and an expired Undo could briefly come back.
+- **Boundary:** synthetic data only. No code change in this PR. The reset is one live write, made by this thread after release, not by CI. Changes no clinical rule or signed value, and approves no merge or release.
