@@ -25,7 +25,6 @@ import {
   ClipboardList,
   Inbox,
   Clock3,
-  DoorOpen,
   LogOut,
   PhoneOutgoing,
   Plus,
@@ -382,7 +381,7 @@ function SignOutRow() {
           data-testid="ward-phone-menu-leave-demo"
           onClick={() => void leaveDemo()}
         >
-          <RowBody icon={DoorOpen} label="Leave the demo" />
+          <RowBody icon={LogOut} label="Leave the demo" />
         </button>
       </li>
     ) : null;

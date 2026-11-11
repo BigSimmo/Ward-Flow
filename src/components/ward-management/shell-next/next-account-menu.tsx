@@ -1,7 +1,7 @@
 "use client";
 
 import { useContext, type RefObject } from "react";
-import { ChevronsUpDown, CircleHelp, DoorOpen, LogOut, Repeat, Settings } from "lucide-react";
+import { ChevronsUpDown, CircleHelp, LogOut, Repeat, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Menu, type MenuItem } from "@/components/wf";
@@ -79,7 +79,7 @@ export function RailAccountMenu({
     // Live audit item 22: the public demo's way out (`front-door/leave-demo.ts`).
     items.push(
       { kind: "separator", id: "sep" },
-      { id: "leave-demo", label: "Leave the demo", icon: DoorOpen, onSelect: act(() => void leaveDemo()) },
+      { id: "leave-demo", label: "Leave the demo", icon: LogOut, onSelect: act(() => void leaveDemo()) },
     );
   }
   const sheet = variant === "sheet";

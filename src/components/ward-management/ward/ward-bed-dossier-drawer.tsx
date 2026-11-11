@@ -881,6 +881,20 @@ export function WardBedDossierDrawer({
       </dl>
     </section>
   );
+  const historyToggle = (
+    <button
+      type="button"
+      className={styles.historyButton}
+      aria-expanded={historyOpen}
+      aria-controls={`${TAB_PREFIX}-history`}
+      data-testid="bed-drawer-history-toggle"
+      onClick={toggleHistory}
+    >
+      <Icon icon={HistoryIcon} size={14} />
+      History
+      <span className={styles.historyCount}>{timeline.length}</span>
+    </button>
+  );
   const history = (
     <section
       ref={historyRef}
@@ -1051,18 +1065,7 @@ export function WardBedDossierDrawer({
             {/* Live audit item 13: an empty bed's History holds its closures, so it shows when there are any. */}
             {timeline.length > 0 ? (
               <>
-                <button
-                  type="button"
-                  className={styles.historyButton}
-                  aria-expanded={historyOpen}
-                  aria-controls={`${TAB_PREFIX}-history`}
-                  data-testid="bed-drawer-history-toggle"
-                  onClick={toggleHistory}
-                >
-                  <Icon icon={HistoryIcon} size={14} />
-                  History
-                  <span className={styles.historyCount}>{timeline.length}</span>
-                </button>
+                {historyToggle}
                 {history}
               </>
             ) : null}
@@ -1097,18 +1100,7 @@ export function WardBedDossierDrawer({
                   );
                 })}
               </div>
-              <button
-                type="button"
-                className={styles.historyButton}
-                aria-expanded={historyOpen}
-                aria-controls={`${TAB_PREFIX}-history`}
-                data-testid="bed-drawer-history-toggle"
-                onClick={toggleHistory}
-              >
-                <Icon icon={HistoryIcon} size={14} />
-                History
-                <span className={styles.historyCount}>{timeline.length}</span>
-              </button>
+              {historyToggle}
             </div>
             {panel(
               "now",
