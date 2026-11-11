@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 
-import doorStyles from "./front-door-hold.module.css";
+import doorStyles from "../shell/ward-access.module.css";
 
 /**
  * The idle prompts, out of the phone's first load like the front door. They are fetched once the
@@ -20,7 +20,7 @@ export const IdleWarningSheet = dynamic(() => loadLockCards().then((module) => m
 
 export const IdleLockScreen = dynamic(() => loadLockCards().then((module) => module.IdleLockScreen), {
   ssr: false,
-  loading: () => <div className={doorStyles.screen} aria-busy="true" />,
+  loading: () => <div className={doorStyles.doorScreen} aria-busy="true" />,
 });
 
 preloadWhenIdle(loadLockCards);

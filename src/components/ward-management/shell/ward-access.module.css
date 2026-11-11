@@ -159,3 +159,24 @@
   border-bottom: 1px solid var(--wf-line);
   font-size: var(--wf-fs-13);
 }
+
+/*
+ * The front-door classes the always-loaded holders use (`front-door/front-door-lazy.tsx`,
+ * `front-door/lock-cards-lazy.tsx`). Composed here so the phone's first load carries these four
+ * names, not the front door's whole class map (budget trim, live audit 11 Nov 2026).
+ */
+.doorScreen {
+  composes: screen from "../front-door/front-door.module.css";
+}
+
+.doorBtn {
+  composes: btn from "../front-door/front-door.module.css";
+}
+
+.doorBtnPrimary {
+  composes: btnPrimary from "../front-door/front-door.module.css";
+}
+
+.doorLink {
+  composes: link from "../front-door/front-door.module.css";
+}

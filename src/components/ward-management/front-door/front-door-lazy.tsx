@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 
-import styles from "./front-door-hold.module.css";
+import styles from "../shell/ward-access.module.css";
 
 /**
  * The app's own front door, loaded only when it shows. Every page carries the shared access shell,
@@ -17,7 +17,7 @@ const loadFrontDoor = () => import("./front-door");
 
 /** The navy screen alone, while the sign-in code arrives, so nothing of the app shows meanwhile. */
 function Hold() {
-  return <div className={styles.screen} aria-busy="true" />;
+  return <div className={styles.doorScreen} aria-busy="true" />;
 }
 
 export const FrontDoor = dynamic(() => loadFrontDoor().then((module) => module.FrontDoor), {
@@ -41,7 +41,11 @@ export function FrontDoorStatusButton({
   children: ReactNode;
 }) {
   return (
-    <button type="button" className={primary ? `${styles.btn} ${styles.btnPrimary}` : styles.link} onClick={onClick}>
+    <button
+      type="button"
+      className={primary ? `${styles.doorBtn} ${styles.doorBtnPrimary}` : styles.doorLink}
+      onClick={onClick}
+    >
       {children}
     </button>
   );
