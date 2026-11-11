@@ -119,10 +119,30 @@ function fromBase64Url(value: string): Uint8Array | null {
   }
 }
 
+/**
+ * Imported signing keys, one per secret, so a request does not import the same key again. Only a
+ * few secrets are ever live at once (the current one, and the old one during a change), so the
+ * oldest is dropped past that. A failed import is not kept.
+ */
+const signingKeys = new Map<string, Promise<CryptoKey>>();
+const SIGNING_KEYS_KEPT = 4;
+
+function signingKey(secret: string): Promise<CryptoKey> {
+  let key = signingKeys.get(secret);
+  if (!key) {
+    key = crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    const imported = key;
+    imported.catch(() => {
+      if (signingKeys.get(secret) === imported) signingKeys.delete(secret);
+    });
+    signingKeys.set(secret, imported);
+    while (signingKeys.size > SIGNING_KEYS_KEPT) signingKeys.delete(signingKeys.keys().next().value as string);
+  }
+  return key;
+}
+
 async function sign(secret: string, data: string): Promise<string> {
-  const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, [
-    "sign",
-  ]);
+  const key = await signingKey(secret);
   return toBase64Url(new Uint8Array(await crypto.subtle.sign("HMAC", key, encoder.encode(data))));
 }
 
@@ -226,4 +246,25 @@ export async function demoCodeMatches(entered: string, env: Env = process.env): 
   const digest = async (text: string) =>
     toBase64Url(new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(text))));
   return sameText(await digest(normaliseDemoCode(entered.slice(0, 64))), await digest(expected));
+}
+
+/**
+ * When a sign-in began, in milliseconds: the oldest `amr` factor time in a Supabase access token,
+ * as the backend counts it (`startedAt` in backend/ward-flow/supabase-auth.mjs). A refresh or a later
+ * factor never moves it, so the 12-hour session limit (ISM-0428) counts from here. `null` when the
+ * token cannot be read or carries no factor time. The signature is not checked: callers use this only
+ * to show or shorten a limit the server enforces itself.
+ */
+export function signInStartedAt(token: string): number | null {
+  try {
+    const part = (token.split(".")[1] ?? "").replace(/-/g, "+").replace(/_/g, "/");
+    const bytes = Uint8Array.from(atob(part), (char) => char.charCodeAt(0));
+    const claims = JSON.parse(new TextDecoder().decode(bytes));
+    const times = (Array.isArray(claims?.amr) ? claims.amr : [])
+      .map((entry: { timestamp?: unknown }) => entry?.timestamp)
+      .filter((value: unknown): value is number => Number.isFinite(value));
+    return times.length ? Math.min(...times) * 1000 : null;
+  } catch {
+    return null;
+  }
 }

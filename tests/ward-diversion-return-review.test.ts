@@ -8,6 +8,10 @@ import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-valu
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { scopeWardFlowState } from "@/components/ward-management/ward-access-state";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
+import type { WardAccess } from "@/components/ward-management/ward-role-access";
+import { isValidSharedWardFlowState } from "@/components/ward-management/ward-shared-state-validation";
 
 /*
  * Batch 3 item 28 (D-136): a person offered an alternative to admission (D-110), taken by a
@@ -125,5 +129,77 @@ describe("diversion return review prompt (D-136 item 1)", () => {
     );
     expect(Object.keys(prompt!).sort()).toEqual(["id", "returnedAt", "subject", "takenAt"]);
     expect(prompt!.subject).toEqual({ patientId: PATIENT });
+  });
+});
+
+/*
+ * D-152: in shared mode the community desk is not sent the later ED request, so the server finds
+ * the return in the whole workspace and sends that desk a referral id and a time, nothing else.
+ */
+describe("diversion return review in shared mode (D-152)", () => {
+  function sharedWorld() {
+    const seed = seedWardFlowState();
+    const person = { ...seed.patients[0]!, id: PATIENT } as (typeof seed.patients)[number];
+    const { diverted, backInEd } = fixtures();
+    // The return arrives on an ED request the taking team was never asked about.
+    const unrelated = seed.referrals.find(
+      (referral) => !referral.destinations.some((line) => line.destination.kind === "community_team"),
+    )!;
+    const returned = { ...backInEd(NOW_ANCHOR - 60), referralId: unrelated.id };
+    const state = {
+      ...seed,
+      patients: [...seed.patients, person],
+      referrals: [...seed.referrals, diverted],
+      movements: [...seed.movements, returned],
+    };
+    return { state, diverted, returned, places: wardPlaceLookup(state.units) };
+  }
+  const teamDesk = (team: CommunityTeam): WardAccess => ({
+    role: "community",
+    scope: { kind: "team", teamName: team.name },
+  });
+
+  it("sends the taking team the referral id and the time back, and the prompt appears", () => {
+    const { state, diverted, returned, places } = sharedWorld();
+    const scoped = scopeWardFlowState(state, teamDesk(TEAM!), { now: NOW_ANCHOR, places }).state;
+    // The desk's copy has the referral it took but not the later ED request.
+    expect(scoped.referrals.some((referral) => referral.id === diverted.id)).toBe(true);
+    expect(scoped.movements.some((movement) => movement.id === returned.id)).toBe(false);
+    expect(scoped.diversionReturns).toEqual([{ referralId: diverted.id, returnedAt: returned.openedAt }]);
+    const text = JSON.stringify(scoped.diversionReturns);
+    expect(text).not.toContain(returned.id);
+    expect(text).not.toContain(String(returned.originEdId));
+    expect(isValidSharedWardFlowState(JSON.parse(JSON.stringify(scoped)))).toBe(true);
+
+    const fromCopy = diversionReturnPrompts(scoped, TEAM!, NOW_ANCHOR);
+    const fromWhole = diversionReturnPrompts(state, TEAM!, NOW_ANCHOR);
+    expect(fromCopy).toHaveLength(1);
+    expect(fromCopy).toEqual(fromWhole);
+  });
+
+  it("sends nothing once the window has passed", () => {
+    const { state, places } = sharedWorld();
+    const later = NOW_ANCHOR - 60 + WINDOW + 1;
+    expect(scopeWardFlowState(state, teamDesk(TEAM!), { now: later, places }).state.diversionReturns).toBeUndefined();
+  });
+
+  it("sends nothing to another team, a ward, an ED or a service coordinator", () => {
+    const { state, places } = sharedWorld();
+    const ward = state.units[0]!;
+    for (const access of [
+      teamDesk(OTHER_TEAM!),
+      { role: "ward", scope: { kind: "ward", unitIds: [ward.id] } },
+      { role: "ed", scope: { kind: "ed", edId: "fsh-ed" } },
+      { role: "coordinator", scope: { kind: "service", service: "South Metro" } },
+    ] as WardAccess[]) {
+      expect(scopeWardFlowState(state, access, { now: NOW_ANCHOR, places }).state.diversionReturns).toBeUndefined();
+    }
+  });
+
+  it("rejects a shared copy whose return names a referral the desk was not sent", () => {
+    const { state, places } = sharedWorld();
+    const scoped = scopeWardFlowState(state, teamDesk(TEAM!), { now: NOW_ANCHOR, places }).state;
+    const forged = { ...scoped, diversionReturns: [{ referralId: "REF-NOT-SENT", returnedAt: NOW_ANCHOR - 60 }] };
+    expect(isValidSharedWardFlowState(JSON.parse(JSON.stringify(forged)))).toBe(false);
   });
 });

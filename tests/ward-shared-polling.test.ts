@@ -73,3 +73,33 @@ it("a skipped read neither clears nor deepens an outage delay", async () => {
   expect(refresh).toHaveBeenCalledTimes(3);
   polling.stop();
 });
+// Performance audit (11 Nov 2026): a hidden tab parks the poller instead of waking every three
+// seconds to re-check visibility, and becoming visible restarts the normal cadence.
+it("schedules no timer while hidden and restarts the cadence when the tab is shown", async () => {
+  vi.useFakeTimers();
+  let visible = false;
+  let listener: (() => void) | null = null;
+  const refresh = vi.fn<() => Promise<boolean>>().mockResolvedValue(true);
+  const polling = startWardPolling({
+    refresh,
+    visible: () => visible,
+    onVisible: (next) => {
+      listener = next;
+      return () => {
+        listener = null;
+      };
+    },
+  });
+  await vi.advanceTimersByTimeAsync(3_000);
+  expect(listener).not.toBeNull();
+  expect(vi.getTimerCount()).toBe(0);
+  await vi.advanceTimersByTimeAsync(60_000);
+  expect(refresh).not.toHaveBeenCalled();
+  visible = true;
+  listener!();
+  expect(listener).toBeNull();
+  await vi.advanceTimersByTimeAsync(3_000);
+  expect(refresh).toHaveBeenCalledTimes(1);
+  polling.stop();
+  expect(vi.getTimerCount()).toBe(0);
+});
