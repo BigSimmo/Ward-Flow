@@ -1459,6 +1459,7 @@
       "effects": [
         "Filters patient from patients; keeps sequence so id is not reused",
         "D-149: a withdrawn or cancelled referral that named the record stays in the referrals list with its patientId removed, so the stored workspace still validates",
+        "D-149 review: an Undo record still naming the record (past the Undo window, or stamped after the board's time) is dropped, so it cannot become usable later and bring back a step naming an archived record",
         "Reducer audit wrapper retains the archive event/reason; no care record is removed",
         "The step can be taken back by UNDO_PATIENT_RECORD within the Undo window."
       ],
@@ -1466,7 +1467,7 @@
         {
           "path": "src/components/ward-management/ward-patient-archive-reducer.ts",
           "line": 10,
-          "sha256": "fbe91ef4b0daad593da3144d30e40c65803851a4f31337bf61bd3004038c1900"
+          "sha256": "d62abeda9f9da15c550d60692fddf854fe29ece3c2db0bc472ab46c01886a930"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",

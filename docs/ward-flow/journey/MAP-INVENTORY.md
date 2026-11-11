@@ -997,10 +997,11 @@ Source-contract SHA256: 893ba6732a3ea9e2dd31a2d71fc4eecebca0a3652a49de3af890910e
   guards: Registration facts include the optional typed details (preferred name, address, GP, catchment team, interpreter language, Indigenous status, and the ADMIN_DETAIL_FIELDS administrative details); refuse any non-registration fact, any open or answered referral, or any other state reference. D-149 (Josh, 11 Nov 2026): a front-door referral whose every destination was withdrawn by the referrer or cancelled does not block, audit rows do not block, and an Undo record blocks only while it is inside the Undo window (measured from the event's now). Each refusal names its reason, and the coordinator's card shows it instead of hiding
   effects: Filters patient from patients; keeps sequence so id is not reused
   effects: D-149: a withdrawn or cancelled referral that named the record stays in the referrals list with its patientId removed, so the stored workspace still validates
+  effects: D-149 review: an Undo record still naming the record (past the Undo window, or stamped after the board's time) is dropped, so it cannot become usable later and bring back a step naming an archived record
   effects: Reducer audit wrapper retains the archive event/reason; no care record is removed
   effects: The step can be taken back by UNDO_PATIENT_RECORD within the Undo window.
   tests: tests/ward-patient-archive.test.ts
-  Reviewed source: src/components/ward-management/ward-patient-archive-reducer.ts:10; SHA256 fbe91ef4b0daad593da3144d30e40c65803851a4f31337bf61bd3004038c1900
+  Reviewed source: src/components/ward-management/ward-patient-archive-reducer.ts:10; SHA256 d62abeda9f9da15c550d60692fddf854fe29ece3c2db0bc472ab46c01886a930
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:397; SHA256 cd2310745ab8bd06363b052024f920d5248a8815bae9e2eee5c4945c11b1013d
   Reviewed source: src/components/ward-management/ward-patient-archive.ts:32; SHA256 0836301ee769bdc651066d09a763d083ca95047425bac33559d6e1538fed7d54
   Reviewed source: src/components/ward-management/ward-patient-archive.ts:54; SHA256 0836301ee769bdc651066d09a763d083ca95047425bac33559d6e1538fed7d54

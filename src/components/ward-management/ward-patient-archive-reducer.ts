@@ -29,5 +29,15 @@ export function reducePatientArchive(
     void _archived;
     return unlinked;
   });
-  return { ...state, patients: state.patients.filter((patient) => patient.id !== patientId), referrals };
+  // Any Undo record still naming the record can no longer be used (it is past the window, or stamped
+  // after the board's time by a clock step back). Drop it, so it cannot become usable once the clock
+  // reaches its time and bring back a step naming a record that has left the lists.
+  const quoted = JSON.stringify(patientId);
+  const undoRecords = state.undoRecords?.filter((entry) => !JSON.stringify(entry).includes(quoted));
+  return {
+    ...state,
+    patients: state.patients.filter((patient) => patient.id !== patientId),
+    referrals,
+    ...(undoRecords === undefined ? {} : { undoRecords }),
+  };
 }

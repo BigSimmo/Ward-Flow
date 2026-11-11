@@ -28,7 +28,12 @@ describe("toast choices without the menu's code", () => {
         onClose={onClose}
       />,
     );
-    await act(async () => {});
+    // The menu's import has failed, and React has settled on the fallback the failed import gives,
+    // not the Suspense fallback shown while it is pending.
+    await expect(import("@/components/wf/toast-choices")).rejects.toThrow();
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
     const group = await screen.findByRole("group", { name: "Add a reason" });
     fireEvent.click(within(group).getByRole("button", { name: "Staffing" }));
     expect(onChoose).toHaveBeenCalledWith("staffing");

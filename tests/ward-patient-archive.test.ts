@@ -258,6 +258,37 @@ describe("ARCHIVE_PATIENT after a withdrawn referral (D-149)", () => {
     expect(after.patients.some((patient) => patient.id === world.patient.id)).toBe(false);
   });
 
+  it("drops a future-stamped Undo step on archive, so it cannot come back once the clock reaches it", () => {
+    const world = referred();
+    world.send({ type: "RECORD_REFERRER_WITHDRAWAL", role: "coordinator", referralId: world.referralId } as never);
+    const otherStep = { kind: "step", undoType: "UNDO_BED_STEP", subjectId: "PT-OTHER", seq: 2, at: now };
+    const withUndo = {
+      ...world.state,
+      undoRecords: [
+        ...(world.state.undoRecords ?? []),
+        { kind: "step", undoType: "UNDO_BED_STEP", subjectId: world.patient.id, seq: 1, at: later(60) },
+        otherStep,
+      ],
+    } as unknown as WardFlowState;
+    // The step is stamped an hour after the board's time (a D-150 clock step back), so archive is allowed.
+    const archived = wardFlowReducer(withUndo, {
+      type: "ARCHIVE_PATIENT",
+      role: "coordinator",
+      now,
+      patientId: world.patient.id,
+      reason: "test",
+    });
+    expect(archived.patients.some((patient) => patient.id === world.patient.id)).toBe(false);
+    // The future-stamped step on the record is gone, so it cannot bring a step on it back later.
+    // The archive's own Undo record, which restores the record itself, is the only one naming it.
+    const naming = (archived.undoRecords ?? []).filter((entry) =>
+      JSON.stringify(entry).includes(JSON.stringify(world.patient.id)),
+    );
+    expect(naming.map((entry) => (entry as { action?: string }).action)).toEqual(["ARCHIVE_PATIENT"]);
+    // An Undo record about anything else is kept.
+    expect(archived.undoRecords).toContainEqual(otherStep);
+  });
+
   it("still refuses a referral a ward answered", () => {
     const world = referred();
     const answered = {

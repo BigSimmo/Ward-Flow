@@ -244,6 +244,32 @@ async function buildEngine(runRoot) {
   return pathToFileURL(outfile).href;
 }
 
+/** The scripted demo hour (10:42, `NOW_ANCHOR`), in minutes after a Perth midnight. */
+const SCRIPTED_MINUTE = 10 * 60 + 42;
+
+/**
+ * The real engine, except a new world's clock starts at the scripted 10:42 and runs in real time from
+ * there, as it did before D-150. D-150 puts the signed-in site on real Perth time, so the seeded
+ * board would otherwise depend on the hour CI runs: from five hours into each shift until it ends,
+ * every seeded ward has already confirmed its beds this shift, and the journeys that ask a ward to
+ * confirm find no ward to ask. This changes only this run's throwaway world; production is unchanged.
+ */
+function pinnedClockEngine(engine) {
+  return {
+    ...engine,
+    seedWorld(at) {
+      // A Perth midnight is a multiple of a whole day after 16:00 UTC (Perth is UTC+8 all year).
+      const perthDay = Math.floor((at.getTime() + 8 * 3_600_000) / 86_400_000) * 86_400_000 - 8 * 3_600_000;
+      const world = engine.seedWorld(new Date(perthDay + SCRIPTED_MINUTE * 60_000));
+      return {
+        ...world,
+        dayZero: new Date(at.getTime() - SCRIPTED_MINUTE * 60_000).toISOString(),
+        startedAt: at.toISOString(),
+      };
+    },
+  };
+}
+
 /** backend/ward-flow/server.mjs's own startup, with the local seams its tests use. */
 async function startBackend({ databaseUrl, authOrigin, appOrigin, engineUrl }) {
   const [{ readConfig }, { createBackend }, { createHandler, listen }, { createSupabaseAuthenticator }] =
@@ -285,7 +311,7 @@ async function startBackend({ databaseUrl, authOrigin, appOrigin, engineUrl }) {
           fetch: (url, init) => fetch(String(url).replace(SUPABASE_ORIGIN, authOrigin), init),
         }),
     },
-    engine: () => import(engineUrl),
+    engine: () => import(engineUrl).then(pinnedClockEngine),
   });
   const server = listen(createHandler({ ...store, log: () => {} }), config);
   cleanups.push(async () => {
