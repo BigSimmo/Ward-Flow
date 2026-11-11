@@ -254,8 +254,22 @@ function requireWorkflow(source) {
   assert.equal(typecheck.fields.get("if"), frontend);
   assert.equal(
     typecheck.text.split("        run: |\n")[1]?.trim(),
-    "node node_modules/next/dist/bin/next typegen\n          node --max-old-space-size=8192 node_modules/typescript/bin/tsc -p tsconfig.json --noEmit --incremental false",
+    "node node_modules/next/dist/bin/next typegen\n          node --max-old-space-size=8192 node_modules/typescript/bin/tsc -p tsconfig.json --noEmit --incremental",
   );
+  // The incremental record is restored before the typecheck and saved only from main.
+  {
+    const names = steps("static").map(({ fields }) => fields.get("name"));
+    assert.ok(
+      names.indexOf("Restore the TypeScript build info") === names.indexOf("Typecheck source and route types") - 1,
+      "static: the TypeScript build info is restored straight before the typecheck",
+    );
+    const save = step("static", "Save the TypeScript build info on main");
+    assert.match(
+      save.fields.get("if") ?? "",
+      /github\.ref == 'refs\/heads\/main' && github\.event_name != 'pull_request'/u,
+    );
+    assert.match(save.fields.get("if") ?? "", /steps\.typecheck\.outcome == 'success'/u);
+  }
   exact(
     "backend",
     "Install locked Ward backend dependencies",

@@ -276,11 +276,29 @@ jobs:
       - name: Check Ward legal wording
         if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.frontend_static == 'true' }}
         run: npm run check:ward-legal-language
+      # TypeScript's own incremental record (tsconfig.json tsBuildInfoFile). tsc rechecks every file
+      # whose content or dependencies changed and reuses the rest, so an older record only costs
+      # time. Restored on every run, saved from main only; a lockfile or tsconfig change starts empty.
+      - name: Restore the TypeScript build info
+        id: tsc-cache
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.frontend_static == 'true' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules/.cache/tsc
+          key: ward-tsc-${{ runner.os }}-${{ hashFiles('package-lock.json', 'tsconfig.json') }}-${{ github.sha }}
+          restore-keys: ward-tsc-${{ runner.os }}-${{ hashFiles('package-lock.json', 'tsconfig.json') }}-
       - name: Typecheck source and route types
+        id: typecheck
         if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.frontend_static == 'true' }}
         run: |
           node node_modules/next/dist/bin/next typegen
-          node --max-old-space-size=8192 node_modules/typescript/bin/tsc -p tsconfig.json --noEmit --incremental false
+          node --max-old-space-size=8192 node_modules/typescript/bin/tsc -p tsconfig.json --noEmit --incremental
+      - name: Save the TypeScript build info on main
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && steps.typecheck.outcome == 'success' && steps.tsc-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules/.cache/tsc
+          key: ${{ steps.tsc-cache.outputs.cache-primary-key }}
       - name: Upload static check diagnostics
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
