@@ -5,7 +5,7 @@ import {
   reduceDowntimePackPrint,
   type DowntimePackPrintEvent,
   type DowntimePackPrintRecord,
-} from "./reports/downtime-pack-prints";
+} from "./ward-downtime-pack-prints";
 import { reduceOutageWindow, type OutageWindowEvent, type OutageWindowRecord } from "./ward-outage-catch-up";
 import {
   reduceSiteFeatureSwitch,

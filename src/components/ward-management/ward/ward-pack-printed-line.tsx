@@ -2,7 +2,7 @@
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { lastPackPrintedAt } from "@/components/ward-management/reports/downtime-pack-prints";
+import { lastPackPrintedAt } from "@/components/ward-management/ward-downtime-pack-prints";
 
 /**
  * DOWNTIME PACK UP TO DATE (Batch 4 item 24, Josh approved the drawing 11 Nov 2026, D-142): My

@@ -9,7 +9,7 @@ import {
   lastDowntimePack,
   rememberDowntimePack,
 } from "@/components/ward-management/reports/downtime-pack";
-import { lastPackPrintedAt } from "@/components/ward-management/reports/downtime-pack-prints";
+import { lastPackPrintedAt } from "@/components/ward-management/ward-downtime-pack-prints";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -33,6 +33,8 @@ const SYNTHETIC_NAME = "Synthetic person";
  * reports/ that read pack print times or the outage catch-up.
  */
 const PACK_TIME_READERS = [
+  // The print time record sits at the ward root, shared by the coordinator, ward and reports screens.
+  "src/components/ward-management/ward-downtime-pack-prints.ts",
   "src/components/ward-management/use-outage-catch-up.ts",
   "src/components/ward-management/ward/ward-pack-printed-line.tsx",
   "src/components/ward-management/ward/ward-outage-catch-up-card.tsx",
@@ -96,7 +98,7 @@ describe("downtime pack keeps no board data on the device (D-72 item 2)", () => 
         "downtime-pack.ts",
         "use-take-downtime-pack.ts",
         // Batch 4 item 24 (10 Nov 2026): the print time record and the hook that sends it.
-        "downtime-pack-prints.ts",
+        "ward-downtime-pack-prints.ts",
         "downtime-pack-print-hook.ts",
         // D-142 (11 Nov 2026): the old packs band, Record an outage, and their readers elsewhere.
         "downtime-pack-old-band.tsx",

@@ -4,7 +4,7 @@ import type { CapacityFigure } from "@/components/ward-management/ward-model-voc
 import {
   lastPackPrintedAt,
   type DowntimePackPrintRecord,
-} from "@/components/ward-management/reports/downtime-pack-prints";
+} from "@/components/ward-management/ward-downtime-pack-prints";
 
 /**
  * CATCH-UP AFTER AN OUTAGE (Batch 4 item 25, Josh's approved plan, 10 Nov 2026,

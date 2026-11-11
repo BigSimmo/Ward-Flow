@@ -24,10 +24,7 @@ import {
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { savedAtToast } from "@/components/ward-management/ward-saved-at-toast";
-import {
-  useWardCommandCompletion,
-  wardCommandFailure,
-} from "@/components/ward-management/ward/use-ward-command-completion";
+import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 
 import styles from "./downtime-pack-outage.module.css";
 
@@ -66,7 +63,8 @@ export function typedOutageWindow(
  */
 export function DowntimeRecordOutage({ now, onDone }: { now: Instant; onDone: () => void }) {
   const raise = useWardRaise("coordinator");
-  const completeCommand = useWardCommandCompletion();
+  // The ward root's form save: it holds Save while the shared save is pending and says why one failed.
+  const form = useWardFormSave("record-outage");
   const toast = useOptionalToast();
   const recorded = useOptionalWardFlowSelect("outageWindows")?.outageWindows ?? [];
   // "HH:MM" once a real 24-hour time is typed, otherwise "" (the kit TimeField's value).
@@ -74,6 +72,11 @@ export function DowntimeRecordOutage({ now, onDone }: { now: Instant; onDone: ()
   const [toTime, setToTime] = useState("");
   const [day, setDay] = useState<StartDay | "">("");
   const [problem, setProblem] = useState<string | null>(null);
+  const clearProblem = () => {
+    setProblem(null);
+    form.clearError();
+  };
+  const shownProblem = problem ?? form.error ?? null;
 
   const window = typedOutageWindow(fromTime, toTime, day, now);
   const reason =
@@ -86,14 +89,11 @@ export function DowntimeRecordOutage({ now, onDone }: { now: Instant; onDone: ()
       return setProblem("The time Ward Flow came back cannot be later than now. Check the end time.");
     if (recorded.some((row) => row.from === window.from && row.to === window.to))
       return setProblem("That outage is already recorded. Change a time to record another.");
-    setProblem(null);
+    clearProblem();
     const words = `Outage recorded: down ${formatInstantWithDay(window.from, now)} to ${formatInstantWithDay(window.to, now)}`;
-    completeCommand(
-      "record-outage",
+    form.submit(
       () => raise("RECORD_OUTAGE_WINDOW", { from: window.from, to: window.to }),
-      (outcome) => {
-        const failure = wardCommandFailure(outcome);
-        if (failure) return setProblem(failure);
+      () => {
         savedAtToast(toast, words, now);
         onDone();
       },
@@ -114,7 +114,7 @@ export function DowntimeRecordOutage({ now, onDone }: { now: Instant; onDone: ()
               value={fromTime}
               onValueChange={(time) => {
                 setFromTime(time);
-                setProblem(null);
+                clearProblem();
               }}
               data-testid="ward-downtime-outage-from"
             />
@@ -125,7 +125,7 @@ export function DowntimeRecordOutage({ now, onDone }: { now: Instant; onDone: ()
               value={day}
               onChange={(next) => {
                 setDay(next);
-                setProblem(null);
+                clearProblem();
               }}
               items={[
                 { id: "today", label: "Today" },
@@ -145,7 +145,7 @@ export function DowntimeRecordOutage({ now, onDone }: { now: Instant; onDone: ()
               value={toTime}
               onValueChange={(time) => {
                 setToTime(time);
-                setProblem(null);
+                clearProblem();
               }}
               data-testid="ward-downtime-outage-to"
             />
@@ -154,7 +154,7 @@ export function DowntimeRecordOutage({ now, onDone }: { now: Instant; onDone: ()
             <Button
               variant="pri"
               size="sm"
-              disabledReason={reason}
+              disabledReason={reason ?? (form.pending ? "Saving the outage." : undefined)}
               onClick={save}
               data-testid="ward-downtime-outage-save"
             >
@@ -163,12 +163,12 @@ export function DowntimeRecordOutage({ now, onDone }: { now: Instant; onDone: ()
           </div>
         </div>
         <p className={styles.recordHint}>Pick the day it started. Nothing is filled in for you.</p>
-        {problem ? (
+        {shownProblem ? (
           <StateLine
             kind="error"
             compact
             title="Outage not saved"
-            reason={problem}
+            reason={shownProblem}
             className={styles.recordProblem}
             data-testid="ward-downtime-outage-problem"
           />

@@ -77,7 +77,7 @@ import flowStyles from "./home-flow.module.css";
 import { HomePinnedCard } from "./home-pinned-card";
 import { HomeSinceBanner } from "./home-since-banner-lazy";
 import { HomeOutageCatchUp } from "./home-outage-catch-up-lazy";
-import { PACK_OLD_AFTER_MINUTES, wardsWithOldPack } from "@/components/ward-management/reports/downtime-pack-prints";
+import { PACK_OLD_AFTER_MINUTES, wardsWithOldPack } from "@/components/ward-management/ward-downtime-pack-prints";
 import Link from "next/link";
 import catchUpStyles from "./home-outage-catch-up.module.css";
 import heroStyles from "./home-hero.module.css";

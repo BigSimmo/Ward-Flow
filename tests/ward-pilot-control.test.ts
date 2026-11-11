@@ -8,7 +8,7 @@ import {
   lastPackPrintPerWard,
   lastPackPrintedAt,
   wardsWithOldPack,
-} from "@/components/ward-management/reports/downtime-pack-prints";
+} from "@/components/ward-management/ward-downtime-pack-prints";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { resolveWardFeatureFlags } from "@/components/ward-management/ward-feature-flags";

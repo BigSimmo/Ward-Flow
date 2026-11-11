@@ -7,7 +7,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import styles from "./downtime-pack-outage.module.css";
-import { PACK_OLD_AFTER_MINUTES, wardsWithOldPack, type DowntimePackPrintRecord } from "./downtime-pack-prints";
+import { PACK_OLD_AFTER_MINUTES, wardsWithOldPack, type DowntimePackPrintRecord } from "../ward-downtime-pack-prints";
 
 /** Old packs the band shows before "Show more". */
 const OLD_PACKS_FIRST = 6;

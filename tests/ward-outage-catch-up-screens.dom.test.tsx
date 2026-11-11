@@ -5,7 +5,7 @@ import "@testing-library/jest-dom/vitest";
 
 /*
  * Batch 4 items 24 and 25 (Josh approved the design review and its recommendations, 11 Nov 2026,
- * D-142): the screens over the model in `downtime-pack-prints.ts` and `ward-outage-catch-up.ts`.
+ * D-142): the screens over the model in `ward-downtime-pack-prints.ts` and `ward-outage-catch-up.ts`.
  * Synthetic data only. The model's own rules are pinned in `ward-pilot-control.test.ts`.
  */
 
