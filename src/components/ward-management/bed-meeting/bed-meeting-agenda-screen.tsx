@@ -817,7 +817,7 @@ function BedMeetingAgenda() {
                     <Link
                       href={unitHref(item.unitId)}
                       className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.addAction}`}
-                      aria-label={`Open ${item.wardName} to review bed ${item.bedNumber}`}
+                      aria-label={`Open ward: ${item.wardName}, to review bed ${item.bedNumber}`}
                     >
                       Open ward
                     </Link>

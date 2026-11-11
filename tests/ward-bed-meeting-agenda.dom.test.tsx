@@ -326,7 +326,7 @@ describe("bed meeting agenda group filter (B1 extended, 4 Nov 2026)", () => {
     expect(within(section).getByRole("heading", { name: /Closed beds past review/ })).toBeInTheDocument();
     expect(section).toHaveTextContent(/Bed \d+/);
     expect(section).toHaveTextContent(/Closed since .* · review was /);
-    const link = within(section).getAllByRole("link", { name: /^Open .* to review bed \d+$/ })[0]!;
+    const link = within(section).getAllByRole("link", { name: /^Open ward: .*, to review bed \d+$/ })[0]!;
     expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/ward\/[a-z-]+$/);
   });
 });
