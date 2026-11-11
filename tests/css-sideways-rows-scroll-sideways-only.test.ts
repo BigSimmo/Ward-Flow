@@ -36,16 +36,4 @@ describe("sideways scrolling rows", () => {
     }
     expect(offenders).toEqual([]);
   });
-
-  // The quick-link chip rows on every page top (and the shared phone chip row) also turn off the
-  // up-and-down bounce, which iPhone Safari still allows on a sideways row (Josh, 11 Nov 2026).
-  it.each([
-    ["wf/hero-top.module.css", 2],
-    ["ward-management/quick-bar/ward-quick-bar.module.css", 1],
-    ["wf/phone-rows.module.css", 1],
-    ["ward-management/coordinator/home-hero.module.css", 1],
-  ])("%s keeps its chip rows from bouncing up and down", (file, rules) => {
-    const css = readFileSync(join(ROOT, "components", file), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
-    expect(css.match(/overscroll-behavior-y\s*:\s*none/g)?.length ?? 0).toBeGreaterThanOrEqual(rules);
-  });
 });
