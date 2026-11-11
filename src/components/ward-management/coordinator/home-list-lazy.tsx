@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 
 import { preloadWhenIdle } from "../preload-when-idle";
+import { earlyHomeCard } from "./home-early-card";
 // A1K-01 / DR-03 (26 Oct 2026): the server draws My list's rows before their code arrives, so their
 // styles load with Home. Without them the rows paint as plain text, then grow into cards and push
 // Home down (0.16 on a phone). My list itself now loads with the page (below).
@@ -27,10 +28,11 @@ export { MyListCard } from "./my-list-card";
 export const HomePlacementDrawer = dynamic(() => loadPlacementDrawer().then((m) => m.HomePlacementDrawer), {
   loading: () => null,
 });
-export const BedsGapCard = dynamic(() => loadBedsGapCard().then((m) => m.BedsGapCard), { loading: () => null });
+// Fetched as soon as Home's code runs and drawn in Home's first frame, so it never pushes Later
+// today down as it arrives (home-early-card.tsx).
+export const BedsGapCard = earlyHomeCard(() => loadBedsGapCard().then((m) => m.BedsGapCard));
 
 preloadWhenIdle(loadPlacementDrawer);
-preloadWhenIdle(loadBedsGapCard);
 
 // H-0977: Home's in-place "Release bed" sheet, fetched on first use so it stays off the first load.
 export const HomeReleaseSheet = dynamic(() => import("./home-release-sheet").then((m) => m.HomeReleaseSheet), {

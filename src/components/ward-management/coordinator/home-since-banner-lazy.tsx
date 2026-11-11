@@ -1,18 +1,13 @@
 "use client";
 
-import dynamic from "next/dynamic";
-
-import { preloadWhenIdle } from "../preload-when-idle";
+import { earlyHomeCard } from "./home-early-card";
 
 /**
  * Phone budget: the "since you were last here" line brings the last-look comparison and its sheet
  * with it. It renders nothing until something is new, so it stays off Home's first load and is
- * fetched when the browser is idle, as Later today is (see home-activity-lazy.tsx).
+ * fetched as soon as Home's code runs, so it draws in Home's first frame and never pushes My list
+ * down as it arrives (home-early-card.tsx).
  */
 const loadSinceBanner = () => import("./home-since-banner");
 
-export const HomeSinceBanner = dynamic(() => loadSinceBanner().then((m) => m.HomeSinceBanner), {
-  loading: () => null,
-});
-
-preloadWhenIdle(loadSinceBanner);
+export const HomeSinceBanner = earlyHomeCard(() => loadSinceBanner().then((m) => m.HomeSinceBanner));
