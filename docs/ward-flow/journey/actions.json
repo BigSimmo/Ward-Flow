@@ -4685,7 +4685,7 @@
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 290,
-          "sha256": "4a7dde821d15d7032a38cb18333ed34872d78fb28e4be6efb382ad5e9095c81d"
+          "sha256": "423499562da6da82c4e887f5ab5aade3c572049781b80eb62070bddbff3d4d05"
         },
         {
           "path": "src/components/ward-management/shell/ward-bar-state.ts",
@@ -4705,12 +4705,12 @@
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 297,
-          "sha256": "4a7dde821d15d7032a38cb18333ed34872d78fb28e4be6efb382ad5e9095c81d"
+          "sha256": "423499562da6da82c4e887f5ab5aade3c572049781b80eb62070bddbff3d4d05"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 301,
-          "sha256": "4a7dde821d15d7032a38cb18333ed34872d78fb28e4be6efb382ad5e9095c81d"
+          "sha256": "423499562da6da82c4e887f5ab5aade3c572049781b80eb62070bddbff3d4d05"
         }
       ]
     }
@@ -4732,7 +4732,7 @@
         "message": "ACKNOWLEDGE_INBOX_ITEM inboxItemId must name a row — a blank names nothing",
         "source": {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 315
+          "line": 316
         }
       },
       {
@@ -4740,7 +4740,7 @@
         "message": "ACKNOWLEDGE_INBOX_ITEM inboxItemId ${inboxItemId} does not name a real inbox row — its prefix must be one of INBOX_CATEGORIES and its remainder an existing record for that category",
         "source": {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 336
+          "line": 337
         }
       }
     ],
@@ -4759,7 +4759,7 @@
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 312,
-          "sha256": "4a7dde821d15d7032a38cb18333ed34872d78fb28e4be6efb382ad5e9095c81d"
+          "sha256": "423499562da6da82c4e887f5ab5aade3c572049781b80eb62070bddbff3d4d05"
         },
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
@@ -4773,13 +4773,13 @@
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 315,
-          "sha256": "4a7dde821d15d7032a38cb18333ed34872d78fb28e4be6efb382ad5e9095c81d"
+          "line": 316,
+          "sha256": "423499562da6da82c4e887f5ab5aade3c572049781b80eb62070bddbff3d4d05"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 336,
-          "sha256": "4a7dde821d15d7032a38cb18333ed34872d78fb28e4be6efb382ad5e9095c81d"
+          "line": 337,
+          "sha256": "423499562da6da82c4e887f5ab5aade3c572049781b80eb62070bddbff3d4d05"
         }
       ]
     }
@@ -4801,7 +4801,7 @@
         "message": "COMPLETE_INBOX_ITEM inboxItemId must name a row — a blank names nothing",
         "source": {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 352
+          "line": 353
         }
       },
       {
@@ -4809,7 +4809,7 @@
         "message": "inbox row ${inboxItemId} does not name a day for the daily check",
         "source": {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 369
+          "line": 370
         }
       },
       {
@@ -4817,7 +4817,7 @@
         "message": "inbox row ${inboxItemId} is already complete",
         "source": {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 373
+          "line": 374
         }
       }
     ],
@@ -4835,8 +4835,8 @@
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 349,
-          "sha256": "4a7dde821d15d7032a38cb18333ed34872d78fb28e4be6efb382ad5e9095c81d"
+          "line": 350,
+          "sha256": "423499562da6da82c4e887f5ab5aade3c572049781b80eb62070bddbff3d4d05"
         },
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
@@ -4850,18 +4850,18 @@
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 352,
-          "sha256": "4a7dde821d15d7032a38cb18333ed34872d78fb28e4be6efb382ad5e9095c81d"
+          "line": 353,
+          "sha256": "423499562da6da82c4e887f5ab5aade3c572049781b80eb62070bddbff3d4d05"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 369,
-          "sha256": "4a7dde821d15d7032a38cb18333ed34872d78fb28e4be6efb382ad5e9095c81d"
+          "line": 370,
+          "sha256": "423499562da6da82c4e887f5ab5aade3c572049781b80eb62070bddbff3d4d05"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 373,
-          "sha256": "4a7dde821d15d7032a38cb18333ed34872d78fb28e4be6efb382ad5e9095c81d"
+          "line": 374,
+          "sha256": "423499562da6da82c4e887f5ab5aade3c572049781b80eb62070bddbff3d4d05"
         }
       ]
     }
@@ -4883,7 +4883,7 @@
         "message": "REOPEN_INBOX_ITEM inboxItemId must name a row — a blank names nothing",
         "source": {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 387
+          "line": 388
         }
       },
       {
@@ -4891,7 +4891,7 @@
         "message": "inbox row ${inboxItemId} is not complete, so there is nothing to reopen",
         "source": {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 391
+          "line": 392
         }
       }
     ],
@@ -4909,8 +4909,8 @@
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 384,
-          "sha256": "4a7dde821d15d7032a38cb18333ed34872d78fb28e4be6efb382ad5e9095c81d"
+          "line": 385,
+          "sha256": "423499562da6da82c4e887f5ab5aade3c572049781b80eb62070bddbff3d4d05"
         },
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
@@ -4919,13 +4919,13 @@
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 387,
-          "sha256": "4a7dde821d15d7032a38cb18333ed34872d78fb28e4be6efb382ad5e9095c81d"
+          "line": 388,
+          "sha256": "423499562da6da82c4e887f5ab5aade3c572049781b80eb62070bddbff3d4d05"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 391,
-          "sha256": "4a7dde821d15d7032a38cb18333ed34872d78fb28e4be6efb382ad5e9095c81d"
+          "line": 392,
+          "sha256": "423499562da6da82c4e887f5ab5aade3c572049781b80eb62070bddbff3d4d05"
         }
       ]
     }
@@ -5260,7 +5260,7 @@
         {
           "path": "src/components/ward-management/governance-registers.tsx",
           "line": 546,
-          "sha256": "c68c89bd3aa60a17ca378d9e3f369d3ee42ffa57ac035d1ca8ebd4e29c8b634d"
+          "sha256": "198ab9034a632ffca21ae9f719bed97ce6b53f40f7148085fb9ddd034da46a2c"
         }
       ]
     }
