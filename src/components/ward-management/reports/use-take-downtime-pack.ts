@@ -7,6 +7,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
+import { useWardSharedReceivedAt } from "@/components/ward-management/ward-shared-freshness";
 
 import { downtimePack, lastDowntimeSyncAt, noteDowntimeSync, rememberDowntimePack } from "./downtime-pack";
 import { useDowntimePackAccess } from "./downtime-pack-context";
@@ -40,7 +41,10 @@ export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | nu
   // tick while the browser says online. A dropped server with the browser still online, or a read
   // that has not come back yet, leaves it where it was. Without a shared workspace there is no
   // server to sync with, so the local board is in sync whenever the browser is online, as before.
-  const receivedAt = shared?.enabled ? (shared.receivedAt ?? 0) : null;
+  // The provider gives the read time in its own context (it moves on every poll); a hand-built test
+  // context may still set it on `shared`.
+  const freshness = useWardSharedReceivedAt();
+  const receivedAt = shared?.enabled ? (freshness ?? shared.receivedAt ?? 0) : null;
   const notedRead = useRef<string | null>(null);
   useEffect(() => {
     if (!online || !canTake) return;

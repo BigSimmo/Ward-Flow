@@ -353,16 +353,22 @@ export type HeroBandProps = {
   aside?: ReactNode;
   /** Makes `aside` a link with a chevron. */
   asideHref?: string;
+  /** One more quiet line between the head and the cells (My ward's pack time on a phone, D-142). */
+  note?: ReactNode;
   cells: HeroBandCell[];
-  /** `inline`: name and value on one line (Home's ED strip). `stacked`: name over value. */
-  variant?: "inline" | "stacked";
+  /**
+   * `inline`: name and value on one line (Home's ED strip). `stacked`: name over value. `wrap`: as
+   * `inline`, wrapping onto more rows on wider screens and one cell per line on a phone, for a list
+   * of named times (the downtime pack's old packs, Batch 4, D-142).
+   */
+  variant?: "inline" | "stacked" | "wrap";
   /** Narrower gaps between cells on desktop, for a band with many cells (the bed board's eight). */
   compact?: boolean;
   testId?: string;
 };
 
 /** One slim strip of cells on the slate, hairlines between; it scrolls sideways with a fade on a phone. */
-export function HeroBand({ title, aside, asideHref, cells, variant = "inline", compact, testId }: HeroBandProps) {
+export function HeroBand({ title, aside, asideHref, note, cells, variant = "inline", compact, testId }: HeroBandProps) {
   "use no memo";
   const titleId = useId();
   const listRef = useRef<HTMLUListElement>(null);
@@ -385,6 +391,7 @@ export function HeroBand({ title, aside, asideHref, cells, variant = "inline", c
           )
         ) : null}
       </div>
+      {note ? <p className={styles.bandNote}>{note}</p> : null}
       <ul
         ref={listRef}
         className={styles.cells}

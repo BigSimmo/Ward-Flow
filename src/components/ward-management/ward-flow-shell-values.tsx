@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, type ReactNode } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import { WardAuthorisedExecutivePreview } from "./shell/ward-chrome-frame";
 import { wardShellLifetime } from "./shell/ward-shell-public-context";
 import {
@@ -38,21 +38,25 @@ export function useWardShellValues({
   children: ReactNode;
 }) {
   const shellAccess = useEffectiveWardAccess();
+  // The connection object is new on every poll; the shell reads only these fields of it, so its
+  // value (and its sixteen readers) changes only when one of them does. The role switch reads the
+  // latest connection through a ref.
+  const latestShared = useRef(shared);
+  useLayoutEffect(() => {
+    latestShared.current = shared;
+  });
+  const authenticated = shared.enabled;
   const switchPublicRole = useCallback(() => {
     if (readWardAccessSnapshot().previewOf) endAccessPreview();
-    else if (!shared.enabled) setWardAccess(STATEWIDE_COORDINATOR);
-    else shared.switchRole?.();
-  }, [shared]);
+    else if (!authenticated) setWardAccess(STATEWIDE_COORDINATOR);
+    else latestShared.current.switchRole?.();
+  }, [authenticated]);
+  const accessLifetime = wardShellLifetime(shared, state.scenario, state.worldGeneration, shellAccess);
+  const places = useMemo(() => wardPlaceLookup(state.units), [state.units]);
+  const placeLabel = accessPlaceLabel(shellAccess, state.units);
   const shellPublic = useMemo(
-    () => ({
-      places: wardPlaceLookup(state.units),
-      placeLabel: accessPlaceLabel(shellAccess, state.units),
-      now,
-      authenticated: shared.enabled,
-      switchRole: switchPublicRole,
-      accessLifetime: wardShellLifetime(shared, state.scenario, state.worldGeneration, shellAccess),
-    }),
-    [state.units, state.scenario, state.worldGeneration, shellAccess, now, shared, switchPublicRole],
+    () => ({ places, placeLabel, now, authenticated, switchRole: switchPublicRole, accessLifetime }),
+    [places, placeLabel, now, authenticated, switchPublicRole, accessLifetime],
   );
   const previewSource = useMemo(
     () => ({ state, access: shellAccess, now, dayZero: dayZero.toISOString(), startedAt, events }),

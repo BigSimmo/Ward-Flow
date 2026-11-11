@@ -155,6 +155,12 @@ const ACCEPTED = Object.fromEntries([
     `012-foreign-key-indexes.sql#${index + 1} index-blocks-writes`,
     `${SMALL}; CONCURRENTLY cannot run inside the migration transaction`,
   ]),
+  // Migration 18 adds three read-path indexes, for the same reason. The prototype's logs hold
+  // synthetic rows only, so each build takes milliseconds while saves wait.
+  ...Array.from({ length: 3 }, (_, index) => [
+    `018-read-path-indexes.sql#${index + 1} index-blocks-writes`,
+    `${SMALL}; CONCURRENTLY cannot run inside the migration transaction`,
+  ]),
   // Starts each existing role's "last used" clock once, so no role switches off as 009 lands.
   ["009-access-cover-requests.sql#4 bulk-row-change", SMALL],
 ]);

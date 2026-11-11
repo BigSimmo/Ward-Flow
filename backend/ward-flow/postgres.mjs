@@ -204,6 +204,77 @@ export function createWorkspaceStore(
   let scopedReplyTicket = {};
   /** Full public reports only, from committed locked reads; never a candidate save. */
   const executiveReplies = new LruCache(SCOPED_REPLY_CACHE_ENTRIES);
+  /**
+   * The committed row the last cached executive report was built from, with the world generation
+   * and archive count it used, so a poll at that same row can find the report without a read.
+   * @type {{ stamp: string, generation: number, archived: number } | null}
+   */
+  let executiveBasis = null;
+  /**
+   * The workspace clock (day zero and offset, D-150) of one committed row ("revision:updated-at"), so
+   * an unchanged poll does not read them out of the workspace JSON each time. Set by full reads
+   * and by the poll's own fallback read; a row with a different stamp is never answered from it.
+   * @type {{ stamp: string, dayZero: string, clockOffset: number } | null}
+   */
+  let pollClock = null;
+  function rememberPollClock(stamp, dayZero, clockOffset) {
+    if (
+      typeof stamp === "string" &&
+      typeof dayZero === "string" &&
+      Number.isFinite(Date.parse(dayZero)) &&
+      Number.isFinite(clockOffset)
+    )
+      pollClock = { stamp, dayZero, clockOffset };
+  }
+  const pollNow = (at) =>
+    engine.worldNow({ dayZero: pollClock?.dayZero, state: { clockOffsetMinutes: pollClock?.clockOffset } }, at);
+  /** The executive desk's snapshot around one report, as a full read and a cached poll send it. */
+  const executiveReply = (view, context, accessUntil, revision, now, report) => ({
+    kind: "executive-aggregate",
+    dataMode: "prototype",
+    actorId: view.actorId,
+    revision,
+    ...context,
+    accessUntil,
+    now,
+    report,
+    demoControls: false,
+  });
+  /**
+   * An executive poll answered from the report cache, with no transaction: only when this request's
+   * own resolve (one statement with its memberships) saw the very row the cached report was built
+   * from, in the same workspace minute, for the same desk, access and end. Anything else (a save,
+   * a new minute, a changed role, an ended role) returns null and takes the full locked read.
+   */
+  function cachedExecutivePoll(view, stamp, at) {
+    const accessUntil = view?.accessUntil;
+    if (
+      !executiveBasis ||
+      executiveBasis.stamp !== stamp ||
+      pollClock?.stamp !== stamp ||
+      known.version < ARCHIVE_MIGRATION ||
+      !view?.membershipId ||
+      !Number.isFinite(accessUntil) ||
+      accessUntil <= clock().getTime()
+    )
+      return null;
+    const context = accessContext(at, view);
+    if (typeof context.accessContext !== "string") return null;
+    const now = pollNow(at);
+    const report = executiveReplies.get(
+      JSON.stringify([
+        stamp,
+        executiveBasis.generation,
+        executiveBasis.archived,
+        now,
+        view.actorId,
+        context.accessContext,
+        accessUntil,
+      ]),
+    );
+    if (!report) return null;
+    return executiveReply(view, context, accessUntil, Number(stamp.split(":")[0]), now, report);
+  }
   async function executiveSnapshot(connection, row, at, view, stamp) {
     const unavailable = () => new Error("Executive reporting is unavailable");
     const context = accessContext(at, view);
@@ -286,19 +357,15 @@ export function createWorkspaceStore(
         executiveReplies.set(key, report);
       }
     }
+    if (key)
+      executiveBasis = {
+        stamp: /** @type {string} */ (stamp),
+        generation: row.payload.state.worldGeneration,
+        archived: row.archived,
+      };
     // Projection is expensive. Membership must still be live when the result leaves the store.
     if (accessUntil <= clock().getTime()) throw new Error("role-ended");
-    return {
-      kind: "executive-aggregate",
-      dataMode: "prototype",
-      actorId: view.actorId,
-      revision: Number(row.revision),
-      ...context,
-      accessUntil,
-      now,
-      report,
-      demoControls: false,
-    };
+    return executiveReply(view, context, accessUntil, Number(row.revision), now, report);
   }
   function scopedParts(row, at, view, senderView, stamp, entryTicket) {
     const reviewable = reviewIdsFor(row, row.payload, view, at);
@@ -369,6 +436,8 @@ export function createWorkspaceStore(
     connection = null,
     replyTicket = /** @type {object | undefined} */ (undefined),
   ) => {
+    // A committed row's clock, so the next unchanged poll answers from memory (no migration).
+    rememberPollClock(stamp, row.payload?.dayZero, row.payload?.state?.clockOffsetMinutes);
     if (view?.access?.role === "executive") return executiveSnapshot(connection, row, at, view, stamp);
     const context = accessContext(at, view);
     const revision = Number(row.revision);
@@ -499,8 +568,11 @@ export function createWorkspaceStore(
       archivedKnown = null;
     }
   }
-  /** One audit row, naming the sender's role and place once migration 8 holds them. */
-  async function audit(client, view, actorId, row) {
+  /**
+   * One audit row's INSERT, naming the sender's role and place once migration 8 holds them. Its
+   * placeholders start after `offset`, so a caller can write it in the same statement as another.
+   */
+  function auditInsert(view, actorId, row, offset = 0) {
     const values = [
       workspaceId,
       actorId,
@@ -511,16 +583,16 @@ export function createWorkspaceStore(
       row.revision,
       storedAuditChanges(row.changes),
     ];
-    if (view && view.version >= ROLE_ACCESS_MIGRATION)
-      await client.query(
-        "INSERT INTO ward_flow.audit(workspace_id, actor_id, command_id, action, outcome, prior_revision, revision, changes, actor_role, actor_scope) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
-        [...values, view.access.role, view.access.scope],
-      );
-    else
-      await client.query(
-        "INSERT INTO ward_flow.audit(workspace_id, actor_id, command_id, action, outcome, prior_revision, revision, changes) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
-        values,
-      );
+    const roles = view && view.version >= ROLE_ACCESS_MIGRATION;
+    if (roles) values.push(view.access.role, view.access.scope);
+    return {
+      sql: `INSERT INTO ward_flow.audit(workspace_id, actor_id, command_id, action, outcome, prior_revision, revision, changes${roles ? ", actor_role, actor_scope" : ""}) VALUES (${values.map((_, index) => `$${offset + index + 1}`).join(",")})`,
+      values,
+    };
+  }
+  async function audit(client, view, actorId, row) {
+    const { sql, values } = auditInsert(view, actorId, row);
+    await client.query(sql, values);
   }
   async function transaction(run) {
     const client = await pool.connect();
@@ -692,13 +764,9 @@ export function createWorkspaceStore(
     }
     if (bytes > MAX_WORLD_BYTES) throw new WorkspaceTooLargeError();
     const plan = planSave(row.stored, world, revision, row.core);
-    await client.query("UPDATE ward_flow.workspaces SET revision=$2, payload=$3, updated_at=$4 WHERE id=$1", [
-      workspaceId,
-      revision,
-      plan.core,
-      at,
-    ]);
-    await writeRecords(client, plan, at);
+    // One round trip under the workspace lock: the workspace row, the records gone and the
+    // records changed are written by one statement, so they still commit or fail together.
+    await writeRecords(client, plan, at, { revision, core: plan.core });
     pending = savedState(row, plan, revision, at);
   }
   /**
@@ -883,30 +951,49 @@ export function createWorkspaceStore(
     archiveRefresh = refresh.catch(() => {});
     return refresh;
   }
-  async function writeRecords(client, plan, at) {
+  /**
+   * Writes a save plan's records and, with `workspace`, the workspace row too, in one statement:
+   * each earlier step is a data-modifying WITH, which PostgreSQL always runs to completion with
+   * the statement, so the writes commit or fail together. A plan's deletes and upserts never
+   * name the same record (planSave), so no row is changed twice in the one statement.
+   * @param {{ revision: number, core: any }} [workspace]
+   */
+  async function writeRecords(client, plan, at, workspace = undefined) {
+    // Each step keeps its own placeholders, in the order it had as a statement of its own.
+    const values = [workspaceId];
+    const param = (value) => `$${values.push(value)}`;
+    const steps = [];
+    if (workspace)
+      steps.push(
+        `UPDATE ward_flow.workspaces SET revision=${param(workspace.revision)}, payload=${param(workspace.core)}, updated_at=${param(at)} WHERE id=$1`,
+      );
     if (plan.deletes.length)
-      await client.query(
-        "DELETE FROM ward_flow.workspace_records WHERE workspace_id=$1 AND (collection, record_id) IN (SELECT * FROM unnest($2::text[], $3::text[]))",
-        [workspaceId, plan.deletes.map((row) => row.collection), plan.deletes.map((row) => row.recordId)],
+      steps.push(
+        `DELETE FROM ward_flow.workspace_records WHERE workspace_id=$1 AND (collection, record_id) IN (SELECT * FROM unnest(${param(plan.deletes.map((row) => row.collection))}::text[], ${param(plan.deletes.map((row) => row.recordId))}::text[]))`,
       );
-    if (plan.upserts.length)
-      await client.query(
-        "INSERT INTO ward_flow.workspace_records(workspace_id, collection, record_id, kind, ordinal, revision, body, updated_at) SELECT $1, r.collection, r.record_id, r.kind, r.ordinal, r.revision, r.body, $3 FROM jsonb_to_recordset($2::jsonb) AS r(collection text, record_id text, kind text, ordinal integer, revision bigint, body jsonb) ON CONFLICT (workspace_id, collection, record_id) DO UPDATE SET kind=EXCLUDED.kind, ordinal=EXCLUDED.ordinal, body=EXCLUDED.body, updated_at=CASE WHEN ward_flow.workspace_records.revision = EXCLUDED.revision THEN ward_flow.workspace_records.updated_at ELSE EXCLUDED.updated_at END, revision=EXCLUDED.revision",
-        [
-          workspaceId,
-          JSON.stringify(
-            plan.upserts.map((part) => ({
-              collection: part.collection,
-              record_id: part.recordId,
-              kind: part.kind,
-              ordinal: part.ordinal,
-              revision: part.revision,
-              body: part.body,
-            })),
-          ),
-          at,
-        ],
+    if (plan.upserts.length) {
+      const rows = param(
+        JSON.stringify(
+          plan.upserts.map((part) => ({
+            collection: part.collection,
+            record_id: part.recordId,
+            kind: part.kind,
+            ordinal: part.ordinal,
+            revision: part.revision,
+            body: part.body,
+          })),
+        ),
       );
+      steps.push(
+        `INSERT INTO ward_flow.workspace_records(workspace_id, collection, record_id, kind, ordinal, revision, body, updated_at) SELECT $1, r.collection, r.record_id, r.kind, r.ordinal, r.revision, r.body, ${param(at)} FROM jsonb_to_recordset(${rows}::jsonb) AS r(collection text, record_id text, kind text, ordinal integer, revision bigint, body jsonb) ON CONFLICT (workspace_id, collection, record_id) DO UPDATE SET kind=EXCLUDED.kind, ordinal=EXCLUDED.ordinal, body=EXCLUDED.body, updated_at=CASE WHEN ward_flow.workspace_records.revision = EXCLUDED.revision THEN ward_flow.workspace_records.updated_at ELSE EXCLUDED.updated_at END, revision=EXCLUDED.revision`,
+      );
+    }
+    const last = steps.pop();
+    if (!last) return;
+    await client.query(
+      steps.length ? `WITH ${steps.map((step, index) => `step${index} AS (${step})`).join(", ")} ${last}` : last,
+      values,
+    );
   }
   async function lock(client, actorId, at, view) {
     let row = await lockedWorld(client, "UPDATE");
@@ -1125,14 +1212,28 @@ export function createWorkspaceStore(
      * otherwise the full snapshot, as `read` does. A member desk also names its `knownContext`, and
      * gets the cheap answer only while that still matches; its browser reads in full every minute,
      * because what a desk may see also changes with time (hand-off windows).
+     *
+     * `view.workspaceStamp`, when the request's own resolve read it (the same statement as its
+     * memberships), names the workspace row, so an unchanged poll sends no further statement: the
+     * clock comes from `pollClock` for that row. An executive desk's report, built per row and
+     * workspace minute, is answered from the report cache the same way (`cachedExecutivePoll`).
      * @param {any} actorId
      * @param {any} knownRevision
      * @param {any} [view]
      * @param {string | null} [knownContext]
      */
     async poll(actorId, knownRevision, view, knownContext = null) {
-      if (view?.access?.role === "executive") return { notModified: false, snapshot: await read(actorId, view) };
       const at = clock();
+      const seen = view?.workspaceStamp;
+      const stamp =
+        seen && Number.isSafeInteger(seen.revision) && Number.isFinite(seen.updatedAt)
+          ? `${seen.revision}:${seen.updatedAt}`
+          : null;
+      if (view?.access?.role === "executive")
+        return {
+          notModified: false,
+          snapshot: (stamp && cachedExecutivePoll(view, stamp, at)) || (await read(actorId, view)),
+        };
       // Re-resolve scoped access immediately before reading. A role or one of its covers may have
       // ended since the HTTP handler resolved the view; never use that stale scope for a snapshot.
       // Audit F-04: a member desk whose access is unchanged (same role, place, cover and openings,
@@ -1144,11 +1245,19 @@ export function createWorkspaceStore(
         (view.recentGrant || typeof knownContext !== "string" || accessContext(at, view).accessContext !== knownContext)
       )
         return { notModified: false, snapshot: await scopedRead(actorId, view) };
+      if (stamp) {
+        // The resolve read a prototype workspace row (its statement names data_mode='prototype').
+        if (seen.revision !== knownRevision) return { notModified: false, snapshot: await read(actorId, view) };
+        if (pollClock?.stamp === stamp)
+          return { notModified: true, dataMode: "prototype", revision: knownRevision, now: pollNow(at) };
+      }
       const { rows } = await pool.query(
-        "SELECT data_mode, revision, payload->>'dayZero' AS day_zero, payload->'state'->'clockOffsetMinutes' AS clock_offset FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
+        "SELECT data_mode, revision, date_trunc('milliseconds', updated_at) AS updated_at, payload->>'dayZero' AS day_zero, payload->'state'->'clockOffsetMinutes' AS clock_offset FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
         [workspaceId],
       );
       const row = rows[0];
+      if (row && row.updated_at instanceof Date)
+        rememberPollClock(`${Number(row.revision)}:${row.updated_at.getTime()}`, row.day_zero, row.clock_offset);
       if (
         row &&
         Number(row.revision) === knownRevision &&
@@ -1577,11 +1686,11 @@ export function createWorkspaceStore(
             commandTiming.lap("save");
             if (push) {
               // Phone push must never cost the coordinator their change: an evaluation error rolls
-              // back to here, is logged, and the command still commits.
+              // back to here, is logged, and the command still commits. A savepoint left open is
+              // released by COMMIT, so a successful check costs no RELEASE round trip.
               await client.query("SAVEPOINT push_evaluation");
               try {
                 queued = await evaluatePush(client, row.payload, before, at, actorId);
-                await client.query("RELEASE SAVEPOINT push_evaluation");
               } catch (error) {
                 await client.query("ROLLBACK TO SAVEPOINT push_evaluation");
                 queued = false;
@@ -1602,16 +1711,17 @@ export function createWorkspaceStore(
           ...(outcome === "stale" ? { code: "stale", recordType: recordType ?? "record" } : {}),
           ...(covered?.length ? { covered } : {}),
         };
-        await audit(client, view, actorId, {
-          commandId,
-          action: event.type,
-          outcome,
-          priorRevision,
-          revision: row.revision,
-          changes,
-        });
+        // The command's audit row and its receipt go in one statement (one round trip under the
+        // workspace lock): a data-modifying WITH always runs with its statement, so both are
+        // written or neither is, and a failed receipt still rolls back the whole save.
+        const audited = auditInsert(
+          view,
+          actorId,
+          { commandId, action: event.type, outcome, priorRevision, revision: row.revision, changes },
+          6,
+        );
         await client.query(
-          "INSERT INTO ward_flow.commands(workspace_id, actor_id, command_id, fingerprint, status, result) VALUES ($1,$2,$3,$4,$5,$6)",
+          `WITH audited AS (${audited.sql}) INSERT INTO ward_flow.commands(workspace_id, actor_id, command_id, fingerprint, status, result) VALUES ($1,$2,$3,$4,$5,$6)`,
           [
             workspaceId,
             actorId,
@@ -1622,6 +1732,7 @@ export function createWorkspaceStore(
               ...result,
               receiptAccessContext: accessContext(at, view).accessContext ?? null,
             },
+            ...audited.values,
           ],
         );
         const settle = (entry) => {

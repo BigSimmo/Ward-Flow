@@ -29,8 +29,12 @@ describe("phone Home Checking line", () => {
         </ToastProvider>
       </WardFlowProvider>,
     );
-    const line = screen.getByText(/^Checking: \d+ stale bed counts?, \d+ wards? not reporting$/);
-    expect(line).toHaveAttribute("data-testid", "home-next-checking");
+    // Batch 4 item 24 (D-142): the line ends with a pointer to the old outage packs, when any.
+    const line = screen.getByTestId("home-next-checking");
+    expect(line.textContent).toMatch(
+      /^Checking: \d+ stale bed counts?, \d+ wards? not reporting(, \d+ outage packs? over 24h old)?$/,
+    );
+    expect(screen.getAllByTestId("home-next-checking")).toHaveLength(1);
     expect(line.closest("[data-wf-hero-next]")).not.toBeNull();
     expect(screen.queryByTestId("wf-checking-foot")).not.toBeInTheDocument();
   });

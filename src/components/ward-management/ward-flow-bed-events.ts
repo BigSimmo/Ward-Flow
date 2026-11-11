@@ -359,6 +359,8 @@ export function reduceBedEvent(
           // The role check above limits this to a desk `CONFIRM_CAPACITY` allows.
           confirmedBy: event.role as CapacityConfirmer,
           confirmedAt: event.now,
+          // The ward's own last confirm survives another desk's (outage catch-up, D-142).
+          ...(event.role === "ward" ? { wardConfirmedAt: event.now } : {}),
           revision: (unit.allocatable.revision ?? 0) + 1,
           confirmations: (unit.allocatable.confirmations ?? 0) + 1,
           // The run of shifts the ward has confirmed the same number (Capacity's This shift lists

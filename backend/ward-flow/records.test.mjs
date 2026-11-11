@@ -511,6 +511,9 @@ test(
       try {
         await client.query("BEGIN");
         await client.query(
+          await readFile(new URL("./infra/rollback-018-read-path-indexes.sql", import.meta.url), "utf8"),
+        );
+        await client.query(
           await readFile(new URL("./infra/rollback-017-account-preferences.sql", import.meta.url), "utf8"),
         );
         await client.query(

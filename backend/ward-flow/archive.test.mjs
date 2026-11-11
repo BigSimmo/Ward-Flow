@@ -171,6 +171,7 @@ test(
       try {
         await client.query("BEGIN");
         for (const file of [
+          "./infra/rollback-018-read-path-indexes.sql",
           "./infra/rollback-017-account-preferences.sql",
           "./infra/rollback-016-forecast-history.sql",
           "./infra/rollback-015-list-and-tv-views.sql",

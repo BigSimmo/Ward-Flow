@@ -115,6 +115,13 @@ export const WardConfirmBedsDialog = dynamic(() => loadConfirmBeds().then((m) =>
   ssr: false,
 });
 preloadWhenIdle(loadConfirmBeds);
+// Phone budget: Catch-up after the outage (Batch 4 item 25, D-142) renders nothing until an outage
+// is recorded, so it stays off the ward's first load and is fetched when the browser is idle.
+const loadOutageCatchUp = () => import("./ward-outage-catch-up-card");
+export const WardOutageCatchUpCard = dynamic(() => loadOutageCatchUp().then((m) => m.WardOutageCatchUpCard), {
+  ssr: false,
+});
+preloadWhenIdle(loadOutageCatchUp);
 // Shown only after a confirmed discharge, so it loads when first needed.
 export const WardDischargeNotices = dynamic(
   () => import("./ward-discharge-notices").then((m) => m.WardDischargeNotices),
