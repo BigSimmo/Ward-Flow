@@ -39,7 +39,7 @@ Build the shared engine with `npm --prefix backend/ward-flow run build:engine`, 
 node --env-file=C:/private/ward-runtime.env backend/ward-flow/server.mjs
 ```
 
-The portable and Supabase presets verify the actual login, flags, memberships, ownership, effective permissions, migration set and guard triggers. They refuse unsafe or unprepared runtimes. Pools use verified TLS, four connections and bounded connection/query timeouts.
+The portable and Supabase presets verify the actual login, flags, memberships, ownership, effective permissions, migration set and guard triggers. They refuse unsafe or unprepared runtimes. Pools use verified TLS, bounded connection/query timeouts and at most four connections (portable) or ten (Supabase, within its pooler limit).
 
 After `npm run ensure`, verify `/api/local-project-id` before opening the frontend. Confirm authenticated readiness, shared read/save/reload, stale-revision refusal and retry behaviour for the selected target before relying on it. Offline mocked checks do not establish a hosted connection, local real-database correctness or deployment. Push stays off unless separately configured; this setup does not enable a scheduler.
 
