@@ -106,7 +106,7 @@ Weekly, or before a demonstration. All read-only.
 5. **Receipts.** Command receipts older than 7 days are pruned every Monday at 03:00 Perth by
    `.github/workflows/prune-receipts.yml`. Until the owner adds the repository secret
    `WARD_SUPABASE_PRUNE_DATABASE_URL`, the weekly run fails on purpose; check it succeeded. To prune by hand, run
-   `npm --prefix backend/ward-flow run prune:supabase`. It needs the private administrator
+   `npm --prefix backend/ward-flow run prune:receipts:supabase`. It needs the private administrator
    environment, so it is a live change. The audit history is never pruned.
 6. **Quiet periods.** Two things stop by themselves when nobody is working on Ward Flow:
    - GitHub turns off every scheduled workflow after 60 days without repository activity:
