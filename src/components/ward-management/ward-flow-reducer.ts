@@ -32,6 +32,7 @@ import { reduceDirectoryCheck, type DirectoryCheckRecord } from "./on-call/on-ca
 import type { SiteHandoverSignOffRecord } from "./site-sign-off/site-handover-sign-off";
 import type { TriageSignedRecord } from "./triage/triage-record";
 import { reduceStaffRequest, type StaffRequestRecord } from "./staffing/staff-requests";
+import type { PilotControlState } from "./ward-flow-pilot-control-events";
 import { classifyLegalStatus, legalStatusIsDetained } from "@/components/ward-management/ward-legal-status";
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { referralState } from "./ward-referrals";
@@ -283,7 +284,8 @@ export const STAGE_TRANSITION_BLOCKERS = {
  * Units live in state, not just movements: a ward whose capacity never moves as it accepts, holds
  * and receives patients makes the primary screen less true the more it is used.
  */
-export type WardFlowState = WardAuditState & {
+type WardAuditAndPilotState = WardAuditState & PilotControlState; // Batch 4 records (10 Nov 2026).
+export type WardFlowState = WardAuditAndPilotState & {
   dischargeRevisions: Record<string, number>;
   movements: Movement[];
   units: Unit[];
@@ -2379,6 +2381,10 @@ export function reduceClinicalEvent(
     case "REQUEST_WARD_STAFF":
     case "CLOSE_WARD_STAFF_REQUEST":
       return reduceStaffRequest(state, event, reject);
+    case "SET_SITE_FEATURE_SWITCH": // Batch 4 (10 Nov 2026): one small record each.
+    case "RECORD_DOWNTIME_PACK_PRINTED":
+    case "RECORD_OUTAGE_WINDOW":
+      return reducerSlices().reducePilotControlEvent(state, event, decision, reject);
     // Triage and risk (7 Nov 2026): a signed triage on one person. No Undo: it is a signed record.
     case "RECORD_TRIAGE_SIGNED":
       return reducerSlices().reduceTriageSigned(state, event, reject);

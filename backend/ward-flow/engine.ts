@@ -51,6 +51,10 @@ import {
 } from "../../src/components/ward-management/ward-flow-reducer";
 import { isValidSharedWardFlowState } from "../../src/components/ward-management/ward-shared-state-validation";
 import { checkSyntheticPayload } from "../../src/lib/synthetic-data-guard";
+import {
+  SITE_FEATURE_SWITCH_ROLE,
+  siteFeatureSwitchRefusal,
+} from "../../src/components/ward-management/ward-site-feature-switches";
 import { cleanReferralFields } from "../../src/components/ward-management/referrals/referral-text-clean";
 
 export { checkSyntheticPayload };
@@ -611,7 +615,15 @@ export function deskCommand(access: WardAccess, supplied: unknown): unknown {
   const sent = supplied as Record<string, unknown> | null;
   const networkSignOff =
     sent?.type === "RECORD_HANDOVER_SIGN_OFF" && accessIsWholeNetwork(access) && sent.unitId === undefined;
-  const fields = networkSignOff ? { ...sent, network: true } : sent;
+  let fields = networkSignOff ? { ...sent, network: true } : sent;
+  // D-142 (Josh, 11 Nov 2026): a site switch names the access admin from the membership, never from
+  // the browser, so the record says who switched it. The access admin's switch goes under the
+  // engine's coordinator role, the one role the action takes; `commandRefusal` still decides.
+  if (fields?.type === "SET_SITE_FEATURE_SWITCH") {
+    fields = { ...fields };
+    delete fields.byAccessAdmin;
+    if (access.role === "admin") return { ...fields, role: SITE_FEATURE_SWITCH_ROLE, byAccessAdmin: true };
+  }
   if (access.role !== "coordinator" || typeof fields?.role !== "string") return fields;
   if (fields.role === "demo" || fields.role === access.role || fields.type === "MARK_NOTICE_READ") return fields;
   return { ...fields, role: access.role };
@@ -637,7 +649,15 @@ export function commandRefusal(
   if (!Object.hasOwn(EVENT_ROLE, type)) return "This change is not one the workflow knows.";
   if (accessIsWholeNetwork(access)) return null;
   const notYours = "This change is not part of your role.";
+  // Batch 4 item 20 (10 Nov 2026): only an admin switches a feature off at a site. The statewide
+  // coordinator was returned above; the statewide access admin is let through here (D-142, Josh's
+  // amendment to D-80 for this one action); every other desk, a service coordinator too, is refused.
+  if (type === "SET_SITE_FEATURE_SWITCH") return siteFeatureSwitchRefusal(access, supplied);
   if (access.role === "admin" || access.role === "executive" || role === "demo") return notYours;
+  // Batch 4 item 25 (D-142): an outage record is network-wide, so only the statewide coordinator
+  // (returned above) records one; a service coordinator is refused. The role itself is allowed, so
+  // the permission matrix reads this as a place limit, like the site switch above.
+  if (type === "RECORD_OUTAGE_WINDOW") return "Only the statewide coordinator records an outage.";
   // A service coordinator is the coordinator inside its service (Josh, 10 Oct 2026: the
   // coordinator takes every action), so only its place limits it, below.
   if (access.role !== "coordinator") {

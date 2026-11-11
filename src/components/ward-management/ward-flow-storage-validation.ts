@@ -93,6 +93,7 @@ import { isObservation, type Observation } from "./ward-observation";
 import { isTentativeDiagnosisBlock } from "./ward-diagnosis";
 import { isCommunityReferralPurpose } from "./ward-model-referral-parts";
 import { storedStaffRequests } from "./staffing/staff-requests-schema";
+import { pilotControlRowsBelong, pilotControlStoredFields } from "./ward-flow-pilot-control-schema";
 import { storedCarerCallbacks, storedHandedItems } from "@/components/ward-management/handover-work-schema";
 
 // D-72: numbered device-copy stand-ins keep typed criteria distinct.
@@ -291,6 +292,7 @@ const capacityFigure = z.looseObject({
   revision: z.optional(counter),
   confirmations: z.optional(counter),
   confirmedBy: z.optional(z.enum(["ward", "bed_manager", "coordinator"])),
+  wardConfirmedAt: z.optional(finite),
 });
 // Closing the loop, package D (24 Oct 2026): fixed-list choices, ids, instants and role labels only.
 const closureTransitionMarkRule = z.strictObject({
@@ -1092,6 +1094,8 @@ const storedState = z.looseObject({
   triages: z.optional(storedTriageRecords),
   // Staff needed (feature 10, 9 Nov 2026): absent in older saves. Ids, closed lists, times and roles only.
   staffRequests: z.optional(storedStaffRequests),
+  // Batch 4 (10 Nov 2026): site feature switches, pack print times and outage windows, each optional.
+  ...pilotControlStoredFields,
   // Batch 3 items 21 and 23 (10 Nov 2026): absent in older saves. Ids, desks and times only.
   handedItems: z.optional(storedHandedItems),
   carerCallbacks: z.optional(storedCarerCallbacks),
@@ -1461,6 +1465,7 @@ function consistent(state: StoredState, value: RecordValue): boolean {
   for (const key of Object.keys(state.morningRollupConfirmations)) if (!unitIds.has(key)) return false;
   // Staff needed (feature 10): every request names a ward in this world.
   for (const row of state.staffRequests ?? []) if (!unitIds.has(row.unitId)) return false;
+  if (!pilotControlRowsBelong(value as unknown as WardFlowState, state.units)) return false;
   // H-IMPORT (#1455): live absence, active stays and numbered beds must each have one owner.
   return storedPlacementInvariants(value as unknown as WardFlowState, activePatientStays(state.admissions));
 }

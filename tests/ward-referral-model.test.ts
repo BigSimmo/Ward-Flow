@@ -724,6 +724,10 @@ describe("front-door contract — an ED may close to all admissions, never refus
     REQUEST_PSYCH_REVIEW: false,
     RECORD_PSYCH_REVIEW_SEEN: false,
     MARK_WARD_READY_FOR_NEXT: false,
+    // Batch 4 (10 Nov 2026): a site switch, a pack print time and an outage window; refuses no one.
+    SET_SITE_FEATURE_SWITCH: false,
+    RECORD_DOWNTIME_PACK_PRINTED: false,
+    RECORD_OUTAGE_WINDOW: false,
     RAISE_EXPECT_FLAG: false,
     FLAG_LEGAL_MISMATCH: false,
     EVALUATE_LEAVE_BED_WARNINGS: false,

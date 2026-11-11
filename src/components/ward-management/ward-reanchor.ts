@@ -102,6 +102,8 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   // Item 5 (9 Nov 2026): the day a stay was recorded clinically ready for discharge.
   "clinicallyReadySince",
   "confirmedAt",
+  // Batch 4 item 25 (D-142): the ward's own last bed confirm, kept for its outage catch-up.
+  "wardConfirmedAt",
   "decidedAt",
   "dueAt",
   "previousDueAt",
