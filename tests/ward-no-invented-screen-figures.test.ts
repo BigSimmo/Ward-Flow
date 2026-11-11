@@ -157,6 +157,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^ROLE_ALERT_WINDOW_MINUTES$/,
   },
   {
+    id: "save-warning-pause",
+    why: "Live audit item 8 (11 Nov 2026): how long a save in flight shows the calm Saving… pill before the reload warning; screen timing, never shown, not a clinical limit.",
+    file: /^ward-shared-save-status\.tsx$/,
+    name: /^SAVE_WARNING_AFTER_MS$/,
+  },
+  {
     id: "typing-pause",
     why: "The referral draft's autosave pause (9 Oct 2026): how long typing rests before tab memory is updated; never shown, not a limit.",
     file: /^referrals\/referral-draft-cache\.ts$/,
