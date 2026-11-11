@@ -439,7 +439,9 @@ export function PatientNowScreen({
 
   // Item 27 (10 Nov 2026): the transfer as plain recorded facts, for the notes, once a ward accepted.
   const transferNotes = () =>
-    liveMovement ? movementTransferNotesText(liveMovement, { patientName: displayName, units, now }) : undefined;
+    liveMovement
+      ? movementTransferNotesText(liveMovement, { patientName: displayName, units, admissions, now })
+      : undefined;
 
   // Keyboard navigation for tablist
   // Round 2 (Josh, 1 Nov 2026): Community shows only when community engagement is noted (a team

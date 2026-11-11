@@ -99,7 +99,12 @@ describe("transfer notes", () => {
     const state = seedWardFlowState();
     const movement = acceptedSeedMovement();
     const ward = state.units.find((unit) => unit.id === movement.acceptedUnitId)!;
-    const text = movementTransferNotesText(movement, { patientName: "Synthetic, Person", units: state.units, now })!;
+    const text = movementTransferNotesText(movement, {
+      patientName: "Synthetic, Person",
+      units: state.units,
+      admissions: state.admissions,
+      now,
+    })!;
     const lines = text.split("\n");
     expect(lines[0]).toBe(SYNTHETIC_COPY_LINE);
     expect(lines[1]).toBe("Ward Flow transfer: Synthetic, Person.");
@@ -110,9 +115,41 @@ describe("transfer notes", () => {
     expectNoTypedText(text);
   });
 
+  it("starts a ward-to-ward transfer at the sending ward, not its routing ED", () => {
+    const state = seedWardFlowState();
+    const admission = state.admissions[0]!;
+    const sending = state.units.find((unit) => unit.id === admission.unitId)!;
+    const movement = { ...acceptedSeedMovement(), sourceAdmissionId: admission.id };
+    const ward = state.units.find((unit) => unit.id === movement.acceptedUnitId)!;
+    const text = movementTransferNotesText(movement, {
+      patientName: "X",
+      units: state.units,
+      admissions: state.admissions,
+      now,
+    })!;
+    expect(text.split("\n")[2]).toBe(`From ${sending.name} to ${ward.name}.`);
+  });
+
+  it("starts a community referral's journey at the referring team", () => {
+    const state = seedWardFlowState();
+    const movement: Movement = {
+      ...acceptedSeedMovement(),
+      originEdId: undefined,
+      originCommunity: { teamName: "Midland Community Team" } as Movement["originCommunity"],
+    };
+    const ward = state.units.find((unit) => unit.id === movement.acceptedUnitId)!;
+    const text = movementTransferNotesText(movement, {
+      patientName: "X",
+      units: state.units,
+      admissions: state.admissions,
+      now,
+    })!;
+    expect(text.split("\n")[2]).toBe(`From Midland Community Team (community) to ${ward.name}.`);
+  });
+
   it("has nothing to copy before a ward accepts", () => {
     const movement = { ...acceptedSeedMovement(), acceptedUnitId: undefined };
-    expect(movementTransferNotesText(movement, { patientName: "X", units: [], now })).toBe(undefined);
+    expect(movementTransferNotesText(movement, { patientName: "X", units: [], admissions: [], now })).toBe(undefined);
   });
 });
 
@@ -124,6 +161,7 @@ describe("Copy to notes button", () => {
     const text = movementTransferNotesText(acceptedSeedMovement(), {
       patientName: "Synthetic, Person",
       units: state.units,
+      admissions: state.admissions,
       now,
     })!;
     render(<CopyNotesButton text={() => text} testId="copy" />);

@@ -89,6 +89,8 @@ describe("home team heads-up (D-133)", () => {
       edStay("WF-C", "PT-T1", { leftDepartmentAt: 880 }),
       edStay("WF-D", "PT-T1", { closure: { outcome: "did_not_proceed" } as Movement["closure"] }),
       edStay("WF-E", "PT-T1", { originEdId: undefined }),
+      // A ward-to-ward transfer keeps an ED id for routing; the person is still on the ward.
+      edStay("WF-F", "PT-T1", { sourceAdmissionId: "ADM-T1" as Movement["sourceAdmissionId"] }),
     ];
     expect(homeTeamHeadsUps(stays, MIDLAND, episodesOf, NOW)).toEqual([]);
   });

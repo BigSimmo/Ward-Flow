@@ -1,9 +1,10 @@
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { SYNTHETIC_COPY_LINE } from "@/components/ward-management/ward-clipboard";
+import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { ARRIVAL_MODE_LABELS } from "@/components/ward-management/ward-model-vocabulary";
 import { acceptedAddressing } from "@/components/ward-management/ward-referrals";
-import { edById } from "@/components/ward-management/ward-sites";
+import { originName, sourceWardName } from "@/components/ward-management/ward-movement-origin";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 
 /**
@@ -43,13 +44,23 @@ export function referralAcceptanceNotesText(
   ].join("\n");
 }
 
-/** A movement to an accepting ward, as lines for the notes. `undefined` until a ward has accepted. */
+/**
+ * A movement to an accepting ward, as lines for the notes. `undefined` until a ward has accepted.
+ * "From" is where the journey starts (WF-J03, D-76): the sending ward for a ward-to-ward transfer,
+ * whose ED id is only routing, then the ED, then the referring community team.
+ */
 export function movementTransferNotesText(
   movement: Movement,
-  context: { patientName: string; units: readonly Pick<Unit, "id" | "name">[]; now: Instant },
+  context: {
+    patientName: string;
+    units: readonly Pick<Unit, "id" | "name">[];
+    admissions: readonly Pick<Admission, "id" | "unitId">[];
+    now: Instant;
+  },
 ): string | undefined {
   if (movement.acceptedUnitId === undefined) return undefined;
-  const from = edById(movement.originEdId)?.name ?? "Origin not recorded";
+  const from =
+    sourceWardName(movement, context.admissions, context.units) ?? originName(movement) ?? "Origin not recorded";
   const to = unitName(context.units, movement.acceptedUnitId);
   const arrival = movement.arrivalDetails;
   const arrived = movement.closure?.outcome === "arrived" ? movement.closure.at : undefined;

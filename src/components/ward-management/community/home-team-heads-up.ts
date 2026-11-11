@@ -1,6 +1,7 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { PatientId } from "@/components/ward-management/ward-patients";
+import { isEdOriginJourney } from "@/components/ward-management/ward-ed-presence";
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { namesTeam, type CommunityTeam } from "./community-derivations";
 
@@ -26,13 +27,16 @@ export type CommunityEpisodesOf = (patientId: PatientId) => readonly CommunityEp
 
 type HeadsUpMovement = Pick<
   Movement,
-  "id" | "patientId" | "originEdId" | "stage" | "closure" | "leftDepartmentAt" | "openedAt"
+  "id" | "patientId" | "originEdId" | "sourceAdmissionId" | "stage" | "closure" | "leftDepartmentAt" | "openedAt"
 >;
 
-/** Still in the emergency department: opened there, not moving or arrived, not closed or left. */
+/**
+ * Still in the emergency department: opened there, not moving or arrived, not closed or left. A
+ * ward-to-ward transfer keeps an ED id for routing only; the person is still on the sending ward.
+ */
 function inEmergencyDepartment(movement: HeadsUpMovement, now: Instant): boolean {
   return (
-    movement.originEdId !== undefined &&
+    isEdOriginJourney(movement) &&
     movement.stage !== "moving" &&
     movement.stage !== "arrived" &&
     movement.closure === undefined &&
