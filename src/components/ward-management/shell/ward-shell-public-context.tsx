@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useWardFeatureFlag } from "./ward-feature-flag-store";
 import type { PlaceLookup, WardAccess } from "../ward-role-access";
 import type { ExecutiveReportingFoundation } from "../statistics/executive-statistics-contract";
@@ -28,7 +28,12 @@ export function wardShellLifetime(
 /** Authenticated authority is available before any operational provider or local desk effect. */
 const WardShellAuthorityContext = createContext<WardAccess | null>(null);
 export function WardShellAuthorityProvider({ access, children }: { access: WardAccess; children: ReactNode }) {
-  return <WardShellAuthorityContext.Provider value={access}>{children}</WardShellAuthorityContext.Provider>;
+  // One object while the role and place stay the same. Each shared poll parses a fresh, equal
+  // copy, and the idle lock restarts its 15-minute clock on every new object, so a signed-in desk
+  // never locked. 5ea825c6b keyed the workspace host's copy; this covers every provider (WF-22).
+  const key = JSON.stringify(access);
+  const stable = useMemo(() => JSON.parse(key) as WardAccess, [key]);
+  return <WardShellAuthorityContext.Provider value={stable}>{children}</WardShellAuthorityContext.Provider>;
 }
 export function useWardShellAuthority() {
   return useContext(WardShellAuthorityContext);

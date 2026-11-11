@@ -247,6 +247,30 @@ describe("M17: one form, edited, replaced and lapsed, reads the same on every ou
     expect(outputs.downtimeEnded).toBe(true);
   });
 
+  // Fixed 11 Nov 2026 (Josh): the Legal forms card and row said "Ended" then "Form expiry ends 15:42
+  // as typed", which reads as a live expiry. The ended form's typed time is history, as typed.
+  it("on the Legal forms page, an ended form's line says it ended and gives the typed expiry as history", () => {
+    const { second } = journey();
+    const ended = apply(second, {
+      type: "RECORD_LEGAL_FORM_DETAILS",
+      role: "ed",
+      now: NOW + 3,
+      movementId: MOVEMENT_ID,
+      formCode: "3A",
+      endedBy: "revoked",
+    });
+    const movement = movementOf(ended);
+    const dueAt = movement.legalForm!.dueAt!;
+    for (const now of [NOW + 3, dueAt + 61]) {
+      const page = legalDeadlineText(movement, now);
+      expect(page).toBe(`Form ended; expiry as typed was ${typedClock(dueAt, now)}`);
+      expect(page).not.toContain(typedTimePhrase(dueAt, now));
+      expect(page).not.toMatch(COUNT);
+    }
+    const noTime = { ...movement, legalForm: { ...movement.legalForm!, dueAt: undefined } } as Movement;
+    expect(legalDeadlineText(noTime, NOW + 3)).toBe("Form ended");
+  });
+
   it("names the form on the TV wall by its full name (D-93), not the bare code", () => {
     const { second } = journey();
     const outputs = outputsAt(second, NOW + 2);
