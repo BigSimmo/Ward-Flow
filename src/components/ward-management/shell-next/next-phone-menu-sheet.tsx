@@ -47,7 +47,7 @@ import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle"
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 
 import { useWardDataMode } from "@/components/ward-management/ward-shared-access";
-import { leaveDemo, useCanLeaveDemo } from "@/components/ward-management/shell/leave-demo";
+import { useCanLeaveDemo, useLeaveDemo } from "@/components/ward-management/shell/leave-demo";
 import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
 import { settingsHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
@@ -372,15 +372,11 @@ function DataModeRow({ onClose }: { onClose: () => void }) {
 function SignOutRow() {
   const session = useContext(SharedSessionContext);
   const canLeaveDemo = useCanLeaveDemo();
+  const leave = useLeaveDemo();
   if (!session) {
     return canLeaveDemo ? (
       <li>
-        <button
-          type="button"
-          className={styles.row}
-          data-testid="ward-phone-menu-leave-demo"
-          onClick={() => void leaveDemo()}
-        >
+        <button type="button" className={styles.row} data-testid="ward-phone-menu-leave-demo" onClick={leave}>
           <RowBody icon={LogOut} label="Leave the demo" />
         </button>
       </li>

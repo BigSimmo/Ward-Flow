@@ -20,6 +20,16 @@
   font: inherit;
 }
 
+/* Live audit item 8: a calm save inside a sheet is one small line, not the recovery box. */
+.recoveryCalm {
+  gap: 0;
+  padding: var(--wf-s-1) var(--wf-s-3);
+  margin-block-end: var(--wf-s-2);
+  border-color: var(--wf-line);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
 .recovery:focus {
   outline: none;
 }

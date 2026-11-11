@@ -23,7 +23,7 @@ import {
 
 import { digestHref } from "@/components/ward-management/shell/ward-facade";
 import { FeatureFlagsCard } from "@/components/ward-management/settings/feature-flags-card";
-import { leaveDemo, useCanLeaveDemo } from "@/components/ward-management/shell/leave-demo";
+import { useCanLeaveDemo, useLeaveDemo } from "@/components/ward-management/shell/leave-demo";
 import { Button, Card, CardHead, buttonClass } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
@@ -197,6 +197,7 @@ export function SettingsDemoTools({
   about?: AboutProps;
 }) {
   const canLeave = useCanLeaveDemo();
+  const leave = useLeaveDemo();
   return (
     <div className={styles.demoStack} data-setting="demo-tools" data-testid="ward-settings-demo-tools">
       <div className={styles.demoStack}>
@@ -231,7 +232,7 @@ export function SettingsDemoTools({
                 <button
                   type="button"
                   className={buttonClass({ variant: "ghost", className: styles.pill })}
-                  onClick={() => void leaveDemo()}
+                  onClick={leave}
                   data-testid="btn-leave-demo"
                 >
                   <DoorOpen size={14} aria-hidden="true" />

@@ -157,8 +157,11 @@ export function endWardFlowBrowserSession(): void {
   void endWardFlowBrowserSessionAndPass();
 }
 
-/** The same, resolving once the front door's pass has ended (Leave the demo waits on it). */
-export function endWardFlowBrowserSessionAndPass(): Promise<void> {
+/**
+ * The same, resolving once the front door's pass has ended (Leave the demo waits on it): true when
+ * the server confirmed it, false when it could not be ended in time.
+ */
+export function endWardFlowBrowserSessionAndPass(): Promise<boolean> {
   fenceWardLeaveSaves();
   clearSessionDrafts();
   for (const reset of sessionEndResets) {

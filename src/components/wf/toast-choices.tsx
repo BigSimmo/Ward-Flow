@@ -19,7 +19,9 @@ export default function ToastChoicesMenu({ choices, onDone }: { choices: ToastCh
         id: item.id,
         label: item.label,
         onSelect: () => {
-          choices.onChoose(item.id);
+          // A blocked choice (Undo unavailable while the board reconnects) keeps the toast and its
+          // Undo, so the person can try again.
+          if (choices.onChoose(item.id) === false) return;
           onDone?.();
         },
       }))}

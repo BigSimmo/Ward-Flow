@@ -307,7 +307,7 @@ export function useUndoableStep({
     return {
       label: choices.label,
       items: choices.items,
-      onChoose: (id: string) => {
+      onChoose: (id: string) =>
         takeBack(pending, build, watch, {
           success: choices.notRedone,
           then: () =>
@@ -317,8 +317,7 @@ export function useUndoableStep({
               undone: pending.undone,
               who: pending.who,
             }),
-        });
-      },
+        }),
     };
   }
 

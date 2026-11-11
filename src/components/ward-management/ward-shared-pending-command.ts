@@ -96,16 +96,37 @@ export function pinToBoard(
   }
 }
 
+type BoardStays = { payload: { state: { admissions: readonly { id: string; unitId: string; bedNumber?: number }[] } } };
+
 /**
  * D-151: the beds that a save waiting on this page will change, as `unitId:bedNumber`, so the bed
  * tile can say "Waiting to save". Read from memory only, like the queue itself (D-18, D-72, D-124).
+ * A step on a stay (a bed move, `PLACE_IN_BED`, and its Undo) names no unit, so its beds are found
+ * from the stay on this page's board: the bed it is in now, and the bed it is moving to.
  */
-export function waitingBedKeys(commands: readonly ({ event: WardFlowEvent } | null)[]): string[] {
+export function waitingBedKeys(
+  commands: readonly ({ event: WardFlowEvent } | null)[],
+  next?: BoardStays | null,
+  current?: BoardStays | null,
+): string[] {
+  // The board about to be published (`next`, null when it is cleared), else the one shown now.
+  const admissions = (next === undefined ? current : next)?.payload.state.admissions ?? [];
   const keys = new Set<string>();
   for (const command of commands) {
-    const event = command?.event as { unitId?: unknown; bedNumber?: unknown } | undefined;
-    if (typeof event?.unitId === "string" && typeof event.bedNumber === "number")
-      keys.add(`${event.unitId}:${event.bedNumber}`);
+    const event = command?.event as
+      { unitId?: unknown; bedNumber?: unknown; admissionId?: unknown; actingUnitId?: unknown } | undefined;
+    if (!event) continue;
+    const stay =
+      typeof event.admissionId === "string" ? admissions.find((entry) => entry.id === event.admissionId) : undefined;
+    const unitId =
+      typeof event.unitId === "string"
+        ? event.unitId
+        : typeof event.actingUnitId === "string"
+          ? event.actingUnitId
+          : stay?.unitId;
+    if (typeof unitId === "string" && typeof event.bedNumber === "number") keys.add(`${unitId}:${event.bedNumber}`);
+    if (stay && typeof stay.bedNumber === "number" && typeof event.unitId !== "string")
+      keys.add(`${stay.unitId}:${stay.bedNumber}`);
   }
   return [...keys];
 }

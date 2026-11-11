@@ -59,11 +59,13 @@ function session(overrides: Partial<SharedSession> = {}): SharedSession {
 function renderRail(signedIn: SharedSession | null = null, onOpenOperatorModal?: () => void) {
   return render(
     // Inside the provider: its own shared-access layer supplies no session in the local demo.
-    <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <SharedSessionContext.Provider value={signedIn}>
-        <NextRailBody onOpenOperatorModal={onOpenOperatorModal} />
-      </SharedSessionContext.Provider>
-    </WardFlowProvider>,
+    <ToastProvider>
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <SharedSessionContext.Provider value={signedIn}>
+          <NextRailBody onOpenOperatorModal={onOpenOperatorModal} />
+        </SharedSessionContext.Provider>
+      </WardFlowProvider>
+    </ToastProvider>,
   );
 }
 
@@ -156,6 +158,38 @@ describe("rail account menu (DK1)", () => {
       document.cookie = "wf_door=; path=/; max-age=0";
       vi.unstubAllGlobals();
       vi.restoreAllMocks();
+    }
+  });
+
+  // Review of PR #1626: a pass the server did not end still opens the demo, so the sign-in page is
+  // not opened; a toast says so and the item stays to try again.
+  it("stays on the demo and says so when the pass could not be ended", async () => {
+    document.cookie = "wf_door=1; path=/";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(null, { status: 500 })),
+    );
+    const replace = vi.fn();
+    vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, replace } as Location);
+    try {
+      renderRail();
+      fireEvent.click(within(openAccountMenu()).getByRole("menuitem", { name: "Leave the demo" }));
+      expect(await screen.findByText("The demo could not end")).toBeInTheDocument();
+      expect(replace).not.toHaveBeenCalled();
+    } finally {
+      document.cookie = "wf_door=; path=/; max-age=0";
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    }
+  });
+
+  it("never offers Leave the demo in a signed-in session, even on a front-door site", () => {
+    document.cookie = "wf_door=1; path=/";
+    try {
+      renderRail(session());
+      expect(itemNames(openAccountMenu())).not.toContain("Leave the demo");
+    } finally {
+      document.cookie = "wf_door=; path=/; max-age=0";
     }
   });
 });

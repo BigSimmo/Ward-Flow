@@ -507,7 +507,7 @@ export class SharedWorkspaceClient {
       recovering: this.recoveryPending,
       recoveryStorageUnavailable: this.recoveryStorageUnavailable,
       pendingCount: (this.pending ? 1 : 0) + this.queue.length,
-      waitingBeds: waitingBedKeys([this.pending, ...this.queue]),
+      waitingBeds: waitingBedKeys([this.pending, ...this.queue], update.snapshot, this.view.snapshot),
       unconfirmedSave: this.pending !== null || this.queue.length > 0 || this.recoveryPending,
       waiting: this.offlineHold ? (this.pending ? 1 : 0) + this.queue.length : 0,
     };

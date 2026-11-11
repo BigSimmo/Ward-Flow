@@ -232,7 +232,11 @@ describe("ARCHIVE_PATIENT after a withdrawn referral (D-149)", () => {
       ],
     } as unknown as WardFlowState;
     expect(patientArchiveProblem(withUndo, world.patient.id, now)).toMatch(/can still be undone/);
-    expect(patientArchiveProblem(withUndo, world.patient.id, later(UNDO_WINDOW_MINUTES))).toBeUndefined();
+    // At exactly the window Undo is still allowed (`undoWindowRefusal` refuses only past it).
+    expect(patientArchiveProblem(withUndo, world.patient.id, later(UNDO_WINDOW_MINUTES))).toMatch(
+      /can still be undone/,
+    );
+    expect(patientArchiveProblem(withUndo, world.patient.id, later(UNDO_WINDOW_MINUTES + 1))).toBeUndefined();
     const inside = wardFlowReducer(withUndo, {
       type: "ARCHIVE_PATIENT",
       role: "coordinator",

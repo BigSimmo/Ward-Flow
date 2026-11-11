@@ -15,6 +15,7 @@ import { subscribeToSheetStack, topSheetRoot } from "@/components/wf/sheet-focus
 import type { WardSharedConnection } from "./ward-shared-access";
 import { useWardSharedSave } from "./shell/ward-shared-save-context";
 import { saveProblem } from "./ward-save-failure";
+import { useOnlineStatus } from "./use-online-status";
 import styles from "./ward-shared-save-status.module.css";
 
 /** Offline with saves waiting on this page (Tier 1 item 1). "Held" is only for a leave bed (D-85). */
@@ -38,6 +39,8 @@ const SAVE_WARNING_AFTER_MS = 8_000;
  */
 function useSaveSlow(saving: boolean): boolean {
   const [slow, setSlow] = useState(false);
+  // Subscribed, so going offline mid-save shows the warning at once (PR #1626 review).
+  const online = useOnlineStatus();
   useEffect(() => {
     if (!saving) return;
     const timer = setTimeout(() => setSlow(true), SAVE_WARNING_AFTER_MS);
@@ -46,7 +49,7 @@ function useSaveSlow(saving: boolean): boolean {
       setSlow(false);
     };
   }, [saving]);
-  return saving && (slow || (typeof navigator !== "undefined" && navigator.onLine === false));
+  return saving && (slow || !online);
 }
 
 /** Keep recovery inside the top overlay's focus trap, without reopening or closing any record. */
@@ -144,7 +147,8 @@ export function WardSharedSaveStatus({
   const late =
     useSharedRefreshLate(connection.enabled && connection.status !== "unavailable") && connection.receivedAt > 0;
   // Inside an open sheet the strip is inert, so a late refresh moves its words and Retry there too.
-  const showRecovery = (inFlight && !calmSave) || connection.status === "unavailable" || late || stale;
+  // A calm save shows its small "Saving…" there as well, with no warning or Retry (PR #1626 review).
+  const showRecovery = inFlight || connection.status === "unavailable" || late || stale;
   const host = useRecoveryHost(showRecovery);
   const saving = connection.status === "saving" || retrying;
   const recoveryRef = useRef<HTMLElement>(null);
@@ -236,7 +240,7 @@ export function WardSharedSaveStatus({
           <section
             ref={recoveryRef}
             tabIndex={-1}
-            className={styles.recovery}
+            className={calmSave ? `${styles.recovery} ${styles.recoveryCalm}` : styles.recovery}
             role="status"
             aria-live="polite"
             data-testid="ward-shared-recovery"

@@ -54,7 +54,8 @@ export type ToastChoices = {
   /** The menu's accessible name and the button's words. */
   label: string;
   items: readonly { id: string; label: string }[];
-  onChoose: (id: string) => void;
+  /** False when the choice could not be taken now (Undo blocked): the toast then stays. */
+  onChoose: (id: string) => void | false;
 };
 
 /** Loaded only when a toast offers choices (D-148), so the kit menu is off every first load. */
