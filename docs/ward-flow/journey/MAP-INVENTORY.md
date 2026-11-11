@@ -1566,13 +1566,14 @@ Source-contract SHA256: e73d1cd81542d3f2030a3f69d3b7b5dc096d8695d24f6ec6a605e186
   Scope: Ward, coordinator or site bed manager in EVENT_ROLE; a ward acts only for its own ward (actingUnitId must equal unitId). Executive changes nothing (D-80). Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.
   payload: unitId; shift this or next; count 1, 2, 3 or 4 or more
   payload: reasons: one or more distinct items from STAFF_REQUEST_REASONS; actingUnitId for ward callers; role and now
+  payload: optional shiftStartAt: the start of the shift the person chose; kept only when it is that shift's start at now or 5 minutes earlier, otherwise the shift at now is used
   guards: Known unit; shift and count from their lists
   guards: Reject empty, duplicate or unlisted reasons, and a ward naming another ward
   effects: Appends a record, or updates count, reasons and updatedAt on the open one; never names a patient
   effects: Does not change beds, placement, movements or any patient stage
   tests: tests/ward-staff-requests.test.ts
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2375; SHA256 edd08d18e7d96cad77b0a026b29f7acc6b9918b4818010e53b14e08d9c00eb2a
-  Reviewed source: src/components/ward-management/staffing/staff-requests.ts:132; SHA256 d3e51d13faedefa5314d5f128c59473110a61bae075bd5ddb362788d5ae479f3
+  Reviewed source: src/components/ward-management/staffing/staff-requests.ts:156; SHA256 e47b9fadc1f70f84b56bd4e91eb36f5b95f85da6234e10f6251bea10c3f6237a
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:591; SHA256 01913e33459ff2e0c7dfce7de7e0e731cc155400a42b2537e1e6ad7a6c3c83eb
 - CLOSE_WARD_STAFF_REQUEST — modelled; event roles: ward, coordinator, bed_manager
   Source-reviewed command model: an open staff request closed as arranged, not available or withdrawn.
@@ -1590,7 +1591,7 @@ Source-contract SHA256: e73d1cd81542d3f2030a3f69d3b7b5dc096d8695d24f6ec6a605e186
   effects: Does not change beds, placement, movements or any patient stage
   tests: tests/ward-staff-requests.test.ts
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2376; SHA256 edd08d18e7d96cad77b0a026b29f7acc6b9918b4818010e53b14e08d9c00eb2a
-  Reviewed source: src/components/ward-management/staffing/staff-requests.ts:171; SHA256 d3e51d13faedefa5314d5f128c59473110a61bae075bd5ddb362788d5ae479f3
+  Reviewed source: src/components/ward-management/staffing/staff-requests.ts:195; SHA256 e47b9fadc1f70f84b56bd4e91eb36f5b95f85da6234e10f6251bea10c3f6237a
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:592; SHA256 01913e33459ff2e0c7dfce7de7e0e731cc155400a42b2537e1e6ad7a6c3c83eb
 - RECORD_CLINICAL_CONTACT — diagram-reviewed; event roles: community, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
