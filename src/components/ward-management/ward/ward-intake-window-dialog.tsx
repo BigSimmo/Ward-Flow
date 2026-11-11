@@ -4,7 +4,7 @@ import { useId, useState } from "react";
 
 import { Dialog, Field, TextInput } from "@/components/wf";
 
-import { intakeWindowFromClockText } from "../capacity/ward-intake-window";
+import { intakeWindowFromClockText } from "../ward-intake-window";
 import { formatInstant, type Instant } from "../ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import type { Unit } from "../ward-model";

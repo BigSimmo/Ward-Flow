@@ -3,7 +3,9 @@
 import dynamic from "next/dynamic";
 import { useState } from "react";
 
-import { intakeWindowLine, tonightIntakeWindow } from "../capacity/ward-intake-window";
+import { StateLine } from "@/components/wf";
+
+import { intakeWindowLine, tonightIntakeWindow } from "../ward-intake-window";
 import type { Instant } from "../ward-clock";
 import { useRouteRole } from "../ward-role-gate";
 import type { Unit } from "../ward-model";
@@ -49,11 +51,7 @@ export function WardIntakeWindowControl({ unit, now }: { unit: Unit; now: Instan
           </button>
         </>
       ) : null}
-      {refused ? (
-        <span className={styles.refused} role="alert">
-          Not saved. {refused}
-        </span>
-      ) : null}
+      {refused ? <StateLine kind="error" compact title="Not saved." reason={refused} /> : null}
       {open && mayEdit ? (
         <WardIntakeWindowDialog
           unit={unit}

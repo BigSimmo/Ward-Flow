@@ -1,6 +1,6 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Unit } from "@/components/ward-management/ward-model";
-import { intakeDayStart, intakeWindowFromClockText } from "./ward-intake-window";
+import { intakeDayStart, intakeWindowFromClockText } from "../ward-intake-window";
 
 /**
  * Feature item 13 (10 Nov 2026): synthetic intake hours on three wards, set this morning relative to

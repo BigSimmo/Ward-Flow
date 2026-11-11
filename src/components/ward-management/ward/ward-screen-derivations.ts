@@ -35,7 +35,7 @@ import { patientAgeYears } from "@/components/ward-management/ward-patients";
 import { WARD_LOCKED_BED_SPLITS } from "@/components/ward-management/ward-sites";
 import { layoutBedNumbers, wardStaySeats } from "./ward-bed-layout";
 import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
-import { bedReviewLine } from "../capacity/bed-closure-review";
+import { bedReviewLine } from "../ward-bed-closure-review";
 import { arrivalIsLate } from "./ward-screen-helpers";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";

@@ -7,7 +7,7 @@ import { edById } from "../ward-sites";
 import { outOfAreaLedger } from "../ward-referrals-out-of-area";
 import { strandedFlags, strandedPromptText } from "../ward-stranded";
 import { isWaitingInEd } from "../ward-ed-presence";
-import { closedBedsPastReview } from "../capacity/bed-closure-review";
+import { closedBedsPastReview } from "../ward-bed-closure-review";
 import type { BedMeetingAction, BedMeetingSubject } from "./bed-meeting-actions";
 
 /**

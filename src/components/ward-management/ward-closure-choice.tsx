@@ -2,8 +2,8 @@
 
 import { ChipGroup, FilterChip } from "@/components/wf";
 
-import { WARD_REOPEN_AFTER_HOURS } from "./ward-closure";
-import styles from "./closure-choice.module.css";
+import { WARD_REOPEN_AFTER_HOURS } from "./capacity/ward-closure";
+import styles from "./ward-closure-choice.module.css";
 
 /** One closure choice as kit chips; the chosen id rides on `data-value` for the page and its tests. */
 export function ClosureChoice({

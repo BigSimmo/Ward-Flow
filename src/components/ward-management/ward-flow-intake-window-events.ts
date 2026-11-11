@@ -1,5 +1,5 @@
 import type { AuditDecision } from "./ward-audit";
-import { intakeWindowProblem } from "./capacity/ward-intake-window";
+import { intakeWindowProblem } from "./ward-intake-window";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { findUnit, reject, replaceUnit, WardFlowState } from "./ward-flow-reducer";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";

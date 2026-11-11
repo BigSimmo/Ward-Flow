@@ -10,6 +10,7 @@ import {
   DrawerFootRow,
   Field,
   PanelDrawer,
+  Segmented,
   Select,
   StatusGlyph,
   StatusPill,
@@ -43,7 +44,6 @@ import { WardDiagnosisControl } from "./ward-board-ward-diagnosis";
 import { ClinicallyReadyControl } from "./ward-board-clinically-ready";
 import { plural } from "@/components/ward-management/ward-plural";
 import { WardStepDownRequest } from "@/components/ward-management/referrals/step-down-request";
-import { Choice } from "@/components/ward-management/referrals/ward-referral-drawer-fields";
 
 /** Redesign: the record's buttons are the kit's, so the panel matches the rest of the page. */
 // Long labels ("Gone to an ED" and others) wrap inside the panel
@@ -681,25 +681,23 @@ export function TransportWaitField({
   value: boolean | undefined;
   onChange: (awaitingTransport: boolean) => void;
 }) {
-  // Radio choices, not a drop-down (Q36). Nothing is chosen until the person answers.
+  // Kit radio choices, not a drop-down (Q36). Nothing is chosen until the person answers.
   return (
     <div data-testid={id}>
-      <Choice
-        legend="Has their transport come?"
-        name={id}
-        id={id + "-first"}
-        options={TRANSPORT_WAIT_OPTIONS}
-        labels={TRANSPORT_WAIT_LABELS}
-        value={value === undefined ? undefined : value ? "waiting" : "collected"}
-        required
+      <p className={cx(styles.leavingLabel, redesign.fieldLabel)} aria-hidden="true">
+        Has their transport come?
+      </p>
+      <Segmented
+        label="Has their transport come?"
+        items={TRANSPORT_WAIT_ITEMS}
+        value={value === undefined ? "" : value ? "waiting" : "collected"}
         onChange={(choice) => onChange(choice === "waiting")}
       />
     </div>
   );
 }
 
-const TRANSPORT_WAIT_OPTIONS = ["waiting", "collected"] as const;
-const TRANSPORT_WAIT_LABELS = {
-  waiting: "No, still waiting for transport",
-  collected: "Yes, gone with transport",
-} as const;
+const TRANSPORT_WAIT_ITEMS: { id: "" | "waiting" | "collected"; label: string }[] = [
+  { id: "waiting", label: "No, still waiting for transport" },
+  { id: "collected", label: "Yes, gone with transport" },
+];

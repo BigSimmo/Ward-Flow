@@ -6,8 +6,8 @@ import {
   bedReviewDue,
   bedReviewLine,
   closedBedsPastReview,
-} from "@/components/ward-management/capacity/bed-closure-review";
-import { reviewAtFrom, REVIEW_AFTER_CHOICES } from "@/components/ward-management/capacity/closure-choice";
+} from "@/components/ward-management/ward-bed-closure-review";
+import { reviewAtFrom, REVIEW_AFTER_CHOICES } from "@/components/ward-management/ward-closure-choice";
 import { WARD_REOPEN_AFTER_HOURS } from "@/components/ward-management/capacity/ward-closure";
 import { closedBedsReviewSection } from "@/components/ward-management/bed-meeting/bed-meeting-agenda";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";

@@ -12,8 +12,8 @@ import type { Unit } from "@/components/ward-management/ward-model";
 import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
 import { wardStaySeats } from "@/components/ward-management/ward/ward-bed-layout";
 
-import { bedReviewLine } from "./bed-closure-review";
-import { ClosureChoice, REVIEW_AFTER_CHOICES, reviewAtFrom } from "./closure-choice";
+import { bedReviewLine } from "../ward-bed-closure-review";
+import { ClosureChoice, REVIEW_AFTER_CHOICES, reviewAtFrom } from "../ward-closure-choice";
 import { WARD_CLOSURE_REASONS, wardClosureReasonLabel, type WardClosureReason } from "./ward-closure";
 import { WardClosurePanel, type FootAction } from "./ward-closure-panel";
 import styles from "./capacity-page.module.css";

@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/wf";
-import { ClosureChoice, REVIEW_AFTER_CHOICES } from "../capacity/closure-choice";
+import { ClosureChoice, REVIEW_AFTER_CHOICES } from "../ward-closure-choice";
 import styles from "./ward-bed-dossier-drawer.module.css";
 
 /**

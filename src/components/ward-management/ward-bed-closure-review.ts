@@ -1,7 +1,7 @@
-import { formatInstantWithDay, type Instant } from "../ward-clock";
-import { byServiceThenName } from "../ward-derivations-shortlist";
-import type { Unit } from "../ward-model";
-import { activeClosedBeds } from "../ward-ready-beds";
+import { formatInstantWithDay, type Instant } from "./ward-clock";
+import { byServiceThenName } from "./ward-derivations-shortlist";
+import type { Unit } from "./ward-model";
+import { activeClosedBeds } from "./ward-ready-beds";
 
 /**
  * Item 6 (10 Nov 2026), bed closures with a review time: a ward closing one bed can say when to look

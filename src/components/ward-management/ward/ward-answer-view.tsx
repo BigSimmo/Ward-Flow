@@ -29,7 +29,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { CardSafetyTags } from "@/components/ward-management/patients/card-safety-tags";
-import { ArrivalStaffingNote } from "@/components/ward-management/patients/arrival-staffing-note";
+import { ArrivalStaffingNote } from "@/components/ward-management/ward-arrival-staffing-note";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import {

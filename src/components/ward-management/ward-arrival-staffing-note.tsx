@@ -1,7 +1,7 @@
 import { Info } from "lucide-react";
 import type { Movement } from "@/components/ward-management/ward-model";
-import { arrivalStaffingPrompt, type CardReferral } from "./patient-referral-safety";
-import styles from "./card-safety-tags.module.css";
+import { arrivalStaffingPrompt, type CardReferral } from "./patients/patient-referral-safety";
+import styles from "./patients/card-safety-tags.module.css";
 
 /**
  * Feature 7, "Plan staff for an arrival" (D-117 item 3): one calm line on the receiving ward's

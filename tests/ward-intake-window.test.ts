@@ -5,7 +5,7 @@ import {
   intakeWindowFromClockText,
   intakeWindowLine,
   tonightIntakeWindow,
-} from "@/components/ward-management/capacity/ward-intake-window";
+} from "@/components/ward-management/ward-intake-window";
 import { tonightIntakeWindowList } from "@/components/ward-management/capacity/ward-intake-window-list";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";

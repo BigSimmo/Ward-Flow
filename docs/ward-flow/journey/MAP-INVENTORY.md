@@ -162,7 +162,7 @@ Source-contract SHA256: 4c514aa6973241e21d5b4cf07cff43a7be5693f7801ae977f6693e0c
   effects: Information only: moves no counts, blocks no referral and ranks no ward
   effects: Shown on Capacity's Tonight's intake windows card and the ward's own control
   tests: tests/ward-intake-window.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-intake-window-events.ts:23; SHA256 736e8575d23d5e22b44a96d4c36c0a2b6773f080f8d38e324a23b04011651c19
+  Reviewed source: src/components/ward-management/ward-flow-intake-window-events.ts:23; SHA256 933a9d461aaf0dbb804152d520119190458417c5765eed29507e5d8b324fcd7a
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:105; SHA256 8bb4dfcff9fdf244226c46cf2f4b55967c6c1a50af9f663d1d5adb6d61b8384b
   Reviewed source: src/components/ward-management/ward-flow-events.ts:609; SHA256 207ee16a0f423433ba0b35b7465a90d52d2ca6d46928fa7e7686871b6f901ba0
 - RECORD_ESCALATION — diagram-reviewed; event roles: coordinator

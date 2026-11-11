@@ -7,7 +7,7 @@ import type { Unit } from "@/components/ward-management/ward-model";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 
-import { closedBedsPastReview } from "./bed-closure-review";
+import { closedBedsPastReview } from "../ward-bed-closure-review";
 import styles from "./capacity-page.module.css";
 
 /**

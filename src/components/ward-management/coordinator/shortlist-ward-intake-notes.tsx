@@ -1,4 +1,4 @@
-import { intakeWindowLine, tonightIntakeWindow } from "@/components/ward-management/capacity/ward-intake-window";
+import { intakeWindowLine, tonightIntakeWindow } from "@/components/ward-management/ward-intake-window";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { wardIntakeConstraintLabels } from "@/components/ward-management/ward-change-reasons";
 import type { Unit } from "@/components/ward-management/ward-model";

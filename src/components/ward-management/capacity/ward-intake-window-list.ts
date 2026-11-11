@@ -2,7 +2,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { byServiceThenName } from "@/components/ward-management/ward-derivations-shortlist";
 import type { Unit, WardIntakeWindow } from "@/components/ward-management/ward-model";
 
-import { tonightIntakeWindow } from "./ward-intake-window";
+import { tonightIntakeWindow } from "../ward-intake-window";
 
 /**
  * Feature item 13: the wards that have set tonight's intake hours, in the one neutral order

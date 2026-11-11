@@ -24,7 +24,7 @@ import {
   wardReopeningDue,
   type WardClosureReason,
 } from "./ward-closure";
-import { ClosureChoice } from "./closure-choice";
+import { ClosureChoice } from "../ward-closure-choice";
 import styles from "./ward-closure-panel.module.css";
 // Closing the loop, package D (24 Oct 2026): restriction reviews and the closure transition list.
 import { ClosureTransitionChecklist, WardRestrictionReviews } from "../loop-checks/loop-checks-lazy";

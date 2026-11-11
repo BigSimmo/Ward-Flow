@@ -10,7 +10,7 @@ vi.mock("next/navigation", async (importOriginal) => ({
   useSearchParams: () => new URLSearchParams(window.location.search),
 }));
 
-import { ArrivalStaffingNote } from "@/components/ward-management/patients/arrival-staffing-note";
+import { ArrivalStaffingNote } from "@/components/ward-management/ward-arrival-staffing-note";
 import {
   arrivalStaffingPrompt,
   type CardReferral,

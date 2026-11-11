@@ -6,8 +6,8 @@
 import type { LeavingDestination } from "@/components/ward-management/ward-admissions";
 import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
-import { bedReviewLine } from "../capacity/bed-closure-review";
-import { reviewAtFrom } from "../capacity/closure-choice";
+import { bedReviewLine } from "../ward-bed-closure-review";
+import { reviewAtFrom } from "../ward-closure-choice";
 import { admissionCriteriaEligibility } from "@/components/ward-management/ward-flow-reducer";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 import { useUndoableStep } from "../use-undoable-step";
