@@ -51,6 +51,7 @@ import {
   WardPrintFooter,
 } from "@/components/ward-management/shell/ward-access";
 import { WardRowDensity } from "@/components/ward-management/settings/row-density";
+import { WardRailPlaceholder } from "@/components/ward-management/shell/ward-rail-placeholder";
 import { WardGround } from "@/components/ward-management/ward-shell";
 import { WardDeskHold, WardDeskPendingClear } from "@/components/ward-management/shell/ward-access-hold";
 import {
@@ -242,7 +243,7 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
               <div className={styles.shellRow}>
                 {/* Desk walk follow-up (9 Nov 2026): the coordinator's rail and top bar carry network
                 figures, so a held first load draws them once the desk is known (WardDeskHold). */}
-                <WardDeskHold held={deskHeld} placeholder={null}>
+                <WardDeskHold held={deskHeld} placeholder={<WardRailPlaceholder />}>
                   <NextShellBoundary label="The sidebar">
                     <WardRail />
                   </NextShellBoundary>
