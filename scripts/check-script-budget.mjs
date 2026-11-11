@@ -242,27 +242,41 @@ export async function reportSizes(base, budgetedRoutes, extraRoutes = REPORT_ROU
   const routes = {};
   /** @type {Set<string> | undefined} */
   let shared;
+  // A budgeted route that cannot be read leaves the shared set unknown, so no shared total is shown.
+  let sharedKnown = true;
   for (const route of [...budgetedRoutes, ...extraRoutes]) {
+    const isBudgeted = budgetedRoutes.includes(route);
+    let parsed = false;
     try {
       const html = await fetchPageHtml(base, route);
       const scripts = scriptSources(html);
       const { stylesheets, preloads } = pageAssets(html);
+      // Intersect before any asset download, so a failed download cannot drop this route from it.
+      if (isBudgeted) shared = shared ? new Set(scripts.filter((src) => shared.has(src))) : new Set(scripts);
+      parsed = true;
       const extraPreloads = preloads.filter((src) => !scripts.includes(src));
       routes[route] = {
-        budgeted: budgetedRoutes.includes(route),
+        budgeted: isBudgeted,
         scriptKb: await total(scripts),
         cssKb: await total(stylesheets),
         cssFiles: stylesheets.length,
         preloadKb: await total(extraPreloads),
         preloadFiles: extraPreloads.length,
       };
-      if (budgetedRoutes.includes(route))
-        shared = shared ? new Set(scripts.filter((src) => shared.has(src))) : new Set(scripts);
     } catch (error) {
-      routes[route] = { budgeted: budgetedRoutes.includes(route), error: error.message };
+      if (isBudgeted && !parsed) sharedKnown = false;
+      routes[route] = { budgeted: isBudgeted, error: error.message };
     }
   }
-  return { routes, sharedScriptKb: shared ? await total([...shared]) : undefined };
+  let sharedScriptKb;
+  if (sharedKnown && shared) {
+    try {
+      sharedScriptKb = await total([...shared]);
+    } catch {
+      sharedScriptKb = undefined;
+    }
+  }
+  return { routes, sharedScriptKb };
 }
 
 export function formatReport(report) {

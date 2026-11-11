@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { seedWardFlowState, seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -62,5 +62,18 @@ describe("Movements page Back listener (WF-27)", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     act(() => window.dispatchEvent(new PopStateEvent("popstate", { state: { wardMovementDetail: "missing" } })));
     expect(screen.queryByRole("dialog")).toBeNull();
+
+    // Review follow-up (PR #1622): change which movements exist after mount, so a listener that kept
+    // the first render's movements would answer wrongly in both directions.
+    const switched = seedWardFlowStateAt(0, "quiet-day").movements;
+    const added = switched.find(isOpen)!;
+    expect(seedWardFlowState().movements.some((movement) => movement.id === added.id)).toBe(false);
+    expect(switched.some((movement) => movement.id === openMovement.id)).toBe(false);
+    act(() => dispatchRef!({ type: "SET_SCENARIO", role: "demo", now: NOW_ANCHOR, scenario: "quiet-day" }));
+    act(() => window.dispatchEvent(new PopStateEvent("popstate", { state: { wardMovementDetail: added.id } })));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    act(() => window.dispatchEvent(new PopStateEvent("popstate", { state: { wardMovementDetail: openMovement.id } })));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(popstateAdds(add)).toBe(before);
   });
 });

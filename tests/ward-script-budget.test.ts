@@ -365,6 +365,30 @@ describe("report-only sizes", () => {
     );
   });
 
+  it("keeps a budgeted page whose stylesheet fails in the shared shell, and omits the total when a budgeted page cannot be read", async () => {
+    const pages = {
+      "/one": {
+        body: '<script src="/_next/static/chunks/a.js"></script><script src="/_next/static/chunks/b.js"></script>',
+      },
+      "/two": {
+        body: '<script src="/_next/static/chunks/a.js"></script><link rel="stylesheet" href="/_next/static/css/gone.css">',
+      },
+      "/_next/static/chunks/a.js": asset,
+      "/_next/static/chunks/b.js": asset,
+    };
+    await withPages(pages, async (base) => {
+      const kb = (body: string) => Math.round((gzipSync(Buffer.from(body), { level: 9 }).length / 1024) * 10) / 10;
+      const report = await reportSizes(base, ["/one", "/two"], []);
+      expect(report.routes["/two"]).toMatchObject({ budgeted: true, error: expect.stringContaining("gone.css") });
+      // Only a.js is on both budgeted pages; b.js must not count as shared.
+      expect(report.sharedScriptKb).toBe(kb(chunk));
+
+      const unreadable = await reportSizes(base, ["/one", "/missing"], []);
+      expect(unreadable.sharedScriptKb).toBeUndefined();
+      expect(formatReport(unreadable)).not.toContain("shared shell");
+    });
+  });
+
   it("reports the heavy unbudgeted triage page", () => {
     expect(REPORT_ROUTES).toContain("/ward-flow/people/PT-028/triage");
     for (const route of REPORT_ROUTES) expect(Object.keys(scriptBudget.budgets)).not.toContain(route);

@@ -1553,7 +1553,7 @@
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 403,
-          "sha256": "423499562da6da82c4e887f5ab5aade3c572049781b80eb62070bddbff3d4d05"
+          "sha256": "08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1591,6 +1591,7 @@
       "payload": ["inboxItemId trimmed before lookup; role and now"],
       "scope": "Coordinator role only; shared authenticated scope must also permit the row’s subject. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority. Scoped state projection retains this metadata for permitted meeting-action subjects by parsing the encoded subject id; metadata for other subjects stays excluded.",
       "guards": [
+        "A blank or non-text inboxItemId is refused before any history is read",
         "Current owner must match acting role after filtering entries older than the row’s current occurrence, if a start is available; this branch does not independently require row existence"
       ],
       "effects": ["Appends released history entry; does not delete prior ownership, resolve fact or hide row"],
@@ -1598,7 +1599,7 @@
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 423,
-          "sha256": "423499562da6da82c4e887f5ab5aade3c572049781b80eb62070bddbff3d4d05"
+          "sha256": "08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1651,7 +1652,7 @@
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 436,
-          "sha256": "423499562da6da82c4e887f5ab5aade3c572049781b80eb62070bddbff3d4d05"
+          "sha256": "08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1689,6 +1690,7 @@
       "payload": ["inboxItemId trimmed before lookup; role and now"],
       "scope": "Coordinator role only; shared authenticated scope must also permit the row’s subject. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority. Scoped state projection retains this metadata for permitted meeting-action subjects by parsing the encoded subject id; metadata for other subjects stays excluded.",
       "guards": [
+        "A blank or non-text inboxItemId is refused before any history is read",
         "Active snooze must exist after occurrence filtering; expired or older-occurrence entry refused; this branch does not independently require row existence"
       ],
       "effects": [
@@ -1698,7 +1700,7 @@
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 470,
-          "sha256": "423499562da6da82c4e887f5ab5aade3c572049781b80eb62070bddbff3d4d05"
+          "sha256": "08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",

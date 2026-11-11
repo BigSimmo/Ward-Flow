@@ -422,6 +422,9 @@ export function reduceInboxEvent(
 
     case "RELEASE_INBOX_ITEM_OWNERSHIP": {
       const inboxItemId = typeof event.inboxItemId === "string" ? event.inboxItemId.trim() : "";
+      if (inboxItemId.length === 0) {
+        return reject(state, event, "RELEASE_INBOX_ITEM_OWNERSHIP inboxItemId must name a row — a blank names nothing");
+      }
       const by = WARD_FLOW_ROLE_LABELS[event.role];
       const history = state.inboxOwnership[inboxItemId] ?? [];
       if (currentInboxOwner(history, inboxRowSince(state, inboxItemId))?.by !== by) {
@@ -469,6 +472,9 @@ export function reduceInboxEvent(
 
     case "UNSNOOZE_INBOX_ITEM": {
       const inboxItemId = typeof event.inboxItemId === "string" ? event.inboxItemId.trim() : "";
+      if (inboxItemId.length === 0) {
+        return reject(state, event, "UNSNOOZE_INBOX_ITEM inboxItemId must name a row — a blank names nothing");
+      }
       const history = state.inboxSnoozes[inboxItemId];
       if (!history || !activeSnooze(history, event.now, inboxRowSince(state, inboxItemId))) {
         return reject(state, event, `inbox row ${inboxItemId} is not snoozed, so there is nothing to return`);
