@@ -374,20 +374,22 @@ jobs:
           restore-keys: |
             ward-release-apt-${{ runner.os }}-chromium-${{ steps.shared-version.outputs.version }}-
             ward-release-apt-${{ runner.os }}-${{ steps.shared-version.outputs.version }}-
-      # WebKit's own packages, so the offline install covers both engines when the mirror is down.
+      - name: Seed release system packages
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
+        run: node scripts/ward-ci-public/apt-archive-cache.mjs seed "$HOME/.cache/ward-release-apt"
+      # WebKit's own packages too, so the offline install covers both engines when the mirror is down.
+      # Same path as the save step, because the path is part of the cache version.
       - name: Restore release WebKit system packages
         if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
-          path: ~/.cache/ward-release-apt-webkit
+          path: ~/.cache/ward-release-apt
           key: ward-release-apt-${{ runner.os }}-webkit-${{ steps.shared-version.outputs.version }}-${{ steps.shared-version.outputs.image }}
           restore-keys: |
             ward-release-apt-${{ runner.os }}-webkit-${{ steps.shared-version.outputs.version }}-
-      - name: Seed release system packages
+      - name: Seed release WebKit system packages
         if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
-        run: |
-          node scripts/ward-ci-public/apt-archive-cache.mjs seed "$HOME/.cache/ward-release-apt"
-          node scripts/ward-ci-public/apt-archive-cache.mjs seed "$HOME/.cache/ward-release-apt-webkit"
+        run: node scripts/ward-ci-public/apt-archive-cache.mjs seed "$HOME/.cache/ward-release-apt"
       - name: Install Chromium and WebKit for the shared-mode journeys
         id: shared-chromium
         timeout-minutes: 10
