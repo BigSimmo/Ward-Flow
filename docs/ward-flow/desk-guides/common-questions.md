@@ -1,6 +1,6 @@
 # Desk guide: Common questions
 
-<!-- last-checked: 2026-10-28 -->
+<!-- last-checked: 2026-11-10 -->
 
 Short answers to questions staff ask often. Each answer is copied from Help in the app, and the line under it says where.
 
