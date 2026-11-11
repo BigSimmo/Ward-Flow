@@ -21,6 +21,15 @@ Hosted CI's build after the merge (e0e6112) measured home 575.6, referrals 583.8
 | ED desk `/ward-flow/ed/arm-ed`     | 667.4 | 667.6 | 0.2   |
 | Statistics `/ward-flow/statistics` | 632.6 | 633.2 | 0.6   |
 
+Hosted CI's build after merging `main` at `b393351` (9b9ded4 plus main) measured home 576.1, referrals 584.3, capacity 655.0 and statistics 633.1. Referrals hit its limit, and the other three sat 0.1 KB under theirs, so each is now the CI measurement plus about 0.5. Total raises on main's limits stay under 2 KB per screen:
+
+| Screen                             | Main  | New   | Raise |
+| ---------------------------------- | ----- | ----- | ----- |
+| Home `/ward-flow`                  | 575.4 | 576.6 | 1.2   |
+| Referrals `/ward-flow/referrals`   | 583.6 | 584.8 | 1.2   |
+| Capacity `/ward-flow/capacity`     | 654.3 | 655.5 | 1.2   |
+| Statistics `/ward-flow/statistics` | 632.6 | 633.6 | 1.0   |
+
 Why it changed: item 4 adds the `RECORD_CHIEF_PSYCHIATRIST_NOTIFIED` event, its storage check and history words to the shared engine, and item 15 adds the interpreter, Aboriginal liaison and advocate lines to the arrival checklist.
 
 Trim tried: the new event lives in its own small file and the notice renders only inside the bed drawer. No other safe trim was found.
