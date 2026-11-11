@@ -1,0 +1,26 @@
+/* Batch 4 item 20 (D-142): the access admin's Features at this site card. */
+.control {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.switch {
+  width: auto;
+}
+
+.site {
+  min-width: 12rem;
+}
+
+/* Phone: every control in the card takes a 40px tap height. */
+@media (max-width: 46.4375rem) {
+  .switch,
+  .undo {
+    min-height: 40px;
+  }
+
+  .site {
+    min-width: 0;
+  }
+}
