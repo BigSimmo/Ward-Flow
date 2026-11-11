@@ -101,7 +101,9 @@ describe("ward board triage bar — the home page's six figures, in the home pag
 
     for (const unit of allUnits) {
       const { unmount } = renderWardBoard(unit.id);
-      const breakdown = capacityBreakdown(unit, [...releases], [...seededState.leaveBeds], WARD_ADMISSIONS_ANCHOR);
+      // The seeded unit, as the board reads it: the demo seed closes one bed by number (item 6).
+      const seeded = seededState.units.find((candidate) => candidate.id === unit.id) ?? unit;
+      const breakdown = capacityBreakdown(seeded, [...releases], [...seededState.leaveBeds], WARD_ADMISSIONS_ANCHOR);
 
       for (const key of FIGURE_KEYS) {
         const figure = figureFor(key);
@@ -139,7 +141,9 @@ describe("ward board triage bar — the toggle changes emphasis and hides nothin
 
     for (const unit of allUnits) {
       const { unmount } = renderWardBoard(unit.id);
-      const breakdown = capacityBreakdown(unit, [...releases], [...seededState.leaveBeds], WARD_ADMISSIONS_ANCHOR);
+      // The seeded unit, as the board reads it: the demo seed closes one bed by number (item 6).
+      const seeded = seededState.units.find((candidate) => candidate.id === unit.id) ?? unit;
+      const breakdown = capacityBreakdown(seeded, [...releases], [...seededState.leaveBeds], WARD_ADMISSIONS_ANCHOR);
 
       const rowsNow = () => screen.queryAllByTestId(/^ward-board-outgoing-derived-/).length;
 

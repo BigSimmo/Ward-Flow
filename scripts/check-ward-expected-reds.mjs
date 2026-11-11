@@ -74,7 +74,8 @@ const MIN_FILE_SECONDS = 0.1;
 // 1,530 files and 16,600 tests). The test floor stays lower than the file floor because a shard's
 // floors scale by its share of files, and shards differ in tests per file.
 // 4 Nov 2026: raised from 1000 when the population passed 2,000 files and 1000 fell below half of it.
-const FLOOR_FILES = 1200;
+// 11 Nov 2026: raised from 1200 when the population passed 2,400 files, as on 4 Nov.
+const FLOOR_FILES = 1400;
 const FLOOR_TESTS = 6000;
 
 /**

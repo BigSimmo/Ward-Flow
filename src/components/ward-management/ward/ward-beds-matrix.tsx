@@ -30,6 +30,7 @@ interface WardBedsMatrixProps {
 function formatBedAriaLabel(bed: BedItem, eddMoved: string | null = null): string {
   const parts: string[] = [`${bed.bedLabel} ${bed.statusText}`];
   if (bed.patientAlias) parts.push(bed.patientAlias);
+  if (bed.closedReview) parts.push(bed.closedReview); // Item 7: a closed bed's review prompt, overdue or due.
   if (bed.stayDays !== undefined && bed.stayDays !== null)
     parts.push(`${bed.stayDays} ${bed.stayDays === 1 ? "day" : "days"} in bed`);
   if (bed.pastDate) parts.push("Past expected discharge date");
@@ -132,6 +133,7 @@ function areBedCardPropsEqual(prev: WardBedCardProps, next: WardBedCardProps): b
     p.expectedDays === n.expectedDays &&
     p.departureExpectedAt === n.departureExpectedAt &&
     p.isClosed === n.isClosed &&
+    p.closedReview === n.closedReview &&
     p.isPulled === n.isPulled &&
     p.pastDate === n.pastDate &&
     p.admissionId === n.admissionId &&
@@ -229,7 +231,9 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect,
     who = (
       <>
         <span className={styles.rowName}>Not offered</span>
-        <span className={styles.rowSub}>Closed until it is reopened</span>
+        <span className={styles.rowSub}>
+          {bed.closedReview ? `Closed until reopened · ${bed.closedReview}` : "Closed until it is reopened"}
+        </span>
       </>
     );
   } else if (isPulled) {

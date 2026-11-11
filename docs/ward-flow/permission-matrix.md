@@ -18,7 +18,7 @@ and the reducer still limit each desk to records in its own place.
 | Backend  | `deskCommand`, the role clause of `validSharedCommand` and `commandRefusal` (`backend/ward-flow/engine.ts`); no role is refused 403 in `shared-http.mjs`                                                                                                      | Called per cell                                     |
 | Database | Row level security policies and grants in `backend/ward-flow/migrations/` and `infra/`                                                                                                                                                                        | SQL read as text                                    |
 
-**201 actions x 10 desks = 2010 cells.**
+**203 actions x 10 desks = 2030 cells.**
 
 ## Matrix
 
@@ -84,6 +84,7 @@ and the reducer still limit each desk to records in its own place.
 | `MARK_NOTICE_READ`                          |            Y            |             Y             |         Y         |     Y     |        Y         |      Y       |       Y        |     -     |      -       |    -    |
 | `MARK_REFERRAL_INFORMATION_MET`             |            Y            |             Y             |         -         |     Y     |        -         |      Y       |       Y        |     -     |      -       |    -    |
 | `MARK_REFERRAL_OPENED`                      |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
+| `MARK_TRANSPORT_COLLECTED`                  |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `MARK_WARD_READY_FOR_NEXT`                  |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `MARK_WEEKEND_DISCHARGE_REVIEWED`           |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `OPEN_DISCHARGE_RECORD`                     |            Y            |             Y             |         -         |     Y     |        Y         |      -       |       Y        |     -     |      -       |    -    |
@@ -189,6 +190,7 @@ and the reducer still limit each desk to records in its own place.
 | `SET_CULTURAL_SUPPORT_REQUEST`              |            Y            |             Y             |         -         |     Y     |        -         |      Y       |       Y        |     -     |      -       |    -    |
 | `SET_DISCHARGE_BARRIER`                     |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `SET_DISCHARGE_CRITERIA`                    |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
+| `SET_INTAKE_WINDOW`                         |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `SET_SCENARIO`                              |            Y            |             -             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `SET_SECLUSION_ROOM_STATUS`                 |            Y            |             Y             |         -         |     Y     |        Y         |      -       |       -        |     -     |      -       |    -    |
 | `SET_SITE_FEATURE_SWITCH`                   |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      Y       |    -    |

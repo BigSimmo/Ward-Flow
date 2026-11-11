@@ -74,8 +74,15 @@ import hero from "./ward-board-hero.module.css";
 import panels from "./ward-board-panels.module.css";
 import { WardBoardFlowColumn } from "./ward-board-flow-column";
 import { WardBoardGridColumn } from "./ward-board-grid-column";
-import { LeavingDestinationField, WardBoardDetailPanel } from "./ward-board-detail-panel";
+import { LeavingDestinationField, TransportWaitField, WardBoardDetailPanel } from "./ward-board-detail-panel";
 import { WardBoardWorkBand } from "./ward-board-work-band";
+import {
+  collectedStep,
+  transportConfirm,
+  TransportWaitConfirmText,
+  WardBoardTransportWait,
+} from "./ward-board-transport-wait";
+import { transportPendingFor, waitingForTransport } from "@/components/ward-management/ward-left-ward";
 import { WardBoardPrintSections } from "./ward-board-print-sections";
 import { createReadmissionIndex } from "@/components/ward-management/ward-readmission";
 import { stayReadmissionCopy } from "@/components/ward-management/ward-readmission-copy";
@@ -189,6 +196,8 @@ export function WardBoard({
     identity?: string;
     item?: ShiftTileItem;
     admissionId?: string;
+    offerTransport?: boolean; // Item 18: transport still pending, so the dialog asks about it.
+    awaitingTransport?: boolean; // Item 18: left the ward, waiting for transport. Unset until chosen.
   } | null>(null);
   const dialogTriggerRef = useRef<HTMLElement | null>(null);
   const blockerDialogRef = useRef<HTMLDivElement | null>(null);
@@ -581,6 +590,10 @@ export function WardBoard({
   const states = bedStates(unit, admissions, [...bedReleases], [...leaveBeds], namedHolds);
   const incoming = buildIncoming(unit, admissions, movements, now);
   const outgoing = outgoingToday(unit, bedReleases, outgoingBasis, now);
+  // Item 18: with transport still pending, "They have left" also asks whether they are waiting for it.
+  const transportPendingForStay = (key?: string | null) =>
+    admissions.some((admission) => admission.id === key && transportPendingFor(admission, liveBedReleases));
+  const transportWait = waitingForTransport(admissions, unit.id); // Item 18: left, still to be collected.
   /*
    * `sinceYesterday` counts whatever it is given and deliberately cannot use `admissionsForUnit`,
    * which drops departed admissions and would make `discharged` permanently zero — see its own doc
@@ -922,6 +935,7 @@ export function WardBoard({
   const confirmDestination = LEAVING_DESTINATIONS.find(
     (destination) => destination.id === destinationFor(confirmAdmissionId),
   )?.label;
+  const ask = transportConfirm(pendingConfirm, destinationFor(confirmAdmissionId), transportPendingForStay);
 
   const handleConfirmAction = () => {
     if (!pendingConfirm) return;
@@ -929,16 +943,21 @@ export function WardBoard({
       const admissionId = pendingConfirm.admissionId || pendingConfirm.item?.selectableKey;
       const leavingDestination = destinationFor(admissionId);
       if (!admissionId || leavingDestination === "") return;
+      if (ask.unanswered) return;
+      const awaitingTransport = ask.awaiting === true;
       recordDepartureAndReport(
         () =>
           recordWardDeparture
-            ? recordWardDeparture(admissionId, unit.id, leavingDestination)
+            ? recordWardDeparture(admissionId, unit.id, leavingDestination, "ward", { awaitingTransport })
             : raise("RECORD_LEAVING", {
                 admissionId: admissionId,
                 actingUnitId: unit.id,
                 leavingDestination,
+                ...(awaitingTransport ? { awaitingTransport: true as const } : {}),
               }),
-        `Recorded discharge: ${pendingConfirm.who} has left the ward.`,
+        awaitingTransport
+          ? `Recorded: ${pendingConfirm.who} has left the ward and is waiting for transport. The bed is ready.`
+          : `Recorded discharge: ${pendingConfirm.who} has left the ward.`,
         admissionId,
         pendingConfirm.who,
       );
@@ -965,6 +984,17 @@ export function WardBoard({
 
   const handleShiftAction = (item: ShiftTileItem, word: string) => {
     if (word === "They have left") {
+      if (transportPendingForStay(item.selectableKey)) {
+        setPendingConfirm({
+          kind: "leaving",
+          who: item.who || nameFor(item.selectableKey),
+          identity: identityFor(item.selectableKey),
+          item,
+          admissionId: item.selectableKey,
+          offerTransport: true,
+        });
+        return;
+      }
       const leavingDestination = destinationFor(item.selectableKey);
       const executeLeaving = (leavingDestination: LeavingDestination) => {
         recordDepartureAndReport(
@@ -1152,6 +1182,7 @@ export function WardBoard({
       }
       setPendingConfirm={setPendingConfirm}
       setSelectedBlocker={setSelectedBlocker}
+      transportPending={transportPendingForStay(selectedTile?.key)}
       unit={unit}
     />
   );
@@ -1311,6 +1342,17 @@ export function WardBoard({
             shiftTiles={shiftTiles}
             unit={unit}
           />
+          <WardBoardTransportWait
+            entries={transportWait}
+            nameFor={listNameFor}
+            now={now}
+            onCollected={(entry, who) =>
+              runDeparture(
+                () => raise("MARK_TRANSPORT_COLLECTED", { admissionId: entry.admissionId, actingUnitId: unit.id }),
+                collectedStep(entry.admissionId, unit.id, who),
+              )
+            }
+          />
         </div>
 
         <WardBoardPrintSections
@@ -1346,7 +1388,7 @@ export function WardBoard({
             <div className={styles.confirmDialogPanel}>
               <div className={styles.modalHeader}>
                 <h3 id="confirm-dialog-title" className={styles.confirmDialogTitle}>
-                  {pendingConfirm.kind === "leaving" ? "Confirm discharge" : "Confirm emergency department transfer"}
+                  {ask.words.title}
                 </h3>
                 <button
                   ref={confirmCloseBtnRef}
@@ -1364,7 +1406,9 @@ export function WardBoard({
               </div>
 
               <p id="confirm-dialog-description" className={styles.confirmDialogText}>
-                {pendingConfirm.kind === "leaving" ? (
+                {ask.awaiting ? (
+                  <TransportWaitConfirmText who={pendingConfirm.who} destination={confirmDestination} />
+                ) : pendingConfirm.kind === "leaving" ? (
                   <>
                     Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has left the ward? This
                     will record their discharge and make this bed available for new admissions.
@@ -1399,6 +1443,14 @@ export function WardBoard({
                 />
               ) : null}
 
+              {ask.offers ? (
+                <TransportWaitField
+                  id="ward-board-confirm-transport"
+                  value={ask.awaiting}
+                  onChange={(awaitingTransport) => setPendingConfirm({ ...pendingConfirm, awaitingTransport })}
+                />
+              ) : null}
+
               <div className={styles.modalActions}>
                 <button
                   type="button"
@@ -1414,10 +1466,12 @@ export function WardBoard({
                   data-testid="ward-board-confirm-proceed"
                   className={styles.detailPrimaryBtn}
                   // Native `disabled`: transient inertness until where they went is chosen (CS3-07).
-                  disabled={pendingConfirm.kind === "leaving" && destinationFor(confirmAdmissionId) === ""}
+                  disabled={
+                    (pendingConfirm.kind === "leaving" && destinationFor(confirmAdmissionId) === "") || ask.unanswered
+                  }
                   data-tone={pendingConfirm.kind === "leaving" ? "warn" : undefined}
                 >
-                  {pendingConfirm.kind === "leaving" ? "Record discharge" : "Record ED transfer"}
+                  {ask.words.action}
                 </button>
               </div>
             </div>

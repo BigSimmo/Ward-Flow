@@ -10,6 +10,7 @@ import {
   DrawerFootRow,
   Field,
   PanelDrawer,
+  Segmented,
   Select,
   StatusGlyph,
   StatusPill,
@@ -124,6 +125,7 @@ export function WardBoardDetailPanel({
   setLeavingDestination,
   setPendingConfirm,
   setSelectedBlocker,
+  transportPending = false,
   unit,
 }: {
   admissions: Admission[];
@@ -165,9 +167,17 @@ export function WardBoardDetailPanel({
   >;
   setLeavingDestination: (destination: LeavingDestination) => void;
   setPendingConfirm: Dispatch<
-    SetStateAction<{ kind: "leaving" | "away_at_ed"; who: string; item?: ShiftTileItem; admissionId?: string } | null>
+    SetStateAction<{
+      kind: "leaving" | "away_at_ed";
+      who: string;
+      item?: ShiftTileItem;
+      admissionId?: string;
+      offerTransport?: boolean;
+    } | null>
   >;
   setSelectedBlocker: Dispatch<SetStateAction<BedReleaseBlocker>>;
+  /** Item 18: the selected stay's transport is still pending, so leaving asks about it (Codex, #1608). */
+  transportPending?: boolean;
   unit: Unit;
 }) {
   const [dateTimeWrong, setDateTimeWrong] = useState(false);
@@ -270,7 +280,8 @@ export function WardBoardDetailPanel({
             };
 
             // Audit CS3-07: with no destination chosen yet, the confirmation asks for one.
-            if (!requireConfirmation && leavingDestination !== "") {
+            // Item 18: with transport still pending, it always asks whether they are waiting for it.
+            if (!requireConfirmation && leavingDestination !== "" && !transportPending) {
               executeLeaving(leavingDestination);
               return;
             }
@@ -280,6 +291,7 @@ export function WardBoardDetailPanel({
               kind: "leaving",
               who: tileWho || nameFor(selectedTile.key),
               admissionId: selectedTile.key,
+              ...(transportPending ? { offerTransport: true } : {}),
             });
           }}
         >
@@ -675,3 +687,34 @@ export function LeavingDestinationField({
     </>
   );
 }
+
+/** Item 18: asked only while transport is pending; never defaulted, so the ward chooses each time. */
+export function TransportWaitField({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: boolean | undefined;
+  onChange: (awaitingTransport: boolean) => void;
+}) {
+  // Kit radio choices, not a drop-down (Q36). Nothing is chosen until the person answers.
+  return (
+    <div data-testid={id}>
+      <p className={cx(styles.leavingLabel, redesign.fieldLabel)} aria-hidden="true">
+        Has their transport come?
+      </p>
+      <Segmented
+        label="Has their transport come?"
+        items={TRANSPORT_WAIT_ITEMS}
+        value={value === undefined ? "" : value ? "waiting" : "collected"}
+        onChange={(choice) => onChange(choice === "waiting")}
+      />
+    </div>
+  );
+}
+
+const TRANSPORT_WAIT_ITEMS: { id: "" | "waiting" | "collected"; label: string }[] = [
+  { id: "waiting", label: "No, still waiting for transport" },
+  { id: "collected", label: "Yes, gone with transport" },
+];

@@ -23,6 +23,7 @@ import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { edPressure } from "@/components/ward-management/ward-pressure";
 import { openEdJourneys, waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
+import { transportPendingFor, waitingForTransport } from "@/components/ward-management/ward-left-ward";
 
 /**
  * AUDIT 4, ONE NUMBER, ONE ANSWER ACROSS SCREENS (issue #1567). One state, from the seed, and every
@@ -428,6 +429,54 @@ describe("one number, one answer across Home, the board, the TV, Statistics and 
       ]),
     ).toEqual([]);
     expect(row.inUse, "occupancy ignores the named bed").toBe(unheld.inUse);
+  });
+
+  /*
+   * 4. Item 18, "Left the ward, waiting for transport". The bed is Ready at once (Josh: no cleaning
+   *    step), by one, on every screen, because it frees through the ordinary departure (D-115).
+   */
+  it("Beds ready now (item 18): Left the ward raises Ready by one, at once, on every screen", () => {
+    const candidates = state.admissions.filter((admission) => transportPendingFor(admission, state.bedReleases));
+    expect(candidates.length, "the seed has a discharge waiting on transport").toBeGreaterThan(0);
+    const left = candidates
+      .map((admission) =>
+        wardFlowReducer(state, {
+          type: "RECORD_LEAVING",
+          role: "ward",
+          now,
+          admissionId: admission.id,
+          actingUnitId: admission.unitId,
+          leavingDestination: "discharged-to-the-community",
+          awaitingTransport: true,
+        }),
+      )
+      .find(
+        (next) =>
+          next.rejections.length === state.rejections.length && networkTvFigures(next, now).bedsReady > tv.bedsReady,
+      );
+    expect(left, "one discharge waiting on transport can leave the ward and free a ready bed").toBeDefined();
+    const after = {
+      home: homeFigures(left!, now),
+      tv: networkTvFigures(left!, now),
+      print: printFigures(left!, now),
+      statistics: statisticsFigures(left!, now),
+      boards: left!.units.map((unit) => boardFigures(left!, now, unit)),
+    };
+    expect(after.tv.bedsReady, "Ready rose by exactly one").toBe(tv.bedsReady + 1);
+    expectOneAnswer("beds ready now, after Left the ward", [
+      { screen: "Home hero", value: after.home.bedsReady },
+      { screen: "ward boards, summed", value: after.boards.reduce((sum, board) => sum + board.readyNow, 0) },
+      {
+        screen: "ward board Ready tiles, summed",
+        value: after.boards.reduce((sum, board) => sum + board.readyTiles, 0),
+      },
+      { screen: "TV, all services", value: after.tv.bedsReady },
+      { screen: "Statistics", value: after.statistics.bedsReady },
+      { screen: "printed sheet", value: after.print.bedsReady },
+    ]);
+    // And the person is still listed while on site.
+    const waiting = waitingForTransport(left!.admissions);
+    expect(waiting.length).toBe(waitingForTransport(state.admissions).length + 1);
   });
 });
 

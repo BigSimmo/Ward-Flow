@@ -315,6 +315,20 @@ describe("bed meeting agenda group filter (B1 extended, 4 Nov 2026)", () => {
     expect(screen.queryByTestId("bed-meeting-agenda-groups-applied")).toBeNull();
     expect(rows()).toBe(before);
   });
+
+  it("lists the seeded closed bed past its review, with a link to its ward (item 6)", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <BedMeetingAgendaScreen />
+      </WardFlowProvider>,
+    );
+    const section = screen.getByTestId("bed-meeting-agenda-closed-beds-review");
+    expect(within(section).getByRole("heading", { name: /Closed beds past review/ })).toBeInTheDocument();
+    expect(section).toHaveTextContent(/Bed \d+/);
+    expect(section).toHaveTextContent(/Closed since .* · review was /);
+    const link = within(section).getAllByRole("link", { name: /^Open ward: .*, to review bed \d+$/ })[0]!;
+    expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/ward\/[a-z-]+$/);
+  });
 });
 
 /**

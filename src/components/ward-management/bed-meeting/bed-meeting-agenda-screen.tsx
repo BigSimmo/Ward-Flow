@@ -48,6 +48,8 @@ import { HEALTH_SERVICES, type HealthService } from "../ward-model-vocabulary";
 import { referralQueueOrder } from "../ward-referrals";
 import { healthServiceAcronym, movementBelongsToService, unitHealthService } from "../ward-service-scope";
 import { siteByCode } from "../ward-sites";
+import { unitHref } from "../shell/ward-facade";
+import { useCanOpenHref, useDeskInScope } from "../shell/ward-access";
 import { referralBoardHref } from "../ed/ed-bed-search-step";
 import { askingForShort, waitWords } from "../referrals/referral-board-parts";
 import { WardPrototypeFooter } from "../shell/ward-prototype-footer";
@@ -71,7 +73,13 @@ import {
   type BedMeetingActionKind,
   type BedMeetingActionOwner,
 } from "./bed-meeting-actions";
-import { bedMeetingAgenda, meetingActionSummary, type AgendaItem, type MeetingActionRow } from "./bed-meeting-agenda";
+import {
+  bedMeetingAgenda,
+  closedBedsReviewSection,
+  meetingActionSummary,
+  type AgendaItem,
+  type MeetingActionRow,
+} from "./bed-meeting-agenda";
 import { AgendaReferralsCopy, agendaReferralsText } from "./agenda-referrals-copy";
 import {
   actionsRecordedSince,
@@ -240,6 +248,17 @@ function BedMeetingAgenda() {
       })
     : allSections;
   const fullSummary = meetingActionSummary(scopedMovements, scopedAdmissions, now);
+  // Item 6 (10 Nov 2026): beds, not people, so only the unfiltered agenda lists them. Decision 46: a
+  // site bed manager's agenda is its own site's, so another site's beds are left out; a listed ward the
+  // desk still cannot open shows no Open ward link.
+  const canOpenHref = useCanOpenHref();
+  const deskInScope = useDeskInScope();
+  const closedReview = closedBedsReviewSection(
+    units.filter(
+      (unit) => (service === null || unitHealthService(unit) === service) && (!deskInScope || deskInScope(unit.id)),
+    ),
+    now,
+  );
   // Offer every group the control can filter: the agenda lists, the actions from earlier meetings
   // and the waiting referrals, each person counted once.
   const groupOptions = agendaGroupOptions(
@@ -788,6 +807,36 @@ function BedMeetingAgenda() {
             </AgendaList>
           ) : null,
         )}
+        {closedReview.total > 0 && chips.size === 0 && !grouped ? (
+          <AgendaList id={closedReview.id} title={closedReview.title} count={closedReview.total}>
+            {(limit) =>
+              closedReview.items.slice(0, limit).map((item) => (
+                <li key={`${item.unitId}-${item.bedNumber}`} className={styles.agendaRow}>
+                  <div className={styles.row}>
+                    <div className={styles.rowText}>
+                      <span className={styles.name}>
+                        {item.wardName} · Bed {item.bedNumber}
+                      </span>
+                      <span className={styles.detail}>
+                        Closed since {formatInstantWithDay(item.closedAt, now)} · review was{" "}
+                        {formatInstantWithDay(item.reviewAt, now)}
+                      </span>
+                    </div>
+                    {canOpenHref(unitHref(item.unitId)) ? (
+                      <Link
+                        href={unitHref(item.unitId)}
+                        className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.addAction}`}
+                        aria-label={`Open ward: ${item.wardName}, to review bed ${item.bedNumber}`}
+                      >
+                        Open ward
+                      </Link>
+                    ) : null}
+                  </div>
+                </li>
+              ))
+            }
+          </AgendaList>
+        ) : null}
         {shows("referrals") ? (
           <AgendaList
             id="referrals"

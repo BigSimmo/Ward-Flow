@@ -6,6 +6,9 @@ export type WardReferralInboxEntry = {
   id: string;
   patientId: Referral["patientId"];
   raisedAt: number;
+  /** When the referral itself was raised, kept apart from `raisedAt` for a ward asked later (D-76),
+   *  so the safety tags date the risk flags by the referral (H10), not by this ward's request. */
+  referralRaisedAt: number;
   urgency: Referral["urgency"];
   /** Placement facts from this sender, never another recipient's answer. */
   ageBand?: Referral["ageBand"];
@@ -61,6 +64,7 @@ export function wardReferralInboxEntries(referrals: readonly Referral[], unitId:
         patientId: referral.patientId,
         // A ward asked later (Ask more wards, D-76) waits from when it was asked, not from the referral.
         raisedAt: arm.addedBy !== undefined && arm.referredAt !== undefined ? arm.referredAt : referral.raisedAt,
+        referralRaisedAt: referral.raisedAt,
         urgency: referral.urgency,
         ageBand: referral.ageBand,
         originSiteCode: referral.originSiteCode,
@@ -94,4 +98,12 @@ export function wardReferralInboxEntries(referrals: readonly Referral[], unitId:
       },
     ];
   });
+}
+
+/**
+ * H10: this ward's entries dated by when each referral was raised, for the safety tags beside its
+ * risk flags. A ward asked later (D-76) keeps its own `raisedAt` for its wait clock elsewhere.
+ */
+export function referralDated(entries: readonly WardReferralInboxEntry[] | false | undefined) {
+  return (entries || []).map((entry) => ({ ...entry, raisedAt: entry.referralRaisedAt }));
 }

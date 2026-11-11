@@ -43,6 +43,7 @@ type Pending = {
   /** A refusal is already said inline by the page; see `UndoableStep.refusalShownInline`. */
   refusalShownInline?: boolean;
   onRefused?: (reason: string) => void;
+  onAccepted?: () => void;
   /** Who the step is for; see `UndoableStep.who`. */
   who?: string;
   /** The record number already kept for this undo and subject before the step, if any. */
@@ -102,6 +103,8 @@ export type UndoableStep = {
   refusalShownInline?: boolean;
   /** Told the engine's own reason when the step is refused, so the page can say it beside its control. */
   onRefused?: (reason: string) => void;
+  /** Told once the engine has accepted the step, so a form can close only then and keep its draft otherwise. */
+  onAccepted?: () => void;
   /**
    * Audit M2: who the step is for, as the success message names them. A refusal names them too
    * (Josh, 26 Sept 2026), because a shared-board refusal never names the patient (P058).
@@ -213,6 +216,7 @@ export function useUndoableStep({
         pending.then();
         continue;
       }
+      pending.onAccepted?.();
       const build = pending.undo;
       if (!sink) {
         onMessage?.(pending.success, "success");

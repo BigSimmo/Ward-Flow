@@ -97,3 +97,31 @@ describe("closing the exact bed from the bed drawer", () => {
     expect(toggle).toHaveTextContent("History2");
   });
 });
+
+describe("closing a bed with a review time (item 6)", () => {
+  it("records Review in, shows the review on the closed bed, and leaves Ready as a plain closure", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <Grab />
+          <WardScreen unitId={UNIT} />
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    const ready = bedsIn("ready");
+    const bed = Math.min(...ready);
+    fireEvent.click(card(bed));
+    // Nothing is chosen for the person beyond "Not known", which leaves the time out.
+    const choice = screen.getByTestId("ward-drawer-close-bed-review");
+    expect(choice).toHaveAttribute("data-value", "");
+    fireEvent.click(screen.getByRole("button", { name: "In 4 hours" }));
+    expect(choice).toHaveAttribute("data-value", "4");
+    fireEvent.click(screen.getByTestId("ward-drawer-close-bed"));
+
+    const now = flow!.now;
+    const mark = flow!.units.find((unit) => unit.id === UNIT)!.closedBeds!.at(-1)!;
+    expect(mark).toMatchObject({ bedNumber: bed, reviewAt: now + 240 });
+    expect(bedsIn("ready")).toHaveLength(ready.length - 1);
+    expect(screen.getByTestId("ward-drawer-reopen-bed-note")).toHaveTextContent(/^Review \d\d:\d\d\. Reopening/);
+  });
+});

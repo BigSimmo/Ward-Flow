@@ -106,7 +106,8 @@ describe("real provider updates all subscribed modes", () => {
       });
       expect(current.rejections.length).toBe(refusals);
     };
-    for (const value of [0, 1, 0, 2, 1]) {
+    // Ends above one: the seed closes one bed on this ward (item 6), so a confirmed 1 shows 0 Ready.
+    for (const value of [0, 1, 0, 1, 2]) {
       confirm(value);
       const ready = Number(screen.getByTestId("beds-ready").textContent);
       expect(JSON.parse(screen.getByTestId("forecast").textContent!).readyNow).toBe(ready);
