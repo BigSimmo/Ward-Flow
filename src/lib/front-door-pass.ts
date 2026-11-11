@@ -206,15 +206,22 @@ export function passOpensSite(pass: FrontDoorPass, sharedEnabled: boolean): bool
   return pass.kind === "account" || !sharedEnabled;
 }
 
+/** The shortest demo code that opens the site, counted after spaces and dashes are removed. */
+export const DEMO_CODE_MIN_LENGTH = 12;
+
 /** The demo code's own form: capitals, with spaces and dashes ignored, so "ward 7q4k" still opens. */
 function normaliseDemoCode(code: string): string {
   return code.toUpperCase().replace(/[\s-]+/g, "");
 }
 
-/** Whether an entered demo code matches `WARD_DEMO_CODE`. False when no code is set. */
+/**
+ * Whether an entered demo code matches `WARD_DEMO_CODE`. False when no code is set, or when the set
+ * code is shorter than 12 characters (spaces and dashes not counted), so a guessable code never
+ * opens the site (D-145).
+ */
 export async function demoCodeMatches(entered: string, env: Env = process.env): Promise<boolean> {
   const expected = normaliseDemoCode(env.WARD_DEMO_CODE ?? "");
-  if (expected.length < 4) return false;
+  if (expected.length < DEMO_CODE_MIN_LENGTH) return false;
   // Hash both sides, so the comparison takes the same time whatever was typed.
   const digest = async (text: string) =>
     toBase64Url(new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(text))));

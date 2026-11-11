@@ -56,7 +56,8 @@ so changing them needs a restart, not a rebuild:
   stays shut and `/sign-in` says sign-in is not set up. Changing it signs everyone out.
 - `WARD_DEMO_CODE` (public demo only) is the code `/sign-in` asks for. Josh chose a demo code over
   the open demo of 28 September 2026 ([D-88](decisions.md)). Share it only with people meant to
-  see the demo.
+  see the demo. It must be at least 12 characters, not counting spaces and dashes; a shorter code
+  counts as no code and the demo stays shut (D-145).
 
 With it on, a page without a pass goes to `/sign-in` and an API call gets 401. On the signed-in
 site the pass lasts until the 12-hour sign-in limit and ends at sign-out. A demo code pass lasts 8
