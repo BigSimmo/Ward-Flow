@@ -131,15 +131,18 @@ export function useWardRecordActors(): readonly WardRecordActor[] {
   }, [access]);
 }
 
+/** Shared empty set, so an unscoped desk's value keeps its identity from render to render. */
+const NO_IDS: ReadonlySet<string> = new Set();
+
 /** Break glass ids visible only through a grant, so a screen can say the record is read only. */
-const BreakGlassContext = createContext<ReadonlySet<string>>(new Set());
+const BreakGlassContext = createContext<ReadonlySet<string>>(NO_IDS);
 
 function useBreakGlassPatientIds(): ReadonlySet<string> {
   return useContext(BreakGlassContext);
 }
 
 /** Stays this desk sees with ward and dates only (a community team's catchment client). */
-const DatesOnlyStayContext = createContext<ReadonlySet<string>>(new Set());
+const DatesOnlyStayContext = createContext<ReadonlySet<string>>(NO_IDS);
 
 /**
  * Whether this desk sees a stay with ward and dates only, so its observation level and other
@@ -327,7 +330,7 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     datesOnly: ReadonlySet<string>;
   }>(() => {
     if (accessIsWholeNetwork(access) && activeGrants.length === 0)
-      return { scoped: context, glass: new Set(), datesOnly: new Set() };
+      return { scoped: context, glass: NO_IDS, datesOnly: NO_IDS };
     const places = wardPlaceLookup(context.units);
     const baseScoped = scopeWorkspace(context, access, { now, places, grants: activeGrants });
     const collection = retainSharedSenderReadCollection({
