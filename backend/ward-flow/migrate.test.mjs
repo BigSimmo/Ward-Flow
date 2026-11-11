@@ -25,12 +25,12 @@ function database(version) {
   return { pool: { connect: async () => client }, queries, current: () => current, released: () => released };
 }
 
-for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]) {
-  const expected = Array.from({ length: 17 - (from ?? 0) }, (_, index) => (from ?? 0) + index + 1);
-  test(`migration runner advances ${from ?? "fresh"} to version 17 in order`, async () => {
+for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]) {
+  const expected = Array.from({ length: 18 - (from ?? 0) }, (_, index) => (from ?? 0) + index + 1);
+  test(`migration runner advances ${from ?? "fresh"} to version 18 in order`, async () => {
     const db = database(from);
     await migrate(db.pool);
-    assert.equal(db.current(), 17);
+    assert.equal(db.current(), 18);
     assert.deepEqual(
       db.queries.flatMap((sql) => {
         const match = /INSERT INTO ward_flow\.migrations\(version\) VALUES\((\d+)\)/.exec(sql);
@@ -48,7 +48,7 @@ for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
 }
 
 test("unknown migration versions fail closed and roll back", async () => {
-  for (const version of [0, 18, "5"]) {
+  for (const version of [0, 19, "5"]) {
     const db = database(version);
     await assert.rejects(migrate(db.pool), /Unsupported database migration version/);
     assert.equal(db.queries.at(-1), "ROLLBACK");
@@ -171,6 +171,27 @@ test("migration 12 only adds indexes, and its rollback refuses any other version
   assert.equal(undo.match(/^DROP INDEX ward_flow\./gm)?.length, 13);
   assert.match(undo, /IS DISTINCT FROM 12/);
   assert.match(undo, /DELETE FROM ward_flow\.migrations WHERE version = 12;/);
+});
+
+test("migration 18 only adds the read-path indexes the queries filter on, and its rollback drops each", async () => {
+  const sql = await readFile(new URL("./migrations/018-read-path-indexes.sql", import.meta.url), "utf8");
+  const undo = await readFile(new URL("./infra/rollback-018-read-path-indexes.sql", import.meta.url), "utf8");
+  const statements = sql.split("\n").filter((line) => line.trim() && !line.startsWith("--"));
+  assert.deepEqual(statements, [
+    "CREATE INDEX audit_break_glass_actor ON ward_flow.audit(workspace_id, actor_id) WHERE action = 'BREAK_GLASS';",
+    "CREATE INDEX audit_access_sequence ON ward_flow.audit(workspace_id, sequence DESC) WHERE action LIKE 'ACCESS\\_%';",
+    "CREATE INDEX record_access_workspace_viewed ON ward_flow.record_access(workspace_id, viewed_at DESC);",
+    "INSERT INTO ward_flow.migrations(version) VALUES(18);",
+  ]);
+  // A partial index serves a query only when the query repeats its predicate exactly.
+  const access = await readFile(new URL("./workspace-access.mjs", import.meta.url), "utf8");
+  const views = await readFile(new URL("./workspace-record-views.mjs", import.meta.url), "utf8");
+  assert.match(access, /a\.workspace_id=b\.workspace_id AND a\.actor_id=b\.actor_id AND a\.action='BREAK_GLASS'/);
+  assert.ok(views.includes(`" AND action LIKE 'ACCESS\\\\_%'"`), "the access history repeats the index predicate");
+  for (const name of ["audit_break_glass_actor", "audit_access_sequence", "record_access_workspace_viewed"])
+    assert.match(undo, new RegExp(`^DROP INDEX ward_flow\\.${name};$`, "m"));
+  assert.match(undo, /IS DISTINCT FROM 18/);
+  assert.match(undo, /DELETE FROM ward_flow\.migrations WHERE version = 18;/);
 });
 
 test("migration 13 only widens the record view screens, and its rollback keeps logged referral views", async () => {

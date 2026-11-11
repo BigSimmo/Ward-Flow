@@ -264,7 +264,7 @@ type WardFlowContextValue = closingLoop.ClosingLoopContext & {
   loadScenarioFile?: ScenarioFileLoader;
   /** False when the D-18 free-text privacy lock (or storage unavailability) has paused device saving. */
   savingOnDevice?: boolean;
-  /** Shared workspace status, error and receivedAt (device time of the last good read, 0 before one) for shared-save forms. */
+  /** Shared status and error; `receivedAt` (moves every poll) comes from `useWardSharedReceivedAt()`, not here. */
   shared?: {
     enabled: boolean;
     status: WardSharedConnection["status"];
@@ -1289,9 +1289,9 @@ function WardFlowWorld({
     [state, shown, dispatch],
   );
 
-  // One object per change of status, so readers of `shared` do not wake on every clock tick.
-  const { enabled, status, error, receivedAt } = sharedConnection;
-  const sharedStatus = useMemo(() => ({ enabled, status, error, receivedAt }), [enabled, status, error, receivedAt]);
+  // One object per change of status, so readers of `shared` do not wake on every clock tick or poll.
+  const { enabled, status, error } = sharedConnection;
+  const sharedStatus = useMemo(() => ({ enabled, status, error }), [enabled, status, error]);
 
   const value = useMemo<WardFlowContextValue>(
     () => ({
@@ -1445,8 +1445,9 @@ export function useCommunityScopedReferrals(): CommunityScopedReferral[] {
 
 /** Batch 3 item 28 (D-136): a team's "returned to ED" prompts, from the full record here (FD-23). */
 export function useDiversionReturnPrompts(matchesTeam: TeamMatch, windowMinutes: number): DiversionReturnPrompt[] {
-  const { referrals, movements, now } = useWardFlowSelect("referrals", "movements", "now");
-  return diversionReturnPrompts({ referrals, movements }, matchesTeam, windowMinutes, now);
+  // Shared mode (D-152): `diversionReturns` are the server's returns for this desk's own referrals.
+  const source = useWardFlowSelect("referrals", "movements", "diversionReturns", "now");
+  return diversionReturnPrompts(source, matchesTeam, windowMinutes, source.now);
 }
 
 /** Fix plan item 17 (D-74): referrals as the community team that sent them sees them, never the record. */

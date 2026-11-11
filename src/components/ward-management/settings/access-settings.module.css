@@ -111,3 +111,34 @@
   line-height: var(--wf-lh-13);
   color: var(--wf-ink-2);
 }
+
+/* Batch 4 item 20 (D-142): the intro and its result lines read as one block. */
+.lead {
+  display: grid;
+  gap: var(--wf-s-3);
+  align-content: start;
+}
+
+.siteFeatures {
+  display: grid;
+  min-width: 0;
+}
+
+/* Desktop, two cards a row (settings-layout's access grid): the access admin's Features at this site
+ * card sits in the left column under the intro, beside Requests for access, as drawn. */
+@media (min-width: 75.0625rem) {
+  .leadBesideRequests {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .leadBesideRequests ~ .siteFeatures {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .leadBesideRequests ~ .requestsBesideFeatures {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}

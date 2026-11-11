@@ -22,6 +22,7 @@ import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-bro
 import { WardOfflineBanner, WardPracticeLine } from "@/components/ward-management/shell/ward-offline-banner";
 import { WardTrainingBanner } from "@/components/ward-management/shell/ward-training-banner";
 import { WardDowntimePackLine } from "@/components/ward-management/shell/ward-downtime-pack-line";
+import { WardSiteFeatureSwitchSync } from "@/components/ward-management/shell/ward-site-feature-switch-sync";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import { WardDemoNotSavedNote, WardDemoTypedTextNote } from "@/components/ward-management/shell/ward-demo-saving";
 import { WardRecoveryNotice } from "@/components/ward-management/shell/ward-recovery-notice";
@@ -233,6 +234,8 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
               <WardOfflineLinks />
               {/* A demo link's `?flags=` switches feature flags on this device (ward-feature-flags.ts). */}
               <WardFeatureFlagLink />
+              {/* Batch 4 item 20: a feature an admin switched off at this desk's site is off here too. Renders nothing. */}
+              <WardSiteFeatureSwitchSync />
               {/* WS-18: Home's second skip link, straight after the page's "Skip to main content". */}
               <WardSkipToActNow />
               {/* P073: "Skip to main content" moves focus into the page's main. */}

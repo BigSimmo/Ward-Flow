@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import * as engine from "./dist/engine.mjs";
 import { createWorkspaceStore } from "./postgres.mjs";
+import { throughSteps } from "./writable-with.test-support.mjs";
+import { answerMembershipRead, isMembershipRead } from "./viewer.test-support.mjs";
 
 const at = new Date("2026-10-27T04:00:00Z");
 const actorId = "11111111-1111-4111-8111-111111111111";
@@ -60,7 +62,8 @@ function setup(
   const receipts = new Map();
   const queries = [];
   let locked = false;
-  const query = async (sql, values = []) => {
+  const query = throughSteps(async (sql, values = []) => {
+    if (isMembershipRead(sql)) return answerMembershipRead(query, sql, values);
     queries.push(sql);
     if (sql === "BEGIN") return { rows: [] };
     if (sql === "COMMIT" || sql === "ROLLBACK") {
@@ -100,7 +103,7 @@ function setup(
     }
     if (sql.startsWith("INSERT INTO ward_flow.audit")) return { rows: [] };
     assert.fail(`Unexpected SQL in offline authority double: ${sql.slice(0, 100)}`);
-  };
+  });
   const pool = { query, connect: async () => ({ query, release() {} }) };
   const store = createWorkspaceStore(pool, {
     workspaceId,

@@ -58,7 +58,12 @@ export function FeatureFlagsCard() {
           setting={`flag-${flag.name}`}
           testId={`feature-flag-${flag.name}`}
           title={flag.definition.label}
-          sub={`${WARD_FEATURE_FLAG_SOURCE_LABELS[flag.source]} · Owner ${WARD_FEATURE_FLAG_NOTES[flag.name].owner} · Added ${WARD_FEATURE_FLAG_NOTES[flag.name].added}`}
+          sub={
+            // Batch 4 item 20 (D-142): a feature switched off at the desk's site is greyed here.
+            flag.source === "site"
+              ? "Off at this site, so off on this device"
+              : `${WARD_FEATURE_FLAG_SOURCE_LABELS[flag.source]} · Owner ${WARD_FEATURE_FLAG_NOTES[flag.name].owner} · Added ${WARD_FEATURE_FLAG_NOTES[flag.name].added}`
+          }
         >
           <Switch
             checked={flag.on}

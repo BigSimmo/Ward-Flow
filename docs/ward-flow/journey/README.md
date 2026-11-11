@@ -287,3 +287,26 @@ Live audit fixes (#1626, 11 Nov 2026): source digests for three files were re-re
 - `ward/ward-screen-overlays.tsx`: closing a bed offers an optional reason on its toast (D-148). `SET_BED_CLOSED` is unchanged. Choosing a reason undoes the close and sends it again with that reason. `RECORD_AWAY_AT_EMERGENCY_DEPARTMENT`, `RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT`, `SET_BED_PREPARATION` and the discharge-barrier dispatch each moved down twelve lines.
 - `ward-global-search.tsx`, `tools/ward-demo-panel.tsx`: `ADVANCE_CLOCK` is unchanged, but D-150 hides its controls in shared mode, because the signed-in site runs on real Perth time. The action's screen note says so. `RESET_SCENARIO` and `SET_SCENARIO` are unchanged.
 - `ward-patient-archive.ts`, `ward-patient-archive-reducer.ts`: D-149 changed `ARCHIVE_PATIENT`'s guard. A withdrawn or cancelled front-door referral, audit rows and expired Undo records no longer block, and the withdrawn referral is unlinked from the archived record. The command model's before, guards, effects and the `patientArchiveProblem` citation (line 44 to 54) are updated.
+
+## Source review — 10 Nov 2026 (Batch 4 outages and pilot control, PR #1603, D-135)
+
+Source digests were re-reviewed file by file against `main` before being re-recorded. Only additive Batch 4 edits were found:
+
+- `ward-flow-event-roles.ts`, `ward-flow-events.ts`: three new events (`SET_SITE_FEATURE_SWITCH`, `RECORD_DOWNTIME_PACK_PRINTED`, `RECORD_OUTAGE_WINDOW`) and their roles were added. No existing event's payload or role changed; cited lines below the additions moved down only.
+- `ward-flow-reducer.ts`: one type import, the `PilotControlState` records joined to `WardFlowState`, and the three new events routed to `reducePilotControlEvent`. No existing case changed; later citations moved down by one to six lines.
+- `ward-access-state.ts`: the three new records are scoped (switches and outage windows to every desk, print times to the desks of the wards printed for). No existing field rule changed; every citation moved down by seven to ten lines.
+- `ward-flow-storage-validation.ts`: the three stored records are checked on restore. The cited locked-bed invariant moved from line 460 to 461, unchanged.
+
+Each cited line was found again by its text. The three new events have command models in `event-dispositions.json`; no screen dispatches `SET_SITE_FEATURE_SWITCH` or `RECORD_OUTAGE_WINDOW` yet (screens wait for the Batch 4 design review, D-74).
+
+After review the same day, `ward-site-feature-switches.ts` and `ward-outage-catch-up.ts` made three helpers private (`isSiteProtectedFeature`, `SiteProtectedFeature`, `wardOwnConfirmationAt`) for the unused-export check. Only the `export` keyword changed; behaviour and cited lines are the same, so only their digests were re-recorded.
+
+## Source review — 11 Nov 2026 (Batch 4 screens, PR #1603, D-142)
+
+Source digests were re-reviewed against the Batch 4 command review (`573c7ff77`) before being re-recorded:
+
+- `ward-flow-event-roles.ts`: the `SET_SITE_FEATURE_SWITCH` comment now cites D-142. The edit replaces comment lines one for one, so no role changed and no cited line moved; only digests were re-recorded for every event citing this file.
+- `ward-site-feature-switches.ts`: by D-142 (Josh, 11 Nov 2026, amending D-80 for this one action) `mayChangeSiteFeatures` admits the statewide access admin as well as the statewide coordinator. The access admin sends the switch under the coordinator role (`SITE_FEATURE_SWITCH_ROLE`), and the record's `by` names `admin` when the shared server's `deskCommand` sets `byAccessAdmin` from the desk's membership. `reduceSiteFeatureSwitch` moved from line 91 to 102; its guards are unchanged.
+- Screens now dispatch the new events: `SET_SITE_FEATURE_SWITCH` from Features at this site on the access admin's Access tab, and `RECORD_OUTAGE_WINDOW` from the coordinator's Record an outage form on the downtime pack. The ward catch-up card, outage bed tags, Home's catch-up card, the old packs band and the ward's pack printed line read the records. The `SET_SITE_FEATURE_SWITCH`, `RECORD_OUTAGE_WINDOW` and `RECORD_DOWNTIME_PACK_PRINTED` models say so and cite the new screen tests.
+
+The same day, the print time record moved from `reports/downtime-pack-prints.ts` to the ward root as `ward-downtime-pack-prints.ts`, so the coordinator and ward screens read it without a screen-to-screen import (the import map guard). The file's text is unchanged, so its cited line and digest stand; only the path changed. `ward-flow-pilot-control-events.ts` and `ward-outage-catch-up.ts` changed one import line each, so no cited line moved and only their digests were re-recorded.
