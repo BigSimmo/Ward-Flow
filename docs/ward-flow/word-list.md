@@ -118,7 +118,6 @@ sub-labels under those four, in order: **Referred**, **Review**, **Accepted**, *
 | **HMDC**          | Hospital Morbidity Data Collection, WA Health's record of hospital stays.             |
 | **ISBAR**         | Identify, Situation, Background, Assessment, Recommendation: the order of a handover. |
 | **MBBS**          | Bachelor of Medicine, Bachelor of Surgery, a medical degree.                          |
-| **MHERT**         | Mental health emergency response team.                                                |
 | **MHN**           | Mental health nurse.                                                                  |
 | **NICE**          | National Institute for Health and Care Excellence, the UK guideline body.             |
 | **PAS**           | Patient administration system, the hospital's admissions and bed record.              |
