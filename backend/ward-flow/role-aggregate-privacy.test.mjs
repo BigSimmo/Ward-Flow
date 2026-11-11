@@ -3,6 +3,7 @@ import test from "node:test";
 
 import * as engine from "./dist/engine.mjs";
 import { createWorkspaceStore } from "./postgres.mjs";
+import { throughSteps } from "./writable-with.test-support.mjs";
 import { withoutRecordDetail } from "./record-detail.mjs";
 
 // Production store and reporting engine; the double only schedules the locked SQL reads.
@@ -25,7 +26,7 @@ function executiveBoundary({
   const access = { role: "executive", scope: { kind: "service", service } };
   const membershipId = "55555555-5555-4555-8555-555555555555";
   const view = { actorId, membershipId, access, version: 14, grants: [], accessUntil: expiry };
-  const query = async (sql, values = []) => {
+  const query = throughSteps(async (sql, values = []) => {
     if (sql === "BEGIN") return { rows: [] };
     if (sql === "COMMIT" || sql === "ROLLBACK") {
       locked = false;
@@ -66,7 +67,7 @@ function executiveBoundary({
     if (sql.startsWith("SELECT status, result")) return { rows: receipt ? [receipt] : [] };
     if (sql.startsWith("INSERT INTO ward_flow.audit")) return { rows: [] };
     assert.fail(`Unexpected executive boundary SQL: ${sql.slice(0, 100)}`);
-  };
+  });
   const store = createWorkspaceStore(
     { query, connect: async () => ({ query, release() {} }) },
     {
@@ -576,7 +577,7 @@ test("refused commands and replay use the same bound response factory without pe
   const stored = { data_mode: "prototype", revision: 7, payload: world, cache_updated_at: at.toISOString() };
   let receipt;
   let released = 0;
-  const query = async (sql, values = []) => {
+  const query = throughSteps(async (sql, values = []) => {
     if (sql.startsWith("SELECT data_mode, revision, payload, date_trunc('milliseconds', updated_at)")) {
       assert.equal(
         sql,
@@ -593,7 +594,7 @@ test("refused commands and replay use the same bound response factory without pe
     }
     assert.ok(["BEGIN", "COMMIT"].includes(sql) || sql.startsWith("INSERT INTO ward_flow.audit"), sql);
     return { rows: [] };
-  };
+  });
   const pool = {
     query,
     connect: async () => ({
