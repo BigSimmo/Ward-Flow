@@ -592,6 +592,15 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // Not the executive, which changes nothing (D-80).
   REQUEST_WARD_STAFF: ["ward", "coordinator", "bed_manager"],
   CLOSE_WARD_STAFF_REQUEST: ["ward", "coordinator", "bed_manager"],
+  // Batch 4 item 20 (Josh's plan, 10 Nov 2026): a feature switched off at one site, admins only: the
+  // statewide coordinator and, by D-142 (Josh, 11 Nov 2026, amending D-80 for this one action), the
+  // statewide access admin, which sends it under this coordinator role (`mayChangeSiteFeatures`). The
+  // shared server refuses every other desk, a service coordinator too (`siteFeatureSwitchRefusal`).
+  SET_SITE_FEATURE_SWITCH: ["coordinator"],
+  // Batch 4 item 24: the desks that open the downtime pack record when they print it or save a PDF.
+  RECORD_DOWNTIME_PACK_PRINTED: ["coordinator", "bed_manager", "ward", "ed"],
+  // Batch 4 item 25: a coordinator records the outage window, typed. Not the ward, which confirms.
+  RECORD_OUTAGE_WINDOW: ["coordinator"],
   // Batch 3 item 21 (D-136): a desk that can own an open item (a referral, a bed meeting chase or a
   // carer callback) hands it on, and the receiving desk accepts it. The reducer lets only the owner
   // hand an item over and only the named desk accept it; a ward names its own ward.

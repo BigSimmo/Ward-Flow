@@ -80,6 +80,10 @@ import list from "./home-list.module.css";
 import flowStyles from "./home-flow.module.css";
 import { HomePinnedCard } from "./home-pinned-card";
 import { HomeSinceBanner } from "./home-since-banner-lazy";
+import { HomeOutageCatchUp } from "./home-outage-catch-up-lazy";
+import { PACK_OLD_AFTER_MINUTES, wardsWithOldPack } from "@/components/ward-management/ward-downtime-pack-prints";
+import Link from "next/link";
+import catchUpStyles from "./home-outage-catch-up.module.css";
 import heroStyles from "./home-hero.module.css";
 import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 import type { PlacementSubject } from "./home-placement-drawer";
@@ -240,6 +244,7 @@ export function CoordinatorScreen() {
     inboxSnoozes,
     inboxAcknowledgements,
     inboxOwnership,
+    downtimePackPrints,
   } = useWardFlowSelect(
     "movements",
     "units",
@@ -257,6 +262,7 @@ export function CoordinatorScreen() {
     "inboxSnoozes",
     "inboxAcknowledgements",
     "inboxOwnership",
+    "downtimePackPrints",
   );
   const liveNow = useWardFlowClock();
   const service = useServiceScope();
@@ -743,11 +749,32 @@ export function CoordinatorScreen() {
           : { answer: `Nothing needs you now${nextScope}` };
   // Josh, 4 Nov 2026 (2i question 5): the Checking line sits under the step whenever a bed count is
   // stale or a ward is not reporting (every size since the sticky header redesign, 9 Nov 2026).
+  // Batch 4 item 24 (Josh approved the drawing 11 Nov 2026, D-142): a pointer to the wards whose
+  // outage pack is old or never printed. The list itself lives once, on the Downtime pack screen.
+  const oldPacks = wardsWithOldPack(
+    downtimePackPrints,
+    units.map((unit) => unit.id),
+    now,
+  ).length;
+  const bedChecks = staleBedCounts + wardsNotReporting > 0;
+  const packPointer =
+    oldPacks > 0 ? (
+      <Link href="/ward-flow/reports/downtime" className={catchUpStyles.pointer} data-testid="home-next-old-packs">
+        {oldPacks} outage {oldPacks === 1 ? "pack" : "packs"} over {Math.round(PACK_OLD_AFTER_MINUTES / 60)}h old
+      </Link>
+    ) : null;
   const checkingLine =
-    staleBedCounts + wardsNotReporting > 0 ? (
+    bedChecks || packPointer ? (
       <span data-testid="home-next-checking">
-        Checking: {staleBedCounts} stale bed {staleBedCounts === 1 ? "count" : "counts"}, {wardsNotReporting}{" "}
-        {wardsNotReporting === 1 ? "ward" : "wards"} not reporting
+        Checking:{" "}
+        {bedChecks ? (
+          <>
+            {staleBedCounts} stale bed {staleBedCounts === 1 ? "count" : "counts"}, {wardsNotReporting}{" "}
+            {wardsNotReporting === 1 ? "ward" : "wards"} not reporting
+          </>
+        ) : null}
+        {bedChecks && packPointer ? ", " : null}
+        {packPointer}
       </span>
     ) : undefined;
 
@@ -953,6 +980,8 @@ export function CoordinatorScreen() {
               {/* Features 40 and 31 (9 Nov 2026): what changed since the last review, then this person's
                   pins. Both sit inside the column, under the folder tabs, so the approved tab join is
                   untouched, and both render nothing until there is something to show. */}
+              {/* Batch 4 item 25 (D-142): after a recorded outage, the wards still to confirm. */}
+              {shownView === "needs" ? <HomeOutageCatchUp now={now} /> : null}
               <HomeSinceBanner now={now} />
               <HomePinnedCard now={now} phone={isPhone} />
               {shownView === "planned" ? (

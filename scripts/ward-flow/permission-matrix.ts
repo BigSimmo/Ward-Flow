@@ -38,6 +38,10 @@ import { dispatchPermission } from "../../src/components/ward-management/ward-ro
 import { accessIsWholeNetwork, type WardAccess } from "../../src/components/ward-management/ward-role-access";
 import { chromeRoleForAccess } from "../../src/components/ward-management/shell/ward-access-store";
 import { commandRefusal, deskCommand, demoOnlyCommand, seedWorld } from "../../backend/ward-flow/engine";
+import {
+  SITE_FEATURE_SWITCH_ROLE,
+  mayChangeSiteFeatures,
+} from "../../src/components/ward-management/ward-site-feature-switches";
 
 type EventType = WardFlowEvent["type"];
 export type Verdict = "allow" | "deny" | "defer";
@@ -115,6 +119,12 @@ function sentRole(access: WardAccess, type: EventType): WardFlowRole {
 function screenVerdict(desk: Desk, type: EventType): Verdict {
   if (!desk.access) return "deny";
   if (demoOnlyCommand({ type })) return accessIsWholeNetwork(desk.access) ? "allow" : "deny";
+  // D-142: the access admin's one action, offered by Settings' Features at this site card, which
+  // `mayChangeSiteFeatures` gates and which sends the engine's coordinator role.
+  if (type === "SET_SITE_FEATURE_SWITCH" && desk.access.role === "admin")
+    return mayChangeSiteFeatures(desk.access) && dispatchPermission(SITE_FEATURE_SWITCH_ROLE, type).allowed
+      ? "allow"
+      : "deny";
   return dispatchPermission(shellRole(desk.access), type).allowed ? "allow" : "deny";
 }
 
@@ -320,7 +330,7 @@ function renderRaw(matrix: Matrix): string {
     "",
     "| Layer | Source of truth | How it is asked |",
     "| --- | --- | --- |",
-    "| Screen | `dispatchPermission` (`ward-role-permissions.ts`) for the shell role (`chromeRoleForAccess`); demo controls from the server's `demoControls` flag; no role shows the ask-for-access gate | Called per cell |",
+    "| Screen | `dispatchPermission` (`ward-role-permissions.ts`) for the shell role (`chromeRoleForAccess`); demo controls from the server's `demoControls` flag; the access admin's site switch from `mayChangeSiteFeatures` (D-142); no role shows the ask-for-access gate | Called per cell |",
     "| Engine | `EVENT_ROLE` (`ward-flow-event-roles.ts`) as enforced by `wardFlowReducer` | Reducer run on the synthetic seed with a bare event |",
     "| Backend | `deskCommand`, the role clause of `validSharedCommand` and `commandRefusal` (`backend/ward-flow/engine.ts`); no role is refused 403 in `shared-http.mjs` | Called per cell |",
     "| Database | Row level security policies and grants in `backend/ward-flow/migrations/` and `infra/` | SQL read as text |",
