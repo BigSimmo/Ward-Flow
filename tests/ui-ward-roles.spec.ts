@@ -42,9 +42,13 @@ async function openShortlistSections(shortlist: Locator) {
  */
 async function settleStreamUnderPausedClock(page: Page): Promise<void> {
   const staged = page.locator('div[hidden][id^="S:"]');
+  // D-137: a fresh device's first load is held behind a loading page until the app has read its
+  // desk, which happens after hydration, so keep stepping until that page has gone as well.
+  const held = page.getByTestId("ward-flow-loading");
   await expect(async () => {
     await page.clock.runFor(100);
     await expect(staged).toHaveCount(0, { timeout: 500 });
+    await expect(held).toHaveCount(0, { timeout: 500 });
   }).toPass({ timeout: 15_000 });
 }
 

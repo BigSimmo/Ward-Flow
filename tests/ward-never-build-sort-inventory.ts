@@ -71,6 +71,15 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
       "D-126 (10 Nov 2026): the Statistics finder's Wards tab, where a person picks a ward to open, lists wards A to Z by name, not most ready beds first.",
   },
   {
+    file: "night-view-figures.ts",
+    match: "serviceRank(a.unit) - serviceRank(b.unit) || a.unit.name.localeCompare(b.unit.name)",
+    list: "wards",
+    key: "health service, then ward name",
+    order: "fixed order",
+    reason:
+      "Feature plan item 29 (10 Nov 2026): Night view lists wards with ready beds in the fixed order (health service, then ward name, D-126), never most ready beds first (D-71).",
+  },
+  {
     file: "capacity/capacity-derivations.ts",
     match: "byServiceThenName(x.unit, y.unit)",
     list: "wards",

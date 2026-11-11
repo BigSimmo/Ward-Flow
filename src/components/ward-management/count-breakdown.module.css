@@ -1,0 +1,96 @@
+/* Tap a number to see who is in it (feature plan item 5). Kit tokens only. */
+.popover {
+  width: min(22rem, calc(100vw - 2 * var(--wf-s-4)));
+  max-width: min(22rem, calc(100vw - 2 * var(--wf-s-4)));
+  color: var(--wf-ink-1);
+  text-align: left;
+  white-space: normal;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+.sentence {
+  margin: 0;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.loading,
+.note {
+  margin: 0;
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 40px;
+  padding: var(--wf-s-1) var(--wf-s-2);
+  border-radius: var(--wf-r-md);
+  color: var(--wf-ink-1);
+  text-decoration: none;
+}
+
+a.row:hover {
+  background: var(--wf-surface-2);
+}
+
+a.row:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
+}
+
+.row > svg {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+
+.main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.label {
+  font: 500 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.detail {
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.count {
+  flex: none;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.count b {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+}
+
+/* The anchor fills a band cell as the cell's own body did. */
+.cellAnchor {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+}

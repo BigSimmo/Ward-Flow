@@ -77,7 +77,7 @@ describe("Statistics hero: Export the figures", () => {
       const hero = screen.getByRole("heading", { level: 1 }).closest("section")!;
       // Page-top redesign (9 Nov 2026): a figure; the phone shows a short label and keeps the full words.
       const label = within(hero).getByText("open ED movements", { exact: true });
-      const figure = label.closest("p");
+      const figure = label.closest<HTMLElement>("[data-wf-hero-figure]");
       expect(figure?.querySelector("b")?.textContent).toBe("3");
       expect(figure?.textContent).toMatch(phone ? /^3 open movementsopen ED movements$/ : /^3 open ED movements$/);
       if (!phone) {
@@ -97,7 +97,7 @@ describe("Statistics hero: Export the figures", () => {
     const ready = Number(
       within(figures)
         .getByText(/^beds? ready$/u)
-        .closest("p")
+        .closest<HTMLElement>("[data-wf-hero-figure]")
         ?.querySelector("b")?.textContent,
     );
     expect(Number.isInteger(ready) && ready > 0, "the ready figure must be read, not defaulted").toBe(true);

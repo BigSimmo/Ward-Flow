@@ -121,6 +121,7 @@ export type WardScreenId =
   | "statistics"
   | "governance"
   | "review"
+  | "night"
   | "alerts"
   | "on-call"
   | "seclusion"
@@ -159,6 +160,8 @@ export const WARD_SCREEN_IDS: readonly WardScreenId[] = [
   "governance",
   // Today's review (Josh, Home notes 4, 9 Nov 2026): the coordinator's end-of-shift page. No other desk lists it.
   "review",
+  // Night view (feature plan item 29): the coordinator's overnight page. No other desk lists it.
+  "night",
   "alerts",
   "on-call",
   "seclusion",
@@ -419,6 +422,7 @@ export function screenForPath(pathname: string): ScreenAddress | undefined {
     case "search":
     case "governance":
     case "review":
+    case "night":
     case "alerts":
     case "on-call":
     case "seclusion":

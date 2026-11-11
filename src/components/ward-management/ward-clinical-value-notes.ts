@@ -148,6 +148,9 @@ const CLINICAL_VALUE_NOTES = {
     source:
       "Shift ring on the rail, in the 27 Sep 2026 source snapshot with no decision recorded; added to the register 10 Nov 2026 (D-122)",
   },
+  tvChangeMark: {
+    source: 'D-137 (Josh, 10 Nov 2026), plan item 43: TV "Changed HH:MM" mark on the ward and bed meeting TVs',
+  },
   handoverOwnWorkLead: {
     source: "Feature build plan batch 3, item 21: Josh signed 30 minutes on a decision card, 10 Nov 2026 (D-136)",
   },

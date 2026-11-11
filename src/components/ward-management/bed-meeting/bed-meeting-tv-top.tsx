@@ -9,6 +9,7 @@ import { Hero, HeroAct, HeroFigures, HeroQuickChips, HeroTop, SrOnly, cx, type H
 import { LocalSettingsNote } from "@/components/ward-management/shell/local-settings-note";
 import pageTop from "../page-top-title.module.css";
 import styles from "./bed-meeting-tv-top.module.css";
+import { TvChangeMark, useTvChangeMarks } from "./tv-change-mark";
 
 /**
  * Page tops (Josh, 9 Nov 2026): the bed meeting TV's slate top. Kit-size figures (approved: the TV
@@ -26,6 +27,8 @@ export function MeetingTvTop({
   asAt,
   stale,
   chips,
+  now,
+  screen,
 }: {
   sheet: BedMeetingSheet;
   /** "All services" or the service shown; the screen chip names it, the heading reads it. */
@@ -42,11 +45,29 @@ export function MeetingTvTop({
   /** TV-06: the red not-updating warning, shown in place of the Live pill. */
   stale: ReactNode;
   chips: HeroChipItem[];
+  /** The figures' moment, for the change marks (plan item 43, D-137). */
+  now: number;
+  /** Which screen and scenario this is; another one starts with no change marks. */
+  screen: string;
 }) {
   const { capacity, discharges, ed, delays } = sheet;
   // Held up discharges are due too: the panel lists them, so the figure counts them.
   const dischargesDue = discharges.heldUp + discharges.confirmed + discharges.expected;
   const longest = ed.longestWaits[0];
+  // Plan item 43 (D-137): a figure that changed since the last refresh says when, for a while. A
+  // screen that is not live records no change.
+  const changed = useTvChangeMarks(
+    screen,
+    { ed: ed.waiting, ready: capacity.ready, discharges: dischargesDue, delays: delays.total },
+    now,
+    !live,
+  );
+  const labelOf = (key: string, text: string) => (
+    <>
+      {text}
+      <TvChangeMark text={changed(key)} testId={`bed-meeting-tv-${key}-changed`} className={styles.changed} />
+    </>
+  );
   return (
     <header className={styles.header}>
       <Hero
@@ -79,15 +100,25 @@ export function MeetingTvTop({
           figures={
             <HeroFigures
               items={[
-                { id: "ed", value: ed.waiting, label: "waiting in ED", testId: "bed-meeting-tv-ed" },
-                { id: "ready", value: capacity.ready, label: "beds ready", testId: "bed-meeting-tv-ready" },
+                { id: "ed", value: ed.waiting, label: labelOf("ed", "waiting in ED"), testId: "bed-meeting-tv-ed" },
+                {
+                  id: "ready",
+                  value: capacity.ready,
+                  label: labelOf("ready", "beds ready"),
+                  testId: "bed-meeting-tv-ready",
+                },
                 {
                   id: "discharges",
                   value: dischargesDue,
-                  label: "discharges due",
+                  label: labelOf("discharges", "discharges due"),
                   testId: "bed-meeting-tv-discharges",
                 },
-                { id: "delays", value: delays.total, label: "open movements", testId: "bed-meeting-tv-delays" },
+                {
+                  id: "delays",
+                  value: delays.total,
+                  label: labelOf("delays", "open movements"),
+                  testId: "bed-meeting-tv-delays",
+                },
               ]}
             />
           }
