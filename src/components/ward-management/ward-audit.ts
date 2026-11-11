@@ -41,9 +41,9 @@ import { PAPER_EXPIRY_CORRECTION_REASONS, type LegalFormExpiryCorrectionReason }
 
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
 import type { WardFlowEvent } from "./ward-flow-events";
-import { isBreakGlassReviewId } from "./ward-break-glass-review-id";
+import { COVER_REVIEW_PREFIX, isBreakGlassReviewId } from "./ward-break-glass-review-id";
 import { isOnBehalfReason, type OnBehalfReasonId } from "./ward-on-behalf-reason";
-import type { BreakGlassReasonId, WardAccessRole } from "./ward-role-access";
+import type { BreakGlassReasonId, CoverReasonId, WardAccessRole } from "./ward-role-access";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { inboxRowMovementId } from "./ward-inbox-reducer";
 import { seededGovernanceAuditEntry, syntheticGovernanceAuditEvents } from "./ward-governance-seed";
@@ -133,6 +133,18 @@ type BreakGlassAuditDetails = {
   deskCount: number;
   /** Only for "Other" in the local demo, held in memory. */
   otherText?: string;
+};
+/**
+ * Master audit M58 (D-129, 10 Nov 2026): a cover given, on the coordinator's review list beside the
+ * break glass openings, kept outside `auditEvents` the same way (origin `break-glass-opening`: held
+ * outside the workspace). The desk is the giver's role and place; `cover` is the ward or ED covered.
+ */
+type CoverAuditDetails = {
+  reason: CoverReasonId | null;
+  until: Instant | null;
+  desk: WardAccessRole | null;
+  place: string;
+  cover: string;
 };
 export type AuditReview = {
   id: string;
@@ -260,6 +272,7 @@ export type AuditEvent = AuditBase &
         details: { requestId: number | null; requestNamespace?: string; onBehalfReason?: OnBehalfReasonId };
       }
     | { category: "record-access"; action: "BREAK_GLASS"; details: BreakGlassAuditDetails }
+    | { category: "record-access"; action: "ACCESS_COVER"; details: CoverAuditDetails }
     | { category: "review"; action: "REVIEW_AUDIT_EVENT"; details: { decision: AuditReview["decision"] | null } }
     | {
         // v10 pass 2: a review taken back. `decision` is always null so no screen reads it as a review.
@@ -287,9 +300,14 @@ export type AuditEvent = AuditBase &
       }
     | {
         // Stream A, 9 Oct 2026: who took, snoozed or returned an action item. The reason is a closed list.
+        // M37 (D-129, 10 Nov 2026): an acknowledgement too, so "Acknowledge visible" leaves one row per alert.
         category: "inbox";
         action:
-          "TAKE_INBOX_ITEM_OWNERSHIP" | "RELEASE_INBOX_ITEM_OWNERSHIP" | "SNOOZE_INBOX_ITEM" | "UNSNOOZE_INBOX_ITEM";
+          | "ACKNOWLEDGE_INBOX_ITEM"
+          | "TAKE_INBOX_ITEM_OWNERSHIP"
+          | "RELEASE_INBOX_ITEM_OWNERSHIP"
+          | "SNOOZE_INBOX_ITEM"
+          | "UNSNOOZE_INBOX_ITEM";
         details: { inboxItemId: string; reason: InboxSnoozeReason | null; until: Instant | null };
       }
     | {
@@ -397,6 +415,7 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "ARCHIVE_PATIENT":
     case "RECORD_OBSERVATION_LEVEL":
       return "patient-record";
+    case "ACKNOWLEDGE_INBOX_ITEM":
     case "TAKE_INBOX_ITEM_OWNERSHIP":
     case "RELEASE_INBOX_ITEM_OWNERSHIP":
     case "SNOOZE_INBOX_ITEM":
@@ -520,6 +539,7 @@ export function auditSubject(state: WardFlowState, event: WardFlowEvent): AuditS
   } else if (event.type === "SET_CONFIGURATION") {
     return { kind: "configuration" };
   } else if (
+    event.type === "ACKNOWLEDGE_INBOX_ITEM" ||
     event.type === "TAKE_INBOX_ITEM_OWNERSHIP" ||
     event.type === "RELEASE_INBOX_ITEM_OWNERSHIP" ||
     event.type === "SNOOZE_INBOX_ITEM" ||
@@ -754,6 +774,7 @@ export function captureAuditEvent(
         captured.details = { ...captured.details, openBedReason };
       break;
     }
+    case "ACKNOWLEDGE_INBOX_ITEM":
     case "TAKE_INBOX_ITEM_OWNERSHIP":
     case "RELEASE_INBOX_ITEM_OWNERSHIP":
     case "SNOOZE_INBOX_ITEM":
@@ -1082,9 +1103,13 @@ function openingEntry(state: WardFlowState, id: unknown): AuditEvent | undefined
     reasonCode: "none",
     origin: "break-glass-opening",
     category: "record-access",
-    action: "BREAK_GLASS",
-    details: { record: null, reason: null, until: null, desk: null, place: "", deskCount: 0 },
-  };
+    ...(id.startsWith(COVER_REVIEW_PREFIX)
+      ? { action: "ACCESS_COVER", details: { reason: null, until: null, desk: null, place: "", cover: "" } }
+      : {
+          action: "BREAK_GLASS",
+          details: { record: null, reason: null, until: null, desk: null, place: "", deskCount: 0 },
+        }),
+  } as AuditEvent;
 }
 
 /** `readAuditEvents` plus the synthetic seeded entries: for the Governance page only. */

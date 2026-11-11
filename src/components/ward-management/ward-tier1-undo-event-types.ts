@@ -28,7 +28,8 @@ type UndoBedStepEvent = {
 
 /**
  * Takes back a pulled or held bed released, a transport cancelled, a ward request withdrawn
- * (each on its movement) or a planned admission cancelled (on its booking).
+ * (each on its movement), a planned admission cancelled (on its booking) or a discharge signed off
+ * (on its bed release, M37).
  */
 type UndoReleaseStepEvent = {
   type: "UNDO_RELEASE_STEP";
@@ -40,6 +41,7 @@ type UndoReleaseStepEvent = {
   actingUnitId?: string;
   movementId?: string;
   plannedAdmissionId?: string;
+  releaseId?: string;
 };
 
 /** Takes back a community treatment order recorded or ended, or a record archived in error. */

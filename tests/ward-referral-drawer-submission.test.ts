@@ -210,7 +210,8 @@ describe("confirmed drawer submissions use the shared referral engine", () => {
     // unconfirmed catchment and a clearance still to come with no time or contact warn in the drawer,
     // so the engine accepts them. Each must still have the right shape.
     for (const warned of [
-      { ...intake, referrer: { ...intake.referrer, phone: "bad" } },
+      { ...intake, referrer: { ...intake.referrer, phone: "" } },
+      { ...intake, referrer: { ...intake.referrer, phone: "123" } },
       { ...intake, catchment: { ...intake.catchment, confirmed: false } },
       { ...intake, medicalClearance: { cleared: false } },
     ]) {
@@ -220,6 +221,9 @@ describe("confirmed drawer submissions use the shared referral engine", () => {
     }
     for (const invalid of [
       { ...intake, referrer: { ...intake.referrer, phone: "1".repeat(41) } },
+      // Audit M39 (Josh, 10 Nov 2026): a typed phone must be digits, so the engine refuses one without.
+      { ...intake, referrer: { ...intake.referrer, phone: "bad" } },
+      { ...intake, referrer: { ...intake.referrer, phone: "javascript:void(0)" } },
       { ...intake, medicalClearance: { cleared: false, expectedAt: "not a time" } },
       { ...intake, charts: [intake.charts[0]] },
       { ...intake, charts: [{ ...intake.charts[0], base64: "truncated" }, intake.charts[1]] },

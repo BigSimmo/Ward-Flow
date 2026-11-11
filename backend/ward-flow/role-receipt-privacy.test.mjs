@@ -480,6 +480,7 @@ test(
         actorId: actor,
         scope: { kind: "ward", unitIds: [unitB] },
         minutes: 60,
+        reason: "busy",
       });
       assert.equal(cover.status, 200);
       const view = await store.viewer(actor, { workingAs: grant.body.membership.id });

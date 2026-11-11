@@ -211,8 +211,11 @@ describe("shared workspace resilience (audit 4)", () => {
         : Response.json({ error: "Too many requests", snapshot: snapshot(1) }, { status: 429 }),
     );
     await client.refresh();
-    expect((await client.dispatch(event)).status).toBe("refused");
-    expect(view()?.error).toBe("The server is busy. Nothing was saved. Try again in a moment.");
+    // Audit M53: the save is kept and sent again by itself, so it is not refused.
+    expect((await client.dispatch(event)).status).toBe("failed");
+    expect(view()?.error).toBe(
+      "The server is busy. This change is waiting on this page. It sends by itself in a few seconds. Keep this page open.",
+    );
     client.dispose();
   });
 });

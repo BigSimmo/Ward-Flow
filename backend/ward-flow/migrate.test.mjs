@@ -40,6 +40,8 @@ for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
     );
     assert.equal(db.queries[0], "BEGIN");
     assert.equal(db.queries[1], "SELECT pg_advisory_xact_lock(782322)");
+    // Audit M34: no step waits on a table lock for more than 5 seconds.
+    assert.equal(db.queries[2], "SET LOCAL lock_timeout = '5s'");
     assert.equal(db.queries.at(-1), "COMMIT");
     assert.equal(db.released(), true);
   });
@@ -269,7 +271,7 @@ for (const rollbackFails of [false, true]) {
           if (rollbackFails) throw rollback;
           return { rows: [] };
         }
-        if (sql === "BEGIN") return { rows: [] };
+        if (sql === "BEGIN" || sql.startsWith("SET LOCAL")) return { rows: [] };
         throw original;
       },
       release(error) {

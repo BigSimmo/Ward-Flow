@@ -330,3 +330,34 @@ Do these in the Ward Flow project only, after checking the project name and ID m
 5. Does correction run through FOI or IPP 6 for this system, and who is the contact?
 6. Is a 7-day backup window acceptable, or is PITR required from day one with real data?
 7. How long does Supabase keep its own Auth and access logs, and does that meet DA 2023-004 item 33.2?
+8. **Backups.** When a record is due for disposal, how is it removed from database backups and
+   any `pg_dump` copies? Is waiting for the backup window to roll over acceptable?
+9. **Device copies.** Prints, downloads (CSV and JSON, no names per D-102), copied text and the
+   downtime pack leave the database. Which retention rule covers them, and who disposes of them?
+   See the [device walkthrough](governance/DEVICE-AFTER-SESSION-WALKTHROUGH.md).
+10. **Provider logs.** Railway and Sentry logs hold no payloads by design. Does their own retention
+    need a rule?
+
+## Records manager review and deletion check (draft, audit item M66)
+
+_Added 2026-11-10 - drafted for go/no-go row P4; no review or check has been done; Documentation owns._
+
+This is a records manager's call, not Josh's. Go/no-go row P4 is ticked only when the table below
+is filled in.
+
+**Measured deletion check (synthetic, local first).** For each record type the app prunes
+(`commands` receipts after 7 days, expired `session_sign_outs`, dead push addresses):
+
+1. On a local synthetic database, count the rows of that type older than the limit.
+2. Run the prune (for receipts, `backend/ward-flow/prune-receipts.mjs`).
+3. Count again: older rows should be 0 and newer rows unchanged. Check `audit` and
+   `record_access` row counts did not change.
+4. Record the counts and the commit. A hosted run is a provider action and needs Josh's yes.
+
+| Item                                        | Who                              | Date | Evidence |
+| ------------------------------------------- | -------------------------------- | ---- | -------- |
+| Retention table confirmed or changed        | Records manager                  |      |          |
+| Open questions 1 to 10 answered             | Records manager, privacy officer |      |          |
+| Local measured deletion check               |                                  |      |          |
+| Hosted measured deletion check (Josh's yes) |                                  |      |          |
+| Go/no-go P4 ticked                          |                                  |      |          |

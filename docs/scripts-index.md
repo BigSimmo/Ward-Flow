@@ -1,8 +1,8 @@
 # Ward Flow scripts inventory
 
-_Updated 2026-11-10 - CI rows for the protected safety tests, the pull-request patient-identifier scan with its exemptions, the identifier scan and the 5 KB raise cap scripts; Documentation owns._
+_Updated 2026-11-10 - CI rows for the protected safety tests, the pull-request patient-identifier scan with its exemptions, the identifier scan and the 5 KB raise cap scripts, and the audit and support tools; Documentation owns._
 
-Curated map of `scripts/` (166 files) and the `package.json` script surface (87 entries),
+Curated map of `scripts/` (177 files) and the `package.json` script surface (87 entries),
 grouped by what each part protects. `package.json` is the command surface; this page says why
 each group exists. `npm run docs:check-inventory` compares the two counts above exactly,
 and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs
@@ -64,10 +64,13 @@ before the production build measures the phone script budget),
 The other workflows need no script here: `release-tag.yml` tags each CI-passed main commit
 `release-YYYY-MM-DD-<short sha>` (the full commit id if a different same-day commit already holds the short one), and `backend-uptime.yml` checks the hosted backend's `/healthz` every
 10 minutes, signs in as the synthetic monitor account to load `/v1/workspace`, and opens an issue
-for the owner when either stays down. `ward-flow-nightly-browsers.yml` runs the nightly image
+for the owner when either stays down. If the monitor secret is unset or the database check is hidden for
+about a day (144 runs), it also opens one "Uptime monitor not set up" issue, which closes itself when
+the check is complete again (M72). `ward-flow-nightly-browsers.yml` runs the nightly image
 baselines and the 834px tablet checks through `run-playwright.mjs` (front-end audit TE-01, TE-02),
 and a manual run with "update baselines" writes new baselines to commit; a failed scheduled run opens
-or refreshes one issue through `ward-ci-public/nightly-browsers-issue.mjs`. CI also runs
+or refreshes one issue through `ward-ci-public/nightly-browsers-issue.mjs`; it also writes the
+`ward-flow/skip-inventory.mjs` report to the run summary. CI also runs
 `check-script-budget.mjs` (phone first-load script budgets in `script-budget.json`),
 `check-knip-baseline.mjs` (`npm run check:knip`), `ward-flow/related-tests.mjs`,
 `ward-flow/gate-tsc.mjs` and `ward-flow/selected-baseline-verdict.mjs`. Beside the knip ratchet,
@@ -134,6 +137,23 @@ checks that refusal.
 them. `figma-tokens.mjs` syncs design tokens with Figma (see `docs/agents/figma-sync.md`).
 `check-ward-data.mjs` explains problems in the editable ward data in plain words. It has no npm
 command yet because it currently reports open data problems.
+
+## Audit and support tools
+
+Added by the 10 November 2026 audits. None runs a provider by default; the live ones need Josh's yes each time.
+
+| Script                                                          | Purpose                                                                                                            |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `check-live-security-headers.mjs`                               | One read-only request: the live site sends the security headers and cookie flags the code builds (M52).            |
+| `ward-flow/post-release-check.mjs`                              | The read-only check after a release: deployed commit, health, headers and a synthetic sign-in (M67; `--yes-live`). |
+| `ward-flow/live-schema-diff.mjs`                                | Compares a saved read-only query result from the live database with the repo's migrations and grants (M81).        |
+| `ward-flow/hotspots.mjs`                                        | Ranks source files by commits times lines, to pick split targets (M142).                                           |
+| `ward-flow/import-map.ts`, `ward-flow/import-map-baseline.json` | The runtime import map, cycles and screen-to-screen imports, against a baseline that may only shrink (M139).       |
+| `ward-flow/mutation-sample.mjs`                                 | A small hand-picked mutation run on eligibility rules and access scope, on a copy of the checkout (M87).           |
+| `ward-flow/script-size-trend.mjs`                               | Turns one CI script-size measurement into a month's rows of the phone size trend file (M85).                       |
+| `ward-flow/shift-change-load.mjs`                               | Local, synthetic shift-change load against a loopback database: read and save times and no lost save (M69).        |
+| `ward-flow/skip-inventory.mjs`                                  | Lists every skipped, to-do, fixme or conditional test with its reason (M137, M91); `--check` fails on none.        |
+| `ward-flow/stuck-work-check.ts`                                 | Flags ageing referrals and rising refusals in one saved synthetic state (M43, M73).                                |
 
 ## Setup and maintenance
 
