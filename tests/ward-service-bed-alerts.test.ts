@@ -5,7 +5,7 @@ import {
   METRO_HEALTH_SERVICES,
   occupancyTone,
 } from "@/components/ward-management/shell/ward-service-bed-alerts";
-import { computeShiftProgress } from "@/components/ward-management/shell-next/next-rail-body";
+import { computeShiftProgress } from "@/components/ward-management/shell/ward-rail-helpers";
 import type { BedRelease, Site, Unit } from "@/components/ward-management/ward-model";
 import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
