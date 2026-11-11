@@ -8,6 +8,7 @@
  */
 
 import { siteByCode } from "../ward-sites";
+import { COMMUNITY_EPISODE_TEAMS } from "./community-episode-teams";
 
 /** Site names come from the data layer, never typed a second time here. */
 const GRAYLANDS = siteByCode("GRY")?.name ?? "Graylands";
@@ -240,8 +241,7 @@ const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
     episodes: [],
     community: [
       {
-        status: "active",
-        team: "Midland Community Team",
+        ...COMMUNITY_EPISODE_TEAMS["PT-001"][0],
         program: "Case management",
         since: "Jun 2026",
         caseManager: { name: "Okafor, Lin", role: "Nurse, case manager", phone: "08 0000 3124" },
@@ -373,8 +373,7 @@ const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
     ],
     community: [
       {
-        status: "ended",
-        team: "Bentley Community Team",
+        ...COMMUNITY_EPISODE_TEAMS["PT-003"][0],
         program: "Case management",
         since: "Mar 2025",
         ended: "Jan 2026",
@@ -520,8 +519,7 @@ const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
     ],
     community: [
       {
-        status: "active",
-        team: "Midland Community Team",
+        ...COMMUNITY_EPISODE_TEAMS["PT-036"][0],
         program: "Case management",
         since: "Apr 2024",
         caseManager: { name: "Pereira, Dan", role: "Social worker, case manager", phone: "08 0000 3120" },
@@ -710,8 +708,7 @@ const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
     ],
     community: [
       {
-        status: "active",
-        team: "Midland Community Team",
+        ...COMMUNITY_EPISODE_TEAMS["PT-002"][0],
         program: "Case management",
         since: "Nov 2024",
         caseManager: { name: "Tran, Minh", role: "Clinical nurse, case manager", phone: "08 0000 3114" },

@@ -4,21 +4,14 @@ import { useId, useMemo } from "react";
 import { Hospital } from "lucide-react";
 
 import { Card, CardBody, CardHead } from "@/components/wf";
-import { recordExtrasFor } from "@/components/ward-management/patients/patient-record-extras";
+import { communityEpisodeTeamsOf } from "@/components/ward-management/patients/community-episode-teams";
+import { useCommunityEdArrivals } from "@/components/ward-management/shell/ward-access";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { CommunityTeam } from "./community/community-derivations";
-import {
-  homeTeamHeadsUps,
-  homeTeamHeadsUpWho,
-  type CommunityEpisodesOf,
-  type UmrnOf,
-} from "./community/home-team-heads-up";
+import { homeTeamHeadsUps, homeTeamHeadsUpWho, type UmrnOf } from "./community/home-team-heads-up";
 import styles from "./out-of-area/return-early-alerts.module.css";
 import headsUpStyles from "./community/home-team-heads-up.module.css";
-
-/** The patient record's community team episodes (the record's own list; mock-up data for now). */
-const recordedEpisodes: CommunityEpisodesOf = (patientId) => recordExtrasFor(patientId)?.community;
 
 /**
  * Home team heads-up (item 46, D-133): this team's patients with an open episode who are in an
@@ -33,8 +26,11 @@ export function HomeTeamHeadsUpCard({ team, now }: { team: CommunityTeam; now: I
     const byId = new Map((patients ?? []).map((patient) => [patient.id as string, patient.umrn]));
     return (patientId) => byId.get(patientId);
   }, [patients]);
+  // D-154: a community team desk gets its list from its scoped view, since the ED stays are not
+  // in its movements. Any other desk (a statewide coordinator previewing the page) reads its own.
+  const projected = useCommunityEdArrivals();
   if (!source) return null;
-  const items = homeTeamHeadsUps(source.movements, team, recordedEpisodes, now, umrnOf);
+  const items = projected ?? homeTeamHeadsUps(source.movements, team, communityEpisodeTeamsOf, now, umrnOf);
   if (items.length === 0) return null;
   return (
     <Card aria-labelledby={headingId} data-testid="ward-community-heads-up">
