@@ -1,7 +1,12 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { judgeRaiseCap, raisesOverCap, RAISE_CAP_KB } from "../scripts/ward-ci-public/budget-raise-cap.mjs";
+import {
+  judgeRaiseCap,
+  pickJudgeBase,
+  raisesOverCap,
+  RAISE_CAP_KB,
+} from "../scripts/ward-ci-public/budget-raise-cap.mjs";
 
 // D-82 (a PR may raise a phone size limit by up to 5 KB per screen without asking), enforced by the
 // guard D-121 item 5 adds. The script compares the PR's script-budget.json with the PR base; above
@@ -74,6 +79,21 @@ describe("phone limit raise cap (D-82, D-121 item 5)", () => {
     const workflow = readFileSync(path.join(root, ".github/workflows/ward-flow.yml"), "utf8");
     expect(workflow).toMatch(
       /- name: Check the 5 KB phone limit raise cap\n\s+env:\n\s+WARD_BASE_SHA: \$\{\{ github\.event\.pull_request\.base\.sha \|\| github\.event\.merge_group\.base_sha \}\}\n\s+run: node scripts\/ward-ci-public\/budget-raise-cap\.mjs/u,
+    );
+  });
+
+  it("judges a PR's test merge against main as it is now, not the PR's old base (A5-02)", () => {
+    const mergeBase = (from: string) => `merge-base-of-${from}`;
+    // GitHub's test merge: first parent is current main, which descends from the event's base.
+    expect(pickJudgeBase({ base: "old", parents: ["main-now", "pr-tip"], isAncestor: () => true, mergeBase })).toBe(
+      "main-now",
+    );
+    // A plain commit, or a merge whose first parent is not newer main, keeps the merge base.
+    expect(pickJudgeBase({ base: "old", parents: ["pr-tip"], isAncestor: () => true, mergeBase })).toBe(
+      "merge-base-of-old",
+    );
+    expect(pickJudgeBase({ base: "old", parents: ["branch", "main"], isAncestor: () => false, mergeBase })).toBe(
+      "merge-base-of-old",
     );
   });
 });
