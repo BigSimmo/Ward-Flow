@@ -1731,5 +1731,6 @@ is inferred.
   4. **Code health:** the file line cap counts code lines, not comments or blank lines; one shared CI setup step; shared helpers for the forked side rail; reasons or fixes for unexplained React hook rule switch-offs; patch-level dependency updates.
   5. **Josh's own action:** turn off Supabase open sign-up before real data.
 - **Screens approved (11 November 2026, 05:46 UTC):** after the design review page "Leave and export review", Josh chose "Yes, add them" on the decision card. This approves the item 3 screens and two new patterns: an icon-only Print button on phones, and the Export status line hidden until it has something to say (this affects every list with Export).
+- **Clinical sign-off (11 November 2026, 05:51 UTC):** Josh wrote "I approve all of them to remove labels" in the thread "Get all open PRs merged", approving the item 1 fixes in PR #1621 as built, including the Legal forms wording "Form ended; expiry as typed was HH:MM".
 - **Why:** findings from the 11 November review, each checked against source; the clinical items were display bugs, not changes to signed values.
 - **Boundary:** synthetic data only. Changes no signed clinical value; clinical items merge only after Josh checks the held PR. Approves no release.
