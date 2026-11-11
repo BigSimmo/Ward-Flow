@@ -4,6 +4,7 @@ import test from "node:test";
 import * as engine from "./dist/engine.mjs";
 import { createWorkspaceStore } from "./postgres.mjs";
 import { withoutRecordDetail } from "./record-detail.mjs";
+import { isMembershipRead, membershipReadRows } from "./viewer.test-support.mjs";
 
 // Production store and reporting engine; the double only schedules the locked SQL reads.
 /** @param {{ archived?: any[], count?: number, deadline?: number, project?: (...args: any[]) => any, service?: string }} [options] */
@@ -19,6 +20,7 @@ function executiveBoundary({
   let revision = 7;
   let projections = 0;
   let archiveReads = 0;
+  let statements = 0;
   let locked = false;
   let receipt;
   let world = engine.seedWorld(at);
@@ -26,6 +28,7 @@ function executiveBoundary({
   const membershipId = "55555555-5555-4555-8555-555555555555";
   const view = { actorId, membershipId, access, version: 14, grants: [], accessUntil: expiry };
   const query = async (sql, values = []) => {
+    statements++;
     if (sql === "BEGIN") return { rows: [] };
     if (sql === "COMMIT" || sql === "ROLLBACK") {
       locked = false;
@@ -39,15 +42,19 @@ function executiveBoundary({
       };
     }
     if (sql.includes("FROM ward_flow.workspace_records")) return { rows: [] };
-    if (sql.startsWith("SELECT id, role, scope")) {
+    if (isMembershipRead(sql)) {
       assert.equal(locked, true);
-      return {
-        rows: [
-          { id: membershipId, ...access, kind: "role", last_used_at: new Date(time), expires_at: new Date(expiry) },
-        ],
-      };
+      return membershipReadRows([
+        {
+          id: membershipId,
+          ...access,
+          kind: "role",
+          last_used_at: new Date(time),
+          expires_at: new Date(expiry),
+          granted_at: new Date(at),
+        },
+      ]);
     }
-    if (sql.startsWith("SELECT patient_id, opened_at, until")) return { rows: [] };
     if (sql.startsWith("SAVEPOINT") || sql.startsWith("RELEASE SAVEPOINT")) return { rows: [] };
     if (sql.startsWith("SELECT count(*)::integer AS archived")) return { rows: [{ archived: count }] };
     if (sql.startsWith("SELECT collection, record_id, closed_at, body FROM ward_flow.archived_records")) {
@@ -90,6 +97,8 @@ function executiveBoundary({
     access,
     world,
     counts: () => ({ projections, archiveReads }),
+    statements: () => statements,
+    revision: () => revision,
     advance: (minutes) => {
       time += minutes * 60_000;
     },
@@ -134,6 +143,44 @@ test("executive locked read and unchanged poll deliver only the complete aggrega
   assertExecutiveSnapshot(later.snapshot);
   assert.equal(later.snapshot.now, first.now + 1);
   assert.equal(boundary.counts().projections, 2);
+});
+
+test("an executive poll at the row the request resolved is answered from the report cache with no statement", async () => {
+  const boundary = executiveBoundary();
+  const first = await boundary.store.read(actorId, boundary.view);
+  // The request's own resolve (one statement with its memberships) names the row it saw.
+  const resolved = (revision = boundary.revision()) => ({
+    ...boundary.view,
+    workspaceStamp: { revision, updatedAt: at.getTime() },
+  });
+  let before = boundary.statements();
+  const cached = await boundary.store.poll(actorId, first.revision, resolved(), first.accessContext);
+  assert.equal(boundary.statements() - before, 0, "no transaction, lock or count for an unchanged executive poll");
+  assert.equal(cached.notModified, false);
+  assertExecutiveSnapshot(cached.snapshot);
+  assert.equal(cached.snapshot.report, first.report);
+  assert.deepEqual(cached.snapshot, first);
+  // A new workspace minute is a different report: the full locked read builds it.
+  boundary.advance(1);
+  before = boundary.statements();
+  const later = await boundary.store.poll(actorId, first.revision, resolved(), first.accessContext);
+  assert.ok(boundary.statements() - before > 0);
+  assert.equal(later.snapshot.now, first.now + 1);
+  assert.equal(boundary.counts().projections, 2);
+  // A saved row the cached report was not built from never answers from it.
+  boundary.replace(engine.seedWorld(at));
+  before = boundary.statements();
+  const saved = await boundary.store.poll(actorId, first.revision, resolved(), first.accessContext);
+  assert.ok(boundary.statements() - before > 0);
+  assert.equal(saved.snapshot.revision, boundary.revision());
+  assert.equal(boundary.counts().projections, 3);
+  // An ended role is refused, never answered from the cache.
+  boundary.expire(at.getTime() + 60_000);
+  boundary.advance(1);
+  await assert.rejects(
+    boundary.store.poll(actorId, saved.snapshot.revision, { ...resolved(), accessUntil: at.getTime() + 60_000 }),
+    /role-ended/,
+  );
 });
 
 test("executive archive hydration precedes service scope, prefers live ids and rejects incomplete retention", async () => {

@@ -204,6 +204,77 @@ export function createWorkspaceStore(
   let scopedReplyTicket = {};
   /** Full public reports only, from committed locked reads; never a candidate save. */
   const executiveReplies = new LruCache(SCOPED_REPLY_CACHE_ENTRIES);
+  /**
+   * The committed row the last cached executive report was built from, with the world generation
+   * and archive count it used, so a poll at that same row can find the report without a read.
+   * @type {{ stamp: string, generation: number, archived: number } | null}
+   */
+  let executiveBasis = null;
+  /**
+   * The workspace clock (start time and offset) of one committed row ("revision:updated-at"), so
+   * an unchanged poll does not read them out of the workspace JSON each time. Set by full reads
+   * and by the poll's own fallback read; a row with a different stamp is never answered from it.
+   * @type {{ stamp: string, startedAt: string, clockOffset: number } | null}
+   */
+  let pollClock = null;
+  function rememberPollClock(stamp, startedAt, clockOffset) {
+    if (
+      typeof stamp === "string" &&
+      typeof startedAt === "string" &&
+      Number.isFinite(Date.parse(startedAt)) &&
+      Number.isFinite(clockOffset)
+    )
+      pollClock = { stamp, startedAt, clockOffset };
+  }
+  const pollNow = (at) =>
+    engine.worldNow({ startedAt: pollClock?.startedAt, state: { clockOffsetMinutes: pollClock?.clockOffset } }, at);
+  /** The executive desk's snapshot around one report, as a full read and a cached poll send it. */
+  const executiveReply = (view, context, accessUntil, revision, now, report) => ({
+    kind: "executive-aggregate",
+    dataMode: "prototype",
+    actorId: view.actorId,
+    revision,
+    ...context,
+    accessUntil,
+    now,
+    report,
+    demoControls: false,
+  });
+  /**
+   * An executive poll answered from the report cache, with no transaction: only when this request's
+   * own resolve (one statement with its memberships) saw the very row the cached report was built
+   * from, in the same workspace minute, for the same desk, access and end. Anything else (a save,
+   * a new minute, a changed role, an ended role) returns null and takes the full locked read.
+   */
+  function cachedExecutivePoll(view, stamp, at) {
+    const accessUntil = view?.accessUntil;
+    if (
+      !executiveBasis ||
+      executiveBasis.stamp !== stamp ||
+      pollClock?.stamp !== stamp ||
+      known.version < ARCHIVE_MIGRATION ||
+      !view?.membershipId ||
+      !Number.isFinite(accessUntil) ||
+      accessUntil <= clock().getTime()
+    )
+      return null;
+    const context = accessContext(at, view);
+    if (typeof context.accessContext !== "string") return null;
+    const now = pollNow(at);
+    const report = executiveReplies.get(
+      JSON.stringify([
+        stamp,
+        executiveBasis.generation,
+        executiveBasis.archived,
+        now,
+        view.actorId,
+        context.accessContext,
+        accessUntil,
+      ]),
+    );
+    if (!report) return null;
+    return executiveReply(view, context, accessUntil, Number(stamp.split(":")[0]), now, report);
+  }
   async function executiveSnapshot(connection, row, at, view, stamp) {
     const unavailable = () => new Error("Executive reporting is unavailable");
     const context = accessContext(at, view);
@@ -286,19 +357,15 @@ export function createWorkspaceStore(
         executiveReplies.set(key, report);
       }
     }
+    if (key)
+      executiveBasis = {
+        stamp: /** @type {string} */ (stamp),
+        generation: row.payload.state.worldGeneration,
+        archived: row.archived,
+      };
     // Projection is expensive. Membership must still be live when the result leaves the store.
     if (accessUntil <= clock().getTime()) throw new Error("role-ended");
-    return {
-      kind: "executive-aggregate",
-      dataMode: "prototype",
-      actorId: view.actorId,
-      revision: Number(row.revision),
-      ...context,
-      accessUntil,
-      now,
-      report,
-      demoControls: false,
-    };
+    return executiveReply(view, context, accessUntil, Number(row.revision), now, report);
   }
   function scopedParts(row, at, view, senderView, stamp, entryTicket) {
     const reviewable = reviewIdsFor(row, row.payload, view, at);
@@ -369,6 +436,8 @@ export function createWorkspaceStore(
     connection = null,
     replyTicket = /** @type {object | undefined} */ (undefined),
   ) => {
+    // A committed row's clock, so the next unchanged poll answers from memory (no migration).
+    rememberPollClock(stamp, row.payload?.startedAt, row.payload?.state?.clockOffsetMinutes);
     if (view?.access?.role === "executive") return executiveSnapshot(connection, row, at, view, stamp);
     const context = accessContext(at, view);
     const revision = Number(row.revision);
@@ -1125,14 +1194,28 @@ export function createWorkspaceStore(
      * otherwise the full snapshot, as `read` does. A member desk also names its `knownContext`, and
      * gets the cheap answer only while that still matches; its browser reads in full every minute,
      * because what a desk may see also changes with time (hand-off windows).
+     *
+     * `view.workspaceStamp`, when the request's own resolve read it (the same statement as its
+     * memberships), names the workspace row, so an unchanged poll sends no further statement: the
+     * clock comes from `pollClock` for that row. An executive desk's report, built per row and
+     * workspace minute, is answered from the report cache the same way (`cachedExecutivePoll`).
      * @param {any} actorId
      * @param {any} knownRevision
      * @param {any} [view]
      * @param {string | null} [knownContext]
      */
     async poll(actorId, knownRevision, view, knownContext = null) {
-      if (view?.access?.role === "executive") return { notModified: false, snapshot: await read(actorId, view) };
       const at = clock();
+      const seen = view?.workspaceStamp;
+      const stamp =
+        seen && Number.isSafeInteger(seen.revision) && Number.isFinite(seen.updatedAt)
+          ? `${seen.revision}:${seen.updatedAt}`
+          : null;
+      if (view?.access?.role === "executive")
+        return {
+          notModified: false,
+          snapshot: (stamp && cachedExecutivePoll(view, stamp, at)) || (await read(actorId, view)),
+        };
       // Re-resolve scoped access immediately before reading. A role or one of its covers may have
       // ended since the HTTP handler resolved the view; never use that stale scope for a snapshot.
       // Audit F-04: a member desk whose access is unchanged (same role, place, cover and openings,
@@ -1144,11 +1227,19 @@ export function createWorkspaceStore(
         (view.recentGrant || typeof knownContext !== "string" || accessContext(at, view).accessContext !== knownContext)
       )
         return { notModified: false, snapshot: await scopedRead(actorId, view) };
+      if (stamp) {
+        // The resolve read a prototype workspace row (its statement names data_mode='prototype').
+        if (seen.revision !== knownRevision) return { notModified: false, snapshot: await read(actorId, view) };
+        if (pollClock?.stamp === stamp)
+          return { notModified: true, dataMode: "prototype", revision: knownRevision, now: pollNow(at) };
+      }
       const { rows } = await pool.query(
-        "SELECT data_mode, revision, payload->>'startedAt' AS started_at, payload->'state'->'clockOffsetMinutes' AS clock_offset FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
+        "SELECT data_mode, revision, date_trunc('milliseconds', updated_at) AS updated_at, payload->>'startedAt' AS started_at, payload->'state'->'clockOffsetMinutes' AS clock_offset FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
         [workspaceId],
       );
       const row = rows[0];
+      if (row && row.updated_at instanceof Date)
+        rememberPollClock(`${Number(row.revision)}:${row.updated_at.getTime()}`, row.started_at, row.clock_offset);
       if (
         row &&
         Number(row.revision) === knownRevision &&
