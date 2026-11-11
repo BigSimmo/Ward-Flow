@@ -1,0 +1,55 @@
+/* Carer call back (batch 3 item 23). A quiet one-line card; tokens only, so dark mode follows.
+   12px floor; the kit's small buttons are 40px on a phone. */
+
+.card {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.icon {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+
+.text {
+  flex: 1 1 12rem;
+  min-width: 0;
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.clock {
+  font: 600 var(--wf-fs-13) / 18px var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.form {
+  display: grid;
+  gap: 8px;
+  max-width: 24rem;
+}
+
+.note {
+  margin: 0;
+  font: 400 var(--wf-fs-12) / 16px var(--wf-font);
+  color: var(--wf-ink-3);
+}

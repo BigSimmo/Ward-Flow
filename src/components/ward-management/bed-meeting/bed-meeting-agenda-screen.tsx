@@ -38,6 +38,7 @@ import {
 import { bedMeetingSheet } from "../capacity/bed-meeting-derivations";
 import pageTop from "../page-top-title.module.css";
 import { BedMeetingSheetLauncher } from "../capacity/bed-meeting-sheet";
+import { BedRoundAnswersCard } from "./bed-round-answers-card";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { setServiceScope, useServiceScope } from "../shell/ward-service-store";
@@ -840,6 +841,8 @@ function BedMeetingAgenda() {
             }
           </AgendaList>
         ) : null}
+        {/* Batch 3 item 12: each ward's bed round answer, in the fixed ward order (D-126). */}
+        {listChips.length === 0 && !actionedOnly ? <BedRoundAnswersCard service={service} /> : null}
       </div>
       {chairs ? null : <p className={styles.note}>Read only. The bed coordinator records and completes actions.</p>}
       <WardPrototypeFooter testId="ward-bed-meeting-agenda-governance" />

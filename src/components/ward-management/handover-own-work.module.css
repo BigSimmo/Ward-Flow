@@ -1,0 +1,148 @@
+/* Your open work at shift end (batch 3 item 21). Same card as Ward replies due beside it; tokens
+   only, so dark mode follows. 12px floor; the kit's small button is 40px on a phone. */
+
+.panel {
+  margin: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  overflow: hidden;
+}
+
+.panel[data-layout="phone"] {
+  border-radius: 16px;
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--wf-line);
+  font: 600 var(--wf-fs-14) / 20px var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.headIcon {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+
+.count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line);
+  font: 600 var(--wf-fs-12) / 18px var(--wf-mono);
+  text-align: center;
+  color: var(--wf-ink-2);
+}
+
+.note {
+  margin-left: auto;
+  font: 400 var(--wf-fs-12) / 16px var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  min-height: 48px;
+  padding: 6px 16px;
+}
+
+.what {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.kind {
+  flex: none;
+  font: 600 var(--wf-fs-13) / 18px var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.link {
+  /* A 40px tall target, as every tappable control on a phone (design sweep). */
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 40px;
+  color: var(--wf-accent);
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.name {
+  display: block;
+  overflow: hidden;
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status {
+  min-width: 0;
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.status[data-pending] {
+  color: var(--wf-warning-ink, var(--wf-ink-1));
+}
+
+/* Narrow: what and who on the first line, the status underneath, the action on the right. */
+@media (max-width: 62.5rem) {
+  .note {
+    display: none;
+  }
+
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "what act"
+      "status act";
+    gap: 2px 12px;
+    padding: 10px 16px;
+  }
+
+  .what {
+    grid-area: what;
+  }
+
+  .status {
+    grid-area: status;
+  }
+
+  .row > :last-child:not(.status):not(.what) {
+    grid-area: act;
+  }
+}

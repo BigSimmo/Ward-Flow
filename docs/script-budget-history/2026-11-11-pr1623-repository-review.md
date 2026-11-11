@@ -11,3 +11,5 @@ Trim tried: the export code only runs on a tap but is small and shares the exist
 Later the same day (merged with main `c21e99a`, which had raised every route): the same two raises applied on top of main's values, so movements is 610.9 + 0.5 = 611.4 and statistics 633.6 + 0.3 = 633.9. Every other route takes main's value.
 
 Then (PR head `9c7302e`, merged with main `c21e99a`): ED `/ward-flow/ed` raised 536.3 to 536.6. Hosted CI measured 536.3 KB, level with the limit after rounding; main alone could not be measured because of the dependency updates. The growth is most likely the shared helpers from D-145 item 2 (typed-time reader, pull-hold lapse check) that the ED screen loads; this was not measured route by route. Same trim reasoning as above.
+
+Merged again with main `cc755fa`, which raised every route: the same three raises sit on main's values, so ED is 537.8 + 0.3 = 538.1, movements 612.6 + 0.5 = 613.1 and statistics 635.1 + 0.3 = 635.4.

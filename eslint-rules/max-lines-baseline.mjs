@@ -23,6 +23,8 @@
 // 9 Nov 2026 (PR #1583): main reached 2547 of the reducer's 2550 with PR #1563; the discharge and
 // capacity features add six dispatch lines (their logic already lives in slices), so the cap is 2555.
 // 10 Nov 2026 (PR #1583): PR #1578 took main to 2550, so with the same six lines the cap is 2560.
+// 10 Nov 2026 (batch 3 items 21 and 23): two state fields, a guard import and one dispatch line take
+// the reducer to 2565, and one union line takes ward-flow-events to 2751; the logic is a lazy slice.
 // 10 Nov 2026 (PR #1598): main reached 2574 of ward-screen's 2575; the D-129 sign-off Undo adds three
 // lines (its logic lives in ward-sign-off-undo.ts), so the cap is 2580.
 // 10 Nov 2026 (Tier 7 audit A5-05): the cap now covers the backend's source files too. postgres.mjs
@@ -33,14 +35,14 @@
 // The caps were in raw lines; each is now re-set to the file's code lines plus the same
 // headroom it had under raw counting, so no file gains room to grow. ward-model, ward-movements,
 // ward-flow-events, ward-patients-seed and postgres.mjs are under the default in code lines and
-// came off the list.
+// came off the list. Main's later +5 for the reducer (batch 3 items 21 and 23) carries over: 1854 + 5 = 1859.
 export const MAX_LINES_DEFAULT = 1500;
 export const MAX_LINES_HEADROOM = 300;
 // ESLint max-lines options shared by eslint.config.mjs and tests/max-lines-baseline.test.ts.
 export const MAX_LINES_COUNTING = { skipBlankLines: true, skipComments: true };
 
 export const MAX_LINES_BASELINE = {
-  "src/components/ward-management/ward-flow-reducer.ts": 1854,
+  "src/components/ward-management/ward-flow-reducer.ts": 1859,
   "src/components/ward-management/ward/ward-screen.tsx": 2174,
   "src/components/ward-management/coordinator/shortlist-panel.tsx": 2256,
   "src/components/ward-management/movements/movement-workspace-cockpit.tsx": 2059,
