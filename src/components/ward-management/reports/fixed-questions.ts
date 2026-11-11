@@ -6,6 +6,7 @@
 // came from so the screen can link to it. Nothing here releases, books or changes anything.
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { bedHoldLapsed } from "@/components/ward-management/ward-bed-hold";
 import { transportNeedState } from "@/components/ward-management/ward-derivations-transport";
 import type { BedRelease, Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
 import { originName } from "@/components/ward-management/ward-movement-origin";
@@ -138,7 +139,7 @@ export function fixedQuestionAnswers(input: FixedQuestionInput): FixedAnswer[] {
 
   const pastLimit = movements
     .filter((movement) => open(movement) && movement.stage === "pulled")
-    .filter((movement) => movement.pullExpiresAt !== undefined && movement.pullExpiresAt < now)
+    .filter((movement) => bedHoldLapsed(movement.pullExpiresAt, now))
     .map((movement) =>
       movementRow(
         movement,

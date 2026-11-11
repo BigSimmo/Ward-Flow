@@ -60,7 +60,7 @@ so changing them needs a restart, not a rebuild:
 
 With it on, a page without a pass goes to `/sign-in` and an API call gets 401. On the signed-in
 site the pass lasts until the 12-hour sign-in limit and ends at sign-out. A demo code pass lasts 8
-hours. `/api/health`, the offline page and the alert worker stay open. To switch it off, set
+hours, and ends at once when `WARD_DEMO_CODE` changes. `/api/health`, the offline page and the alert worker stay open. To switch it off, set
 `WARD_FRONT_DOOR=off` and restart. Code: `src/lib/front-door-pass.ts`, `src/proxy.ts`,
 `src/app/api/session/route.ts`.
 

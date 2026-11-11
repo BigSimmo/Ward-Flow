@@ -1,4 +1,9 @@
-import { MINUTES_PER_DAY, dayOf, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  MINUTES_PER_DAY,
+  dayOf,
+  minuteOfDayFromClockText,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 
 /**
  * Task F1 (owner answer 32): a bed-release or leave-bed time is typed with a Today/Tomorrow
@@ -9,19 +14,6 @@ export type ReleaseDay = "today" | "tomorrow";
 
 /** Rendered in this fixed order; the chooser is exactly these two options, never free text. */
 export const RELEASE_DAYS: readonly ReleaseDay[] = ["today", "tomorrow"];
-
-/**
- * Parses an `<input type="time">`'s `HH:MM` value into a minute-of-day, 0-1439. Malformed or
- * empty text refuses rather than guesses — same discipline the function this replaces used.
- */
-function parseTimeInputToMinuteOfDay(value: string): number | undefined {
-  const match = /^(\d{2}):(\d{2})$/.exec(value);
-  if (!match) return undefined;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  if (hours > 23 || minutes > 59) return undefined;
-  return hours * 60 + minutes;
-}
 
 /**
  * Resolves a typed `HH:MM` plus a Today/Tomorrow choice against the live clock into an `Instant`.
@@ -43,7 +35,8 @@ function parseTimeInputToMinuteOfDay(value: string): number | undefined {
  * Returns `undefined` for an empty or malformed time, exactly like the function this replaces.
  */
 export function parseReleaseDayInstant(now: Instant, day: ReleaseDay, value: string): Instant | undefined {
-  const minuteOfDay = parseTimeInputToMinuteOfDay(value);
+  // The one clock-text rule: "14:00", "9:30" and "0930" all count; malformed or empty refuses.
+  const minuteOfDay = minuteOfDayFromClockText(value);
   if (minuteOfDay === undefined) return undefined;
   const targetDay = dayOf(now) + (day === "tomorrow" ? 1 : 0);
   return targetDay * MINUTES_PER_DAY + minuteOfDay;
