@@ -1,22 +1,23 @@
 # Desk guide: Bed meeting TV board
 
-<!-- last-checked: 2026-10-26 -->
+<!-- last-checked: 2026-11-10 -->
 
 The TV view puts the bed meeting on a wall screen. It is for looking at together, not for
 recording. It may be switched off in some builds.
 
 ## Who opens it
 
-The bed coordinator, a site bed manager or a ward. Open **Capacity** and press **Open on TV**.
-ED desks do not open the TV view.
+The bed coordinator or a site bed manager: open **Capacity** and press **Open on TV**. A ward:
+press **On TV** on **My ward** for that ward's own screen. ED desks do not open the TV view.
 
 ## What it shows
 
-- **Today at a glance**: beds ready now, who is going out and who is coming in.
-- **Waiting in ED** and the **Longest ED wait**, in wait order.
-- **Due out today and tomorrow**, and people past their expected date.
-- **Delays by cause**.
-- **Agreed at the bed meeting**, when there are any: the actions, their owner and when they are due.
+- Bed figures **By health service**, or for one service the **Wards in** that service.
+- **Beds that fit**, and for all services the **Brief for this meeting**.
+- **Longest ED waits**, in wait order.
+- **Waiting by cause**.
+- A ward's own screen shows **Today at a glance**: beds ready now, who is coming in, who is
+  **Going out** today and tomorrow, and people **Past expected date**.
 
 ## Running the meeting
 

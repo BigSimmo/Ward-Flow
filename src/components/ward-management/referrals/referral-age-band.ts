@@ -1,5 +1,10 @@
 import type { Cohort } from "../ward-model";
 import { patientAgeYears } from "../ward-patients";
+import {
+  OLDER_ADULT_AGE_BAND_FROM_YEARS,
+  YOUTH_AGE_BAND_UNDER_YEARS,
+  YOUTH_SERVICE_NOTE_UP_TO_YEARS,
+} from "../ward-operational-defaults";
 
 /** The soft note for an adult under 25. It never changes the band and never blocks. */
 export const YOUTH_UP_TO_24_NOTE = "Youth service may accept up to 24";
@@ -20,7 +25,7 @@ export function referralAgeBand(
   if (!dateOfBirth || !/^\d{4}-\d{2}-\d{2}/.test(dateOfBirth)) return null;
   const age = patientAgeYears({ dateOfBirth }, demoDay);
   if (!Number.isFinite(age) || age < 0) return null;
-  if (age < 18) return { band: "Youth" };
-  if (age >= 65) return { band: "Older adult" };
-  return age <= 24 ? { band: "Adult", note: YOUTH_UP_TO_24_NOTE } : { band: "Adult" };
+  if (age < YOUTH_AGE_BAND_UNDER_YEARS) return { band: "Youth" };
+  if (age >= OLDER_ADULT_AGE_BAND_FROM_YEARS) return { band: "Older adult" };
+  return age <= YOUTH_SERVICE_NOTE_UP_TO_YEARS ? { band: "Adult", note: YOUTH_UP_TO_24_NOTE } : { band: "Adult" };
 }

@@ -135,6 +135,16 @@ type ScopedAuditEvent = {
 };
 
 /**
+ * A referral answer or arrival row names its one ward as a scalar `details.unitId` (M35). The row
+ * stays with the desks that cover that ward, as a referral's ward targets do, so a service never
+ * reads another service's decline or arrival. The server's scope and the browser's share this rule.
+ */
+export function auditDetailWardInScope(event: { details?: unknown }, unitIn: (unitId: string) => boolean): boolean {
+  const named = (event.details as { unitId?: unknown } | null | undefined)?.unitId;
+  return typeof named !== "string" || unitIn(named);
+}
+
+/**
  * Commands about the person alone, with no stay, journey or ward: the reducer refuses a community
  * treatment order while the person holds a bed or has an open placement, so it can name nothing else.
  */
@@ -226,6 +236,7 @@ export function coordinatorRecordScope(
   const wardsInScope = (event: ScopedAuditEvent): boolean => {
     const acting = event.actor?.actingUnitId;
     if (acting !== undefined && acting !== null && !unitIn(acting)) return false;
+    if (!auditDetailWardInScope(event, unitIn)) return false;
     const targets = (event.details as { targets?: readonly { unitId: string | null }[] } | undefined)?.targets;
     return (targets ?? []).every((target) => target.unitId === null || unitIn(target.unitId));
   };

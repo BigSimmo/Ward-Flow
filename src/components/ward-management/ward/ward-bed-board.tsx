@@ -19,6 +19,7 @@ import {
   type BoardPick,
   nameParts,
 } from "./ward-bed-board-logic";
+import { BED_BOARD_CHIP_WAIT_WARNING_MINUTES } from "../ward-operational-defaults";
 import { bedGlyphTone, type BedItem } from "./ward-bed-tone";
 import { CriteriaLedTag } from "./ward-criteria-led-tag";
 import styles from "./ward-bed-board.module.css";
@@ -335,7 +336,10 @@ export function WardBedBoard({
               }}
             >
               <span className={styles.chipTop}>
-                <StatusGlyph tone={referral.waitedMinutes >= 240 ? "warning" : "neutral"} size={10} />
+                <StatusGlyph
+                  tone={referral.waitedMinutes >= BED_BOARD_CHIP_WAIT_WARNING_MINUTES ? "warning" : "neutral"}
+                  size={10}
+                />
                 <span className={styles.chipName}>{nameFor(referral.name, referral.umrn)}</span>
               </span>
               <span className={styles.chipMeta}>

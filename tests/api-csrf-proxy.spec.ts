@@ -66,25 +66,21 @@ test.describe("API CSRF proxy integration (#72282V)", () => {
     expect(data.error).toBe("Cross-site request blocked.");
   });
 
-  test("Host vs X-Forwarded-Host scenario where X-Forwarded-Host matches Origin -> allowed", async ({
-    request,
-    baseURL,
-  }) => {
+  test("Spoofed X-Forwarded-Host matching a foreign Origin -> 403 Forbidden (A4-08)", async ({ request, baseURL }) => {
     const { host } = resolveOriginAndHost(baseURL);
-    const externalDomain = "ward-flow.example.test";
-    const externalOrigin = `https://${externalDomain}`;
+    const spoofedDomain = "evil-attacker.example.com";
 
     const response = await request.post("/api/health", {
       headers: {
-        origin: externalOrigin,
-        host, // Internal host differs from external Origin
-        "x-forwarded-host": externalDomain, // Forwarded host matches Origin
+        origin: `https://${spoofedDomain}`,
+        host,
+        "x-forwarded-host": spoofedDomain, // Client-sent; must not vouch for the Origin
         "sec-fetch-site": "same-site",
       },
       data: {},
     });
 
-    expect(response.status()).toBe(405);
+    expect(response.status()).toBe(403);
   });
 });
 
@@ -134,13 +130,23 @@ test.describe("apiMutationCsrfVerdict pure contract under simulated proxy header
     });
   });
 
-  test("Host vs X-Forwarded-Host scenario where X-Forwarded-Host matches Origin -> allowed verdict", () => {
+  test("X-Forwarded-Host equal to the configured public host -> allowed verdict", () => {
     const headers = new Headers({
       host: internalHost,
       "x-forwarded-host": `${externalHost}, internal-proxy`,
       origin: externalOrigin,
       "sec-fetch-site": "same-site",
     });
-    expect(apiMutationCsrfVerdict(headers, internalHost)).toEqual({ allowed: true });
+    expect(apiMutationCsrfVerdict(headers, internalHost, [externalOrigin])).toEqual({ allowed: true });
+  });
+
+  test("Spoofed X-Forwarded-Host without a configured public host -> origin_mismatch (A4-08)", () => {
+    const headers = new Headers({
+      host: internalHost,
+      "x-forwarded-host": externalHost,
+      origin: externalOrigin,
+      "sec-fetch-site": "same-site",
+    });
+    expect(apiMutationCsrfVerdict(headers, internalHost, [])).toEqual({ allowed: false, reason: "origin_mismatch" });
   });
 });

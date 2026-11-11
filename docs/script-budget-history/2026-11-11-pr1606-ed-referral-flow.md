@@ -1,17 +1,18 @@
 # 11 Nov 2026, ED and referral flow (PR #1606)
 
-Changed on top of `main` at `8d948c7`. Each raise is under 5 KB, within the per-screen allowance in HOW-WE-WORK section 6:
+Changed on top of `main` at `5b08a5e` (after #1599, #1601, #1604 and #1610 merged). Each raise is under 5 KB, within the per-screen allowance in HOW-WE-WORK section 6:
 
-- Home `/ward-flow`: 574.7 to 577.1
-- Referrals `/ward-flow/referrals`: 583.4 to 586.5
-- ED `/ward-flow/ed`: 534.3 to 535.6
-- Ward `/ward-flow/ward/rph-adult-secure`: 613.0 to 613.9
-- Movement `/ward-flow/movements/WF-001`: 608.6 to 610.9
-- Capacity `/ward-flow/capacity`: 653.3 to 654.3
-- ED site `/ward-flow/ed/arm-ed`: 667.4 to 668.0
-- Bed meeting `/ward-flow/bed-meeting`: 590.7 to 592.0
+- Home `/ward-flow`: 575.4 to 578.2
+- Referrals `/ward-flow/referrals`: 583.6 to 587.5
+- ED `/ward-flow/ed`: 535.4 to 536.6
+- Ward `/ward-flow/ward/rph-adult-secure`: 613.8 to 614.9
+- Movement `/ward-flow/movements/WF-001`: 609.8 to 611.6
+- Capacity `/ward-flow/capacity`: 654.3 to 655.4
+- ED site `/ward-flow/ed/arm-ed`: 667.4 to 668.8
+- Bed meeting `/ward-flow/bed-meeting`: 592.2 to 593.0
+- Statistics `/ward-flow/statistics`: 632.6 to 633.6
 
-Measured locally from a production build of `f66eb99`: Home 576.6 KB, Referrals 586.0, ED 535.1, ward 613.4, movement 610.1, Capacity 653.8, ED site 667.5, bed meeting 591.2. Each limit is the measurement plus 0.5. That margin covers the seed-only commit that followed. After main merged in #1604 (which raised the movement and bed meeting limits by 0.3), those two limits keep the same 0.5 margin on top of that growth.
+Measured locally from a production build of this branch with `main` at `5b08a5e` merged in: Home 577.7 KB, Referrals 587.0, ED 536.1, ward 614.4, movement 611.1, Capacity 654.9, ED site 668.3, bed meeting 592.5, Statistics 633.1. Each limit is the measurement plus 0.5.
 
 Why it changed: Batch 1 (D-133, D-140, D-141) adds three engine events to the shared reducer that every route loads: `RECORD_ESCALATION_CALL`, `RECORD_CREW_TIMES` and `RECORD_ARRIVAL_MODE`, about 0.5 to 1 KB. On top of that:
 

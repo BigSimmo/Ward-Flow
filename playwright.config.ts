@@ -32,7 +32,8 @@ const releaseGateSpecPattern =
 // Shared mode (audit F-16): two signed-in desks against a real local backend and PostgreSQL. It needs
 // the stack `tests/support/ward-shared-mode-run.mjs` starts (shared-mode production `next start`, the backend, a
 // fake sign-in service), so the project exists only inside that runner, never in the offline gates.
-// Nightly only (.github/workflows/ward-flow-nightly-browsers.yml), never on a pull request. TE-01: image
+// It runs in the backend job of .github/workflows/ward-flow.yml, on pull requests and main pushes whose
+// plan includes the backend; the nightly browser workflow does not run it. TE-01: image
 // baselines for ten key screens, made and compared on the same hosted Linux runner. TE-02: the 834px
 // tablet layout, which has its own server path (guessTabletFromRequest), runs the axe sweep and the
 // responsive audit on iPad WebKit. Front-end audit, 5 Nov 2026.

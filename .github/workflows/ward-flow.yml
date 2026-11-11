@@ -178,8 +178,14 @@ jobs:
         env:
           WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/doc-facts.mjs
+      # Advisory on pull requests: a date passing must not turn an unrelated PR red. The runbook and desk
+      # guides still show as errors here and block `npm run docs:freshness` and `docs:maintain:check`.
       - name: Warn about living pages that need a re-check
-        run: node scripts/check-living-docs-freshness.mjs --annotate
+        run: node scripts/check-living-docs-freshness.mjs --annotate --advisory
+      # Advisory: lists docs untouched for 180+ days that nothing links to. It fails only when the
+      # history cannot be read (a shallow clone); this job checks out the full history.
+      - name: Report stale unlinked documents (advisory)
+        run: node scripts/check-stale-docs.mjs
       - name: Check owner rulings index
         if: ${{ needs.plan.outputs.owner_index == 'true' }}
         run: node scripts/ward-flow/owner-rulings-index.mjs --check
@@ -857,8 +863,9 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      # On pull_request, merge the current main before measuring (strict up-to-date is off; the merge queue
-      # will re-check the grouped head). The PR-only merge step below is skipped on merge_group.
+      # On pull_request, merge the current main before measuring (strict up-to-date is off, and no merge
+      # queue is in use: a PR merges directly once required checks pass, D-107). The PR-only merge step
+      # below is skipped on the dormant merge_group trigger.
       - name: Merge the latest main before measuring
         if: ${{ github.event_name == 'pull_request' }}
         run: node scripts/ward-ci-public/merge-latest-main.mjs

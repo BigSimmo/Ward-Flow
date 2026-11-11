@@ -12,7 +12,13 @@ import {
   isUnderAForm,
 } from "@/components/ward-management/ed/ed-home-derivations";
 import { edBayAssignments, movementMedicalClearance } from "@/components/ward-management/ed/ed-screen-model";
-import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
+import {
+  currentLegalDueAt,
+  FORM_RECORDED_ENDED,
+  formProgression,
+  formRecordedEnded,
+} from "@/components/ward-management/legal-forms/legal-form-progression";
+import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { riskFlagLabel } from "@/components/ward-management/referrals/referral-risk-flags";
 import { dayOf, formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
@@ -23,6 +29,10 @@ import {
   observationSummary,
   type Observation,
 } from "@/components/ward-management/ward-observation";
+import {
+  ED_SEVERE_PRESSURE_WAIT_MINUTES,
+  TV_LEAVE_DUE_BACK_WINDOW_MINUTES,
+} from "@/components/ward-management/ward-operational-defaults";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { wardStaySeats } from "@/components/ward-management/ward/ward-bed-layout";
 
@@ -109,11 +119,14 @@ function legalFact(status: string | undefined, movement: Movement | undefined, n
       }`,
       tone: "danger",
     };
-  const head = `Form ${form.code}${status ? `, ${status.toLowerCase()}` : ""}`;
-  if (form.dueAt === undefined) return { text: head };
-  const left = form.dueAt - now;
+  // D-93: the form by its full name, as every other output names it (M17, 10 Nov 2026).
+  const head = `${legalFormName(form)}${status ? `, ${status.toLowerCase()}` : ""}`;
+  if (formRecordedEnded(movement)) return { text: `${head}. ${FORM_RECORDED_ENDED}` };
+  const dueAt = currentLegalDueAt(movement);
+  if (dueAt === undefined) return { text: head };
+  const left = dueAt - now;
   return {
-    text: `${head}. ${typedTimeLine(form.dueAt, now)}`,
+    text: `${head}. ${typedTimeLine(dueAt, now)}`,
     tone: left <= 0 ? "danger" : left <= HOURS_24 ? "warning" : undefined,
   };
 }
@@ -251,7 +264,7 @@ function attentionFor(row: WardClinicalRow, leave: LeaveBed | undefined, now: In
   const items: WardClinicalRow["attention"] = [];
   if (row.where === "awol") items.push({ group: "missing", text: row.whereabouts?.text ?? "", tone: "danger" });
   if (row.legal?.tone) items.push({ group: "legal", text: row.legal.text, tone: row.legal.tone });
-  if (row.where === "leave" && leave && leave.expectedReturn - now <= 12 * 60)
+  if (row.where === "leave" && leave && leave.expectedReturn - now <= TV_LEAVE_DUE_BACK_WINDOW_MINUTES)
     items.push({ group: "leave", text: row.whereabouts?.text ?? "", tone: row.whereabouts?.tone });
   if (row.constantObs) items.push({ group: "obs", text: row.obs.text, tone: "warning" });
   if (row.arrivedToday)
@@ -318,7 +331,11 @@ export function edClinicalRows(input: EdClinicalInputs): EdClinicalRow[] | undef
         { text: movement.examination ? "Psychiatry reviewed" : "Not yet reviewed" },
       ];
       const band: EdClinicalRow["band"] =
-        waitMinutes >= accessTargetMinutes ? "over" : waitMinutes >= 480 ? "eight" : "under";
+        waitMinutes >= accessTargetMinutes
+          ? "over"
+          : waitMinutes >= ED_SEVERE_PRESSURE_WAIT_MINUTES
+            ? "eight"
+            : "under";
       const accepted = unitName(movement.acceptedUnitId);
       const stage = ED_STAGE_LABELS[movement.stage];
       const referral: ClinicalFact = accepted

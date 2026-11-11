@@ -9,7 +9,7 @@ import {
   useWardFlow,
   useWardNetwork,
 } from "@/components/ward-management/ward-flow-provider";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { NOW_ANCHOR, allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import type { LeaveBed } from "@/components/ward-management/ward-model";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -87,6 +87,33 @@ describe("Remind me (Q323)", () => {
     expect(within(yours).queryAllByRole("listitem")).toHaveLength(0);
     expect(within(yours).getByText("None set.")).toBeTruthy();
     expect(count).toBe(0);
+  });
+
+  it("stores a movement reminder with a place label only (go/no-go C3)", () => {
+    withFlow(<ToolRemindMe onNavigate={vi.fn()} />);
+    const movementKind =
+      screen.queryByRole("radio", { name: "Movement" }) ?? screen.getByRole("button", { name: "Movement" });
+    fireEvent.click(movementKind);
+    const moves = within(screen.getByRole("list", { name: "Which movement" })).getAllByRole("button");
+    fireEvent.click(moves[0]!);
+    fireEvent.click(within(screen.getByRole("group", { name: "Reason" })).getByRole("button", { name: "Call back" }));
+    fireEvent.click(screen.getByRole("button", { name: "Set reminder" }));
+
+    const stored = JSON.parse(window.localStorage.getItem("wf-mock-tools-reminders") ?? "[]") as Record<
+      string,
+      unknown
+    >[];
+    expect(stored).toHaveLength(1);
+    // Only list-picked fields are kept: no free text and no patient detail.
+    expect(Object.keys(stored[0]!).sort()).toEqual(["dueAt", "id", "kind", "reason", "targetId", "targetLabel"]);
+    expect(stored[0]!.kind).toBe("movement");
+    // The label names where the movement starts, never the person (D-39).
+    // An exact place label from the synthetic ED list, so a stored name cannot pass.
+    const placeLabels = [
+      ...allEmergencyDepartments().map((ed) => `Movement from ${ed.name.toLowerCase()}`),
+      "Movement from another site",
+    ];
+    expect(placeLabels).toContain(stored[0]!.targetLabel);
   });
 });
 
