@@ -1823,18 +1823,6 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       (_state, random) => ({ grade: pick(random, ["registrar", "consultant"] as const) }),
     ),
   ],
-  // Escalation calls (item 3, D-133).
-  [
-    1,
-    movementEvent("RECORD_ESCALATION_CALL", undefined, (_state, random) => {
-      const step = pick(random, [1, 2, 3, 4] as const)!;
-      return {
-        step,
-        roleCalled: ESCALATION_STEP_ROLE[step],
-        outcome: pick(random, ESCALATION_CALL_OUTCOMES),
-      };
-    }),
-  ],
   [1, movementEvent("CLEAR_MOVEMENT_URGENT_FLAG", (movement) => Boolean(movement.flaggedUrgent))],
   [1, movementEvent("RECORD_MOVEMENT_BLOCKER", undefined, () => ({ blocker: SYNTHETIC_NOTE }))],
   [1, movementEvent("CLEAR_MOVEMENT_BLOCKER")],
@@ -2549,6 +2537,19 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         ...(record.unitId ? { actingUnitId: record.unitId } : {}),
       };
     },
+  ],
+  // Escalation calls (item 3, D-133): weight 0 and last, the same convention, so the weighted
+  // draws of every other builder stay as they were.
+  [
+    0,
+    movementEvent("RECORD_ESCALATION_CALL", undefined, (_state, random) => {
+      const step = pick(random, [1, 2, 3, 4] as const)!;
+      return {
+        step,
+        roleCalled: ESCALATION_STEP_ROLE[step],
+        outcome: pick(random, ESCALATION_CALL_OUTCOMES),
+      };
+    }),
   ],
   // Item 9 (10 Nov 2026): weight 0 and last, so only the coverage sweep sends it and the weighted
   // draws of every other builder stay as they were.
