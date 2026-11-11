@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic";
 
 import { preloadWhenIdle } from "../preload-when-idle";
-import { loadBeforeHeldReveal } from "../shell/held-reveal-loaders";
 
 /**
  * Phone budget: Catch-up after the outage (Batch 4 item 25, D-142) renders nothing until an outage
@@ -17,5 +16,3 @@ export const HomeOutageCatchUp = dynamic(() => loadCatchUp().then((m) => m.HomeO
 });
 
 preloadWhenIdle(loadCatchUp);
-// A held first load draws this card with the page (D-137 follow-up, held-reveal-loaders.ts).
-loadBeforeHeldReveal(loadCatchUp);

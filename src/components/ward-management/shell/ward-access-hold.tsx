@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
-import { hasHeldRevealLoaders, heldRevealReady } from "./held-reveal-loaders";
+import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { WARD_DESK_PENDING_ATTRIBUTE } from "./ward-desk-early";
 
 const never = () => () => {};
@@ -47,18 +46,5 @@ export function WardDeskHold({
   children: ReactNode;
 }) {
   const deskKnown = useDeskKnown();
-  // The route's code-split cards are fetched before a held page is shown, so they are drawn with
-  // it rather than popping in after (held-reveal-loaders.ts).
-  const [cardsReady, setCardsReady] = useState(() => !held || !hasHeldRevealLoaders());
-  useEffect(() => {
-    if (!held || !deskKnown || cardsReady) return;
-    let live = true;
-    void heldRevealReady().then(() => {
-      if (live) setCardsReady(true);
-    });
-    return () => {
-      live = false;
-    };
-  }, [held, deskKnown, cardsReady]);
-  return held && !(deskKnown && cardsReady) ? placeholder : children;
+  return held && !deskKnown ? placeholder : children;
 }
