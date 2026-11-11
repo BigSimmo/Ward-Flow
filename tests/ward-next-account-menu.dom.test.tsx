@@ -138,8 +138,8 @@ describe("rail account menu (DK1)", () => {
     document.cookie = "wf_door=1; path=/";
     const fetchMock = vi.fn(async () => new Response(null, { status: 204 }));
     vi.stubGlobal("fetch", fetchMock);
-    const assign = vi.fn();
-    vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, assign } as Location);
+    const replace = vi.fn();
+    vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, replace } as Location);
     try {
       renderRail();
       const menu = openAccountMenu();
@@ -150,7 +150,7 @@ describe("rail account menu (DK1)", () => {
         "Leave the demo",
       ]);
       fireEvent.click(within(menu).getByRole("menuitem", { name: "Leave the demo" }));
-      await vi.waitFor(() => expect(assign).toHaveBeenCalledWith("/sign-in"));
+      await vi.waitFor(() => expect(replace).toHaveBeenCalledWith("/sign-in"));
       expect(fetchMock).toHaveBeenCalledWith("/api/session", expect.objectContaining({ method: "DELETE" }));
     } finally {
       document.cookie = "wf_door=; path=/; max-age=0";

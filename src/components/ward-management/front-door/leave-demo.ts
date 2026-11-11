@@ -34,5 +34,7 @@ export async function leaveDemo(): Promise<void> {
   }
   // Awaited, so the sign-in page never opens while the pass is still good.
   await fetch("/api/session", { method: "DELETE", credentials: "same-origin" }).catch(() => {});
-  window.location.assign("/sign-in");
+  // A full load, not a client navigation: the sign-in page must be drawn fresh, and Back must not
+  // return to the demo.
+  window.location.replace("/sign-in");
 }
