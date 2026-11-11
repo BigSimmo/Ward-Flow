@@ -7,7 +7,7 @@ import {
   MAX_LINES_HEADROOM,
 } from "../eslint-rules/max-lines-baseline.mjs";
 
-// Count lines the way the lint cap does (code lines only, D-144): run ESLint's own max-lines rule
+// Count lines the way the lint cap does (code lines only, D-145): run ESLint's own max-lines rule
 // with a cap of 0 on each listed file and read the line count from its message.
 async function codeLineCounts(files: string[]) {
   const eslint = new ESLint({

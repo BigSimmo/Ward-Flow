@@ -28,7 +28,7 @@
 // 10 Nov 2026 (Tier 7 audit A5-05): the cap now covers the backend's source files too. postgres.mjs
 // was split by area into workspace-*.mjs; its remaining core (the record cache, reads, saves,
 // archive and the command path) gets a cap of its size plus about 150 lines.
-// 11 Nov 2026 (D-144, Josh approved): the cap counts code lines only. Blank lines and comment-only
+// 11 Nov 2026 (D-145, Josh approved): the cap counts code lines only. Blank lines and comment-only
 // lines no longer count (MAX_LINES_COUNTING), so nobody deletes spacing or safety comments to fit.
 // The caps were in raw lines; each is now re-set to the file's code lines plus the same
 // headroom it had under raw counting, so no file gains room to grow. ward-model, ward-movements,

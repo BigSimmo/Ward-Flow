@@ -179,7 +179,7 @@ const eslintConfig = defineConfig([
   },
   // File size ratchet. New source files stay under MAX_LINES_DEFAULT lines, and the files that
   // were already larger cannot grow much past their baseline (eslint-rules/max-lines-baseline.mjs).
-  // Only code lines count: blank lines and comment-only lines are free (MAX_LINES_COUNTING, D-144).
+  // Only code lines count: blank lines and comment-only lines are free (MAX_LINES_COUNTING, D-145).
   {
     files: ["src/**/*.{ts,tsx}"],
     rules: {

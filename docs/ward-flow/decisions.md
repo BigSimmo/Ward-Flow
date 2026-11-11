@@ -156,7 +156,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-131](#d-131-hard-case-demo-data-allowed-and-the-movement-diagram-follows-the-engine-10-november-2026)                                                | Hard-case demo data allowed, and the movement diagram follows the engine               | Active                                           |
 | [D-132](#d-132-audit-fixes-group-1-docs-and-ci-guards-10-november-2026)                                                                                 | Audit fixes group 1: docs and CI guards; Claude-authored sensitive changes warn        | Active                                           |
 | [D-138](#d-138-phone-alert-urgency-by-kind-10-november-2026)                                                                                            | Phone alert urgency by kind                                                            | Active                                           |
-| [D-144](#d-144-repository-review-fixes-features-and-code-health-approved-11-november-2026)                                                              | Repository review: fixes, features and code health approved                            | Active                                           |
+| [D-145](#d-145-repository-review-fixes-features-and-code-health-approved-11-november-2026)                                                              | Repository review: fixes, features and code health approved                            | Active                                           |
 
 ---
 
@@ -1701,9 +1701,9 @@ is inferred.
 - **Decision:** act-now phone alerts stay high urgency and buzz again when replaced. Jobs and team alerts go out at normal urgency and replace their earlier alert quietly. Settings shows when this device last received an alert, from the time only (never the alert's words).
 - **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge or release.
 
-## D-144. Repository review: fixes, features and code health approved (11 November 2026)
+## D-145. Repository review: fixes, features and code health approved (11 November 2026)
 
-- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, in the Ward Flow project thread "Review repository for issues and new features": "Go ahead with all these recommendations please" (03:55 UTC), answering the review doc "Ward Flow repository review, 11 November 2026". Numbered D-144 because D-133 to D-143 belong to other threads. D-139 is claimed by open PR #1600, D-140 is claimed by open PR #1606, D-141 is claimed by open PR #1606, D-142 is claimed by open PR #1603, and D-143 is claimed by open PR #1612.
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, in the Ward Flow project thread "Review repository for issues and new features": "Go ahead with all these recommendations please" (03:55 UTC), answering the review doc "Ward Flow repository review, 11 November 2026". Numbered D-145 because D-133 to D-144 belong to other threads. D-139 is claimed by open PR #1600, D-140 is claimed by open PR #1606, D-141 is claimed by open PR #1606, D-142 is claimed by open PR #1603, D-143 is claimed by open PR #1612, and D-144 is claimed by open PR #1617.
 - **Decision:**
   1. **Clinical display fixes, one held PR:** a ward's expected occupancy no longer counts a patient twice when they hold a named bed and also have a booked planned admission to that ward; an ended legal form says it ended and gives the expiry only as it was typed; the ED screen flags a long wait at 24 hours or more, like every other screen.
   2. **Non-clinical fixes:** one lapse check for pull holds, staff requests keep the shift the person chose, one reader for typed times, one length-of-stay calculation, a demo code shorter than 12 characters counts as no code, and a demo pass stops working when the code changes. Two lines added to the real-data go/no-go list (record ids never built from UMRNs; a check of the push library).
