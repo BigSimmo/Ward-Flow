@@ -1002,8 +1002,8 @@ Source-contract SHA256: e7d01dcf792ab83c47b4da0cae3de13f629070a9f12a7f939d61775f
   tests: tests/ward-patient-archive.test.ts
   Reviewed source: src/components/ward-management/ward-patient-archive-reducer.ts:10; SHA256 fbe91ef4b0daad593da3144d30e40c65803851a4f31337bf61bd3004038c1900
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:397; SHA256 cd2310745ab8bd06363b052024f920d5248a8815bae9e2eee5c4945c11b1013d
-  Reviewed source: src/components/ward-management/ward-patient-archive.ts:32; SHA256 c831b3968284d3c5448d2ccd2e3b1201eef66a392ae084377c0fe0250b86f5ba
-  Reviewed source: src/components/ward-management/ward-patient-archive.ts:54; SHA256 c831b3968284d3c5448d2ccd2e3b1201eef66a392ae084377c0fe0250b86f5ba
+  Reviewed source: src/components/ward-management/ward-patient-archive.ts:32; SHA256 0836301ee769bdc651066d09a763d083ca95047425bac33559d6e1538fed7d54
+  Reviewed source: src/components/ward-management/ward-patient-archive.ts:54; SHA256 0836301ee769bdc651066d09a763d083ca95047425bac33559d6e1538fed7d54
   Reviewed source: src/components/ward-management/ward-access-state.ts:709; SHA256 6749082a89387b340bc0b52cfe76a13f8375532e44cbbcdf17a85d696c94e703
 - ACCEPT_REFERRAL — diagram-reviewed; event roles: ward, coordinator, ed, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.

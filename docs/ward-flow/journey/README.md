@@ -288,6 +288,7 @@ Live audit fixes (#1626, 11 Nov 2026): source digests for three files were re-re
 - `ward-global-search.tsx`, `tools/ward-demo-panel.tsx`: `ADVANCE_CLOCK` is unchanged, but D-150 hides its controls in shared mode, because the signed-in site runs on real Perth time. The action's screen note says so. `RESET_SCENARIO` and `SET_SCENARIO` are unchanged.
 - `ward-patient-archive.ts`, `ward-patient-archive-reducer.ts`: D-149 changed `ARCHIVE_PATIENT`'s guard. A withdrawn or cancelled front-door referral, audit rows and expired Undo records no longer block, and the withdrawn referral is unlinked from the archived record. The command model's before, guards, effects and the `patientArchiveProblem` citation (line 44 to 54) are updated.
 - `ward-patient-archive.ts` (review round, 11 Nov 2026): an Undo record now blocks archive through the last minute of the Undo window (`<=`), matching `undoWindowRefusal`, which still allows Undo at exactly that minute. One character changed; no cited line moved and the model's prose ("inside the Undo window") stands, so only the digest was re-recorded.
+- `ward-patient-archive.ts` (independent review, 11 Nov 2026): an Undo record stamped after the board's time, which D-150's one-off clock step back can leave, no longer blocks archive, matching `undoWindowRefusal`, which refuses such an Undo. Only the Undo-window filter below the cited lines changed; no cited line moved, so only the digest was re-recorded.
 
 ## Source review — 10 Nov 2026 (Batch 4 outages and pilot control, PR #1603, D-135)
 

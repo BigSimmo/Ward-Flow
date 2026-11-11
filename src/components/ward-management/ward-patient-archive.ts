@@ -68,7 +68,11 @@ export function patientArchiveProblem(state: WardFlowState, patientId: string, n
     return "This record has an open or answered referral, so it has care recorded against them and stays.";
   if (JSON.stringify(rest).includes(quoted))
     return "Something else on the board names this record, so it has care recorded against them and stays.";
-  const usable = (undoRecords ?? []).filter((entry) => now === undefined || now - entry.at <= UNDO_WINDOW_MINUTES);
+  // Same window as Undo's own check (`undoWindowRefusal`): a step stamped after `now`, which a clock
+  // step back can leave, cannot be undone either, so it does not hold the record.
+  const usable = (undoRecords ?? []).filter(
+    (entry) => now === undefined || (now >= entry.at && now - entry.at <= UNDO_WINDOW_MINUTES),
+  );
   if (JSON.stringify(usable).includes(quoted))
     return `A step on this record can still be undone. Archive it once ${UNDO_WINDOW_MINUTES} minutes have passed.`;
   return undefined;

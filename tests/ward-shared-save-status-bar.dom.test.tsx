@@ -164,4 +164,28 @@ describe("a save in flight", () => {
     again.rerender(withSave(<WardSharedSaveStatus deskLabel="Coordinator" connection={saving()} />));
     expect(screen.getByTestId("ward-shared-reload-warning")).toBeVisible();
   });
+
+  // An earlier refused save's note stays on the board while it is ready. A new save queued behind a
+  // refresh at that moment has not failed, so it still shows the calm "Saving…" once it sends.
+  it("stays calm for a new save while an earlier refusal's note is still on the board", () => {
+    const refusedEarlier = {
+      ...connection("ready"),
+      error: "That bed has changed. Nothing was changed.",
+    } as unknown as WardSharedConnection;
+    const view = render(withSave(<WardSharedSaveStatus deskLabel="Coordinator" connection={refusedEarlier} />));
+    view.rerender(withSave(<WardSharedSaveStatus deskLabel="Coordinator" connection={saving()} />));
+    expect(screen.getByTestId("ward-shared-status-bar")).toHaveTextContent(/^Saving…$/u);
+    expect(screen.queryByTestId("ward-shared-reload-warning")).toBeNull();
+  });
+
+  it("keeps the full warning through Retry once its own save ended with an error", () => {
+    const view = render(withSave(<WardSharedSaveStatus deskLabel="Coordinator" connection={saving()} />));
+    const notConfirmed = {
+      ...connection("ready"),
+      error: "Your last change was not confirmed. The board is up to date. Press Retry to send it.",
+    } as unknown as WardSharedConnection;
+    view.rerender(withSave(<WardSharedSaveStatus deskLabel="Coordinator" connection={notConfirmed} />));
+    view.rerender(withSave(<WardSharedSaveStatus deskLabel="Coordinator" connection={saving()} />));
+    expect(screen.getByTestId("ward-shared-reload-warning")).toBeVisible();
+  });
 });

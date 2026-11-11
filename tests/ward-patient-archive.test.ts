@@ -237,6 +237,9 @@ describe("ARCHIVE_PATIENT after a withdrawn referral (D-149)", () => {
       /can still be undone/,
     );
     expect(patientArchiveProblem(withUndo, world.patient.id, later(UNDO_WINDOW_MINUTES + 1))).toBeUndefined();
+    // A step stamped after the board's time (left by a clock step back, D-150) cannot be undone
+    // (`undoWindowRefusal`), so it does not hold the record either.
+    expect(patientArchiveProblem(withUndo, world.patient.id, (now - 60) as typeof now)).toBeUndefined();
     const inside = wardFlowReducer(withUndo, {
       type: "ARCHIVE_PATIENT",
       role: "coordinator",
