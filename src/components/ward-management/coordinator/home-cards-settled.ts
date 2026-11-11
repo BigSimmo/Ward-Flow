@@ -6,7 +6,7 @@ import { bedsGapCard } from "./home-list-lazy";
 import { sinceBanner } from "./home-since-banner-lazy";
 
 /** Home never stays hidden longer than this for a card that is slow or fails to load. */
-export const HOME_CARDS_WAIT_MS = 1500;
+const HOME_CARDS_WAIT_MS = 1500;
 
 /**
  * Layout shift on Home (11 Nov 2026): Home draws on the client, and the two cards it shows at rest
