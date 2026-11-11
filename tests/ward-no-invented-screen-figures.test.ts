@@ -193,6 +193,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^WARD_LOADING_SLOW_MS$/,
   },
   {
+    id: "held-reveal-wait",
+    why: "The longest a held first load waits for its code-split cards before it shows the page anyway (D-137 follow-up, 11 Nov 2026); a UI pause, never shown, not a limit.",
+    file: /^shell\/held-reveal-loaders\.ts$/,
+    name: /^HELD_REVEAL_WAIT_MS$/,
+  },
+  {
     id: "offline-prefetch-fresh",
     why: "How long a page the router fetched in full may open offline, kept under Next's 5-minute client cache (pre-launch review E1, Q273, 2 Nov 2026); a cache window, not a limit.",
     file: /^shell\/ward-offline-links\.tsx$/,
