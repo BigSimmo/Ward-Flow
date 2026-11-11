@@ -55,6 +55,7 @@ export type { SharedBreakGlassOpening, SharedCoverGiven, SharedRecordView } from
 import type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
 import {
   markOwnSave,
+  waitingBedKeys,
   pinToBoard,
   sheetBasis,
   type PendingCommand,
@@ -69,7 +70,6 @@ import {
   mergeSharedPartialView,
 } from "./ward-shared-state-check";
 import { SharedPacing } from "./ward-shared-pacing";
-
 import type { SharedSnapshot, SharedView, SharedChangeResult, WardCommandOutcome } from "./ward-shared-client-types";
 import { SharedIntentKeys } from "./shared-intent-keys";
 export type {
@@ -91,7 +91,6 @@ const NO_ROLE = "No Ward Flow role is assigned to this account";
 export type { SharedActivityAuditEvent, SharedActivityAuditPage } from "./ward-shared-activity-audit";
 /** A member desk reads its part of the workspace in full at least this often (audit F-04). */
 const FULL_READ_EVERY_MS = 60_000;
-
 /** Thrown once by a request whose first 401 is asked again with a fresh token (audit A4-02). */
 const FRESH_TOKEN = new Error("Ask again with a fresh token");
 
@@ -507,6 +506,7 @@ export class SharedWorkspaceClient {
       recovering: this.recoveryPending,
       recoveryStorageUnavailable: this.recoveryStorageUnavailable,
       pendingCount: (this.pending ? 1 : 0) + this.queue.length,
+      waitingBeds: waitingBedKeys([this.pending, ...this.queue]),
       unconfirmedSave: this.pending !== null || this.queue.length > 0 || this.recoveryPending,
       waiting: this.offlineHold ? (this.pending ? 1 : 0) + this.queue.length : 0,
     };

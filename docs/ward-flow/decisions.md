@@ -159,6 +159,10 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-139](#d-139-phone-statistics-ward-list-a-to-z-and-leave-return-times-as-typed-10-november-2026)                                                      | Phone Statistics ward list A to Z, and leave return times as typed                     | Active                                           |
 | [D-143](#d-143-mhert-is-mherl-in-the-glossary-smhmr-deferred-11-november-2026)                                                                          | MHERT is MHERL in the glossary; SMHMR deferred                                         | Active                                           |
 | [D-144](#d-144-chip-rows-move-only-sideways-on-a-phone-11-november-2026)                                                                                | Chip rows move only sideways on a phone                                                | Active                                           |
+| [D-148](#d-148-closing-a-bed-stays-one-tap-and-its-toast-offers-a-reason-11-november-2026)                                                              | Closing a bed stays one tap, and its toast offers a reason                             | Active                                           |
+| [D-149](#d-149-a-record-whose-only-links-are-withdrawn-referrals-can-be-archived-11-november-2026)                                                      | A record whose only links are withdrawn referrals can be archived                      | Active                                           |
+| [D-150](#d-150-the-signed-in-site-runs-on-real-perth-time-11-november-2026)                                                                             | The signed-in site runs on real Perth time                                             | Active                                           |
+| [D-151](#d-151-a-bed-tile-says-when-a-change-is-waiting-to-save-11-november-2026)                                                                       | A bed tile says when a change is waiting to save                                       | Active                                           |
 
 ---
 
@@ -1726,3 +1730,35 @@ is inferred.
 - **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, on a decision card in the Ward Flow project thread "Stop chip rows dragging up and down", choosing "Lock rows to sideways only" over measuring on his iPhone first. Numbered D-144 because D-133 to D-143 belong to other threads. D-140 is claimed by open PR #1606, and D-141 is claimed by open PR #1606. D-142 is claimed by open PR #1603.
 - **Decision:** on a phone, the page-top quick-link chip rows, the Home quick bar, the shared phone chip row and Home's "Waiting in ED" strip take `touch-action: pan-x`. A finger on one of these rows can only move it sideways. The accepted trade-off is that a vertical swipe starting on one of these rows does not scroll the page. Reason: iPhone still slid the rows up and down after three layout fixes (#1596, #1602, #1610), and the cause could not be reproduced off the device.
 - **Boundary:** presentation only, synthetic data. Changes no clinical value or rule, and approves no merge or release.
+
+## D-148. Closing a bed stays one tap, and its toast offers a reason (11 November 2026)
+
+- **Date:** 11 November 2026. **Decided by:** Josh, approving every recommendation in the "Ward Flow live audit: verified findings and fix plan" (decision item 4) after fact-checking: "Go ahead with all recommendations after fact checking please". Numbered D-148 because D-145 is claimed by open PR #1623. D-146 is claimed by open PR #1624. D-147 is claimed by open PR #1615.
+- **Decision:** "Close this bed" in the bed drawer still saves on one tap with Undo (the 26 October fast-workflow choice). No confirm step is added. Its toast now offers "Add a reason", a kit menu of the existing ward closure reasons (`WARD_CLOSURE_REASONS`). Choosing one undoes the close and closes the bed again with that reason, so the reason is chosen, never typed, and the History shows both steps.
+- **Why:** the live audit found closures with no reason; a reason helps the bed meeting without slowing the close.
+- **Boundary:** synthetic data only. No engine rule changes: `SET_BED_CLOSED` already took an optional reason.
+
+## D-149. A record whose only links are withdrawn referrals can be archived (11 November 2026)
+
+- **Date:** 11 November 2026. **Decided by:** Josh, approving decision item 9 of the live audit fix plan, as for D-148. This gives the 26 October rule (#816: "archive only, coordinator only, for records added in error") its D-number.
+- **Decision:**
+  1. Archiving stays coordinator only, for a record added in error, and still never destroys anything.
+  2. A record can now be archived when the only things naming it are front-door referrals that nobody answered (every destination withdrawn by the referrer or cancelled), audit rows, and Undo records older than the Undo window. Any journey, stay, form, bed record, answered or open referral, or fact recorded on the person still keeps the record.
+  3. The coordinator's "Record added in error" card no longer hides when archive is not available. It says why in one line.
+- **Why:** the live audit's test patient could never be archived because a withdrawn referral and record-view audit rows named it, so test and mistaken records stayed on the board for good.
+- **Boundary:** synthetic data only. Archiving the live audit's test patient and the old TEST-Helper4 records is a live write that waits for Josh's yes after release.
+
+## D-150. The signed-in site runs on real Perth time (11 November 2026)
+
+- **Date:** 11 November 2026. **Decided by:** Josh, approving decision item 5 of the live audit fix plan, as for D-148.
+- **Decision:** the shared world's clock is the real minutes since its day zero (a Perth midnight). A new world's seed is re-anchored onto that time, as the public demo already does (`ward-reanchor.ts`). The scripted clock that starts at 10:42 stays on the public demo only, and the advance-clock controls are hidden on the signed-in site.
+- **Why:** the shared clock started at 10:42 whenever the world was made, so the board, labelled AWST, ran about 48 minutes fast all day.
+- **Note:** an existing shared world's clock steps back once by that gap when this is released, so steps recorded in the last 48 minutes before the release briefly read as a little in the future.
+- **Boundary:** synthetic data only. No clinical rule or signed value changes.
+
+## D-151. A bed tile says when a change is waiting to save (11 November 2026)
+
+- **Date:** 11 November 2026. **Decided by:** Josh, approving decision item 3 of the live audit fix plan, as for D-148.
+- **Decision:** the privacy rule stands (D-18, D-72, D-124): a save waiting on the signed-in site is held in this page's memory only, never on the device. The ward bed tile now says "Waiting to save" while a save for that bed is waiting. The browser's warning before the page closes or reloads with a save waiting was already in place (since 23 October), so it is unchanged.
+- **Why:** the live audit closed a bed offline and the tile still read "Ready", with nothing on it to say the change had not gone.
+- **Boundary:** presentation only, synthetic data. Nothing new is stored on the device.

@@ -15,7 +15,7 @@ export function reducePatientArchive(
     return reject(state, event, "ARCHIVE_PATIENT needs a reason from the list");
   // Archived D-14: the event's patient is read through the allow-listed subjectId, not here.
   const patientId = subjectId(event);
-  const problem = patientArchiveProblem(state, patientId);
+  const problem = patientArchiveProblem(state, patientId, event.now);
   if (problem !== undefined) return reject(state, event, problem);
   // The record leaves the lists. Its ADD_PATIENT and this event stay in the audit trail, and the
   // patient sequence is kept, so no later record reuses the id.

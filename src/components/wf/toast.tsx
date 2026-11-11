@@ -2,7 +2,8 @@
 
 import { X } from "lucide-react";
 import { type CSSProperties, type HTMLAttributes, type ReactNode, useEffect, useRef, useState } from "react";
-import { Button } from "./button";
+import { Button, buttonClass } from "./button";
+import { Menu } from "./menu";
 import { cx } from "./cx";
 import styles from "./overlay.module.css";
 import { StatusGlyph, type WfTone } from "./status-glyph";
@@ -37,6 +38,17 @@ type ToastTimeout = {
   restartKey?: unknown;
 };
 
+/**
+ * An optional follow-up choice on the toast, such as a reason for the step just taken (D-148). A
+ * kit menu of the choices opens from one button; choosing closes the toast.
+ */
+export type ToastChoices = {
+  /** The menu's accessible name and the button's words. */
+  label: string;
+  items: readonly { id: string; label: string }[];
+  onChoose: (id: string) => void;
+};
+
 export type ToastNextStep = {
   label: string;
   href?: string;
@@ -56,6 +68,8 @@ export type ToastViewProps = {
   nextStep?: ToastNextStep;
   /** Undo with a time window and its shrinking line. */
   undo?: ToastUndo;
+  /** An optional follow-up choice, shown before Undo (D-148). */
+  choices?: ToastChoices;
   /** Closes the toast after a pausable time. Ignored when `undo` is set: the window is the clock. */
   timeout?: ToastTimeout;
   /**
@@ -184,6 +198,7 @@ export function ToastView({
   action,
   nextStep,
   undo,
+  choices,
   timeout,
   leaving = false,
   onClose,
@@ -276,6 +291,27 @@ export function ToastView({
             {nextStep.label}
           </Button>
         )
+      ) : null}
+      {choices && (!undo || phase === "running") ? (
+        <Menu
+          label={choices.label}
+          align="end"
+          items={choices.items.map((item) => ({
+            id: item.id,
+            label: item.label,
+            onSelect: () => choices.onChoose(item.id),
+          }))}
+          trigger={(props) => (
+            <button
+              {...props}
+              type="button"
+              className={cx(buttonClass({ variant: "ghost", size: "sm" }), styles.toastAction)}
+              data-testid="toast-choices"
+            >
+              {choices.label}
+            </button>
+          )}
+        />
       ) : null}
       {undo ? <UndoButton undo={undo} phase={phase} finish={finish} primary={primary === "undo"} /> : null}
       {onClose ? (

@@ -9,6 +9,8 @@ export type WardSharedSave = {
   status: SharedView["status"];
   error: string | null;
   retry: () => void;
+  /** D-151: `unitId:bedNumber` of each bed a save waiting on this page will change. */
+  waitingBeds?: readonly string[];
 };
 
 export const WardSharedSaveContext = createContext<WardSharedSave | null>(null);

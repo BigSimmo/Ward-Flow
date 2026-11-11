@@ -9,6 +9,7 @@ import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
 import { admissionCriteriaEligibility } from "@/components/ward-management/ward-flow-reducer";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 import { useUndoableStep } from "../use-undoable-step";
+import { bedClosureReasonChoices } from "./ward-bed-closure-reason";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { WardBedDossierDrawer } from "./ward-screen-lazy";
 import { wardSafeRejectionReason } from "./ward-rejection-text";
@@ -161,6 +162,17 @@ export function WardScreenBedDrawer({
           ...(bedClosureRole === "ward" ? { actingUnitId: unitId } : {}),
         }),
         undone: closed ? `Undone. Bed ${bedNumber} is open again.` : `Undone. Bed ${bedNumber} is closed again.`,
+        // D-148 (Josh, 11 Nov 2026): closing stays one tap; its toast offers an optional reason.
+        ...(closed
+          ? {
+              choices: bedClosureReasonChoices({
+                role: bedClosureRole,
+                unitId: unit.id,
+                actingUnitId: unitId,
+                bedNumber,
+              }),
+            }
+          : {}),
       },
     );
   return selectedBed !== null

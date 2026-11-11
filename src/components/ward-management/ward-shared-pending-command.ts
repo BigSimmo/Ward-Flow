@@ -95,3 +95,17 @@ export function pinToBoard(
     queued.sheets = [pin];
   }
 }
+
+/**
+ * D-151: the beds that a save waiting on this page will change, as `unitId:bedNumber`, so the bed
+ * tile can say "Waiting to save". Read from memory only, like the queue itself (D-18, D-72, D-124).
+ */
+export function waitingBedKeys(commands: readonly ({ event: WardFlowEvent } | null)[]): string[] {
+  const keys = new Set<string>();
+  for (const command of commands) {
+    const event = command?.event as { unitId?: unknown; bedNumber?: unknown } | undefined;
+    if (typeof event?.unitId === "string" && typeof event.bedNumber === "number")
+      keys.add(`${event.unitId}:${event.bedNumber}`);
+  }
+  return [...keys];
+}

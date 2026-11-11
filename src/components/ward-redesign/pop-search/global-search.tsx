@@ -1158,11 +1158,15 @@ export function GlobalSearch({
             canOpenHref={canOpenHref}
             shortcutsExpanded={shortcutsExpanded}
             onToggleShortcuts={() => setShowShortcuts((previous) => !previous)}
-            onAdvanceClock={() => {
-              if (wardFlow)
-                wardFlow.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: now ?? wardFlow.now, minutes: 15 });
-              close();
-            }}
+            onAdvanceClock={
+              wardFlow?.shared?.enabled
+                ? undefined
+                : () => {
+                    if (wardFlow)
+                      wardFlow.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: now ?? wardFlow.now, minutes: 15 });
+                    close();
+                  }
+            }
             onSwitchDesk={(role, href) => {
               if (!confirmLeave()) return;
               setDeskRole(role, href);

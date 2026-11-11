@@ -1145,22 +1145,22 @@ export function createWorkspaceStore(
       )
         return { notModified: false, snapshot: await scopedRead(actorId, view) };
       const { rows } = await pool.query(
-        "SELECT data_mode, revision, payload->>'startedAt' AS started_at, payload->'state'->'clockOffsetMinutes' AS clock_offset FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
+        "SELECT data_mode, revision, payload->>'dayZero' AS day_zero, payload->'state'->'clockOffsetMinutes' AS clock_offset FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
         [workspaceId],
       );
       const row = rows[0];
       if (
         row &&
         Number(row.revision) === knownRevision &&
-        typeof row.started_at === "string" &&
-        Number.isFinite(Date.parse(row.started_at)) &&
+        typeof row.day_zero === "string" &&
+        Number.isFinite(Date.parse(row.day_zero)) &&
         Number.isFinite(row.clock_offset)
       )
         return {
           notModified: true,
           dataMode: row.data_mode,
           revision: knownRevision,
-          now: engine.worldNow({ startedAt: row.started_at, state: { clockOffsetMinutes: row.clock_offset } }, at),
+          now: engine.worldNow({ dayZero: row.day_zero, state: { clockOffsetMinutes: row.clock_offset } }, at),
         };
       return { notModified: false, snapshot: await read(actorId, view) };
     },

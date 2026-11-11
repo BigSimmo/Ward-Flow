@@ -1270,11 +1270,20 @@ export function WardGlobalSearch({
                 onToggleShortcuts={() => setShowShortcuts((previous) => !previous)}
                 savedHere={myViews.savedHere}
                 onToggleSaveView={myViews.toggleHere}
-                onAdvanceClock={() => {
-                  if (wardFlow)
-                    wardFlow.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: now ?? wardFlow.now, minutes: 15 });
-                  close();
-                }}
+                onAdvanceClock={
+                  wardFlow?.shared?.enabled
+                    ? undefined
+                    : () => {
+                        if (wardFlow)
+                          wardFlow.dispatch({
+                            type: "ADVANCE_CLOCK",
+                            role: "demo",
+                            now: now ?? wardFlow.now,
+                            minutes: 15,
+                          });
+                        close();
+                      }
+                }
                 onSwitchDesk={(role, href) => {
                   navigateWithDirtyGuard(() => {
                     if (deskSwitch.shared) {
