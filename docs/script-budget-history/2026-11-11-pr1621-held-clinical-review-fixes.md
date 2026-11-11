@@ -7,3 +7,5 @@ Measured on hosted CI (production build of the PR head `eda932a`, merged with ma
 Why it changed: the shared bed-forecast code that these routes load grew by 0.1 to 0.3 KB gzipped. Planned admissions now skip a patient who already holds a named bed (`patientsHoldingANamedBed`), and the ED long-wait check moved into one shared `isLongWait` helper (D-145 item 1).
 
 Trim tried: the forecast is already part of each route's first load and the added code is the fix itself, so lazy loading would save nothing. No other safe trim was found.
+
+Later the same day (PR head `65ea28a`, merged with main `c339231`): ED `/ward-flow/ed` raised 535.4 to 535.7. Hosted CI measured 535.4 KB against main alone 535.2 KB; the same shared `isLongWait` helper and named-bed check account for the 0.2 KB. Same trim reasoning as above.
