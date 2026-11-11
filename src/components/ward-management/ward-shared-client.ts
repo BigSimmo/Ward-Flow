@@ -13,6 +13,7 @@ import { forecastHistoryFailure } from "./forecast/forecast-history-response";
 import {
   anySignal,
   checkSharedSnapshot,
+  notModifiedUpdate,
   onDeviceClock,
   sentence,
   untilAborted,
@@ -899,8 +900,7 @@ export class SharedWorkspaceClient {
       if (value?.notModified === true) {
         if (!current || "kind" in current || value.revision !== current.revision || !Number.isFinite(value.now))
           throw new Error("Incompatible workspace data");
-        if (this.view.snapshot === current)
-          this.publish({ snapshot: { ...current, now: value.now }, receivedAt: Date.now() });
+        if (this.view.snapshot === current) this.publish(notModifiedUpdate(current, value.now, Date.now()));
       } else {
         this.adopt(value.snapshot);
         this.fullReadAt = Date.now();

@@ -190,6 +190,43 @@ describe("shared snapshot access context", () => {
     expect(view?.snapshot?.revision).toBe(2);
     client.dispose();
   });
+
+  // Performance audit (11 Nov 2026): an unchanged poll in the same server minute keeps the snapshot's
+  // identity, so the board does not re-render every three seconds; the receipt time still moves.
+  it("keeps the snapshot object on a not-modified poll in the same minute", async () => {
+    let view: SharedView | undefined;
+    let reads = 0;
+    const deviceNow = vi.spyOn(Date, "now").mockReturnValue(1_000);
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async () => {
+        reads++;
+        if (reads === 1) return Response.json({ snapshot: snapshot(1) });
+        return Response.json({ notModified: true, revision: 1, now: reads === 2 ? 642 : 643 });
+      },
+    });
+    try {
+      await client.refresh();
+      const first = view!.snapshot;
+      deviceNow.mockReturnValue(4_000);
+      await client.refresh();
+      expect(view?.snapshot).toBe(first);
+      expect(view?.receivedAt).toBe(4_000);
+      deviceNow.mockReturnValue(64_000);
+      await client.refresh();
+      expect(view?.snapshot).not.toBe(first);
+      expect(view?.snapshot?.now).toBe(643);
+      expect(view?.snapshot?.payload).toBe(first?.payload);
+      expect(view?.receivedAt).toBe(64_000);
+    } finally {
+      client.dispose();
+      deviceNow.mockRestore();
+    }
+  });
 });
 
 describe("shared view response ordering", () => {

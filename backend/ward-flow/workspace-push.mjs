@@ -77,9 +77,16 @@ export function createPushDelivery({
     if (!push) return false;
     const current = engine.actNowAlerts(world, at);
     const currentIds = current.map((alert) => alert.id);
+    // One round trip under the workspace lock: the stored baseline is read and locked, replaced
+    // only when the red set changed (jsonb arrays compare in order), and the rows of items no
+    // longer red go. Every WITH step sees the rows as they were before the statement, so `stored`
+    // is the old baseline. An item no longer red is never announced late; its rows go, so the
+    // table stays small. Done here, under the workspace and baseline locks, so it can never race a
+    // commit that has just queued a new item (deliver() reads the world without a lock and could
+    // hold a stale red set).
     const stored = await client.query(
-      "SELECT item_ids FROM ward_flow.push_baselines WHERE workspace_id=$1 AND data_mode='prototype' FOR UPDATE",
-      [workspaceId],
+      "WITH stored AS (SELECT item_ids FROM ward_flow.push_baselines WHERE workspace_id=$1 AND data_mode='prototype' FOR UPDATE), saved AS (INSERT INTO ward_flow.push_baselines(workspace_id, item_ids, evaluated_at) VALUES ($1, $2, $3) ON CONFLICT (workspace_id) DO UPDATE SET item_ids=EXCLUDED.item_ids, evaluated_at=EXCLUDED.evaluated_at WHERE ward_flow.push_baselines.item_ids IS DISTINCT FROM EXCLUDED.item_ids), cleared AS (DELETE FROM ward_flow.push_deliveries d USING ward_flow.push_subscriptions s WHERE d.subscription_id = s.id AND s.workspace_id=$1 AND NOT (d.item_id = ANY($4::text[]))) SELECT item_ids FROM stored",
+      [workspaceId, JSON.stringify(currentIds), at, currentIds],
     );
     const reset = before.state.worldGeneration !== world.state.worldGeneration;
     const previous = reset
@@ -87,24 +94,6 @@ export function createPushDelivery({
       : stored.rowCount
         ? stored.rows[0].item_ids
         : engine.actNowAlerts(before, at).map((alert) => alert.id);
-    const baselineUnchanged =
-      stored.rowCount > 0 &&
-      Array.isArray(stored.rows[0].item_ids) &&
-      stored.rows[0].item_ids.length === currentIds.length &&
-      stored.rows[0].item_ids.every((id, index) => id === currentIds[index]);
-    if (!baselineUnchanged) {
-      await client.query(
-        "INSERT INTO ward_flow.push_baselines(workspace_id, item_ids, evaluated_at) VALUES ($1, $2, $3) ON CONFLICT (workspace_id) DO UPDATE SET item_ids=EXCLUDED.item_ids, evaluated_at=EXCLUDED.evaluated_at",
-        [workspaceId, JSON.stringify(currentIds), at],
-      );
-    }
-    // An item no longer red is never announced late; its rows go, so the table stays small. Done
-    // here, under the workspace and baseline locks, so it can never race a commit that has just
-    // queued a new item (deliver() reads the world without a lock and could hold a stale red set).
-    await client.query(
-      "DELETE FROM ward_flow.push_deliveries d USING ward_flow.push_subscriptions s WHERE d.subscription_id = s.id AND s.workspace_id=$1 AND NOT (d.item_id = ANY($2::text[]))",
-      [workspaceId, currentIds],
-    );
     const fresh = freshAlerts(previous, current);
     if (!fresh.length) return false;
     const byRole = (await schemaVersion()) >= ACCESS_COVER_MIGRATION;

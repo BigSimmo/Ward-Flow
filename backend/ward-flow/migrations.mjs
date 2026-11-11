@@ -97,6 +97,11 @@ export const MIGRATIONS = Object.freeze([
     file: "017-account-preferences.sql",
     sha256: "dac39da6483b43b5a429d6c0b452bc46706de7a85a3319f1417c4e385baf8b9b",
   },
+  {
+    version: 18,
+    file: "018-read-path-indexes.sql",
+    sha256: "0933f754748b844e32a019e1ca2678a68a9e88412dc21e1c9b1ef0bc5587d7e1",
+  },
 ]);
 
 export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
@@ -104,7 +109,7 @@ export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
 /**
  * The oldest schema the running backend accepts. Row-level security (6), the prototype-only check
  * (7), role access (8), cover with requests (9), records saved one by one (10) and the record access
- * log with sign-outs (11) are applied to a live database separately, so the backend runs on 5 to 17:
+ * log with sign-outs (11) are applied to a live database separately, so the backend runs on 5 to 18:
  * it can deploy before those migrations, and keeps running if their infra/rollback-*.sql scripts take
  * the database back. Before 8 only the WARD_COORDINATOR_USER_IDS accounts can sign in. Before 9 there
  * is no cover, no request for access, no "not used" switch-off and no phone alert by role. Before 10
@@ -114,7 +119,8 @@ export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
  * 13 opening a referral's full detail is not logged. Before 14 closed records are never archived, so
  * the live workspace keeps growing towards its 8 MB limit. Before 15 list and TV reads are not
  * logged. Before 16 there is no shared forecast history, so each browser keeps its own. Before 17
- * Help is remembered by each browser only, not by the account.
+ * Help is remembered by each browser only, not by the account. Migration 18 adds read-path indexes
+ * only, so nothing behaves differently before it.
  */
 export const MINIMUM_RUNTIME_MIGRATION = 5;
 
