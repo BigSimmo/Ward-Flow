@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { signInStartedAt } from "@/lib/front-door-pass";
+import { signInStartedAt as wardSignInStartedAt } from "@/components/ward-management/ward-sign-in-started-at";
+import { signInStartedAt as passSignInStartedAt } from "@/lib/front-door-pass";
 
 const token = (claims: unknown) => `x.${Buffer.from(JSON.stringify(claims)).toString("base64url")}.sig`;
 
-describe("signInStartedAt", () => {
+describe.each([
+  ["front door pass", passSignInStartedAt],
+  ["ward client", wardSignInStartedAt],
+])("signInStartedAt (%s)", (_name, signInStartedAt) => {
   it("returns the oldest factor time in milliseconds", () => {
     expect(signInStartedAt(token({ amr: [{ timestamp: 200 }, { timestamp: 100 }] }))).toBe(100_000);
   });

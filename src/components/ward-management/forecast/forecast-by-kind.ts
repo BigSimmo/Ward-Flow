@@ -10,7 +10,10 @@
 // planned admission is sorted by its booked age band and, for an adult, by its legal status:
 // detained under the Act needs a locked bed, anything else an open one. Nothing is predicted.
 import { bedKindGaps, type BedKindId } from "@/components/ward-management/capacity/capacity-derivations";
-import { plannedAdmissionsStillNeedingABed } from "@/components/ward-management/capacity/planned-admissions-reducer";
+import {
+  patientsHoldingANamedBed,
+  plannedAdmissionsStillNeedingABed,
+} from "@/components/ward-management/capacity/planned-admissions-reducer";
 import { isDetainedUnderTheAct } from "@/components/ward-management/ed/ed-home-derivations";
 import { bedIsOccupied, type Admission, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
@@ -125,6 +128,7 @@ export function forecastByKind(
     until,
     waitingMovements,
     admissions,
+    patientsHoldingANamedBed([...openUnits.values()], admissions, [...movements, ...referrals]),
   );
 
   const kinds = KIND_ORDER.map((id): KindForecast => {

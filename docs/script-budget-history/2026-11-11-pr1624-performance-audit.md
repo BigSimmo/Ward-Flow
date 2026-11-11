@@ -8,10 +8,8 @@ Why it changed: the ward screen's heavy figures (capacity, bed states, occupancy
 
 Trim tried: the hook is needed on the first render of the ward screen, so lazy loading would only delay it. No other safe trim was found.
 
-## Second raise, after merging `main` at `a5d880c`
+## After merging `main` at `35c7ccd`
 
-Raised `/ward-flow` 575.4 to 575.6, `/ward-flow/referrals` 583.6 to 583.8 and `/ward-flow/capacity` 654.3 to 654.5 (0.2 KB each, within the 5 KB allowance).
+Main has since raised its own limits. This PR now keeps main's values for every screen except the ward, which goes from main's 614.1 to 614.8 (0.7 KB, within the 5 KB allowance). An earlier 0.2 KB raise to three screens is withdrawn.
 
-Measured locally with `npm run build` and `node scripts/check-script-budget.mjs --write`, main alone against this PR merged with main: every phone screen grows by 0.07 to 0.09 KB from the shared freshness context and sign-in start helper (ward 0.61 KB, statistics 0.14 KB for their own hooks). Main alone already sits within 0.1 KB of these three limits (575.32, 583.56 and 654.23 KB), so the shared growth tips them over: this PR measures 575.41, 583.63 and 654.30 KB. CI could not build main alone to compare (its worktree build failed to parse `instrumentation-client.ts`), so it counted all of it against this PR.
-
-Trim tried: the freshness context is what stops unchanged polls redrawing the app, so removing it would undo the fix.
+Measured locally with `npm run build` and `node scripts/check-script-budget.mjs --write`, main alone against this PR merged with main: the ward screen is 613.91 KB on main and 614.39 KB with this PR (+0.47 KB, the memoised figures hook). Every other phone screen is the same or about 0.06 KB smaller with this PR. The sign-in start helper keeps a Ward Flow copy so the ward's first load does not carry the front door's signing code.
