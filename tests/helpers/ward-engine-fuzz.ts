@@ -2560,6 +2560,20 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       };
     },
   ],
+  // Item 18: Collected for the first stay waiting for transport. The ED return builder above sends it
+  // only when someone is waiting, so merging main (11 Nov 2026) could leave it unsent. With nobody
+  // waiting it still sends, naming a missing stay (refused), so the sweep always covers it.
+  [
+    0,
+    (state) => {
+      const waiting = state.admissions.find((candidate) => candidate.waitingForTransport);
+      return {
+        type: "MARK_TRANSPORT_COLLECTED",
+        admissionId: waiting?.id ?? MISSING_ID,
+        actingUnitId: waiting?.unitId ?? MISSING_ID,
+      };
+    },
+  ],
 ];
 
 const ALL_BUILDERS = [...BUILDERS, ...MORE_BUILDERS];
