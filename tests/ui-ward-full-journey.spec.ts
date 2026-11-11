@@ -416,7 +416,9 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     // (Josh, 9 Nov 2026): the hero figure's button is its word, named by figure and word together
     // ("16 of 20 occupied"); the figure itself is the <b> beside it.
     const occupiedFigure = (scope: Locator) =>
-      scope.locator("p", { has: scope.page().getByRole("button", { name: /^\d+\b.*\boccupied$/iu }) }).locator("b");
+      scope
+        .locator("[data-wf-hero-figure]", { has: scope.page().getByRole("button", { name: /^\d+\b.*\boccupied$/iu }) })
+        .locator("b");
     const occupiedBeforeText = await occupiedFigure(wardScreen).innerText();
     const occupiedBeforeCount = Number(/\d+/u.exec(occupiedBeforeText)?.[0] ?? "NaN");
     expect(

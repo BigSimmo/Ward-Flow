@@ -85,6 +85,7 @@ import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { TodaysReviewScreen } from "@/components/ward-management/review/todays-review-screen";
+import { NightViewScreen } from "@/components/ward-management/night/night-view-screen";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
 import { StatisticsServicesIndexScreen } from "@/components/ward-management/statistics/statistics-services-index";
@@ -1384,6 +1385,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/reports/downtime`, render: () => createElement(DowntimePackScreen) },
   { route: `${ROUTE_PREFIX}/reports/chronology`, render: () => createElement(PatientChronologyScreen) },
   { route: `${ROUTE_PREFIX}/review`, render: () => createElement(TodaysReviewScreen) },
+  { route: `${ROUTE_PREFIX}/night`, render: () => createElement(NightViewScreen) },
 ];
 
 describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on the map)", () => {
@@ -1489,7 +1491,8 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
     // 46: the triage and risk form (`/people/[patientId]/triage`) and Start a triage (`/triage/new`), 7 Nov 2026.
     // 47: Today's review (`/review`, Home notes 4, 9 Nov 2026).
     // 48: the Leave page (`/leave`, feature 23), 9 Nov 2026. Moved in both files together.
-    expect(RENDERABLE_ROUTES.length).toBe(48);
+    // 49: the Night view (`/night`, feature plan item 29), 10 Nov 2026.
+    expect(RENDERABLE_ROUTES.length).toBe(49);
   });
 });
 

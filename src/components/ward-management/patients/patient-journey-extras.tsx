@@ -20,6 +20,7 @@ import { recordExtrasFor } from "./patient-record-extras";
 import { handoverPackAvailable, type HandoverContact, type HandoverPackInput } from "./patient-handover-pack";
 import { PatientHandoverPackButton } from "./patient-handover-pack-button";
 import { PatientHoursBreakdown } from "./patient-hours-breakdown";
+import { PatientCarerPageButton } from "../patient-carer-page";
 
 function ageSexWords(patient: Patient | undefined, dayZero: Date, now: Instant): string {
   if (!patient) return "";
@@ -48,10 +49,11 @@ export function PatientJourneyExtras({
 }) {
   // The desk's own scoped support records, so a recorded advocacy notice reads as recorded in the
   // pack (CodeRabbit, #1609); a desk never sent a record still sees it as not recorded.
-  const { referrals, dayZero, supportNotifications } = useWardFlowSelect(
+  const { referrals, dayZero, supportNotifications, units } = useWardFlowSelect(
     "referrals",
     "dayZero",
     "supportNotifications",
+    "units",
   );
   let pack: HandoverPackInput | undefined;
   if (handoverPackAvailable(movement)) {
@@ -96,6 +98,7 @@ export function PatientJourneyExtras({
     <>
       <PatientHoursBreakdown movement={movement} now={now} />
       {pack ? <PatientHandoverPackButton input={pack} dayZero={dayZero} /> : null}
+      <PatientCarerPageButton movement={movement} units={units} />
     </>
   );
 }

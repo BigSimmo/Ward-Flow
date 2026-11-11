@@ -30,12 +30,47 @@ import {
   heroChipClassName,
   useIsPhone,
   type HeroBandCell,
+  type HeroRenderPress,
 } from "@/components/wf";
+import { CountBreakdown } from "@/components/ward-management/count-breakdown";
+import type { BreakdownRow } from "@/components/ward-management/count-breakdown-model";
+import breakdownStyles from "@/components/ward-management/count-breakdown.module.css";
 
 import pageTop from "../page-top-hero.module.css";
 import styles from "./ward-board-hero.module.css";
 
-type BoardFigure = { key: string; label: string; value: number; led?: boolean; note?: string };
+type BoardFigure = {
+  key: string;
+  label: string;
+  value: number;
+  led?: boolean;
+  note?: string;
+  /** Item 5: the people this figure counts, for its breakdown. */
+  rows?: () => readonly BreakdownRow[];
+};
+
+/** Item 5: the figure's label or cell becomes a button that lists the people it counts. */
+function breakdownPress(figure: BoardFigure | undefined, now: number, testId: string): HeroRenderPress | undefined {
+  const rows = figure?.rows;
+  if (!figure || !rows) return undefined;
+  return function BoardFigureBreakdown(press) {
+    return (
+      <CountBreakdown
+        value={figure.value}
+        noun={figure.label.charAt(0).toLowerCase() + figure.label.slice(1)}
+        countedAt={now}
+        rows={rows}
+        className={press.className}
+        id={press.id}
+        labelledBy={press.labelledBy}
+        anchorClassName={breakdownStyles.cellAnchor}
+        testId={press.testId ?? testId}
+      >
+        {press.children}
+      </CountBreakdown>
+    );
+  };
+}
 
 /** Page tops: the band's short word for each figure; the shared label is still read in full. */
 const BAND_WORDS: Record<string, string> = {
@@ -155,6 +190,7 @@ export function WardBoardHero(props: {
         ),
         tone: key === "blockedToday" && figure.value > 0 ? "danger" : undefined,
         testId: `ward-board-figure-${key}`,
+        renderPress: breakdownPress(figure, props.now, `ward-board-figure-${key}-breakdown`),
       },
     ];
   });
@@ -200,6 +236,7 @@ export function WardBoardHero(props: {
                       </>
                     ),
                     testId: "ward-board-figure-pulled",
+                    renderPress: breakdownPress(byKey.get("pulled"), props.now, "ward-board-figure-pulled-breakdown"),
                   },
                   // Wider screens: Expected today joins the figures (the band then leaves it out).
                   ...(isPhone || !expected
@@ -215,6 +252,7 @@ export function WardBoardHero(props: {
                             </>
                           ),
                           testId: "ward-board-figure-expectedToday",
+                          renderPress: breakdownPress(expected, props.now, "ward-board-figure-expectedToday-breakdown"),
                         },
                       ]),
                 ]}

@@ -1,0 +1,175 @@
+/* Patient and carer page (patient-carer-page.tsx). On screen a paper preview in the dialog that
+ * follows the theme; on paper ink on white, A4, from the shared print isolation. Larger plain type
+ * than staff documents, as it is read by patients and carers. */
+
+/* The entry beside the handover pack, in the same card shape. */
+.entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.entryText {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.entryTitle {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-15) / 1.3 var(--wf-font);
+}
+
+.entrySub {
+  margin: 2px 0 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.paper {
+  display: grid;
+  gap: var(--wf-s-4);
+  padding: var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-15);
+  line-height: 1.5;
+}
+
+.head {
+  padding-bottom: var(--wf-s-3);
+  border-bottom: 2px solid var(--wf-ink-1);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.title {
+  margin: var(--wf-s-1) 0 0;
+  font-size: var(--wf-fs-20);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.ward {
+  font-weight: 700;
+}
+
+.hospital {
+  margin: var(--wf-s-1) 0 0;
+  font-size: var(--wf-fs-16);
+}
+
+.facts {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin: 0;
+}
+
+.fact {
+  display: grid;
+  grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr);
+  gap: var(--wf-s-2);
+}
+
+.fact dt {
+  font-weight: 600;
+}
+
+.fact dd {
+  margin: 0;
+}
+
+.section {
+  display: grid;
+  gap: var(--wf-s-2);
+}
+
+.sectionHead {
+  margin: 0;
+  font-size: var(--wf-fs-16);
+  font-weight: 600;
+}
+
+.list {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.footer {
+  display: grid;
+  gap: var(--wf-s-1);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.footer p {
+  margin: 0;
+}
+
+.draft {
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .fact {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}
+
+@media print {
+  .paper {
+    gap: 6mm;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--wf-print-ink);
+    font-size: 13pt;
+  }
+
+  .head {
+    border-bottom-color: var(--wf-print-ink);
+  }
+
+  .eyebrow,
+  .footer {
+    color: var(--wf-print-muted);
+  }
+
+  .title {
+    font-size: 20pt;
+  }
+
+  .hospital,
+  .sectionHead {
+    font-size: 15pt;
+  }
+
+  .footer {
+    border-top-color: var(--wf-print-rule);
+    font-size: 9pt;
+  }
+
+  .section {
+    break-inside: avoid;
+  }
+}
