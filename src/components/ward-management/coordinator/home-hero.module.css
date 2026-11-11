@@ -248,6 +248,9 @@
     padding-inline: 16px;
     overflow-x: auto;
     overflow-y: hidden;
+    /* D-144: on a phone this row only ever moves sideways. A finger on it pans the row, never the
+       row or page up and down (iPhone still slid the row vertically after every layout fix). */
+    touch-action: pan-x;
     scrollbar-width: none;
     -webkit-mask-image: linear-gradient(to right, black 88%, transparent);
     mask-image: linear-gradient(to right, black 88%, transparent);
