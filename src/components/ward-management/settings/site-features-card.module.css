@@ -9,8 +9,9 @@
   width: auto;
 }
 
-.site {
-  min-width: 12rem;
+.sitePick {
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
 }
 
 /* Phone: every control in the card takes a 40px tap height. */
@@ -18,9 +19,5 @@
   .switch,
   .undo {
     min-height: 40px;
-  }
-
-  .site {
-    min-width: 0;
   }
 }

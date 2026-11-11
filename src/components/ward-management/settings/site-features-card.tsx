@@ -3,11 +3,12 @@
 import { Flag } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 
-import { Button, Card, CardHead, Select, SrOnly, Switch } from "@/components/wf";
+import { Button, Card, CardHead, ListPicker, SrOnly, Switch } from "@/components/wf";
 import { useUnscopedWardFlow } from "@/components/ward-management/shell/ward-access";
 import { useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
-import { formatInstant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { WARD_FEATURE_FLAGS } from "@/components/ward-management/ward-feature-flags";
+import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import { ACCESS_ROLE_LABELS } from "@/components/ward-management/ward-role-access";
 import { siteByCode } from "@/components/ward-management/ward-sites";
@@ -40,19 +41,28 @@ export function SiteFeaturesCard() {
   const baseId = useId();
   const { desk } = useWardAccessSnapshot();
   const { units, now, siteFeatureSwitches, dispatch } = useUnscopedWardFlow();
-  const sites = useMemo(() => [...new Set(units.map((unit) => unit.siteCode))], [units]);
-  const [chosenSite, setChosenSite] = useState("");
-  const siteCode = sites.includes(chosenSite) ? chosenSite : undefined;
+  const sites = useMemo(
+    () =>
+      [...new Set(units.map((unit) => unit.siteCode))].map((code) => ({
+        value: code,
+        label: siteByCode(code)?.name ?? code,
+      })),
+    [units],
+  );
+  const [chosenSite, setChosenSite] = useState<string | null>(null);
+  const siteCode = sites.find((site) => site.value === chosenSite)?.value;
   const [undo, setUndo] = useState<{ siteCode: string; feature: SiteSwitchableFeature; off: boolean } | null>(null);
 
   if (desk.role !== "admin" || !mayChangeSiteFeatures(desk)) return null;
 
   const send = (feature: SiteSwitchableFeature, off: boolean) => {
     if (siteCode === undefined) return;
-    void dispatch({
-      type: "SET_SITE_FEATURE_SWITCH",
-      role: SITE_FEATURE_SWITCH_ROLE,
+    // D-142: sent under the engine's coordinator role; the record names the access admin.
+    void wardRaise(
+      dispatch,
+      SITE_FEATURE_SWITCH_ROLE,
       now,
+    )("SET_SITE_FEATURE_SWITCH", {
       siteCode,
       feature,
       off,
@@ -69,26 +79,21 @@ export function SiteFeaturesCard() {
         title="Features at this site"
         meta="Changes it for everyone here"
       />
-      <SettingRow setting="site-features-site" title="Site" testId="site-features-site">
-        <Select
-          aria-label="Site"
-          boxClassName={cardStyles.site}
-          value={siteCode ?? ""}
-          onChange={(event) => {
-            setChosenSite(event.target.value);
+      {/* Q36: the kit's picker, not a browser drop-down. It starts empty. */}
+      <div className={cardStyles.sitePick} data-setting="site-features-site">
+        <ListPicker
+          label="Site"
+          placeholder="Choose a site"
+          required
+          value={siteCode ?? null}
+          onChange={(value) => {
+            setChosenSite(value);
             setUndo(null);
           }}
-        >
-          <option value="" disabled>
-            Choose a site
-          </option>
-          {sites.map((code) => (
-            <option key={code} value={code}>
-              {siteByCode(code)?.name ?? code}
-            </option>
-          ))}
-        </Select>
-      </SettingRow>
+          options={sites}
+          testId="site-features-site"
+        />
+      </div>
       {SITE_SWITCHABLE_FEATURES.map((feature) => {
         const label = WARD_FEATURE_FLAGS[feature].label;
         const record =
@@ -106,7 +111,7 @@ export function SiteFeaturesCard() {
               siteCode === undefined
                 ? "Choose a site first"
                 : record
-                  ? `Off for everyone here since ${formatInstant(record.at)} · ${byLabel(record.by)}`
+                  ? `Off for everyone here since ${formatInstantWithDay(record.at, now)} · ${byLabel(record.by)}`
                   : "On for everyone here"
             }
           >

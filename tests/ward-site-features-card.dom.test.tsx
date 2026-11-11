@@ -106,7 +106,7 @@ describe("Features at this site", () => {
   it("starts with no site chosen, so nothing switches until one is", () => {
     settingsAs({ role: "admin", scope: { kind: "statewide" } });
     const card = screen.getByTestId("ward-settings-site-features");
-    expect(within(card).getByRole("combobox", { name: "Site" })).toHaveValue("");
+    expect(within(card).getByTestId("site-features-site")).toHaveTextContent("Choose a site");
     const row = within(card).getByTestId("site-feature-help-ask");
     expect(row).toHaveTextContent("Choose a site first");
     fireEvent.click(within(row).getByRole("switch"));
@@ -116,7 +116,9 @@ describe("Features at this site", () => {
   it("switches a feature off for the chosen site with one tap, and Undo switches it back", () => {
     settingsAs({ role: "admin", scope: { kind: "statewide" } });
     const card = screen.getByTestId("ward-settings-site-features");
-    fireEvent.change(within(card).getByRole("combobox", { name: "Site" }), { target: { value: "RPH" } });
+    fireEvent.click(within(card).getByTestId("site-features-site"));
+    fireEvent.click(screen.getByRole("option", { name: /Royal Perth Hospital/u }));
+    expect(within(card).getByTestId("site-features-site")).toHaveTextContent("Royal Perth Hospital");
     const row = () => within(screen.getByTestId("ward-settings-site-features")).getByTestId("site-feature-help-ask");
     expect(row()).toHaveTextContent("On for everyone here");
     expect(within(row()).getByRole("switch")).toHaveAttribute("aria-checked", "true");
