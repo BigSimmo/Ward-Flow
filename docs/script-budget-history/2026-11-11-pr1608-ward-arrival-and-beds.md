@@ -23,3 +23,5 @@ Trim tried: the ward hero's intake hours editor now loads as its own chunk when 
 After merging `main` at `35c7ccd`, which raised five of these screens by 0.3 to 0.4 KB, each limit is main's new limit plus this PR's same raise. No raise grew.
 
 After merging `main` at `f0db2be`, which includes #1609 and raised these screens again, each limit is main's new limit plus this PR's same raise. No raise grew.
+
+After merging `main` at `daacf21` (#1607 and #1628), each limit is again main's new limit plus this PR's same raise. No raise grew.

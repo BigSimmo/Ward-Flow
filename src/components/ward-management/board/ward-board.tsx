@@ -13,7 +13,14 @@ import {
   LEAVING_DESTINATIONS,
   type LeavingDestination,
 } from "@/components/ward-management/ward-admissions";
-import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
+import {
+  bedsPendingPreparation,
+  capacityBreakdown,
+  capacityBreakdownLists,
+} from "@/components/ward-management/ward-bed-availability";
+import type { BreakdownRow } from "@/components/ward-management/count-breakdown-model";
+import { leaveStays, releaseStays, stayBreakdownRows } from "@/components/ward-management/count-breakdown-rows";
+import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import {
   arrowTargets,
   constraintSentence,
@@ -31,6 +38,7 @@ import { derivedBedReleases } from "@/components/ward-management/ward-discharge-
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 import { confirmedHeldUpNote } from "@/components/ward-management/capacity/capacity-derivations";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 
 import { asAtStamp } from "./ward-daily-sheet";
@@ -138,6 +146,7 @@ export function WardBoard({
   // below is the one this board is about; `now` and `admissions` keep their names so every
   // derivation beneath reads unchanged.
   const network = useWardNetwork();
+  const canOpenHref = useCanOpenHref();
   const {
     units: liveUnits,
     admissions,
@@ -729,7 +738,30 @@ export function WardBoard({
    * when there is nothing to say cannot tell a reader that there is nothing to say.
    */
   const pulledIn = incoming.filter((person) => person.state === "pulled");
-  const figures: { key: string; label: string; value: number; led?: boolean; note?: string }[] = [
+  // Item 5 (count breakdown): each figure below that names people is the length of one list, and
+  // tapping it lists exactly that list, so the list and the number can never disagree.
+  const dayLists = capacityBreakdownLists(unit, bedReleases, leaveBeds, now);
+  const awayAtEdOccupants = occupants.filter((occupant) => occupant.awayAtEdHours !== null);
+  const overThreeMonthsTiles = tiles.filter((tile) => tile.kind === "occupied" && tile.bandId === "over-3-months");
+  const breakdownPersonOf = (admissionId: string) => {
+    const subject = admissions.find((a) => a.id === admissionId) ?? { id: admissionId };
+    const resolved = resolvePatientIdentity
+      ? resolvePatientIdentity(subject)
+      : resolveSubjectPatient(subject, { patients, movements });
+    return resolved.patient
+      ? { name: resolved.formalName, href: patientHref(resolved.patient.id) }
+      : { name: "Name not recorded" };
+  };
+  const stayRows = (stays: readonly { key: string; admissionId: string }[]) => () =>
+    stayBreakdownRows(stays, breakdownPersonOf, canOpenHref);
+  const figures: {
+    key: string;
+    label: string;
+    value: number;
+    led?: boolean;
+    note?: string;
+    rows?: () => readonly BreakdownRow[];
+  }[] = [
     {
       key: "availableNow",
       label: CAPACITY_FIGURE_LABELS.availableNow,
@@ -742,7 +774,8 @@ export function WardBoard({
     {
       key: "confirmedToday",
       label: CAPACITY_FIGURE_LABELS.confirmedToday,
-      value: breakdown.confirmedToday,
+      value: dayLists.confirmedToday.length,
+      rows: stayRows(releaseStays(dayLists.confirmedToday)),
       led: outgoingBasis === "confirmed",
       // NA3-06 (decision 16): Capacity's note, explaining the bed meeting's lower confirmed figure.
       note: confirmedHeldUpNote(breakdown.confirmedToday, breakdown.confirmedHeldUpToday),
@@ -750,23 +783,41 @@ export function WardBoard({
     {
       key: "expectedToday",
       label: CAPACITY_FIGURE_LABELS.expectedToday,
-      value: breakdown.expectedToday,
+      value: dayLists.expectedToday.length,
+      rows: stayRows(releaseStays(dayLists.expectedToday)),
       led: outgoingBasis === "expected",
     },
-    { key: "blockedToday", label: CAPACITY_FIGURE_LABELS.blockedToday, value: breakdown.blockedToday },
+    {
+      key: "blockedToday",
+      label: CAPACITY_FIGURE_LABELS.blockedToday,
+      value: dayLists.blockedToday.length,
+      rows: stayRows(releaseStays(dayLists.blockedToday)),
+    },
     {
       key: "awayAtEd",
       label: "Away at an ED",
-      value: occupants.filter((occupant) => occupant.awayAtEdHours !== null).length,
+      value: awayAtEdOccupants.length,
+      rows: stayRows(awayAtEdOccupants.map((occupant) => ({ key: occupant.key, admissionId: occupant.admissionId }))),
     },
-    { key: "pulled", label: "Pulled, not arrived", value: pulledIn.length },
+    {
+      key: "pulled",
+      label: "Pulled, not arrived",
+      value: pulledIn.length,
+      rows: stayRows(pulledIn.map((person) => ({ key: person.key, admissionId: person.key }))),
+    },
     { key: "blockedBeds", label: "Out of service", value: blockedTileCount },
     {
       key: "overThreeMonths",
       label: "Here over 3 months",
-      value: tiles.filter((tile) => tile.kind === "occupied" && tile.bandId === "over-3-months").length,
+      value: overThreeMonthsTiles.length,
+      rows: stayRows(overThreeMonthsTiles.map((tile) => ({ key: tile.key, admissionId: tile.key }))),
     },
-    { key: "onLeave", label: CAPACITY_FIGURE_LABELS.onLeave, value: breakdown.onLeave },
+    {
+      key: "onLeave",
+      label: CAPACITY_FIGURE_LABELS.onLeave,
+      value: dayLists.onLeave.length,
+      rows: stayRows(leaveStays(dayLists.onLeave)),
+    },
   ];
 
   // Page tops (9 Nov 2026): the hero's next step is the "Worth a look" list, the same flags it shows.

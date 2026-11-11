@@ -69,6 +69,7 @@ const PAGE_WALK_PATHS: Readonly<Record<string, string>> = {
   "statistics-eds": "/ward-flow/statistics/eds",
   "statistics-teams": "/ward-flow/statistics/teams",
   "statistics-weekly": "/ward-flow/statistics/weekly",
+  night: "/ward-flow/night",
 };
 const PAGE_WALKS = Object.keys(PAGE_WALK_PATHS);
 

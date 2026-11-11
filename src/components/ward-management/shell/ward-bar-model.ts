@@ -253,6 +253,8 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
     (pathname === officerHref() ? "Transport" : undefined) ??
     (pathname === onCallHref() ? "On-call" : undefined) ??
     (/^\/ward-flow\/reports\/downtime\/?$/u.test(pathname) ? "Downtime pack" : undefined) ??
+    // Feature plan item 29: the coordinator's overnight page names itself, not "Ward Flow".
+    (/^\/ward-flow\/night\/?$/u.test(pathname) ? "Night view" : undefined) ??
     (/^\/ward-flow\/reports\/chronology\/?$/u.test(pathname) ? "Patient chronology" : undefined) ??
     (pathname === WARD_ADD_PERSON_HREF ? "Add patient" : undefined) ??
     (/^\/ward-flow\/people\/[^/]+\/?$/u.test(pathname) ? "Patient" : undefined) ??
