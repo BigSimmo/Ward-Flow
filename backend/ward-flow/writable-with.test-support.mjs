@@ -11,7 +11,7 @@
  * @param {unknown[]} [values]
  * @returns {Array<{ sql: string, values: unknown[] }>}
  */
-export function statementSteps(sql, values = []) {
+function statementSteps(sql, values = []) {
   if (!/^WITH \w+ AS \((INSERT|UPDATE|DELETE) /.test(sql)) return [{ sql, values }];
   const steps = [];
   let index = "WITH ".length;
