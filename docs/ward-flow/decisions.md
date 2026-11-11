@@ -155,6 +155,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-130](#d-130-audit-follow-ups-every-remaining-recommendation-approved-10-november-2026)                                                               | Audit follow-ups: every remaining recommendation approved                              | Active                                           |
 | [D-131](#d-131-hard-case-demo-data-allowed-and-the-movement-diagram-follows-the-engine-10-november-2026)                                                | Hard-case demo data allowed, and the movement diagram follows the engine               | Active                                           |
 | [D-132](#d-132-audit-fixes-group-1-docs-and-ci-guards-10-november-2026)                                                                                 | Audit fixes group 1: docs and CI guards; Claude-authored sensitive changes warn        | Active                                           |
+| [D-136](#d-136-feature-batch-3-shift-change-and-follow-up-two-signed-values-10-november-2026)                                                           | Feature batch 3: two signed values (7-day diversion return, 30-minute handover list)   | Active                                           |
 | [D-138](#d-138-phone-alert-urgency-by-kind-10-november-2026)                                                                                            | Phone alert urgency by kind                                                            | Active                                           |
 | [D-139](#d-139-phone-statistics-ward-list-a-to-z-and-leave-return-times-as-typed-10-november-2026)                                                      | Phone Statistics ward list A to Z, and leave return times as typed                     | Active                                           |
 | [D-143](#d-143-mhert-is-mherl-in-the-glossary-smhmr-deferred-11-november-2026)                                                                          | MHERT is MHERL in the glossary; SMHMR deferred                                         | Active                                           |
@@ -1697,6 +1698,18 @@ is inferred.
   3. **Later the same day (17:16 UTC), Josh answered "Yes to all recommendations"** to the open questions in that thread: the demo script is rewritten from the current app in this PR; the 5 KB phone limit allowance (D-82) stays, and red mains are fixed by trimming pages for headroom, not by a never-raise rule; the merge queue stays off (D-107); a separate agent identity with a required owner review becomes a gate before real data, not a change now; and one read-only pass of hosted settings (rulesets, bypass actors, the coordinator end date, main's green rate) is allowed.
 - **Why:** these were the confirmed, low-risk audit findings; failing agent commits now would block almost every engine or legal PR, because no approval route exists yet.
 - **Boundary:** synthetic data only. No clinical rule, signed value or release changes. D-82 (5 KB phone limit raises) and D-107 (no merge queue) stand.
+
+## D-136. Feature batch 3 (shift change and follow-up): two signed values (10 November 2026)
+
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, on two decision cards in the batch 3 build thread, and "Go ahead with all your recommendations" on the feature build plan the same day. Numbered D-136 by the coordinator's allocation. D-133 is claimed by PR #1606. D-134 is claimed by PR #1608. D-135 is claimed by PR #1603.
+- **Decision:**
+  1. **Diversion return (item 28):** a person offered an alternative to admission (D-110) who returns to ED within 7 days prompts the team that took them to review. Signed as `diversionReturnReview`.
+  2. **End-of-shift handover (item 21):** the handover page lists your own open work, with "Hand to", once the shift has 30 minutes or less to run. Signed as `handoverOwnWorkLead`.
+  3. **Batch scope:** batch 3 builds items 11, 12, 21, 22, 23 and 28 of the feature build plan. Josh's go-ahead on the plan, given after D-128 item 9, starts these features while #1564 to #1577 are still open.
+  4. **Design approved (11 November 2026):** the batch 3 design review page (six screens, D-74) is approved as built, by Josh's "go ahead with all your recommendations" relayed to this thread.
+  5. **D-14 allowlist (11 November 2026):** `community/diversion-return-review.ts` joins the patient-link allowlist. It compares ids only, for one referral this team took and a later ED request, and shows the team that person's link and two times.
+  6. **Item 21 placement (11 November 2026):** the "Your open work" list sits at the top of the Handover page.
+- **Boundary:** synthetic data only. Both values are prompts: neither blocks sign-out, ranks a person or judges the alternative. Approves no merge or release.
 
 ## D-138. Phone alert urgency by kind (10 November 2026)
 

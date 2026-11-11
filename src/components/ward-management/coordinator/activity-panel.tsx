@@ -39,6 +39,7 @@ import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 
 import { CHANGE_GROUPS, type ChangeLine, changesHandoverText, useExplicitReview } from "./activity-changes";
+import { shiftLookLabel } from "@/components/ward-management/shift-first-look";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import styles from "./home-activity.module.css";
 
@@ -398,15 +399,18 @@ function FigureChecks({ checks }: { checks: readonly WardReconciliationCheck[] }
   );
 }
 
+/** "Since your review at 09:42", or, before a review this shift, "Since last night at 23:00" (item 11). */
+function changesSinceLabel(review: Review, now: Instant): string {
+  return review.reviewedAt !== undefined
+    ? `Since your review at ${formatInstantWithDay(review.reviewedAt, now)}`
+    : shiftLookLabel(review.windowStart, now);
+}
+
 function ChangesBody({ review, now, links }: { review: Review; now: Instant; links: Links }) {
-  const since = review.reviewedAt ?? review.shiftStart;
+  const since = review.reviewedAt ?? review.windowStart;
   return (
     <>
-      <p className={styles.metaLine}>
-        {review.reviewedAt !== undefined
-          ? `Since your review at ${formatInstantWithDay(review.reviewedAt, now)}`
-          : `Since ${formatInstantWithDay(review.shiftStart, now)}, the start of your shift`}
-      </p>
+      <p className={styles.metaLine}>{changesSinceLabel(review, now)}</p>
       {review.arrived.length > 0 ? (
         <div className={styles.arrived} role="status">
           <span>
@@ -473,11 +477,9 @@ function ReviewFoot({ review, now }: { review: Review; now: Instant }) {
   const count = review.shown.length;
   const [copyNote, setCopyNote] = useState<string | undefined>();
   const copyHandover = () => {
-    const sinceLabel =
-      review.reviewedAt !== undefined
-        ? `Since your review at ${formatInstantWithDay(review.reviewedAt, now)}`
-        : `Since ${formatInstantWithDay(review.shiftStart, now)}, the start of your shift`;
-    const text = changesHandoverText(review.shown, sinceLabel, (at) => formatInstantWithDay(at, now));
+    const text = changesHandoverText(review.shown, changesSinceLabel(review, now), (at) =>
+      formatInstantWithDay(at, now),
+    );
     copyTextToClipboard(text).then(
       () => setCopyNote("Copied as handover text."),
       () => setCopyNote("Copying is not available in this browser."),

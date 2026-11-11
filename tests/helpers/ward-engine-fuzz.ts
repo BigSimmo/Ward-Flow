@@ -2536,6 +2536,39 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
   ],
 ];
 
+/**
+ * Batch 3 items 21 and 23: accept a waiting hand-over as its receiving desk (the demo seeds one),
+ * hand an open carer callback on as its owner, tick one off, or record one on a current stay. The
+ * kind is chosen by `pickKind`, falling through to recording when its subject is missing.
+ */
+function handoverWorkDraft(state: WardFlowState, pickKind: number): Draft {
+  const waiting = (state.handedItems ?? []).find((record) => record.acceptedAt === undefined);
+  const owned = (state.carerCallbacks ?? []).find((record) => record.madeAt === undefined);
+  if (waiting && pickKind === 0)
+    return {
+      type: "ACCEPT_HANDED_ITEM",
+      role: waiting.to.role,
+      handedItemId: waiting.id,
+      ...(waiting.to.unitId ? { actingUnitId: waiting.to.unitId } : {}),
+    };
+  if (owned && pickKind === 1)
+    return {
+      type: "HAND_OVER_ITEM",
+      role: owned.owner.role,
+      item: { kind: "callback", callbackId: owned.id },
+      toRole: owned.owner.role === "coordinator" ? "ward" : "coordinator",
+      ...(owned.owner.unitId ? { actingUnitId: owned.owner.unitId } : {}),
+    };
+  if (owned && pickKind === 2) return { type: "MARK_CARER_CALLBACK_MADE", role: "coordinator", callbackId: owned.id };
+  const stay = state.admissions.find((admission) => admission.state === "occupied");
+  return {
+    type: "RECORD_CARER_CALLBACK",
+    role: "coordinator",
+    admissionId: stay?.id ?? MISSING_ID,
+    bestAfter: Math.floor(currentNow) + 60,
+  };
+}
+
 const ALL_BUILDERS = [...BUILDERS, ...MORE_BUILDERS];
 
 const TOTAL_WEIGHT = ALL_BUILDERS.reduce((sum, [weight]) => sum + weight, 0);
@@ -2623,6 +2656,13 @@ export function nextEvent(
   }
   // Aimed on 9 Nov 2026, when adding the staff request builders shifted the random runs: a reset is
   // counted as accepted only from a state with no refusal yet, so now and then reset at the first step.
+  // Batch 3 items 21 and 23 (10 Nov 2026): each seeded run's last step sends one of the four, by
+  // seed, so no earlier step's draw moves and a short run still sends every one.
+  if (seed !== undefined && step === steps - 1) {
+    const draft = handoverWorkDraft(state, seed % 4);
+    FUZZED_EVENT_TYPES.add(draft.type);
+    return { now: currentNow, ...draft } as unknown as WardFlowEvent;
+  }
   if (seed !== undefined && step === 0 && seed % 25 === 0) {
     FUZZED_EVENT_TYPES.add("RESET_SCENARIO");
     return { type: "RESET_SCENARIO", role: "demo", now: currentNow } as WardFlowEvent;
