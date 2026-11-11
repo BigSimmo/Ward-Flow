@@ -37,18 +37,28 @@ export function trustedProxyAddressesFromEnv(env: NodeJS.Dict<string | undefined
  * `X-Real-IP`, else the last `X-Forwarded-For` hop, is read only when the socket peer is a listed
  * trusted proxy, or `*` is listed. Otherwise the socket address, or `"unknown"` when the Next route
  * has no socket, so a caller cannot choose their bucket by sending a header.
+ *
+ * Fallback (D-147): while `WARD_TRUSTED_PROXY_ADDRESSES` names no proxy, the key stays the edge's
+ * `X-Real-IP`, else the last `X-Forwarded-For` hop, as before A4-02. The Next route has no socket,
+ * so the strict rule would put every caller in one `"unknown"` bucket, and ten wrong tries from
+ * anyone would refuse every presenter. Nothing is logged.
  */
 export function edgeAddress(
   headers: Headers,
   trustedProxyAddresses: readonly string[] = trustedProxyAddressesFromEnv(),
   socketAddress = "unknown",
 ): string {
+  if (trustedProxyAddresses.length === 0) return forwardedAddress(headers) || "unknown";
   const socket = (socketAddress || "unknown").replace(/^::ffff:/i, "").slice(0, 64) || "unknown";
   if (!trustedProxyAddresses.includes("*") && !trustedProxyAddresses.includes(socket)) return socket;
+  return forwardedAddress(headers) || socket;
+}
+
+/** `X-Real-IP`, else the last `X-Forwarded-For` hop, capped at 64 characters; "" when neither is sent. */
+function forwardedAddress(headers: Headers): string {
   const real = headers.get("x-real-ip")?.trim();
-  const hops = headers.get("x-forwarded-for")?.split(",") ?? [];
-  const last = hops.at(-1)?.trim() ?? "";
-  return (real || last || socket).slice(0, 64) || "unknown";
+  const last = headers.get("x-forwarded-for")?.split(",").at(-1)?.trim();
+  return (real || last || "").slice(0, 64);
 }
 
 function pruneWrongTries(now: number) {

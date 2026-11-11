@@ -453,8 +453,12 @@ describe("POST /api/session", () => {
     expect(edgeAddress(dual, ["10.0.0.2"], "10.0.0.2")).toBe("192.0.2.40");
     expect(edgeAddress(dual, ["10.0.0.2"], "::ffff:10.0.0.2")).toBe("192.0.2.40");
     expect(edgeAddress(dual, ["10.0.0.2"], "198.51.100.8")).toBe("198.51.100.8");
-    expect(edgeAddress(dual, [])).toBe("unknown");
+    expect(edgeAddress(dual, ["10.0.0.2"])).toBe("unknown");
     expect(edgeAddress(new Headers(), ["*"])).toBe("unknown");
+    // D-147 fallback: with no trusted proxy configured, keying stays as before A4-02.
+    expect(edgeAddress(dual, [])).toBe("192.0.2.40");
+    expect(edgeAddress(forwardedOnly, [])).toBe("192.0.2.41");
+    expect(edgeAddress(new Headers(), [])).toBe("unknown");
     expect(trustedProxyAddressesFromEnv({ WARD_TRUSTED_PROXY_ADDRESSES: "10.0.0.2, *, not-an-ip" })).toEqual([
       "10.0.0.2",
       "*",
@@ -470,12 +474,26 @@ describe("POST /api/session", () => {
     expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.50", "198.51.100.99"))).status).toBe(429);
   });
 
-  it("ignores a caller-sent address when no trusted proxy is configured (A4-02)", async () => {
+  it("keeps per-address keying while no trusted proxy is configured (D-147)", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
     vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
     vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "");
+    for (let attempt = 0; attempt < 10; attempt += 1)
+      expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.70"))).status).toBe(401);
+    expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.70"))).status).toBe(429);
+    // Another address keeps its own budget, so one guesser cannot refuse every presenter.
+    expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.71"))).status).toBe(401);
+    expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.72"))).status).toBe(204);
+  });
+
+  it("ignores a caller-sent address once a trusted proxy is configured but the socket is not it (A4-02)", async () => {
+    vi.stubEnv("WARD_FRONT_DOOR", "required");
+    vi.stubEnv("WARD_PASS_SECRET", SECRET);
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
+    vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "10.0.0.2");
     for (let attempt = 0; attempt < 10; attempt += 1)
       expect((await POST(post({ demoCode: "WRONG" }, `198.51.100.${attempt}`))).status).toBe(401);
     // Rotating X-Real-IP does not open a new bucket: every request shares "unknown".
