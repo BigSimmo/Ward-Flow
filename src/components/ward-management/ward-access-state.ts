@@ -55,6 +55,9 @@ import {
 import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 import { siteByCode } from "./ward-sites";
 import { returnEarlyNoticesFor } from "./out-of-area/return-early";
+import { diversionReturnsForTeam } from "./community/diversion-return-review";
+import { CLINICAL_VALUES } from "./ward-clinical-values";
+import { MINUTES_PER_DAY } from "./ward-clock";
 import { journeySentByDesk, referralSentByDesk } from "./ward-referral-sender";
 import { isBreakGlassReviewId } from "./ward-break-glass-review-id";
 
@@ -70,12 +73,32 @@ type Context = {
   readonly inboxSubjectIds: ReadonlySet<string>;
   readonly auditEvents: readonly AuditEvent[];
   readonly reviewableBreakGlassEventIds: ReadonlySet<string>;
+  /** The time the copy is cut at, for the windowed derivations below. */
+  readonly now: number;
 };
 
 const keep =
   <K extends keyof WardFlowState>(key: K) =>
   (context: Context): WardFlowState[K] =>
     context.state[key];
+
+/**
+ * D-152: the community desk's own returns to ED after a diversion, from the whole workspace. Any
+ * other desk gets none: a ward, ED, officer or coordinator copy never carries them.
+ */
+function diversionReturnsForDesk(context: Context): NonNullable<WardFlowState["diversionReturns"]> {
+  const { access } = context;
+  if (access.role !== "community" || access.scope.kind !== "team") return [];
+  const ownTeam = communityTeamKey(access.scope.teamName);
+  if (ownTeam === "") return [];
+  const sent = new Set(context.scoped.referrals.map((referral) => referral.id));
+  return diversionReturnsForTeam(
+    context.state,
+    (teamName) => communityTeamKey(teamName) === ownTeam,
+    CLINICAL_VALUES.diversionReturnReview.value * MINUTES_PER_DAY,
+    context.now,
+  ).filter((record) => sent.has(record.referralId));
+}
 
 /** Every ward of the site is inside the desk's scope (and the site has a ward). */
 function siteWithinScope(context: Pick<Context, "state" | "unitIn">, siteCode: string): boolean {
@@ -380,6 +403,10 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
       seesSite: (siteCode) => context.state.units.some((unit) => unit.siteCode === siteCode && context.unitIn(unit.id)),
       seesStay: (admissionId) => wholeStay(context, admissionId),
     }),
+  // Shared mode (D-152, item 28): a community desk is not sent the later ED request, so the return
+  // is found in the whole workspace. Only the taking team hears it, as a referral id it is already
+  // sent and the time back: never the ED, the movement or anything typed.
+  diversionReturns: (context) => diversionReturnsForDesk(context),
   repatriations: (context) =>
     context.coordinator
       ? context.state.repatriations.filter((record) => context.admissionIds.has(record.admissionId))
@@ -450,6 +477,7 @@ export function scopeWardFlowState(
     admissionIds,
     inboxSubjectIds,
     reviewableBreakGlassEventIds: options.reviewableBreakGlassEventIds ?? new Set<string>(),
+    now: options.now,
   };
   const auditEvents = state.auditEvents.filter(
     (event) =>
@@ -478,6 +506,7 @@ export function scopeWardFlowState(
   if (state.handedItems === undefined) delete next.handedItems;
   if (state.carerCallbacks === undefined) delete next.carerCallbacks;
   if ((next.returnEarlyNotices as unknown[]).length === 0) delete next.returnEarlyNotices;
+  if ((next.diversionReturns as unknown[]).length === 0) delete next.diversionReturns;
   return {
     state: closeReferences(next as WardFlowState, scoped.datesOnlyAdmissionIds, state, access.role !== "executive"),
     breakGlassPatientIds: scoped.breakGlassPatientIds,
