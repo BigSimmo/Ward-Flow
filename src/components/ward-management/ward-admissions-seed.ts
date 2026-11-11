@@ -1247,6 +1247,13 @@ function occupantCohort(unitId: string): GeneratedSeedPatientCohort {
 }
 
 /**
+ * Feature item 4 (11 Nov 2026): one synthetic seventeen year old on an adult ward (SCGH adult open,
+ * AD-SCGA-09), so the under 18 on an adult ward notice can be seen. Born September 2009, so the
+ * person stays under 18 through the demonstration year.
+ */
+const UNDER_18_ON_ADULT_WARD = "PT-G-AD-SCGA-09";
+
+/**
  * The generated people in these beds (seed-link plan task T1 names them `PT-G-<admission id>`),
  * built here, next to the records they describe, as `ward-patients-seed.ts` asks. Owner rule,
  * 25 Sept 2026: every seeded record belongs to a patient who exists.
@@ -1261,4 +1268,5 @@ export const generatedOccupantPatients: Patient[] = wardAdmissions
       cohort: occupantCohort(admission.unitId),
       index,
     }),
-  );
+  )
+  .map((patient) => (patient.id === UNDER_18_ON_ADULT_WARD ? { ...patient, dateOfBirth: "2009-09-20" } : patient));
