@@ -87,6 +87,8 @@ describe("Statistics Map: a ward transfer out is a move, not a discharge", () =>
   });
 
   it("the live Map's Gone today does not rise for the transfer", () => {
+    const ended = moved.admissions.find((a) => a.id === source.id)!;
+    expect(Math.floor(ended.leftAt! / 1440)).toBe(Math.floor(REPORT_NOW / 1440));
     expect(liveGoneToday(moved)).toBe(liveGoneToday(seed));
   });
 
