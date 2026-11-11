@@ -10,25 +10,25 @@ import { Button } from "@/components/wf";
  */
 export function ListPrintButton({
   variant = "sec",
+  iconOnly = false,
   disabled,
   testId,
 }: {
   variant?: "sec" | "ghost";
+  /** The printer alone, named "Print this list", where a narrow card head has no room for the word. */
+  iconOnly?: boolean;
   disabled?: boolean;
   testId?: string;
 }) {
-  return (
-    <Button
-      variant={variant}
-      size="sm"
-      icon={Printer}
-      disabled={disabled}
-      aria-label="Print this list"
-      data-print-hide
-      data-testid={testId}
-      onClick={() => window.print()}
-    >
-      Print
-    </Button>
-  );
+  const shared = {
+    variant,
+    size: "sm",
+    icon: Printer,
+    disabled,
+    "aria-label": "Print this list",
+    "data-print-hide": true,
+    "data-testid": testId,
+    onClick: () => window.print(),
+  } as const;
+  return iconOnly ? <Button {...shared} iconOnly /> : <Button {...shared}>Print</Button>;
 }

@@ -2,7 +2,16 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Card, CardBody, CardHead, FilterChip, StatusGlyph, tableClasses, type WfTone } from "@/components/wf";
+import {
+  Card,
+  CardBody,
+  CardHead,
+  FilterChip,
+  StatusGlyph,
+  tableClasses,
+  useIsPhone,
+  type WfTone,
+} from "@/components/wf";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
@@ -63,6 +72,7 @@ export function LeaveScreen() {
   const access = useEffectiveWardAccess();
   const canOpenHref = useCanOpenHref();
   const [needsActionOnly, setNeedsActionOnly] = useState(false);
+  const isPhone = useIsPhone();
   const rows = useMemo(() => {
     const places = wardPlaceLookup(units);
     const names = wardNames(units);
@@ -80,10 +90,7 @@ export function LeaveScreen() {
   const onLeave = rows.filter((row) => row.status !== "absent").length;
   return (
     <main id="main-content" className={styles.main} data-testid="ward-leave-screen">
-      <div className={styles.head}>
-        <h1 className={styles.title}>Leave</h1>
-        <ListPrintButton disabled={shown.length === 0} testId="ward-leave-print" />
-      </div>
+      <h1 className={styles.title}>Leave</h1>
       {/* On paper only: what the list holds and when, as the other printed lists say. */}
       <p className={styles.printScope} data-testid="ward-leave-print-scope">
         {needsActionOnly ? "Overdue or absent only" : "Everyone on leave"} · As at{" "}
@@ -93,14 +100,19 @@ export function LeaveScreen() {
         <span className={styles.figure}>{onLeave}</span> on leave · <span className={styles.figure}>{dueToday}</span>{" "}
         due back today · <span className={styles.figure}>{needsAction.length}</span> overdue or absent
       </p>
-      <Card aria-labelledby="ward-leave-list">
+      <Card aria-labelledby="ward-leave-list" className={styles.listCard}>
         <CardHead
           id="ward-leave-list"
           title="On leave"
           action={
-            <FilterChip pressed={needsActionOnly} onPressedChange={setNeedsActionOnly} count={needsAction.length}>
-              Overdue or absent
-            </FilterChip>
+            // Print sits with the list it prints, as on Legal forms and Movements, so the page title
+            // keeps its own line height. On a phone the printer alone keeps the head on one line.
+            <>
+              <FilterChip pressed={needsActionOnly} onPressedChange={setNeedsActionOnly} count={needsAction.length}>
+                Overdue or absent
+              </FilterChip>
+              <ListPrintButton iconOnly={isPhone} disabled={shown.length === 0} testId="ward-leave-print" />
+            </>
           }
         />
         <CardBody flush>

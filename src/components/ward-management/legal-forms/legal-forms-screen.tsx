@@ -1090,7 +1090,8 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                 <CardHead
                   title={shownView === "history" ? "Closed moves with a form" : "Everyone on a form"}
                   level={2}
-                  aside={
+                  // The note sits under the title and wraps, so the list's tools keep the right edge.
+                  meta={
                     <span className={styles.meta}>
                       {highlight
                         ? `${highlightCount} of ${rows.length} highlighted, all rows stay`

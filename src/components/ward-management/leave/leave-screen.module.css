@@ -7,13 +7,6 @@
   padding: var(--wf-s-4);
 }
 
-.head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-3);
-}
-
 .title {
   margin: 0;
   font-size: var(--wf-fs-20);
@@ -94,12 +87,26 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Overdue or absent rows: the ward page where the leave is ended. */
+/* Overdue or absent rows: the ward page where the leave is ended. The kit's quiet link look
+ * (figure.module.css `.link`): accent ink and an underline, so it reads as a link in dark too. */
 .wardLink {
   display: block;
   margin-top: 2px;
   font-size: var(--wf-fs-12);
   color: var(--wf-accent-ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+
+.wardLink:hover {
+  text-decoration-thickness: 2px;
+}
+
+.wardLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }
 
 .printScope {
@@ -206,8 +213,11 @@
     display: inline;
   }
 
+  /* Inline-block, so the link's underline stops at the link and skips the separator. */
   .table td.ward .wardLink::before {
     content: " · ";
+    display: inline-block;
+    white-space: pre;
     color: var(--wf-ink-2);
   }
 
@@ -231,8 +241,22 @@
 
 /* Paper: the whole list in the page's flow, with what it holds and when. */
 @media print {
+  /* Same paper as Discharges and the bed-meeting sheet (P048). */
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
   .main {
     padding: 0;
+  }
+
+  /* Paper takes no card chrome: the list prints as a plain ruled table, so no shadow or rounded edge
+   * is cut at the page's content edge. */
+  .main .listCard {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .printScope {
