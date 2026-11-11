@@ -659,7 +659,7 @@ describe("who may raise which event", () => {
     const service = { role: "coordinator", scope: { kind: "service", service: "East Metro" } } as const;
     expect(commandRefusal(world, statewide, deskCommand(statewide, outage) as Record<string, unknown>, at)).toBeNull();
     expect(commandRefusal(world, service, deskCommand(service, outage) as Record<string, unknown>, at)).toBe(
-      "This change is not part of your role.",
+      "Only the statewide coordinator records an outage.",
     );
   });
 });

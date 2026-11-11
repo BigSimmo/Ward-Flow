@@ -653,10 +653,11 @@ export function commandRefusal(
   // coordinator was returned above; the statewide access admin is let through here (D-142, Josh's
   // amendment to D-80 for this one action); every other desk, a service coordinator too, is refused.
   if (type === "SET_SITE_FEATURE_SWITCH") return siteFeatureSwitchRefusal(access, supplied);
-  // Batch 4 item 25 (D-142): an outage record is network-wide, so only the statewide coordinator
-  // (returned above) records one; a service coordinator is refused.
-  if (type === "RECORD_OUTAGE_WINDOW") return notYours;
   if (access.role === "admin" || access.role === "executive" || role === "demo") return notYours;
+  // Batch 4 item 25 (D-142): an outage record is network-wide, so only the statewide coordinator
+  // (returned above) records one; a service coordinator is refused. The role itself is allowed, so
+  // the permission matrix reads this as a place limit, like the site switch above.
+  if (type === "RECORD_OUTAGE_WINDOW") return "Only the statewide coordinator records an outage.";
   // A service coordinator is the coordinator inside its service (Josh, 10 Oct 2026: the
   // coordinator takes every action), so only its place limits it, below.
   if (access.role !== "coordinator") {
