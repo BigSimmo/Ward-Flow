@@ -31,10 +31,6 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "capacity/ward-closure-panel.tsx": { cover: "held", why: "Held once a reason or reopening time is chosen." },
   "board/ward-board.tsx": { cover: "popup", why: "Departure and release confirms are modal." },
   "community/community-screen.tsx": { cover: "held" },
-  "ward/ward-intake-window-control.tsx": {
-    cover: "popup",
-    why: "Tonight's intake hours are set inside the control's own Dialog (item 13, 10 Nov 2026).",
-  },
   "community/use-community-screen-overlays.ts": { cover: "popup", why: "Transport booking is a modal sheet." },
   "coordinator/activity-panel.tsx": { cover: "popup", why: "Mark read is one tap inside the Activity drawer." },
   "coordinator/call-sheet.tsx": { cover: "held", why: "Held while a call batch save is in flight." },

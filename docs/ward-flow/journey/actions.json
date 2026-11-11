@@ -948,8 +948,8 @@
         },
         {
           "path": "src/components/ward-management/coordinator/shortlist-panel.tsx",
-          "line": 844,
-          "sha256": "520e79f35b67ef8592dc6439642f36413b0fdb607849b0ce0635ea6271e78a88"
+          "line": 843,
+          "sha256": "dd5c42ab264a46e690ddbc328f01f8d381b903154442fef8835651654a0012db"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
@@ -1205,8 +1205,8 @@
         },
         {
           "path": "src/components/ward-management/coordinator/shortlist-panel.tsx",
-          "line": 886,
-          "sha256": "520e79f35b67ef8592dc6439642f36413b0fdb607849b0ce0635ea6271e78a88"
+          "line": 885,
+          "sha256": "dd5c42ab264a46e690ddbc328f01f8d381b903154442fef8835651654a0012db"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
