@@ -262,7 +262,7 @@ describe("a ward or ED desk is not offered pages outside its role (DA-09)", () =
   it("points the brand at the desk's own home", () => {
     atDesk(WARD_DESK);
     render(wrap(<WardRail />));
-    expect(screen.getByRole("link", { name: "Ward Flow WA — home" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Ward Flow WA, home" })).toHaveAttribute(
       "href",
       "/ward-flow/ward/rph-adult-secure",
     );
@@ -270,7 +270,7 @@ describe("a ward or ED desk is not offered pages outside its role (DA-09)", () =
 
   it("keeps the brand on Ward Flow's home for the coordinator", () => {
     render(wrap(<WardRail />));
-    expect(screen.getByRole("link", { name: "Ward Flow WA — home" })).toHaveAttribute("href", "/ward-flow");
+    expect(screen.getByRole("link", { name: "Ward Flow WA, home" })).toHaveAttribute("href", "/ward-flow");
   });
 
   it("offers an ED desk no Governance link from the rail's More sheet", () => {

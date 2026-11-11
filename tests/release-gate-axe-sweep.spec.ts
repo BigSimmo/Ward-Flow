@@ -39,6 +39,7 @@ const ROUTES = [
   ["/handover", "ward-handover-page"],
   ["/help", "ward-coordinator", ""],
   ["/hub", "ward-hub-page"],
+  ["/leave", "ward-leave-screen"],
   ["/legal-forms", "ward-legal-forms-page"],
   ["/movements", "ward-movements-page"],
   [`/movements/${encodeRecordAddress("WF-001")}`, "ward-person-screen"],
@@ -61,6 +62,8 @@ const ROUTES = [
   ["/statistics/compare", "ward-statistics-compare-screen"],
   ["/statistics/ed/rph-ed", "ward-statistics-ed-screen"],
   ["/statistics/eds", "ward-statistics-eds-index"],
+  // Overview folded into the Statistics home (D-77); the old address forwards there.
+  ["/statistics/overview", "ward-statistics-screen", "/statistics"],
   ["/statistics/service/North%20Metro", "ward-statistics-service-screen"],
   ["/statistics/services", "ward-statistics-services-index"],
   ["/statistics/teams", "ward-statistics-teams-index"],
@@ -157,12 +160,14 @@ for (const [route, screenId, destination = route] of ROUTES) {
 
 /**
  * M159 (final master audit, 10 Nov 2026): the sweep above runs as the statewide coordinator, who
- * sees every screen. These run again as the ward, ED, community and transport officer desks, with
- * role access on, on each desk's most-used routes, so a screen drawn differently for a desk is
- * scanned as that desk sees it. Each desk is signed in the way `?flags=role-access:on` signs one in
- * locally: its role and place ids in session storage (`ui-ward-tour-targets.spec.ts`). Every route
- * listed is one the desk may open (`ROLE_SCREENS`), so the page must stay put, never be sent on to
- * the desk's home. The officer desk opens only four screens, so it has four routes. Synthetic data only.
+ * sees every screen. These run again as the ward, ED, community, bed manager, executive and
+ * transport officer desks, with role access on, on each desk's most-used routes, so a screen drawn
+ * differently for a desk is scanned as that desk sees it (A8-04 added the bed manager and executive
+ * desks). Each desk is signed in the way `?flags=role-access:on` signs one in locally: its role and
+ * place ids in session storage (`ui-ward-tour-targets.spec.ts`). Every route listed is one the desk
+ * may open (`ROLE_SCREENS`), so the page must stay put, never be sent on to the desk's home. The
+ * officer desk opens only four screens and the executive desk three, so they have that many routes.
+ * Synthetic data only.
  */
 const DESK_SWEEPS = [
   {
@@ -214,6 +219,39 @@ const DESK_SWEEPS = [
       ["/search", "ward-patient-search"],
       ["/alerts", "ward-alerts-page"],
       ["/on-call", "ward-on-call-screen"],
+      ["/settings", "ward-settings-screen"],
+    ],
+  },
+  {
+    desk: "bed manager",
+    access: { role: "bed_manager", scope: { kind: "site", siteCode: "FSH" } },
+    routes: [
+      ["/capacity", "ward-capacity-screen"],
+      ["/wards", "ward-index"],
+      ["/hub", "ward-hub-page"],
+      ["/ward/fsh-adult-secure", "ward-unit-screen"],
+      ["/board/fsh-adult-secure", "ward-board"],
+      ["/discharges", "ward-discharge-board"],
+      ["/bed-meeting/agenda", "bed-meeting-agenda"],
+      ["/referrals", "ward-referral-board-screen"],
+      ["/movements", "ward-movements-page"],
+      ["/waiting", "ward-delays-page"],
+      ["/handover", "ward-handover-page"],
+      ["/leave", "ward-leave-screen"],
+      ["/search", "ward-patient-search"],
+      ["/statistics", "ward-statistics-screen"],
+      ["/alerts", "ward-alerts-page"],
+      ["/on-call", "ward-on-call-screen"],
+      ["/settings", "ward-settings-screen"],
+    ],
+  },
+  {
+    desk: "executive",
+    access: { role: "executive", scope: { kind: "statewide" } },
+    routes: [
+      ["/statistics", "ward-statistics-screen"],
+      // The executive's Capacity is its own counts-only view.
+      ["/capacity", "ward-capacity-executive"],
       ["/settings", "ward-settings-screen"],
     ],
   },
