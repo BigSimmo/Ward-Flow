@@ -1,10 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentPropsWithoutRef,
+  type ReactNode,
+} from "react";
 import { Download, type LucideIcon } from "lucide-react";
 
 import { Button, Card, CardHead, Hero, LiveChip, SrOnly, cx, folderTabClasses, useIsPhone } from "@/components/wf";
-import { useWardFlow, useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { calendarDateOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import type { StatisticsSection } from "./statistics-sections";
@@ -38,12 +47,58 @@ function PhoneHeroActions({ titleAction }: { titleAction?: ReactNode }) {
   );
 }
 
+const STATISTICS_LIVE_KEYS = [
+  "units",
+  "admissions",
+  "movements",
+  "referrals",
+  "bedReleases",
+  "leaveBeds",
+  "patients",
+  "dayZero",
+  "configuration",
+  "eventLog",
+  "morningRollupConfirmations",
+] as const;
+
 /**
  * Live figures that can be held still. While paused, the screen keeps reading the state and clock
  * it had at the moment of pausing, so a reader can finish a table without it reordering under them.
  */
 export function useStatisticsLive() {
-  const state = useWardFlow();
+  // Only the fields the statistics and weekly report pages read, not the whole value, which
+  // changes on every unrelated update. One object per change of these fields.
+  const picked = useWardFlowSelect(...STATISTICS_LIVE_KEYS);
+  const { units, admissions, movements, referrals, bedReleases, leaveBeds, patients } = picked;
+  const { dayZero, configuration, eventLog, morningRollupConfirmations } = picked;
+  const state = useMemo(
+    () => ({
+      units,
+      admissions,
+      movements,
+      referrals,
+      bedReleases,
+      leaveBeds,
+      patients,
+      dayZero,
+      configuration,
+      eventLog,
+      morningRollupConfirmations,
+    }),
+    [
+      units,
+      admissions,
+      movements,
+      referrals,
+      bedReleases,
+      leaveBeds,
+      patients,
+      dayZero,
+      configuration,
+      eventLog,
+      morningRollupConfirmations,
+    ],
+  );
   const now = useWardFlowClock();
   const [held, setHeld] = useState<{ state: typeof state; now: Instant } | null>(null);
   const lastUnpausedSnapshotRef = useRef({ state, now });

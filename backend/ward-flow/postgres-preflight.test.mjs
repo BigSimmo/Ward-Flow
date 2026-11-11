@@ -23,6 +23,7 @@ const sqlFiles = [
   "015-list-and-tv-views",
   "016-forecast-history",
   "017-account-preferences",
+  "018-read-path-indexes",
 ].map((name) => readFileSync(new URL(`./migrations/${name}.sql`, import.meta.url), "utf8"));
 
 function column(name, definition) {
@@ -178,7 +179,8 @@ function fixture(version = LATEST_MIGRATION) {
     for (const match of sql.matchAll(
       /CREATE (UNIQUE )?INDEX (\w+) ON ward_flow\.(\w+)\(([^)]+)\)(?: WHERE ([^;]+))?;/g,
     ))
-      addIndex(match[2], match[3], match[4], !!match[1], match[5]);
+      // The catalogue deparses LIKE in a partial index's predicate as ~~ (migration 18).
+      addIndex(match[2], match[3], match[4], !!match[1], match[5]?.replace(/ LIKE /g, " ~~ "));
     for (const match of sql.matchAll(
       /CREATE FUNCTION ward_flow\.(\w+)\(\) RETURNS trigger LANGUAGE plpgsql AS \$\$([\s\S]*?)\$\$;/g,
     ))
