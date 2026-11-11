@@ -1686,7 +1686,7 @@ is inferred.
 
 ## D-135. Batch 4, outages and pilot control: pack age and plan answers (10 November 2026)
 
-- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, choosing "Older than 24 hours" on a decision card in the Batch 4 thread (17:04 UTC), and saying "Go ahead with all your recommendations" for the feature build plan in the project chat (17:04 UTC). D-132 is claimed by open PR #1601. D-133 and D-134 are reserved for the Batch 1 and Batch 2 PRs, which were not open when this entry was written in PR #1603.
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, choosing "Older than 24 hours" on a decision card in the Batch 4 thread (17:04 UTC), and saying "Go ahead with all your recommendations" for the feature build plan in the project chat (17:04 UTC). D-132 is claimed by open PR #1601. D-133 is claimed by open PR #1606 (Batch 1). D-134 is reserved for the Batch 2 PR, which was not open when this entry was written in PR #1603.
 - **Decision:**
   1. **Outage pack age (item 24):** a ward's downtime pack counts as old once its last print or PDF save is more than 24 hours ago (`PACK_OLD_AFTER_MINUTES`, clinical-values.md). The server keeps only the time and ward of each print, never the pack.
   2. **Site switch-off (item 20):** a fixed allow-list says which features can be switched off at one site. Safety notices, legal times, ruling guards, role access, the AWOL bed hold review, ward closure and the demo reset can never be switched off.
@@ -1695,7 +1695,7 @@ is inferred.
 
 ## D-142. Batch 4: design review and all twelve answers approved, D-80 amended for site features (11 November 2026)
 
-- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, writing "Go ahead with all recommendations now for me." in the Batch 4 thread (02:21 UTC), and confirming in the project chat that every thread should go ahead with all its recommendations (02:22 UTC). D-136 is claimed by open PR #1605, D-138 is claimed by open PR #1604 and D-139 is claimed by open PR #1600. D-137, D-140 and D-141 are reserved for the Batch 5 and Batch 1 PRs, which were not open when this entry was written in PR #1603.
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, writing "Go ahead with all recommendations now for me." in the Batch 4 thread (02:21 UTC), and confirming in the project chat that every thread should go ahead with all its recommendations (02:22 UTC). D-136 is claimed by open PR #1605, D-138 is claimed by open PR #1604 and D-139 is claimed by open PR #1600. D-140 and D-141 are claimed by open PR #1606 (Batch 1). D-137 is reserved for the Batch 5 PR, which was not open when this entry was written in PR #1603.
 - **Decision:**
   1. **Design review (D-74):** the Batch 4 screens are built as drawn in the review page.
   2. **Site switch-off (item 20):** the allow-list holds five features (bed meeting TV, Top 25 criteria-led discharge, referral opened receipts, referral information needs and Help ask). The card "Features at this site" sits in the access admin's Access tab. One tap switches a feature, with Undo.
