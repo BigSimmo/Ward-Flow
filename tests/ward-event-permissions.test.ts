@@ -469,6 +469,7 @@ describe("who may raise which event", () => {
     SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
     RECORD_WARD_DIAGNOSIS: ["ward", "coordinator"],
     MARK_WEEKEND_DISCHARGE_REVIEWED: ["ward", "coordinator"],
+    RECORD_CHIEF_PSYCHIATRIST_NOTIFIED: ["ward", "coordinator"],
     SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
     SET_CLINICALLY_READY: ["ward", "coordinator"],
     SET_DISCHARGE_CRITERIA: ["ward", "coordinator"],

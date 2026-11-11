@@ -18,7 +18,7 @@ and the reducer still limit each desk to records in its own place.
 | Backend  | `deskCommand`, the role clause of `validSharedCommand` and `commandRefusal` (`backend/ward-flow/engine.ts`); no role is refused 403 in `shared-http.mjs`                                 | Called per cell                                     |
 | Database | Row level security policies and grants in `backend/ward-flow/migrations/` and `infra/`                                                                                                   | SQL read as text                                    |
 
-**193 actions x 10 desks = 1930 cells.**
+**194 actions x 10 desks = 1940 cells.**
 
 ## Matrix
 
@@ -102,6 +102,7 @@ and the reducer still limit each desk to records in its own place.
 | `RECORD_AWAY_AT_EMERGENCY_DEPARTMENT`       |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_BED_MEETING_ACTION`                 |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_CARE_PLAN`                          |            Y            |             Y             |         -         |     Y     |        -         |      Y       |       Y        |     -     |      -       |    -    |
+| `RECORD_CHIEF_PSYCHIATRIST_NOTIFIED`        |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_CLINICAL_CONTACT`                   |            Y            |             Y             |         -         |     -     |        -         |      -       |       Y        |     -     |      -       |    -    |
 | `RECORD_COMMUNITY_TREATMENT_ORDER`          |            Y            |             Y             |         -         |     -     |        -         |      -       |       Y        |     -     |      -       |    -    |
 | `RECORD_COUNTRY_EXTENSION`                  |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |

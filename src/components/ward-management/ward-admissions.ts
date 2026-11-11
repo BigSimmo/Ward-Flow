@@ -746,6 +746,17 @@ export type Admission = {
     readonly at: Instant;
     readonly by: WardFlowRole;
   }>;
+  /**
+   * Item 4 (Josh, 11 Nov 2026): when the Chief Psychiatrist was notified that this person, under 18,
+   * is on an adult ward (`RECORD_CHIEF_PSYCHIATRIST_NOTIFIED`). `notifiedAt` is the time a person
+   * typed, never pre-filled (D-93). Records what a person says happened; nothing here decides
+   * whether a notice is required, computes a deadline or blocks anything. Absent until recorded.
+   */
+  chiefPsychiatristNotice?: {
+    readonly notifiedAt: Instant;
+    readonly at: Instant;
+    readonly by: WardFlowRole;
+  };
   /** Where this person went, once they have gone. `null` until then. */
   leavingDestination: LeavingDestination | null;
   /** When they went. `null` until then. */
@@ -843,6 +854,7 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   stayBlockClearances: true,
   stayBlockRecords: true,
   weekendDischargeReviews: true,
+  chiefPsychiatristNotice: true,
   leavingDestination: true,
   leftAt: true,
   followUp: true,

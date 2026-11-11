@@ -83,6 +83,7 @@ import { PhoneBedSheet } from "./ward-bed-dossier-phone";
 import { WardDrawerDischargeDate } from "./ward-drawer-discharge-date";
 import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
+import { WardUnder18Notice } from "./ward-under-18-notice";
 
 const roleLabel = (role: keyof typeof WARD_FLOW_ROLE_LABELS) => WARD_FLOW_ROLE_LABELS[role];
 
@@ -598,6 +599,9 @@ export function WardBedDossierDrawer({
   const resolved = admission ? resolvePatientIdentity(admission) : undefined;
   const person = resolved?.patient;
   const personHref = person ? patientHref(person.id) : null;
+  // Feature item 4: under 18 on an adult ward, read from the date of birth and this ward's cohort.
+  const under18Notice =
+    !isReady && admission ? <WardUnder18Notice patient={person} unit={unit} admission={admission} /> : null;
 
   // The ward board's departure check (`board/ward-board.tsx`): name · UMRN · bed, and here the destination.
   const leavingLabel = LEAVING_DESTINATIONS.find((destination) => destination.id === drawerLeavingDestination)?.label;
@@ -802,6 +806,7 @@ export function WardBedDossierDrawer({
           sentJourney={sentJourneyControls}
           leavingCriteriaNote={criteriaDepartureNote}
           readyNote={readyNote}
+          safetyNote={under18Notice}
           actions={bedActions}
           mainId={mainId}
           notLeftPlan={expectedPlan}
@@ -1040,6 +1045,7 @@ export function WardBedDossierDrawer({
         ) : (
           <>
             {hero}
+            {under18Notice}
             <div className={styles.tabsWrap}>
               {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
               <div role="tablist" aria-label="Bed details" className={styles.tabs} onKeyDown={onTabKeyDown}>

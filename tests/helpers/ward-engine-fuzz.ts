@@ -1280,6 +1280,19 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     1,
     (state, random) => {
       const stay = stayFor(state, random, occupied);
+      return {
+        type: "RECORD_CHIEF_PSYCHIATRIST_NOTIFIED",
+        admissionId: id(stay),
+        actingUnitId: stay?.unitId ?? MISSING_ID,
+        // Item 4: a typed time at or before now; now and then one later than now, refused.
+        notifiedAt: chance(random, 0.85) ? currentNow - 30 : currentNow + 60,
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const stay = stayFor(state, random, occupied);
       const roll = random();
       return {
         type: "SET_DISCHARGE_BARRIER",
