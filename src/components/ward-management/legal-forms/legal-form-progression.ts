@@ -57,6 +57,9 @@ export function formProgression(movement: Movement | undefined): FormProgression
   return undefined;
 }
 
+// The ended-form words live at the ward root so screens share them without importing each other.
+export { FORM_RECORDED_ENDED, formRecordedEnded } from "@/components/ward-management/ward-legal-form-ended";
+
 /** The finite recorded expiry still in force; ended forms retain their expiry only as history. */
 export function currentLegalDueAt(movement: Movement): Instant | undefined {
   if (formProgression(movement) !== undefined) return undefined;

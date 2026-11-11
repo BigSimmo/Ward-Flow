@@ -1,6 +1,6 @@
 # Desk guide: Ward (nurse in charge)
 
-<!-- last-checked: 2026-10-26 -->
+<!-- last-checked: 2026-11-10 -->
 
 _Updated 2026-10-30 — role wording checked against source at `b6aa5cde`; browser coverage above is unchanged._
 
@@ -13,8 +13,8 @@ manager** and are kept as they are.
 **My ward**: your bed board, what needs doing this shift, and **Awaiting your answer** for
 referrals. Your main menu: **My ward, Coming and going, Referrals to answer, Handover**.
 
-On a phone, the bar at the bottom has **My ward, Referrals, Create, Alerts, Handover**. **Coming
-and going** is under **Menu**.
+On a phone, the bar at the bottom has **My ward, Referrals, Create, Alerts, Coming and going**.
+**Handover** is under **Menu**.
 
 ## Jobs you do most
 

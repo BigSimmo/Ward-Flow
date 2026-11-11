@@ -32,6 +32,7 @@ import { admittedStayForArrival, type PlannedAdmission } from "@/components/ward
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import type { Sex, Unit } from "@/components/ward-management/ward-model";
 import {
+  auditDetailWardInScope,
   bookingPersonShown,
   communityTeamKey,
   countsOnlyBedRelease,
@@ -419,7 +420,7 @@ export function scopeWardFlowState(
     (event) =>
       access.role !== "executive" &&
       (coordinator
-        ? auditSubjectInScope(event, { ...partial, auditEvents: [] })
+        ? auditSubjectInScope(event, { ...partial, auditEvents: [] }) && auditDetailWardInScope(event, unitIn)
         : event.category === "record-access" &&
           event.subject.kind === "admission" &&
           admissionIds.has(event.subject.admissionId) &&

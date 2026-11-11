@@ -693,18 +693,12 @@
   gap: 6px;
 }
 
-/* The access-target card in the Lists style. */
-.colRiskWho {
-  width: 26%;
-}
+/* The access-target card in the Lists style. It names nobody (M120), so no person or action column. */
 .colRiskNeeds {
-  width: 14%;
+  width: 24%;
 }
 .colRiskIn {
-  width: 14%;
-}
-.colRiskAct {
-  width: 132px;
+  width: 18%;
 }
 .listWrap {
   white-space: normal;

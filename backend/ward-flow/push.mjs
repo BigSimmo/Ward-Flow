@@ -37,6 +37,15 @@ export function pushTopic(payload) {
   const tag = payload?.tag;
   return typeof tag === "string" && Object.hasOwn(PUSH_TOPICS, tag) ? PUSH_TOPICS[tag] : PUSH_TOPIC;
 }
+
+/**
+ * Audit A8-07 (Josh, Nov 2026): the Web Push Urgency for a payload. Only an act-now (red) row is
+ * "high", which may wake a sleeping phone at once; transport jobs and team updates are "normal" so
+ * they do not wear out attention. Unknown tags are act-now, as for the topic.
+ */
+export function pushUrgency(payload) {
+  return pushTopic(payload) === PUSH_TOPIC ? "high" : "normal";
+}
 const MAX_SUBSCRIPTIONS_PER_ACCOUNT = 10;
 
 function decodedLength(value) {
@@ -250,7 +259,7 @@ export function createPushSender(config, webpush) {
       await webpush.sendNotification(
         { endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } },
         JSON.stringify(payload),
-        { vapidDetails, TTL: 3600, urgency: "high", topic: pushTopic(payload), timeout: 5000 },
+        { vapidDetails, TTL: 3600, urgency: pushUrgency(payload), topic: pushTopic(payload), timeout: 5000 },
       );
       return { outcome: "sent" };
     } catch (error) {

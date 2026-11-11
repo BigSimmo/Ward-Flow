@@ -38,7 +38,7 @@ import {
 const MINUTES_PER_HOUR = 60;
 const HOURS_PER_DAY = 24;
 
-export type ClinicalValueUnit = "minutes" | "hours" | "days" | "percent" | "count";
+export type ClinicalValueUnit = "minutes" | "hours" | "days" | "years" | "percent" | "count";
 
 /** A value is synthetic until a named person signs it for the prototype on a date (D-56). */
 export type ClinicalValueSignature =
@@ -56,7 +56,8 @@ type ClinicalValueGroup =
   | "Access and privacy"
   | "Observation levels"
   | "Triage urgency"
-  | "Patient flags";
+  | "Patient flags"
+  | "Age bands";
 
 export type ClinicalValueEntry = ClinicalValueSignature & {
   /** What the rule does, in the words Settings lists it under. */
@@ -90,6 +91,11 @@ const SIGNED_BY_JOSH_23_OCT = { status: "signed", signedBy: "Josh (product owner
  * and capacity review page).
  */
 const SIGNED_BY_JOSH_9_NOV = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-11-09" } as const;
+/**
+ * D-130 (Josh, 10 Nov 2026, "Go ahead with all recommendations"): he signed, as they were, the time
+ * and age numbers screens used to type inline (M16): the TV leave window, the ED "not yet seen" flag,
+ * the ED statistics band edges, the bed board referral chip and the age bands.
+ */
 /** Josh chose 24 hours for an old downtime pack on 10 Nov 2026 (decision card, Batch 4 item 24, D-135). */
 const SIGNED_BY_JOSH_10_NOV = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-11-10" } as const;
 
@@ -709,6 +715,63 @@ export const CLINICAL_VALUES = {
     value: 4,
     unit: "count",
   },
+  // ---- Signed as they were (M16, D-130, Josh, 10 Nov 2026) ----------------------------------------
+  tvLeaveDueBack: {
+    ...SIGNED_BY_JOSH_10_NOV,
+    name: "Ward TV lists a leave return due within",
+    group: "Discharge, leave and absence",
+    value: 12 * MINUTES_PER_HOUR,
+    unit: "minutes",
+  },
+  edReferredNotSeen: {
+    ...SIGNED_BY_JOSH_10_NOV,
+    name: "ED flags a referral not yet seen after",
+    group: "Emergency department waits",
+    value: 60,
+    unit: "minutes",
+  },
+  edStatisticsFirstBandEdge: {
+    ...SIGNED_BY_JOSH_10_NOV,
+    name: "ED statistics first wait band ends at",
+    group: "Emergency department waits",
+    value: 4 * MINUTES_PER_HOUR,
+    unit: "minutes",
+  },
+  edStatisticsThirdBandEdge: {
+    ...SIGNED_BY_JOSH_10_NOV,
+    name: "ED statistics third wait band starts at",
+    group: "Emergency department waits",
+    value: 12 * MINUTES_PER_HOUR,
+    unit: "minutes",
+  },
+  bedBoardReferralWaitWarning: {
+    ...SIGNED_BY_JOSH_10_NOV,
+    name: "Ward bed board referral chip shown as a warning after",
+    group: "Arrivals and answers",
+    value: 4 * MINUTES_PER_HOUR,
+    unit: "minutes",
+  },
+  youthAgeBandUnder: {
+    ...SIGNED_BY_JOSH_10_NOV,
+    name: "Youth age band: under",
+    group: "Age bands",
+    value: 18,
+    unit: "years",
+  },
+  olderAdultAgeBandFrom: {
+    ...SIGNED_BY_JOSH_10_NOV,
+    name: "Older adult age band: from",
+    group: "Age bands",
+    value: 65,
+    unit: "years",
+  },
+  youthServiceNoteUpTo: {
+    ...SIGNED_BY_JOSH_10_NOV,
+    name: "Youth service may still accept an adult up to",
+    group: "Age bands",
+    value: 24,
+    unit: "years",
+  },
 } satisfies Record<string, ClinicalValueEntry>;
 
 export type ClinicalValueId = keyof typeof CLINICAL_VALUES;
@@ -722,6 +785,7 @@ export function formatClinicalFigure(value: number, unit: ClinicalValueUnit): st
   if (unit === "percent") return `${value}%`;
   if (unit === "count") return String(value);
   if (unit === "days") return plural(value, "day");
+  if (unit === "years") return plural(value, "year");
   if (unit === "hours") return plural(value, "hour");
   if (value % (HOURS_PER_DAY * MINUTES_PER_HOUR) === 0 && value >= 7 * HOURS_PER_DAY * MINUTES_PER_HOUR)
     return plural(value / (HOURS_PER_DAY * MINUTES_PER_HOUR), "day");

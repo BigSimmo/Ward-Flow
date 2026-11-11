@@ -1,10 +1,18 @@
 import { describe, expect, it } from "vitest";
 
-import { closerBedOptions } from "../src/components/ward-management/out-of-area/out-of-area-model";
+import {
+  CLOSER_BED_NOTE,
+  HOME_REGION_BEDS_NOTE,
+  closerBedOptions,
+} from "../src/components/ward-management/out-of-area/out-of-area-model";
 import { wardAdmissions } from "../src/components/ward-management/ward-admissions-seed";
 import { outOfAreaLedger } from "../src/components/ward-management/ward-referrals";
 import { referralAgeBand } from "../src/components/ward-management/referrals/referral-age-band";
-import { findBeds, type BedFinderFilters } from "../src/components/ward-management/tools/ward-bed-finder";
+import {
+  BED_FINDER_NOTE,
+  findBeds,
+  type BedFinderFilters,
+} from "../src/components/ward-management/tools/ward-bed-finder";
 import { eligibleCandidatesAmong } from "../src/components/ward-management/ward-derivations-shortlist";
 import {
   eligibility,
@@ -49,8 +57,9 @@ import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
  *
  * `tests/ward-eligibility-paths-agree.test.ts` already compares the two engine paths for cohort,
  * binary sex, two legal statuses and acuity. This file widens the people and adds the other
- * surfaces. A surface that checks less must say so on screen; where it does not, the case is an
- * `it.todo` DEFECT for Josh (clinical; no behaviour changed).
+ * surfaces. A surface that checks less must say so on screen. Fixed 10 Nov 2026 (D-125): the bed
+ * finder drops forensic wards and names what it leaves out, and the out-of-area lists say they are
+ * travel lists. One gap stays an `it.todo` for Josh: the finder's Ward for choice is Female or Male.
  */
 
 const NOW = NOW_ANCHOR;
@@ -253,26 +262,33 @@ describe("M118: the Tools bed finder is a narrower quick filter", () => {
     }
   });
 
-  it("probe: lists a forensic ward today, which every engine path refuses (D7)", () => {
+  // Fixed 10 Nov 2026 (M118, D-125): the finder leaves forensic wards out, as every engine path does.
+  it("never lists a forensic ward, which every engine path refuses (D7)", () => {
     const base = units.find((unit) => !unit.isClosed && unit.cohort === "Adult" && unit.authorised)!;
     const forensic: Unit = { ...base, id: `${base.id}-m118-forensic`, forensic: true };
+    const plain: Unit = { ...base, id: `${base.id}-m118-plain`, forensic: false };
     const person = PEOPLE.find((candidate) => candidate.cohort === "Adult" && candidate.gender === candidate.sex)!;
-    const listed = findBeds([forensic], [], [], filtersFor(person, "any")).map((row) => row.unit.id);
-    expect(listed).toEqual([forensic.id]);
+    const listed = findBeds([forensic, plain], [], [], filtersFor(person, "any")).map((row) => row.unit.id);
+    expect(listed).toEqual([plain.id]);
     expect(gate(eligibility(asMovement(person), forensic, NOW).gates, "forensic").pass).toBe(false);
+    for (const person of PEOPLE.filter((candidate) => candidate.gender === candidate.sex))
+      for (const row of findBeds(units, [], [], filtersFor(person, person.sex))) expect(row.unit.forensic).toBe(false);
   });
 
-  it.todo(
-    "M118 defect: the Tools bed finder lists forensic wards (D7: never offered) and does not check security, bay sex mix or a gender-diverse person's designation; its note says the referral still checks every rule but does not name what it leaves out",
-  );
+  it("says on screen which fit rules the quick filter leaves out", () => {
+    expect(BED_FINDER_NOTE).toMatch(/forensic wards are left out/i);
+    expect(BED_FINDER_NOTE).toMatch(/quick filter/i);
+    for (const rule of ["security", "bay mix", "gender-diverse designation"])
+      expect(BED_FINDER_NOTE.toLowerCase()).toContain(rule);
+  });
   it.todo(
     "M118 gap: the Tools bed finder's 'Ward for' choice offers Female and Male only, so a gender diverse or not-recorded person cannot be put to it the way the engines take them",
   );
 });
 
 describe("M118: the out-of-area closer-bed list", () => {
-  it("probe: lists a closer ward the engine refuses (forensic, unauthorised) today", () => {
-    // Pinned so a change is noticed. Josh to confirm whether a travel list may skip the fit rules.
+  it("is a travel list on cohort only, so it still lists a closer ward the engine refuses", () => {
+    // Josh, 10 Nov 2026 (D-125): a travel list may skip the fit rules if its note says so.
     const { entries } = outOfAreaLedger(wardAdmissions, units, NOW);
     const found = entries
       .map((entry) => ({ entry, options: closerBedOptions(entry, units, NOW) }))
@@ -285,7 +301,12 @@ describe("M118: the out-of-area closer-bed list", () => {
     expect(listed).toContain(target.id);
   });
 
-  it.todo(
-    "M118 gap: out-of-area 'closer bed' options (closerBedOptions, homeRegionBeds) check cohort only (homeRegionBeds: Adult only), not authorisation, sex designation or forensic; Josh to say whether the screen must label this as a travel list, not a fit list",
-  );
+  it("labels the closer-bed and home-region lists as travel lists that check cohort only", () => {
+    for (const note of [CLOSER_BED_NOTE, HOME_REGION_BEDS_NOTE]) {
+      expect(note).toMatch(/^Travel list/);
+      for (const rule of ["authorisation", "sex designation", "forensic"]) expect(note).toContain(rule);
+    }
+    expect(CLOSER_BED_NOTE).toMatch(/same cohort only/);
+    expect(HOME_REGION_BEDS_NOTE).toMatch(/adult wards only/);
+  });
 });

@@ -13,6 +13,7 @@ import type { EdScreenContext } from "./ed-screen-context";
 import { edReferralClockLines, outstandingItem } from "./ed-screen-model";
 import { askForBedFromReferral, EdInboxDecline } from "./ed-screen-inbox";
 import { recordedEdDeparture } from "@/components/ward-management/ward-ed-presence";
+import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { formTitleForCode } from "@/lib/form-register";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { ReferralIntakeSummary } from "@/components/ward-management/referrals/referral-intake-summary";
@@ -238,7 +239,12 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
               review.map((m) => {
                 const person = who(m);
                 const minutes = minutesHere(m);
-                const tone = minutes >= ctx.accessTarget ? "danger" : minutes >= 480 ? "warning" : undefined;
+                const tone =
+                  minutes >= ctx.accessTarget
+                    ? "danger"
+                    : minutes >= ED_SEVERE_PRESSURE_WAIT_MINUTES
+                      ? "warning"
+                      : undefined;
                 // Psychiatry review tracker (Josh, 9 Nov 2026): the stage as recorded, in the row's
                 // own place. The list keeps its order; the stage never moves a row.
                 const stage = psychReviewStage(m, now, minutes);

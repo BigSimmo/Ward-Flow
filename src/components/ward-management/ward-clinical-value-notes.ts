@@ -29,6 +29,8 @@ export interface ClinicalValueNote {
 
 const OBSERVATION_LEVEL_SOURCE = "Fix plan item 10 (21 Oct 2026)";
 /** Values a screen typed in, moved into the register unsigned (D-106, Josh, 9 Nov 2026). */
+/** M16 (master audit, 10 Nov 2026): a number a screen typed inline, signed by Josh as it was (D-130). */
+const SIGNED_AS_TYPED_10_NOV_SOURCE = "Typed inline before 10 Nov 2026; signed as it was by Josh (D-130, M16)";
 const ADDED_9_NOV_SOURCE = "Added to the register 9 Nov 2026 (D-106); no clinical decision yet";
 /** The forecast alert rules in Settings, moved into the register unsigned (D-122, Josh, 10 Nov 2026). */
 const FORECAST_ALERT_SOURCE =
@@ -277,6 +279,14 @@ const CLINICAL_VALUE_NOTES = {
     source:
       "Josh's product default, 9 Nov 2026 (D-104, care plans and safety flags); quoted from memory, check before clinical use",
   },
+  tvLeaveDueBack: { source: SIGNED_AS_TYPED_10_NOV_SOURCE },
+  edReferredNotSeen: { source: SIGNED_AS_TYPED_10_NOV_SOURCE },
+  edStatisticsFirstBandEdge: { source: SIGNED_AS_TYPED_10_NOV_SOURCE },
+  edStatisticsThirdBandEdge: { source: SIGNED_AS_TYPED_10_NOV_SOURCE },
+  bedBoardReferralWaitWarning: { source: SIGNED_AS_TYPED_10_NOV_SOURCE },
+  youthAgeBandUnder: { source: "Finding 36 (Josh, 27 Oct 2026), signed as typed 10 Nov 2026 (D-130, M16)" },
+  olderAdultAgeBandFrom: { source: "Finding 36 (Josh, 27 Oct 2026), signed as typed 10 Nov 2026 (D-130, M16)" },
+  youthServiceNoteUpTo: { source: "Finding 36 (Josh, 27 Oct 2026), signed as typed 10 Nov 2026 (D-130, M16)" },
 } satisfies Record<ClinicalValueId, ClinicalValueNote>;
 
 /** Every value as a list, with its id, in the order Settings and the doc show them. */

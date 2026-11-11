@@ -123,6 +123,14 @@ governance sign-off before real patient use (D-54).
 | Triage urgency | Triage urgency D: seen within | 48 hours | Synthetic value | WA mental health triage scale urgency categories, as on the triage form (SMHMR900); listed 7 Nov 2026, awaiting Josh's sign-off | None recorded | `triageUrgencyD` |
 | Triage urgency | Triage urgency E: seen within | 14 days | Synthetic value | WA mental health triage scale urgency categories, as on the triage form (SMHMR900); listed 7 Nov 2026, awaiting Josh's sign-off | None recorded | `triageUrgencyE` |
 | Patient flags | Frequent presenter tag shown at ED presentations in 12 months | 4 | Synthetic value | Josh's product default, 9 Nov 2026 (D-104, care plans and safety flags); quoted from memory, check before clinical use | None recorded | `frequentPresenterEdPresentations` |
+| Discharge, leave and absence | Ward TV lists a leave return due within | 12 hours | Signed for the prototype by Josh (product owner), 2026-11-10 | Typed inline before 10 Nov 2026; signed as it was by Josh (D-130, M16) | None recorded | `tvLeaveDueBack` |
+| Emergency department waits | ED flags a referral not yet seen after | 1 hour | Signed for the prototype by Josh (product owner), 2026-11-10 | Typed inline before 10 Nov 2026; signed as it was by Josh (D-130, M16) | None recorded | `edReferredNotSeen` |
+| Emergency department waits | ED statistics first wait band ends at | 4 hours | Signed for the prototype by Josh (product owner), 2026-11-10 | Typed inline before 10 Nov 2026; signed as it was by Josh (D-130, M16) | None recorded | `edStatisticsFirstBandEdge` |
+| Emergency department waits | ED statistics third wait band starts at | 12 hours | Signed for the prototype by Josh (product owner), 2026-11-10 | Typed inline before 10 Nov 2026; signed as it was by Josh (D-130, M16) | None recorded | `edStatisticsThirdBandEdge` |
+| Arrivals and answers | Ward bed board referral chip shown as a warning after | 4 hours | Signed for the prototype by Josh (product owner), 2026-11-10 | Typed inline before 10 Nov 2026; signed as it was by Josh (D-130, M16) | None recorded | `bedBoardReferralWaitWarning` |
+| Age bands | Youth age band: under | 18 years | Signed for the prototype by Josh (product owner), 2026-11-10 | Finding 36 (Josh, 27 Oct 2026), signed as typed 10 Nov 2026 (D-130, M16) | None recorded | `youthAgeBandUnder` |
+| Age bands | Older adult age band: from | 65 years | Signed for the prototype by Josh (product owner), 2026-11-10 | Finding 36 (Josh, 27 Oct 2026), signed as typed 10 Nov 2026 (D-130, M16) | None recorded | `olderAdultAgeBandFrom` |
+| Age bands | Youth service may still accept an adult up to | 24 years | Signed for the prototype by Josh (product owner), 2026-11-10 | Finding 36 (Josh, 27 Oct 2026), signed as typed 10 Nov 2026 (D-130, M16) | None recorded | `youthServiceNoteUpTo` |
 
 <!-- clinical-values:end -->
 <!-- prettier-ignore-end -->

@@ -68,6 +68,7 @@ import { nextDowntimePackAt } from "./downtime-pack-schedule";
 import { useRecordDowntimePackPrint } from "./downtime-pack-print-hook";
 import { useTakeDowntimePack } from "./use-take-downtime-pack";
 import { reportDay, reportMoment } from "./report-parts";
+import { FORM_RECORDED_ENDED } from "@/components/ward-management/ward-legal-form-ended";
 import topTitle from "../shell/page-top-title.module.css";
 import styles from "./reports.module.css";
 import tabsStyles from "./downtime-pack-tabs.module.css";
@@ -810,7 +811,7 @@ export function DowntimePackScreen() {
                     <td>{line.legalStatus}</td>
                     <td className={styles.time}>{at(line.madeAt)}</td>
                     {formsReceived ? <td className={styles.time}>{at(line.receivedAt)}</td> : null}
-                    <td className={styles.time}>{at(line.typedExpiryAt)}</td>
+                    <td className={styles.time}>{line.formEnded ? FORM_RECORDED_ENDED : at(line.typedExpiryAt)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -968,7 +969,11 @@ export function DowntimePackScreen() {
                           { id: "form", label: "Form", value: line.form || NOT_RECORDED },
                           { id: "made", label: "Made", value: at(line.madeAt) },
                           { id: "received", label: "Received", value: at(line.receivedAt) },
-                          { id: "expiry", label: "Typed expiry", value: at(line.typedExpiryAt) },
+                          {
+                            id: "expiry",
+                            label: "Typed expiry",
+                            value: line.formEnded ? FORM_RECORDED_ENDED : at(line.typedExpiryAt),
+                          },
                         ],
                       })
                     }

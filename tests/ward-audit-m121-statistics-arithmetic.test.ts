@@ -5,7 +5,15 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import baseline from "./ward-audit-m121-inline-percent-baseline.json";
-import { occupancyPercent } from "../src/components/ward-management/statistics/statistics-occupancy";
+import {
+  NO_BEDS_TEXT,
+  occupancyPercent,
+  occupancyText,
+} from "../src/components/ward-management/statistics/statistics-occupancy";
+import { journeyStages } from "../src/components/ward-management/statistics/statistics-journey-view";
+import { bedStates } from "../src/components/ward-management/ward-bed-states";
+import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
+import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { median } from "../src/components/ward-management/statistics/executive-statistics-derivations";
 import { CLEARANCE_MEDIAN_MIN_JOURNEYS, clearanceMedian } from "../src/components/ward-management/ed/ed-clearance-time";
 import { edPresentationsInWindow } from "../src/components/ward-management/ward-patient-care-plans";
@@ -55,15 +63,62 @@ describe("M121 hand-worked figures", () => {
   });
 
   it("the shared occupancy helper returns 0 for a ward with no beds (callers must show no beds)", () => {
-    // Pinned: the helper's own contract. Whether each screen then says "no beds" is the todo below.
+    // Pinned: the helper's own contract. Screens print occupancyText, which says "No beds" (below).
     expect(occupancyPercent({ beds: 0, inUse: 0 })).toBe(0);
   });
-  it.todo(
-    "DEFECT M121: a ward with no beds shows 'no beds', not 0% (hospital-capacity-matrix, ward-tool-messages, statistics-ward-screen, statistics-service-screen)",
-  );
-  it.todo(
-    "DEFECT M121: 'Of beds' and the executive occupancy text divide occupied beds only, beside an in-use figure that includes pulled beds (statistics-journey-view.tsx, executive-statistics-derivations.ts, statistics-map-view.tsx)",
-  );
+  // Fixed (Josh approved, D-125, 10 Nov 2026).
+  it("M121 fixed: a ward with no beds prints 'No beds', never 0%", () => {
+    expect(NO_BEDS_TEXT).toBe("No beds");
+    expect(occupancyText({ beds: 0, inUse: 0 })).toBe("No beds");
+    expect(occupancyText({ beds: 20, inUse: 17 })).toBe("85%");
+    expect(occupancyText({ beds: 3, inUse: 0 })).toBe("0%");
+    const src = (file: string) => readFileSync(path.join(__dirname, "..", file), "utf8");
+    const dir = "src/components/ward-management/";
+    expect(src(`${dir}statistics/hospital-capacity-matrix.tsx`)).toContain("occupancyText({ beds: r.beds");
+    expect(src(`${dir}statistics/hospital-capacity-matrix.tsx`)).not.toContain("{r.occRate}%");
+    expect(src(`${dir}tools/ward-tool-messages.tsx`)).toContain("`Occupancy: ${NO_BEDS_TEXT}.`");
+    expect(src(`${dir}tools/ward-tool-messages.tsx`)).not.toMatch(/`Occupancy: \$\{(?:f\.)?occupancy\}%/);
+    expect(src(`${dir}statistics/statistics-ward-top.tsx`)).toContain("unit.beds > 0 ? `in use, ${occupancyPct}%`");
+    expect(src(`${dir}statistics/statistics-service-screen.tsx`)).toContain(
+      "totalBedBase > 0 ? `${occupancyPct}%` : NO_BEDS_TEXT",
+    );
+  });
+
+  it("M121 fixed: 'In use' is beds in use (occupied + pulled) over beds, like every other occupancy", () => {
+    const seed = seedWardFlowState();
+    const { units, admissions, bedReleases, leaveBeds, movements } = seed;
+    const totals = units.reduce(
+      (sum, unit) => {
+        const states = bedStates(unit, admissions, [...bedReleases], leaveBeds);
+        return {
+          beds: sum.beds + unit.beds,
+          occupied: sum.occupied + states.occupied,
+          inUse: sum.inUse + states.occupied + states.pulled,
+        };
+      },
+      { beds: 0, occupied: 0, inUse: 0 },
+    );
+    // The seed has a pulled bed, so the two rules give different answers and the test can tell.
+    expect(totals.inUse).toBeGreaterThan(totals.occupied);
+    const ward = journeyStages({ units, admissions, bedReleases, leaveBeds, movements, now: NOW_ANCHOR }).find(
+      (stage) => stage.id === "ward",
+    );
+    expect(ward?.breakdown.find((part) => part.label === "In use")?.value).toBe(
+      `${Math.round((totals.inUse / totals.beds) * 100)}%`,
+    );
+    expect(
+      journeyStages({ units: [], admissions, bedReleases, leaveBeds, movements, now: NOW_ANCHOR })
+        .find((stage) => stage.id === "ward")
+        ?.breakdown.find((part) => part.label === "In use")?.value,
+    ).toBe("No beds");
+    const dir = path.join(__dirname, "..", "src/components/ward-management/statistics");
+    const exec = readFileSync(path.join(dir, "executive-statistics-derivations.ts"), "utf8");
+    expect(exec).toContain("text: occupancyText({ beds: beds.total, inUse: beds.inUse }),");
+    expect(exec).not.toMatch(/beds\.occupied \/ beds\.total/);
+    const map = readFileSync(path.join(dir, "statistics-map-view.tsx"), "utf8");
+    expect(map).not.toMatch(/\* 100/);
+    expect(map).not.toMatch(/\$\{(?:site|network|row|ward)\.pct\}%|\{ward\.pct\}%/);
+  });
 });
 
 describe("M121 inline percentage ratchet", () => {

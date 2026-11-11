@@ -18,6 +18,7 @@ import {
 } from "@/components/wf";
 import { unitHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import type { StatisticsHeroTop } from "./statistics-hero";
+import { NO_BEDS_TEXT } from "./statistics-occupancy";
 import { STATISTICS_COMPARE_HREF, STATISTICS_WARDS_HREF } from "./statistics-sections";
 import { statisticsCountText, type StatisticsCount } from "./statistics-small-numbers";
 import { setStatisticsSamples } from "./statistics-samples";
@@ -152,7 +153,7 @@ export function wardStatisticsTop({
     id: "in-use",
     value: wardOccupancy.inUse,
     unit: <>&thinsp;/&thinsp;{unit.beds}</>,
-    label: `in use, ${occupancyPct}%`,
+    label: unit.beds > 0 ? `in use, ${occupancyPct}%` : `in use, ${NO_BEDS_TEXT.toLowerCase()}`,
     testId: "ward-stat-in-use",
   };
   const readyFigure: HeroFigureItem = {
