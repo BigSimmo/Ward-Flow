@@ -166,7 +166,7 @@ export function endWardFlowBrowserSession(): void {
   clearWardFlowBrowserData();
   syncWardDeskHeldCookie(null);
   // The front door's pass ends with the sign-in, so the next person at this browser starts outside.
-  endFrontDoorPass();
+  void endFrontDoorPass();
 }
 
 /**
