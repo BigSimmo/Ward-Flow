@@ -110,12 +110,16 @@ function requireWorkflow(source) {
   }
   assert.match(jobs.get("static"), /^ {4}needs: plan$/mu);
   assert.match(jobs.get("static"), /^ {4}if: \$\{\{ !cancelled\(\) && needs.plan.result == 'success' \}\}$/mu);
-  // Cheap first (Josh, 4 Nov 2026): the expensive jobs wait for static checks and the production
-  // build; a build skipped by scope (not by failure) still lets them run.
+  // Cheap first (Josh, 4 Nov 2026): the expensive jobs wait for static checks, and the browser
+  // jobs also for the production build; a build skipped by scope (not by failure) still lets them
+  // run. The unit shards do not use the build and wait for static checks only (11 Nov 2026).
   const cheapFirst = new Set(["unit", "browser", "release-gate"]);
-  const cheapGate =
-    " && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true')))";
-  for (const job of cheapFirst)
+  const staticGate = " && needs.static.result == 'success'";
+  const buildGate =
+    " && (needs.build.result == 'success' || (needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true')))";
+  const cheapGateFor = (job) => (job === "unit" ? staticGate : staticGate + buildGate);
+  assert.match(jobs.get("unit"), /^ {4}needs: \[plan, reuse, static\]$/mu, "unit: waits for static checks");
+  for (const job of ["browser", "release-gate"])
     assert.match(jobs.get(job), /^ {4}needs: \[[^\n]*\bstatic, build\]$/mu, `${job}: waits for cheap checks`);
   for (const [job, scope, reuseGate] of [
     ["unit", "unit", "unit"],
@@ -131,7 +135,7 @@ function requireWorkflow(source) {
         ? " && (needs.reuse.outputs.browser_verified != 'true' || needs.reuse.outputs.release_verified != 'true')"
         : ` && needs.reuse.outputs.${reuseGate}_verified != 'true'`;
     const route = expression(
-      `!cancelled() && needs.plan.result == 'success' && needs.plan.outputs.${scope} == 'true'${reuseGuard}${scope === "browser" ? " && github.event.pull_request.draft != true" : ""}${job === "browser" || job === "release-gate" ? " && needs.browser-build.result == 'success'" : ""}${job === "coverage" ? " && needs.unit.result == 'success'" : ""}${cheapFirst.has(job) ? cheapGate : ""}`,
+      `!cancelled() && needs.plan.result == 'success' && needs.plan.outputs.${scope} == 'true'${reuseGuard}${scope === "browser" ? " && github.event.pull_request.draft != true" : ""}${job === "browser" || job === "release-gate" ? " && needs.browser-build.result == 'success'" : ""}${job === "coverage" ? " && needs.unit.result == 'success'" : ""}${cheapFirst.has(job) ? cheapGateFor(job) : ""}`,
     );
     assert.ok(jobs.get(job)?.includes(`    if: ${route}\n`), `${job} job scope`);
     assert.match(jobs.get(job), /^ {4}needs: (?:plan|\[[^\n]*\bplan\b[^\n]*\])$/mu);
@@ -546,6 +550,16 @@ function requireWorkflow(source) {
     );
     assert.ok(jobs.get(job).includes(`${variable}: ${expression(`matrix.${key}`)}/${count}`));
   }
+  // Each browser group and release-gate suite runs on two servers at once, never more: three
+  // sharing one 4-vCPU runner made timing-sensitive journeys fail (28 September 2026).
+  for (const [job, name] of [
+    ["browser", "Run Ward browser journeys"],
+    ["release-gate", "Run the release-gate journeys"],
+    ["release-gate", "Run the second release-gate suite"],
+    ["release-gate", "Run the third release-gate suite"],
+  ])
+    assert.match(step(job, name).text, /^ {10}WARD_JOURNEY_SHARDS: "2"$/mu, `${job}: ${name} runs two shards`);
+  assert.equal([...source.matchAll(/WARD_JOURNEY_SHARDS:/gu)].length, 4, "two shards only where the contract says");
   // Static checks always run. Every expensive gate consumes its own verified evidence.
   assert.doesNotMatch(jobs.get("static"), /needs.reuse/u);
   assert.ok(!jobs.has("secret-scan"), "the secret scan runs inside the scope plan job");
@@ -901,6 +915,7 @@ for (const [before, after] of [
   ["&& github.event.pull_request.draft != true }}", "}}"],
   ["shard: [1, 2, 3, 4]", "shard: [1, 2, 3]"],
   ["group: [1, 2]", "group: [1]"],
+  ['          WARD_JOURNEY_SHARDS: "2"\n', '          WARD_JOURNEY_SHARDS: "3"\n'],
   ["            browser: webkit\n", "            browser: chromium\n"],
   ["            second_part: referrals\n", "            second_part: journeys\n"],
   [
@@ -939,7 +954,8 @@ for (const [before, after] of [
     "!cancelled() && needs.plan.result == 'success' && needs.plan.outputs.build",
     "!cancelled() && needs.plan.outputs.build",
   ],
-  ["    needs: [plan, reuse, static, build]\n", "    needs: [plan, reuse]\n"],
+  ["    needs: [plan, reuse, static]\n", "    needs: [plan, reuse]\n"],
+  ["unit_verified != 'true' && needs.static.result == 'success' }}", "unit_verified != 'true' }}"],
   ["    needs: [plan, reuse, browser-build, static, build]\n", "    needs: [plan, browser-build]\n"],
   [" && needs.static.result == 'success' && (needs.build.result == 'success'", " && (needs.build.result == 'success'"],
   [
