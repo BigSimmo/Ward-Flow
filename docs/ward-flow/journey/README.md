@@ -292,3 +292,11 @@ Source digests were re-reviewed file by file against `main` before being re-reco
 Each cited line was found again by its text. The three new events have command models in `event-dispositions.json`; no screen dispatches `SET_SITE_FEATURE_SWITCH` or `RECORD_OUTAGE_WINDOW` yet (screens wait for the Batch 4 design review, D-74).
 
 After review the same day, `ward-site-feature-switches.ts` and `ward-outage-catch-up.ts` made three helpers private (`isSiteProtectedFeature`, `SiteProtectedFeature`, `wardOwnConfirmationAt`) for the unused-export check. Only the `export` keyword changed; behaviour and cited lines are the same, so only their digests were re-recorded.
+
+## Source review — 11 Nov 2026 (Batch 4 screens, PR #1603, D-142)
+
+Source digests were re-reviewed against the Batch 4 command review (`573c7ff77`) before being re-recorded:
+
+- `ward-flow-event-roles.ts`: the `SET_SITE_FEATURE_SWITCH` comment now cites D-142. The edit replaces comment lines one for one, so no role changed and no cited line moved; only digests were re-recorded for every event citing this file.
+- `ward-site-feature-switches.ts`: by D-142 (Josh, 11 Nov 2026, amending D-80 for this one action) `mayChangeSiteFeatures` admits the statewide access admin as well as the statewide coordinator. The access admin sends the switch under the coordinator role (`SITE_FEATURE_SWITCH_ROLE`), and the record's `by` names `admin` when the shared server's `deskCommand` sets `byAccessAdmin` from the desk's membership. `reduceSiteFeatureSwitch` moved from line 91 to 102; its guards are unchanged.
+- Screens now dispatch the new events: `SET_SITE_FEATURE_SWITCH` from Features at this site on the access admin's Access tab, and `RECORD_OUTAGE_WINDOW` from the coordinator's Record an outage form on the downtime pack. The ward catch-up card, outage bed tags, Home's catch-up card, the old packs band and the ward's pack printed line read the records. The `SET_SITE_FEATURE_SWITCH`, `RECORD_OUTAGE_WINDOW` and `RECORD_DOWNTIME_PACK_PRINTED` models say so and cite the new screen tests.
