@@ -65,8 +65,8 @@ type Pending = {
 
 /**
  * D-148: an optional choice on the success toast, such as a bed closure's reason. Choosing undoes
- * the step and records it again with the choice, so the step itself stays one tap and the History
- * shows both. The new step offers Undo as the first did.
+ * the step and records it again with the choice, so the step itself stays one tap and the audit
+ * trail keeps both. The new step offers Undo as the first did.
  */
 export type UndoStepChoices = {
   label: string;

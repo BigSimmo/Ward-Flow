@@ -1734,7 +1734,7 @@ is inferred.
 ## D-148. Closing a bed stays one tap, and its toast offers a reason (11 November 2026)
 
 - **Date:** 11 November 2026. **Decided by:** Josh, approving every recommendation in the "Ward Flow live audit: verified findings and fix plan" (decision item 4) after fact-checking: "Go ahead with all recommendations after fact checking please". Numbered D-148 because D-145 is claimed by open PR #1623. D-146 is claimed by open PR #1624. D-147 is claimed by open PR #1615.
-- **Decision:** "Close this bed" in the bed drawer still saves on one tap with Undo (the 26 October fast-workflow choice). No confirm step is added. Its toast now offers "Add a reason", a kit menu of the existing ward closure reasons (`WARD_CLOSURE_REASONS`). Choosing one undoes the close and closes the bed again with that reason, so the reason is chosen, never typed, and the History shows both steps.
+- **Decision:** "Close this bed" in the bed drawer still saves on one tap with Undo (the 26 October fast-workflow choice). No confirm step is added. Its toast now offers "Add a reason", a kit menu of the existing ward closure reasons (`WARD_CLOSURE_REASONS`). Choosing one undoes the close and closes the bed again with that reason, so the reason is chosen, never typed, and the audit trail keeps both steps (the bed's History shows the closure with its reason).
 - **Why:** the live audit found closures with no reason; a reason helps the bed meeting without slowing the close.
 - **Boundary:** synthetic data only. No engine rule changes: `SET_BED_CLOSED` already took an optional reason.
 
