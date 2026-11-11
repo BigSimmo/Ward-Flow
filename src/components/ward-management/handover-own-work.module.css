@@ -83,7 +83,11 @@
 }
 
 .link {
+  /* A 40px tall target, as every tappable control on a phone (design sweep). */
+  display: inline-flex;
+  align-items: center;
   min-width: 0;
+  min-height: 40px;
   color: var(--wf-accent);
   text-decoration: none;
 }
