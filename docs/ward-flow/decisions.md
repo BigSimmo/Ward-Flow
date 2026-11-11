@@ -1921,7 +1921,7 @@ is inferred.
 
 ## D-155. Check the live clock offset before clearing it (11 November 2026)
 
-- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, "Go ahead with all recommendations" in the Ward Flow project thread for PRs #1622, #1623 and #1626, choosing the recommended option on the decision card about the live world's clock offset. Numbered D-155 because D-153 and D-154 belong to other threads. D-153 is recorded above from PR #1630. D-154 is reserved for the community heads-up follow-up to PR #1606.
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, "Go ahead with all recommendations" in the Ward Flow project thread for PRs #1622, #1623 and #1626, choosing the recommended option on the decision card about the live world's clock offset. Numbered D-155 because D-153 and D-154 belong to other threads. D-153 is recorded above from PR #1630. D-154 is claimed by open PR #1632.
 - **Decision:** D-150 keeps `clockOffsetMinutes` on purpose, because test servers use it to move the clock. After this PR is released, the live shared world's stored offset is read once, read-only, and reported to Josh. If it is not 0, nothing is written: clearing it is a live write that waits for Josh's own yes.
 - **Why:** under D-150 a leftover offset would keep the signed-in site's clock ahead of real Perth time by that amount. Reading the value is harmless, and Josh decides on the live write once the number is known.
 - **Boundary:** synthetic data only. No code change, and no live write is approved. Changes no clinical rule or signed value, and approves no merge or release.
