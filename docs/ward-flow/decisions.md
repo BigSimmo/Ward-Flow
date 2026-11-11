@@ -1720,4 +1720,5 @@ is inferred.
   3. **D-80 amended:** the access admin may switch site features as well as the statewide coordinator. Protected features still cannot be switched off by anyone.
   4. **Pack age (item 24):** the old-pack list lives on the Downtime screen, with a pointer on Home. A ward that has never printed is listed as old. Print times may sit in the device's cleaned copy of the state.
   5. **Catch-up (item 25):** the outage start is a blank Today or Yesterday choice. Each bed not confirmed since the outage shows "Not confirmed since the outage" in full. Catch-up starts only after the coordinator records the outage, and only the ward's own confirm counts.
+- **Later the same day (04:13 UTC):** Josh chose "Mark ready now" on a decision card, so this PR was marked ready past the five-PR cap.
 - **Boundary:** synthetic data only. Approves the screens and the D-80 amendment only; no release.
