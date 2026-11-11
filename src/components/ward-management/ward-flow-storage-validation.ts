@@ -610,12 +610,8 @@ const admission = z
     dischargeConfirmedBy: nullableText,
     blockReason: z.nullable(z.enum(BED_RELEASE_BLOCKERS)),
     stayBlockRecords: z.optional(z.custom(isStayBlockRecords)), // absent in older saves.
-    ...dischargeFollowThroughFields, // Features 6, 37, 13 and 14 (9 Nov 2026); absent in older saves.
+    ...dischargeFollowThroughFields, // Features 6, 37, 13 and 14 (9 Nov 2026), item 18; absent in older saves.
     leavingDestination: z.nullable(z.custom(isLeavingDestination)),
-    // Item 18: left the ward, waiting for transport. Absent in older saves; a time and a known role only.
-    waitingForTransport: z.optional(
-      z.strictObject({ since: finite, by: z.enum(Object.keys(WARD_FLOW_ROLE_LABELS) as [string, ...string[]]) }),
-    ),
     // A stored barrier is a list value or absent; free text would be typed text restored (finding A2-2).
     dischargeBarrier: z.optional(z.nullable(z.custom(isDischargeBarrier))),
     // Item 5: a day's instant and a listed reason, or absent in older saves.

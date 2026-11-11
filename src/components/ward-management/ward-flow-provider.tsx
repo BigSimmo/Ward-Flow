@@ -126,6 +126,7 @@ import { useWardShellValues } from "./ward-flow-shell-values";
 import { ExecutiveStatisticsUnavailable } from "./statistics/statistics-small-numbers";
 import {
   broadcastDispatchEvent,
+  danglingReferralIds,
   getOrCreateBroadcastInstanceId,
   nextOpenRequestSequence,
 } from "./ward-flow-provider-helpers";
@@ -1466,14 +1467,7 @@ export function useCommunitySentReferrals(): ReturnType<typeof communitySentView
  */
 export function useDanglingReferralIds(admissions: readonly Admission[]): ReadonlySet<string> {
   const { referrals } = useWardFlowSelect("referrals");
-  return useMemo(() => {
-    const known = new Set(referrals.map((referral) => referral.id));
-    return new Set(
-      admissions.flatMap((admission) =>
-        admission.referralId !== null && !known.has(admission.referralId) ? [admission.referralId] : [],
-      ),
-    );
-  }, [admissions, referrals]);
+  return useMemo(() => danglingReferralIds(admissions, referrals), [admissions, referrals]);
 }
 
 export function useWardFlowClock(fallback?: Instant): Instant {
