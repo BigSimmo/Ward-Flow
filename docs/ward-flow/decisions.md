@@ -156,6 +156,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-131](#d-131-hard-case-demo-data-allowed-and-the-movement-diagram-follows-the-engine-10-november-2026)                                                | Hard-case demo data allowed, and the movement diagram follows the engine               | Active                                           |
 | [D-133](#d-133-batch-1-ed-and-referral-flow-three-answers-10-november-2026)                                                                             | Batch 1: escalation record, 30 min not opened, home team heads-up                      | Active                                           |
 | [D-140](#d-140-feature-list-adopted-and-wave-1-begins-10-november-2026)                                                                                 | Feature list adopted, and Wave 1 begins                                                | Active                                           |
+| [D-141](#d-141-batch-1-ed-and-referral-flow-design-approved-with-eleven-answers-11-november-2026)                                                       | Batch 1 design approved, with eleven answers                                           | Active                                           |
 
 ---
 
@@ -1683,6 +1684,7 @@ is inferred.
   2. **Movement diagram (M26):** every recommendation in [the mismatch list](evidence/2026-11-10-machine-test-mismatches.md) is approved. The engine stays as it is and `machines.json` is corrected to match it (Z1 to Z12).
 - **Open:** the glossary meanings of MHERT and SMHMR still wait on Josh.
 - **Boundary:** no clinical behaviour change; approves no merge of the held clinical PR and no release.
+
 ## D-133. Batch 1 (ED and referral flow): three answers (10 November 2026)
 
 - **Date:** 10 November 2026, 17:02 UTC (1:02 AM AWST on 11 November). **Decided by:** Josh, on three decision cards in the Ward Flow project thread "Build ED and referral flow features", after asking at 17:00 UTC for Batches 1 and 2 of the feature build plan (Claude Doc "Ward Flow feature build plan: 27 chosen items") to begin. That request is his go-ahead for these items despite D-128 item 9. D-132 is claimed by open PR #1601, and D-140 is in this PR.
@@ -1695,7 +1697,7 @@ is inferred.
 
 ## D-140. Feature list adopted, and Wave 1 begins (10 November 2026)
 
-- **Date:** 10 November 2026, 10:09 PM AWST (14:09 UTC). **Decided by:** Josh, in the Ward Flow project thread "Perfect the ranked feature list": "Go ahead with all your recommendations", answering the six questions in the reviewed feature list (Claude Doc "Ward Flow feature list: reviewed and re-ranked", 10 November 2026). Numbered D-140 because D-132 and D-134 to D-139 are claimed by other open work and D-133 is in the same PR.
+- **Date:** 10 November 2026, 10:09 PM AWST (14:09 UTC). **Decided by:** Josh, in the Ward Flow project thread "Perfect the ranked feature list": "Go ahead with all your recommendations", answering the six questions in the reviewed feature list (Claude Doc "Ward Flow feature list: reviewed and re-ranked", 10 November 2026). Numbered D-140 because D-132 to D-139 were taken first; D-133 is in the same PR. D-135 is claimed by open PR #1603. D-136 is claimed by open PR #1605. D-138 is claimed by open PR #1604. D-139 is claimed by open PR #1600.
 - **Decision:**
   1. **Working list:** the reviewed list (39 build items in four waves, pilot items P1 to P3, ruling items R1 to R6) replaces the order in the 10 November feature handover. Each item is re-checked against `main` before it is built.
   2. **Two-point ID:** rows, cards and toasts on signed-in screens show age and sex as recorded and the full UMRN beside the full name, the same UMRN format as D-113, and mark same-name clashes on a list. Never on the wall TV. Built in a held PR, after PR #1599.
@@ -1705,3 +1707,21 @@ is inferred.
   6. **Bed round:** wards stay in the fixed order (D-126); wards that have not answered "Please confirm your beds" get a tag and a filter, and are not moved to the top.
 - **Why:** the code check found several listed items already built, and six needed changes to stay within D-71, D-113, D-126 and the do-not-build list.
 - **Boundary:** synthetic data only. Changes no signed clinical value; approves no release. D-74 still applies to anything drawn.
+
+## D-141. Batch 1 (ED and referral flow) design approved, with eleven answers (11 November 2026)
+
+- **Date:** 11 November 2026, 02:19 UTC (10:19 AM AWST). **Decided by:** Josh, in the Ward Flow project thread "Build ED and referral flow features": "Approve all your recommendations", answering the eleven questions on the Batch 1 design review page (artifact "Batch 1 design review", v1). D-133 and D-140 are in the same PR.
+- **Decision:**
+  1. **Design:** Batch 1 (items 3, 9, 10, 16, 26, 27 and 46) is approved as built (D-74).
+  2. **New features:** Josh's request to begin Batches 1 and 2 (10 November, 17:00 UTC) overrides D-128 item 9 for Batch 1.
+  3. **Who to call:** desktop and tablet only; phone shows no wait step, so it has no link.
+  4. **Step 1 contact:** the service bed coordinator, as one contact, rather than each ward's nurse in charge.
+  5. **Escalation record:** keeps only the latest call outcome for each step.
+  6. **Privacy guard:** D-133 covers the home team heads-up's one extra reader of the patient link in the D-14 guard.
+  7. **Open episode:** the patient record's community list stands in for a stored community episode until one exists.
+  8. **Demo seed:** one unopened referral to a named ward and one with a ward's ask are added, so items 10 and 16 show without set-up.
+  9. **Brought by:** a new ED arrival can be marked "Brought by: Police" or "Ambulance", nothing pre-selected, so crew times can be recorded for it.
+  10. **Crews line on Home:** one total line across departments, not one per department tile.
+  11. **Heads-up identity:** the home team heads-up shows the UMRN, and still no name, reason, diagnosis, risk or free text.
+- **Also fixed:** the white strip between the ED board's hero and its Board tabs (Josh's screenshot, 11 November 2026).
+- **Boundary:** synthetic data only. Changes no signed clinical value. Item 46 with real data still needs the D-87 privacy review. Approves no release.
