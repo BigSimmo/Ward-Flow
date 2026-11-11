@@ -101,7 +101,7 @@ export type DirectoryEntry = {
 };
 
 /** The desk that keeps an entry up to date (D-133), from where the entry sits in the directory. */
-export function directoryOwnerRole(entry: Pick<DirectoryEntry, "section" | "siteCode">): WardFlowRole {
+function directoryOwnerRole(entry: Pick<DirectoryEntry, "section" | "siteCode">): WardFlowRole {
   if (entry.section === "community") return "community";
   if (entry.section === "hospitals" && entry.siteCode) return "bed_manager";
   return "coordinator";

@@ -56,7 +56,7 @@ const MORE_GATES: readonly { gate: EligibilityGate; label: string }[] = [
   { gate: "specialling", label: "Observation staffing" },
 ];
 
-export type FitDetailStatus = "Met" | "Not met" | "To check";
+type FitDetailStatus = "Met" | "Not met" | "To check";
 export type FitDetail = { gate: EligibilityGate; label: string; status: FitDetailStatus };
 
 /** Information-only gates appear only as "To check", and only when the patient has that need. */

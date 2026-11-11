@@ -59,15 +59,15 @@ export const ESCALATION_CALL_OUTCOME_LABELS: Readonly<Record<EscalationCallOutco
 
 const STEPS: readonly EdWaitStep["step"][] = [1, 2, 3, 4];
 
-export function isEscalationCallOutcome(value: unknown): value is EscalationCallOutcome {
+function isEscalationCallOutcome(value: unknown): value is EscalationCallOutcome {
   return typeof value === "string" && (ESCALATION_CALL_OUTCOMES as readonly string[]).includes(value);
 }
 
-export function isEscalationContactRole(value: unknown): value is EscalationContactRole {
+function isEscalationContactRole(value: unknown): value is EscalationContactRole {
   return typeof value === "string" && (ESCALATION_CONTACT_ROLES as readonly string[]).includes(value);
 }
 
-export function isEscalationStep(value: unknown): value is EdWaitStep["step"] {
+function isEscalationStep(value: unknown): value is EdWaitStep["step"] {
   return typeof value === "number" && (STEPS as readonly number[]).includes(value);
 }
 

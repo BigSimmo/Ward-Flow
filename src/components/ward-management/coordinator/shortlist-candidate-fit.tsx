@@ -38,7 +38,7 @@ export function CandidateItem({
  * checked, each Met, Not met or To check. It sits beside the card's button, never inside it, and
  * explains only (D-71): no order, tint, score or suggestion.
  */
-export function CandidateFitMore({
+function CandidateFitMore({
   unitId,
   unitName,
   gates,
