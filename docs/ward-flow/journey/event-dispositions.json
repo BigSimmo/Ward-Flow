@@ -1444,20 +1444,21 @@
   {
     "event": "ARCHIVE_PATIENT",
     "status": "modelled",
-    "reason": "Source-reviewed command model: Patient removed from active patients list; audit event and sequence retained.",
+    "reason": "Source-reviewed command model: Patient removed from active patients list (withdrawn-only referrals unlinked, D-149); audit event and sequence retained.",
     "source": "src/components/ward-management/ward-patient-archive-reducer.ts",
     "model": {
       "subject": "An erroneous standalone patient registration",
-      "before": "Patient has only registration fields and no care records/references elsewhere",
+      "before": "Patient has only registration fields, and nothing else names it except withdrawn or cancelled front-door referrals, audit rows, or Undo records older than the Undo window (D-149)",
       "after": "Patient removed from active patients list; audit event and sequence retained",
       "payload": ["patientId; reason from PATIENT_ARCHIVE_REASONS (duplicate, test, wrong_person); role and now"],
       "scope": "Coordinator only, with shared record scope applied. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": [
         "Patient must exist; listed archive reason",
-        "Registration facts include the optional typed details (preferred name, address, GP, catchment team, interpreter language, Indigenous status, and the ADMIN_DETAIL_FIELDS administrative details); refuse any non-registration fact or any state/audit care reference; prior archive-attempt audit entries do not block"
+        "Registration facts include the optional typed details (preferred name, address, GP, catchment team, interpreter language, Indigenous status, and the ADMIN_DETAIL_FIELDS administrative details); refuse any non-registration fact, any open or answered referral, or any other state reference. D-149 (Josh, 11 Nov 2026): a front-door referral whose every destination was withdrawn by the referrer or cancelled does not block, audit rows do not block, and an Undo record blocks only while it is inside the Undo window (measured from the event's now). Each refusal names its reason, and the coordinator's card shows it instead of hiding"
       ],
       "effects": [
         "Filters patient from patients; keeps sequence so id is not reused",
+        "D-149: a withdrawn or cancelled referral that named the record stays in the referrals list with its patientId removed, so the stored workspace still validates",
         "Reducer audit wrapper retains the archive event/reason; no care record is removed",
         "The step can be taken back by UNDO_PATIENT_RECORD within the Undo window."
       ],
@@ -1465,7 +1466,7 @@
         {
           "path": "src/components/ward-management/ward-patient-archive-reducer.ts",
           "line": 10,
-          "sha256": "bfd91bd2e7955ee0c776cf1c8e5fb3ecb1dd76d2cd0d2c9a71a9789270b95898"
+          "sha256": "fbe91ef4b0daad593da3144d30e40c65803851a4f31337bf61bd3004038c1900"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1474,13 +1475,13 @@
         },
         {
           "path": "src/components/ward-management/ward-patient-archive.ts",
-          "line": 30,
-          "sha256": "2738c8d1a80a5d8fc418865719058ee2603141bb9493d55954cae83742455eb3"
+          "line": 32,
+          "sha256": "9677f94adeb0eedb1a1b2b9e8f0c3f4bc36236e91f95f97f5d9198f56f8d1324"
         },
         {
           "path": "src/components/ward-management/ward-patient-archive.ts",
-          "line": 44,
-          "sha256": "2738c8d1a80a5d8fc418865719058ee2603141bb9493d55954cae83742455eb3"
+          "line": 54,
+          "sha256": "9677f94adeb0eedb1a1b2b9e8f0c3f4bc36236e91f95f97f5d9198f56f8d1324"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",

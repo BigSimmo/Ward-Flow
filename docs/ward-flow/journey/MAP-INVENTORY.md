@@ -984,25 +984,26 @@ Source-contract SHA256: 0873c62bf7c72255c924e82c939d36e74594ee43c51831c4d4ba4063
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1792
   Event/dispatch reference: src/components/ward-management/ward-patient-registration-reducer.ts:39
 - ARCHIVE_PATIENT — modelled; event roles: coordinator
-  Source-reviewed command model: Patient removed from active patients list; audit event and sequence retained.
+  Source-reviewed command model: Patient removed from active patients list (withdrawn-only referrals unlinked, D-149); audit event and sequence retained.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:397
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1794
   Event/dispatch reference: src/components/ward-management/ward-patient-archive-reducer.ts:10
   Subject: An erroneous standalone patient registration
-  Before: Patient has only registration fields and no care records/references elsewhere
+  Before: Patient has only registration fields, and nothing else names it except withdrawn or cancelled front-door referrals, audit rows, or Undo records older than the Undo window (D-149)
   After: Patient removed from active patients list; audit event and sequence retained
   Scope: Coordinator only, with shared record scope applied. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.
   payload: patientId; reason from PATIENT_ARCHIVE_REASONS (duplicate, test, wrong_person); role and now
   guards: Patient must exist; listed archive reason
-  guards: Registration facts include the optional typed details (preferred name, address, GP, catchment team, interpreter language, Indigenous status, and the ADMIN_DETAIL_FIELDS administrative details); refuse any non-registration fact or any state/audit care reference; prior archive-attempt audit entries do not block
+  guards: Registration facts include the optional typed details (preferred name, address, GP, catchment team, interpreter language, Indigenous status, and the ADMIN_DETAIL_FIELDS administrative details); refuse any non-registration fact, any open or answered referral, or any other state reference. D-149 (Josh, 11 Nov 2026): a front-door referral whose every destination was withdrawn by the referrer or cancelled does not block, audit rows do not block, and an Undo record blocks only while it is inside the Undo window (measured from the event's now). Each refusal names its reason, and the coordinator's card shows it instead of hiding
   effects: Filters patient from patients; keeps sequence so id is not reused
+  effects: D-149: a withdrawn or cancelled referral that named the record stays in the referrals list with its patientId removed, so the stored workspace still validates
   effects: Reducer audit wrapper retains the archive event/reason; no care record is removed
   effects: The step can be taken back by UNDO_PATIENT_RECORD within the Undo window.
   tests: tests/ward-patient-archive.test.ts
-  Reviewed source: src/components/ward-management/ward-patient-archive-reducer.ts:10; SHA256 bfd91bd2e7955ee0c776cf1c8e5fb3ecb1dd76d2cd0d2c9a71a9789270b95898
+  Reviewed source: src/components/ward-management/ward-patient-archive-reducer.ts:10; SHA256 fbe91ef4b0daad593da3144d30e40c65803851a4f31337bf61bd3004038c1900
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:397; SHA256 f9c4dd2aa18c14b7b98ab03b46946cf70c309a6281278d4eda668faa4011d423
-  Reviewed source: src/components/ward-management/ward-patient-archive.ts:30; SHA256 2738c8d1a80a5d8fc418865719058ee2603141bb9493d55954cae83742455eb3
-  Reviewed source: src/components/ward-management/ward-patient-archive.ts:44; SHA256 2738c8d1a80a5d8fc418865719058ee2603141bb9493d55954cae83742455eb3
+  Reviewed source: src/components/ward-management/ward-patient-archive.ts:32; SHA256 9677f94adeb0eedb1a1b2b9e8f0c3f4bc36236e91f95f97f5d9198f56f8d1324
+  Reviewed source: src/components/ward-management/ward-patient-archive.ts:54; SHA256 9677f94adeb0eedb1a1b2b9e8f0c3f4bc36236e91f95f97f5d9198f56f8d1324
   Reviewed source: src/components/ward-management/ward-access-state.ts:668; SHA256 aff9d668ab52da5a8f185ac0169ee45d478cffb4aad491addc9809f5a352f2b5
 - ACCEPT_REFERRAL — diagram-reviewed; event roles: ward, coordinator, ed, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
