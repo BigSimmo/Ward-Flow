@@ -1,5 +1,6 @@
 import { endFrontDoorPass } from "@/components/ward-management/front-door/front-door-pass-client";
 import { clearSessionDrafts } from "./ward-session-drafts";
+import { syncWardDeskHeldCookie } from "./shell/ward-desk-early";
 
 /**
  * Ward Flow's browser storage, cleared when a signed-in session ends (overall review 20 Oct 2026,
@@ -163,6 +164,7 @@ export function endWardFlowBrowserSession(): void {
     }
   }
   clearWardFlowBrowserData();
+  syncWardDeskHeldCookie(null);
   // The front door's pass ends with the sign-in, so the next person at this browser starts outside.
   endFrontDoorPass();
 }

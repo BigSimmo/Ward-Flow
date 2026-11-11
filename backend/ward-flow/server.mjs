@@ -18,11 +18,16 @@ const gzipAsync = promisify(gzip);
 const BODY_LIMIT = 1_048_576;
 /**
  * Audit P174: every backend reply is JSON, never a page, so it may not be framed or load anything,
- * and browsers keep to HTTPS for a year.
+ * and browsers keep to HTTPS for a year. Live audit item 17 (hardening only): no referrer leaves a
+ * reply, no browser feature is offered, and no other site may embed a reply without CORS (the
+ * site's own CORS reads are unaffected, as CORP applies only to no-cors loads).
  */
 export const BACKEND_SECURITY_HEADERS = Object.freeze({
   "strict-transport-security": "max-age=31536000; includeSubDomains",
   "content-security-policy": "default-src 'none'; frame-ancestors 'none'",
+  "referrer-policy": "no-referrer",
+  "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=()",
+  "cross-origin-resource-policy": "same-origin",
 });
 /** Audit P177: the uptime monitor sends this header to see the database answer on `/healthz`. */
 export const UPTIME_TOKEN_HEADER = "x-ward-flow-uptime-token";

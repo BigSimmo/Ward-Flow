@@ -7,12 +7,20 @@
 
 const MARKER = "wf_door=1";
 
+/**
+ * Live audit item 19: sign-out removes the marker, so this tab remembers having seen it. A sign-in
+ * in the app after an idle sign-out then still renews the pass.
+ */
+let markerSeen = false;
+
 function frontDoorOn(): boolean {
+  if (markerSeen) return true;
   try {
-    return document.cookie.split(/;\s*/).includes(MARKER);
+    markerSeen = document.cookie.split(/;\s*/).includes(MARKER);
   } catch {
-    return false;
+    // Cookies blocked: no marker to read.
   }
+  return markerSeen;
 }
 
 /**
@@ -66,6 +74,7 @@ export async function renewFrontDoorPass(token: () => Promise<string>): Promise<
 export function endFrontDoorPass(): void {
   if (!frontDoorOn()) return;
   try {
+    // The server's reply removes the marker with the pass (live audit item 19).
     void fetch("/api/session", { method: "DELETE", credentials: "same-origin", keepalive: true }).catch(() => {});
   } catch {
     // No fetch here: the pass still ends at its own time.

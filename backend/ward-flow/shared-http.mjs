@@ -53,6 +53,12 @@ const STEP_UP_PATHS = new Set([
 const WORKING_AS = "x-ward-working-as";
 /** "tv" when the desk is showing the bed meeting TV board, so the access log can say so (H-0731). */
 const SCREEN = "x-ward-screen";
+/**
+ * Live audit item 21: the roles whose desk opens the bed meeting TV board (`ROLE_SCREENS` has
+ * "bed-meeting" for these only; `tests/ward-live-audit-hardening.test.ts` keeps them in step). Any
+ * other desk's "tv" header is logged as the list it really is.
+ */
+export const TV_BOARD_ROLES = new Set(["coordinator", "bed_manager", "ward"]);
 /** Messages the pg pool and the workspace store use when the database, not the code, failed. */
 const STORAGE_MESSAGES =
   /^(?:Connection terminated|timeout exceeded when trying to connect|Client has encountered a connection error|Cannot use a pool after calling end|Shared schema unavailable|Workspace data mode mismatch|Stored workspace is incompatible)/;
@@ -486,7 +492,7 @@ export function createSharedHandler({
         // unchanged poll sends none, so it is not logged, except on the TV board: a desk that moves
         // to the TV keeps showing the records it already holds, so the TV logs its own polls too
         // (the store logs at most once a window). A failed log write fails the read.
-        const tvScreen = request.headers.get(SCREEN) === "tv";
+        const tvScreen = request.headers.get(SCREEN) === "tv" && TV_BOARD_ROLES.has(view.access.role);
         const logListRead = async () => {
           if (view.access.role !== "executive" && store.logList) await store.logList(view, tvScreen ? "tv" : "list");
         };

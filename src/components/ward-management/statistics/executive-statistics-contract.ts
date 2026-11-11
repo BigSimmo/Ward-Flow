@@ -13,6 +13,11 @@ import { ED_WAIT_BANDS } from "./statistics-ed-waits";
 import { reportWeek } from "../reports/weekly-report";
 import { validateConfiguration } from "../ward-configuration";
 
+// Live audit item 23: before the first schema is built, so zod never probes `new Function`, which
+// the production CSP refuses and reports on every executive page. This is Ward Flow's only full-zod
+// schema in the browser (the others use zod/mini, which compiles nothing).
+z.config({ jitless: true });
+
 /** Foundation only. No server or screen adopts this payload until its full reporting contract is ready. */
 const count = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 const releasedCount = z.discriminatedUnion("kind", [
