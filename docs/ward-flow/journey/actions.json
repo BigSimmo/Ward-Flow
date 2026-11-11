@@ -2621,8 +2621,8 @@
         },
         {
           "path": "src/components/ward-management/board/ward-board.tsx",
-          "line": 373,
-          "sha256": "52629938c38f72e99b3c784ac4329cb3479b89dea703f249eaf0e085a606c394"
+          "line": 376,
+          "sha256": "784c8da7f148f6489b10162e410ae9ef9b48bf4acb83ecb216dc5ad52a94fa2f"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -3400,8 +3400,8 @@
         },
         {
           "path": "src/components/ward-management/board/ward-board.tsx",
-          "line": 946,
-          "sha256": "52629938c38f72e99b3c784ac4329cb3479b89dea703f249eaf0e085a606c394"
+          "line": 951,
+          "sha256": "784c8da7f148f6489b10162e410ae9ef9b48bf4acb83ecb216dc5ad52a94fa2f"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
@@ -3479,8 +3479,8 @@
         },
         {
           "path": "src/components/ward-management/board/ward-board.tsx",
-          "line": 968,
-          "sha256": "52629938c38f72e99b3c784ac4329cb3479b89dea703f249eaf0e085a606c394"
+          "line": 973,
+          "sha256": "784c8da7f148f6489b10162e410ae9ef9b48bf4acb83ecb216dc5ad52a94fa2f"
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
@@ -3559,7 +3559,7 @@
         {
           "path": "src/components/ward-management/board/ward-board.tsx",
           "line": 1069,
-          "sha256": "52629938c38f72e99b3c784ac4329cb3479b89dea703f249eaf0e085a606c394"
+          "sha256": "784c8da7f148f6489b10162e410ae9ef9b48bf4acb83ecb216dc5ad52a94fa2f"
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
@@ -3697,7 +3697,7 @@
         {
           "path": "src/components/ward-management/board/ward-board.tsx",
           "line": 1061,
-          "sha256": "52629938c38f72e99b3c784ac4329cb3479b89dea703f249eaf0e085a606c394"
+          "sha256": "784c8da7f148f6489b10162e410ae9ef9b48bf4acb83ecb216dc5ad52a94fa2f"
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
