@@ -3,13 +3,15 @@
  * server process.
  */
 
+import { isIP } from "node:net";
+
 /**
  * A few wrong tries per address, then a pause, so a demo code cannot be guessed by brute force. The
- * address is the one Railway's edge saw (`X-Real-IP`), not the first `X-Forwarded-For` entry, which
- * the caller writes. A cap across all addresses slows a guesser who rotates addresses: once it is
- * reached, a wrong code is refused with a pause, but the right code still opens the door, so one
- * caller cannot lock every presenter out (SEC-1, 5 November 2026). A full table refuses new
- * addresses instead of forgetting everyone's count.
+ * address comes from a trusted hop only (A4-02), the same rule as the backend's `clientAddress`. A
+ * cap across all addresses slows a guesser who rotates addresses: once it is reached, a wrong code
+ * is refused with a pause, but the right code still opens the door, so one caller cannot lock every
+ * presenter out (SEC-1, 5 November 2026). A full table refuses new addresses instead of forgetting
+ * everyone's count.
  */
 const WRONG_TRY_LIMIT = 10;
 const WRONG_TRY_WINDOW_MS = 10 * 60_000;
@@ -19,15 +21,34 @@ const wrongTries = new Map<string, { count: number; since: number }>();
 let allWrongTries = { count: 0, since: 0 };
 
 /**
- * The caller's address as the edge saw it: `X-Real-IP`, else the last `X-Forwarded-For` hop.
- * Not yet confirmed: that Railway's edge overwrites a caller-sent `X-Real-IP`. Confirm on Railway;
- * if it does not, a caller can rotate this header to dodge the per-address limit.
+ * Proxies whose forwarding headers may be trusted, from `WARD_TRUSTED_PROXY_ADDRESSES`.
+ * Each entry must be a literal IP address or `*`; anything else is ignored, as on the backend.
+ * `*` requires verified proxy-only ingress that overwrites those headers and prevents direct access.
  */
-export function edgeAddress(headers: Headers): string {
+export function trustedProxyAddressesFromEnv(env: NodeJS.Dict<string | undefined> = process.env): string[] {
+  return (env.WARD_TRUSTED_PROXY_ADDRESSES ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((address) => address === "*" || isIP(address) !== 0);
+}
+
+/**
+ * The address the demo-code limit is keyed on, mirroring the backend's `clientAddress`.
+ * `X-Real-IP`, else the last `X-Forwarded-For` hop, is read only when the socket peer is a listed
+ * trusted proxy, or `*` is listed. Otherwise the socket address, or `"unknown"` when the Next route
+ * has no socket, so a caller cannot choose their bucket by sending a header.
+ */
+export function edgeAddress(
+  headers: Headers,
+  trustedProxyAddresses: readonly string[] = trustedProxyAddressesFromEnv(),
+  socketAddress = "unknown",
+): string {
+  const socket = (socketAddress || "unknown").replace(/^::ffff:/i, "").slice(0, 64) || "unknown";
+  if (!trustedProxyAddresses.includes("*") && !trustedProxyAddresses.includes(socket)) return socket;
   const real = headers.get("x-real-ip")?.trim();
-  if (real) return real.slice(0, 64);
   const hops = headers.get("x-forwarded-for")?.split(",") ?? [];
-  return hops.at(-1)?.trim().slice(0, 64) || "unknown";
+  const last = hops.at(-1)?.trim() ?? "";
+  return (real || last || socket).slice(0, 64) || "unknown";
 }
 
 function pruneWrongTries(now: number) {
