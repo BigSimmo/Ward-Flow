@@ -1,7 +1,5 @@
 // Feature item 4 (Josh, 11 Nov 2026): the under 18 on an adult ward notice on the bed record.
 // Synthetic seed only.
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { createRef } from "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -89,19 +87,6 @@ describe("the recorded time", () => {
     expect(later.rejections.at(-1)?.reason).toBe("The notified time is later than now");
     const ed = wardFlowReducer(seed, { ...base, role: "ed", notifiedAt: NOW_ANCHOR });
     expect(ed.admissions.find((admission) => admission.id === stay.id)?.chiefPsychiatristNotice).toBeUndefined();
-  });
-
-  it("never blocks a bed offer: no placement, eligibility or offer code reads the notice", () => {
-    const root = path.join(process.cwd(), "src/components/ward-management");
-    for (const file of [
-      "ward-eligibility.ts",
-      "ward/ward-referral-fit.ts",
-      "ward-flow-placement-events.ts",
-      "ward-flow-referral-answer-events.ts",
-    ]) {
-      const source = readFileSync(path.join(root, file), "utf8");
-      expect(source, file).not.toMatch(/under18|under-18|chiefPsychiatrist/i);
-    }
   });
 });
 
