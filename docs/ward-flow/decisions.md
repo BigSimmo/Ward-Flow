@@ -156,6 +156,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-131](#d-131-hard-case-demo-data-allowed-and-the-movement-diagram-follows-the-engine-10-november-2026)                                                | Hard-case demo data allowed, and the movement diagram follows the engine               | Active                                           |
 | [D-132](#d-132-audit-fixes-group-1-docs-and-ci-guards-10-november-2026)                                                                                 | Audit fixes group 1: docs and CI guards; Claude-authored sensitive changes warn        | Active                                           |
 | [D-138](#d-138-phone-alert-urgency-by-kind-10-november-2026)                                                                                            | Phone alert urgency by kind                                                            | Active                                           |
+| [D-144](#d-144-repository-review-fixes-features-and-code-health-approved-11-november-2026)                                                              | Repository review: fixes, features and code health approved                            | Active                                           |
 
 ---
 
@@ -1699,3 +1700,15 @@ is inferred.
 - **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, picking item 23 of the audit fix build plan (Ward Flow project thread "Fix audit app and backend issues", audit fix group 2), which counts as his yes to audit decision 20. Numbered D-138 because D-132 to D-137 belong to other threads. D-133 is claimed by open PR #1606. D-134 is claimed by open PR #1608, and D-135 is claimed by open PR #1603, and D-136 is claimed by open PR #1605, and D-137 is claimed by open PR #1607. On 11 November 2026 Josh told every thread to go ahead with its recommendations, which approved the Settings line as drawn in the design review.
 - **Decision:** act-now phone alerts stay high urgency and buzz again when replaced. Jobs and team alerts go out at normal urgency and replace their earlier alert quietly. Settings shows when this device last received an alert, from the time only (never the alert's words).
 - **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge or release.
+
+## D-144. Repository review: fixes, features and code health approved (11 November 2026)
+
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, in the Ward Flow project thread "Review repository for issues and new features": "Go ahead with all these recommendations please" (03:55 UTC), answering the review doc "Ward Flow repository review, 11 November 2026". Numbered D-144 because D-133 to D-143 belong to other threads. D-139 is claimed by open PR #1600, D-140 is claimed by open PR #1606, D-141 is claimed by open PR #1606, D-142 is claimed by open PR #1603, and D-143 is claimed by open PR #1612.
+- **Decision:**
+  1. **Clinical display fixes, one held PR:** a ward's expected occupancy no longer counts a patient twice when they hold a named bed and also have a booked planned admission to that ward; an ended legal form says it ended and gives the expiry only as it was typed; the ED screen flags a long wait at 24 hours or more, like every other screen. The held PR is shared with the performance thread's triage date fix.
+  2. **Non-clinical fixes:** one lapse check for pull holds, staff requests keep the shift the person chose, one reader for typed times, one length-of-stay calculation, a demo code shorter than 12 characters counts as no code, and a demo pass stops working when the code changes. Two lines added to the real-data go/no-go list (record ids never built from UMRNs; a check of the push library).
+  3. **Features that finish existing screens** (not covered by the D-128 item 9 pause): Leave page links, print and entry point; Help for pages that had none; print and spreadsheet export on Legal forms and Movements. Triage risk reviews due waits until #1564 to #1577 close and needs its own clinical sign-off.
+  4. **Code health:** the file line cap counts code lines, not comments or blank lines; one shared CI setup step; shared helpers for the forked side rail; reasons or fixes for unexplained React hook rule switch-offs; patch-level dependency updates.
+  5. **Josh's own action:** turn off Supabase open sign-up before real data.
+- **Why:** findings from the 11 November review, each checked against source; the clinical items were display bugs, not changes to signed values.
+- **Boundary:** synthetic data only. Changes no signed clinical value; clinical items merge only after Josh checks the held PR. Approves no release.
