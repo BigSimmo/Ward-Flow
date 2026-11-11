@@ -278,7 +278,13 @@ describe("Network views consume only the released executive report", () => {
     );
     // The phone switch reads "By hospital / By ward", without counts (31 Oct 2026 build).
     fireEvent.click(screen.getByRole("radio", { name: "By ward" }));
-    expect(screen.getByRole("list", { name: "Wards by beds ready" })).toBeInTheDocument();
+    // D-139: the ward list is A to Z by ward name, not most ready first.
+    const wardList = screen.getByRole("list", { name: "Wards A to Z" });
+    const wardNames = [...wardList.querySelectorAll("li")]
+      .map((row) => report.wards.find((ward) => row.textContent?.startsWith(ward.name))?.name)
+      .filter((name): name is string => Boolean(name));
+    expect(wardNames.length).toBeGreaterThan(1);
+    expect(wardNames).toEqual([...wardNames].sort((a, b) => a.localeCompare(b)));
     fireEvent.click(screen.getByTestId("ward-statistics-more-figures"));
     expect(screen.getByRole("dialog")).toHaveTextContent("Discharges held up");
     expect(screen.getByRole("dialog")).toHaveTextContent(
