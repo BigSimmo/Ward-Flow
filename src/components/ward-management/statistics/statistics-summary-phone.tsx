@@ -288,7 +288,8 @@ function StatisticsSummaryPhoneView({
       };
     })
     .sort((a, b) => b.ready - a.ready || b.percent - a.percent || a.name.localeCompare(b.name));
-  const byReady = [...wards].sort((a, b) => b.ready - a.ready || b.percent - a.percent || a.name.localeCompare(b.name));
+  // By ward: A to Z by ward name, every count kept (D-139, following D-126). Most ready first read as "send them here".
+  const byName = [...wards].sort((a, b) => a.name.localeCompare(b.name));
   const overCount = wards.filter((ward) => overLine(ward.percent)).length;
   const edsWaiting = eds.filter((ed) => exactStatisticsCount(ed.waiting) !== 0);
   const edPresenceKnown = eds.every((ed) => exactStatisticsCount(ed.waiting) !== null);
@@ -518,10 +519,7 @@ function StatisticsSummaryPhoneView({
             />
           )}
 
-          <ul
-            className={styles.list}
-            aria-label={group === "hospital" ? "Hospitals by beds ready" : "Wards by beds ready"}
-          >
+          <ul className={styles.list} aria-label={group === "hospital" ? "Hospitals by beds ready" : "Wards A to Z"}>
             {group === "hospital"
               ? hospitals.slice(0, showAll ? undefined : LIST_SHOWN).map((hospital) => (
                   <PhoneListRow
@@ -537,7 +535,7 @@ function StatisticsSummaryPhoneView({
                     onSelect={() => setSheet({ kind: "hospital", name: hospital.name })}
                   />
                 ))
-              : byReady.slice(0, showAll ? undefined : LIST_SHOWN).map(wardRow)}
+              : byName.slice(0, showAll ? undefined : LIST_SHOWN).map(wardRow)}
             {listLength > LIST_SHOWN ? (
               <li className={styles.showMoreItem}>
                 <ShowMoreRow expanded={showAll} onClick={() => setShowAll((value) => !value)}>

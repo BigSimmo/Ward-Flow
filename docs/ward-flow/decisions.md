@@ -13,7 +13,7 @@ ruling here. Do not start new `owner-*.md` files; the existing ones stay as date
 decision in one or two sentences, and why. Never rewrite an old entry's decision; a wording or citation correction is allowed when a later entry discloses it (D-107). If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
 
-_Updated 2026-11-10 - added D-121 and D-122 and corrected the D-58, D-74, D-94 and D-100 status rows; Documentation owns. Earlier changes are in Git history._
+_Updated 2026-11-10 - added D-139, added D-121 and D-122 and corrected the D-58, D-74, D-94 and D-100 status rows; Documentation owns. Earlier changes are in Git history._
 
 ---
 
@@ -157,6 +157,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-132](#d-132-audit-fixes-group-1-docs-and-ci-guards-10-november-2026)                                                                                 | Audit fixes group 1: docs and CI guards; Claude-authored sensitive changes warn        | Active                                           |
 | [D-135](#d-135-batch-4-outages-and-pilot-control-pack-age-and-plan-answers-10-november-2026)                                                            | Batch 4, outages and pilot control: pack age and plan answers                          | Active                                           |
 | [D-138](#d-138-phone-alert-urgency-by-kind-10-november-2026)                                                                                            | Phone alert urgency by kind                                                            | Active                                           |
+| [D-139](#d-139-phone-statistics-ward-list-a-to-z-and-leave-return-times-as-typed-10-november-2026)                                                      | Phone Statistics ward list A to Z, and leave return times as typed                     | Active                                           |
 | [D-142](#d-142-batch-4-design-review-and-all-twelve-answers-approved-d-80-amended-for-site-features-11-november-2026)                                   | Batch 4: design review and all twelve answers approved, D-80 amended for site features | Active                                           |
 | [D-143](#d-143-mhert-is-mherl-in-the-glossary-smhmr-deferred-11-november-2026)                                                                          | MHERT is MHERL in the glossary; SMHMR deferred                                         | Active                                           |
 
@@ -1711,6 +1712,16 @@ is inferred.
 - **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, picking item 23 of the audit fix build plan (Ward Flow project thread "Fix audit app and backend issues", audit fix group 2), which counts as his yes to audit decision 20. Numbered D-138 because D-132 to D-137 belong to other threads. D-133 is claimed by open PR #1606. D-134 is claimed by open PR #1608, and D-135 is claimed by open PR #1603, and D-136 is claimed by open PR #1605, and D-137 is claimed by open PR #1607. On 11 November 2026 Josh told every thread to go ahead with its recommendations, which approved the Settings line as drawn in the design review.
 - **Decision:** act-now phone alerts stay high urgency and buzz again when replaced. Jobs and team alerts go out at normal urgency and replace their earlier alert quietly. Settings shows when this device last received an alert, from the time only (never the alert's words).
 - **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge or release.
+
+## D-139. Phone Statistics ward list A to Z, and leave return times as typed (10 November 2026)
+
+- **Date:** 10 November 2026 (`2026-11-10`), about 1:08 AM AWST on 11 November (17:08 UTC). **Decided by:** Josh, in the Ward Flow project. Item 1: launching audit fix group 3 ("Also launch group 2 and group 3 please"), which counts as his yes to audit decision 4. Item 2: choosing "Yes, typed time only" on a decision card in the thread "Fix held clinical audit items", and "Yes to all recommendations please" in the project chat. D-135 is claimed by open PR #1603. D-136 is claimed by open PR #1605. D-133 is claimed by open PR #1606. D-137 is claimed by open PR #1607. D-134 is claimed by open PR #1608.
+- **Decision:**
+  1. **Phone Statistics, "By ward" list** (audit fix list item 9): A to Z by ward name, with every count kept. It extends D-126 to a list that review did not cover. The "By hospital" list is unchanged.
+  2. **Leave return times** (item 26, audit A1-06): leave and medical trip return times follow D-93. They show only as the time the ward typed ("Due back 15:40 tomorrow", "Typed by the ward"), and once that time has gone by, "That time has passed" with the warning colour. Nothing is worked out from it: no "Overdue by 2h" or "In 3h" on the Patient page status card, and the Patient summary's second figure reads "Passed" or "Not yet" under "Typed time" instead of "Overdue 2h" or "From now 3h". `tests/ward-legal-as-typed-guard.test.ts` fails if a duration formatter takes a leave return time again.
+- **Unchanged:** the time absent without leave still shows as a running figure, because it counts from when the absence was recorded, not from a typed return time. Leave lists still order by return time.
+- **Why:** a list that puts the most ready beds first reads as "send them here" (D-126). A return time comes from the leave form, which staff read against paper; a running figure beside it is a second, unchecked number, the reason D-93 exists.
+- **Boundary:** D-71 and D-93 stand. Order and wording only; no figure, clinical value or rule changes. Synthetic data only. Approves no merge or release.
 
 ## D-142. Batch 4: design review and all twelve answers approved, D-80 amended for site features (11 November 2026)
 
