@@ -11,7 +11,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { Ambulance, BedSingle, Camera, FileText, Users } from "lucide-react";
+import { Ambulance, BedSingle, Camera, Clock, FileText, Users } from "lucide-react";
 
 import {
   Card,
@@ -62,6 +62,8 @@ import {
   type DowntimeWard,
 } from "./downtime-pack";
 import { useDowntimePackAccess } from "./downtime-pack-context";
+import { DowntimeOldPacksBand, lastPrintedByRole } from "./downtime-pack-old-band";
+import { DowntimeRecordOutage } from "./downtime-pack-record-outage";
 import { nextDowntimePackAt } from "./downtime-pack-schedule";
 import { useRecordDowntimePackPrint } from "./downtime-pack-print-hook";
 import { useTakeDowntimePack } from "./use-take-downtime-pack";
@@ -177,7 +179,12 @@ type SheetRow = { title: string; facts: Array<{ id: string; label: string; value
  */
 export function DowntimePackScreen() {
   const now = useWardFlowClock();
-  const { dayZero, worldGeneration, shared } = useWardFlowSelect("dayZero", "worldGeneration", "shared");
+  const { dayZero, worldGeneration, shared, downtimePackPrints } = useWardFlowSelect(
+    "dayZero",
+    "worldGeneration",
+    "shared",
+    "downtimePackPrints",
+  );
   const isPhone = useIsPhone();
   const role = useRouteRole();
   const { owner, ready, unavailable } = useDowntimePackAccess();
@@ -242,6 +249,8 @@ export function DowntimePackScreen() {
   }, [pack, recordPrint]);
 
   const [section, setSection] = useState<Section>("beds");
+  // Batch 4 item 25 (D-142): the coordinator's Record an outage form, opened from its chip.
+  const [recordingOutage, setRecordingOutage] = useState(false);
   const [sheet, setSheet] = useState<SheetRow | null>(null);
   const [previousBoundary, setPreviousBoundary] = useState({ owner, worldGeneration });
   if (previousBoundary.owner !== owner || previousBoundary.worldGeneration !== worldGeneration) {
@@ -388,6 +397,28 @@ export function DowntimePackScreen() {
     { id: "forms", label: "Legal forms", short: "Forms", count: totals.forms },
   ];
   const twinKey: Record<Section, keyof PackTotals> = { beds: "ready", ed: "ed", moves: "moves", forms: "forms" };
+  // Batch 4 items 24 and 25 (Josh approved the drawing 11 Nov 2026, D-142): this desk's last print of
+  // this pack's wards under Print; for the coordinator, Record an outage and the old packs band.
+  const lastPrinted = lastPrintedByRole(
+    downtimePackPrints,
+    pack.wards.map((ward) => ward.unitId),
+    role,
+  );
+  const isCoordinator = role === "coordinator";
+  const outageChip = {
+    id: "outage",
+    label: "Record an outage",
+    icon: <Clock size={16} strokeWidth={1.75} aria-hidden="true" />,
+    expanded: recordingOutage,
+    onClick: () => setRecordingOutage((open) => !open),
+    testId: "ward-downtime-record-outage-chip",
+  };
+  const recordOutage =
+    recordingOutage && isCoordinator ? (
+      <div data-print-hide>
+        <DowntimeRecordOutage now={now} onDone={() => setRecordingOutage(false)} />
+      </div>
+    ) : null;
   const pageTop = (
     <Hero
       level={1}
@@ -431,6 +462,13 @@ export function DowntimePackScreen() {
             tone={staleText ? "warning" : "calm"}
             title={staleText ?? `Ready to print · next at ${pack.offline ? "when online" : nextPackAt}`}
             titleTestId={staleText ? "ward-downtime-stale" : undefined}
+            sub={
+              lastPrinted === null ? undefined : (
+                <span data-testid="ward-downtime-last-printed">
+                  Last printed <b>{formatInstantWithDay(lastPrinted, now)}</b>
+                </span>
+              )
+            }
             action={{
               label: "Print or save PDF",
               phoneLabel: "Print",
@@ -443,7 +481,10 @@ export function DowntimePackScreen() {
           <div className={styles.topChips} data-print-hide>
             <HeroQuickChips
               label="Pack actions"
-              items={[{ id: "snapshot", label: "New snapshot", node: snapshotChip }]}
+              items={[
+                { id: "snapshot", label: "New snapshot", node: snapshotChip },
+                ...(isCoordinator ? [outageChip] : []),
+              ]}
             />
             {isPhone ? null : (
               <p className={styles.topNote} data-testid="ward-downtime-keep-copy">
@@ -452,6 +493,7 @@ export function DowntimePackScreen() {
             )}
           </div>
         }
+        band={isCoordinator ? <DowntimeOldPacksBand now={now} /> : undefined}
       >
         {twins ? (
           <p className={styles.topTwins}>
@@ -795,6 +837,7 @@ export function DowntimePackScreen() {
                 items={tabItems.map((item) => ({ id: item.id, label: item.short, count: item.count }))}
               />
             </FolderTabs>
+            {recordOutage}
             <p className={styles.phoneNote} data-testid="ward-downtime-keep-copy">
               {KEEP_A_COPY}
             </p>
@@ -969,6 +1012,7 @@ export function DowntimePackScreen() {
             items={tabItems.map((item) => ({ id: item.id, label: item.label, count: item.count }))}
           />
         </FolderTabs>
+        {recordOutage}
 
         {/* F-08: the printout says it holds invented records before its first table. */}
         <p className={cx(styles.printOnly, styles.printMeta)} data-testid="ward-downtime-print-provenance">

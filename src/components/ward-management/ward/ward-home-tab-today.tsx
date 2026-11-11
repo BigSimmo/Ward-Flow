@@ -21,6 +21,8 @@ import {
   type WardTomorrowOutlook,
 } from "./ward-home-outlook";
 import styles from "./ward-home-tab.module.css";
+import outageTag from "./ward-outage-bed-tag.module.css";
+import { NOT_CONFIRMED_SINCE_OUTAGE } from "@/components/ward-management/use-outage-catch-up";
 
 type WardHomeTodayStripProps = {
   hidden: boolean;
@@ -267,11 +269,14 @@ export function WardHomeTileText({
   label,
   note,
   days,
+  outage = false,
 }: {
   name: string | null;
   label: string;
   note: string;
   days: string;
+  /** Batch 4 item 25 (D-142): the bed is not confirmed since the recorded outage. */
+  outage?: boolean;
 }) {
   const parts = name === null ? null : formalParts(name);
   const stateLine = tileStateLine(note, days);
@@ -288,6 +293,11 @@ export function WardHomeTileText({
       <span className={styles.bedTileState} aria-hidden="true">
         <span className={styles.bedTileNote}>{stateLine}</span>
       </span>
+      {outage ? (
+        <span className={outageTag.tile} aria-hidden="true">
+          {NOT_CONFIRMED_SINCE_OUTAGE}
+        </span>
+      ) : null}
     </>
   );
 }

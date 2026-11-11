@@ -28,10 +28,24 @@ const STORAGE_APIS =
   /\b(?:localStorage|sessionStorage|indexedDB)\b|\bcaches\s*\??\.|\bdocument\s*\??\.\s*cookie\b|\bnavigator\s*\??\.\s*storage\b/u;
 const SYNTHETIC_NAME = "Synthetic person";
 
+/**
+ * Batch 4 items 24 and 25 (Josh approved the drawing 11 Nov 2026, D-142): the screens outside
+ * reports/ that read pack print times or the outage catch-up.
+ */
+const PACK_TIME_READERS = [
+  "src/components/ward-management/use-outage-catch-up.ts",
+  "src/components/ward-management/ward/ward-pack-printed-line.tsx",
+  "src/components/ward-management/ward/ward-outage-catch-up-card.tsx",
+  "src/components/ward-management/coordinator/home-outage-catch-up.tsx",
+].map((path) => join(process.cwd(), path));
+
 function downtimePackSources(): string[] {
-  return readdirSync(REPORTS_DIR)
-    .filter((name) => /^(downtime-pack[\w.-]*|use-take-downtime-pack)\.tsx?$/u.test(name))
-    .map((name) => join(REPORTS_DIR, name));
+  return [
+    ...readdirSync(REPORTS_DIR)
+      .filter((name) => /^(downtime-pack[\w.-]*|use-take-downtime-pack)\.tsx?$/u.test(name))
+      .map((name) => join(REPORTS_DIR, name)),
+    ...PACK_TIME_READERS,
+  ];
 }
 
 /** Drops block and line comments so only live code is scanned. */
@@ -84,6 +98,13 @@ describe("downtime pack keeps no board data on the device (D-72 item 2)", () => 
         // Batch 4 item 24 (10 Nov 2026): the print time record and the hook that sends it.
         "downtime-pack-prints.ts",
         "downtime-pack-print-hook.ts",
+        // D-142 (11 Nov 2026): the old packs band, Record an outage, and their readers elsewhere.
+        "downtime-pack-old-band.tsx",
+        "downtime-pack-record-outage.tsx",
+        "use-outage-catch-up.ts",
+        "ward-pack-printed-line.tsx",
+        "ward-outage-catch-up-card.tsx",
+        "home-outage-catch-up.tsx",
       ]),
     );
   });

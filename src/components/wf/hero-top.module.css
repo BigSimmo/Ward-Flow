@@ -341,6 +341,17 @@ a.figLink::after,
   color: var(--wf-hero-ink);
 }
 
+.bandNote {
+  margin: 0;
+  font: 400 var(--wf-fs-12) / 16px var(--wf-font);
+  color: var(--wf-hero-ink-2);
+}
+
+.bandNote b {
+  font: 600 var(--wf-fs-12) / 16px var(--wf-mono);
+  color: var(--wf-hero-ink);
+}
+
 .bandAsideLink {
   display: inline-flex;
   align-items: center;
@@ -449,6 +460,25 @@ a.cellBody {
 .cells[data-variant="inline"] .cellLabel {
   letter-spacing: 0.01em;
   text-transform: none;
+}
+
+/* `wrap` (Batch 4, D-142): a list of named times. Name and value on one line, as `inline`; the
+   cells wrap onto more rows on wider screens and stand one per line on a phone (below). */
+.cells[data-variant="wrap"] {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.cells[data-variant="wrap"] .cellTop {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.cells[data-variant="wrap"] .cellLabel {
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--wf-hero-ink);
 }
 
 .cellValue {
@@ -680,5 +710,31 @@ a.cellBody {
   .chip,
   .pill {
     border-color: CanvasText;
+  }
+}
+
+/* Phone: a `wrap` band is a short list, one cell per line, so it never scrolls sideways or fades. */
+@media (max-width: 46.4375rem) {
+  .cells[data-variant="wrap"] {
+    flex-direction: column;
+    row-gap: 4px;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .cells[data-variant="wrap"] .cell {
+    flex: none;
+  }
+
+  .cells[data-variant="wrap"] .cellBody {
+    padding: 0;
+    border-left: 0;
+  }
+
+  .cells[data-variant="wrap"] .cellTop {
+    white-space: normal;
   }
 }

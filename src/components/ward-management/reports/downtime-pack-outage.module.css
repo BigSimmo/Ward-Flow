@@ -1,0 +1,49 @@
+/* Record an outage (Batch 4 item 25, D-142): the coordinator's form under the downtime pack's
+   tabs. Kit card, fields and buttons; tokens only. Text keeps the 12px floor. */
+
+.record {
+  margin-block-end: var(--wf-s-4);
+}
+
+.recordRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--wf-s-3);
+}
+
+.timeField {
+  inline-size: 9.5rem;
+}
+
+.dayChoice,
+.saveCell {
+  display: flex;
+  align-items: center;
+  min-block-size: var(--wf-h-md);
+}
+
+.recordHint {
+  margin: var(--wf-s-3) 0 0;
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.recordProblem {
+  margin-block-start: var(--wf-s-2);
+}
+
+@media (max-width: 46.4375rem) {
+  .record {
+    margin-block: var(--wf-s-3);
+  }
+
+  .timeField {
+    inline-size: calc(50% - var(--wf-s-3) / 2);
+  }
+
+  .dayChoice,
+  .saveCell {
+    min-block-size: 40px;
+  }
+}

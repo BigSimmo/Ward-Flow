@@ -36,6 +36,7 @@ import type { WardCommandDispatch } from "@/components/ward-management/ward-shar
 import type { CapacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { wardLiveFormAlerts, type WardScreenBed } from "./ward-screen-derivations";
 import { ReturnEarlyAlerts } from "@/components/ward-management/out-of-area/return-early-alerts";
+import { WardOutageCatchUpCard } from "./ward-outage-catch-up-card";
 
 /** The Home tab section (Worth your attention), drawn from the ward screen's own state. */
 type WardScreenHomeSectionProps = {
@@ -228,6 +229,24 @@ export function WardScreenHomeSection({
       aria-labelledby="tabBtn-attn"
       data-active={activeTab === "attn" || activeTab === "board"}
     >
+      {/* Batch 4 item 25 (D-142): after a recorded outage, until this ward confirms its beds. Each
+          row opens the ward's existing place for that work. */}
+      <WardOutageCatchUpCard
+        unit={unit}
+        now={now}
+        actions={{
+          onAdmissions: () => {
+            setPhonePanel(null);
+            selectActiveTab("coming");
+          },
+          onDischarges: openDischargesTab,
+          onMoves: () => {
+            selectActiveTab("board");
+            focusWhenShown('[aria-labelledby="ward-bed-board-title"] button');
+          },
+          onBedChanges: () => selectActiveTab("beds"),
+        }}
+      />
       {/* Out of area "Flag early" (3 Nov 2026): this ward's site is the home hospital. In-app only. */}
       <ReturnEarlyAlerts desk={{ role: "ward", siteCode: unit.siteCode }} now={now} />
       <WardHomeTab
