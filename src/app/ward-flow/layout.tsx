@@ -52,9 +52,14 @@ import {
   WardPrintFooter,
 } from "@/components/ward-management/shell/ward-access";
 import { WardRowDensity } from "@/components/ward-management/settings/row-density";
+import { WardRailPlaceholder } from "@/components/ward-management/shell/ward-rail-placeholder";
 import { WardGround } from "@/components/ward-management/ward-shell";
 import { WardDeskHold, WardDeskPendingClear } from "@/components/ward-management/shell/ward-access-hold";
-import { WARD_DESK_EARLY_SCRIPT, WARD_DESK_HELD_COOKIE } from "@/components/ward-management/shell/ward-desk-early";
+import {
+  WARD_DESK_EARLY_SCRIPT,
+  WARD_DESK_HELD_COOKIE,
+  wardDeskHeldFromCookie,
+} from "@/components/ward-management/shell/ward-desk-early";
 import { HeldDeskLoading } from "./loading-status";
 
 import styles from "./ward-flow-layout.module.css";
@@ -151,9 +156,10 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
   // The strict script-src needs the per-request nonce (src/proxy.ts) on our own inline script.
   const requestHeaders = await headers();
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
-  // Desk walk follow-up (9 Nov 2026): this browser's desk is not the whole-network coordinator's, so
-  // the server sends a loading page, not the coordinator's page, until the browser knows the desk.
-  const deskHeld = (await cookies()).get(WARD_DESK_HELD_COOKIE)?.value === "1";
+  // Desk walk follow-up (9 Nov 2026) and count leak (D-137, 10 Nov 2026): unless this browser said its
+  // desk is the whole-network coordinator's, the server sends a loading page, not the coordinator's
+  // page, until the browser knows the desk. A fresh device is held too.
+  const deskHeld = wardDeskHeldFromCookie((await cookies()).get(WARD_DESK_HELD_COOKIE)?.value);
   // A1-17 (audit 13 Oct 2026): draw the phone layout first on a phone, so slow signal does not show
   // a different, desktop-shaped page for many seconds before the code loads.
   const userAgent = requestHeaders.get("user-agent");
@@ -240,7 +246,7 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
               <div className={styles.shellRow}>
                 {/* Desk walk follow-up (9 Nov 2026): the coordinator's rail and top bar carry network
                 figures, so a held first load draws them once the desk is known (WardDeskHold). */}
-                <WardDeskHold held={deskHeld} placeholder={null}>
+                <WardDeskHold held={deskHeld} placeholder={<WardRailPlaceholder />}>
                   <NextShellBoundary label="The sidebar">
                     <WardRail />
                   </NextShellBoundary>

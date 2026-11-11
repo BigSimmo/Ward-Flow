@@ -397,7 +397,7 @@ describe("the Movements screen", () => {
     renderScreen();
     const figure = within(screen.getByRole("group", { name: "Highlight movements" }))
       .getByText("on the road or booked")
-      .closest("p");
+      .closest("[data-wf-hero-figure]");
     expect(figure).toHaveTextContent(
       new RegExp(`^${counts.Accepted + counts["En route"] + counts.Collected} on the road or booked$`, "u"),
     );

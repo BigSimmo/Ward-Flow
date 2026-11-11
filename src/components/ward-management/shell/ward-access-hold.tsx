@@ -33,7 +33,8 @@ export function WardDeskPendingClear() {
  * than the whole-network coordinator's), the server sends `placeholder` in place of the page, and
  * the browser's first pass keeps it so the two match. The pass after reads the stored desk, so the
  * page is first drawn for that desk and the coordinator's figures never reach the page at all.
- * Without the cookie (a fresh device, the coordinator) the server's page stands, as H-0111 decided.
+ * Since D-137 (10 Nov 2026) a fresh device, which sends no cookie, is held as well; only a browser
+ * whose desk is the whole-network coordinator's gets the server's page straight away.
  */
 export function WardDeskHold({
   held,

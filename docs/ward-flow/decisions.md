@@ -157,11 +157,13 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-132](#d-132-audit-fixes-group-1-docs-and-ci-guards-10-november-2026)                                                                                 | Audit fixes group 1: docs and CI guards; Claude-authored sensitive changes warn        | Active                                           |
 | [D-135](#d-135-batch-4-outages-and-pilot-control-pack-age-and-plan-answers-10-november-2026)                                                            | Batch 4, outages and pilot control: pack age and plan answers                          | Active                                           |
 | [D-136](#d-136-feature-batch-3-shift-change-and-follow-up-two-signed-values-10-november-2026)                                                           | Feature batch 3: two signed values (7-day diversion return, 30-minute handover list)   | Active                                           |
+| [D-137](#d-137-feature-build-batch-5-count-leak-first-tv-change-mark-and-qr-library-10-november-2026)                                                   | Feature build batch 5: count leak first, TV change mark 15 minutes, QR library         | Active                                           |
 | [D-138](#d-138-phone-alert-urgency-by-kind-10-november-2026)                                                                                            | Phone alert urgency by kind                                                            | Active                                           |
 | [D-139](#d-139-phone-statistics-ward-list-a-to-z-and-leave-return-times-as-typed-10-november-2026)                                                      | Phone Statistics ward list A to Z, and leave return times as typed                     | Active                                           |
 | [D-142](#d-142-batch-4-design-review-and-all-twelve-answers-approved-d-80-amended-for-site-features-11-november-2026)                                   | Batch 4: design review and all twelve answers approved, D-80 amended for site features | Active                                           |
 | [D-143](#d-143-mhert-is-mherl-in-the-glossary-smhmr-deferred-11-november-2026)                                                                          | MHERT is MHERL in the glossary; SMHMR deferred                                         | Active                                           |
 | [D-144](#d-144-chip-rows-move-only-sideways-on-a-phone-11-november-2026)                                                                                | Chip rows move only sideways on a phone                                                | Active                                           |
+| [D-147](#d-147-demo-code-tries-keep-per-address-keying-until-a-trusted-proxy-is-set-11-november-2026)                                                   | Demo-code tries keep per-address keying until a trusted proxy is set                   | Active                                           |
 
 ---
 
@@ -1721,6 +1723,22 @@ is inferred.
   6. **Item 21 placement (11 November 2026):** the "Your open work" list sits at the top of the Handover page.
 - **Boundary:** synthetic data only. Both values are prompts: neither blocks sign-out, ranks a person or judges the alternative. Approves no merge or release.
 
+## D-137. Feature build batch 5: count leak first, TV change mark and QR library (10 November 2026)
+
+- **Date:** 10 November 2026, 1:05 AM AWST on 11 November (17:05 UTC on 10 November). **Decided by:** Josh, choosing the recommended option on three decision cards in the "Build counts, screens and print" project thread, and writing "Go ahead with all your recommendations and disregard anything you cannot do" in the feature list thread (17:04 UTC) for the build plan's twelve questions. Numbered D-137 because the numbers before it were taken first. D-132 is claimed by PR #1601. D-133 is claimed by PR #1606. D-134 is claimed by PR #1608. D-135 is claimed by PR #1603. D-136 is claimed by PR #1605.
+- **Decision:**
+  1. **Count leak (plan question 1, item 1):** fixed first, before item 5. The server holds the page whenever it cannot be sure of the desk: only a browser that has said its desk is the whole-network coordinator's (cookie value `0`) gets the server's page. This changes H-0111 for a fresh device, which now sees a short loading page before its first page.
+  2. **TV change mark (plan question 9, item 43):** "Changed 14:32" shows on a ward or bed meeting TV tile for 15 minutes after its figure changes. Signed for the prototype by Josh as `tvChangeMark` in clinical-values.md.
+  3. **QR code library (plan question 11, item 42):** one small, well-known QR code library may be added as a dependency, loaded only where the desk QR code is drawn.
+  4. **Design approval and review answers (11 November 2026, 10:20 AM AWST, 02:20 UTC):** Josh chose "Approve all, with your answers" on the batch 5 approval card and wrote "Go ahead with all recommendations now for me." That approves the drawn parts on the batch's design review page (D-74) and these answers:
+     - No names in executive or statistics (aggregate) views at any count: a tapped count of people there lists nobody and says "Names are not listed in this view."
+     - The patient or carer page shows the receiving ward's mock nurses' station number from the on-call directory as "Ward phone".
+     - The patient or carer page wording stays marked as draft until consumer, carer and cultural review.
+     - The Night view's ready-bed heading reads "Beds ready now".
+     - This batch may change three files that held PR #1599 also changes (`bed-meeting-tv.tsx`, `ward-clinical-values.ts`, `ward-clinical-value-notes.ts`); this batch fixes any conflict.
+- **Note:** D-128 item 9 said no new features until #1564 to #1577 close. This batch builds because Josh chose the 27 items and asked for the batches to start on 10 November 2026; Josh may say otherwise on the PR.
+- **Boundary:** synthetic data only. Design approval for the drawn parts stays with the batch's design review page (D-74). Approves no merge or release.
+
 ## D-138. Phone alert urgency by kind (10 November 2026)
 
 - **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, picking item 23 of the audit fix build plan (Ward Flow project thread "Fix audit app and backend issues", audit fix group 2), which counts as his yes to audit decision 20. Numbered D-138 because D-132 to D-137 belong to other threads. D-133 is claimed by open PR #1606. D-134 is claimed by open PR #1608, and D-135 is claimed by open PR #1603, and D-136 is claimed by open PR #1605, and D-137 is claimed by open PR #1607. On 11 November 2026 Josh told every thread to go ahead with its recommendations, which approved the Settings line as drawn in the design review.
@@ -1762,3 +1780,9 @@ is inferred.
 - **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, on a decision card in the Ward Flow project thread "Stop chip rows dragging up and down", choosing "Lock rows to sideways only" over measuring on his iPhone first. Numbered D-144 because D-133 to D-143 belong to other threads. D-140 is claimed by open PR #1606, and D-141 is claimed by open PR #1606. D-142 is claimed by open PR #1603.
 - **Decision:** on a phone, the page-top quick-link chip rows, the Home quick bar, the shared phone chip row and Home's "Waiting in ED" strip take `touch-action: pan-x`. A finger on one of these rows can only move it sideways. The accepted trade-off is that a vertical swipe starting on one of these rows does not scroll the page. Reason: iPhone still slid the rows up and down after three layout fixes (#1596, #1602, #1610), and the cause could not be reproduced off the device.
 - **Boundary:** presentation only, synthetic data. Changes no clinical value or rule, and approves no merge or release.
+
+## D-147. Demo-code tries keep per-address keying until a trusted proxy is set (11 November 2026)
+
+- **Date:** 11 November 2026, 2:37 PM AWST (06:37 UTC). **Decided by:** Josh, on a decision card in the Ward Flow project thread "Get all open PRs merged", choosing "Add a safe fallback, then merge" for PR #1615 (A4-02). Numbered D-147 because D-145 and D-146 belong to other threads. D-145 is claimed by open PR #1623. D-146 is claimed by open PR #1624.
+- **Decision:** while `WARD_TRUSTED_PROXY_ADDRESSES` names no proxy on the Next service, the front door's demo-code try limit keeps keying on the edge's `X-Real-IP`, else the last `X-Forwarded-For` hop, as it did before A4-02. Once it names a proxy (or `*`), A4-02's trusted-proxy rule applies. Reason: the Next session route has no socket address, so the strict rule alone would put every caller in one shared bucket, and ten wrong tries from anyone in ten minutes would refuse every presenter.
+- **Boundary:** no Railway or environment change; setting `WARD_TRUSTED_PROXY_ADDRESSES` stays a separate, approved provider action. The fallback logs nothing. Synthetic data only; changes no clinical value or rule, and approves no release.

@@ -108,6 +108,8 @@ describe("clinical values file", () => {
       forecastEdRiskLead: 720,
       forecastWorseAlert: 2,
       handoverDuePrompt: 15,
+      // D-137 (Josh, 10 Nov 2026): the TV change mark shows for 15 minutes, signed.
+      tvChangeMark: 15,
       handoverOwnWorkLead: 30,
       lateArrivalGrace: 60,
       silentWardFirstReminder: 120,

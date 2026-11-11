@@ -512,7 +512,11 @@ describe("the Capacity screen", () => {
 describe("the Capacity screen never labels a bed count and a ward count with the same words", () => {
   /** The hero figures count beds: each figure's label, without its value. */
   function heroLabels(): string[] {
-    return Array.from(screen.getByRole("group", { name: "Network beds" }).querySelectorAll<HTMLElement>(":scope > p"))
+    return Array.from(
+      screen
+        .getByRole("group", { name: "Network beds" })
+        .querySelectorAll<HTMLElement>(":scope > [data-wf-hero-figure]"),
+    )
       .map((figure) => (figure.lastElementChild?.textContent ?? "").replace(/\s+/gu, " ").trim())
       .filter((text) => text !== "");
   }

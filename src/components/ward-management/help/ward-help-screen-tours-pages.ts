@@ -46,6 +46,49 @@ export const named = (label: string, element = "*"): TourTarget => ({
  */
 export const MORE_PAGES: readonly Around[] = [
   {
+    // Feature plan item 29: the first-night walk round of the coordinator's Night view.
+    screen: "night",
+    name: "Night view",
+    keywords: "night overnight first night shift after hours on call steps beds ready",
+    page: {
+      purpose: "The coordinator's overnight page: beds ready, ED waits by Step, who is on the way and on-call lines.",
+      path: /^\/ward-flow\/night$/u,
+      needs: "night",
+    },
+    steps: [
+      {
+        target: [id("night-figures"), HERO],
+        title: "Tonight at a glance",
+        body: "Beds ready, people waiting in an ED and people on the way. The same figures as Home, Waiting and Movements.",
+      },
+      {
+        target: id("night-beds"),
+        title: "Beds ready now",
+        body: "Each ward with a bed ready, by health service then name, with when its count was confirmed. Never ranked.",
+      },
+      {
+        target: id("night-ed-steps"),
+        title: "ED waits by Step",
+        body: "How many people are at each Step, by time in the department, with the suggested next step. A Step is a prompt for a person to act.",
+      },
+      {
+        target: id("night-on-the-way"),
+        title: "On the way",
+        body: "Everyone collected and moving to a ward. Open one for their record and arrival.",
+      },
+      {
+        target: id("night-intake-windows"),
+        title: "Intake windows",
+        body: "Says Not recorded until wards record their overnight intake windows.",
+      },
+      {
+        target: id("night-on-call"),
+        title: "On call now",
+        body: "The state desk, each service's bed flow and the crisis line, with who answers now. Numbers are synthetic.",
+      },
+    ],
+  },
+  {
     screen: "patient",
     name: "this patient record",
     keywords: "patient record movement person now history details documents status card",
