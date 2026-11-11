@@ -1697,7 +1697,7 @@ is inferred.
 
 ## D-140. Feature list adopted, and Wave 1 begins (10 November 2026)
 
-- **Date:** 10 November 2026, 10:09 PM AWST (14:09 UTC). **Decided by:** Josh, in the Ward Flow project thread "Perfect the ranked feature list": "Go ahead with all your recommendations", answering the six questions in the reviewed feature list (Claude Doc "Ward Flow feature list: reviewed and re-ranked", 10 November 2026). Numbered D-140 because D-132 to D-139 were taken first; D-133 is in the same PR. D-135 is claimed by open PR #1603. D-136 is claimed by open PR #1605. D-138 is claimed by open PR #1604. D-139 is claimed by open PR #1600.
+- **Date:** 10 November 2026, 10:09 PM AWST (14:09 UTC). **Decided by:** Josh, in the Ward Flow project thread "Perfect the ranked feature list": "Go ahead with all your recommendations", answering the six questions in the reviewed feature list (Claude Doc "Ward Flow feature list: reviewed and re-ranked", 10 November 2026). Numbered D-140 because D-132 to D-139 were taken first; D-133 is in the same PR. D-134 is claimed by open PR #1608. D-135 is claimed by open PR #1603. D-136 is claimed by open PR #1605. D-137 is claimed by open PR #1607. D-138 is claimed by open PR #1604. D-139 is claimed by open PR #1600.
 - **Decision:**
   1. **Working list:** the reviewed list (39 build items in four waves, pilot items P1 to P3, ruling items R1 to R6) replaces the order in the 10 November feature handover. Each item is re-checked against `main` before it is built.
   2. **Two-point ID:** rows, cards and toasts on signed-in screens show age and sex as recorded and the full UMRN beside the full name, the same UMRN format as D-113, and mark same-name clashes on a list. Never on the wall TV. Built in a held PR, after PR #1599.
