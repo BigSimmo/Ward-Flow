@@ -1,6 +1,6 @@
 import type { WardFlowState } from "../ward-flow-reducer";
 import { wardStatistics } from "../ward-statistics";
-import { bedIsOccupied, STAY_BANDS, stayBand } from "../ward-admissions";
+import { bedIsOccupied, endedInWardTransfer, STAY_BANDS, stayBand } from "../ward-admissions";
 import { dayOf, MINUTES_PER_DAY, isClockBreached } from "../ward-clock";
 import { openBedsNow, bedsPendingPreparation } from "../ward-bed-availability";
 import { dischargeDateCoverage } from "./statistics-ward-discharge-dates";
@@ -8,6 +8,7 @@ import { readyNotYetGone } from "./statistics-ward-ready";
 import { wardReferralTally } from "./statistics-ward-referrals";
 import { ED_WAIT_BANDS, edJourneyWaitBands, edJourneyWaitFigures, edWaitFigures } from "./statistics-ed-waits";
 import { declinesByReason } from "./statistics-derivations";
+import { occupancyText } from "./statistics-occupancy";
 import { pilotMeasures, type DurationSummary } from "../reports/pilot-measures";
 import { reportWeek, weeklyOperationsReport, type WeeklyReportInput } from "../reports/weekly-report";
 import { ExecutiveCountRelease, type ReportingCount } from "./executive-statistics-release";
@@ -202,6 +203,7 @@ export function executiveWardSummary(ward: PublicWard, input: ExecutivePrivateIn
     ...ward,
     cohort: unit.cohort,
     authorised: unit.authorised,
+    forensic: unit.forensic === true,
     lockedBeds: unit.lockedBeds,
     // Public inventory facts preserve the existing bed-finder controls without a Unit record.
     isClosed: unit.isClosed === true,
@@ -230,7 +232,12 @@ export function executiveWardSummary(ward: PublicWard, input: ExecutivePrivateIn
     dischargedToday: c(
       "dischargedToday",
       input.admissions.filter(
-        (row) => row.unitId === ward.id && row.leftAt !== null && dayOf(row.leftAt) === dayOf(now),
+        // M35 (Josh, 10 Nov 2026): a transfer to another psychiatric ward is a move, not a discharge.
+        (row) =>
+          row.unitId === ward.id &&
+          row.leftAt !== null &&
+          dayOf(row.leftAt) === dayOf(now) &&
+          !endedInWardTransfer(row),
       ).length,
     ),
     dueToday: dueByDay[0]!.count,
@@ -754,7 +761,8 @@ export function executiveSites(
     const c = (suffix: string, value: number) => release.count(`site:${code}:${suffix}`, value);
     const dischargedToday = c(
       "dischargedToday",
-      onSite.filter((row) => row.leftAt !== null && dayOf(row.leftAt) === dayOf(input.now)).length,
+      onSite.filter((row) => row.leftAt !== null && dayOf(row.leftAt) === dayOf(input.now) && !endedInWardTransfer(row))
+        .length,
     );
     const dueToday = c(
       "dueToday",
@@ -955,10 +963,11 @@ export function executiveJourney(
       figure: { kind: "bed" as const, value: beds.occupied },
       breakdown: [
         {
-          label: "Of beds",
+          label: "In use",
           figure: {
             kind: "text" as const,
-            text: `${beds.total ? Math.round((beds.occupied / beds.total) * 100) : 0}%`,
+            // M121 (L1 ruling, D-125): in use (Occupied + Pulled), or "No beds".
+            text: occupancyText({ beds: beds.total, inUse: beds.inUse }),
           },
         },
         ...leaveRows,

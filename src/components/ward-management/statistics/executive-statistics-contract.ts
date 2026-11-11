@@ -170,6 +170,8 @@ const wardSummary = z.strictObject({
   beds: bedCounts,
   cohort: publicLabel,
   authorised: z.boolean(),
+  /** A forensic ward is never offered (D7), so the executive bed finders leave it out (M118). */
+  forensic: z.boolean(),
   lockedBeds: count,
   isClosed: z.boolean(),
   sexDesignation: z.enum(SEX_DESIGNATIONS),
