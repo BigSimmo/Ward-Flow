@@ -7,6 +7,7 @@ import {
   WARD_DESK_EARLY_SCRIPT,
   WARD_DESK_HELD_COOKIE,
   WARD_DESK_PENDING_ATTRIBUTE,
+  wardDeskHeldFromCookie,
 } from "@/components/ward-management/shell/ward-desk-early";
 import {
   parseStoredAccess,
@@ -24,6 +25,7 @@ const bedManager = { role: "bed_manager", scope: { kind: "site", siteCode: "FSH"
 const runEarly = () => new Function(WARD_DESK_EARLY_SCRIPT)();
 const pending = () => document.documentElement.hasAttribute(WARD_DESK_PENDING_ATTRIBUTE);
 const held = () => document.cookie.split("; ").includes(`${WARD_DESK_HELD_COOKIE}=1`);
+const wholeNetwork = () => document.cookie.split("; ").includes(`${WARD_DESK_HELD_COOKIE}=0`);
 const clearHeld = () => {
   document.cookie = `${WARD_DESK_HELD_COOKIE}=;path=/ward-flow;max-age=0`;
   document.cookie = `${WARD_DESK_HELD_COOKIE}=;max-age=0`;
@@ -89,6 +91,7 @@ describe("server page held for a desk other than the coordinator's", () => {
     window.sessionStorage.setItem(KEY, JSON.stringify({ role: "coordinator", scope: { kind: "statewide" } }));
     runEarly();
     expect(held()).toBe(false);
+    expect(wholeNetwork(), "the coordinator's desk says so, so the server may draw its page").toBe(true);
   });
 
   it("keeps the held cookie in step with the desk the app stores", () => {
@@ -100,6 +103,7 @@ describe("server page held for a desk other than the coordinator's", () => {
     expect(held()).toBe(true);
     setWardAccess({ role: "coordinator", scope: { kind: "statewide" } });
     expect(held()).toBe(false);
+    expect(wholeNetwork()).toBe(true);
   });
 
   it("sends the placeholder, never the page, when held, and draws the page once the desk is known", async () => {
@@ -127,7 +131,7 @@ describe("server page held for a desk other than the coordinator's", () => {
     act(() => root?.unmount());
   });
 
-  it("keeps the server's page for a fresh device and the coordinator", () => {
+  it("keeps the server's page only for the coordinator", () => {
     const html = renderToString(
       <WardDeskHold held={false} placeholder={<p>Loading page</p>}>
         <p>Home</p>
@@ -135,5 +139,30 @@ describe("server page held for a desk other than the coordinator's", () => {
     );
     expect(html).toContain("Home");
     expect(html).not.toContain("Loading page");
+  });
+});
+
+/**
+ * Count leak (item 1, Josh, 10 Nov 2026, D-137): a fresh device sent no cookie, so the server drew
+ * the coordinator's figures into the first page. The server now holds the page unless the request
+ * says the desk is the whole-network coordinator's, which changes H-0111 for a fresh device.
+ */
+describe("D-137 server holds the page when it cannot be sure of the desk", () => {
+  it("holds a fresh device, another desk and any unknown value; lets only the coordinator's stand", () => {
+    expect(wardDeskHeldFromCookie(undefined), "fresh device, no cookie").toBe(true);
+    expect(wardDeskHeldFromCookie("")).toBe(true);
+    expect(wardDeskHeldFromCookie("1")).toBe(true);
+    expect(wardDeskHeldFromCookie("coordinator")).toBe(true);
+    expect(wardDeskHeldFromCookie("0")).toBe(false);
+  });
+
+  it("never draws the coordinator's figures in the first page for a fresh device", () => {
+    const html = renderToString(
+      <WardDeskHold held={wardDeskHeldFromCookie(undefined)} placeholder={<p>Loading page</p>}>
+        <p>Network beds ready of 304</p>
+      </WardDeskHold>,
+    );
+    expect(html).toContain("Loading page");
+    expect(html).not.toContain("304");
   });
 });

@@ -27,8 +27,12 @@ describe("Midland community team demo (locked design)", () => {
     // Page-top redesign (Josh, 9 Nov 2026): figures, the act row, chips and the week-ahead band.
     expect(screen.getByTestId("ward-community-hero-answer")).toHaveTextContent(/^142\s*on the caseload$/u);
     const figures = screen.getByRole("group", { name: "Team figures" });
-    expect(within(figures).getByText("in hospital").closest("p")).toHaveTextContent(/^9 in hospital$/u);
-    expect(within(figures).getByText("no case manager").closest("p")).toHaveTextContent(/^5 no case manager$/u);
+    expect(within(figures).getByText("in hospital").closest<HTMLElement>("[data-wf-hero-figure]")).toHaveTextContent(
+      /^9 in hospital$/u,
+    );
+    expect(
+      within(figures).getByText("no case manager").closest<HTMLElement>("[data-wf-hero-figure]"),
+    ).toHaveTextContent(/^5 no case manager$/u);
     expect(screen.getByText("3 need someone today")).toBeInTheDocument();
     expect(
       within(screen.getByTestId("ward-community-glance")).getByRole("button", { name: /CTO reviews/u }),
