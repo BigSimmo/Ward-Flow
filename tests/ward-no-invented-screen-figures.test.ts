@@ -181,6 +181,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^ACCEPT_SECOND_TAP_GUARD_MS$/,
   },
   {
+    id: "home-cards-wait",
+    why: "How long Home holds its columns for its two early cards before showing anyway (item 13, 11 Nov 2026), so the page does not shift; a loading pause, never shown, not a limit.",
+    file: /^coordinator\/home-cards-settled\.ts$/,
+    name: /^HOME_CARDS_WAIT_MS$/,
+  },
+  {
     id: "recovery-verifier-lifetime",
     why: "How long this browser keeps the one-use PKCE secret for a password recovery link it asked for (SEC-2, Josh, 6 Nov 2026); a sign-in security timer, never shown, not a clinical limit.",
     file: /^ward-auth-link\.ts$/,
