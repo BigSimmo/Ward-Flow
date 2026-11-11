@@ -1699,4 +1699,9 @@ is inferred.
   8. **ED may record the advocate line (item 15):** ED can record "Mental Health Advocacy Service told" on an accepted move of a detained patient before arrival. The ward sees it and can change it after arrival. It uses the one existing advocacy record.
   9. **Item 4 wording and behaviour (replaces item 3):** the patient card of a patient under 18 on a ward that is not a youth ward shows "Under 18 on an adult ward. Check the Mental Health Act 2014 requirements for a child on an adult ward, including notifying the Chief Psychiatrist." It shows automatically from the date of birth and the ward type. It has one optional typed field, "Chief Psychiatrist notified at", never pre-filled (D-93). Once a time is entered it stays visible but goes quiet. It goes away at 18 or on a move to a youth ward. It never blocks a bed offer and never pre-selects anything. It quotes no section number or time limit, because neither has been verified. It stays in the held PR.
 
+- **Addendum, 11 November 2026, about 11:05 to 11:24 AM AWST (03:05 to 03:24 UTC):** Josh wrote "I approve all your recommendations" in this batch's thread, then "I sign off on everything here" to the project's PR summary, which listed the held PR #1609 as waiting on his sign-off.
+
+  10. **Held items signed off:** items 4 and 15 (#1609) are signed off, so its `hold` label comes off and it may merge once green.
+  11. **Legal wording check:** the legal language check lets through only his exact item 4 sentence ("check the Mental Health Act 2014 requirements for a child on an adult ward"). It tells staff to check the Act rather than claiming authority. "2014" stays in the notice.
+
 - **Boundary:** synthetic data only. Information and prompts only: nothing ranks or recommends a ward or bed (D-71), and no clinical value changes. Approves no merge or release.
