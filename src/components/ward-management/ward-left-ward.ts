@@ -1,4 +1,4 @@
-import type { Admission } from "@/components/ward-management/ward-admissions";
+import type { Admission, LeavingDestination } from "@/components/ward-management/ward-admissions";
 import type { BedRelease } from "@/components/ward-management/ward-model-bed-release";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
@@ -45,15 +45,18 @@ const AWAITING_TRANSPORT = "Awaiting transport";
 export function transportPendingFor(admission: Admission, bedReleases: readonly BedRelease[]): boolean {
   if (admission.state !== "occupied") return false;
   if (admission.blockReason === AWAITING_TRANSPORT) return true;
-  return bedReleases.some(
-    (release) =>
-      release.admissionId === admission.id &&
-      release.state !== "discharged" &&
-      (release.waitingOn === AWAITING_TRANSPORT ||
-        release.blocker === AWAITING_TRANSPORT ||
-        (release.dependencies ?? []).some(
-          (dependency) => dependency.kind === "transport" && dependency.state === "outstanding",
-        )),
+  return bedReleases.some((release) => release.admissionId === admission.id && releaseTransportPending(release));
+}
+
+/** Whether this live release still has transport outstanding, from its own fields only. */
+export function releaseTransportPending(release: BedRelease): boolean {
+  return (
+    release.state !== "discharged" &&
+    (release.waitingOn === AWAITING_TRANSPORT ||
+      release.blocker === AWAITING_TRANSPORT ||
+      (release.dependencies ?? []).some(
+        (dependency) => dependency.kind === "transport" && dependency.state === "outstanding",
+      ))
   );
 }
 
@@ -84,5 +87,31 @@ export function waitingForTransport(admissions: readonly Admission[], unitId?: s
 }
 
 /** The refusal both departure paths give when "Left the ward" is asked for without transport pending. */
-export const LEFT_WARD_NEEDS_TRANSPORT =
+const LEFT_WARD_NEEDS_TRANSPORT =
   "Left the ward is for a discharge still waiting on transport. Record the departure with They have left instead";
+
+/** The refusal when "Left the ward" is asked for someone who did not return: they are not on site. */
+const LEFT_WARD_NOT_ON_SITE =
+  "Left the ward, waiting for transport, is for someone still on site. Someone who did not return is not waiting for transport";
+
+/** Destinations that cannot be waiting on site for transport. */
+const NOT_ON_SITE: readonly LeavingDestination[] = ["did-not-return"];
+
+/** Whether "Left the ward, waiting for transport" may be offered with this destination. */
+export function leftWardAllowedFor(destination: LeavingDestination): boolean {
+  return !NOT_ON_SITE.includes(destination);
+}
+
+/**
+ * Why "Left the ward, waiting for transport" is refused for this departure, or null when it may be
+ * recorded. Both departure paths (`RECORD_LEAVING` and `RECORD_PATIENT_DISCHARGE`) ask this.
+ */
+export function leftWardRefusal(
+  admission: Admission,
+  bedReleases: readonly BedRelease[],
+  destination: LeavingDestination,
+): string | null {
+  if (!leftWardAllowedFor(destination)) return LEFT_WARD_NOT_ON_SITE;
+  if (!transportPendingFor(admission, bedReleases)) return LEFT_WARD_NEEDS_TRANSPORT;
+  return null;
+}

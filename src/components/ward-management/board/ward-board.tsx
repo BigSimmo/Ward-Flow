@@ -78,7 +78,7 @@ import { LeavingDestinationField, TransportWaitField, WardBoardDetailPanel } fro
 import { WardBoardWorkBand } from "./ward-board-work-band";
 import {
   collectedStep,
-  leavingConfirmWords,
+  transportConfirm,
   TransportWaitConfirmText,
   WardBoardTransportWait,
 } from "./ward-board-transport-wait";
@@ -935,6 +935,7 @@ export function WardBoard({
   const confirmDestination = LEAVING_DESTINATIONS.find(
     (destination) => destination.id === destinationFor(confirmAdmissionId),
   )?.label;
+  const ask = transportConfirm(pendingConfirm, destinationFor(confirmAdmissionId), transportPendingForStay);
 
   const handleConfirmAction = () => {
     if (!pendingConfirm) return;
@@ -942,8 +943,8 @@ export function WardBoard({
       const admissionId = pendingConfirm.admissionId || pendingConfirm.item?.selectableKey;
       const leavingDestination = destinationFor(admissionId);
       if (!admissionId || leavingDestination === "") return;
-      if (pendingConfirm.offerTransport && pendingConfirm.awaitingTransport === undefined) return;
-      const awaitingTransport = pendingConfirm.awaitingTransport === true;
+      if (ask.unanswered) return;
+      const awaitingTransport = ask.awaiting === true;
       recordDepartureAndReport(
         () =>
           recordWardDeparture
@@ -1387,7 +1388,7 @@ export function WardBoard({
             <div className={styles.confirmDialogPanel}>
               <div className={styles.modalHeader}>
                 <h3 id="confirm-dialog-title" className={styles.confirmDialogTitle}>
-                  {leavingConfirmWords(pendingConfirm).title}
+                  {ask.words.title}
                 </h3>
                 <button
                   ref={confirmCloseBtnRef}
@@ -1405,7 +1406,7 @@ export function WardBoard({
               </div>
 
               <p id="confirm-dialog-description" className={styles.confirmDialogText}>
-                {pendingConfirm.awaitingTransport ? (
+                {ask.awaiting ? (
                   <TransportWaitConfirmText who={pendingConfirm.who} destination={confirmDestination} />
                 ) : pendingConfirm.kind === "leaving" ? (
                   <>
@@ -1442,10 +1443,10 @@ export function WardBoard({
                 />
               ) : null}
 
-              {pendingConfirm.offerTransport ? (
+              {ask.offers ? (
                 <TransportWaitField
                   id="ward-board-confirm-transport"
-                  value={pendingConfirm.awaitingTransport}
+                  value={ask.awaiting}
                   onChange={(awaitingTransport) => setPendingConfirm({ ...pendingConfirm, awaitingTransport })}
                 />
               ) : null}
@@ -1466,12 +1467,11 @@ export function WardBoard({
                   className={styles.detailPrimaryBtn}
                   // Native `disabled`: transient inertness until where they went is chosen (CS3-07).
                   disabled={
-                    (pendingConfirm.kind === "leaving" && destinationFor(confirmAdmissionId) === "") ||
-                    (pendingConfirm.offerTransport === true && pendingConfirm.awaitingTransport === undefined)
+                    (pendingConfirm.kind === "leaving" && destinationFor(confirmAdmissionId) === "") || ask.unanswered
                   }
                   data-tone={pendingConfirm.kind === "leaving" ? "warn" : undefined}
                 >
-                  {leavingConfirmWords(pendingConfirm).action}
+                  {ask.words.action}
                 </button>
               </div>
             </div>

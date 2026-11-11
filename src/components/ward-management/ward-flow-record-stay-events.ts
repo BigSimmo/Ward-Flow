@@ -4,7 +4,7 @@
 import { stayLegalStatusIsInvoluntary } from "./ward-discharge-records";
 import { openRestrictivePracticeRefusal } from "./restrictive-practice/ward-restrictive-practice";
 import { isLeavingDestination } from "./ward-admissions";
-import { LEFT_WARD_NEEDS_TRANSPORT, transportPendingFor } from "./ward-left-ward";
+import { leftWardRefusal } from "./ward-left-ward";
 import { type AuditDecision, finiteInstant } from "./ward-audit";
 import { recordedCommunityTransition } from "./ward-care-journey";
 import type {
@@ -156,8 +156,9 @@ export function reduceRecordedStayEvent(
         return reject(state, event, "Departure cannot precede this admission's arrival");
       }
       // Item 18: "Left the ward" only for a discharge still waiting on transport.
-      if (event.awaitingTransport === true && !transportPendingFor(admission, state.bedReleases)) {
-        return reject(state, event, LEFT_WARD_NEEDS_TRANSPORT);
+      if (event.awaitingTransport === true) {
+        const refusal = leftWardRefusal(admission, state.bedReleases, event.leavingDestination);
+        if (refusal) return reject(state, event, refusal);
       }
 
       // Discharge blocked while in transit: a patient cannot be discharged while their transfer
@@ -244,7 +245,16 @@ export function reduceRecordedStayEvent(
       decision.reasonCode = "none";
       const collected: typeof admission = { ...admission };
       delete collected.waitingForTransport;
-      return replaceAdmission(state, admission.id, collected);
+      // The projected discharge record changes too, so its revision moves: a protected-record
+      // command carrying the revision from before collection is then refused as stale.
+      const next = replaceAdmission(state, admission.id, collected);
+      return {
+        ...next,
+        dischargeRevisions: {
+          ...next.dischargeRevisions,
+          [admission.id]: (state.dischargeRevisions[admission.id] ?? 0) + 1,
+        },
+      };
     }
 
     case "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT": {

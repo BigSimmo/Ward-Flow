@@ -107,6 +107,20 @@ describe("Left the ward, waiting for transport (item 18)", () => {
     expect(refused.units).toEqual(seed.units);
   });
 
+  it("is refused for someone who did not return, who is not on site to wait (CodeRabbit, #1608)", () => {
+    const refused = wardFlowReducer(seed, { ...leave(person.id, person.unitId), leavingDestination: "did-not-return" });
+    expect(refused.rejections.length).toBe(seed.rejections.length + 1);
+    expect(refused.rejections.at(-1)?.reason).toContain("still on site");
+    expect(stayOf(refused, person.id).state).toBe("occupied");
+    // Without the wait, did-not-return is still recorded as before.
+    const plain = wardFlowReducer(seed, {
+      ...leave(person.id, person.unitId),
+      leavingDestination: "did-not-return",
+      awaitingTransport: undefined,
+    });
+    expect(stayOf(plain, person.id).state).toBe("departed");
+  });
+
   it("never frees the bed twice: a second departure of any kind is refused and moves nothing", () => {
     const again = wardFlowReducer(left, leave(person.id, person.unitId));
     expect(again.rejections.length).toBe(left.rejections.length + 1);
@@ -123,6 +137,8 @@ describe("Left the ward, waiting for transport (item 18)", () => {
       person.id,
     );
     expect(collected.units).toEqual(left.units);
+    // The discharge record changed, so its revision moves and a command from before is stale.
+    expect(collected.dischargeRevisions[person.id]).toBe((left.dischargeRevisions[person.id] ?? 0) + 1);
     // Collecting again is refused rather than silently accepted.
     const twice = wardFlowReducer(collected, collect(person.id, person.unitId));
     expect(twice.rejections.length).toBe(collected.rejections.length + 1);

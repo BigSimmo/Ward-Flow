@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 
-import { Dialog, Field, TextInput } from "@/components/wf";
+import { Dialog, Field, StateLine, TextInput } from "@/components/wf";
 
 import { intakeWindowFromClockText } from "../ward-intake-window";
 import { formatInstant, type Instant } from "../ward-clock";
@@ -22,16 +22,16 @@ export function WardIntakeWindowDialog({
   hasTonight,
   role,
   onClose,
-  onRefused,
 }: {
   unit: Unit;
   hasTonight: boolean;
   role: Extract<WardFlowRole, "ward" | "coordinator">;
   onClose: () => void;
-  onRefused: (why: string) => void;
 }) {
   const [fromText, setFromText] = useState("");
   const [toText, setToText] = useState("");
+  // A refused or unconfirmed save keeps the dialog and both typed times, and says why here.
+  const [refused, setRefused] = useState<string | null>(null);
   const id = useId();
   const { dispatch, rejections } = useWardFlowSelect("dispatch", "rejections");
   // The live clock stamps the step; the page clock may be paused, kept for display only.
@@ -47,6 +47,7 @@ export function WardIntakeWindowDialog({
         : undefined;
 
   const send = (next: { from: Instant; to: Instant } | null) => {
+    setRefused(null);
     run(
       {
         type: "SET_INTAKE_WINDOW",
@@ -61,10 +62,10 @@ export function WardIntakeWindowDialog({
           ? `${unit.name}: admit ${formatInstant(next.from)} to ${formatInstant(next.to)} tonight.`
           : `${unit.name}: tonight's intake hours cleared.`,
         refusalShownInline: true,
-        onRefused: (why) => onRefused(refusalReasonText(why)),
+        onRefused: (why) => setRefused(refusalReasonText(why)),
+        onAccepted: onClose,
       },
     );
-    onClose();
   };
 
   return (
@@ -110,6 +111,7 @@ export function WardIntakeWindowDialog({
           />
         </Field>
       </div>
+      {refused ? <StateLine kind="error" compact title="Not saved." reason={refused} /> : null}
     </Dialog>
   );
 }

@@ -4,7 +4,8 @@
 // left the ward (their bed is already Ready) but are still on site waiting to be collected. Each
 // stays here until "Collected", so nobody drops off every list while still in the building.
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import type { WaitingForTransportEntry } from "@/components/ward-management/ward-left-ward";
+import type { LeavingDestination } from "@/components/ward-management/ward-admissions";
+import { leftWardAllowedFor, type WaitingForTransportEntry } from "@/components/ward-management/ward-left-ward";
 import styles from "./board.module.css";
 
 export function WardBoardTransportWait({
@@ -31,7 +32,8 @@ export function WardBoardTransportWait({
             Waiting for transport
           </h2>
           <span className={styles.workBandDigest}>
-            {entries.length === 1 ? "1 person has" : `${entries.length} people have`} left the ward. Their bed is ready.
+            {entries.length === 1 ? "1 person has" : `${entries.length} people have`} left the ward. Their bed was freed
+            when they left.
           </span>
         </div>
         <div className={styles.shiftGrid} data-expanded="true">
@@ -81,7 +83,7 @@ export function TransportWaitConfirmText({ who, destination }: { who: string; de
 }
 
 /** The confirm dialog's title and button for a discharge, an ED transfer or item 18's left-the-ward step. */
-export function leavingConfirmWords(confirm: { kind: string; offerTransport?: boolean; awaitingTransport?: boolean }) {
+function leavingConfirmWords(confirm: { kind: string; offerTransport?: boolean; awaitingTransport?: boolean }) {
   const leaving = confirm.kind === "leaving";
   return {
     title: confirm.offerTransport
@@ -90,6 +92,37 @@ export function leavingConfirmWords(confirm: { kind: string; offerTransport?: bo
         ? "Confirm discharge"
         : "Confirm emergency department transfer",
     action: confirm.awaitingTransport ? "Record left ward" : leaving ? "Record discharge" : "Record ED transfer",
+  };
+}
+
+/**
+ * Item 18: what the departure confirm asks about transport. It asks while the dialog's stay has
+ * transport pending now, read from the live records (`pendingNow`), not only when it opened, so
+ * transport another desk records as outstanding meanwhile is still asked about. Someone who did not
+ * return is not on site, so it is never asked for them and no wait is recorded.
+ */
+export function transportConfirm(
+  confirm: {
+    kind: string;
+    offerTransport?: boolean;
+    awaitingTransport?: boolean;
+    admissionId?: string;
+    item?: { selectableKey?: string | null };
+  } | null,
+  destination: LeavingDestination | "",
+  pendingNow: (admissionId?: string | null) => boolean,
+) {
+  const admissionId = confirm?.admissionId || confirm?.item?.selectableKey;
+  const offers =
+    confirm?.kind === "leaving" &&
+    (destination === "" || leftWardAllowedFor(destination)) &&
+    (confirm.offerTransport === true || pendingNow(admissionId));
+  const awaiting = offers ? confirm?.awaitingTransport : undefined;
+  return {
+    offers,
+    awaiting,
+    unanswered: offers && awaiting === undefined,
+    words: leavingConfirmWords({ kind: confirm?.kind ?? "", offerTransport: offers, awaitingTransport: awaiting }),
   };
 }
 

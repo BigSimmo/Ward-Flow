@@ -3,8 +3,6 @@
 import dynamic from "next/dynamic";
 import { useState } from "react";
 
-import { StateLine } from "@/components/wf";
-
 import { intakeWindowLine, tonightIntakeWindow } from "../ward-intake-window";
 import type { Instant } from "../ward-clock";
 import { useRouteRole } from "../ward-role-gate";
@@ -29,7 +27,6 @@ export function WardIntakeWindowControl({ unit, now }: { unit: Unit; now: Instan
   const tonight = tonightIntakeWindow(unit, now);
   const mayEdit = role === "ward" || role === "coordinator";
   const [open, setOpen] = useState(false);
-  const [refused, setRefused] = useState<string | null>(null);
 
   return (
     <span className={styles.row} data-testid="ward-intake-window">
@@ -41,25 +38,15 @@ export function WardIntakeWindowControl({ unit, now }: { unit: Unit; now: Instan
             type="button"
             className={styles.trigger}
             aria-label={`Edit tonight's intake hours for ${unit.name}`}
-            onClick={() => {
-              setRefused(null);
-              setOpen(true);
-            }}
+            onClick={() => setOpen(true)}
             data-testid="ward-intake-window-edit"
           >
             Edit
           </button>
         </>
       ) : null}
-      {refused ? <StateLine kind="error" compact title="Not saved. Press Edit to try again." reason={refused} /> : null}
       {open && mayEdit ? (
-        <WardIntakeWindowDialog
-          unit={unit}
-          hasTonight={tonight !== null}
-          role={role}
-          onClose={() => setOpen(false)}
-          onRefused={setRefused}
-        />
+        <WardIntakeWindowDialog unit={unit} hasTonight={tonight !== null} role={role} onClose={() => setOpen(false)} />
       ) : null}
     </span>
   );

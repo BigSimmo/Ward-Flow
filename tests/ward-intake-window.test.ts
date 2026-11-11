@@ -112,6 +112,16 @@ describe("SET_INTAKE_WINDOW", () => {
     expect(send(state, { unitId: "no-such-ward", intake }).rejections).toHaveLength(1);
     expect(send(state, { unitId, intake }).rejections).toEqual([]);
   });
+
+  it("refuses a shared command that arrives with no hours, rather than throwing (CodeRabbit, #1608)", () => {
+    const { state, unitId } = setup();
+    const missing = { unitId, intake: undefined } as unknown as Partial<
+      Extract<WardFlowEvent, { type: "SET_INTAKE_WINDOW" }>
+    >;
+    const refused = send(state, missing);
+    expect(refused.rejections).toHaveLength(1);
+    expect(unitOf(refused, unitId).intakeWindow).toBeUndefined();
+  });
 });
 
 describe("tonightIntakeWindowList", () => {

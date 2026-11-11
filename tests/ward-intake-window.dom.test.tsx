@@ -34,7 +34,7 @@ describe("tonight's intake hours on the ward hero (feature item 13)", () => {
   it("starts empty, and saves two typed times", () => {
     renderWard("rph-older-adult");
     expect(screen.getByTestId("ward-intake-window-line").textContent).toBe("Tonight: not set");
-    fireEvent.click(screen.getByTestId("ward-intake-window-edit"));
+    fireEvent.click(screen.getByRole("button", { name: /^Edit tonight's intake hours for / }));
     const from = screen.getByTestId("ward-intake-window-from") as HTMLInputElement;
     const to = screen.getByTestId("ward-intake-window-to") as HTMLInputElement;
     // Nothing pre-filled.
@@ -51,8 +51,10 @@ describe("Tonight's intake windows card", () => {
   it("lists the seeded windows and folds the rest into one count line", () => {
     const units = seedWardFlowState().units;
     render(<CapacityIntakeWindowsCard units={units} now={NOW_ANCHOR} />);
-    const card = screen.getByTestId("capacity-intake-windows");
-    const rows = within(card).getAllByTestId("capacity-intake-window-row");
+    const card = screen.getByRole("region", { name: "Tonight's intake windows" });
+    const rows = within(within(card).getByRole("list", { name: "Wards with intake hours tonight" })).getAllByRole(
+      "listitem",
+    );
     expect(rows).toHaveLength(3);
     expect(within(card).getByTestId("capacity-intake-windows-not-set").textContent).toContain(
       `${units.length - 3} wards haven't set a window.`,

@@ -30,6 +30,7 @@ import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { CardSafetyTags } from "@/components/ward-management/patients/card-safety-tags";
 import { ArrivalStaffingNote } from "@/components/ward-management/ward-arrival-staffing-note";
+import { referralDated } from "@/components/ward-management/referrals/referral-inbox";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import {
@@ -151,8 +152,8 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const now = useWardFlowClock();
   const raise = useWardRaise("ward");
   const unit = units.find((candidate) => candidate.id === unitId);
-  // D-117 item 3: only the referrals sent to this ward (FD-23) feed the request card's flags.
-  const wardReferrals = useMemo(() => (unit ? (wardReferralInbox?.(unit.id) ?? []) : []), [wardReferralInbox, unit]);
+  // D-117 item 3: only the referrals sent to this ward (FD-23) feed the card's flags, dated by the referral (H10).
+  const wardReferrals = useMemo(() => referralDated(unit && wardReferralInbox?.(unit.id)), [wardReferralInbox, unit]);
 
   // CS-08 / Notices option A: hold by journey id, not list position; a Notices link opens its named request.
   const [answerSelection, setAnswerSelection] = useState<{ id?: string; index: number; name?: string }>({

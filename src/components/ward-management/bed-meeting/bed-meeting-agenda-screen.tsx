@@ -49,6 +49,7 @@ import { referralQueueOrder } from "../ward-referrals";
 import { healthServiceAcronym, movementBelongsToService, unitHealthService } from "../ward-service-scope";
 import { siteByCode } from "../ward-sites";
 import { unitHref } from "../shell/ward-facade";
+import { useCanOpenHref } from "../shell/ward-access";
 import { referralBoardHref } from "../ed/ed-bed-search-step";
 import { askingForShort, waitWords } from "../referrals/referral-board-parts";
 import { WardPrototypeFooter } from "../shell/ward-prototype-footer";
@@ -247,7 +248,9 @@ function BedMeetingAgenda() {
       })
     : allSections;
   const fullSummary = meetingActionSummary(scopedMovements, scopedAdmissions, now);
-  // Item 6 (10 Nov 2026): beds, not people, so only the unfiltered agenda lists them.
+  // Item 6 (10 Nov 2026): beds, not people, so only the unfiltered agenda lists them. A ward the desk
+  // cannot open (another site's, for a site bed manager) is listed without its Open ward link.
+  const canOpenHref = useCanOpenHref();
   const closedReview = closedBedsReviewSection(
     service === null ? units : units.filter((unit) => unitHealthService(unit) === service),
     now,
@@ -815,13 +818,15 @@ function BedMeetingAgenda() {
                         {formatInstantWithDay(item.reviewAt, now)}
                       </span>
                     </div>
-                    <Link
-                      href={unitHref(item.unitId)}
-                      className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.addAction}`}
-                      aria-label={`Open ward: ${item.wardName}, to review bed ${item.bedNumber}`}
-                    >
-                      Open ward
-                    </Link>
+                    {canOpenHref(unitHref(item.unitId)) ? (
+                      <Link
+                        href={unitHref(item.unitId)}
+                        className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.addAction}`}
+                        aria-label={`Open ward: ${item.wardName}, to review bed ${item.bedNumber}`}
+                      >
+                        Open ward
+                      </Link>
+                    ) : null}
                   </div>
                 </li>
               ))

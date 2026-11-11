@@ -46,6 +46,11 @@ export function reduceIntakeWindowEvent(
     return replaceUnit(state, unit.id, cleared);
   }
 
+  // A shared command can arrive without its hours; refuse it rather than throw reading them.
+  if (typeof event.intake !== "object" || event.intake === undefined) {
+    decision.reasonCode = "invalid-payload";
+    return reject(state, event, "Intake hours need a start and an end");
+  }
   const problem = intakeWindowProblem(event.intake, event.now);
   if (problem) return reject(state, event, problem);
   decision.outcome = "accepted";
