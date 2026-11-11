@@ -148,5 +148,7 @@ export function DELETE(request: NextRequest) {
     "Set-Cookie",
     `${FRONT_DOOR_PASS_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax; HttpOnly${secure}`,
   );
+  // Live audit item 19: the readable marker goes with the pass, so nothing stays after sign-out.
+  response.headers.append("Set-Cookie", `${FRONT_DOOR_MARKER_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax${secure}`);
   return response;
 }

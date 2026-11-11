@@ -1072,6 +1072,35 @@ test("the server logs each full read of a desk's list or TV board, and the TV's 
   assert.equal((await failing(request())).status, 503);
 });
 
+test("live audit item 21: a desk whose role cannot open the TV board is logged as its list", async () => {
+  const logged = [];
+  const edView = { ...wardView, access: { role: "ed", scope: { kind: "ed", edIds: ["ed-a"] } } };
+  const { handler } = setup(other, "prototype", {
+    viewer: async () => edView,
+    logList: async (view, surface) => {
+      logged.push([view.access.role, surface]);
+      return true;
+    },
+  });
+  const tv = request();
+  tv.headers.set("x-ward-screen", "tv");
+  assert.equal((await handler(tv)).status, 200);
+  const { handler: ward } = setup(other, "prototype", {
+    viewer: async () => wardView,
+    logList: async (view, surface) => {
+      logged.push([view.access.role, surface]);
+      return true;
+    },
+  });
+  const wardTv = request();
+  wardTv.headers.set("x-ward-screen", "tv");
+  assert.equal((await ward(wardTv)).status, 200);
+  assert.deepEqual(logged, [
+    ["ed", "list"],
+    ["ward", "tv"],
+  ]);
+});
+
 test("a bootstrap coordinator past its end date has no role (H-0057)", async () => {
   const handler = createHandler({
     config: {
