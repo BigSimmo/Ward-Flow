@@ -29,3 +29,5 @@ After main at `35c7ccd91` raised five routes by 0.3 to 0.4 KB, the third merge k
 The build on `47311d11b` measured Statistics at 633.9 KB, 1.4 KB above main alone. It is set to 634.1, up 1.5 KB from main's 632.6.
 
 After main at `f0db2beec` raised every route again (PR #1609), the fourth merge kept this PR's raise on top of main's values: Home 578.2, Referrals 586.5, ED 537.8, Ward 616.5, Movement detail 612.6, Capacity 657.3, Bed meeting 594.8 and Statistics 635.1. Arm ED stays at main's 667.6.
+
+The build on `3ac0b5560` measured Arm ED at 667.9 KB against main's 667.6 limit. Main alone could not be built for comparison. Arm ED is set to 668.1, up 0.5 KB.
