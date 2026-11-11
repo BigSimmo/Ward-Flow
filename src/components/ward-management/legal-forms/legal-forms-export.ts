@@ -2,7 +2,7 @@ import { formatSheetMoment, isClockBreached, type Instant } from "@/components/w
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { FORM_RECORDED_ENDED, formRecordedEnded } from "@/components/ward-management/ward-legal-form-ended";
 import type { Movement } from "@/components/ward-management/ward-model";
-import { downloadCsv } from "@/components/ward-management/statistics/statistics-csv";
+import { downloadCsv } from "@/components/ward-management/ward-csv";
 
 import { currentLegalDueAt, formProgression, formProgressionPhrase } from "./legal-form-progression";
 

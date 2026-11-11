@@ -6,7 +6,7 @@ import { movementOriginLabel } from "@/components/ward-management/ward-movement-
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
-import { downloadCsv } from "@/components/ward-management/statistics/statistics-csv";
+import { downloadCsv } from "@/components/ward-management/ward-csv";
 
 /** Where and when the file was taken, as `downloadCsv` writes it above the rows. */
 export type ListExportProvenance = NonNullable<Parameters<typeof downloadCsv>[2]>;
