@@ -534,7 +534,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       downloadBlob(blob, `ward-flow-rules-${date}.json`);
       showToast("Saved rules downloaded.");
     } catch {
-      showToast("The rules file could not be downloaded.");
+      showToast("The rules file could not be downloaded. Try again in a moment.");
     }
   };
 
@@ -555,7 +555,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
           : "Diagnostics copied to clipboard (aggregate only).",
       );
     } catch {
-      showToast("Diagnostics could not be copied.");
+      showToast("Diagnostics could not be copied. Try again in a moment.");
     }
   };
 
@@ -617,7 +617,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
         `Session data for this tab cleared.${operational && !sharedEnabled ? " The demonstration has restarted." : ""}`,
       );
     } catch {
-      showToast("Session data could not be cleared.");
+      showToast("Session data could not be cleared. Close the browser to clear it.");
     }
   };
 

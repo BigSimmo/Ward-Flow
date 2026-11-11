@@ -25,6 +25,9 @@
 // 10 Nov 2026 (PR #1583): PR #1578 took main to 2550, so with the same six lines the cap is 2560.
 // 10 Nov 2026 (PR #1598): main reached 2574 of ward-screen's 2575; the D-129 sign-off Undo adds three
 // lines (its logic lives in ward-sign-off-undo.ts), so the cap is 2580.
+// 10 Nov 2026 (Tier 7 audit A5-05): the cap now covers the backend's source files too. postgres.mjs
+// was split by area into workspace-*.mjs; its remaining core (the record cache, reads, saves,
+// archive and the command path) gets a cap of its size plus about 150 lines.
 export const MAX_LINES_DEFAULT = 1500;
 export const MAX_LINES_HEADROOM = 300;
 
@@ -39,4 +42,5 @@ export const MAX_LINES_BASELINE = {
   "src/components/ward-management/ward/ward-home-tab.tsx": 2150,
   "src/components/ward-management/ward-patients-seed.ts": 1800,
   "src/components/ward-management/ward/ward-answer-view.tsx": 1750,
+  "backend/ward-flow/postgres.mjs": 1860,
 };
