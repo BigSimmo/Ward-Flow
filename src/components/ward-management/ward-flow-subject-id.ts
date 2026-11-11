@@ -1,5 +1,18 @@
 import type { WardFlowEvent } from "./ward-flow-events";
 import { PATIENT_RECORD_UNDO_TYPES, undoStepSubjectId } from "./ward-undo";
+import type { HandedItemRef } from "@/components/ward-management/handover-work-events";
+
+/** A hand-over's item id; a malformed item (from the wire) files against nothing rather than throwing. */
+function handedItemSubjectId(item: HandedItemRef | undefined): string {
+  if (typeof item !== "object" || item === null) return "none";
+  const id =
+    item.kind === "referral"
+      ? item.referralId
+      : item.kind === "callback"
+        ? item.callbackId
+        : (item.movementId ?? item.admissionId);
+  return typeof id === "string" ? id : "none";
+}
 
 /*
  * Moved out of ward-flow-reducer.ts unchanged (19 Oct 2026) to keep the reducer under its line cap
@@ -203,6 +216,16 @@ export function subjectId(event: WardFlowEvent): string {
     case "REQUEST_WARD_STAFF":
     case "CLOSE_WARD_STAFF_REQUEST":
       return event.unitId;
+    // Batch 3 items 21 and 23: a hand-over is filed against its item, an accept against itself, a
+    // carer callback against its stay or bed request, and its tick against itself.
+    case "HAND_OVER_ITEM":
+      return handedItemSubjectId(event.item);
+    case "ACCEPT_HANDED_ITEM":
+      return typeof event.handedItemId === "string" ? event.handedItemId : "none";
+    case "RECORD_CARER_CALLBACK":
+      return event.admissionId ?? event.movementId ?? "none";
+    case "MARK_CARER_CALLBACK_MADE":
+      return typeof event.callbackId === "string" ? event.callbackId : "none";
     case "DISPATCH_BROADCAST_ALERT":
       return "broadcast";
     case "ACKNOWLEDGE_BROADCAST_ALERT":

@@ -17,6 +17,8 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { useSinceLastLook } from "./since-last-look-panel";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
+import { shiftLookWindowStart } from "@/components/ward-management/shift-first-look";
+import { nightMovementChanges, type NightMovementChange } from "@/components/ward-management/night-movement-changes";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import type { Admission } from "@/components/ward-management/ward-admissions";
@@ -27,16 +29,28 @@ import { allEmergencyDepartments } from "@/components/ward-management/ward-sites
 /**
  * The Changes tab of Home's Activity panel (Home and Activity design, approved by Josh 31 Oct 2026). Every line comes from the real
  * "since last look" comparison (`since-last-look.ts`): before any review this shift it reads
- * recorded times since the shift began (`changesSinceInstant`); after a review it compares the
+ * recorded times since the previous shift began (`changesSinceInstant`, item 11: the day
+ * coordinator's first look covers the whole night); after a review it compares the
  * world with the picture saved at that review (`changesSinceLastLook`). Each line counts
  * once: a ward's ready beds going up is one line, never one per bed.
  */
-type ChangeGroupId = "escalations" | "referrals" | "journeys" | "acceptances" | "beds" | "delays" | "discharges";
+type ChangeGroupId =
+  | "escalations"
+  | "absences"
+  | "referrals"
+  | "journeys"
+  | "transfers"
+  | "acceptances"
+  | "beds"
+  | "delays"
+  | "discharges";
 
 export const CHANGE_GROUPS: readonly { id: ChangeGroupId; label: string }[] = [
   { id: "escalations", label: "Escalations" },
+  { id: "absences", label: "Absent without leave" },
   { id: "referrals", label: "Referrals" },
   { id: "journeys", label: "New ED movements" },
+  { id: "transfers", label: "Transfers" },
   { id: "acceptances", label: "Acceptances withdrawn" },
   { id: "beds", label: "Beds" },
   { id: "delays", label: "Delays" },
@@ -88,6 +102,8 @@ type LineContext = {
   base: LastLookSnapshot | undefined;
   nameOf: (subject: Movement | Referral | Admission) => ResolvedPatientInfo;
   alertMovementIds: ReadonlySet<string>;
+  /** Item 11: absences and transfers in the window, from recorded times (`night-movement-changes.ts`). */
+  nightMoves: readonly NightMovementChange[];
 };
 
 function person(info: ResolvedPatientInfo): Pick<ChangeLine, "who" | "href"> {
@@ -193,12 +209,31 @@ function changeLines(changes: ChangesSinceLastLook, context: LineContext): Chang
     });
   }
 
+  for (const move of context.nightMoves) {
+    const admission = admissionById.get(move.admissionId);
+    lines.push({
+      id: `${move.kind}:${move.admissionId}:${move.at}`,
+      group: move.kind === "absence" ? "absences" : "transfers",
+      tone: move.kind === "absence" ? "warning" : "neutral",
+      ...(admission ? person(nameOf(admission)) : { who: "Patient not recorded" }),
+      text: move.text,
+      at: move.at,
+    });
+  }
+
   const order = new Map(CHANGE_GROUPS.map((group, index) => [group.id, index]));
   return lines.sort((a, b) => (order.get(a.group) ?? 0) - (order.get(b.group) ?? 0) || (b.at ?? 0) - (a.at ?? 0));
 }
 
 /** What the open panel shows: the lines captured when it opened, and the picture taken then. */
-type Capture = { snapshot: LastLookSnapshot; lines: readonly ChangeLine[]; reviewedAt?: Instant; shiftStart: Instant };
+type Capture = {
+  snapshot: LastLookSnapshot;
+  lines: readonly ChangeLine[];
+  reviewedAt?: Instant;
+  shiftStart: Instant;
+  /** Where unreviewed lines count from: the previous shift's start on a first look (item 11). */
+  windowStart: Instant;
+};
 
 /**
  * Home's changes since the coordinator's last review, read from the store, so the hero chip and the
@@ -221,7 +256,7 @@ function useHomeChanges(now: Instant) {
     "plannedAdmissions",
     "leaveBeds",
   );
-  const { scenario, referrals, movements, units, bedReleases, admissions } = store;
+  const { scenario, referrals, movements, units, bedReleases, admissions, leaveBeds } = store;
   const world = useMemo(
     () => ({ scenario, referrals, movements, units, bedReleases, admissions }),
     [scenario, referrals, movements, units, bedReleases, admissions],
@@ -262,12 +297,17 @@ function useHomeChanges(now: Instant) {
     [shiftStart, now, current],
   );
   const reviewedAt = usable(stored) ? stored.at : undefined;
+  // Item 11: with no review this shift, lines count from the previous shift's start.
+  const windowStart = shiftLookWindowStart(undefined, now);
 
   const linesFor = useCallback(
     (basis: LastLookSnapshot | undefined): ChangeLine[] => {
       const compared = usable(basis) ? changesSinceLastLook(basis, current, world) : undefined;
-      const changes = compared ?? changesSinceInstant(world, shiftStart, now);
+      const changes = compared ?? changesSinceInstant(world, windowStart, now);
+      const since = compared ? compared.since : windowStart;
+      const nightMoves = nightMovementChanges({ admissions, leaveBeds, units }, since, now);
       return changeLines(changes, {
+        nightMoves,
         referrals,
         movements,
         admissions,
@@ -276,11 +316,34 @@ function useHomeChanges(now: Instant) {
         base: compared ? basis : undefined,
       });
     },
-    [usable, shiftStart, now, current, world, referrals, movements, admissions, nameOf, alertMovementIds],
+    [
+      usable,
+      windowStart,
+      now,
+      current,
+      world,
+      referrals,
+      movements,
+      admissions,
+      leaveBeds,
+      units,
+      nameOf,
+      alertMovementIds,
+    ],
   );
   /** Lines awaiting review right now (the hero chip's count). */
   const live = useMemo(() => linesFor(stored), [linesFor, stored]);
-  return { live, linesFor, reviewedAt, shiftStart, stored, current, validReview: usable, save: saveReview };
+  return {
+    live,
+    linesFor,
+    reviewedAt,
+    shiftStart,
+    windowStart,
+    stored,
+    current,
+    validReview: usable,
+    save: saveReview,
+  };
 }
 
 /**
@@ -294,7 +357,7 @@ export function useExplicitReview(now: Instant) {
   const [lastReviewed, setLastReviewed] = useState<
     { count: number; at: Instant; previous: LastLookSnapshot | undefined } | undefined
   >(undefined);
-  const { live, linesFor, stored, current, save, validReview, shiftStart } = changes;
+  const { live, linesFor, stored, current, save, validReview, shiftStart, windowStart } = changes;
   const capturedIds = useMemo(() => new Set(capture?.lines.map((line) => line.id)), [capture]);
   const arrived = capture ? live.filter((line) => !capturedIds.has(line.id)) : [];
   const recapture = useCallback(
@@ -304,8 +367,9 @@ export function useExplicitReview(now: Instant) {
         lines: linesFor(basis),
         reviewedAt: validReview(basis) ? basis.at : undefined,
         shiftStart,
+        windowStart,
       }),
-    [current, linesFor, validReview, shiftStart],
+    [current, linesFor, validReview, shiftStart, windowStart],
   );
 
   return {
@@ -314,6 +378,7 @@ export function useExplicitReview(now: Instant) {
     arrived,
     reviewedAt: capture ? capture.reviewedAt : changes.reviewedAt,
     shiftStart: capture ? capture.shiftStart : changes.shiftStart,
+    windowStart: capture ? capture.windowStart : changes.windowStart,
     lastReviewed,
     /** Called when the panel opens: the lines it shows are fixed until Show or a review. */
     capture: () => {

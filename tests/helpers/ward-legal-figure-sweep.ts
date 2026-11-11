@@ -1838,6 +1838,37 @@ function candidatesForMovements(
         actingUnitId: record.unitId,
         outcome: "withdrawn",
       }));
+    // Batch 3 items 21 and 23: hand-overs and carer call backs carry ids, times and desks only.
+    case "HAND_OVER_ITEM":
+      return (state.carerCallbacks ?? [])
+        .filter((record) => record.madeAt === undefined && record.owner.role === "coordinator")
+        .map((record) => ({ type, role, now, item: { kind: "callback", callbackId: record.id }, toRole: "ward" }));
+    case "ACCEPT_HANDED_ITEM":
+      return (state.handedItems ?? [])
+        .filter((record) => record.acceptedAt === undefined)
+        .map((record) => ({
+          type,
+          role: record.to.role,
+          now,
+          ...(record.to.role === "ward" ? { actingUnitId: record.to.unitId } : {}),
+          handedItemId: record.id,
+        }));
+    case "RECORD_CARER_CALLBACK":
+      return state.admissions
+        .filter((admission) => admission.state !== "departed")
+        .slice(0, 2)
+        .map((admission) => ({
+          type,
+          role,
+          now,
+          admissionId: admission.id,
+          actingUnitId: admission.unitId,
+          bestAfter: Math.floor(now) + 60,
+        }));
+    case "MARK_CARER_CALLBACK_MADE":
+      return (state.carerCallbacks ?? [])
+        .filter((record) => record.madeAt === undefined)
+        .map((record) => ({ type, role, now, callbackId: record.id, actingUnitId: record.unitId }));
     case "RECORD_DIRECTORY_CHECK":
       return buildOnCallDirectory()
         .slice(0, 3)

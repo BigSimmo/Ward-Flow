@@ -512,6 +512,11 @@ describe("who may raise which event", () => {
     // Staff needed (feature 10, 9 Nov 2026).
     REQUEST_WARD_STAFF: ["ward", "coordinator", "bed_manager"],
     CLOSE_WARD_STAFF_REQUEST: ["ward", "coordinator", "bed_manager"],
+    // Batch 3 items 21 and 23 (10 Nov 2026): handing on own work, and carer callbacks.
+    HAND_OVER_ITEM: ["coordinator", "ward", "ed", "community"],
+    ACCEPT_HANDED_ITEM: ["coordinator", "ward", "ed", "community"],
+    RECORD_CARER_CALLBACK: ["ward", "coordinator"],
+    MARK_CARER_CALLBACK_MADE: ["ward", "coordinator"],
     RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
     RECORD_SITE_HANDOVER_SIGN_OFF: ["bed_manager", "coordinator"],
     // Triage and risk (7 Nov 2026): the desks that raise a referral, never the bed manager, officer,

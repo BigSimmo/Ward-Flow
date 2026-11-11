@@ -14,6 +14,11 @@ import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referra
 import type { Admission, LeavingDestination } from "./ward-admissions";
 import { communityScopedReferrals, communitySentView, type CommunityScopedReferral } from "./ward-referral-visibility";
 import {
+  diversionReturnPrompts,
+  type DiversionReturnPrompt,
+  type TeamMatch,
+} from "./community/diversion-return-review";
+import {
   type Context,
   createContext,
   type Dispatch,
@@ -1441,6 +1446,12 @@ export function useWardFlow(): WardFlowContextValue {
 export function useCommunityScopedReferrals(): CommunityScopedReferral[] {
   const { referrals } = useWardFlowSelect("referrals");
   return useMemo(() => communityScopedReferrals(referrals), [referrals]);
+}
+
+/** Batch 3 item 28 (D-136): a team's "returned to ED" prompts, from the full record here (FD-23). */
+export function useDiversionReturnPrompts(matchesTeam: TeamMatch, windowMinutes: number): DiversionReturnPrompt[] {
+  const { referrals, movements, now } = useWardFlowSelect("referrals", "movements", "now");
+  return diversionReturnPrompts({ referrals, movements }, matchesTeam, windowMinutes, now);
 }
 
 /** Fix plan item 17 (D-74): referrals as the community team that sent them sees them, never the record. */

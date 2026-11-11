@@ -75,11 +75,11 @@ describe("the Command screen's changes since the last review (Activity panel)", 
   beforeEach(() => window.sessionStorage.clear());
 
   // Home and Activity design (Josh, 31 Oct 2026): review is explicit. Leaving the screen saves nothing.
-  it("counts from the shift start on a first look, and saves no picture when the coordinator leaves", async () => {
+  it("counts from last night on a first look (item 11), and saves no picture when the coordinator leaves", async () => {
     const { unmount } = renderCommand();
     await openActivity();
     expect(within(activityPanel()).getByRole("tab", { name: /Changes/u, selected: true })).toBeInTheDocument();
-    expect(activityPanel()).toHaveTextContent("Since 07:00, the start of your shift");
+    expect(activityPanel()).toHaveTextContent("Since last night at 23:00");
     expect(within(activityPanel()).getByRole("button", { name: /^Mark these \d+ reviewed$/u })).toBeInTheDocument();
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
     fireEvent(window, new Event("pagehide"));
@@ -167,8 +167,12 @@ describe("the Command screen's changes since the last review (Activity panel)", 
     const before = snapshot.readyByUnit[unitId]! - 1;
     expect(beds).toHaveTextContent(`ready beds ${before} to ${before + 1}`);
 
-    fireEvent.click(panel.getByRole("button", { name: "Mark these 2 reviewed" }));
-    expect(panel.queryByRole("region", { name: /Referrals|Beds/u })).toBeNull();
+    // Item 11: the seed's absence without leave recorded at 10:07 is listed from its recorded time.
+    expect(panel.getByRole("region", { name: /Absent without leave/u })).toHaveTextContent(
+      /absent without leave from /u,
+    );
+    fireEvent.click(panel.getByRole("button", { name: "Mark these 3 reviewed" }));
+    expect(panel.queryByRole("region", { name: /Referrals|Beds|Absent/u })).toBeNull();
     expect(activityPanel()).toHaveTextContent("Nothing new since 10:42");
   });
 });
