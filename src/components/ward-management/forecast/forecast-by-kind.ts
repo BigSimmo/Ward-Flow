@@ -16,6 +16,7 @@ import { bedIsOccupied, type Admission, type PlannedAdmission } from "@/componen
 import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { numberedBedKind, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { isOpen } from "@/components/ward-management/ward-derivations";
+import { patientsHoldingANamedBed } from "@/components/ward-management/ward-movement-bed-hold";
 import type { BedRelease, Movement, Unit } from "@/components/ward-management/ward-model";
 import { forecastReleaseAt } from "./forecast-release-date";
 
@@ -125,6 +126,7 @@ export function forecastByKind(
     until,
     waitingMovements,
     admissions,
+    patientsHoldingANamedBed([...openUnits.values()], admissions, [...movements, ...referrals]),
   );
 
   const kinds = KIND_ORDER.map((id): KindForecast => {
