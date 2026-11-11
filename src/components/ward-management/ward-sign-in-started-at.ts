@@ -1,7 +1,7 @@
 // Ward Flow's own copy of `signInStartedAt` in @/lib/front-door-pass, which the session route uses
 // for the account pass. Kept separate so the ward's first load does not carry the front door's
 // signing code, and because Ward Flow may not import a new shared module (tests/ward-flow-seam).
-// tests/sign-in-started-at.test.ts runs the same cases against both copies.
+// tests/ward-sign-in-started-at.test.ts runs the same cases against both copies.
 /**
  * When a sign-in began, in milliseconds: the oldest `amr` factor time in a Supabase access token,
  * as the backend counts it (`startedAt` in backend/ward-flow/supabase-auth.mjs). A refresh or a later
