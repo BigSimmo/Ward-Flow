@@ -10,7 +10,7 @@ name: Ward Flow backend uptime
 # signed-in site sleeps when idle, and a check every 10 minutes would keep it awake. `/healthz`
 # needs no sign-in; sent the WARD_FLOW_UPTIME_TOKEN repo secret (audit P177), it reports `database`
 # as "ok" or "unavailable" from a check it repeats at most every 30 seconds. A missing or wrong
-# token hides `database`: that counts as up and shows a warning on the run, not a "database down"
+# token hides `database`: the run fails with a warning (A7-01) and does not open a "database down"
 # issue (`/readyz` needs a sign-in). Run it by hand with "Send one test alert" ticked to check the
 # email arrives: it opens and at once closes one clearly labelled test issue and skips the checks.
 #
@@ -25,13 +25,15 @@ name: Ward Flow backend uptime
 # hidden database does. Sign-in that does not answer, or a workspace that does not load, raises
 # the issue.
 #
-# Monitor coverage (audit M72, approved 10 November 2026). A hidden database answer, unset monitor
-# secrets or a monitor account that cannot sign in or read leaves every run green with a warning
-# nobody reads, so part of the check is silently off. After about a day of those (144 runs of this
-# workflow, counted by run number, so no clock is read), one "Uptime monitor not set up" issue
-# @mentions the owner. The run number the gap began at is kept in the monitor-not-set-up label's
-# description. A rate-limited check or an outage neither starts nor clears the count; a run where
-# the database and the signed-in workspace both answer clears it and closes the issue.
+# Monitor coverage (audit M72, approved 10 November 2026; A7-01, 11 November 2026). A hidden
+# database answer, unset monitor secrets or a monitor account that cannot sign in or read leaves
+# part of the check silently off. A missing or wrong token (database not checked) fails the run so
+# it cannot look green while blind; it still does not open a "backend down" issue, because the
+# database itself was not seen. After about a day of those gaps (144 runs of this workflow, counted
+# by run number, so no clock is read), one "Uptime monitor not set up" issue @mentions the owner.
+# The run number the gap began at is kept in the monitor-not-set-up label's description. A
+# rate-limited check or an outage neither starts nor clears the count; a run where the database and
+# the signed-in workspace both answer clears it and closes the issue.
 # Public repository: free. GitHub turns scheduled workflows off after 60 days without repository
 # activity.
 on:
@@ -241,7 +243,13 @@ jobs:
             fi
             exit 0
           fi
-          # Hidden database or a monitor account that is not set up: neither raise nor close.
+          # Hidden database or a monitor account that is not set up: neither raise nor close a
+          # backend-down issue. A hidden database check must not look green (A7-01). A rate-limited
+          # or unset workspace check stays a warning only; the monitor-not-set-up issue covers it.
+          if [ "$HEALTH" = "unknown" ]; then
+            echo "::error::Uptime check did not see the database: WARD_FLOW_UPTIME_TOKEN is missing or does not match the backend's value."
+            exit 1
+          fi
           if [ "$state" = "unknown" ]; then exit 0; fi
           if [ -z "$open" ]; then
             gh label create "$LABEL" --color B60205 --description "Hosted backend not answering" --force

@@ -177,5 +177,6 @@ describe("ward flow keeps its changeable data in one place", () => {
         "than typing it — and if a file genuinely must own network facts, add it to DATA_LAYER with " +
         "its reason, which is a decision rather than a formality.",
     ).toEqual([]);
-  });
+    // Scans every ward source file: about 4 s locally, but it passed 30 s on a busy CI shard.
+  }, 120_000);
 });
