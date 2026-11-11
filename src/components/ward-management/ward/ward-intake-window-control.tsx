@@ -51,7 +51,7 @@ export function WardIntakeWindowControl({ unit, now }: { unit: Unit; now: Instan
           </button>
         </>
       ) : null}
-      {refused ? <StateLine kind="error" compact title="Not saved." reason={refused} /> : null}
+      {refused ? <StateLine kind="error" compact title="Not saved. Press Edit to try again." reason={refused} /> : null}
       {open && mayEdit ? (
         <WardIntakeWindowDialog
           unit={unit}
