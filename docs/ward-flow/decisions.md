@@ -1815,6 +1815,7 @@ is inferred.
   3. The coordinator's "Record added in error" card no longer hides when archive is not available. It says why in one line.
 - **Why:** the live audit's test patient could never be archived because a withdrawn referral and record-view audit rows named it, so test and mistaken records stayed on the board for good.
 - **Boundary:** synthetic data only. Archiving the live audit's test patient and the old TEST-Helper4 records is a live write that waits for Josh's yes after release.
+- **Note (11 November 2026, 15:34 UTC):** Josh approved, on a decision card in the Ward Flow project thread for PR #1626, adding `ward-patient-archive-reducer.ts` to the D-14 patient-link allowlist (60 to 61 files). The archive step reads `referral.patientId` only to unlink that one record's withdrawn front-door referrals; it reads no other referral and shows nothing.
 
 ## D-150. The signed-in site runs on real Perth time (11 November 2026)
 

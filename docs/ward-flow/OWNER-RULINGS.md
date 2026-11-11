@@ -315,9 +315,9 @@ safe global key across 30 files.
 | `D-147` | `decisions.md`:1796 | D-147. Demo-code tries keep per-address keying until a trusted proxy is set (11 November 2026) |
 | `D-148` | `decisions.md`:1802 | D-148. Closing a bed stays one tap, and its toast offers a reason (11 November 2026) |
 | `D-149` | `decisions.md`:1809 | D-149. A record whose only links are withdrawn referrals can be archived (11 November 2026) |
-| `D-150` | `decisions.md`:1819 | D-150. The signed-in site runs on real Perth time (11 November 2026) |
-| `D-151` | `decisions.md`:1827 | D-151. A bed tile says when a change is waiting to save (11 November 2026) |
-| `D-152` | `decisions.md`:1834 | D-152. Returned to ED prompt sees every return in shared mode (11 November 2026) |
+| `D-150` | `decisions.md`:1820 | D-150. The signed-in site runs on real Perth time (11 November 2026) |
+| `D-151` | `decisions.md`:1828 | D-151. A bed tile says when a change is waiting to save (11 November 2026) |
+| `D-152` | `decisions.md`:1835 | D-152. Returned to ED prompt sees every return in shared mode (11 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -772,9 +772,9 @@ safe global key across 30 files.
 - `D-147` — line 1796, heading: "D-147. Demo-code tries keep per-address keying until a trusted proxy is set (11 November 2026)"
 - `D-148` — line 1802, heading: "D-148. Closing a bed stays one tap, and its toast offers a reason (11 November 2026)"
 - `D-149` — line 1809, heading: "D-149. A record whose only links are withdrawn referrals can be archived (11 November 2026)"
-- `D-150` — line 1819, heading: "D-150. The signed-in site runs on real Perth time (11 November 2026)"
-- `D-151` — line 1827, heading: "D-151. A bed tile says when a change is waiting to save (11 November 2026)"
-- `D-152` — line 1834, heading: "D-152. Returned to ED prompt sees every return in shared mode (11 November 2026)"
+- `D-150` — line 1820, heading: "D-150. The signed-in site runs on real Perth time (11 November 2026)"
+- `D-151` — line 1828, heading: "D-151. A bed tile says when a change is waiting to save (11 November 2026)"
+- `D-152` — line 1835, heading: "D-152. Returned to ED prompt sees every return in shared mode (11 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 
