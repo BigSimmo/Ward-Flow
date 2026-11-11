@@ -116,7 +116,6 @@ function isDeviceCopyDischargeCriteriaRecord(value: unknown): value is Discharge
 // Restore validates nested values, collection shapes, then cross-row consistency in order.
 // `nested` refuses undefined, so optional fields must be absent. Strict identity/care records
 // refuse unknown keys to prevent restoring free text.
-
 type RecordValue = Record<string, unknown>;
 const object = (v: unknown): v is RecordValue => typeof v === "object" && v !== null && !Array.isArray(v);
 const fits = (schema: z.ZodMiniType, value: unknown) => schema.safeParse(value).success;
