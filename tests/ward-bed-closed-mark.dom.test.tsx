@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { useEffect, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -123,5 +123,38 @@ describe("closing a bed with a review time (item 6)", () => {
     expect(mark).toMatchObject({ bedNumber: bed, reviewAt: now + 240 });
     expect(bedsIn("ready")).toHaveLength(ready.length - 1);
     expect(screen.getByTestId("ward-drawer-reopen-bed-note")).toHaveTextContent(/^Review \d\d:\d\d\. Reopening/);
+  });
+
+  // PR #1626 review: a reason chosen on the toast (D-148) closes the bed again, and keeps the time.
+  it("keeps the review time when a reason is added from the toast", async () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <Grab />
+          <WardScreen unitId={UNIT} />
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    const bed = Math.min(...bedsIn("ready"));
+    fireEvent.click(card(bed));
+    fireEvent.click(screen.getByRole("button", { name: "In 4 hours" }));
+    fireEvent.click(screen.getByTestId("ward-drawer-close-bed"));
+    const reviewAt = flow!.now + 240;
+    // The menu loads on use; until then the same choices are plain buttons on the toast.
+    const toast = screen.getByTestId("toast");
+    const staffing =
+      within(toast).queryByRole("group", { name: "Add a reason" }) !== null
+        ? within(within(toast).getByRole("group", { name: "Add a reason" })).getByRole("button", { name: "Staffing" })
+        : null;
+    await act(async () => {
+      if (staffing) fireEvent.click(staffing);
+      else fireEvent.click(within(toast).getByTestId("toast-choices"));
+    });
+    if (!staffing)
+      await act(async () => {
+        fireEvent.click(screen.getByRole("menuitem", { name: "Staffing" }));
+      });
+    const mark = flow!.units.find((unit) => unit.id === UNIT)!.closedBeds!.at(-1)!;
+    expect(mark).toMatchObject({ bedNumber: bed, reason: "staffing", reviewAt });
   });
 });

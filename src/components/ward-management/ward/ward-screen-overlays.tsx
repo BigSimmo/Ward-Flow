@@ -183,6 +183,8 @@ export function WardScreenBedDrawer({
                 unitId: unit.id,
                 actingUnitId: unitId,
                 bedNumber,
+                // The reasoned close keeps the first close's review time (item 6).
+                ...(reviewAt !== undefined ? { reviewAt } : {}),
               }),
             }
           : {}),
