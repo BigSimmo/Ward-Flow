@@ -7,7 +7,7 @@ import requireButtonWiring from "./eslint-rules/require-button-wiring.mjs";
 import requireZIndexLadder from "./eslint-rules/require-z-index-ladder.mjs";
 import restrictSuppressHydrationWarning from "./eslint-rules/restrict-suppress-hydration-warning.mjs";
 import noHardcodedHex from "./eslint-rules/no-hardcoded-hex.mjs";
-import { MAX_LINES_BASELINE, MAX_LINES_DEFAULT } from "./eslint-rules/max-lines-baseline.mjs";
+import { MAX_LINES_BASELINE, MAX_LINES_COUNTING, MAX_LINES_DEFAULT } from "./eslint-rules/max-lines-baseline.mjs";
 
 // Shared `local` plugin object. ESLint flat config requires every config block
 // that references a plugin namespace to point at the *same* object, and the five
@@ -179,10 +179,11 @@ const eslintConfig = defineConfig([
   },
   // File size ratchet. New source files stay under MAX_LINES_DEFAULT lines, and the files that
   // were already larger cannot grow much past their baseline (eslint-rules/max-lines-baseline.mjs).
+  // Only code lines count: blank lines and comment-only lines are free (MAX_LINES_COUNTING, D-144).
   {
     files: ["src/**/*.{ts,tsx}"],
     rules: {
-      "max-lines": ["error", { max: MAX_LINES_DEFAULT }],
+      "max-lines": ["error", { ...MAX_LINES_COUNTING, max: MAX_LINES_DEFAULT }],
     },
   },
   // The backend's source files too (Tier 7 audit A5-05); its tests are left out, as src's are.
@@ -190,13 +191,13 @@ const eslintConfig = defineConfig([
     files: ["backend/ward-flow/*.mjs"],
     ignores: ["backend/ward-flow/*.test.mjs", "backend/ward-flow/*.test-support.mjs"],
     rules: {
-      "max-lines": ["error", { max: MAX_LINES_DEFAULT }],
+      "max-lines": ["error", { ...MAX_LINES_COUNTING, max: MAX_LINES_DEFAULT }],
     },
   },
   ...Object.entries(MAX_LINES_BASELINE).map(([file, max]) => ({
     files: [file],
     rules: {
-      "max-lines": ["error", { max }],
+      "max-lines": ["error", { ...MAX_LINES_COUNTING, max }],
     },
   })),
   // A lucide-react icon rendered as JSX must be decorative (aria-hidden) or
