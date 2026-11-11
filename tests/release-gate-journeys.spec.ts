@@ -236,6 +236,10 @@ test("Morning bed meeting: a ward confirms its numbers and the coordinator's cap
 test("Transfer with transport: the ED books transport, the officer delivers, and the ward confirms arrival", async ({
   page,
 }, testInfo) => {
+  // Three desks, ten accessibility checks and three desk switches: the longest journey here. Phone
+  // WebKit on a hosted runner took 1.3 min on 11 Nov at 10:31Z and 2.1 min by 18:00Z with no step
+  // hanging (each click 1.5 to 3 s, each check about 2 s), so it alone gets three minutes.
+  test.setTimeout(180_000);
   // WF-004 is seeded pulled into its accepted ward with a linked stay waiting for the patient, and
   // no transport booked yet. A hand-authored transport job has no stay, so arrival could only move
   // the ward's count; this one proves the patient's own stay becomes an occupied bed.
