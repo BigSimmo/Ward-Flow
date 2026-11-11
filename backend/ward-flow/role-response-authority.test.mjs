@@ -5,6 +5,7 @@ import test from "node:test";
 import * as engine from "./dist/engine.mjs";
 import { createWorkspaceStore } from "./postgres.mjs";
 import { throughSteps } from "./writable-with.test-support.mjs";
+import { answerMembershipRead, isMembershipRead } from "./viewer.test-support.mjs";
 
 const at = new Date("2026-10-27T04:00:00Z");
 const actorId = "11111111-1111-4111-8111-111111111111";
@@ -62,6 +63,7 @@ function setup(
   const queries = [];
   let locked = false;
   const query = throughSteps(async (sql, values = []) => {
+    if (isMembershipRead(sql)) return answerMembershipRead(query, sql, values);
     queries.push(sql);
     if (sql === "BEGIN") return { rows: [] };
     if (sql === "COMMIT" || sql === "ROLLBACK") {

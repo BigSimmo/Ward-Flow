@@ -4,6 +4,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { ACCESS_COVER_MIGRATION, RECORD_ACCESS_MIGRATION, ROLE_ACCESS_MIGRATION } from "./migrations.mjs";
 import { membershipPage } from "./membership-page.mjs";
+import { LruCache } from "./reply-cache.mjs";
 import { canonical, minutesFrom } from "./workspace-shared.mjs";
 
 /** A break glass record opened or ended this recently still sends the whole scoped workspace on a poll. */
@@ -27,6 +28,15 @@ const REQUEST_LAPSE_MS = 14 * 24 * 60 * 60_000;
  * own requests are not crowded out by other places' (about 140 days of a sustained flood).
  */
 const REQUEST_SCAN_LIMIT = 5_000;
+/**
+ * How long this server trusts "not signed out" for one sign-in before asking the database again,
+ * so the 3 second poll does not ask on every request. A sign-out made through this server is seen
+ * at once (`signOutSession` notes it here); one made through another server instance is seen
+ * within this window. A sign-out, once seen, is kept: it is never undone.
+ */
+export const SIGN_OUT_CHECK_MS = 5_000;
+/** Sign-ins whose sign-out answer this server holds at once, least recently asked dropped first. */
+const SIGN_OUT_CHECK_ENTRIES = 2_000;
 
 export function createViewer({
   pool,
@@ -53,6 +63,7 @@ export function createViewer({
   /**
    * `touch: false` (fresh audit X-2) skips the "last worked as" write, for the push opt-out that a
    * signed-out or expired sign-in may still call, so it cannot keep an unused role switched on.
+   * @returns {Promise<any>}
    */
   async function resolveViewer(
     actorId,
@@ -63,21 +74,47 @@ export function createViewer({
   ) {
     const choices = bootstrap ? [{ membershipId: null, access: engine.STATEWIDE, own: engine.STATEWIDE }] : [];
     let needsService = false;
+    /** Break glass rows per membership, read with the memberships (one round trip, not two). */
+    const grantRows = new Map();
+    /** The workspace row as the same statement saw it, for the poll's "not modified" check. */
+    let workspaceStamp = null;
     if (version >= ROLE_ACCESS_MIGRATION) {
       // From 9, a role not worked as for the set time is switched off (cover is too short to go
       // unused), and cover is a membership of its own kind.
       const covers = version >= ACCESS_COVER_MIGRATION;
-      const { rows } = await connection
+      const memberships = covers
+        ? `SELECT id, role, scope, kind, last_used_at, expires_at, granted_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $5)`
+        : `SELECT id, role, scope, expires_at, 'role' AS kind, granted_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM}`;
+      // Each membership's break glass openings ending after the settle cutoff, newest end first and
+      // capped, as a separate read for the chosen membership would list them; only the chosen
+      // membership's are used. Each must still have its accepted audit line in this world
+      // generation. On the pool (the HTTP request's own resolve) the same statement also reads the
+      // workspace revision, so an unchanged poll needs no read of its own.
+      const grants = `SELECT coalesce(json_agg(g ORDER BY g.until DESC), '[]'::json) FROM (SELECT b.patient_id, b.opened_at, b.until FROM ward_flow.break_glass b WHERE b.workspace_id=$1 AND b.actor_id=$2 AND b.membership_id=m.id AND b.until > $4 AND EXISTS (SELECT 1 FROM ward_flow.audit a JOIN ward_flow.workspaces w ON w.id=a.workspace_id AND w.data_mode='prototype' WHERE a.workspace_id=b.workspace_id AND a.actor_id=b.actor_id AND a.action='BREAK_GLASS' AND a.outcome='accepted' AND a.changes->>'membershipId'=b.membership_id::text AND a.changes->>'patientId'=b.patient_id AND a.changes->>'reason'=b.reason AND a.changes->>'until'=to_char(b.until AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AND coalesce(a.changes->'worldGeneration', '0'::jsonb)=w.payload->'state'->'worldGeneration') ORDER BY b.until DESC LIMIT ${GRANT_LIST_LIMIT}) g`;
+      const withWorkspace = connection === pool;
+      const { rows: found } = await connection
         .query(
-          covers
-            ? `SELECT id, role, scope, kind, last_used_at, expires_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $4) ORDER BY granted_at, id`
-            : `SELECT id, role, scope, expires_at, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} ORDER BY granted_at, id`,
-          covers ? [workspaceId, actorId, at, unusedBefore(at)] : [workspaceId, actorId, at],
+          `SELECT (SELECT coalesce(json_agg(x ORDER BY x.granted_at, x.id), '[]'::json) FROM (SELECT m.*, (${grants}) AS grants FROM (${memberships}) m) x) AS memberships${withWorkspace ? ", w.revision, date_trunc('milliseconds', w.updated_at) AS updated_at FROM (SELECT 1) one LEFT JOIN ward_flow.workspaces w ON w.id=$1 AND w.data_mode='prototype'" : ""}`,
+          [workspaceId, actorId, at, new Date(at.getTime() - GRANT_SETTLE_MS), ...(covers ? [unusedBefore(at)] : [])],
         )
         .catch((error) => {
           forgetVersionOnMissing(error);
           throw error;
         });
+      const result = found[0] ?? {};
+      if (withWorkspace && result.revision != null && result.updated_at instanceof Date)
+        workspaceStamp = { revision: Number(result.revision), updatedAt: result.updated_at.getTime() };
+      const rows = Array.isArray(result.memberships) ? result.memberships : [];
+      // JSON carries times as text: turn them back into dates, as the driver would.
+      for (const row of rows)
+        grantRows.set(
+          row.id,
+          (Array.isArray(row.grants) ? row.grants : []).map((grant) => ({
+            patient_id: grant.patient_id,
+            opened_at: grant.opened_at == null ? null : new Date(grant.opened_at),
+            until: new Date(grant.until),
+          })),
+        );
       const roles = [];
       const wardCovers = [];
       for (const row of rows) {
@@ -158,10 +195,7 @@ export function createViewer({
           throw error;
         });
     if (chosen.membershipId) {
-      const { rows } = await connection.query(
-        `SELECT patient_id, opened_at, until FROM ward_flow.break_glass b WHERE workspace_id=$1 AND actor_id=$2 AND membership_id=$3 AND until > $4 AND EXISTS (SELECT 1 FROM ward_flow.audit a JOIN ward_flow.workspaces w ON w.id=a.workspace_id AND w.data_mode='prototype' WHERE a.workspace_id=b.workspace_id AND a.actor_id=b.actor_id AND a.action='BREAK_GLASS' AND a.outcome='accepted' AND a.changes->>'membershipId'=b.membership_id::text AND a.changes->>'patientId'=b.patient_id AND a.changes->>'reason'=b.reason AND a.changes->>'until'=to_char(b.until AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AND coalesce(a.changes->'worldGeneration', '0'::jsonb)=w.payload->'state'->'worldGeneration') ORDER BY until DESC LIMIT ${GRANT_LIST_LIMIT}`,
-        [workspaceId, actorId, chosen.membershipId, new Date(at.getTime() - GRANT_SETTLE_MS)],
-      );
+      const rows = grantRows.get(chosen.membershipId) ?? [];
       const nowMs = at.getTime();
       recentGrant = rows.some((row) => {
         const openedAtMs =
@@ -194,6 +228,8 @@ export function createViewer({
       // The role as granted, before any cover joined it: what this desk may give cover of. `null`
       // when the desk is working as cover, which is never given on.
       ownAccess: chosen.own === undefined ? chosen.access : chosen.own,
+      // Server-side only, never sent: the workspace revision this resolve read (`poll`).
+      ...(workspaceStamp ? { workspaceStamp } : {}),
       grants,
       recentGrant,
     };
@@ -228,6 +264,12 @@ export function accessStore({
   // A2-01/A2-03: an opening or cover sent without a request key (an older tab) that repeats one
   // made this recently, and still in force, is a retry of it rather than a second one.
   const UNKEYED_RETRY_MS = 60_000;
+  /**
+   * Sign-out answers this server read or wrote, per sign-in: `true` for good once seen, `false`
+   * only until `until` (wall clock, SIGN_OUT_CHECK_MS). A failed read is never kept.
+   * @type {LruCache<{ signedOut: boolean, until: number }>}
+   */
+  const signOutChecks = new LruCache(SIGN_OUT_CHECK_ENTRIES);
   /**
    * Live memberships matching `where`, oldest grant first, kept by `keep` as they are read, up to
    * `cap`. Pages on (granted_at, id), with the time carried as text so its microseconds survive the
@@ -778,6 +820,8 @@ export function accessStore({
         "INSERT INTO ward_flow.session_sign_outs(session_id, workspace_id, actor_id, signed_out_at, until) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (session_id) DO NOTHING",
         [sessionId, workspaceId, actorId, at, until],
       );
+      // Seen here at once, whatever this server last read for the sign-in.
+      signOutChecks.set(sessionId, { signedOut: true, until: Infinity });
       await pool.query("DELETE FROM ward_flow.session_sign_outs WHERE workspace_id=$1 AND until < $2", [
         workspaceId,
         at,
@@ -791,13 +835,20 @@ export function accessStore({
     async sessionSignedOut(sessionId) {
       if ((await schemaVersion()) < RECORD_ACCESS_MIGRATION) return false;
       if (typeof sessionId !== "string") return true;
+      const now = Date.now();
+      const held = signOutChecks.get(sessionId);
+      if (held && (held.signedOut || held.until > now)) return held.signedOut;
       const { rows } = await pool
         .query("SELECT 1 FROM ward_flow.session_sign_outs WHERE session_id=$1 LIMIT 1", [sessionId])
         .catch((error) => {
           forgetVersionOnMissing(error);
           throw error;
         });
-      return rows.length > 0;
+      const signedOut = rows.length > 0;
+      // A sign-out written here while this read was out is kept, never overwritten with "no".
+      if (!signOutChecks.get(sessionId)?.signedOut)
+        signOutChecks.set(sessionId, { signedOut, until: now + SIGN_OUT_CHECK_MS });
+      return signedOut;
     },
     /**
      * Opens one patient's record, read only, outside this desk's care for a set time, with a

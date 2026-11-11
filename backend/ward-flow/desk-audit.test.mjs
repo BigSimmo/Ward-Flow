@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createWorkspaceStore } from "./postgres.mjs";
+import { answerMembershipRead, isMembershipRead } from "./viewer.test-support.mjs";
 import { createSharedHandler } from "./shared-http.mjs";
 import { LATEST_MIGRATION } from "./migrations.mjs";
 
@@ -63,6 +64,7 @@ function fixture(world = { valid: true }) {
   let currentAccess = { role: "ward", scope: own };
   const pool = {
     query: async (text, values) => {
+      if (isMembershipRead(text)) return answerMembershipRead((s, v) => pool.query(s, v), text, values);
       sql.push(text);
       if (["BEGIN", "COMMIT", "ROLLBACK"].includes(text)) return { rows: [] };
       if (text.startsWith("SELECT id, role, scope"))

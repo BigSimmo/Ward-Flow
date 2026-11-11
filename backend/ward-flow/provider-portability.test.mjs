@@ -75,7 +75,8 @@ test("both pool presets enforce verified TLS and bounded resources without netwo
   );
   for (const pool of [portable, supabase]) {
     assert.deepEqual(pool.options.ssl, { rejectUnauthorized: true });
-    assert.equal(pool.options.max, 4);
+    // Supabase's pooler takes more connections per backend copy than an unknown portable server.
+    assert.equal(pool.options.max, pool === supabase ? 10 : 4);
     assert.equal(pool.options.connectionTimeoutMillis, 6000);
     assert.equal(pool.options.statement_timeout, 10000);
     assert.equal(pool.options.query_timeout, 12000);

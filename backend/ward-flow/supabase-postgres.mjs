@@ -20,7 +20,7 @@ function createVerifiedSupabasePool(config, dependencies, runtime) {
   const pool = new PoolClass({
     connectionString,
     ssl: { rejectUnauthorized: true, ...(ca ? { ca } : {}) },
-    max: 4,
+    max: 10,
     connectionTimeoutMillis: 6000,
     idleTimeoutMillis: 30000,
     statement_timeout: 10000,

@@ -116,6 +116,22 @@ describe("the pass", () => {
     expect(await verifyPass(SECRET, value, NOW + 12 * 3_600_000)).toBeNull();
   });
 
+  it("imports each signing secret once, and still tells secrets apart", async () => {
+    const importKey = vi.spyOn(crypto.subtle, "importKey");
+    try {
+      const secret = `${SECRET}-memo`;
+      const other = `${SECRET}-memo-other`;
+      const { value } = await issuePass(secret, { kind: "demo", hours: 8 }, NOW);
+      expect(await verifyPass(secret, value, NOW)).toMatchObject({ kind: "demo" });
+      expect(await verifyPass(secret, value, NOW + 1000)).toMatchObject({ kind: "demo" });
+      expect(importKey).toHaveBeenCalledTimes(1);
+      expect(await verifyPass(other, value, NOW)).toBeNull();
+      expect(importKey).toHaveBeenCalledTimes(2);
+    } finally {
+      importKey.mockRestore();
+    }
+  });
+
   it("ends with the sign-in's own limit when that comes first", async () => {
     const endsBy = NOW + 3_600_000;
     const { value, maxAge } = await issuePass(SECRET, { kind: "account", hours: 12, endsBy }, NOW);
