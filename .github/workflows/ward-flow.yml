@@ -276,11 +276,29 @@ jobs:
       - name: Check Ward legal wording
         if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.frontend_static == 'true' }}
         run: npm run check:ward-legal-language
+      # TypeScript's own incremental record (tsconfig.json tsBuildInfoFile). tsc rechecks every file
+      # whose content or dependencies changed and reuses the rest, so an older record only costs
+      # time. Restored on every run, saved from main only; a lockfile or tsconfig change starts empty.
+      - name: Restore the TypeScript build info
+        id: tsc-cache
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.frontend_static == 'true' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules/.cache/tsc
+          key: ward-tsc-${{ runner.os }}-${{ hashFiles('package-lock.json', 'tsconfig.json') }}-${{ github.sha }}
+          restore-keys: ward-tsc-${{ runner.os }}-${{ hashFiles('package-lock.json', 'tsconfig.json') }}-
       - name: Typecheck source and route types
+        id: typecheck
         if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.frontend_static == 'true' }}
         run: |
           node node_modules/next/dist/bin/next typegen
-          node --max-old-space-size=8192 node_modules/typescript/bin/tsc -p tsconfig.json --noEmit --incremental false
+          node --max-old-space-size=8192 node_modules/typescript/bin/tsc -p tsconfig.json --noEmit --incremental
+      - name: Save the TypeScript build info on main
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && steps.typecheck.outcome == 'success' && steps.tsc-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules/.cache/tsc
+          key: ${{ steps.tsc-cache.outputs.cache-primary-key }}
       - name: Upload static check diagnostics
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
@@ -384,14 +402,16 @@ jobs:
             coverage/backend/
           if-no-files-found: warn
           retention-days: 7
-  # Cheap first (Josh, 4 Nov 2026): the unit shards, browser journeys, release gate and coverage
-  # wait for the scope plan, static checks and production build, so a failing build, budget or
-  # lint stops the run before about a dozen expensive runners start. A job skipped because one of
-  # those failed is never a pass: Ward Flow required needs success for every in-scope job.
+  # Cheap first (Josh, 4 Nov 2026): the unit shards wait for the scope plan and static checks; the
+  # browser journeys and release gate also wait for the production build, so a failing lint,
+  # typecheck, build or budget stops the run before the expensive browser runners start. The unit
+  # shards no longer wait for the build (11 Nov 2026): they do not use it, and the build only
+  # delayed them. A job skipped because one of those failed is never a pass: Ward Flow required
+  # needs success for every in-scope job, the build included.
   unit:
     name: Ward Flow unit shard ${{ matrix.shard }}
-    needs: [plan, reuse, static, build]
-    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.unit == 'true' && needs.reuse.outputs.unit_verified != 'true' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true'))) }}
+    needs: [plan, reuse, static]
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.unit == 'true' && needs.reuse.outputs.unit_verified != 'true' && needs.static.result == 'success' }}
     runs-on: ubuntu-24.04
     # 30, not 20 (10 Nov 2026): shards now take 15-20 minutes, and runs near the old limit were
     # cancelled with 0 failures. A fifth shard would rename required checks and coverage blobs.
@@ -632,6 +652,8 @@ jobs:
         if: ${{ !cancelled() && steps.chromium.outcome == 'success' }}
         env:
           WARD_JOURNEY_GROUP: ${{ matrix.group }}/2
+          # Two servers and browsers on the runner's 4 vCPUs, each running half this group's files.
+          WARD_JOURNEY_SHARDS: "2"
           WARD_GATE_BUILD: "1"
           WARD_BROWSER_ARTIFACT_DIR: ${{ needs.browser-build.result == 'success' && format('{0}/ward-browser-build', runner.temp) || '' }}
         run: npm run test:e2e:ward-journeys
@@ -667,7 +689,8 @@ jobs:
     # per device (Josh, 4 November 2026: fewer jobs): every job runs its first suite, then its
     # second and third on the same installed browsers, whatever the earlier ones did. Each suite
     # keeps its own project, part, evidence and report artifact names, and Ward Flow required
-    # needs both jobs.
+    # needs both jobs. Each suite splits its tests across two servers on the runner
+    # (WARD_JOURNEY_SHARDS=2, test-level because a part may be one file).
     strategy:
       fail-fast: false
       matrix:
@@ -764,6 +787,7 @@ jobs:
           WARD_GATE_BUILD: "1"
           WARD_RELEASE_GATE_PROJECT: ${{ matrix.project }}
           WARD_RELEASE_GATE_PART: ${{ matrix.part }}
+          WARD_JOURNEY_SHARDS: "2"
           WARD_BROWSER_ARTIFACT_DIR: ${{ needs.browser-build.result == 'success' && format('{0}/ward-browser-build', runner.temp) || '' }}
         run: npm run test:e2e:release-gate
       - name: Upload failed release-gate evidence
@@ -794,6 +818,7 @@ jobs:
           WARD_GATE_BUILD: "1"
           WARD_RELEASE_GATE_PROJECT: ${{ matrix.second_project }}
           WARD_RELEASE_GATE_PART: ${{ matrix.second_part }}
+          WARD_JOURNEY_SHARDS: "2"
           WARD_BROWSER_ARTIFACT_DIR: ${{ needs.browser-build.result == 'success' && format('{0}/ward-browser-build', runner.temp) || '' }}
         run: npm run test:e2e:release-gate
       - name: Upload failed second-suite evidence
@@ -822,6 +847,7 @@ jobs:
           WARD_GATE_BUILD: "1"
           WARD_RELEASE_GATE_PROJECT: ${{ matrix.third_project }}
           WARD_RELEASE_GATE_PART: ${{ matrix.third_part }}
+          WARD_JOURNEY_SHARDS: "2"
           WARD_BROWSER_ARTIFACT_DIR: ${{ needs.browser-build.result == 'success' && format('{0}/ward-browser-build', runner.temp) || '' }}
         run: npm run test:e2e:release-gate
       - name: Upload failed third-suite evidence
