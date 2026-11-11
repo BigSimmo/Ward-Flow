@@ -29,6 +29,7 @@ import {
   Radio,
   Select,
   TextInput,
+  cx,
   requestConfirm,
   type WfTone,
 } from "@/components/wf";
@@ -77,6 +78,7 @@ import {
 import { useStepUp, type StepUpResult } from "@/components/ward-management/shell/ward-step-up";
 import { useSharedAdminSource, useSharedCoverSource } from "@/components/ward-management/settings/access-shared-source";
 import { AccessLog } from "@/components/ward-management/settings/access-log";
+import { SiteFeaturesCard } from "@/components/ward-management/settings/site-features-card";
 import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
 
 import styles from "@/components/ward-management/settings/access-settings.module.css";
@@ -197,21 +199,27 @@ function AccessAdminPanel() {
   const defaultDays = CLINICAL_VALUES.accessGrantDefault.value;
   const defaultEnd = now + defaultDays * MINUTES_PER_DAY;
 
+  // Batch 4 item 20 (D-142): the access admin's Features at this site card. Desktop sets it in the
+  // left column under the intro, beside Requests for access; a phone shows it after the requests.
+  const siteFeatures = desk.role === "admin";
+
   return (
     <>
-      {/* Polish r2: the end date is said once, on Give a role. */}
-      <p className={styles.intro}>
-        {desk.role === "admin" ? null : "As a statewide coordinator you also give and remove roles. "}
-        Nobody grants themselves a role.
-      </p>
-      {source.problem ? (
-        <p className={styles.result} role="alert">
-          {source.problem}
+      <div className={cx(styles.lead, siteFeatures && styles.leadBesideRequests)}>
+        {/* Polish r2: the end date is said once, on Give a role. */}
+        <p className={styles.intro}>
+          {desk.role === "admin" ? null : "As a statewide coordinator you also give and remove roles. "}
+          Nobody grants themselves a role.
         </p>
-      ) : null}
-      {result}
+        {source.problem ? (
+          <p className={styles.result} role="alert">
+            {source.problem}
+          </p>
+        ) : null}
+        {result}
+      </div>
 
-      <Card data-testid="ward-access-requests">
+      <Card data-testid="ward-access-requests" className={siteFeatures ? styles.requestsBesideFeatures : undefined}>
         <CardHead title="Requests for access" icon={UserPlus} meta={plural(open.length, "open request")} />
         <CardBody flush>
           {open.length === 0 ? (
@@ -255,6 +263,12 @@ function AccessAdminPanel() {
           )}
         </CardBody>
       </Card>
+
+      {siteFeatures ? (
+        <div className={styles.siteFeatures}>
+          <SiteFeaturesCard />
+        </div>
+      ) : null}
 
       <GrantForm source={source} units={units} now={now} onRun={run} />
 

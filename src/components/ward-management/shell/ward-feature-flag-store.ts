@@ -70,18 +70,37 @@ const SERVER_FLAGS = resolveWardFeatureFlags({
 });
 
 let cachedRaw: string | null | undefined;
+let cachedSiteOff: string | undefined;
 let cachedFlags: ResolvedWardFeatureFlag[] = SERVER_FLAGS;
 
-/** Stable between reads while the stored choice is unchanged, as `useSyncExternalStore` needs. */
+/**
+ * Batch 4 item 20 (10 Nov 2026): the features switched off at this desk's site, read from the shared
+ * workspace (`WardSiteFeatureSwitchSync`). Memory only: never written to the device, so a fresh load
+ * reads the site's switches from the workspace again.
+ */
+let siteOff: readonly string[] = [];
+
+/** Sets the features switched off at the desk's site; the shell's flags follow at once. */
+export function setSiteSwitchedOffFeatures(names: readonly string[]): void {
+  const next = [...new Set(names)].sort();
+  if (next.join(",") === siteOff.join(",")) return;
+  siteOff = next;
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
+/** Stable between reads while the stored choice and the site's switches are unchanged, as `useSyncExternalStore` needs. */
 function snapshot(): ResolvedWardFeatureFlag[] {
   const raw = readRaw();
-  if (raw === cachedRaw) return cachedFlags;
+  const site = siteOff.join(",");
+  if (raw === cachedRaw && site === cachedSiteOff) return cachedFlags;
   cachedRaw = raw;
+  cachedSiteOff = site;
   cachedFlags = resolveWardFeatureFlags({
     environment: wardEnvironment(),
     safeguardsLocked: wardSafeguardsLocked(),
     server: serverWardFeatureFlags(),
     device: parseStoredWardFeatureFlags(raw),
+    siteOff,
   });
   return cachedFlags;
 }

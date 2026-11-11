@@ -83,6 +83,8 @@ describe("conservative demo recovery", () => {
         source: "ward",
         confirmedBy: "ward",
         confirmedAt: current.now,
+        // The ward's own confirm is kept for its outage catch-up (D-142).
+        wardConfirmedAt: current.now,
         revision: (unit.allocatable.revision ?? 0) + 1,
         confirmations: (unit.allocatable.confirmations ?? 0) + 1,
         // CONFIRM_CAPACITY also counts the unchanged-shift run; the seed records none, so it is 0.

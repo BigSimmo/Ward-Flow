@@ -1824,6 +1824,13 @@ function candidatesForMovements(
         actingUnitId: record.unitId,
         outcome: "withdrawn",
       }));
+    // Batch 4 (10 Nov 2026): settings and records with no legal figure.
+    case "SET_SITE_FEATURE_SWITCH":
+      return [{ type, role, now, siteCode: state.units[0]!.siteCode, feature: "help-ask", off: true }];
+    case "RECORD_DOWNTIME_PACK_PRINTED":
+      return [{ type, role, now, unitIds: state.units.slice(0, 2).map((unit) => unit.id) }];
+    case "RECORD_OUTAGE_WINDOW":
+      return [{ type, role, now, from: now - 120, to: now - 10 }];
     // Batch 3 items 21 and 23: hand-overs and carer call backs carry ids, times and desks only.
     case "HAND_OVER_ITEM":
       return (state.carerCallbacks ?? [])

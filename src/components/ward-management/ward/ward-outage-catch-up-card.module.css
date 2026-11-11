@@ -1,0 +1,87 @@
+/* Catch up after the outage (Batch 4 item 25, D-142): My ward's card above Ward home. Kit card,
+   buttons and glyph; tokens only. Text keeps the 12px floor. */
+
+.card {
+  margin-block-end: var(--wf-s-4);
+}
+
+.lead {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-1);
+  font: 400 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.lead b {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+}
+
+.rows {
+  margin: 0;
+  padding: 0 var(--wf-s-4);
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  min-block-size: var(--wf-row-default);
+  padding-block: var(--wf-s-1);
+  border-block-end: 1px solid var(--wf-line);
+}
+
+.rowText {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.rowTitle {
+  font: 500 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.rowSub {
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.row > button {
+  flex: none;
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.footNote {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+@media (max-width: 46.4375rem) {
+  .card {
+    margin-block: 0 var(--wf-s-4);
+  }
+
+  .lead {
+    font-size: var(--wf-fs-14);
+    line-height: var(--wf-lh-14);
+  }
+
+  .foot {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
