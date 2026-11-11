@@ -59,28 +59,26 @@ export type ToastChoices = {
 };
 
 /**
- * PR #1626 review: until the menu's code arrives, or if it cannot load, a plain native list keeps
+ * PR #1626 review: until the menu's code arrives, or if it cannot load, plain buttons keep
  * the choice open within the Undo window.
  */
 function PlainChoices({ choices, onDone }: { choices: ToastChoices; onDone?: () => void }) {
   return (
-    <select
-      aria-label={choices.label}
-      className={styles.toastAction}
-      value=""
-      onChange={(event) => {
-        if (event.target.value && choices.onChoose(event.target.value) !== false) onDone?.();
-      }}
-    >
-      <option value="" disabled>
-        {choices.label}
-      </option>
+    <span role="group" aria-label={choices.label}>
       {choices.items.map((item) => (
-        <option key={item.id} value={item.id}>
+        <Button
+          key={item.id}
+          variant="ghost"
+          size="sm"
+          className={styles.toastAction}
+          onClick={() => {
+            if (choices.onChoose(item.id) !== false) onDone?.();
+          }}
+        >
           {item.label}
-        </option>
+        </Button>
       ))}
-    </select>
+    </span>
   );
 }
 

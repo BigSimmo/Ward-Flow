@@ -349,17 +349,19 @@ export function useUndoableStep({
     // After the page has gone, one command says one thing: an unconfirmed save already told the
     // person to check, so the same command's later receipt does not raise a second toast.
     let saidAfterLeaving = false;
+    // PR #1626 review: a toast choice's second step (D-148's reasoned close) still runs after the
+    // page has gone, once its Undo is accepted, even after an earlier "not confirmed" was said.
+    let ranThen = false;
     const publish = (outcome: WardCommandOutcome | void) => {
       if (!mountedRef.current) {
-        if (saidAfterLeaving) return;
-        // PR #1626 review: a toast choice's second step (D-148's reasoned close) still runs after
-        // the page has gone, once its Undo is accepted, so the chosen reason is not lost.
         if (pending.then && outcome?.status === "accepted" && !(outcome.isCurrent && !outcome.isCurrent())) {
-          saidAfterLeaving = true;
-          pending.then();
+          if (!ranThen) {
+            ranThen = true;
+            pending.then();
+          }
           return;
         }
-        saidAfterLeaving = sayAfterLeaving(pending, outcome || undefined);
+        if (!saidAfterLeaving) saidAfterLeaving = sayAfterLeaving(pending, outcome || undefined);
         return;
       }
       pendingRef.current.push(outcome ? { ...pending, outcome } : pending);

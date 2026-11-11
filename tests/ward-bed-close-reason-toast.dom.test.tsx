@@ -115,6 +115,44 @@ describe("bed closure reason on the toast (D-148)", () => {
     expect(await screen.findByText(/^Bed 4 closed: Staffing\./u)).toBeInTheDocument();
   });
 
+  // PR #1626 review: after leaving, an Undo first reported as not confirmed and then confirmed still
+  // closes again with the reason.
+  it("still closes again with the reason when the Undo is confirmed after an unconfirmed reply", async () => {
+    let confirmUndo: (outcome: WardCommandOutcome) => void = () => {};
+    let replyUndo: (outcome: WardCommandOutcome) => void = () => {};
+    const confirmation = new Promise<WardCommandOutcome>((resolve) => (confirmUndo = resolve));
+    const dispatch = vi
+      .fn<(event: WardFlowEvent) => Promise<WardCommandOutcome>>()
+      .mockResolvedValueOnce({ commandId: "close", status: "accepted", undoStep: stepRecord(3) })
+      .mockImplementationOnce(() => new Promise((resolve) => (replyUndo = resolve)))
+      .mockResolvedValueOnce({ commandId: "again", status: "accepted", undoStep: stepRecord(5) });
+    const view = render(
+      <ToastProvider>
+        <Page dispatch={dispatch} />
+      </ToastProvider>,
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByText("Close this bed"));
+    });
+    const choose = await within(screen.getByTestId("toast")).findByTestId("toast-choices");
+    await act(async () => {
+      fireEvent.click(choose);
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("menuitem", { name: "Staffing" }));
+    });
+    view.rerender(<ToastProvider>{null}</ToastProvider>);
+    await act(async () => {
+      replyUndo({ commandId: "undo", status: "failed", message: "Not confirmed yet.", confirmation });
+    });
+    expect(dispatch).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      confirmUndo({ commandId: "undo", status: "accepted" });
+    });
+    expect(dispatch).toHaveBeenCalledTimes(3);
+    expect(dispatch.mock.calls[2][0]).toMatchObject({ type: "SET_BED_CLOSED", closed: true, reason: "staffing" });
+  });
+
   it("does not close again when the undo is refused", async () => {
     const dispatch = vi
       .fn<(event: WardFlowEvent) => Promise<WardCommandOutcome>>()

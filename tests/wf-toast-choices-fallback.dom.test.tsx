@@ -1,9 +1,9 @@
 import "@testing-library/jest-dom/vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-// PR #1626 review: the toast's reason menu loads on use (D-148). If its code cannot load, a plain
-// list still offers the choice within the Undo window. Synthetic labels only.
+// PR #1626 review: the toast's reason menu loads on use (D-148). If its code cannot load, plain
+// buttons still offer the choice within the Undo window. Synthetic labels only.
 vi.mock("@/components/wf/toast-choices", () => {
   throw new Error("Chunk failed to load");
 });
@@ -11,7 +11,7 @@ vi.mock("@/components/wf/toast-choices", () => {
 import { ToastView } from "@/components/wf/toast";
 
 describe("toast choices without the menu's code", () => {
-  it("offers the choices as a plain list, which chooses and closes the toast", async () => {
+  it("offers the choices as plain buttons, which chooses and closes the toast", async () => {
     const onChoose = vi.fn();
     const onClose = vi.fn();
     render(
@@ -29,8 +29,8 @@ describe("toast choices without the menu's code", () => {
       />,
     );
     await act(async () => {});
-    const list = await screen.findByRole("combobox", { name: "Add a reason" });
-    fireEvent.change(list, { target: { value: "staffing" } });
+    const group = await screen.findByRole("group", { name: "Add a reason" });
+    fireEvent.click(within(group).getByRole("button", { name: "Staffing" }));
     expect(onChoose).toHaveBeenCalledWith("staffing");
     expect(onClose).toHaveBeenCalledTimes(1);
   });
