@@ -156,6 +156,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-131](#d-131-hard-case-demo-data-allowed-and-the-movement-diagram-follows-the-engine-10-november-2026)                                                | Hard-case demo data allowed, and the movement diagram follows the engine               | Active                                           |
 | [D-132](#d-132-audit-fixes-group-1-docs-and-ci-guards-10-november-2026)                                                                                 | Audit fixes group 1: docs and CI guards; Claude-authored sensitive changes warn        | Active                                           |
 | [D-138](#d-138-phone-alert-urgency-by-kind-10-november-2026)                                                                                            | Phone alert urgency by kind                                                            | Active                                           |
+| [D-143](#d-143-mhert-is-mherl-in-the-glossary-smhmr-deferred-11-november-2026)                                                                          | MHERT is MHERL in the glossary; SMHMR deferred                                         | Active                                           |
 | [D-145](#d-145-repository-review-fixes-features-and-code-health-approved-11-november-2026)                                                              | Repository review: fixes, features and code health approved                            | Active                                           |
 
 ---
@@ -1701,12 +1702,20 @@ is inferred.
 - **Decision:** act-now phone alerts stay high urgency and buzz again when replaced. Jobs and team alerts go out at normal urgency and replace their earlier alert quietly. Settings shows when this device last received an alert, from the time only (never the alert's words).
 - **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge or release.
 
+## D-143. MHERT is MHERL in the glossary; SMHMR deferred (11 November 2026)
+
+- **Date:** 11 November 2026, 10:45 AM AWST (02:45 UTC). **Decided by:** Josh, in the Ward Flow project thread "Run the remaining master list audits": "MHERL (mental health emergency response line) and defer SMHMR as I don't know what that is", answering the D-131 open item. D-139 is claimed by open PR #1600. D-140 is claimed by open PR #1606. D-141 is claimed by open PR #1606. D-142 is claimed by open PR #1603.
+- **Decision:**
+  1. **MHERT:** the term is MHERL, the Mental Health Emergency Response Line, which the glossary already lists. The MHERT glossary entry is removed, and the two synthetic community demo lines now read "MHERL / WA Police co-response".
+  2. **SMHMR:** its meaning is deferred. The existing glossary wording stays until Josh confirms it.
+- **Boundary:** wording only; no clinical behaviour change.
+
 ## D-145. Repository review: fixes, features and code health approved (11 November 2026)
 
 - **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, in the Ward Flow project thread "Review repository for issues and new features": "Go ahead with all these recommendations please" (03:55 UTC), answering the review doc "Ward Flow repository review, 11 November 2026". Numbered D-145 because D-133 to D-144 belong to other threads. D-139 is claimed by open PR #1600, D-140 is claimed by open PR #1606, D-141 is claimed by open PR #1606, D-142 is claimed by open PR #1603, D-143 is claimed by open PR #1612, and D-144 is claimed by open PR #1617.
 - **Decision:**
   1. **Clinical display fixes, one held PR:** a ward's expected occupancy no longer counts a patient twice when they hold a named bed and also have a booked planned admission to that ward; an ended legal form says it ended and gives the expiry only as it was typed; the ED screen flags a long wait at 24 hours or more, like every other screen.
-  2. **Non-clinical fixes:** one lapse check for pull holds, staff requests keep the shift the person chose, one reader for typed times, one length-of-stay calculation, a demo code shorter than 12 characters counts as no code, and a demo pass stops working when the code changes. Two lines added to the real-data go/no-go list (record ids never built from UMRNs; a check of the push library).
+  2. **Non-clinical fixes:** one lapse check for pull holds, staff requests keep the shift the person chose, one reader for typed times, one length-of-stay calculation, a demo code shorter than 12 characters counts as no code (follows once PR #1615 merges, because its tests use a shorter code), and a demo pass stops working when the code changes. Two lines added to the real-data go/no-go list (record ids never built from UMRNs; a check of the push library).
   3. **Features that finish existing screens** (not covered by the D-128 item 9 pause): Leave page links, print and entry point; Help for pages that had none; print and spreadsheet export on Legal forms and Movements. Triage risk reviews due waits until #1564 to #1577 close and needs its own clinical sign-off.
   4. **Code health:** the file line cap counts code lines, not comments or blank lines; one shared CI setup step; shared helpers for the forked side rail; reasons or fixes for unexplained React hook rule switch-offs; patch-level dependency updates.
   5. **Josh's own action:** turn off Supabase open sign-up before real data.
