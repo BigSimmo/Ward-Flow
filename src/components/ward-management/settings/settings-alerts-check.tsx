@@ -20,6 +20,7 @@ import styles from "@/components/ward-management/settings/settings.module.css";
 import rx from "./settings-layout.module.css";
 import { SettingRow } from "./settings-rows";
 import { SettingsAlertChoices } from "./settings-alert-choices";
+import { lastPushLine, readLastPushAt } from "./settings-last-push";
 
 export function SettingsAlertsPane({
   notifications,
@@ -49,6 +50,17 @@ export function SettingsAlertsPane({
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the display mode is only readable after mount
     setInstalled(standaloneApp());
+  }, []);
+  // A8-07: when this device last received a phone alert, as the service worker recorded it.
+  const [lastPush, setLastPush] = useState<Date | null>(null);
+  useEffect(() => {
+    let live = true;
+    void readLastPushAt().then((at) => {
+      if (live) setLastPush(at);
+    });
+    return () => {
+      live = false;
+    };
   }, []);
 
   const browserOn = notifications && permission === "granted";
@@ -116,6 +128,9 @@ export function SettingsAlertsPane({
         <p className={rx.checkNext}>
           <StatusGlyph tone={browserOn && buzz ? "success" : "warning"} size={9} />
           {next}
+        </p>
+        <p className={rx.surgeLine} data-testid="ward-settings-last-push">
+          {lastPushLine(lastPush)}
         </p>
         <div className={rx.checkFoot}>
           <Button variant="sec" onClick={sendTest} data-setting="test-alert">

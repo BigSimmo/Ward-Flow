@@ -10,6 +10,7 @@ import {
   freshAlerts,
   parseSubscription,
   pushPayload,
+  pushUrgency,
   readPushConfig,
 } from "./push.mjs";
 import { readConfig } from "./config.mjs";
@@ -175,6 +176,36 @@ test("M158: a red alert, a transport job and a team update each use their own sl
     for (const value of ["WF-004", "WF-005", "AD-01", "bed-pull", "job:", "admitted:"])
       assert.equal(body.includes(value), false, `payload must not contain ${value}`);
   }
+});
+
+test("A8-07: only an act-now push is high urgency; transport jobs and team updates are normal", async () => {
+  const calls = [];
+  const send = createPushSender(readPushConfig(env), {
+    sendNotification: async (...args) => {
+      calls.push(args);
+      return { statusCode: 201 };
+    },
+  });
+  const subscription = { endpoint: "https://fcm.googleapis.com/fcm/send/abc", ...browserKeys };
+  for (const kind of ["act-now", "job", "community"])
+    await send(subscription, pushPayload([{ id: `synthetic-${kind}`, site: "Royal Perth Hospital", kind }]));
+  assert.deepEqual(
+    calls.map(([, , options]) => options.urgency),
+    ["high", "normal", "normal"],
+  );
+  // A mixed batch is the act-now template, and an unknown or missing tag is treated as act-now.
+  assert.equal(
+    pushUrgency(
+      pushPayload([
+        { site: "A", kind: "job" },
+        { site: "B", kind: "act-now" },
+      ]),
+    ),
+    "high",
+  );
+  for (const tag of [undefined, "ward-flow-other", 7, "Synthetic Person"])
+    assert.equal(pushUrgency({ title: "x", body: "y", url: ALERTS_PATH, tag }), "high");
+  assert.equal(pushUrgency(null), "high");
 });
 
 test("no patient name, UMRN, Ward Flow id, alert text or typed text reaches the payload", async () => {
