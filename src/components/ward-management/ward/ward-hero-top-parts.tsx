@@ -5,6 +5,7 @@ import { formatInstant, formatInstantWithDay } from "@/components/ward-managemen
 import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
 import { BED_RELEASES_HELD_UP_ANY_DATE_LABEL } from "@/components/ward-management/ward-derivations";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
+import { WardPackPrintedLine } from "./ward-pack-printed-line";
 
 export type WardHeroTopInput = {
   unit: Unit;
@@ -111,8 +112,11 @@ export function wardHeroTopParts({
           <b>{formatInstant(unit.allocatable.confirmedAt)}</b>
           {" · "}
           {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} ago
+          {/* Batch 4 item 24 (D-142): the outage pack's time, after the capacity time; a line of its own on a phone. */}
+          {isPhone ? null : <WardPackPrintedLine unitId={unit.id} now={now} lead=" · " />}
         </>
       }
+      note={isPhone ? <WardPackPrintedLine unitId={unit.id} now={now} /> : undefined}
       cells={[
         {
           id: "held",

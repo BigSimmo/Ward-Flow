@@ -195,6 +195,33 @@ it("starts the settle budget at the first rendered frame, not while a cold brows
   }
 });
 
+it("does not count a renderer stall after the first frame against the settle budget (D-137)", async () => {
+  document.body.innerHTML = "<main></main>";
+  Object.defineProperty(document, "fonts", { configurable: true, value: { ready: Promise.resolve() } });
+  Object.defineProperty(document, "getAnimations", { configurable: true, value: () => [] });
+  vi.useFakeTimers();
+  let frames = 0;
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+    // A held first load: the first frame comes at once, then the browser draws nothing for six
+    // seconds while it lays out the full page, then frames flow again.
+    return setTimeout(() => callback(0), frames++ === 1 ? 6000 : 16);
+  });
+  try {
+    let settled = false;
+    const readiness = waitForAccessibleReadiness({
+      evaluate: (callback: () => Promise<void>) => callback(),
+    } as unknown as Page).then(() => {
+      settled = true;
+    });
+    await vi.advanceTimersByTimeAsync(16 + 6000 + 16 * 4);
+    await readiness;
+    expect(settled).toBe(true);
+  } finally {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  }
+});
+
 it("does not wait forever on a removed CSS transition's unsettled finished promise", async () => {
   document.body.innerHTML = "<main></main>";
   let frames = 0;

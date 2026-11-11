@@ -41,14 +41,18 @@ export type WaitingFigure = {
   byService: ReadonlyMap<HealthService, number>;
 };
 
-export function waitingInEds(movements: readonly Movement[], now: Instant): WaitingFigure {
+export function waitingInEds(
+  movements: readonly Movement[],
+  now: Instant,
+): WaitingFigure & { people: readonly Movement[] } {
   const byService = new Map<HealthService, number>(HEALTH_SERVICES.map((service) => [service, 0]));
-  let total = 0;
+  // Item 5 (count breakdown): the people are the figure; the total is their number, never a second sum.
+  const people: Movement[] = [];
   for (const summary of edOpenSummaries(movements, now)) {
-    total += summary.waiting;
-    byService.set(summary.service, (byService.get(summary.service) ?? 0) + summary.waiting);
+    people.push(...summary.open);
+    byService.set(summary.service, (byService.get(summary.service) ?? 0) + summary.open.length);
   }
-  return { total, byService };
+  return { total: people.length, byService, people };
 }
 
 /**
@@ -83,18 +87,19 @@ export function minutesInEd(movement: Pick<Movement, "openedAt">, now: Instant):
 export function openEdJourneys(
   movements: readonly Movement[],
   now: Instant,
-): WaitingFigure & { stillInEd: number; inTransit: number } {
+): WaitingFigure & { stillInEd: number; inTransit: number; people: readonly Movement[] } {
   const byService = new Map<HealthService, number>(HEALTH_SERVICES.map((service) => [service, 0]));
-  let total = 0;
+  // Item 5 (count breakdown): the journeys are the figure; the total is their number.
+  const people: Movement[] = [];
   let stillInEd = 0;
   let inTransit = 0;
   for (const summary of edJourneySummaries(movements, now)) {
-    total += summary.waiting;
+    people.push(...summary.open);
     stillInEd += summary.stillInEd;
     inTransit += summary.inTransit;
-    byService.set(summary.service, (byService.get(summary.service) ?? 0) + summary.waiting);
+    byService.set(summary.service, (byService.get(summary.service) ?? 0) + summary.open.length);
   }
-  return { total, stillInEd, inTransit, byService };
+  return { total: people.length, stillInEd, inTransit, byService, people };
 }
 
 /** "35 waiting", "none waiting": the picker's words, so the noun never leaves the number. */

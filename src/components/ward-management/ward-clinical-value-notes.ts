@@ -125,6 +125,10 @@ const CLINICAL_VALUE_NOTES = {
     source:
       "D-63 (16 Oct 2026), local workflow choice; each health service's business continuity plan sets downtime report refresh",
   },
+  downtimePackOld: {
+    source:
+      "Josh, 10 Nov 2026, decision card (Batch 4 item 24, D-135); each health service's business continuity plan sets how often paper is refreshed",
+  },
   preparingBedStale: {
     source: "D-63 (16 Oct 2026), more than an hour, local workflow choice",
   },
@@ -147,6 +151,9 @@ const CLINICAL_VALUE_NOTES = {
   handoverDuePrompt: {
     source:
       "Shift ring on the rail, in the 27 Sep 2026 source snapshot with no decision recorded; added to the register 10 Nov 2026 (D-122)",
+  },
+  tvChangeMark: {
+    source: 'D-137 (Josh, 10 Nov 2026), plan item 43: TV "Changed HH:MM" mark on the ward and bed meeting TVs',
   },
   handoverOwnWorkLead: {
     source: "Feature build plan batch 3, item 21: Josh signed 30 minutes on a decision card, 10 Nov 2026 (D-136)",

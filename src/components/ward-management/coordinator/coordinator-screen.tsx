@@ -39,6 +39,10 @@ import type { Movement, Referral } from "@/components/ward-management/ward-model
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { CountBreakdown } from "@/components/ward-management/count-breakdown";
+import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
+import { movementBreakdownRows, wardReadyBreakdownRows } from "@/components/ward-management/count-breakdown-rows";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { queueOrder } from "@/components/ward-management/ward-priority";
 import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
 import {
@@ -76,6 +80,10 @@ import list from "./home-list.module.css";
 import flowStyles from "./home-flow.module.css";
 import { HomePinnedCard } from "./home-pinned-card";
 import { HomeSinceBanner } from "./home-since-banner-lazy";
+import { HomeOutageCatchUp } from "./home-outage-catch-up-lazy";
+import { PACK_OLD_AFTER_MINUTES, wardsWithOldPack } from "@/components/ward-management/ward-downtime-pack-prints";
+import Link from "next/link";
+import catchUpStyles from "./home-outage-catch-up.module.css";
 import heroStyles from "./home-hero.module.css";
 import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 import type { PlacementSubject } from "./home-placement-drawer";
@@ -193,6 +201,8 @@ function HomeListMoreMenu() {
         // Home notes 4, issue 4 (Josh, 9 Nov 2026): Today's review replaces the four Registers tabs
         // (Exceptions, Declines, Overrides, Refused) as the one page for what went off-plan today.
         { id: "review", label: "Today's review", onSelect: () => router?.push("/ward-flow/review") },
+        // Feature plan item 29: the overnight page, with the same figures as the day screens.
+        { id: "night", label: "Night view", onSelect: () => router?.push("/ward-flow/night") },
         { id: "alerts", label: "Alerts history", onSelect: () => router?.push("/ward-flow/alerts") },
       ]}
       trigger={(props) => (
@@ -234,6 +244,7 @@ export function CoordinatorScreen() {
     inboxSnoozes,
     inboxAcknowledgements,
     inboxOwnership,
+    downtimePackPrints,
   } = useWardFlowSelect(
     "movements",
     "units",
@@ -251,6 +262,7 @@ export function CoordinatorScreen() {
     "inboxSnoozes",
     "inboxAcknowledgements",
     "inboxOwnership",
+    "downtimePackPrints",
   );
   const liveNow = useWardFlowClock();
   const service = useServiceScope();
@@ -441,6 +453,14 @@ export function CoordinatorScreen() {
   }
 
   const patientOf = usePatientOf();
+  const canOpenHref = useCanOpenHref();
+  /** Item 5: a breakdown row names the person in full (D-83), or says the name is not recorded. */
+  const breakdownPerson = (movement: Movement) => {
+    const resolved = patientOf(movement);
+    return resolved.patient
+      ? { name: resolved.formalName, href: patientHref(resolved.patient.id) }
+      : { name: "Name not recorded" };
+  };
 
   /*
    * Option B (Josh, 13 Oct 2026; D-30): Refer on Home's placement shortlist writes a referral, not an
@@ -729,11 +749,32 @@ export function CoordinatorScreen() {
           : { answer: `Nothing needs you now${nextScope}` };
   // Josh, 4 Nov 2026 (2i question 5): the Checking line sits under the step whenever a bed count is
   // stale or a ward is not reporting (every size since the sticky header redesign, 9 Nov 2026).
+  // Batch 4 item 24 (Josh approved the drawing 11 Nov 2026, D-142): a pointer to the wards whose
+  // outage pack is old or never printed. The list itself lives once, on the Downtime pack screen.
+  const oldPacks = wardsWithOldPack(
+    downtimePackPrints,
+    units.map((unit) => unit.id),
+    now,
+  ).length;
+  const bedChecks = staleBedCounts + wardsNotReporting > 0;
+  const packPointer =
+    oldPacks > 0 ? (
+      <Link href="/ward-flow/reports/downtime" className={catchUpStyles.pointer} data-testid="home-next-old-packs">
+        {oldPacks} outage {oldPacks === 1 ? "pack" : "packs"} over {Math.round(PACK_OLD_AFTER_MINUTES / 60)}h old
+      </Link>
+    ) : null;
   const checkingLine =
-    staleBedCounts + wardsNotReporting > 0 ? (
+    bedChecks || packPointer ? (
       <span data-testid="home-next-checking">
-        Checking: {staleBedCounts} stale bed {staleBedCounts === 1 ? "count" : "counts"}, {wardsNotReporting}{" "}
-        {wardsNotReporting === 1 ? "ward" : "wards"} not reporting
+        Checking:{" "}
+        {bedChecks ? (
+          <>
+            {staleBedCounts} stale bed {staleBedCounts === 1 ? "count" : "counts"}, {wardsNotReporting}{" "}
+            {wardsNotReporting === 1 ? "ward" : "wards"} not reporting
+          </>
+        ) : null}
+        {bedChecks && packPointer ? ", " : null}
+        {packPointer}
       </span>
     ) : undefined;
 
@@ -771,12 +812,42 @@ export function CoordinatorScreen() {
                       value: edJourneys.total,
                       label: `open ED movements${service === null ? "" : ` in ${service}`}`,
                       testId: "home-figure-ed",
+                      // Item 5: tap the figure to see who is in it, from the same journeys it counts.
+                      renderPress: (press) => (
+                        <CountBreakdown
+                          value={edJourneys.total}
+                          noun={`open ED ${edJourneys.total === 1 ? "movement" : "movements"}${service === null ? "" : ` in ${service}`}`}
+                          countedAt={now}
+                          rows={() => movementBreakdownRows(edJourneys.people, breakdownPerson, now, canOpenHref)}
+                          className={press.className}
+                          id={press.id}
+                          labelledBy={press.labelledBy}
+                          testId="home-figure-ed-breakdown"
+                        >
+                          {press.children}
+                        </CountBreakdown>
+                      ),
                     },
                     {
                       id: "beds",
                       value: bedsReady,
                       label: `${bedsReady === 1 ? "bed" : "beds"} ready${networkWord}`,
                       testId: "home-figure-beds",
+                      renderPress: (press) => (
+                        <CountBreakdown
+                          value={bedsReady}
+                          noun={`${bedsReady === 1 ? "bed" : "beds"} ready${networkWord}`}
+                          kind="beds"
+                          countedAt={now}
+                          rows={() => wardReadyBreakdownRows(counts.capacity?.readyWards ?? [], canOpenHref)}
+                          className={press.className}
+                          id={press.id}
+                          labelledBy={press.labelledBy}
+                          testId="home-figure-beds-breakdown"
+                        >
+                          {press.children}
+                        </CountBreakdown>
+                      ),
                     },
                     ...(statewideOccupancy === null
                       ? []
@@ -909,6 +980,8 @@ export function CoordinatorScreen() {
               {/* Features 40 and 31 (9 Nov 2026): what changed since the last review, then this person's
                   pins. Both sit inside the column, under the folder tabs, so the approved tab join is
                   untouched, and both render nothing until there is something to show. */}
+              {/* Batch 4 item 25 (D-142): after a recorded outage, the wards still to confirm. */}
+              {shownView === "needs" ? <HomeOutageCatchUp now={now} /> : null}
               <HomeSinceBanner now={now} />
               <HomePinnedCard now={now} phone={isPhone} />
               {shownView === "planned" ? (

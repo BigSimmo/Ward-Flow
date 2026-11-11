@@ -137,6 +137,7 @@ export const ROUTE_COMPONENTS = [
   { route: "/movements", folder: "movements", react: "movements/movements-screen.tsx" },
   { route: "/movements/[movementId]", folder: "patients", react: "patients/patient-now-screen.tsx" },
   { route: "/network", folder: "network", react: null },
+  { route: "/night", folder: "night", react: "night/night-view-screen.tsx" },
   { route: "/on-call", folder: "on-call", react: "on-call/on-call-screen.tsx" },
   { route: "/out-of-area", folder: "out-of-area", react: "out-of-area/out-of-area-board.tsx" },
   { route: "/people/[patientId]", folder: "patients", react: "patients/patient-now-screen.tsx" },

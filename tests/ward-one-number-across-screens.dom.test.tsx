@@ -84,7 +84,7 @@ describe("Home and Statistics print the same figures as the bed meeting sheet (A
     // Page tops (9 Nov 2026, PR #1581): the hero's figures are one "Network at a glance" row, each
     // a number then its words ("4 beds ready", "41 / 60 in use, 68%").
     const chips = within(page).getByRole("group", { name: "Network at a glance" });
-    const figureOf = (words: RegExp) => within(chips).getByText(words).closest("p")!;
+    const figureOf = (words: RegExp) => within(chips).getByText(words).closest<HTMLElement>("[data-wf-hero-figure]")!;
     expect(leadingNumber(figureOf(/^beds? ready$/u)), "ready vs print").toBe(sheet.capacity.ready);
     expect(leadingNumber(figureOf(/^in use,/u)), "in use vs print").toBe(printedInUse);
     expect(
@@ -125,7 +125,7 @@ describe("a missing ward source reads as unknown, never 0% in use (audit M6)", (
     });
     const inUse = within(chips)
       .getByText(/^in use,/u)
-      .closest("p")!;
+      .closest<HTMLElement>("[data-wf-hero-figure]")!;
     expect(inUse.textContent).toContain("—");
     expect(inUse.textContent).not.toMatch(/\d\s*%/u);
   });

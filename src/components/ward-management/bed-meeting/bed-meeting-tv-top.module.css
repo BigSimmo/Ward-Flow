@@ -126,3 +126,10 @@
     margin-block-start: var(--wf-s-2);
   }
 }
+
+/* Plan item 43 (D-137): "Changed 14:32" under a figure's label, in the hero's small text. No motion. */
+.changed {
+  display: block;
+  font: 400 var(--wf-fs-12) / 16px var(--wf-font);
+  color: var(--wf-hero-ink-3);
+}

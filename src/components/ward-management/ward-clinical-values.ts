@@ -94,8 +94,10 @@ const SIGNED_BY_JOSH_9_NOV = { status: "signed", signedBy: "Josh (product owner)
 /**
  * D-130 (Josh, 10 Nov 2026, "Go ahead with all recommendations"): he signed, as they were, the time
  * and age numbers screens used to type inline (M16): the TV leave window, the ED "not yet seen" flag,
- * the ED statistics band edges, the bed board referral chip and the age bands.
+ * the ED statistics band edges, the bed board referral chip and the age bands. He also signed the TV
+ * change mark's length for the prototype (D-137).
  */
+/** Josh chose 24 hours for an old downtime pack on 10 Nov 2026 (decision card, Batch 4 item 24, D-135). */
 const SIGNED_BY_JOSH_10_NOV = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-11-10" } as const;
 
 /**
@@ -311,6 +313,15 @@ export const CLINICAL_VALUES = {
     value: 1 * MINUTES_PER_HOUR,
     unit: "minutes",
   },
+  // Batch 4 item 24 (Josh, 10 Nov 2026, decision card): a ward whose last printed or saved pack is
+  // older than this is listed as having an old pack. A prompt only; nothing is printed for the ward.
+  downtimePackOld: {
+    ...SIGNED_BY_JOSH_10_NOV,
+    name: "Ward's printed downtime pack listed as old after",
+    group: "Alerts and holds",
+    value: 24 * MINUTES_PER_HOUR,
+    unit: "minutes",
+  },
   preparingBedStale: {
     ...SIGNED_BY_JOSH_16_OCT,
     name: "Bed left as preparing or cleaning flagged after",
@@ -386,6 +397,13 @@ export const CLINICAL_VALUES = {
   handoverDuePrompt: {
     status: "synthetic",
     name: "Rail shows Handover Due once the shift has this long or less to run",
+    group: "Alerts and holds",
+    value: 15,
+    unit: "minutes",
+  },
+  tvChangeMark: {
+    ...SIGNED_BY_JOSH_10_NOV,
+    name: "TV tile shows when its figure changed, for",
     group: "Alerts and holds",
     value: 15,
     unit: "minutes",

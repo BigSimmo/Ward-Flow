@@ -107,7 +107,9 @@ describe("count labels say what they count", () => {
     inProvider(<StatisticsScreen />);
     const chips = screen.getByRole("group", { name: "Network at a glance" });
     // Page tops (9 Nov 2026): the count is a hero figure, a number then its label.
-    const journeys = within(chips).getByText("open ED movements", { exact: true }).closest("p")!;
+    const journeys = within(chips)
+      .getByText("open ED movements", { exact: true })
+      .closest<HTMLElement>("[data-wf-hero-figure]")!;
     expect(openEdJourneys(state.movements, NOW_ANCHOR).total).toBe(expected);
     expect(journeys.textContent).toBe(`${expected} open ED movements`);
   });

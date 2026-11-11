@@ -5,6 +5,7 @@ import type { DiversionReturnRecord } from "./community/diversion-return-review"
 import type { SiteHandoverSignOffRecord } from "./site-sign-off/site-handover-sign-off";
 import type { TriageSignedRecord } from "./triage/triage-record";
 import type { StaffRequestRecord } from "./staffing/staff-requests";
+import type { PilotControlState } from "./ward-flow-pilot-control-events";
 import type { CarerCallbackRecord, HandedItemRecord } from "@/components/ward-management/handover-work-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 
@@ -37,7 +38,7 @@ export type ClosingLoopContext = {
   handedItems?: HandedItemRecord[];
   /** Batch 3 item 23 (`RECORD_CARER_CALLBACK`): carer callback promises, read by handover and the patient page. */
   carerCallbacks?: CarerCallbackRecord[];
-};
+} & PilotControlState; // Batch 4 (10 Nov 2026): site switches, pack print times and outage windows.
 
 export const CLOSING_LOOP_CONTEXT_KEYS = {
   homeServiceReturns: true,
@@ -48,6 +49,9 @@ export const CLOSING_LOOP_CONTEXT_KEYS = {
   diversionReturns: true,
   triages: true,
   staffRequests: true,
+  siteFeatureSwitches: true,
+  downtimePackPrints: true,
+  outageWindows: true,
   handedItems: true,
   carerCallbacks: true,
 } as const;
@@ -64,6 +68,9 @@ export function closingLoopContext(state: WardFlowState): Required<ClosingLoopCo
     diversionReturns: Array.isArray(state.diversionReturns) ? state.diversionReturns : NONE,
     triages: Array.isArray(state.triages) ? state.triages : NONE,
     staffRequests: Array.isArray(state.staffRequests) ? state.staffRequests : NONE,
+    siteFeatureSwitches: Array.isArray(state.siteFeatureSwitches) ? state.siteFeatureSwitches : NONE,
+    downtimePackPrints: Array.isArray(state.downtimePackPrints) ? state.downtimePackPrints : NONE,
+    outageWindows: Array.isArray(state.outageWindows) ? state.outageWindows : NONE,
     handedItems: Array.isArray(state.handedItems) ? state.handedItems : NONE,
     carerCallbacks: Array.isArray(state.carerCallbacks) ? state.carerCallbacks : NONE,
   };
