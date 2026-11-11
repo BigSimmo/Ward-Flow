@@ -106,12 +106,33 @@ export async function waitForAccessibleReadiness(page: Page) {
     // does, neither requestAnimationFrame nor CSS transitions advance (every transition reads
     // localTime 0), so that start-up time is not motion and must not consume the budget. The
     // test's own timeout still bounds a browser that never renders.
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    //
+    // Count leak (D-137, 11 Nov 2026): a fresh device is now held, so the server sends a small
+    // loading page and the browser draws the full page itself after hydration. A cold WebKit can
+    // then stall again after its first frame, while it lays out that page for the first time. The
+    // budget therefore counts only time in which the browser draws frames (and the font wait): a
+    // stalled renderer is not motion. Motion that keeps the browser drawing still fails after five
+    // seconds, and the test's own timeout still bounds a renderer that never recovers.
+    let frames = 0;
+    const nextFrame = () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => {
+          frames += 1;
+          resolve();
+        }),
+      );
+    await nextFrame();
     let cancelled = false;
     let phase = "fonts";
-    let timer: ReturnType<typeof setTimeout>;
+    let timer: ReturnType<typeof setInterval>;
     const deadline = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => {
+      let used = 0;
+      let framesAtLastTick = frames;
+      timer = setInterval(() => {
+        if (phase === "fonts" || frames !== framesAtLastTick) used += 100;
+        framesAtLastTick = frames;
+        if (used < 5_000) return;
+        clearInterval(timer);
         const animations = document.getAnimations().map((animation) => {
           const target = (animation.effect as KeyframeEffect | null)?.target;
           return {
@@ -128,7 +149,7 @@ export async function waitForAccessibleReadiness(page: Page) {
             `Accessibility layout did not settle within five seconds: ${JSON.stringify({ phase, animations })}`,
           ),
         );
-      }, 5_000);
+      }, 100);
     });
     const settled = async () => {
       await document.fonts?.ready;
@@ -150,7 +171,7 @@ export async function waitForAccessibleReadiness(page: Page) {
       let previous = "";
       let equalFrames = 0;
       while (!cancelled && equalFrames < 3) {
-        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+        await nextFrame();
         // CSS transitions can disappear without settling a previously captured `finished`
         // promise. Observe the current animations so removed motion cannot strand readiness.
         if (motionIsRunning()) {
@@ -173,7 +194,7 @@ export async function waitForAccessibleReadiness(page: Page) {
       await Promise.race([settled(), deadline]);
     } finally {
       cancelled = true;
-      clearTimeout(timer!);
+      clearInterval(timer!);
     }
   });
 }

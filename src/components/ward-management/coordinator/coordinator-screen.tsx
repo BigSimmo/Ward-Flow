@@ -39,6 +39,10 @@ import type { Movement, Referral } from "@/components/ward-management/ward-model
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { CountBreakdown } from "@/components/ward-management/count-breakdown";
+import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
+import { movementBreakdownRows, wardReadyBreakdownRows } from "@/components/ward-management/count-breakdown-rows";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { queueOrder } from "@/components/ward-management/ward-priority";
 import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
 import {
@@ -193,6 +197,8 @@ function HomeListMoreMenu() {
         // Home notes 4, issue 4 (Josh, 9 Nov 2026): Today's review replaces the four Registers tabs
         // (Exceptions, Declines, Overrides, Refused) as the one page for what went off-plan today.
         { id: "review", label: "Today's review", onSelect: () => router?.push("/ward-flow/review") },
+        // Feature plan item 29: the overnight page, with the same figures as the day screens.
+        { id: "night", label: "Night view", onSelect: () => router?.push("/ward-flow/night") },
         { id: "alerts", label: "Alerts history", onSelect: () => router?.push("/ward-flow/alerts") },
       ]}
       trigger={(props) => (
@@ -441,6 +447,14 @@ export function CoordinatorScreen() {
   }
 
   const patientOf = usePatientOf();
+  const canOpenHref = useCanOpenHref();
+  /** Item 5: a breakdown row names the person in full (D-83), or says the name is not recorded. */
+  const breakdownPerson = (movement: Movement) => {
+    const resolved = patientOf(movement);
+    return resolved.patient
+      ? { name: resolved.formalName, href: patientHref(resolved.patient.id) }
+      : { name: "Name not recorded" };
+  };
 
   /*
    * Option B (Josh, 13 Oct 2026; D-30): Refer on Home's placement shortlist writes a referral, not an
@@ -771,12 +785,42 @@ export function CoordinatorScreen() {
                       value: edJourneys.total,
                       label: `open ED movements${service === null ? "" : ` in ${service}`}`,
                       testId: "home-figure-ed",
+                      // Item 5: tap the figure to see who is in it, from the same journeys it counts.
+                      renderPress: (press) => (
+                        <CountBreakdown
+                          value={edJourneys.total}
+                          noun={`open ED ${edJourneys.total === 1 ? "movement" : "movements"}${service === null ? "" : ` in ${service}`}`}
+                          countedAt={now}
+                          rows={() => movementBreakdownRows(edJourneys.people, breakdownPerson, now, canOpenHref)}
+                          className={press.className}
+                          id={press.id}
+                          labelledBy={press.labelledBy}
+                          testId="home-figure-ed-breakdown"
+                        >
+                          {press.children}
+                        </CountBreakdown>
+                      ),
                     },
                     {
                       id: "beds",
                       value: bedsReady,
                       label: `${bedsReady === 1 ? "bed" : "beds"} ready${networkWord}`,
                       testId: "home-figure-beds",
+                      renderPress: (press) => (
+                        <CountBreakdown
+                          value={bedsReady}
+                          noun={`${bedsReady === 1 ? "bed" : "beds"} ready${networkWord}`}
+                          kind="beds"
+                          countedAt={now}
+                          rows={() => wardReadyBreakdownRows(counts.capacity?.readyWards ?? [], canOpenHref)}
+                          className={press.className}
+                          id={press.id}
+                          labelledBy={press.labelledBy}
+                          testId="home-figure-beds-breakdown"
+                        >
+                          {press.children}
+                        </CountBreakdown>
+                      ),
                     },
                     ...(statewideOccupancy === null
                       ? []

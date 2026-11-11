@@ -26,6 +26,11 @@ const WARD_DIR = "src/components/ward-management";
  */
 const MAY_ASSERT_TODAY = new Map([
   [
+    "changedAt",
+    "TV change mark (item 43, D-137): shows only while under 15 minutes old, so its clock face is today or the last minutes before midnight.",
+  ],
+  ["countedAt", "Count breakdown (item 5): the time the figure was counted, which is now."],
+  [
     "lastNightStart",
     'Night shift first look (batch 3 item 11, 10 Nov 2026): the words say "Since last night at", which name the day; the instant is always the previous night shift\'s start.',
   ],

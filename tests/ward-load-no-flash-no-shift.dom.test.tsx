@@ -21,6 +21,7 @@ vi.mock("next/navigation", () => ({
 
 import { NextRail as WardRail } from "@/components/ward-management/shell-next/next-rail";
 import { RAIL_OPEN_STORAGE_KEY, WARD_RAIL_EARLY_SCRIPT } from "@/components/ward-management/shell/ward-rail-early";
+import { WardRailPlaceholder } from "@/components/ward-management/shell/ward-rail-placeholder";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { Hero } from "@/components/wf";
@@ -191,6 +192,18 @@ describe("desktop rail: the server render is the settled render", () => {
     const desktop = [...css.matchAll(/@media \(min-width: 1001px\) \{([\s\S]*?)\n\}/gu)].map((m) => m[1]).join("");
     expect(desktop).not.toMatch(/compactExtra/u);
   });
+
+  // D-137 follow-up: the held cookie is shared across tabs, so a ward tab can get the coordinator's
+  // server rail and bar; while this tab's desk is pending they stay hidden, with the same give-up.
+  it("hides the server's rail and top bar while a stored desk is pending", () => {
+    const css = strip(readFileSync("src/app/ward-flow/ward-flow-layout.module.css", "utf8"));
+    const rule =
+      /:global\(html\[data-wf-desk-pending\]\) \.shellRow :global\(\[data-testid="ward-rail"\]\),\s*:global\(html\[data-wf-desk-pending\]\) \.shellContent :global\(\[data-testid="ward-bar"\]\) \{([^}]*)\}/u.exec(
+        css,
+      );
+    expect(rule?.[1]).toMatch(/visibility: hidden;/u);
+    expect(rule?.[1]).toMatch(/animation: deskPendingGiveUp 0s 8s forwards;/u);
+  });
 });
 
 describe("rail early script", () => {
@@ -272,5 +285,39 @@ describe("rail early script and hydration", () => {
     expect(mismatch).toEqual([]);
     expect(recoverable).toEqual([]);
     expect(host.querySelector('[data-testid="ward-rail"]')).toHaveAttribute("data-rail", "closed");
+  });
+
+  // Count leak (D-137): the held first load's empty rail gets the same early shape, and hydrates over it.
+  it.each([
+    { name: "a closed rail preference", wide: true, stored: "closed", tablet: null },
+    { name: "tablet landscape", wide: false, stored: null, tablet: "landscape" },
+  ])("hydrates the rail placeholder over $name without a mismatch", async ({ wide, stored, tablet }) => {
+    const host = document.createElement("div");
+    host.innerHTML = renderToString(<WardRailPlaceholder />);
+    document.body.append(host);
+    const placeholder = () => host.querySelector("[data-wf-rail-placeholder]");
+    expect(placeholder()).toHaveAttribute("data-rail", "open");
+
+    mockViewport(
+      (query) =>
+        query === "(min-width: 1001px)" ||
+        (wide && query === "(min-width: 1201px)") ||
+        (!wide && query === "(max-width: 1200px)"),
+    );
+    if (stored) window.localStorage.setItem(RAIL_OPEN_STORAGE_KEY, stored);
+    new Function(WARD_RAIL_EARLY_SCRIPT)();
+    expect(placeholder()).toHaveAttribute("data-rail", "closed");
+
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    const recoverable: unknown[] = [];
+    await act(async () => {
+      hydrateRoot(host, <WardRailPlaceholder />, { onRecoverableError: (error) => recoverable.push(error) });
+    });
+    const mismatch = errors.mock.calls.filter((call) => /hydrat|did(n't| not) match/iu.test(String(call[0])));
+    expect(mismatch).toEqual([]);
+    expect(recoverable).toEqual([]);
+    expect(placeholder()).toHaveAttribute("data-rail", "closed");
+    if (tablet) expect(placeholder()).toHaveAttribute("data-tablet", tablet);
+    else expect(placeholder()).not.toHaveAttribute("data-tablet");
   });
 });

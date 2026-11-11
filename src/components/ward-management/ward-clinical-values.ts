@@ -94,7 +94,8 @@ const SIGNED_BY_JOSH_9_NOV = { status: "signed", signedBy: "Josh (product owner)
 /**
  * D-130 (Josh, 10 Nov 2026, "Go ahead with all recommendations"): he signed, as they were, the time
  * and age numbers screens used to type inline (M16): the TV leave window, the ED "not yet seen" flag,
- * the ED statistics band edges, the bed board referral chip and the age bands.
+ * the ED statistics band edges, the bed board referral chip and the age bands. He also signed the TV
+ * change mark's length for the prototype (D-137).
  */
 const SIGNED_BY_JOSH_10_NOV = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-11-10" } as const;
 
@@ -386,6 +387,13 @@ export const CLINICAL_VALUES = {
   handoverDuePrompt: {
     status: "synthetic",
     name: "Rail shows Handover Due once the shift has this long or less to run",
+    group: "Alerts and holds",
+    value: 15,
+    unit: "minutes",
+  },
+  tvChangeMark: {
+    ...SIGNED_BY_JOSH_10_NOV,
+    name: "TV tile shows when its figure changed, for",
     group: "Alerts and holds",
     value: 15,
     unit: "minutes",
