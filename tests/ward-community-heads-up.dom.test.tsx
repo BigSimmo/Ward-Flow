@@ -6,9 +6,12 @@ import { HomeTeamHeadsUpCard } from "@/components/ward-management/community/home
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
-/* Item 46 (D-133): the team page card shows the ED name and time, and nothing for another team. */
+/*
+ * Item 46 (D-133): the team page card shows the ED name and time, and nothing for another team.
+ * D-141 (11 Nov 2026): it leads with the patient's UMRN in Geist Mono, never their name.
+ */
 describe("home team heads-up card", () => {
-  it("lists the open-episode patient in ED on the Midland page, ED name and time only", () => {
+  it("lists the open-episode patient in ED on the Midland page: UMRN, ED name and time only", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <HomeTeamHeadsUpCard team={communityTeamById("midland")!} now={NOW_ANCHOR} />
@@ -16,7 +19,10 @@ describe("home team heads-up card", () => {
     );
     const items = screen.getAllByTestId("ward-community-heads-up-item");
     expect(items).toHaveLength(1);
-    expect(items[0]!.textContent).toMatch(/^Your patient is in Armadale ED since \d{2}:\d{2}( yesterday)?$/u);
+    expect(items[0]!.textContent).toMatch(/^UM\d{6} is in Armadale ED since \d{2}:\d{2}( yesterday)?$/u);
+    const umrn = items[0]!.querySelector("span span");
+    expect(umrn?.textContent).toMatch(/^UM\d{6}$/u);
+    expect(umrn?.className).toMatch(/umrn/u);
     expect(screen.getByRole("heading", { name: "Your patients in ED" })).toBeInTheDocument();
   });
 

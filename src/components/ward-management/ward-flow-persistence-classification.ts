@@ -268,6 +268,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "RECORD_LEFT_DEPARTMENT",
   // Item 9 (10 Nov 2026): a movement id and up to three typed clock times. No typed text.
   "RECORD_CREW_TIMES",
+  // D-141 (11 Nov 2026): a movement id and a fixed Police or Ambulance choice. No typed text.
+  "RECORD_ARRIVAL_MODE",
   "RECORD_LEGAL_FORM_EXPIRY",
   "RECORD_LEGAL_FORM_RECEIVED",
   "RECORD_LOCAL_BED_SOUGHT",

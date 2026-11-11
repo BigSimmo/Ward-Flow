@@ -14,7 +14,8 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /*
  * Item 46, home team heads-up (D-133, Josh 10 Nov 2026): open episodes only, ED name and arrival
- * time only. Synthetic movements and episodes throughout.
+ * time only. D-141 (Josh, 11 Nov 2026) adds the patient's UMRN so a team can tell items apart; still
+ * no name, reason, diagnosis, risk or typed text. Synthetic movements, episodes and UMRNs throughout.
  */
 const MIDLAND = communityTeamById("midland")!;
 const NOW = 900;
@@ -38,15 +39,25 @@ const EPISODES: Record<string, CommunityEpisode[]> = {
   "PT-T3": [{ status: "active", team: "Bentley Community Team" }],
 };
 const episodesOf = (patientId: PatientId) => EPISODES[patientId];
+const UMRNS: Record<string, string> = { "PT-T1": "UM900001" };
+const umrnOf = (patientId: PatientId) => UMRNS[patientId];
 
 describe("home team heads-up (D-133)", () => {
   it("is raised for a patient with an open episode with this team who is in ED", () => {
-    const items = homeTeamHeadsUps([edStay("WF-T1", "PT-T1")], MIDLAND, episodesOf, NOW);
-    expect(items).toEqual([{ key: "WF-T1", edName: "RPH ED", since: 860 }]);
-    expect(homeTeamHeadsUpSentence(items[0]!, "14:20")).toBe("Your patient is in RPH ED since 14:20");
+    const items = homeTeamHeadsUps([edStay("WF-T1", "PT-T1")], MIDLAND, episodesOf, NOW, umrnOf);
+    expect(items).toEqual([{ key: "WF-T1", umrn: "UM900001", edName: "RPH ED", since: 860 }]);
+    expect(homeTeamHeadsUpSentence(items[0]!, "14:20")).toBe("UM900001 is in RPH ED since 14:20");
   });
 
-  it("holds only the ED name and the time: no reason, diagnosis, risk or typed text", () => {
+  it("reads 'Your patient' when no UMRN is recorded (D-141)", () => {
+    for (const lookup of [undefined, () => "", () => "UMRN not recorded"]) {
+      const [item] = homeTeamHeadsUps([edStay("WF-T1", "PT-T1")], MIDLAND, episodesOf, NOW, lookup);
+      expect(item).toEqual({ key: "WF-T1", edName: "RPH ED", since: 860 });
+      expect(homeTeamHeadsUpSentence(item!, "14:20")).toBe("Your patient is in RPH ED since 14:20");
+    }
+  });
+
+  it("holds only the UMRN, the ED name and the time: no name, reason, diagnosis, risk or typed text", () => {
     const stay = {
       ...edStay("WF-T1", "PT-T1"),
       blocker: "Typed blocker text",
@@ -54,9 +65,10 @@ describe("home team heads-up (D-133)", () => {
       edPresentations: ["self_harm"],
       legalStatus: "Voluntary",
     } as unknown as ReturnType<typeof edStay>;
-    const [item] = homeTeamHeadsUps([stay], MIDLAND, episodesOf, NOW);
-    expect(Object.keys(item!).sort()).toEqual(["edName", "key", "since"]);
+    const [item] = homeTeamHeadsUps([stay], MIDLAND, episodesOf, NOW, umrnOf);
+    expect(Object.keys(item!).sort()).toEqual(["edName", "key", "since", "umrn"]);
     const sentence = homeTeamHeadsUpSentence(item!, "14:20");
+    expect(sentence).toBe("UM900001 is in RPH ED since 14:20");
     expect(sentence).not.toMatch(/blocker|F20|self|harm|risk|Voluntary|PT-T1|WF-T1/iu);
   });
 

@@ -421,7 +421,8 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
     file: "community/home-team-heads-up.ts",
     reason:
       "D-133 (Josh, 10 Nov 2026): the home team heads-up links a person's open ED stay to their own open " +
-      "community team episode, for that one team's page only, and shows the ED name and time, nothing else.",
+      "community team episode, for that one team's page only, and shows the ED name and time, nothing else. " +
+      "D-141 (Josh, 11 Nov 2026) adds the patient's UMRN so a team can tell items apart; still no name.",
   },
   {
     file: "patients/patient-now-adapter.ts",

@@ -2558,6 +2558,19 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       };
     },
   ],
+  // D-141 (11 Nov 2026): weight 0 and last, the same convention, so the weighted draws stay as they were.
+  [
+    0,
+    (state, random) => {
+      // D-141: "Brought by" on an ED arrival, sometimes on a journey that never was one.
+      const movement = prefer(random, state.movements, (m) => m.originEdId !== undefined);
+      return {
+        type: "RECORD_ARRIVAL_MODE",
+        movementId: id(movement),
+        arrivalMode: chance(random, 0.5) ? "police" : "ambulance",
+      };
+    },
+  ],
 ];
 
 const ALL_BUILDERS = [...BUILDERS, ...MORE_BUILDERS];

@@ -2542,7 +2542,7 @@ export type WardFlowEvent =
   // Package B (24 Oct 2026) dependencies and plan changes; features 37 and 13 (9 Nov 2026) checklist and reply.
   | import("./discharges/discharge-check-events").DischargeDeskEvent
   | ObservationLevelEvent
-  | import("./ward-crew-handover").RecordCrewTimesEvent
+  | import("./ward-crew-handover").CrewHandoverEvent
   | RecordWardDiagnosisEvent
   // Feature 14 (Josh, 9 Nov 2026): the weekend discharge review tick.
   | MarkWeekendDischargeReviewedEvent

@@ -2,19 +2,20 @@
 
 // Item 9: the crew times form draws only once a patient record is open, so its code loads after the
 // first paint and is fetched when the browser is idle, the same approach as `EdObservationControl`
-// (phone script budget). Until it has loaded, or if the fetch fails, nothing is drawn.
+// (phone script budget). Until it has loaded, or if the fetch fails, nothing is drawn. D-141: the
+// same chunk carries "Brought by: Police / Ambulance", so it also loads for any open ED arrival.
 import { useEffect, useState, type ComponentProps } from "react";
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
-import { crewArrivalMode } from "@/components/ward-management/ward-crew-handover";
+import { canMarkBroughtBy, crewArrivalMode } from "@/components/ward-management/ward-crew-handover";
 
 type CrewModule = typeof import("./ed-crew-times");
 let loadedCrew: CrewModule | undefined;
 const loadCrew = () => import("./ed-crew-times").then((m) => (loadedCrew = m));
 preloadWhenIdle(loadCrew);
 
-export function EdCrewTimesSlot(props: ComponentProps<CrewModule["EdCrewTimes"]>) {
+export function EdCrewTimesSlot(props: ComponentProps<CrewModule["EdArrivalCrew"]>) {
   const [loaded, setLoaded] = useState(() => loadedCrew);
-  const wanted = crewArrivalMode(props.movement) !== undefined;
+  const wanted = crewArrivalMode(props.movement) !== undefined || canMarkBroughtBy(props.movement);
   useEffect(() => {
     if (loaded || !wanted) return;
     let live = true;
@@ -27,6 +28,6 @@ export function EdCrewTimesSlot(props: ComponentProps<CrewModule["EdCrewTimes"]>
       live = false;
     };
   }, [loaded, wanted]);
-  const Crew = loaded?.EdCrewTimes;
+  const Crew = loaded?.EdArrivalCrew;
   return wanted && Crew ? <Crew {...props} /> : null;
 }

@@ -125,3 +125,66 @@ describe("saved records", () => {
     expect(m).toMatchObject({ crewArrivedAt: now - 50, crewHandedOverAt: now - 20 });
   });
 });
+
+describe("RECORD_ARRIVAL_MODE (D-141)", () => {
+  const walkInId = () =>
+    seedWardFlowState().movements.find(
+      (m) => m.originEdId !== undefined && m.sourceAdmissionId === undefined && m.arrivalMode === undefined,
+    )!.id;
+
+  it("marks an ED arrival brought by police, and then its crew times can be typed", () => {
+    const f = journey();
+    const walkIn = walkInId();
+    f.send({ type: "RECORD_ARRIVAL_MODE", movementId: walkIn, arrivalMode: "police" });
+    expect(f.state.rejections).toEqual([]);
+    expect(f.movement(walkIn).arrivalMode).toBe("police");
+    f.send({ type: "RECORD_CREW_TIMES", movementId: walkIn, crewArrivedAt: now - 10 });
+    expect(f.state.rejections).toEqual([]);
+    expect(f.movement(walkIn).crewArrivedAt).toBe(now - 10);
+  });
+
+  it("corrects police to ambulance and keeps the typed crew times; the same mode again changes nothing", () => {
+    const f = journey();
+    f.send({ type: "RECORD_CREW_TIMES", movementId: POLICE, crewArrivedAt: now - 30 });
+    f.send({ type: "RECORD_ARRIVAL_MODE", movementId: POLICE, arrivalMode: "ambulance" });
+    expect(f.movement(POLICE)).toMatchObject({ arrivalMode: "ambulance", crewArrivedAt: now - 30 });
+    const before = f.state;
+    expect(f.send({ type: "RECORD_ARRIVAL_MODE", movementId: POLICE, arrivalMode: "ambulance" })).toBe(before);
+    expect(f.state.rejections).toEqual([]);
+  });
+
+  it("refuses a mode outside Police and Ambulance, an unknown journey and a desk outside ED and the coordinator", () => {
+    const f = journey();
+    const walkIn = walkInId();
+    f.send({ type: "RECORD_ARRIVAL_MODE", movementId: walkIn, arrivalMode: "self" });
+    f.send({ type: "RECORD_ARRIVAL_MODE", movementId: "WF-NOPE", arrivalMode: "police" });
+    f.send({ type: "RECORD_ARRIVAL_MODE", role: "ward", movementId: walkIn, arrivalMode: "police" });
+    expect(f.state.rejections).toHaveLength(3);
+    expect(f.state.rejections[0]?.reason).toBe("RECORD_ARRIVAL_MODE needs Police or Ambulance");
+    expect(f.movement(walkIn).arrivalMode).toBeUndefined();
+  });
+
+  it("refuses a journey that did not start in an emergency department", () => {
+    // Synthetic: a community journey, made from a seeded one with its ED taken off.
+    const seeded = seedWardFlowState();
+    const community = { ...seeded.movements.find((m) => m.id === POLICE)!, originEdId: undefined };
+    const state = { ...seeded, movements: seeded.movements.map((m) => (m.id === POLICE ? community : m)) };
+    const next = wardFlowReducer(state, {
+      type: "RECORD_ARRIVAL_MODE",
+      role: "ed",
+      now,
+      movementId: POLICE,
+      arrivalMode: "ambulance",
+    });
+    expect(next.rejections.at(-1)?.reason).toMatch(/did not arrive at an emergency department$/);
+  });
+
+  it("a marked record saves and loads", () => {
+    const f = journey();
+    const walkIn = walkInId();
+    f.send({ type: "RECORD_ARRIVAL_MODE", movementId: walkIn, arrivalMode: "ambulance" });
+    const reloaded = JSON.parse(JSON.stringify(f.state)) as WardFlowState;
+    expect(isValidStoredWardFlowState(reloaded)).toBe(true);
+    expect(reloaded.movements.find((m: Movement) => m.id === walkIn)?.arrivalMode).toBe("ambulance");
+  });
+});

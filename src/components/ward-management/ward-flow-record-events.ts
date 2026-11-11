@@ -33,7 +33,7 @@ import type {
 } from "./ward-flow-reducer";
 import { reduceRecordedLegalEvent } from "./ward-flow-record-legal-events";
 import { reduceRecordedStayEvent } from "./ward-flow-record-stay-events";
-import { reduceCrewTimesEvent } from "./ward-crew-handover";
+import { reduceArrivalModeEvent, reduceCrewTimesEvent } from "./ward-crew-handover";
 import { movementPatientIdentityMatchesRecord } from "./ward-patient-resolver";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import {
@@ -101,7 +101,8 @@ export type RecordedFactEvent = Extract<
       | "RECORD_REPATRIATION"
       | "RECORD_CLINICAL_CONTACT"
       | "RECORD_SUPPORT_NOTIFICATION"
-      | "RECORD_CREW_TIMES";
+      | "RECORD_CREW_TIMES"
+      | "RECORD_ARRIVAL_MODE";
   }
 >;
 
@@ -1369,6 +1370,9 @@ export function reduceRecordedFactEvent(
     // Item 9: a police or ambulance crew's typed times, declared beside its rule.
     case "RECORD_CREW_TIMES":
       return reduceCrewTimesEvent(state, event, helpers);
+    // D-141: "Brought by: Police / Ambulance" on an ED arrival, declared beside the crew times.
+    case "RECORD_ARRIVAL_MODE":
+      return reduceArrivalModeEvent(state, event, helpers);
   }
   return state;
 }

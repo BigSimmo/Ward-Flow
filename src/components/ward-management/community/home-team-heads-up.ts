@@ -10,11 +10,15 @@ import { namesTeam, type CommunityTeam } from "./community-derivations";
  * Armadale ED since 08:22".
  *
  * Derived each render from the recorded ED stay; nothing is stored and no event is raised. Each item
- * holds the ED name and the time the stay was recorded, and nothing else: no reason, diagnosis, risk
- * or typed text (D-133). Only an open (`active`) episode with this team raises one; an ended
- * episode, or one with another team, raises nothing. Items keep the record order: no sort, no rank.
+ * holds the patient's UMRN (D-141, Josh 11 Nov 2026, so a team can tell two items apart), the ED
+ * name and the time the stay was recorded, and nothing else: no name, reason, diagnosis, risk or
+ * typed text (D-133). Only an open (`active`) episode with this team raises one; an ended episode,
+ * or one with another team, raises nothing. Items keep the record order: no sort, no rank.
  */
-export type HomeTeamHeadsUp = { key: string; edName: string; since: Instant };
+export type HomeTeamHeadsUp = { key: string; umrn?: string; edName: string; since: Instant };
+
+/** The patient's UMRN, or `undefined` when none is recorded. */
+export type UmrnOf = (patientId: PatientId) => string | undefined;
 
 /** One community team episode as the patient record holds it: the team by name, open or ended. */
 export type CommunityEpisode = { status: "active" | "ended"; team: string };
@@ -52,6 +56,7 @@ export function homeTeamHeadsUps(
   team: CommunityTeam,
   episodesOf: CommunityEpisodesOf,
   now: Instant,
+  umrnOf: UmrnOf = () => undefined,
 ): HomeTeamHeadsUp[] {
   const items: HomeTeamHeadsUp[] = [];
   for (const movement of movements) {
@@ -62,12 +67,27 @@ export function homeTeamHeadsUps(
     if (!open) continue;
     const ed = edById(movement.originEdId);
     if (ed === undefined) continue;
-    items.push({ key: movement.id, edName: edShortName(ed), since: movement.openedAt });
+    const umrn = recordedUmrn(umrnOf(movement.patientId));
+    items.push({ key: movement.id, ...(umrn ? { umrn } : {}), edName: edShortName(ed), since: movement.openedAt });
   }
   return items;
 }
 
-/** "Your patient is in Armadale ED since 08:22": the ED name and the time, as D-133 allows. */
+/** A UMRN as recorded, or `undefined` for a blank or "not recorded" placeholder. */
+function recordedUmrn(umrn: string | undefined): string | undefined {
+  const trimmed = umrn?.trim();
+  return trimmed && trimmed !== "UMRN not recorded" ? trimmed : undefined;
+}
+
+/**
+ * "UM100001 is in Armadale ED since 08:22": the UMRN (D-141), the ED name and the time. With no
+ * UMRN recorded it reads "Your patient is in Armadale ED since 08:22", as D-133 first allowed.
+ */
 export function homeTeamHeadsUpSentence(item: HomeTeamHeadsUp, time: string): string {
-  return `Your patient is in ${item.edName} since ${time}`;
+  return `${homeTeamHeadsUpWho(item)} is in ${item.edName} since ${time}`;
+}
+
+/** Who the sentence starts with: the UMRN, or "Your patient" when none is recorded. */
+export function homeTeamHeadsUpWho(item: HomeTeamHeadsUp): string {
+  return item.umrn ?? "Your patient";
 }

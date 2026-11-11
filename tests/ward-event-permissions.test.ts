@@ -467,6 +467,8 @@ describe("who may raise which event", () => {
     RECORD_ED_OUTCOME: ["ed", "coordinator"],
     // Item 9 (10 Nov 2026): the department holding the patient types its police or ambulance crew times.
     RECORD_CREW_TIMES: ["ed", "coordinator"],
+    // D-141 (11 Nov 2026): the same department marks an arrival brought by police or ambulance.
+    RECORD_ARRIVAL_MODE: ["ed", "coordinator"],
     SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward", "community"],
     SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
     RECORD_WARD_DIAGNOSIS: ["ward", "coordinator"],

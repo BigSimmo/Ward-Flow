@@ -20,6 +20,14 @@ export function crewArrivalMode(movement: Pick<Movement, "arrivalMode">): CrewAr
   return movement.arrivalMode === "police" || movement.arrivalMode === "ambulance" ? movement.arrivalMode : undefined;
 }
 
+/**
+ * D-141: whether the record offers "Brought by: Police / Ambulance". An ED arrival that is still
+ * open; a journey that started elsewhere, or a closed one, does not ask.
+ */
+export function canMarkBroughtBy(movement: Pick<Movement, "sourceAdmissionId" | "originEdId" | "closure">): boolean {
+  return isEdOriginJourney(movement) && movement.closure === undefined;
+}
+
 /** The three typed times, in the order they happen. */
 export const CREW_TIME_FIELDS = ["crewArrivedAt", "crewHandedOverAt", "crewReleasedAt"] as const;
 export type CrewTimeField = (typeof CREW_TIME_FIELDS)[number];
@@ -38,6 +46,23 @@ export type RecordCrewTimesEvent = {
   crewHandedOverAt?: Instant;
   crewReleasedAt?: Instant;
 };
+
+/**
+ * `RECORD_ARRIVAL_MODE` (D-141, Josh 11 Nov 2026): the department marks an ED arrival "Brought by:
+ * Police" or "Ambulance", so the crew times above can be typed for an arrival that was not seeded
+ * with a mode. A fixed two-value choice and a movement id; no typed text. Marking it again with the
+ * other mode corrects it; the crew times already typed stay as they are.
+ */
+export type RecordArrivalModeEvent = {
+  type: "RECORD_ARRIVAL_MODE";
+  role: WardFlowRole;
+  now: Instant;
+  movementId: string;
+  arrivalMode: CrewArrivalMode;
+};
+
+/** The crew events this file declares, as one member of `WardFlowEvent`. */
+export type CrewHandoverEvent = RecordCrewTimesEvent | RecordArrivalModeEvent;
 
 /**
  * Why a set of crew times cannot be recorded, or `undefined` when it can. Times are read off a clock
@@ -115,4 +140,20 @@ export function reduceCrewTimesEvent(
   if (refusal) return reject(state, event, refusal);
   if (CREW_TIME_FIELDS.every((field) => next[field] === movement[field])) return state;
   return replaceMovement(state, movement.id, next);
+}
+
+/** `RECORD_ARRIVAL_MODE` (D-141). The role check has already run in the reducer. */
+export function reduceArrivalModeEvent(
+  state: WardFlowState,
+  event: RecordArrivalModeEvent,
+  { findMovement, reject, replaceMovement }: CrewTimesHelpers,
+): WardFlowState {
+  const movement = findMovement(state, event.movementId);
+  if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+  if (!isEdOriginJourney(movement))
+    return reject(state, event, `movement ${movement.id} did not arrive at an emergency department`);
+  if (event.arrivalMode !== "police" && event.arrivalMode !== "ambulance")
+    return reject(state, event, "RECORD_ARRIVAL_MODE needs Police or Ambulance");
+  if (movement.arrivalMode === event.arrivalMode) return state;
+  return replaceMovement(state, movement.id, { ...movement, arrivalMode: event.arrivalMode });
 }

@@ -18,7 +18,7 @@ and the reducer still limit each desk to records in its own place.
 | Backend  | `deskCommand`, the role clause of `validSharedCommand` and `commandRefusal` (`backend/ward-flow/engine.ts`); no role is refused 403 in `shared-http.mjs`                                 | Called per cell                                     |
 | Database | Row level security policies and grants in `backend/ward-flow/migrations/` and `infra/`                                                                                                   | SQL read as text                                    |
 
-**195 actions x 10 desks = 1950 cells.**
+**196 actions x 10 desks = 1960 cells.**
 
 ## Matrix
 
@@ -98,6 +98,7 @@ and the reducer still limit each desk to records in its own place.
 | `RECORD_ADMISSION_CARE`                     |            Y            |             Y             |         -         |     Y     |        -         |      -       |       Y        |     -     |      -       |    -    |
 | `RECORD_ADMISSION_FOLLOW_UP`                |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_ARRIVAL_CHECK`                      |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
+| `RECORD_ARRIVAL_MODE`                       |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_ARRIVED_IN_DEPARTMENT`              |            Y            |             Y             |         -         |     -     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RECORD_AWAY_AT_EMERGENCY_DEPARTMENT`       |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RECORD_BED_MEETING_ACTION`                 |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |

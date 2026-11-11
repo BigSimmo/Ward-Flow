@@ -86,3 +86,53 @@ describe("ED patient record — police and ambulance crew times", () => {
     expect(screen.getByTestId("probe")).toHaveTextContent("undefined|undefined|undefined");
   });
 });
+
+/*
+ * D-141 (Josh, 11 Nov 2026): "Brought by: Police / Ambulance" on an ED arrival with no seeded mode.
+ * WF-005 is a synthetic Peel arrival with no arrival mode. Nothing is chosen for the person; once
+ * marked and saved, the crew section appears.
+ */
+function ModeProbe() {
+  const { movements } = useWardFlow();
+  return <p data-testid="mode-probe">{String(movements.find((m) => m.id === "WF-005")?.arrivalMode)}</p>;
+}
+
+describe("ED patient record — brought by police or ambulance (D-141)", () => {
+  it("starts with nothing chosen, saves the choice, then shows the crew times", async () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <EdScreen edId="peel-ed" />
+        <ModeProbe />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("ward-ed-row-name-WF-005"));
+    fireEvent.click(
+      within(screen.getByTestId("ward-ed-phone-sheet-WF-005")).getByRole("button", { name: "Open patient" }),
+    );
+    const block = await screen.findByTestId("ward-ed-brought-by");
+    const group = within(block).getByRole("radiogroup", { name: "Brought by" });
+    for (const radio of within(group).getAllByRole("radio")) expect(radio).toHaveAttribute("aria-checked", "false");
+    expect(screen.queryByTestId("ward-ed-crew-times")).toBeNull();
+    expect(within(block).queryByTestId("ward-ed-brought-by-save")).toBeNull();
+
+    // Choosing alone records nothing.
+    fireEvent.click(within(group).getByRole("radio", { name: "Ambulance" }));
+    expect(screen.getByTestId("mode-probe")).toHaveTextContent("undefined");
+    fireEvent.click(within(block).getByTestId("ward-ed-brought-by-save"));
+    await waitFor(() => expect(screen.getByTestId("mode-probe")).toHaveTextContent("ambulance"));
+    const crew = await screen.findByTestId("ward-ed-crew-times");
+    expect(within(crew).getByRole("heading", { name: "Ambulance crew" })).toBeInTheDocument();
+    expect(within(group).getByRole("radio", { name: "Ambulance" })).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("shows a seeded police arrival as marked Police", async () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <EdScreen edId="peel-ed" />
+      </WardFlowProvider>,
+    );
+    await openPolicePatient();
+    const block = screen.getByTestId("ward-ed-brought-by");
+    expect(within(block).getByRole("radio", { name: "Police" })).toHaveAttribute("aria-checked", "true");
+  });
+});

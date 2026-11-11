@@ -1389,6 +1389,11 @@ function candidatesForMovements(
       return state.movements
         .filter((m) => m.arrivalMode === "police" || m.arrivalMode === "ambulance")
         .map((m) => ({ type, role, now, movementId: m.id, crewArrivedAt: now - 30 }));
+    // D-141 (11 Nov 2026): marks an ED arrival brought by police. It writes no legal figure.
+    case "RECORD_ARRIVAL_MODE":
+      return state.movements
+        .filter((m) => m.originEdId !== undefined)
+        .map((m) => ({ type, role, now, movementId: m.id, arrivalMode: "police" as const }));
     case "WITHDRAW_WARD_REQUEST":
       return state.movements.flatMap((m) =>
         (m.referredUnitIds ?? []).map((unitId) => ({

@@ -6,6 +6,7 @@ import { pastInstantFromClockText } from "@/components/ward-management/restricti
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
   CREW_TIME_FIELDS,
+  canMarkBroughtBy,
   crewArrivalMode,
   crewsWaiting,
   crewTimesRefusal,
@@ -14,6 +15,7 @@ import {
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
+import { EdBroughtBy } from "./ed-brought-by";
 import { EdTimeBox } from "./ed-referral-choices";
 import edStyles from "./ed.module.css";
 import styles from "./ed-crew-times.module.css";
@@ -133,6 +135,19 @@ export function EdCrewTimes({ movement, now, raise }: { movement: Movement; now:
         ) : null}
       </form>
     </section>
+  );
+}
+
+/**
+ * D-141: the record's arrival block. "Brought by" on an open ED arrival, then the crew's times once
+ * it is marked Police or Ambulance (or was seeded so).
+ */
+export function EdArrivalCrew({ movement, now, raise }: { movement: Movement; now: Instant; raise: WardRaise }) {
+  return (
+    <>
+      {canMarkBroughtBy(movement) ? <EdBroughtBy movement={movement} raise={raise} /> : null}
+      <EdCrewTimes movement={movement} now={now} raise={raise} />
+    </>
   );
 }
 

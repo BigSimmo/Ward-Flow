@@ -1896,6 +1896,7 @@ export function reduceClinicalEvent(
     case "RECORD_CLINICAL_CONTACT":
     case "RECORD_SUPPORT_NOTIFICATION":
     case "RECORD_CREW_TIMES":
+    case "RECORD_ARRIVAL_MODE":
       return reducerSlices().reduceRecordedFactEvent(state, event, decision, RECORDED_FACT_EVENT_HELPERS);
     case "RECORD_OBSERVATION_LEVEL":
       return reduceObservationLevelEvent(state, event, RECORDED_FACT_EVENT_HELPERS, decision);
@@ -1992,7 +1993,6 @@ export function reduceClinicalEvent(
     case "STEP_BACK_STAGE":
     case "RELEASE_AND_REOPEN_SEARCH":
       return reducerSlices().reducePlacementEvent(state, event, decision, PLACEMENT_EVENT_HELPERS);
-
     case "HANDOVER_READY":
     case "TRANSPORT_ACCEPTED":
     case "TRANSPORT_EN_ROUTE":
