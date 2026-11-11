@@ -70,7 +70,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // and MARK_WARD_READY_FOR_NEXT. Staff needed (9 Nov 2026) adds REQUEST_WARD_STAFF and
       // CLOSE_WARD_STAFF_REQUEST. Escalation calls (item 3, D-133) add RECORD_ESCALATION_CALL, and
       // item 9 (10 Nov 2026) adds RECORD_CREW_TIMES. D-141 (11 Nov 2026) adds RECORD_ARRIVAL_MODE.
-      expect(allEventTypes.length).toBe(196);
+      // Item 4 (11 Nov 2026) adds RECORD_CHIEF_PSYCHIATRIST_NOTIFIED.
+      expect(allEventTypes.length).toBe(197);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

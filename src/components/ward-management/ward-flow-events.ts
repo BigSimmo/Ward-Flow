@@ -2544,12 +2544,12 @@ export type WardFlowEvent =
   | ObservationLevelEvent
   | import("./ward-crew-handover").CrewHandoverEvent
   | RecordWardDiagnosisEvent
-  // Feature 14 (Josh, 9 Nov 2026): the weekend discharge review tick.
+  // Feature 14 (9 Nov 2026): the weekend discharge review tick; item 4 (11 Nov 2026): Chief Psychiatrist notified.
   | MarkWeekendDischargeReviewedEvent
+  | import("./ward-flow-under-18-events").ChiefPsychiatristNotifiedEvent
   | import("./ward-flow-referral-ask-events").ReferralAskEvent
-  // Closing-the-loop (package E): return requested vs home service agreed.
+  // Closing-the-loop (package E): return requested vs home service agreed; an on-call directory entry checked now.
   | import("./out-of-area/home-service-return").HomeServiceReturnEvent
-  // Closing-the-loop (package E): an on-call directory entry checked now.
   | import("./on-call/on-call-checks").DirectoryCheckEvent
   // Q61 (Josh, 31 Oct 2026): the site bed manager's site handover sign-off, and its Undo.
   | import("./site-sign-off/site-handover-sign-off").SiteHandoverSignOffEvent

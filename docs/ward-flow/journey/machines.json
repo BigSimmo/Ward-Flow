@@ -1814,12 +1814,12 @@
       {
         "path": "src/components/ward-management/ward-flow-event-roles.ts",
         "line": 1,
-        "sha256": "0abfafadccb7d195736d6b51bebca10a07896e4b0fa3785fdf5b466783d609fc"
+        "sha256": "289058cca33236846b9649deccea009a5a9028960778fedb1e3a12d719239f9d"
       },
       {
         "path": "src/components/ward-management/ward-flow-events.ts",
         "line": 1,
-        "sha256": "7037b1dd4bee561bc0bae50d7f2e08f43e699b6afc50529c8e334a962582a082"
+        "sha256": "1305639c28d2d82ea54e668f94824225f78adafcd74b319ecb29a0315f8c1d9d"
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
@@ -1829,7 +1829,7 @@
       {
         "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
         "line": 1,
-        "sha256": "54c8451a1eab7a74e88ff65a617a8cd2440a3de08b73e42b7e5e93720531fc96"
+        "sha256": "1eb306ce2963727a9c1e99aa60dd505b7ac247af29c50b7980f0617f6e1ee25e"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -1843,13 +1843,13 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-        "line": 376,
-        "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
+        "line": 377,
+        "sha256": "c3710e57ffa74c56374fd19198b2dd25941ae342206abe440657000ee1aae939"
       },
       {
         "path": "src/components/ward-management/ward-flow-reducer.ts",
         "line": 1168,
-        "sha256": "f1fdbc9915f0f8108720af16786907d82fc8faa543a5624a1e5189ce47c881e6"
+        "sha256": "3853d7beb7bbef739c295a8ca2511baa0aef68f398051e415208b7d837bf2006"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
@@ -1899,7 +1899,7 @@
       {
         "path": "src/components/ward-management/ward-model.ts",
         "line": 1,
-        "sha256": "d0c91106b25bacf440661635c892c800822ca25ba24e1195a0ff0294e911641a"
+        "sha256": "17f10e85fe7399728eccd9510362880f0eb9f334298590c27fdb243cb9b07515"
       },
       {
         "path": "src/components/ward-management/ward-patient-registration-reducer.ts",

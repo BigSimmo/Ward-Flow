@@ -334,6 +334,9 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "RECORD_WARD_DIAGNOSIS",
   // Feature 14: an admission id, a unit id and instants. No typed text.
   "MARK_WEEKEND_DISCHARGE_REVIEWED",
+  // Item 4 (11 Nov 2026): an admission id, a unit id and instants (the notified time is a typed clock
+  // time read to an instant, never free text). No typed text.
+  "RECORD_CHIEF_PSYCHIATRIST_NOTIFIED",
   // Closing-the-loop (package E): an admission id, a site code, closed lists and instants. No typed text.
   "RECORD_HOME_SERVICE_RETURN",
   // Closing-the-loop (package E): a directory entry id only. No typed text.

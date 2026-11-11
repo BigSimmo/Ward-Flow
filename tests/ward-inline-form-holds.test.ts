@@ -54,6 +54,10 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
     cover: "page form",
     formIn: "discharges/discharge-detail-panes.tsx",
   },
+  "ed/ed-admission-checklist.tsx": {
+    cover: "held",
+    why: "The MHAS told form (item 15) calls useHoldOpenForm while it is open.",
+  },
   "ed/ed-crew-times.tsx": {
     cover: "page form",
     why: "Item 9: the three crew time boxes and Save crew times sit in one form (D-93, D-141).",
@@ -138,6 +142,10 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "ward/ward-drawer-discharge-date.tsx": { cover: "popup", why: "Opens only inside the bed drawer (WT-16)." },
   "ward/ward-observation-control.tsx": { cover: "held" },
   "ward/ward-screen.tsx": { cover: "held" },
+  "ward/ward-under-18-notice.tsx": {
+    cover: "popup",
+    why: "The Chief Psychiatrist notified time renders only inside the bed drawer and phone bed sheet (item 4).",
+  },
   "wards/ward-index.tsx": {
     cover: "no form",
     why: "Ask a ward to confirm its beds is one tap with no fields; the open states only fold filters and the phone rail.",

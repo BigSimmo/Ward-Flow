@@ -1,4 +1,6 @@
+import { recordedAboriginalIdentity, recordedInterpreterLanguage } from "./ward-arrival-support-lines";
 import type { AuditDecision } from "./ward-audit";
+import { createPatientResolver } from "./ward-patient-resolver";
 import type { Instant } from "./ward-clock";
 import type { WardFlowRole } from "./ward-flow-roles";
 import type { BedEventHelpers, findMovement, reject, replaceMovement, WardFlowState } from "./ward-flow-reducer";
@@ -37,8 +39,9 @@ export type ReleaseNoticeEvent = {
 
 /**
  * The emergency department records an arrival checklist item, the pre-transfer contraband search
- * or the medication chart for the receiving ward. Writes `Movement.contrabandSearchDone` or
- * `Movement.medicationChartDone`. `done: false` takes a mistaken tick back. Part of `WardFlowEvent`.
+ * or the medication chart for the receiving ward, and (item 15) an interpreter booked or Aboriginal
+ * liaison offered. Writes the matching `Movement` flag. `done: false` takes a mistaken tick back.
+ * Part of `WardFlowEvent`.
  */
 export type ArrivalCheckEvent = {
   type: "RECORD_ARRIVAL_CHECK";
@@ -82,6 +85,14 @@ export function reduceReleaseNoticeEvent(
   return replaceBedRelease(state, release.id, updated);
 }
 
+/** The movement field each arrival check writes. */
+const ARRIVAL_CHECK_FIELDS = {
+  contraband_search: "contrabandSearchDone",
+  medication_chart: "medicationChartDone",
+  interpreter_booked: "interpreterBooked",
+  aboriginal_liaison_offered: "aboriginalLiaisonOffered",
+} as const satisfies Record<ArrivalCheck, keyof Movement>;
+
 export type ArrivalCheckHelpers = {
   findMovement: typeof findMovement;
   reject: typeof reject;
@@ -99,7 +110,15 @@ export function reduceArrivalCheckEvent(
   if (!ARRIVAL_CHECKS.includes(event.check)) {
     return reject(state, event, "Choose a check to record.");
   }
-  const field = event.check === "contraband_search" ? "contrabandSearchDone" : "medicationChartDone";
+  // Item 15: interpreter and liaison lines are offered only when the patient record says they apply.
+  if (event.done === true && (event.check === "interpreter_booked" || event.check === "aboriginal_liaison_offered")) {
+    const patient = createPatientResolver(state)(movement).patient;
+    if (event.check === "interpreter_booked" && recordedInterpreterLanguage(patient) === undefined)
+      return reject(state, event, "No interpreter need is recorded for this patient.");
+    if (event.check === "aboriginal_liaison_offered" && recordedAboriginalIdentity(patient) === undefined)
+      return reject(state, event, "No Aboriginal or Torres Strait Islander identity is recorded for this patient.");
+  }
+  const field = ARRIVAL_CHECK_FIELDS[event.check];
   // `!movement[field]` counts an unrecorded check as not done; a non-boolean `done` is refused here too.
   if (typeof event.done !== "boolean" || !movement[field] === !event.done) {
     return reject(state, event, "This check is already recorded that way.");
