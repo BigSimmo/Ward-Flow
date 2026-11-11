@@ -1719,5 +1719,6 @@ is inferred.
   3. **Features that finish existing screens** (not covered by the D-128 item 9 pause): Leave page links, print and entry point; Help for pages that had none; print and spreadsheet export on Legal forms and Movements. Triage risk reviews due waits until #1564 to #1577 close and needs its own clinical sign-off.
   4. **Code health:** the file line cap counts code lines, not comments or blank lines; one shared CI setup step; shared helpers for the forked side rail; reasons or fixes for unexplained React hook rule switch-offs; patch-level dependency updates.
   5. **Josh's own action:** turn off Supabase open sign-up before real data.
+- **Screens approved (11 November 2026, 05:46 UTC):** after the design review page "Leave and export review", Josh chose "Yes, add them" on the decision card. This approves the item 3 screens and two new patterns: an icon-only Print button on phones, and the Export status line hidden until it has something to say (this affects every list with Export).
 - **Why:** findings from the 11 November review, each checked against source; the clinical items were display bugs, not changes to signed values.
 - **Boundary:** synthetic data only. Changes no signed clinical value; clinical items merge only after Josh checks the held PR. Approves no release.
