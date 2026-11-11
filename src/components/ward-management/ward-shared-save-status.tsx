@@ -49,6 +49,67 @@ function useSaveSlow(saving: boolean): boolean {
   return saving && (slow || (typeof navigator !== "undefined" && navigator.onLine === false));
 }
 
+/** Keep recovery inside the top overlay's focus trap, without reopening or closing any record. */
+function useRecoveryHost(show: boolean): HTMLElement | null {
+  "use no memo";
+  const root = useSyncExternalStore(subscribeToSheetStack, topSheetRoot, () => null);
+  const [host, setHost] = useState<HTMLElement | null>(null);
+  const focusedInHost = useRef(false);
+  useLayoutEffect(() => {
+    if (!show || !root) {
+      return;
+    }
+    const panel = root.matches('[role="dialog"]') ? root : root.querySelector<HTMLElement>('[role="dialog"]');
+    // Inline modals may already sit inside the disabled workspace. Recovery there would inherit
+    // inert too; leave the global control available instead.
+    if (!panel || panel.closest("[inert]")) {
+      return;
+    }
+    const container = panel.querySelector<HTMLElement>("[data-phone-sheet-body]") ?? panel;
+    const element = document.createElement("div");
+    element.dataset.wardSharedRecoveryHost = "";
+    element.className = styles.host;
+    container.prepend(element);
+    focusedInHost.current = false;
+    const rememberFocus = (event: FocusEvent) => {
+      focusedInHost.current = event.target instanceof Node && element.contains(event.target);
+    };
+    document.addEventListener("focusin", rememberFocus);
+    setHost(element);
+    return () => {
+      const hadFocus =
+        element.contains(document.activeElement) || (focusedInHost.current && document.activeElement === document.body);
+      document.removeEventListener("focusin", rememberFocus);
+      element.remove();
+      // A completed retry removes its control. Keep focus in this same record, while a closing
+      // or stacked overlay continues to own its normal focus return.
+      if (hadFocus && panel.isConnected && root === topSheetRoot()) panel.focus({ preventScroll: true });
+    };
+  }, [root, show]);
+  return show && root?.contains(host) ? host : null;
+}
+
+/**
+ * Publish this strip's height as --wf-data-bar-height, so the shell (sized to the window less that
+ * variable) shortens to fit rather than pushing its bottom edge, the rail's account card, off screen.
+ */
+function useBarHeight(ref: RefObject<HTMLElement | null>, shown: boolean) {
+  useLayoutEffect(() => {
+    const bar = ref.current;
+    if (!bar || !shown) return;
+    const root = document.documentElement;
+    const publish = () =>
+      root.style.setProperty("--wf-data-bar-height", `${Math.ceil(bar.getBoundingClientRect().height)}px`);
+    publish();
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(publish);
+    observer?.observe(bar);
+    return () => {
+      observer?.disconnect();
+      root.style.removeProperty("--wf-data-bar-height");
+    };
+  }, [ref, shown]);
+}
+
 export function WardSharedSaveStatus({
   connection,
   deskLabel,
