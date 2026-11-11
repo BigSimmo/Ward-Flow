@@ -4,7 +4,9 @@ name: Ward Flow hold
 # with auto-merge armed. Auto-merge itself is left alone (AGENTS.md hard rule 6). It blocks only
 # once "Ward Flow hold" is a required status check. pull_request_target runs in the base
 # repository's context, so this workflow never checks out or runs pull-request code: it reads
-# labels from the event or the GitHub API. merge_group re-checks the queued PR's labels.
+# labels from the event or the GitHub API. merge_group is dormant: no merge queue is in use and PRs
+# merge directly once required checks pass (D-107). If a queue is turned on, it re-checks the queued
+# PR's labels.
 on:
   pull_request_target:
     types: [opened, synchronize, reopened, labeled, unlabeled]

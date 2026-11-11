@@ -196,6 +196,7 @@ function requireWorkflow(source) {
     ["Check reference-pack integrity", "node scripts/ward-flow/maintain-docs-and-organisation.mjs --pack-only --check"],
     ["Check maintained document commands", "npm run docs:check-scripts"],
     ["Check doc facts and retired terms", "node scripts/doc-facts.mjs"],
+    ["Report stale unlinked documents (advisory)", "node scripts/check-stale-docs.mjs"],
     ["Check changed files", "node scripts/ward-ci-public/changed-checks.mjs", installed],
     [
       "Lint the whole tree",
@@ -971,7 +972,10 @@ for (const [before, after] of [
   assert.throws(() => requireWorkflow(changed), before);
 }
 assert.deepEqual(parseNameStatus("M\tdocs/ward-flow/README.md\n"), [{ status: "M", file: "docs/ward-flow/README.md" }]);
-assert.equal(classifyChanges([{ status: "M", file: "docs/ward-flow/README.md" }]).full, false);
+// A document no unit test reads; tests/ward-ci-scope.test.ts covers documents unit tests do read.
+const unread = { testReadDocs: { exact: new Set(), prefixes: [] } };
+assert.equal(classifyChanges([{ status: "M", file: "docs/ward-flow/README.md" }], unread).full, false);
+assert.equal(classifyChanges([{ status: "M", file: "docs/ward-flow/README.md" }]).unit, true);
 assert.equal(classifyChanges([{ status: "D", file: "docs/ward-flow/README.md" }]).full, true);
 assert.equal(
   classifyChanges([{ status: "M", file: "src/components/ward-management/board/ward-board.tsx" }]).full,
@@ -980,7 +984,10 @@ assert.equal(
 assert.equal(classifyChanges([{ status: "M", file: ".github/workflows/ward-flow.yml" }]).full, true);
 // Dynamic scope: narrower only for positively recognised files, never for anything else.
 const scope = (...files) => {
-  const { full, unit, browser } = classifyChanges(files.map((file) => ({ status: "M", file })));
+  const { full, unit, browser } = classifyChanges(
+    files.map((file) => ({ status: "M", file })),
+    unread,
+  );
   return { full, unit, browser };
 };
 const everything = { full: true, unit: true, browser: true };

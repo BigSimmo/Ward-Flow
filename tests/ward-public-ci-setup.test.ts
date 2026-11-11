@@ -108,7 +108,7 @@ describe("maintained document CI scope", () => {
     "docs/ward-flow/additional-owner-ruling.md",
   ])("checks owner index for %s without application jobs", (file) => {
     expect(documentChecks(entries(file))).toMatchObject({ owner_index: true, organisation: true });
-    expect(classifyChanges(entries(file))).toMatchObject({ unit: false, browser: false });
+    expect(classifyChanges(entries(file))).toMatchObject({ browser: false, build: false, frontend_static: false });
   });
   it("checks lesson inputs/outputs without rerunning app browsers", () => {
     expect(documentChecks(entries("docs/history/lessons/example.md"))).toMatchObject({
@@ -124,7 +124,9 @@ describe("maintained document CI scope", () => {
       organisation: true,
       doc_contracts: true,
     });
-    expect(classifyChanges(entries("docs/ward-flow/README.md"))).toMatchObject({
+    expect(
+      classifyChanges(entries("docs/ward-flow/README.md"), { testReadDocs: { exact: new Set(), prefixes: [] } }),
+    ).toMatchObject({
       full: false,
       unit: false,
       browser: false,

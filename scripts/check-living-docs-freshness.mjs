@@ -20,11 +20,15 @@
  * 7 days (documentation audit, approved by Josh 7 November 2026). A page's own limit applies when it
  * is shorter than --days.
  *
- * Advisory: exit 0 unless --strict is passed, then exit 1 when anything is stale or missing.
- * --annotate also prints one GitHub Actions warning per problem, so pull requests show it.
+ * Blocking for the pages staff and the operator act on (audit A8-10): a problem on the operations
+ * runbook or any desk guide (BLOCKING_DOCS, BLOCKING_DIRS) exits 1, so CI fails until the page is
+ * re-checked. Every other page stays advisory: exit 0 unless --strict is passed, which makes every
+ * problem exit 1. --advisory never fails, and nor does --json (the weekly reminder's report) without --strict.
+ * --annotate also prints one GitHub Actions annotation per problem (an error for a blocking page,
+ * a warning otherwise), so pull requests show it.
  *
  * Usage:
- *   node scripts/check-living-docs-freshness.mjs [--days 14] [--strict] [--json] [--annotate]
+ *   node scripts/check-living-docs-freshness.mjs [--days 14] [--strict | --advisory] [--json] [--annotate]
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -49,6 +53,14 @@ export const LIVING_DOCS = [
 export const PAGE_DAYS = { "docs/ward-flow/STATUS.md": 7 };
 // Every page in these folders is living too.
 export const LIVING_DIRS = ["docs/ward-flow/desk-guides"];
+// Pages whose problems fail the check by default (audit A8-10): the runbook and every desk guide.
+export const BLOCKING_DOCS = ["docs/ward-flow/OPERATIONS-RUNBOOK.md"];
+export const BLOCKING_DIRS = ["docs/ward-flow/desk-guides"];
+
+/** True when a problem on this page fails the check without --strict. */
+export function isBlocking(path) {
+  return BLOCKING_DOCS.includes(path) || BLOCKING_DIRS.some((dir) => path.startsWith(`${dir}/`));
+}
 
 const MARKER = /<!--\s*last-checked:\s*(\d{4}-\d{2}-\d{2})\s*-->/u;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -117,8 +129,15 @@ export function run({ root = DEFAULT_ROOT, days = 14, reference = headCommitDate
   });
   const problems = results
     .filter((r) => r.status !== "ok")
-    .map((result) => ({ ...result, detail: problemDetail(result) }));
+    .map((result) => ({ ...result, blocking: isBlocking(result.path), detail: problemDetail(result) }));
   return { reference, days, results, problems };
+}
+
+/** 1 when a blocking page has a problem (or any page, with strict); 0 in advisory mode. */
+export function exitCodeFor(report, { strict = false, advisory = false } = {}) {
+  if (advisory) return 0;
+  const failing = strict ? report.problems : report.problems.filter((p) => p.blocking);
+  return failing.length > 0 ? 1 : 0;
 }
 
 function main(argv) {
@@ -141,14 +160,19 @@ function main(argv) {
     console.log(`living docs needing a re-check (HEAD ${report.reference}, limit ${days} days):`);
     for (const p of report.problems) {
       const detail = p.detail;
-      console.log(`  ${p.path}: ${detail}`);
+      console.log(`  ${p.path}: ${detail}${p.blocking ? " (blocking)" : ""}`);
       if (argv.includes("--annotate")) {
-        console.log(`::warning file=${p.path},title=Living page needs a re-check::${p.path}: ${detail}`);
+        const level = p.blocking ? "error" : "warning";
+        console.log(`::${level} file=${p.path},title=Living page needs a re-check::${p.path}: ${detail}`);
       }
     }
-    console.log("Check each page against the current app, then update its last-checked date. (advisory)");
+    console.log(
+      "Check each page against the current app, then update its last-checked date. The runbook and desk guides block; other pages are advisory.",
+    );
   }
-  return argv.includes("--strict") && report.problems.length > 0 ? 1 : 0;
+  // --json is the weekly reminder's report, read by a shell step, so it fails only with --strict.
+  const strict = argv.includes("--strict");
+  return exitCodeFor(report, { strict, advisory: argv.includes("--advisory") || (argv.includes("--json") && !strict) });
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
