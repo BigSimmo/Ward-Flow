@@ -2,7 +2,7 @@
 // engine (`PLACE_IN_BED`, `ACCEPT_REFERRAL` with a bed number), and Undo on the toast reverses both
 // the bed and the referral (build guide acceptance check "Place then Undo returns the referral and
 // the bed to their first state").
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { useEffect, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -77,6 +77,34 @@ describe("Ward Bed board — a save waiting on this page", () => {
     expect(screen.getByTestId("ward-board-bed-3")).toHaveAttribute("data-waiting-save", "true");
     expect(cellText(3)).toMatch(/Waiting to save/);
     expect(screen.getByTestId("ward-board-bed-4")).not.toHaveAttribute("data-waiting-save");
+  });
+
+  it("keeps the waiting mark beside a fit reason while a stay is picked up", () => {
+    renderBoard();
+    const to = bedNo(firstBed((label) => /, Ready, Free to place$/.test(label)));
+    cleanup();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <WardSharedSaveContext.Provider
+            value={{
+              unconfirmedSave: true,
+              status: "ready",
+              error: null,
+              retry: () => {},
+              waitingBeds: [`${UNIT}:${to}`],
+            }}
+          >
+            <WardScreen unitId={UNIT} />
+          </WardSharedSaveContext.Provider>
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("ward-open-bed-board"));
+    fireEvent.click(firstBed((label) => !/ready|closed|pulled|waiting/i.test(label)));
+    fireEvent.click(getBedStep("Move to another bed"));
+    expect(screen.getByTestId(`ward-board-bed-${to}`)).toHaveAttribute("data-fits", "true");
+    expect(cellText(to)).toMatch(/Waiting to save · .+, fits$/);
   });
 });
 

@@ -489,8 +489,13 @@ export function WardBedBoard({
                   const glyph = bedGlyphTone(bed);
                   const dim = picked ? !fits && !source : !matchesQuery(bed, query);
                   const waitingSave = waitingBeds.has(`${unit.id}:${Number(bed.bedNumber)}`);
-                  const shownSub =
-                    fits && picked ? fitReason(bed, picked, isMixed) : waitingSave ? "Waiting to save" : cellSub(bed);
+                  // A fit reason while picking keeps the waiting mark beside it (PR #1626 review).
+                  const baseSub = fits && picked ? fitReason(bed, picked, isMixed) : cellSub(bed);
+                  const shownSub = waitingSave
+                    ? fits && picked
+                      ? `Waiting to save · ${baseSub}`
+                      : "Waiting to save"
+                    : baseSub;
                   const label = cellLabel(bed, fits, nameFor, shownSub, collidingPairs);
                   const chosen = confirming !== null && Number(confirming.bedNumber) === Number(bed.bedNumber);
                   return (
