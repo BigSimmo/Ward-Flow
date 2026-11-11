@@ -78,7 +78,10 @@ test(
       assert.equal(choices.choices.length, 21);
       assert.equal((await store.viewer(actor, { workingAs: latest })).status, "ok");
       const coverScope = { kind: "ward", unitIds: [world.state.units[1].id] };
-      assert.equal((await store.giveCover(leadView, { actorId: actor, scope: coverScope, minutes: 60 })).status, 200);
+      assert.equal(
+        (await store.giveCover(leadView, { actorId: actor, scope: coverScope, minutes: 60, reason: "busy" })).status,
+        200,
+      );
       const ward = await store.viewer(actor, { workingAs: own.body.membership.id });
       assert.deepEqual([...ward.access.scope.unitIds].sort(), [...ownScope.unitIds, ...coverScope.unitIds].sort());
     });

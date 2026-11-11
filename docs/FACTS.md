@@ -16,7 +16,7 @@ green. Quote a fact instead of restating it, and it updates itself when the sour
 | `latest-decision`   | D-137                                       | Newest entry in the decision log                                                      | `docs/ward-flow/decisions.md`                                      |
 | `next-decision`     | D-138                                       | Number to use for the next decision                                                   | `docs/ward-flow/decisions.md`                                      |
 | `node-engine`       | >=24.22.1 <25                               | Supported Node.js range                                                               | `package.json`                                                     |
-| `backend-env-vars`  | 32 names, [listed below](#backend-env-vars) | Environment variables the shared backend reads                                        | `backend/ward-flow/*.mjs`                                          |
+| `backend-env-vars`  | 33 names, [listed below](#backend-env-vars) | Environment variables the shared backend reads                                        | `backend/ward-flow/*.mjs`                                          |
 
 ## backend-env-vars
 
@@ -43,6 +43,7 @@ Environment variables the shared backend reads:
 - `WARD_POSTGRES_CA_CERT_FILE`
 - `WARD_POSTGRES_DATABASE_URL`
 - `WARD_POSTGRES_MIGRATION_DATABASE_URL`
+- `WARD_RESTORE_MARKER`
 - `WARD_SHARED_DEMO_EVENTS`
 - `WARD_SHARED_ENABLED`
 - `WARD_SUPABASE_CA_CERT_FILE`

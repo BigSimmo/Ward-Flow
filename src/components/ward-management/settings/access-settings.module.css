@@ -62,6 +62,25 @@
   padding: var(--wf-s-3) var(--wf-s-4);
 }
 
+/* M58 cover reason: a radio group laid out like a Field (kit label type). */
+.choices {
+  display: grid;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choicesLegend {
+  padding: 0;
+  margin-bottom: 6px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+
 .formFoot {
   display: flex;
   flex-wrap: wrap;

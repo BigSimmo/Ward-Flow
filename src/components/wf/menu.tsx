@@ -87,11 +87,44 @@ function visibleArea(element: HTMLElement) {
   return area;
 }
 
+/**
+ * True when `element` sits in a row that slides sideways only (`overflow-x` auto or scroll with
+ * `overflow-y` hidden), such as the hero's quick chips on a phone. A panel drawn inside that row is
+ * cut to the row's height, and focusing its first item scrolls the row up out of view, so the panel
+ * is pinned to the window instead (the Capacity "Bed meeting" menu, 10 Nov 2026).
+ */
+function inSidewaysRow(element: HTMLElement) {
+  for (let node = element.parentElement; node && node !== document.body; node = node.parentElement) {
+    const css = getComputedStyle(node);
+    if (/^(auto|scroll)$/.test(css.overflowX) && /^(hidden|clip)$/.test(css.overflowY)) return true;
+  }
+  return false;
+}
+
+/** Where a `position: fixed` box measures from: the window, or an ancestor that makes itself the
+ * containing block (a transform, filter, backdrop filter or paint containment). */
+function fixedOrigin(element: HTMLElement) {
+  for (let node = element.parentElement; node && node !== document.body; node = node.parentElement) {
+    const css = getComputedStyle(node);
+    if (
+      css.transform !== "none" ||
+      css.filter !== "none" ||
+      (css.backdropFilter && css.backdropFilter !== "none") ||
+      /paint|layout|strict|content/.test(css.contain)
+    ) {
+      const rect = node.getBoundingClientRect();
+      return { left: rect.left, top: rect.top };
+    }
+  }
+  return { left: 0, top: 0 };
+}
+
 /*
  * Keeps an open panel inside the window. It drops below its trigger, so a trigger low on the page or
  * a long list ran off the bottom with no way to reach the last items, and an anchor near the right
  * edge pushed it off the side. It flips above when there is more room there, caps its height to the
- * room it has and scrolls inside, and slides sideways back into view.
+ * room it has and scrolls inside, and slides sideways back into view. In a sideways-only row it is
+ * pinned to the window beside its trigger and follows it as the page scrolls.
  */
 export function usePanelFit(
   open: boolean,
@@ -103,24 +136,49 @@ export function usePanelFit(
     const panel = panelRef.current;
     if (!open || !anchor || !panel) return;
     const style = panel.style;
+    const pinned = inSidewaysRow(anchor);
     function fit() {
       // A resize (rotation, a narrower window) refits from the stylesheet placement.
       style.top = style.bottom = style.maxHeight = style.overflowY = style.translate = "";
+      style.position = style.left = style.right = "";
       const trigger = anchor!.getBoundingClientRect();
+      if (pinned) {
+        const origin = fixedOrigin(panel!);
+        // The stylesheet placement says which edge the panel lines up with: its trigger's left edge
+        // (`start`) or right edge (`end`).
+        const placed = panel!.getBoundingClientRect();
+        const alignEnd = Math.abs(placed.right - trigger.right) < Math.abs(placed.left - trigger.left);
+        style.position = "fixed";
+        style.top = `${trigger.bottom + 6 - origin.top}px`;
+        style.bottom = "auto";
+        if (alignEnd) {
+          style.left = `${trigger.right - origin.left - placed.width}px`;
+          style.right = "auto";
+        } else {
+          style.left = `${trigger.left - origin.left}px`;
+        }
+      }
       const box = panel!.getBoundingClientRect();
       if (!box.width) return;
-      const area = visibleArea(anchor!);
+      const area = pinned
+        ? { top: 0, left: 0, right: document.documentElement.clientWidth, bottom: window.innerHeight }
+        : visibleArea(anchor!);
       const below = area.bottom - trigger.bottom - 14;
       const above = trigger.top - area.top - 14;
       if (box.height > below) {
         if (above > below) {
-          style.top = "auto";
-          style.bottom = "calc(100% + 6px)";
+          if (pinned) {
+            style.top = `${trigger.top - 6 - box.height - fixedOrigin(panel!).top}px`;
+          } else {
+            style.top = "auto";
+            style.bottom = "calc(100% + 6px)";
+          }
         }
         const room = Math.max(above, below);
         if (box.height > room) {
           style.maxHeight = `${room}px`;
           style.overflowY = "auto";
+          if (pinned && above > below) style.top = `${trigger.top - 6 - room - fixedOrigin(panel!).top}px`;
         }
       }
       const right = area.right - 8;
@@ -131,7 +189,12 @@ export function usePanelFit(
     }
     fit();
     window.addEventListener("resize", fit);
-    return () => window.removeEventListener("resize", fit);
+    // A pinned panel follows its trigger when the page, or the row itself, scrolls.
+    if (pinned) window.addEventListener("scroll", fit, { capture: true, passive: true });
+    return () => {
+      window.removeEventListener("resize", fit);
+      if (pinned) window.removeEventListener("scroll", fit, { capture: true });
+    };
   }, [open, anchorRef, panelRef]);
 }
 

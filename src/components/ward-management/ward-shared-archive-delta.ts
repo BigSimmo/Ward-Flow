@@ -7,7 +7,7 @@
  * desk reads the whole archive again instead.
  */
 
-export const ARCHIVED_COLLECTIONS = ["movements", "referrals", "broadcastAlerts"] as const;
+const ARCHIVED_COLLECTIONS = ["movements", "referrals", "broadcastAlerts"] as const;
 export type ArchivedCollection = (typeof ARCHIVED_COLLECTIONS)[number];
 
 type ArchiveEntry = {
@@ -114,4 +114,22 @@ export function foldArchiveReply(value: unknown, held: HeldArchive | null): Fold
   );
   if (sumOf(entries) !== sum) return "reread";
   return { entries, held: { through: through as number, entries } };
+}
+
+/** The archive's closed records put back beside the live ones, for the same world and access view only. */
+export function withArchivedRecords<P extends { state: { worldGeneration: number } }>(
+  payload: P,
+  archive: { generation: number; accessContext: unknown; records: Record<ArchivedCollection, { id: string }[]> } | null,
+  accessContext: unknown,
+): P {
+  if (!archive || archive.generation !== payload.state.worldGeneration || archive.accessContext !== accessContext)
+    return payload;
+  const state = { ...payload.state } as Record<string, unknown>;
+  for (const collection of ARCHIVED_COLLECTIONS) {
+    const live = state[collection] as { id: string }[];
+    if (!archive.records[collection].length) continue;
+    const ids = new Set(live.map((record) => record.id));
+    state[collection] = [...archive.records[collection].filter((record) => !ids.has(record.id)), ...live];
+  }
+  return { ...payload, state };
 }

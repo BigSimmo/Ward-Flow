@@ -41,8 +41,16 @@ export const SAVE_PROBLEMS = {
   notReady: unsent("The workspace is not connected", "Wait for it to reconnect, then try again."),
   /** A reset or new scenario replaced the board while this action waited its turn. */
   replaced: unsent("The workspace was replaced first"),
-  /** The server asked this device to slow down (HTTP 429). */
-  busy: ["The server is busy. Nothing was saved.", "Try again in a moment."],
+  /** The server asked this account to slow down (HTTP 429, audit M53). The save waits and goes again by itself. */
+  busy: [
+    "The server is busy. This change is waiting on this page.",
+    "It sends by itself in a few seconds. Keep this page open.",
+  ],
+  /** The shared board is at its size limit (HTTP 413 workspace-full, audit M83). Sending it again cannot work. */
+  boardFull: [
+    "The shared board is full, so this change was not saved.",
+    "Ask whoever runs the demonstration to reset the scenario before making more changes.",
+  ],
   /** A refusal with no reason given. */
   refused: ["The action was not applied. Nothing was changed.", "Check the details you entered, then try again."],
   /** A demonstration control on a shared workspace that has them switched off. */

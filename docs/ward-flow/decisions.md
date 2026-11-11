@@ -151,6 +151,9 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-126](#d-126-ranked-lists-neutral-orders-approved-10-november-2026)                                                                                   | Ranked lists: neutral orders on 11 lists, lists 9 and 12 kept                          | Active                                           |
 | [D-127](#d-127-neutral-wording-for-a-community-treatment-order-at-arrival-10-november-2026)                                                             | Neutral wording for a community treatment order at arrival                             | Active                                           |
 | [D-128](#d-128-final-master-audit-nine-answers-10-november-2026)                                                                                        | Final master audit: nine answers                                                       | Active                                           |
+| [D-129](#d-129-master-audit-findings-every-recommendation-approved-10-november-2026)                                                                    | Master audit findings: every recommendation approved                                   | Active                                           |
+| [D-130](#d-130-audit-follow-ups-every-remaining-recommendation-approved-10-november-2026)                                                               | Audit follow-ups: every remaining recommendation approved                              | Active                                           |
+| [D-131](#d-131-hard-case-demo-data-allowed-and-the-movement-diagram-follows-the-engine-10-november-2026)                                                | Hard-case demo data allowed, and the movement diagram follows the engine               | Active                                           |
 | [D-137](#d-137-feature-build-batch-5-count-leak-first-tv-change-mark-and-qr-library-10-november-2026)                                                   | Feature build batch 5: count leak first, TV change mark 15 minutes, QR library         | Active                                           |
 
 ---
@@ -1605,9 +1608,84 @@ is inferred.
   9. **New features:** none from the proposed list until #1564 to #1577 close.
 - **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge or release.
 
+## D-129. Master audit findings: every recommendation approved (10 November 2026)
+
+- **Date:** 10 November 2026. **Decided by:** Josh, in the "Run the remaining master list audits" thread: "Approve all recommendations" (07:38Z), after the audit swarm's findings. Numbered D-129 because D-121 to D-127 landed from other threads and D-128 is claimed by open PR #1594.
+- **Decision:** the audit swarm's recommendations are approved. The fixes follow:
+  1. **Clinical, in a held PR:**
+     - The triage "Reviewed time" uses Perth time.
+     - The Tools bed finder leaves out forensic wards and names the rules it skips.
+     - An ended legal form reads the same on the TV, the downtime pack and print, with its full name on the TV (D-93).
+     - Typed 8-hour waits read the signed value.
+     - The ED "May pass" card drops names, UMRN and "Find a bed", and forecasts carry "From recorded waits and releases. Not a prediction."
+     - Occupancy percentages use in-use beds (L1), and a ward with no beds shows "No beds".
+  2. **Non-clinical, in this thread's PR:**
+     - **Restore:** a restore tells open tabs to reload, and the runbook warns that phone alerts may repeat.
+     - **Acknowledge visible:**
+       - Its confirm lists each patient with UMRN.
+       - It names any refusals.
+       - It writes one audit row per alert.
+     - **Sign off N** gets a short Undo.
+     - **Handover:**
+       - For 30 minutes after each handover, the Handover page opens on the handover just held.
+       - Printed handover and shift brief say "Not updating since HH:MM" while reads are frozen.
+     - **Cover** asks for a reason and appears on the review list.
+     - **Error events** carry the request ID, role and screen, and handled server errors are sent.
+     - **Migrations** get a 5-second lock timeout.
+     - **Uptime check:** it raises a "monitor not set up" issue.
+     - **Saves and reconnects:**
+       - Queued saves are held and resent on a 429.
+       - Saves get a per-account limit.
+       - Reconnect reads are spread.
+     - **Phone toasts** sit above the floating bar.
+     - **Show me** says it's offline instead of leaving the app.
+     - **Report-a-problem picture** carries a synthetic marker.
+     - **Shared views** say when a non-default threshold is in use.
+     - **Chronology CSV** drops the name.
+     - **Glossary:** the Help glossary gains 18 abbreviations.
+     - **Referrer phone:** the server checks its format.
+     - **Seed and tests:**
+       - The seed gains the hard cases.
+       - Four surviving mutants get tests.
+       - The movement diagram follows the engine.
+  3. **Other approvals:**
+     - **Phone alerts** stay a prompt only (M20 option A).
+     - **Handover** has no acceptance step (M19 option A).
+     - **Old open tabs** are supported one release back (M33).
+     - **Idle lock** stays at 15 minutes until the pilot site's policy is known (M50).
+     - **Surge beds and ward renaming** are not prototype features (M36).
+     - **Sign-in front door:** switch it on for both sites.
+     - **Tier 7:** the plan is approved, starting with change hotspots (M142), the import map (M139) and the mockup check (M149).
+- **Boundary:** synthetic data only. Hosted, billable and provider steps still need their own yes: the Railway variable rename, the receipt clean-up secret, Dependabot security updates, the hosted database check, live post-release runs, the penetration test and the TGA adviser. Approves no merge of the held clinical PR and no release.
+
+## D-130. Audit follow-ups: every remaining recommendation approved (10 November 2026)
+
+- **Date:** 10 November 2026. **Decided by:** Josh, in the "Run the remaining master list audits" thread: "Go ahead with all recommendations for things you are able to do" (12:53Z).
+- **Decision:**
+  1. **Held clinical PR** (labelled `hold`, Josh reviews before merge):
+     - The Call sheet and the bed and capacity meeting sheets show initials and UMRN only.
+     - The Map counts a ward transfer out as a move, not a discharge.
+     - Referral declines and arrivals write an audit row.
+     - The unsigned time numbers are signed as they stand today: leave due back within 12 hours, "Referred and not yet seen" after 60 minutes, the 4 and 12 hour statistics bands, the 4 hour bed board referral chip, and the under 18 and 65+ age bands.
+     - "Of beds" is renamed "In use", now that it counts pulled beds.
+  2. **No change:** the save limit stays at 600 per 5 minutes per account. Toasts already lead with what happened.
+  3. **Machine-test mismatches (M26):** listed on one page for Josh to rule on; nothing changes yet.
+  4. **Front door:** seen on the public demo on 10 November (demo-code page). No Railway change needed (Josh, 12:07Z).
+- **Open:** the glossary meanings of MHERT and SMHMR wait on Josh.
+- **Boundary:** approves no merge of the held clinical PR, no hosted step and no release.
+
+## D-131. Hard-case demo data allowed, and the movement diagram follows the engine (10 November 2026)
+
+- **Date:** 10 November 2026. **Decided by:** Josh, in the "Run the remaining master list audits" thread: "Yes go ahead with all recommendations" (14:13Z).
+- **Decision:**
+  1. **Hard-case demo data:** as Ward Lead, Josh allows `ward-hard-cases-demo.ts` (the M134 synthetic hard-case overlay) to read the patient link, like the earlier seed builders. It is added to the default-deny allowlist with that reason.
+  2. **Movement diagram (M26):** every recommendation in [the mismatch list](evidence/2026-11-10-machine-test-mismatches.md) is approved. The engine stays as it is and `machines.json` is corrected to match it (Z1 to Z12).
+- **Open:** the glossary meanings of MHERT and SMHMR still wait on Josh.
+- **Boundary:** no clinical behaviour change; approves no merge of the held clinical PR and no release.
+
 ## D-137. Feature build batch 5: count leak first, TV change mark and QR library (10 November 2026)
 
-- **Date:** 10 November 2026, 1:05 AM AWST on 11 November (17:05 UTC on 10 November). **Decided by:** Josh, choosing the recommended option on three decision cards in the "Build counts, screens and print" project thread, and writing "Go ahead with all your recommendations and disregard anything you cannot do" in the feature list thread (17:04 UTC) for the build plan's twelve questions. Numbered D-137 because the numbers before it were taken first. D-129, D-130 and D-131 are claimed by PR #1598. D-132 is claimed by PR #1601. D-135 is claimed by PR #1603. D-133 is claimed by a feature batch PR, as are D-134 (claimed the same way) and D-136, which is claimed by a third batch PR.
+- **Date:** 10 November 2026, 1:05 AM AWST on 11 November (17:05 UTC on 10 November). **Decided by:** Josh, choosing the recommended option on three decision cards in the "Build counts, screens and print" project thread, and writing "Go ahead with all your recommendations and disregard anything you cannot do" in the feature list thread (17:04 UTC) for the build plan's twelve questions. Numbered D-137 because the numbers before it were taken first. D-132 is claimed by PR #1601. D-133 is claimed by PR #1606. D-134 is claimed by the ward arrival batch PR. D-135 is claimed by PR #1603. D-136 is claimed by PR #1605.
 - **Decision:**
   1. **Count leak (plan question 1, item 1):** fixed first, before item 5. The server holds the page whenever it cannot be sure of the desk: only a browser that has said its desk is the whole-network coordinator's (cookie value `0`) gets the server's page. This changes H-0111 for a fresh device, which now sees a short loading page before its first page.
   2. **TV change mark (plan question 9, item 43):** "Changed 14:32" shows on a ward or bed meeting TV tile for 15 minutes after its figure changes. Signed for the prototype by Josh as `tvChangeMark` in clinical-values.md.

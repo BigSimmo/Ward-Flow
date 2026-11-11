@@ -433,6 +433,7 @@ integration("A05 detail refreshes joined cover after revocation", async (f) => {
     actorId: f.actors[1],
     scope: { kind: "ward", unitIds: [f.unitB] },
     minutes: 60,
+    reason: "busy",
   });
   assert.equal(cover.status, 200);
   const joined = await f.call(1, "", undefined, f.membership);

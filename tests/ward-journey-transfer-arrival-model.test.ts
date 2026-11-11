@@ -119,7 +119,13 @@ describe("transfer arrival is modelled as state transitions (not as a plain writ
   it("is drawn in the admission, movement and bed-release machines", () => {
     expect(transitionsOf("admission").sort()).toEqual(["none->occupied", "occupied->departed"]);
     expect(transitionsOf("movement")).toEqual(["start->arrived"]);
-    expect(transitionsOf("bedrelease").sort()).toEqual(["confirmed->discharged", "expected->discharged"]);
+    // The arrival also marks the bed as being made ready (D-131), drawn as a side arrow to that flag.
+    expect(transitionsOf("bedrelease").sort()).toEqual([
+      "confirmed->discharged",
+      "confirmed->preparing",
+      "expected->discharged",
+      "expected->preparing",
+    ]);
   });
 
   it("is listed as a mover of both bed counts", () => {

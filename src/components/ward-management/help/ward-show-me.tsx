@@ -11,6 +11,7 @@ import { OverlayPortal, useModalFocus } from "@/components/wf";
 import { hasOpenSheet, subscribeToSheetStack, topSheetRoot } from "@/components/wf/sheet-focus";
 import { PHONE_QUICK_SETTINGS } from "@/components/ward-management/settings/settings-screen-model";
 import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
+import { WARD_OFFLINE_LINK_NOTICE } from "@/components/ward-management/shell/ward-offline-links";
 import { showMeAvailable } from "./ward-help-task-list";
 import { walkPlaysHere } from "./ward-help-screen-tours";
 
@@ -73,15 +74,20 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
       ? destination.split("#")[0]
       : destination;
   const went = useRef(false);
+  // M111 (10 Nov 2026): offline, the router cannot fetch another screen and falls back to a full
+  // load, which leaves the app (A1-18). Show me stays put and says so, as an offline link tap does.
+  // Read once, when the run starts: the person taps Show me again once back online.
+  const [startedOffline] = useState(() => typeof navigator !== "undefined" && navigator.onLine === false);
+  const offline = startedOffline && permitted && Boolean(href) && pathname !== href?.split("#")[0];
   useEffect(() => {
-    if (!permitted || went.current || !href) return;
+    if (!permitted || went.current || !href || offline) return;
     const [path, tab] = href.split("#");
     navigateWithDirtyGuard(() => {
       went.current = true;
       if (pathname !== path) router.push(href);
       else if (tab && window.location.hash !== `#${tab}`) window.location.hash = tab;
     });
-  }, [href, pathname, router, permitted]);
+  }, [href, pathname, router, permitted, offline]);
   useEffect(() => {
     if (!permitted && !restricted) onBack();
   }, [permitted, restricted, onBack]);
@@ -125,7 +131,7 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
 
   // The restricted notice has no steps, so the admit effect never runs; it owns focus as soon as it shows.
   const { rootRef } = useModalFocus({
-    open: ownsFocus || restricted,
+    open: ownsFocus || restricted || offline,
     onClose,
     panelRef: cardRef,
     initialFocusRef: nextRef,
@@ -174,6 +180,35 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
       </OverlayPortal>
     );
   if (!permitted || !howTo || !step) return null;
+  if (offline)
+    return (
+      <OverlayPortal layer="modal" name="ward-show-me">
+        <div ref={rootRef} className={styles.layer} data-testid="ward-show-me" data-device={device}>
+          <div
+            ref={cardRef}
+            className={styles.card}
+            role="dialog"
+            aria-modal="true"
+            aria-label={howTo.title}
+            data-testid="ward-show-me-card"
+            data-offline=""
+          >
+            <p className={styles.who}>{howTo.around ? howTo.title : `Show me · ${howTo.title}`}</p>
+            <p className={styles.body} role="status">
+              {WARD_OFFLINE_LINK_NOTICE}
+            </p>
+            <div className={styles.buttons}>
+              <button type="button" className={styles.skip} onClick={onBack} data-testid="ward-show-me-back">
+                Back to Help
+              </button>
+              <button ref={nextRef} type="button" className={styles.primary} onClick={onClose}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </OverlayPortal>
+    );
 
   return (
     <OverlayPortal key={ownsFocus ? "ready" : "waiting"} layer="modal" name="ward-show-me">

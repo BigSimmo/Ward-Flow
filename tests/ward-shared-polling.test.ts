@@ -9,7 +9,7 @@ it("backs failed reads off to15and60seconds, then restores three seconds after s
     .mockResolvedValueOnce(false)
     .mockResolvedValueOnce(false)
     .mockResolvedValue(true);
-  const polling = startWardPolling({ refresh, visible: () => true });
+  const polling = startWardPolling({ refresh, visible: () => true, random: () => 0.5 });
   await vi.advanceTimersByTimeAsync(3_000);
   expect(refresh).toHaveBeenCalledTimes(1);
   await vi.advanceTimersByTimeAsync(14_999);
@@ -28,7 +28,7 @@ it("does not poll hidden tabs; a successful manual read resets an outage delay",
   vi.useFakeTimers();
   let visible = false;
   const refresh = vi.fn<() => Promise<boolean>>().mockResolvedValue(false);
-  const polling = startWardPolling({ refresh, visible: () => visible });
+  const polling = startWardPolling({ refresh, visible: () => visible, random: () => 0.5 });
   await vi.advanceTimersByTimeAsync(60_000);
   expect(refresh).not.toHaveBeenCalled();
   visible = true;
@@ -49,7 +49,7 @@ it("keeps the three-second cadence when reads are skipped during a save", async 
     .mockResolvedValueOnce("skipped")
     .mockResolvedValueOnce("skipped")
     .mockResolvedValue(true);
-  const polling = startWardPolling({ refresh, visible: () => true });
+  const polling = startWardPolling({ refresh, visible: () => true, random: () => 0.5 });
   await vi.advanceTimersByTimeAsync(9_000);
   expect(refresh).toHaveBeenCalledTimes(3);
   await vi.advanceTimersByTimeAsync(3_000);
@@ -63,7 +63,7 @@ it("a skipped read neither clears nor deepens an outage delay", async () => {
     .mockResolvedValueOnce(false)
     .mockResolvedValueOnce("skipped")
     .mockResolvedValue(true);
-  const polling = startWardPolling({ refresh, visible: () => true });
+  const polling = startWardPolling({ refresh, visible: () => true, random: () => 0.5 });
   await vi.advanceTimersByTimeAsync(3_000);
   await vi.advanceTimersByTimeAsync(15_000);
   expect(refresh).toHaveBeenCalledTimes(2);
