@@ -902,7 +902,7 @@
           "w": 300,
           "h": 86,
           "label": "Being made ready — a flag",
-          "sub": "Cleaning or repair is a separate flag. It can be set on an expected, confirmed or discharged release, and recording the departure (or a ward transfer arriving) sets it too. It does not rewrite the ward count, but a new pull refuses when every free bed is still being prepared."
+          "sub": "Cleaning or repair is a separate flag. It can be set on an expected, confirmed or discharged release, and recording the departure (or a ward transfer arriving) sets it too, except item 18's \"Left the ward, waiting for transport\", where the bed is Ready at once. It does not rewrite the ward count, but a new pull refuses when every free bed is still being prepared."
         }
       ],
       "transitions": [
@@ -1015,7 +1015,7 @@
           "route": "exit",
           "offset": 170,
           "kind": "side",
-          "label": "the departure also marks the bed"
+          "label": "the departure also marks the bed, unless left waiting for transport"
         },
         {
           "from": "confirmed",
@@ -1024,7 +1024,7 @@
           "route": "exit",
           "offset": 190,
           "kind": "side",
-          "label": "the departure also marks the bed"
+          "label": "the departure also marks the bed, unless left waiting for transport"
         },
         {
           "from": "expected",
@@ -1812,14 +1812,19 @@
         "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
       },
       {
+        "path": "src/components/ward-management/ward-flow-departure.ts",
+        "line": 18,
+        "sha256": "624ccc1fda2f7732e2704270f7281dcea991daac85485619881b0d1790aacb62"
+      },
+      {
         "path": "src/components/ward-management/ward-flow-event-roles.ts",
         "line": 1,
-        "sha256": "77b865d4619e74be8ea3dcac1b81c0201a1e48ec5e2502fe38ee9d3ab62e7275"
+        "sha256": "808d614bd517bb11c0ef517ce5632dd3caba8a71758476401f35da82fe26afda"
       },
       {
         "path": "src/components/ward-management/ward-flow-events.ts",
         "line": 1,
-        "sha256": "f62bf604de20719b5ce3a7f2ecfadad362bc090f532ddd4fe86acfea97259dac"
+        "sha256": "8a2438031d11683d8648960b9d12ffd41eda8a351a21b1b50037bfd2ab59dde4"
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
@@ -1829,12 +1834,12 @@
       {
         "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
         "line": 1,
-        "sha256": "1eb306ce2963727a9c1e99aa60dd505b7ac247af29c50b7980f0617f6e1ee25e"
+        "sha256": "bfc2dbb4d35f590f6a48073fdc1d2a552b38abe82dbebc83dc2131eb52e16828"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-events.ts",
-        "line": 604,
-        "sha256": "41fbe5cfec478d74043479580c78fd1f773d0ffbb65ba5977fff172070dcf591"
+        "line": 606,
+        "sha256": "5cc4fde885cc7c9b44aabd7b260b5f94371b7d4f06e26736e406c40972fb8d21"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
@@ -1843,13 +1848,13 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-        "line": 377,
-        "sha256": "c3710e57ffa74c56374fd19198b2dd25941ae342206abe440657000ee1aae939"
+        "line": 428,
+        "sha256": "6d2e541a95fe4655e181df60917102587753069caaf78534536b93a4a5b4d4fe"
       },
       {
         "path": "src/components/ward-management/ward-flow-reducer.ts",
-        "line": 1173,
-        "sha256": "9c1070d69204d59729ce019fbf9edf8b3ff67eac83421f1eb04e3237828b2911"
+        "line": 1176,
+        "sha256": "ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
@@ -1863,8 +1868,8 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-storage-validation.ts",
-        "line": 463,
-        "sha256": "51c4558eaffb74f80aa515b67df9e6c26eff9fa67f3fd7bccaf223b5604dada6"
+        "line": 452,
+        "sha256": "235c28653c50815296ac813352251daa8bfdc0d045f34784be71ad4387965ac5"
       },
       {
         "path": "src/components/ward-management/ward-flow-transport-events.ts",
@@ -1899,7 +1904,7 @@
       {
         "path": "src/components/ward-management/ward-model.ts",
         "line": 1,
-        "sha256": "17f10e85fe7399728eccd9510362880f0eb9f334298590c27fdb243cb9b07515"
+        "sha256": "6cc372267168e04e8bb4a3365d5db08888f67c6cbd08a372e5f57d40b6614e46"
       },
       {
         "path": "src/components/ward-management/ward-patient-registration-reducer.ts",
@@ -1914,7 +1919,7 @@
       {
         "path": "src/components/ward-management/ward-undo.ts",
         "line": 1,
-        "sha256": "22a192fa0c973fff7b2b9b13038f17020b3990a33a0588af76ab2a4f79d035db"
+        "sha256": "3c53075006e38d5b6dac4bfff7b374662ec8511a331c3129f22d9febaefc8186"
       },
       {
         "path": "src/components/ward-management/ward-observation.ts",

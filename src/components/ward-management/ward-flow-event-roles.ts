@@ -101,6 +101,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // Owner Answer 18, second round, 2026-09-17: the ward's own answer to what is currently
   // limiting its intake, same role as CONFIRM_CAPACITY above.
   RECORD_WARD_INTAKE_CONSTRAINTS: ["ward", "coordinator"],
+  // Feature item 13: tonight's intake hours, the ward for itself (reducer checks) or the coordinator.
+  SET_INTAKE_WINDOW: ["ward", "coordinator"],
   RECORD_ESCALATION: ["coordinator"],
   ADVANCE_CLOCK: ["demo"],
   RESET_SCENARIO: ["demo"],
@@ -222,6 +224,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // know that somebody walked out of a building, and a coordinator recording a discharge it
   // cannot observe is the shape this project refuses everywhere else.
   RECORD_LEAVING: ["ward", "coordinator"],
+  // Item 18: whoever may record the departure may record the collection that ends the wait.
+  MARK_TRANSPORT_COLLECTED: ["ward", "coordinator"],
   // The ward that holds the bed, and nobody else. A ward is the only party that observes one of
   // its own occupants leaving the building for an emergency department and coming back, and it is
   // the party still holding the bed while they are gone. The coordinator is excluded on exactly

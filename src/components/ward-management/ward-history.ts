@@ -48,6 +48,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   OPEN_DISCHARGE_RECORD: { category: "neither", plainWording: "Discharge record viewed" },
   REVIEW_AUDIT_EVENT: { category: "neither", plainWording: "Governance audit review completed" },
   RECORD_LEAVING: { category: "both", plainWording: "Patient departed ward" },
+  MARK_TRANSPORT_COLLECTED: { category: "patient", plainWording: "Collected by transport" },
   RECORD_AWAY_AT_EMERGENCY_DEPARTMENT: {
     category: "patient",
     plainWording: "Patient temporarily away at Emergency Department",
@@ -155,6 +156,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   // 2.5 Capacity and bed release
   CONFIRM_CAPACITY: { category: "bed", plainWording: "Ward bed capacity confirmed" },
   RECORD_WARD_INTAKE_CONSTRAINTS: { category: "bed", plainWording: "Ward intake constraints updated" },
+  SET_INTAKE_WINDOW: { category: "bed", plainWording: "Tonight's intake hours updated" },
   FLAG_BED_RELEASE: { category: "bed", plainWording: "Upcoming bed release flagged" },
   CONFIRM_BED_RELEASE: { category: "bed", plainWording: "Bed release confirmed" },
   REVERT_BED_RELEASE: { category: "bed", plainWording: "Bed release reverted to expected" },

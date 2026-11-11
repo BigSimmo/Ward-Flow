@@ -8,7 +8,6 @@ import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { MINUTES_PER_DAY, formatInstant, formatSheetMoment } from "@/components/ward-management/ward-clock";
-import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { ListExportButton } from "@/components/ward-management/ward-list-export-button";
@@ -17,7 +16,6 @@ import {
   Card,
   cx,
   DrawerFootRow,
-  Field,
   FolderTabs,
   folderTabClasses,
   Hero,
@@ -29,7 +27,6 @@ import {
   LiveChip,
   PanelDrawer,
   PhoneSheet,
-  Select,
   ShowMoreRow,
   SrOnly,
   StatusGlyph,
@@ -70,6 +67,7 @@ import {
   recordedMoment,
   recordedDate,
   matchesHighlight,
+  recordGoingTo,
 } from "./discharge-board-model";
 import { DischargePopulationSwitch, DischargeFilterCard } from "./discharge-board-filters";
 import {
@@ -81,6 +79,7 @@ import {
 } from "./discharge-detail-panes";
 import { useDischargeDeskView } from "./discharge-desk-view";
 import { useDischargeWorkspaceState } from "./use-discharge-workspace-state";
+import { useDischargeDepartureField } from "./discharge-departure-field";
 import { dischargeChartDays } from "./discharge-chart-days";
 // Closing-the-loop package B (24 Oct 2026): the weekend and holiday list. Since the redesign (approved
 // 31 Oct 2026) it is a compact notice ABOVE the list, so it loads with the board: loaded lazily, the
@@ -337,8 +336,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
       ),
       recorded,
       records,
-      destinationOf: (record) =>
-        LEAVING_DESTINATIONS.find((item) => item.id === record.leavingDestination)?.label ?? "Not recorded",
+      // The same words as the Going to cell, so a transport wait is kept in the export (item 18).
+      destinationOf: (record) => recordGoingTo(record, dayZero),
       followUpOf: (record) => followUpOf(record).status,
     });
   const exportCount = nowView ? visibleReleaseGroups.reduce((n, k) => n + shownGroups[k].length, 0) : recorded.length;
@@ -411,34 +410,18 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   // The phone shows the release's panes together (no tabs); a record keeps its tabs at every width.
   const drawerTabs = drawerHead && (activeRecord || !isPhone) ? dischargeDrawerTabs(drawerHead.hasBlocker) : undefined;
   // "Going to" sits in the body, beside the facts, so the foot keeps one primary and one secondary.
-  const departureField =
-    canRecordDeparture && detailRelease ? (
-      <Field label="Going to" className={pageStyles.departDest}>
-        <Select
-          aria-label="Where are they going?"
-          data-testid="ward-discharge-departure-destination"
-          value={departureDestination}
-          onChange={(event) =>
-            setDeparture({
-              releaseId: detailRelease.id,
-              destination: event.target.value as LeavingDestination,
-            })
-          }
-        >
-          {LEAVING_DESTINATIONS.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </Select>
-      </Field>
-    ) : null;
+  const departure = useDischargeDepartureField(
+    canRecordDeparture ? detailRelease : undefined,
+    departureDestination,
+    setDeparture,
+  );
   const recordDeparture = (variant: "pri" | "sec") =>
     canRecordDeparture && detailRelease ? (
       <Button
         variant={variant}
         className={variant === "pri" ? pageStyles.drawerPrimary : undefined}
         data-testid="ward-discharge-record-departure"
+        disabled={departure.unanswered}
         onClick={() => {
           const who = linkedReleaseRecord ? recordName(linkedReleaseRecord) : "The person";
           const admissionId = detailRelease.admissionId;
@@ -447,11 +430,14 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             detailRelease.unitId,
             departureDestination,
             s.releaseActor.role === "coordinator" ? "coordinator" : "ward",
+            { awaitingTransport: departure.awaitingTransport },
           );
           // The completion carries this command's accepted Undo record, including shared saves.
           offerDeparture(
             {
-              success: `Recorded: ${who} has left the ward.`,
+              success: departure.awaitingTransport
+                ? `Recorded: ${who} has left the ward and is waiting for transport.`
+                : `Recorded: ${who} has left the ward.`,
               undo: (at) => ({
                 type: "UNDO_DEPARTURE",
                 role: s.releaseActor.role,
@@ -1045,10 +1031,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                             <td data-label="Left" className={pageStyles.timingCell}>
                               <strong className={pageStyles.due}>{recordedMoment(record.leftAt, dayZero)}</strong>
                             </td>
-                            <td data-label="Going to">
-                              {LEAVING_DESTINATIONS.find((item) => item.id === record.leavingDestination)?.label ??
-                                "Not recorded"}
-                            </td>
+                            <td data-label="Going to">{recordGoingTo(record, dayZero)}</td>
                             <td data-label="7 day follow-up">
                               <span className={releaseList.followUp} data-warning={check.warning || undefined}>
                                 <StatusGlyph tone={check.warning ? "warning" : "success"} size={9} />
@@ -1467,7 +1450,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 s={s}
                 detailRelease={detailRelease}
                 openOn={openOn?.releaseId === detailRelease.id ? openOn.part : null}
-                departure={departureField}
+                departure={departure.field}
               />
             ) : selected?.handle === null ? (
               // D-80 item 17: the coordinator says why before the ward's record opens.

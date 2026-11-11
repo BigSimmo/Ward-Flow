@@ -1,4 +1,6 @@
 import type { WardFlowState } from "./ward-flow-reducer";
+import type { Admission } from "./ward-admissions";
+import type { Referral } from "./ward-model";
 
 /**
  * Small helpers for `WardFlowProvider`, kept here so the provider stays under its line cap.
@@ -60,4 +62,17 @@ export function nextOpenRequestSequence(auditEvents: WardFlowState["auditEvents"
     if (typeof requestId === "number" && Number.isFinite(requestId) && requestId > highest) highest = requestId;
   }
   return highest + 1;
+}
+
+/** The referral ids on `admissions` that match no referral in `referrals` (`useDanglingReferralIds`). */
+export function danglingReferralIds(
+  admissions: readonly Pick<Admission, "referralId">[],
+  referrals: readonly Pick<Referral, "id">[],
+): ReadonlySet<string> {
+  const known = new Set(referrals.map((referral) => referral.id));
+  return new Set(
+    admissions.flatMap((admission) =>
+      admission.referralId !== null && !known.has(admission.referralId) ? [admission.referralId] : [],
+    ),
+  );
 }

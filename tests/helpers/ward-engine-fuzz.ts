@@ -846,6 +846,13 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
     1,
     (state, random) => {
       const stay = stayFor(state, random, (candidate) => candidate.awayAtEmergencyDepartmentSince !== null);
+      // Item 18: on alternate calls (by the refusal count, never a fresh draw, so the seeded runs keep
+      // their random stream), or with nobody away at an ED, Collected for the first stay waiting for transport.
+      const waiting =
+        stay && state.rejections.length % 2 === 1
+          ? undefined
+          : state.admissions.find((candidate) => candidate.waitingForTransport);
+      if (waiting) return { type: "MARK_TRANSPORT_COLLECTED", admissionId: waiting.id, actingUnitId: waiting.unitId };
       return {
         type: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
         admissionId: id(stay),
@@ -1144,7 +1151,11 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         actingUnitId: id(unit),
         bedNumber: beds - int(random, 0, Math.min(2, beds - 1)),
         closed: true,
-        ...(chance(random, 0.5) ? { reason: pick(random, WARD_CLOSURE_REASON_IDS) } : {}),
+        // Item 6: a review time rides with a chosen reason, with no extra draw, so the runs aimed
+        // before it was added stay where they were.
+        ...(chance(random, 0.5)
+          ? { reason: pick(random, WARD_CLOSURE_REASON_IDS), reviewAt: currentNow + WARD_REOPEN_AFTER_HOURS[0] * 60 }
+          : {}),
       };
     },
   ],
@@ -2124,6 +2135,21 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       };
     },
   ],
+  // Feature item 13: tonight's intake hours, set (from the next whole hour, two to six hours long)
+  // or cleared. Information only, so it must leave every count and placement where it was.
+  [
+    0.5,
+    (state, random) => {
+      const unit = pick(random, state.units);
+      const from = Math.ceil((currentNow + 1) / 60) * 60;
+      return {
+        type: "SET_INTAKE_WINDOW",
+        unitId: id(unit),
+        actingUnitId: id(unit),
+        intake: chance(random, 0.3) ? null : { from, to: from + int(random, 2, 6) * 60 },
+      };
+    },
+  ],
   // Ward-level confirmations and requests.
   [
     1,
@@ -2601,6 +2627,20 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       };
     },
   ],
+  // Item 18: Collected for the first stay waiting for transport. The ED return builder above sends it
+  // only when someone is waiting, so merging main (11 Nov 2026) could leave it unsent. With nobody
+  // waiting it still sends, naming a missing stay (refused), so the sweep always covers it.
+  [
+    0,
+    (state) => {
+      const waiting = state.admissions.find((candidate) => candidate.waitingForTransport);
+      return {
+        type: "MARK_TRANSPORT_COLLECTED",
+        admissionId: waiting?.id ?? MISSING_ID,
+        actingUnitId: waiting?.unitId ?? MISSING_ID,
+      };
+    },
+  ],
 ];
 
 /**
@@ -2719,6 +2759,26 @@ export function nextEvent(
       role: justTold.role,
       now: currentNow,
       siteCode: justTold.subjectId.replace(/^site-handover:/, ""),
+    } as unknown as WardFlowEvent;
+  }
+  // The same for a governance review (11 Nov 2026): merging the ward arrival batch with Batch 1 moved
+  // the random runs so no seed drew the undo in time. Sometimes take the newest review back at once,
+  // as the coordinator. The draw is made only while one can be undone, so other runs do not move.
+  const lastReview = state.auditReviews.at(-1);
+  if (
+    !sweep &&
+    lastReview !== undefined &&
+    lastReview.generation === state.worldGeneration &&
+    currentNow - lastReview.at <= UNDO_WINDOW_MINUTES &&
+    chance(random, 0.5)
+  ) {
+    FUZZED_EVENT_TYPES.add("UNDO_AUDIT_REVIEW");
+    return {
+      type: "UNDO_AUDIT_REVIEW",
+      role: "coordinator",
+      now: currentNow,
+      reviewId: lastReview.id,
+      expectedGeneration: state.worldGeneration,
     } as unknown as WardFlowEvent;
   }
   // Aimed on 9 Nov 2026, when adding the staff request builders shifted the random runs: a reset is

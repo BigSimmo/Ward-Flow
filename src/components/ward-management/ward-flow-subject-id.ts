@@ -76,6 +76,7 @@ export function subjectId(event: WardFlowEvent): string {
       return event.edId ?? event.acceptedUnitId ?? "none";
     case "CONFIRM_CAPACITY":
     case "RECORD_WARD_INTAKE_CONSTRAINTS":
+    case "SET_INTAKE_WINDOW":
     case "CLOSE_WARD_TO_ADMISSIONS":
     case "REOPEN_WARD_TO_ADMISSIONS":
     case "MARK_WARD_READY_FOR_NEXT":
@@ -97,6 +98,7 @@ export function subjectId(event: WardFlowEvent): string {
       return event.releaseId;
     // Admission-scoped: an admission id is not a unit or release id, so these keep their own group.
     case "RECORD_LEAVING":
+    case "MARK_TRANSPORT_COLLECTED":
     case "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT":
     case "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT":
     case "RECORD_STAY_DISCHARGE_BLOCKER":

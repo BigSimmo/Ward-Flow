@@ -179,7 +179,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "CLEAR_MOVEMENT_URGENT_FLAG",
   "CLOSE_WARD_TO_ADMISSIONS",
   "REOPEN_WARD_TO_ADMISSIONS",
-  // H-0978: ids, a whole bed number, a boolean and a choice from WARD_CLOSURE_REASONS. No typed text.
+  // H-0978: ids, a whole bed number, a boolean, a choice from WARD_CLOSURE_REASONS and (item 6) a
+  // review time chosen from WARD_REOPEN_AFTER_HOURS, read to an `Instant`. No typed text.
   "SET_BED_CLOSED",
   "RECORD_BED_MEETING_ACTION",
   "COMPLETE_BED_MEETING_ACTION",
@@ -265,6 +266,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // #816: a patient id and a closed `PatientArchiveReason`, offered by radio buttons. No typed text.
   "ARCHIVE_PATIENT",
   "RECORD_LEAVING",
+  // Item 18: an admission id, the acting unit id, a time and the caller's role. No typed text.
+  "MARK_TRANSPORT_COLLECTED",
   "RECORD_LEFT_DEPARTMENT",
   // Item 9 (10 Nov 2026): a movement id and up to three typed clock times. No typed text.
   "RECORD_CREW_TIMES",
@@ -292,6 +295,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // the reducer, never a bare `string[]` — the same "array element types reviewed by hand" shape
   // `REFER_TO_UNITS.unitIds` already has on this list.
   "RECORD_WARD_INTAKE_CONSTRAINTS",
+  // Feature item 13 (D-72 pattern): ids and two typed clock times already read to instants. No typed text.
+  "SET_INTAKE_WINDOW",
   "REFER_TO_UNITS",
   // Owner answer 8 (second round, 2026-09-17): `movementId`/`actingUnitId` are ids (reviewed
   // above) and the caller's own `role` — no human-typed field, the same shape `RELEASE_PULL`

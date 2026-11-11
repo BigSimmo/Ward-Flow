@@ -1,8 +1,8 @@
 import { Badge } from "@/components/wf";
-import type { Movement, Referral } from "@/components/ward-management/ward-model";
+import type { Movement } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { perthDayLabel } from "@/components/ward-management/ward-clock";
-import { referralCardFlags } from "./patient-referral-safety";
+import { referralCardFlags, type CardReferral } from "./patient-referral-safety";
 import { interpreterLanguageRequired } from "./patient-interpreter";
 import styles from "./card-safety-tags.module.css";
 
@@ -20,7 +20,8 @@ export function CardSafetyTags({
   testId,
 }: {
   movement: Movement;
-  referrals: readonly Referral[];
+  /** The desk's scoped referrals: full records, or a ward's own inbox entries (FD-23). */
+  referrals: readonly CardReferral[];
   patient: Pick<Patient, "interpreterLanguage"> | undefined;
   /** Without a day zero the referral date cannot be shown, so neither are its flags (H10). */
   dayZero: Date | undefined;

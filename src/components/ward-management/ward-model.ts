@@ -330,8 +330,19 @@ export type Unit = {
    * because of it. Cleared by a pull into this ward or by the ward cancelling it.
    */
   readyForNextAt?: Instant;
-  /** H-0978: beds closed one by one (`SET_BED_CLOSED`); a reopened one keeps `reopenedAt` as seat history. */
-  closedBeds?: { bedNumber: number; at: Instant; by: string; reason?: WardClosureReason; reopenedAt?: Instant }[];
+  /**
+   * H-0978: beds closed one by one (`SET_BED_CLOSED`); a reopened one keeps `reopenedAt` as seat history.
+   * Item 6 (10 Nov 2026): `reviewAt`, "look at this again", only prompts (`bedReviewDue`); reopening
+   * always needs a person, and it changes no bed figure.
+   */
+  closedBeds?: {
+    bedNumber: number;
+    at: Instant;
+    by: string;
+    reason?: WardClosureReason;
+    reviewAt?: Instant;
+    reopenedAt?: Instant;
+  }[];
   /**
    * D-72 (21 Oct 2026), operational only: seclusion and restraint in use now, the seclusion room's
    * recorded status, and incidents the ward recorded. Typed times and fixed lists, no legal limit.
@@ -460,9 +471,18 @@ export type Unit = {
    * limiting intake is recorded".
    */
   intakeConstraints?: readonly WardIntakeConstraint[];
+  /**
+   * Feature item 13 (10 Nov 2026): the hours tonight the ward says it can take an admission, set by
+   * `SET_INTAKE_WINDOW`. Information only: never blocks a referral or orders wards. Read through
+   * `tonightIntakeWindow`, which ignores a window set before the latest 07:00 day start.
+   */
+  intakeWindow?: WardIntakeWindow;
   restrictionReviews?: LoopChecks.WardRestrictionReview[]; // Closing the loop D3: reviewer and review time.
   homeRegion?: HomeRegion;
 };
+
+/** Feature item 13: typed clock times read to instants (D-72), when set and by which desk. */
+export type WardIntakeWindow = { from: Instant; to: Instant; at: Instant; by: string };
 
 export type Site = {
   code: string;

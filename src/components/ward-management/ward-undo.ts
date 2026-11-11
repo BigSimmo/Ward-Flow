@@ -100,7 +100,8 @@ export const UNDO_STEP_ACTIONS = {
   ],
   UNDO_TRANSPORT_STEP: ["TRANSPORT_ACCEPTED", "TRANSPORT_EN_ROUTE", "PATIENT_COLLECTED", "PATIENT_ARRIVED"],
   // Audit A1-12 / A4-24 (13 Oct 2026): "Has left" is reversible from its toast, like Move bed.
-  UNDO_DEPARTURE: ["RECORD_LEAVING", "RECORD_PATIENT_DISCHARGE"],
+  // Item 18: "Collected" comes back the same way, filed against the same stay.
+  UNDO_DEPARTURE: ["RECORD_LEAVING", "RECORD_PATIENT_DISCHARGE", "MARK_TRANSPORT_COLLECTED"],
   // Audit A3-10 (13 Oct 2026): Mark absent starts the police steps on one tap, so it offers Undo.
   UNDO_ABSENT_WITHOUT_LEAVE: ["RECORD_ABSENT_WITHOUT_LEAVE"],
   // H-0150 (26 Oct 2026): a bed meeting action marked done by mistake comes back from its toast.

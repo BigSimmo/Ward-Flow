@@ -27,3 +27,5 @@ Later the same day, after the review fixes (817a61b) and merging `main` at `51a4
 After merging `main` at `024f903` (which brings #1631's Home layout-shift fix), hosted CI (job 130748219734) measured Home at 585.2 KB against its 584.9 limit. Every other screen stayed inside its limit. Home's limit is now 585.4, the measurement plus 0.2 and 1.9 KB over `main`'s 583.5.
 
 After merging `main` at `205b637` (#1622, #1630), hosted CI (job 130768853350) measured Statistics just over its 638 limit (shown as 638.0 KB). `main` alone could not be built for comparison. Statistics' limit is now 638.2, 0.2 KB over `main`'s. Every other screen stayed inside its limit.
+
+After merging `main` at `0e24781` (#1608, which raised every limit for the ward arrival batch), each limit is `main`'s new limit plus this PR's own raise above the old `main`, in KB: Home 587.9 (+1.9 over `main`'s 586.0), Referrals 598.4 (+5.0 over 593.4), Movement 618.9 (+1.0 over 617.9), ED site 679.3 (+1.2 over 678.1) and Statistics 640.5 (+0.2 over 640.3). ED, Ward, Capacity and Bed meeting take `main`'s limits unchanged. Hosted CI's measurement will show whether any can come down.

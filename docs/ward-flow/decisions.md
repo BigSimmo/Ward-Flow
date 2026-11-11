@@ -156,6 +156,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-131](#d-131-hard-case-demo-data-allowed-and-the-movement-diagram-follows-the-engine-10-november-2026)                                                | Hard-case demo data allowed, and the movement diagram follows the engine               | Active                                           |
 | [D-132](#d-132-audit-fixes-group-1-docs-and-ci-guards-10-november-2026)                                                                                 | Audit fixes group 1: docs and CI guards; Claude-authored sensitive changes warn        | Active                                           |
 | [D-133](#d-133-batch-1-ed-and-referral-flow-three-answers-10-november-2026)                                                                             | Batch 1: escalation record, 30 min not opened, home team heads-up                      | Active                                           |
+| [D-134](#d-134-ward-arrival-and-beds-batch-how-to-hold-advocate-line-night-list-and-the-feature-freeze-10-november-2026)                                | Ward arrival and beds batch: held split, advocate line, night list, feature freeze     | Active                                           |
 | [D-135](#d-135-batch-4-outages-and-pilot-control-pack-age-and-plan-answers-10-november-2026)                                                            | Batch 4, outages and pilot control: pack age and plan answers                          | Active                                           |
 | [D-136](#d-136-feature-batch-3-shift-change-and-follow-up-two-signed-values-10-november-2026)                                                           | Feature batch 3: two signed values (7-day diversion return, 30-minute handover list)   | Active                                           |
 | [D-137](#d-137-feature-build-batch-5-count-leak-first-tv-change-mark-and-qr-library-10-november-2026)                                                   | Feature build batch 5: count leak first, TV change mark 15 minutes, QR library         | Active                                           |
@@ -1718,6 +1719,29 @@ is inferred.
 - **Why:** item 3 exists to show that escalation was done, which a browser-only log can't; 30 minutes lets a busy ward look before chasing; the home team already holds the open episode.
 - **Boundary:** synthetic data only. Item 46 with real data still needs the D-87 privacy review. Approves no merge or release. D-74 still applies to anything drawn.
 
+## D-134. Ward arrival and beds batch: how to hold, advocate line, night list and the feature freeze (10 November 2026)
+
+- **Date:** 10 November 2026, about 1:02 AM to 1:08 AM AWST on 11 November (17:02 to 17:08 UTC on 10 November). **Decided by:** Josh, on two decision cards in the Ward Flow project thread "Build ward arrival and bed features", then "Yes to all recommendations please" to the thread's numbered questions. Numbered D-134 because the numbers before it were taken first. D-133 is claimed by open PR #1606.
+- **Decision:**
+  1. **Held split:** items 6 (bed closure review time), 7 (plan staffing for an arrival), 13 (overnight intake window) and 18 (left the ward, waiting for transport) go in one PR that may merge once green. Items 4 (young person on an adult ward) and 15 (interpreter, Aboriginal liaison and advocate lines at arrival) go in a second PR with the `hold` label until Josh signs them off.
+  2. **Advocate line (item 15):** "Mental Health Advocacy Service told" shows on the arrival checklist for every patient the app already treats as detained, the same group the existing support and advocacy notification checklist covers, and reuses that record.
+  3. **Item 4:** nothing is built until Josh gives the legal duty and the exact notice wording.
+  4. **Night list (item 13):** a "Tonight's intake windows" card on the Capacity page, beside "Closed beds past review", in the neutral service-then-name order (D-126).
+  5. **Feature freeze:** Josh's instruction to begin the feature batches replaces D-128 item 9 for the 27 items he chose on 10 November. Other features stay frozen until #1564 to #1577 close.
+  6. **Design review first:** Josh approves the batch's design review page before its PR is opened (D-74, D-107).
+- **Addendum, 11 November 2026, about 10:19 AM AWST (02:19 UTC):** Josh wrote "Go ahead with all recommendations now for me" in the project thread "Perfect the ranked feature list", and the same words two minutes later in this batch's thread "Build ward arrival and bed features". They answer this batch's two open cards with their recommended options, and the item 4 design that thread drew:
+
+  7. **Design approval:** the review page for items 6, 7, 13 and 18 is approved as drawn (version 3: "Has their transport come?" is two buttons, not a drop-down).
+  8. **ED may record the advocate line (item 15):** ED can record "Mental Health Advocacy Service told" on an accepted move of a detained patient before arrival. The ward sees it and can change it after arrival. It uses the one existing advocacy record.
+  9. **Item 4 wording and behaviour (replaces item 3):** the patient card of a patient under 18 on a ward that is not a youth ward shows "Under 18 on an adult ward. Check the Mental Health Act 2014 requirements for a child on an adult ward, including notifying the Chief Psychiatrist." It shows automatically from the date of birth and the ward type. It has one optional typed field, "Chief Psychiatrist notified at", never pre-filled (D-93). Once a time is entered it stays visible but goes quiet. It goes away at 18 or on a move to a youth ward. It never blocks a bed offer and never pre-selects anything. It quotes no section number or time limit, because neither has been verified. It stays in the held PR.
+
+- **Addendum, 11 November 2026, about 11:05 to 11:24 AM AWST (03:05 to 03:24 UTC):** Josh wrote "I approve all your recommendations" in this batch's thread, then "I sign off on everything here" to the project's PR summary, which listed the held PR #1609 as waiting on his sign-off.
+
+  10. **Held items signed off:** items 4 and 15 (#1609) are signed off, so its `hold` label comes off and it may merge once green.
+  11. **Legal wording check:** the legal language check lets through only his exact item 4 sentence ("check the Mental Health Act 2014 requirements for a child on an adult ward"). It tells staff to check the Act rather than claiming authority. "2014" stays in the notice.
+
+- **Boundary:** synthetic data only. Information and prompts only: nothing ranks or recommends a ward or bed (D-71), and no clinical value changes. Approves no merge or release.
+
 ## D-135. Batch 4, outages and pilot control: pack age and plan answers (10 November 2026)
 
 - **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, choosing "Older than 24 hours" on a decision card in the Batch 4 thread (17:04 UTC), and saying "Go ahead with all your recommendations" for the feature build plan in the project chat (17:04 UTC). D-132 is claimed by open PR #1601. D-133 is claimed by open PR #1606 (Batch 1). D-134 is claimed by open PR #1608 (Batch 2).
@@ -1757,7 +1781,7 @@ is inferred.
 
 ## D-138. Phone alert urgency by kind (10 November 2026)
 
-- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, picking item 23 of the audit fix build plan (Ward Flow project thread "Fix audit app and backend issues", audit fix group 2), which counts as his yes to audit decision 20. Numbered D-138 because D-132 to D-137 belong to other threads. D-133 is claimed by open PR #1606. D-134 is claimed by open PR #1608, and D-135 is claimed by open PR #1603, and D-136 is claimed by open PR #1605, and D-137 is claimed by open PR #1607. On 11 November 2026 Josh told every thread to go ahead with its recommendations, which approved the Settings line as drawn in the design review.
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, picking item 23 of the audit fix build plan (Ward Flow project thread "Fix audit app and backend issues", audit fix group 2), which counts as his yes to audit decision 20. Numbered D-138 because D-132 to D-137 belong to other threads. D-133 is claimed by open PR #1606. D-135 is claimed by open PR #1603, and D-136 is claimed by open PR #1605, and D-137 is claimed by open PR #1607. On 11 November 2026 Josh told every thread to go ahead with its recommendations, which approved the Settings line as drawn in the design review.
 - **Decision:** act-now phone alerts stay high urgency and buzz again when replaced. Jobs and team alerts go out at normal urgency and replace their earlier alert quietly. Settings shows when this device last received an alert, from the time only (never the alert's words).
 - **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge or release.
 
