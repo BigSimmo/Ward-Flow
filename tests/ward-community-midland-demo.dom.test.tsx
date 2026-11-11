@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CommunityScreen } from "@/components/ward-management/community/community-screen";
 import {
   recordMidlandDecision,
@@ -97,6 +97,22 @@ describe("Midland community team demo (locked design)", () => {
       expect(after.tab).toBe(`Referrals${REFERRALS.length - 1}`);
     } finally {
       undoMidlandDecision(REFERRALS[0]!.id);
+    }
+  });
+});
+
+// Live audit item 6 (11 Nov 2026): the signed-in shared workspace never shows the Midland demo team,
+// so its home lists the shared referrals and nothing is kept in this browser.
+describe("Midland on the signed-in shared workspace", () => {
+  it("shows the team's own page, not the demo team", () => {
+    vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "true");
+    try {
+      renderTeam("midland");
+      expect(screen.queryByTestId("community-top-duty")).toBeNull();
+      expect(screen.queryByText("3 need someone today")).toBeNull();
+      expect(screen.getByTestId("ward-community-screen")).toBeInTheDocument();
+    } finally {
+      vi.unstubAllEnvs();
     }
   });
 });
