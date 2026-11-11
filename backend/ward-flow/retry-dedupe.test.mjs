@@ -10,6 +10,7 @@ import * as engine from "./dist/engine.mjs";
 import { dropTestDatabase } from "./drop-test-database.test-support.mjs";
 import { migrate } from "./migrate.mjs";
 import { createWorkspaceStore } from "./postgres.mjs";
+import { answerMembershipRead, isMembershipRead } from "./viewer.test-support.mjs";
 
 const url = process.env.WARD_TEST_DATABASE_URL;
 if (url && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
@@ -30,6 +31,7 @@ function offline(access) {
   const memberships = [];
   const audits = [];
   const query = async (sql, values = []) => {
+    if (isMembershipRead(sql)) return answerMembershipRead(query, sql, values);
     if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") return { rows: [] };
     if (sql.startsWith("SELECT max(version)")) return { rows: [{ version: 9 }] };
     if (sql.includes("FROM ward_flow.workspaces") && sql.includes("FOR ")) return { rows: [structuredClone(stored)] };

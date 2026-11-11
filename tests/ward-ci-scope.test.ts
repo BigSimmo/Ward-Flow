@@ -24,12 +24,19 @@ describe("CI scopes follow package consumers and keep the production build for e
       browser: false,
     });
   });
-  it("does not install/test the backend for a unit-test-only change, but still builds the app", () => {
+  it("does not install/test the backend or build the app for a unit-test-only change", () => {
     expect(scope("tests/ward-waitlist.test.ts")).toMatchObject({
       full: true,
       unit: true,
       backend: false,
       frontend_static: true,
+      build: false,
+      browser: false,
+    });
+  });
+  it("still builds the app when unit tests change alongside backend input", () => {
+    expect(scope("tests/ward-waitlist.test.ts", "backend/ward-flow/engine.ts")).toMatchObject({
+      backend: true,
       build: true,
       browser: false,
     });

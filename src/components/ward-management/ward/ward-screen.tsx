@@ -31,12 +31,7 @@ import {
   observationStaffOnWard,
   type LeavingDestination,
 } from "@/components/ward-management/ward-admissions";
-import {
-  bedsPendingPreparation,
-  capacityBreakdown,
-  releaseBand,
-} from "@/components/ward-management/ward-bed-availability";
-import { bedStates } from "@/components/ward-management/ward-bed-states";
+import { bedsPendingPreparation, releaseBand } from "@/components/ward-management/ward-bed-availability";
 import { currentShiftStartInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
 import {
   OVERRIDE_REASONS,
@@ -50,7 +45,6 @@ import {
   BED_RELEASES_HELD_UP_ANY_DATE_LABEL,
   deriveAfternoonDischarges,
   overridesAgainstUnit,
-  unitCapacity,
 } from "@/components/ward-management/ward-derivations";
 import {
   useDueSoonThresholds,
@@ -74,9 +68,8 @@ import {
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { type DeclineReason, EXTRA_TRAVEL_HOLD_MINUTES, type Rejection } from "@/components/ward-management/ward-model";
-import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
-import { LEAVE_BED_OPEN_WARNING_MINUTES, UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
+import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import { wardTransferNeedsCoordinator } from "@/components/ward-management/ward-referrals";
 import { useDeskRoleSwitch, useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
@@ -135,7 +128,7 @@ import {
 } from "./ward-screen-lazy";
 import { WardScreenReferralsTab } from "./ward-screen-referrals-tab";
 import { WardScreenTopBar } from "./ward-screen-top-bar";
-import { wardBedRoster, wardLiveFormAlerts } from "./ward-screen-derivations";
+import { useWardScreenFigures } from "./use-ward-screen-figures";
 import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placement";
 import { WardScreenHomeSection } from "./ward-screen-home-section";
 import { WardAcceptDialog, WardScreenDecisionJobs } from "./ward-on-demand";
@@ -942,8 +935,26 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   const { pendingBedReleases, unitLeaveBeds, incoming, accepted, heldAfterStop, recentAnswers, withdrawn } =
     useWardUnitQueues({ unit, bedReleases, leaveBeds, movements });
+  // Memoised on their inputs, so local state (the Find box, an open sheet) does not re-derive them.
+  const figures = useWardScreenFigures({
+    unit,
+    unitLeaveBeds,
+    admissions,
+    bedReleases,
+    leaveBeds,
+    accepted,
+    movements,
+    resolvePatientIdentity,
+    now,
+    thresholds,
+    criteriaLedOn,
+    patients,
+    plannedAdmissions,
+    dayZero,
+    wardReferralInbox,
+  });
 
-  if (!unit) {
+  if (!unit || !figures) {
     return (
       <div className={styles.screen} data-testid="ward-unit-screen">
         <main id="main-content" className={styles.main}>
@@ -959,14 +970,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     );
   }
 
-  const capacity = unitCapacity(unit, bedReleases);
+  const { capacity, states, occupancy, breakdown, liveFormAlerts } = figures;
   // The ruled four boxes — Ready · Pulled · Closed · Occupied — for every bed-state figure this
   // screen shows. `capacity.held` is NOT Closed (it still counts a live pull's empty bed), and
   // "Held" is reserved for a bed kept for a patient on leave.
-  const states = bedStates(unit, admissions, bedReleases, leaveBeds);
   // The one occupancy figure (Occupied + Pulled, `ward-occupancy.ts`): the same percentage this
   // ward shows on Ward answer, the rail and Capacity.
-  const occupancy = wardOccupancy([unit], admissions, bedReleases);
   // Visual-fix pass: the capacity board (`CapacityView` in `ward-management-modes.tsx`) was just
   // corrected to source Confirmed/Expected from `capacityBreakdown()` rather than `unitCapacity()`'s
   // raw, state-and-timing-blind `potential` count — this screen used to be the one place still
@@ -974,7 +983,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // and "Confirmed 1, Expected 0" one screen over, for the exact same release. This screen now reads
   // the same breakdown so both screens describe the same beds the same way. `unitCapacity()` itself
   // is untouched — see its own doc comment on `potential` in `ward-derivations.ts`.
-  const breakdown = capacityBreakdown(unit, bedReleases, leaveBeds, now);
   // Owner ruling 2026-09-05: shown BESIDE the Ready figure, never subtracted from it. The
   // reducer's own helper, so this screen and the PULL_PATIENT refusal read one source.
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
@@ -1125,34 +1133,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       }).counts.total
     : 0;
   const staffedSpecialling = observationStaffOnWard(unit.id, admissions ?? []);
-  const overdueLeaveBeds = unitLeaveBeds.filter(
-    (leaveBed) => now - leaveBed.confirmedAt >= LEAVE_BED_OPEN_WARNING_MINUTES,
-  );
-  const { liveFormAlerts } = wardLiveFormAlerts({
-    resolvePatientIdentity,
-    accepted,
-    now,
-    thresholds,
-    overdueLeaveBeds,
-    unit,
-  });
-
-  const { bedsList, inboxEntries, isMixed } = wardBedRoster({
-    unit,
-    unitLeaveBeds,
-    admissions,
-    bedReleases,
-    states,
-    accepted,
-    movements,
-    resolvePatientIdentity,
-    now,
-    criteriaLedOn,
-    patients,
-    plannedAdmissions,
-    dayZero,
-    wardReferralInbox,
-  });
+  const { bedsList, inboxEntries, isMixed } = figures.roster;
   // A `?bed=` from a stale or edited URL that names no bed on this ward opens nothing; clearing it
   // here (a render-phase update, like the bed-param sync above) also drops it from the URL.
   if (selectedBed !== null && !bedsList.some((bed) => bed.bedNumber === selectedBed)) {
