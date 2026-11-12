@@ -443,6 +443,12 @@ function requireWorkflow(source, action) {
     /name: ward-unit-durations-\$\{\{ github\.run_id \}\}\n/u,
   );
   assert.match(step("plan", "Upload the unit shard timings").text, /if-no-files-found: error\n/u);
+  // A rerun keeps the run id; both records must replace their own earlier copy, not fail on the name.
+  for (const [job, name] of [
+    ["plan", "Upload the unit shard timings"],
+    ["coverage", "Keep main's unit timings for the shard split"],
+  ])
+    assert.match(step(job, name).text, /\n\s+overwrite: true\n/u, `${name} must be rerun-safe`);
   assert.match(
     step("unit", "Download the unit shard timings").text,
     /name: ward-unit-durations-\$\{\{ github\.run_id \}\}\n/u,

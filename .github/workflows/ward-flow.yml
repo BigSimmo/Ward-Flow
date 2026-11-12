@@ -115,6 +115,10 @@ jobs:
           path: ${{ runner.temp }}/ward-unit-durations/unit-durations.json
           if-no-files-found: error
           retention-days: 1
+          # A rerun of this job keeps the run id, so it replaces its own earlier record. No shard
+          # has read that record yet: shards start only after this job passes, and a rerun of the
+          # whole run reruns them all with the new one.
+          overwrite: true
       # Last, because it moves HEAD: a pull request that conflicts with the current main fails here,
       # in the cheap plan job, before any other job starts. The production build still merges main
       # again before measuring the script budget.
@@ -995,6 +999,8 @@ jobs:
           path: ${{ runner.temp }}/ward-unit-costs.json
           if-no-files-found: error
           retention-days: 30
+          # A rerun of the coverage job replaces its own record rather than failing on the name.
+          overwrite: true
       - name: Upload final coverage and measured costs
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
