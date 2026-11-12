@@ -332,7 +332,7 @@ safe global key across 30 files.
 | `D-159` | `decisions.md`:1980 | D-159. Fixes from the 10 to 12 November PR review (12 November 2026) |
 | `D-160` | `decisions.md`:1992 | D-160. A trusted proxy list of plain addresses falls back to per-address keying (12 November 2026) |
 | `D-161` | `decisions.md`:1999 | D-161. Home's changes-since strip is one line (12 November 2026) |
-| `D-163` | `decisions.md`:2006 | D-163. Home's changes-since strip names escalations first and leaves movements off (12 November 2026) |
+| `D-164` | `decisions.md`:2006 | D-164. Home's changes-since strip names escalations first and leaves movements off (12 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -804,7 +804,7 @@ safe global key across 30 files.
 - `D-159` — line 1980, heading: "D-159. Fixes from the 10 to 12 November PR review (12 November 2026)"
 - `D-160` — line 1992, heading: "D-160. A trusted proxy list of plain addresses falls back to per-address keying (12 November 2026)"
 - `D-161` — line 1999, heading: "D-161. Home's changes-since strip is one line (12 November 2026)"
-- `D-163` — line 2006, heading: "D-163. Home's changes-since strip names escalations first and leaves movements off (12 November 2026)"
+- `D-164` — line 2006, heading: "D-164. Home's changes-since strip names escalations first and leaves movements off (12 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 

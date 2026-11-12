@@ -2,7 +2,7 @@ import type { ChangesSinceLastLook } from "./since-last-look";
 
 /**
  * Home's "What changed since my last shift" line (feature 40, 9 Nov 2026). Counts only, escalations
- * first (D-163). Pure, so the words are tested once.
+ * first (D-164). Pure, so the words are tested once.
  */
 
 /** At most this many parts are named on a wide line; narrower lines name fewer (CSS container query). */
@@ -24,7 +24,7 @@ function part(n: number, one: string, many: string, isNew = false): SinceBannerP
  */
 export function sinceBannerCounts(changes: ChangesSinceLastLook): SinceBannerPart[] {
   const beds = changes.bedsFreed.reduce((sum, entry) => sum + entry.count, 0);
-  // Escalations first, then delays, referrals and beds freed (D-163): a phone line names only the
+  // Escalations first, then delays, referrals and beds freed (D-164): a phone line names only the
   // first. New movements are routine churn, so they stay in the Review sheet and off this line,
   // unless they are the only change, when the line names them so Review stays reachable.
   const named = [

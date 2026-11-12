@@ -197,7 +197,7 @@ describe("since banner text", () => {
     expect(sinceBannerText(nothing, "07:00")).toBeUndefined();
   });
 
-  it("leaves movements off the line unless they are the only change (D-163)", () => {
+  it("leaves movements off the line unless they are the only change (D-164)", () => {
     const withMovements = { ...base, newMovementIds: ["WF-3", "WF-4"] };
     expect(sinceBannerCounts(withMovements).map(({ label }) => label)).not.toContain("movements");
     const onlyMovements = { ...withMovements, newReferralIds: [], bedsFreed: [], newDelays: [] };
