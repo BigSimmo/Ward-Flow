@@ -94,6 +94,10 @@ const PatientTriageCard = dynamic(
 const CarerCallbackCard = dynamic(
   withLoadRetry(() => import("@/components/ward-management/carer-callback-card").then((m) => m.CarerCallbackCard)),
 );
+// Where the hours went, on History. It comes from the same download as the Now tab's handover pack.
+const PatientJourneyHours = dynamic(
+  withLoadRetry(() => import("./patient-journey-extras").then((m) => m.PatientJourneyHours)),
+);
 preloadWhenIdle(
   loadTransitOperations,
   loadUploadForms,
@@ -1298,7 +1302,11 @@ export function PatientNowScreen({
                     absence={stayLeaveBed?.absentWithoutLeave}
                     absenceVoluntary={voluntaryNow}
                     chronologyHref={openable(livePatient ? patientChronologyHref(livePatient.id) : undefined)}
-                    hoursNow={isLiveBedflow && liveMovement ? now : undefined}
+                    hours={
+                      isLiveBedflow && liveMovement ? (
+                        <PatientJourneyHours movement={liveMovement} now={now} />
+                      ) : undefined
+                    }
                     open={!modeMeta.quiet}
                     onBackToNow={() => {
                       setActiveTab("now");

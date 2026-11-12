@@ -1,10 +1,11 @@
 "use client";
 
 /*
- * Beside the journey timeline on the patient page: "Where the hours went" for the movement, and
- * the ED-to-ward handover pack once a ward has accepted it. Loaded on its own (patient-now-panel)
- * so the phone's first load does not grow. Everything is read from the record through pure
- * selectors; this file only gathers their inputs.
+ * The patient page's lazily loaded extras. On Now, in the "Hand over and print" card: the ED-to-ward
+ * handover pack once a ward has accepted the movement, and the patient or carer page. On History:
+ * "Where the hours went" (moved there in the 12 Nov 2026 redesign). Loaded on its own so the
+ * phone's first load does not grow; both parts stay in this one file so they share one download.
+ * Everything is read from the record through pure selectors; this file only gathers their inputs.
  */
 
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -29,6 +30,11 @@ function ageSexWords(patient: Patient | undefined, dayZero: Date, now: Instant):
   return `${age}, ${patient.sex?.trim() ? patient.sex.trim().toLowerCase() : "sex not recorded"}`;
 }
 
+/** "Where the hours went" for the History tab, from this file's own download. */
+export function PatientJourneyHours({ movement, now }: { movement: Movement; now: Instant }) {
+  return <PatientHoursBreakdown movement={movement} now={now} />;
+}
+
 export function PatientJourneyExtras({
   movement,
   patient,
@@ -37,10 +43,7 @@ export function PatientJourneyExtras({
   callTargets,
   riskFlags,
   now,
-  part = "all",
 }: {
-  /** Redesign (12 Nov 2026): Now shows the hand over part in its side column; History shows the hours. */
-  part?: "all" | "hours" | "handover";
   movement: Movement;
   patient: Patient | undefined;
   /** The name as the page's header shows it. */
@@ -97,10 +100,8 @@ export function PatientJourneyExtras({
       now,
     };
   }
-  if (part === "hours") return <PatientHoursBreakdown movement={movement} now={now} />;
   return (
     <>
-      {part === "all" ? <PatientHoursBreakdown movement={movement} now={now} /> : null}
       {pack ? <PatientHandoverPackButton input={pack} dayZero={dayZero} /> : null}
       <PatientCarerPageButton movement={movement} units={units} />
     </>

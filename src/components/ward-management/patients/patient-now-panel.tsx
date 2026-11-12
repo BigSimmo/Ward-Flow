@@ -45,7 +45,7 @@ const PatientDischargeReadiness = dynamic(
 );
 const PatientLastDay = dynamic(withLoadRetry(() => loadWardCards().then((m) => m.PatientLastDay)));
 const PatientNextStepCard = dynamic(withLoadRetry(() => loadWardCards().then((m) => m.PatientNextStepCard)));
-// Where the hours went and the handover pack (items 8 and 17) load on their own (phone script budget).
+// The handover pack and the patient or carer page (item 17) load on their own (phone script budget).
 const PatientJourneyExtras = dynamic(
   withLoadRetry(() => import("./patient-journey-extras").then((m) => m.PatientJourneyExtras)),
 );
@@ -399,7 +399,6 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
       handover={
         isLiveBedflow && liveMovement ? (
           <PatientJourneyExtras
-            part="handover"
             movement={liveMovement}
             patient={livePatient}
             patientName={patientName}
