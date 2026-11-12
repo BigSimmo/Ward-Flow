@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { preloadWhenIdle } from "../preload-when-idle";
 
@@ -11,9 +12,12 @@ import { preloadWhenIdle } from "../preload-when-idle";
  */
 const loadHeatmap = () => import("./weekly-delay-heatmap");
 
-export const WeeklyDelayHeatmap = dynamic(() => loadHeatmap().then((m) => m.WeeklyDelayHeatmap), {
-  loading: () => null,
-});
+export const WeeklyDelayHeatmap = dynamic(
+  withLoadRetry(() => loadHeatmap().then((m) => m.WeeklyDelayHeatmap)),
+  {
+    loading: () => null,
+  },
+);
 
 export function preloadWeeklyDelayHeatmap(): void {
   preloadWhenIdle(loadHeatmap);

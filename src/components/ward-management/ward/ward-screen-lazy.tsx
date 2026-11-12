@@ -5,6 +5,7 @@
 
 import type { CSSProperties } from "react";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { usePathname } from "next/navigation";
 import { preloadWhenIdle } from "../preload-when-idle";
 import { wardRouteUnitId } from "../ward-chrome-role";
@@ -27,58 +28,66 @@ function WardTabBodyPlaceholder() {
 }
 
 export const WardDailySheetDialog = dynamic(
-  () => import("@/components/ward-management/board/ward-daily-sheet").then((m) => m.WardDailySheetDialog),
+  withLoadRetry(() =>
+    import("@/components/ward-management/board/ward-daily-sheet").then((m) => m.WardDailySheetDialog),
+  ),
   { ssr: false },
 );
 // Printing can start before an asynchronous chunk arrives, including from the browser menu.
 // Keep the paper table available with the ward page's first render.
 export { WardBedListPrint } from "./ward-bed-list-print";
 export const WardBedDossierDrawer = dynamic(
-  () => import("./ward-bed-dossier-drawer").then((m) => m.WardBedDossierDrawer),
+  withLoadRetry(() => import("./ward-bed-dossier-drawer").then((m) => m.WardBedDossierDrawer)),
   {
     ssr: false,
   },
 );
 export const WardNotificationCenter = dynamic(
-  () => import("./ward-notification-center").then((m) => m.WardNotificationCenter),
+  withLoadRetry(() => import("./ward-notification-center").then((m) => m.WardNotificationCenter)),
   { ssr: false },
 );
-const WardAnswerView = dynamic(() => import("./ward-answer-view").then((m) => m.WardAnswerView), {
-  ssr: false,
-  // The loading state keeps the page's one main landmark and one h1; the loaded view replaces it
-  // wholesale, so neither is ever duplicated.
-  loading: () => (
-    <main id="main-content" data-testid="ward-answer-screen">
-      <h1>Ward answer</h1>
-      <p role="status">Loading ward answer…</p>
-    </main>
-  ),
-});
+const WardAnswerView = dynamic(
+  withLoadRetry(() => import("./ward-answer-view").then((m) => m.WardAnswerView)),
+  {
+    ssr: false,
+    // The loading state keeps the page's one main landmark and one h1; the loaded view replaces it
+    // wholesale, so neither is ever duplicated.
+    loading: () => (
+      <main id="main-content" data-testid="ward-answer-screen">
+        <h1>Ward answer</h1>
+        <p role="status">Loading ward answer…</p>
+      </main>
+    ),
+  },
+);
 export const WardDecisionsCockpit = dynamic(
-  () => import("./ward-decisions-cockpit").then((m) => m.WardDecisionsCockpit),
+  withLoadRetry(() => import("./ward-decisions-cockpit").then((m) => m.WardDecisionsCockpit)),
   {
     ssr: false,
     loading: () => <WardTabBodyPlaceholder />,
   },
 );
 export const WardArrivalsCorridor = dynamic(
-  () => import("./ward-arrivals-corridor").then((m) => m.WardArrivalsCorridor),
+  withLoadRetry(() => import("./ward-arrivals-corridor").then((m) => m.WardArrivalsCorridor)),
   {
     ssr: false,
     loading: () => <WardTabBodyPlaceholder />,
   },
 );
 export const WardDischargesMatrix = dynamic(
-  () => import("./ward-discharges-matrix").then((m) => m.WardDischargesMatrix),
+  withLoadRetry(() => import("./ward-discharges-matrix").then((m) => m.WardDischargesMatrix)),
   {
     ssr: false,
     loading: () => <WardTabBodyPlaceholder />,
   },
 );
-export const WardBedsMatrix = dynamic(() => import("./ward-beds-matrix").then((m) => m.WardBedsMatrix), {
-  ssr: false,
-  loading: () => <WardTabBodyPlaceholder />,
-});
+export const WardBedsMatrix = dynamic(
+  withLoadRetry(() => import("./ward-beds-matrix").then((m) => m.WardBedsMatrix)),
+  {
+    ssr: false,
+    loading: () => <WardTabBodyPlaceholder />,
+  },
+);
 // Design audit DA-02: the inbox sits above the ward's action bar and its chunk arrives late on a
 // phone, so while it loads it holds about the space its cards will take. That keeps the buttons
 // below it from moving under a finger. A ward with no entries holds no space, as the inbox shows none.
@@ -103,7 +112,7 @@ function WardReferralInboxPlaceholder() {
 }
 // Client-only like the other ward sections below; it renders nothing until the store has entries.
 export const WardReferralInbox = dynamic(
-  () => import("../referrals/ward-referral-inbox").then((m) => m.WardReferralInbox),
+  withLoadRetry(() => import("../referrals/ward-referral-inbox").then((m) => m.WardReferralInbox)),
   {
     ssr: false,
     loading: () => <WardReferralInboxPlaceholder />,
@@ -111,28 +120,37 @@ export const WardReferralInbox = dynamic(
 );
 // The capacity confirmation dialog is closed at first paint, so it loads when the browser is idle.
 const loadConfirmBeds = () => import("./ward-confirm-beds-dialog");
-export const WardConfirmBedsDialog = dynamic(() => loadConfirmBeds().then((m) => m.WardConfirmBedsDialog), {
-  ssr: false,
-});
-preloadWhenIdle(loadConfirmBeds);
-// Phone budget: Catch-up after the outage (Batch 4 item 25, D-142) renders nothing until an outage
-// is recorded, so it stays off the ward's first load and is fetched when the browser is idle.
-const loadOutageCatchUp = () => import("./ward-outage-catch-up-card");
-export const WardOutageCatchUpCard = dynamic(() => loadOutageCatchUp().then((m) => m.WardOutageCatchUpCard), {
-  ssr: false,
-});
-preloadWhenIdle(loadOutageCatchUp);
-// Shown only after a confirmed discharge, so it loads when first needed.
-export const WardDischargeNotices = dynamic(
-  () => import("./ward-discharge-notices").then((m) => m.WardDischargeNotices),
+export const WardConfirmBedsDialog = dynamic(
+  withLoadRetry(() => loadConfirmBeds().then((m) => m.WardConfirmBedsDialog)),
   {
     ssr: false,
   },
 );
-export const WardBedBoard = dynamic(() => import("./ward-bed-board").then((m) => m.WardBedBoard), {
-  ssr: false,
-  loading: () => <WardTabBodyPlaceholder />,
-});
+preloadWhenIdle(loadConfirmBeds);
+// Phone budget: Catch-up after the outage (Batch 4 item 25, D-142) renders nothing until an outage
+// is recorded, so it stays off the ward's first load and is fetched when the browser is idle.
+const loadOutageCatchUp = () => import("./ward-outage-catch-up-card");
+export const WardOutageCatchUpCard = dynamic(
+  withLoadRetry(() => loadOutageCatchUp().then((m) => m.WardOutageCatchUpCard)),
+  {
+    ssr: false,
+  },
+);
+preloadWhenIdle(loadOutageCatchUp);
+// Shown only after a confirmed discharge, so it loads when first needed.
+export const WardDischargeNotices = dynamic(
+  withLoadRetry(() => import("./ward-discharge-notices").then((m) => m.WardDischargeNotices)),
+  {
+    ssr: false,
+  },
+);
+export const WardBedBoard = dynamic(
+  withLoadRetry(() => import("./ward-bed-board").then((m) => m.WardBedBoard)),
+  {
+    ssr: false,
+    loading: () => <WardTabBodyPlaceholder />,
+  },
+);
 
 /** Notices option A (22 Oct 2026): a Notices row names its request in `?movement=`, so the Answer view
  * opens on that patient, not the oldest. Read on the ward page, which already reads its query. */
@@ -142,6 +160,6 @@ export function WardAnswerFromLink({ unitId }: { unitId: string }) {
 }
 
 export const WardPlannedAdmissionsPanel = dynamic(
-  () => import("../capacity/planned-admissions-panel").then((m) => m.PlannedAdmissionsPanel),
+  withLoadRetry(() => import("../capacity/planned-admissions-panel").then((m) => m.PlannedAdmissionsPanel)),
   { loading: () => <p role="status">Loading planned admissions…</p> },
 );

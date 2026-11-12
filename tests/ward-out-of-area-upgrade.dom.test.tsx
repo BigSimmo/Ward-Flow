@@ -217,6 +217,18 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     for (const entry of swEntries) expect(isHighlighted(entry.admission.id)).toBe(false);
   });
 
+  it("narrows, never widens: a search inside a region highlights only rows matching both", () => {
+    renderBoard();
+    fireEvent.click(screen.getByRole("button", { name: /^Highlight people from South West/ }));
+    const outside = entries.find((e) => e.admission.homeRegion !== "South West");
+    expect(outside).toBeDefined();
+    const row = screen.getByTestId(`ward-out-of-area-row-${outside!.admission.id}`);
+    const umrn = within(row).getByRole("link").textContent?.trim() ?? "";
+    fireEvent.change(screen.getByLabelText(/Highlight people by name, UMRN or ward/i), { target: { value: umrn } });
+    // The UMRN matches but the region does not, so nobody is highlighted (it was OR before).
+    for (const entry of entries) expect(isHighlighted(entry.admission.id)).toBe(false);
+  });
+
   it("clears selection back to cohort overview when Escape key is pressed", () => {
     renderBoard();
     const first = entries[0];
@@ -226,6 +238,17 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     fireEvent.keyDown(window, { key: "Escape" });
     expect(screen.queryByTestId("ward-out-of-area-subject-facts")).not.toBeInTheDocument();
     expect(screen.getByTestId("ward-out-of-area-subject-empty")).toBeInTheDocument();
+  });
+
+  it("leaves the plan open when an inner control already took the Escape", () => {
+    renderBoard();
+    fireEvent.click(screen.getByTestId(`ward-out-of-area-row-${entries[0].admission.id}`));
+    const taken = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+    taken.preventDefault();
+    act(() => {
+      window.dispatchEvent(taken);
+    });
+    expect(screen.getByTestId("ward-out-of-area-subject-facts")).toBeInTheDocument();
   });
 
   it("opens the next return to plan straight from the header", () => {

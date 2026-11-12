@@ -15,6 +15,7 @@ import {
 import { createPortal } from "react-dom";
 import { Clock } from "lucide-react";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { usePathname } from "next/navigation";
 import type { SharedChangeResult, SharedView, SharedWorkspaceClient, WardCommandDispatch } from "./ward-shared-client";
 import { PhonePushAccessContext, type PhonePushAccess, type PhonePushApi } from "./shell/ward-phone-push";
@@ -77,14 +78,20 @@ const unavailableAccessApi: SharedAccessApi = {
 // The role picker and Ask for access show only in the shared workspace, before the board opens,
 // so a first load skips their code.
 // The Demo menu (change 8) loads only when the Synthetic pill opens it.
-const WardRolePicker = dynamic(() => import("./ward-shared-role-gate").then((m) => m.WardRolePicker), {
-  ssr: false,
-  loading: () => null,
-});
-const WardAskForAccess = dynamic(() => import("./ward-shared-role-gate").then((m) => m.WardAskForAccess), {
-  ssr: false,
-  loading: () => null,
-});
+const WardRolePicker = dynamic(
+  withLoadRetry(() => import("./ward-shared-role-gate").then((m) => m.WardRolePicker)),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+const WardAskForAccess = dynamic(
+  withLoadRetry(() => import("./ward-shared-role-gate").then((m) => m.WardAskForAccess)),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
 
 /** The shared workspace's access calls, through the signed-in connection. Reject when not connected. */
 /**

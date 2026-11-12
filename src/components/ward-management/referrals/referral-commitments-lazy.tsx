@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { preloadWhenIdle } from "../preload-when-idle";
 
@@ -11,12 +12,18 @@ import { preloadWhenIdle } from "../preload-when-idle";
  */
 const loadReferralCommitments = () => import("./referral-commitments-panel");
 
-export const ReferralCommitments = dynamic(() => loadReferralCommitments().then((m) => m.ReferralCommitments), {
-  loading: () => null,
-});
+export const ReferralCommitments = dynamic(
+  withLoadRetry(() => loadReferralCommitments().then((m) => m.ReferralCommitments)),
+  {
+    loading: () => null,
+  },
+);
 
-export const WardCommitmentControls = dynamic(() => loadReferralCommitments().then((m) => m.WardCommitmentControls), {
-  loading: () => null,
-});
+export const WardCommitmentControls = dynamic(
+  withLoadRetry(() => loadReferralCommitments().then((m) => m.WardCommitmentControls)),
+  {
+    loading: () => null,
+  },
+);
 
 preloadWhenIdle(loadReferralCommitments);

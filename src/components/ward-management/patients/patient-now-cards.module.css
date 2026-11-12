@@ -210,6 +210,13 @@
   cursor: pointer;
 }
 
+/* Phone tap sweep (12 Nov 2026): the v6 screen zeroes every button's min-height under a fine pointer
+   (patient-now.module.css), which left the head row's Forms button 13px tall in a narrow desktop
+   window. The doubled class outranks that reset so the 48px box holds there too. */
+.phHeadRow .phLink.phLink {
+  min-height: 48px;
+}
+
 .phLink:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;

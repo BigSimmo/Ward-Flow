@@ -176,7 +176,10 @@ export function useSharedForecastHistory(generation: number) {
       );
     };
     void load();
-    const timer = window.setInterval(load, READ_EVERY_MS);
+    // A hidden tab skips the timed read; it reads again when shown (below).
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, READ_EVERY_MS);
     const onShown = () => {
       if (document.visibilityState === "visible") void load();
     };

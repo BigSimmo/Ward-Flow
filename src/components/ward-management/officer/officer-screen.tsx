@@ -1164,7 +1164,6 @@ export function OfficerScreen() {
                               data-testid={`ward-officer-job-${movement.id}`}
                               data-highlight={lit ? "true" : undefined}
                               className={active ? `${tableClasses.selected} ${styles.jobRow}` : styles.jobRow}
-                              aria-selected={active}
                             >
                               <td>
                                 <button

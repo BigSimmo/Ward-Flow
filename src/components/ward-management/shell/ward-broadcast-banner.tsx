@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { usePathname } from "next/navigation";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import {
@@ -29,12 +30,12 @@ import "./ward-broadcast-banner.module.css";
 // on every first load. It stays server-rendered, so a live alert paints in the first HTML with no
 // shift, and it is fetched once the page is idle so a new alert does not wait on the network.
 const loadBannerBody = () => import("./ward-broadcast-banner-body");
-const BannerBody = dynamic(() => loadBannerBody().then((m) => m.BannerBody));
+const BannerBody = dynamic(withLoadRetry(() => loadBannerBody().then((m) => m.BannerBody)));
 preloadWhenIdle(loadBannerBody);
 
 // Preview mode (#25), for tests and previews only, loads on demand so no screen carries it.
-const BannerPreview = dynamic(() =>
-  import("./ward-broadcast-banner-preview").then((m) => m.WardBroadcastBannerPreview),
+const BannerPreview = dynamic(
+  withLoadRetry(() => import("./ward-broadcast-banner-preview").then((m) => m.WardBroadcastBannerPreview)),
 );
 
 export interface WardBroadcastBannerProps extends Partial<WardBroadcastBannerPreviewProps> {

@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { minutesText } from "@/components/ward-management/alerts/alerts-model";
 import alertStyles from "@/components/ward-management/alerts/alerts.module.css";
@@ -22,7 +23,7 @@ import styles from "./home-list.module.css";
 
 // WS-03: the one-step pull loads only when a coordinator opens it.
 const PullAcceptedReferral = dynamic(
-  () => import("../referrals/pull-accepted-referral").then((m) => m.PullAcceptedReferral),
+  withLoadRetry(() => import("../referrals/pull-accepted-referral").then((m) => m.PullAcceptedReferral)),
   { loading: () => null },
 );
 

@@ -59,11 +59,14 @@ export function WardBoardWorkBand({
       aria-labelledby="ward-board-work-band-heading"
       data-wf-rail="1121"
     >
+      {/* The heading sits outside the fold's control: a summary is read as a button, and a heading
+          inside it is lost to screen readers. The summary shows the same words as plain text. */}
+      <h2 id="ward-board-work-band-heading" className="sr-only">
+        Before handover
+      </h2>
       <details className={styles.workBandFold} data-testid="ward-board-work-band" open>
         <summary className={styles.workBandSummary}>
-          <h2 id="ward-board-work-band-heading" className={styles.workBandTitle}>
-            Before handover
-          </h2>
+          <span className={styles.workBandTitle}>Before handover</span>
           <span className={styles.workBandDigest} data-testid="ward-board-work-band-digest">
             {shiftDigest}
           </span>
@@ -95,6 +98,7 @@ export function WardBoardWorkBand({
                       }
                     }}
                   >
+                    {item.subject ? `${item.subject} · ` : null}
                     {item.label}
                   </button>
                   <span className={styles.shiftTag}>{item.chip}</span>
@@ -108,6 +112,8 @@ export function WardBoardWorkBand({
                       type="button"
                       className={styles.shiftCtl}
                       data-tone={act.tone ?? undefined}
+                      // The visible word leads the name (WCAG 2.5.3); the bed and person follow.
+                      aria-label={item.subject ? `${act.word}, ${item.subject.replace(/ · /g, ", ")}` : undefined}
                       onClick={() => handleShiftAction(item, act.word)}
                     >
                       {act.word}

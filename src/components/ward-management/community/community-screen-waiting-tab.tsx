@@ -31,7 +31,6 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
     declineOpenFor,
     declineDraft,
     setDeclineDraft,
-    setToastMessage,
     setActiveDrawer,
     setSelectedPatientId,
     setSelectedReferralId,
@@ -42,6 +41,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
     isDemoMode,
     demoTeamReferrals,
     demoVisibleReferrals,
+    answerSampleReferral,
     handleActionClick,
     handleToggleDecline,
     handleConfirmDecline,
@@ -197,11 +197,12 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                         <button
                           type="button"
                           className={styles.btnSmPrimary}
-                          onClick={() => {
-                            setToastMessage(
+                          onClick={() =>
+                            answerSampleReferral(
+                              referral.id,
                               `Accepted the referral for ${demoUmrnOf(referral.patientId)} into community triage.`,
-                            );
-                          }}
+                            )
+                          }
                         >
                           {referral.primaryActionLabel}
                         </button>
@@ -218,11 +219,12 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                         <button
                           type="button"
                           className={styles.btnSmSec}
-                          onClick={() => {
-                            setToastMessage(
-                              `Decline option for the referral for ${demoUmrnOf(referral.patientId)} recorded.`,
-                            );
-                          }}
+                          onClick={() =>
+                            answerSampleReferral(
+                              referral.id,
+                              `Declined the referral for ${demoUmrnOf(referral.patientId)}.`,
+                            )
+                          }
                         >
                           {referral.declineActionLabel}
                         </button>

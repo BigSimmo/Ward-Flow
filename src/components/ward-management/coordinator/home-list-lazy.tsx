@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { WF_PHONE_QUERY } from "@/components/wf";
 
@@ -26,9 +27,12 @@ const loadPlacementDrawer = () => import("./home-placement-drawer");
  * jumped 0.35 on iPad portrait. It adds about 14 KB to the phone first load (within budget).
  */
 export { MyListCard } from "./my-list-card";
-export const HomePlacementDrawer = dynamic(() => loadPlacementDrawer().then((m) => m.HomePlacementDrawer), {
-  loading: () => null,
-});
+export const HomePlacementDrawer = dynamic(
+  withLoadRetry(() => loadPlacementDrawer().then((m) => m.HomePlacementDrawer)),
+  {
+    loading: () => null,
+  },
+);
 
 /*
  * Beds that fit sits above Later today at rest on a wider screen. Arriving late, it pushed Later
@@ -47,6 +51,13 @@ if (wide) bedsGapCard.start();
 else preloadWhenIdle(async () => bedsGapCard.start());
 
 // H-0977: Home's in-place "Release bed" sheet, fetched on first use so it stays off the first load.
-export const HomeReleaseSheet = dynamic(() => import("./home-release-sheet").then((m) => m.HomeReleaseSheet), {
-  loading: () => null,
-});
+export const HomeReleaseSheet = dynamic(
+  withLoadRetry(
+    () => import("./home-release-sheet").then((m) => m.HomeReleaseSheet),
+    undefined,
+    ({ entry }) => !entry,
+  ),
+  {
+    loading: () => null,
+  },
+);

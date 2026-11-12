@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -12,7 +12,12 @@ vi.mock("next/link", () => ({
 
 import { BedMeetingTvScreen } from "@/components/ward-management/bed-meeting/bed-meeting-tv";
 import { tvBoardOf } from "@/components/ward-management/bed-meeting/tv-board-switch";
-import { edClinicalRows, wardClinicalRows } from "@/components/ward-management/bed-meeting/tv-clinical-derivations";
+import {
+  edClinicalRows,
+  wardClinicalRows,
+  type WardClinicalRow,
+} from "@/components/ward-management/bed-meeting/tv-clinical-derivations";
+import { WardClinicalTvView } from "@/components/ward-management/bed-meeting/tv-clinical-views";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { WARD_BED_MEETING_TV_HREF, bedMeetingTvHref } from "@/components/ward-management/ward-nav";
@@ -254,5 +259,69 @@ describe("clinical TV screens", () => {
       "aria-current",
       "page",
     );
+  });
+});
+
+describe("clinical TV paging can be stopped (WCAG 2.2.2)", () => {
+  function syntheticRows(count: number): WardClinicalRow[] {
+    return Array.from({ length: count }, (_, index) => ({
+      key: `synthetic-${index}`,
+      bed: String(index + 1).padStart(2, "0"),
+      bedNumber: index + 1,
+      name: `Synthetic ${index + 1}`,
+      dayNumber: 2,
+      where: "ward" as const,
+      obs: { text: "General obs" },
+      constantObs: false,
+      risks: [],
+      legal: null,
+      whereabouts: null,
+      plan: null,
+      arrivedToday: false,
+      goingToday: false,
+      attention: [],
+    }));
+  }
+  const pageText = () => screen.getByTestId("tv-clinical-page").textContent ?? "";
+
+  it("turns on its own, holds while paused or focused, and pages by hand", () => {
+    vi.useFakeTimers();
+    try {
+      render(<WardClinicalTvView rows={syntheticRows(30)} footer={null} />);
+      expect(pageText()).toContain("Page 1 of 3");
+      act(() => vi.advanceTimersByTime(20_000));
+      expect(pageText()).toContain("Page 2 of 3");
+
+      fireEvent.click(screen.getByRole("button", { name: "Pause" }));
+      expect(screen.getByRole("button", { name: "Resume" })).toBeInTheDocument();
+      act(() => vi.advanceTimersByTime(60_000));
+      expect(pageText()).toContain("Page 2 of 3");
+      fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+      expect(pageText()).toContain("Page 3 of 3");
+      fireEvent.click(screen.getByRole("button", { name: "Resume" }));
+
+      // Focus inside the board holds the page too.
+      fireEvent.focusIn(screen.getByRole("button", { name: "Next page" }));
+      act(() => vi.advanceTimersByTime(40_000));
+      expect(pageText()).toContain("Page 3 of 3");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("never turns on its own under the Ward reduced-motion setting", () => {
+    vi.useFakeTimers();
+    document.documentElement.setAttribute("data-reduced-motion", "");
+    try {
+      render(<WardClinicalTvView rows={syntheticRows(30)} footer={null} />);
+      expect(screen.queryByRole("button", { name: "Pause" })).toBeNull();
+      act(() => vi.advanceTimersByTime(60_000));
+      expect(pageText()).toContain("Page 1 of 3");
+      fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+      expect(pageText()).toContain("Page 2 of 3");
+    } finally {
+      document.documentElement.removeAttribute("data-reduced-motion");
+      vi.useRealTimers();
+    }
   });
 });

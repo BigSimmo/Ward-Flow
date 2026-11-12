@@ -184,6 +184,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-159](#d-159-fixes-from-the-10-to-12-november-pr-review-12-november-2026)                                                                             | Fixes from the 10 to 12 November PR review                                             | Active                                           |
 | [D-160](#d-160-a-trusted-proxy-list-of-plain-addresses-falls-back-to-per-address-keying-12-november-2026)                                               | A trusted proxy list of plain addresses falls back to per-address keying               | Active                                           |
 | [D-161](#d-161-homes-changes-since-strip-is-one-line-12-november-2026)                                                                                  | Home's changes-since strip is one line                                                 | Active                                           |
+| [D-162](#d-162-fixes-from-the-12-november-whole-site-component-review-12-november-2026)                                                                 | Fixes from the 12 November whole-site component review                                 | Active                                           |
 | [D-163](#d-163-pre-demo-audits-use-the-public-demo-after-d-162-is-live-12-november-2026)                                                                | Pre-demo audits use the public demo after D-162 is live                                | Active                                           |
 | [D-164](#d-164-homes-changes-since-strip-names-escalations-first-and-leaves-movements-off-12-november-2026)                                             | Home's changes-since strip names escalations first and leaves movements off            | Active                                           |
 
@@ -2003,6 +2004,16 @@ is inferred.
 - **Decision:** Home's "since" strip (feature 40) stays on one line at every width. It leads with "This shift" before any review and "Since 15:02 yesterday" after one, drops "new" from each count, sets each figure in mono, names three counts where the line is wide and fewer where it is narrow (one on a phone), and ends with "+N more" matching what is hidden. Screen readers hear the whole sentence with every count. The card, the Review button and the sheet it opens are unchanged.
 - **Not decided:** Josh did not answer the two follow-up questions (put escalations first; leave movements off the line), so the count order and the counts shown are unchanged.
 - **Boundary:** synthetic data only. No clinical rule changes. Approves no release.
+
+## D-162. Fixes from the 12 November whole-site component review (12 November 2026)
+
+- **Date:** 12 November 2026, 11:25 PM AWST (15:25 UTC). **Decided by:** Josh, "Yes go ahead with all recommendations" in the Ward Flow project thread "Review every site component for issues", answering its two numbered questions.
+- **Decision:**
+  1. **One fix PR:** the review's findings 2 to 26 are fixed as recommended in one PR. These include a retry on every lazily loaded part so Try again recovers, demo Accept and Decline on the community waiting list that act (with Undo), no unwired triage buttons, visible error lines for failed saves, a kit focus ring in the seclusion dialog, "Showing N of M" lines where a list is cut short, named bed board tiles, a pausable bed meeting TV view, keyboard and screen-reader fixes across the kit and screens, rem breakpoints, lighter cross-tab sync and saving, a capped saved audit trail, timers that pause in hidden tabs, hover shading only on devices that hover, and 24px phone tap areas.
+  2. **Phone bundle (finding 1):** the build is measured first, then the demo data and less-used logic load after first paint where that is safe. This is in the same PR (Josh, "go ahead with all recommendations").
+  3. **Saved audit trail (finding 22):** not capped. Trimming the saved copy would break restore, Today's review counts and the audit trail itself, and the existing "storage unavailable" notice already tells staff when saving stops. Josh agreed at 12:58 AM AWST on 13 November (16:58 UTC on 12 November), "I agree with your recommendations".
+  4. **Open-tab sync (finding 13):** narrowed. Each tab keeps its own saved day, so the whole day still travels between tabs. The receiving tab now skips the double comparison when the worlds clearly differ, and it no longer redraws every clock view on each message.
+- **Boundary:** synthetic data only. No signed clinical value, time limit or clinical rule changes. Approves no release.
 
 ## D-163. Pre-demo audits use the public demo after D-162 is live (12 November 2026)
 

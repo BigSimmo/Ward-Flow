@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { preloadWhenIdle } from "../preload-when-idle";
 
@@ -11,8 +12,11 @@ import { preloadWhenIdle } from "../preload-when-idle";
  */
 const loadCatchUp = () => import("./home-outage-catch-up");
 
-export const HomeOutageCatchUp = dynamic(() => loadCatchUp().then((m) => m.HomeOutageCatchUp), {
-  loading: () => null,
-});
+export const HomeOutageCatchUp = dynamic(
+  withLoadRetry(() => loadCatchUp().then((m) => m.HomeOutageCatchUp)),
+  {
+    loading: () => null,
+  },
+);
 
 preloadWhenIdle(loadCatchUp);

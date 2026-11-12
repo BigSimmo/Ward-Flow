@@ -3,6 +3,7 @@
 // Fork of src/components/ward-management/shell/ward-phone-menu.tsx: the mock-ups' phone dock and menu.
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -531,11 +532,12 @@ type PhoneMenuSheetsProps = ComponentProps<
   (typeof import("@/components/ward-management/shell/ward-phone-menu-sheet"))["PhoneMenuSheets"]
 >;
 const PhoneMenuSheets = dynamic(
-  () =>
+  withLoadRetry(() =>
     loadMenuSheets().then(
       (m) => m.PhoneMenuSheets,
       () => PhoneMenuSheetsRetry,
     ),
+  ),
   { ssr: false },
 );
 preloadWhenIdle(loadMenuSheets);

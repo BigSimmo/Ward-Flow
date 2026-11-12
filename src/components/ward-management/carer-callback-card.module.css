@@ -116,6 +116,13 @@
   margin-top: var(--wf-s-2);
 }
 
+/* A failed "Call made" save, under the state line in both forms. */
+.card[data-tile] .error {
+  grid-column: 2 / -1;
+  grid-row: 3;
+  margin-top: var(--wf-s-1);
+}
+
 /* In a narrow card (a phone) the actions drop under the state, still on the text's left edge. */
 @container (max-width: 460px) {
   .card[data-tile] .actions {
@@ -125,7 +132,8 @@
     margin-top: var(--wf-s-1);
   }
 
-  .card[data-tile] .form {
+  .card[data-tile] .form,
+  .card[data-tile] .error {
     grid-row: 4;
   }
 }

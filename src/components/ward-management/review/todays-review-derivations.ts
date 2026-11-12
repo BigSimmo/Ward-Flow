@@ -46,7 +46,10 @@ export type TodaysReviewInput = {
 export type TodaysReview = {
   todos: ReviewTodo[];
   events: ReviewEvent[];
+  /** Lines per filter chip: a ward's declines are one grouped line. */
   counts: Record<ReviewFilter, number>;
+  /** Today's declines one by one, for the headline figure (a grouped line holds several). */
+  declineCount: number;
 };
 
 /** A ward declining this many times today for the same reason is worth raising at the bed meeting. */
@@ -133,9 +136,13 @@ export function todaysReview(input: TodaysReviewInput): TodaysReview {
   }
 
   const counts: Record<ReviewFilter, number> = { all: events.length, decline: 0, override: 0, stopped: 0, problem: 0 };
-  for (const event of events) counts[event.kind] += 1;
+  let declineCount = 0;
+  for (const event of events) {
+    counts[event.kind] += 1;
+    if (event.kind === "decline") declineCount += event.members.length;
+  }
 
-  return { todos, events, counts };
+  return { todos, events, counts, declineCount };
 }
 
 /**

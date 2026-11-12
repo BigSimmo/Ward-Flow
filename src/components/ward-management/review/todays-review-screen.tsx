@@ -380,7 +380,7 @@ export function TodaysReviewScreen() {
         stats={
           <>
             <HeroStat value={left} label="Overrides to review" tone={left > 0 ? "warning" : undefined} />
-            <HeroStat value={review.counts.decline} label="Declines" />
+            <HeroStat value={review.declineCount} label="Declines" />
             <HeroStat value={review.counts.override} label="Overrides" />
             <HeroStat value={review.counts.problem} label="Open problems" />
           </>

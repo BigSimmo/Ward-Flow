@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { preloadWhenIdle } from "../preload-when-idle";
 
@@ -12,8 +13,11 @@ import { preloadWhenIdle } from "../preload-when-idle";
  */
 const loadPanel = () => import("./discharge-dependencies-panel");
 
-export const DischargeDependenciesPanel = dynamic(() => loadPanel().then((m) => m.DischargeDependenciesPanel), {
-  loading: () => null,
-});
+export const DischargeDependenciesPanel = dynamic(
+  withLoadRetry(() => loadPanel().then((m) => m.DischargeDependenciesPanel)),
+  {
+    loading: () => null,
+  },
+);
 
 preloadWhenIdle(loadPanel);

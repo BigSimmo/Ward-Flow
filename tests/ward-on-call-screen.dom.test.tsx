@@ -247,6 +247,17 @@ describe("the on-call screen", () => {
     expect(panel().getByRole("heading", { name: "Bed coordinator" })).toBeVisible();
   });
 
+  it("names the panel by its Matches heading, and says politely when the matches list is cut short", () => {
+    renderOnCall();
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "08" } });
+    expect(screen.getByRole("region", { name: "Matches" })).toBe(screen.getByTestId("ward-on-call-role-panel"));
+    const note = screen.getByTestId("ward-on-call-matches-truncated");
+    expect(note).toHaveAttribute("aria-live", "polite");
+    expect(note.textContent).toMatch(/^Showing 30 of \d+ synthetic entries\. Refine the search\.$/u);
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "EPIC" } });
+    expect(screen.getByTestId("ward-on-call-matches-truncated")).toHaveTextContent("");
+  });
+
   it("finds a site by its code, and one click on a match opens its card with a link to that ED", () => {
     renderOnCall();
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "SCGH" } });

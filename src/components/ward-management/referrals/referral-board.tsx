@@ -10,6 +10,7 @@ import { BED_MEETING_REFERRALS_HREF } from "@/components/ward-management/bed-mee
 import { BEDS_READY_SCOPED_TITLE } from "@/components/ward-management/ward-shared-figures";
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import Link from "next/link";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import {
@@ -103,13 +104,22 @@ import { ReferralCoordinatorTop } from "./referral-board-top";
 import { HIGHLIGHT_KEYS, HIGHLIGHT_LABELS, highlightTest, type HighlightKey } from "./referral-highlights";
 
 // The bed meeting, ISBAR and shortcut sheets open only on request, so they load after first render.
-const IsbarSheet = dynamic(() => import("./referral-summary-sheet").then((m) => m.ReferralSummarySheet), {
-  ssr: false,
-});
-const ShortcutsSheet = dynamic(() => import("./referral-board-sheets").then((m) => m.ShortcutsSheet), { ssr: false });
-const PullAcceptedReferral = dynamic(() => import("./pull-accepted-referral").then((m) => m.PullAcceptedReferral), {
-  ssr: false,
-});
+const IsbarSheet = dynamic(
+  withLoadRetry(() => import("./referral-summary-sheet").then((m) => m.ReferralSummarySheet)),
+  {
+    ssr: false,
+  },
+);
+const ShortcutsSheet = dynamic(
+  withLoadRetry(() => import("./referral-board-sheets").then((m) => m.ShortcutsSheet)),
+  { ssr: false },
+);
+const PullAcceptedReferral = dynamic(
+  withLoadRetry(() => import("./pull-accepted-referral").then((m) => m.PullAcceptedReferral)),
+  {
+    ssr: false,
+  },
+);
 import a from "./referral-board.module.css";
 import p from "./referral-board-phone.module.css";
 import wardPin from "@/components/ward-management/ward-pinned-switch.module.css";

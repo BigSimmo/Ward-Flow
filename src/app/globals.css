@@ -1503,9 +1503,14 @@ td,
     transition: scrollbar-color var(--duration-moderate) ease;
   }
 
-  .polished-scroll:hover,
   .polished-scroll:focus-within {
     scrollbar-color: var(--wf-line-3) transparent;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .polished-scroll:hover {
+      scrollbar-color: var(--wf-line-3) transparent;
+    }
   }
 
   .polished-scroll::-webkit-scrollbar {
@@ -1529,12 +1534,16 @@ td,
     transition: background-color var(--duration-quick) ease;
   }
 
-  .polished-scroll:hover::-webkit-scrollbar-thumb {
-    background-color: color-mix(in srgb, var(--border-strong) 90%, var(--decoration-soft) 15%);
+  @media (hover: hover) and (pointer: fine) {
+    .polished-scroll:hover::-webkit-scrollbar-thumb {
+      background-color: color-mix(in srgb, var(--border-strong) 90%, var(--decoration-soft) 15%);
+    }
   }
 
-  .polished-scroll::-webkit-scrollbar-thumb:hover {
-    background-color: color-mix(in srgb, var(--clinical-accent) 40%, var(--border-strong));
+  @media (hover: hover) and (pointer: fine) {
+    .polished-scroll::-webkit-scrollbar-thumb:hover {
+      background-color: color-mix(in srgb, var(--clinical-accent) 40%, var(--border-strong));
+    }
   }
 
   .polished-scroll::-webkit-scrollbar-thumb:active {
@@ -2176,10 +2185,16 @@ html.theme-transitioning *:after {
     font-weight: 700;
   }
 
-  select option:hover,
   select option:focus-visible {
     background: var(--wf-hover, #f2f5f8);
     outline: none;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    select option:hover {
+      background: var(--wf-hover, #f2f5f8);
+      outline: none;
+    }
   }
 
   select option:checked {
@@ -2201,8 +2216,14 @@ html.theme-transitioning *:after {
     visibility: hidden;
   }
 
-  select option[value=""]:is(:hover, :focus-visible) {
+  select option[value=""]:focus-visible {
     background: var(--wf-hover, #f2f5f8);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    select option[value=""]:hover {
+      background: var(--wf-hover, #f2f5f8);
+    }
   }
 
   select option:disabled {

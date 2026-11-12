@@ -2,7 +2,7 @@
 
 import { readFileSync } from "node:fs";
 import { createRef, useState } from "react";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MoreHorizontal } from "lucide-react";
 import { describe, expect, it, vi } from "vitest";
@@ -501,6 +501,38 @@ describe("Menu checkable items", () => {
     await userEvent.click(screen.getByRole("button", { name: "View" }));
     expect(screen.getByRole("menuitemradio", { name: "Sort by tier" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("menuitemradio", { name: "Sort by waiting" })).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("names a heading's items as a group, so screen readers announce the heading", async () => {
+    render(<Harness />);
+    await userEvent.click(screen.getByRole("button", { name: "View" }));
+    const group = screen.getByRole("group", { name: "Show" });
+    expect(
+      within(group)
+        .getAllByRole("menuitemcheckbox")
+        .map((item) => item.textContent),
+    ).toEqual(["Ready beds", "Held beds"]);
+    expect(within(group).queryByRole("menuitemradio")).toBeNull();
+  });
+
+  it("closes on Tab with focus parked on the trigger", async () => {
+    render(
+      <>
+        <button type="button">Before</button>
+        <Harness />
+        <button type="button">After</button>
+      </>,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "View" }));
+    await userEvent.keyboard("{ArrowDown}");
+    await userEvent.tab();
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "After" })).toHaveFocus();
+    await userEvent.click(screen.getByRole("button", { name: "View" }));
+    await userEvent.keyboard("{ArrowDown}");
+    await userEvent.tab({ shift: true });
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "View" })).toHaveFocus();
   });
 
   it("keeps plain items as menuitem with no aria-checked", async () => {

@@ -220,7 +220,7 @@ describe("Handover shows once where the countdown card links to it (A5)", () => 
       }
     });
     expect(rules).toEqual([
-      '(min-width: 1201px) .rail[data-rail="open"]:not([data-tablet]) .countdownTwin display: none',
+      '(min-width: 75.0625rem) .rail[data-rail="open"]:not([data-tablet]) .countdownTwin display: none',
     ]);
   });
 

@@ -14,6 +14,7 @@ import {
   Field,
   RadioGroup,
   SearchField,
+  SrOnly,
   StatusGlyph,
   TextInput,
   TimePresets,
@@ -26,6 +27,7 @@ import { useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import type { Unit } from "../ward-model";
 import { usePatientOf } from "../ward-patient-name";
+import { wardScrollBehavior } from "../ward-scroll";
 import { ROLE_SCREENS } from "../ward-role-access";
 import { useWardFormSave, type WardFormSave } from "../use-ward-form-save";
 import {
@@ -62,6 +64,8 @@ const ROOM_STATE: Record<SeclusionRoomState, { label: string; tone: WfTone }> = 
 };
 
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
+/** The patient search shows this many matches; more asks for more of the name. */
+const MATCHES_SHOWN = 6;
 
 function useTypedTime(now: Instant, after?: Instant) {
   const [text, setText] = useState("");
@@ -195,7 +199,7 @@ export function SeclusionFormsView({
     if (ask) onAskSeen?.();
     if (ask?.kind !== "room" || rooms.length === 1) return;
     const list = roomsRef.current;
-    list?.scrollIntoView?.({ block: "start", behavior: "smooth" });
+    list?.scrollIntoView?.({ block: "start", behavior: wardScrollBehavior() });
     list?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Only a new ask (`ask.n`) moves focus; the rooms list or `onAskSeen` changing under it does not.
   }, [ask?.n]);
@@ -394,10 +398,11 @@ function StartDialog({
   const chosen = stays.find((entry) => entry.stay.id === admissionId);
   // Search audit, 8 Nov 2026: every word in any order, and the UMRN too, as other patient pickers do.
   const needle = query.trim();
-  const matches =
+  const allMatches =
     needle === ""
       ? []
-      : stays.filter((entry) => fieldsMatchEveryWord(needle, [entry.name, entry.umrn, entry.unit.name])).slice(0, 6);
+      : stays.filter((entry) => fieldsMatchEveryWord(needle, [entry.name, entry.umrn, entry.unit.name]));
+  const matches = allMatches.slice(0, MATCHES_SHOWN);
   const refusal = !chosen ? "Choose the patient first." : practice === "" ? "Choose what is in use." : time.refusal;
   return (
     <Dialog
@@ -454,7 +459,14 @@ function StartDialog({
                   </li>
                 ))}
               </ul>
-            ) : needle !== "" ? (
+            ) : null}
+            {allMatches.length > matches.length ? (
+              <p className={styles.note} role="status" aria-atomic="true" data-testid="seclusion-start-more">
+                Showing {matches.length} of {allMatches.length}
+                <SrOnly>, sample data</SrOnly>, type more of the name.
+              </p>
+            ) : null}
+            {matches.length === 0 && needle !== "" ? (
               <p className={styles.note}>No patient on these wards matches.</p>
             ) : null}
           </div>

@@ -17,7 +17,7 @@ function openBlockerDialog(): HTMLElement {
       <WardBoard unitId="rph-adult-secure" requireConfirmation={false} />
     </WardFlowProvider>,
   );
-  const triggers = screen.queryAllByRole("button", { name: "Record hold-up" });
+  const triggers = screen.queryAllByRole("button", { name: /^Record hold-up, / });
   // Non-vacuity: the seeded ward really offers the action, or nothing below is proved.
   expect(triggers.length).toBeGreaterThan(0);
   fireEvent.click(triggers[0]);
@@ -59,8 +59,35 @@ describe("Record a blocker dialog", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
     expect(screen.queryByRole("dialog", { name: "Record hold-up" })).toBeNull();
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Record hold-up" })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: /^Record hold-up, / })[0]);
     const again = screen.getByRole("dialog", { name: "Record hold-up" });
     for (const radio of within(again).getAllByRole("radio")) expect(radio).not.toBeChecked();
+  });
+});
+
+describe("Before handover discharge tiles name their bed and person", () => {
+  it("leads each heading with the card line and gives each action a distinct name", () => {
+    render(
+      <WardFlowProvider initialNow={WARD_ADMISSIONS_ANCHOR}>
+        <WardBoard unitId="rph-adult-secure" requireConfirmation={false} />
+      </WardFlowProvider>,
+    );
+    const band = screen.getByTestId("ward-board-work-band");
+    const left = within(band).getAllByRole("button", { name: /^They have left, / });
+    expect(left.length).toBeGreaterThan(0);
+    // The visible word stays exactly "They have left"; the name adds who it is about.
+    for (const button of left) expect(button).toHaveTextContent(/^They have left$/u);
+    const names = left.map((button) => button.getAttribute("aria-label"));
+    expect(new Set(names).size).toBe(names.length);
+    for (const button of left) {
+      const tile = button.closest<HTMLElement>('[data-testid^="ward-board-shift-discharge-"]');
+      expect(tile).not.toBeNull();
+      const heading = within(tile!).getAllByRole("button")[0];
+      expect(heading.textContent).toMatch(/discharge$/u);
+      expect(button.getAttribute("aria-label")).toContain(heading.textContent!.split(" · ")[0]);
+    }
+    // 17: the band's heading is outside the fold's summary, and still names the section.
+    expect(band.querySelector("summary h2")).toBeNull();
+    expect(screen.getByRole("region", { name: "Before handover" })).toBeInTheDocument();
   });
 });

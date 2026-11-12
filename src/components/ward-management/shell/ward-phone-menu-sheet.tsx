@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -484,11 +485,12 @@ type MenuSearchResultsProps = ComponentProps<(typeof import("./ward-phone-menu-r
 // A failed load (offline before the code arrived) draws `MenuSearchRetry` in its place rather than
 // failing the whole shell.
 const MenuSearchResults = dynamic(
-  () =>
+  withLoadRetry(() =>
     loadMenuResults().then(
       (m) => m.MenuSearchResults,
       () => MenuSearchRetry,
     ),
+  ),
   { ssr: false, loading: () => <MenuSearching /> },
 );
 preloadWhenIdle(loadMenuResults);

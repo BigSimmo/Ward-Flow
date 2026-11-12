@@ -176,6 +176,9 @@ function ChoiceMenu({ trigger, onClose, onChoose, initial = 0 }: Omit<NewMenuPro
       event.stopPropagation();
       onClose(true);
     } else if (event.key === "Tab") {
+      // Park focus on New before the portalled menu unmounts, so the browser's Tab step carries on
+      // from the trigger rather than dropping to the page (as the kit menu does).
+      trigger?.focus({ preventScroll: true });
       onClose(false);
     } else if (event.key.length === 1 && /\S/.test(event.key)) {
       // Type-ahead stays in the menu so page shortcuts do not fire too.

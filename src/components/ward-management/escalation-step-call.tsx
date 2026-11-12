@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useRef, useState } from "react";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -12,8 +13,8 @@ import styles from "./escalation/escalation-call.module.css";
 
 // The sheet loads on its own: the on-call directory it reads is not otherwise on the ED page, and
 // the phone size limit for that page has no room for it in the first load.
-const EscalationCallSheet = dynamic(() =>
-  import("./escalation/escalation-call-sheet").then((m) => m.EscalationCallSheet),
+const EscalationCallSheet = dynamic(
+  withLoadRetry(() => import("./escalation/escalation-call-sheet").then((m) => m.EscalationCallSheet)),
 );
 
 /** Escalation calls (item 3, D-133): the last recorded outcome beside an ED wait step, "No answer 14:32". */

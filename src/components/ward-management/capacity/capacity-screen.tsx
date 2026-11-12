@@ -4,6 +4,7 @@ import { useWardFormSave } from "../use-ward-form-save";
 import { wardScrollBehavior } from "../ward-scroll";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { startTransition, useEffect, useMemo, useState } from "react";
 
 import {
@@ -50,18 +51,30 @@ import styles from "./capacity-page.module.css";
 
 // Phone size limit (9 Nov 2026): the ward drawer's body and the two pop-ups load when first opened,
 // not with the page. Each is drawn only while open, as the bed meeting sheet already was.
-const ScenarioDialog = dynamic(() => import("./capacity-open-parts").then((m) => m.ScenarioDialog), {
-  ssr: false,
-});
-const BedMeetingSheetDialog = dynamic(() => import("./capacity-open-parts").then((m) => m.BedMeetingSheetDialog), {
-  ssr: false,
-});
-const CapacityWardFoot = dynamic(() => import("./capacity-open-parts").then((m) => m.CapacityWardFoot), {
-  ssr: false,
-});
-const CapacityWardSidebar = dynamic(() => import("./capacity-open-parts").then((m) => m.CapacityWardSidebar), {
-  ssr: false,
-});
+const ScenarioDialog = dynamic(
+  withLoadRetry(() => import("./capacity-open-parts").then((m) => m.ScenarioDialog)),
+  {
+    ssr: false,
+  },
+);
+const BedMeetingSheetDialog = dynamic(
+  withLoadRetry(() => import("./capacity-open-parts").then((m) => m.BedMeetingSheetDialog)),
+  {
+    ssr: false,
+  },
+);
+const CapacityWardFoot = dynamic(
+  withLoadRetry(() => import("./capacity-open-parts").then((m) => m.CapacityWardFoot)),
+  {
+    ssr: false,
+  },
+);
+const CapacityWardSidebar = dynamic(
+  withLoadRetry(() => import("./capacity-open-parts").then((m) => m.CapacityWardSidebar)),
+  {
+    ssr: false,
+  },
+);
 
 type Popup = { kind: "scenario" } | { kind: "sheet" } | { kind: "ward"; unitId: string } | { kind: "forecast" } | null;
 type PageTab = "overview" | "wards" | "planned";

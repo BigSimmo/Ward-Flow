@@ -900,7 +900,13 @@ export function OnCallScreen() {
               data-wf-rail
             >
               {queryHits.length || query.trim() ? (
-                <MatchesPanel query={query} hits={queryHits} actions={actions} onClear={() => setQuery("")} />
+                <MatchesPanel
+                  query={query}
+                  hits={queryHits}
+                  actions={actions}
+                  onClear={() => setQuery("")}
+                  headingId={panelHeadingId}
+                />
               ) : (
                 <ContactCard entry={selected} actions={actions} headingId={panelHeadingId} />
               )}
@@ -934,22 +940,31 @@ export function OnCallScreen() {
   );
 }
 
+/** The side panel lists this many matches at most. */
+const MATCHES_SHOWN = 30;
+
 function MatchesPanel({
   query,
   hits,
   actions,
   onClear,
+  headingId,
 }: {
   query: string;
   hits: DirectoryEntry[];
   actions: ContactActions;
   onClear: () => void;
+  /** Names the side panel, which is labelled by this heading (review finding 15, 12 Nov 2026). */
+  headingId?: string;
 }) {
+  const shown = hits.slice(0, MATCHES_SHOWN);
   return (
     <>
       <div className={styles.cardHead}>
         <div className={styles.cardWho}>
-          <h2 className={styles.cardTitle}>Matches</h2>
+          <h2 className={styles.cardTitle} id={headingId}>
+            Matches
+          </h2>
           <span className={styles.cardPlace}>For &ldquo;{query.trim()}&rdquo;</span>
         </div>
         <Button variant="ghost" size="sm" onClick={onClear}>
@@ -958,7 +973,7 @@ function MatchesPanel({
       </div>
       {hits.length ? (
         <ul className={styles.matches}>
-          {hits.slice(0, 30).map((entry) => (
+          {shown.map((entry) => (
             <li key={entry.id}>
               <button
                 type="button"
@@ -983,6 +998,16 @@ function MatchesPanel({
       ) : (
         <p className={styles.note}>No role, place, number or team matches.</p>
       )}
+      {/* Review finding 15: the list stops at MATCHES_SHOWN, so it says so, politely, when it does. */}
+      <p
+        className={hits.length > shown.length ? styles.note : "sr-only"}
+        aria-live="polite"
+        data-testid="ward-on-call-matches-truncated"
+      >
+        {hits.length > shown.length
+          ? `Showing ${shown.length} of ${hits.length} synthetic entries. Refine the search.`
+          : null}
+      </p>
     </>
   );
 }

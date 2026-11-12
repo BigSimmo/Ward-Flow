@@ -38,43 +38,40 @@ import { activeCommunityTreatmentOrder, type Patient } from "@/components/ward-m
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { WardMovementNotFound } from "@/components/ward-management/ward-movement-not-found";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { preloadWhenIdle } from "../preload-when-idle";
 // The arrival-time dialog has no initial-page content. Load it only after its action is opened.
 // (Document details load through the cancellable UploadFormsModal below.)
 // Care and safety (Josh, 9 Nov 2026) sits below the first screen of the Now tab, so its code loads
 // on its own rather than with the patient page's first load.
-const PatientCarePlansCard = dynamic(() => import("./patient-care-plans-card").then((m) => m.PatientCarePlansCard));
-const ArrivalTimeModal = dynamic(() => import("../referrals/arrival-time-modal").then((m) => m.ArrivalTimeModal));
+const PatientCarePlansCard = dynamic(
+  withLoadRetry(() => import("./patient-care-plans-card").then((m) => m.PatientCarePlansCard)),
+);
+const ArrivalTimeModal = dynamic(
+  withLoadRetry(() => import("../referrals/arrival-time-modal").then((m) => m.ArrivalTimeModal)),
+);
 // F-10: transit operations only draw inside the Destination sheet, so their code loads on its own,
 // fetched once the page is idle, rather than with the patient page.
 const loadTransitOperations = () => import("./patient-transit-operations");
-const PatientTransitOperations = dynamic(() => loadTransitOperations().then((m) => m.PatientTransitOperations));
+const PatientTransitOperations = dynamic(
+  withLoadRetry(() => loadTransitOperations().then((m) => m.PatientTransitOperations)),
+);
 // Document details have no closed-state work. Keep their code off the first load, with the same
 // idle preload as Transit operations and a cancellable, focus-managed dialog while loading.
 const loadUploadForms = () => import("../referrals/upload-forms-modal");
 const UploadFormsCloseContext = createContext<(() => void) | null>(null);
-function UploadFormsPending({ failed = false }: { failed?: boolean }) {
+function UploadFormsPending() {
   const onClose = useContext(UploadFormsCloseContext);
   if (!onClose) return null;
   return (
     <Dialog open onClose={onClose} title="Record document details">
-      <p role={failed ? "alert" : "status"}>
-        {failed
-          ? "Document details could not load. Close this dialog and reload the page before trying again."
-          : "Loading document details…"}
-      </p>
+      <p role="status">Loading document details…</p>
     </Dialog>
   );
 }
-function UploadFormsUnavailable() {
-  return <UploadFormsPending failed />;
-}
+// A failed fetch reaches withLoadRetry, which shows Try again and Close (the render site passes onClose).
 const UploadFormsModal = dynamic<UploadFormsModalProps>(
-  () =>
-    loadUploadForms().then(
-      (module) => module.UploadFormsModal,
-      () => UploadFormsUnavailable,
-    ),
+  withLoadRetry(() => loadUploadForms().then((module) => module.UploadFormsModal)),
   { loading: () => <UploadFormsPending /> },
 );
 // The History, Community, Details and Documents tabs draw nothing until opened, so their code
@@ -85,15 +82,17 @@ const loadDetailsTab = () => import("./patient-details-tab");
 const loadDocumentsTab = () => import("./patient-documents-tab");
 // Each pane wraps its tab in its own Suspense: without one, a tab whose code has not arrived yet
 // hid the whole page (React's fallback), and the arrow-key focus on the record tabs fell to the body.
-const PatientHistoryTab = dynamic(() => loadHistoryTab().then((m) => m.PatientHistoryTab));
-const PatientCommunityTab = dynamic(() => loadCommunityTab().then((m) => m.PatientCommunityTab));
-const PatientDetailsTab = dynamic(() => loadDetailsTab().then((m) => m.PatientDetailsTab));
-const PatientDocumentsTab = dynamic(() => loadDocumentsTab().then((m) => m.PatientDocumentsTab));
+const PatientHistoryTab = dynamic(withLoadRetry(() => loadHistoryTab().then((m) => m.PatientHistoryTab)));
+const PatientCommunityTab = dynamic(withLoadRetry(() => loadCommunityTab().then((m) => m.PatientCommunityTab)));
+const PatientDetailsTab = dynamic(withLoadRetry(() => loadDetailsTab().then((m) => m.PatientDetailsTab)));
+const PatientDocumentsTab = dynamic(withLoadRetry(() => loadDocumentsTab().then((m) => m.PatientDocumentsTab)));
 // Triage and risk (built 7 Nov 2026): the signed triages and the Triage action, on Now. Loaded with
 // the page's other lazy parts so the movement page's phone first load does not grow.
-const PatientTriageCard = dynamic(() => import("../triage/patient-triage-card").then((m) => m.PatientTriageCard));
-const CarerCallbackCard = dynamic(() =>
-  import("@/components/ward-management/carer-callback-card").then((m) => m.CarerCallbackCard),
+const PatientTriageCard = dynamic(
+  withLoadRetry(() => import("../triage/patient-triage-card").then((m) => m.PatientTriageCard)),
+);
+const CarerCallbackCard = dynamic(
+  withLoadRetry(() => import("@/components/ward-management/carer-callback-card").then((m) => m.CarerCallbackCard)),
 );
 preloadWhenIdle(
   loadTransitOperations,

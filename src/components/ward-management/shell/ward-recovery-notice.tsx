@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { usePathname } from "next/navigation";
 import { createContext, useContext } from "react";
 
@@ -16,7 +17,7 @@ const ROUTINE_NOTICE_MS = 8_000;
 // one, which keeps it off every page's first load (Josh, 21 Oct 2026: no phone script budget raises).
 // `loading` gives it its own Suspense boundary, so its first load never suspends the whole page.
 const WardRecoveryNoticeBody = dynamic(
-  () => import("./ward-recovery-notice-body").then((module) => module.WardRecoveryNoticeBody),
+  withLoadRetry(() => import("./ward-recovery-notice-body").then((module) => module.WardRecoveryNoticeBody)),
   { loading: () => null },
 );
 

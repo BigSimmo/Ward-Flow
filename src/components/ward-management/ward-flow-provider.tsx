@@ -8,7 +8,7 @@ import { WardDemoNotSavedContext } from "@/components/ward-management/shell/ward
 import { WardRecoveryNoticeContext } from "@/components/ward-management/shell/ward-recovery-notice";
 import { ToastDeviceSaveContext } from "@/components/wf";
 import { clearReferralDraftMemory, clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
-import { seedSafeSenderId, useOpenTabsDay } from "./ward-flow-open-tabs-day";
+import { seedSafeSenderId, useOpenTabsDay, worldsCertainlyDiffer } from "./ward-flow-open-tabs-day";
 import { clearLegacySessionDrafts, setDraftScenarioScope } from "./ward-session-drafts";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { Admission, LeavingDestination } from "./ward-admissions";
@@ -78,6 +78,7 @@ import {
   readDemoStateLater,
   STORAGE_UNAVAILABLE,
   tryWriteDemoState,
+  useDeferredDeviceSave,
   useDemoStateRead,
   WARD_FLOW_DEMO_STORAGE_KEY,
 } from "./ward-flow-demo-storage";
@@ -930,6 +931,7 @@ function WardFlowWorld({
                   const restoredElapsed =
                     saved.now - NOW_ANCHOR - saved.state.clockOffsetMinutes + baseMounted - saved.savedAtAbsolute;
                   const isSameWorld =
+                    !worldsCertainlyDiffer(saved.state, current.world) &&
                     JSON.stringify(saved.state) === JSON.stringify({ ...current.world, rejections: [] });
                   if (isSameWorld) {
                     return current;
@@ -950,7 +952,8 @@ function WardFlowWorld({
               });
             });
           }
-          setTick((tick) => tick + 1);
+          // Review finding 13: no clock refresh per message. An adopted day re-renders through its own
+          // dispatch; a tab that keeps its own day has nothing new to show.
         }
       };
       return () => {
@@ -969,23 +972,32 @@ function WardFlowWorld({
   // Local saving runs only in the unpinned local demonstration, until storage fails or a typed-text
   // copy cannot be made safely. Shared mode does not save actions on this device.
   const savingOnDevice = ownDevice && initialNow === undefined && !typedTextLocked && !storageUnavailable;
-  useOpenTabsDay(savingOnDevice && !!container.sessionAdopted, freshSeedRef, broadcastInstanceIdRef, ownsLocalDayRef);
   const demoControlsAvailable = !shared.enabled || shared.snapshot?.demoControls !== false;
   useEffect(() => {
     if (!savingOnDevice) savesOnDeviceRef.current = false;
   }, [savingOnDevice, state]);
 
+  // The device save runs when the browser is idle (review finding 23); it is flushed before leaving.
+  const deviceSave = useDeferredDeviceSave();
+  useOpenTabsDay(
+    savingOnDevice && !!container.sessionAdopted,
+    freshSeedRef,
+    broadcastInstanceIdRef,
+    ownsLocalDayRef,
+    deviceSave.flush,
+  );
   // Protect accepted local work until its device write, including safe-copy loading or failure.
   useEffect(() => {
     if (!ownDevice || initialNow !== undefined) return;
     const warn = (event: BeforeUnloadEvent) => {
+      deviceSave.flush();
       if (!ownsLocalDayRef.current || savesOnDeviceRef.current) return;
       event.preventDefault();
       event.returnValue = "";
     };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [ownDevice, initialNow]);
+  }, [ownDevice, initialNow, deviceSave]);
 
   /**
    * Restores a saved same-day session once the mount effect in `WardFlowProvider` has supplied
@@ -1076,9 +1088,10 @@ function WardFlowWorld({
   const lastDeviceSaveRef = useRef<DeviceSaveInputs | undefined>(undefined);
 
   useEffect(() => {
-    if (!ownDevice) return;
-    if (initialNow !== undefined || mountedAtAbsolute === null || !container.sessionAdopted) return;
-    if (storageUnavailable) return;
+    // A path that writes nothing first writes any save still waiting, as an immediate write would have.
+    if (!ownDevice || initialNow !== undefined || mountedAtAbsolute === null || !container.sessionAdopted)
+      return deviceSave.flush();
+    if (storageUnavailable) return deviceSave.flush();
     // Fresh audit P-1: a refused or empty action would store the same world again, so skip it.
     const saveInputs = { state, held: container, locked: typedTextLocked, dayZero, mountedAtAbsolute };
     const previousSave = lastDeviceSaveRef.current;
@@ -1094,6 +1107,7 @@ function WardFlowWorld({
     savesOnDeviceRef.current = false;
     const deviceCopy = deviceCopyOf(state, container, typedTextLocked, fixtureWorlds);
     if (deviceCopy === undefined) {
+      deviceSave.flush();
       keepLastSafeDemoSave();
       void loadTypedTextScrub().then(
         () => setDeviceCopyCheck("loaded"),
@@ -1104,24 +1118,29 @@ function WardFlowWorld({
     if (!deviceCopy) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- display the outcome of the external storage operation
       setDeviceCopyCheck(state.worldGeneration);
+      deviceSave.flush();
       if (!keepLastSafeDemoSave()) setStorageUnavailable(true);
       return;
     }
     const isFromRemoteBroadcast = lastAdoptedBroadcastWorldRef.current === state;
-    if (
-      !tryWriteDemoState(
-        deviceCopy,
-        dayZero,
-        nowRef.current,
-        mountedAtAbsolute + Math.max(0, elapsedRef.current),
-        seedSafeSenderId(isFromRemoteBroadcast || freshSeedRef.current, broadcastInstanceIdRef),
+    const senderId = seedSafeSenderId(isFromRemoteBroadcast || freshSeedRef.current, broadcastInstanceIdRef);
+    // Replaces any save still waiting: this one holds the newer day.
+    deviceSave.schedule(() => {
+      if (
+        !tryWriteDemoState(
+          deviceCopy,
+          dayZero,
+          nowRef.current,
+          mountedAtAbsolute + Math.max(0, elapsedRef.current),
+          senderId,
+        )
       )
-    ) {
-      setStorageUnavailable(true);
-    } else {
-      lastDeviceSaveRef.current = saveInputs;
-      savesOnDeviceRef.current = commandsRef.current.world === state;
-    }
+        setStorageUnavailable(true);
+      else {
+        lastDeviceSaveRef.current = saveInputs;
+        savesOnDeviceRef.current = commandsRef.current.world === state;
+      }
+    });
   }, [
     state,
     container,
@@ -1132,14 +1151,17 @@ function WardFlowWorld({
     dayZero,
     storageUnavailable,
     ownDevice,
+    deviceSave,
   ]);
 
   // ISSUE-P1-83 3e: stable, as the `value` useMemo below depends on it. Reset also clears Midland decisions (SD-06).
   const resetDemoState = useCallback(() => {
+    // A save still waiting holds the day being reset, so it must not land after the clear.
+    deviceSave.cancel();
     if (ownDevice) clearWardFlowDemoState();
     lastDeviceSaveRef.current = undefined;
     dispatch({ type: "RESET_SCENARIO", role: "demo", now: nowRef.current });
-  }, [dispatch, ownDevice]);
+  }, [dispatch, ownDevice, deviceSave]);
 
   const saveScenarioFile = useCallback(() => buildScenarioFileLater(state, nowRef.current), [state]);
 

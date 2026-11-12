@@ -21,6 +21,7 @@ export function useOpenTabsDay(
   freshSeedRef: RefObject<boolean>,
   instanceIdRef: { current: string },
   ownsDayRef?: RefObject<boolean>,
+  flushSave?: () => void,
 ): void {
   useEffect(() => {
     if (!enabled || typeof window.BroadcastChannel === "undefined") return;
@@ -39,6 +40,8 @@ export function useOpenTabsDay(
       }
       if (data.eventType !== "REQUEST_SAVED_STATE" || freshSeedRef.current) return;
       try {
+        // An idle-deferred device save may still be waiting: write it first so the new tab gets today's day.
+        flushSave?.();
         const raw = window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
         if (raw) broadcastDispatchEvent("SYNC_SAVED_STATE", instanceId, raw);
       } catch {
@@ -47,7 +50,7 @@ export function useOpenTabsDay(
     };
     if (freshSeedRef.current) broadcastDispatchEvent("REQUEST_SAVED_STATE", instanceId);
     return () => channel.close();
-  }, [enabled, freshSeedRef, instanceIdRef, ownsDayRef]);
+  }, [enabled, freshSeedRef, instanceIdRef, ownsDayRef, flushSave]);
 }
 
 /** True when a peer's saved day is not this tab's own saved day (both stored without refusals). */
@@ -58,10 +61,36 @@ function otherTabDayDiffers(peerPayload: string): boolean {
     const peer = JSON.parse(peerPayload) as { dayZero?: unknown; state?: unknown };
     const mine = JSON.parse(own) as { dayZero?: unknown; state?: unknown };
     // A save for another calendar day is refused by the restore fence anyway; it is not a split.
-    return peer.dayZero === mine.dayZero && JSON.stringify(peer.state) !== JSON.stringify(mine.state);
+    if (peer.dayZero !== mine.dayZero) return false;
+    return worldsCertainlyDiffer(peer.state, mine.state) || JSON.stringify(peer.state) !== JSON.stringify(mine.state);
   } catch {
     return false;
   }
+}
+
+/**
+ * Review finding 13 (12 Nov 2026): true only when two saved worlds' JSON must differ, read from their
+ * top level alone: a string, boolean or finite number that differs, or a list of another length.
+ * False means "not known", so the caller still compares the whole JSON. Saves an encode of two
+ * ~480 KB worlds on most changes from another tab. `rejections` is skipped: it is never stored.
+ */
+export function worldsCertainlyDiffer(a: unknown, b: unknown): boolean {
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+  const left = a as Record<string, unknown>;
+  const right = b as Record<string, unknown>;
+  for (const key of Object.keys(left)) {
+    if (key === "rejections") continue;
+    const x = left[key];
+    const y = right[key];
+    if (Array.isArray(x) && Array.isArray(y)) {
+      if (x.length !== y.length) return true;
+    } else if (typeof x === typeof y && (typeof x === "string" || typeof x === "boolean")) {
+      if (x !== y) return true;
+    } else if (typeof x === "number" && typeof y === "number" && Number.isFinite(x) && Number.isFinite(y)) {
+      if (x !== y) return true;
+    }
+  }
+  return false;
 }
 
 /** The sender id a save is broadcast under, or none when it must not reach other tabs (`skip`). */

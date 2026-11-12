@@ -131,7 +131,7 @@ describe("ward board: Left the ward, waiting for transport (item 18)", () => {
 
 /** Presses each "They have left" until one opens the transport question; true when one did. */
 function openTransportDialog(): boolean {
-  const buttons = screen.queryAllByRole("button", { name: "They have left" });
+  const buttons = screen.queryAllByRole("button", { name: /^They have left(, |$)/ });
   for (const button of buttons) {
     if (!button.isConnected) continue;
     fireEvent.click(button);

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { WardAccessScope } from "@/components/ward-management/shell/ward-access";
@@ -33,17 +33,17 @@ function renderAtDesk(access: WardAccess) {
   return openScopeMenu();
 }
 
-/** Opens the Show menu and reads its groups: each heading and the choices listed under it. */
+/** Opens the Show menu and reads its groups: each heading (a labelled group) and the choices in it. */
 function openScopeMenu(): Map<string, string[]> {
   fireEvent.click(screen.getByRole("button", { name: /^Show:/ }));
   const menu = screen.getByRole("menu", { name: "Show" });
   const groups = new Map<string, string[]>();
-  let heading = "";
-  for (const node of Array.from(menu.children)) {
-    if (node.getAttribute("role") === "presentation") {
-      heading = node.textContent ?? "";
-      groups.set(heading, []);
-    } else if (heading) groups.get(heading)!.push(node.textContent ?? "");
+  for (const group of within(menu).queryAllByRole("group")) {
+    const heading = document.getElementById(group.getAttribute("aria-labelledby") ?? "")?.textContent ?? "";
+    groups.set(
+      heading,
+      Array.from(group.querySelectorAll('[role^="menuitem"]'), (item) => item.textContent ?? ""),
+    );
   }
   return groups;
 }

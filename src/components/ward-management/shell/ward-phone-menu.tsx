@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -561,11 +562,12 @@ export function usePhoneActivitySheet(
 const loadMenuSheets = () => import("./ward-phone-menu-sheet");
 type PhoneMenuSheetsProps = ComponentProps<(typeof import("./ward-phone-menu-sheet"))["PhoneMenuSheets"]>;
 const PhoneMenuSheets = dynamic(
-  () =>
+  withLoadRetry(() =>
     loadMenuSheets().then(
       (m) => m.PhoneMenuSheets,
       () => PhoneMenuSheetsRetry,
     ),
+  ),
   { ssr: false },
 );
 preloadWhenIdle(loadMenuSheets);
