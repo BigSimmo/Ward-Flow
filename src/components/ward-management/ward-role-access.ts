@@ -92,7 +92,6 @@ export function edActingPlaceId(access: WardAccess, originEdId: string | undefin
  */
 export type WardScreenId =
   | "home"
-  | "network"
   | "capacity"
   | "wards"
   | "hub"
@@ -130,7 +129,6 @@ export type WardScreenId =
 
 export const WARD_SCREEN_IDS: readonly WardScreenId[] = [
   "home",
-  "network",
   "capacity",
   "wards",
   "hub",
@@ -373,7 +371,10 @@ export type ScreenAddress = {
 
 const REDIRECT_TARGETS: Readonly<Record<string, WardScreenId>> = {
   command: "home",
-  constellation: "network",
+  // Live audit item 25 (11 Nov 2026): the Network screen was retired on 19 Oct 2026 and its address
+  // redirects to Home, so it (and the older Constellation address) is Home here too, not a screen.
+  network: "home",
+  constellation: "home",
   queue: "delays",
   exceptions: "delays",
   escalation: "delays",
@@ -409,7 +410,6 @@ export function screenForPath(pathname: string): ScreenAddress | undefined {
   // PL1 (3 Nov 2026): Places' Catchments tab is the old community index, so it keeps that access.
   if (first === "hub" && second === "catchments") return third === undefined ? { screen: "community" } : undefined;
   switch (first) {
-    case "network":
     case "capacity":
     case "wards":
     case "hub":

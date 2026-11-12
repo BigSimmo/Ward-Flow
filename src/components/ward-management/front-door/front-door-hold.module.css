@@ -1,0 +1,20 @@
+/*
+ * The four front-door classes the always-loaded holders use (`front-door-lazy.tsx`,
+ * `lock-cards-lazy.tsx`). Composed here so the phone's first load carries these four names, not
+ * the front door's whole class map (budget trim, live audit 11 Nov 2026).
+ */
+.screen {
+  composes: screen from "./front-door.module.css";
+}
+
+.btn {
+  composes: btn from "./front-door.module.css";
+}
+
+.btnPrimary {
+  composes: btnPrimary from "./front-door.module.css";
+}
+
+.link {
+  composes: link from "./front-door.module.css";
+}

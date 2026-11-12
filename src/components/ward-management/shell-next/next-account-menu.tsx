@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { Menu, type MenuItem } from "@/components/wf";
 import { useWardHelpRow } from "@/components/ward-management/help/ward-help-link";
+import { useCanLeaveDemo, useLeaveDemo } from "@/components/ward-management/shell/leave-demo";
 import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
 import { settingsHref } from "@/components/ward-management/shell/ward-facade";
 import rail from "@/components/ward-management/shell/ward-rail.module.css";
@@ -43,6 +44,8 @@ export function RailAccountMenu({
   const session = useContext(SharedSessionContext);
   const router = useRouter();
   const help = useWardHelpRow();
+  const canLeaveDemo = useCanLeaveDemo();
+  const leave = useLeaveDemo();
   const act = (run: () => void) => () => {
     onLeave?.();
     run();
@@ -72,6 +75,12 @@ export function RailAccountMenu({
     items.push(
       { kind: "separator", id: "sep" },
       { id: "sign-out", label: "Sign out", icon: LogOut, onSelect: act(() => session.signOut()) },
+    );
+  } else if (canLeaveDemo) {
+    // Live audit item 22: the public demo's way out (`shell/leave-demo.ts`).
+    items.push(
+      { kind: "separator", id: "sep" },
+      { id: "leave-demo", label: "Leave the demo", icon: LogOut, onSelect: act(leave) },
     );
   }
   const sheet = variant === "sheet";

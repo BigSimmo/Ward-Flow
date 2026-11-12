@@ -261,22 +261,27 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
           <span className={demo.clock}>
             Demo clock <b>{formatInstant(now)}</b>
           </span>
-          <button
-            type="button"
-            className={demo.small}
-            {...lock}
-            onClick={() => raise("ADVANCE_CLOCK", { minutes: 15 })}
-          >
-            +15 min
-          </button>
-          <button
-            type="button"
-            className={demo.small}
-            {...lock}
-            onClick={() => raise("ADVANCE_CLOCK", { minutes: 60 })}
-          >
-            +1 hour
-          </button>
+          {/* D-150: the signed-in site runs on real Perth time, so its clock is not advanced. */}
+          {shared?.enabled ? null : (
+            <>
+              <button
+                type="button"
+                className={demo.small}
+                {...lock}
+                onClick={() => raise("ADVANCE_CLOCK", { minutes: 15 })}
+              >
+                +15 min
+              </button>
+              <button
+                type="button"
+                className={demo.small}
+                {...lock}
+                onClick={() => raise("ADVANCE_CLOCK", { minutes: 60 })}
+              >
+                +1 hour
+              </button>
+            </>
+          )}
         </div>
         {oneList ? null : (
           <WardDemoReset className={styles.resetBlock} headingClassName={styles.resetHeading} offNoteId={offId} />

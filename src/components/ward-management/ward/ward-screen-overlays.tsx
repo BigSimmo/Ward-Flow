@@ -11,9 +11,10 @@ import { reviewAtFrom } from "../ward-closure-choice";
 import { admissionCriteriaEligibility } from "@/components/ward-management/ward-flow-reducer";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 import { useUndoableStep } from "../use-undoable-step";
+import { bedClosureReasonChoices } from "../ward-bed-closure-reason";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { WardBedDossierDrawer } from "./ward-screen-lazy";
-import { wardSafeRejectionReason } from "./ward-rejection-text";
+import { notRecordedMessage } from "./ward-screen-messages";
 import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction } from "react";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
@@ -60,23 +61,7 @@ type WardScreenBedDrawerProps = {
   raiseAsRouteRole: WardRaise;
 };
 
-/**
- * The drawer's refusal line: what was refused, then that nothing changed, said once. A shared-board
- * refusal already ends "Nothing was changed." (audit E-25).
- */
-export function notRecordedMessage(message?: string): string {
-  const reason = (message ?? "The change was refused").replace(/\s*Nothing was changed\.$/u, "").replace(/\.$/u, "");
-  return `Not recorded: ${reason}. Nothing was changed.`;
-}
-
-/**
- * D-125 (audit M2): a refused referral answer said on this ward's own toast. It names the person,
- * as the success message does; the engine's reason is put in ward words first.
- */
-export function namedNotRecordedMessage(reason: string, who: string): string {
-  const said = wardSafeRejectionReason(reason);
-  return notRecordedMessage(said.includes(who) ? said : `${who}: ${said}`);
-}
+export { namedNotRecordedMessage, notRecordedMessage } from "./ward-screen-messages";
 
 export function WardScreenBedDrawer({
   selectedBed,
@@ -174,6 +159,19 @@ export function WardScreenBedDrawer({
           ...(bedClosureRole === "ward" ? { actingUnitId: unitId } : {}),
         }),
         undone: closed ? `Undone. Bed ${bedNumber} is open again.` : `Undone. Bed ${bedNumber} is closed again.`,
+        // D-148 (Josh, 11 Nov 2026): closing stays one tap; its toast offers an optional reason.
+        ...(closed
+          ? {
+              choices: bedClosureReasonChoices({
+                role: bedClosureRole,
+                unitId: unit.id,
+                actingUnitId: unitId,
+                bedNumber,
+                // The reasoned close keeps the first close's review time (item 6).
+                ...(reviewAt !== undefined ? { reviewAt } : {}),
+              }),
+            }
+          : {}),
       },
     );
   };

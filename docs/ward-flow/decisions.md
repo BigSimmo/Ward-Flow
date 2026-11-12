@@ -170,9 +170,15 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-145](#d-145-repository-review-fixes-features-and-code-health-approved-11-november-2026)                                                              | Repository review: fixes, features and code health approved                            | Active                                           |
 | [D-146](#d-146-performance-audit-fixes-and-the-phone-speed-target-11-november-2026)                                                                     | Performance audit fixes and the phone speed target                                     | Active                                           |
 | [D-147](#d-147-demo-code-tries-keep-per-address-keying-until-a-trusted-proxy-is-set-11-november-2026)                                                   | Demo-code tries keep per-address keying until a trusted proxy is set                   | Active                                           |
+| [D-148](#d-148-closing-a-bed-stays-one-tap-and-its-toast-offers-a-reason-11-november-2026)                                                              | Closing a bed stays one tap, and its toast offers a reason                             | Active                                           |
+| [D-149](#d-149-a-record-whose-only-links-are-withdrawn-referrals-can-be-archived-11-november-2026)                                                      | A record whose only links are withdrawn referrals can be archived                      | Active                                           |
+| [D-150](#d-150-the-signed-in-site-runs-on-real-perth-time-11-november-2026)                                                                             | The signed-in site runs on real Perth time                                             | Active                                           |
+| [D-151](#d-151-a-bed-tile-says-when-a-change-is-waiting-to-save-11-november-2026)                                                                       | A bed tile says when a change is waiting to save                                       | Active                                           |
 | [D-152](#d-152-returned-to-ed-prompt-sees-every-return-in-shared-mode-11-november-2026)                                                                 | Returned to ED prompt sees every return in shared mode                                 | Active                                           |
 | [D-153](#d-153-keep-the-drawn-time-settle-check-and-defer-a-separate-agent-github-identity-11-november-2026)                                            | Keep the drawn-time settle check, and defer a separate agent GitHub identity           | Active                                           |
 | [D-154](#d-154-the-community-desks-ed-heads-up-reads-a-narrow-scoped-list-11-november-2026)                                                             | The community desk's ED heads-up reads a narrow scoped list                            | Active                                           |
+| [D-155](#d-155-check-the-live-clock-offset-before-clearing-it-11-november-2026)                                                                         | Check the live clock offset before clearing it                                         | Active                                           |
+| [D-156](#d-156-reset-the-synthetic-live-world-after-the-clock-fix-11-november-2026)                                                                     | Post-release reset of the live synthetic world withdrawn                               | Withdrawn 12 November 2026                       |
 
 ---
 
@@ -1880,6 +1886,39 @@ is inferred.
 - **Decision:** while `WARD_TRUSTED_PROXY_ADDRESSES` names no proxy on the Next service, the front door's demo-code try limit keeps keying on the edge's `X-Real-IP`, else the last `X-Forwarded-For` hop, as it did before A4-02. Once it names a proxy (or `*`), A4-02's trusted-proxy rule applies. Reason: the Next session route has no socket address, so the strict rule alone would put every caller in one shared bucket, and ten wrong tries from anyone in ten minutes would refuse every presenter.
 - **Boundary:** no Railway or environment change; setting `WARD_TRUSTED_PROXY_ADDRESSES` stays a separate, approved provider action. The fallback logs nothing. Synthetic data only; changes no clinical value or rule, and approves no release.
 
+## D-148. Closing a bed stays one tap, and its toast offers a reason (11 November 2026)
+
+- **Date:** 11 November 2026. **Decided by:** Josh, approving every recommendation in the "Ward Flow live audit: verified findings and fix plan" (decision item 4) after fact-checking: "Go ahead with all recommendations after fact checking please". Numbered D-148 because D-145 is claimed by open PR #1623. D-146 is claimed by open PR #1624. D-147 is claimed by open PR #1615.
+- **Decision:** "Close this bed" in the bed drawer still saves on one tap with Undo (the 26 October fast-workflow choice). No confirm step is added. Its toast now offers "Add a reason", a kit menu of the existing ward closure reasons (`WARD_CLOSURE_REASONS`). Choosing one undoes the close and closes the bed again with that reason, so the reason is chosen, never typed, and the audit trail keeps both steps (the bed's History shows the closure with its reason).
+- **Why:** the live audit found closures with no reason; a reason helps the bed meeting without slowing the close.
+- **Boundary:** synthetic data only. No engine rule changes: `SET_BED_CLOSED` already took an optional reason.
+
+## D-149. A record whose only links are withdrawn referrals can be archived (11 November 2026)
+
+- **Date:** 11 November 2026. **Decided by:** Josh, approving decision item 9 of the live audit fix plan, as for D-148. This gives the 26 October rule (#816: "archive only, coordinator only, for records added in error") its D-number.
+- **Decision:**
+  1. Archiving stays coordinator only, for a record added in error, and still never destroys anything.
+  2. A record can now be archived when the only things naming it are front-door referrals that nobody answered (every destination withdrawn by the referrer or cancelled), audit rows, and Undo records older than the Undo window. Any journey, stay, form, bed record, answered or open referral, or fact recorded on the person still keeps the record. The withdrawn referral stays in the history but no longer links to the archived record.
+  3. The coordinator's "Record added in error" card no longer hides when archive is not available. It says why in one line.
+- **Why:** the live audit's test patient could never be archived because a withdrawn referral and record-view audit rows named it, so test and mistaken records stayed on the board for good.
+- **Boundary:** synthetic data only. Archiving the live audit's test patient and the old TEST-Helper4 records is a live write that waits for Josh's yes after release.
+- **Note (11 November 2026, 15:34 UTC):** Josh approved, on a decision card in the Ward Flow project thread for PR #1626, adding `ward-patient-archive-reducer.ts` to the D-14 patient-link allowlist (60 to 61 files). The archive step reads `referral.patientId` only to unlink that one record's withdrawn front-door referrals; it reads no other referral and shows nothing.
+
+## D-150. The signed-in site runs on real Perth time (11 November 2026)
+
+- **Date:** 11 November 2026. **Decided by:** Josh, approving decision item 5 of the live audit fix plan, as for D-148.
+- **Decision:** the shared world's clock is the real minutes since its day zero (a Perth midnight). A new world's seed is re-anchored onto that time, as the public demo already does (`ward-reanchor.ts`). The scripted clock that starts at 10:42 stays on the public demo only, and the advance-clock controls are hidden on the signed-in site.
+- **Why:** the shared clock started at 10:42 whenever the world was made, so the board, labelled AWST, ran about 48 minutes fast all day.
+- **Note:** an existing shared world's clock steps back once by that gap when this is released, so steps recorded in the last 48 minutes before the release briefly read as a little in the future.
+- **Boundary:** synthetic data only. No clinical rule or signed value changes.
+
+## D-151. A bed tile says when a change is waiting to save (11 November 2026)
+
+- **Date:** 11 November 2026. **Decided by:** Josh, approving decision item 3 of the live audit fix plan, as for D-148.
+- **Decision:** the privacy rule stands (D-18, D-72, D-124): a save waiting on the signed-in site is held in this page's memory only, never on the device. The ward bed tile now says "Waiting to save" while a save for that bed is waiting. The browser's warning before the page closes or reloads with a save waiting was already in place (since 23 October), so it is unchanged.
+- **Why:** the live audit closed a bed offline and the tile still read "Ready", with nothing on it to say the change had not gone.
+- **Boundary:** presentation only, synthetic data. Nothing new is stored on the device.
+
 ## D-152. Returned to ED prompt sees every return in shared mode (11 November 2026)
 
 - **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, "Yes go ahead with all recommendations" in the Ward Flow project thread "Show every ED return in shared mode", approving the follow-up the batch 3 thread recorded on PR #1605. Numbered D-152 because D-145 to D-151 belong to other threads. D-145 is claimed by open PR #1623. D-146 is claimed by open PR #1624. D-148 is claimed by open PR #1626. D-149 is claimed by open PR #1626. D-150 is claimed by open PR #1626. D-151 is claimed by open PR #1626.
@@ -1904,3 +1943,18 @@ is inferred.
 - **Episode list:** the mock-up community episodes' team and status moved to `patients/community-episode-teams.ts`, the one place they are typed. The patient record mock-ups spread them in. That keeps the record mock-ups out of the shared access code.
 - **Not covered:** shared mode. A shared community desk's copy comes from the server's `scopeWardFlowState`, which does not send this list yet, so the card stays empty there, as before. Sending it the way D-152 sends `diversionReturns` is a separate change.
 - **Boundary:** synthetic data only. Display only. No event, stored field or signed clinical value changes, and this approves no merge or release.
+
+## D-155. Check the live clock offset before clearing it (11 November 2026)
+
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, "Go ahead with all recommendations" in the Ward Flow project thread for PRs #1622, #1623 and #1626, choosing the recommended option on the decision card about the live world's clock offset. Numbered D-155 because D-153 and D-154 belong to other threads, and both are recorded above (PR #1630 and PR #1632).
+- **Decision:** D-150 keeps `clockOffsetMinutes` on purpose, because test servers use it to move the clock. After this PR is released, the live shared world's stored offset is read once, read-only, and reported to Josh. If it is not 0, nothing is written: clearing it is a live write that waits for Josh's own yes.
+- **Why:** under D-150 a leftover offset would keep the signed-in site's clock ahead of real Perth time by that amount. Reading the value is harmless, and Josh decides on the live write once the number is known.
+- **Boundary:** synthetic data only. No code change, and no live write is approved. Changes no clinical rule or signed value, and approves no merge or release.
+
+## D-156. Reset the synthetic live world after the clock fix (11 November 2026)
+
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, choosing "Reset the synthetic live world" on the decision card in the Ward Flow project thread for PR #1626 (18:07 UTC), about the times stored before D-150's clock change.
+- **Decision:** after PR #1626 is released, the live shared world is reset to a fresh synthetic seed, so every stored time is on the new clock. Its current demo history goes, PT-A06 and TEST-Helper4 included, which also covers the D-149 archive of those records. This supersedes D-155's "clearing it waits for Josh's own yes": the reset clears any stored clock offset as well, so no separate offset write is needed. D-155's text stands as recorded.
+- **Why:** the live world holds synthetic data only, so a reset is the simplest fix. It leaves no lasting skew from D-150's clock change: without it, times stored before release stay about 48 minutes ahead of the new clock, so waits recorded before release read short and an expired Undo could briefly come back.
+- **Boundary:** synthetic data only. No code change in this PR. The reset is one live write, made by this thread after release, not by CI. Changes no clinical rule or signed value, and approves no merge or release.
+- **Withdrawn (12 November 2026):** Josh withdrew the post-release reset of the live synthetic shared world on 12 November 2026 (`2026-11-12`). No reset happens without a verified pre-reset backup and a tested restore, plus a fresh yes from Josh. D-149's after-release archive of PT-A06 and TEST-Helper4 is restored: that live write still waits for Josh's yes. D-155 stands as recorded: after release, the live world's stored clock offset is read once, read-only, and reported; any clear of that offset is a live write that waits for Josh's yes. This entry's 11 November decision to reset after release is withdrawn and does not supersede D-149 or D-155.

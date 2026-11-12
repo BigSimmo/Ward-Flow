@@ -15,7 +15,7 @@ import { canRestoreFocusTo } from "./sheet-focus";
 import { ConfirmHost } from "./confirm-dialog";
 import { OverlayPortal } from "./overlay-root";
 import overlayStyles from "./overlay.module.css";
-import { type ToastNextStep, type ToastUndo, ToastView } from "./toast";
+import { type ToastChoices, type ToastNextStep, type ToastUndo, ToastView } from "./toast";
 import { useToastJumpKey } from "./toast-keyboard";
 import { timedToastMs } from "./toast-timing";
 
@@ -41,6 +41,8 @@ export type Toast = {
    * closes itself, so `duration` defaults to 0 here too.
    */
   undo?: ToastUndo;
+  /** An optional follow-up choice, such as a reason (D-148); choosing closes the toast. */
+  choices?: ToastChoices;
   /** Mono meta on the right, such as "1s ago". */
   meta?: string;
   /**
@@ -376,6 +378,7 @@ function ToastCard({
           : undefined
       }
       nextStep={toast.nextStep}
+      choices={toast.choices}
       undo={
         toast.undo
           ? {

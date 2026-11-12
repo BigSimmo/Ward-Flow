@@ -1,9 +1,10 @@
 "use client";
 
 import { LayoutGrid, List } from "lucide-react";
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useWardSharedSave } from "@/components/ward-management/shell/ward-shared-save-context";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { Card, CardHead, DisabledReason, StatusGlyph, buttonClass, cx, useIsPhone, durMinutes } from "@/components/wf";
 
@@ -251,6 +252,9 @@ export function WardBedBoard({
 }: WardBedBoardProps) {
   const isPhone = useIsPhone();
   const nameFor = usePatientNameDisplay();
+  // D-151: a bed a save waiting on this page will change says so on its tile, as in the bed list.
+  const waitingList = useWardSharedSave()?.waitingBeds;
+  const waitingBeds = useMemo(() => new Set(waitingList ?? []), [waitingList]);
   const pods = podsOf(beds, unit, isMixed);
   const collidingPairs = lookAlikeKeys(beds);
   // Audit 24-4 NA2-09 (Josh, 24 Oct 2026): the ward's own ready figure (beds being made ready
@@ -484,7 +488,14 @@ export function WardBedBoard({
                   const source = picked?.kind === "stay" && picked.fromBed === Number(bed.bedNumber);
                   const glyph = bedGlyphTone(bed);
                   const dim = picked ? !fits && !source : !matchesQuery(bed, query);
-                  const shownSub = fits && picked ? fitReason(bed, picked, isMixed) : cellSub(bed);
+                  const waitingSave = waitingBeds.has(`${unit.id}:${Number(bed.bedNumber)}`);
+                  // A fit reason while picking keeps the waiting mark beside it (PR #1626 review).
+                  const baseSub = fits && picked ? fitReason(bed, picked, isMixed) : cellSub(bed);
+                  const shownSub = waitingSave
+                    ? fits && picked
+                      ? `Waiting to save · ${baseSub}`
+                      : "Waiting to save"
+                    : baseSub;
                   const label = cellLabel(bed, fits, nameFor, shownSub, collidingPairs);
                   const chosen = confirming !== null && Number(confirming.bedNumber) === Number(bed.bedNumber);
                   return (
@@ -498,6 +509,7 @@ export function WardBedBoard({
                       data-act={glyph === "danger" ? "true" : undefined}
                       data-dim={dim ? "true" : undefined}
                       data-placed={placedBed === Number(bed.bedNumber) ? "true" : undefined}
+                      data-waiting-save={waitingSave ? "true" : undefined}
                       aria-pressed={source ? true : undefined}
                       // P087: while a pick is held, a bed it cannot go to is unavailable, not only dimmed.
                       // A press still says why it does not fit.

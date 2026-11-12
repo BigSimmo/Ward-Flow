@@ -60,6 +60,8 @@ const OPEN_PATHS = new Set([
   "/api/health",
   "/api/local-project-id",
   "/robots.txt",
+  // Live audit item 15: the security contact (RFC 9116) is readable before sign-in.
+  "/.well-known/security.txt",
   "/opengraph-image",
   "/ward-flow-offline.html",
   "/ward-flow-push-sw.js",

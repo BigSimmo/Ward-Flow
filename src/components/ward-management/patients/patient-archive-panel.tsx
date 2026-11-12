@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button, Card, CardBody, CardHead, useToast } from "@/components/wf";
 import { UNDO_TOAST_MS, UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import {
@@ -28,8 +28,9 @@ function useOptionalToast() {
 
 /**
  * #816 (Josh, 26 Oct 2026: archive only, coordinator only): a record added in error can leave every
- * list. Shown only to the coordinator, and only while nothing else names the record, so a person
- * with care recorded against them is never archived. The audit trail keeps the record.
+ * list. Shown only to the coordinator. A person with care recorded against them is never archived;
+ * D-149 (Josh, 11 Nov 2026): the card then says why in one line instead of hiding. The audit trail
+ * keeps the record.
  */
 export function PatientArchivePanel({ patientId, displayName }: { patientId: PatientId; displayName: string }) {
   const gate = useRoleGate();
@@ -41,13 +42,24 @@ export function PatientArchivePanel({ patientId, displayName }: { patientId: Pat
     "bedReleases",
     "leaveBeds",
     "rejections",
+    "undoRecords",
   );
+  const now = useWardFlowClock();
   const [reason, setReason] = useState<PatientArchiveReason | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   if (!gate("ARCHIVE_PATIENT").allowed) return null;
   // The screen's own read of the lists it holds. The engine reads every list and stays the authority.
-  if (patientArchiveProblem(state as Parameters<typeof patientArchiveProblem>[0], patientId) !== undefined) return null;
+  const blocked = patientArchiveProblem(state as Parameters<typeof patientArchiveProblem>[0], patientId, now);
+  if (blocked !== undefined)
+    return (
+      <Card data-testid="ward-patient-archive">
+        <CardHead title="Record added in error" />
+        <CardBody>
+          <p data-testid="ward-patient-archive-why-not">Archive is not available. {blocked}</p>
+        </CardBody>
+      </Card>
+    );
   return (
     <Card data-testid="ward-patient-archive">
       <CardHead title="Record added in error" />

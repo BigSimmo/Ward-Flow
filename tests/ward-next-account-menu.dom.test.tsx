@@ -59,11 +59,13 @@ function session(overrides: Partial<SharedSession> = {}): SharedSession {
 function renderRail(signedIn: SharedSession | null = null, onOpenOperatorModal?: () => void) {
   return render(
     // Inside the provider: its own shared-access layer supplies no session in the local demo.
-    <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <SharedSessionContext.Provider value={signedIn}>
-        <NextRailBody onOpenOperatorModal={onOpenOperatorModal} />
-      </SharedSessionContext.Provider>
-    </WardFlowProvider>,
+    <ToastProvider>
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <SharedSessionContext.Provider value={signedIn}>
+          <NextRailBody onOpenOperatorModal={onOpenOperatorModal} />
+        </SharedSessionContext.Provider>
+      </WardFlowProvider>
+    </ToastProvider>,
   );
 }
 
@@ -130,6 +132,101 @@ describe("rail account menu (DK1)", () => {
     renderRail(session());
     const menu = openAccountMenu();
     expect(itemNames(menu)).toEqual(["Settings", expect.stringMatching(/^Help/u), "Sign out"]);
+  });
+
+  // Live audit item 22 (11 Nov 2026): on a front-door site the public demo offers Leave the demo,
+  // which ends the demo code's pass through DELETE /api/session and opens the sign-in page.
+  it("on a front-door demo site offers Leave the demo, which ends the pass", async () => {
+    document.cookie = "wf_door=1; path=/";
+    const fetchMock = vi.fn(async () => new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const replace = vi.fn();
+    vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, replace } as Location);
+    try {
+      renderRail();
+      const menu = openAccountMenu();
+      expect(itemNames(menu)).toEqual([
+        "Settings",
+        expect.stringMatching(/^Help/u),
+        "Try another desk (demo)",
+        "Leave the demo",
+      ]);
+      fireEvent.click(within(menu).getByRole("menuitem", { name: "Leave the demo" }));
+      await vi.waitFor(() => expect(replace).toHaveBeenCalledWith("/sign-in"));
+      expect(fetchMock).toHaveBeenCalledWith("/api/session", expect.objectContaining({ method: "DELETE" }));
+    } finally {
+      document.cookie = "wf_door=; path=/; max-age=0";
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    }
+  });
+
+  // Review of PR #1626: a pass the server did not end still opens the demo, so the sign-in page is
+  // not opened; a toast says so and the item stays to try again.
+  it("stays on the demo and says so when the pass could not be ended", async () => {
+    document.cookie = "wf_door=1; path=/";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(null, { status: 500 })),
+    );
+    const replace = vi.fn();
+    vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, replace } as Location);
+    try {
+      renderRail();
+      fireEvent.click(within(openAccountMenu()).getByRole("menuitem", { name: "Leave the demo" }));
+      expect(await screen.findByText("The demo could not end")).toBeInTheDocument();
+      expect(replace).not.toHaveBeenCalled();
+    } finally {
+      document.cookie = "wf_door=; path=/; max-age=0";
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    }
+  });
+
+  // Review of PR #1626: a pass end the server confirms after the deadline removes the marker; the
+  // page still offers Leave the demo, so trying again needs no reload.
+  it("keeps Leave the demo on offer when the pass ends after the deadline", async () => {
+    document.cookie = "wf_door=1; path=/";
+    let reply: (response: Response) => void = () => {};
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>((resolve) => (reply = resolve))),
+    );
+    const replace = vi.fn();
+    vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, replace } as Location);
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      renderRail();
+      fireEvent.click(within(openAccountMenu()).getByRole("menuitem", { name: "Leave the demo" }));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(8_000);
+      });
+      expect(screen.getByText("The demo could not end")).toBeInTheDocument();
+      // The late reply ends the pass and removes the marker.
+      document.cookie = "wf_door=; path=/; max-age=0";
+      await act(async () => {
+        reply(new Response(null, { status: 204 }));
+      });
+      cleanup();
+      renderRail();
+      expect(itemNames(openAccountMenu())).toContain("Leave the demo");
+      expect(replace).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+      document.cookie = "wf_door=; path=/; max-age=0";
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    }
+  });
+
+  it("never offers Leave the demo in a signed-in session, even on a front-door site", () => {
+    document.cookie = "wf_door=1; path=/";
+    try {
+      renderRail(session());
+      expect(itemNames(openAccountMenu())).not.toContain("Leave the demo");
+    } finally {
+      document.cookie = "wf_door=; path=/; max-age=0";
+    }
   });
 });
 

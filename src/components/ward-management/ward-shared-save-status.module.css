@@ -20,6 +20,16 @@
   font: inherit;
 }
 
+/* Live audit item 8: a calm save inside a sheet is one small line, not the recovery box. */
+.recoveryCalm {
+  gap: 0;
+  padding: var(--wf-s-1) var(--wf-s-3);
+  margin-block-end: var(--wf-s-2);
+  border-color: var(--wf-line);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
 .recovery:focus {
   outline: none;
 }
@@ -58,6 +68,25 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/*
+ * Live audit item 8 (11 Nov 2026): a save in flight shows this small calm pill, not the warning
+ * strip. It floats, so the page never jumps on every save, and takes no taps.
+ */
+.pill {
+  position: fixed;
+  inset-block-end: var(--wf-s-4);
+  inset-inline-start: var(--wf-s-4);
+  z-index: 40;
+  padding: var(--wf-s-1) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: 999px;
+  color: var(--wf-ink-2);
+  background: var(--wf-surface);
+  font-size: var(--wf-fs-12);
+  line-height: 1.4;
+  pointer-events: none;
 }
 
 /*
@@ -150,6 +179,10 @@
 
   .action {
     flex: none;
+  }
+
+  .pill {
+    inset-block-end: calc(var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + 0.5rem);
   }
 
   /* The reload warning must stay readable, so a strip carrying it wraps. */

@@ -37,18 +37,26 @@ const WARD_DESK_WHOLE_NETWORK_VALUE = "0";
 
 const HELD_COOKIE = `${WARD_DESK_HELD_COOKIE}=1;path=/ward-flow;SameSite=Strict`;
 const CLEARED_COOKIE = `${WARD_DESK_HELD_COOKIE}=${WARD_DESK_WHOLE_NETWORK_VALUE};path=/ward-flow;SameSite=Strict`;
+/** Sign-out removes the cookie outright (live audit item 19). With none, the server holds the page (D-137). */
+const REMOVED_COOKIE = `${WARD_DESK_HELD_COOKIE}=;path=/ward-flow;SameSite=Strict;max-age=0`;
 
 /** D-137: the server holds the page unless the request says the desk is the coordinator's. */
 export function wardDeskHeldFromCookie(value: string | undefined): boolean {
   return value !== WARD_DESK_WHOLE_NETWORK_VALUE;
 }
 
-export const WARD_DESK_EARLY_SCRIPT = `(function(){try{var d=JSON.parse(sessionStorage.getItem("wardflow:access-desk-v1")||"null");if(d&&typeof d==="object"){if(d.role==="coordinator"&&d.scope&&d.scope.kind==="statewide"){document.cookie="${CLEARED_COOKIE}";}else{document.documentElement.setAttribute("${WARD_DESK_PENDING_ATTRIBUTE}","");document.cookie="${HELD_COOKIE}";}}}catch(e){/* storage blocked - the cookie stays as it was */}})();`;
+/** Live audit item 19: every write of the desk cookie is Secure over https. */
+export const WARD_DESK_EARLY_SCRIPT = `(function(){try{var d=JSON.parse(sessionStorage.getItem("wardflow:access-desk-v1")||"null"),s=location.protocol==="https:"?";Secure":"";if(d&&typeof d==="object"){if(d.role==="coordinator"&&d.scope&&d.scope.kind==="statewide"){document.cookie="${CLEARED_COOKIE}"+s;}else{document.documentElement.setAttribute("${WARD_DESK_PENDING_ATTRIBUTE}","");document.cookie="${HELD_COOKIE}"+s;}}}catch(e){/* storage blocked - the cookie stays as it was */}})();`;
 
-/** Keeps the cookie in step with the desk this tab has just stored (`ward-access-store.ts`). */
-export function syncWardDeskHeldCookie(wholeNetwork: boolean): void {
+/**
+ * Keeps the cookie in step with the desk this tab has just stored (`ward-access-store.ts`). Sign-out
+ * passes `null`, which removes it, so nothing of the desk stays readable (live audit item 19).
+ */
+export function syncWardDeskHeldCookie(wholeNetwork: boolean | null): void {
   try {
-    document.cookie = wholeNetwork ? CLEARED_COOKIE : HELD_COOKIE;
+    document.cookie =
+      (wholeNetwork === null ? REMOVED_COOKIE : wholeNetwork ? CLEARED_COOKIE : HELD_COOKIE) +
+      (location.protocol === "https:" ? ";Secure" : "");
   } catch {
     // Cookies blocked: the first-load hide above still applies.
   }

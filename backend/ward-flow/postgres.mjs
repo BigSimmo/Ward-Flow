@@ -211,23 +211,23 @@ export function createWorkspaceStore(
    */
   let executiveBasis = null;
   /**
-   * The workspace clock (start time and offset) of one committed row ("revision:updated-at"), so
+   * The workspace clock (day zero and offset, D-150) of one committed row ("revision:updated-at"), so
    * an unchanged poll does not read them out of the workspace JSON each time. Set by full reads
    * and by the poll's own fallback read; a row with a different stamp is never answered from it.
-   * @type {{ stamp: string, startedAt: string, clockOffset: number } | null}
+   * @type {{ stamp: string, dayZero: string, clockOffset: number } | null}
    */
   let pollClock = null;
-  function rememberPollClock(stamp, startedAt, clockOffset) {
+  function rememberPollClock(stamp, dayZero, clockOffset) {
     if (
       typeof stamp === "string" &&
-      typeof startedAt === "string" &&
-      Number.isFinite(Date.parse(startedAt)) &&
+      typeof dayZero === "string" &&
+      Number.isFinite(Date.parse(dayZero)) &&
       Number.isFinite(clockOffset)
     )
-      pollClock = { stamp, startedAt, clockOffset };
+      pollClock = { stamp, dayZero, clockOffset };
   }
   const pollNow = (at) =>
-    engine.worldNow({ startedAt: pollClock?.startedAt, state: { clockOffsetMinutes: pollClock?.clockOffset } }, at);
+    engine.worldNow({ dayZero: pollClock?.dayZero, state: { clockOffsetMinutes: pollClock?.clockOffset } }, at);
   /** The executive desk's snapshot around one report, as a full read and a cached poll send it. */
   const executiveReply = (view, context, accessUntil, revision, now, report) => ({
     kind: "executive-aggregate",
@@ -437,7 +437,7 @@ export function createWorkspaceStore(
     replyTicket = /** @type {object | undefined} */ (undefined),
   ) => {
     // A committed row's clock, so the next unchanged poll answers from memory (no migration).
-    rememberPollClock(stamp, row.payload?.startedAt, row.payload?.state?.clockOffsetMinutes);
+    rememberPollClock(stamp, row.payload?.dayZero, row.payload?.state?.clockOffsetMinutes);
     if (view?.access?.role === "executive") return executiveSnapshot(connection, row, at, view, stamp);
     const context = accessContext(at, view);
     const revision = Number(row.revision);
@@ -1252,24 +1252,24 @@ export function createWorkspaceStore(
           return { notModified: true, dataMode: "prototype", revision: knownRevision, now: pollNow(at) };
       }
       const { rows } = await pool.query(
-        "SELECT data_mode, revision, date_trunc('milliseconds', updated_at) AS updated_at, payload->>'startedAt' AS started_at, payload->'state'->'clockOffsetMinutes' AS clock_offset FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
+        "SELECT data_mode, revision, date_trunc('milliseconds', updated_at) AS updated_at, payload->>'dayZero' AS day_zero, payload->'state'->'clockOffsetMinutes' AS clock_offset FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
         [workspaceId],
       );
       const row = rows[0];
       if (row && row.updated_at instanceof Date)
-        rememberPollClock(`${Number(row.revision)}:${row.updated_at.getTime()}`, row.started_at, row.clock_offset);
+        rememberPollClock(`${Number(row.revision)}:${row.updated_at.getTime()}`, row.day_zero, row.clock_offset);
       if (
         row &&
         Number(row.revision) === knownRevision &&
-        typeof row.started_at === "string" &&
-        Number.isFinite(Date.parse(row.started_at)) &&
+        typeof row.day_zero === "string" &&
+        Number.isFinite(Date.parse(row.day_zero)) &&
         Number.isFinite(row.clock_offset)
       )
         return {
           notModified: true,
           dataMode: row.data_mode,
           revision: knownRevision,
-          now: engine.worldNow({ startedAt: row.started_at, state: { clockOffsetMinutes: row.clock_offset } }, at),
+          now: engine.worldNow({ dayZero: row.day_zero, state: { clockOffsetMinutes: row.clock_offset } }, at),
         };
       return { notModified: false, snapshot: await read(actorId, view) };
     },

@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 
-import styles from "./front-door.module.css";
+import styles from "./front-door-hold.module.css";
 
 /**
  * The app's own front door, loaded only when it shows. Every page carries the shared access shell,

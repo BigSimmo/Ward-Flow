@@ -8,7 +8,8 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { currentCareContactCompleted } from "../ward-care-journey";
 import type { DischargeOpenHandle } from "../ward-discharge-records";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
 import { Segmented, useIsPhone, useOptionalToast } from "@/components/wf";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { useActionToast } from "@/components/ward-management/use-action-toast";
@@ -312,6 +313,10 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     "worldGeneration",
   );
   const liveReferrals = useCommunityScopedReferrals();
+  // Live audit item 6 (11 Nov 2026): the signed-in shared workspace (a shared build, or a signed-in
+  // session) never shows the Midland demo team.
+  const sharedWorkspace =
+    useContext(SharedSessionContext) !== null || process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED === "true";
   const sentByAnyTeam = useCommunitySentReferrals();
   const now = useWardFlowClock();
   const raise = useWardRaise("community");
@@ -434,7 +439,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     generation: worldGeneration,
     shared,
     onAccepted: (source) => {
-      if (MIDLAND_DEMO_TEAM.test(teamId)) recordMidlandContact("team");
+      if (!sharedWorkspace && MIDLAND_DEMO_TEAM.test(teamId)) recordMidlandContact("team");
       if (source === "modal") setActiveModalType((current) => (current === "contact" ? null : current));
       else setToastMessage("Team contact logged. This does not record patient or referral contact.");
     },
@@ -450,8 +455,10 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   const hasExplicitProps = Boolean(admissions || referrals);
   const isDemoMode = demonstration && !hasExplicitProps;
   // The live Midland page carries the locked mock-up's demo team (Q126, Q132: Midland only). Supplied
-  // records, and the older demonstration cohort, keep their own lists.
-  const midlandDemo = !hasExplicitProps && !demonstration && MIDLAND_DEMO_TEAM.test(teamId);
+  // records, and the older demonstration cohort, keep their own lists. Live audit item 6 (11 Nov
+  // 2026): the signed-in shared workspace never shows the demo team, so its home lists the shared
+  // referrals and a contact is saved to the workspace, not kept in this browser.
+  const midlandDemo = !hasExplicitProps && !demonstration && !sharedWorkspace && MIDLAND_DEMO_TEAM.test(teamId);
   const midlandDecisions = useMidlandDecisions();
 
   const { demoTeamReferrals, demoVisibleReferrals, demoVisibleInpatients, demoVisibleEgress, demoVisibleCaseload } =
