@@ -70,7 +70,13 @@ export function HomeSinceBanner({ now }: { now: Instant }) {
             <SrOnly>{text}</SrOnly>
             <span className={styles.bannerLine} aria-hidden="true" data-testid="home-since-line">
               <span className={styles.bannerLead}>
-                {lead.lead}
+                {lead.lead.startsWith("Since ") ? (
+                  <>
+                    Since <span className={styles.bannerFigure}>{lead.lead.slice("Since ".length)}</span>
+                  </>
+                ) : (
+                  lead.lead
+                )}
                 {lead.day ? <span className={styles.bannerLeadDay}>{lead.day}</span> : null}
               </span>
               {named.map((entry, index) => (
@@ -83,7 +89,7 @@ export function HomeSinceBanner({ now }: { now: Instant }) {
                 const rest = counts.length - (index + 1);
                 return rest > 0 ? (
                   <span key={`more-${entry.label}`} className={styles.bannerMore} data-shown={index + 1}>
-                    +{rest} more
+                    <span className={styles.bannerFigure}>+{rest}</span> more
                   </span>
                 ) : null;
               })}

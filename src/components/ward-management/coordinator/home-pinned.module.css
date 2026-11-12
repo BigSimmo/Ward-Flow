@@ -177,6 +177,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The lead's clock time and the "+N" figure: mono like every figure, at their own weight and colour. */
+.bannerFigure {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
 .bannerMore {
   display: none;
   flex: none;
