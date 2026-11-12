@@ -45,6 +45,7 @@ import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { originName } from "@/components/ward-management/ward-movement-origin";
 import { STAGES, type PatientNowRecord } from "./patient-now-records";
 import { recordExtrasFor, type EpisodeKind, type PastEpisode, type RecordDocument } from "./patient-record-extras";
+import { PatientHoursBreakdown } from "./patient-hours-breakdown";
 import s from "./patient-history-tab.module.css";
 
 /** The readmission window, read from the register (`readmissionWindow`), never typed in a label. */
@@ -358,7 +359,10 @@ export function PatientHistoryTab({
   absence,
   absenceVoluntary = false,
   chronologyHref,
+  hoursNow,
 }: {
+  /** Redesign (12 Nov 2026): the board time, given while a movement is open, so Where the hours went sits here. */
+  hoursNow?: number;
   record: PatientNowRecord;
   /** Ops-17 (13 Oct 2026): this person's full chronology, one tap from their history. */
   chronologyHref?: string;
@@ -462,11 +466,18 @@ export function PatientHistoryTab({
 
   return (
     <section className={s.pane} aria-label="Presentation history" data-layout="history">
+      {/* Redesign (12 Nov 2026): the figure strip leads. While a movement is open, where its hours went
+          sits beside the episodes on a wide screen. */}
       {knownHistory ? (
         <StatRow rows={rows} dayZero={dayZero} current={current !== undefined} admittedNow={occupiedNow} />
       ) : null}
+      {movement && hoursNow !== undefined ? (
+        <div className={s.hoursSlot}>
+          <PatientHoursBreakdown movement={movement} now={hoursNow} />
+        </div>
+      ) : null}
 
-      <Card aria-label="Movement event log">
+      <Card aria-label="Movement event log" className={s.mainCard}>
         <CardHead
           level={2}
           icon={History}

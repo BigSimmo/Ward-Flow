@@ -9,7 +9,7 @@
 import { ClipboardList } from "lucide-react";
 import Link from "next/link";
 
-import { Card, CardBody, CardHead, buttonClass } from "@/components/wf";
+import { Icon, buttonClass } from "@/components/wf";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { calendarDateOf, perthCalendarDay, perthClockTime } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -53,27 +53,26 @@ export function PatientTriageCard({ patientId }: { patientId: string | undefined
   const canTriage = gate.allowed && canOpen(WARD_TRIAGE_NEW_HREF);
   if (!canTriage && signed.length === 0) return null;
   const latest = signed[0];
+  const meta = signed.length ? `${signed.length} signed` : "SMHMR900 and SMHMR905";
+  // Version 2 (12 Nov 2026): a row of the Now page's small card, in the status rows' own form: a
+  // tinted icon, the title over what is on record, and the one action on the right edge.
   return (
-    <Card className={styles.card} aria-labelledby="patient-triage-title" data-testid="patient-triage-card">
-      <CardHead
-        id="patient-triage-title"
-        title="Triage and risk"
-        icon={ClipboardList}
-        iconPlain
-        meta={signed.length ? `${signed.length} signed` : "SMHMR900 and SMHMR905"}
-        action={
-          canTriage ? (
-            <Link
-              href={triageHrefFor(patientId)}
-              className={buttonClass({ size: "sm" })}
-              data-testid="patient-triage-start"
-            >
-              Triage
-            </Link>
-          ) : undefined
-        }
-      />
-      <CardBody className={styles.body}>
+    <section
+      className={styles.row}
+      aria-labelledby="patient-triage-title"
+      data-testid="patient-triage-card"
+      data-now-tile=""
+    >
+      <span className={styles.chip} aria-hidden="true">
+        <Icon icon={ClipboardList} size={16} />
+      </span>
+      <div className={styles.text}>
+        <div className={styles.top}>
+          <h2 id="patient-triage-title" className={styles.title}>
+            Triage and risk
+          </h2>
+          <span className={styles.meta}>{meta}</span>
+        </div>
         {latest ? (
           <>
             <p className={styles.signed} data-testid="patient-triage-signed">
@@ -88,7 +87,16 @@ export function PatientTriageCard({ patientId }: { patientId: string | undefined
         ) : (
           <p className={styles.quiet}>No triage on record. Triage opens a blank form, with nothing pre-selected.</p>
         )}
-      </CardBody>
-    </Card>
+      </div>
+      {canTriage ? (
+        <Link
+          href={triageHrefFor(patientId)}
+          className={`${buttonClass({ size: "sm" })} ${styles.action}`}
+          data-testid="patient-triage-start"
+        >
+          Triage
+        </Link>
+      ) : null}
+    </section>
   );
 }

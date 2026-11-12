@@ -6,15 +6,129 @@
   min-width: 0;
 }
 
+/* Redesign (12 Nov 2026): the 12-column grid, main and side column at 2:1, 16px gutters. */
 .cols {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
-  gap: var(--wf-s-3);
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: var(--wf-s-4);
   align-items: start;
+}
+
+.cols > .col {
+  gap: var(--wf-s-4);
+}
+
+/* Version 2: triage and carer call back are rows of one card, in the status rows' own form (a
+   tinted icon, the title over the state, the action on the right edge). The hairline between rows
+   is the card's own ground showing through a 1px gap. */
+.tiles {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1px;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: linear-gradient(var(--wf-line), var(--wf-line)), var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  container-type: inline-size;
+}
+
+.tiles:empty {
+  display: none;
+}
+
+.tiles > * {
+  min-width: 0;
+  margin: 0;
+}
+
+/* Version 2: the status card and the rows that open its sheets are one card. The card keeps its own
+   edge and shadow; the links are its foot, on the quieter surface. */
+.work {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+}
+
+.work:has(> .across) > section {
+  border-bottom: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.work:has(> .across) > section [data-hot] {
+  border-radius: 0;
+}
+
+.work > .across > .sheetRows {
+  border-top-color: var(--wf-line);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  background: var(--wf-surface-2);
+  box-shadow: var(--wf-e1);
+}
+
+.work > .across .sheetRow .callName {
+  font-weight: 500;
+  color: var(--wf-ink-2);
+}
+
+.work > .across .sheetRow:hover .callName {
+  color: var(--wf-ink-1);
+}
+
+/* Destination, Transport and Review read across as one strip on a wide screen. */
+.across > .sheetRows {
+  flex-direction: row;
+}
+
+.across .sheetRow {
+  flex: 1 1 auto;
+  min-width: 0;
+  border-top: 0;
+  border-left: 1px solid var(--wf-line);
+}
+
+.across .sheetRow:first-child {
+  border-left: 0;
+}
+
+/* The status rows above already say where each stands, so the strip keeps the titles only. */
+.across .sheetRow {
+  min-height: 44px;
+}
+
+.across .sheetRow .callRole {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.across .sheetRow .callName {
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+
+/* Hand over and print: the two printable pages as rows of one card. */
+.handover:not(:has(section)) {
+  display: none;
+}
+
+.handoverRows > section {
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .col {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--wf-s-3);
   min-width: 0;
   align-content: start;
@@ -73,6 +187,50 @@
   min-height: 64px;
   padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-2) var(--wf-s-4);
   border-top: 1px solid var(--wf-line);
+}
+
+/* Version 2: in a narrow card (the side column, a phone) the name takes the full width and is never
+   cut short; the number and its hours sit under it, with Copy on the right edge. */
+.calls {
+  container: calls / inline-size;
+}
+
+@container calls (max-width: 420px) {
+  .callRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "text copy"
+      "number copy";
+    row-gap: var(--wf-s-1);
+    padding-block: var(--wf-s-3);
+  }
+
+  .callRow > .callText {
+    grid-area: text;
+  }
+
+  .callRow > .callNumber {
+    grid-area: number;
+    flex-direction: row;
+    align-items: baseline;
+    justify-self: start;
+    gap: var(--wf-s-3);
+  }
+
+  .callRow > :last-child {
+    grid-area: copy;
+    align-self: center;
+  }
+
+  .callRow .callName {
+    display: block;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+  }
+
+  .callRow .callRole {
+    white-space: normal;
+  }
 }
 
 .callText {

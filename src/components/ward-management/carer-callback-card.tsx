@@ -23,7 +23,16 @@ const NONE: never[] = [];
  * comes, until someone ticks it off with "Call made". 🔒 No carer name or phone number is typed
  * here: the only box is the time. One open call back per person; asking again moves its time.
  */
-export function CarerCallbackCard({ admissionId, movementId }: { admissionId?: string; movementId?: string }) {
+export function CarerCallbackCard({
+  admissionId,
+  movementId,
+  tile = false,
+}: {
+  admissionId?: string;
+  movementId?: string;
+  /** Patient page redesign (12 Nov 2026): a titled row under Triage and risk, the state on its own line. */
+  tile?: boolean;
+}) {
   const flow = useOptionalWardFlowSelect("carerCallbacks", "admissions", "movements", "units");
   const now = useWardFlowClock();
   const routeRole = useRouteRole();
@@ -74,84 +83,107 @@ export function CarerCallbackCard({ admissionId, movementId }: { admissionId?: s
   };
 
   return (
-    <section className={styles.card} aria-label="Carer call back" data-testid="ward-carer-callback">
-      <div className={styles.line}>
-        <Icon icon={PhoneCall} size={16} className={styles.icon} />
-        <span className={styles.text}>
-          {open ? (
-            <>
-              Carer wants a call back · best after{" "}
-              <span className={styles.clock}>{formatInstantWithDay(open.bestAfter, now)}</span>
-            </>
-          ) : (
-            "Carer call back"
-          )}
-        </span>
-        {canRecord && !editing ? (
-          <span className={styles.actions}>
-            {open ? (
-              <Button
-                variant="sec"
-                size="sm"
-                data-testid="ward-carer-callback-made"
-                disabledReason={save.pending ? "Saving" : undefined}
-                onClick={() =>
-                  save.submit(
-                    () => raise("MARK_CARER_CALLBACK_MADE", { callbackId: open.id, ...acting }),
-                    () => undefined,
-                  )
-                }
-              >
-                Call made
-              </Button>
-            ) : null}
-            <Button variant="ghost" size="sm" data-testid="ward-carer-callback-open" onClick={() => setEditing(true)}>
-              {open ? "Change time" : "Carer wants a call back"}
-            </Button>
+    <section
+      className={styles.card}
+      aria-label="Carer call back"
+      data-testid="ward-carer-callback"
+      data-tile={tile || undefined}
+      data-now-tile={tile ? "" : undefined}
+    >
+      {tile ? (
+        <div className={styles.tileHead}>
+          <span className={styles.chip} aria-hidden="true">
+            <Icon icon={PhoneCall} size={16} />
           </span>
+          <h2 className={styles.tileTitle}>Carer call back</h2>
+        </div>
+      ) : null}
+      <div className={tile ? styles.tileBody : styles.plainBody}>
+        <div className={styles.line}>
+          {tile ? null : <Icon icon={PhoneCall} size={16} className={styles.icon} />}
+          <span className={styles.text}>
+            {open ? (
+              <>
+                Carer wants a call back · best after{" "}
+                <span className={styles.clock}>{formatInstantWithDay(open.bestAfter, now)}</span>
+              </>
+            ) : tile ? (
+              "No call back asked for."
+            ) : (
+              "Carer call back"
+            )}
+          </span>
+          {canRecord && !editing ? (
+            <span className={styles.actions}>
+              {open ? (
+                <Button
+                  variant="sec"
+                  size="sm"
+                  data-testid="ward-carer-callback-made"
+                  disabledReason={save.pending ? "Saving" : undefined}
+                  onClick={() =>
+                    save.submit(
+                      () => raise("MARK_CARER_CALLBACK_MADE", { callbackId: open.id, ...acting }),
+                      () => undefined,
+                    )
+                  }
+                >
+                  Call made
+                </Button>
+              ) : null}
+              <Button
+                variant={tile && !open ? "sec" : "ghost"}
+                size="sm"
+                data-testid="ward-carer-callback-open"
+                onClick={() => setEditing(true)}
+              >
+                {open ? "Change time" : "Carer wants a call back"}
+              </Button>
+            </span>
+          ) : null}
+        </div>
+        {editing ? (
+          <form
+            className={styles.form}
+            onSubmit={(event) => {
+              event.preventDefault();
+              submit();
+            }}
+          >
+            <Field
+              label="Best after"
+              hint={bestAfter !== undefined ? `Due ${formatInstantWithDay(bestAfter, now)}` : "HH:MM"}
+              error={showError ? TIME_FIELD_ERROR : undefined}
+            >
+              <TimeField value={time} onValueChange={setTime} data-testid="ward-carer-callback-time" />
+            </Field>
+            <p className={styles.note}>Only the time is kept. Do not add the carer&apos;s name or number.</p>
+            {save.error ? <StateLine kind="error" compact title={save.error} /> : null}
+            <span className={styles.actions}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditing(false);
+                  setTime("");
+                  setShowError(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="pri"
+                size="sm"
+                type="submit"
+                data-testid="ward-carer-callback-save"
+                disabledReason={save.pending ? "Saving" : undefined}
+              >
+                Save call back
+              </Button>
+            </span>
+          </form>
         ) : null}
       </div>
-      {editing ? (
-        <form
-          className={styles.form}
-          onSubmit={(event) => {
-            event.preventDefault();
-            submit();
-          }}
-        >
-          <Field
-            label="Best after"
-            hint={bestAfter !== undefined ? `Due ${formatInstantWithDay(bestAfter, now)}` : "HH:MM"}
-            error={showError ? TIME_FIELD_ERROR : undefined}
-          >
-            <TimeField value={time} onValueChange={setTime} data-testid="ward-carer-callback-time" />
-          </Field>
-          <p className={styles.note}>Only the time is kept. Do not add the carer&apos;s name or number.</p>
-          {save.error ? <StateLine kind="error" compact title={save.error} /> : null}
-          <span className={styles.actions}>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setEditing(false);
-                setTime("");
-                setShowError(false);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="pri"
-              size="sm"
-              type="submit"
-              data-testid="ward-carer-callback-save"
-              disabledReason={save.pending ? "Saving" : undefined}
-            >
-              Save call back
-            </Button>
-          </span>
-        </form>
-      ) : null}
     </section>
   );
 }

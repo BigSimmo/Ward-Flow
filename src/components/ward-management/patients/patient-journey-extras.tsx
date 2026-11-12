@@ -37,7 +37,10 @@ export function PatientJourneyExtras({
   callTargets,
   riskFlags,
   now,
+  part = "all",
 }: {
+  /** Redesign (12 Nov 2026): Now shows the hand over part in its side column; History shows the hours. */
+  part?: "all" | "hours" | "handover";
   movement: Movement;
   patient: Patient | undefined;
   /** The name as the page's header shows it. */
@@ -94,9 +97,10 @@ export function PatientJourneyExtras({
       now,
     };
   }
+  if (part === "hours") return <PatientHoursBreakdown movement={movement} now={now} />;
   return (
     <>
-      <PatientHoursBreakdown movement={movement} now={now} />
+      {part === "all" ? <PatientHoursBreakdown movement={movement} now={now} /> : null}
       {pack ? <PatientHandoverPackButton input={pack} dayZero={dayZero} /> : null}
       <PatientCarerPageButton movement={movement} units={units} />
     </>

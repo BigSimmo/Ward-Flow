@@ -926,6 +926,9 @@ export function PatientStatusCard({
         aria-label="Status"
         data-tone={status.tone}
         data-ph-placing={(isPhone && placing) || undefined}
+        // Redesign (12 Nov 2026): on tablet and desktop the gates read as rows, one under the other,
+        // with every action on the right edge, so the card sits in the Now grid's main column.
+        data-rows={!isPhone || undefined}
         data-testid="ward-patient-status-card"
       >
         <div className={styles.head} hidden={phoneQuiet}>

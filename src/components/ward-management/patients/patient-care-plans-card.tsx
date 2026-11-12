@@ -260,7 +260,7 @@ export function PatientCarePlansCard({
           )
         }
       />
-      <CardBody>
+      <CardBody flush>
         {presenter || patient.culturalSupportRequested ? (
           <p className={styles.tags} data-testid="ward-patient-care-flags">
             {presenter ? <Badge size="sm">{presenter}</Badge> : null}

@@ -53,3 +53,79 @@
   font: 400 var(--wf-fs-12) / 16px var(--wf-font);
   color: var(--wf-ink-3);
 }
+
+/* Patient page redesign, version 2 (12 Nov 2026): the row form, under Triage and risk in the Now
+   page's small card. A tinted icon, the title over the state, and the actions on the right edge. The
+   wrappers step aside so the icon, title, state and actions sit on one grid. */
+.card[data-tile] {
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 2px var(--wf-s-3);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 0;
+  border-radius: 0;
+}
+
+.card[data-tile] .tileHead,
+.card[data-tile] .tileBody,
+.card[data-tile] .line {
+  display: contents;
+}
+
+.chip {
+  display: inline-grid;
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.tileTitle {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.plainBody {
+  display: contents;
+}
+
+.card[data-tile] .text {
+  grid-column: 2;
+  grid-row: 2;
+  color: var(--wf-ink-2);
+}
+
+.card[data-tile] .actions {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-self: center;
+  margin-left: 0;
+}
+
+.card[data-tile] .form {
+  grid-column: 2 / -1;
+  grid-row: 3;
+  margin-top: var(--wf-s-2);
+}
+
+/* In a narrow card (a phone) the actions drop under the state, still on the text's left edge. */
+@container (max-width: 460px) {
+  .card[data-tile] .actions {
+    grid-column: 2 / -1;
+    grid-row: 3;
+    justify-self: start;
+    margin-top: var(--wf-s-1);
+  }
+
+  .card[data-tile] .form {
+    grid-row: 4;
+  }
+}

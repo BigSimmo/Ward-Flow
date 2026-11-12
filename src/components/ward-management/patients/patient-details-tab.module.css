@@ -313,3 +313,86 @@
     display: none;
   }
 }
+
+/* Redesign (12 Nov 2026): two level cards from the tablet-landscape width up. Each card lays its
+   groups out from its own width: label above, two columns of facts (the phone form). */
+.dash {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.dash > .card {
+  container: details-card / inline-size;
+}
+
+@media (min-width: 1001px) {
+  .dash {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--wf-s-4);
+    align-items: start;
+  }
+}
+
+@container details-card (max-width: 640px) {
+  .section {
+    position: static;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "label action"
+      "body body";
+    row-gap: var(--wf-s-2);
+    padding: 12px var(--wf-s-4) 14px;
+  }
+
+  .label {
+    grid-area: label;
+    align-self: center;
+  }
+
+  .body {
+    grid-area: body;
+  }
+
+  .action {
+    position: static;
+    grid-area: action;
+  }
+
+  .facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px var(--wf-s-4);
+  }
+
+  .person {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "name role"
+      "quiet end";
+    row-gap: 2px;
+    padding-block: 8px;
+  }
+
+  .personName {
+    grid-area: name;
+  }
+
+  .personRole {
+    grid-area: role;
+    text-align: right;
+  }
+
+  .personQuiet {
+    grid-area: quiet;
+  }
+
+  .personEnd {
+    grid-area: end;
+    grid-column: auto;
+    justify-content: flex-end;
+  }
+
+  .personEnd:empty {
+    display: none;
+  }
+}
