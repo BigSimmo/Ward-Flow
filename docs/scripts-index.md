@@ -2,7 +2,7 @@
 
 _Updated 2026-11-10 - CI rows for the protected safety tests, the pull-request patient-identifier scan with its exemptions, the identifier scan and the 5 KB raise cap scripts, and the audit and support tools; Documentation owns._
 
-Curated map of `scripts/` (177 files) and the `package.json` script surface (88 entries),
+Curated map of `scripts/` (178 files) and the `package.json` script surface (88 entries),
 grouped by what each part protects. `package.json` is the command surface; this page says why
 each group exists. `npm run docs:check-inventory` compares the two counts above exactly,
 and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs
