@@ -184,6 +184,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-159](#d-159-fixes-from-the-10-to-12-november-pr-review-12-november-2026)                                                                             | Fixes from the 10 to 12 November PR review                                             | Active                                           |
 | [D-160](#d-160-a-trusted-proxy-list-of-plain-addresses-falls-back-to-per-address-keying-12-november-2026)                                               | A trusted proxy list of plain addresses falls back to per-address keying               | Active                                           |
 | [D-161](#d-161-homes-changes-since-strip-is-one-line-12-november-2026)                                                                                  | Home's changes-since strip is one line                                                 | Active                                           |
+| [D-163](#d-163-pre-demo-audits-use-the-public-demo-after-d-162-is-live-12-november-2026)                                                                | Pre-demo audits use the public demo after D-162 is live                                | Active                                           |
 | [D-164](#d-164-homes-changes-since-strip-names-escalations-first-and-leaves-movements-off-12-november-2026)                                             | Home's changes-since strip names escalations first and leaves movements off            | Active                                           |
 
 ---
@@ -2003,8 +2004,17 @@ is inferred.
 - **Not decided:** Josh did not answer the two follow-up questions (put escalations first; leave movements off the line), so the count order and the counts shown are unchanged.
 - **Boundary:** synthetic data only. No clinical rule changes. Approves no release.
 
+## D-163. Pre-demo audits use the public demo after D-162 is live (12 November 2026)
+
+- **Date:** 12 November 2026, 11:39 PM AWST (15:39 UTC). **Decided by:** Josh, "Yes to all recommendations" in the Ward Flow project thread "Write pre-demo audit prompts", answering its three numbered questions. Numbered D-163 because D-162 is claimed by open PR #1639.
+- **Decision:**
+  1. **Site to show:** the health service demonstration uses the public demo (state kept on the device, with Reset demo), not the signed-in shared site. The shared world still holds the PT-A06 and TEST-Helper4 test records, and clearing them stays a live write that waits for Josh's yes (D-149, D-156).
+  2. **Timing:** the pre-demo audit prompts run after PR #1639 (D-162) has merged and reached `live`, so they do not re-find its fixes.
+  3. **Public demo walk:** the demo rehearsal prompt may do one read-only walk of the public demo address, using on-screen controls only. It never signs in to the shared site, writes to the live world or calls another provider.
+- **Boundary:** synthetic data only. No code, clinical rule or signed value changes. Approves no live write, release, hosted CI run or other provider action.
+
 ## D-164. Home's changes-since strip names escalations first and leaves movements off (12 November 2026)
 
-- **Date:** 12 November 2026, 11:27 PM AWST (15:27 UTC). **Decided by:** Josh, "Go ahead and fix all recommendations" in the Ward Flow project thread "Tidy the Since the shift started strip", answering the two follow-up questions left open by D-161. Numbered D-164: D-162 is claimed by open PR #1639. D-163 is claimed by open PR #1640.
+- **Date:** 12 November 2026, 11:27 PM AWST (15:27 UTC). **Decided by:** Josh, "Go ahead and fix all recommendations" in the Ward Flow project thread "Tidy the Since the shift started strip", answering the two follow-up questions left open by D-161. Numbered D-164 because D-162 is claimed by open PR #1639.
 - **Decision:** the strip's counts run escalations, delays, referrals, beds freed, then acceptances withdrawn, discharge dates moved and records updated, so a phone line, which names one count, shows an escalation when there is one. New movements are left off the line and stay in the Review sheet; when movements are the only change, the line names them so Review stays reachable from Home.
 - **Boundary:** synthetic data only. Changes no clinical rule, only the order and choice of counts on one line. Approves no release.
