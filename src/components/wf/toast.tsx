@@ -58,32 +58,8 @@ export type ToastChoices = {
   onChoose: (id: string) => void | false;
 };
 
-/**
- * PR #1626 review: until the menu's code arrives, or if it cannot load, plain buttons keep
- * the choice open within the Undo window.
- */
-function PlainChoices({ choices, onDone }: { choices: ToastChoices; onDone?: () => void }) {
-  return (
-    <span role="group" aria-label={choices.label}>
-      {choices.items.map((item) => (
-        <Button
-          key={item.id}
-          variant="ghost"
-          size="sm"
-          className={styles.toastAction}
-          onClick={() => {
-            if (choices.onChoose(item.id) !== false) onDone?.();
-          }}
-        >
-          {item.label}
-        </Button>
-      ))}
-    </span>
-  );
-}
-
-/** Loaded only when a toast offers choices (D-148), so the kit menu is off every first load. */
-const ToastChoicesMenu = lazy(() => import("./toast-choices").catch(() => ({ default: PlainChoices })));
+/** Loaded only when a toast offers choices (D-148), so the buttons and kit menu stay off the first load. */
+const ToastChoicesSlot = lazy(() => import("./toast-choices-entry"));
 
 export type ToastNextStep = {
   label: string;
@@ -329,8 +305,8 @@ export function ToastView({
         )
       ) : null}
       {choices && (!undo || phase === "running") ? (
-        <Suspense fallback={<PlainChoices choices={choices} onDone={onClose} />}>
-          <ToastChoicesMenu choices={choices} onDone={onClose} />
+        <Suspense fallback={null}>
+          <ToastChoicesSlot choices={choices} onDone={onClose} />
         </Suspense>
       ) : null}
       {undo ? <UndoButton undo={undo} phase={phase} finish={finish} primary={primary === "undo"} /> : null}

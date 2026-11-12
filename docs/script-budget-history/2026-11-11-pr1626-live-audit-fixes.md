@@ -19,3 +19,11 @@ Trim tried: the toast's reason menu (`wf/toast-choices.tsx`) and the front-door 
 `main` raised six of its own limits. This PR now keeps `main`'s value for every route and adds only its own raise over the old `main` at `0b657ad`, in KB: Home 588.3 to 588.8 (+0.5), Movement 619.0 to 619.5 (+0.5) and ED site 678.1 to 681.5 (+3.4). Every other route takes `main`'s limit unchanged. Hosted CI's measurement will show whether any can come down.
 
 Hosted CI on that merge (job 130851096719) measured, in KB: Referrals 594.5, Ward 625.9, Movement 619.6 and ED site 681.8, and `main` alone could not be built. Builds vary by a few tenths, so these four limits are now the measurement plus 0.5: Referrals 595.0 (+0.7 over `main`), Ward 626.4 (+1.0), Movement 620.1 (+1.1) and ED site 682.3 (+4.2), each within the 5 KB allowance. Home stays at 588.8 (+0.5) and every other route keeps `main`'s limit.
+
+## After the first-load trim (12 Nov 2026)
+
+The toast's fallback buttons and the ward bed drawer left the first load (the drawer was already
+closed at first paint; its inner sheet was already lazy). Local production measurement after that
+trim, in KB: Home 588.2, Referrals 594.3, Ward 623.6, Movement 619.4 and ED site 681.6. All nine
+budgeted routes sit inside the limits already on this branch. Ward is 1.8 KB inside `main`'s 625.4.
+The other limits can come down later (Home 588.8, Referrals 595.0, Movement 620.1, ED site 682.3).

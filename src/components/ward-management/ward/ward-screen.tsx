@@ -125,6 +125,7 @@ import {
   WardDailySheetDialog,
   WardDischargeNotices,
   WardPlannedAdmissionsPanel,
+  WardScreenBedDrawer,
 } from "./ward-screen-lazy";
 import { WardScreenReferralsTab } from "./ward-screen-referrals-tab";
 import { WardScreenTopBar } from "./ward-screen-top-bar";
@@ -135,7 +136,7 @@ import { WardAcceptDialog, WardScreenDecisionJobs } from "./ward-on-demand";
 import type { DecisionReport } from "./ward-decisions-cockpit";
 import { signOffUndo } from "./ward-sign-off-undo";
 import { formatDateOfBirth } from "@/components/ward-management/ward-patients";
-import { namedNotRecordedMessage, notRecordedMessage, WardScreenBedDrawer } from "./ward-screen-overlays";
+import { namedNotRecordedMessage, notRecordedMessage } from "./ward-screen-messages";
 import { WardScreenTabSections } from "./ward-screen-tab-sections";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 

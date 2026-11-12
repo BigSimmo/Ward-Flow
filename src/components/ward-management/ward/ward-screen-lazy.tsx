@@ -39,6 +39,12 @@ export const WardBedDossierDrawer = dynamic(
     ssr: false,
   },
 );
+// The bed drawer is closed at first paint, so it stays off the ward's first load (PR #1626 phone budget).
+const loadBedDrawer = () => import("./ward-screen-overlays");
+export const WardScreenBedDrawer = dynamic(() => loadBedDrawer().then((m) => m.WardScreenBedDrawer), {
+  ssr: false,
+});
+preloadWhenIdle(loadBedDrawer);
 export const WardNotificationCenter = dynamic(
   () => import("./ward-notification-center").then((m) => m.WardNotificationCenter),
   { ssr: false },

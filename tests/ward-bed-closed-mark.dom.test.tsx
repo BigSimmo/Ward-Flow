@@ -140,19 +140,18 @@ describe("closing a bed with a review time (item 6)", () => {
     fireEvent.click(screen.getByRole("button", { name: "In 4 hours" }));
     fireEvent.click(screen.getByTestId("ward-drawer-close-bed"));
     const reviewAt = flow!.now + 240;
-    // The menu loads on use; until then the same choices are plain buttons on the toast.
-    const toast = screen.getByTestId("toast");
-    const staffing =
-      within(toast).queryByRole("group", { name: "Add a reason" }) !== null
-        ? within(within(toast).getByRole("group", { name: "Add a reason" })).getByRole("button", { name: "Staffing" })
-        : null;
+    // The menu loads on use (off the first load); until then the same choices are plain buttons.
+    const toast = await screen.findByTestId("toast");
+    const staffing = await within(toast)
+      .findByRole("button", { name: "Staffing" })
+      .catch(() => null);
     await act(async () => {
       if (staffing) fireEvent.click(staffing);
-      else fireEvent.click(within(toast).getByTestId("toast-choices"));
+      else fireEvent.click(await within(toast).findByTestId("toast-choices"));
     });
     if (!staffing)
       await act(async () => {
-        fireEvent.click(screen.getByRole("menuitem", { name: "Staffing" }));
+        fireEvent.click(await screen.findByRole("menuitem", { name: "Staffing" }));
       });
     const mark = flow!.units.find((unit) => unit.id === UNIT)!.closedBeds!.at(-1)!;
     expect(mark).toMatchObject({ bedNumber: bed, reason: "staffing", reviewAt });
