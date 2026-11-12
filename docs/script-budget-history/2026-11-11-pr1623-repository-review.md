@@ -27,3 +27,5 @@ Merged again after #1608 (main `0e2478133`): main's values taken, plus this PR's
 Merged again after #1606 (main `0b657ad3f`): main's values taken, plus this PR's deltas, giving Home 588.3, Referrals 594.7, ED 543.7, Movements 619.2 and Statistics 640.8.
 
 Merged again after #1632 (main `02817bbd6`, which raised six routes): main's values taken, plus this PR's deltas, giving Home 588.9, Referrals 594.7, ED 544.2, Movements 619.5 and Statistics 641.3.
+
+Hosted CI on that merge (head `986e9dfa9`) measured, in KB: Home 589.2, Movements 619.8 and Capacity 666.4, and `main` alone could not be built, so it could not be compared. Builds vary by a few tenths, so these three limits are now the measurement plus 0.5: Home 589.7 (+1.4 over `main`), Movements 620.3 (+1.3) and Capacity 666.9 (+1.0), each within the 5 KB allowance.
