@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, ChevronRight, Copy, Phone, Printer } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 
 import { Button, Card, CardHead, useIsPhone, useIsTabletPortrait } from "@/components/wf";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
@@ -81,7 +81,14 @@ export function PatientNowLayout({
   // Redesign (12 Nov 2026): Now is a dashboard grid. The work leads in the main column, triage and
   // carer call back follow as rows of one card, and the side column holds what people look up
   // (legal, who to call, hand over). Nothing stretches the full width of the page.
-  const tileRow = tiles ? <div className={styles.tiles}>{tiles}</div> : null;
+  // The rows and Care and safety hold open editors. Each keeps one key under the one keyed parent in
+  // all three forms, so turning a tablet (which swaps the form) does not throw away a draft.
+  const tileRow = tiles ? (
+    <div key="tiles" className={styles.tiles}>
+      {tiles}
+    </div>
+  ) : null;
+  const careSlot = <Fragment key="care">{care}</Fragment>;
   // Version 2: the status card and the rows that open its sheets are one card, the links its foot.
   const work = (
     <div className={styles.work}>
@@ -98,57 +105,61 @@ export function PatientNowLayout({
   if (isPhone)
     return (
       <div className={styles.stack}>
-        {nextStep}
-        {card}
-        {sheetRows}
-        {notices}
-        {tileRow}
-        {legal}
-        {readiness}
-        {recent}
-        {callCard}
-        {absence}
-        {change}
-        {care}
-        {handoverCard}
-        {phoneMore}
+        <div key="main" className={styles.flat}>
+          {nextStep}
+          {card}
+          {sheetRows}
+          {notices}
+          {tileRow}
+          {legal}
+          {readiness}
+          {recent}
+          {callCard}
+          {absence}
+          {change}
+          {careSlot}
+          {handoverCard}
+          {phoneMore}
+        </div>
       </div>
     );
   if (isPortrait)
     return (
       <div className={styles.stack}>
-        {nextStep}
-        {work}
-        {notices}
-        {tileRow}
-        <div className={styles.twoUp}>
-          {legal || readiness ? (
-            <div className={styles.col}>
-              {legal}
-              {readiness}
-              {why}
-            </div>
-          ) : (
-            why
-          )}
-          {callCard}
+        <div key="main" className={styles.flat}>
+          {nextStep}
+          {work}
+          {notices}
+          {tileRow}
+          <div className={styles.twoUp}>
+            {legal || readiness ? (
+              <div className={styles.col}>
+                {legal}
+                {readiness}
+                {why}
+              </div>
+            ) : (
+              why
+            )}
+            {callCard}
+          </div>
+          {recent}
+          {absence}
+          {change}
+          {careSlot}
+          {handoverCard}
         </div>
-        {recent}
-        {absence}
-        {change}
-        {care}
-        {handoverCard}
       </div>
     );
   return (
     <div className={styles.cols} data-now-dash="">
-      <div className={styles.col}>
+      <div key="main" className={styles.col}>
         {nextStep}
         {work}
         {notices}
         {tileRow}
         {change}
-        {care}
+        {careSlot}
       </div>
       {/* Not the shared `data-wf-rail`: that caps the column at the window and scrolls it inside
           itself, which cut Who to call off when this column was the longer one (Josh, 19 Oct 2026). */}

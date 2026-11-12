@@ -2035,7 +2035,7 @@ is inferred.
 ## D-165. The patient screen is a dashboard grid on every tab (13 November 2026)
 
 - **Date:** 13 November 2026, 5:21 AM AWST (12 November, 21:21 UTC). **Decided by:** Josh, "Yes, open the PR" on the card "Approve version 2 of the patient screen so I can open the PR?" in the Ward Flow project thread "Redesign the patient screen". He had asked for the screen to be overhauled so the Now cards stop stretching across the page, saw version 1, said the History figure strip looked better as it was and gave free rein for a visual upgrade, then approved version 2 as shown at 390, 820, 1280 and 1440 in light and dark, with its five recommended answers.
-- **Decision:** the screen opened by clicking a patient uses one 2:1 grid on every tab from tablet landscape up.
+- **Decision:** the screen opened by clicking a patient is a dashboard grid on every tab from tablet landscape up: a 2:1 main and side column on Now, History and Community, and two level columns on Details and Documents.
   1. **Now, main column:** the next step; the status gates as rows, each with a tinted icon and its action on the right edge, joined to a one-line Destination, Transport and Review foot that shows titles only; Triage and risk and Carer call back as two rows of one card under that work; then Care and safety.
   2. **Now, side column:** Legal now, Discharge readiness, the leave or absence card, Who to call (stacked when narrow, so a name is never cut short), Recent changes, Why, and one "Hand over and print" card in place of the separate print cards.
   3. **Moved:** "Where the hours went" sits on History beside the record, for a moving patient only; "Record added in error" sits at the foot of Details.

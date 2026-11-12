@@ -6,6 +6,12 @@
   min-width: 0;
 }
 
+/* The stack's one keyed child: it draws no box, so its children are the stack's own rows. It exists
+   so the editors inside keep their place (and any draft) when the form changes with the width. */
+.flat {
+  display: contents;
+}
+
 /* Redesign (12 Nov 2026): the 12-column grid, main and side column at 2:1, 16px gutters. */
 .cols {
   display: grid;
@@ -114,7 +120,8 @@
 }
 
 /* Hand over and print: the two printable pages as rows of one card. */
-.handover:not(:has(section)) {
+/* Hidden only while it is empty: a failed download still shows its error line and Try again. */
+.handover:not(:has(section, [role="alert"])) {
   display: none;
 }
 
