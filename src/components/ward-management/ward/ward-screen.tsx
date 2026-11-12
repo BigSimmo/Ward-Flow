@@ -125,8 +125,8 @@ import {
   WardDailySheetDialog,
   WardDischargeNotices,
   WardPlannedAdmissionsPanel,
-  WardScreenBedDrawer,
 } from "./ward-screen-lazy";
+import { WardScreenBedDrawer } from "./ward-screen-bed-drawer-lazy";
 import { WardScreenReferralsTab } from "./ward-screen-referrals-tab";
 import { WardScreenTopBar } from "./ward-screen-top-bar";
 import { useWardScreenFigures } from "./use-ward-screen-figures";

@@ -628,7 +628,7 @@ safe global key across 30 files.
 
 ## By file, newest first — 43 files
 
-### `decisions.md` (2026-09-01 – 2026-11-11 (mixed, see file))
+### `decisions.md` (2026-09-01 – 2026-11-12 (mixed, see file))
 
 **Recorded decision log.** Read the source for supersession and current scope; indexing does not grant authority.
 
