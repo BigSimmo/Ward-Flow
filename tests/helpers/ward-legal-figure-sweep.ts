@@ -26,6 +26,7 @@ import { OBSERVATION_LEVELS, observationAt } from "@/components/ward-management/
 import { activeSnooze, SNOOZE_REASON_IDS } from "@/components/ward-management/ward-inbox-snooze";
 import { referralState } from "../../src/components/ward-management/ward-referrals";
 import { afterAll, expect } from "vitest";
+import type { AuditDecision } from "../../src/components/ward-management/ward-audit";
 import { createPreparationProfile } from "../../scripts/ward-flow/test-preparation-profile.mjs";
 
 import {
@@ -53,6 +54,7 @@ import {
   wardFlowReducer,
   bedNumberRefusal,
   heldBedRefusal,
+  reduceClinicalEvent,
   type WardFlowState,
 } from "../../src/components/ward-management/ward-flow-reducer";
 import { SELECTABLE_LEGAL_FORMS } from "../../src/components/ward-management/ward-legal-forms";
@@ -2327,6 +2329,62 @@ export function* iterateCandidateEvents(
 }
 
 /**
+ * Events `wardFlowReducer` does not send straight through `reduceClinicalEvent`: protected record
+ * events, the two world reseeds and the one-tap raise-and-pull. They always take the full reducer.
+ */
+const FULL_REDUCER_ONLY = new Set<WardFlowEvent["type"]>([
+  "OPEN_DISCHARGE_RECORD",
+  "REVIEW_AUDIT_EVENT",
+  "UNDO_AUDIT_REVIEW",
+  "RECORD_PATIENT_DISCHARGE",
+  "RECORD_ADMISSION_FOLLOW_UP",
+  "RECORD_ADMISSION_CARE",
+  "RESET_SCENARIO",
+  "SET_SCENARIO",
+]);
+
+/** How often a quick refusal is checked again against the whole reducer. */
+const CLINICAL_REFUSAL_CHECK_EVERY = 64;
+let clinicalRefusalsSinceCheck = 0;
+/** Event types whose first quick refusal has been checked against the whole reducer. */
+const clinicalRefusalTypesChecked = new Set<WardFlowEvent["type"]>();
+
+/**
+ * Sweep cost, 12 Nov 2026: about 99.8% of the sweep's ten million reducer calls per pass are
+ * refused, and most of each refused call went on work around the verdict (the denied audit entry,
+ * the step-undo diff) that the sweep throws away with the refused state.
+ *
+ * `wardFlowReducer` takes its verdict from `reduceClinicalEvent` for every event outside
+ * `FULL_REDUCER_ONLY`; the wrappers after it only add undo records, unit revisions and the audit
+ * entry, and never drop a rejection. So when `reduceClinicalEvent` alone records a rejection, the
+ * full reducer refuses the same event, and the sweep can skip it without changing which candidate
+ * is accepted first. An accepted verdict is never trusted from here: the full reducer still runs
+ * and decides, and every accepted state is still checked exactly as before.
+ *
+ * Tripwire: the first quick refusal of each event type, and every CLINICAL_REFUSAL_CHECK_EVERY-th
+ * after that, is run through the whole reducer too, and the sweep fails if the two ever disagree.
+ * A reducer change that broke this equivalence (a new event routed around `reduceClinicalEvent`,
+ * say) therefore fails the sweep instead of hiding.
+ */
+function clinicalStepRefuses(state: WardFlowState, event: WardFlowEvent): boolean {
+  if (FULL_REDUCER_ONLY.has(event.type)) return false;
+  if (event.type === "RAISE_REFERRAL" && event.pullBed === true) return false;
+  const decision: AuditDecision = { outcome: "denied", reasonCode: "transition" };
+  const clinical = preparationProfile.measure("clinicalStep", () => reduceClinicalEvent(state, event, decision));
+  if (clinical.rejections.length === state.rejections.length) return false;
+  clinicalRefusalsSinceCheck += 1;
+  if (clinicalRefusalsSinceCheck >= CLINICAL_REFUSAL_CHECK_EVERY || !clinicalRefusalTypesChecked.has(event.type)) {
+    clinicalRefusalsSinceCheck = 0;
+    clinicalRefusalTypesChecked.add(event.type);
+    preparationProfile.count("clinicalRefusalsRechecked");
+    const full = wardFlowReducer(state, event);
+    if (full.rejections.length === state.rejections.length)
+      throw new Error(`reduceClinicalEvent refused ${event.type} but wardFlowReducer accepted it`);
+  }
+  return true;
+}
+
+/**
  * Applies the first candidate of this type that the reducer ACCEPTS, optionally restricted to
  * candidates acting on a movement whose legal form carries `code`.
  *
@@ -2347,6 +2405,11 @@ export function applyFirstAccepted(
 ): { applied: WardFlowState; event: WardFlowEvent } | undefined {
   for (const event of iterateCandidateEvents(type, state, now, code, supplyDueAt)) {
     preparationProfile.count("reducerAttempts");
+    if (clinicalStepRefuses(state, event)) {
+      preparationProfile.count("refusedTransitions");
+      preparationProfile.count("refusedByClinicalStep");
+      continue;
+    }
     const next = preparationProfile.measure("reducer", () => wardFlowReducer(state, event));
     if (next.rejections.length === state.rejections.length) {
       preparationProfile.count("acceptedTransitions");
