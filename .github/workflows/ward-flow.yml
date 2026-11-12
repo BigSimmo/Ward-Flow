@@ -29,6 +29,10 @@ jobs:
     name: Ward Flow scope plan
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    # actions: read lets the shard timings step read main's newest unit timing record.
+    permissions:
+      contents: read
+      actions: read
     outputs:
       full: ${{ steps.plan.outputs.full }}
       unit: ${{ steps.plan.outputs.unit }}
@@ -98,6 +102,23 @@ jobs:
         id: secret-scan
         run: |
           "$RUNNER_TEMP/gitleaks" git . --redact --no-banner --exit-code 1 --gitleaks-ignore-path .gitleaksignore --log-opts="--full-history HEAD"
+      # D-166: the unit shards are dealt from the newest main measurement, so they stay balanced as
+      # tests are added. One file for the whole run, uploaded here, so every shard deals the same split.
+      - name: Choose the unit shard timings
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ward-ci-public/unit-durations-latest.mjs --output "$RUNNER_TEMP/ward-unit-durations/unit-durations.json"
+      - name: Upload the unit shard timings
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: ward-unit-durations-${{ github.run_id }}
+          path: ${{ runner.temp }}/ward-unit-durations/unit-durations.json
+          if-no-files-found: error
+          retention-days: 1
+          # A rerun of this job keeps the run id, so it replaces its own earlier record. No shard
+          # has read that record yet: shards start only after this job passes, and a rerun of the
+          # whole run reruns them all with the new one.
+          overwrite: true
       # Last, because it moves HEAD: a pull request that conflicts with the current main fails here,
       # in the cheap plan job, before any other job starts. The production build still merges main
       # again before measuring the script budget.
@@ -310,7 +331,7 @@ jobs:
   backend:
     name: Ward Flow backend and shared production proof
     needs: [plan, reuse]
-    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.backend == 'true' && needs.reuse.outputs.backend_verified != 'true' }}
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.backend == 'true' && needs.reuse.outputs.backend_verified != 'true' && github.event.pull_request.draft != true }}
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     services:
@@ -410,7 +431,7 @@ jobs:
   unit:
     name: Ward Flow unit shard ${{ matrix.shard }}
     needs: [plan, reuse, static]
-    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.unit == 'true' && needs.reuse.outputs.unit_verified != 'true' && needs.static.result == 'success' }}
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.unit == 'true' && needs.reuse.outputs.unit_verified != 'true' && github.event.pull_request.draft != true && needs.static.result == 'success' }}
     runs-on: ubuntu-24.04
     # 30, not 20 (10 Nov 2026): shards now take 15-20 minutes, and runs near the old limit were
     # cancelled with 0 failures. A fifth shard would rename required checks and coverage blobs.
@@ -429,6 +450,13 @@ jobs:
       - name: Set up Node and install locked dependencies
         id: install
         uses: ./.github/actions/ward-setup
+      - name: Download the unit shard timings
+        id: timings
+        if: ${{ steps.install.outcome == 'success' }}
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: ward-unit-durations-${{ github.run_id }}
+          path: ${{ runner.temp }}/ward-unit-durations
       - name: Select reproducible nightly fuzz window
         if: ${{ github.event_name == 'schedule' && steps.install.outcome == 'success' }}
         run: node scripts/ward-flow/engine-fuzz-window.mjs --output "$RUNNER_TEMP/ward-profile/fuzz-window.json" --github-env "$GITHUB_ENV"
@@ -454,9 +482,10 @@ jobs:
           lookup-only: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
       - name: Run reconciled unit suite shard
         id: shard
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.timings.outcome == 'success' }}
         env:
           WARD_GATE_SHARD: ${{ matrix.shard }}/4
+          WARD_UNIT_DURATIONS_FILE: ${{ runner.temp }}/ward-unit-durations/unit-durations.json
           # A pull request that changes nothing the legal-figure sweep runs leaves it out (Josh,
           # 27 October 2026); only an explicit "false" from the plan does, so main always runs it.
           WARD_GATE_SKIP_LEGAL_SWEEP: ${{ needs.plan.outputs.legal_sweep == 'false' && '1' || '0' }}
@@ -497,8 +526,10 @@ jobs:
           if-no-files-found: warn
           overwrite: true
           retention-days: 3
-  # Draft fast lane: a draft pull request skips the browser build, browser journeys and release gate,
-  # and Ward Flow required fails on a draft, so only the full run after ready_for_review can merge.
+  # Draft fast lane: a draft pull request runs only the scope plan, static checks and production
+  # build. It skips the backend proof, unit shards, coverage, browser build, browser journeys and
+  # release gate (unit and backend since D-166, 12 Nov 2026), and Ward Flow required fails on a draft,
+  # so only the full run after ready_for_review can merge.
   browser-build:
     name: Ward Flow prepared browser build
     needs: [plan, reuse]
@@ -649,24 +680,34 @@ jobs:
     timeout-minutes: 35
     # Desktop Chromium and phone WebKit each split the release gate into three parts (journeys,
     # referrals, checks) that partition the release-gate files without overlap
-    # (scripts/ward-flow/browser-run-contract.mjs). The six suites run as two jobs of three, one
-    # per device (Josh, 4 November 2026: fewer jobs): every job runs its first suite, then its
-    # second and third on the same installed browsers, whatever the earlier ones did. Each suite
-    # keeps its own project, part, evidence and report artifact names, and Ward Flow required
-    # needs both jobs. Each suite splits its tests across two servers on the runner
-    # (WARD_JOURNEY_SHARDS=2, test-level because a part may be one file).
+    # (scripts/ward-flow/browser-run-contract.mjs). Desktop runs its three suites in one job (Josh,
+    # 4 November 2026: fewer jobs). Phone, about twice as slow, runs as two jobs since D-166
+    # (12 Nov 2026): journeys then referrals, and checks alone. Every job runs its first suite, then
+    # any second and third on the same installed browsers, whatever the earlier ones did. Each job's
+    # name lists its device and parts in order (gate-reuse.mjs reads them). Each suite keeps its own
+    # project, part, evidence and report artifact names, and Ward Flow required needs every job.
+    # Each suite splits its tests across two servers on the runner (WARD_JOURNEY_SHARDS=2,
+    # test-level because a part may be one file).
     strategy:
       fail-fast: false
       matrix:
         include:
-          - pair: phone journeys, referrals and checks
+          - pair: phone journeys and referrals
             project: release-gate-phone
             browser: webkit
             part: journeys
             second_project: release-gate-phone
             second_part: referrals
-            third_project: release-gate-phone
-            third_part: checks
+            third_project: ""
+            third_part: ""
+          - pair: phone checks
+            project: release-gate-phone
+            browser: webkit
+            part: checks
+            second_project: ""
+            second_part: ""
+            third_project: ""
+            third_part: ""
           - pair: desktop journeys, referrals and checks
             project: release-gate-desktop
             browser: chromium
@@ -761,11 +802,11 @@ jobs:
       # The first suite's results are already uploaded; set them aside so the second suite's
       # evidence and reports hold only its own files.
       - name: Set aside the first suite's results
-        if: ${{ !cancelled() && steps.gate.outcome != 'skipped' }}
+        if: ${{ !cancelled() && steps.gate.outcome != 'skipped' && matrix.second_part != '' }}
         run: if [ -d test-results ]; then mv test-results "$RUNNER_TEMP/ward-release-gate-first-results"; fi
       - name: Run the second release-gate suite
         id: gate-second
-        if: ${{ !cancelled() && steps.browsers.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.browsers.outcome == 'success' && matrix.second_part != '' }}
         env:
           WARD_GATE_BUILD: "1"
           WARD_RELEASE_GATE_PROJECT: ${{ matrix.second_project }}
@@ -790,11 +831,11 @@ jobs:
           if-no-files-found: error
           retention-days: 3
       - name: Set aside the second suite's results
-        if: ${{ !cancelled() && steps.gate-second.outcome != 'skipped' }}
+        if: ${{ !cancelled() && steps.gate-second.outcome != 'skipped' && matrix.third_part != '' }}
         run: if [ -d test-results ]; then mv test-results "$RUNNER_TEMP/ward-release-gate-second-results"; fi
       - name: Run the third release-gate suite
         id: gate-third
-        if: ${{ !cancelled() && steps.browsers.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.browsers.outcome == 'success' && matrix.third_part != '' }}
         env:
           WARD_GATE_BUILD: "1"
           WARD_RELEASE_GATE_PROJECT: ${{ matrix.third_project }}
@@ -948,6 +989,18 @@ jobs:
         env:
           WARD_SHARD_BLOBS: ${{ runner.temp }}/ward-shard-blobs
         run: node scripts/ward-flow/unit-durations.mjs --from-blobs "$WARD_SHARD_BLOBS" --output "$RUNNER_TEMP/ward-unit-costs.json"
+      # The record the next runs' unit shards are dealt from (unit-durations-latest.mjs). Main pushes
+      # only: the nightly fuzz window and pull requests measure different work.
+      - name: Keep main's unit timings for the shard split
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: ward-unit-durations
+          path: ${{ runner.temp }}/ward-unit-costs.json
+          if-no-files-found: error
+          retention-days: 30
+          # A rerun of the coverage job replaces its own record rather than failing on the name.
+          overwrite: true
       - name: Upload final coverage and measured costs
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
@@ -1014,15 +1067,15 @@ jobs:
           test "$STATIC_RESULT" = success
           test "$SECRET_SCAN_RESULT" = success
           if [ "$DRAFT" = true ]; then
-            require_scope "$BACKEND_SCOPE" "$BACKEND_RESULT"
             test "$GITHUB_EVENT_NAME" = pull_request
-            require_scope "$UNIT_SCOPE" "$UNIT_RESULT"
-            require_scope "$UNIT_SCOPE" "$COVERAGE_RESULT"
             require_scope "$BUILD_SCOPE" "$BUILD_RESULT"
+            test "$BACKEND_RESULT" = skipped
+            test "$UNIT_RESULT" = skipped
+            test "$COVERAGE_RESULT" = skipped
             test "$BROWSER_BUILD_RESULT" = skipped
             test "$BROWSER_RESULT" = skipped
             test "$RELEASE_GATE_RESULT" = skipped
-            echo "::error title=Draft fast lane::Quick checks passed. Browser, phone and accessibility checks run when this pull request is marked ready; only that run can pass this check."
+            echo "::error title=Draft fast lane::Quick checks passed. Unit, backend, browser, phone and accessibility checks run when this pull request is marked ready; only that run can pass this check."
             exit 1
           fi
           test "$UNIT_REUSED" = "$COVERAGE_REUSED"

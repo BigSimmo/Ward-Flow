@@ -188,6 +188,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-163](#d-163-pre-demo-audits-use-the-public-demo-after-d-162-is-live-12-november-2026)                                                                | Pre-demo audits use the public demo after D-162 is live                                | Active                                           |
 | [D-164](#d-164-homes-changes-since-strip-names-escalations-first-and-leaves-movements-off-12-november-2026)                                             | Home's changes-since strip names escalations first and leaves movements off            | Active                                           |
 | [D-165](#d-165-the-patient-screen-is-a-dashboard-grid-on-every-tab-13-november-2026)                                                                    | The patient screen is a dashboard grid on every tab                                    | Active                                           |
+| [D-166](#d-166-ci-runs-faster-without-dropping-a-check-12-november-2026)                                                                                | CI runs faster without dropping a check                                                | Active                                           |
 
 ---
 
@@ -2041,3 +2042,12 @@ is inferred.
   4. **History** keeps its joined figure strip across the top, as it was.
   5. **Top band:** every patient gets the same band (chips, figures, tags), whether moving or staying; on a phone it drops the duplicate "Ends ... as typed" line.
 - **Boundary:** synthetic data only. Layout and appearance only: no action, wording of a clinical rule, permission or saved record changes. Approves no release.
+
+## D-166. CI runs faster without dropping a check (12 November 2026)
+
+- **Date:** 13 November 2026, 5:26 AM AWST (12 November, 21:26 UTC). **Decided by:** Josh, "Yes to all recommendations" in the Ward Flow project thread "Speed up CI without losing quality", answering its three numbered questions on the CI review. Numbered D-166 because D-165 is claimed by PR #1644 (patient screen redesign).
+- **Decision:**
+  1. **Draft lane:** a draft PR runs only the scope plan, static checks and production build. The unit shards, coverage, backend proof, browser journeys and release gate run when it is marked ready, and only that run can pass Ward Flow required.
+  2. **Phone release gate:** runs as two jobs (journeys then referrals, and checks alone). This reverses the phone half of the 4 November "fewer jobs" ruling; desktop keeps its three suites in one job.
+  3. **The rest of the review:** the unit shards are dealt from main's newest measured timings (falling back to `scripts/ward-flow/unit-durations.json`); the push guard warns when it cannot see a PR; threads keep PRs in draft while iterating; `npm run check:phone-budget` checks phone limits before a push; and main reuses a PR's unit evidence apart from the legal-figure sweep.
+- **Boundary:** no check is removed, skipped on a ready PR or loosened. Phone limits, coverage floors and test populations are unchanged. Approves no release, provider action or settings change.

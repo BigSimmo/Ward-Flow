@@ -204,6 +204,8 @@ function requireWorkflow(source, action) {
   assert.match(jobs.get("unit"), /^ {4}needs: \[plan, reuse, static\]$/mu, "unit: waits for static checks");
   for (const job of ["browser", "release-gate"])
     assert.match(jobs.get(job), /^ {4}needs: \[[^\n]*\bstatic, build\]$/mu, `${job}: waits for cheap checks`);
+  // Draft fast lane (D-166, 12 Nov 2026): drafts also skip the unit shards (so coverage) and the backend proof.
+  const draftSkipped = new Set(["unit", "backend"]);
   for (const [job, scope, reuseGate] of [
     ["unit", "unit", "unit"],
     ["browser-build", "browser", null],
@@ -218,7 +220,7 @@ function requireWorkflow(source, action) {
         ? " && (needs.reuse.outputs.browser_verified != 'true' || needs.reuse.outputs.release_verified != 'true')"
         : ` && needs.reuse.outputs.${reuseGate}_verified != 'true'`;
     const route = expression(
-      `!cancelled() && needs.plan.result == 'success' && needs.plan.outputs.${scope} == 'true'${reuseGuard}${scope === "browser" ? " && github.event.pull_request.draft != true" : ""}${job === "browser" || job === "release-gate" ? " && needs.browser-build.result == 'success'" : ""}${job === "coverage" ? " && needs.unit.result == 'success'" : ""}${cheapFirst.has(job) ? cheapGateFor(job) : ""}`,
+      `!cancelled() && needs.plan.result == 'success' && needs.plan.outputs.${scope} == 'true'${reuseGuard}${scope === "browser" || draftSkipped.has(job) ? " && github.event.pull_request.draft != true" : ""}${job === "browser" || job === "release-gate" ? " && needs.browser-build.result == 'success'" : ""}${job === "coverage" ? " && needs.unit.result == 'success'" : ""}${cheapFirst.has(job) ? cheapGateFor(job) : ""}`,
     );
     assert.ok(jobs.get(job)?.includes(`    if: ${route}\n`), `${job} job scope`);
     assert.match(jobs.get(job), /^ {4}needs: (?:plan|\[[^\n]*\bplan\b[^\n]*\])$/mu);
@@ -425,7 +427,40 @@ function requireWorkflow(source, action) {
     "node tests/support/ward-shared-mode-run.mjs",
     expression("!cancelled() && steps.shared-chromium.outcome == 'success'"),
   );
-  exact("unit", "Run reconciled unit suite shard", "npm run check:ward-expected-reds -- --print-signatures", installed);
+  exact(
+    "unit",
+    "Run reconciled unit suite shard",
+    "npm run check:ward-expected-reds -- --print-signatures",
+    expression("!cancelled() && steps.install.outcome == 'success' && steps.timings.outcome == 'success'"),
+  );
+  // D-166: one timing record per run, chosen and uploaded by the plan, so every shard deals the same split.
+  assert.equal(
+    step("plan", "Choose the unit shard timings").fields.get("run"),
+    'node scripts/ward-ci-public/unit-durations-latest.mjs --output "$RUNNER_TEMP/ward-unit-durations/unit-durations.json"',
+  );
+  assert.match(
+    step("plan", "Upload the unit shard timings").text,
+    /name: ward-unit-durations-\$\{\{ github\.run_id \}\}\n/u,
+  );
+  assert.match(step("plan", "Upload the unit shard timings").text, /if-no-files-found: error\n/u);
+  // A rerun keeps the run id; both records must replace their own earlier copy, not fail on the name.
+  for (const [job, name] of [
+    ["plan", "Upload the unit shard timings"],
+    ["coverage", "Keep main's unit timings for the shard split"],
+  ])
+    assert.match(step(job, name).text, /\n\s+overwrite: true\n/u, `${name} must be rerun-safe`);
+  assert.match(
+    step("unit", "Download the unit shard timings").text,
+    /name: ward-unit-durations-\$\{\{ github\.run_id \}\}\n/u,
+  );
+  assert.match(
+    step("unit", "Run reconciled unit suite shard").text,
+    /WARD_UNIT_DURATIONS_FILE: \$\{\{ runner\.temp \}\}\/ward-unit-durations\/unit-durations\.json\n/u,
+  );
+  assert.match(
+    step("coverage", "Keep main's unit timings for the shard split").fields.get("if") ?? "",
+    /github\.event_name == 'push' && github\.ref == 'refs\/heads\/main'/u,
+  );
   // The unit suite runs every file on every PR in the shards; a second, related-only run is not repeated.
   assert.doesNotMatch(jobs.get("static"), /related-tests\.mjs/u);
   // Lint and Vitest module caches only ever save from main, and lint keys include its config and rules.
@@ -496,18 +531,19 @@ function requireWorkflow(source, action) {
     "release-gate",
     "Run the second release-gate suite",
     "npm run test:e2e:release-gate",
-    expression("!cancelled() && steps.browsers.outcome == 'success'"),
+    expression("!cancelled() && steps.browsers.outcome == 'success' && matrix.second_part != ''"),
   );
   exact(
     "release-gate",
     "Run the third release-gate suite",
     "npm run test:e2e:release-gate",
-    expression("!cancelled() && steps.browsers.outcome == 'success'"),
+    expression("!cancelled() && steps.browsers.outcome == 'success' && matrix.third_part != ''"),
   );
   // Desktop and phone each split the gate into three parts (which partition the release-gate files),
-  // run as two jobs of three suites: together exactly both device projects times all three parts,
-  // each suite once, none dropped by fail-fast, and each suite's runner narrowed only through
-  // WARD_RELEASE_GATE_PROJECT and WARD_RELEASE_GATE_PART.
+  // run as jobs of one to three suites (desktop one job, phone two since D-166): together exactly
+  // both device projects times all three parts, each suite once, none dropped by fail-fast, and each
+  // suite's runner narrowed only through WARD_RELEASE_GATE_PROJECT and WARD_RELEASE_GATE_PART. Each
+  // job's name is its device then its parts in order, which gate-reuse.mjs reads for main reuse.
   const gateMatrix = jobs
     .get("release-gate")
     .match(
@@ -532,17 +568,33 @@ function requireWorkflow(source, action) {
         "third_project",
       ]);
       assert.equal(fields.browser, fields.project === "release-gate-phone" ? "webkit" : "chromium");
-      return fields;
+      for (const key of Object.keys(fields)) if (fields[key] === '""') fields[key] = "";
+      const suites = [
+        [fields.project, fields.part],
+        [fields.second_project, fields.second_part],
+        [fields.third_project, fields.third_part],
+      ];
+      const present = suites.filter(([project, part]) => project || part);
+      assert.ok(
+        present.every(([project, part]) => project === fields.project && part) &&
+          suites.findIndex(([project, part]) => !project && !part) in { [-1]: 1, [present.length]: 1 },
+        `release-gate ${fields.pair}: one device, suites filled from the first with no gap`,
+      );
+      const parts = present.map(([, part]) => part);
+      const listed = parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`;
+      assert.equal(
+        fields.pair,
+        `${fields.project === "release-gate-phone" ? "phone" : "desktop"} ${listed}`,
+        `release-gate ${fields.pair}: the job name lists its device and parts in order`,
+      );
+      return { ...fields, suites: present.map(([project, part]) => `${project}/${part}`) };
     });
-  assert.equal(gateEntries.length, 2, "release-gate: two jobs of three suites");
-  assert.equal(new Set(gateEntries.map(({ pair }) => pair)).size, 2, "release-gate: distinct job names");
-  const gateSuites = gateEntries
-    .flatMap(({ project, part, second_project, second_part, third_project, third_part }) => [
-      `${project}/${part}`,
-      `${second_project}/${second_part}`,
-      `${third_project}/${third_part}`,
-    ])
-    .sort();
+  assert.equal(
+    new Set(gateEntries.map(({ pair }) => pair)).size,
+    gateEntries.length,
+    "release-gate: distinct job names",
+  );
+  const gateSuites = gateEntries.flatMap(({ suites }) => suites).sort();
   assert.deepEqual(
     gateSuites,
     ["release-gate-desktop", "release-gate-phone"]
@@ -898,15 +950,15 @@ function requireWorkflow(source, action) {
           test "$STATIC_RESULT" = success
           test "$SECRET_SCAN_RESULT" = success
           if [ "$DRAFT" = true ]; then
-            require_scope "$BACKEND_SCOPE" "$BACKEND_RESULT"
             test "$GITHUB_EVENT_NAME" = pull_request
-            require_scope "$UNIT_SCOPE" "$UNIT_RESULT"
-            require_scope "$UNIT_SCOPE" "$COVERAGE_RESULT"
             require_scope "$BUILD_SCOPE" "$BUILD_RESULT"
+            test "$BACKEND_RESULT" = skipped
+            test "$UNIT_RESULT" = skipped
+            test "$COVERAGE_RESULT" = skipped
             test "$BROWSER_BUILD_RESULT" = skipped
             test "$BROWSER_RESULT" = skipped
             test "$RELEASE_GATE_RESULT" = skipped
-            echo "::error title=Draft fast lane::Quick checks passed. Browser, phone and accessibility checks run when this pull request is marked ready; only that run can pass this check."
+            echo "::error title=Draft fast lane::Quick checks passed. Unit, backend, browser, phone and accessibility checks run when this pull request is marked ready; only that run can pass this check."
             exit 1
           fi
           test "$UNIT_REUSED" = "$COVERAGE_REUSED"
@@ -1096,7 +1148,13 @@ for (const [before, after] of [
     "!cancelled() && needs.plan.outputs.build",
   ],
   ["    needs: [plan, reuse, static]\n", "    needs: [plan, reuse]\n"],
-  ["unit_verified != 'true' && needs.static.result == 'success' }}", "unit_verified != 'true' }}"],
+  [
+    "github.event.pull_request.draft != true && needs.static.result == 'success' }}",
+    "github.event.pull_request.draft != true }}",
+  ],
+  ["unit_verified != 'true' && github.event.pull_request.draft != true", "unit_verified != 'true'"],
+  ["          WARD_UNIT_DURATIONS_FILE: ${{ runner.temp }}/ward-unit-durations/unit-durations.json\n", ""],
+  ["          - pair: phone checks\n", "          - pair: phone journeys\n"],
   ["    needs: [plan, reuse, browser-build, static, build]\n", "    needs: [plan, browser-build]\n"],
   [" && needs.static.result == 'success' && (needs.build.result == 'success'", " && (needs.build.result == 'success'"],
   [
@@ -1116,7 +1174,11 @@ for (const [before, after] of [
     "name: Upload successful third-suite reports\n        if: ${{ !cancelled() && steps.gate-third.outcome == 'success' }}",
     "name: Upload successful third-suite reports\n        if: ${{ false }}",
   ],
-  ["needs.reuse.outputs.backend_verified != 'true' }}", "true }}"],
+  [
+    "needs.reuse.outputs.backend_verified != 'true' && github.event.pull_request.draft != true }}",
+    "true && github.event.pull_request.draft != true }}",
+  ],
+  ["backend_verified != 'true' && github.event.pull_request.draft != true }}", "backend_verified != 'true' }}"],
   ["branches: [main]", "branches: [other]"],
   [
     "        env:\n          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}\n        run: node scripts/ward-flow/check-patient-identifiers.mjs",
