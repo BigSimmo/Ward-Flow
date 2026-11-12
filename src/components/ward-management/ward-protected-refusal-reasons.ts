@@ -21,3 +21,10 @@ export const PROTECTED_REFUSAL_REASONS: Record<AuditDecision["reasonCode"], stri
   "identity-link":
     "The patient record link could not be checked. Check the patient, then try again. Nothing was changed.",
 };
+
+/**
+ * Shown when a care step, such as a revocation, is attempted on a stay with no linked patient. Kept
+ * here, not in the slice, so the reducer can re-export it without loading the slice on first paint.
+ */
+export const UNLINKED_CARE_REFUSAL =
+  "Link the patient to their record first. A revocation or any other care step can only be recorded for a linked patient.";

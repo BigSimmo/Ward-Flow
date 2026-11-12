@@ -2,7 +2,7 @@ import { pulledBedAvailability } from "./ward-ready-beds";
 import { leftWardRefusal } from "./ward-left-ward";
 import { withoutRecordNumbers } from "./ward-patient-resolver";
 import { validCareChange, careChangeRefusal, applyCareChange, emptyCareJourney } from "./ward-care-journey";
-import { PROTECTED_REFUSAL_REASONS } from "./ward-protected-refusal-reasons";
+import { PROTECTED_REFUSAL_REASONS, UNLINKED_CARE_REFUSAL } from "./ward-protected-refusal-reasons";
 import { ON_BEHALF_REASON_REFUSAL, isOnBehalfReason } from "./ward-on-behalf-reason";
 import { appendAudit, finiteInstant, governanceAuditEntry, reviewDecision, type AuditDecision } from "./ward-audit";
 import { undoWindowRefusal } from "./ward-undo";
@@ -50,11 +50,7 @@ export type ProtectedRecordEvent = Extract<
   }
 >;
 
-/** Shown when a care step, such as a revocation, is attempted on a stay with no linked patient. */
-export const UNLINKED_CARE_REFUSAL =
-  "Link the patient to their record first. A revocation or any other care step can only be recorded for a linked patient.";
-
-export { PROTECTED_REFUSAL_REASONS };
+export { PROTECTED_REFUSAL_REASONS, UNLINKED_CARE_REFUSAL };
 
 function protectedRefusal(
   state: WardFlowState,
