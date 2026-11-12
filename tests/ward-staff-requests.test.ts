@@ -133,20 +133,35 @@ describe("staff needed requests", () => {
     expect(openStaffRequestFor(asked.staffRequests, UNIT, end)).toBeUndefined();
   });
 
-  it("keeps the shift the desk chose when the shared save lands just after the shift changes", () => {
+  it("keeps Next shift when the shared save lands just after the shift changes", () => {
     const boundary = shiftEndInstant(NOW_ANCHOR);
     const pressedAt = boundary - 1;
     const savedAt = boundary + 1;
     const startOf = (state: WardFlowState) =>
       state.staffRequests!.filter((record) => record.unitId === UNIT).at(-1)!.shiftStartAt;
-    for (const shift of ["this_shift", "next_shift"] as const) {
-      const chosen = staffRequestShiftStart(shift, pressedAt);
-      const kept = wardFlowReducer(seed, ask({ shift, now: savedAt, shiftStartAt: chosen }));
-      expect(refused(seed, kept)).toBe(false);
-      expect(startOf(kept)).toBe(chosen);
-      // Without the desk's choice, the server's later clock reads the next shift (the old bug).
-      expect(startOf(wardFlowReducer(seed, ask({ shift, now: savedAt })))).toBe(staffRequestShiftStart(shift, savedAt));
-    }
+    const chosen = staffRequestShiftStart("next_shift", pressedAt);
+    const kept = wardFlowReducer(seed, ask({ shift: "next_shift", now: savedAt, shiftStartAt: chosen }));
+    expect(refused(seed, kept)).toBe(false);
+    expect(startOf(kept)).toBe(chosen);
+    // Without the desk's choice, the server's later clock reads the following shift (the old bug).
+    expect(startOf(wardFlowReducer(seed, ask({ shift: "next_shift", now: savedAt })))).toBe(
+      staffRequestShiftStart("next_shift", savedAt),
+    );
+  });
+
+  it("refuses This shift when the shared save lands after that shift has ended (D-156)", () => {
+    const boundary = shiftEndInstant(NOW_ANCHOR);
+    const pressedAt = boundary - 1;
+    const savedAt = boundary + 1;
+    const chosen = staffRequestShiftStart("this_shift", pressedAt);
+    const after = wardFlowReducer(seed, ask({ shift: "this_shift", now: savedAt, shiftStartAt: chosen }));
+    expect(refused(seed, after)).toBe(true);
+    expect(after.staffRequests?.filter((record) => record.unitId === UNIT) ?? []).toHaveLength(0);
+    expect(after.rejections.at(-1)?.reason).toBe("This shift has already ended. Choose this shift or next shift again");
+    // A This shift that is still open at save is accepted, including a press just before the end.
+    const before = wardFlowReducer(seed, ask({ shift: "this_shift", now: pressedAt, shiftStartAt: chosen }));
+    expect(refused(seed, before)).toBe(false);
+    expect(before.staffRequests!.filter((record) => record.unitId === UNIT).at(-1)!.shiftStartAt).toBe(chosen);
     expect(staffRequestShiftStart("this_shift", pressedAt)).toBe(currentShiftStartInstant(NOW_ANCHOR));
   });
 

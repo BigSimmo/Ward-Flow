@@ -84,7 +84,12 @@ import {
   legalFormGroupRows,
   isLegalDeadlineBreached,
 } from "./legal-forms-derivations";
-import { admittedOnAForm, LegalFormsAdmitted, WARD_RECORDS_ADMITTED } from "./legal-forms-admitted";
+import {
+  admittedOnAForm,
+  legalFormsListPopulation,
+  LegalFormsAdmitted,
+  WARD_RECORDS_ADMITTED,
+} from "./legal-forms-admitted";
 import { FocusPanel, typedReceipt } from "./legal-forms-panel";
 import { AddTimeDialog } from "./legal-forms-add-time";
 import { ChecklistView, FormRow, GAP_LABEL, PhoneFormRow, ROW_COLUMNS } from "./legal-form-rows";
@@ -254,6 +259,9 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const patientOf = (movement: Movement) => resolveSubjectPatient(movement, { patients, referrals });
   const noDeadline = legalFormGroupRows(movements, now, "no-deadline");
   const rows = [...withDeadline, ...noDeadline];
+  // D-155: Print, Export and their disabled state use the same people as the on-screen list,
+  // including "Admitted on a form" (same `admitted` set the admitted group shows).
+  const listPopulation = legalFormsListPopulation(rows, admitted);
   const withoutForm = openMovements.length - rows.length;
   const breakdown = legalFormBreakdown(rows, now);
   const reminders = legalExpiryReminderSummary(movements, now, thresholds);
@@ -545,14 +553,16 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     if (!formCode) return;
     return raise("RECORD_LEGAL_FORM_DETAILS", { movementId: target.id, formCode, ...details });
   };
-  // Export (feature 44): everyone on a form, never names; legal times exactly as typed (D-93, D-102).
+  // Export (feature 44, D-155): everyone on a form on the list, including admitted on a form;
+  // never names; legal times exactly as typed (D-93, D-102).
   const exportList = async () =>
     (await import("./legal-forms-export")).downloadLegalFormsList(
-      rows,
+      listPopulation,
       { umrnOf, edName: edNameOf, wardName: wardNameOf, now, dayZero },
       {
         asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
-        scope: "Legal forms; everyone on a form on the list, expiry typed first (highlights do not narrow it)",
+        scope:
+          "Legal forms; everyone on a form on the list, including admitted on a form, expiry typed first (highlights do not narrow it)",
       },
     );
   const addTimeTarget = rows.find((movement) => movement.id === addTimeId) ?? null;
@@ -1112,8 +1122,12 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                       ) : null}
                       {shownView === "history" ? null : (
                         <>
-                          <ListPrintButton disabled={rows.length === 0} testId="ward-legal-print" />
-                          <ListExportButton load={exportList} disabled={rows.length === 0} testId="ward-legal-export" />
+                          <ListPrintButton disabled={listPopulation.length === 0} testId="ward-legal-print" />
+                          <ListExportButton
+                            load={exportList}
+                            disabled={listPopulation.length === 0}
+                            testId="ward-legal-export"
+                          />
                         </>
                       )}
                     </>
