@@ -184,6 +184,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-159](#d-159-fixes-from-the-10-to-12-november-pr-review-12-november-2026)                                                                             | Fixes from the 10 to 12 November PR review                                             | Active                                           |
 | [D-160](#d-160-a-trusted-proxy-list-of-plain-addresses-falls-back-to-per-address-keying-12-november-2026)                                               | A trusted proxy list of plain addresses falls back to per-address keying               | Active                                           |
 | [D-161](#d-161-homes-changes-since-strip-is-one-line-12-november-2026)                                                                                  | Home's changes-since strip is one line                                                 | Active                                           |
+| [D-163](#d-163-homes-changes-since-strip-names-escalations-first-and-leaves-movements-off-12-november-2026)                                             | Home's changes-since strip names escalations first and leaves movements off            | Active                                           |
 
 ---
 
@@ -2001,3 +2002,9 @@ is inferred.
 - **Decision:** Home's "since" strip (feature 40) stays on one line at every width. It leads with "This shift" before any review and "Since 15:02 yesterday" after one, drops "new" from each count, sets each figure in mono, names three counts where the line is wide and fewer where it is narrow (one on a phone), and ends with "+N more" matching what is hidden. Screen readers hear the whole sentence with every count. The card, the Review button and the sheet it opens are unchanged.
 - **Not decided:** Josh did not answer the two follow-up questions (put escalations first; leave movements off the line), so the count order and the counts shown are unchanged.
 - **Boundary:** synthetic data only. No clinical rule changes. Approves no release.
+
+## D-163. Home's changes-since strip names escalations first and leaves movements off (12 November 2026)
+
+- **Date:** 12 November 2026, 11:27 PM AWST (15:27 UTC). **Decided by:** Josh, "Go ahead and fix all recommendations" in the Ward Flow project thread "Tidy the Since the shift started strip", answering the two follow-up questions left open by D-161. Numbered D-163 because D-162 is claimed by the site review fixes.
+- **Decision:** the strip's counts run escalations, delays, referrals, beds freed, then acceptances withdrawn, discharge dates moved and records updated, so a phone line, which names one count, shows an escalation when there is one. New movements are left off the line and stay in the Review sheet; when movements are the only change, the line names them so Review stays reachable from Home.
+- **Boundary:** synthetic data only. Changes no clinical rule, only the order and choice of counts on one line. Approves no release.

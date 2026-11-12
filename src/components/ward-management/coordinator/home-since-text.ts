@@ -1,8 +1,8 @@
 import type { ChangesSinceLastLook } from "./since-last-look";
 
 /**
- * Home's "What changed since my last shift" line (feature 40, 9 Nov 2026). Counts only, in the same
- * order as the Since you last looked sheet, most useful first. Pure, so the words are tested once.
+ * Home's "What changed since my last shift" line (feature 40, 9 Nov 2026). Counts only, escalations
+ * first (D-163). Pure, so the words are tested once.
  */
 
 /** At most this many parts are named on a wide line; narrower lines name fewer (CSS container query). */
@@ -24,16 +24,21 @@ function part(n: number, one: string, many: string, isNew = false): SinceBannerP
  */
 export function sinceBannerCounts(changes: ChangesSinceLastLook): SinceBannerPart[] {
   const beds = changes.bedsFreed.reduce((sum, entry) => sum + entry.count, 0);
-  return [
+  // Escalations first, then delays, referrals and beds freed (D-163): a phone line names only the
+  // first. New movements are routine churn, so they stay in the Review sheet and off this line,
+  // unless they are the only change, when the line names them so Review stays reachable.
+  const named = [
+    part(changes.newEscalationIds.length, "escalation", "escalations", true),
+    part(changes.newDelays.length, "delay", "delays", true),
     part(changes.newReferralIds.length, "referral", "referrals", true),
     part(beds, "bed freed", "beds freed"),
-    part(changes.newDelays.length, "delay", "delays", true),
-    part(changes.newEscalationIds.length, "escalation", "escalations", true),
-    part(changes.newMovementIds.length, "movement", "movements", true),
     part(changes.acceptanceWithdrawn?.length ?? 0, "acceptance withdrawn", "acceptances withdrawn"),
     part(changes.dischargeDatesMoved?.length ?? 0, "discharge date moved", "discharge dates moved"),
     part(changes.updates?.length ?? 0, "record updated", "records updated"),
   ].filter((entry): entry is SinceBannerPart => entry !== undefined);
+  if (named.length > 0) return named;
+  const movements = part(changes.newMovementIds.length, "movement", "movements", true);
+  return movements ? [movements] : [];
 }
 
 /**
