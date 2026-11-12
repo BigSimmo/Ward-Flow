@@ -157,7 +157,7 @@ describe("Mark them back command completion", () => {
       </WardFlowProvider>,
     );
     const row = screen.getByTestId(`ward-board-shift-away-${awayAdmission!.id}`);
-    fireEvent.click(within(row).getByRole("button", { name: "Mark them back" }));
+    fireEvent.click(within(row).getByRole("button", { name: /^Mark them back, / }));
     expect(dispatch.mock.calls.map(([event]) => event.type)).toEqual(
       both
         ? ["END_LEAVE_BED", "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT"]
@@ -195,7 +195,7 @@ describe("Mark them back command completion", () => {
     );
     fireEvent.click(
       within(screen.getByTestId(`ward-board-shift-away-${awayAdmission!.id}`)).getByRole("button", {
-        name: "Mark them back",
+        name: /^Mark them back, /,
       }),
     );
     expect(finishes).toHaveLength(2);
@@ -240,7 +240,7 @@ it.each(["refused", "failed", "cancelled"] as const)(
     await act(async () => {
       fireEvent.click(
         within(screen.getByTestId(`ward-board-shift-away-${awayAdmission!.id}`)).getByRole("button", {
-          name: "Mark them back",
+          name: /^Mark them back, /,
         }),
       );
     });

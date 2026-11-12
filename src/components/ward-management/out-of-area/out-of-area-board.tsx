@@ -6,6 +6,7 @@ import { fieldsMatchEveryWord } from "@/components/ward-management/search/search
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { hasOpenSheet, topSheetRoot } from "@/components/wf/sheet-focus";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, ClipboardCopy, Download, Map as MapIcon, Search } from "lucide-react";
 
@@ -149,6 +150,14 @@ const STATUS_TONE: Record<ReturnStatus, WfTone> = {
   not_agreed: "neutral",
   agreed: "neutral",
 };
+
+/** True when the top-most open sheet is not the plan drawer, for example a dialog over it. */
+function innerSheetOnTop(): boolean {
+  if (!hasOpenSheet()) return false;
+  const top = topSheetRoot();
+  const drawer = document.querySelector('[data-testid="ward-out-of-area-subject"]');
+  return !top || !drawer || !(top.contains(drawer) || drawer.contains(top));
+}
 
 /** Drawer review (6 Nov 2026): the return plan's tag carries the tone; the panel's borders stay neutral. */
 const STATUS_TAG_TONE: Record<ReturnStatus, WfTone> = {
@@ -303,10 +312,13 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     return fieldsMatchEveryWord(query, fields);
   };
   const anyHighlight = highlight !== null || region !== null || query.length > 0;
+  // Every active criterion must match (AND), so typing a search or adding a region narrows the
+  // highlight inside a chip rather than widening it. With none active, nothing is highlighted.
   const isHighlighted = (entry: OutOfAreaEntry) =>
-    matchesHighlight(entry, highlight) ||
-    (region !== null && entry.admission.homeRegion === region) ||
-    matchesQuery(entry);
+    anyHighlight &&
+    (highlight === null || matchesHighlight(entry, highlight)) &&
+    (region === null || entry.admission.homeRegion === region) &&
+    (query.length === 0 || matchesQuery(entry));
   const highlightedCount = sorted.filter(isHighlighted).length;
   const clearHighlights = () => {
     setHighlight(null);
@@ -347,8 +359,15 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     if (next) setSelectedId(next.admission.id);
   };
 
+  // The row order as one string, so the shortcut effect below re-subscribes only when it changes.
+  const sortedIdsKey = sorted.map((entry) => entry.admission.id).join("\n");
   useEffect(() => {
+    const sortedIds = sortedIdsKey === "" ? [] : sortedIdsKey.split("\n");
     const handleKeyDown = (event: KeyboardEvent) => {
+      // A sheet, dialog or inner control that already took the key (the kit Sheet prevents its
+      // Escape) keeps it, and so does a sheet opened over the plan drawer (the drawer is itself a
+      // sheet, so `hasOpenSheet()` alone would also stop j/k while it is open).
+      if (event.defaultPrevented || innerSheetOnTop()) return;
       if (event.key === "Escape" && selectedId !== null) {
         setSelectedId(null);
         selectionOriginRef.current?.focus();
@@ -369,14 +388,14 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         return;
       }
       if (event.key === "j" || event.key === "k") {
-        const index = sorted.findIndex((entry) => entry.admission.id === selectedId);
-        const next = sorted[index < 0 ? 0 : index + (event.key === "j" ? 1 : -1)];
-        if (next) setSelectedId(next.admission.id);
+        const index = selectedId === null ? -1 : sortedIds.indexOf(selectedId);
+        const next = sortedIds[index < 0 ? 0 : index + (event.key === "j" ? 1 : -1)];
+        if (next) setSelectedId(next);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  });
+  }, [selectedId, isPhone, sortedIdsKey]);
 
   useEffect(() => {
     if (!repatNotice) return;

@@ -394,7 +394,7 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
   // The ward's confirmation reaches the board: one discharge, one answer.
   await expect(shiftItem).toBeVisible();
   await expect(shiftItem).toContainText("Confirmed discharge");
-  await shiftItem.getByRole("button", { name: "They have left", exact: true }).click();
+  await shiftItem.getByRole("button", { name: /^They have left, / }).click();
   const departure = page.getByRole("dialog", { name: "Confirm discharge" });
   await expect(departure).toBeVisible();
   await expectAccessible(page, testInfo, "confirm patient departure dialog");

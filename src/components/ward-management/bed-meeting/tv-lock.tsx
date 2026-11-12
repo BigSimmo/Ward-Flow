@@ -118,7 +118,7 @@ export function TvLockControl({ href, className, shared }: { href: string; class
           <Lock aria-hidden="true" />
           Lock as TV
         </button>
-        {error ? <span role="status">{error}</span> : null}
+        {error ? <span role="alert">{error}</span> : null}
       </>
     );
   }
@@ -159,7 +159,7 @@ export function TvLockControl({ href, className, shared }: { href: string; class
         }}
         secondary={[{ label: "Cancel", onAction: close }]}
       >
-        {error && !needsPassword ? <p role="status">{error}</p> : null}
+        {error && !needsPassword ? <p role="alert">{error}</p> : null}
         {offline ? (
           <p>The password cannot be checked without a connection.</p>
         ) : needsPassword ? (

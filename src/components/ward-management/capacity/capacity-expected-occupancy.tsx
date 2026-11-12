@@ -63,7 +63,9 @@ export function ExpectedOccupancyTable({
       <h3 id={titleId} className={styles.title}>
         Expected occupancy
       </h3>
-      <div className={styles.scroll} role="region" aria-labelledby={titleId} tabIndex={0}>
+      {/* The section is the landmark named by the heading; the focusable scroll box takes its own
+          name so the page has no two regions called the same (axe landmark-unique). */}
+      <div className={styles.scroll} role="region" aria-label="Expected occupancy by ward, table" tabIndex={0}>
         <table className={styles.table} id={tableId} aria-labelledby={titleId}>
           <thead>
             <tr>

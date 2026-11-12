@@ -46,7 +46,7 @@ describe("Ward Flow Dialog & Modal Accessibility Semantics", () => {
         </WardFlowProvider>,
       );
 
-      const blockerButtons = screen.queryAllByRole("button", { name: "Record hold-up" });
+      const blockerButtons = screen.queryAllByRole("button", { name: /^Record hold-up, / });
       expect(blockerButtons.length).toBeGreaterThan(0);
       const trigger = blockerButtons[0];
       trigger.focus();

@@ -650,6 +650,9 @@ export interface ShiftTileItem {
   text: string;
   acts: ShiftAction[];
   who?: string;
+  /** The bed and person the tile is about ("Bed 4 · Surname, Given"), from `boardCardLine`. Leads
+   *  the tile's heading and names each action, so two overdue discharges never read the same. */
+  subject?: string;
 }
 
 /**
