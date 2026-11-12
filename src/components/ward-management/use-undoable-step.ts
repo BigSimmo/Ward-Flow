@@ -267,8 +267,7 @@ export function useUndoableStep({
             }),
       });
     }
-    // The token drives this; `sink`, `dispatch` and the callbacks are read as they are now.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- The token drives this; `sink`, `routeRole` and the callbacks are read as they are now.
   }, [token, rejections]);
 
   /** The toast's Undo, or a choice's undo: fenced as one, then sent with the record it was offered for. */

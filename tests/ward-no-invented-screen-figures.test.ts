@@ -138,6 +138,12 @@ const EXCLUSIONS: readonly Exclusion[] = [
 
 /** Rule 4 only: constants that are not limits. */
 const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegExp; name?: RegExp }> = [
+  {
+    id: "staff-request-clock-slack",
+    why: "How many minutes a staff request may lag the shift start it names before the save falls back to the current shift (D-145); clock slack for a form, never shown, not a limit.",
+    file: /^staffing\/staff-requests\.ts$/,
+    name: /^STAFF_REQUEST_SHIFT_TOLERANCE_MINUTES$/,
+  },
   { id: "seed-data", why: "Seed files build made-up records; their times are data, not limits.", file: /-seed\.ts$/ },
   {
     id: "chart-and-day-part",

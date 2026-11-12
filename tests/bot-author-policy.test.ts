@@ -99,6 +99,16 @@ describe("bot-author PR policy", () => {
     expect(botSensitiveCommitViolations([{ sha: "f".repeat(40), author: dependabot, files: [workflow] }])).toHaveLength(
       1,
     );
+    // The workflows' local composite actions carry pins too, and get the same exemption.
+    const setupAction = ".github/actions/ward-setup/action.yml";
+    expect(
+      botSensitiveCommitViolations([
+        { sha: "f".repeat(40), author: dependabot, files: [setupAction], actionPinOnlyFiles: [setupAction] },
+      ]),
+    ).toEqual([]);
+    expect(
+      botSensitiveCommitViolations([{ sha: "f".repeat(40), author: dependabot, files: [setupAction] }]),
+    ).toHaveLength(1);
     // Only Dependabot gets the exemption, and only for workflow files.
     expect(
       botSensitiveCommitViolations([
@@ -140,6 +150,7 @@ describe("bot-author PR policy: coding-agent warn tier (A6-F02)", () => {
   it("protects workflows, public CI scripts and the protected safety tests", () => {
     for (const file of [
       ".github/workflows/ward-flow.yml",
+      ".github/actions/ward-setup/action.yml",
       "scripts/ward-ci-public/plan.mjs",
       "scripts/ward-ci-public/bot-author-policy.mjs",
       "scripts/ward-flow/protected-safety-tests.json",

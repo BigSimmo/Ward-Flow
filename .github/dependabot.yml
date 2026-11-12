@@ -35,8 +35,9 @@ updates:
         applies-to: security-updates
         patterns: ["*"]
 
+  # The local composite actions under .github/actions/ hold action pins too.
   - package-ecosystem: github-actions
-    directory: /
+    directories: ["/", "/.github/actions/*"]
     schedule:
       interval: weekly
       day: monday

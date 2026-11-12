@@ -55,8 +55,11 @@ export function ListExportButton({
       >
         Export
       </Button>
-      {/* Always present, so a screen reader announces the note when it arrives. */}
-      <span role="status">{note}</span>
+      {/* Always present, so a screen reader announces the note when it arrives. Visually hidden while
+          empty, so it takes no gap in a flex row and the button sits flush with the row's right edge. */}
+      <span role="status" className={note ? undefined : "sr-only"}>
+        {note}
+      </span>
     </>
   );
 }

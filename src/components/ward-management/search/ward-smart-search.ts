@@ -141,6 +141,14 @@ export const CORE_SEARCH_VIEWS: readonly CoreSearchView[] = [
     description: "Recorded forms (demo)",
   },
   {
+    // Feature 23: the Leave page, also reached from the Tools sheet's Leave due ("See all leave").
+    key: "leave",
+    title: "Leave",
+    href: "/ward-flow/leave",
+    keywords: ["leave", "on leave", "due back", "overdue", "absent", "absent without leave", "awol"],
+    description: "Everyone on leave and due back",
+  },
+  {
     key: "referrals",
     title: "Referrals",
     href: "/ward-flow/referrals",

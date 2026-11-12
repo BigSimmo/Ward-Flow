@@ -40,11 +40,15 @@ describe("applyDraftPatch", () => {
 });
 
 describe("clock input", () => {
-  it("round-trips an instant's time of day and refuses what is not hh:mm", () => {
+  it("round-trips an instant's time of day and refuses what is not a clock time", () => {
     expect(clockInputValue(MINUTES_PER_DAY + 9 * 60 + 5)).toBe("09:05");
     expect(parseClockInput("09:05")).toBe(9 * 60 + 5);
     expect(parseClockInput("24:00")).toBeNull();
-    expect(parseClockInput("9:05")).toBeNull();
+    // The one clock-text rule (minuteOfDayFromClockText): "9:05" and "0905" count as 09:05.
+    expect(parseClockInput("9:05")).toBe(9 * 60 + 5);
+    expect(parseClockInput("0905")).toBe(9 * 60 + 5);
+    expect(parseClockInput("9h05")).toBeNull();
+    expect(parseClockInput("905")).toBeNull();
     expect(parseClockInput("")).toBeNull();
   });
 });
