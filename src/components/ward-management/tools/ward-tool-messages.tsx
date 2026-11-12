@@ -14,7 +14,7 @@ import {
 import { bedSummaryText, type BedSummaryInput } from "@/components/ward-management/tools/ward-bed-summary";
 import { standingFigures } from "@/components/ward-management/ward-standing-strip";
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
-import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { bedStates, readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { openEdJourneys } from "@/components/ward-management/ward-shared-figures";
 import { formatInstant, minutesUntil, splitDuration } from "@/components/ward-management/ward-clock";
@@ -108,7 +108,11 @@ function operationalFigures(input: BedSummaryInput) {
   let confirmed = 0;
   let expected = 0;
   let heldUp = 0;
+  // Pulled counts named holds (D-115 item 3), so a bed held by an accepted referral sits in Pulled
+  // rather than dropping out of both lines; occupancy stays stay-only (CodeRabbit on #1637).
+  let pulled = 0;
   for (const unit of units) {
+    pulled += bedStates(unit, admissions, bedReleases, leaveBeds, holds).pulled;
     const capacity = capacityBreakdown(unit, bedReleases, leaveBeds, now);
     const readyHere = readyBedsNow(unit, admissions, bedReleases, holds);
     const service = unitHealthService(unit);
@@ -139,7 +143,7 @@ function operationalFigures(input: BedSummaryInput) {
     beds: occupied.beds,
     occupancy: occupancyPercent(occupied),
     inUse: occupied.inUse,
-    pulled: occupied.pulled,
+    pulled,
     readyTotal,
     readyByService: listByService(ready),
     pending,

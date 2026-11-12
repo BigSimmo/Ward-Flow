@@ -322,6 +322,8 @@
    rows while it waits; once focus moves inside, the columns show at once. */
 .grid[data-cards-pending]:not(:focus-within) {
   opacity: 0;
+  /* No click lands on a control nobody can see yet (CodeRabbit on #1637). */
+  pointer-events: none;
 }
 
 @media (min-width: 62.5625rem) {

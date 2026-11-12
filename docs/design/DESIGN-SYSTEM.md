@@ -249,7 +249,7 @@ The shell, tokens and kit keep Ward Flow feeling like one product. The variation
 - The shell: sidebar, app bar, band hero frame, phone dock, toasts, footer.
 - Tokens: no new colours, sizes, radii or fonts. Tone semantics (red is act now).
 - Kit primitives: buttons, badges, choices, fields, sheets, dialogs, Show more.
-- House rules: 12px floor, 40px phone controls with a 48px cover, 30px desktop tabs, no coloured side edges, one filled button per panel, one on-hero button plus one quick-link chip row (D-159).
+- House rules: 12px floor, 40px phone controls with a 48px cover, 30px desktop tabs, no coloured side edges, one filled button per panel, at most one on-hero button plus one quick-link chip row (D-159).
 - Words, names, times, safety wording and synthetic data.
 - The five-second answer in the hero title.
 
@@ -282,7 +282,7 @@ Each page may take **one signature part**: a bespoke visual that shows its own d
 - [ ] Tokens only; kit parts only; no one-off pills.
 - [ ] Icons from the table in section 4 at 1.75 stroke; status marks from `StatusGlyph`, no typed symbols, and only where they change the next action.
 - [ ] No coloured side edges; no text under 12px; phone controls 40px; desktop tabs 30px.
-- [ ] One on-hero button plus one quick-link chip row (D-159), one filled button per panel, eight rows then Show more.
+- [ ] At most one on-hero button plus one quick-link chip row (D-159), one filled button per panel, eight rows then Show more.
 - [ ] Words from section 6; patient names surname first, staff names as written, both in full; times as typed.
 - [ ] At most one signature part, inside the limits in section 8.
 - [ ] Synthetic data only; no names or typed text in URLs, screenshots or logs.

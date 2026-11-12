@@ -6,6 +6,8 @@ import { deriveServiceBedAlerts } from "@/components/ward-management/shell/ward-
 import { bedSummaryText } from "@/components/ward-management/tools/ward-bed-summary";
 import { DEFAULT_BED_FINDER_FILTERS, findBeds } from "@/components/ward-management/tools/ward-bed-finder";
 import { readyBedsNow, totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
+import { heldBedsByKind } from "@/components/ward-management/ward-movement-bed-hold";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { activeWardNetwork, NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
@@ -65,6 +67,27 @@ describe("D-115 item 3: a named bed is not ready on the Tools sheet, rail or Sea
         (candidate) => candidate.unit.id === unit.id,
       );
       expect(row?.free, unit.id).toBe(readyBedsNow(unit, state.admissions, state.bedReleases, holds));
+    }
+  });
+
+  it("Find a bed's Locked and Open filters take a named bed off its own kind (CodeRabbit on #1637)", () => {
+    for (const unit of named) {
+      const held = heldBedsByKind(unit, state.admissions, holds);
+      const ready = readyBedsNow(unit, state.admissions, state.bedReleases, holds);
+      for (const bed of ["locked", "open"] as const) {
+        const filters = {
+          ...DEFAULT_BED_FINDER_FILTERS,
+          cohort: unit.cohort,
+          bed,
+          legalStatus: "voluntary" as const,
+        };
+        const row = findBeds(state.units, state.admissions, state.bedReleases, filters, holds).find(
+          (candidate) => candidate.unit.id === unit.id,
+        );
+        const kindFree = bed === "locked" ? lockedBedsFree(unit) - held.locked : openBedsFree(unit) - held.open;
+        expect(row?.free, `${unit.id} ${bed}`).toBe(Math.min(Math.max(0, kindFree), ready));
+      }
+      expect(held.locked + held.open, unit.id).toBeGreaterThan(0);
     }
   });
 
