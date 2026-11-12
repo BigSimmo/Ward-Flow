@@ -117,13 +117,104 @@
   flex: none;
 }
 
+/* The text column is the query container, so the line names only as many counts as fit. */
 .bannerText {
   flex: 1 1 auto;
   min-width: 0;
   margin: 0;
+  container-type: inline-size;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.bannerLine {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.bannerLead {
+  flex: none;
   color: var(--wf-ink-1);
-  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  overflow-wrap: break-word;
+  font-weight: 600;
+}
+
+/* A count gives way before the lead or "+N more" does: a long label ("discharge dates moved") or a
+   long lead ("Since 15:02 yesterday") ellipsises the last named count's words, never its figure, so
+   the figure and the overflow total stay visible. */
+.bannerPart {
+  display: flex;
+  flex: 0 1 auto;
+  gap: 0.3em;
+  /* Room for a figure of up to three digits, so a squeezed count keeps its number. */
+  min-width: 3.5ch;
+  overflow: hidden;
+}
+
+/* The furthest count gives way first. */
+.bannerPart[data-rank="2"] {
+  flex-shrink: 10;
+}
+
+.bannerPart[data-rank="3"] {
+  flex-shrink: 100;
+}
+
+.bannerLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bannerCount {
+  flex: none;
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The lead's clock time and the "+N" figure: mono like every figure, at their own weight and colour. */
+.bannerFigure {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.bannerMore {
+  display: none;
+  flex: none;
+  color: var(--wf-ink-3);
+}
+
+/* Wide line: three counts. Narrower: two, then one; "+N more" matches whatever is named. */
+.bannerMore[data-shown="3"] {
+  display: inline;
+}
+
+@container (max-width: 400px) {
+  .bannerPart[data-rank="3"],
+  .bannerMore[data-shown="3"] {
+    display: none;
+  }
+
+  .bannerMore[data-shown="2"] {
+    display: inline;
+  }
+}
+
+@container (max-width: 290px) {
+  .bannerLeadDay,
+  .bannerPart[data-rank="2"],
+  .bannerMore[data-shown="2"] {
+    display: none;
+  }
+
+  .bannerMore[data-shown="1"] {
+    display: inline;
+  }
 }
 
 .bannerSlot .bannerAction {
