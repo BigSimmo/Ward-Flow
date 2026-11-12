@@ -27,3 +27,7 @@ closed at first paint; its inner sheet was already lazy). Local production measu
 trim, in KB: Home 588.2, Referrals 594.3, Ward 623.6, Movement 619.4 and ED site 681.6. All nine
 budgeted routes sit inside the limits already on this branch. Ward is 1.8 KB inside `main`'s 625.4.
 The other limits can come down later (Home 588.8, Referrals 595.0, Movement 620.1, ED site 682.3).
+
+## After merging `main` at `0f2ce4d` (#1623)
+
+The merge with #1623 kept this PR's older values and so lowered four of `main`'s limits below what #1623 needed (Home, ED, Movement and Capacity), and hosted CI then failed Home (589.0 against 588.8) and Capacity (666.0 against 665.9). After the trim, hosted CI measured, in KB: Home 589.0, Referrals 593.5, ED 543.1, Ward 622.5, Movement 619.6, Capacity 666.0, ED site 678.1, Bed meeting 599.5 and Statistics 640.6, so every route but ED site fits `main`'s limits. This PR now takes `main`'s limit for every route and keeps one raise: ED site 678.1 to 678.6 (+0.5), because it measured exactly at `main`'s limit and builds vary by a few tenths. The earlier raises (Home, Referrals, Ward, Movement and ED site to 682.3) are no longer needed and are dropped.
