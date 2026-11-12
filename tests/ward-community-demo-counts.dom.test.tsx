@@ -16,7 +16,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
-import { WF_PHONE_QUERY } from "@/components/wf";
+import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
 
 function renderTeam(teamId = "midland", explicit = false) {
   return render(
@@ -103,6 +103,26 @@ describe("community demonstration queue totals", () => {
     renderTeam();
     expect(screen.getByRole("radio", { name: /^Waiting/u })).toHaveTextContent("Waiting2");
     expect(within(screen.getByTestId("ward-community-phone-list-waiting")).getAllByRole("listitem")).toHaveLength(2);
+  });
+
+  it("takes an accepted or declined sample referral off the list and every count, with Undo", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <CommunityScreen teamId="alma-street-fremantle" demonstration />
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    const list = () => within(screen.getByTestId("ward-community-waiting-list")).getAllByRole("listitem");
+    expect(list()).toHaveLength(5);
+    fireEvent.click(within(list()[0]!).getByRole("button", { name: /^Accept/u }));
+    expect(list()).toHaveLength(4);
+    expect(screen.getByRole("button", { name: /^All referrals/u })).toHaveTextContent("4");
+    expect(screen.getByRole("tab", { name: /^Referrals/u })).toHaveTextContent("Referrals4");
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(list()).toHaveLength(5);
+    fireEvent.click(within(list()[0]!).getByRole("button", { name: /^Decline/u }));
+    expect(list()).toHaveLength(4);
   });
 
   it("preserves the depot room's recorded 16:30 closing time", () => {

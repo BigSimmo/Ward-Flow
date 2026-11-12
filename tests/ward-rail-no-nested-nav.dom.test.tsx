@@ -61,7 +61,7 @@ afterEach(() => {
  */
 describe("ward rail landmarks (P084)", () => {
   it("has no navigation landmark nested inside another", () => {
-    const media = mockViewport(["(min-width: 1001px)"]);
+    const media = mockViewport(["(min-width: 62.5625rem)"]);
     try {
       renderShell();
       const rail = screen.getByTestId("ward-rail");

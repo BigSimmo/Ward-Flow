@@ -235,7 +235,7 @@ describe("closed desktop rail cards", () => {
     const matchMedia = vi.spyOn(window, "matchMedia").mockImplementation(
       (query) =>
         ({
-          matches: query === "(min-width: 1001px)",
+          matches: query === "(min-width: 62.5625rem)",
           media: query,
           onchange: null,
           addListener: vi.fn(),

@@ -58,10 +58,36 @@ function otherTabDayDiffers(peerPayload: string): boolean {
     const peer = JSON.parse(peerPayload) as { dayZero?: unknown; state?: unknown };
     const mine = JSON.parse(own) as { dayZero?: unknown; state?: unknown };
     // A save for another calendar day is refused by the restore fence anyway; it is not a split.
-    return peer.dayZero === mine.dayZero && JSON.stringify(peer.state) !== JSON.stringify(mine.state);
+    if (peer.dayZero !== mine.dayZero) return false;
+    return worldsCertainlyDiffer(peer.state, mine.state) || JSON.stringify(peer.state) !== JSON.stringify(mine.state);
   } catch {
     return false;
   }
+}
+
+/**
+ * Review finding 13 (12 Nov 2026): true only when two saved worlds' JSON must differ, read from their
+ * top level alone: a string, boolean or finite number that differs, or a list of another length.
+ * False means "not known", so the caller still compares the whole JSON. Saves an encode of two
+ * ~480 KB worlds on most changes from another tab. `rejections` is skipped: it is never stored.
+ */
+export function worldsCertainlyDiffer(a: unknown, b: unknown): boolean {
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+  const left = a as Record<string, unknown>;
+  const right = b as Record<string, unknown>;
+  for (const key of Object.keys(left)) {
+    if (key === "rejections") continue;
+    const x = left[key];
+    const y = right[key];
+    if (Array.isArray(x) && Array.isArray(y)) {
+      if (x.length !== y.length) return true;
+    } else if (typeof x === typeof y && (typeof x === "string" || typeof x === "boolean")) {
+      if (x !== y) return true;
+    } else if (typeof x === "number" && typeof y === "number" && Number.isFinite(x) && Number.isFinite(y)) {
+      if (x !== y) return true;
+    }
+  }
+  return false;
 }
 
 /** The sender id a save is broadcast under, or none when it must not reach other tabs (`skip`). */

@@ -1,5 +1,6 @@
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { createContext, useContext, type ComponentProps } from "react";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -13,7 +14,7 @@ import { originName as movementOriginName } from "@/components/ward-management/w
 // The full referral loads when a ward opens it, so its sections and the seeded referral details
 // stay out of the ward page's first script.
 const LazyReferralDetailDrawer = dynamic(
-  () => import("./ward-referral-detail").then((module) => module.WardReferralDetailDrawer),
+  withLoadRetry(() => import("./ward-referral-detail").then((module) => module.WardReferralDetailDrawer)),
   { ssr: false, loading: () => <ReferralDrawerLoading /> },
 );
 

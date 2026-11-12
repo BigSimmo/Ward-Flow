@@ -181,7 +181,7 @@ describe("desktop rail: the server render is the settled render", () => {
     const host = document.createElement("div");
     host.innerHTML = renderToString(tree);
     const server = railItemClasses(host);
-    mockViewport((query) => query === "(min-width: 1001px)");
+    mockViewport((query) => query === "(min-width: 62.5625rem)");
     const { container } = render(tree);
     expect(server.length).toBeGreaterThan(0);
     expect(railItemClasses(container)).toEqual(server);
@@ -189,7 +189,7 @@ describe("desktop rail: the server render is the settled render", () => {
 
   it("hides narrow-only entries at 1000px and below only", () => {
     const css = strip(readFileSync("src/components/ward-management/shell/ward-rail.module.css", "utf8"));
-    const desktop = [...css.matchAll(/@media \(min-width: 1001px\) \{([\s\S]*?)\n\}/gu)].map((m) => m[1]).join("");
+    const desktop = [...css.matchAll(/@media \(min-width: 62.5625rem\) \{([\s\S]*?)\n\}/gu)].map((m) => m[1]).join("");
     expect(desktop).not.toMatch(/compactExtra/u);
   });
 
@@ -232,9 +232,9 @@ describe("rail early script", () => {
       root: document.documentElement.getAttribute("data-rail"),
     };
   }
-  const desktop = (q: string) => q === "(min-width: 1001px)";
-  const tablet = (q: string) => q === "(min-width: 1001px)" || q === "(max-width: 1200px)";
-  const narrow = (q: string) => q === "(max-width: 1200px)";
+  const desktop = (q: string) => q === "(min-width: 62.5625rem)";
+  const tablet = (q: string) => q === "(min-width: 62.5625rem)" || q === "(max-width: 75rem)";
+  const narrow = (q: string) => q === "(max-width: 75rem)";
 
   it("draws a stored closed rail closed on desktop before the app loads", () => {
     expect(runWith({ query: desktop, stored: "closed" })).toEqual({ rail: "closed", tablet: null, root: "closed" });
@@ -271,7 +271,7 @@ describe("rail early script and hydration", () => {
     document.body.append(host);
     expect(host.querySelector('[data-testid="ward-rail"]')).toHaveAttribute("data-rail", "open");
 
-    mockViewport((query) => query === "(min-width: 1001px)" || query === "(min-width: 1201px)");
+    mockViewport((query) => query === "(min-width: 62.5625rem)" || query === "(min-width: 75.0625rem)");
     window.localStorage.setItem(RAIL_OPEN_STORAGE_KEY, "closed");
     new Function(WARD_RAIL_EARLY_SCRIPT)();
     expect(host.querySelector('[data-testid="ward-rail"]')).toHaveAttribute("data-rail", "closed");
@@ -300,9 +300,9 @@ describe("rail early script and hydration", () => {
 
     mockViewport(
       (query) =>
-        query === "(min-width: 1001px)" ||
-        (wide && query === "(min-width: 1201px)") ||
-        (!wide && query === "(max-width: 1200px)"),
+        query === "(min-width: 62.5625rem)" ||
+        (wide && query === "(min-width: 75.0625rem)") ||
+        (!wide && query === "(max-width: 75rem)"),
     );
     if (stored) window.localStorage.setItem(RAIL_OPEN_STORAGE_KEY, stored);
     new Function(WARD_RAIL_EARLY_SCRIPT)();

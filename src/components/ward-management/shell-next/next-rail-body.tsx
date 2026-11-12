@@ -150,14 +150,14 @@ const NARROW_CORE_ENTRY_COUNT = 3;
 /** The role menu id of the handover board, which the countdown card also opens (A5). */
 const HANDOVER_MENU_ID = "handover";
 
-const CLOSED_RAIL_CARD_MEDIA_QUERY = "(min-width: 1001px)";
+const CLOSED_RAIL_CARD_MEDIA_QUERY = "(min-width: 62.5625rem)";
 /**
  * Tablet landscape (v10 shell, "Landscape 1180"): the 64px icon rail whatever is stored, with the
  * role's own menu, then More, which opens the rest over the page (B1, 19 Oct 2026: every shape
  * shows the same short menu). Above 1200px the stored open or closed preference applies as before;
  * at 1000px and below the tablet portrait and phone shapes take over.
  */
-export const TABLET_LANDSCAPE_RAIL_QUERY = "(min-width: 1001px) and (max-width: 1200px)";
+export const TABLET_LANDSCAPE_RAIL_QUERY = "(min-width: 62.5625rem) and (max-width: 75rem)";
 
 // Visual abbreviations for the tablet row. Full registry names and live counts remain on the
 // accessible link and its hover card; these never define destinations.

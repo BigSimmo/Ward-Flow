@@ -5,6 +5,7 @@
 // The bar's own controls, moved out of `ward-bar.tsx` to keep it under the line cap: the phone
 // Menu entry, the Service selector with its sheet, the drawer buttons and the primary action.
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Bell, Plus, Check, ChevronDown, Menu as MenuIcon, RotateCcwClock, Wrench } from "lucide-react";
 import { useCallback, useState, type KeyboardEvent, type RefObject } from "react";
@@ -430,7 +431,10 @@ export function WardBarDrawerTriggers({
 
 // The New menu (built 7 Nov 2026) loads on first use, so a phone's first load does not carry it.
 const loadNewMenu = () => import("@/components/ward-management/shell-next/next-new-menu");
-const NewMenu = dynamic(() => loadNewMenu().then((module) => module.NewMenu), { ssr: false });
+const NewMenu = dynamic(
+  withLoadRetry(() => loadNewMenu().then((module) => module.NewMenu)),
+  { ssr: false },
+);
 
 /**
  * The bar's New button (Josh's approved mock-up, built 7 Nov 2026): "New" with a caret, opening the

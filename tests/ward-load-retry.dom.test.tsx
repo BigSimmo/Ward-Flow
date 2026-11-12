@@ -64,7 +64,7 @@ describe("withLoadRetry", () => {
   it("adds Close when the panel takes onClose, for drawers that draw their own header", async () => {
     const onClose = vi.fn();
     const Lazy = dynamic(
-      withLoadRetry<{ onClose: () => void }>(
+      withLoadRetry<(props: { onClose: () => void }) => null>(
         () => Promise.reject(new Error("ChunkLoadError")),
         "Referrals did not load",
       ),

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { broadcastDispatchEvent } from "./ward-flow-provider-helpers";
 import { loadScenarioNetworks } from "./ward-scenario-network-loader";
@@ -244,6 +244,56 @@ export function tryWriteDemoState(
     markDemoSaveCurrent(false);
     return false;
   }
+}
+
+/**
+ * Review finding 23 (12 Nov 2026): a device save encodes and writes the whole day (about 480 KB), so
+ * it runs when the browser is next idle rather than inside the action that caused it. Several
+ * changes before then make one write of the newest day. `flush` writes a waiting save at once: on
+ * leaving or hiding the page, before the leave warning reads whether the day is saved, and whenever
+ * the provider takes a path that does not write. `cancel` drops it (Reset demo clears the save).
+ * Where the browser has no idle callback (Safari, jsdom) the save is written straight away, as before.
+ */
+export function useDeferredDeviceSave() {
+  const pending = useRef<(() => void) | null>(null);
+  const handle = useRef<number | null>(null);
+  const [save] = useState(() => {
+    const unschedule = () => {
+      if (handle.current !== null) window.cancelIdleCallback?.(handle.current);
+      handle.current = null;
+    };
+    const flush = () => {
+      unschedule();
+      const write = pending.current;
+      pending.current = null;
+      write?.();
+    };
+    return {
+      flush,
+      cancel: () => {
+        unschedule();
+        pending.current = null;
+      },
+      schedule: (write: () => void) => {
+        pending.current = write;
+        if (typeof window.requestIdleCallback !== "function") return flush();
+        if (handle.current === null) handle.current = window.requestIdleCallback(flush, { timeout: 1000 });
+      },
+    };
+  });
+  useEffect(() => {
+    const flushWhenHidden = () => {
+      if (document.visibilityState === "hidden") save.flush();
+    };
+    window.addEventListener("pagehide", save.flush);
+    document.addEventListener("visibilitychange", flushWhenHidden);
+    return () => {
+      window.removeEventListener("pagehide", save.flush);
+      document.removeEventListener("visibilitychange", flushWhenHidden);
+      save.flush();
+    };
+  }, [save]);
+  return save;
 }
 
 /**

@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { preloadWhenIdle } from "../preload-when-idle";
 
@@ -20,11 +21,17 @@ const loadShortlistPanel = () => import("./shortlist-panel");
  */
 const panelPending = () => null;
 
-export const ShortlistPanel = dynamic(() => loadShortlistPanel().then((m) => m.ShortlistPanel), {
-  loading: panelPending,
-});
-export const ReferralPlacementPanel = dynamic(() => loadShortlistPanel().then((m) => m.ReferralPlacementPanel), {
-  loading: panelPending,
-});
+export const ShortlistPanel = dynamic(
+  withLoadRetry(() => loadShortlistPanel().then((m) => m.ShortlistPanel)),
+  {
+    loading: panelPending,
+  },
+);
+export const ReferralPlacementPanel = dynamic(
+  withLoadRetry(() => loadShortlistPanel().then((m) => m.ReferralPlacementPanel)),
+  {
+    loading: panelPending,
+  },
+);
 
 preloadWhenIdle(loadShortlistPanel);

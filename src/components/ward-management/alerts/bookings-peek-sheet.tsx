@@ -3,6 +3,7 @@
 // The bookings peek's sheet (item 6b), loaded on the first press so no route's first download grows.
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { ArrowUpRight } from "lucide-react";
 import { PhoneSheet, useIsPhone } from "@/components/wf";
 import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -10,7 +11,9 @@ import type { Unit } from "@/components/ward-management/ward-model";
 import styles from "@/components/ward-management/patients/patient-peek.module.css";
 
 const PlannedAdmissionsPanel = dynamic(
-  () => import("@/components/ward-management/capacity/planned-admissions-panel").then((m) => m.PlannedAdmissionsPanel),
+  withLoadRetry(() =>
+    import("@/components/ward-management/capacity/planned-admissions-panel").then((m) => m.PlannedAdmissionsPanel),
+  ),
   { loading: () => <p role="status">Loading bookings…</p> },
 );
 

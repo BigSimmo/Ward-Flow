@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { preloadWhenIdle } from "../preload-when-idle";
 
@@ -11,9 +12,12 @@ import { preloadWhenIdle } from "../preload-when-idle";
  */
 const loadNotifier = () => import("./ward-act-now-notifier");
 
-export const WardActNowNotifier = dynamic(() => loadNotifier().then((m) => m.WardActNowNotifier), {
-  ssr: false,
-  loading: () => null,
-});
+export const WardActNowNotifier = dynamic(
+  withLoadRetry(() => loadNotifier().then((m) => m.WardActNowNotifier)),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
 
 preloadWhenIdle(loadNotifier);

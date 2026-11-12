@@ -40,6 +40,8 @@ import { confirmedWardCommand } from "@/components/ward-management/ward-command-
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 
 import { DecisionBody } from "./triage-risk-decision";
 import { FOLDABLE, foldedSections, foldLine } from "./triage-risk-fold";
@@ -111,8 +113,6 @@ const SUB: Readonly<Record<SectionId, string>> = {
 };
 
 type Sheet = "sum" | "how" | "all" | null;
-
-const NOT_WIRED = "Not wired in this prototype.";
 
 const NOT_SIGNED = "Not signed. Try again.";
 
@@ -390,6 +390,8 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
   // Raised by name as this desk at the board clock, as every screen does (tests/ward-flow-raise.test.ts).
   const raise = useWardRaise(routeRole);
   const signGate = useRoleGate({ patientId: person.id })("RECORD_TRIAGE_SIGNED");
+  const bedRequestHref = raiseReferralHref({ patientId: person.id });
+  const canRequestBed = useCanOpenHref()(bedRequestHref);
   const [signing, setSigning] = useState(false);
   const [editingReview, setEditingReview] = useState(false);
   const [sheet, setSheet] = useState<Sheet>(null);
@@ -761,7 +763,12 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                 <Button variant="pri" onClick={copySummary} data-testid="triage-signed-copy">
                   Copy summary
                 </Button>
-                <Button onClick={() => say(NOT_WIRED)}>Make a bed request</Button>
+                {/* Review finding 4 (12 Nov 2026): opens the new referral for this person, where the desk may. */}
+                {canRequestBed ? (
+                  <Link href={bedRequestHref} className={buttonClass()} data-testid="triage-signed-bed-request">
+                    Make a bed request
+                  </Link>
+                ) : null}
                 <Link href={person.recordHref} className={buttonClass()}>
                   Open patient record
                 </Link>
@@ -857,10 +864,8 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                           "Everything needed is in. Signing creates both records."
                         )}
                       </span>
-                      <Button variant="ghost" onClick={() => say(NOT_WIRED)}>
-                        Awaiting information
-                      </Button>
-                      <Button onClick={() => say(NOT_WIRED)}>Save draft</Button>
+                      {/* Review finding 4: Awaiting information and Save draft only said they were not
+                          wired, so they are hidden until they do something. */}
                       {signButton("foot")}
                     </div>
                   ) : null}

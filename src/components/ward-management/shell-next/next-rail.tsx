@@ -4,6 +4,7 @@
 // the page-wide preferences and drawer shortcuts. It replaced the old shell's lazy rail.
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -30,8 +31,8 @@ import "@/components/ward-management/shell/ward-rail.module.css";
  * and the server waits for it). On a phone only the page-wide preferences and drawer shortcuts
  * the rail used to keep run, so its code is never fetched.
  */
-const RailLoaded = dynamic(() =>
-  import("@/components/ward-management/shell-next/next-rail-body").then((m) => m.NextRailBody),
+const RailLoaded = dynamic(
+  withLoadRetry(() => import("@/components/ward-management/shell-next/next-rail-body").then((m) => m.NextRailBody)),
 );
 
 function PhonePreferences() {

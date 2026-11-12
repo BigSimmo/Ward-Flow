@@ -1,5 +1,6 @@
 import type { MouseEvent, ReactNode } from "react";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { BedSingle, Clock, DoorOpen, FileBadge, Stethoscope, Ambulance, UserRound, Users } from "lucide-react";
@@ -25,9 +26,13 @@ import type { WardFlowEventType } from "@/components/ward-management/ward-role-p
 import { recordExtrasFor } from "./patient-record-extras";
 import { stayProgress } from "./patient-now-ward";
 // Loads with the other ward cards, only for a stay (phone script budget).
-const PatientStayProgress = dynamic(() => import("./patient-now-ward-cards").then((m) => m.PatientStayProgress));
+const PatientStayProgress = dynamic(
+  withLoadRetry(() => import("./patient-now-ward-cards").then((m) => m.PatientStayProgress)),
+);
 // The coordinator-only no-reply timers load on their own (phone script budget, item 1).
-const NoReplyTimerList = dynamic(() => import("../referrals/referral-no-reply-timers").then((m) => m.NoReplyTimerList));
+const NoReplyTimerList = dynamic(
+  withLoadRetry(() => import("../referrals/referral-no-reply-timers").then((m) => m.NoReplyTimerList)),
+);
 import styles from "./patient-status-card.module.css";
 import { useSenderPresentation } from "../ward-sender-presentation";
 import { movementPresentation } from "../ward-partial-view-presenters";

@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { Phone, UserPlus } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 
@@ -17,12 +18,18 @@ import { openStaffRequestFor, staffRequestTagText, type StaffRequestRecord } fro
 import styles from "./staffing.module.css";
 
 // Loaded on first open, so the ward page's first download does not grow.
-const StaffNeededSheet = dynamic(() => import("./staff-needed-sheet").then((m) => m.StaffNeededSheet), {
-  ssr: false,
-});
-const WardContactSheet = dynamic(() => import("../on-call/ward-contact-sheet").then((m) => m.WardContactSheet), {
-  ssr: false,
-});
+const StaffNeededSheet = dynamic(
+  withLoadRetry(() => import("./staff-needed-sheet").then((m) => m.StaffNeededSheet)),
+  {
+    ssr: false,
+  },
+);
+const WardContactSheet = dynamic(
+  withLoadRetry(() => import("../on-call/ward-contact-sheet").then((m) => m.WardContactSheet)),
+  {
+    ssr: false,
+  },
+);
 
 const NONE: StaffRequestRecord[] = [];
 

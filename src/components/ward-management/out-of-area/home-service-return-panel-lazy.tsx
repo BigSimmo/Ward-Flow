@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { preloadWhenIdle } from "../preload-when-idle";
 
@@ -11,7 +12,7 @@ import { preloadWhenIdle } from "../preload-when-idle";
 const loadHomeServiceReturnPanel = () => import("./home-service-return-panel");
 
 export const HomeServiceReturnPanel = dynamic(
-  () => loadHomeServiceReturnPanel().then((m) => m.HomeServiceReturnPanel),
+  withLoadRetry(() => loadHomeServiceReturnPanel().then((m) => m.HomeServiceReturnPanel)),
   { loading: () => null },
 );
 

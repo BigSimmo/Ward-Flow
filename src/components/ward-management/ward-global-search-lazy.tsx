@@ -2,6 +2,7 @@
 
 import { Search } from "lucide-react";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import {
   type ComponentType,
   type ReactNode,
@@ -37,7 +38,7 @@ import "./search/global-search-preview.module.css";
 // The search arrives with its Help wrapper (`ward-global-search-help.tsx`), which supplies the
 // desk's Help answers; neither loads on a phone before the page is ready.
 const loadSearch = () => import("./ward-global-search-help");
-const SearchLoaded = dynamic(() => loadSearch().then((m) => m.WardGlobalSearch));
+const SearchLoaded = dynamic(withLoadRetry(() => loadSearch().then((m) => m.WardGlobalSearch)));
 
 /**
  * WT-38 (walk-through, 26 Oct 2026): a new desk starts with an empty search, not the last desk's

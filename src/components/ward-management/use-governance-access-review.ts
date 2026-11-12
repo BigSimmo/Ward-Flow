@@ -91,10 +91,16 @@ export function useGovernanceAccessReview(governanceEvents: readonly AuditEvent[
         },
       );
     void load();
-    const timer = window.setInterval(() => void load(), READ_EVERY_MS);
+    // No reads while the tab is hidden; one straight away when it is shown again.
+    const refresh = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    const timer = window.setInterval(refresh, READ_EVERY_MS);
+    document.addEventListener("visibilitychange", refresh);
     return () => {
       cancelled = true;
       window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refresh);
     };
   }, [read]);
   // Stamped with the demo clock on the first render after it arrives (as the Access tab does).

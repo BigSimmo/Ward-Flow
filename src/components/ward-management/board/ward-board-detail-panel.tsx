@@ -45,9 +45,10 @@ import { ClinicallyReadyControl } from "./ward-board-clinically-ready";
 import { plural } from "@/components/ward-management/ward-plural";
 import { WardStepDownRequest } from "@/components/ward-management/referrals/step-down-request";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 // Batch 3 item 23: a carer call back, from the ward's bed record. Loaded with the open drawer.
-const CarerCallbackCard = dynamic(() =>
-  import("@/components/ward-management/carer-callback-card").then((m) => m.CarerCallbackCard),
+const CarerCallbackCard = dynamic(
+  withLoadRetry(() => import("@/components/ward-management/carer-callback-card").then((m) => m.CarerCallbackCard)),
 );
 
 /** Redesign: the record's buttons are the kit's, so the panel matches the rest of the page. */

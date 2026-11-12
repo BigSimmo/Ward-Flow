@@ -2,6 +2,7 @@
 // Copied from src/components/ward-management/referrals/referral-match-lazy.tsx (Referrals redesign).
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 
@@ -16,8 +17,11 @@ const loadReferralMatch = () => import("./referral-match");
 
 // `loading` gives the panel its own Suspense boundary, so only the panel waits for its code rather
 // than the whole route (the same reason as `coordinator/shortlist-panel-lazy.tsx`).
-export const ReferralMatchView = dynamic(() => loadReferralMatch().then((m) => m.ReferralMatchView), {
-  loading: () => null,
-});
+export const ReferralMatchView = dynamic(
+  withLoadRetry(() => loadReferralMatch().then((m) => m.ReferralMatchView)),
+  {
+    loading: () => null,
+  },
+);
 
 preloadWhenIdle(loadReferralMatch);

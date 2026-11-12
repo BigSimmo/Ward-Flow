@@ -1127,26 +1127,30 @@ export function HubScreen() {
               a screen reader announcing "list, 16 items") counts places, not headings.
             */}
             <div className={styles.listScroll} id="hub-results" role="region" aria-label="Network results" tabIndex={0}>
-              {searching && shownCount === 0 ? (
-                <p className={styles.emptyState} data-testid="hub-no-match">
-                  {/* Names the ACTIVE FILTER: "nothing matches" differs from "nothing of this kind matches". */}
-                  No{" "}
-                  {kind === "all"
-                    ? "ward, emergency department or community team"
-                    : KIND_WORD_LONG[kind].toLowerCase()}{" "}
-                  matches “{query}”. Try a hospital name or a health service such as “WACHS”.{" "}
-                  <button
-                    type="button"
-                    className={styles.clearHighlight}
-                    onClick={() => {
-                      setQuery("");
-                      inputRef.current?.focus();
-                    }}
-                  >
-                    Clear search
-                  </button>
-                </p>
-              ) : null}
+              {/* Review finding 16 (12 Nov 2026): the no-match line is announced, from a region that
+                  is always there so a screen reader hears it appear. */}
+              <div aria-live="polite">
+                {searching && shownCount === 0 ? (
+                  <p className={styles.emptyState} data-testid="hub-no-match">
+                    {/* Names the ACTIVE FILTER: "nothing matches" differs from "nothing of this kind matches". */}
+                    No{" "}
+                    {kind === "all"
+                      ? "ward, emergency department or community team"
+                      : KIND_WORD_LONG[kind].toLowerCase()}{" "}
+                    matches “{query}”. Try a hospital name or a health service such as “WACHS”.{" "}
+                    <button
+                      type="button"
+                      className={styles.clearHighlight}
+                      onClick={() => {
+                        setQuery("");
+                        inputRef.current?.focus();
+                      }}
+                    >
+                      Clear search
+                    </button>
+                  </p>
+                ) : null}
+              </div>
               {deskSite !== undefined && ownShown ? (
                 // ROLE BRANCH (bed_manager): the desk's own site first, open, before the network.
                 <section aria-label={`Your site, ${deskSite.name}`} className={styles.group}>
@@ -1198,14 +1202,18 @@ export function HubScreen() {
             </div>
             {/* Round 2: the count shows only when a search or tab narrows the list (the hero says the
                 total), and the beds pointer lives once, as the preview's Beds row. */}
-            {searching || kind !== "all" ? (
-              <div className={styles.listFoot}>
-                <span className={styles.shownCount} data-testid="hub-shown-count">
-                  <b>{searching ? `${shownCount} of ${totals.all}` : `${results.length} of ${totals.all}`}</b>{" "}
-                  {searching ? "match" : "listed"}
-                </span>
-              </div>
-            ) : null}
+            {/* Review finding 16: the count is announced politely, from an always-present region. */}
+            <div aria-live="polite" aria-atomic="true">
+              {searching || kind !== "all" ? (
+                <div className={styles.listFoot}>
+                  <span className={styles.shownCount} data-testid="hub-shown-count">
+                    <b>{searching ? `${shownCount} of ${totals.all}` : `${results.length} of ${totals.all}`}</b>{" "}
+                    {searching ? "match" : "listed"}
+                    <SrOnly>, sample data</SrOnly>
+                  </span>
+                </div>
+              ) : null}
+            </div>
           </Card>
         </div>
         <WardPrototypeFooter

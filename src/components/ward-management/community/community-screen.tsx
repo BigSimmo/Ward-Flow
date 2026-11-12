@@ -461,8 +461,30 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   const midlandDemo = !hasExplicitProps && !demonstration && !sharedWorkspace && MIDLAND_DEMO_TEAM.test(teamId);
   const midlandDecisions = useMidlandDecisions();
 
-  const { demoTeamReferrals, demoVisibleReferrals, demoVisibleInpatients, demoVisibleEgress, demoVisibleCaseload } =
-    useCommunityScreenDemoLists({ teamId, triageFilter, inpatientFilter, egressFilter, caseloadFilter });
+  const {
+    demoTeamReferrals,
+    demoVisibleReferrals,
+    demoVisibleInpatients,
+    demoVisibleEgress,
+    demoVisibleCaseload,
+    answerDemoReferral,
+    restoreDemoReferral,
+  } = useCommunityScreenDemoLists({ teamId, triageFilter, inpatientFilter, egressFilter, caseloadFilter });
+  // Review finding 3 (12 Nov 2026): a sample row's Accept or Decline takes it off the sample list,
+  // with Undo on the toast, as the real list's decision does. The sample list keeps nothing.
+  const answerSampleReferral = useCallback(
+    (referralId: string, title: string) => {
+      answerDemoReferral(referralId);
+      toast?.push({
+        tone: "success",
+        title,
+        body: "Sample referral only: taken off this list, nothing is saved.",
+        testId: "community-action-toast",
+        action: { label: "Undo", onAction: () => restoreDemoReferral(referralId) },
+      });
+    },
+    [answerDemoReferral, restoreDemoReferral, toast],
+  );
 
   const handleCompleteContact = useCallback((ptId: string) => {
     setSelectedPatientId(ptId);
@@ -1045,6 +1067,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     isDemoMode,
     demoTeamReferrals,
     demoVisibleReferrals,
+    answerSampleReferral,
     demoVisibleInpatients,
     demoVisibleEgress,
     demoVisibleCaseload,

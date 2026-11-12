@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { preloadWhenIdle } from "./preload-when-idle";
 
@@ -10,8 +11,11 @@ import { preloadWhenIdle } from "./preload-when-idle";
  */
 const loadOnBehalfReasonForm = () => import("./on-behalf-reason-form");
 
-export const OnBehalfReasonForm = dynamic(() => loadOnBehalfReasonForm().then((m) => m.OnBehalfReasonForm), {
-  loading: () => null,
-});
+export const OnBehalfReasonForm = dynamic(
+  withLoadRetry(() => loadOnBehalfReasonForm().then((m) => m.OnBehalfReasonForm)),
+  {
+    loading: () => null,
+  },
+);
 
 preloadWhenIdle(loadOnBehalfReasonForm);

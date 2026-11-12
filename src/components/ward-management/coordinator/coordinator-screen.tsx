@@ -49,6 +49,7 @@ import {
   movementBelongsToService,
   noRecordedServiceMovementCount,
   referralBelongsToService,
+  unitHealthService,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
 import { homeChipFigures, openEdJourneys } from "@/components/ward-management/ward-shared-figures";
@@ -414,8 +415,9 @@ export function CoordinatorScreen() {
   const queueServiceScope = service
     ? {
         service,
-        shown: isInServiceScope ? movements.filter(isInServiceScope).length : movements.length,
-        total: movements.length,
+        // Review finding 14 (12 Nov 2026): open movements in both figures, as Waiting counts them.
+        shown: isInServiceScope ? openMovements.filter(isInServiceScope).length : openMovements.length,
+        total: openMovements.length,
         noRecordedServiceCount,
         urgentOutside: { count: urgentOutsideServiceCount },
       }
@@ -652,8 +654,8 @@ export function CoordinatorScreen() {
     () => openEdJourneys(isInServiceScope ? movements.filter(isInServiceScope) : movements, now),
     [now, movements, isInServiceScope],
   );
-  // The bed figures (beds ready, occupancy) and the bed-count checks stay network-wide on purpose
-  // (a placement may use any ward), so with a service chosen they say so beside the figure.
+  // The bed figures (beds ready, occupancy) stay network-wide on purpose (a placement may use any
+  // ward), so with a service chosen they say so beside the figure.
   const networkWord = service === null ? "" : " network-wide";
   const bedsReady = counts.capacity?.value ?? 0;
   // The highlight chips count the queue they highlight (after the ED and service filters), P002/P003.
@@ -665,9 +667,13 @@ export function CoordinatorScreen() {
     () => wardOccupancy(units, admissions, bedReleases).percent,
     [units, admissions, bedReleases],
   );
-  // Checking foot: what this page watched, as counts. Never "All clear".
-  const staleBedCounts = units.filter((unit) => now - unit.allocatable.confirmedAt > BED_COUNT_FRESH_MINUTES).length;
-  const wardsNotReporting = units.filter(
+  // Checking foot: what this page watched, as counts. Never "All clear". Review finding 14 (12 Nov
+  // 2026): with a service chosen, it counts that service's wards only, as the rest of Home does.
+  const checkedUnits = service === null ? units : units.filter((unit) => unitHealthService(unit) === service);
+  const staleBedCounts = checkedUnits.filter(
+    (unit) => now - unit.allocatable.confirmedAt > BED_COUNT_FRESH_MINUTES,
+  ).length;
+  const wardsNotReporting = checkedUnits.filter(
     (unit) => now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes,
   ).length;
 
@@ -756,7 +762,7 @@ export function CoordinatorScreen() {
   // outage pack is old or never printed. The list itself lives once, on the Downtime pack screen.
   const oldPacks = wardsWithOldPack(
     downtimePackPrints,
-    units.map((unit) => unit.id),
+    checkedUnits.map((unit) => unit.id),
     now,
   ).length;
   const bedChecks = staleBedCounts + wardsNotReporting > 0;

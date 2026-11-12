@@ -8,6 +8,7 @@ import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import {
   GroupHead,
@@ -46,7 +47,10 @@ import styles from "./home-list.module.css";
 
 const WAIT_ROWS_SHOWN = 3;
 
-const CallSheet = dynamic(() => import("./call-sheet").then((m) => m.CallSheet), { loading: () => null });
+const CallSheet = dynamic(
+  withLoadRetry(() => import("./call-sheet").then((m) => m.CallSheet)),
+  { loading: () => null },
+);
 
 /** "Asked 3 times · Promise overdue", from the records alone, or undefined when nothing is recorded. */
 function followUpMarker(referral: Referral, now: Instant): string | undefined {
