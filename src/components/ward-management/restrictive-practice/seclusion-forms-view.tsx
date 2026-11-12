@@ -14,6 +14,7 @@ import {
   Field,
   RadioGroup,
   SearchField,
+  SrOnly,
   StatusGlyph,
   TextInput,
   TimePresets,
@@ -460,8 +461,9 @@ function StartDialog({
               </ul>
             ) : null}
             {allMatches.length > matches.length ? (
-              <p className={styles.note} role="status" data-testid="seclusion-start-more">
-                Showing {matches.length} of {allMatches.length}, type more of the name.
+              <p className={styles.note} role="status" aria-atomic="true" data-testid="seclusion-start-more">
+                Showing {matches.length} of {allMatches.length}
+                <SrOnly>, sample data</SrOnly>, type more of the name.
               </p>
             ) : null}
             {matches.length === 0 && needle !== "" ? (

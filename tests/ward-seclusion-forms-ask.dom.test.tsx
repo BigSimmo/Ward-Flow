@@ -50,7 +50,7 @@ describe("seclusion forms view asks from the page top", () => {
     const shown = within(screen.getByTestId("seclusion-start-matches")).getAllByRole("button");
     expect(shown).toHaveLength(6);
     expect(screen.getByTestId("seclusion-start-more")).toHaveTextContent(
-      /^Showing 6 of \d+, type more of the name\.$/u,
+      /^Showing 6 of \d+, sample data, type more of the name\.$/u,
     );
   });
 });
