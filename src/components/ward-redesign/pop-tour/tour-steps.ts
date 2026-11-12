@@ -332,7 +332,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           // D-159: off the phone the ward top has no New referral chip; the bed's own More menu raises it.
           undefined,
           "Refer a patient on",
-          `Open a bed and choose More, then Raise ward referral, to send a patient from ${place ?? "your ward"} to a medical ward or a community team.`,
+          `Open the patient's bed and choose More, then Raise ward referral, to send a patient from ${place ?? "your ward"} to a medical ward or a community team.`,
         ),
         step(
           "Finding your way",
