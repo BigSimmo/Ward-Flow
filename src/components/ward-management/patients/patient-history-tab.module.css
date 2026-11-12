@@ -664,30 +664,33 @@
   container: history-main / inline-size;
 }
 
-@container history-main (max-width: 800px) {
-  .ep details > summary {
-    grid-template-columns: 28px 150px minmax(0, 1fr) 16px;
-    grid-template-areas:
-      "kind when place chev"
-      "kind when legal chev";
-  }
-  .ep summary > .kind {
-    grid-area: kind;
-  }
-  .ep summary > .when {
-    grid-area: when;
-  }
-  .ep summary > .place {
-    grid-area: place;
-  }
-  .ep summary > .legal {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--wf-s-2);
-    grid-area: legal;
-  }
-  .ep summary > .chev {
-    grid-area: chev;
+/* Not on a phone: there the 600px rule above stacks the dates, place and legal lines. */
+@media (min-width: 601px) {
+  @container history-main (max-width: 800px) {
+    .ep details > summary {
+      grid-template-columns: 28px 150px minmax(0, 1fr) 16px;
+      grid-template-areas:
+        "kind when place chev"
+        "kind when legal chev";
+    }
+    .ep summary > .kind {
+      grid-area: kind;
+    }
+    .ep summary > .when {
+      grid-area: when;
+    }
+    .ep summary > .place {
+      grid-area: place;
+    }
+    .ep summary > .legal {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--wf-s-2);
+      grid-area: legal;
+    }
+    .ep summary > .chev {
+      grid-area: chev;
+    }
   }
 }

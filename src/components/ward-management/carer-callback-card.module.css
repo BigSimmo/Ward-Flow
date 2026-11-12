@@ -116,6 +116,15 @@
   margin-top: var(--wf-s-2);
 }
 
+/* The editor's own Cancel and Save stay in the form's stack, not in the row's action column. */
+.card[data-tile] .form .actions {
+  grid-column: auto;
+  grid-row: auto;
+  align-self: auto;
+  justify-self: start;
+  margin-top: 0;
+}
+
 /* A failed "Call made" save, under the state line in both forms. */
 .card[data-tile] .error {
   grid-column: 2 / -1;
