@@ -401,21 +401,38 @@ function changedFacts(before: WardFlowState, after: WardFlowState, rawAfter?: Wa
 }
 
 export function seedWorld(at: Date): SharedWorld {
+  const dayZero = demoDayZero(at);
   return {
     version: 1,
-    state: serialise(seedWardFlowStateAt(0)),
+    // D-150: the seed is re-anchored onto the real Perth time, as the public demo's provider does
+    // (`ward-reanchor.ts`), so a new world's clock and its seeded times agree from the start.
+    state: serialise(seedWardFlowStateAt(minutesSince(dayZero, at) - NOW_ANCHOR)),
     // New worlds share the local demo's Perth calendar. Existing stored origins remain authoritative.
-    dayZero: demoDayZero(at).toISOString(),
+    dayZero: dayZero.toISOString(),
     startedAt: at.toISOString(),
   };
 }
 
-export function worldNow(world: SharedWorld, at: Date): number {
-  return (
-    NOW_ANCHOR +
-    Math.max(0, Math.floor((at.getTime() - Date.parse(world.startedAt)) / 60_000)) +
-    world.state.clockOffsetMinutes
+/** Whole minutes from `from` to `at`, never negative. */
+function minutesSince(from: Date | string, at: Date): number {
+  return Math.max(
+    0,
+    Math.floor((at.getTime() - (typeof from === "string" ? Date.parse(from) : from.getTime())) / 60_000),
   );
+}
+
+/**
+ * The shared world's clock. D-150 (Josh, 11 Nov 2026): the signed-in site shows real Perth time, so
+ * an instant is the real minutes since the world's day zero (a Perth midnight). Before this the clock
+ * started at the scripted 10:42 (`NOW_ANCHOR`) whenever the world was made and ran fast or slow by
+ * that gap all day. The scripted clock stays on the public demo only. `clockOffsetMinutes` is still
+ * added, though the advance-clock control is hidden in shared mode.
+ */
+export function worldNow(
+  world: Pick<SharedWorld, "dayZero"> & { state: Pick<WardFlowState, "clockOffsetMinutes"> },
+  at: Date,
+): number {
+  return minutesSince(world.dayZero, at) + world.state.clockOffsetMinutes;
 }
 
 export function validWorld(value: unknown): value is SharedWorld {

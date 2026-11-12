@@ -1,5 +1,6 @@
 "use client";
 
+import { plural } from "../ward-plural";
 import { confirmLeavingShell } from "../shell/ward-leave-guard";
 
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
@@ -658,7 +659,7 @@ export function OfficerScreen() {
       ...lines,
     ].join("\n");
     copyTextToClipboard(text).then(
-      () => showToast(`Handover copied, ${jobs.length} open jobs.`),
+      () => showToast(`Handover copied, ${plural(jobs.length, "open job", "open jobs")}.`),
       () => showToast("Copying is not available in this browser."),
     );
   };

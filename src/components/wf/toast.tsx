@@ -1,7 +1,16 @@
 "use client";
 
 import { X } from "lucide-react";
-import { type CSSProperties, type HTMLAttributes, type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  type HTMLAttributes,
+  type ReactNode,
+  Suspense,
+  lazy,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Button } from "./button";
 import { cx } from "./cx";
 import styles from "./overlay.module.css";
@@ -37,6 +46,21 @@ type ToastTimeout = {
   restartKey?: unknown;
 };
 
+/**
+ * An optional follow-up choice on the toast, such as a reason for the step just taken (D-148). A
+ * kit menu of the choices opens from one button (a plain list until its code has loaded); choosing closes the toast.
+ */
+export type ToastChoices = {
+  /** The menu's accessible name and the button's words. */
+  label: string;
+  items: readonly { id: string; label: string }[];
+  /** False when the choice could not be taken now (Undo blocked): the toast then stays. */
+  onChoose: (id: string) => void | false;
+};
+
+/** Loaded only when a toast offers choices (D-148), so the buttons and kit menu stay off the first load. */
+const ToastChoicesSlot = lazy(() => import("./toast-choices-entry"));
+
 export type ToastNextStep = {
   label: string;
   href?: string;
@@ -56,6 +80,8 @@ export type ToastViewProps = {
   nextStep?: ToastNextStep;
   /** Undo with a time window and its shrinking line. */
   undo?: ToastUndo;
+  /** An optional follow-up choice, shown before Undo (D-148). */
+  choices?: ToastChoices;
   /** Closes the toast after a pausable time. Ignored when `undo` is set: the window is the clock. */
   timeout?: ToastTimeout;
   /**
@@ -184,6 +210,7 @@ export function ToastView({
   action,
   nextStep,
   undo,
+  choices,
   timeout,
   leaving = false,
   onClose,
@@ -276,6 +303,11 @@ export function ToastView({
             {nextStep.label}
           </Button>
         )
+      ) : null}
+      {choices && (!undo || phase === "running") ? (
+        <Suspense fallback={null}>
+          <ToastChoicesSlot choices={choices} onDone={onClose} />
+        </Suspense>
       ) : null}
       {undo ? <UndoButton undo={undo} phase={phase} finish={finish} primary={primary === "undo"} /> : null}
       {onClose ? (

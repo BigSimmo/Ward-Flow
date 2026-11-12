@@ -59,6 +59,7 @@ The test fails when a test mocks a module not in this list. Add it here, and to 
 @/components/ward-management/shell/ward-access-store
 @/components/ward-management/shell/ward-activity-panel-store
 @/components/ward-management/shell/ward-command-activity
+@/components/ward-management/shell/ward-desk-early
 @/components/ward-management/shell/ward-drawer-bus
 @/components/ward-management/shell/ward-feature-flag-store
 @/components/ward-management/shell/ward-live-region
@@ -103,6 +104,7 @@ The test fails when a test mocks a module not in this list. Add it here, and to 
 @/components/ward-management/ward/ward-screen-lazy
 @/components/wf
 @/components/wf/dialog
+@/components/wf/toast-choices
 @/components/wf/use-is-phone
 @/lib/copy-to-clipboard
 @/lib/front-door-pass

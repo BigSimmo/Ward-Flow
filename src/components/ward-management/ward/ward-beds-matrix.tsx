@@ -8,6 +8,7 @@ import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-av
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { useWardSharedSave } from "../shell/ward-shared-save-context";
 import { StatusGlyph, cx, type WfTone } from "@/components/wf";
 import { bedGlyphTone, eddMovedBadge, type BedItem } from "./ward-bed-tone";
 import { observationRatio, observationSummary } from "@/components/ward-management/ward-observation";
@@ -111,11 +112,14 @@ interface WardBedCardProps {
   bed: BedItem;
   isSelected: boolean;
   onSelect: (bed: BedItem) => void;
+  /** D-151: a save waiting on this page will change this bed. */
+  waiting?: boolean;
 }
 
 function areBedCardPropsEqual(prev: WardBedCardProps, next: WardBedCardProps): boolean {
   if (prev.isSelected !== next.isSelected) return false;
   if (prev.onSelect !== next.onSelect) return false;
+  if (prev.waiting !== next.waiting) return false;
   const p = prev.bed;
   const n = next.bed;
   return (
@@ -175,7 +179,7 @@ function leavingCell(bed: BedItem): { text: string; tone: "danger" | "warning" |
   return { text: `In ${plural(bed.expectedDays, "day", "days")}`, tone: bed.expectedDays <= 2 ? "info" : null };
 }
 
-const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect }: WardBedCardProps) {
+const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect, waiting }: WardBedCardProps) {
   const stayDaysNum = typeof bed.stayDays === "number" ? bed.stayDays : null;
   const isPastDate = bed.pastDate === true;
   const isReady = bed.status === "ready";
@@ -253,7 +257,8 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect 
       data-state={bed.status as string}
       data-tone={tone ?? undefined}
       onClick={handleClick}
-      aria-label={formatBedAriaLabel(bed, eddMoved)}
+      aria-label={`${formatBedAriaLabel(bed, eddMoved)}${waiting ? ". A change is waiting to save" : ""}`}
+      data-waiting-save={waiting ? "true" : undefined}
     >
       <span className={styles.cBed}>
         <b>{number}</b>
@@ -294,6 +299,11 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect 
         {bed.patientAlias && !isPulled && bed.observation ? observationSummary(bed.observation) : null}
       </span>
       <span className={styles.cNow}>
+        {waiting ? (
+          <span className={cx(styles.chip, styles.chipWarn)} data-testid="ward-bed-waiting-save">
+            Waiting to save
+          </span>
+        ) : null}
         {nowChip ? (
           <span className={cx(styles.chip, isAwayAtEd && styles.chipWarn, bed.blockReason && styles.chipAct)}>
             {nowChip}
@@ -336,6 +346,9 @@ export function WardBedsMatrix({
   // The board clock, so the handover named is the current shift's end (Audit 24-6 TC-02).
   const boardNow = useOptionalWardFlowSelect("now")?.now ?? now;
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleasesList);
+  // D-151: the beds a save waiting on this page will change, shown on their tiles.
+  const waitingList = useWardSharedSave()?.waitingBeds;
+  const waitingBeds = useMemo(() => new Set(waitingList ?? []), [waitingList]);
 
   // Filter by pod / locked / open
   const podFilteredBeds = useMemo(
@@ -793,6 +806,7 @@ export function WardBedsMatrix({
                     bed={bed}
                     isSelected={selectedBed === bed.bedNumber}
                     onSelect={handleBedClick}
+                    waiting={waitingBeds.has(`${unit.id}:${bed.bedNumber}`)}
                   />
                 ))}
               </div>

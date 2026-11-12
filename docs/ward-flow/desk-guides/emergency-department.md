@@ -1,6 +1,6 @@
 # Desk guide: ED mental health clinician
 
-<!-- last-checked: 2026-11-10 -->
+<!-- last-checked: 2026-11-11 -->
 
 You look after mental health patients waiting in your own emergency department.
 
@@ -14,8 +14,8 @@ holds **New referral**.
 
 ## Jobs you do most
 
-1. **New referral.** Use **New referral**, from the header or on the board. Fill in the
-   form and send it.
+1. **New referral.** Press **New** in the header and choose **Referral** (**Triage** is the other
+   choice). Fill in the form and send it.
 2. **Record ED steps.** On a patient, use **Record examination**, **Record medically cleared** and
    **Mark handover ready**.
 3. **Legal paperwork.** Use **Change legal status** and **Mark Form 1A received**. Type any expiry
@@ -37,7 +37,8 @@ holds **New referral**.
   device only."
 - A success message now waits until the save is confirmed. Until then, what you typed stays in the
   form.
-- On a shared board the status line reads "Saving shared changes…", then your desk name again.
+- On a shared board a small "Saving…" note shows while a save goes through. If it takes longer
+  than 8 seconds, or you are offline, the status line warns you not to reload.
 - If it reads "Connection unavailable — changes are disabled." and shows **Retry**: stay on the
   page and press **Retry**. Do not reload. Reloading loses the unconfirmed action.
 - A message saying an action was not recorded means nothing changed. Read the reason and try again.

@@ -66,6 +66,8 @@ export type SharedView = {
   recovery?: string;
   recovering?: boolean;
   pendingCount?: number;
+  /** D-151: `unitId:bedNumber` of each bed a waiting save will change, for the tile's marker. */
+  waitingBeds?: readonly string[];
   recoveryStorageUnavailable?: boolean;
   recoveryResults?: readonly import("./ward-command-recovery").RecoveryResult[];
 };

@@ -8,10 +8,22 @@
 
 import Link from "next/link";
 import { type ChangeEvent, type ReactNode } from "react";
-import { BookOpen, Copy, Database, Download, Info, RotateCcw, ShieldCheck, Upload, Wrench } from "lucide-react";
+import {
+  BookOpen,
+  Copy,
+  Database,
+  DoorOpen,
+  Download,
+  Info,
+  RotateCcw,
+  ShieldCheck,
+  Upload,
+  Wrench,
+} from "lucide-react";
 
 import { digestHref } from "@/components/ward-management/shell/ward-facade";
 import { FeatureFlagsCard } from "@/components/ward-management/settings/feature-flags-card";
+import { useCanLeaveDemo, useLeaveDemo } from "@/components/ward-management/shell/leave-demo";
 import { Button, Card, CardHead, buttonClass } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
@@ -184,6 +196,8 @@ export function SettingsDemoTools({
   onCopyDiagnostics?: () => void;
   about?: AboutProps;
 }) {
+  const canLeave = useCanLeaveDemo();
+  const leave = useLeaveDemo();
   return (
     <div className={styles.demoStack} data-setting="demo-tools" data-testid="ward-settings-demo-tools">
       <div className={styles.demoStack}>
@@ -212,6 +226,20 @@ export function SettingsDemoTools({
               </button>
             </SettingRow>
             {onCopyDiagnostics ? <DiagnosticsRow onCopyDiagnostics={onCopyDiagnostics} /> : null}
+            {/* Live audit item 22 (11 Nov 2026): the public demo's way out. */}
+            {canLeave ? (
+              <SettingRow setting="leave-demo" title="Leave the demo" sub="Clears this demo and ends the demo code">
+                <button
+                  type="button"
+                  className={buttonClass({ variant: "ghost", className: styles.pill })}
+                  onClick={leave}
+                  data-testid="btn-leave-demo"
+                >
+                  <DoorOpen size={14} aria-hidden="true" />
+                  Leave
+                </button>
+              </SettingRow>
+            ) : null}
           </Card>
         </div>
         {about ? (

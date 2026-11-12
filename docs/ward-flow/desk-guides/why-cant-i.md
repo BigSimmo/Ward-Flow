@@ -1,6 +1,6 @@
 # Desk guide: Why can't I open this?
 
-<!-- last-checked: 2026-11-07 -->
+<!-- last-checked: 2026-11-11 -->
 
 Each desk opens only the screens its role allows. If you cannot open a screen, check the table for the roles that can, and ask the access admin if you need it.
 
@@ -9,7 +9,6 @@ Each desk opens only the screens its role allows. If you cannot open a screen, c
 | Screen               | Roles that can open it                                                                                                                                                                                      |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `home`               | Bed coordinator                                                                                                                                                                                             |
-| `network`            | Bed coordinator                                                                                                                                                                                             |
 | `capacity`           | Bed coordinator, Bed manager (own place), Executive (counts only)                                                                                                                                           |
 | `wards`              | Bed coordinator, Bed manager (own place)                                                                                                                                                                    |
 | `hub`                | Bed coordinator, Bed manager (own place)                                                                                                                                                                    |

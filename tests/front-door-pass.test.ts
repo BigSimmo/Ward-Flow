@@ -84,9 +84,18 @@ describe("front door switch and secret", () => {
       "/api/health",
       "/ward-flow-offline.html",
       "/ward-flow-push-sw.js",
+      "/.well-known/security.txt",
     ])
       expect(isFrontDoorOpenPath(path)).toBe(true);
-    for (const path of ["/", "/ward-flow", "/api/workspace", "/sign-in/extra", "/ward-flow-sign-in/extra", "/mockups"])
+    for (const path of [
+      "/",
+      "/ward-flow",
+      "/api/workspace",
+      "/sign-in/extra",
+      "/ward-flow-sign-in/extra",
+      "/mockups",
+      "/.well-known/other.txt",
+    ])
       expect(isFrontDoorOpenPath(path)).toBe(false);
   });
 });
@@ -574,12 +583,17 @@ describe("DELETE /api/session", () => {
   it("clears the pass", () => {
     const response = DELETE(new NextRequest(new URL("https://ward.example.test/api/session"), { method: "DELETE" }));
     expect(response.status).toBe(204);
-    expect(response.headers.get("set-cookie")).toMatch(/^wf_pass=; Path=\/; Max-Age=0;.*HttpOnly; Secure$/);
+    const [pass, marker] = response.headers.getSetCookie();
+    expect(pass).toMatch(/^wf_pass=; Path=\/; Max-Age=0;.*HttpOnly; Secure$/);
+    // Live audit item 19: the readable marker goes too, so nothing stays after sign-out.
+    expect(marker).toBe("wf_door=; Path=/; Max-Age=0; SameSite=Lax; Secure");
   });
 
   it("marks the cookie Secure in production even when the app sees plain http behind the edge", () => {
     vi.stubEnv("NODE_ENV", "production");
     const response = DELETE(new NextRequest(new URL("http://ward.example.test/api/session"), { method: "DELETE" }));
-    expect(response.headers.get("set-cookie")).toMatch(/HttpOnly; Secure$/);
+    const [pass, marker] = response.headers.getSetCookie();
+    expect(pass).toMatch(/HttpOnly; Secure$/);
+    expect(marker).toMatch(/; Secure$/);
   });
 });

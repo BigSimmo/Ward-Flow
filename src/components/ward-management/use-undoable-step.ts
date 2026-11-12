@@ -58,6 +58,26 @@ type Pending = {
    * toast when the page that raised the toast has gone, because the toast outlives the page.
    */
   sayAfterLeaving?: boolean;
+  /** See `UndoableStep.choices`. */
+  choices?: UndoStepChoices;
+  /** Runs once this step is accepted, in place of its toast: a choice's undo before its redo. */
+  then?: () => void;
+};
+
+/**
+ * D-148: an optional choice on the success toast, such as a bed closure's reason. Choosing undoes
+ * the step and records it again with the choice, so the step itself stays one tap and the audit
+ * trail keeps both. The new step offers Undo as the first did.
+ */
+export type UndoStepChoices = {
+  label: string;
+  items: readonly { id: string; label: string }[];
+  /** The step again with the choice, built when it is chosen. */
+  redo: (id: string, now: Instant) => WardFlowEvent;
+  /** The toast's title once the step with the choice is accepted. */
+  success: (id: string) => string;
+  /** Said if the page has gone when the undo lands, so the step is not redone. */
+  notRedone: string;
 };
 
 type RecordWatch = { undoType: string; subjectId: string; priorSeq?: number; seq?: number };
@@ -90,6 +110,8 @@ export type UndoableStep = {
    * (Josh, 26 Sept 2026), because a shared-board refusal never names the patient (P058).
    */
   who?: string;
+  /** D-148: an optional follow-up choice on the success toast. */
+  choices?: UndoStepChoices;
 };
 
 /** The refusal's words, led by the person's name when the words do not already name them. */
@@ -190,6 +212,10 @@ export function useUndoableStep({
         else onMessage?.(said, "warning");
         continue;
       }
+      if (pending.then) {
+        pending.then();
+        continue;
+      }
       pending.onAccepted?.();
       const build = pending.undo;
       if (!sink) {
@@ -235,41 +261,80 @@ export function useUndoableStep({
               body: `Undo within ${UNDO_WINDOW_MINUTES} min.`,
               undo: {
                 durationMs: UNDO_TOAST_MS,
-                onUndo: () => {
-                  if (pending.outcome?.isCurrent && !pending.outcome.isCurrent()) {
-                    sink.push({
-                      tone: "warning",
-                      title:
-                        "Undo is unavailable because the workspace or working role changed. Review the current board.",
-                    });
-                    return;
-                  }
-                  if (pending.outcome?.canUndo && !pending.outcome.canUndo()) {
-                    sink.push({
-                      tone: "warning",
-                      title:
-                        "Undo is unavailable until the shared board is ready. Wait for it to reconnect, then check the board.",
-                    });
-                    return false;
-                  }
-                  const undoPending = {
-                    prior: rejectionCountRef.current,
-                    success: pending.undone ?? "Undone. Back as it was.",
-                    sayAfterLeaving: true,
-                  };
-                  const undoEvent = {
-                    ...build(nowRef.current),
-                    ...(watch.seq === undefined ? {} : { recordSeq: watch.seq }),
-                  } as WardFlowEvent;
-                  submit(undoEvent, undoPending);
-                  return undefined;
-                },
+                onUndo: () => takeBack(pending, build, watch, { success: pending.undone ?? "Undone. Back as it was." }),
               },
+              ...(pending.choices ? { choices: toastChoices(pending, pending.choices, build, watch) } : {}),
             }),
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- The token drives this; `sink`, `routeRole` and the callbacks are read as they are now.
   }, [token, rejections]);
+
+  /** The toast's Undo, or a choice's undo: fenced as one, then sent with the record it was offered for. */
+  function takeBack(
+    pending: Pending,
+    build: (now: Instant) => WardFlowEvent,
+    watch: RecordWatch,
+    next: Pick<Pending, "success" | "then">,
+  ): void | false {
+    if (!sink) return undefined;
+    if (pending.outcome?.isCurrent && !pending.outcome.isCurrent()) {
+      sink.push({
+        tone: "warning",
+        title: "Undo is unavailable because the workspace or working role changed. Review the current board.",
+      });
+      return undefined;
+    }
+    if (pending.outcome?.canUndo && !pending.outcome.canUndo()) {
+      sink.push({
+        tone: "warning",
+        title: "Undo is unavailable until the shared board is ready. Wait for it to reconnect, then check the board.",
+      });
+      return false;
+    }
+    const undoEvent = {
+      ...build(nowRef.current),
+      ...(watch.seq === undefined ? {} : { recordSeq: watch.seq }),
+    } as WardFlowEvent;
+    submit(undoEvent, { prior: rejectionCountRef.current, sayAfterLeaving: true, ...next });
+    return undefined;
+  }
+
+  /** D-148: the toast's choices. Choosing undoes the step, then records it again with the choice. */
+  function toastChoices(
+    pending: Pending,
+    choices: UndoStepChoices,
+    build: (now: Instant) => WardFlowEvent,
+    watch: RecordWatch,
+  ) {
+    return {
+      label: choices.label,
+      items: choices.items,
+      onChoose: (id: string) =>
+        takeBack(pending, build, watch, {
+          success: choices.notRedone,
+          then: () =>
+            runStep(choices.redo(id, nowRef.current), {
+              success: choices.success(id),
+              undo: pending.undo,
+              undone: pending.undone,
+              who: pending.who,
+            }),
+        }),
+    };
+  }
+
+  function runStep(event: WardFlowEvent, step: UndoableStep) {
+    const offered = step.undo?.(nowRef.current);
+    const priorSeq = offered ? undoRecordSeqFor(undoRecords, offered.type, stepUndoSubjectId(offered)) : undefined;
+    // Run after the page has gone (a toast choice's second step): its outcome is said on the layout toast.
+    submit(event, {
+      prior: rejectionCountRef.current,
+      ...step,
+      priorSeq,
+      ...(mountedRef.current ? {} : { sayAfterLeaving: true }),
+    });
+  }
 
   function submit(event: WardFlowEvent, pending: Pending, record?: () => ReturnType<WardCommandDispatch>) {
     let result: ReturnType<WardCommandDispatch>;
@@ -287,8 +352,18 @@ export function useUndoableStep({
     // After the page has gone, one command says one thing: an unconfirmed save already told the
     // person to check, so the same command's later receipt does not raise a second toast.
     let saidAfterLeaving = false;
+    // PR #1626 review: a toast choice's second step (D-148's reasoned close) still runs after the
+    // page has gone, once its Undo is accepted, even after an earlier "not confirmed" was said.
+    let ranThen = false;
     const publish = (outcome: WardCommandOutcome | void) => {
       if (!mountedRef.current) {
+        if (pending.then && outcome?.status === "accepted" && !(outcome.isCurrent && !outcome.isCurrent())) {
+          if (!ranThen) {
+            ranThen = true;
+            pending.then();
+          }
+          return;
+        }
         if (!saidAfterLeaving) saidAfterLeaving = sayAfterLeaving(pending, outcome || undefined);
         return;
       }
@@ -347,11 +422,7 @@ export function useUndoableStep({
 
   return {
     /** Dispatches `event` now, then offers Undo once the engine has accepted it. */
-    run(event: WardFlowEvent, step: UndoableStep) {
-      const offered = step.undo?.(nowRef.current);
-      const priorSeq = offered ? undoRecordSeqFor(undoRecords, offered.type, stepUndoSubjectId(offered)) : undefined;
-      submit(event, { prior: rejectionCountRef.current, ...step, priorSeq });
-    },
+    run: runStep,
     /** Records through a provider helper while keeping the command's completion and Undo guard. */
     runRecorded(record: () => ReturnType<WardCommandDispatch>, step: UndoableStep) {
       const offered = step.undo?.(nowRef.current);

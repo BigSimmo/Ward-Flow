@@ -10,6 +10,7 @@ vi.mock("@/components/ward-management/ward-auth-session", () => ({ createWardAut
 
 import { FrontDoorPage } from "../src/components/ward-management/front-door/front-door-page";
 import {
+  END_PASS_DEADLINE_MS,
   endFrontDoorPass,
   renewFrontDoorPass,
 } from "../src/components/ward-management/front-door/front-door-pass-client";
@@ -262,6 +263,25 @@ describe("the pass from inside the app", () => {
     await renewFrontDoorPass(async () => "synthetic-token");
     endFrontDoorPass();
     expect(fetcher.mock.calls.map(([, init]) => init?.method)).toEqual(["POST", "DELETE"]);
+  });
+
+  // Review of PR #1626: Leave the demo waits on the end, so it reports failure and never hangs.
+  it("says whether the server ended the pass, and stops waiting at the deadline", async () => {
+    document.cookie = "wf_door=1";
+    await expect(endFrontDoorPass()).resolves.toBe(true);
+    fetcher.mockResolvedValueOnce(answer(500));
+    await expect(endFrontDoorPass()).resolves.toBe(false);
+    fetcher.mockRejectedValueOnce(new TypeError("offline"));
+    await expect(endFrontDoorPass()).resolves.toBe(false);
+    vi.useFakeTimers();
+    try {
+      fetcher.mockImplementationOnce(() => new Promise<Response>(() => {}));
+      const ended = endFrontDoorPass();
+      await vi.advanceTimersByTimeAsync(END_PASS_DEADLINE_MS);
+      await expect(ended).resolves.toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("keeps quiet when the renewal fails", async () => {

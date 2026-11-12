@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 
-import doorStyles from "./front-door.module.css";
+import doorStyles from "./front-door-hold.module.css";
 
 /**
  * The idle prompts, out of the phone's first load like the front door. They are fetched once the

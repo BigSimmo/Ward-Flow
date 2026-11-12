@@ -15,11 +15,29 @@ export function reducePatientArchive(
     return reject(state, event, "ARCHIVE_PATIENT needs a reason from the list");
   // Archived D-14: the event's patient is read through the allow-listed subjectId, not here.
   const patientId = subjectId(event);
-  const problem = patientArchiveProblem(state, patientId);
+  const problem = patientArchiveProblem(state, patientId, event.now);
   if (problem !== undefined) return reject(state, event, problem);
   // The record leaves the lists. Its ADD_PATIENT and this event stay in the audit trail, and the
   // patient sequence is kept, so no later record reuses the id.
   decision.outcome = "accepted";
   decision.reasonCode = "none";
-  return { ...state, patients: state.patients.filter((patient) => patient.id !== patientId) };
+  // D-149: the only referrals still naming the record are ones nobody answered. They stay, but no
+  // longer point at a record that has left the lists, so the stored workspace still checks out.
+  const referrals = state.referrals.map((referral) => {
+    if (referral.patientId !== patientId) return referral;
+    const { patientId: _archived, ...unlinked } = referral;
+    void _archived;
+    return unlinked;
+  });
+  // Any Undo record still naming the record can no longer be used (it is past the window, or stamped
+  // after the board's time by a clock step back). Drop it, so it cannot become usable once the clock
+  // reaches its time and bring back a step naming a record that has left the lists.
+  const quoted = JSON.stringify(patientId);
+  const undoRecords = state.undoRecords?.filter((entry) => !JSON.stringify(entry).includes(quoted));
+  return {
+    ...state,
+    patients: state.patients.filter((patient) => patient.id !== patientId),
+    referrals,
+    ...(undoRecords === undefined ? {} : { undoRecords }),
+  };
 }

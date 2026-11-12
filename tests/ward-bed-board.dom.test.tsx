@@ -2,7 +2,7 @@
 // engine (`PLACE_IN_BED`, `ACCEPT_REFERRAL` with a bed number), and Undo on the toast reverses both
 // the bed and the referral (build guide acceptance check "Place then Undo returns the referral and
 // the bed to their first state").
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { useEffect, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -15,6 +15,7 @@ vi.mock("next/link", () => ({
 }));
 
 import { ToastProvider } from "@/components/wf/toast-provider";
+import { WardSharedSaveContext } from "@/components/ward-management/shell/ward-shared-save-context";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -57,6 +58,55 @@ const firstBed = (predicate: (label: string) => boolean) =>
     predicate(cell.getAttribute("aria-label") ?? ""),
   )!;
 const bedNo = (cell: HTMLElement) => Number(cell.dataset.testid?.replace("ward-board-bed-", ""));
+
+// D-151 (PR #1626 review): the Bed board's tile says "Waiting to save" too, as the bed list does.
+describe("Ward Bed board — a save waiting on this page", () => {
+  it("marks only the bed the waiting save changes", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <WardSharedSaveContext.Provider
+            value={{ unconfirmedSave: true, status: "ready", error: null, retry: () => {}, waitingBeds: [`${UNIT}:3`] }}
+          >
+            <WardScreen unitId={UNIT} />
+          </WardSharedSaveContext.Provider>
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("ward-open-bed-board"));
+    expect(screen.getByTestId("ward-board-bed-3")).toHaveAttribute("data-waiting-save", "true");
+    expect(cellText(3)).toMatch(/Waiting to save/);
+    expect(screen.getByTestId("ward-board-bed-4")).not.toHaveAttribute("data-waiting-save");
+  });
+
+  it("keeps the waiting mark beside a fit reason while a stay is picked up", () => {
+    renderBoard();
+    const to = bedNo(firstBed((label) => /, Ready, Free to place$/.test(label)));
+    cleanup();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <WardSharedSaveContext.Provider
+            value={{
+              unconfirmedSave: true,
+              status: "ready",
+              error: null,
+              retry: () => {},
+              waitingBeds: [`${UNIT}:${to}`],
+            }}
+          >
+            <WardScreen unitId={UNIT} />
+          </WardSharedSaveContext.Provider>
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("ward-open-bed-board"));
+    fireEvent.click(firstBed((label) => !/ready|closed|pulled|waiting/i.test(label)));
+    fireEvent.click(getBedStep("Move to another bed"));
+    expect(screen.getByTestId(`ward-board-bed-${to}`)).toHaveAttribute("data-fits", "true");
+    expect(cellText(to)).toMatch(/Waiting to save · .+, fits$/);
+  });
+});
 
 describe("Ward Bed board — pick up and place, with Undo", () => {
   // Josh, 3 Nov 2026 (WH7, reverses CRIT-07): three view tabs, Ward home, Referrals and Decisions.

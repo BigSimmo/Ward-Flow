@@ -226,22 +226,27 @@ function OperationalDemoPanel({ oneList = false }: { oneList?: boolean }) {
           <span className={mock.clock}>
             Demo clock <b>{formatInstant(now)}</b>
           </span>
-          <button
-            type="button"
-            className={mock.small}
-            {...lock}
-            onClick={() => raise("ADVANCE_CLOCK", { minutes: 15 })}
-          >
-            +15 min
-          </button>
-          <button
-            type="button"
-            className={mock.small}
-            {...lock}
-            onClick={() => raise("ADVANCE_CLOCK", { minutes: 60 })}
-          >
-            +1 hour
-          </button>
+          {/* D-150: the signed-in site runs on real Perth time, so its clock is not advanced. */}
+          {shared?.enabled ? null : (
+            <>
+              <button
+                type="button"
+                className={mock.small}
+                {...lock}
+                onClick={() => raise("ADVANCE_CLOCK", { minutes: 15 })}
+              >
+                +15 min
+              </button>
+              <button
+                type="button"
+                className={mock.small}
+                {...lock}
+                onClick={() => raise("ADVANCE_CLOCK", { minutes: 60 })}
+              >
+                +1 hour
+              </button>
+            </>
+          )}
         </div>
         <details className={mock.practice}>
           <summary>

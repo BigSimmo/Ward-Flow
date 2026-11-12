@@ -5,7 +5,10 @@ import type { WardCommandOutcome } from "@/components/ward-management/ward-share
 const mocks = vi.hoisted(() => ({ raise: vi.fn(), replace: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: mocks.replace }) }));
 vi.mock("@/components/ward-management/ward-flow-raise", () => ({ useWardRaise: () => mocks.raise }));
-vi.mock("@/components/ward-management/ward-flow-provider", () => ({ useWardFlowSelect: () => ({}) }));
+vi.mock("@/components/ward-management/ward-flow-provider", () => ({
+  useWardFlowSelect: () => ({}),
+  useWardFlowClock: () => 0,
+}));
 vi.mock("@/components/ward-management/ward-role-gate", () => ({
   useRoleGate: () => () => ({ allowed: true }),
   useRouteRole: () => "coordinator",

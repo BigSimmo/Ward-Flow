@@ -25,7 +25,8 @@ export function WardSearchCommands({
   resultsCurrent: boolean;
   canRunAction: NonNullable<WardGlobalSearchProps["canRunAction"]>;
   canOpenHref: NonNullable<WardGlobalSearchProps["canOpenHref"]>;
-  onAdvanceClock: () => void;
+  /** Absent in shared mode (D-150): the signed-in site runs on real Perth time. */
+  onAdvanceClock?: () => void;
   onSwitchDesk: (role: DeskRole, href: string) => void;
   onHandover: () => void;
   shortcutsExpanded: boolean;
@@ -50,7 +51,7 @@ export function WardSearchCommands({
         </p>
       ) : null}
       <div className={styles.commandList}>
-        {canRunAction("advance-clock") ? (
+        {canRunAction("advance-clock") && onAdvanceClock ? (
           <button
             type="button"
             className={styles.commandBtn}
