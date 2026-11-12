@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/his
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**722 rulings/items extracted, across 43 of 44 files.**
+**723 rulings/items extracted, across 43 of 44 files.**
 **0 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 **1 file(s) recorded as holding no ruling of their own**, each with its reason. See below.
 
@@ -32,7 +32,7 @@ line, in the order discovered — confirm which instance you mean before citing 
 
 ---
 
-## ID index — 472 distinct IDs
+## ID index — 473 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -331,6 +331,7 @@ safe global key across 30 files.
 | `D-158` | `decisions.md`:1972 | D-158. A This-shift staff request is refused once that shift has ended (12 November 2026) |
 | `D-159` | `decisions.md`:1978 | D-159. Fixes from the 10 to 12 November PR review (12 November 2026) |
 | `D-160` | `decisions.md`:1990 | D-160. A trusted proxy list of plain addresses falls back to per-address keying (12 November 2026) |
+| `D-161` | `decisions.md`:1997 | D-161. Home's changes-since strip is one line (12 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -639,7 +640,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-160 item(s):
+161 item(s):
 
 - `D-1` — line 189, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 199, heading: "D-2. Railway is disconnected"
@@ -801,6 +802,7 @@ safe global key across 30 files.
 - `D-158` — line 1972, heading: "D-158. A This-shift staff request is refused once that shift has ended (12 November 2026)"
 - `D-159` — line 1978, heading: "D-159. Fixes from the 10 to 12 November PR review (12 November 2026)"
 - `D-160` — line 1990, heading: "D-160. A trusted proxy list of plain addresses falls back to per-address keying (12 November 2026)"
+- `D-161` — line 1997, heading: "D-161. Home's changes-since strip is one line (12 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 

@@ -24,7 +24,11 @@ vi.mock("next/navigation", () => ({
 
 import { HomePinnedCard } from "@/components/ward-management/coordinator/home-pinned-card";
 import { pinnedRows } from "@/components/ward-management/coordinator/home-pinned";
-import { sinceBannerParts, sinceBannerText } from "@/components/ward-management/coordinator/home-since-text";
+import {
+  sinceBannerCounts,
+  sinceBannerLead,
+  sinceBannerText,
+} from "@/components/ward-management/coordinator/home-since-text";
 import type { ChangesSinceLastLook } from "@/components/ward-management/coordinator/since-last-look";
 import {
   MY_PATIENTS_LIMIT,
@@ -169,17 +173,24 @@ describe("since banner text", () => {
 
   it("names counts in order with the review time", () => {
     expect(sinceBannerText(base, "15:02 yesterday")).toBe(
-      "Since you were last here, 15:02 yesterday: 4 new referrals · 3 beds freed · 2 new delays",
+      "Since 15:02 yesterday: 4 new referrals, 3 beds freed, 2 new delays",
     );
+    expect(sinceBannerLead(base, "15:02 yesterday")).toBe("Since 15:02 yesterday");
+    expect(sinceBannerCounts(base).map(({ count, label }) => `${count} ${label}`)).toEqual([
+      "4 referrals",
+      "3 beds freed",
+      "2 delays",
+    ]);
   });
 
-  it("says the shift start before any review, folds extra kinds into 'more', and is empty with nothing new", () => {
+  it("leads with This shift before any review, keeps every count for screen readers, and is empty with nothing new", () => {
     const shift = { ...base, basis: "shift" as const, newEscalationIds: ["WF-9"] };
+    expect(sinceBannerLead(shift, "07:00")).toBe("This shift");
     expect(sinceBannerText(shift, "07:00")).toBe(
-      "Since the shift started, 07:00: 4 new referrals · 3 beds freed · 2 new delays · 1 more",
+      "Since the shift started at 07:00: 4 new referrals, 3 beds freed, 2 new delays, 1 new escalation",
     );
     const nothing = { ...base, newReferralIds: [], bedsFreed: [], newDelays: [] };
-    expect(sinceBannerParts(nothing)).toEqual([]);
+    expect(sinceBannerCounts(nothing)).toEqual([]);
     expect(sinceBannerText(nothing, "07:00")).toBeUndefined();
   });
 });

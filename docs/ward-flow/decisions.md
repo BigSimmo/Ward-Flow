@@ -1993,3 +1993,10 @@ is inferred.
 - **Decision:** when `WARD_TRUSTED_PROXY_ADDRESSES` lists plain addresses rather than `*`, the demo-code limit ignores the list with one warning and keys wrong tries per address as D-147 does. It does not fall back to one shared bucket, because ten wrong tries from anyone would then lock out every presenter.
 - **Accepted risk:** someone who can forge a forwarding header could avoid the 10-wrong-tries limit for one address. The network-wide cap of 200 wrong tries per 10 minutes still applies. The live sites use `*`, so the setting is not used there.
 - **Boundary:** synthetic data only. Changes no setting on Railway and approves no release.
+
+## D-161. Home's changes-since strip is one line (12 November 2026)
+
+- **Date:** 12 November 2026, 9:39 PM AWST (13:39 UTC). **Decided by:** Josh, "Build option A" in the Ward Flow project thread "Tidy the Since the shift started strip", after the mock-up showed options A and B at 390, 820, 1280 and 1440 in light and dark. Numbered D-161 because D-159 and D-160 arrived with PR #1637.
+- **Decision:** Home's "since" strip (feature 40) stays on one line at every width. It leads with "This shift" before any review and "Since 15:02 yesterday" after one, drops "new" from each count, sets each figure in mono, names three counts where the line is wide and fewer where it is narrow (one on a phone), and ends with "+N more" matching what is hidden. Screen readers hear the whole sentence with every count. The card, the Review button and the sheet it opens are unchanged.
+- **Not decided:** Josh did not answer the two follow-up questions (put escalations first; leave movements off the line), so the count order and the counts shown are unchanged.
+- **Boundary:** synthetic data only. No clinical rule changes. Approves no release.
