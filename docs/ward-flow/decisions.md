@@ -182,6 +182,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-157](#d-157-legal-forms-print-and-export-include-people-admitted-on-a-form-12-november-2026)                                                         | Legal forms Print and Export include people admitted on a form                         | Active                                           |
 | [D-158](#d-158-a-this-shift-staff-request-is-refused-once-that-shift-has-ended-12-november-2026)                                                        | A This-shift staff request is refused once that shift has ended                        | Active                                           |
 | [D-159](#d-159-fixes-from-the-10-to-12-november-pr-review-12-november-2026)                                                                             | Fixes from the 10 to 12 November PR review                                             | Active                                           |
+| [D-160](#d-160-a-trusted-proxy-list-of-plain-addresses-falls-back-to-per-address-keying-12-november-2026)                                               | A trusted proxy list of plain addresses falls back to per-address keying               | Active                                           |
 
 ---
 
@@ -1985,3 +1986,10 @@ is inferred.
   5. **The other review findings** are fixed as recommended: eight rows then Show more on the new lists, Leave on the band hero, one phone rule for Print and Export, kit control sizes, shorter transport choices, honest outage catch-up labels, one ready count (D-115), one ended-form wording, the uptime issue raised before the run fails, a trusted proxy list other than `*` ignored, and Home's loading cards no longer hiding the page.
   6. **MHERL wording:** the synthetic community example reads "joint assessment with the WA Police co-response team, referred through MHERL", so the phone line refers rather than attends. Josh may reword it.
 - **Boundary:** synthetic data only. No signed clinical value, time limit or clinical rule changes. Approves no release.
+
+## D-160. A trusted proxy list of plain addresses falls back to per-address keying (12 November 2026)
+
+- **Date:** 12 November 2026, 7:56 PM AWST (11:56 UTC). **Decided by:** Josh, "Keep it as is" on the decision card in the Ward Flow project thread "Review recent PRs for design regressions", answering CodeRabbit's security note on PR #1637.
+- **Decision:** when `WARD_TRUSTED_PROXY_ADDRESSES` lists plain addresses rather than `*`, the demo-code limit ignores the list with one warning and keys wrong tries per address as D-147 does. It does not fall back to one shared bucket, because ten wrong tries from anyone would then lock out every presenter.
+- **Accepted risk:** someone who can forge a forwarding header could avoid the 10-wrong-tries limit for one address. The network-wide cap of 200 wrong tries per 10 minutes still applies. The live sites use `*`, so the setting is not used there.
+- **Boundary:** synthetic data only. Changes no setting on Railway and approves no release.
