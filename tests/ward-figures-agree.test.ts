@@ -36,7 +36,9 @@ import { nextEvent, nowFor, seededRandom } from "./helpers/ward-engine-fuzz";
  * shared one, so a pass is not a fixture that never exercises the case.
  */
 describe("figures that more than one screen prints agree after random actions", () => {
-  it("beds ready, over 8h, over 24h, confirmed and discharged today", () => {
+  // About 11 s on its own; a loaded, coverage-instrumented CI shard took it past the 30 s default on
+  // #1637 twice. Every step and assertion still runs.
+  it("beds ready, over 8h, over 24h, confirmed and discharged today", { timeout: 90_000 }, () => {
     let checked = 0;
     let oldReadySplit = 0;
     let oldOver8hSplit = 0;
