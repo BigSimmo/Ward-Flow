@@ -1,24 +1,236 @@
 /*
- * Triage and risk mock-up: the Summary button at the foot of the section list (7 Nov 2026). Tokens only, neutral borders,
- * 12px floor. Hidden with the rest of the index foot below 62.5rem, where the phone bar or the
- * tablet's Summary button takes over.
+ * Triage and risk: the sign-off rail (redesign, 13 Nov 2026; on the left since Josh's note the same
+ * day). Tokens only, neutral borders, 12px floor. The row is the app's one row pattern: a 32px tinted chip, a bold title over one quiet line,
+ * and the figure on the right edge (as the patient page's status rows).
  */
 
-/* Pinned to the foot of the left column while the form scrolls. */
-.summary {
-  position: sticky;
-  bottom: 0;
-  padding: var(--wf-s-2) 0;
-  /* On the section list's white card. */
-  background: var(--wf-surface);
+.rail {
+  min-width: 0;
 }
 
-.summaryButton {
+.card {
+  overflow: hidden;
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.soft {
+  color: var(--wf-ink-3);
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+.progress b {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.group + .group {
+  border-top: 1px solid var(--wf-line);
+}
+
+.groupHead {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.groupHead .mono {
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0 var(--wf-s-2) var(--wf-s-2);
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--wf-s-3);
   width: 100%;
+  min-height: 52px;
+  padding: var(--wf-s-2);
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: none;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.row:hover {
+  background: var(--wf-hover);
+}
+
+.row[aria-current] {
+  background: var(--wf-selected);
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.chip {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-accent-tint);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  color: var(--wf-accent-ink);
+}
+
+.row[data-done] .chip {
+  background: var(--wf-fit-tint);
+  color: var(--wf-success-ink);
+}
+
+/* The section in view: a filled chip. A finished one keeps its tick. */
+.row[aria-current]:not([data-done]) .chip {
+  background: var(--wf-pri-2);
+  color: var(--wf-on-accent);
+}
+
+.text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.line {
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row[data-done] .line {
+  color: var(--wf-ink-3);
+}
+
+.count {
+  min-width: 1.5rem;
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+  text-align: right;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.foot > * {
+  flex: 1 1 0;
   justify-content: center;
   white-space: nowrap;
 }
 
-.summaryButton * {
-  white-space: nowrap;
+.summary {
+  flex: 0 1 auto;
+}
+
+/* Sign and send fills the rest of the foot, also inside the wrapper that carries its reason. */
+.foot > span > button {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+/* Desktop: the left column, in view while the form scrolls. The sections of each printed form read
+   as steps: a hairline joins one chip to the next. */
+@media (min-width: 62.5625rem) {
+  .row {
+    position: relative;
+  }
+  li:not(:first-child) > .row::before,
+  li:not(:last-child) > .row::after {
+    content: "";
+    position: absolute;
+    left: calc(var(--wf-s-2) + 15px);
+    width: 2px;
+    height: calc(50% - 20px);
+    border-radius: 1px;
+    background: var(--wf-line-2);
+  }
+  li:not(:first-child) > .row::before {
+    top: 0;
+  }
+  li:not(:last-child) > .row::after {
+    bottom: 0;
+  }
+  .rail {
+    position: sticky;
+    top: calc(var(--wf-header-height) + var(--wf-s-4));
+    max-height: calc(100dvh - var(--wf-header-height) - var(--wf-s-4) * 2);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    /* Room for the card's shadow inside the scroll box. */
+    margin: -2px;
+    padding: 2px;
+  }
+}
+
+/* Tablet: after the form, the rows sit two to a line so the card stays short. */
+@media (min-width: 46.5rem) and (max-width: 62.5rem) {
+  .rail {
+    margin-top: var(--wf-s-2);
+  }
+  .rows {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--wf-s-2);
+  }
+  .foot {
+    justify-content: flex-end;
+  }
+  .foot > * {
+    flex: 0 0 auto;
+    min-width: 10rem;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .row {
+    transition: background-color 120ms ease;
+  }
 }

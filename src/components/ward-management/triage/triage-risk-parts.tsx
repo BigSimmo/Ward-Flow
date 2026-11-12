@@ -5,17 +5,16 @@
  * (Card, Segmented, FilterChip, Button, StatusGlyph). Nothing here is pre-selected: a choice with no
  * answer shows no option chosen, and a second press on the chosen option clears it.
  */
-import { BookOpen, ChevronDown } from "lucide-react";
+import { BookOpen, Check, ChevronDown } from "lucide-react";
 import { useId, useState, type ReactNode, type RefObject } from "react";
 
 import {
   Button,
-  Card,
-  CardBody,
-  CardHead,
   ChipGroup,
   FilterChip,
+  Icon,
   ListPicker,
+  PanelBoundary,
   Segmented,
   Sheet,
   SrOnly,
@@ -327,13 +326,19 @@ export function StatusMark({ status, withText = true }: { status: SectionStatus;
  */
 export type SectionFold = { folded: boolean; line: readonly string[]; onOpen: () => void };
 
-/** A numbered form section on the kit card; with `fold`, it can fold to one line once finished. */
+/**
+ * A numbered form section, one row of its part's card (redesign, 13 Nov 2026): a tinted number chip
+ * (a tick once nothing is needed), the title over one quiet line, and the status on the right edge.
+ * With `fold`, a finished section is that row alone: the quiet line carries its facts and the right
+ * edge carries Change.
+ */
 export function SectionCard({
   id,
   n,
   title,
   sub,
   status,
+  active = false,
   fold,
   children,
 }: {
@@ -342,65 +347,80 @@ export function SectionCard({
   title: string;
   sub: string;
   status: SectionStatus;
+  /** The section in view: its number chip fills, as its row in the rail does. */
+  active?: boolean;
   fold?: SectionFold;
   children: ReactNode;
 }) {
   const headingId = `triage-h-${id}`;
   const bodyId = `triage-body-${id}`;
+  const folded = Boolean(fold?.folded);
   return (
-    <Card
+    <section
       id={`triage-${id}`}
       aria-labelledby={headingId}
       className={styles.section}
       data-section={id}
       data-done={status.done ? "" : undefined}
+      data-active={active ? "" : undefined}
+      data-folded={folded ? "" : undefined}
     >
-      <CardHead
-        id={headingId}
-        title={
-          <>
-            <span className={styles.secNum} aria-hidden="true">
-              {n}
-            </span>
+      <div className={styles.secHead}>
+        <span className={styles.secNum} aria-hidden="true">
+          {status.done ? <Icon icon={Check} size={16} /> : n}
+        </span>
+        <div className={styles.secText}>
+          <h2 id={headingId} className={styles.secTitle}>
             {title}
-          </>
-        }
-        meta={<span className={styles.secSub}>{sub}</span>}
-        aside={<StatusMark status={status} />}
-      />
-      <CardBody className={styles.sectionBody}>
-        {fold?.folded ? (
-          <div className={styles.oneLine} data-testid={`triage-fold-${id}`}>
-            {fold.line.map((bit) => (
-              <span key={bit}>{bit}</span>
-            ))}
-            <Button
-              variant="ghost"
-              size="sm"
-              className={styles.pushEnd}
-              data-fold-change=""
-              aria-expanded={false}
-              aria-controls={bodyId}
-              aria-label={`Change ${title}`}
-              onClick={fold.onOpen}
-              onFocus={(event) => {
-                // Tabbing in opens it; a press is handled by the click.
-                if (event.currentTarget.matches(":focus-visible")) fold.onOpen();
-              }}
-            >
-              Change
-            </Button>
-          </div>
-        ) : null}
-        {fold ? (
-          <div id={bodyId} className={styles.foldBody} hidden={fold.folded} data-fold-body="">
-            {children}
-          </div>
-        ) : (
-          children
-        )}
-      </CardBody>
-    </Card>
+          </h2>
+          {fold && folded ? (
+            <p className={styles.secLine} data-testid={`triage-fold-${id}`}>
+              {fold.line.map((bit) => (
+                <span key={bit}>{bit}</span>
+              ))}
+            </p>
+          ) : (
+            <p className={styles.secSub}>{sub}</p>
+          )}
+        </div>
+        <div className={styles.secAside}>
+          {fold && folded ? (
+            <>
+              <SrOnly>{status.text}</SrOnly>
+              <Button
+                variant="ghost"
+                size="sm"
+                data-fold-change=""
+                aria-expanded={false}
+                aria-controls={bodyId}
+                aria-label={`Change ${title}`}
+                onClick={fold.onOpen}
+                onFocus={(event) => {
+                  // Tabbing in opens it; a press is handled by the click.
+                  if (event.currentTarget.matches(":focus-visible")) fold.onOpen();
+                }}
+              >
+                Change
+              </Button>
+            </>
+          ) : (
+            // The chip carries the tick, so the status is words alone.
+            <span className={styles.secStatus} data-open={status.needed ? "" : undefined}>
+              {status.text}
+            </span>
+          )}
+        </div>
+      </div>
+      {fold ? (
+        <div id={bodyId} className={`${styles.sectionBody} ${styles.foldBody}`} hidden={folded} data-fold-body="">
+          <PanelBoundary>{children}</PanelBoundary>
+        </div>
+      ) : (
+        <div className={styles.sectionBody}>
+          <PanelBoundary>{children}</PanelBoundary>
+        </div>
+      )}
+    </section>
   );
 }
 

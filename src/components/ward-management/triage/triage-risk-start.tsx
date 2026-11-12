@@ -14,7 +14,7 @@
  * in the kit drawer without leaving the queue. The app bar already owns "/" (`search-shortcut.ts`),
  * so this search binds no key of its own.
  */
-import { ChevronRight, Ellipsis, FileText, UserPlus } from "lucide-react";
+import { Check, ChevronRight, Ellipsis, FileText, UserPlus, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useId, useMemo, useState } from "react";
 
@@ -59,6 +59,8 @@ const SORTS: { id: QueueSort; label: string }[] = [
 
 /** Rows the queue shows before Show all. */
 const QUEUE_LIMIT = 8;
+/** Signed triages the side column lists. */
+const SIGNED_LIMIT = 5;
 
 export type QueueSort = "wait" | "urgency";
 
@@ -112,6 +114,9 @@ function PersonRow({ person, onChoose }: { person: TriagePerson; onChoose: () =>
   return (
     <li>
       <button type="button" className={styles.person} onClick={onChoose} data-testid="triage-start-person">
+        <span className={styles.chip} aria-hidden="true">
+          <Icon icon={UserRound} size={16} />
+        </span>
         <span className={styles.personText}>
           <span className={styles.personName}>
             <FormalName name={person.name} />
@@ -135,39 +140,48 @@ function PersonRow({ person, onChoose }: { person: TriagePerson; onChoose: () =>
   );
 }
 
+/**
+ * One referral on the queue, as the app's one row pattern (redesign, 13 Nov 2026): the place in the
+ * queue on a tinted chip, the name over one quiet line, the wait as a figure, and the actions on the
+ * right edge. Every fact the row held before is still on it.
+ */
 function QueueRow({
   row,
+  place,
   onChoose,
   onOpenReferral,
 }: {
   row: AwaitingTriage;
+  /** Where the referral sits in the queue as sorted, from 1. */
+  place: number;
   onChoose: () => void;
   onOpenReferral: () => void;
 }) {
   const { referral } = row;
   return (
     <li className={styles.row} data-testid="triage-start-referral-row">
+      <span className={styles.chip} aria-hidden="true">
+        {place}
+      </span>
       <div className={styles.rowWho}>
         <span className={styles.personName}>
           <FormalName name={row.name} />
           <span className={styles.personMeta}>{row.meta}</span>
         </span>
-        <span className={styles.personLine}>
-          UMRN <b className={styles.mono}>{row.umrn}</b>
-        </span>
-      </div>
-      <div className={styles.rowFacts}>
-        <span className={styles.personLine}>{referral.from}</span>
-        <span className={styles.rowTags}>
-          {referral.received ? (
-            <span className={styles.wait}>
-              Waiting <b className={styles.mono}>{splitDuration(row.waitedMinutes)}</b>
-            </span>
-          ) : null}
+        <span className={styles.rowLine}>
+          <span>
+            UMRN <b className={styles.mono}>{row.umrn}</b>
+          </span>
+          <span>{referral.from}</span>
           {referral.urgency ? <Badge>Asked {referral.urgency}</Badge> : null}
           <span className={styles.retriage}>{retriageWords(row)}</span>
         </span>
       </div>
+      {referral.received ? (
+        <span className={styles.wait}>
+          Waiting <b className={styles.mono}>{splitDuration(row.waitedMinutes)}</b>
+        </span>
+      ) : null}
       <div className={styles.rowActions}>
         <Button
           size="sm"
@@ -191,6 +205,86 @@ function QueueRow({
         </Button>
       </div>
     </li>
+  );
+}
+
+/**
+ * The side column (redesign, 13 Nov 2026): reference beside the queue. Waiting by source counts the
+ * queue as it stands, with each source's longest wait; Signed triages lists the people this
+ * workspace holds a signed triage for. Nothing here is new data, and nothing is a clinical judgement.
+ */
+function QueueSide({ awaiting, people }: { awaiting: readonly AwaitingTriage[]; people: readonly TriagePerson[] }) {
+  const sources = triageQueueSources(awaiting).map(({ from, count }) => ({
+    from,
+    count,
+    oldest: Math.max(...awaiting.filter((row) => row.referral.from === from).map((row) => row.waitedMinutes)),
+  }));
+  const signed = people.filter((person) => person.last);
+  const shown = signed.slice(0, SIGNED_LIMIT);
+  return (
+    <aside className={styles.side} aria-label="Queue at a glance" data-testid="triage-start-side">
+      <Card className={`${styles.card} ${styles.sources}`} aria-labelledby="triage-start-sources">
+        <CardHead id="triage-start-sources" title="Waiting by source" meta={`${awaiting.length} awaiting`} />
+        <CardBody flush>
+          {sources.length ? (
+            <ul className={styles.sideRows}>
+              {sources.map(({ from, count, oldest }) => (
+                <li key={from} className={styles.sideRow}>
+                  <span className={styles.chip} aria-hidden="true">
+                    {count}
+                  </span>
+                  <span className={styles.sideText}>
+                    <span className={styles.sideTitle}>{from}</span>
+                    <span className={styles.personLine}>
+                      {count} awaiting · longest <b className={styles.mono}>{splitDuration(oldest)}</b>
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.sideEmpty}>No referral is waiting for a triage.</p>
+          )}
+        </CardBody>
+      </Card>
+      <Card className={styles.card} aria-labelledby="triage-start-signed">
+        <CardHead
+          id="triage-start-signed"
+          title="Signed triages"
+          meta={signed.length ? `${signed.length} on this workspace` : undefined}
+        />
+        <CardBody flush>
+          {shown.length ? (
+            <ul className={styles.sideRows}>
+              {shown.map((person) => (
+                <li key={person.id} className={styles.sideRow}>
+                  <span className={styles.chip} data-done="" aria-hidden="true">
+                    <Icon icon={Check} size={16} />
+                  </span>
+                  <span className={styles.sideText}>
+                    <span className={styles.sideTitle}>
+                      <FormalName name={person.name} />
+                    </span>
+                    <span className={styles.personLine}>
+                      {person.last!.when} · Urgency {person.last!.urgencyText} · {person.last!.outcome}
+                    </span>
+                  </span>
+                  <Link
+                    href={person.recordHref}
+                    className={buttonClass({ variant: "ghost", size: "sm" })}
+                    aria-label={`Open the record for ${person.name}`}
+                  >
+                    Record
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.sideEmpty}>No triage has been signed on this workspace yet.</p>
+          )}
+        </CardBody>
+      </Card>
+    </aside>
   );
 }
 
@@ -372,50 +466,64 @@ export function TriageStart({ onChoose }: { onChoose: (person: TriagePerson) => 
         </FolderTabs>
       ) : null}
 
-      {searching ? (
-        <Card className={styles.card} aria-labelledby={headingId}>
-          <CardHead id={headingId} title="Matching people" meta={`${matches.length} of ${people.length} people`} />
-          <CardBody className={styles.body}>
-            {matches.length ? (
-              <ul className={styles.list} aria-label="Matching people">
-                {matches.map((person) => (
-                  <PersonRow key={person.id} person={person} onChoose={() => onChoose(person)} />
-                ))}
-              </ul>
-            ) : (
-              <p className={styles.empty} data-testid="triage-start-no-match">
-                No synthetic person matches. Check the spelling, or add them.
-              </p>
-            )}
-          </CardBody>
-        </Card>
-      ) : null}
+      {/* Redesign (13 Nov 2026): the app's 2:1 grid. The queue is the work; the side column is reference. */}
+      <div className={styles.grid}>
+        <div className={styles.mainCol}>
+          {searching ? (
+            <Card className={styles.card} aria-labelledby={headingId}>
+              <CardHead id={headingId} title="Matching people" meta={`${matches.length} of ${people.length} people`} />
+              <CardBody flush className={styles.body}>
+                {matches.length ? (
+                  <ul className={styles.list} aria-label="Matching people">
+                    {matches.map((person) => (
+                      <PersonRow key={person.id} person={person} onChoose={() => onChoose(person)} />
+                    ))}
+                  </ul>
+                ) : (
+                  <p className={styles.empty} data-testid="triage-start-no-match">
+                    No synthetic person matches. Check the spelling, or add them.
+                  </p>
+                )}
+              </CardBody>
+            </Card>
+          ) : null}
 
-      <Card className={styles.card} aria-label="Referrals awaiting triage" data-testid="triage-start-queue">
-        <CardBody className={styles.body}>
-          {awaiting.length ? (
-            <>
-              <ul id={queueId} className={styles.queue} aria-label="Referrals awaiting triage">
-                {shown.map((row) => (
-                  <QueueRow
-                    key={rowKey(row)}
-                    row={row}
-                    onChoose={() => onChoose(row)}
-                    onOpenReferral={() => setOpenKey(rowKey(row))}
-                  />
-                ))}
-              </ul>
-              {hidden > 0 ? (
-                <ShowMoreRow onClick={() => setShowAll((all) => !all)} expanded={showAll} controls={queueId}>
-                  {showAll ? "Show fewer" : `Show all (${queue.length})`}
-                </ShowMoreRow>
-              ) : null}
-            </>
-          ) : (
-            <p className={styles.quiet}>No referral is waiting for a triage.</p>
-          )}
-        </CardBody>
-      </Card>
+          <Card className={styles.card} aria-label="Referrals awaiting triage" data-testid="triage-start-queue">
+            {awaiting.length ? (
+              <CardHead
+                title={activeSource ?? "All referrals"}
+                meta={`${queue.length} awaiting`}
+                aside={<span className={styles.order}>{SORTS.find((option) => option.id === sort)!.label} first</span>}
+              />
+            ) : null}
+            <CardBody flush className={styles.body}>
+              {awaiting.length ? (
+                <>
+                  <ul id={queueId} className={styles.queue} aria-label="Referrals awaiting triage">
+                    {shown.map((row, index) => (
+                      <QueueRow
+                        key={rowKey(row)}
+                        row={row}
+                        place={index + 1}
+                        onChoose={() => onChoose(row)}
+                        onOpenReferral={() => setOpenKey(rowKey(row))}
+                      />
+                    ))}
+                  </ul>
+                  {hidden > 0 ? (
+                    <ShowMoreRow onClick={() => setShowAll((all) => !all)} expanded={showAll} controls={queueId}>
+                      {showAll ? "Show fewer" : `Show all (${queue.length})`}
+                    </ShowMoreRow>
+                  ) : null}
+                </>
+              ) : (
+                <p className={styles.sideEmpty}>No referral is waiting for a triage.</p>
+              )}
+            </CardBody>
+          </Card>
+        </div>
+        <QueueSide awaiting={awaiting} people={people} />
+      </div>
       <p className={styles.footNote}>
         Ward Flow prototype. Synthetic people only. Not validated clinical decision support.
       </p>

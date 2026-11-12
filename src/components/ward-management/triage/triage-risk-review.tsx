@@ -112,15 +112,16 @@ function ProgramLine({ form }: { form: FormApi }) {
   const programs = PROGRAMS[streamOf(state.program) ?? STREAMS[0][0]];
   const open = changing || !label;
   return (
-    <div className={styles.oneLine} data-testid="triage-program">
-      <span>
-        Program <b>{label || "not set"}</b>
+    <div className={styles.factRow} data-testid="triage-program">
+      <span className={styles.factLabel}>Program </span>
+      <span className={styles.factText}>
+        <b>{label || "not set"}</b>
       </span>
       {label ? (
         <Button
           variant="ghost"
           size="sm"
-          className={styles.pushEnd}
+          className={styles.factAction}
           aria-expanded={open}
           aria-controls="triage-program-choice"
           onClick={() => setChanging(!changing)}
@@ -129,7 +130,7 @@ function ProgramLine({ form }: { form: FormApi }) {
         </Button>
       ) : null}
       {open ? (
-        <div id="triage-program-choice" className={styles.programChoice}>
+        <div id="triage-program-choice" className={styles.factMore}>
           <Choice
             label="Program"
             options={programs.map(([code, name]) => [code, name] as const)}
@@ -160,20 +161,22 @@ function ReferrerLine({ form }: { form: FormApi }) {
   const [changing, setChanging] = useState(false);
   const open = changing || !line;
   return (
-    <div className={styles.oneLine} data-testid="triage-referrer">
-      <span className={styles.from}>{referral ? "From referral" : "Referrer · no referral linked"}</span>
-      {referral ? (
-        <span>
-          <b>{referral.from}</b>
-          {referral.received ? ` · ${referral.received}` : ""}
-        </span>
-      ) : null}
-      {open ? null : (
-        <span>
-          Referrer <b>{line}</b>
-        </span>
-      )}
-      <span className={`${styles.inline} ${styles.pushEnd}`}>
+    <div className={styles.factRow} data-testid="triage-referrer">
+      <span className={styles.factLabel}>{referral ? "From referral" : "Referrer · no referral linked"}</span>
+      <span className={styles.factText}>
+        {referral ? (
+          <span>
+            <b>{referral.from}</b>
+            {referral.received ? ` · ${referral.received}` : ""}
+          </span>
+        ) : null}
+        {open ? null : (
+          <span>
+            Referrer <b>{line}</b>
+          </span>
+        )}
+      </span>
+      <span className={`${styles.inline} ${styles.factAction}`}>
         {line ? (
           <Button
             variant="ghost"
@@ -192,7 +195,7 @@ function ReferrerLine({ form }: { form: FormApi }) {
         ) : null}
       </span>
       {open ? (
-        <div className={styles.referrerFields} id="triage-referrer-fields">
+        <div className={`${styles.referrerFields} ${styles.factMore}`} id="triage-referrer-fields">
           <TextInput
             aria-label="Referrer name"
             placeholder="Referrer name"
@@ -246,43 +249,45 @@ export function ReviewBody({
       <ReferrerLine form={form} />
       <ProgramLine form={form} />
       {done ? (
-        <div className={styles.oneLine} data-testid="triage-review-line">
-          <span className={styles.from}>Reviewed</span>
-          <span>
-            <b className={styles.mono}>{state.text.revTime}</b> · {HOW_NAME[state.how ?? ""]} ·{" "}
-            {labelOf(VENUES, state.where)}
-          </span>
-          {state.referralType ? <span>Referral: {labelOf(REFERRAL_TYPES, state.referralType)}</span> : null}
-          {state.arrivedBy || accompanied ? (
+        <div className={styles.factRow} data-testid="triage-review-line">
+          <span className={styles.factLabel}>Reviewed</span>
+          <span className={styles.factText}>
             <span>
-              Arrived {state.arrivedBy ? `by ${state.arrivedBy.toLowerCase()}` : ""}
-              {accompanied ? `${state.arrivedBy ? ", " : ""}with ${accompanied}` : ""}
+              <b className={styles.mono}>{state.text.revTime}</b> · {HOW_NAME[state.how ?? ""]} ·{" "}
+              {labelOf(VENUES, state.where)}
             </span>
-          ) : null}
-          <span>
-            Person {state.present === "yes" ? "present" : "not present"}
-            {state.others.length ? `, with ${state.others.join(", ").toLowerCase()}` : ""}
-          </span>
-          <span>
-            {state.purpose} · {state.episode} episode
-          </span>
-          {state.interp === "yes" || state.interp === "unavail" ? (
+            {state.referralType ? <span>Referral: {labelOf(REFERRAL_TYPES, state.referralType)}</span> : null}
+            {state.arrivedBy || accompanied ? (
+              <span>
+                Arrived {state.arrivedBy ? `by ${state.arrivedBy.toLowerCase()}` : ""}
+                {accompanied ? `${state.arrivedBy ? ", " : ""}with ${accompanied}` : ""}
+              </span>
+            ) : null}
             <span>
-              Interpreter{state.interp === "unavail" ? " needed, not available" : ""}
-              {language ? `: ${language}` : ", language not given"}
+              Person {state.present === "yes" ? "present" : "not present"}
+              {state.others.length ? `, with ${state.others.join(", ").toLowerCase()}` : ""}
             </span>
-          ) : null}
-          {state.sources.length ? <span>Sources: {state.sources.join(", ").toLowerCase()}</span> : null}
-          {state.atsi ? null : (
-            <span className={styles.inlineMark}>
-              <StatusGlyph tone="warning" size={8} />
-              Aboriginal status not asked
+            <span>
+              {state.purpose} · {state.episode} episode
             </span>
-          )}
+            {state.interp === "yes" || state.interp === "unavail" ? (
+              <span>
+                Interpreter{state.interp === "unavail" ? " needed, not available" : ""}
+                {language ? `: ${language}` : ", language not given"}
+              </span>
+            ) : null}
+            {state.sources.length ? <span>Sources: {state.sources.join(", ").toLowerCase()}</span> : null}
+            {state.atsi ? null : (
+              <span className={styles.inlineMark}>
+                <StatusGlyph tone="warning" size={8} />
+                Aboriginal status not asked
+              </span>
+            )}
+          </span>
           <Button
             variant="ghost"
             size="sm"
-            className={styles.pushEnd}
+            className={styles.factAction}
             aria-expanded={!folded}
             aria-controls="triage-review-fields"
             onClick={() => onEditing(!editing)}
