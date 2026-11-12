@@ -627,3 +627,70 @@
     justify-content: flex-start;
   }
 }
+
+/* Redesign (12 Nov 2026): the episodes card and the hours slot never push the pane wider. */
+.hoursSlot,
+.mainCard {
+  min-width: 0;
+}
+
+/* Version 2 (Josh, 12 Nov 2026): the figure strip keeps its place across the top. Only a patient who
+   is moving has a side column, for where this movement's hours went. */
+@media (min-width: 1001px) {
+  .pane[data-layout="history"]:has(> .hoursSlot) {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    grid-auto-flow: dense;
+    column-gap: var(--wf-s-4);
+    row-gap: var(--wf-s-4);
+    align-items: start;
+  }
+
+  .pane[data-layout="history"]:has(> .hoursSlot) > .stats {
+    grid-column: 1 / -1;
+  }
+
+  .pane[data-layout="history"]:has(> .hoursSlot) > .mainCard {
+    grid-column: 1;
+  }
+
+  .pane[data-layout="history"]:has(> .hoursSlot) > .hoursSlot {
+    grid-column: 2;
+  }
+}
+
+/* Beside the side column the episodes card is narrower than the window, so the episode rows take
+   their two-line form from the card's own width (the same form the 1100px window rule gives). */
+.mainCard {
+  container: history-main / inline-size;
+}
+
+/* Not on a phone: there the 600px rule above stacks the dates, place and legal lines. */
+@media (min-width: 601px) {
+  @container history-main (max-width: 800px) {
+    .ep details > summary {
+      grid-template-columns: 28px 150px minmax(0, 1fr) 16px;
+      grid-template-areas:
+        "kind when place chev"
+        "kind when legal chev";
+    }
+    .ep summary > .kind {
+      grid-area: kind;
+    }
+    .ep summary > .when {
+      grid-area: when;
+    }
+    .ep summary > .place {
+      grid-area: place;
+    }
+    .ep summary > .legal {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--wf-s-2);
+      grid-area: legal;
+    }
+    .ep summary > .chev {
+      grid-area: chev;
+    }
+  }
+}

@@ -159,8 +159,16 @@
   grid-template-columns: auto minmax(0, 1fr);
 }
 
+/* Redesign (12 Nov 2026): the time column is as wide as its longest time ("18:42 yesterday"), so a
+   time never runs under the words beside it, and every row's words start on the same edge. */
+.list:has(> .event) {
+  display: grid;
+  grid-template-columns: minmax(3.25rem, max-content) minmax(0, 1fr);
+}
+
 .event {
-  grid-template-columns: 3.25rem minmax(0, 1fr);
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   font-size: var(--wf-fs-14);
   line-height: var(--wf-lh-14);
   color: var(--wf-ink-1);
@@ -190,6 +198,7 @@
 }
 
 .time {
+  white-space: nowrap;
   font-family: var(--wf-mono);
   font-variant-numeric: tabular-nums;
   font-size: var(--wf-fs-13);

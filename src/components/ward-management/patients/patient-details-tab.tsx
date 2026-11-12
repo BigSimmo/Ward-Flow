@@ -170,6 +170,7 @@ function episodeCounts(episodes: PastEpisode[]): string | undefined {
 }
 
 export function PatientDetailsTab({
+  foot,
   patient,
   movement,
   displayName,
@@ -177,6 +178,8 @@ export function PatientDetailsTab({
   referralSafety,
   referralWhen,
 }: {
+  /** Redesign (12 Nov 2026): the Record added in error card, at the foot of Details only. */
+  foot?: ReactNode;
   patient?: Patient;
   movement?: Movement;
   /** PT1 H10: what the one referral behind this placement or stay says, read in
@@ -406,94 +409,100 @@ export function PatientDetailsTab({
           <span>Patient sex or gender differs from the movement placement record. Both are shown below.</span>
         </p>
       )}
-      <Card className={styles.card} data-testid="ward-person-placement-details">
-        <Section title="Identity">
-          <FactGrid facts={identity} />
-        </Section>
-
-        <Section title="Contact">
-          <FactGrid facts={contact} />
-        </Section>
-
-        {kin.length > 0 ? (
-          <Section title="Next of kin and carer">
-            <FactGrid facts={kin} />
+      {/* Redesign (12 Nov 2026): two level cards on a wide screen, the person on the left and their
+          care and legal facts on the right, so nothing stretches across the page. */}
+      <div className={styles.dash}>
+        <Card className={styles.card} data-testid="ward-person-placement-details">
+          <Section title="Identity">
+            <FactGrid facts={identity} />
           </Section>
-        ) : null}
 
-        {funding.length > 0 ? (
-          <Section title="Funding and planning">
-            <FactGrid facts={funding} />
+          <Section title="Contact">
+            <FactGrid facts={contact} />
           </Section>
-        ) : null}
 
-        {supports.length > 0 || noNominatedPerson ? (
-          <Section title="Support people">
-            {supports.length > 0 ? (
-              <ul className={styles.people}>
-                {supports.map((person) => (
-                  <li className={styles.person} key={`${person.name}-${person.role}`}>
-                    <span className={styles.personName}>{person.name}</span>
-                    <span className={styles.personRole}>{person.role}</span>
-                    <span className={styles.personQuiet}>
-                      {person.relationship}
-                      {person.relationship && person.phone ? " · " : null}
-                      {person.phone ? <span className={styles.mono}>{person.phone}</span> : null}
-                    </span>
-                    <span className={styles.personEnd}>
-                      {person.notify ? <Tag tone="info">Tell on transfer</Tag> : null}
-                    </span>
+          {kin.length > 0 ? (
+            <Section title="Next of kin and carer">
+              <FactGrid facts={kin} />
+            </Section>
+          ) : null}
+
+          {funding.length > 0 ? (
+            <Section title="Funding and planning">
+              <FactGrid facts={funding} />
+            </Section>
+          ) : null}
+
+          {supports.length > 0 || noNominatedPerson ? (
+            <Section title="Support people">
+              {supports.length > 0 ? (
+                <ul className={styles.people}>
+                  {supports.map((person) => (
+                    <li className={styles.person} key={`${person.name}-${person.role}`}>
+                      <span className={styles.personName}>{person.name}</span>
+                      <span className={styles.personRole}>{person.role}</span>
+                      <span className={styles.personQuiet}>
+                        {person.relationship}
+                        {person.relationship && person.phone ? " · " : null}
+                        {person.phone ? <span className={styles.mono}>{person.phone}</span> : null}
+                      </span>
+                      <span className={styles.personEnd}>
+                        {person.notify ? <Tag tone="info">Tell on transfer</Tag> : null}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {noNominatedPerson ? <p className={styles.quiet}>No nominated person recorded.</p> : null}
+            </Section>
+          ) : null}
+        </Card>
+        <Card className={styles.card} data-testid="ward-person-care-details">
+          <Section title="Care links" action={careCopy ? <CopyCareLinks value={careCopy} /> : undefined}>
+            <FactGrid facts={care} />
+          </Section>
+
+          <Section title="Diagnosis">
+            <FactGrid
+              facts={[
+                {
+                  label: "Working diagnosis",
+                  value: diagnosisNotShared ? "Not shared with this desk" : diagnosis,
+                  aside: diagnosis
+                    ? referralWhen
+                      ? `As written on the referral, ${referralWhen}`
+                      : "As written on the referral"
+                    : undefined,
+                  wide: true,
+                },
+              ]}
+            />
+          </Section>
+
+          <Section title={placement ? "Legal and placement" : "Legal"}>
+            <FactGrid facts={legal} />
+          </Section>
+
+          {extras && extras.alerts.length > 0 ? (
+            <Section title="Health alerts">
+              <ul className={styles.tags} aria-label="Health alerts">
+                {extras.alerts.map((alert) => (
+                  <li key={alert}>
+                    <Tag>{alert}</Tag>
                   </li>
                 ))}
               </ul>
-            ) : null}
-            {noNominatedPerson ? <p className={styles.quiet}>No nominated person recorded.</p> : null}
-          </Section>
-        ) : null}
+            </Section>
+          ) : null}
 
-        <Section title="Care links" action={careCopy ? <CopyCareLinks value={careCopy} /> : undefined}>
-          <FactGrid facts={care} />
-        </Section>
-
-        <Section title="Diagnosis">
-          <FactGrid
-            facts={[
-              {
-                label: "Working diagnosis",
-                value: diagnosisNotShared ? "Not shared with this desk" : diagnosis,
-                aside: diagnosis
-                  ? referralWhen
-                    ? `As written on the referral, ${referralWhen}`
-                    : "As written on the referral"
-                  : undefined,
-                wide: true,
-              },
-            ]}
-          />
-        </Section>
-
-        <Section title={placement ? "Legal and placement" : "Legal"}>
-          <FactGrid facts={legal} />
-        </Section>
-
-        {extras && extras.alerts.length > 0 ? (
-          <Section title="Health alerts">
-            <ul className={styles.tags} aria-label="Health alerts">
-              {extras.alerts.map((alert) => (
-                <li key={alert}>
-                  <Tag>{alert}</Tag>
-                </li>
-              ))}
-            </ul>
-          </Section>
-        ) : null}
-
-        {episodes.length > 0 ? (
-          <Section title="Record">
-            <FactGrid facts={record} />
-          </Section>
-        ) : null}
-      </Card>
+          {episodes.length > 0 ? (
+            <Section title="Record">
+              <FactGrid facts={record} />
+            </Section>
+          ) : null}
+        </Card>
+      </div>
+      {foot}
     </section>
   );
 }

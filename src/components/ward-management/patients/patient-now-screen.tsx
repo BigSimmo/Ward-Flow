@@ -94,6 +94,10 @@ const PatientTriageCard = dynamic(
 const CarerCallbackCard = dynamic(
   withLoadRetry(() => import("@/components/ward-management/carer-callback-card").then((m) => m.CarerCallbackCard)),
 );
+// Where the hours went, on History. It comes from the same download as the Now tab's handover pack.
+const PatientJourneyHours = dynamic(
+  withLoadRetry(() => import("./patient-journey-extras").then((m) => m.PatientJourneyHours)),
+);
 preloadWhenIdle(
   loadTransitOperations,
   loadUploadForms,
@@ -302,7 +306,7 @@ export function PatientNowScreen({
 
   const closeClearanceModal = useCallback(() => {
     if (!clearanceSave.pending) setShowClearanceModal(false);
-  }, [clearanceSave.pending]);
+  }, [clearanceSave.pending, setShowClearanceModal]);
 
   // Synchronize document title
   useEffect(() => {
@@ -1122,6 +1126,36 @@ export function PatientNowScreen({
       wardPending={wardSave.pending}
       wardRefusal={wardRefusal}
       wardSaveError={wardSave.error}
+      notices={
+        <>
+          {/* Overall review, 20 Oct 2026: the owner of a bed meeting action marks it done here. */}
+          <MeetingActionsDue subject={liveMovement && { kind: "movement", id: liveMovement.id }} />
+          <MeetingActionsDue subject={resolved.liveAdmission && { kind: "admission", id: resolved.liveAdmission.id }} />
+        </>
+      }
+      tiles={
+        <>
+          <PatientTriageCard patientId={livePatient?.id} />
+          <CarerCallbackCard tile admissionId={resolved.liveAdmission?.id} movementId={liveMovement?.id} />
+        </>
+      }
+      care={
+        // Care plans and safety flags (Josh, 9 Nov 2026): the plan, hearing date, carer told and
+        // cultural support, on the record's own facts.
+        livePatient ? (
+          <PatientCarePlansCard
+            patient={livePatient}
+            role={routeRole}
+            now={now}
+            todayIso={perthIsoDay(displayToday)}
+            nowClock={perthClockTime(displayToday)}
+            hasCarer={(extras?.supports.length ?? 0) > 0}
+            episodes={extras?.episodes}
+            gate={gate}
+            run={(event, success, onRefused) => runStep(event, { success, onRefused })}
+          />
+        ) : null
+      }
     />
   );
 
@@ -1245,29 +1279,7 @@ export function PatientNowScreen({
               aria-labelledby="pntab-now"
               hidden={activeTab !== "now"}
             >
-              {/* Overall review, 20 Oct 2026: the owner of a bed meeting action marks it done here. */}
-              <MeetingActionsDue subject={liveMovement && { kind: "movement", id: liveMovement.id }} />
-              <MeetingActionsDue
-                subject={resolved.liveAdmission && { kind: "admission", id: resolved.liveAdmission.id }}
-              />
-              <PatientTriageCard patientId={livePatient?.id} />
-              <CarerCallbackCard admissionId={resolved.liveAdmission?.id} movementId={liveMovement?.id} />
               {nowPanel}
-              {/* Care plans and safety flags (Josh, 9 Nov 2026): the plan, hearing date, carer told
-                  and cultural support, on the record's own facts. */}
-              {livePatient ? (
-                <PatientCarePlansCard
-                  patient={livePatient}
-                  role={routeRole}
-                  now={now}
-                  todayIso={perthIsoDay(displayToday)}
-                  nowClock={perthClockTime(displayToday)}
-                  hasCarer={(extras?.supports.length ?? 0) > 0}
-                  episodes={extras?.episodes}
-                  gate={gate}
-                  run={(event, success, onRefused) => runStep(event, { success, onRefused })}
-                />
-              ) : null}
             </div>
 
             {/* Tab 2: HISTORY */}
@@ -1290,6 +1302,11 @@ export function PatientNowScreen({
                     absence={stayLeaveBed?.absentWithoutLeave}
                     absenceVoluntary={voluntaryNow}
                     chronologyHref={openable(livePatient ? patientChronologyHref(livePatient.id) : undefined)}
+                    hours={
+                      isLiveBedflow && liveMovement ? (
+                        <PatientJourneyHours movement={liveMovement} now={now} />
+                      ) : undefined
+                    }
                     open={!modeMeta.quiet}
                     onBackToNow={() => {
                       setActiveTab("now");
@@ -1370,6 +1387,9 @@ export function PatientNowScreen({
                     referralWhen={referralWhen}
                     displayName={displayName}
                     preferredName={preferredName}
+                    foot={
+                      livePatient ? <PatientArchivePanel patientId={livePatient.id} displayName={displayName} /> : null
+                    }
                   />
                 </Suspense>
               ) : null}
@@ -1490,7 +1510,6 @@ export function PatientNowScreen({
           </PhoneSheet>
         </>
       ) : null}
-      {livePatient ? <PatientArchivePanel patientId={livePatient.id} displayName={displayName} /> : null}
       <WardPrototypeFooter testId="ward-patient-now-governance" />
     </main>
   );
