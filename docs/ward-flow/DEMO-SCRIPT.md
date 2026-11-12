@@ -44,7 +44,8 @@ owns._
 3. In the header, press the **Board time** clock. **Tools** opens at **Scenario and clock**. Check the
    scenario is **Standard day**, and pick it first if it is not: Reset demo reloads whichever
    scenario is loaded. Press **Reset demo**, then **Reset demo** again in the "Reset the demo?" box.
-   The demo clock keeps the current Perth time, so say the time you see. Press **Esc**.
+   The demo board opens at 10:42 on today's date, whatever the real time, then runs on in real
+   time. Say it is a demonstration clock, not the time now. Press **Esc**.
 4. Check the page footer reads "Synthetic prototype" and ends "… synthetic demonstration figures ·
    Not approved for clinical use".
 5. Rehearse once from start to finish, then **Reset demo** again.
