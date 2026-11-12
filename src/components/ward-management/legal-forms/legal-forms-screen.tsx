@@ -259,7 +259,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const patientOf = (movement: Movement) => resolveSubjectPatient(movement, { patients, referrals });
   const noDeadline = legalFormGroupRows(movements, now, "no-deadline");
   const rows = [...withDeadline, ...noDeadline];
-  // D-155: Print, Export and their disabled state use the same people as the on-screen list,
+  // D-157: Print, Export and their disabled state use the same people as the on-screen list,
   // including "Admitted on a form" (same `admitted` set the admitted group shows).
   const listPopulation = legalFormsListPopulation(rows, admitted);
   const withoutForm = openMovements.length - rows.length;
@@ -345,6 +345,9 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   // FS3: only the desks that may open seclusion (D-72: ward, site bed manager, coordinator) see the view.
   const seesSeclusion = ROLE_SCREENS[access.role].seclusion !== undefined;
   const shownView: View = view === "seclusion" && !seesSeclusion ? "clocks" : view;
+  // D-157: Checklist Print is window.print() of this view, so Admitted on a form stays on
+  // Checklist as well as On a form (clocks), and the printed page includes those people.
+  const showAdmittedOnAForm = shownView === "clocks" || shownView === "checklist";
   // Page tops (10 Nov 2026): the bar names the Seclusion tab, as the old Seclusion page did.
   const pathname = usePathname() ?? "";
   useWardBarPageTitle(pathname, shownView === "seclusion" ? "Seclusion" : undefined);
@@ -553,7 +556,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     if (!formCode) return;
     return raise("RECORD_LEGAL_FORM_DETAILS", { movementId: target.id, formCode, ...details });
   };
-  // Export (feature 44, D-155): everyone on a form on the list, including admitted on a form;
+  // Export (feature 44, D-157): everyone on a form on the list, including admitted on a form;
   // never names; legal times exactly as typed (D-93, D-102).
   const exportList = async () =>
     (await import("./legal-forms-export")).downloadLegalFormsList(
@@ -1057,7 +1060,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   onSelect={select}
                 />
               ) : null}
-              {shownView === "clocks" ? admittedList : null}
+              {showAdmittedOnAForm ? admittedList : null}
               {shownView === "history" ? historyList : null}
               {/* FS1: as on desktop, the full notice closes the list it qualifies, so the phone reaches
                   the people on a form first. */}
@@ -1211,7 +1214,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   />
                 ) : null}
 
-                {shownView === "clocks" ? admittedList : null}
+                {showAdmittedOnAForm ? admittedList : null}
                 {shownView === "history" ? historyList : null}
                 {/* The full notice closes the list it qualifies, not a loose line under the hero. */}
                 <div className={styles.listFoot}>

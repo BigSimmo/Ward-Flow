@@ -172,7 +172,7 @@ export function reduceStaffRequest(state: WardFlowState, event: StaffRequestEven
     )
       return reject(state, event, "REQUEST_WARD_STAFF needs one or more reasons chosen from the list");
     const shiftStartAt = chosenShiftStart(event);
-    // D-156: a "This shift" pressed just before the shift ends, and saved just after, would
+    // D-158: a "This shift" pressed just before the shift ends, and saved just after, would
     // otherwise keep the ended shift — accepted, immediately not open, and unable to be closed.
     // "Next shift" across the same boundary stays valid and is kept.
     if (event.shift === "this_shift" && event.now >= staffRequestEndsAt({ shiftStartAt }))

@@ -126,7 +126,7 @@ describe("the ward records the next form for a person admitted on a form (WT-03)
   });
 });
 
-describe("legal forms list population (D-155)", () => {
+describe("legal forms list population (D-157)", () => {
   it("puts admitted-on-a-form journeys after the open-movement rows, without duplicates", () => {
     const { state, movementId } = arrivedOnA1A();
     const rows = state.movements.filter((movement) => isOpen(movement) && movement.legalForm !== undefined);

@@ -3093,8 +3093,8 @@
         },
         {
           "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
-          "line": 373,
-          "sha256": "de3fda91e7efd4a5d2431400fc59468f647a9fcf6a68d8576ea0643d5886dd1d"
+          "line": 376,
+          "sha256": "06b9403c02ff16aace7df7690c0ca9f195bf1a674e79aaa9f0274b332fcc06b1"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -3239,8 +3239,8 @@
         },
         {
           "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
-          "line": 1318,
-          "sha256": "de3fda91e7efd4a5d2431400fc59468f647a9fcf6a68d8576ea0643d5886dd1d"
+          "line": 1321,
+          "sha256": "06b9403c02ff16aace7df7690c0ca9f195bf1a674e79aaa9f0274b332fcc06b1"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
@@ -6238,8 +6238,8 @@
         },
         {
           "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
-          "line": 539,
-          "sha256": "de3fda91e7efd4a5d2431400fc59468f647a9fcf6a68d8576ea0643d5886dd1d"
+          "line": 542,
+          "sha256": "06b9403c02ff16aace7df7690c0ca9f195bf1a674e79aaa9f0274b332fcc06b1"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-legal-events.ts",

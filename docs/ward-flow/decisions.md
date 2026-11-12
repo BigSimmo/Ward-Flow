@@ -179,6 +179,8 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-154](#d-154-the-community-desks-ed-heads-up-reads-a-narrow-scoped-list-11-november-2026)                                                             | The community desk's ED heads-up reads a narrow scoped list                            | Active                                           |
 | [D-155](#d-155-check-the-live-clock-offset-before-clearing-it-11-november-2026)                                                                         | Check the live clock offset before clearing it                                         | Active                                           |
 | [D-156](#d-156-reset-the-synthetic-live-world-after-the-clock-fix-11-november-2026)                                                                     | Post-release reset of the live synthetic world withdrawn                               | Withdrawn 12 November 2026                       |
+| [D-157](#d-157-legal-forms-print-and-export-include-people-admitted-on-a-form-12-november-2026)                                                         | Legal forms Print and Export include people admitted on a form                         | Active                                           |
+| [D-158](#d-158-a-this-shift-staff-request-is-refused-once-that-shift-has-ended-12-november-2026)                                                        | A This-shift staff request is refused once that shift has ended                        | Active                                           |
 
 ---
 
@@ -1005,7 +1007,7 @@ is inferred.
   5. **Observation levels.** General (hourly), Intermittent (interval typed, 15 or 30 minutes), Constant within sight (1:1), Constant within arm's length (1:1) and Two staff constant (2:1). Each 1:1 counts as one staff member against a ward's observation capacity and 2:1 as two; General and Intermittent count as none. The labels stay editable in the clinical values, because names vary by health service. Nothing is scored or suggested from a level (D-71).
   6. **Seclusion and restraint.** An operational view only: what is in use now and seclusion room availability, typed times, no computed limits (D-70). The legal register stays in the health service's own system.
   7. **Unfinished controls hidden by Audit 7.** Build the answer view's bed hold field (wired to the existing hold event) and its nurse unit manager field (wired to the existing high-acuity override tick). Delete the referral Call button and replace it with "Log a call" from the new call log. Delete the Add patient "After adding" card and go straight to the patient's page. Delete the cockpit's "Confirm a destination" section, which leans toward suggesting a ward (D-71). Build Assign referral with the call log.
-- **Boundary:** Synthetic data only. This decides product direction, not clinical governance sign-off (D-54), and authorises no provider, deployment or spending step.
+- **Boundary:** synthetic data only. This decides product direction, not clinical governance sign-off (D-54), and authorises no provider, deployment or spending step.
 - **Why:** A source review of 21 October 2026 found 14 product issues; these were the decisions the fix plan needed from the owner before building. Plan: `/mnt/project-files/plan/ward-flow-fix-plan-2026-10-21.md` (project files, outside the repository).
 - **Subsequent note (25 October 2026):** The fix plan named above is no longer kept in the project files, so that path no longer opens.
 
@@ -1021,7 +1023,7 @@ is inferred.
   5. The merge queue is used for this batch. Josh switches it on himself.
   6. A read-only check of the Supabase plan and Realtime quota is allowed before fix plan items 1 (shared boards) or 6 (history) start.
   7. Issues #430 (CAD number validation) and #431 (seeded surname check) join Phase 2 of the fix plan. Issues #314, #315 and #374 to #376 are closed once each is verified as fixed in the source.
-- **Boundary:** Synthetic data only. A push or PR is not a merge, deployment or provider change; each still needs its own authority (AGENTS.md hard rule 10).
+- **Boundary:** synthetic data only. A push or PR is not a merge, deployment or provider change; each still needs its own authority (AGENTS.md hard rule 10).
 - **Why:** Several threads were building fix plan items in parallel, and the batch needed agreed rules for publishing, shared files and merge order.
 - **Subsequent note (21 October 2026):** Item 5 cannot be applied as approved: GitHub's merge queue is unavailable for a personally owned repository. Josh accepted a lighter substitute in the health check thread at 7:51 PM AWST, in his words "yes but this slows things down", then "yes ok", to that session's proposal as relayed by the coordinating session: "Require branches to be up to date before merging" stays off; only the three riskier PRs (Work loss, Referral owner and Observation levels) merge `main` in and re-run CI just before they are marked ready; the smaller PRs merge as they are.
 
@@ -1043,7 +1045,7 @@ is inferred.
   11. **R19** (costed ward questions) stays parked until a pilot ward is chosen.
   12. **Hosted checks.** The hosted save and conflict test and the hosted fresh browser check are approved, with synthetic data only.
 - **Standing rule:** Josh, in the project chat at 8:02 PM AWST: "DO NOT EVER GO AHEAD UNTIL I APPROVE THE MOCKUP". Nothing is built from any mockup until Josh explicitly approves that mockup.
-- **Boundary:** Synthetic data only. This authorises no deployment, provider configuration change or spending. The Supabase connector, open sign-up, restore drill, iPhone walkthrough and pilot roles are for Josh to do himself.
+- **Boundary:** synthetic data only. This authorises no deployment, provider configuration change or spending. The Supabase connector, open sign-up, restore drill, iPhone walkthrough and pilot roles are for Josh to do himself.
 - **Why:** The parallel threads had raised open questions that needed owner answers before Phase 2 and the hosted checks could go ahead.
 
 ## D-75. UX audit follow-up, page caching, community gaps and the extra-travel bed hold (21 October 2026)
@@ -1056,7 +1058,7 @@ is inferred.
   4. **Seclusion view** may claim the two screen-map files their previous owner released.
   5. **Extra-travel bed hold.** A bed hold for a person with extra travel adds 60 minutes to the hold set in Settings.
 - **Mock-up evidence rule:** Josh, in the project chat at 8:40 PM AWST: "Disregard any mockups that did not utilise up to date live or local site and visual assessment". A mock-up counts only when it was made from screenshots of the running app at current `main` or the hosted site, and it says which commit.
-- **Boundary:** Synthetic data only. This authorises no deployment, provider configuration change or spending, and no build from a mock-up before Josh approves it.
+- **Boundary:** synthetic data only. This authorises no deployment, provider configuration change or spending, and no build from a mock-up before Josh approves it.
 - **Why:** The audit and the fix threads needed owner answers before the quick wins, caching work, community gaps and bed hold timing could go ahead.
 
 ## D-76. Community referral gaps: the full move journey and asking more wards (21 October 2026)
@@ -1065,7 +1067,7 @@ is inferred.
 - **Decision:**
   1. **Fix plan item 15.** An accepted community referral is built as the full journey: it can be moved, transported and arrived, and it shows on the Movements and Transport boards. The journey records a community origin by team name, with no address. This updates owner ruling 8 of 1 September 2026, which said a journey never starts at a community team, for an accepted community referral. The smaller option, where the ward records "arrived from community" against the held bed with no movement, is not taken.
   2. **Fix plan item 16.** The coordinator can ask more wards about an open community referral. Each ward added is recorded with who added it and when. No more than 3 wards may be waiting at once (`PARALLEL_REFERRAL_CAP`), and wards that declined do not count. Wards are listed alphabetically and are never ranked or suggested (D-71).
-- **Boundary:** Synthetic data only. The engine work waits until the trends work has merged, because both touch the same event, model and drawer files. This authorises no deployment, provider configuration change or spending.
+- **Boundary:** synthetic data only. The engine work waits until the trends work has merged, because both touch the same event, model and drawer files. This authorises no deployment, provider configuration change or spending.
 - **Why:** D-74 item 2 put the community gaps into Phase 2, and the scope showed that only the full journey puts community transport on the boards that coordinators and transport officers already use.
 
 ## D-77. The ten bigger UX changes approved for build (22 October 2026)
@@ -1085,7 +1087,7 @@ is inferred.
   11. **Top bar** at 1280 px is fixed.
 - **Not decided:** the "Not legally checked" notice stays on the live Legal forms screen, and D-70 is unchanged, until Josh answers that question. The card's recommendation to remove it is not acted on.
 - **Process:** one pull request per group, each from current `main`, with a visual check. Nothing merges without Josh.
-- **Boundary:** Synthetic data only. This authorises no deployment, provider configuration change or spending.
+- **Boundary:** synthetic data only. This authorises no deployment, provider configuration change or spending.
 - **Why:** Josh reviewed the ten mock-ups, made from the current app, and approved them with the recommended answers to their open questions.
 
 ## D-78. One decline list for wards and coordinators (22 October 2026)
@@ -1096,7 +1098,7 @@ is inferred.
   2. **Ward-only reasons stay.** Four clinically distinct reasons are kept for ward declines only: Specialling unavailable, Acuity mix, Bed pulled for earlier referral and Capability mismatch. Capability mismatch is kept because neither Age band not provided here nor Secure bed unavailable fully covers it, for example a ward with no ECT or eating disorder capability.
   3. **Retired ward values map across.** No bed becomes No suitable bed, Sex mix becomes Sex designation unavailable and Out of catchment becomes Belongs to another service. Old saves are converted when they load, so no recorded decline is lost.
   4. **Limits kept.** A ward refusing a movement is still not offered Sex designation unavailable (T10), and an ED decline gets none of the ward-only reasons.
-- **Boundary:** Synthetic data only. Built in PR #579, which cites D-78 in its code comments. This authorises no deployment, provider configuration change or spending.
+- **Boundary:** synthetic data only. Built in PR #579, which cites D-78 in its code comments. This authorises no deployment, provider configuration change or spending.
 - **Why:** two lists with different words for the same reason made decline records hard to compare across the network. Keeping the ward-only reasons and converting old values keeps what earlier records meant.
 
 ## D-79. Wards see the full referral, with name and UMRN, before they answer (23 October 2026)
@@ -1107,7 +1109,7 @@ is inferred.
   2. **Never other destinations.** The ward never sees which other wards or teams the patient was referred to (FD-23, and D-17 in `archive/dated-notes/owner-decisions-2026-09-1x.md`, not the D-17 in this log).
   3. **Fit lines split.** The card shows the patient's checks on one line and the ward's own state, such as a stale bed count or no free bed, on another, so a ward problem no longer reads as the patient failing.
 - **What it replaces:** Josh's 26 September 2026 rule that a ward sees no identity before it accepts, and the part of D-68 item 3 that kept the name and UMRN off the accept card until acceptance. D-39 and D-74 item 5 stand: no `WF-...` journey number or referral number shows on the card.
-- **Boundary:** Synthetic data only, with synthetic referral forms and documents for the seeded journeys. Showing identity before acceptance needs the privacy review before any real patient data. Being built in PR #588, still a draft when this was recorded. This authorises no deployment, provider configuration change or spending.
+- **Boundary:** synthetic data only. with synthetic referral forms and documents for the seeded journeys. Showing identity before acceptance needs the privacy review before any real patient data. Being built in PR #588, still a draft when this was recorded. This authorises no deployment, provider configuration change or spending.
 - **Why:** A ward cannot make a safe decision on a referral it cannot read. The engine already held about half the fields, and community teams already saw them.
 
 ## D-80. Role access plan version 2: all 17 recommendations (23 October 2026)
@@ -1121,7 +1123,7 @@ is inferred.
   5. **PR 5, items 7, 9 to 13 and 15.** Transport officers see their own service's jobs only, with the referral's risk categories as flags. Wards, EDs and community teams get own-place Statistics as counts. Community teams get a Movements screen for their own journeys. Phone alerts go to officers for new or changed jobs, and to community teams when a referral is answered or a catchment client is admitted or discharged. The ward sees the readmission flag once it has accepted, which changes Josh's 9 October 2026 ruling. The ED sees the wards asked, their state and the accepting ward, but not other wards' decline reasons. Opening the full referral detail is logged as a record view.
 - **Mock-ups first (item 14):** a review screen for break glass openings and record views, read from the server, for statewide and service coordinators, and an Access log in Settings for the access admin. Both are made from the running app at current `main` and built only after Josh approves them (D-74).
 - **Pre-pilot only (item 17):** before any real data, a second approver comes back for role grants, and a coordinator opening a clinical ward record gives an "on behalf of the ward" reason. This is recorded now and built at pilot. Until then D-66 stands. _Subsequent note (27 October 2026): D-86 drops the second approver part of this item; the "on behalf of the ward" reason is unchanged._
-- **Boundary:** Synthetic data only. No Supabase change beyond reading tables that already exist. No new roles, and nothing a coordinator, ward or ED needs is taken away. This authorises no deployment, provider configuration change or spending.
+- **Boundary:** synthetic data only. No Supabase change beyond reading tables that already exist. No new roles, and nothing a coordinator, ward or ED needs is taken away. This authorises no deployment, provider configuration change or spending.
 - **Why:** the review found the FD-23 leak, a broken bed manager Discharges screen, cover that could go to any account, break glass review with no screen, and gaps in daily work for sending wards, community teams and transport officers.
 - **Later change (2 November 2026):** the site bed manager no longer marks a bed meeting action done, which narrows item 3 above and the 31 October Q61 ruling. The bed meeting agenda is read only for that desk (Decision 46). Ward, ED and community desks still mark their own agreed actions done. Built in PR #1214 (Q97, 1 November 2026); Josh approved recording it here on 2 November 2026 ("Yes to all recommendations").
 
@@ -1958,3 +1960,15 @@ is inferred.
 - **Why:** the live world holds synthetic data only, so a reset is the simplest fix. It leaves no lasting skew from D-150's clock change: without it, times stored before release stay about 48 minutes ahead of the new clock, so waits recorded before release read short and an expired Undo could briefly come back.
 - **Boundary:** synthetic data only. No code change in this PR. The reset is one live write, made by this thread after release, not by CI. Changes no clinical rule or signed value, and approves no merge or release.
 - **Withdrawn (12 November 2026):** Josh withdrew the post-release reset of the live synthetic shared world on 12 November 2026 (`2026-11-12`). No reset happens without a verified pre-reset backup and a tested restore, plus a fresh yes from Josh. D-149's after-release archive of PT-A06 and TEST-Helper4 is restored: that live write still waits for Josh's yes. D-155 stands as recorded: after release, the live world's stored clock offset is read once, read-only, and reported; any clear of that offset is a live write that waits for Josh's yes. This entry's 11 November decision to reset after release is withdrawn and does not supersede D-149 or D-155.
+
+## D-157. Legal forms Print and Export include people admitted on a form (12 November 2026)
+
+- **Date:** 12 November 2026, 8:44 AM to 8:45 AM AWST (00:44 to 00:45 UTC). **Decided by:** Josh, ruling on the two open review threads on PR #1623. Numbered D-157 because D-145 through D-156 are already on main (D-148 to D-156 arrived with PR #1626; D-156 is withdrawn but the number stays taken).
+- **Decision:** Legal forms Print, Export and the disabled condition for those buttons include the "Admitted on a form" people together with the open-movement rows, using the same `admitted` set as the on-screen admitted list (the same role filter). Highlights do not narrow the export. Print is `window.print()` of the current page, so that admitted group also shows on the Checklist view, not only On a form (clocks), and a Checklist print includes those people.
+- **Boundary:** synthetic data only. No signed clinical value or clinical rule. Approves no merge or release.
+
+## D-158. A This-shift staff request is refused once that shift has ended (12 November 2026)
+
+- **Date:** 12 November 2026, 8:44 AM to 8:45 AM AWST (00:44 to 00:45 UTC). **Decided by:** Josh, ruling on the two open review threads on PR #1623. Numbered D-158 because D-157 records the Legal forms ruling from the same answers, and D-155 and D-156 are already on main via PR #1626.
+- **Decision:** A `this_shift` staff request whose chosen shift has already ended is refused, using the Staff needed sheet's existing save error, with the reason "This shift has already ended. Choose this shift or next shift again". "Next shift" late-save behaviour is unchanged: a Next-shift request that lands just after the shift changes is still kept.
+- **Boundary:** synthetic data only. No signed clinical value or clinical rule. Approves no merge or release.

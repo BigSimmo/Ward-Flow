@@ -154,7 +154,7 @@ describe("Legal forms Print and Export", () => {
     expectNoNames(csv);
   });
 
-  it("includes a person admitted on a form in the export, and Print stays available (D-155)", async () => {
+  it("includes a person admitted on a form in the export, and Print stays available (D-157)", async () => {
     const { state, movementId } = arrivedOnA1A(false);
     expect(admittedOnAForm(state.movements, state.admissions).map((movement) => movement.id)).toContain(movementId);
     wrap(<FormsWith state={state} />);
@@ -166,7 +166,7 @@ describe("Legal forms Print and Export", () => {
     expectNoNames(csv);
   });
 
-  it("keeps Print and Export available when only admitted-on-a-form people are on the list (D-155)", async () => {
+  it("keeps Print and Export available when only admitted-on-a-form people are on the list (D-157)", async () => {
     const { state, movementId } = arrivedOnA1A(true);
     expect(state.movements.filter((movement) => isOpen(movement) && movement.legalForm !== undefined)).toHaveLength(0);
     wrap(<FormsWith state={state} />);
@@ -181,6 +181,21 @@ describe("Legal forms Print and Export", () => {
       .filter((line) => line.length > 0);
     expect(data.some((line) => line.includes(movementId))).toBe(true);
     expectNoNames(csv);
+  });
+
+  it("shows admitted-on-a-form people in Checklist so Print includes them (D-157)", () => {
+    const { state } = arrivedOnA1A(true);
+    wrap(<FormsWith state={state} />);
+    fireEvent.click(screen.getByRole("radio", { name: "Checklist" }));
+    expect(screen.getByRole("radio", { name: "Checklist" })).toBeChecked();
+    expect(screen.getByRole("region", { name: "Checklist" })).toBeInTheDocument();
+    expect(screen.getByTestId("ward-legal-print")).not.toBeDisabled();
+    // window.print() prints this view, so the admitted person must be on Checklist, not only On a form.
+    expect(
+      within(screen.getByTestId("ward-legal-forms-admitted")).getByText(
+        "Form 6A not recorded (Form 1A ended at arrival)",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("disables Print and Export when nobody is on a form", () => {

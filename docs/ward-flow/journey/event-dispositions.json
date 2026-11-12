@@ -4188,7 +4188,7 @@
       "guards": [
         "Known unit; shift and count from their lists",
         "Reject empty, duplicate or unlisted reasons, and a ward naming another ward",
-        "Reject a This-shift request whose chosen shift has already ended (D-156); a Next-shift request that lands just after the shift changes is still kept"
+        "Reject a This-shift request whose chosen shift has already ended (D-158); a Next-shift request that lands just after the shift changes is still kept"
       ],
       "effects": [
         "Appends a record, or updates count, reasons and updatedAt on the open one; never names a patient",
@@ -4203,7 +4203,7 @@
         {
           "path": "src/components/ward-management/staffing/staff-requests.ts",
           "line": 156,
-          "sha256": "9b8adc8255527c0e8dbf37b683884c7b76af12f5b7b7c841a07e6a189f6206f8"
+          "sha256": "61771664a49e5dd78341e5a6f34b9ad61b99896c789768c878c93b3bb5ff21ad"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4245,7 +4245,7 @@
         {
           "path": "src/components/ward-management/staffing/staff-requests.ts",
           "line": 200,
-          "sha256": "9b8adc8255527c0e8dbf37b683884c7b76af12f5b7b7c841a07e6a189f6206f8"
+          "sha256": "61771664a49e5dd78341e5a6f34b9ad61b99896c789768c878c93b3bb5ff21ad"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",

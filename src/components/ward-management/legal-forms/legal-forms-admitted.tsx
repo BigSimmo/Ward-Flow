@@ -22,7 +22,7 @@ export function admittedOnAForm(movements: readonly Movement[], admissions: read
 }
 
 /**
- * Everyone on a form on the list (D-155): the open-movement table rows, then the same
+ * Everyone on a form on the list (D-157): the open-movement table rows, then the same
  * admitted-on-a-form journeys the screen shows, with no duplicates.
  */
 export function legalFormsListPopulation<M extends { id: string }>(rows: readonly M[], admitted: readonly M[]): M[] {
