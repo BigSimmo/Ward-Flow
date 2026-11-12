@@ -143,7 +143,8 @@ export function StatisticsCapacityChart(props: CapacityInput) {
             },
             pending: ward.pendingPreparation,
             available: ward.beds.ready,
-            inUse: ward.beds.occupied + ward.beds.pulled,
+            // The report's own stay-only figure; its Pulled includes named holds (CodeRabbit on #1637).
+            inUse: ward.beds.inUse,
           }))
       : props.units!.map((unit) => {
           const unheld = bedStates(unit, props.admissions ?? [], props.bedReleases!, props.leaveBeds ?? []);
