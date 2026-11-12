@@ -19,7 +19,8 @@ function scratch() {
 }
 afterEach(() => {
   delete process.env.WARD_UNIT_DURATIONS_FILE;
-  for (const directory of directories.splice(0)) rmSync(directory, { recursive: true, force: true });
+  for (const directory of directories.splice(0))
+    rmSync(directory, { recursive: true, force: true, maxRetries: 3, retryDelay: 50 });
 });
 
 function artifact(overrides: Record<string, unknown> = {}, run: Record<string, unknown> = {}) {
