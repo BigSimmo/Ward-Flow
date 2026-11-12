@@ -8,6 +8,7 @@ import type { Unit } from "@/components/ward-management/ward-model";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { savedAtToast } from "@/components/ward-management/ward-saved-at-toast";
 import { useWardOutageCatchUp } from "@/components/ward-management/use-outage-catch-up";
+import { bedsNotConfirmedSinceOutage } from "@/components/ward-management/ward-outage-catch-up";
 
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 import styles from "./ward-outage-catch-up-card.module.css";
@@ -47,28 +48,30 @@ export function WardOutageCatchUpCard({
   const toast = useOptionalToast();
   if (catchUp === null || catchUp.caughtUp || routeRole === "bed_manager") return null;
   const { outage } = catchUp;
+  // The beds the record says are still unconfirmed, not simply every bed on the ward.
+  const unconfirmed = bedsNotConfirmedSinceOutage(unit, outage).length;
   const by = WARD_FLOW_ROLE_LABELS[outage.by]?.toLowerCase() ?? "the coordinator";
   const rows = [
     {
       id: "admissions",
       title: "Admissions",
       sub: "People admitted on paper",
-      action: "Add admission",
+      action: "Open arrivals",
       run: actions.onAdmissions,
     },
     {
       id: "discharges",
       title: "Discharges",
       sub: "People who left on paper",
-      action: "Record discharge",
+      action: "Open discharges",
       run: actions.onDischarges,
     },
-    { id: "moves", title: "Moves", sub: "Bed or ward moves on paper", action: "Record move", run: actions.onMoves },
+    { id: "moves", title: "Moves", sub: "Bed or ward moves on paper", action: "Open bed board", run: actions.onMoves },
     {
       id: "beds",
       title: "Bed changes",
       sub: "Beds closed, opened or cleaned",
-      action: "Change a bed",
+      action: "Open bed list",
       run: actions.onBedChanges,
     },
   ];
@@ -123,7 +126,9 @@ export function WardOutageCatchUpCard({
       <div className={styles.foot}>
         <span className={styles.footNote} data-testid="ward-catch-up-beds">
           <StatusGlyph tone="neutral" size={9} />
-          {unit.beds} {unit.beds === 1 ? "bed" : "beds"} not confirmed since the outage
+          {unconfirmed > 0
+            ? `${unconfirmed} ${unconfirmed === 1 ? "bed" : "beds"} not confirmed since the outage`
+            : "Confirm the beds since the outage"}
         </span>
         <Button variant="pri" size="sm" onClick={confirm} data-testid="ward-catch-up-confirm">
           Beds still correct

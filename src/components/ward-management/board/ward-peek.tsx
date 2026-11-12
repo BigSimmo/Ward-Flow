@@ -25,17 +25,20 @@ export function WardPeekButton({
   label: string;
   variant?: "pri" | "sec";
 }) {
-  const { units, admissions, bedReleases, referrals } = useWardFlowSelect(
+  const { units, admissions, bedReleases, movements, referrals } = useWardFlowSelect(
     "units",
     "admissions",
     "bedReleases",
+    "movements",
     "referrals",
   );
   const canOpen = useCanOpenHref();
   const unit = units.find((candidate) => candidate.id === unitId);
   if (!unit || !canOpen(href)) return null;
-  // Same rule as Search's ready count, without pulling Search's code into every board.
-  const ready = unit.allocatable && unit.empty ? readyBedsNow(unit, admissions, [], referrals) : null;
+  // Same rule as Search's ready count, without pulling Search's code into every board. The named
+  // holds are open journeys and accepted referrals, as Home and the rail count them (D-115 item 3).
+  const ready =
+    unit.allocatable && unit.empty ? readyBedsNow(unit, admissions, [], [...movements, ...referrals]) : null;
   const inUse = wardBedsInUse(unit, admissions, bedReleases);
   const site = siteByCode(unit.siteCode)?.name;
   return (

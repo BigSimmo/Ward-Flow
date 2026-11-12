@@ -491,11 +491,17 @@ describe("POST /api/session", () => {
     expect(edgeAddress(dual, [])).toBe("192.0.2.40");
     expect(edgeAddress(forwardedOnly, [])).toBe("192.0.2.41");
     expect(edgeAddress(new Headers(), [])).toBe("unknown");
-    expect(trustedProxyAddressesFromEnv({ WARD_TRUSTED_PROXY_ADDRESSES: "10.0.0.2, *, not-an-ip" })).toEqual([
-      "10.0.0.2",
+    // #1615: on the Next service only `*` applies; an IP-only list is dropped with one warning.
+    const warn = vi.fn();
+    expect(trustedProxyAddressesFromEnv({ WARD_TRUSTED_PROXY_ADDRESSES: "10.0.0.2, *, not-an-ip" }, warn)).toEqual([
       "*",
     ]);
-    expect(trustedProxyAddressesFromEnv({})).toEqual([]);
+    expect(trustedProxyAddressesFromEnv({}, warn)).toEqual([]);
+    expect(warn).not.toHaveBeenCalled();
+    expect(trustedProxyAddressesFromEnv({ WARD_TRUSTED_PROXY_ADDRESSES: "10.0.0.2, not-an-ip" }, warn)).toEqual([]);
+    expect(trustedProxyAddressesFromEnv({ WARD_TRUSTED_PROXY_ADDRESSES: "10.0.0.3" }, warn)).toEqual([]);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toBe("ward_front_door_config_warning");
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
     vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K-SYNTH");
@@ -520,17 +526,18 @@ describe("POST /api/session", () => {
     expect((await POST(post({ demoCode: "ward 7q4k synth" }, "192.0.2.72"))).status).toBe(204);
   });
 
-  it("ignores a caller-sent address once a trusted proxy is configured but the socket is not it (A4-02)", async () => {
+  it("ignores an IP-only trusted proxy list on the Next route, so one guesser cannot lock everyone out (#1615)", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
     vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K-SYNTH");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
     vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "10.0.0.2");
     for (let attempt = 0; attempt < 10; attempt += 1)
-      expect((await POST(post({ demoCode: "WRONG" }, `198.51.100.${attempt}`))).status).toBe(401);
-    // Rotating X-Real-IP does not open a new bucket: every request shares "unknown".
-    expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.99"))).status).toBe(429);
-    expect((await POST(post({ demoCode: "ward 7q4k synth" }, "192.0.2.98"))).status).toBe(429);
+      expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.80"))).status).toBe(401);
+    expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.80"))).status).toBe(429);
+    // The route has no socket, so the list falls back to D-147 keying: other callers keep their budget.
+    expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.81"))).status).toBe(401);
+    expect((await POST(post({ demoCode: "ward 7q4k synth" }, "192.0.2.82"))).status).toBe(204);
   });
 
   it("refuses wrong codes once tries across all addresses reach the cap, but still opens with the right code", async () => {

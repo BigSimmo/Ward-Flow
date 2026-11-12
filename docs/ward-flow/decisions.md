@@ -181,6 +181,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-156](#d-156-reset-the-synthetic-live-world-after-the-clock-fix-11-november-2026)                                                                     | Post-release reset of the live synthetic world withdrawn                               | Withdrawn 12 November 2026                       |
 | [D-157](#d-157-legal-forms-print-and-export-include-people-admitted-on-a-form-12-november-2026)                                                         | Legal forms Print and Export include people admitted on a form                         | Active                                           |
 | [D-158](#d-158-a-this-shift-staff-request-is-refused-once-that-shift-has-ended-12-november-2026)                                                        | A This-shift staff request is refused once that shift has ended                        | Active                                           |
+| [D-159](#d-159-fixes-from-the-10-to-12-november-pr-review-12-november-2026)                                                                             | Fixes from the 10 to 12 November PR review                                             | Active                                           |
 
 ---
 
@@ -1109,7 +1110,7 @@ is inferred.
   2. **Never other destinations.** The ward never sees which other wards or teams the patient was referred to (FD-23, and D-17 in `archive/dated-notes/owner-decisions-2026-09-1x.md`, not the D-17 in this log).
   3. **Fit lines split.** The card shows the patient's checks on one line and the ward's own state, such as a stale bed count or no free bed, on another, so a ward problem no longer reads as the patient failing.
 - **What it replaces:** Josh's 26 September 2026 rule that a ward sees no identity before it accepts, and the part of D-68 item 3 that kept the name and UMRN off the accept card until acceptance. D-39 and D-74 item 5 stand: no `WF-...` journey number or referral number shows on the card.
-- **Boundary:** synthetic data only. with synthetic referral forms and documents for the seeded journeys. Showing identity before acceptance needs the privacy review before any real patient data. Being built in PR #588, still a draft when this was recorded. This authorises no deployment, provider configuration change or spending.
+- **Boundary:** Synthetic data only, with synthetic referral forms and documents for the seeded journeys. Showing identity before acceptance needs the privacy review before any real patient data. Being built in PR #588, still a draft when this was recorded. This authorises no deployment, provider configuration change or spending.
 - **Why:** A ward cannot make a safe decision on a referral it cannot read. The engine already held about half the fields, and community teams already saw them.
 
 ## D-80. Role access plan version 2: all 17 recommendations (23 October 2026)
@@ -1972,3 +1973,15 @@ is inferred.
 - **Date:** 12 November 2026, 8:44 AM to 8:45 AM AWST (00:44 to 00:45 UTC). **Decided by:** Josh, ruling on the two open review threads on PR #1623. Numbered D-158 because D-157 records the Legal forms ruling from the same answers, and D-155 and D-156 are already on main via PR #1626.
 - **Decision:** A `this_shift` staff request whose chosen shift has already ended is refused, using the Staff needed sheet's existing save error, with the reason "This shift has already ended. Choose this shift or next shift again". "Next shift" late-save behaviour is unchanged: a Next-shift request that lands just after the shift changes is still kept.
 - **Boundary:** synthetic data only. No signed clinical value or clinical rule. Approves no merge or release.
+
+## D-159. Fixes from the 10 to 12 November PR review (12 November 2026)
+
+- **Date:** 12 November 2026, 12:04 PM AWST (04:04 UTC). **Decided by:** Josh, "Yes to all" in the Ward Flow project thread "Review recent PRs for design regressions", answering its three numbered questions: fix the review's findings in one PR, keep v6's quick-link chip rows as the rule, and refresh the master design's Home and Ward tabs from main.
+- **Decision:**
+  1. **Page header rule:** a page top has at most one on-hero button, the next step's light button, plus one row of quick-link chips under it that scrolls sideways on a phone (page tops v6, D-116). DESIGN-SYSTEM.md says so in place of "one on-hero action".
+  2. **New referral chip:** phone-only on the ward top, as D-116 says; off the phone the bar's New menu is the way in.
+  3. **Chip rows (D-144 follow-up):** a sideways chip row still never slides up and down, but a finger that starts on it scrolls the page (`touch-action: pan-x pan-y`, `overflow-y: hidden`).
+  4. **Home's Waiting in ED strip on a tablet:** cells keep their whole words and the strip scrolls sideways when the departments do not fit.
+  5. **The other review findings** are fixed as recommended: eight rows then Show more on the new lists, Leave on the band hero, one phone rule for Print and Export, kit control sizes, shorter transport choices, honest outage catch-up labels, one ready count (D-115), one ended-form wording, the uptime issue raised before the run fails, a trusted proxy list other than `*` ignored, and Home's loading cards no longer hiding the page.
+  6. **MHERL wording:** the synthetic community example reads "joint assessment with the WA Police co-response team, referred through MHERL", so the phone line refers rather than attends. Josh may reword it.
+- **Boundary:** synthetic data only. No signed clinical value, time limit or clinical rule changes. Approves no release.

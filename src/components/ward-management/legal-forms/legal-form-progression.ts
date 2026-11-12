@@ -60,6 +60,24 @@ export function formProgression(movement: Movement | undefined): FormProgression
 // The ended-form words live at the ward root so screens share them without importing each other.
 export { FORM_RECORDED_ENDED, formRecordedEnded } from "@/components/ward-management/ward-legal-form-ended";
 
+/**
+ * How a form's record says it ended, in the one order every screen checks (as `legalDeadlineText`
+ * since 11 Nov 2026): a form that ended at the examination or arrival first, then a form a person
+ * recorded as ended, and only then the neutral community treatment order wording at arrival (D-127).
+ * So a 5A or 5B recorded as ended after the patient arrived reads as ended, never "On Form 5A at
+ * arrival". `progressed` carries the progression to phrase; `recorded` is the person's recorded end.
+ */
+export type LegalFormEnd = { kind: "progressed"; progression: FormProgression } | { kind: "recorded" };
+
+export function legalFormEnd(
+  movement: Pick<Movement, "legalForm" | "legalStatus" | "examination" | "closure"> | undefined,
+): LegalFormEnd | undefined {
+  const progression = formProgression(movement as Movement | undefined);
+  if (progression?.ended) return { kind: "progressed", progression };
+  if (movement?.legalForm?.endedBy !== undefined) return { kind: "recorded" };
+  return progression ? { kind: "progressed", progression } : undefined;
+}
+
 /** The finite recorded expiry still in force; ended forms retain their expiry only as history. */
 export function currentLegalDueAt(movement: Movement): Instant | undefined {
   if (formProgression(movement) !== undefined) return undefined;

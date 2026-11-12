@@ -38,13 +38,17 @@ describe("sideways scrolling rows", () => {
   });
 
   // D-144 (Josh, 11 Nov 2026): on a phone the quick-link chip rows move only sideways under a finger.
+  // D-159 (Josh, 12 Nov 2026): the row stays sideways-only, but a finger that starts on it can still
+  // scroll the page, so the touch action allows both pans and the row's own overflow-y stays hidden.
   it.each([
     "wf/hero-top.module.css",
     "ward-management/quick-bar/ward-quick-bar.module.css",
     "wf/phone-rows.module.css",
     "ward-management/coordinator/home-hero.module.css",
-  ])("%s locks its phone chip row to sideways touch", (file) => {
+  ])("%s keeps its phone chip row sideways and lets the page scroll from it", (file) => {
     const css = readFileSync(join(ROOT, "components", file), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
-    expect(css).toMatch(/touch-action\s*:\s*pan-x/);
+    expect(css).toMatch(/touch-action\s*:\s*pan-x pan-y\s*;/);
+    expect(css).not.toMatch(/touch-action\s*:\s*pan-x\s*;/);
+    expect(css).toMatch(/overscroll-behavior-x\s*:\s*contain/);
   });
 });

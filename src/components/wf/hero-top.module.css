@@ -553,9 +553,9 @@ a.cellBody {
     padding: 4px 24px 4px 16px;
     overflow-x: auto;
     overflow-y: hidden;
-    /* D-144: on a phone this row only ever moves sideways. A finger on it pans the row, never the
-       row or page up and down (iPhone still slid the row vertically after every layout fix). */
-    touch-action: pan-x;
+    /* D-144 and D-159: the row itself moves only sideways (overflow-y hidden), but a finger
+       that starts on it can still scroll the page up and down. */
+    touch-action: pan-x pan-y;
     overscroll-behavior-x: contain;
     scroll-padding-left: 16px;
     /* A chip focused from the keyboard scrolls clear of the right-hand fade. */

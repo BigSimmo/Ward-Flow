@@ -60,15 +60,14 @@ export function ReferralNotOpenedTag({
   const unitIds = referralNotOpenedUnitIds(referral, now);
   if (!unitIds.length) return null;
   const wards = unitIds.map((id) => flow.units.find((unit) => unit.id === id)?.name ?? "A ward");
+  const why = `Not opened by ${wards.join(", ")} after ${NOT_OPENED_TAG_MINUTES} minutes`;
   return (
     <span className={className} data-testid={testId}>
-      <Badge
-        tone="neutral"
-        size="sm"
-        title={`Not opened by ${wards.join(", ")} after ${NOT_OPENED_TAG_MINUTES} minutes`}
-      >
+      <Badge tone="neutral" size="sm" title={why}>
         {NOT_OPENED_TAG}
       </Badge>
+      {/* The tooltip is mouse-only, so keyboard and screen reader users get the wards here. */}
+      <span className="sr-only">: {why}</span>
     </span>
   );
 }

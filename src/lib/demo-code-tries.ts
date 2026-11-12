@@ -5,6 +5,8 @@
 
 import { isIP } from "node:net";
 
+import { logger } from "@/lib/logger";
+
 /**
  * A few wrong tries per address, then a pause, so a demo code cannot be guessed by brute force. The
  * address comes from a trusted hop only (A4-02), the same rule as the backend's `clientAddress`. A
@@ -20,16 +22,35 @@ const ADDRESS_TABLE_LIMIT = 5_000;
 const wrongTries = new Map<string, { count: number; since: number }>();
 let allWrongTries = { count: 0, since: 0 };
 
+let warnedIgnoredProxyList = false;
+
 /**
  * Proxies whose forwarding headers may be trusted, from `WARD_TRUSTED_PROXY_ADDRESSES`.
  * Each entry must be a literal IP address or `*`; anything else is ignored, as on the backend.
  * `*` requires verified proxy-only ingress that overwrites those headers and prevents direct access.
+ *
+ * On the Next service only `*` means anything (#1615, 12 November 2026): the session route has no
+ * socket address to match a listed IP against, so a list without `*` would key every caller as
+ * `"unknown"` and ten wrong tries would refuse every presenter. Such a list is ignored, with one
+ * warning per process, and the D-147 no-proxy keying applies. The backend still honours IP lists.
  */
-export function trustedProxyAddressesFromEnv(env: NodeJS.Dict<string | undefined> = process.env): string[] {
-  return (env.WARD_TRUSTED_PROXY_ADDRESSES ?? "")
+export function trustedProxyAddressesFromEnv(
+  env: NodeJS.Dict<string | undefined> = process.env,
+  warn: (message: string, context: Record<string, unknown>) => void = logger.warn,
+): string[] {
+  const listed = (env.WARD_TRUSTED_PROXY_ADDRESSES ?? "")
     .split(",")
     .map((entry) => entry.trim())
     .filter((address) => address === "*" || isIP(address) !== 0);
+  if (listed.includes("*")) return ["*"];
+  if (listed.length > 0 && !warnedIgnoredProxyList) {
+    warnedIgnoredProxyList = true;
+    warn("ward_front_door_config_warning", {
+      setting: "WARD_TRUSTED_PROXY_ADDRESSES",
+      detail: "The Next service has no socket address, so only * applies here; the IP list is ignored.",
+    });
+  }
+  return [];
 }
 
 /**
@@ -41,7 +62,8 @@ export function trustedProxyAddressesFromEnv(env: NodeJS.Dict<string | undefined
  * Fallback (D-147): while `WARD_TRUSTED_PROXY_ADDRESSES` names no proxy, the key stays the edge's
  * `X-Real-IP`, else the last `X-Forwarded-For` hop, as before A4-02. The Next route has no socket,
  * so the strict rule would put every caller in one `"unknown"` bucket, and ten wrong tries from
- * anyone would refuse every presenter. Nothing is logged.
+ * anyone would refuse every presenter. Nothing is logged for the fallback itself;
+ * `trustedProxyAddressesFromEnv` logs once when it drops an IP-only list for the same reason.
  */
 export function edgeAddress(
   headers: Headers,
@@ -90,6 +112,7 @@ function countWrongTry(address: string, now: number) {
 /** Test hook: forget every wrong try. */
 export function resetWrongTriesForTests() {
   wrongTries.clear();
+  warnedIgnoredProxyList = false;
   allWrongTries = { count: 0, since: 0 };
 }
 

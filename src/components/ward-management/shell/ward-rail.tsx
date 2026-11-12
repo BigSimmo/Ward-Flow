@@ -252,12 +252,13 @@ const NO_BED_ALERTS: ServiceBedAlertsSummary = {
 export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const network = useWardNetwork();
   const pathname = usePathname() ?? "";
-  const { units, bedReleases, movements, configuration, admissions } = useWardFlowSelect(
+  const { units, bedReleases, movements, configuration, admissions, referrals } = useWardFlowSelect(
     "units",
     "bedReleases",
     "movements",
     "configuration",
     "admissions",
+    "referrals",
   );
   const now = useWardFlowClock();
   const accessTargetMinutes = configuration.edAccessTargetMinutes;
@@ -265,7 +266,16 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   // A phone never draws the rail (below), so it skips the bed alert figures too.
   const bedAlerts = phone
     ? NO_BED_ALERTS
-    : deriveServiceBedAlerts(units, bedReleases, network.sites, movements, now, accessTargetMinutes, admissions);
+    : deriveServiceBedAlerts(
+        units,
+        bedReleases,
+        network.sites,
+        movements,
+        now,
+        accessTargetMinutes,
+        admissions,
+        referrals,
+      );
   // Nav order follows the signed-in person, not the route (device audit item 6).
   const { counts, shellRole: role } = useWardNavCounts();
   const { open, appearance: storedAppearance, glare } = useWardDocumentPreferences();

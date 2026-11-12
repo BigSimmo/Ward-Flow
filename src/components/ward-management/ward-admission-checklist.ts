@@ -123,8 +123,8 @@ function advocacyLine(
         record === undefined
           ? "Not recorded"
           : record.outcome === "told"
-            ? `Told ${record.who ?? ""}${when}`
-            : `Not applicable · ${record.reason ?? ""}`,
+            ? `${["Told", record.who?.trim()].filter(Boolean).join(" ")}${when}`
+            : ["Not applicable", record.reason?.trim()].filter(Boolean).join(" · "),
       ...(subject ? { supportNotification: { occasion: subject.occasion, subjectId: subject.subjectId } } : {}),
     },
   ];

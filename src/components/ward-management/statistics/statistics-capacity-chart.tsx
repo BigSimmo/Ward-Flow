@@ -19,7 +19,7 @@ import {
 } from "@/components/wf";
 import { BED_ALERT_THRESHOLD_PERCENT } from "../shell/ward-service-bed-alerts";
 import { bedsPendingPreparation } from "../ward-bed-availability";
-import { BED_STATE_LABELS, bedStates, readyBedsNow } from "../ward-bed-states";
+import { BED_STATE_LABELS, bedStates, readyBedsNow, type ReservationReferral } from "../ward-bed-states";
 import type { Admission } from "../ward-admissions";
 import { siteByCode } from "../ward-sites";
 import type { BedRelease, HealthService, LeaveBed, Unit } from "../ward-model";
@@ -59,6 +59,7 @@ type CapacityInput = CapacityOptions &
         bedReleases?: never;
         admissions?: never;
         leaveBeds?: never;
+        holds?: never;
       }
     | {
         aggregate?: undefined;
@@ -66,6 +67,8 @@ type CapacityInput = CapacityOptions &
         bedReleases: BedRelease[];
         admissions?: readonly Admission[];
         leaveBeds?: readonly LeaveBed[];
+        /** D-115 item 3: open journeys and accepted referrals, so a named bed shows Pulled, not Ready. */
+        holds?: readonly ReservationReferral[];
       }
   );
 
@@ -143,9 +146,9 @@ export function StatisticsCapacityChart(props: CapacityInput) {
           hospital: siteByCode(unit.siteCode)?.name ?? unit.siteCode,
           service: siteByCode(unit.siteCode)?.service ?? "Service not recorded",
           beds: unit.beds,
-          states: bedStates(unit, props.admissions ?? [], props.bedReleases!, props.leaveBeds ?? []),
+          states: bedStates(unit, props.admissions ?? [], props.bedReleases!, props.leaveBeds ?? [], props.holds ?? []),
           pending: bedsPendingPreparation(unit.id, props.bedReleases!),
-          available: readyBedsNow(unit, props.admissions ?? [], props.bedReleases!),
+          available: readyBedsNow(unit, props.admissions ?? [], props.bedReleases!, props.holds ?? []),
         }));
   return (
     <CapacityChartView

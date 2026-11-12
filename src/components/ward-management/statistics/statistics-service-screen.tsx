@@ -491,6 +491,7 @@ function OperationalServiceScreen({ serviceId }: { serviceId: string }) {
             bedReleases={bedReleases}
             admissions={admissions}
             leaveBeds={leaveBeds}
+            holds={namedHolds}
             initialGroup="ward"
             scopeLabel={`in ${service}`}
             title="Ward capacity"

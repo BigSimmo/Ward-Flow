@@ -47,7 +47,13 @@ function laterAt(step: LaterStep, now: number): number {
  * browser only; it never changes a ward's figures, which only the ward confirms.
  */
 export function ToolCallLog() {
-  const { units, admissions, bedReleases } = useWardFlowSelect("units", "admissions", "bedReleases");
+  const { units, admissions, bedReleases, movements, referrals } = useWardFlowSelect(
+    "units",
+    "admissions",
+    "bedReleases",
+    "movements",
+    "referrals",
+  );
   const now = useWardFlowClock();
   const log = useCallLog();
 
@@ -101,7 +107,7 @@ export function ToolCallLog() {
   }
 
   // The same Ready count as the Capacity page, never the raw ward observation (review, 8 Nov 2026).
-  const free = ward ? readyBedsNow(ward, admissions, bedReleases) : 0;
+  const free = ward ? readyBedsNow(ward, admissions, bedReleases, [...movements, ...referrals]) : 0;
   const detail: Record<CallOutcome, string> = {
     "as-shown": ward ? `The board shows ${free} free` : "The board is right",
     later: "One should free up today",

@@ -18,6 +18,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import type { Admission } from "@/components/ward-management/ward-admissions";
+import type { ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import {
   OCCUPANCY_ALERT_PERCENT,
   OCCUPANCY_CRITICAL_PERCENT,
@@ -137,9 +138,20 @@ export function deriveServiceBedAlerts(
   accessTargetMinutes?: number,
   /** Admissions, so a live pull counts as a bed in use (`ward-occupancy.ts`). */
   admissions: readonly Admission[] = [],
+  /** Accepted referrals; with `movements` they are the named holds Free leaves out (D-115 item 3). */
+  referrals: readonly ReservationReferral[] = [],
 ): ServiceBedAlertsSummary {
   // Leverage the comprehensive backend tracker
-  const report = trackServiceBedCapacity(units, bedReleases, movements, now, sites, accessTargetMinutes, admissions);
+  const report = trackServiceBedCapacity(
+    units,
+    bedReleases,
+    movements,
+    now,
+    sites,
+    accessTargetMinutes,
+    admissions,
+    referrals,
+  );
 
   const codePriority: Record<ServiceBedAlertCode, number> = {
     black: 4,

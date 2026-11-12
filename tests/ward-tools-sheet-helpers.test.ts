@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
-import { bedReleases, leaveBeds, wardMovements } from "@/components/ward-management/ward-movements";
+import { bedReleases, leaveBeds, referrals, wardMovements } from "@/components/ward-management/ward-movements";
 import { activeWardNetwork, allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { readyBedsNow, totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
@@ -14,6 +14,7 @@ const seed = {
   units: allUnits(),
   admissions: wardAdmissions,
   movements: wardMovements,
+  referrals,
   bedReleases,
   leaveBeds,
   now: NOW_ANCHOR,
@@ -21,11 +22,14 @@ const seed = {
   network: activeWardNetwork(),
 };
 
+// D-115 item 3: the named holds every ready figure leaves out.
+const holds = [...wardMovements, ...referrals];
+
 describe("Tools sheet, Copy bed summary", () => {
   // NA3-05 (audit 26 Oct 2026): the figure Home, Capacity and the rail print, not the older
   // `capacityBreakdown().availableNow` this test used to compare against.
   it("states the same ready count as every other screen, with total beds", () => {
-    const ready = totalReadyBedsNow(seed.units, wardAdmissions, bedReleases);
+    const ready = totalReadyBedsNow(seed.units, wardAdmissions, bedReleases, holds);
     const beds = seed.units.reduce((sum, unit) => sum + unit.beds, 0);
     expect(bedSummaryText(seed)).toContain(`Ready beds: ${ready} of ${beds}`);
   });
@@ -43,32 +47,34 @@ const VOLUNTARY = { ...DEFAULT_BED_FINDER_FILTERS, legalStatus: "voluntary" } as
 describe("Tools sheet, Find a bed", () => {
   it("lists nothing until a legal status is chosen", () => {
     expect(DEFAULT_BED_FINDER_FILTERS.legalStatus).toBeUndefined();
-    expect(findBeds(seed.units, wardAdmissions, bedReleases, DEFAULT_BED_FINDER_FILTERS)).toEqual([]);
+    expect(findBeds(seed.units, wardAdmissions, bedReleases, DEFAULT_BED_FINDER_FILTERS, holds)).toEqual([]);
   });
 
   it("lists every open ward of the chosen age group, with its Ready count and recorded time", () => {
-    const matches = findBeds(seed.units, wardAdmissions, bedReleases, VOLUNTARY);
+    const matches = findBeds(seed.units, wardAdmissions, bedReleases, VOLUNTARY, holds);
     expect(matches.length).toBeGreaterThan(0);
     expect(matches).toHaveLength(seed.units.filter((unit) => !unit.isClosed && unit.cohort === "Adult").length);
     for (const match of matches) {
       expect(match.unit.cohort).toBe("Adult");
       expect(match.unit.isClosed).not.toBe(true);
-      expect(match.free).toBe(readyBedsNow(match.unit, wardAdmissions, bedReleases));
+      expect(match.free).toBe(readyBedsNow(match.unit, wardAdmissions, bedReleases, holds));
       expect(match.recordedAt).toBe(match.unit.allocatable.confirmedAt);
     }
   });
 
   it("keeps involuntary patients to authorised wards and locked requests to free locked beds", () => {
-    const matches = findBeds(seed.units, wardAdmissions, bedReleases, {
-      ...DEFAULT_BED_FINDER_FILTERS,
-      legalStatus: "involuntary",
-      bed: "locked",
-    });
+    const matches = findBeds(
+      seed.units,
+      wardAdmissions,
+      bedReleases,
+      { ...DEFAULT_BED_FINDER_FILTERS, legalStatus: "involuntary", bed: "locked" },
+      holds,
+    );
     expect(matches.length).toBeGreaterThan(0);
     for (const match of matches) {
       expect(match.unit.authorised).toBe(true);
       expect(match.free).toBe(
-        Math.min(lockedBedsFree(match.unit), readyBedsNow(match.unit, wardAdmissions, bedReleases)),
+        Math.min(lockedBedsFree(match.unit), readyBedsNow(match.unit, wardAdmissions, bedReleases, holds)),
       );
     }
   });
@@ -76,7 +82,7 @@ describe("Tools sheet, Find a bed", () => {
   it("never shows more beds than the board's Ready figure", () => {
     const ward = seed.units.find((unit) => !unit.isClosed && unit.cohort === "Adult" && unit.allocatable.value > 1)!;
     const crowded = { ...ward, empty: { ...ward.empty, value: 1 } };
-    const [match] = findBeds([crowded], [], bedReleases, VOLUNTARY);
+    const [match] = findBeds([crowded], [], bedReleases, VOLUNTARY, []);
     expect(match?.free).toBe(1);
     const mixed = {
       ...ward,
@@ -84,21 +90,21 @@ describe("Tools sheet, Find a bed", () => {
       allocatableLocked: 2,
       empty: { ...ward.empty, value: 2 },
     };
-    expect(findBeds([mixed], [], bedReleases, { ...VOLUNTARY, bed: "open" })[0]?.free).toBe(2);
+    expect(findBeds([mixed], [], bedReleases, { ...VOLUNTARY, bed: "open" }, [])[0]?.free).toBe(2);
     // Every ward in scope is listed, so a ward with no Ready bed shows 0 rather than dropping out.
     const none = { ...ward, empty: { ...ward.empty, value: 0 } };
-    expect(findBeds([none], [], bedReleases, VOLUNTARY)[0]?.free).toBe(0);
+    expect(findBeds([none], [], bedReleases, VOLUNTARY, [])[0]?.free).toBe(0);
   });
 
   it("labels wards in the home service without moving them up the list", () => {
     const home = unitHealthService(seed.units[0]!)!;
-    const matches = findBeds(seed.units, wardAdmissions, bedReleases, { ...VOLUNTARY, home });
+    const matches = findBeds(seed.units, wardAdmissions, bedReleases, { ...VOLUNTARY, home }, holds);
     expect(matches.some((match) => match.home)).toBe(true);
     for (const match of matches) expect(match.home).toBe(match.service === home);
     const names = matches.map((match) => match.unit.name);
     expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, "en-AU")));
     expect(matches.map((match) => match.unit.id)).toEqual(
-      findBeds(seed.units, wardAdmissions, bedReleases, VOLUNTARY).map((match) => match.unit.id),
+      findBeds(seed.units, wardAdmissions, bedReleases, VOLUNTARY, holds).map((match) => match.unit.id),
     );
   });
 });

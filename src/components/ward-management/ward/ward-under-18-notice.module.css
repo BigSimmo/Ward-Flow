@@ -38,6 +38,15 @@
   color: var(--wf-ink-2);
 }
 
+/* Empty: out of the grid's flow (no stray gap) but still in the accessibility tree as a live region. */
+.recorded:empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
 .form {
   display: flex;
   flex-wrap: wrap;

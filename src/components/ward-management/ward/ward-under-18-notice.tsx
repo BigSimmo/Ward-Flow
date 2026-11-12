@@ -141,16 +141,15 @@ export function WardUnder18Notice({
             />
           </Field>
           <Segmented<NotifiedDay> label="Day notified" items={DAY_ITEMS} value={day as NotifiedDay} onChange={setDay} />
-          <Button type="submit" variant="sec" size="sm" className={styles.save}>
+          <Button type="submit" variant="sec" className={styles.save}>
             Save
           </Button>
         </form>
       ) : null}
-      {message ? (
-        <p className={styles.recorded} role="status">
-          {message}
-        </p>
-      ) : null}
+      {/* Always mounted, so screen readers hear the message when it arrives. */}
+      <p className={styles.recorded} role="status">
+        {message ?? ""}
+      </p>
     </section>
   );
 }

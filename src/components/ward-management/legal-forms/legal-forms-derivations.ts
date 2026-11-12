@@ -11,7 +11,7 @@ import { elapsedLabel, isOpen } from "@/components/ward-management/ward-derivati
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { LegalForm, Movement } from "@/components/ward-management/ward-model";
 import type { WardRecordTone } from "@/components/ward-management/ward-record-row";
-import { currentLegalDueAt, formProgression, formProgressionPhrase } from "./legal-form-progression";
+import { currentLegalDueAt, formProgressionPhrase, legalFormEnd } from "./legal-form-progression";
 export { currentLegalDueAt } from "./legal-form-progression";
 import { typedClock, typedTimePhrase } from "./legal-time-as-typed";
 
@@ -180,16 +180,17 @@ export function legalDeadlineText(movement: Movement, now: Instant): string {
   if (!legalForm) {
     throw new Error(`legalDeadlineText called on movement ${movement.id}, which carries no legal form`);
   }
-  const progression = formProgression(movement);
-  if (progression?.ended) return `${formProgressionPhrase(progression)}; Form ${progression.nextCode} to record`;
+  const end = legalFormEnd(movement);
+  if (end?.kind === "progressed") {
+    return `${formProgressionPhrase(end.progression)}; Form ${end.progression.nextCode} to record`;
+  }
   // A form a person recorded as ended keeps its typed expiry as history only (Josh, 11 Nov 2026):
   // never "Form expiry ends 15:42 as typed" under "Ended", which reads as a live expiry.
-  if (legalForm.endedBy !== undefined) {
+  if (end?.kind === "recorded") {
     return legalForm.dueAt === undefined
       ? "Form ended"
       : `Form ended; expiry as typed was ${typedClock(legalForm.dueAt, now)}`;
   }
-  if (progression) return `${formProgressionPhrase(progression)}; Form ${progression.nextCode} to record`;
   if (legalForm.dueAt !== undefined) {
     // Legal times only as typed (31 Oct 2026): "Form expiry ends 15:42 as typed", never a count.
     return `Form expiry ${typedTimePhrase(legalForm.dueAt, now)}`;

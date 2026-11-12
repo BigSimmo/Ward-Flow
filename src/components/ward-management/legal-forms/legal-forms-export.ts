@@ -1,10 +1,10 @@
 import { formatSheetMoment, isClockBreached, type Instant } from "@/components/ward-management/ward-clock";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
-import { FORM_RECORDED_ENDED, formRecordedEnded } from "@/components/ward-management/ward-legal-form-ended";
+import { FORM_RECORDED_ENDED } from "@/components/ward-management/ward-legal-form-ended";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { downloadCsv } from "@/components/ward-management/ward-csv";
 
-import { currentLegalDueAt, formProgression, formProgressionPhrase } from "./legal-form-progression";
+import { currentLegalDueAt, formProgressionPhrase, legalFormEnd } from "./legal-form-progression";
 
 /** Where and when the file was taken, as `downloadCsv` writes it above the rows. */
 export type ListExportProvenance = NonNullable<Parameters<typeof downloadCsv>[2]>;
@@ -21,9 +21,9 @@ export function legalEndAsTyped(
   dayZero: Date,
 ): string {
   if (!movement.legalForm) return "No form recorded";
-  const progression = formProgression(movement as Movement);
-  if (progression) return formProgressionPhrase(progression);
-  if (formRecordedEnded(movement)) return FORM_RECORDED_ENDED;
+  const end = legalFormEnd(movement);
+  if (end?.kind === "progressed") return formProgressionPhrase(end.progression);
+  if (end?.kind === "recorded") return FORM_RECORDED_ENDED;
   const typed = currentLegalDueAt(movement as Movement);
   if (typed === undefined) return "No expiry recorded from the form";
   return `${isClockBreached(typed, now) ? "Ended" : "Ends"} ${formatSheetMoment(typed, dayZero)} as typed`;

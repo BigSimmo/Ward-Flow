@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState } from "react";
 
-import { Dialog, Field, StateLine, TextInput } from "@/components/wf";
+import { Dialog, Field, StateLine, TIME_FIELD_ERROR, TimeField } from "@/components/wf";
 
 import { intakeWindowFromClockText } from "../ward-intake-window";
 import { formatInstant, type Instant } from "../ward-clock";
@@ -28,8 +28,15 @@ export function WardIntakeWindowDialog({
   role: Extract<WardFlowRole, "ward" | "coordinator">;
   onClose: () => void;
 }) {
+  // Each time is the kit TimeField's "HH:MM" (or "" while unfinished), plus the text as typed, so
+  // an empty box can be told from an unfinished or wrong one.
   const [fromText, setFromText] = useState("");
   const [toText, setToText] = useState("");
+  const [fromTyped, setFromTyped] = useState("");
+  const [toTyped, setToTyped] = useState("");
+  // A box's error shows once the person has left it, not while they are still typing.
+  const [fromLeft, setFromLeft] = useState(false);
+  const [toLeft, setToLeft] = useState(false);
   // A refused or unconfirmed save keeps the dialog and both typed times, and says why here.
   const [refused, setRefused] = useState<string | null>(null);
   // Counts edits and saves, so an earlier save that lands late cannot close over newer typing.
@@ -41,12 +48,16 @@ export function WardIntakeWindowDialog({
   const { run } = useUndoableStep({ dispatch, rejections, now: at, routeRole: role });
 
   const intake = intakeWindowFromClockText(fromText, toText, at);
+  const fromWrong = fromTyped.trim() !== "" && fromText === "";
+  const toWrong = toTyped.trim() !== "" && toText === "";
   const problem =
-    fromText.trim() === "" || toText.trim() === ""
-      ? "Type both times."
-      : intake === undefined
-        ? "Type each time as 21:00 or 2100, and make them different."
-        : undefined;
+    fromWrong || toWrong
+      ? TIME_FIELD_ERROR
+      : fromText === "" || toText === ""
+        ? "Type both times."
+        : intake === undefined
+          ? "Make the two times different."
+          : undefined;
 
   const send = (next: { from: Instant; to: Instant } | null) => {
     setRefused(null);
@@ -95,29 +106,37 @@ export function WardIntakeWindowDialog({
       data-testid="ward-intake-window-dialog"
     >
       <div className={styles.fields}>
-        <Field label="From" id={`${id}-from`}>
-          <TextInput
-            inputMode="numeric"
-            autoComplete="off"
-            placeholder="HH:MM"
+        <Field
+          label="From"
+          id={`${id}-from`}
+          hint="HH:MM, 24-hour"
+          error={fromLeft && fromWrong ? TIME_FIELD_ERROR : undefined}
+        >
+          <TimeField
             value={fromText}
-            onChange={(event) => {
+            onValueChange={(time) => {
               draft.current += 1;
-              setFromText(event.target.value);
+              setFromText(time);
             }}
+            onTextChange={setFromTyped}
+            onBlur={() => setFromLeft(true)}
             data-testid="ward-intake-window-from"
           />
         </Field>
-        <Field label="To" id={`${id}-to`}>
-          <TextInput
-            inputMode="numeric"
-            autoComplete="off"
-            placeholder="HH:MM"
+        <Field
+          label="To"
+          id={`${id}-to`}
+          hint="HH:MM, 24-hour"
+          error={toLeft && toWrong ? TIME_FIELD_ERROR : undefined}
+        >
+          <TimeField
             value={toText}
-            onChange={(event) => {
+            onValueChange={(time) => {
               draft.current += 1;
-              setToText(event.target.value);
+              setToText(time);
             }}
+            onTextChange={setToTyped}
+            onBlur={() => setToLeft(true)}
             data-testid="ward-intake-window-to"
           />
         </Field>

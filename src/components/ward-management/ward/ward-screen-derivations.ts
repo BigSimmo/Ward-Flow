@@ -4,8 +4,9 @@
 import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import {
   currentLegalDueAt,
-  formProgression,
+  FORM_RECORDED_ENDED,
   formProgressionPhrase,
+  legalFormEnd,
 } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
@@ -224,12 +225,16 @@ export function wardBedRoster({
         : undefined;
     // WT-03 (walk-through, 26 Oct 2026): a form the examination or arrival moved on from is not the
     // stay's authority, so the card names the form still to record, as the person page does.
-    const progression = patientLegalForm ? formProgression(linkedMovement) : undefined;
-    const legalStatusLabel = progression
-      ? `Form ${progression.nextCode} not recorded (${formProgressionPhrase(progression)})`
-      : patientLegalForm
-        ? `Form ${patientLegalForm.code}${patientLegalStatus ? ` ${patientLegalStatus}` : ""}`
-        : patientLegalStatus;
+    // A form recorded as ended is read before the neutral 5A/5B arrival wording (legalFormEnd).
+    const legalEnd = patientLegalForm ? legalFormEnd(linkedMovement) : undefined;
+    const legalStatusLabel =
+      legalEnd?.kind === "progressed"
+        ? `Form ${legalEnd.progression.nextCode} not recorded (${formProgressionPhrase(legalEnd.progression)})`
+        : legalEnd?.kind === "recorded" && patientLegalForm
+          ? `Form ${patientLegalForm.code} ${FORM_RECORDED_ENDED.toLowerCase()}`
+          : patientLegalForm
+            ? `Form ${patientLegalForm.code}${patientLegalStatus ? ` ${patientLegalStatus}` : ""}`
+            : patientLegalStatus;
 
     const stayBandObj = admission && stayDays !== null ? stayBand(admission, now) : null;
     const isPastDate = admission ? isPastExpectedDischarge(admission, now) : false;

@@ -19,8 +19,8 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import pageStyles from "./discharges-third-edition.module.css";
 
 const TRANSPORT_ITEMS: { id: "" | "waiting" | "collected"; label: string }[] = [
-  { id: "waiting", label: "No, still waiting for transport" },
-  { id: "collected", label: "Yes, gone with transport" },
+  { id: "waiting", label: "Still waiting" },
+  { id: "collected", label: "Gone with transport" },
 ];
 
 /**

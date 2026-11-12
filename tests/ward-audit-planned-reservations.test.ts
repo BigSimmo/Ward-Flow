@@ -106,6 +106,7 @@ describe("planned conversion consumes only unreserved open capacity", () => {
         before.units.find((u) => u.id === UNIT)!,
         before.admissions,
         before.bedReleases,
+        [],
       );
     expect(ready()).toBeGreaterThan(0);
     for (let step = 0; ready() > 0 && step < before.units.find((u) => u.id === UNIT)!.beds; step++) {
@@ -181,6 +182,7 @@ describe("planned conversion consumes only unreserved open capacity", () => {
         before.units.find((u) => u.id === UNIT)!,
         before.admissions,
         before.bedReleases,
+        [],
       ),
     ).toBe(pulls === 4 ? 1 : 0);
     const after = wardFlowReducer(before, convert(booking.plannedAdmissionId));

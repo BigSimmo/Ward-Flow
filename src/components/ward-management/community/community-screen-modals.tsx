@@ -299,8 +299,8 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
               </div>
             </dl>
             <p className={styles.note}>
-              <b>Example deployment (synthetic):</b> Urgent joint assessment with MHERL / WA Police co-response,
-              travelling from {teamConfig.campus} to a catchment residence.
+              <b>Example deployment (synthetic):</b> Urgent joint assessment with the WA Police co-response team,
+              referred through MHERL, travelling from {teamConfig.campus} to a catchment residence.
             </p>
             <div className={styles.actions}>
               <Button variant="ghost" onClick={close}>

@@ -29,7 +29,7 @@ describe("audit remediation: statistics use recorded populations", () => {
     const admissions = [
       { ...state.admissions[0]!, unitId: unit.id, state: "pulled" as const, movementId: state.movements[0]!.id },
     ];
-    expect(readyBedsNow(unit, admissions, [])).toBe(2);
+    expect(readyBedsNow(unit, admissions, [], [])).toBe(2);
     expect(networkCapacity([unit], [], admissions).ready).toBe(2);
     const sites = siteFigures({
       units: [unit],

@@ -7,20 +7,6 @@
   padding: var(--wf-s-4);
 }
 
-.title {
-  margin: 0;
-  font-size: var(--wf-fs-20);
-  font-weight: 600;
-  color: var(--wf-ink-1);
-}
-
-.summary {
-  margin: 0;
-  font-size: var(--wf-fs-13);
-  color: var(--wf-ink-2);
-}
-
-.figure,
 .time {
   font-family: var(--wf-mono);
   font-variant-numeric: tabular-nums;

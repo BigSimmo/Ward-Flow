@@ -1,10 +1,10 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import { ArrowRightLeft } from "lucide-react";
 
-import { Button, FormalName, Icon, Menu, buttonClass } from "@/components/wf";
+import { Button, FormalName, Icon, Menu, ShowMoreRow, buttonClass, foldHidden, foldLimit } from "@/components/wf";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { bedMeetingActionLabel } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
@@ -34,6 +34,9 @@ const WORK_DESKS: readonly WardFlowRole[] = ["coordinator", "ward", "ed", "commu
 
 const NONE: never[] = [];
 
+/** About eight rows, then the kit's Show more (DESIGN-SYSTEM.md section 4). */
+const OWN_WORK_ROWS = 8;
+
 /**
  * END-OF-SHIFT HANDOVER OF YOUR WORK (batch 3 item 21, D-136 item 2). On the handover page, from
  * `HANDOVER_OWN_WORK_LEAD_MINUTES` before the shift ends, this desk's own open work: referrals it is
@@ -43,6 +46,7 @@ const NONE: never[] = [];
  */
 export function HandoverOwnWork({ now, layout = "page" }: { now: Instant; layout?: "page" | "phone" }) {
   const baseId = useId();
+  const [showAll, setShowAll] = useState(false);
   const flow = useOptionalWardFlowSelect(
     "referrals",
     "movements",
@@ -74,6 +78,12 @@ export function HandoverOwnWork({ now, layout = "page" }: { now: Instant; layout
   const mine = ownWorkItems(state, desk).filter((row) => listOpen || row.pending);
   const incoming = incomingHandOvers(state, desk);
   if (mine.length === 0 && incoming.length === 0) return null;
+  // Handed to you first, then this desk's own; the fold counts both as one list.
+  const total = incoming.length + mine.length;
+  const hidden = foldHidden(total, OWN_WORK_ROWS);
+  const limit = showAll || hidden === 0 ? total : foldLimit(total, OWN_WORK_ROWS);
+  const incomingShown = incoming.slice(0, limit);
+  const mineShown = mine.slice(0, Math.max(0, limit - incomingShown.length));
   const acting = ownWard ? { actingUnitId: ownWard.id } : {};
   const at = (instant: Instant) => formatInstantWithDay(instant, now);
   const deskLabel = (target: WorkDesk) =>
@@ -152,8 +162,8 @@ export function HandoverOwnWork({ now, layout = "page" }: { now: Instant; layout
         <span className={styles.count}>{mine.length + incoming.length}</span>
         {listOpen ? <span className={styles.note}>Shift ends within {HANDOVER_OWN_WORK_LEAD_MINUTES} min</span> : null}
       </h2>
-      <ul className={styles.list}>
-        {incoming.map((record) => {
+      <ul className={styles.list} id={`${baseId}-list`}>
+        {incomingShown.map((record) => {
           const { what, who, href } = describe(record.item);
           return (
             <li key={record.id} className={styles.row} data-testid={`ward-handover-incoming-${record.id}`}>
@@ -183,7 +193,7 @@ export function HandoverOwnWork({ now, layout = "page" }: { now: Instant; layout
             </li>
           );
         })}
-        {mine.map(({ key, item, sortAt, pending }) => {
+        {mineShown.map(({ key, item, sortAt, pending }) => {
           const { what, who, href } = describe(item);
           const when =
             item.kind === "referral"
@@ -211,6 +221,11 @@ export function HandoverOwnWork({ now, layout = "page" }: { now: Instant; layout
           );
         })}
       </ul>
+      {hidden > 0 ? (
+        <ShowMoreRow onClick={() => setShowAll((all) => !all)} expanded={showAll} controls={`${baseId}-list`}>
+          {showAll ? "Show fewer" : `Show ${hidden} more`}
+        </ShowMoreRow>
+      ) : null}
     </section>
   );
 }
