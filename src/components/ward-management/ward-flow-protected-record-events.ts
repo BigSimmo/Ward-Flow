@@ -50,7 +50,7 @@ export type ProtectedRecordEvent = Extract<
   }
 >;
 
-export { PROTECTED_REFUSAL_REASONS, UNLINKED_CARE_REFUSAL };
+export { PROTECTED_REFUSAL_REASONS };
 
 function protectedRefusal(
   state: WardFlowState,
