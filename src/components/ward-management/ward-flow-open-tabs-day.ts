@@ -21,6 +21,7 @@ export function useOpenTabsDay(
   freshSeedRef: RefObject<boolean>,
   instanceIdRef: { current: string },
   ownsDayRef?: RefObject<boolean>,
+  flushSave?: () => void,
 ): void {
   useEffect(() => {
     if (!enabled || typeof window.BroadcastChannel === "undefined") return;
@@ -39,6 +40,8 @@ export function useOpenTabsDay(
       }
       if (data.eventType !== "REQUEST_SAVED_STATE" || freshSeedRef.current) return;
       try {
+        // An idle-deferred device save may still be waiting: write it first so the new tab gets today's day.
+        flushSave?.();
         const raw = window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
         if (raw) broadcastDispatchEvent("SYNC_SAVED_STATE", instanceId, raw);
       } catch {
@@ -47,7 +50,7 @@ export function useOpenTabsDay(
     };
     if (freshSeedRef.current) broadcastDispatchEvent("REQUEST_SAVED_STATE", instanceId);
     return () => channel.close();
-  }, [enabled, freshSeedRef, instanceIdRef, ownsDayRef]);
+  }, [enabled, freshSeedRef, instanceIdRef, ownsDayRef, flushSave]);
 }
 
 /** True when a peer's saved day is not this tab's own saved day (both stored without refusals). */

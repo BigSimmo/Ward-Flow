@@ -52,7 +52,11 @@ else preloadWhenIdle(async () => bedsGapCard.start());
 
 // H-0977: Home's in-place "Release bed" sheet, fetched on first use so it stays off the first load.
 export const HomeReleaseSheet = dynamic(
-  withLoadRetry(() => import("./home-release-sheet").then((m) => m.HomeReleaseSheet)),
+  withLoadRetry(
+    () => import("./home-release-sheet").then((m) => m.HomeReleaseSheet),
+    undefined,
+    ({ entry }) => !entry,
+  ),
   {
     loading: () => null,
   },

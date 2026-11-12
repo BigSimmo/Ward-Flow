@@ -74,10 +74,14 @@ export function useGovernanceAccessReview(governanceEvents: readonly AuditEvent[
   useEffect(() => {
     if (!read) return;
     let cancelled = false;
-    const load = () =>
-      read().then(
+    // A newer read supersedes an older one still in flight, so a late answer cannot replace it.
+    let latest = 0;
+    const load = () => {
+      const sequence = ++latest;
+      const current = () => !cancelled && sequence === latest;
+      return read().then(
         (value) => {
-          if (!cancelled)
+          if (current())
             setLoaded({
               openings: value.openings,
               views: value.views,
@@ -87,9 +91,10 @@ export function useGovernanceAccessReview(governanceEvents: readonly AuditEvent[
             });
         },
         () => {
-          if (!cancelled) setLoaded((current) => (current ? { ...current, problem: true } : null) ?? EMPTY_FAILED);
+          if (current()) setLoaded((shown) => (shown ? { ...shown, problem: true } : null) ?? EMPTY_FAILED);
         },
       );
+    };
     void load();
     // No reads while the tab is hidden; one straight away when it is shown again.
     const refresh = () => {

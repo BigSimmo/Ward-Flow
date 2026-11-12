@@ -32,6 +32,9 @@ type PanelProps<C> = C extends (props: infer P) => unknown
 export function withLoadRetry<C extends ComponentType<never>>(
   load: () => Promise<C>,
   title = "This part did not load",
+  // A retained panel that stays mounted while closed (Home's Release bed sheet) passes how to tell it
+  // is closed, so the stand-in disappears when its Close clears the selection.
+  isClosed?: (props: PanelProps<C>) => boolean,
 ): () => Promise<C> {
   let loaded: ComponentType<PanelProps<C> & object> | undefined;
   const listeners = new Set<() => void>();
@@ -55,6 +58,7 @@ export function withLoadRetry<C extends ComponentType<never>>(
       () => undefined,
     );
     if (Panel) return <Panel {...props} />;
+    if (isClosed?.(props)) return null;
     // A drawer that draws its own header (Referrals, Tasks) has no other close control on a phone.
     const { onClose } = props as { onClose?: () => void };
     return (

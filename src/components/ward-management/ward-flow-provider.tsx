@@ -972,7 +972,6 @@ function WardFlowWorld({
   // Local saving runs only in the unpinned local demonstration, until storage fails or a typed-text
   // copy cannot be made safely. Shared mode does not save actions on this device.
   const savingOnDevice = ownDevice && initialNow === undefined && !typedTextLocked && !storageUnavailable;
-  useOpenTabsDay(savingOnDevice && !!container.sessionAdopted, freshSeedRef, broadcastInstanceIdRef, ownsLocalDayRef);
   const demoControlsAvailable = !shared.enabled || shared.snapshot?.demoControls !== false;
   useEffect(() => {
     if (!savingOnDevice) savesOnDeviceRef.current = false;
@@ -980,6 +979,13 @@ function WardFlowWorld({
 
   // The device save runs when the browser is idle (review finding 23); it is flushed before leaving.
   const deviceSave = useDeferredDeviceSave();
+  useOpenTabsDay(
+    savingOnDevice && !!container.sessionAdopted,
+    freshSeedRef,
+    broadcastInstanceIdRef,
+    ownsLocalDayRef,
+    deviceSave.flush,
+  );
   // Protect accepted local work until its device write, including safe-copy loading or failure.
   useEffect(() => {
     if (!ownDevice || initialNow !== undefined) return;

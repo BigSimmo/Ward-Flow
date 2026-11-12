@@ -60,29 +60,18 @@ const PatientTransitOperations = dynamic(
 // idle preload as Transit operations and a cancellable, focus-managed dialog while loading.
 const loadUploadForms = () => import("../referrals/upload-forms-modal");
 const UploadFormsCloseContext = createContext<(() => void) | null>(null);
-function UploadFormsPending({ failed = false }: { failed?: boolean }) {
+function UploadFormsPending() {
   const onClose = useContext(UploadFormsCloseContext);
   if (!onClose) return null;
   return (
     <Dialog open onClose={onClose} title="Record document details">
-      <p role={failed ? "alert" : "status"}>
-        {failed
-          ? "Document details could not load. Close this dialog and reload the page before trying again."
-          : "Loading document details…"}
-      </p>
+      <p role="status">Loading document details…</p>
     </Dialog>
   );
 }
-function UploadFormsUnavailable() {
-  return <UploadFormsPending failed />;
-}
+// A failed fetch reaches withLoadRetry, which shows Try again and Close (the render site passes onClose).
 const UploadFormsModal = dynamic<UploadFormsModalProps>(
-  withLoadRetry(() =>
-    loadUploadForms().then(
-      (module) => module.UploadFormsModal,
-      () => UploadFormsUnavailable,
-    ),
-  ),
+  withLoadRetry(() => loadUploadForms().then((module) => module.UploadFormsModal)),
   { loading: () => <UploadFormsPending /> },
 );
 // The History, Community, Details and Documents tabs draw nothing until opened, so their code
