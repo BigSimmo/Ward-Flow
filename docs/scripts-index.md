@@ -71,7 +71,7 @@ baselines and the 834px tablet checks through `run-playwright.mjs` (front-end au
 and a manual run with "update baselines" writes new baselines to commit; a failed scheduled run opens
 or refreshes one issue through `ward-ci-public/nightly-browsers-issue.mjs`; it also writes the
 `ward-flow/skip-inventory.mjs` report to the run summary. CI also runs
-`check-script-budget.mjs` (phone first-load script budgets in `script-budget.json`; run it locally after a build with `npm run check:phone-budget`),
+`check-script-budget.mjs` (phone first-load script budgets in `script-budget.json`; `npm run check:phone-budget` builds, then runs it locally),
 `ward-ci-public/unit-durations-latest.mjs` (picks main's newest unit timings to balance the unit shards),
 `check-knip-baseline.mjs` (`npm run check:knip`), `ward-flow/related-tests.mjs`,
 `ward-flow/gate-tsc.mjs` and `ward-flow/selected-baseline-verdict.mjs`. Beside the knip ratchet,
