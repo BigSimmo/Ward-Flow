@@ -63,7 +63,10 @@ test("P177: the uptime workflow sends the token and warns, not alarms, when the 
   assert.match(workflow, /::warning::Database not checked: WARD_FLOW_UPTIME_TOKEN/);
   // Hidden is unknown, not up: it must not close a real open incident.
   assert.match(workflow, /WARD_FLOW_UPTIME_TOKEN is missing[^\n]*\n\s*state=unknown/);
-  assert.match(workflow, /= "unknown" \]; then exit 0; fi/);
+  // An unknown state stops before any issue; a hidden database fails the run only after a
+  // sign-in or workspace failure has raised its issue (D-159).
+  assert.match(workflow, /if \[ "\$state" = "unknown" \]; then\n\s*if \[ -n "\$hidden" \]; then echo "\$hidden"; exit 1; fi\n\s*exit 0\n\s*fi/);
+  assert.match(workflow, /esac\n\s*fi\n\s*if \[ -n "\$hidden" \]; then echo "\$hidden"; fi\n\s*exit 1/);
   // A failed curl or malformed JSON counts as down, never as hidden.
   assert.doesNotMatch(workflow, /\|\| true\)/);
   assert.doesNotMatch(workflow, /\|\| echo hidden/);
