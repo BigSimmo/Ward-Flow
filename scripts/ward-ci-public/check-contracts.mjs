@@ -8,7 +8,90 @@ const workflow = readFileSync(new URL("../../.github/workflows/ward-flow.yml", i
   /\r\n/gu,
   "\n",
 );
-function requireWorkflow(source) {
+// The shared setup action the install jobs use (.github/actions/ward-setup).
+const setupAction = readFileSync(
+  new URL("../../.github/actions/ward-setup/action.yml", import.meta.url),
+  "utf8",
+).replace(/\r\n/gu, "\n");
+function requireWorkflow(source, action) {
+  // The shared setup the install jobs use: Node, the pinned npm, the exact installed-packages restore and
+  // the attested install. Its steps are held to the same contracts the inline copies were.
+  const SETUP_ACTION = "./.github/actions/ward-setup";
+  const SETUP_STEP = "Set up Node and install locked dependencies";
+  const SETUP_JOBS = ["backend", "unit", "browser-build", "browser", "release-gate", "build", "coverage"];
+  const NPM_PROVISION =
+    'npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require(\'./package.json\').packageManager")" && node --version && npm --version';
+  const CACHE_RESTORE = "actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9";
+  const NODE_MODULES_KEY =
+    "ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}";
+  function requireSetupAction(source, setupNode) {
+    source = source
+      .split("\n")
+      .filter((line) => !/^\s*#/u.test(line))
+      .join("\n");
+    assert.match(source, /^runs:\n {2}using: composite\n {2}steps:\n/mu);
+    // The build job's main-only save reads these outputs; anything else would save an unattested key.
+    assert.match(
+      source,
+      /^outputs:\n {2}cache-hit:\n {4}description: [^\n]+\n {4}value: \$\{\{ steps\.node-modules\.outputs\.cache-hit \}\}\n {2}cache-primary-key:\n {4}description: [^\n]+\n {4}value: \$\{\{ steps\.node-modules\.outputs\.cache-primary-key \}\}\n(?=\S)/mu,
+    );
+    for (const pattern of [
+      /continue-on-error:/u,
+      /secrets\./u,
+      /actions\/cache@/u,
+      /node-version: /u,
+      /restore-keys/u,
+      /^\s*if:/mu,
+      /working-directory:/u,
+      /^\s*(?:-\s+)?uses: \.\//mu,
+    ])
+      assert.doesNotMatch(source, pattern, `setup action: ${pattern}`);
+    for (const match of source.matchAll(/^\s*(?:- )?uses: ([^\n]+)/gmu))
+      assert.match(match[1], /^[\w./-]+@[0-9a-f]{40}$/u);
+    // A composite run step must name its shell; plain bash keeps -e and pipefail.
+    for (const match of source.matchAll(/^\s*shell: ([^\n]*)$/gmu)) assert.equal(match[1], "bash");
+    const entries = source
+      .split(/^ {4}- /mu)
+      .slice(1)
+      .map((text) => {
+        const fields = new Map();
+        for (const match of `      ${text}`.matchAll(/^ {6}([a-z][a-z0-9_-]*): ([^\n]*)(?:\n|$)/gmu)) {
+          assert.ok(!fields.has(match[1]), `setup action: duplicate step field ${match[1]}`);
+          fields.set(match[1], match[2]);
+        }
+        return { fields, text };
+      });
+    assert.deepEqual(
+      entries.map(({ fields }) => fields.get("name") ?? fields.get("uses")),
+      [
+        setupNode,
+        "Install and record the pinned npm toolchain",
+        "Restore installed packages",
+        "Install locked dependencies",
+      ],
+      "setup action: select Node, provision npm, restore, then install",
+    );
+    const [runtime, provision, restore, install] = entries;
+    assert.match(runtime.fields.get("uses"), /^actions\/setup-node@[0-9a-f]{40}$/u);
+    assert.match(runtime.text, /^ {8}node-version-file: \.nvmrc$/mu);
+    assert.match(runtime.text, /^ {8}cache: npm$/mu);
+    assert.equal(provision.fields.get("run"), NPM_PROVISION);
+    assert.equal(provision.fields.get("shell"), "bash");
+    assert.equal(restore.fields.get("uses"), CACHE_RESTORE);
+    assert.equal(restore.fields.get("id"), "node-modules");
+    assert.match(restore.text, /^ {8}path: node_modules$/mu);
+    assert.ok(
+      restore.text.includes(`        key: ${NODE_MODULES_KEY}\n`),
+      "setup action: exact installed-packages key",
+    );
+    assert.equal(install.fields.get("id"), "install");
+    assert.equal(install.fields.get("run"), "node scripts/install-locked-dependencies.mjs");
+    assert.equal(install.fields.get("shell"), "bash");
+    assert.deepEqual(
+      install.text.split("\n").filter((line) => line.startsWith("        WARD_")),
+      ["        WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}"],
+    );
+  }
   // Dependency-free, bounded YAML subset: duplicate fields and comments cannot
   // supply executable evidence. Exact commands prevent shell failure suppression.
   source = source
@@ -81,7 +164,7 @@ function requireWorkflow(source) {
   ])
     assert.doesNotMatch(source, pattern);
   for (const match of source.matchAll(/^\s*(?:- )?uses: ([^\n]+)/gmu))
-    assert.match(match[1], /^[\w./-]+@[0-9a-f]{40}$/u);
+    if (match[1] !== SETUP_ACTION) assert.match(match[1], /^[\w./-]+@[0-9a-f]{40}$/u);
   for (const match of source.matchAll(/persist-credentials: ([^\n]+)/gu)) assert.equal(match[1], "false");
   assert.equal([...source.matchAll(/run: node scripts\/ward-ci-public\/plan\.mjs/g)].length, 1);
   exact("plan", "Plan Ward scope", "node scripts/ward-ci-public/plan.mjs");
@@ -139,9 +222,47 @@ function requireWorkflow(source) {
     );
     assert.ok(jobs.get(job)?.includes(`    if: ${route}\n`), `${job} job scope`);
     assert.match(jobs.get(job), /^ {4}needs: (?:plan|\[[^\n]*\bplan\b[^\n]*\])$/mu);
-    exact(job, "Install locked dependencies", "node scripts/install-locked-dependencies.mjs");
-    assert.equal(step(job, "Install locked dependencies").fields.get("id"), "install");
   }
+  // These jobs install through the shared setup action, unconditionally, after their checkout.
+  assert.deepEqual(
+    [...jobs.keys()].filter((job) => jobs.get(job).includes(SETUP_ACTION)),
+    SETUP_JOBS,
+    "jobs using the shared setup action",
+  );
+  for (const job of SETUP_JOBS) {
+    const entries = steps(job);
+    const setup = step(job, SETUP_STEP);
+    assert.equal(setup.fields.get("uses"), SETUP_ACTION, `${job}: shared setup action`);
+    assert.equal(setup.fields.get("id"), "install", `${job}: setup outcome is steps.install`);
+    assert.deepEqual(
+      [...setup.fields.keys()].sort(),
+      ["id", "name", "uses"],
+      `${job}: setup takes no inputs or condition`,
+    );
+    assert.equal(
+      entries.filter(({ fields }) => fields.get("uses")?.startsWith("actions/checkout@")).length,
+      1,
+      `${job}: one checkout`,
+    );
+    assert.ok(
+      entries.findIndex(({ fields }) => fields.get("uses")?.startsWith("actions/checkout@")) <
+        entries.findIndex(({ fields }) => fields.get("name") === SETUP_STEP),
+      `${job}: checkout before the local setup action`,
+    );
+    assert.doesNotMatch(jobs.get(job), /actions\/setup-node@|Install locked dependencies|steps\.node-modules\./u);
+  }
+  // A job reading steps.install has exactly one installer: the shared action or the inline steps.
+  for (const [job, body] of jobs) {
+    if (!body.includes("steps.install.")) continue;
+    const inline = steps(job).filter(({ fields }) => fields.get("name") === "Install locked dependencies").length;
+    const shared = steps(job).filter(({ fields }) => fields.get("name") === SETUP_STEP).length;
+    assert.equal(inline + shared, 1, `${job}: one dependency install`);
+    if (!inline) assert.doesNotMatch(body, /steps\.node-modules\./u, `${job}: restore outputs come from the action`);
+  }
+  // The action selects Node with the same pinned setup-node the plan job uses.
+  const planSetupNode = steps("plan").find(({ fields }) => fields.get("uses")?.startsWith("actions/setup-node@"));
+  assert.ok(planSetupNode, "plan: selects Node");
+  requireSetupAction(action, planSetupNode.fields.get("uses"));
   assert.equal(step("static", "Install locked dependencies").fields.get("id"), "install");
   // Installed packages come from a cache saved on main only, straight after an attested install; the
   // installer reuses an exact hit only when its own post-install stamp still matches (see
@@ -177,9 +298,19 @@ function requireWorkflow(source) {
     const names = steps("build").map(({ fields }) => fields.get("name"));
     assert.equal(
       names.indexOf("Save installed packages on main"),
-      names.indexOf("Install locked dependencies") + 1,
+      names.indexOf(SETUP_STEP) + 1,
       "build: installed packages are saved straight after the attested install",
     );
+    const save = step("build", "Save installed packages on main");
+    assert.equal(save.fields.get("uses"), "actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9");
+    assert.equal(
+      save.fields.get("if"),
+      expression(
+        "!cancelled() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && steps.install.outcome == 'success' && steps.install.outputs.cache-hit != 'true'",
+      ),
+    );
+    assert.match(save.text, /^ {10}path: node_modules$/mu);
+    assert.ok(save.text.includes(`          key: ${expression("steps.install.outputs.cache-primary-key")}\n`));
   }
   exact(
     "static",
@@ -679,11 +810,7 @@ function requireWorkflow(source) {
     }
     if (body.includes("actions/setup-node@")) {
       assert.match(body, /node-version-file: \.nvmrc/u);
-      exact(
-        job,
-        "Install and record the pinned npm toolchain",
-        'npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require(\'./package.json\').packageManager")" && node --version && npm --version',
-      );
+      exact(job, "Install and record the pinned npm toolchain", NPM_PROVISION);
       const entries = steps(job);
       const provision = entries.findIndex(
         (entry) => entry.fields.get("name") === "Install and record the pinned npm toolchain",
@@ -796,7 +923,7 @@ function requireWorkflow(source) {
           fi`,
   );
 }
-requireWorkflow(workflow);
+requireWorkflow(workflow, setupAction);
 // Exercise the actual aggregate shell across every scope combination and every
 // failure/cancellation/missing-result branch, including the trusted reuse route.
 const verdictShell = /^ {8}run: \|\n([\s\S]*)$/mu.exec(workflow.slice(workflow.indexOf("  required:\n")))?.[1];
@@ -999,7 +1126,54 @@ for (const [before, after] of [
 ]) {
   const changed = workflow.replace(before, after);
   assert.notEqual(changed, workflow, before);
-  assert.throws(() => requireWorkflow(changed), before);
+  assert.throws(() => requireWorkflow(changed, setupAction), before);
+}
+// The same probes against the shared setup action, plus its wiring in the workflow.
+for (const [before, after] of [
+  ["run: npm install --global --ignore-scripts --no-audit --no-fund", "run: echo npm installation omitted"],
+  [
+    "      run: node scripts/install-locked-dependencies.mjs",
+    "      run: node scripts/install-locked-dependencies.mjs || true",
+  ],
+  ["      id: node-modules\n", "      id: unused-node-modules\n"],
+  ["      id: install\n", "      id: unused-install\n"],
+  ["        WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}", "        WARD_INSTALL_RESTORED: true"],
+  [
+    "        path: node_modules\n        key: ward-node-modules-",
+    "        path: node_modules\n        restore-keys: ward-\n        key: ward-node-modules-",
+  ],
+  ["        key: ward-node-modules-${{ runner.os }}-", "        key: ward-node-modules-"],
+  ["        node-version-file: .nvmrc\n", "        node-version: 24\n"],
+  ["        cache: npm\n", ""],
+  ["      shell: bash\n      run: npm", "      shell: bash {0}\n      run: npm"],
+  ["    - name: Restore installed packages\n", "    - name: Restore installed packages\n      if: ${{ false }}\n"],
+  [
+    "      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+    "      uses: actions/cache/restore@v4",
+  ],
+  ["    value: ${{ steps.node-modules.outputs.cache-primary-key }}", "    value: ward-node-modules"],
+  ["    value: ${{ steps.node-modules.outputs.cache-hit }}", "    value: 'false'"],
+]) {
+  const changed = setupAction.replace(before, after);
+  assert.notEqual(changed, setupAction, before);
+  assert.throws(() => requireWorkflow(workflow, changed), before);
+}
+for (const [before, after] of [
+  [`        uses: ./.github/actions/ward-setup\n`, "        uses: ./.github/actions/other\n"],
+  [
+    "        id: install\n        uses: ./.github/actions/ward-setup\n",
+    "        id: setup\n        uses: ./.github/actions/ward-setup\n",
+  ],
+  [
+    `        uses: ./.github/actions/ward-setup\n`,
+    "        if: ${{ false }}\n        uses: ./.github/actions/ward-setup\n",
+  ],
+  ["steps.install.outputs.cache-hit != 'true'", "true"],
+  ["key: ${{ steps.install.outputs.cache-primary-key }}", "key: ward-node-modules"],
+]) {
+  const changed = workflow.replace(before, after);
+  assert.notEqual(changed, workflow, before);
+  assert.throws(() => requireWorkflow(changed, setupAction), before);
 }
 assert.deepEqual(parseNameStatus("M\tdocs/ward-flow/README.md\n"), [{ status: "M", file: "docs/ward-flow/README.md" }]);
 // A document no unit test reads; tests/ward-ci-scope.test.ts covers documents unit tests do read.

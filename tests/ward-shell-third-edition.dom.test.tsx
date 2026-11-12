@@ -42,7 +42,7 @@ vi.mock("next/navigation", () => ({
 import { applyAppearance } from "@/components/ward-management/shell/ward-bar";
 import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
 import { WardLiveRegion, resetWardLiveRegionForTests } from "@/components/ward-management/shell/ward-live-region";
-import { computeShiftProgress } from "@/components/ward-management/shell-next/next-rail-body";
+import { computeShiftProgress } from "@/components/ward-management/shell/ward-rail-helpers";
 import { NextRailBody as WardRail } from "@/components/ward-management/shell-next/next-rail-body";
 // CB-1 (Josh, 6 Nov 2026): two cases stay on the retired shell until Josh decides, because the live
 // shell has no equivalent. Its Activity trigger reads "Activity" alone, with no "synthetic activity"

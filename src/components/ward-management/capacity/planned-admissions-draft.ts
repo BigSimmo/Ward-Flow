@@ -10,7 +10,7 @@ import {
   type PlannedAdmissionReason,
 } from "../ward-admissions";
 import type { OverrideReason } from "../ward-change-reasons";
-import { dayOf, MINUTES_PER_DAY, minuteOfDay, type Instant } from "../ward-clock";
+import { dayOf, MINUTES_PER_DAY, minuteOfDay, minuteOfDayFromClockText, type Instant } from "../ward-clock";
 import { requiresAuthorisedDestination } from "../ward-eligibility";
 import type { Cohort, LegalStatus, RecordedSex, ReferralGender, Unit } from "../ward-model";
 
@@ -65,13 +65,12 @@ export function clockInputValue(instant: Instant): string {
   return `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
 }
 
-/** Minutes past midnight for a typed "hh:mm", or null when it is not a clock time. */
+/**
+ * Minutes past midnight for a typed time, or null when it is not a clock time. Reads the one
+ * clock-text rule (`minuteOfDayFromClockText`), so "9:05" and "0905" count here as everywhere else.
+ */
 export function parseClockInput(value: string): number | null {
-  const match = /^(\d{2}):(\d{2})$/.exec(value);
-  if (!match) return null;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  return hours < 24 && minutes < 60 ? hours * 60 + minutes : null;
+  return minuteOfDayFromClockText(value) ?? null;
 }
 
 /**

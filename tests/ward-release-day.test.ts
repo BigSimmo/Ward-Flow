@@ -25,6 +25,9 @@ describe("parseReleaseDayInstant", () => {
     // Naive day-zero parsing would give 840 (0 * 1440 + 840). The clock is on day 1, so a
     // same-day pick must land on day 1.
     expect(parseReleaseDayInstant(NOW_DAY_1_AT_10, "today", "14:00")).toBe(1 * MINUTES_PER_DAY + 840);
+    // The one clock-text rule (minuteOfDayFromClockText): one-digit hours and four digits count too.
+    expect(parseReleaseDayInstant(NOW_DAY_1_AT_10, "today", "9:30")).toBe(1 * MINUTES_PER_DAY + 570);
+    expect(parseReleaseDayInstant(NOW_DAY_1_AT_10, "today", "1400")).toBe(1 * MINUTES_PER_DAY + 840);
   });
 
   it("resolves Tomorrow to the calendar day after the clock's own day", () => {
@@ -46,7 +49,8 @@ describe("parseReleaseDayInstant", () => {
 
   it("refuses malformed or empty input rather than guessing a value", () => {
     expect(parseReleaseDayInstant(NOW_DAY_1_AT_10, "today", "")).toBeUndefined();
-    expect(parseReleaseDayInstant(NOW_DAY_1_AT_10, "today", "9:00")).toBeUndefined();
+    expect(parseReleaseDayInstant(NOW_DAY_1_AT_10, "today", "9h00")).toBeUndefined();
+    expect(parseReleaseDayInstant(NOW_DAY_1_AT_10, "today", "143")).toBeUndefined();
     expect(parseReleaseDayInstant(NOW_DAY_1_AT_10, "today", "24:00")).toBeUndefined();
     expect(parseReleaseDayInstant(NOW_DAY_1_AT_10, "today", "10:60")).toBeUndefined();
   });

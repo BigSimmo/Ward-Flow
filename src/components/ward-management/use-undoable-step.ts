@@ -268,8 +268,7 @@ export function useUndoableStep({
             }),
       });
     }
-    // The token drives this; `sink`, `dispatch` and the callbacks are read as they are now.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- The token drives this; `sink`, `routeRole` and the callbacks are read as they are now.
   }, [token, rejections]);
 
   function submit(event: WardFlowEvent, pending: Pending, record?: () => ReturnType<WardCommandDispatch>) {

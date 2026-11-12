@@ -160,9 +160,16 @@ describe("the pass", () => {
 
 describe("demo code", () => {
   it("matches ignoring case, spaces and dashes, and never when no code is set", async () => {
-    expect(await demoCodeMatches("ward 7q4k", { WARD_DEMO_CODE: "WARD-7Q4K" })).toBe(true);
-    expect(await demoCodeMatches("WARD-7Q4J", { WARD_DEMO_CODE: "WARD-7Q4K" })).toBe(false);
+    expect(await demoCodeMatches("ward 7q4k synth", { WARD_DEMO_CODE: "WARD-7Q4K-SYNTH" })).toBe(true);
+    expect(await demoCodeMatches("WARD-7Q4J-SYNTH", { WARD_DEMO_CODE: "WARD-7Q4K-SYNTH" })).toBe(false);
     expect(await demoCodeMatches("", {})).toBe(false);
+  });
+
+  it("treats a set code shorter than 12 characters as no code at all", async () => {
+    // Eleven characters once spaces and dashes are removed: too guessable to open the site.
+    expect(await demoCodeMatches("WARD-7Q4K-SYN", { WARD_DEMO_CODE: "WARD-7Q4K-SYN" })).toBe(false);
+    // Exactly twelve opens it.
+    expect(await demoCodeMatches("WARD-7Q4K-SYNT", { WARD_DEMO_CODE: "WARD-7Q4K-SYNT" })).toBe(true);
   });
 });
 
@@ -448,17 +455,17 @@ describe("POST /api/session", () => {
   it("opens the public demo with the right code and pauses after too many wrong ones", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
-    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K-SYNTH");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
     vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "*");
-    const right = await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.20"));
+    const right = await POST(post({ demoCode: "ward 7q4k synth" }, "192.0.2.20"));
     expect(right.status).toBe(204);
     expect(right.headers.getSetCookie().find((line) => line.startsWith(FRONT_DOOR_PASS_COOKIE))).toContain(
       `Max-Age=${8 * 3600}`,
     );
     for (let attempt = 0; attempt < 10; attempt += 1)
       expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.30"))).status).toBe(401);
-    expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.30"))).status).toBe(429);
+    expect((await POST(post({ demoCode: "ward 7q4k synth" }, "192.0.2.30"))).status).toBe(429);
   });
 
   it("counts wrong tries by a trusted hop's address, not a caller-written forwarded-for (A4-02)", async () => {
@@ -482,7 +489,7 @@ describe("POST /api/session", () => {
     expect(trustedProxyAddressesFromEnv({})).toEqual([]);
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
-    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K-SYNTH");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
     vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "*");
     for (let attempt = 0; attempt < 10; attempt += 1)
@@ -493,7 +500,7 @@ describe("POST /api/session", () => {
   it("keeps per-address keying while no trusted proxy is configured (D-147)", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
-    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K-SYNTH");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
     vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "");
     for (let attempt = 0; attempt < 10; attempt += 1)
@@ -501,42 +508,42 @@ describe("POST /api/session", () => {
     expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.70"))).status).toBe(429);
     // Another address keeps its own budget, so one guesser cannot refuse every presenter.
     expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.71"))).status).toBe(401);
-    expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.72"))).status).toBe(204);
+    expect((await POST(post({ demoCode: "ward 7q4k synth" }, "192.0.2.72"))).status).toBe(204);
   });
 
   it("ignores a caller-sent address once a trusted proxy is configured but the socket is not it (A4-02)", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
-    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K-SYNTH");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
     vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "10.0.0.2");
     for (let attempt = 0; attempt < 10; attempt += 1)
       expect((await POST(post({ demoCode: "WRONG" }, `198.51.100.${attempt}`))).status).toBe(401);
     // Rotating X-Real-IP does not open a new bucket: every request shares "unknown".
     expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.99"))).status).toBe(429);
-    expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.98"))).status).toBe(429);
+    expect((await POST(post({ demoCode: "ward 7q4k synth" }, "192.0.2.98"))).status).toBe(429);
   });
 
   it("refuses wrong codes once tries across all addresses reach the cap, but still opens with the right code", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
-    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K-SYNTH");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
     vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "*");
     for (let attempt = 0; attempt < 200; attempt += 1)
       expect((await POST(post({ demoCode: "WRONG" }, `10.0.${attempt >> 8}.${attempt & 255}`))).status).toBe(401);
     expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.61"))).status).toBe(429);
-    expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.60"))).status).toBe(204);
+    expect((await POST(post({ demoCode: "ward 7q4k synth" }, "192.0.2.60"))).status).toBe(204);
     // The per-address limit still applies at the cap.
     for (let attempt = 0; attempt < 9; attempt += 1)
       expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.61"))).status).toBe(429);
-    expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.61"))).status).toBe(429);
+    expect((await POST(post({ demoCode: "ward 7q4k synth" }, "192.0.2.61"))).status).toBe(429);
   });
 
   it("checks the code before a full address table refuses, so the right code from a new address opens (M53)", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
-    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K-SYNTH");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
     vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "*");
     // Fill the 5,000-address table with wrong tries 9.5 minutes ago, so each is still counted while
@@ -548,7 +555,7 @@ describe("POST /api/session", () => {
       expect(reserveDemoTry(address(index), opened + 60_000)).not.toBeNull();
     first?.release();
     expect(reserveDemoTry(address(4_999), opened + 60_000)).not.toBeNull();
-    expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.70"))).status).toBe(204);
+    expect((await POST(post({ demoCode: "ward 7q4k synth" }, "192.0.2.70"))).status).toBe(204);
     // The table being full still pauses a wrong code from a new address, without forgetting anyone.
     expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.71"))).status).toBe(429);
     expect(reserveDemoTry(address(0), Date.now())).toMatchObject({ overCap: false });
@@ -557,7 +564,7 @@ describe("POST /api/session", () => {
   it("never opens the signed-in site with a demo code", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
-    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K-SYNTH");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "true");
     expect((await POST(post({ demoCode: "WARD-7Q4K" }))).status).toBe(400);
   });

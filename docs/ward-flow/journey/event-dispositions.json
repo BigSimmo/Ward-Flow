@@ -4179,7 +4179,8 @@
       "after": "staffRequests holds one open request for the ward and shift with count and ordered reasons",
       "payload": [
         "unitId; shift this or next; count 1, 2, 3 or 4 or more",
-        "reasons: one or more distinct items from STAFF_REQUEST_REASONS; actingUnitId for ward callers; role and now"
+        "reasons: one or more distinct items from STAFF_REQUEST_REASONS; actingUnitId for ward callers; role and now",
+        "optional shiftStartAt: the start of the shift the person chose; kept only when it is that shift's start at now or 5 minutes earlier, otherwise the shift at now is used"
       ],
       "scope": "Ward, coordinator or site bed manager in EVENT_ROLE; a ward acts only for its own ward (actingUnitId must equal unitId). Executive changes nothing (D-80). Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": [
@@ -4198,8 +4199,8 @@
         },
         {
           "path": "src/components/ward-management/staffing/staff-requests.ts",
-          "line": 132,
-          "sha256": "d3e51d13faedefa5314d5f128c59473110a61bae075bd5ddb362788d5ae479f3"
+          "line": 156,
+          "sha256": "e47b9fadc1f70f84b56bd4e91eb36f5b95f85da6234e10f6251bea10c3f6237a"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4240,8 +4241,8 @@
         },
         {
           "path": "src/components/ward-management/staffing/staff-requests.ts",
-          "line": 171,
-          "sha256": "d3e51d13faedefa5314d5f128c59473110a61bae075bd5ddb362788d5ae479f3"
+          "line": 195,
+          "sha256": "e47b9fadc1f70f84b56bd4e91eb36f5b95f85da6234e10f6251bea10c3f6237a"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",

@@ -26,7 +26,7 @@ import {
 } from "@/components/wf";
 import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
-import { bedIsOccupied } from "@/components/ward-management/ward-admissions";
+import { bedIsOccupied, daysInBed } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import {
@@ -36,7 +36,6 @@ import {
   OCCUPIED_NOUN,
   wardBedsInUse,
 } from "@/components/ward-management/ward-occupancy";
-import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
@@ -100,12 +99,6 @@ export function SortTh<K extends string>({
 }
 
 type WardChip = "over" | "none-ready" | "pending" | "pulled" | "blocked";
-
-/** Whole days in a bed so far, or null for someone not yet arrived (or a clock wound back). */
-function stayDays(arrivedAt: number | null, now: number): number | null {
-  if (arrivedAt === null || arrivedAt > now) return null;
-  return Math.floor((now - arrivedAt) / MINUTES_PER_DAY);
-}
 
 const plural = (count: StatisticsCount, one: string, many: string) => (count === 1 ? one : many);
 
@@ -196,7 +189,7 @@ function OperationalWardsIndex() {
         );
         const stays = current
           .filter((admission) => bedIsOccupied(admission))
-          .map((admission) => stayDays(admission.arrivedAt, now))
+          .map((admission) => daysInBed(admission, now))
           .filter((days): days is number => days !== null);
         return {
           id: unit.id,

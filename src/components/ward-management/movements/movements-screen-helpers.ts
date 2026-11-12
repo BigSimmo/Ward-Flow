@@ -3,6 +3,7 @@
 // of movements-screen.tsx to keep that file under the line cap; movements-screen.tsx re-exports
 // causeOf and inServiceSuffix.
 import { type Instant } from "@/components/ward-management/ward-clock";
+import { bedHoldLapsed } from "@/components/ward-management/ward-bed-hold";
 import { isOpen, transportLeg, transportNeedState } from "@/components/ward-management/ward-derivations";
 import { type DelayCause } from "@/components/ward-management/delays/delays-derivations";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -159,7 +160,7 @@ export function causeOf(
 
   if (noAccepted && hasReferred) return "awaiting_ward_answer";
 
-  if (movement.stage === "pulled" && movement.pullExpiresAt !== undefined && movement.pullExpiresAt < now) {
+  if (movement.stage === "pulled" && bedHoldLapsed(movement.pullExpiresAt, now)) {
     return "bed_pull_expired";
   }
 
