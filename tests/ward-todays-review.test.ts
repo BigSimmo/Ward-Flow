@@ -100,6 +100,8 @@ describe("todaysReview", () => {
     expect(grouped).toMatchObject({ id: `decline-u1-${NOW - 20}`, at: NOW - 20 });
     expect(grouped?.kind === "decline" && grouped.members.length).toBe(2);
     expect(result.counts.decline).toBe(2);
+    // The headline counts each decline; the chip counts lines.
+    expect(result.declineCount).toBe(3);
   });
 
   it("raises a ward's repeated declines for one recorded reason at the threshold", () => {

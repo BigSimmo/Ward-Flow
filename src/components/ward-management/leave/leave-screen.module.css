@@ -207,6 +207,20 @@
     color: var(--wf-ink-2);
   }
 
+  /* Phone tap sweep (12 Nov 2026): the name and Open ward links are 16-17px lines. A transparent
+     hit area takes each to at least 24px (--wf-target-min) without moving the text. */
+  .person a,
+  .table td.ward .wardLink {
+    position: relative;
+  }
+
+  .person a::after,
+  .table td.ward .wardLink::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+
   .table td.kind,
   .table td.time {
     width: auto;
