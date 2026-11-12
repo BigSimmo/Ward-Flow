@@ -142,11 +142,35 @@
   font-weight: 600;
 }
 
+/* A count gives way before the lead or "+N more" does: a long label ("discharge dates moved") or a
+   long lead ("Since 15:02 yesterday") ellipsises the last named count's words, never its figure, so
+   the figure and the overflow total stay visible. */
 .bannerPart {
-  flex: none;
+  display: flex;
+  flex: 0 1 auto;
+  gap: 0.3em;
+  /* Room for a figure of up to three digits, so a squeezed count keeps its number. */
+  min-width: 3.5ch;
+  overflow: hidden;
+}
+
+/* The furthest count gives way first. */
+.bannerPart[data-rank="2"] {
+  flex-shrink: 10;
+}
+
+.bannerPart[data-rank="3"] {
+  flex-shrink: 100;
+}
+
+.bannerLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bannerCount {
+  flex: none;
   color: var(--wf-ink-1);
   font-family: var(--wf-mono);
   font-weight: 600;
@@ -176,6 +200,7 @@
 }
 
 @container (max-width: 290px) {
+  .bannerLeadDay,
   .bannerPart[data-rank="2"],
   .bannerMore[data-shown="2"] {
     display: none;

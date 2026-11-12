@@ -27,6 +27,7 @@ import { pinnedRows } from "@/components/ward-management/coordinator/home-pinned
 import {
   sinceBannerCounts,
   sinceBannerLead,
+  sinceBannerLeadParts,
   sinceBannerText,
 } from "@/components/ward-management/coordinator/home-since-text";
 import type { ChangesSinceLastLook } from "@/components/ward-management/coordinator/since-last-look";
@@ -176,6 +177,8 @@ describe("since banner text", () => {
       "Since 15:02 yesterday: 4 new referrals, 3 beds freed, 2 new delays",
     );
     expect(sinceBannerLead(base, "15:02 yesterday")).toBe("Since 15:02 yesterday");
+    expect(sinceBannerLeadParts(base, "15:02 yesterday")).toEqual({ lead: "Since 15:02", day: " yesterday" });
+    expect(sinceBannerLeadParts(base, "15:02")).toEqual({ lead: "Since 15:02", day: "" });
     expect(sinceBannerCounts(base).map(({ count, label }) => `${count} ${label}`)).toEqual([
       "4 referrals",
       "3 beds freed",

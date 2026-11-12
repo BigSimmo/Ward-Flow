@@ -7,7 +7,7 @@ import { useWardAccessSnapshot } from "@/components/ward-management/shell/ward-a
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { Button, Card, Sheet, SrOnly, StatusGlyph } from "@/components/wf";
 
-import { SINCE_BANNER_MAX_PARTS, sinceBannerCounts, sinceBannerLead, sinceBannerText } from "./home-since-text";
+import { SINCE_BANNER_MAX_PARTS, sinceBannerCounts, sinceBannerLeadParts, sinceBannerText } from "./home-since-text";
 import styles from "./home-pinned.module.css";
 import type { ChangesSinceLastLook } from "./since-last-look";
 import { SinceLastLookSheetBody, sinceLastLookCount, useSinceLastLook } from "./since-last-look-panel";
@@ -48,6 +48,7 @@ export function HomeSinceBanner({ now }: { now: Instant }) {
   const text = sinceLastLookCount(shown) > 0 ? sinceBannerText(shown, sinceLabel) : undefined;
   const counts = text ? sinceBannerCounts(shown) : [];
   const named = counts.slice(0, SINCE_BANNER_MAX_PARTS);
+  const lead = sinceBannerLeadParts(shown, sinceLabel);
 
   return (
     // With nothing new the slot leaves the column's flow but stays focusable, so focus has a place
@@ -68,10 +69,14 @@ export function HomeSinceBanner({ now }: { now: Instant }) {
           <p className={styles.bannerText}>
             <SrOnly>{text}</SrOnly>
             <span className={styles.bannerLine} aria-hidden="true" data-testid="home-since-line">
-              <span className={styles.bannerLead}>{sinceBannerLead(shown, sinceLabel)}</span>
+              <span className={styles.bannerLead}>
+                {lead.lead}
+                {lead.day ? <span className={styles.bannerLeadDay}>{lead.day}</span> : null}
+              </span>
               {named.map((entry, index) => (
                 <span key={entry.label} className={styles.bannerPart} data-rank={index + 1}>
-                  <span className={styles.bannerCount}>{entry.count}</span> {entry.label}
+                  <span className={styles.bannerCount}>{entry.count}</span>
+                  <span className={styles.bannerLabel}>{entry.label}</span>
                 </span>
               ))}
               {named.map((entry, index) => {

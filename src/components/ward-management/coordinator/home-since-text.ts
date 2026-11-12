@@ -36,9 +36,22 @@ export function sinceBannerCounts(changes: ChangesSinceLastLook): SinceBannerPar
   ].filter((entry): entry is SinceBannerPart => entry !== undefined);
 }
 
-/** The line's short lead: "This shift" before any review, else "Since 15:02 yesterday". */
+/**
+ * The line's short lead: "This shift" before any review, else "Since 15:02 yesterday". `day` is the
+ * part after the clock face (" yesterday", ", 2 days ago"), which a very narrow line drops.
+ */
+export function sinceBannerLeadParts(changes: ChangesSinceLastLook, sinceLabel: string): { lead: string; day: string } {
+  if (changes.basis === "shift") return { lead: "This shift", day: "" };
+  const split = sinceLabel.search(/[ ,]/);
+  return split < 0
+    ? { lead: `Since ${sinceLabel}`, day: "" }
+    : { lead: `Since ${sinceLabel.slice(0, split)}`, day: sinceLabel.slice(split) };
+}
+
+/** The whole lead as one string. */
 export function sinceBannerLead(changes: ChangesSinceLastLook, sinceLabel: string): string {
-  return changes.basis === "shift" ? "This shift" : `Since ${sinceLabel}`;
+  const { lead, day } = sinceBannerLeadParts(changes, sinceLabel);
+  return `${lead}${day}`;
 }
 
 /**
