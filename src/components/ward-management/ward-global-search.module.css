@@ -1512,7 +1512,8 @@ a.askChip {
     outline-offset: 2px;
   }
 
-  /* Go to always fits the width: four equal columns, so it never scrolls sideways. */
+  /* Go to always fits the width, so it never scrolls sideways. The five 54px columns are set in
+     the "Glass rows" block below; this is the fallback grid and the shared reset. */
   .popup[data-start] .groupItem[data-group="goto"] .groupList {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1616,17 +1617,18 @@ a.askChip {
     inset: -20px -4px -4px; /* 48px tall; grows into the gap above, never over the first alert */
   }
 
+  /* The kit's phone pill size (40px face; HOW-WE-WORK §6). */
   .popup[data-start] .askChip,
   .popup[data-start] .commandBtn {
-    height: 32px;
-    gap: 7px;
-    padding: 0 12px;
+    height: var(--wf-phone-pill-h);
+    gap: var(--wf-phone-pill-gap);
+    padding: 0 var(--wf-phone-pill-px);
     border: 0;
-    border-radius: 999px;
+    border-radius: var(--wf-r-pill);
     background: color-mix(in srgb, var(--wf-surface) 55%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-ink-1) 8%, transparent);
     color: var(--wf-ink-1);
-    font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+    font: 500 var(--wf-phone-pill-fs) / 1 var(--wf-font);
   }
 
   .popup[data-start] .commandBtn {
@@ -1635,7 +1637,7 @@ a.askChip {
 
   .popup[data-start] .askChip .kindCount {
     color: var(--wf-ink-3);
-    font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+    font: 600 var(--wf-phone-pill-count-fs) / 1 var(--wf-mono);
     opacity: 1;
   }
 
@@ -1648,7 +1650,7 @@ a.askChip {
   }
 
   .popup[data-start] .groupItem[data-group="goto"] .option {
-    gap: 8px;
+    gap: var(--wf-s-2);
     padding: 2px 0;
   }
 
@@ -1657,7 +1659,7 @@ a.askChip {
     align-self: center;
     width: 54px;
     height: 54px;
-    border-radius: 16px;
+    border-radius: var(--wf-r-lg);
     background: color-mix(in srgb, var(--wf-accent-tint) 78%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-accent) 9%, transparent);
     color: var(--wf-accent);
@@ -1750,9 +1752,9 @@ a.askChip {
 
   @media (max-width: 22.4375rem) {
     .popup[data-start] .groupItem[data-group="goto"] .groupList {
-      grid-template-columns: repeat(5, auto);
-      justify-content: space-between;
-      gap: 0 8px;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      justify-content: stretch;
+      gap: 0 var(--wf-s-1);
     }
 
     .popup[data-start] .groupItem[data-group="goto"] .itemIconBox {
@@ -1760,12 +1762,20 @@ a.askChip {
       height: 48px;
     }
 
-    /* 12 px is the text floor (D-3). Each column is as wide as its tile or label, whichever is
-       wider, and the spare room goes between them, so "Movements" fits inside the 14 px edge. */
+    /* 12 px is the text floor (D-3). Five equal columns share the width, and a label longer than
+       its column is cut with an ellipsis (the full name stays the option's accessible name), so
+       neighbouring labels never collide at 320px. */
+    .popup[data-start] .groupItem[data-group="goto"] .resultContent {
+      overflow: hidden;
+    }
+
     .popup[data-start] .groupItem[data-group="goto"] .resultTitle {
-      max-width: none;
-      font-size: 12px;
+      max-width: 100%;
+      overflow: hidden;
+      font-size: var(--wf-fs-12);
       letter-spacing: -0.02em;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 

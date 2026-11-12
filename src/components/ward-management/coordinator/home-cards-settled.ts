@@ -12,8 +12,9 @@ const HOME_CARDS_WAIT_MS = 1500;
  * Layout shift on Home (11 Nov 2026): Home draws on the client, and the two cards it shows at rest
  * from split code (the "since you were last here" line, and Beds that fit off a phone) landed a
  * moment after My list and Later today and pushed them down (0.106 on a desktop, 0.064 on a phone).
- * Home's columns now stay hidden, still taking their space, until those cards have arrived, then
- * appear whole. Both are fetched as soon as Home's code runs, so the wait is normally nothing.
+ * Home's columns now stay invisible (opacity 0), still taking their space, until those cards have
+ * arrived, then appear whole. They stay in the accessibility tree and reachable by the keyboard
+ * (#1631), and show as soon as focus moves inside them. Both are fetched as soon as Home's code runs, so the wait is normally nothing.
  * After `HOME_CARDS_WAIT_MS` Home shows anyway and the late card drops in, as before.
  */
 export function useHomeCardsSettled(needBeds: boolean): boolean {

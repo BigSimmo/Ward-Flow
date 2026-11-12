@@ -36,7 +36,9 @@ import { nextEvent, nowFor, seededRandom } from "./helpers/ward-engine-fuzz";
  * shared one, so a pass is not a fixture that never exercises the case.
  */
 describe("figures that more than one screen prints agree after random actions", () => {
-  it("beds ready, over 8h, over 24h, confirmed and discharged today", () => {
+  // About 11 s on its own; a loaded, coverage-instrumented CI shard took it past the 30 s default on
+  // #1637 twice. Every step and assertion still runs.
+  it("beds ready, over 8h, over 24h, confirmed and discharged today", { timeout: 90_000 }, () => {
     let checked = 0;
     let oldReadySplit = 0;
     let oldOver8hSplit = 0;
@@ -56,12 +58,15 @@ describe("figures that more than one screen prints agree after random actions", 
         const thresholds = dueSoonThresholdsOf(state.configuration);
 
         // Beds ready.
-        const ready = totalReadyBedsNow(state.units, state.admissions, state.bedReleases);
-        expect(bedsReadySummary(state.units, state.admissions, state.bedReleases, now).total, at).toBe(ready);
+        // D-115 item 3: a bed named for an open journey or accepted referral is not ready anywhere.
+        const holds = [...state.movements, ...state.referrals];
+        const ready = totalReadyBedsNow(state.units, state.admissions, state.bedReleases, holds);
+        expect(bedsReadySummary(state.units, state.admissions, state.bedReleases, now, holds).total, at).toBe(ready);
         const summary = bedSummaryText({
           units: state.units,
           admissions: state.admissions,
           movements: state.movements,
+          referrals: state.referrals,
           bedReleases: state.bedReleases,
           leaveBeds: state.leaveBeds,
           now,
@@ -69,11 +74,14 @@ describe("figures that more than one screen prints agree after random actions", 
           network,
         });
         expect(summary, at).toContain(`Ready beds: ${ready} of `);
-        for (const row of findBeds(state.units, state.admissions, state.bedReleases, {
-          ...DEFAULT_BED_FINDER_FILTERS,
-          legalStatus: "voluntary",
-        })) {
-          expect(row.free, at).toBe(readyBedsNow(row.unit, state.admissions, state.bedReleases));
+        for (const row of findBeds(
+          state.units,
+          state.admissions,
+          state.bedReleases,
+          { ...DEFAULT_BED_FINDER_FILTERS, legalStatus: "voluntary" },
+          holds,
+        )) {
+          expect(row.free, at).toBe(readyBedsNow(row.unit, state.admissions, state.bedReleases, holds));
         }
         const old = state.units.reduce(
           (sum, unit) => sum + capacityBreakdown(unit, state.bedReleases, state.leaveBeds, now).availableNow,

@@ -17,8 +17,9 @@ import { observationSummary } from "@/components/ward-management/ward-observatio
 import { riskFlagLabel } from "@/components/ward-management/referrals/referral-risk-flags";
 import type { FormTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
 import {
-  formProgression,
+  FORM_RECORDED_ENDED,
   formProgressionPhrase,
+  legalFormEnd,
 } from "@/components/ward-management/legal-forms/legal-form-progression";
 import type { PatientMode } from "./patient-mode";
 import { interpreterRequired } from "./patient-flight-header";
@@ -123,14 +124,22 @@ function legalTile({ patient, movement, formTimeLeft, mode, onOpenForms, recordC
   }
   // Audit S-6: a referral or transport form that ended at arrival or at the examination is never
   // shown as in force; the band names it as ended and the inpatient order still to record.
-  const progression = formProgression(movement);
-  if (progression)
+  // A form recorded as ended is read before the neutral 5A/5B arrival wording (as the Legal forms page).
+  const end = legalFormEnd(movement);
+  if (end?.kind === "progressed")
     return {
       ...base,
       value: status ?? "Not recorded",
       quiet: status === undefined,
-      sub: `${formProgressionPhrase(progression)} · Form ${progression.nextCode} to record`,
+      sub: `${formProgressionPhrase(end.progression)} · Form ${end.progression.nextCode} to record`,
       tone: "warning",
+    };
+  if (end?.kind === "recorded" && movement?.legalForm)
+    return {
+      ...base,
+      value: status ?? "Not recorded",
+      quiet: status === undefined,
+      sub: `Form ${movement.legalForm.code} ${FORM_RECORDED_ENDED.toLowerCase()}`,
     };
   const form = movement?.legalForm ? `Form ${movement.legalForm.code}` : cto ? `Form ${cto.form}` : undefined;
   return {

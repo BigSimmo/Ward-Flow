@@ -287,7 +287,9 @@ describe("beds and ready beds", () => {
     expect(isReadyBedQuery("bed")).toBe(false);
     const results = search("free beds");
     expect(results.readyBedsOnly).toBe(true);
-    const expected = state.units.filter((unit) => (unitReadyBedCount(unit) ?? 0) > 0).map((unit) => unit.id);
+    const expected = state.units
+      .filter((unit) => (unitReadyBedCount(unit, [], [...state.movements, ...state.referrals]) ?? 0) > 0)
+      .map((unit) => unit.id);
     if (expected.length === 0) throw new Error("fixture drifted: no ward has a ready bed");
     expect(results.wards.map((result) => result.unit.id)).toEqual(expected.slice(0, 40));
   });

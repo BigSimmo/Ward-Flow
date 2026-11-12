@@ -34,12 +34,13 @@ export function NextPhoneMenuTop({
   onGo: () => void;
 }) {
   const network = useWardNetwork();
-  const { units, bedReleases, movements, configuration, admissions } = useWardFlowSelect(
+  const { units, bedReleases, movements, configuration, admissions, referrals } = useWardFlowSelect(
     "units",
     "bedReleases",
     "movements",
     "configuration",
     "admissions",
+    "referrals",
   );
   const now = useWardFlowClock();
   const access = useEffectiveWardAccess();
@@ -54,6 +55,7 @@ export function NextPhoneMenuTop({
     now,
     configuration.edAccessTargetMinutes,
     admissions,
+    referrals,
   );
   const rows = deskCapacityRows(access, units, admissions ?? [], bedReleases, bedAlerts);
   const overLine = overLineLabel(rows);

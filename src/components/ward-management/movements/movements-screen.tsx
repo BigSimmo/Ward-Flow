@@ -1232,13 +1232,19 @@ export function MovementsScreen() {
                   aria-label="Find movements by name, UMRN or ED"
                   boxClassName={flow.search}
                 />
-                {isPhone ? null : (
-                  <MovementsListTools
-                    {...{ patients, referrals, units, now, dayZero, resolved: boardTab === "resolved" }}
-                    movements={boardTab === "resolved" ? worklistClosedToday : worklistMovements}
-                    disabled={(boardTab === "resolved" ? worklistClosedToday : worklistMovements).length === 0}
-                  />
-                )}
+                <MovementsListTools
+                  {...{
+                    patients,
+                    referrals,
+                    units,
+                    now,
+                    dayZero,
+                    resolved: boardTab === "resolved",
+                    iconOnly: isPhone,
+                  }}
+                  movements={boardTab === "resolved" ? worklistClosedToday : worklistMovements}
+                  disabled={(boardTab === "resolved" ? worklistClosedToday : worklistMovements).length === 0}
+                />
               </div>
 
               {/* Column heads for the rows below. The rows are list items, so these are a visual

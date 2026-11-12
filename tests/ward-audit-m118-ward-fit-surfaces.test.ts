@@ -251,7 +251,7 @@ describe("M118: the Tools bed finder is a narrower quick filter", () => {
 
   it("never lists a ward the engine refuses on the three rules it does check (cohort, authorisation, sex)", () => {
     for (const person of PEOPLE.filter((candidate) => candidate.gender === candidate.sex)) {
-      const listed = findBeds(units, [], [], filtersFor(person, person.sex));
+      const listed = findBeds(units, [], [], filtersFor(person, person.sex), []);
       for (const row of listed) {
         const gates = eligibility(asMovement(person), row.unit, NOW).gates;
         const where = `${row.unit.id} ${JSON.stringify(person)}`;
@@ -268,11 +268,12 @@ describe("M118: the Tools bed finder is a narrower quick filter", () => {
     const forensic: Unit = { ...base, id: `${base.id}-m118-forensic`, forensic: true };
     const plain: Unit = { ...base, id: `${base.id}-m118-plain`, forensic: false };
     const person = PEOPLE.find((candidate) => candidate.cohort === "Adult" && candidate.gender === candidate.sex)!;
-    const listed = findBeds([forensic, plain], [], [], filtersFor(person, "any")).map((row) => row.unit.id);
+    const listed = findBeds([forensic, plain], [], [], filtersFor(person, "any"), []).map((row) => row.unit.id);
     expect(listed).toEqual([plain.id]);
     expect(gate(eligibility(asMovement(person), forensic, NOW).gates, "forensic").pass).toBe(false);
     for (const person of PEOPLE.filter((candidate) => candidate.gender === candidate.sex))
-      for (const row of findBeds(units, [], [], filtersFor(person, person.sex))) expect(row.unit.forensic).toBe(false);
+      for (const row of findBeds(units, [], [], filtersFor(person, person.sex), []))
+        expect(row.unit.forensic).toBe(false);
   });
 
   it("says on screen which fit rules the quick filter leaves out", () => {

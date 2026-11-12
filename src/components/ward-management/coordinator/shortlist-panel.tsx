@@ -2,7 +2,12 @@
 
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
-import { currentLegalDueAt, formProgression, formProgressionPhrase } from "../legal-forms/legal-form-progression";
+import {
+  currentLegalDueAt,
+  FORM_RECORDED_ENDED,
+  formProgressionPhrase,
+  legalFormEnd,
+} from "../legal-forms/legal-form-progression";
 
 import { Check, CircleCheck, CircleAlert, ChevronDown, ChevronUp, Info } from "lucide-react";
 import Link from "next/link";
@@ -241,8 +246,12 @@ type OverrideRecord = { unitIds: string[]; at: Instant; reason: string };
 function legalFormLine(movement: Movement, now: Instant) {
   if (!movement.legalForm) return "No legal form recorded";
   const formCode = `Form ${movement.legalForm.code}`;
-  const progression = formProgression(movement);
-  if (progression) return `${formProgressionPhrase(progression)}; Form ${progression.nextCode} to record`;
+  // The recorded end is read before the neutral 5A/5B arrival wording, as the Legal forms page reads it.
+  const end = legalFormEnd(movement);
+  if (end?.kind === "progressed") {
+    return `${formProgressionPhrase(end.progression)}; Form ${end.progression.nextCode} to record`;
+  }
+  if (end?.kind === "recorded") return `${formCode} · ${FORM_RECORDED_ENDED.toLowerCase()}`;
   const dueAt = currentLegalDueAt(movement);
   if (dueAt === undefined) {
     // States what the record holds, never what the Act requires (tests/ward-legal-figure-guard.test.ts).

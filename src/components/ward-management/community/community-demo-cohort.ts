@@ -131,9 +131,9 @@ export const DEMO_COMMUNITY_REFERRALS: DemoReferral[] = [
     patientDetails: "Male 45y",
     legalStatus: "Form 1A MHA",
     legalStatusTone: "danger",
-    origin: "MHERL / WA Police co-response",
+    origin: "MHERL referral, WA Police co-response",
     clinicalSummary:
-      "Origin: MHERL / WA Police co-response. Severe paranoid persecutory delusions, barricaded in residence, medication non-adherence x3 months. Community mental health crisis team dispatched for joint assessment.",
+      "Origin: MHERL referral, WA Police co-response. Severe paranoid persecutory delusions, barricaded in residence, medication non-adherence x3 months. Community mental health crisis team dispatched for joint assessment.",
     primaryActionLabel: "Accept & allocate",
     secActionLabel: "Dispatch crisis team",
     declineActionLabel: "Decline",

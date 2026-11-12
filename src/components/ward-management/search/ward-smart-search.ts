@@ -209,8 +209,9 @@ type TaskSearchResult = {
  */
 export function unitReadyBedCount(
   unit: Unit,
-  admissions: readonly Admission[] = [],
-  referrals: readonly ReservationReferral[] = [],
+  admissions: readonly Admission[],
+  /** The named holds: open journeys and accepted referrals (D-115 item 3). */
+  referrals: readonly ReservationReferral[],
 ): number | null {
   if (unit.allocatable && unit.empty) {
     return readyBedsNow(unit, admissions, [], referrals);

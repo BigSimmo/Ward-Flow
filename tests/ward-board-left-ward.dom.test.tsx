@@ -87,7 +87,7 @@ describe("ward board: Left the ward, waiting for transport (item 18)", () => {
         .getAllByRole("radio")
         .filter((radio) => (radio as HTMLInputElement).checked),
     ).toHaveLength(0);
-    fireEvent.click(within(transport).getByRole("radio", { name: "No, still waiting for transport" }));
+    fireEvent.click(within(transport).getByRole("radio", { name: "Still waiting" }));
     fireEvent.click(proceed);
     expect(screen.getAllByRole("button", { name: /^Collected/ })).toHaveLength(before + 1);
   });

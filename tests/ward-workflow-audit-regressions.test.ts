@@ -111,7 +111,10 @@ describe("workflow audit regressions", () => {
     });
     const unit = state.units.find((u) => u.id === "rph-adult-secure")!;
     const before = takeLastLookSnapshot(state, now, DEFAULT_DUE_SOON_THRESHOLDS);
-    const readyBefore = readyBedsNow(unit, state.admissions, state.bedReleases);
+    const readyBefore = readyBedsNow(unit, state.admissions, state.bedReleases, [
+      ...state.movements,
+      ...state.referrals,
+    ]);
     state = send(state, {
       type: "CONFIRM_CAPACITY",
       role: "ward",
@@ -123,7 +126,10 @@ describe("workflow audit regressions", () => {
     });
     const currentUnit = state.units.find((u) => u.id === unit.id)!;
     const after = takeLastLookSnapshot(state, now + 1, DEFAULT_DUE_SOON_THRESHOLDS);
-    const readyAfter = readyBedsNow(currentUnit, state.admissions, state.bedReleases);
+    const readyAfter = readyBedsNow(currentUnit, state.admissions, state.bedReleases, [
+      ...state.movements,
+      ...state.referrals,
+    ]);
     expect(readyAfter - readyBefore).toBe(1);
     expect(after.readyByUnit[unit.id]).toBe(readyAfter);
     expect(changesSinceLastLook(JSON.parse(JSON.stringify(before)), after, state)?.bedsFreed).toEqual([

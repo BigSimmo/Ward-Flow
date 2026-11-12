@@ -1,6 +1,6 @@
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { type Instant, isClockBreached } from "@/components/ward-management/ward-clock";
-import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { readyBedsNow, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import { elapsedOpenMinutes, isDetainedUnderTheAct } from "@/components/ward-management/ed/ed-home-derivations";
 import {
@@ -342,8 +342,11 @@ export function trackServiceBedCapacity(
   accessTargetMinutes?: number,
   /** Admissions, so a live pull counts as a bed in use (`ward-occupancy.ts`). */
   admissions: readonly Admission[] = [],
+  /** Accepted referrals; with `movements` they are the named holds a ready bed leaves out (D-115). */
+  referrals: readonly ReservationReferral[] = [],
 ): StatewideCapacityReport {
   const releases = [...bedReleases];
+  const holds: readonly ReservationReferral[] = [...movements, ...referrals];
   const serviceTrackings: ServiceCapacityTracking[] = [];
 
   for (const service of HEALTH_SERVICES) {
@@ -376,7 +379,7 @@ export function trackServiceBedCapacity(
       for (const u of siteUnits) {
         // Audit 24-4 NA2-08: the one ready figure every screen prints (`readyBedsNow`), not the
         // pull gate `openBedsNow`, which also drops beds still being made ready.
-        siteFree += readyBedsNow(u, admissions, releases);
+        siteFree += readyBedsNow(u, admissions, releases, holds);
         siteTotal += u.beds;
         // Occupied is the board's own buckets (Josh, 25 Sept 2026: the rail matches the board): the
         // Occupied and Pulled boxes, through the one shared count every screen reads

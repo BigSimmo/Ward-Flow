@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
@@ -18,13 +18,25 @@ import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
 import { ChevronRight, PhoneCall } from "lucide-react";
-import { Button, FormalName, Icon, StatusGlyph, type HeroActProps } from "@/components/wf";
+import {
+  Button,
+  FormalName,
+  Icon,
+  ShowMoreRow,
+  StatusGlyph,
+  foldHidden,
+  foldLimit,
+  type HeroActProps,
+} from "@/components/wf";
 
 import { useCarerCallbacksDue } from "@/components/ward-management/carer-callbacks";
 import { HandoverOwnWork } from "@/components/ward-management/handover-own-work";
 
 export { useCarerCallbacksDue as useCarerDue } from "@/components/ward-management/carer-callbacks";
 import styles from "./handover-open-promises.module.css";
+
+/** About eight rows, then the kit's Show more (DESIGN-SYSTEM.md section 4). */
+const PROMISE_ROWS = 8;
 
 /** "1 carer call back", "2 carer call backs". */
 function carerCallbacksWords(count: number): string {
@@ -83,7 +95,7 @@ export function openPromiseCounts(referrals: readonly Referral[], now: Instant):
 /**
  * Page tops (Josh, 9 Nov 2026): the ward replies as the top's one act row. Overdue replies are the
  * act-now line ("1 ward reply overdue"); replies still to come are a quieter amber line. The button
- * shows or hides the replies card (`onOpenChange`), or with `onShow` takes the reader to it.
+ * ("Show list") shows or hides the card (`onOpenChange`), or with `onShow` takes the reader to it.
  */
 export function promisesHeroAct(
   referrals: readonly Referral[],
@@ -110,7 +122,8 @@ export function promisesHeroAct(
       : `${carerCallbacksWords(carerDue)} due`,
     testId: "ward-handover-promises-act",
     action: {
-      label: open ? "Hide replies" : "Show replies",
+      // Neutral words: the card may hold carer call backs only, so "replies" would misname it.
+      label: open ? "Hide list" : "Show list",
       phoneLabel: open ? "Hide" : "Show",
       pressed: open,
       testId: "ward-handover-promises-toggle",
@@ -126,7 +139,7 @@ export function promisesPhoneAct(referrals: readonly Referral[], now: Instant, c
   return {
     ...act,
     action: {
-      label: "Show replies",
+      label: "Show list",
       phoneLabel: "Show",
       testId: "ward-handover-promises-toggle",
       onClick: () =>
@@ -176,6 +189,7 @@ function PromisesCard({
   layout?: "page" | "rail" | "phone";
 }) {
   const baseId = useId();
+  const [showAll, setShowAll] = useState(false);
   const patientOf = usePatientOf();
   const nameFor = usePatientNameDisplay();
   // Batch 3 item 23: carer call backs past their best-after time join the same list, as one kind.
@@ -211,6 +225,8 @@ function PromisesCard({
     .sort((left, right) => left.sortAt - right.sortAt);
   const carerRows = carerDue.map((record) => ({ kind: "carer" as const, record, sortAt: record.bestAfter }));
   const merged = [...rows, ...carerRows].sort((left, right) => left.sortAt - right.sortAt);
+  const hidden = foldHidden(merged.length, PROMISE_ROWS);
+  const shown = showAll || hidden === 0 ? merged : merged.slice(0, foldLimit(merged.length, PROMISE_ROWS));
   const heading =
     carerRows.length === 0 ? "Ward replies due" : rows.length === 0 ? "Carer call backs due" : "Promises due";
   return (
@@ -227,8 +243,8 @@ function PromisesCard({
         {/* The overdue count is the page top's act row; each row still says Overdue. */}
         <span className={styles.note}>Earliest first</span>
       </h2>
-      <ul className={styles.list}>
-        {merged.map((row) => {
+      <ul className={styles.list} id={`${baseId}-list`}>
+        {shown.map((row) => {
           if (row.kind === "carer") {
             const { record } = row;
             const stay = stays?.find((admission) => admission.id === record.admissionId);
@@ -312,6 +328,11 @@ function PromisesCard({
           );
         })}
       </ul>
+      {hidden > 0 ? (
+        <ShowMoreRow onClick={() => setShowAll((all) => !all)} expanded={showAll} controls={`${baseId}-list`}>
+          {showAll ? "Show fewer" : `Show ${hidden} more`}
+        </ShowMoreRow>
+      ) : null}
     </section>
   );
 }

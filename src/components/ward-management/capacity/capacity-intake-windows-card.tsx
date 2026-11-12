@@ -1,10 +1,17 @@
-import { Card, CardHead } from "@/components/wf";
+"use client";
+
+import { useState } from "react";
+
+import { Card, CardHead, ShowMoreRow, foldHidden, foldLimit } from "@/components/wf";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import type { Unit } from "@/components/ward-management/ward-model";
 
 import { tonightIntakeWindowList } from "./ward-intake-window-list";
 import styles from "./capacity-intake-windows-card.module.css";
+
+/** About eight rows, then the kit's Show more (DESIGN-SYSTEM.md section 4). */
+const INTAKE_ROWS = 8;
 
 /**
  * Feature item 13 (10 Nov 2026): "Tonight's intake windows" on the Capacity Overview, so night staff
@@ -22,12 +29,15 @@ export function CapacityIntakeWindowsCard({
   onWard?: (unitId: string) => void;
 }) {
   const { set, notSetCount } = tonightIntakeWindowList(units, now);
+  const [showAll, setShowAll] = useState(false);
+  const hidden = foldHidden(set.length, INTAKE_ROWS);
+  const shown = showAll || hidden === 0 ? set : set.slice(0, foldLimit(set.length, INTAKE_ROWS));
   return (
     <Card aria-labelledby="capacity-intake-windows-title" data-testid="capacity-intake-windows">
       <CardHead id="capacity-intake-windows-title" title="Tonight's intake windows" meta={String(set.length)} />
       {set.length > 0 ? (
-        <ul className={styles.list} aria-label="Wards with intake hours tonight">
-          {set.map(({ unit, intake }) => (
+        <ul className={styles.list} id="capacity-intake-windows-list" aria-label="Wards with intake hours tonight">
+          {shown.map(({ unit, intake }) => (
             <li key={unit.id} className={styles.row} data-testid="capacity-intake-window-row">
               {onWard ? (
                 <button type="button" className={styles.ward} onClick={() => onWard(unit.id)}>
@@ -44,6 +54,15 @@ export function CapacityIntakeWindowsCard({
             </li>
           ))}
         </ul>
+      ) : null}
+      {hidden > 0 ? (
+        <ShowMoreRow
+          onClick={() => setShowAll((all) => !all)}
+          expanded={showAll}
+          controls="capacity-intake-windows-list"
+        >
+          {showAll ? "Show fewer" : `Show ${hidden} more`}
+        </ShowMoreRow>
       ) : null}
       <p className={styles.muted} data-testid="capacity-intake-windows-not-set">
         {notSetCount === 0

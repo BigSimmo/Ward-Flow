@@ -2,11 +2,24 @@
 
 import { Ambulance, BedSingle, CalendarClock, Clock, Phone } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
-import { Card, CardHead, EmptyState, Hero, HeroFigures, HeroTop, LiveChip, StatusGlyph } from "@/components/wf";
+import {
+  Card,
+  CardHead,
+  EmptyState,
+  Hero,
+  HeroFigures,
+  HeroTop,
+  LiveChip,
+  ShowMoreRow,
+  StatusGlyph,
+  foldHidden,
+  foldLimit,
+} from "@/components/wf";
 import { movementHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { formatInstant, formatInstantWithDay, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import {
@@ -17,7 +30,11 @@ import {
   nightReadyBeds,
 } from "@/components/ward-management/night-view-figures";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import { unitHealthService } from "@/components/ward-management/ward-service-scope";
+import {
+  healthServiceAcronym,
+  movementBelongsToService,
+  unitHealthService,
+} from "@/components/ward-management/ward-service-scope";
 
 import styles from "./night-view.module.css";
 
@@ -25,6 +42,24 @@ const CAPACITY_HREF = "/ward-flow/capacity";
 const WAITING_HREF = "/ward-flow/waiting";
 const MOVEMENTS_HREF = "/ward-flow/movements";
 const ON_CALL_HREF = "/ward-flow/on-call";
+
+/** About eight rows, then the kit's Show more (DESIGN-SYSTEM.md section 4). */
+const NIGHT_ROWS = 8;
+
+/** A list's fold: the rows to draw and the Show more row, if folding hides two or more. */
+function useFold<T>(items: readonly T[], id: string) {
+  const [open, setOpen] = useState(false);
+  const hidden = foldHidden(items.length, NIGHT_ROWS);
+  return {
+    rows: open || hidden === 0 ? items : items.slice(0, foldLimit(items.length, NIGHT_ROWS)),
+    more:
+      hidden === 0 ? null : (
+        <ShowMoreRow onClick={() => setOpen((was) => !was)} expanded={open} controls={id}>
+          {open ? "Show fewer" : `Show ${hidden} more`}
+        </ShowMoreRow>
+      ),
+  };
+}
 
 /**
  * Night view (feature plan item 29): the coordinator's overnight screen. Beds ready, ED waits by
@@ -43,13 +78,24 @@ export function NightViewScreen() {
   const now = useWardFlowClock();
   const network = useWardNetwork();
   const patientOf = usePatientOf();
+  // The chosen service scopes each figure exactly as Home's matching figure: ED waits and journeys
+  // follow it; beds stay network-wide (a placement may use any ward) and say so, in Home's words.
+  const service = useServiceScope();
+  const networkWord = service === null ? "" : " network-wide";
+  const scopedMovements = useMemo(
+    () =>
+      service === null ? movements : movements.filter((movement) => movementBelongsToService(movement, service, units)),
+    [movements, units, service],
+  );
 
   const beds = useMemo(
     () => nightReadyBeds(units, admissions, bedReleases, movements, referrals),
     [units, admissions, bedReleases, movements, referrals],
   );
-  const waits = useMemo(() => nightEdWaits(movements, now), [movements, now]);
-  const onTheWay = useMemo(() => nightOnTheWay(movements, now), [movements, now]);
+  const waits = useMemo(() => nightEdWaits(scopedMovements, now), [scopedMovements, now]);
+  const onTheWay = useMemo(() => nightOnTheWay(scopedMovements, now), [scopedMovements, now]);
+  const bedRows = useFold(beds.wards, "night-beds-list");
+  const movingRows = useFold(onTheWay, "night-moving-list");
   const contacts = useMemo(() => nightContacts(network.sites, minuteOfDay(now)), [network.sites, now]);
   const unitName = (id: string | undefined) => units.find((unit) => unit.id === id)?.name;
   const atStep = waits.waiting - waits.underFirstStep;
@@ -59,7 +105,7 @@ export function NightViewScreen() {
       <Hero
         level={1}
         title="Night view"
-        titleMeta={`Statewide · as at ${formatInstantWithDay(now, now)}`}
+        titleMeta={`${service === null ? "Statewide" : healthServiceAcronym(service) || service} · as at ${formatInstantWithDay(now, now)}`}
         aside={<LiveChip state="live" onHero age={formatInstant(now)} />}
       >
         <HeroTop
@@ -72,7 +118,7 @@ export function NightViewScreen() {
                 {
                   id: "beds",
                   value: beds.total,
-                  label: `${beds.total === 1 ? "bed" : "beds"} ready`,
+                  label: `${beds.total === 1 ? "bed" : "beds"} ready${networkWord}`,
                   testId: "night-figure-beds",
                 },
                 {
@@ -99,7 +145,7 @@ export function NightViewScreen() {
             title={<span id="night-beds-title">Beds ready now</span>}
             icon={BedSingle}
             iconPlain
-            meta={`${beds.total} ready`}
+            meta={`${beds.total} ready${networkWord}`}
             action={
               <Link href={CAPACITY_HREF} className={styles.headLink}>
                 Capacity
@@ -109,8 +155,8 @@ export function NightViewScreen() {
           {beds.wards.length === 0 ? (
             <EmptyState title="No bed ready" meta={`Checked at ${formatInstant(now)}`} />
           ) : (
-            <ul className={styles.rows}>
-              {beds.wards.map(({ unit, ready }) => (
+            <ul className={styles.rows} id="night-beds-list">
+              {bedRows.rows.map(({ unit, ready }) => (
                 <li key={unit.id} className={styles.row} data-testid={`night-ward-${unit.id}`}>
                   <span className={styles.rowMain}>
                     <Link href={unitHref(unit.id)} className={styles.rowTitle}>
@@ -128,6 +174,7 @@ export function NightViewScreen() {
               ))}
             </ul>
           )}
+          {bedRows.more}
           {beds.wardsWithNone > 0 ? (
             <p className={styles.cardFoot}>
               {beds.wardsWithNone} {beds.wardsWithNone === 1 ? "ward has" : "wards have"} no bed ready. Wards are in a
@@ -189,8 +236,8 @@ export function NightViewScreen() {
           {onTheWay.length === 0 ? (
             <EmptyState title="Nobody on the way" meta={`Checked at ${formatInstant(now)}`} />
           ) : (
-            <ul className={styles.rows}>
-              {onTheWay.map((movement) => {
+            <ul className={styles.rows} id="night-moving-list">
+              {movingRows.rows.map((movement) => {
                 const eta = movement.transport?.estimatedAt;
                 return (
                   <li key={movement.id} className={styles.row} data-testid={`night-moving-${movement.id}`}>
@@ -208,6 +255,7 @@ export function NightViewScreen() {
               })}
             </ul>
           )}
+          {movingRows.more}
         </Card>
 
         <Card aria-labelledby="night-intake-title" data-testid="night-intake-windows">

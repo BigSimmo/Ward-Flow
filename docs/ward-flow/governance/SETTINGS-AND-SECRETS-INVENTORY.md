@@ -31,30 +31,31 @@ that is not in a table below, so the list cannot fall behind the code.
 
 ## Web app (Railway web service)
 
-| Setting                                     | Secret | Purpose                                                      | Read by                                | Checked on service |
-| ------------------------------------------- | ------ | ------------------------------------------------------------ | -------------------------------------- | ------------------ |
-| `NEXT_PUBLIC_DEMO_MODE`                     | No     | Public demo switch                                           | `src/instrumentation.ts`               |                    |
-| `NEXT_PUBLIC_SITE_URL`                      | No     | The site's own address                                       | `src`                                  |                    |
-| `NEXT_PUBLIC_WARD_API_BASE_URL`             | No     | Backend address for the shared workspace                     | `src`                                  |                    |
-| `NEXT_PUBLIC_WARD_AUTH_PROVIDER`            | No     | Sign-in provider (blank means Supabase, D-55)                | `src/lib/security-headers.ts`          |                    |
-| `NEXT_PUBLIC_WARD_COORDINATOR_EMAIL`        | No     | Bootstrap coordinator sign-in hint                           | `src/components/ward-management`       |                    |
-| `NEXT_PUBLIC_WARD_DATA_MODE`                | No     | Data mode; drafts are kept only in `prototype`               | `ward-session-drafts.ts`               |                    |
-| `NEXT_PUBLIC_WARD_DEMO_URL`                 | No     | Link to the public demo                                      | `src`                                  |                    |
-| `NEXT_PUBLIC_WARD_ENVIRONMENT`              | No     | Which environment flags apply                                | `ward-feature-flags.ts`                |                    |
-| `NEXT_PUBLIC_WARD_FLAGS`                    | No     | Feature flags                                                | `ward-feature-flags.ts`                |                    |
-| `NEXT_PUBLIC_WARD_OPEN_SIGNUP`              | No     | Whether the front door offers sign-up                        | `front-door/use-front-door-auth.ts`    |                    |
-| `NEXT_PUBLIC_WARD_SHARED_ENABLED`           | No     | Shared workspace switch                                      | `src`                                  |                    |
-| `NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY` | No     | Supabase publishable key (public by design)                  | `ward-auth-session.ts`                 |                    |
-| `NEXT_PUBLIC_WARD_SUPABASE_URL`             | No     | Supabase project address                                     | `ward-auth-session.ts`                 |                    |
-| `NEXT_PUBLIC_WARD_SUPPORT_EMAIL`            | No     | Report-a-problem support address                             | `help/ward-help-report.ts`             |                    |
-| `WARD_FRONT_DOOR`                           | No     | Front door (pass) switch                                     | `src/proxy.ts`, `api/session/route.ts` |                    |
-| `WARD_DEMO_CODE`                            | Yes    | The demo code people type at the front door                  | `src/lib/front-door-pass.ts`           |                    |
-| `WARD_PASS_SECRET`                          | Yes    | Signs the `wf_pass` cookie                                   | `src/lib/front-door-pass.ts`           |                    |
-| `SENTRY_DSN`                                | Yes    | Server error reporting, off when blank                       | `src/lib/sentry-server.ts`             |                    |
-| `SENTRY_ENVIRONMENT`                        | No     | Label on error reports                                       | `src/lib/sentry-server.ts`             |                    |
-| `SENTRY_ENABLE_LOGS`                        | No     | Sends warn and error log lines to Sentry Logs unless `false` | `src/lib/sentry-server.ts`             |                    |
-| `SENTRY_RELEASE`                            | No     | Release label on error reports                               | `src/lib/sentry-server.ts`             |                    |
-| `SUPABASE_SERVICE_ROLE_KEY`                 | Yes    | **Must never be set on the web app.** Read only to refuse it | `src/instrumentation.ts`               |                    |
+| Setting                                     | Secret | Purpose                                                                                    | Read by                                | Checked on service |
+| ------------------------------------------- | ------ | ------------------------------------------------------------------------------------------ | -------------------------------------- | ------------------ |
+| `NEXT_PUBLIC_DEMO_MODE`                     | No     | Public demo switch                                                                         | `src/instrumentation.ts`               |                    |
+| `NEXT_PUBLIC_SITE_URL`                      | No     | The site's own address                                                                     | `src`                                  |                    |
+| `NEXT_PUBLIC_WARD_API_BASE_URL`             | No     | Backend address for the shared workspace                                                   | `src`                                  |                    |
+| `NEXT_PUBLIC_WARD_AUTH_PROVIDER`            | No     | Sign-in provider (blank means Supabase, D-55)                                              | `src/lib/security-headers.ts`          |                    |
+| `NEXT_PUBLIC_WARD_COORDINATOR_EMAIL`        | No     | Bootstrap coordinator sign-in hint                                                         | `src/components/ward-management`       |                    |
+| `NEXT_PUBLIC_WARD_DATA_MODE`                | No     | Data mode; drafts are kept only in `prototype`                                             | `ward-session-drafts.ts`               |                    |
+| `NEXT_PUBLIC_WARD_DEMO_URL`                 | No     | Link to the public demo                                                                    | `src`                                  |                    |
+| `NEXT_PUBLIC_WARD_ENVIRONMENT`              | No     | Which environment flags apply                                                              | `ward-feature-flags.ts`                |                    |
+| `NEXT_PUBLIC_WARD_FLAGS`                    | No     | Feature flags                                                                              | `ward-feature-flags.ts`                |                    |
+| `NEXT_PUBLIC_WARD_OPEN_SIGNUP`              | No     | Whether the front door offers sign-up                                                      | `front-door/use-front-door-auth.ts`    |                    |
+| `NEXT_PUBLIC_WARD_SHARED_ENABLED`           | No     | Shared workspace switch                                                                    | `src`                                  |                    |
+| `NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY` | No     | Supabase publishable key (public by design)                                                | `ward-auth-session.ts`                 |                    |
+| `NEXT_PUBLIC_WARD_SUPABASE_URL`             | No     | Supabase project address                                                                   | `ward-auth-session.ts`                 |                    |
+| `NEXT_PUBLIC_WARD_SUPPORT_EMAIL`            | No     | Report-a-problem support address                                                           | `help/ward-help-report.ts`             |                    |
+| `WARD_FRONT_DOOR`                           | No     | Front door (pass) switch                                                                   | `src/proxy.ts`, `api/session/route.ts` |                    |
+| `WARD_DEMO_CODE`                            | Yes    | The demo code people type at the front door                                                | `src/lib/front-door-pass.ts`           |                    |
+| `WARD_PASS_SECRET`                          | Yes    | Signs the `wf_pass` cookie                                                                 | `src/lib/front-door-pass.ts`           |                    |
+| `WARD_TRUSTED_PROXY_ADDRESSES`              | No     | Demo-code try limit: only `*` applies here; an IP list is ignored with one warning (D-147) | `src/lib/demo-code-tries.ts`           |                    |
+| `SENTRY_DSN`                                | Yes    | Server error reporting, off when blank                                                     | `src/lib/sentry-server.ts`             |                    |
+| `SENTRY_ENVIRONMENT`                        | No     | Label on error reports                                                                     | `src/lib/sentry-server.ts`             |                    |
+| `SENTRY_ENABLE_LOGS`                        | No     | Sends warn and error log lines to Sentry Logs unless `false`                               | `src/lib/sentry-server.ts`             |                    |
+| `SENTRY_RELEASE`                            | No     | Release label on error reports                                                             | `src/lib/sentry-server.ts`             |                    |
+| `SUPABASE_SERVICE_ROLE_KEY`                 | Yes    | **Must never be set on the web app.** Read only to refuse it                               | `src/instrumentation.ts`               |                    |
 
 ## Backend (Railway backend service)
 

@@ -110,6 +110,10 @@ Backend settings (Railway dashboard):
   headers and the backend cannot be reached directly. Reverify those conditions before relying on
   per-address sign-in limits; prefer explicit proxy socket addresses, or no forwarded-header trust
   when unverified. This document does not establish the current deployed ingress boundary.
+  On the web app (Next) service the same setting only gates the demo-code try limit, and only `*`
+  applies there: the session route has no socket address to match, so a list of IP addresses is
+  ignored with one `ward_front_door_config_warning` log line and the D-147 per-address keying
+  stays.
 - Recorded watch paths: `/backend/ward-flow/**`, `/src/components/ward-management/**` and
   `/src/lib/**` (the engine bundles both, including the synthetic-data guard), `/package.json`,
   `/package-lock.json` and `/tsconfig.json`. The maintained source contract in

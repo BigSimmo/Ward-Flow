@@ -237,7 +237,7 @@ describe("item 25: catch up after the outage", () => {
     expect(card).toHaveTextContent(
       `Since your pack at ${formatInstant(OUTAGE.from - 30)}, enter admissions, discharges, moves and bed changes done on paper.`,
     );
-    for (const action of ["Add admission", "Record discharge", "Record move", "Change a bed", "Beds still correct"])
+    for (const action of ["Open arrivals", "Open discharges", "Open bed board", "Open bed list", "Beds still correct"])
       expect(within(card).getByRole("button", { name: action })).toBeInTheDocument();
     expect(within(card).getByTestId("ward-catch-up-beds")).toHaveTextContent(
       `${ward.beds} beds not confirmed since the outage`,

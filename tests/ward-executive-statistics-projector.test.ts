@@ -248,7 +248,10 @@ describe("the inactive full reporting bundle", () => {
     const sourceWard = state.units.find((unit) => unit.id === ward.id)!;
     // These are public ward inventory facts already used by the permitted bed finder.
     // Never infer free locked/open capacity from the physical designation split.
-    const finderReady = readyBedsNow(sourceWard, state.admissions, state.bedReleases);
+    const finderReady = readyBedsNow(sourceWard, state.admissions, state.bedReleases, [
+      ...state.movements,
+      ...state.referrals,
+    ]);
     expect(ward).toMatchObject({
       isClosed: sourceWard.isClosed === true,
       sexDesignation: sourceWard.sexDesignation,
@@ -1042,7 +1045,9 @@ describe("the executive Network aggregate boundary", () => {
       pulled: occupancy.pulled,
       inUse: occupancy.inUse,
     });
-    expect(projected.beds.ready).toBe(totalReadyBedsNow(state.units, state.admissions, state.bedReleases));
+    expect(projected.beds.ready).toBe(
+      totalReadyBedsNow(state.units, state.admissions, state.bedReleases, [...state.movements, ...state.referrals]),
+    );
     // The seed's linked movement family has protected information. Its large waiting figure
     // must no longer remain exact beside that family; unsuppressed source parity is checked below.
     expect(waitingInEds(state.movements, NOW_ANCHOR).total).toBeGreaterThan(0);

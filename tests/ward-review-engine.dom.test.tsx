@@ -136,7 +136,9 @@ describe("review caller regressions", () => {
     );
     expect(occupied).toBeDefined();
     fireEvent.click(occupied!);
-    fireEvent.click(screen.getAllByRole("button", { name: /^New referral$/ }).at(-1)!);
+    // D-159: off the phone the ward top has no New referral chip; the bed's own actions raise it.
+    fireEvent.click(screen.getAllByRole("button", { name: /^More$/ }).at(-1)!);
+    fireEvent.click(screen.getByRole("menuitem", { name: /^Raise ward referral/ }));
     expect(routing.dispatch.mock.calls.filter(([event]) => event.type === "RECEIVE_REFERRAL")).toEqual([]);
     expect(routing.push).toHaveBeenCalledWith(expect.stringMatching(/^\/ward-flow\/referrals\/new\?category=ward/));
   });

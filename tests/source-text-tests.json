@@ -135,6 +135,7 @@
     "tests/ward-governance-claims.test.ts",
     "tests/ward-handover-no-typed-patient-rows.test.ts",
     "tests/ward-handover.dom.test.tsx",
+    "tests/ward-home-cards-pending-reachable.test.ts",
     "tests/ward-hub-route.test.ts",
     "tests/ward-inbox-classification.test.ts",
     "tests/ward-inline-form-holds.test.ts",

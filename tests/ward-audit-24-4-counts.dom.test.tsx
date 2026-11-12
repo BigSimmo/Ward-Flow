@@ -49,14 +49,16 @@ function eventsToSplit(): WardFlowEvent[] {
       state = next;
       events.push(event);
       const now = nowFor(state, step);
-      if (oldReady(state, now) !== totalReadyBedsNow(state.units, state.admissions, state.bedReleases)) return events;
+      const holds = [...state.movements, ...state.referrals];
+      if (oldReady(state, now) !== totalReadyBedsNow(state.units, state.admissions, state.bedReleases, holds))
+        return events;
     }
   }
   throw new Error("no fuzz run reached a split between the old and shared ready formulas");
 }
 
 function ReadyProbe({ events }: { events: WardFlowEvent[] }) {
-  const { units, admissions, bedReleases, leaveBeds, dispatch } = useWardFlow();
+  const { units, admissions, bedReleases, leaveBeds, movements, referrals, dispatch } = useWardFlow();
   const now = useWardFlowClock();
   const old = units.reduce(
     (sum, unit) => sum + capacityBreakdown(unit, [...bedReleases], leaveBeds, now).availableNow,
@@ -64,7 +66,9 @@ function ReadyProbe({ events }: { events: WardFlowEvent[] }) {
   );
   return (
     <>
-      <span data-testid="ready-probe">{totalReadyBedsNow(units, admissions, bedReleases)}</span>
+      <span data-testid="ready-probe">
+        {totalReadyBedsNow(units, admissions, bedReleases, [...movements, ...referrals])}
+      </span>
       <span data-testid="old-probe">{old}</span>
       <button onClick={() => events.forEach((event) => dispatch(event))}>Replay</button>
     </>

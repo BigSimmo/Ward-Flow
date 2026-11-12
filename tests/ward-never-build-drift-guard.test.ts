@@ -297,6 +297,7 @@ describe("never-build drift guard", () => {
       units: state.units,
       admissions: state.admissions,
       movements: state.movements,
+      referrals: state.referrals,
       bedReleases: state.bedReleases,
       leaveBeds: state.leaveBeds,
       now: NOW_ANCHOR,

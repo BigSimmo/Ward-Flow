@@ -19,7 +19,7 @@ import {
 } from "@/components/wf";
 import { BED_ALERT_THRESHOLD_PERCENT } from "../shell/ward-service-bed-alerts";
 import { bedsPendingPreparation } from "../ward-bed-availability";
-import { BED_STATE_LABELS, bedStates, readyBedsNow } from "../ward-bed-states";
+import { BED_STATE_LABELS, bedStates, readyBedsNow, type ReservationReferral } from "../ward-bed-states";
 import type { Admission } from "../ward-admissions";
 import { siteByCode } from "../ward-sites";
 import type { BedRelease, HealthService, LeaveBed, Unit } from "../ward-model";
@@ -43,6 +43,8 @@ type CapacityWard = {
   states: Pick<ReturnType<typeof bedStates>, "occupied" | "ready" | "pulled" | "closed" | "onLeave">;
   pending: number;
   available: number;
+  /** Beds taken by a stay (Occupied + Pulled without named holds), as Home's occupancy reads it. */
+  inUse: number;
 };
 type CapacityOptions = {
   initialGroup?: "hospital" | "ward";
@@ -59,6 +61,7 @@ type CapacityInput = CapacityOptions &
         bedReleases?: never;
         admissions?: never;
         leaveBeds?: never;
+        holds?: never;
       }
     | {
         aggregate?: undefined;
@@ -66,6 +69,8 @@ type CapacityInput = CapacityOptions &
         bedReleases: BedRelease[];
         admissions?: readonly Admission[];
         leaveBeds?: readonly LeaveBed[];
+        /** D-115 item 3: open journeys and accepted referrals, so a named bed shows Pulled, not Ready. */
+        holds?: readonly ReservationReferral[];
       }
   );
 
@@ -80,11 +85,14 @@ type CapacityRow = {
   closed: number;
   onLeave: number;
   pending: number;
+  inUse: number;
   services: Set<string>;
   units: Pick<CapacityWard, "id" | "name" | "available">[];
 };
 
-const occupancyOf = (row: CapacityRow) => (row.beds ? ((row.occupied + row.pulled) / row.beds) * 100 : 0);
+// Stay-only, as `networkUnitRows` reads it: a bed named for an incoming patient shows Pulled in the
+// breakdown but does not raise occupancy (D-115, CodeRabbit on #1637).
+const occupancyOf = (row: CapacityRow) => (row.beds ? (row.inUse / row.beds) * 100 : 0);
 
 type SortKey = "ready" | "occupancy" | "beds" | "name";
 
@@ -135,18 +143,30 @@ export function StatisticsCapacityChart(props: CapacityInput) {
             },
             pending: ward.pendingPreparation,
             available: ward.beds.ready,
+            // The report's own stay-only figure; its Pulled includes named holds (CodeRabbit on #1637).
+            inUse: ward.beds.inUse,
           }))
-      : props.units!.map((unit) => ({
-          id: unit.id,
-          name: unit.name,
-          siteCode: unit.siteCode,
-          hospital: siteByCode(unit.siteCode)?.name ?? unit.siteCode,
-          service: siteByCode(unit.siteCode)?.service ?? "Service not recorded",
-          beds: unit.beds,
-          states: bedStates(unit, props.admissions ?? [], props.bedReleases!, props.leaveBeds ?? []),
-          pending: bedsPendingPreparation(unit.id, props.bedReleases!),
-          available: readyBedsNow(unit, props.admissions ?? [], props.bedReleases!),
-        }));
+      : props.units!.map((unit) => {
+          const unheld = bedStates(unit, props.admissions ?? [], props.bedReleases!, props.leaveBeds ?? []);
+          return {
+            id: unit.id,
+            name: unit.name,
+            siteCode: unit.siteCode,
+            hospital: siteByCode(unit.siteCode)?.name ?? unit.siteCode,
+            service: siteByCode(unit.siteCode)?.service ?? "Service not recorded",
+            beds: unit.beds,
+            states: bedStates(
+              unit,
+              props.admissions ?? [],
+              props.bedReleases!,
+              props.leaveBeds ?? [],
+              props.holds ?? [],
+            ),
+            pending: bedsPendingPreparation(unit.id, props.bedReleases!),
+            available: readyBedsNow(unit, props.admissions ?? [], props.bedReleases!, props.holds ?? []),
+            inUse: unheld.occupied + unheld.pulled,
+          };
+        });
   return (
     <CapacityChartView
       units={wards}
@@ -203,6 +223,7 @@ function CapacityChartView({
           closed: 0,
           onLeave: 0,
           pending: 0,
+          inUse: 0,
           services: new Set<string>(),
           units: [],
         };
@@ -215,6 +236,7 @@ function CapacityChartView({
         row.closed += states.closed;
         row.onLeave += states.onLeave;
         row.pending += unit.pending;
+        row.inUse += unit.inUse;
         row.units.push(unit);
         grouped.set(id, row);
       }

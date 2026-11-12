@@ -496,6 +496,7 @@ function OperationalStatisticsScreen({
             bedReleases={sourceBedReleases}
             admissions={sourceAdmissions}
             leaveBeds={leaveBeds}
+            holds={namedHolds}
           />
         ),
         occupancy: (

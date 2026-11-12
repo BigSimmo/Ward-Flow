@@ -2,7 +2,8 @@
 .find {
   flex: 0 1 15rem;
   min-width: 9rem;
-  height: 32px;
+  /* The kit TextInput's desktop height (36px), not the old 32px; touch tokens raise it. */
+  height: var(--wf-h-md);
 }
 
 .moreRow {

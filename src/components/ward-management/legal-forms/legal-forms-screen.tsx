@@ -1013,6 +1013,24 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
             {viewTabs}
             {shownView === "seclusion" ? seclusionView : null}
             <Card className={styles.listCard} aria-label="Everyone on a form" hidden={shownView === "seclusion"}>
+              {/* One phone rule with Movements and Leave: Print and Export stay, icon-only, named. */}
+              {shownView === "history" ? null : (
+                <CardHead
+                  title="Everyone on a form"
+                  level={2}
+                  action={
+                    <>
+                      <ListPrintButton iconOnly disabled={listPopulation.length === 0} testId="ward-legal-print" />
+                      <ListExportButton
+                        iconOnly
+                        load={exportList}
+                        disabled={listPopulation.length === 0}
+                        testId="ward-legal-export"
+                      />
+                    </>
+                  }
+                />
+              )}
               {highlight ? (
                 <p className={styles.phoneNote}>
                   {highlightCount} of {rows.length} highlighted, all rows stay
@@ -1105,14 +1123,14 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   level={2}
                   // The note sits under the title and wraps, so the list's tools keep the right edge.
                   meta={
-                    <span className={styles.meta}>
-                      {highlight
-                        ? `${highlightCount} of ${rows.length} highlighted, all rows stay`
-                        : shownView === "clocks"
-                          ? // The one colour key, near the list (Josh, 30 Oct 2026). The group heads say the order.
-                            TYPED_TIME_KEY
-                          : null}
-                    </span>
+                    highlight || shownView === "clocks" ? (
+                      <span className={styles.meta}>
+                        {highlight
+                          ? `${highlightCount} of ${rows.length} highlighted, all rows stay`
+                          : // The one colour key, near the list (Josh, 30 Oct 2026). The group heads say the order.
+                            TYPED_TIME_KEY}
+                      </span>
+                    ) : undefined
                   }
                   action={
                     // Page tops (Josh, 9 Nov 2026): Record a form, Record and tell and Copy for handover are

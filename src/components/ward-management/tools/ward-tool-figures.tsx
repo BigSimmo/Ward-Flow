@@ -35,10 +35,11 @@ export function ToolFigures({ onNavigate }: { onNavigate: () => void }) {
 }
 
 function OperationalFigures({ onNavigate }: { onNavigate: () => void }) {
-  const { units, admissions, movements, bedReleases, leaveBeds } = useWardFlowSelect(
+  const { units, admissions, movements, referrals, bedReleases, leaveBeds } = useWardFlowSelect(
     "units",
     "admissions",
     "movements",
+    "referrals",
     "bedReleases",
     "leaveBeds",
   );
@@ -46,7 +47,10 @@ function OperationalFigures({ onNavigate }: { onNavigate: () => void }) {
   const occupied = occupiedBeds(units, admissions, bedReleases, leaveBeds);
   const ed = openEdJourneys(movements, now);
   const figures: Figure[] = [
-    { label: "Beds ready", value: String(totalReadyBedsNow(units, admissions, bedReleases)) },
+    {
+      label: "Beds ready",
+      value: String(totalReadyBedsNow(units, admissions, bedReleases, [...movements, ...referrals])),
+    },
     { label: "Occupancy", value: occupied.beds ? `${occupancyPercent(occupied)}%` : "—" },
     { label: "Open ED movements", value: String(ed.total) },
     { label: "Waiting in ED", value: String(ed.stillInEd) },

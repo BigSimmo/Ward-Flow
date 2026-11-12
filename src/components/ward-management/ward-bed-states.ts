@@ -93,12 +93,16 @@ export function bedStates(
  * bed board, Handover and Statistics read this, and the bed flow, Capacity and the TV read the same
  * box through `bedStates`. New pulls use the same reservation partition through
  * `pulledBedAvailability`; physical arrivals keep their separate recording rules.
+ *
+ * `referrals` is required (D-115 item 3): the named holds, open journeys and accepted referrals
+ * (`[...movements, ...referrals]`), so a bed named for an incoming patient is off Ready on every
+ * screen. Pass `[]` only where the caller truly holds no named reservation.
  */
 export function readyBedsNow(
   unit: Unit,
   admissions: readonly Admission[],
   bedReleases: readonly BedRelease[],
-  referrals: readonly ReservationReferral[] = [],
+  referrals: readonly ReservationReferral[],
 ): number {
   return bedStates(unit, admissions, [...bedReleases], [], referrals).ready;
 }
@@ -111,7 +115,7 @@ export function readyBedsByWard(
   units: readonly Unit[],
   admissions: readonly Admission[],
   bedReleases: readonly BedRelease[],
-  referrals: readonly ReservationReferral[] = [],
+  referrals: readonly ReservationReferral[],
 ): { unit: Unit; ready: number }[] {
   return units
     .map((unit) => ({ unit, ready: readyBedsNow(unit, admissions, bedReleases, referrals) }))
@@ -123,7 +127,7 @@ export function totalReadyBedsNow(
   units: readonly Unit[],
   admissions: readonly Admission[],
   bedReleases: readonly BedRelease[],
-  referrals: readonly ReservationReferral[] = [],
+  referrals: readonly ReservationReferral[],
 ): number {
   return readyBedsByWard(units, admissions, bedReleases, referrals).reduce((sum, ward) => sum + ward.ready, 0);
 }

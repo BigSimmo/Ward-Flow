@@ -14,7 +14,7 @@ import {
 import { bedSummaryText, type BedSummaryInput } from "@/components/ward-management/tools/ward-bed-summary";
 import { standingFigures } from "@/components/ward-management/ward-standing-strip";
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
-import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { bedStates, readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { openEdJourneys } from "@/components/ward-management/ward-shared-figures";
 import { formatInstant, minutesUntil, splitDuration } from "@/components/ward-management/ward-clock";
@@ -99,16 +99,22 @@ const listByService = (counts: ReadonlyMap<HealthService, number>) =>
 
 /** The figures `bedSummaryText` counts, from the same derivations, plus occupancy and the longest wait. */
 function operationalFigures(input: BedSummaryInput) {
-  const { units, admissions, movements, bedReleases, leaveBeds, now, thresholds, network } = input;
+  const { units, admissions, movements, referrals, bedReleases, leaveBeds, now, thresholds, network } = input;
+  // D-115 item 3: a bed named for an open journey or accepted referral is not ready.
+  const holds = [...movements, ...referrals];
   const ready = new Map<HealthService, number>(HEALTH_SERVICES.map((service) => [service, 0]));
   let readyTotal = 0;
   let pending = 0;
   let confirmed = 0;
   let expected = 0;
   let heldUp = 0;
+  // Pulled counts named holds (D-115 item 3), so a bed held by an accepted referral sits in Pulled
+  // rather than dropping out of both lines; occupancy stays stay-only (CodeRabbit on #1637).
+  let pulled = 0;
   for (const unit of units) {
+    pulled += bedStates(unit, admissions, bedReleases, leaveBeds, holds).pulled;
     const capacity = capacityBreakdown(unit, bedReleases, leaveBeds, now);
-    const readyHere = readyBedsNow(unit, admissions, bedReleases);
+    const readyHere = readyBedsNow(unit, admissions, bedReleases, holds);
     const service = unitHealthService(unit);
     readyTotal += readyHere;
     if (service) ready.set(service, (ready.get(service) ?? 0) + readyHere);
@@ -137,7 +143,7 @@ function operationalFigures(input: BedSummaryInput) {
     beds: occupied.beds,
     occupancy: occupancyPercent(occupied),
     inUse: occupied.inUse,
-    pulled: occupied.pulled,
+    pulled,
     readyTotal,
     readyByService: listByService(ready),
     pending,
@@ -380,10 +386,11 @@ function MessagesView({
 }
 
 function OperationalMessages() {
-  const { units, admissions, movements, bedReleases, leaveBeds } = useWardFlowSelect(
+  const { units, admissions, movements, referrals, bedReleases, leaveBeds } = useWardFlowSelect(
     "units",
     "admissions",
     "movements",
+    "referrals",
     "bedReleases",
     "leaveBeds",
   );
@@ -391,7 +398,17 @@ function OperationalMessages() {
   const thresholds = useDueSoonThresholds();
   const network = useWardNetwork();
   const [choice, setChoice] = useState<MessageId>("summary");
-  const input: BedSummaryInput = { units, admissions, movements, bedReleases, leaveBeds, now, thresholds, network };
+  const input: BedSummaryInput = {
+    units,
+    admissions,
+    movements,
+    referrals,
+    bedReleases,
+    leaveBeds,
+    now,
+    thresholds,
+    network,
+  };
   const message = choice === "summary" ? summaryMessage(bedSummaryText(input)) : operationalMessage(choice, input);
   return <MessagesView message={message} choice={choice} onChoice={setChoice} />;
 }

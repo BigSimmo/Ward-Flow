@@ -178,7 +178,7 @@ describe("Record discharge asks about transport while it is still to come (item 
     // Nothing is chosen for them: the departure waits for an answer.
     expect(record).toBeDisabled();
     const transport = screen.getByTestId("ward-discharge-departure-transport");
-    fireEvent.click(within(transport).getByRole("radio", { name: "No, still waiting for transport" }));
+    fireEvent.click(within(transport).getByRole("radio", { name: "Still waiting" }));
     expect(record).toBeEnabled();
     const waitingBefore = screen.getByTestId("transport-probe").textContent!.split("|")[1]!;
     fireEvent.click(record);

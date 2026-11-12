@@ -80,7 +80,7 @@ a.rowTitle {
 .headLink {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
+  min-height: var(--wf-h-md);
   color: var(--wf-accent-ink);
   font: 500 var(--wf-fs-13) / 18px var(--wf-font);
   text-decoration: underline;

@@ -313,7 +313,9 @@ export function WardScreenTopBar({
                     testId: "ward-updates",
                   },
                   ...staffContact.chips,
-                  ...(raiseReferralGate.allowed
+                  // D-116 and D-159: the New referral chip is phone-only. Off the phone the bar's New
+                  // menu is the one way in, so the ward top does not repeat it.
+                  ...(isPhone && raiseReferralGate.allowed
                     ? [
                         {
                           id: "referral",

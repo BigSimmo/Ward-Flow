@@ -129,7 +129,7 @@ describe("count breakdown: scope", () => {
     for (const p of pulled) expect(own.has(p.key)).toBe(true);
     // Beds are not people: a ward desk sees the network's ready beds as counts (D-115), so a bed
     // breakdown lists wards and numbers, never a person.
-    for (const row of wardReadyBreakdownRows(readyBedsByWard(scoped.units, scoped.admissions, scoped.bedReleases)))
+    for (const row of wardReadyBreakdownRows(readyBedsByWard(scoped.units, scoped.admissions, scoped.bedReleases, [])))
       expect(row.count).toBeGreaterThan(0);
   });
 
