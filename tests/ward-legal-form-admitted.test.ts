@@ -10,7 +10,12 @@ import {
 import type { WardFlowRole } from "../src/components/ward-management/ward-flow-events";
 import type { WardAccess } from "../src/components/ward-management/ward-role-access";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
-import { admittedFormLine, admittedOnAForm } from "../src/components/ward-management/legal-forms/legal-forms-admitted";
+import {
+  admittedFormLine,
+  admittedOnAForm,
+  legalFormsListPopulation,
+} from "../src/components/ward-management/legal-forms/legal-forms-admitted";
+import { isOpen } from "../src/components/ward-management/ward-derivations";
 
 /**
  * Walk-through WT-03 (26 Oct 2026): a person who arrived on a Form 1A still showed Form 1A on the
@@ -118,5 +123,34 @@ describe("the ward records the next form for a person admitted on a form (WT-03)
     const other: WardAccess = { role: "ward", scope: { kind: "ward", unitIds: [otherUnit] } };
     expect(commandScopeRefusal(state, own, command, options)).toBeNull();
     expect(commandScopeRefusal(state, other, command, options)).toMatch(/outside your role's place/);
+  });
+});
+
+describe("legal forms list population (D-157)", () => {
+  it("puts admitted-on-a-form journeys after the open-movement rows, without duplicates", () => {
+    const { state, movementId } = arrivedOnA1A();
+    const rows = state.movements.filter((movement) => isOpen(movement) && movement.legalForm !== undefined);
+    const admitted = admittedOnAForm(state.movements, state.admissions);
+    expect(admitted.map((movement) => movement.id)).toContain(movementId);
+    expect(rows.map((movement) => movement.id)).not.toContain(movementId);
+    const population = legalFormsListPopulation(rows, admitted);
+    expect(population.map((movement) => movement.id)).toEqual([
+      ...rows.map((movement) => movement.id),
+      ...admitted.map((movement) => movement.id),
+    ]);
+    expect(new Set(population.map((movement) => movement.id)).size).toBe(population.length);
+    // A journey already in the open rows is kept once, in the rows' place.
+    expect(legalFormsListPopulation(admitted, admitted).map((movement) => movement.id)).toEqual(
+      admitted.map((movement) => movement.id),
+    );
+  });
+
+  it("is empty only when both the open-form rows and the admitted group are empty", () => {
+    expect(legalFormsListPopulation([], [])).toEqual([]);
+    const { state, movementId } = arrivedOnA1A();
+    const admitted = admittedOnAForm(state.movements, state.admissions);
+    const onlyAdmitted = legalFormsListPopulation([], admitted);
+    expect(onlyAdmitted.map((movement) => movement.id)).toContain(movementId);
+    expect(onlyAdmitted).toHaveLength(admitted.length);
   });
 });

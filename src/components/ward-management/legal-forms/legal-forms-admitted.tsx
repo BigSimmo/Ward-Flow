@@ -21,6 +21,15 @@ export function admittedOnAForm(movements: readonly Movement[], admissions: read
     .sort((a, b) => (a.closure?.at ?? a.openedAt) - (b.closure?.at ?? b.openedAt));
 }
 
+/**
+ * Everyone on a form on the list (D-157): the open-movement table rows, then the same
+ * admitted-on-a-form journeys the screen shows, with no duplicates.
+ */
+export function legalFormsListPopulation<M extends { id: string }>(rows: readonly M[], admitted: readonly M[]): M[] {
+  const seen = new Set(rows.map((row) => row.id));
+  return [...rows, ...admitted.filter((movement) => !seen.has(movement.id))];
+}
+
 /** What the record holds now: the form still to record, or the form recorded since arrival. */
 export function admittedFormLine(movement: Movement): string {
   const progression = formProgression(movement);
