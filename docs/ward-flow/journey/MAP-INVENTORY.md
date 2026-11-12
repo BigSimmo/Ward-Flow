@@ -3,154 +3,154 @@
 The route is selective. Its action notes and the additional command models have source review evidence; source digests detect later edits. This does not establish runtime or clinical acceptance.
 
 ## 206 CURRENT ENGINE EVENTS
-Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd73bbb52ad
+Source-contract SHA256: fcffd5317eb55dd7e4ce29961e8ad901621c80297358d7f5a268b6905f0efc58
 - RECORD_ADMISSION_CARE — diagram-reviewed; event roles: ward, coordinator, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:20
-  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:214
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1466
+  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:210
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1468
 - RECORD_ADMISSION_FOLLOW_UP — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:21
-  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:214
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1465
+  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:210
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1467
 - RECORD_PATIENT_DISCHARGE — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:22
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1464
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1466
 - UPDATE_EXPECTED_DISCHARGE — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:23
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:226
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1658
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1660
 - OPEN_DISCHARGE_RECORD — diagram-reviewed; event roles: coordinator, ward, community, bed_manager
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:25
-  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:179
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1461
+  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:175
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1463
 - REVIEW_AUDIT_EVENT — diagram-reviewed; event roles: coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:26
-  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:132
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1462
+  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:128
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1464
 - RAISE_REFERRAL — diagram-reviewed; event roles: ed, community, ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:37
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1459
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1461
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-send-events.ts:92
 - RECORD_EXAMINATION — diagram-reviewed; event roles: ed, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:38
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:553
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1758
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1760
 - RECORD_MEDICAL_CLEARANCE — diagram-reviewed; event roles: ed, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:39
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:171
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1749
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1751
 - RECORD_ARRIVED_IN_DEPARTMENT — diagram-reviewed; event roles: ed, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:43
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:220
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1750
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1752
 - RECORD_TRANSPORT_NEED — diagram-reviewed; event roles: ed, ward, community, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:52
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:233
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1751
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1753
 - RECORD_LEGAL_FORM_RECEIVED — diagram-reviewed; event roles: ed, ward, community, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:59
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:438
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1432
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1434
 - CORRECT_LEGAL_FORM_RECEIPT — diagram-reviewed; event roles: ed, ward, community, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:65
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1739
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1741
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-send-events.ts:429
 - RECORD_LEGAL_FORM_EXPIRY — diagram-reviewed; event roles: ed, coordinator, ward
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:75
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1363
   Event/dispatch reference: src/components/ward-management/ward-flow-record-legal-events.ts:52
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1755
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1757
 - RECORD_MOVEMENT_GENDER — diagram-reviewed; event roles: ed, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:80
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:484
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1756
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1758
 - RECORD_NO_REFERRAL — diagram-reviewed; event roles: ed, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:81
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:301
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1752
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1754
 - RECORD_ED_OUTCOME — diagram-reviewed; event roles: ed, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:84
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:332
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1753
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1755
 - REFER_TO_UNITS — diagram-reviewed; event roles: coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:85
   Event/dispatch reference: src/components/ward-management/ward-flow-overridable-events.ts:24
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1741
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1743
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-send-events.ts:675
 - ACCEPT_IN_PRINCIPLE — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:86
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:897
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:899
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-answer-events.ts:108
 - PULL_PATIENT — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:90
   Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:79
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:701
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:703
 - DECLINE — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:91
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1792
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1794
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-answer-events.ts:240
 - HANDOVER_READY — diagram-reviewed; event roles: ed, community, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:94
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1887
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1889
   Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:85
 - TRANSPORT_ACCEPTED — diagram-reviewed; event roles: officer, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:95
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1888
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1890
   Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:128
 - TRANSPORT_EN_ROUTE — diagram-reviewed; event roles: officer, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:96
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1889
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1891
   Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:178
 - PATIENT_COLLECTED — diagram-reviewed; event roles: officer, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:97
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1890
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1892
   Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:229
   Event/dispatch reference: src/components/ward-management/ward-transport-collection-events.ts:11
 - PATIENT_ARRIVED — diagram-reviewed; event roles: officer, ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:98
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1489
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1491
   Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:315
 - CONFIRM_CAPACITY — diagram-reviewed; event roles: ward, bed_manager, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:100
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:300
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1660
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1662
 - RECORD_WARD_INTAKE_CONSTRAINTS — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:103
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:771
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1765
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1767
 - SET_INTAKE_WINDOW — modelled; event roles: ward, coordinator
   Source-reviewed command model: sets or clears one ward's intake hours for tonight; information only.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:105
   Event/dispatch reference: src/components/ward-management/ward-flow-intake-window-events.ts:15
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1832
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1834
   Subject: One ward's intake window for tonight (Unit.intakeWindow)
   Before: Ward has no intake window, or has one
   After: intake sets from, to, at and by; intake null removes the window
@@ -169,43 +169,43 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:106
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1069
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1772
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1774
 - ADVANCE_CLOCK — diagram-reviewed; event roles: demo
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:107
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1703
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1705
 - RESET_SCENARIO — diagram-reviewed; event roles: demo
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:108
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1481
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1483
 - SET_SCENARIO — diagram-reviewed; event roles: demo
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:109
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1481
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1483
 - SET_CONFIGURATION — diagram-reviewed; event roles: coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:111
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1714
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1716
 - CHANGE_URGENCY — diagram-reviewed; event roles: coordinator, ed, ward, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:114
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1745
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1747
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-send-events.ts:1178
 - CHANGE_LEGAL_STATUS — diagram-reviewed; event roles: coordinator, ed, ward, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:115
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1746
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1748
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-send-events.ts:1219
 - RELEASE_PULL — diagram-reviewed; event roles: coordinator, ward
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:116
   Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:493
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1881
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1883
 - EXTEND_PULL — modelled; event roles: coordinator, ward
   Reviewed command model (feature 11, 9 Nov 2026): the ward or coordinator adds a fixed amount to a pulled bed's Pull time limit.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:118
   Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:454
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1880
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1882
   Subject: One open movement whose bed is pulled now
   Before: A pulled bed with its Pull time limit
   After: The same pulled bed with a later Pull time limit and one more pullExtensions entry
@@ -221,22 +221,22 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - BOOK_TRANSPORT — diagram-reviewed; event roles: ed, ward, community, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:155
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1892
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1894
   Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:654
 - CANCEL_TRANSPORT — diagram-reviewed; event roles: coordinator, ed, ward, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:177
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1893
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1895
   Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:840
 - STOP_TRANSPORT — diagram-reviewed; event roles: coordinator, ed
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:187
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1894
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1896
   Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:1018
 - RECORD_TRANSPORT_CAD — modelled; event roles: ed, ward, community, coordinator, officer
   Source-reviewed command model: Same job carrying a trimmed CAD number and cadAdded time/role.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:190
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1897
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1899
   Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:1131
   Event/dispatch reference: src/components/ward-management/ward-transport-collection-events.ts:30
   Subject: A movement’s current transport job
@@ -257,32 +257,32 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:192
   Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:619
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1882
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1884
 - RECORD_DIVERSION — diagram-reviewed; event roles: officer, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:194
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1096
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1773
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1775
 - RELEASE_DIVERTED_BED — diagram-reviewed; event roles: coordinator, ward, ed
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:196
   Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:687
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1883
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1885
 - REFER_TO_COMMUNITY_TEAM — diagram-reviewed; event roles: ed, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:197
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1740
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1742
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-send-events.ts:477
 - RECORD_LEFT_DEPARTMENT — diagram-reviewed; event roles: ed, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:198
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:533
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1757
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1759
 - RECORD_CREW_TIMES — modelled; event roles: ed, coordinator
   Reviewed command model (item 9, D-93): records a police or ambulance crew's typed times on an ED arrival; nothing is filled in or worked out.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:200
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1373
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1786
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1788
   Subject: One ED-origin movement whose arrivalMode is police or ambulance
   Before: crewArrivedAt, crewHandedOverAt and crewReleasedAt absent, or some already typed
   After: Each typed time is set on the movement; a time left out keeps what was recorded
@@ -299,13 +299,13 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/ward-crew-handover.ts:128; SHA256 e03c42feb71f228fbb2b07f987ddee2dfce355bcf900136aa81ef7369906ec2a
   Reviewed source: src/components/ward-management/ward-flow-record-events.ts:1374; SHA256 5cc4fde885cc7c9b44aabd7b260b5f94371b7d4f06e26736e406c40972fb8d21
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1787; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1789; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:201; SHA256 808d614bd517bb11c0ef517ce5632dd3caba8a71758476401f35da82fe26afda
 - RECORD_ARRIVAL_MODE — modelled; event roles: ed, coordinator
   Reviewed command model (D-141, 11 Nov 2026): marks an ED arrival "Brought by: Police" or "Ambulance" so its crew times can be typed; a fixed two-value choice, no typed text.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:202
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1376
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1787
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1789
   Subject: One ED-origin movement
   Before: arrivalMode absent, self, or the other crew mode
   After: Movement.arrivalMode = police or ambulance; recorded crew times are kept
@@ -322,55 +322,55 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/ward-crew-handover.ts:153; SHA256 e03c42feb71f228fbb2b07f987ddee2dfce355bcf900136aa81ef7369906ec2a
   Reviewed source: src/components/ward-management/ward-flow-record-events.ts:1377; SHA256 5cc4fde885cc7c9b44aabd7b260b5f94371b7d4f06e26736e406c40972fb8d21
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1788; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1790; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:203; SHA256 808d614bd517bb11c0ef517ce5632dd3caba8a71758476401f35da82fe26afda
 - FLAG_BED_RELEASE — diagram-reviewed; event roles: ward, bed_manager, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:205
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:374
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1661
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1663
 - CONFIRM_BED_RELEASE — diagram-reviewed; event roles: ward, bed_manager, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:206
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:468
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1662
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1664
 - REVERT_BED_RELEASE — diagram-reviewed; event roles: ward, bed_manager, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:210
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:507
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1663
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1665
 - BLOCK_BED_RELEASE — diagram-reviewed; event roles: ward, bed_manager, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:211
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:546
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1664
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1666
 - CLEAR_BED_RELEASE_BLOCK — diagram-reviewed; event roles: ward, bed_manager, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:212
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:586
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1665
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1667
 - SET_BED_PREPARATION — diagram-reviewed; event roles: ward, bed_manager, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:213
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:623
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1666
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1668
 - RECORD_LEAVE_BED — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:214
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1352
   Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:369
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1766
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1768
 - END_LEAVE_BED — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:215
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:658
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1667
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1669
 - RECORD_ABSENT_WITHOUT_LEAVE — modelled; event roles: ward, coordinator
   Source-reviewed command model: Leave-bed record carries absentWithoutLeave {since,steps:[]}; stay remains occupied.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:219
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1353
   Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:424
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1767
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1769
   Subject: An occupied admission and its held leave-bed record
   Before: Occupied stay, not away at ED, with no recorded absence
   After: Leave-bed record carries absentWithoutLeave {since,steps:[]}; stay remains occupied
@@ -391,7 +391,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:220
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1354
   Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:476
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1768
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1770
   Subject: An existing absence without leave
   Before: Absence has no record of this listed missing-person step
   After: Same absence with one timed step appended
@@ -410,7 +410,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:221
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1364
   Event/dispatch reference: src/components/ward-management/ward-flow-record-legal-events.ts:155
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1769
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1771
   Subject: A patient’s recorded community treatment order
   Before: Patient exists with no current order, no occupied stay and no open non-arrived placement
   After: Form 5A recorded with time and desk label; any ended order retained in earlier history
@@ -430,7 +430,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Source-reviewed command model: Same order retained with endedAt=now.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:222
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:671
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1668
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1670
   Subject: A patient’s current community treatment order
   Before: Order exists and has no endedAt
   After: Same order retained with endedAt=now
@@ -449,13 +449,13 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:226
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1347
   Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:125
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1487
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1489
 - MARK_TRANSPORT_COLLECTED — modelled; event roles: ward, coordinator
   Source-reviewed command model: ends a departed person's wait for transport; no bed figure moves.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:228
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1348
   Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:224
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1760
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1762
   Subject: One departed admission's waitingForTransport mark
   Before: Admission departed with waitingForTransport (left the ward, transport still to come)
   After: waitingForTransport removed; the person leaves the Waiting for transport list
@@ -474,19 +474,19 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:240
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1349
   Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:260
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1762
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1764
 - RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:241
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1350
   Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:296
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1763
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1765
 - RECORD_STAY_DISCHARGE_BLOCKER — modelled; event roles: ward, bed_manager, coordinator
   Source-reviewed command model: Stay blockReason and linked nondischarged releases carry the chosen blocker.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:244
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1351
   Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:316
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1764
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1766
   Subject: An occupied admission and its pending bed releases
   Before: Occupied stay with no blocker or another recorded blocker
   After: Stay blockReason and linked nondischarged releases carry the chosen blocker
@@ -505,7 +505,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Source-reviewed command model: Admission blockReason=null; clearance retained on matching pending release or admission.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:245
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:249
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1659
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1661
   Subject: An admission’s current discharge blocker
   Before: Admission carries a non-null blockReason
   After: Admission blockReason=null; clearance retained on matching pending release or admission
@@ -525,7 +525,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Source-reviewed command model: Named target and any agreeing linked open counterpart carry the new observation and append from/to history.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:248
   Event/dispatch reference: src/components/ward-management/ward-flow-observation-events.ts:33
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1789
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1791
   Subject: An open movement or occupied admission and its agreeing live counterpart
   Before: Target has its recorded observation and retained change-count token
   After: Named target and any agreeing linked open counterpart carry the new observation and append from/to history
@@ -554,15 +554,15 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:288
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:714
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1761
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1763
 - CLEAR_MOVEMENT_BLOCKER — diagram-reviewed; event roles: ed, community, ward, coordinator, officer
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:295
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2030
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2032
 - FLAG_MOVEMENT_TURNAROUND_PRIORITY — modelled; event roles: coordinator
   Source-reviewed command model: Same movement carries {unitId,flaggedAt,source}; no bed is promised.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:316
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1917
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1919
   Subject: A waiting movement’s receiving-unit preference
   Before: Waiting unplaced movement with an open suitable ward request and current turnaround source
   After: Same movement carries {unitId,flaggedAt,source}; no bed is promised
@@ -575,7 +575,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   effects: Sets turnaroundPriority only; does not hold capacity, discharge anybody, accept a request or advance stage
   effects: Selectors later hide a preference whose original readiness source no longer qualifies
   tests: tests/ward-cld-turnaround-priority.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1907; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1909; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:318; SHA256 808d614bd517bb11c0ef517ce5632dd3caba8a71758476401f35da82fe26afda
   Reviewed source: src/components/ward-management/ward-flow-events.ts:708; SHA256 8a2438031d11683d8648960b9d12ffd41eda8a351a21b1b50037bfd2ab59dde4
   Reviewed source: src/components/ward-management/ward-turnaround-priority.ts:65; SHA256 f4a062f776b7e676eb045bd32daf9aac4a636392dab5599a571687cbf47db4b8
@@ -583,7 +583,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - FLAG_REFERRAL_TURNAROUND_PRIORITY — modelled; event roles: coordinator
   Source-reviewed command model: Same referral carries {unitId,flaggedAt,source}; no bed is promised.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:317
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1918
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1920
   Subject: A waiting referral’s receiving-unit preference
   Before: Waiting unplaced referral with an open suitable ward request and current turnaround source
   After: Same referral carries {unitId,flaggedAt,source}; no bed is promised
@@ -596,7 +596,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   effects: Sets turnaroundPriority only; does not hold capacity, discharge anybody, accept a request or advance stage
   effects: Selectors later hide a preference whose original readiness source no longer qualifies
   tests: tests/ward-cld-turnaround-priority.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1908; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1910; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:319; SHA256 808d614bd517bb11c0ef517ce5632dd3caba8a71758476401f35da82fe26afda
   Reviewed source: src/components/ward-management/ward-flow-events.ts:717; SHA256 8a2438031d11683d8648960b9d12ffd41eda8a351a21b1b50037bfd2ab59dde4
   Reviewed source: src/components/ward-management/ward-turnaround-priority.ts:65; SHA256 f4a062f776b7e676eb045bd32daf9aac4a636392dab5599a571687cbf47db4b8
@@ -604,7 +604,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - MARK_REFERRAL_OPENED — modelled; event roles: ward, coordinator
   Source-reviewed command model: Same copy has openedAt=now; answer state unchanged.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:320
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1799
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1801
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-followup-events.ts:17
   Subject: One addressed ward’s copy of a referral
   Before: Ward copy exists without openedAt
@@ -622,7 +622,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - REQUEST_REFERRAL_INFORMATION — modelled; event roles: ward, coordinator
   Source-reviewed command model: New listed needs appended; existing open needs retained without duplication.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:321
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1800
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1802
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-followup-events.ts:118
   Subject: One awaiting ward copy’s information checklist
   Before: Ward copy queued and unwithdrawn
@@ -642,7 +642,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - MARK_REFERRAL_INFORMATION_MET — modelled; event roles: ed, community, ward, coordinator
   Source-reviewed command model: Selected open request(s) stamped metAt and metBy; checklist history retained.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:323
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1801
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1803
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-followup-events.ts:55
   Subject: One information category requested by one or all current requesting wards
   Before: At least one requested listed need remains unmet on a queued, unwithdrawn ward copy
@@ -663,7 +663,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - ASSIGN_REFERRAL — modelled; event roles: coordinator, ed, community
   Source-reviewed command model: ownerHistory appended; its last owner is the current chasing desk.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:326
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1807
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1809
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-owner-events.ts:21
   Subject: The desk chasing a front-door referral
   Before: Referral not accepted or fully withdrawn; owner desk differs or is absent
@@ -683,7 +683,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - LOG_REFERRAL_CONTACT — modelled; event roles: coordinator, ed, community
   Source-reviewed command model: New checked contact/outcome entry appended.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:327
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1808
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1810
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-owner-events.ts:67
   Subject: A front-door referral’s call log
   Before: Referral not accepted or fully withdrawn, with prior contact history or none
@@ -704,7 +704,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - RECORD_REFERRAL_COMMITMENT — modelled; event roles: coordinator, ward
   Source-reviewed command model: Checked step/promise/callback entry appended without answering referral.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:329
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1815
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1817
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-commitment-events.ts:24
   Subject: One awaiting ward copy’s response commitment
   Before: Open referral awaiting this ward, commitment absent or not resolved
@@ -728,7 +728,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - ASK_MORE_WARDS — modelled; event roles: coordinator
   Source-reviewed command model: Additional named wards queued, preserving existing destinations.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:330
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1821
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1823
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-ask-events.ts:24
   Subject: An open community referral’s addressed wards
   Before: Open community referral has named ward request(s) with reusable bed requirements
@@ -750,7 +750,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - CLOSE_WARD_TO_ADMISSIONS — modelled; event roles: ward, bed_manager, coordinator
   Source-reviewed command model: isClosed=true with admissionsClosure reason/time/desk and optional expected reopening.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:333
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1828
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1830
   Event/dispatch reference: src/components/ward-management/ward-flow-ward-closure-events.ts:17
   Subject: A ward’s admissions closure
   Before: Known ward open to admissions
@@ -770,7 +770,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - REOPEN_WARD_TO_ADMISSIONS — modelled; event roles: ward, bed_manager, coordinator
   Source-reviewed command model: isClosed=false; admissionsClosure removed.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:334
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1829
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1831
   Event/dispatch reference: src/components/ward-management/ward-flow-ward-closure-events.ts:72
   Subject: A ward’s admissions closure
   Before: Known ward marked closed
@@ -790,7 +790,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Source-reviewed command model: closed=true appends a mark; closed=false stamps active mark reopenedAt.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:336
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-closure-events.ts:24
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1835
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1837
   Subject: One exact numbered bed’s closure mark
   Before: Empty offerable bed is open, or numbered bed has active closed mark
   After: closed=true appends a mark; closed=false stamps active mark reopenedAt
@@ -811,7 +811,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Source-reviewed command model: meetingActions appended with chosen task, owner and due time.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:341
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-meeting-events.ts:30
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1869
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1871
   Subject: A movement or admission’s agreed meeting task
   Before: Subject exists and has no open action of this kind
   After: meetingActions appended with chosen task, owner and due time
@@ -833,7 +833,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Source-reviewed command model: Same action stamped doneAt and doneBy.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:342
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-meeting-events.ts:105
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1870
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1872
   Subject: An open task on a movement or admission
   Before: Chosen subject carries an open action of this kind
   After: Same action stamped doneAt and doneBy
@@ -852,7 +852,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - RECORD_RESTRICTIVE_PRACTICE_START — modelled; event roles: ward, coordinator
   Source-reviewed command model: New episode with typed start and recording metadata appended.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:346
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1842
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1844
   Event/dispatch reference: src/components/ward-management/ward-flow-restrictive-practice-events.ts:61
   Subject: A ward’s operational restrictive-practice episodes
   Before: Occupied stay on this ward with no open same-practice episode
@@ -873,7 +873,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - RECORD_RESTRICTIVE_PRACTICE_END — modelled; event roles: ward, coordinator
   Source-reviewed command model: Same episode stamped with typed endedAt.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:347
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1843
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1845
   Event/dispatch reference: src/components/ward-management/ward-flow-restrictive-practice-events.ts:95
   Subject: One ward’s open restrictive-practice episode
   Before: Episode exists without endedAt
@@ -893,7 +893,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP — modelled; event roles: ward, coordinator
   Reviewed command model: marks or clears one follow-up task on an ended restrictive-practice episode.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:349
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1844
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1846
   Event/dispatch reference: src/components/ward-management/ward-flow-restrictive-practice-events.ts:109
   Subject: One restrictive-practice episode on a ward
   Before: Episode ended, with its follow-up tasks marked so far
@@ -905,12 +905,12 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   guards: task is a listed follow-up task and done is a boolean.
   effects: Sets or removes the task in the episode's followUp; an empty followUp is removed.
   tests: tests/ward-legal-form-gap-items.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1836; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1838; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/ward-flow-restrictive-practice-events.ts:109; SHA256 5e2f0d1e4b5e3a3415d5114400ba622bb5e83a84787491e7a93f4f5a3c7f935b
 - RECORD_WARD_INCIDENT — modelled; event roles: ward, coordinator
   Source-reviewed command model: New category/time incident appended.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:350
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1845
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1847
   Event/dispatch reference: src/components/ward-management/ward-flow-restrictive-practice-events.ts:131
   Subject: A ward’s operational incident list
   Before: Known ward with existing or empty incident history
@@ -929,7 +929,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - SET_SECLUSION_ROOM_STATUS — modelled; event roles: ward, bed_manager, coordinator
   Source-reviewed command model: seclusionRoom replaced with status, time and desk label.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:351
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1846
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1848
   Event/dispatch reference: src/components/ward-management/ward-flow-restrictive-practice-events.ts:152
   Subject: A ward’s recorded seclusion-room availability
   Before: Room status absent or different
@@ -948,7 +948,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Source-reviewed command model: Selected item’s mark replaced with addressed/not_applicable and time/desk.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:355
   Event/dispatch reference: src/components/ward-management/ward-flow-loop-check-events.ts:58
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1857
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1859
   Subject: A cancelled move’s follow-up checklist
   Before: Move is cancelled, with prior mark or no mark for selected item
   After: Selected item’s mark replaced with addressed/not_applicable and time/desk
@@ -967,7 +967,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Source-reviewed command model: New condition appended tied to acceptedUnitId and acceptedAt.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:356
   Event/dispatch reference: src/components/ward-management/ward-flow-loop-check-events.ts:79
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1858
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1860
   Subject: A standing acceptance’s operational conditions
   Before: Open accepted move without this current condition
   After: New condition appended tied to acceptedUnitId and acceptedAt
@@ -988,7 +988,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Source-reviewed command model: Condition retained with met {at,by}.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:357
   Event/dispatch reference: src/components/ward-management/ward-flow-loop-check-events.ts:80
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1859
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1861
   Subject: A current acceptance’s unmet condition
   Before: Open accepted move has this current condition not met
   After: Condition retained with met {at,by}
@@ -1005,7 +1005,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Source-reviewed command model: One current review for restriction recorded/replaced.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:358
   Event/dispatch reference: src/components/ward-management/ward-flow-loop-check-events.ts:139
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1860
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1862
   Subject: A ward’s active restriction review reminder
   Before: Restriction currently active, with prior review or none
   After: One current review for restriction recorded/replaced
@@ -1025,7 +1025,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Source-reviewed command model: Closure transitionMarks appended with current derived item and recording metadata.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:359
   Event/dispatch reference: src/components/ward-management/ward-flow-loop-check-events.ts:169
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1861
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1863
   Subject: A closed ward’s current handover checklist
   Before: Ward has admissionsClosure and selected still-pointing record is unmarked
   After: Closure transitionMarks appended with current derived item and recording metadata
@@ -1043,35 +1043,35 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - FLAG_MOVEMENT_URGENT — diagram-reviewed; event roles: coordinator, ed
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:360
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1970
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1972
 - CLEAR_MOVEMENT_URGENT_FLAG — diagram-reviewed; event roles: coordinator, ed
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:361
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1994
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1996
 - WITHDRAW_REFERRAL — diagram-reviewed; event roles: ed, community, ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:381
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1742
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1744
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-send-events.ts:883
 - REQUEST_CAPACITY_REFRESH — diagram-reviewed; event roles: coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:384
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:686
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1669
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1671
 - RECEIVE_REFERRAL — diagram-reviewed; event roles: community, ed, ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:399
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1793
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1795
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-answer-events.ts:362
 - ADD_PATIENT — diagram-reviewed; event roles: ed, community, ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:403
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1678
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1680
   Event/dispatch reference: src/components/ward-management/ward-patient-registration-reducer.ts:39
 - ARCHIVE_PATIENT — modelled; event roles: coordinator
   Source-reviewed command model: Patient removed from active patients list (withdrawn-only referrals unlinked, D-149); audit event and sequence retained.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:405
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1680
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1682
   Event/dispatch reference: src/components/ward-management/ward-patient-archive-reducer.ts:10
   Subject: An erroneous standalone patient registration
   Before: Patient has only registration fields, and nothing else names it except withdrawn or cancelled front-door referrals, audit rows, or Undo records older than the Undo window (D-149)
@@ -1094,12 +1094,12 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - ACCEPT_REFERRAL — diagram-reviewed; event roles: ward, coordinator, ed, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:435
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:880
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:882
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-answer-events.ts:728
 - HOLD_REFERRAL_BED — modelled; event roles: ward, coordinator
   Source-reviewed command model: Same arm carries chosen heldBedNumber.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:436
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1795
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1797
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-answer-events.ts:695
   Subject: An accepted ward arm’s exact numbered bed hold
   Before: Current accepted, unwithdrawn ward arm without started bed journey; old numbered hold may exist
@@ -1120,65 +1120,65 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - DECLINE_REFERRAL — diagram-reviewed; event roles: ward, coordinator, ed, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:447
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1796
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1798
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-answer-events.ts:1148
 - RECORD_LOCAL_BED_SOUGHT — diagram-reviewed; event roles: coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:453
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1049
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1771
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1773
 - RECORD_REFERRER_WITHDRAWAL — diagram-reviewed; event roles: coordinator, community, ed, ward
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:485
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:805
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1770
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1772
 - ADD_REFERRAL_CORRECTION — diagram-reviewed; event roles: community, ed, ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:492
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1744
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1746
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-send-events.ts:1124
 - STEP_BACK_STAGE — diagram-reviewed; event roles: coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:499
   Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:751
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1884
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1886
 - WITHDRAW_ACCEPTANCE — diagram-reviewed; event roles: coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:500
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1797
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1799
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-answer-events.ts:1308
 - WITHDRAW_WARD_REQUEST — diagram-reviewed; event roles: coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:503
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1743
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1745
   Event/dispatch reference: src/components/ward-management/ward-flow-referral-send-events.ts:1069
 - MARK_NOTICE_READ — diagram-reviewed; event roles: coordinator, ed, ward, officer, community, bed_manager
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:513
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2079
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2081
   Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:290
 - ACKNOWLEDGE_INBOX_ITEM — diagram-reviewed; event roles: coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:534
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2080
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2082
   Event/dispatch reference: src/components/ward-management/ward-inbox-events.ts:41
   Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:312
 - COMPLETE_INBOX_ITEM — diagram-reviewed; event roles: coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:535
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2081
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2083
   Event/dispatch reference: src/components/ward-management/ward-inbox-events.ts:71
   Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:350
 - REOPEN_INBOX_ITEM — diagram-reviewed; event roles: coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:536
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2082
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2084
   Event/dispatch reference: src/components/ward-management/ward-inbox-events.ts:99
   Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:385
 - TAKE_INBOX_ITEM_OWNERSHIP — modelled; event roles: coordinator
   Source-reviewed command model: Ownership history appended; current owner is acting role’s label.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:538
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2083
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2085
   Event/dispatch reference: src/components/ward-management/ward-inbox-events.ts:111
   Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:403
   Subject: A coordinator inbox row and its occurrence-specific history
@@ -1198,7 +1198,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - RELEASE_INBOX_ITEM_OWNERSHIP — modelled; event roles: coordinator
   Source-reviewed command model: Ownership history appended with kind=released; ownership relinquished.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:539
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2084
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2086
   Event/dispatch reference: src/components/ward-management/ward-inbox-events.ts:121
   Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:423
   Subject: A coordinator inbox row and its occurrence-specific history
@@ -1220,7 +1220,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - SNOOZE_INBOX_ITEM — modelled; event roles: coordinator
   Source-reviewed command model: Latest snoozed entry hides row until chosen return time while fact remains.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:540
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2085
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2087
   Event/dispatch reference: src/components/ward-management/ward-inbox-events.ts:133
   Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:439
   Subject: A coordinator inbox row and its occurrence-specific history
@@ -1242,7 +1242,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - UNSNOOZE_INBOX_ITEM — modelled; event roles: coordinator
   Source-reviewed command model: Snooze history appended with kind=returned; active snooze ends now.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:541
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2086
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2088
   Event/dispatch reference: src/components/ward-management/ward-inbox-events.ts:142
   Event/dispatch reference: src/components/ward-management/ward-inbox-reducer.ts:473
   Subject: A coordinator inbox row and its occurrence-specific history
@@ -1263,18 +1263,18 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - SET_ARRIVAL_DETAILS — diagram-reviewed; event roles: coordinator, ed, ward, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:542
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1895
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1897
   Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:1170
 - SET_STEP_DOWN_CANDIDATE — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:543
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:706
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1670
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1672
 - RECORD_WARD_DIAGNOSIS — modelled; event roles: ward, coordinator
   Reviewed command model: Latest ward diagnosis block with recording time and desk.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:545
   Event/dispatch reference: src/components/ward-management/ward-flow-diagnosis-events.ts:14
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2248
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2250
   Subject: One current admission
   Before: No ward diagnosis, or a different ward diagnosis block
   After: Latest ward diagnosis block with recording time and desk
@@ -1290,7 +1290,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - MARK_WEEKEND_DISCHARGE_REVIEWED — modelled; event roles: ward, coordinator
   Reviewed command model: Weekend discharge review tick with weekend, time and desk.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:547
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2250
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2252
   Event/dispatch reference: src/components/ward-management/ward-flow-weekend-review-events.ts:15
   Subject: One current inpatient admission
   Before: No review tick for this weekend
@@ -1307,7 +1307,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - RECORD_CHIEF_PSYCHIATRIST_NOTIFIED — modelled; event roles: ward, coordinator
   Source-reviewed command model: records the typed time the Chief Psychiatrist was told a person under 18 is on an adult ward; information only (item 4, held).
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:549
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2251
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2253
   Event/dispatch reference: src/components/ward-management/ward-flow-under-18-events.ts:14
   Subject: One current stay's chiefPsychiatristNotice
   Before: Pulled or occupied stay with or without an earlier notice record
@@ -1326,17 +1326,17 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:550
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:729
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1671
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1673
 - SET_CLINICALLY_READY — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:552
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:759
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1672
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1674
 - SET_DISCHARGE_CRITERIA — modelled; event roles: ward, coordinator
   Reviewed command model: Criteria set/reviewed, cleared, or one stored criterion ticked/unticked.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:553
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:802
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1673
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1675
   Subject: An occupied admission's criteria-led discharge record
   Before: Unset, current, paused or lapsed criteria
   After: Criteria set/reviewed, cleared, or one stored criterion ticked/unticked
@@ -1357,7 +1357,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Reviewed command model: placement_requested, medically uncleared and explicitly paused; acceptance and reservation removed.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:554
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1169
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1774
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1776
   Subject: An accepted originating-ED movement before collection
   Before: Accepted/pulled pre-transfer placement with optional live transport
   After: placement_requested, medically uncleared and explicitly paused; acceptance and reservation removed
@@ -1377,24 +1377,24 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:555
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1275
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1775
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1777
 - UPLOAD_PATIENT_FORM — diagram-reviewed; event roles: coordinator, ed, ward, community, officer
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:556
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:820
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1674
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1676
 - RECORD_LEGAL_FORM_WRITTEN — diagram-reviewed; event roles: ed, coordinator, ward
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:558
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1365
   Event/dispatch reference: src/components/ward-management/ward-flow-record-legal-events.ts:275
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1776
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1778
 - RECORD_LEGAL_FORM_CODE — modelled; event roles: ed, coordinator, ward
   Reviewed command model: Chosen form code without an invented written time.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:560
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1366
   Event/dispatch reference: src/components/ward-management/ward-flow-record-legal-events.ts:274
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1777
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1779
   Subject: A movement's current legal-form record
   Before: Current form, or no form recorded
   After: Chosen form code without an invented written time
@@ -1416,7 +1416,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:562
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1367
   Event/dispatch reference: src/components/ward-management/ward-flow-record-legal-events.ts:205
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1778
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1780
   Subject: An open movement's ED presentation choices
   Before: Recorded ED presentation list or none
   After: Canonical fixed-list choices, or field removed for an empty selection
@@ -1436,7 +1436,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:564
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1368
   Event/dispatch reference: src/components/ward-management/ward-flow-record-legal-events.ts:222
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1779
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1781
   Subject: The current legal form on one movement
   Before: Form recorded, details as last typed
   After: Form carries the typed maker, copy given, ending, consent and review-by values
@@ -1454,31 +1454,31 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:565
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1369
   Event/dispatch reference: src/components/ward-management/ward-flow-record-legal-events.ts:382
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1780
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1782
 - RECORD_LEGAL_FORM_CONTINUATION — diagram-reviewed; event roles: ed, coordinator, ward, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:566
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1370
   Event/dispatch reference: src/components/ward-management/ward-flow-record-legal-events.ts:415
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1781
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1783
 - EVALUATE_ARRIVAL_LATENESS — diagram-reviewed; event roles: coordinator, ed, ward
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:567
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1896
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1898
   Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:1260
 - RELEASE_AND_REOPEN_SEARCH — diagram-reviewed; event roles: coordinator, ward
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:568
   Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:813
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1885
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1887
 - CLEAR_EXPECT_FLAG — diagram-reviewed; event roles: ward, coordinator, ed, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:569
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2092
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2094
 - REQUEST_PSYCH_REVIEW — modelled; event roles: ed, coordinator
   Reviewed command model (9 Nov 2026): the emergency department records that a psychiatric review was asked for; a time only, nothing ordered or scored.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:571
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2107
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2109
   Event/dispatch reference: src/components/ward-management/ward-flow-review-ready-events.ts:20
   Subject: One open movement
   Before: No psychReview recorded
@@ -1493,12 +1493,12 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   tests: tests/ward-psych-review-ready-next.test.ts
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/ward-flow-review-ready-events.ts:68; SHA256 5cca0ed3af64cbb191c326720a629279f0faaaebecee685b026910c203e2668d
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2103; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2105; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:573; SHA256 808d614bd517bb11c0ef517ce5632dd3caba8a71758476401f35da82fe26afda
 - RECORD_PSYCH_REVIEW_SEEN — modelled; event roles: ed, coordinator
   Reviewed command model (9 Nov 2026): records that the registrar or consultant saw the person for the review asked for; a time only.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:572
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2108
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2110
   Event/dispatch reference: src/components/ward-management/ward-flow-review-ready-events.ts:27
   Subject: One open movement with a review asked for
   Before: psychReview without the named grade seen
@@ -1514,12 +1514,12 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   tests: tests/ward-psych-review-ready-next.test.ts
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/ward-flow-review-ready-events.ts:76; SHA256 5cca0ed3af64cbb191c326720a629279f0faaaebecee685b026910c203e2668d
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2104; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2106; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:576; SHA256 808d614bd517bb11c0ef517ce5632dd3caba8a71758476401f35da82fe26afda
 - RECORD_ESCALATION_CALL — modelled; event roles: ed, coordinator
   Reviewed command model (item 3, D-133): records who was called at an ED wait step and one outcome from a fixed list; a shared record, nothing dials.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:574
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2106
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2108
   Event/dispatch reference: src/components/ward-management/ward-flow-review-ready-events.ts:58
   Subject: One open movement waiting at an ED wait step (D-108)
   Before: escalationCalls without a call for the step, or with an earlier one
@@ -1537,12 +1537,12 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/escalation/escalation-calls.ts:94; SHA256 1e5e6bd8fc4b2a775653431ae515f6feeddb6ed51189be600247b87aa9b94ea7
   Reviewed source: src/components/ward-management/ward-flow-review-ready-events.ts:58; SHA256 5cca0ed3af64cbb191c326720a629279f0faaaebecee685b026910c203e2668d
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2107; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2109; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:575; SHA256 808d614bd517bb11c0ef517ce5632dd3caba8a71758476401f35da82fe26afda
 - MARK_WARD_READY_FOR_NEXT — modelled; event roles: ward, coordinator
   Reviewed command model (9 Nov 2026): a ward says it is ready for its next patient, or cancels that; a fact for the coordinator, who still pulls by hand.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:575
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2109
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2111
   Event/dispatch reference: src/components/ward-management/ward-flow-review-ready-events.ts:35
   Subject: One ward
   Before: readyForNextAt absent (or present, for cancel)
@@ -1558,39 +1558,39 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   tests: tests/ward-psych-review-ready-next.test.ts
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/ward-flow-review-ready-events.ts:91; SHA256 5cca0ed3af64cbb191c326720a629279f0faaaebecee685b026910c203e2668d
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2108; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2110; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:577; SHA256 808d614bd517bb11c0ef517ce5632dd3caba8a71758476401f35da82fe26afda
 - RAISE_EXPECT_FLAG — diagram-reviewed; event roles: ward, coordinator, ed, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:576
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2118
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2120
 - FLAG_LEGAL_MISMATCH — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:577
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2140
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2142
 - EVALUATE_LEAVE_BED_WARNINGS — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:578
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:864
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1675
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1677
 - CONFIRM_MORNING_ROLLUP — diagram-reviewed; event roles: ward, bed_manager, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:579
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2163
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2165
 - SEND_WARD_BUZZ — diagram-reviewed; event roles: coordinator, bed_manager
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:580
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2194
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2196
 - RECORD_REPATRIATION — diagram-reviewed; event roles: coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:582
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1356
   Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:530
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1783
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1785
 - RECORD_HOME_SERVICE_RETURN — modelled; event roles: coordinator
   Reviewed command model: Fresh requested record, or request with agreed/not_yet_agreed/declined answer.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:584
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2256
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2258
   Subject: One current stay's home-service return discussion
   Before: No request, a request without agreement, or an earlier recorded answer
   After: Fresh requested record, or request with agreed/not_yet_agreed/declined answer
@@ -1603,13 +1603,13 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   effects: Records a discussion only: does not book transport or a bed, raise a return movement or change the stay.
   tests: tests/ward-home-service-return.test.ts
   Reviewed source: src/components/ward-management/out-of-area/home-service-return.ts:122; SHA256 2f3fbdc6ba3e36b6eb890a51a7707e8b26f71eba4a803181220c17c63d1249d7
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2244; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2246; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:584; SHA256 808d614bd517bb11c0ef517ce5632dd3caba8a71758476401f35da82fe26afda
   Reviewed source: src/components/ward-management/ward-access-state.ts:709; SHA256 6749082a89387b340bc0b52cfe76a13f8375532e44cbbcdf17a85d696c94e703
 - FLAG_RETURN_EARLY — modelled; event roles: coordinator
   Reviewed command model: the coordinator flags an out-of-area stay as ready to return early to a home hospital.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:586
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2261
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2263
   Subject: One current out-of-area stay
   Before: No early-return flag on the stay
   After: An early-return flag naming the home hospital, time and role
@@ -1620,12 +1620,12 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   guards: The stay is not already flagged.
   effects: Appends a returnEarlyFlags record; the home ward site, community and officer desks see an alert while the stay is current.
   tests: tests/ward-return-early.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:410; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:412; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/out-of-area/return-early.ts:70; SHA256 28c9ec25e8d1fc5808db7af91d11f76ce64b235c292fdddfa60d1423ac2eedb3
 - RECORD_DIRECTORY_CHECK — modelled; event roles: coordinator, bed_manager, ward, ed, community, officer
   Reviewed command model: Latest {entryId, at, by} check for that identifier.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:588
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2258
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2260
   Subject: An on-call directory entry identifier
   Before: Seeded check metadata or a previously recorded check
   After: Latest {entryId, at, by} check for that identifier
@@ -1638,18 +1638,18 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Reviewed source: src/components/ward-management/on-call/on-call-checks.ts:40; SHA256 4c75385ac14339cbc7d98efc18af52257bb6ae185011b80e244fcf21f6d68e9d
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:588; SHA256 808d614bd517bb11c0ef517ce5632dd3caba8a71758476401f35da82fe26afda
   Reviewed source: src/components/ward-management/ward-access-state.ts:709; SHA256 6749082a89387b340bc0b52cfe76a13f8375532e44cbbcdf17a85d696c94e703
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2284; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2286; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
 - RECORD_HANDOVER_SIGN_OFF — diagram-reviewed; event roles: coordinator, ward
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:591
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1355
   Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:509
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1782
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1784
 - RECORD_SITE_HANDOVER_SIGN_OFF — modelled; event roles: bed_manager, coordinator
   Reviewed command model: Site sign-off with a snapshot of unsigned wards and unanswered bed calls.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:595
   Event/dispatch reference: src/components/ward-management/site-sign-off/site-handover-sign-off-reducer.ts:28
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2264
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2266
   Subject: One site and upcoming shift handover
   Before: No sign-off for this site/shift
   After: Site sign-off with a snapshot of unsigned wards and unanswered bed calls
@@ -1669,7 +1669,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - RECORD_TRIAGE_SIGNED — modelled; event roles: ed, community, ward, coordinator
   Reviewed command model (7 Nov 2026): a clinician signs a mental health triage and risk assessment (SMHMR900 and SMHMR905) for one person; closed-list codes only, never typed text.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:599
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2274
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2276
   Subject: One person on this workspace
   Before: No signed triage, or earlier signed triages, on the person
   After: One more signed triage record on the person: time, desk role and closed-list codes
@@ -1683,13 +1683,13 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   effects: Appends a triages record (codes only); the patient record's Now tab lists it. No Undo: it is a signed record. Typed text (assessment, mental state, formulation, plan) stays in the form and is never in the event.
   tests: tests/ward-triage-signed.test.ts
   tests: tests/ward-event-permissions.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2275; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2277; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/triage/triage-signed-reducer.ts:46; SHA256 88ebffb9dc86dd544d9bdac7f561fcf4998a3af62d9a19ffe4211c5325142666
   Reviewed source: src/components/ward-management/ward-access-state.ts:371; SHA256 6749082a89387b340bc0b52cfe76a13f8375532e44cbbcdf17a85d696c94e703
 - REQUEST_WARD_STAFF — modelled; event roles: ward, coordinator, bed_manager
   Source-reviewed command model: one open staff request per ward per shift, added or updated in place.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:603
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2266
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2268
   Subject: A ward's staff request for this shift or next shift
   Before: Known ward; no open request for that ward and shift, or one to update
   After: staffRequests holds one open request for the ward and shift with count and ordered reasons, or the event is refused when This shift has already ended
@@ -1703,13 +1703,13 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   effects: Appends a record, or updates count, reasons and updatedAt on the open one; never names a patient
   effects: Does not change beds, placement, movements or any patient stage
   tests: tests/ward-staff-requests.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2268; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2270; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/staffing/staff-requests.ts:156; SHA256 61771664a49e5dd78341e5a6f34b9ad61b99896c789768c878c93b3bb5ff21ad
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:605; SHA256 808d614bd517bb11c0ef517ce5632dd3caba8a71758476401f35da82fe26afda
 - CLOSE_WARD_STAFF_REQUEST — modelled; event roles: ward, coordinator, bed_manager
   Source-reviewed command model: an open staff request closed as arranged, not available or withdrawn.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:604
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2267
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2269
   Subject: An open staff request on a ward
   Before: Request exists on the named ward and is still open
   After: Request carries closedAt, closedBy and outcome
@@ -1721,14 +1721,14 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   effects: Closes the one record; open lists and alerts drop it
   effects: Does not change beds, placement, movements or any patient stage
   tests: tests/ward-staff-requests.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2269; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2271; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/staffing/staff-requests.ts:200; SHA256 61771664a49e5dd78341e5a6f34b9ad61b99896c789768c878c93b3bb5ff21ad
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:615; SHA256 808d614bd517bb11c0ef517ce5632dd3caba8a71758476401f35da82fe26afda
 - SET_SITE_FEATURE_SWITCH — modelled; event roles: coordinator
   Source-reviewed command model: one listed feature switched off, or back on, at one site (Batch 4 item 20, D-135; access admin by D-142).
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:609
   Event/dispatch reference: src/components/ward-management/ward-flow-pilot-control-events.ts:51
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2269
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2271
   Subject: A site's switched-off features
   Before: A site with wards in this workspace; the listed feature is on there (to switch off) or off there (to switch back on)
   After: siteFeatureSwitches holds one record per site and feature switched off (site code, feature, time, and by: the role, or admin when the access admin switched it); switching back on removes it
@@ -1744,14 +1744,14 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   tests: tests/ward-event-permissions.test.ts
   tests: tests/ward-site-features-card.dom.test.tsx
   Reviewed source: src/components/ward-management/ward-flow-pilot-control-events.ts:51; SHA256 bdd8a6e00ebe08750497e083d9e58b225b5803e45015caa5ab388a681418e8a2
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2270; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2272; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/ward-site-feature-switches.ts:102; SHA256 28c257371212025f04befc60adc5bf0d36c87b1d1d5173b082ccd7a03d84c7e0
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:610; SHA256 808d614bd517bb11c0ef517ce5632dd3caba8a71758476401f35da82fe26afda
 - RECORD_DOWNTIME_PACK_PRINTED — modelled; event roles: coordinator, bed_manager, ward, ed
   Source-reviewed command model: when each ward's downtime pack was printed or saved as a PDF, never the pack itself (Batch 4 item 24, D-135).
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:611
   Event/dispatch reference: src/components/ward-management/ward-flow-pilot-control-events.ts:53
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2270
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2272
   Subject: Each ward's downtime pack print times
   Before: Every ward named is in this workspace
   After: downtimePackPrints holds one record (ward, time, role) per ward on the pack, keeping the newest 12 per ward
@@ -1767,14 +1767,14 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   tests: tests/ward-event-permissions.test.ts
   tests: tests/ward-outage-catch-up-screens.dom.test.tsx
   Reviewed source: src/components/ward-management/ward-flow-pilot-control-events.ts:53; SHA256 bdd8a6e00ebe08750497e083d9e58b225b5803e45015caa5ab388a681418e8a2
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2271; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2273; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/ward-downtime-pack-prints.ts:49; SHA256 e767d9065a60c199968fdc71210406000a397a8dd769b58fb836e8b1a7d7b033
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:612; SHA256 808d614bd517bb11c0ef517ce5632dd3caba8a71758476401f35da82fe26afda
 - RECORD_OUTAGE_WINDOW — modelled; event roles: coordinator
   Source-reviewed command model: a coordinator types the outage window, starting the catch-up prompt; nothing is guessed (Batch 4 item 25, D-135).
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:613
   Event/dispatch reference: src/components/ward-management/ward-flow-pilot-control-events.ts:55
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2271
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2273
   Subject: The workspace's recorded outage windows
   Before: Both times typed; the window is not already recorded
   After: outageWindows holds a new OUT-n record (from, to, recordedAt, role); the most recently recorded window is the active one, so a correction replaces the earlier entry; a ward is caught up only once it confirms Beds still correct itself at or after the outage ended (CapacityFigure.wardConfirmedAt keeps that confirm when another desk confirms later)
@@ -1789,7 +1789,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   tests: tests/ward-event-permissions.test.ts
   tests: tests/ward-outage-catch-up-screens.dom.test.tsx
   Reviewed source: src/components/ward-management/ward-flow-pilot-control-events.ts:55; SHA256 bdd8a6e00ebe08750497e083d9e58b225b5803e45015caa5ab388a681418e8a2
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2272; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2274; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/ward-outage-catch-up.ts:51; SHA256 eda536beceed5d18ab57717139eff4b0cf1fa174dd4cc2278bf6374359344276
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:614; SHA256 808d614bd517bb11c0ef517ce5632dd3caba8a71758476401f35da82fe26afda
 - HAND_OVER_ITEM — modelled; event roles: coordinator, ward, ed, community
@@ -1871,27 +1871,27 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:626
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1357
   Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:716
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1784
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1786
 - DISPATCH_BROADCAST_ALERT — diagram-reviewed; event roles: coordinator, bed_manager
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:630
   Event/dispatch reference: src/components/ward-management/alerts/ward-broadcast-reducer.ts:69
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2219
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2221
 - ACKNOWLEDGE_BROADCAST_ALERT — diagram-reviewed; event roles: coordinator, ward, ed, officer, community, bed_manager
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:631
   Event/dispatch reference: src/components/ward-management/alerts/ward-broadcast-reducer.ts:151
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2220
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2222
 - STAND_DOWN_BROADCAST_ALERT — diagram-reviewed; event roles: coordinator, bed_manager
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:632
   Event/dispatch reference: src/components/ward-management/alerts/ward-broadcast-reducer.ts:198
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2221
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2223
 - EXTEND_BROADCAST_ALERT — modelled; event roles: coordinator, bed_manager
   Reviewed command model: Same active alert with expiry and duration each extended by the fixed default.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:633
   Event/dispatch reference: src/components/ward-management/alerts/ward-broadcast-reducer.ts:228
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2222
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2224
   Subject: An active broadcast alert
   Before: Active alert with current expiry/duration
   After: Same active alert with expiry and duration each extended by the fixed default
@@ -1908,7 +1908,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Reviewed command model: Existing recipients plus new unique named desks.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:634
   Event/dispatch reference: src/components/ward-management/alerts/ward-broadcast-reducer.ts:243
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2223
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2225
   Subject: An active directive or bed call's recipients
   Before: Existing recipient scope/list
   After: Existing recipients plus new unique named desks
@@ -1927,7 +1927,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Reviewed command model: Same movement plus active Pull now addressed to the relevant wards.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:638
   Event/dispatch reference: src/components/ward-management/alerts/ward-broadcast-reducer.ts:293
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2224
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2226
   Subject: A waiting movement and a new patient-specific broadcast
   Before: Waiting open movement with wards considering/accepting it, no live Pull now
   After: Same movement plus active Pull now addressed to the relevant wards
@@ -1947,7 +1947,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Reviewed command model: Reply appended; desk also acknowledged.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:640
   Event/dispatch reference: src/components/ward-management/alerts/ward-broadcast-reducer.ts:348
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2225
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2227
   Subject: One desk's answer to a bed call or Pull now
   Before: Active applicable alert with no answer or a different latest answer for this desk
   After: Reply appended; desk also acknowledged
@@ -1968,7 +1968,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Reviewed command model: New PA-* record in booked state, holding no bed.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:643
   Event/dispatch reference: src/components/ward-management/capacity/planned-admissions-reducer.ts:78
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2231
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2233
   Subject: A future planned admission
   Before: No booking for this linked patient, or an initials-only booking to create
   After: New PA-* record in booked state, holding no bed
@@ -1992,7 +1992,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Reviewed command model: Still booked, with revised fields, changedAt and incremented changeCount.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:644
   Event/dispatch reference: src/components/ward-management/capacity/planned-admissions-reducer.ts:423
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2236
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2238
   Subject: An existing booked planned admission
   Before: booked plan with current ward/date/stay/reason/legal status/gender
   After: Still booked, with revised fields, changedAt and incremented changeCount
@@ -2017,7 +2017,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Reviewed command model: cancelled with cancel reason and time.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:645
   Event/dispatch reference: src/components/ward-management/capacity/planned-admissions-reducer.ts:499
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2241
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2243
   Subject: One booked planned admission
   Before: booked
   After: cancelled with cancel reason and time
@@ -2036,7 +2036,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Reviewed command model: Plan arrived and linked to a new occupied admission.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:646
   Event/dispatch reference: src/components/ward-management/capacity/planned-admissions-reducer.ts:523
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:750
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:752
   Subject: A booked plan and its receiving ward
   Before: booked plan, no current linked bed/journey, ready eligible capacity
   After: Plan arrived and linked to a new occupied admission
@@ -2059,7 +2059,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:650
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1358
   Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:728
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1785
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1787
   Subject: One completed involuntary arrival/transfer or discharge, and one support party
   Before: No or earlier checklist Tell record
   After: Another told/not_applicable record appended
@@ -2078,7 +2078,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - SEND_RELEASE_SUPPORT_NOTICE — modelled; event roles: ward, coordinator
   Reviewed command model: confirmed release with service marked Sent.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:651
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1848
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1850
   Event/dispatch reference: src/components/ward-management/ward-flow-release-notice-events.ts:31
   Subject: One confirmed bed release and a support service
   Before: confirmed release with no Sent record for chosen service
@@ -2098,7 +2098,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Reviewed command model: Latest outstanding/done/not_needed state and owner recorded.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:653
   Event/dispatch reference: src/components/ward-management/discharges/discharge-dependency-events.ts:34
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1851
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1853
   Subject: One non-discharged bed release and one logistics kind
   Before: Missing or existing dependency for this kind
   After: Latest outstanding/done/not_needed state and owner recorded
@@ -2117,7 +2117,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Reviewed command model: One changed fact, with recorded change history where applicable.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:654
   Event/dispatch reference: src/components/ward-management/discharges/discharge-dependency-events.ts:49
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1852
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1854
   Subject: One non-discharged bed release's logistics plan
   Before: Current expected time or planned destination
   After: One changed fact, with recorded change history where applicable
@@ -2137,7 +2137,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Reviewed command model: One discharge checklist item recorded as done, not needed or outstanding.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:656
   Event/dispatch reference: src/components/ward-management/discharges/discharge-check-events.ts:37
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2252
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2254
   Subject: One stay with a bed (not waitlisted) and one checklist item
   Before: Item not ticked, or ticked with a different state
   After: One discharge checklist item recorded as done, not needed or outstanding
@@ -2154,7 +2154,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Reviewed command model: The community team's follow-up reply recorded, with a listed reason when declined.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:658
   Event/dispatch reference: src/components/ward-management/discharges/discharge-check-events.ts:51
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2253
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:2255
   Subject: One stay with a bed (not waitlisted) referred to the acting community team
   Before: No reply, or a different reply or decline reason
   After: The community team's follow-up reply recorded, with a listed reason when declined
@@ -2171,7 +2171,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - RECORD_ARRIVAL_CHECK — modelled; event roles: ed, coordinator
   Reviewed command model: Chosen flag set to the opposite recorded boolean.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:659
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1854
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1856
   Event/dispatch reference: src/components/ward-management/ward-flow-release-notice-events.ts:47
   Subject: An open movement's pre-transfer checklist flag
   Before: Contraband-search or medication-chart flag false/unrecorded or true
@@ -2191,7 +2191,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - UNDO_REFERRAL_DECISION — modelled; event roles: ward, coordinator, ed, community
   Reviewed command model: Referral restored to its pre-decision snapshot.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:663
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1638
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1640
   Event/dispatch reference: src/components/ward-management/ward-flow-undo-events.ts:98
   Subject: The latest accepted/declined decision snapshot on a referral
   Before: Referral exactly as the latest undoable decision left it
@@ -2207,14 +2207,14 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   tests: tests/ward-undo-and-bed-board.test.ts
   tests: tests/ward-undo-toast-record-seq.dom.test.tsx
   Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:98; SHA256 7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1350; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1352; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/ward-undo.ts:492; SHA256 3c53075006e38d5b6dac4bfff7b374662ec8511a331c3129f22d9febaefc8186
   Reviewed source: src/components/ward-management/ward-access-state.ts:709; SHA256 6749082a89387b340bc0b52cfe76a13f8375532e44cbbcdf17a85d696c94e703
 - UNDO_AUDIT_REVIEW — modelled; event roles: coordinator
   Reviewed command model: That review removed while audit history remains.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:665
-  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:105
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1463
+  Event/dispatch reference: src/components/ward-management/ward-flow-protected-record-events.ts:101
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1465
   Subject: One captured-event review in the current world generation
   Before: Latest review on its captured event
   After: That review removed while audit history remains
@@ -2227,7 +2227,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   effects: Does not erase the reviewed event or its original review/Undo audit entries.
   tests: tests/ward-undo-and-bed-board.test.ts
   tests: tests/ward-governance.dom.test.tsx
-  Reviewed source: src/components/ward-management/ward-flow-protected-record-events.ts:105; SHA256 bfc2dbb4d35f590f6a48073fdc1d2a552b38abe82dbebc83dc2131eb52e16828
+  Reviewed source: src/components/ward-management/ward-flow-protected-record-events.ts:101; SHA256 aa8f73e70aa23c67199cec89c7be07f50c18d7bf0a54392f2375b42d7c78ed07
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2611; SHA256 8a2438031d11683d8648960b9d12ffd41eda8a351a21b1b50037bfd2ab59dde4
   Reviewed source: src/components/ward-management/ward-undo.ts:492; SHA256 3c53075006e38d5b6dac4bfff7b374662ec8511a331c3129f22d9febaefc8186
   Reviewed source: src/components/ward-management/ward-access-state.ts:709; SHA256 6749082a89387b340bc0b52cfe76a13f8375532e44cbbcdf17a85d696c94e703
@@ -2235,7 +2235,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   Reviewed command model: Same stay recorded in the selected numbered bed and matching bed kind.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:667
   Event/dispatch reference: src/components/ward-management/ward-flow-bed-events.ts:99
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1657
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1659
   Subject: A current occupied/pulled stay on one ward
   Before: Stay in another numbered bed or with known kind but no number
   After: Same stay recorded in the selected numbered bed and matching bed kind
@@ -2255,7 +2255,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - UNDO_PLACE_IN_BED — modelled; event roles: ward, coordinator
   Reviewed command model: Prior bed number/kind and associated hold numbers restored.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:668
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1639
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1641
   Event/dispatch reference: src/components/ward-management/ward-flow-undo-events.ts:134
   Subject: A stay's latest numbered-bed move
   Before: Stay still in saved destination bed; any changed kind capacity/linked holds unchanged
@@ -2276,7 +2276,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - UNDO_REFER_TO_UNITS — modelled; event roles: coordinator
   Reviewed command model: Movement offer/ward-referral changes reversed.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:671
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1640
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1642
   Event/dispatch reference: src/components/ward-management/ward-flow-undo-events.ts:261
   Subject: Latest undoable REFER_TO_UNITS on the named subject
   Before: Saved step record and unchanged post-step state
@@ -2299,7 +2299,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - UNDO_ACCEPT_IN_PRINCIPLE — modelled; event roles: ward, coordinator
   Reviewed command model: Acceptance, held bed/admission and generated notices restored to pre-acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:672
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1641
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1643
   Event/dispatch reference: src/components/ward-management/ward-flow-undo-events.ts:262
   Subject: Latest undoable ACCEPT_IN_PRINCIPLE on the named subject
   Before: Saved step record and unchanged post-step state
@@ -2322,7 +2322,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - UNDO_LEGAL_FORM_RECORD — modelled; event roles: ed, coordinator, ward, community
   Reviewed command model: Newest recorded form/time/receipt/expiry and accompanying changed rows restored.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:673
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1642
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1644
   Event/dispatch reference: src/components/ward-management/ward-flow-undo-events.ts:263
   Subject: Latest undoable RECORD_LEGAL_FORM_WRITTEN, RECORD_LEGAL_FORM_CODE, RECORD_LEGAL_FORM_RECEIVED or RECORD_LEGAL_FORM_EXPIRY on the named subject
   Before: Saved step record and unchanged post-step state
@@ -2349,7 +2349,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - UNDO_SUPPORT_NOTIFICATION — modelled; event roles: ward, coordinator
   Reviewed command model: Newest Tell record removed from the subject's checklist.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:674
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1643
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1645
   Event/dispatch reference: src/components/ward-management/ward-flow-undo-events.ts:264
   Subject: Latest undoable RECORD_SUPPORT_NOTIFICATION on the named subject
   Before: Saved step record and unchanged post-step state
@@ -2373,7 +2373,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - UNDO_REPATRIATION — modelled; event roles: coordinator
   Reviewed command model: Return transport record and all generated journey/notice changes restored.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:675
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1644
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1646
   Event/dispatch reference: src/components/ward-management/ward-flow-undo-events.ts:265
   Subject: Latest undoable RECORD_REPATRIATION on the named subject
   Before: Saved step record and unchanged post-step state
@@ -2396,7 +2396,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - UNDO_FLAG_RETURN_EARLY — modelled; event roles: coordinator
   Reviewed command model: takes back the newest early-return flag on a stay within the Undo window.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:676
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1645
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1647
   Event/dispatch reference: src/components/ward-management/ward-flow-undo-events.ts:266
   Subject: The newest FLAG_RETURN_EARLY on one stay
   Before: Stay flagged early by that step
@@ -2410,12 +2410,12 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   effects: Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.
   effects: The audit evidence of the step and of the Undo stays.
   tests: tests/ward-return-early.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1393; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1395; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:266; SHA256 7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e
 - UNDO_HANDOVER_SIGN_OFF — modelled; event roles: coordinator, ward
   Reviewed command model: Latest sign-off for that ward or network removed.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:677
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1646
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1648
   Event/dispatch reference: src/components/ward-management/ward-flow-undo-events.ts:267
   Subject: Latest undoable RECORD_HANDOVER_SIGN_OFF on the named subject
   Before: Saved step record and unchanged post-step state
@@ -2440,7 +2440,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - UNDO_SITE_HANDOVER_SIGN_OFF — modelled; event roles: bed_manager
   Reviewed command model: Latest sign-off for that site removed; no ward sign-off changed.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:680
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1647
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1649
   Event/dispatch reference: src/components/ward-management/ward-flow-undo-events.ts:268
   Subject: Latest undoable RECORD_SITE_HANDOVER_SIGN_OFF on the named subject
   Before: Saved step record and unchanged post-step state
@@ -2465,7 +2465,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - UNDO_ED_STEP — modelled; event roles: ed, ward, community, coordinator
   Reviewed command model: Newest ED board step and all records it changed restored.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:681
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1648
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1650
   Event/dispatch reference: src/components/ward-management/ward-flow-undo-events.ts:269
   Subject: Latest undoable RECORD_ARRIVED_IN_DEPARTMENT, RECORD_EXAMINATION, RECORD_MEDICAL_CLEARANCE, RECORD_TRANSPORT_NEED, RECORD_ED_PRESENTATION, HANDOVER_READY, REQUEST_PSYCH_REVIEW or RECORD_PSYCH_REVIEW_SEEN on the named subject
   Before: Saved step record and unchanged post-step state
@@ -2489,7 +2489,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - UNDO_TRANSPORT_STEP — modelled; event roles: officer, ward, coordinator
   Reviewed command model: Newest transport stage reversed, including arrival-created stay and affected bed/resource changes.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:682
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1649
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1651
   Event/dispatch reference: src/components/ward-management/ward-flow-undo-events.ts:270
   Subject: Latest undoable TRANSPORT_ACCEPTED, TRANSPORT_EN_ROUTE, PATIENT_COLLECTED or PATIENT_ARRIVED on the named subject
   Before: Saved step record and unchanged post-step state
@@ -2513,7 +2513,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - UNDO_DEPARTURE — modelled; event roles: ward, coordinator
   Reviewed command model: Departure reversed, stay and capacity restored if still safe.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:683
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1650
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1652
   Event/dispatch reference: src/components/ward-management/ward-flow-undo-events.ts:271
   Subject: Latest undoable RECORD_LEAVING or RECORD_PATIENT_DISCHARGE on the named subject
   Before: Saved step record and unchanged post-step state
@@ -2536,7 +2536,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - UNDO_ABSENT_WITHOUT_LEAVE — modelled; event roles: ward, coordinator
   Reviewed command model: Newest absence record and related row changes reversed.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:684
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1651
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1653
   Event/dispatch reference: src/components/ward-management/ward-flow-undo-events.ts:272
   Subject: Latest undoable RECORD_ABSENT_WITHOUT_LEAVE on the named subject
   Before: Saved step record and unchanged post-step state
@@ -2559,7 +2559,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - UNDO_BED_MEETING_ACTION — modelled; event roles: coordinator, ward, ed, community, bed_manager
   Reviewed command model: One completed meeting action reopened to its exact prior state.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:686
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1652
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1654
   Event/dispatch reference: src/components/ward-management/ward-flow-undo-events.ts:273
   Subject: Latest undoable COMPLETE_BED_MEETING_ACTION or RECORD_BED_MEETING_ACTION on the named subject
   Before: Saved step record and unchanged post-step state
@@ -2583,7 +2583,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
 - UNDO_BED_STEP — modelled; event roles: ward, bed_manager, coordinator
   Reviewed command model: takes back a bed closed or reopened, or a return from leave, within the Undo window.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:688
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1653
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1655
   Event/dispatch reference: src/components/ward-management/ward-flow-undo-events.ts:274
   Subject: One bed (unitId and bedNumber) or one leave bed record
   Before: Bed as the SET_BED_CLOSED or END_LEAVE_BED step left it
@@ -2598,12 +2598,12 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   effects: The audit evidence of the step and of the Undo stays.
   tests: tests/ward-tier1-undo.test.ts
   tests: tests/ward-undo-dependent-records.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1401; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1403; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:274; SHA256 7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e
 - UNDO_RELEASE_STEP — modelled; event roles: coordinator, ward, ed, community, bed_manager
   Reviewed command model: takes back a released bed, confirmed discharge sign-off, cancelled transport, withdrawn ward request or cancelled planned admission.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:689
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1654
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1656
   Event/dispatch reference: src/components/ward-management/ward-flow-undo-events.ts:275
   Subject: One movement, one bed release, or one planned admission
   Before: As the release, confirm, cancel or withdraw step left it
@@ -2617,12 +2617,12 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   effects: Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.
   effects: The audit evidence of the step and of the Undo stays.
   tests: tests/ward-tier1-undo.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1402; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1404; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:275; SHA256 7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e
 - UNDO_PATIENT_RECORD — modelled; event roles: community, coordinator
   Reviewed command model: takes back a community treatment order recorded or ended, or a record archived in error.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:690
-  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1655
+  Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1657
   Event/dispatch reference: src/components/ward-management/ward-flow-undo-events.ts:276
   Subject: One patient record
   Before: As the CTO or archive step left it
@@ -2637,7 +2637,7 @@ Source-contract SHA256: 7cfda9a71c556b4d10a573977f0ef64456a4f9bb9890c7a236952cd7
   effects: The audit evidence of the step and of the Undo stays.
   tests: tests/ward-tier1-undo.test.ts
   tests: tests/ward-retained-umrn.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1403; SHA256 ff62a01c308a19a3cd2f6ea39a1502194855812ad15c7599a441bc8c9e32c4f6
+  Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1405; SHA256 79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304
   Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:276; SHA256 7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e
   Reviewed source: src/components/ward-management/ward-retained-umrn.ts:25; SHA256 7968243f077b9d5c9a6fe6a56385f48ff6a97aa39cfdeec8fe97f05919693d80
 - RECORD_CARE_PLAN — modelled; event roles: ward, ed, community, coordinator
