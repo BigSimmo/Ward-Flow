@@ -188,6 +188,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-163](#d-163-pre-demo-audits-use-the-public-demo-after-d-162-is-live-12-november-2026)                                                                | Pre-demo audits use the public demo after D-162 is live                                | Active                                           |
 | [D-164](#d-164-homes-changes-since-strip-names-escalations-first-and-leaves-movements-off-12-november-2026)                                             | Home's changes-since strip names escalations first and leaves movements off            | Active                                           |
 | [D-166](#d-166-ci-runs-faster-without-dropping-a-check-12-november-2026)                                                                                | CI runs faster without dropping a check                                                | Active                                           |
+| [D-167](#d-167-the-triage-page-has-a-left-sign-off-nav-and-joined-section-steps-13-november-2026)                                                       | The Triage page has a left sign-off nav and joined section steps                       | Active                                           |
 
 ---
 
@@ -2039,3 +2040,14 @@ is inferred.
   2. **Phone release gate:** runs as two jobs (journeys then referrals, and checks alone). This reverses the phone half of the 4 November "fewer jobs" ruling; desktop keeps its three suites in one job.
   3. **The rest of the review:** the unit shards are dealt from main's newest measured timings (falling back to `scripts/ward-flow/unit-durations.json`); the push guard warns when it cannot see a PR; threads keep PRs in draft while iterating; `npm run check:phone-budget` checks phone limits before a push; and main reuses a PR's unit evidence apart from the legal-figure sweep.
 - **Boundary:** no check is removed, skipped on a ready PR or loosened. Phone limits, coverage floors and test populations are unchanged. Approves no release, provider action or settings change.
+
+## D-167. The Triage page has a left sign-off nav and joined section steps (13 November 2026)
+
+- **Date:** 13 November 2026, 7:26 AM AWST (12 November, 23:26 UTC). **Decided by:** Josh, "Yes, open the PR" on the approval card and then "Yes to all recommendations" in the Ward Flow project thread "Redesign the Triage page", answering its five numbered questions on version 2 of the mock-up. Forty minutes earlier, on version 1, he wrote "isn't it better to have the nav on the left please as that is more natural". Numbered D-167 because D-165 is claimed by PR #1644 (patient screen redesign).
+- **Decision:** Start a triage and the Triage and risk form are redrawn in the patient screen's row pattern (D-165), with no change to what any action does, to clinical wording, to permissions or to saved records.
+  1. **Sign-off card on the left:** from 1001 px one sticky "Before you sign" card on the left lists the six sections, shows what is left and carries the Sign button. It replaces the old left list, the progress bar and the Sign button at the form's foot. On a tablet the card sits after the form; a phone keeps its bottom bar. On 7 November 2026 Josh kept the left column to the sections only and moved the "Before you sign" list out of it; this entry replaces that for the left column, because the one card is now both the section list and the sign-off list.
+  2. **Signature part:** the sections are drawn as steps joined by a line, with a filled chip for the section in view, in the card and in the form. This is the page's one signature part.
+  3. **Pills everywhere:** pick-one answers are round pills at every width. Pick-any answers stay square with a tick.
+  4. **Start a triage:** "Waiting by source" and "Signed triages" keep a right-hand column beside the numbered queue.
+  5. **Top band:** unchanged in this PR. Josh set its button row on 9 November 2026.
+- **Boundary:** synthetic data only. Changes no clinical rule, signed value, time limit or permission. Does not touch the patient screen's Triage card (PR #1644). Approves no release.
