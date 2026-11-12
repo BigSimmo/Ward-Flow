@@ -1,10 +1,11 @@
 "use client";
 
 /*
- * Beside the journey timeline on the patient page: "Where the hours went" for the movement, and
- * the ED-to-ward handover pack once a ward has accepted it. Loaded on its own (patient-now-panel)
- * so the phone's first load does not grow. Everything is read from the record through pure
- * selectors; this file only gathers their inputs.
+ * The patient page's lazily loaded extras. On Now, in the "Hand over and print" card: the ED-to-ward
+ * handover pack once a ward has accepted the movement, and the patient or carer page. On History:
+ * "Where the hours went" (moved there in the 12 Nov 2026 redesign). Loaded on its own so the
+ * phone's first load does not grow; both parts stay in this one file so they share one download.
+ * Everything is read from the record through pure selectors; this file only gathers their inputs.
  */
 
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -27,6 +28,11 @@ function ageSexWords(patient: Patient | undefined, dayZero: Date, now: Instant):
   const years = patient.dateOfBirth ? patientAgeYears(patient, calendarDateOf(now, dayZero)) : Number.NaN;
   const age = Number.isFinite(years) && years >= 0 ? `${years}` : "age not recorded";
   return `${age}, ${patient.sex?.trim() ? patient.sex.trim().toLowerCase() : "sex not recorded"}`;
+}
+
+/** "Where the hours went" for the History tab, from this file's own download. */
+export function PatientJourneyHours({ movement, now }: { movement: Movement; now: Instant }) {
+  return <PatientHoursBreakdown movement={movement} now={now} />;
 }
 
 export function PatientJourneyExtras({
@@ -96,7 +102,6 @@ export function PatientJourneyExtras({
   }
   return (
     <>
-      <PatientHoursBreakdown movement={movement} now={now} />
       {pack ? <PatientHandoverPackButton input={pack} dayZero={dayZero} /> : null}
       <PatientCarerPageButton movement={movement} units={units} />
     </>

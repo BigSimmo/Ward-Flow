@@ -500,3 +500,37 @@
   padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
   border-top: 1px solid var(--wf-line);
 }
+
+/* Redesign (12 Nov 2026): the three facts sit together at the left, each as wide as it needs, in
+   place of three cells stretched across the card; the Status column is wide enough for its note. */
+@media (min-width: 46.5rem) {
+  .strip {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .strip > .fact {
+    flex: 0 1 auto;
+    min-width: 176px;
+    padding-right: var(--wf-s-6);
+  }
+
+  .table thead th:nth-child(2) {
+    width: 27%;
+  }
+
+  .table thead th:nth-child(3) {
+    width: 19%;
+  }
+
+  .table thead th:nth-child(4),
+  .table thead th:nth-child(5) {
+    width: 12%;
+  }
+}
+
+.statusCell .ends,
+.statusCell .note {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

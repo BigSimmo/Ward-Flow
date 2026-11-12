@@ -90,7 +90,7 @@ export function PatientDischargeReadiness({
   const rows = dischargeReadiness(admission, patient, dayZero);
   return (
     <Card data-testid="ward-patient-discharge-readiness">
-      <CardHead level={2} icon={ListChecks} iconPlain title="Discharge readiness" meta="As recorded" />
+      <CardHead level={2} icon={ListChecks} title="Discharge readiness" meta="As recorded" />
       <ul className={styles.list} aria-label="Discharge readiness">
         {rows.map((row) => (
           <li key={row.key} className={styles.item} data-testid={`ward-patient-ready-${row.key}`} data-done={row.done}>
@@ -120,7 +120,6 @@ export function PatientLastDay({
       <CardHead
         level={2}
         icon={History}
-        iconPlain
         title="Recent changes"
         action={
           <Button size="sm" variant="ghost" onClick={onOpenHistory} data-testid="ward-patient-last-day-history">

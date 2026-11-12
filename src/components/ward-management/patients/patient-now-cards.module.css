@@ -129,6 +129,12 @@
   border-bottom: 0;
 }
 
+/* In the side column the action keeps its one line and the step's words wrap beside it. */
+.item > button {
+  flex: none;
+  white-space: nowrap;
+}
+
 .itemText {
   display: flex;
   flex-wrap: wrap;
