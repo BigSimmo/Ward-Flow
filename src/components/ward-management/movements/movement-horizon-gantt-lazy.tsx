@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { preloadWhenIdle } from "../preload-when-idle";
 
@@ -19,8 +20,8 @@ import { preloadWhenIdle } from "../preload-when-idle";
  */
 // The import sits inside `dynamic()` so the build links this call to the timeline's code and
 // stylesheet; the server then sends that stylesheet with the page, and the page waits for it.
-export const MovementHorizonGantt = dynamic(() =>
-  import("./movement-horizon-gantt").then((m) => m.MovementHorizonGantt),
+export const MovementHorizonGantt = dynamic(
+  withLoadRetry(() => import("./movement-horizon-gantt").then((m) => m.MovementHorizonGantt)),
 );
 
 preloadWhenIdle(() => import("./movement-horizon-gantt"));

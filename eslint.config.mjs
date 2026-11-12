@@ -7,6 +7,7 @@ import requireButtonWiring from "./eslint-rules/require-button-wiring.mjs";
 import requireZIndexLadder from "./eslint-rules/require-z-index-ladder.mjs";
 import restrictSuppressHydrationWarning from "./eslint-rules/restrict-suppress-hydration-warning.mjs";
 import noHardcodedHex from "./eslint-rules/no-hardcoded-hex.mjs";
+import requireDynamicLoadRetry from "./eslint-rules/require-dynamic-load-retry.mjs";
 import { MAX_LINES_BASELINE, MAX_LINES_COUNTING, MAX_LINES_DEFAULT } from "./eslint-rules/max-lines-baseline.mjs";
 
 // Shared `local` plugin object. ESLint flat config requires every config block
@@ -25,6 +26,7 @@ const localRulesPlugin = {
     "require-z-index-ladder": requireZIndexLadder,
     "restrict-suppress-hydration-warning": restrictSuppressHydrationWarning,
     "no-hardcoded-hex": noHardcodedHex,
+    "require-dynamic-load-retry": requireDynamicLoadRetry,
   },
 };
 
@@ -231,6 +233,8 @@ const eslintConfig = defineConfig([
     plugins: { local: localRulesPlugin },
     rules: {
       "local/restrict-suppress-hydration-warning": "error",
+      // A next/dynamic loader without withLoadRetry caches a failed chunk fetch until reload.
+      "local/require-dynamic-load-retry": "error",
     },
   },
   // Z-index ladder enforcement

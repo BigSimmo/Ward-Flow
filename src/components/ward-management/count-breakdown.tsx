@@ -11,6 +11,7 @@
  * `count-breakdown-model.ts` for the scope and small-number rules. Not for the wall TV.
  */
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useRef, useState, type ReactNode } from "react";
 
 import { Popover, useIsPhone } from "@/components/wf";
@@ -20,10 +21,16 @@ import { type BreakdownKind, type BreakdownRow, type BreakdownScope } from "./co
 import styles from "./count-breakdown.module.css";
 
 const loadPanel = () => import("./count-breakdown-panel");
-const CountBreakdownPanel = dynamic(() => loadPanel().then((m) => m.CountBreakdownPanel), {
-  loading: () => <p className={styles.loading}>Loading the list…</p>,
-});
-const CountBreakdownSheet = dynamic(() => loadPanel().then((m) => m.CountBreakdownSheet), { loading: () => null });
+const CountBreakdownPanel = dynamic(
+  withLoadRetry(() => loadPanel().then((m) => m.CountBreakdownPanel)),
+  {
+    loading: () => <p className={styles.loading}>Loading the list…</p>,
+  },
+);
+const CountBreakdownSheet = dynamic(
+  withLoadRetry(() => loadPanel().then((m) => m.CountBreakdownSheet)),
+  { loading: () => null },
+);
 
 export type CountBreakdownProps = {
   /** The figure, exactly as shown. */

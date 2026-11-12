@@ -7,7 +7,7 @@
  * "this file" or "this screen" in them still means the community team screen as a whole.
  */
 
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   DEMO_COMMUNITY_REFERRALS,
   DEMO_COMMUNITY_INPATIENTS,
@@ -30,12 +30,27 @@ export function useCommunityScreenDemoLists({
   egressFilter: EgressFilter;
   caseloadFilter: CaseloadFilter;
 }) {
+  // Review finding 3 (12 Nov 2026): Accept or Decline on a sample row takes it off this page's
+  // sample list (with Undo), so the row and every count follow. Nothing is saved anywhere.
+  const [answeredDemoIds, setAnsweredDemoIds] = useState<ReadonlySet<string>>(() => new Set());
+  const answerDemoReferral = useCallback((id: string) => {
+    setAnsweredDemoIds((current) => new Set(current).add(id));
+  }, []);
+  const restoreDemoReferral = useCallback((id: string) => {
+    setAnsweredDemoIds((current) => {
+      const next = new Set(current);
+      next.delete(id);
+      return next;
+    });
+  }, []);
+
   const demoTeamReferrals = useMemo(() => {
     return DEMO_COMMUNITY_REFERRALS.filter((r) => {
+      if (answeredDemoIds.has(r.id)) return false;
       if (r.team && r.team !== teamId && (teamId !== "alma-street-fremantle" || r.team !== "fremantle")) return false;
       return true;
     });
-  }, [teamId]);
+  }, [teamId, answeredDemoIds]);
 
   const demoVisibleReferrals = useMemo(() => {
     return demoTeamReferrals.filter((r) => {
@@ -69,5 +84,13 @@ export function useCommunityScreenDemoLists({
     return true;
   });
 
-  return { demoTeamReferrals, demoVisibleReferrals, demoVisibleInpatients, demoVisibleEgress, demoVisibleCaseload };
+  return {
+    demoTeamReferrals,
+    demoVisibleReferrals,
+    demoVisibleInpatients,
+    demoVisibleEgress,
+    demoVisibleCaseload,
+    answerDemoReferral,
+    restoreDemoReferral,
+  };
 }

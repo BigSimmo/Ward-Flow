@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 /**
  * Statistics' waiting-stages and fixed-questions cards (closing-the-loop features, Josh, 24 Oct
@@ -9,10 +10,16 @@ import dynamic from "next/dynamic";
  */
 const cardPending = () => null;
 
-export const WaitingStagesCard = dynamic(() => import("./waiting-stages-card").then((m) => m.WaitingStagesCard), {
-  loading: cardPending,
-});
+export const WaitingStagesCard = dynamic(
+  withLoadRetry(() => import("./waiting-stages-card").then((m) => m.WaitingStagesCard)),
+  {
+    loading: cardPending,
+  },
+);
 
-export const FixedQuestionsCard = dynamic(() => import("./fixed-questions-card").then((m) => m.FixedQuestionsCard), {
-  loading: cardPending,
-});
+export const FixedQuestionsCard = dynamic(
+  withLoadRetry(() => import("./fixed-questions-card").then((m) => m.FixedQuestionsCard)),
+  {
+    loading: cardPending,
+  },
+);

@@ -111,6 +111,8 @@ export function CarerCallbackCard({ admissionId, movementId }: { admissionId?: s
           </span>
         ) : null}
       </div>
+      {/* "Call made" saves from the line above; its failure must show without opening the form. */}
+      {!editing && save.error ? <StateLine kind="error" compact title={save.error} /> : null}
       {editing ? (
         <form
           className={styles.form}

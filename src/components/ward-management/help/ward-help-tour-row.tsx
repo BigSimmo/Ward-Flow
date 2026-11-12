@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Check, Compass } from "lucide-react";
@@ -14,7 +15,10 @@ import { fullTourSteps } from "./ward-tour-more-steps";
 import s from "./ward-help-panel.module.css";
 
 // The welcome cards load only when asked for again here.
-const WardTourWelcome = dynamic(() => import("./ward-tour-welcome").then((m) => m.WardTourWelcome), { ssr: false });
+const WardTourWelcome = dynamic(
+  withLoadRetry(() => import("./ward-tour-welcome").then((m) => m.WardTourWelcome)),
+  { ssr: false },
+);
 
 /**
  * The tour as one row in Help's How to: where this desk stopped, its chapters (a tick on those

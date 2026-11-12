@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import type { Instant } from "../ward-clock";
 import type { WardRecordActor } from "../ward-discharge-records";
@@ -14,18 +15,30 @@ import { activeWardRestrictions, isCancelledMove } from "./ward-loop-checks";
  */
 const panelPending = () => null;
 
-const LazyCancelled = dynamic(() => import("./movement-loop-checks").then((m) => m.CancelledMoveChecklist), {
-  loading: panelPending,
-});
-const LazyConditions = dynamic(() => import("./movement-loop-checks").then((m) => m.AcceptanceConditionsPanel), {
-  loading: panelPending,
-});
-const LazyReviews = dynamic(() => import("./ward-closure-loop-checks").then((m) => m.WardRestrictionReviews), {
-  loading: panelPending,
-});
-const LazyTransition = dynamic(() => import("./ward-closure-loop-checks").then((m) => m.ClosureTransitionChecklist), {
-  loading: panelPending,
-});
+const LazyCancelled = dynamic(
+  withLoadRetry(() => import("./movement-loop-checks").then((m) => m.CancelledMoveChecklist)),
+  {
+    loading: panelPending,
+  },
+);
+const LazyConditions = dynamic(
+  withLoadRetry(() => import("./movement-loop-checks").then((m) => m.AcceptanceConditionsPanel)),
+  {
+    loading: panelPending,
+  },
+);
+const LazyReviews = dynamic(
+  withLoadRetry(() => import("./ward-closure-loop-checks").then((m) => m.WardRestrictionReviews)),
+  {
+    loading: panelPending,
+  },
+);
+const LazyTransition = dynamic(
+  withLoadRetry(() => import("./ward-closure-loop-checks").then((m) => m.ClosureTransitionChecklist)),
+  {
+    loading: panelPending,
+  },
+);
 
 /** The cancelled move's checklist and the acceptance's conditions, each only when it applies. */
 export function MovementLoopChecks({

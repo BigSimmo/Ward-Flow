@@ -15,7 +15,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { Lock } from "lucide-react";
 
-import { Dialog, Field, TextInput } from "@/components/wf";
+import { Dialog, Field, StateLine, TextInput } from "@/components/wf";
 import { StepUpReauthContext } from "@/components/ward-management/shell/ward-step-up-context";
 import { WardAuthError } from "@/components/ward-management/ward-auth-link";
 
@@ -118,7 +118,7 @@ export function TvLockControl({ href, className, shared }: { href: string; class
           <Lock aria-hidden="true" />
           Lock as TV
         </button>
-        {error ? <span role="status">{error}</span> : null}
+        {error ? <StateLine kind="error" compact title={error} /> : null}
       </>
     );
   }
@@ -159,7 +159,7 @@ export function TvLockControl({ href, className, shared }: { href: string; class
         }}
         secondary={[{ label: "Cancel", onAction: close }]}
       >
-        {error && !needsPassword ? <p role="status">{error}</p> : null}
+        {error && !needsPassword ? <StateLine kind="error" compact title={error} /> : null}
         {offline ? (
           <p>The password cannot be checked without a connection.</p>
         ) : needsPassword ? (

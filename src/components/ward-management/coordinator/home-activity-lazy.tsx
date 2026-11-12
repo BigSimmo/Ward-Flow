@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { preloadWhenIdle } from "../preload-when-idle";
 
@@ -13,6 +14,9 @@ import { preloadWhenIdle } from "../preload-when-idle";
  */
 const loadPlannedList = () => import("./planned-list");
 
-export const PlannedList = dynamic(() => loadPlannedList().then((m) => m.PlannedList), { loading: () => null });
+export const PlannedList = dynamic(
+  withLoadRetry(() => loadPlannedList().then((m) => m.PlannedList)),
+  { loading: () => null },
+);
 
 preloadWhenIdle(loadPlannedList);

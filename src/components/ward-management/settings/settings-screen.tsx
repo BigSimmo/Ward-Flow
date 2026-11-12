@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useWardFormSave } from "../use-ward-form-save";
 import {
   areCharacterShortcutsEnabled,
@@ -83,8 +84,10 @@ import {
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 // Help usage counts carry the how-to list, so they load only when the Ask help preview is on.
-const WardHelpUsageCard = dynamic(() =>
-  import("@/components/ward-management/help/ward-help-usage-card").then((m) => m.WardHelpUsageCard),
+const WardHelpUsageCard = dynamic(
+  withLoadRetry(() =>
+    import("@/components/ward-management/help/ward-help-usage-card").then((m) => m.WardHelpUsageCard),
+  ),
 );
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { usePersonaDeskId, useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";

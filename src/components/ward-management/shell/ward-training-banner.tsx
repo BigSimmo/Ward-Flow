@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { useTrainingMode } from "@/components/ward-management/demo-reset/ward-training-mode";
 
@@ -9,9 +10,12 @@ import { useTrainingMode } from "@/components/ward-management/demo-reset/ward-tr
  * pinned notes, with the way out. The layout carries only this gate on every page (phone size
  * limits); the banner's code loads the first time training is on.
  */
-const Body = dynamic(() => import("./ward-training-banner-body").then((m) => m.WardTrainingBannerBody), {
-  ssr: false,
-});
+const Body = dynamic(
+  withLoadRetry(() => import("./ward-training-banner-body").then((m) => m.WardTrainingBannerBody)),
+  {
+    ssr: false,
+  },
+);
 
 export function WardTrainingBanner() {
   return useTrainingMode() ? <Body /> : null;

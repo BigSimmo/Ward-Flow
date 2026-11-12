@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useState } from "react";
 
 import { intakeWindowLine, tonightIntakeWindow } from "../ward-intake-window";
@@ -11,7 +12,7 @@ import styles from "./ward-intake-window-control.module.css";
 
 // The editor arrives as its own chunk when first opened (script budget, 11 Nov 2026).
 const WardIntakeWindowDialog = dynamic(
-  () => import("./ward-intake-window-dialog").then((m) => m.WardIntakeWindowDialog),
+  withLoadRetry(() => import("./ward-intake-window-dialog").then((m) => m.WardIntakeWindowDialog)),
   { ssr: false },
 );
 

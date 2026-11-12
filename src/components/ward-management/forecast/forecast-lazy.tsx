@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { preloadWhenIdle } from "../preload-when-idle";
 // A1K-01 / DR-03 (26 Oct 2026): the server draws these cards before their code arrives, so their
@@ -22,6 +23,6 @@ const loadEdAccessRisk = () => import("./ed-access-risk-card");
  * on the card under the route's loading placeholder and lands whole. A first load is unchanged: the
  * server draws the card and preloads its code.
  */
-export const EdAccessRiskCard = dynamic(() => loadEdAccessRisk().then((m) => m.EdAccessRiskCard));
+export const EdAccessRiskCard = dynamic(withLoadRetry(() => loadEdAccessRisk().then((m) => m.EdAccessRiskCard)));
 
 preloadWhenIdle(loadEdAccessRisk);

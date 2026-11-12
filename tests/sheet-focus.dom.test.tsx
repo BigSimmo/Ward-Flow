@@ -480,4 +480,40 @@ describe("Sheet Tab cycle", () => {
     expect(document.activeElement).toBe(last);
     expect(document.activeElement).not.toBe(excluded);
   });
+
+  it("stops once on a radio group, at its checked radio, as browsers do", () => {
+    vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue({
+      length: 1,
+      item: () => null,
+      [Symbol.iterator]: function* () {
+        yield {} as DOMRect;
+      },
+    } as DOMRectList);
+
+    render(
+      <Sheet open onClose={() => {}} title="Radio order" portal>
+        <button type="button">Before</button>
+        <input type="radio" name="level" value="low" aria-label="Low" />
+        <input type="radio" name="level" value="mid" aria-label="Mid" defaultChecked />
+        <input type="radio" name="level" value="high" aria-label="High" />
+        <button type="button">After</button>
+      </Sheet>,
+    );
+
+    const panel = panelOf("Radio order");
+    const button = (name: string) =>
+      Array.from(panel.querySelectorAll<HTMLButtonElement>("button")).find((node) => node.textContent === name);
+    const tab = (shiftKey = false) =>
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", shiftKey, bubbles: true, cancelable: true }));
+      });
+
+    act(() => button("Before")?.focus());
+    tab();
+    expect(document.activeElement).toBe(panel.querySelector('input[value="mid"]'));
+    tab();
+    expect(document.activeElement).toBe(button("After"));
+    tab(true);
+    expect(document.activeElement).toBe(panel.querySelector('input[value="mid"]'));
+  });
 });

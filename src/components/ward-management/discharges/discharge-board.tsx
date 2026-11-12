@@ -69,7 +69,12 @@ import {
   matchesHighlight,
   recordGoingTo,
 } from "./discharge-board-model";
-import { DischargePopulationSwitch, DischargeFilterCard } from "./discharge-board-filters";
+import {
+  DISCHARGE_TAB_IDS,
+  DISCHARGE_TABPANEL_ID,
+  DischargePopulationSwitch,
+  DischargeFilterCard,
+} from "./discharge-board-filters";
 import {
   DischargeRecordDetail,
   DischargeReleaseDetail,
@@ -865,6 +870,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
         ) : null}
         <div
           className={`${pageStyles.workspace} ${releaseList.workspace}`}
+          id={DISCHARGE_TABPANEL_ID}
+          role="tabpanel"
+          aria-labelledby={DISCHARGE_TAB_IDS[population]}
           data-recorded={population === "records" || undefined}
         >
           <Card className={`${pageStyles.register} ${releaseList.list}`} aria-labelledby="discharge-register-heading">

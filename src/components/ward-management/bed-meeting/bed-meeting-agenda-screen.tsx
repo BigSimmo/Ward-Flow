@@ -1265,7 +1265,6 @@ function ActionForm({
       >
         {kind === "" ? "Record action" : `Record · due ${formatInstantWithDay(dueAt, now)}`}
       </Button>
-      {save.error ? <p role="status">{save.error}</p> : null}
       {kind === "" ? <DisabledReason id={`${id}-reason`}>Choose an action first.</DisabledReason> : null}
       {save.error ? (
         <p className={styles.note} role="alert">

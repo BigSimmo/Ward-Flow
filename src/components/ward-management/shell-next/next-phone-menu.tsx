@@ -3,6 +3,7 @@
 // Fork of src/components/ward-management/shell/ward-phone-menu.tsx: the mock-ups' phone dock and menu.
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -630,18 +631,22 @@ type PhoneMenuSheetsProps = ComponentProps<
   (typeof import("@/components/ward-management/shell-next/next-phone-menu-sheet"))["PhoneMenuSheets"]
 >;
 const PhoneMenuSheets = dynamic(
-  () =>
+  withLoadRetry(() =>
     loadMenuSheets().then(
       (m) => m.PhoneMenuSheets,
       () => PhoneMenuSheetsRetry,
     ),
+  ),
   { ssr: false },
 );
 preloadWhenIdle(loadMenuSheets);
 // The Menu's top block (the desk's capacity card) shows only inside the Menu sheet, so it is its own
 // chunk too, fetched with the sheets once the browser is idle (phone script budget, 2 Nov 2026).
 const loadMenuTop = () => import("@/components/ward-management/shell-next/next-phone-menu-top");
-const NextPhoneMenuTop = dynamic(() => loadMenuTop().then((m) => m.NextPhoneMenuTop), { ssr: false });
+const NextPhoneMenuTop = dynamic(
+  withLoadRetry(() => loadMenuTop().then((m) => m.NextPhoneMenuTop)),
+  { ssr: false },
+);
 preloadWhenIdle(loadMenuTop);
 // Capacity at a glance (Josh, 8 Nov 2026): the coordinator's Capacity tab opens this sheet. Its own
 // chunk, fetched once the browser is idle, so the dock's first load stays small.
@@ -650,11 +655,12 @@ type CapacityGlanceProps = ComponentProps<(typeof import("./next-capacity-glance
 // A failed load (offline before the code arrived) still leaves the Capacity tab working: it goes
 // to the full Capacity page instead of the pop-up.
 const NextCapacityGlance = dynamic(
-  () =>
+  withLoadRetry(() =>
     loadCapacityGlance().then(
       (m) => m.NextCapacityGlance,
       () => CapacityGlanceUnavailable,
     ),
+  ),
   { ssr: false },
 );
 

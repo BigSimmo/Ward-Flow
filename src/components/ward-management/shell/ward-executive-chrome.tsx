@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useContext, useEffect, useRef, useState, type ReactNode } from "react";
@@ -95,7 +96,9 @@ import { useFitDockLabels } from "./use-fit-dock-labels";
 import pageDock from "./ward-phone-page-dock.module.css";
 import layout from "@/app/ward-flow/ward-flow-layout.module.css";
 
-const WardPublicSearch = dynamic(() => import("../ward-public-search").then((module) => module.WardPublicSearch));
+const WardPublicSearch = dynamic(
+  withLoadRetry(() => import("../ward-public-search").then((module) => module.WardPublicSearch)),
+);
 /** DK1: Switch desk, for an account with more than one membership. Nothing otherwise. */
 function ExecutiveSwitchDeskRow({ onSwitch }: { onSwitch: () => void }) {
   const session = useContext(SharedSessionContext);
@@ -404,8 +407,8 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
   const isPhone = useIsPhone();
-  const tabletLandscape = useMediaQuery("(min-width: 1001px) and (max-width: 1200px)");
-  const closedRailCards = useMediaQuery("(min-width: 1001px)");
+  const tabletLandscape = useMediaQuery("(min-width: 62.5625rem) and (max-width: 75rem)");
+  const closedRailCards = useMediaQuery("(min-width: 62.5625rem)");
   const canOpen = useCanOpenHref();
   const canRefer = canOpen(WARD_REFERRAL_INTAKE_HREF);
   const accessNav = useAccessNavFilter();

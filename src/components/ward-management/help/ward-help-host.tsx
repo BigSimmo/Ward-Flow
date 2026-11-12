@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useCallback, useContext, useEffect, useState } from "react";
 
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -11,13 +12,19 @@ import { subscribeShortcutsKey } from "./ward-shortcuts-key";
 
 // The sheet, the tour and their content load only when first needed, so every page's first load
 // stays the same size.
-const WardHelpSheet = dynamic(() => import("./ward-help-sheet").then((m) => m.WardHelpSheet));
-const WardTour = dynamic(() => import("./ward-tour").then((m) => m.WardTour));
-const WardShowMe = dynamic(() => import("./ward-show-me").then((m) => m.WardShowMe));
-const WardTourAutoStart = dynamic(() => import("./ward-tour-auto-start").then((m) => m.WardTourAutoStart));
-const WardHelpHints = dynamic(() => import("../help-content/ward-help-hints").then((m) => m.WardHelpHints));
-const WardWhatsNew = dynamic(() => import("./ward-whats-new").then((m) => m.WardWhatsNew));
-const WardHelpAccountMemory = dynamic(() => import("./ward-help-account-memory").then((m) => m.WardHelpAccountMemory));
+const WardHelpSheet = dynamic(withLoadRetry(() => import("./ward-help-sheet").then((m) => m.WardHelpSheet)));
+const WardTour = dynamic(withLoadRetry(() => import("./ward-tour").then((m) => m.WardTour)));
+const WardShowMe = dynamic(withLoadRetry(() => import("./ward-show-me").then((m) => m.WardShowMe)));
+const WardTourAutoStart = dynamic(
+  withLoadRetry(() => import("./ward-tour-auto-start").then((m) => m.WardTourAutoStart)),
+);
+const WardHelpHints = dynamic(
+  withLoadRetry(() => import("../help-content/ward-help-hints").then((m) => m.WardHelpHints)),
+);
+const WardWhatsNew = dynamic(withLoadRetry(() => import("./ward-whats-new").then((m) => m.WardWhatsNew)));
+const WardHelpAccountMemory = dynamic(
+  withLoadRetry(() => import("./ward-help-account-memory").then((m) => m.WardHelpAccountMemory)),
+);
 
 type Open = { view: HelpView; ask?: string; task?: string } | { showMe: string };
 

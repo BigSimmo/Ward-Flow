@@ -5,8 +5,11 @@
 // script, keeping the phone budget.
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 export const WardAcceptedReferralPlacement = dynamic(
-  () => import("./ward-accepted-referral-placement-form").then((m) => m.WardAcceptedReferralPlacementForm),
+  withLoadRetry(() =>
+    import("./ward-accepted-referral-placement-form").then((m) => m.WardAcceptedReferralPlacementForm),
+  ),
   { ssr: false },
 );

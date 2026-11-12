@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { useId, useMemo, useRef, useState } from "react";
 
@@ -36,8 +37,8 @@ import { useWaitingDeskWords } from "./waiting-desk-words";
 import styles from "./delays.module.css";
 
 // Coordinators only: the daily check is loaded on demand so other screens that include Waiting stay small.
-const DailyCheckLine = dynamic(() => import("./daily-check-line").then((m) => m.DailyCheckLine));
-const DailyCheckList = dynamic(() => import("./daily-check-line").then((m) => m.DailyCheckList));
+const DailyCheckLine = dynamic(withLoadRetry(() => import("./daily-check-line").then((m) => m.DailyCheckLine)));
+const DailyCheckList = dynamic(withLoadRetry(() => import("./daily-check-line").then((m) => m.DailyCheckList)));
 
 const ESCALATION_CONTACT = ESCALATION_CONTACTS[0];
 

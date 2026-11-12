@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 
-import { StatusGlyph } from "@/components/wf";
+import { Button, StatusGlyph } from "@/components/wf";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
@@ -25,17 +25,43 @@ import styles from "./tv-clinical.module.css";
 const TV_PAGE_SECONDS = 20;
 
 /**
+ * True when the system or the Ward accessibility setting asks for reduced motion
+ * (`data-reduced-motion` on the root, set by ward-accessibility.tsx). The board then never turns
+ * its own pages; Next page still does.
+ */
+function motionReduced(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    document.documentElement.hasAttribute("data-reduced-motion") ||
+    Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches)
+  );
+}
+
+type Paging = {
+  page: number;
+  pages: number;
+  perPage: number;
+  /** The viewer pressed Pause. Hover and focus inside the board hold the page without this. */
+  paused: boolean;
+  /** Reduced motion is asked for, so the board never turns on its own. */
+  still: boolean;
+  togglePaused: () => void;
+  next: () => void;
+};
+
+/**
  * One page of rows that fits the screen. It starts at `most` rows and drops one at a time while the
  * list runs past its own box, so a long name or a wrapped form line
  * moves a row to the next page instead of off the bottom. A resize starts again from `most`.
+ * The page turns every TV_PAGE_SECONDS unless the viewer paused it, the pointer or focus is inside
+ * the board, or reduced motion is asked for (WCAG 2.2.2).
  */
-function usePage(
-  target: RefObject<HTMLElement | null>,
-  count: number,
-  most: number,
-): { page: number; pages: number; perPage: number } {
+function usePage(target: RefObject<HTMLElement | null>, count: number, most: number): Paging {
   const [perPage, setPerPage] = useState(most);
   const [page, setPage] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [still, setStill] = useState(false);
+  const held = useRef(false);
   const pages = Math.max(1, Math.ceil(count / perPage));
   useLayoutEffect(() => {
     const element = target.current;
@@ -53,26 +79,88 @@ function usePage(
     return () => window.removeEventListener("resize", reset);
   }, [most]);
   useEffect(() => {
-    if (pages <= 1) return;
-    const timer = window.setInterval(() => setPage((current) => (current + 1) % pages), TV_PAGE_SECONDS * 1000);
+    const read = () => setStill(motionReduced());
+    read();
+    const query =
+      typeof window.matchMedia === "function" ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+    query?.addEventListener?.("change", read);
+    const watcher = typeof MutationObserver === "function" ? new MutationObserver(read) : null;
+    watcher?.observe(document.documentElement, { attributes: true, attributeFilter: ["data-reduced-motion"] });
+    return () => {
+      query?.removeEventListener?.("change", read);
+      watcher?.disconnect();
+    };
+  }, []);
+  useEffect(() => {
+    const element = target.current;
+    if (!element) return;
+    let hovered = false;
+    let focused = false;
+    const sync = () => {
+      held.current = hovered || focused;
+    };
+    const enter = () => ((hovered = true), sync());
+    const leave = () => ((hovered = false), sync());
+    const focusIn = () => ((focused = true), sync());
+    const focusOut = (event: FocusEvent) => {
+      if (!(event.relatedTarget instanceof Node && element.contains(event.relatedTarget))) focused = false;
+      sync();
+    };
+    element.addEventListener("mouseenter", enter);
+    element.addEventListener("mouseleave", leave);
+    element.addEventListener("focusin", focusIn);
+    element.addEventListener("focusout", focusOut);
+    return () => {
+      element.removeEventListener("mouseenter", enter);
+      element.removeEventListener("mouseleave", leave);
+      element.removeEventListener("focusin", focusIn);
+      element.removeEventListener("focusout", focusOut);
+      held.current = false;
+    };
+  }, [target]);
+  useEffect(() => {
+    if (pages <= 1 || paused || still) return;
+    const timer = window.setInterval(() => {
+      if (held.current) return;
+      setPage((current) => (current + 1) % pages);
+    }, TV_PAGE_SECONDS * 1000);
     return () => window.clearInterval(timer);
-  }, [pages]);
-  return { page: page % pages, pages, perPage };
+  }, [pages, paused, still]);
+  return {
+    page: page % pages,
+    pages,
+    perPage,
+    paused,
+    still,
+    togglePaused: () => setPaused((current) => !current),
+    next: () => setPage((current) => ((current % pages) + 1) % pages),
+  };
 }
 
-function PageMark({ page, pages, noun }: { page: number; pages: number; noun: string }) {
+function PageMark({ paging, noun }: { paging: Paging; noun: string }) {
+  const { page, pages, paused, still, togglePaused, next } = paging;
   if (pages <= 1) return null;
   return (
-    <p className={styles.pageMark} data-testid="tv-clinical-page">
+    <div className={styles.pageMark} data-testid="tv-clinical-page">
       <span>
         Page {page + 1} of {pages}, {noun}
       </span>
-      <span className={styles.dots} aria-hidden="true">
-        {Array.from({ length: pages }, (_, index) => (
-          <i key={index} data-on={index === page || undefined} />
-        ))}
+      <span className={styles.pageControls}>
+        {still ? null : (
+          <Button size="sm" variant="ghost" onClick={togglePaused}>
+            {paused ? "Resume" : "Pause"}
+          </Button>
+        )}
+        <Button size="sm" variant="ghost" onClick={next}>
+          Next page
+        </Button>
+        <span className={styles.dots} aria-hidden="true">
+          {Array.from({ length: pages }, (_, index) => (
+            <i key={index} data-on={index === page || undefined} />
+          ))}
+        </span>
       </span>
-    </p>
+    </div>
   );
 }
 
@@ -132,7 +220,8 @@ const WARD_ROWS_MOST = 14;
 
 export function WardClinicalTvView({ rows, footer }: { rows: WardClinicalRow[]; footer: ReactNode }) {
   const ref = useRef<HTMLElement>(null);
-  const { page, pages, perPage } = usePage(ref, rows.length, WARD_ROWS_MOST);
+  const paging = usePage(ref, rows.length, WARD_ROWS_MOST);
+  const { page, perPage } = paging;
   const shown = rows.slice(page * perPage, (page + 1) * perPage);
   const count = (test: (row: WardClinicalRow) => boolean) => rows.filter(test).length;
   return (
@@ -196,7 +285,7 @@ export function WardClinicalTvView({ rows, footer }: { rows: WardClinicalRow[]; 
             </tbody>
           </table>
         )}
-        <PageMark page={page} pages={pages} noun="beds by number" />
+        <PageMark paging={paging} noun="beds by number" />
       </section>
       {footer}
     </>
@@ -211,7 +300,8 @@ const HANDOVER_ROWS_MOST = 20;
 
 export function WardHandoverTvView({ rows, footer }: { rows: WardClinicalRow[]; footer: ReactNode }) {
   const ref = useRef<HTMLElement>(null);
-  const { page, pages, perPage } = usePage(ref, rows.length, HANDOVER_ROWS_MOST);
+  const paging = usePage(ref, rows.length, HANDOVER_ROWS_MOST);
+  const { page, perPage } = paging;
   const shown = rows.slice(page * perPage, (page + 1) * perPage);
   const groups = HANDOVER_GROUPS.map((group) => ({
     ...group,
@@ -279,7 +369,7 @@ export function WardHandoverTvView({ rows, footer }: { rows: WardClinicalRow[]; 
               </li>
             ))}
           </ol>
-          <PageMark page={page} pages={pages} noun="beds" />
+          <PageMark paging={paging} noun="beds" />
         </section>
       </div>
       {footer}
@@ -303,7 +393,8 @@ export function EdClinicalTvView({
   footer: ReactNode;
 }) {
   const ref = useRef<HTMLElement>(null);
-  const { page, pages, perPage } = usePage(ref, rows.length, ED_ROWS_MOST);
+  const paging = usePage(ref, rows.length, ED_ROWS_MOST);
+  const { page, perPage } = paging;
   const shown = rows.slice(page * perPage, (page + 1) * perPage);
   const targetHours = Math.round(accessTargetMinutes / 60);
   const bandTitle: Record<EdClinicalRow["band"], string> = {
@@ -396,7 +487,7 @@ export function EdClinicalTvView({
             <tbody>{body}</tbody>
           </table>
         )}
-        <PageMark page={page} pages={pages} noun="longest in ED first" />
+        <PageMark paging={paging} noun="longest in ED first" />
       </section>
       {footer}
     </>

@@ -2,15 +2,19 @@
 
 import { useCallback, useState } from "react";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 
 import type { HandoverDigestAction, HandoverDigestInput } from "./handover-digest-model";
 
 /* Feature 15: the Shift digest loads only when opened, so the Handover first load stays as it was. */
-const HandoverDigestSheet = dynamic(() => import("./handover-digest-sheet").then((m) => m.HandoverDigestSheet), {
-  loading: () => null,
-});
+const HandoverDigestSheet = dynamic(
+  withLoadRetry(() => import("./handover-digest-sheet").then((m) => m.HandoverDigestSheet)),
+  {
+    loading: () => null,
+  },
+);
 
 /**
  * Whether the Shift digest is open. `?digest=1` (the rail's "Read digest" near handover) opens it,

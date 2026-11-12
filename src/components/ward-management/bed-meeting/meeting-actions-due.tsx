@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useRef, useState } from "react";
 
 import { useIsBreakGlassRecord } from "../shell/ward-access";
@@ -13,7 +14,7 @@ import type { BedMeetingAction, BedMeetingActionOwner, BedMeetingSubject } from 
 import { useBedMeetingDone, type MarkBedMeetingActionDone } from "./use-bed-meeting-done";
 import styles from "./meeting-actions-due.module.css";
 
-const DueActions = dynamic(() => import("./meeting-actions-due-list").then((m) => m.DueActions));
+const DueActions = dynamic(withLoadRetry(() => import("./meeting-actions-due-list").then((m) => m.DueActions)));
 
 /**
  * Overall review, 20 Oct 2026: the owner of a bed meeting action had no way to mark it done; only

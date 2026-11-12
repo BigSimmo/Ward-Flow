@@ -58,6 +58,23 @@ describe("TV lock (A11)", () => {
     ).toBeInTheDocument();
   });
 
+  it("announces a lock the browser could not save as an alert", () => {
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("synthetic storage refusal");
+    });
+    try {
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <BedMeetingTvScreen ward="no-such-ward" />
+        </WardFlowProvider>,
+      );
+      fireEvent.click(screen.getByTestId("tv-lock"));
+      expect(screen.getByRole("alert")).toHaveTextContent("This browser could not save the TV lock.");
+    } finally {
+      setItem.mockRestore();
+    }
+  });
+
   it("sends a locked browser back to its TV view from any other page", () => {
     act(() => lockTv("/ward-flow/bed-meeting?ed=rph-ed"));
     navigation.pathname = "/ward-flow/capacity";

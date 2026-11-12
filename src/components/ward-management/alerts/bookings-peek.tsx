@@ -9,14 +9,18 @@
  */
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useState, type MouseEvent, type ReactNode } from "react";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 
 // The sheet and its bookings panel load on the first press, so no route's first download grows.
-const BookingsPeekSheet = dynamic(() => import("./bookings-peek-sheet").then((m) => m.BookingsPeekSheet), {
-  loading: () => null,
-});
+const BookingsPeekSheet = dynamic(
+  withLoadRetry(() => import("./bookings-peek-sheet").then((m) => m.BookingsPeekSheet)),
+  {
+    loading: () => null,
+  },
+);
 
 export function BookingsPeekLink({
   unitId,

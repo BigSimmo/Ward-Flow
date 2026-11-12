@@ -62,7 +62,7 @@ describe("departure confirmation (DA-08)", () => {
         <WardBoard unitId="arm-adult-open" requireConfirmation={true} />
       </WardFlowProvider>,
     );
-    const leave = screen.getAllByRole("button", { name: "They have left" });
+    const leave = screen.getAllByRole("button", { name: /^They have left(, |$)/ });
     expect(leave.length, "the seed must offer a departure on this ward").toBeGreaterThan(0);
     fireEvent.click(leave[0]);
     const dialog = screen.getByRole("dialog");

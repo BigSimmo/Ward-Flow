@@ -82,7 +82,7 @@ describe("tablet landscape (1001px to 1200px)", () => {
   // B1 (Josh, 19 Oct 2026): every desktop shape shows the role's own menu, then More. The tablet
   // icon rail used to show the Today and Where groups instead.
   it("draws the icon rail even when the stored preference is open, with the role's menu, then More", async () => {
-    const media = mockViewport(["(min-width: 1001px)", TABLET_LANDSCAPE_RAIL_QUERY]);
+    const media = mockViewport(["(min-width: 62.5625rem)", TABLET_LANDSCAPE_RAIL_QUERY]);
     window.localStorage.setItem("ward-flow-rail", "open");
     try {
       renderShell();
@@ -109,7 +109,7 @@ describe("tablet landscape (1001px to 1200px)", () => {
   });
 
   it("opens the full sidebar from the mark and from [, never changing the stored preference", async () => {
-    const media = mockViewport(["(min-width: 1001px)", TABLET_LANDSCAPE_RAIL_QUERY]);
+    const media = mockViewport(["(min-width: 62.5625rem)", TABLET_LANDSCAPE_RAIL_QUERY]);
     window.localStorage.setItem("ward-flow-rail", "closed");
     try {
       renderShell();
@@ -123,7 +123,7 @@ describe("tablet landscape (1001px to 1200px)", () => {
   });
 
   it("leaves desktop above 1200px on the stored preference with the role's menu and More", async () => {
-    const media = mockViewport(["(min-width: 1001px)"]);
+    const media = mockViewport(["(min-width: 62.5625rem)"]);
     window.localStorage.setItem("ward-flow-rail", "open");
     try {
       renderShell();
@@ -146,12 +146,12 @@ describe("tablet portrait (769px to 1000px)", () => {
 
   it("drops the sidebar and shows the bar's Menu, both after the rules they override", () => {
     const rail = css("src/components/ward-management/shell/ward-rail.module.css");
-    const portrait = rail.lastIndexOf("@media (min-width: 46.5rem) and (max-width: 1000px)");
-    expect(portrait).toBeGreaterThan(rail.lastIndexOf("@media (max-width: 1000px)"));
+    const portrait = rail.lastIndexOf("@media (min-width: 46.5rem) and (max-width: 62.5rem)");
+    expect(portrait).toBeGreaterThan(rail.lastIndexOf("@media (max-width: 62.5rem)"));
     expect(rail.slice(portrait)).toMatch(/\.rail,\s*\.rail\[data-rail="closed"\] \{\s*display: none;/u);
 
     const bar = css("src/components/ward-management/shell/ward-bar.module.css");
-    const barPortrait = bar.lastIndexOf("@media (min-width: 46.5rem) and (max-width: 1000px)");
+    const barPortrait = bar.lastIndexOf("@media (min-width: 46.5rem) and (max-width: 62.5rem)");
     expect(barPortrait).toBeGreaterThan(bar.indexOf(".phoneOnly {\n  display: none;"));
     expect(bar.slice(barPortrait)).toMatch(
       /\.phoneOnly \{\s*display: inline-flex;[^}]*width: var\(--ward-tap, var\(--spacing-tap, 3rem\)\);/u,

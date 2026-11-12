@@ -17,10 +17,12 @@ import { allEmergencyDepartments, allUnits, NOW_ANCHOR } from "@/components/ward
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { resetServiceScopeForTests, setServiceScope } from "@/components/ward-management/shell/ward-service-store";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
   edHealthService,
   movementBelongsToService,
   referralBelongsToService,
+  unitHealthService,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
 import { showWholeHomeQueue } from "./helpers/ward-home-queue";
@@ -135,21 +137,18 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
 
     // The scope bar belongs to the priority queue, behind Home's Flow list.
     showEveryoneWaiting();
-    const memberOfWhole = wardMovements.filter((movement) => movementBelongsToService(movement, SERVICE, UNITS));
-    // The screen's own denominator is the full seeded population (seedWardFlowState().movements),
-    // not the raw wardMovements fixture array: seedWardFlowState() additively overlays demonstration
-    // movements (ward-rulings-demo.ts), which grew the seed from 60 to 77 movements (2026-09-25)
-    // while the raw wardMovements array itself stayed at 60. Computed from the current seed, not
-    // hand-derived.
-    const wholeSeedMovementCount = seedWardFlowState().movements.length;
-    // Same reasoning as wholeSeedMovementCount above: urgent movements outside the service are
-    // derived from the full seeded (overlay-inclusive) population the screen actually renders from,
-    // not the raw wardMovements fixture array, which undercounts since the 2026-09-25 seed growth.
+    // The screen counts the full seeded population (seedWardFlowState().movements), not the raw
+    // wardMovements fixture array: seedWardFlowState() additively overlays demonstration movements
+    // (ward-rulings-demo.ts). Review finding 14 (12 Nov 2026): both figures count open movements,
+    // as Waiting's bar does. Computed from the current seed, not hand-derived.
     const wholeSeedOpenMovements = seedWardFlowState().movements.filter(isOpen);
+    const memberOfWhole = wholeSeedOpenMovements.filter((movement) =>
+      movementBelongsToService(movement, SERVICE, UNITS),
+    );
     const urgentOutside = urgentMovementsOutsideService(wholeSeedOpenMovements, SERVICE, UNITS, NOW_ANCHOR, CONFIG);
     expect(screen.getByTestId("ward-service-scope-bar")).toBeInTheDocument();
     expect(screen.getByTestId("ward-service-scope-bar-summary").textContent ?? "").toContain(
-      `Showing ${memberOfWhole.length} of ${wholeSeedMovementCount} movements, in South Metro.`,
+      `Showing ${memberOfWhole.length} of ${wholeSeedOpenMovements.length} movements, in South Metro.`,
     );
     expect(screen.getByTestId("ward-service-scope-bar-urgent")).toHaveTextContent(
       urgentOutside.length === 0
@@ -261,6 +260,30 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
     const folded = (screen.queryByTestId("ward-home-ed-clear")?.dataset.edIds ?? "").split(" ");
     for (const ed of ALL_EDS) {
       expect(screen.queryByTestId(`ward-ed-${ed.id}`) !== null || folded.includes(ed.id), ed.id).toBe(true);
+    }
+  });
+
+  it("counts only the chosen service's wards on the Checking line (review finding 14)", () => {
+    setServiceScope(SERVICE);
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CoordinatorScreen />
+      </WardFlowProvider>,
+    );
+    const units = seedWardFlowState().units.filter((unit) => unitHealthService(unit) === SERVICE);
+    const stale = units.filter(
+      (unit) => NOW_ANCHOR - unit.allocatable.confirmedAt > CLINICAL_VALUES.bedCountFresh.value,
+    ).length;
+    const notReporting = units.filter(
+      (unit) => NOW_ANCHOR - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes,
+    ).length;
+    const line = screen.queryByTestId("home-next-checking");
+    if (stale + notReporting === 0) {
+      expect(line?.textContent ?? "").not.toMatch(/stale bed/u);
+    } else {
+      expect(line?.textContent ?? "").toContain(
+        `${stale} stale bed ${stale === 1 ? "count" : "counts"}, ${notReporting} ${notReporting === 1 ? "ward" : "wards"} not reporting`,
+      );
     }
   });
 });

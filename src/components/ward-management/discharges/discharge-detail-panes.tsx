@@ -42,6 +42,9 @@ import { HELD_UP, pastWords, type ReleasePanelPart } from "./discharge-release-a
 import type { DischargeWorkspaceState } from "./use-discharge-workspace-state";
 import { DischargeMessageWard } from "./discharge-message-ward";
 
+/** The confirmation after an expected discharge date saves; any other date message is a refusal. */
+const DATE_UPDATED = "Expected discharge updated.";
+
 /*
  * The discharge detail panel, moved from `discharge-board.tsx`. Drawer review (6 Nov 2026): it opens
  * in the kit PanelDrawer at every width. The drawer draws the head (name, one subtitle line, status
@@ -312,7 +315,7 @@ export function DischargeRecordDetail({
                       if (!mountedRef.current) return;
                       if (outcome?.status === "accepted" && outcome.isCurrent?.() !== false) {
                         setShowUpdateDate(false);
-                        setDateMessage("Expected discharge updated.");
+                        setDateMessage(DATE_UPDATED);
                       } else {
                         setDateMessage(
                           outcome?.message ??
@@ -369,7 +372,10 @@ export function DischargeRecordDetail({
                 </Button>
               </form>
             )}
-            {dateMessage ? <p role="status">{dateMessage}</p> : null}
+            {dateMessage ? (
+              // A refusal is an error and is announced at once; the confirmation stays polite.
+              <p role={dateMessage === DATE_UPDATED ? "status" : "alert"}>{dateMessage}</p>
+            ) : null}
           </dd>
           <dt>Date recorded</dt>
           <dd>

@@ -215,22 +215,26 @@
     color: var(--wf-hero-ink-2);
   }
 
-  :global(:root:has([data-wf-bar][data-band="ink"])) .rail:not([data-rail="closed"]) .railToggle:hover,
-  :global(
-      :root:has([data-wf-scroller] [data-wf-hero="band"]:not([data-band="off"])):not(:has([data-wf-bar][data-band]))
-    )
-    .rail:not([data-rail="closed"])
-    .railToggle:hover {
-    color: var(--wf-hero-ink);
+  @media (hover: hover) and (pointer: fine) {
+    :global(:root:has([data-wf-bar][data-band="ink"])) .rail:not([data-rail="closed"]) .railToggle:hover,
+    :global(
+        :root:has([data-wf-scroller] [data-wf-hero="band"]:not([data-band="off"])):not(:has([data-wf-bar][data-band]))
+      )
+      .rail:not([data-rail="closed"])
+      .railToggle:hover {
+      color: var(--wf-hero-ink);
+    }
   }
 
-  :global(:root:has([data-wf-bar][data-band="ink"])) .rail:not([data-rail="closed"]) .railToggle:hover::before,
-  :global(
-      :root:has([data-wf-scroller] [data-wf-hero="band"]:not([data-band="off"])):not(:has([data-wf-bar][data-band]))
-    )
-    .rail:not([data-rail="closed"])
-    .railToggle:hover::before {
-    background: var(--wf-on-hero-fill);
+  @media (hover: hover) and (pointer: fine) {
+    :global(:root:has([data-wf-bar][data-band="ink"])) .rail:not([data-rail="closed"]) .railToggle:hover::before,
+    :global(
+        :root:has([data-wf-scroller] [data-wf-hero="band"]:not([data-band="off"])):not(:has([data-wf-bar][data-band]))
+      )
+      .rail:not([data-rail="closed"])
+      .railToggle:hover::before {
+      background: var(--wf-on-hero-fill);
+    }
   }
 }
 
@@ -264,12 +268,16 @@
   transition: background-color var(--wf-m-fast);
 }
 
-.railToggle:hover {
-  color: var(--wf-ink-1);
+@media (hover: hover) and (pointer: fine) {
+  .railToggle:hover {
+    color: var(--wf-ink-1);
+  }
 }
 
-.railToggle:hover::before {
-  background: var(--wf-hover);
+@media (hover: hover) and (pointer: fine) {
+  .railToggle:hover::before {
+    background: var(--wf-hover);
+  }
 }
 
 .railToggle:focus-visible {
@@ -430,8 +438,10 @@
   transition: background-color var(--wf-m-fast);
 }
 
-.shiftTimerLink:hover {
-  background: color-mix(in srgb, var(--wf-accent-tint) 80%, var(--wf-accent) 8%);
+@media (hover: hover) and (pointer: fine) {
+  .shiftTimerLink:hover {
+    background: color-mix(in srgb, var(--wf-accent-tint) 80%, var(--wf-accent) 8%);
+  }
 }
 
 .shiftTimerLink:focus-visible {
@@ -493,8 +503,10 @@
     box-shadow var(--wf-m-fast);
 }
 
-.capacityPulseStrip:hover {
-  border-color: var(--wf-line-2);
+@media (hover: hover) and (pointer: fine) {
+  .capacityPulseStrip:hover {
+    border-color: var(--wf-line-2);
+  }
 }
 
 .capacityPulseStrip[data-open="true"] {
@@ -742,8 +754,10 @@
   cursor: pointer;
 }
 
-.compactAlertPip:hover {
-  border-color: var(--wf-line-2);
+@media (hover: hover) and (pointer: fine) {
+  .compactAlertPip:hover {
+    border-color: var(--wf-line-2);
+  }
 }
 
 .compactAlertPip:focus-visible {
@@ -850,15 +864,26 @@
   border-top-color: transparent;
 }
 
-.alertCard:hover,
 .alertCard[data-hot="true"] {
   background: var(--wf-hover);
   border-top-color: transparent;
 }
 
-.alertCard:hover + .alertCard,
+@media (hover: hover) and (pointer: fine) {
+  .alertCard:hover {
+    background: var(--wf-hover);
+    border-top-color: transparent;
+  }
+}
+
 .alertCard[data-hot="true"] + .alertCard {
   border-top-color: transparent;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .alertCard:hover + .alertCard {
+    border-top-color: transparent;
+  }
 }
 
 .alertCard:focus-visible {
@@ -957,9 +982,11 @@
   height: 0.875rem;
 }
 
-.alertsOpenLink:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
+@media (hover: hover) and (pointer: fine) {
+  .alertsOpenLink:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
 }
 
 .alertsOpenLink:focus-visible {
@@ -1067,8 +1094,10 @@
     color var(--wf-m-fast);
 }
 
-.railLink:hover {
-  background: var(--wf-hover);
+@media (hover: hover) and (pointer: fine) {
+  .railLink:hover {
+    background: var(--wf-hover);
+  }
 }
 
 /* B1 (19 Oct 2026): More, and the ED's Find a bed, are buttons drawn as rail rows. */
@@ -1266,9 +1295,14 @@
   color: var(--wf-ink-3);
 }
 
-.utilityLink:hover,
 .utilityLink[aria-expanded="true"] {
   background: var(--wf-hover);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .utilityLink:hover {
+    background: var(--wf-hover);
+  }
 }
 
 .utilityLink:focus-visible {
@@ -1338,8 +1372,10 @@
   transition: border-color var(--wf-m-fast);
 }
 
-.appearancePillBtn:hover {
-  border-color: var(--wf-line-3);
+@media (hover: hover) and (pointer: fine) {
+  .appearancePillBtn:hover {
+    border-color: var(--wf-line-3);
+  }
 }
 
 .appearancePillBtn[aria-pressed="true"] {
@@ -1418,8 +1454,10 @@
   cursor: pointer;
 }
 
-.userProfileCardBtn:hover {
-  border-color: var(--wf-line-2);
+@media (hover: hover) and (pointer: fine) {
+  .userProfileCardBtn:hover {
+    border-color: var(--wf-line-2);
+  }
 }
 
 .userProfileCardBtn:focus-visible {
@@ -1505,8 +1543,10 @@
   cursor: pointer;
 }
 
-.moreTrigger:hover {
-  border-color: var(--wf-line-3);
+@media (hover: hover) and (pointer: fine) {
+  .moreTrigger:hover {
+    border-color: var(--wf-line-3);
+  }
 }
 
 .moreTrigger:focus-visible {
@@ -1591,8 +1631,10 @@
   padding-right: 2rem;
 }
 
-.menuContextLink:hover {
-  background: var(--wf-hover);
+@media (hover: hover) and (pointer: fine) {
+  .menuContextLink:hover {
+    background: var(--wf-hover);
+  }
 }
 
 .menuContextLink:focus-visible {
@@ -1697,9 +1739,11 @@
   height: 1rem;
 }
 
-.pinButton:hover {
-  background: var(--wf-surface-2);
-  color: var(--wf-ink-1);
+@media (hover: hover) and (pointer: fine) {
+  .pinButton:hover {
+    background: var(--wf-surface-2);
+    color: var(--wf-ink-1);
+  }
 }
 
 .pinButton[aria-pressed="true"] {
@@ -1815,8 +1859,10 @@
   color: var(--wf-ink-off);
 }
 
-.sheetUtilityLink:hover {
-  background: var(--wf-hover);
+@media (hover: hover) and (pointer: fine) {
+  .sheetUtilityLink:hover {
+    background: var(--wf-hover);
+  }
 }
 
 .sheetUtilityLink:focus-visible {
@@ -1860,8 +1906,10 @@
   cursor: pointer;
 }
 
-.moreFootPersonBtn:hover {
-  background: var(--wf-hover);
+@media (hover: hover) and (pointer: fine) {
+  .moreFootPersonBtn:hover {
+    background: var(--wf-hover);
+  }
 }
 
 .moreFootPersonBtn:focus-visible {
@@ -1925,7 +1973,7 @@
 
 /* ── Desktop, fine pointer: v6 control heights ─────────────────────────────────────────────── */
 
-@media (min-width: 1001px) and (pointer: fine) {
+@media (min-width: 62.5625rem) and (pointer: fine) {
   .rail[data-rail="open"] .railLink {
     min-height: var(--wf-h-md);
   }
@@ -1941,7 +1989,7 @@
 
 /* ── Desktop: the open rail and the closed strip (collapsed rail board) ────────────────────── */
 
-@media (min-width: 1001px) {
+@media (min-width: 62.5625rem) {
   /* Appearance and Settings share one row in the open rail (8 October 2026). */
   .rail[data-rail="open"] .utilityLinks {
     flex-direction: row;
@@ -2007,11 +2055,13 @@
       box-shadow var(--wf-m-fast);
   }
 
-  .rail[data-rail="closed"] .brandLink:hover .brandEmblem {
-    box-shadow:
-      inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 18%, transparent),
-      var(--wf-e2);
-    transform: translateY(-1px);
+  @media (hover: hover) and (pointer: fine) {
+    .rail[data-rail="closed"] .brandLink:hover .brandEmblem {
+      box-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 18%, transparent),
+        var(--wf-e2);
+      transform: translateY(-1px);
+    }
   }
 
   .rail[data-rail="closed"] .emblemGlyph {
@@ -2063,10 +2113,16 @@
     box-shadow: none;
   }
 
-  .rail[data-rail="closed"] .compactAlertPip:hover,
   .rail[data-rail="closed"] .compactAlertPip[aria-expanded="true"] {
     border-color: transparent;
     background: var(--wf-hover);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .rail[data-rail="closed"] .compactAlertPip:hover {
+      border-color: transparent;
+      background: var(--wf-hover);
+    }
   }
 
   .rail[data-rail="closed"] .capacityAlertsDropdown {
@@ -2202,9 +2258,11 @@
     box-shadow: none;
   }
 
-  .rail[data-rail="closed"] .userProfileCard:hover {
-    border-color: transparent;
-    background: var(--wf-hover);
+  @media (hover: hover) and (pointer: fine) {
+    .rail[data-rail="closed"] .userProfileCard:hover {
+      border-color: transparent;
+      background: var(--wf-hover);
+    }
   }
 
   .rail[data-rail="closed"] .userAvatar {
@@ -2226,7 +2284,7 @@
  *
  * D1 #2917: collapse at ~1000px is intentional (Standard §7.7). Toggle keeps
  * min-width/min-height: var(--ward-tap) above — do not shrink it when touching this block. */
-@media (max-width: 1000px) {
+@media (max-width: 62.5rem) {
   .rail,
   .rail[data-rail="closed"] {
     position: static;
@@ -2318,7 +2376,7 @@
 }
 
 /* Give the contained brand a full row in the tablet navigation stream. */
-@media (min-width: 46.5rem) and (max-width: 1000px) {
+@media (min-width: 46.5rem) and (max-width: 62.5rem) {
   .rail .brand {
     flex: 0 0 100%;
     order: 0;
@@ -2427,7 +2485,7 @@
 }
 
 /* Patient Now keeps tablet attention on the patient; shell context remains in Menu. */
-@media (min-width: 46.5rem) and (max-width: 1000px) {
+@media (min-width: 46.5rem) and (max-width: 62.5rem) {
   :global(body:has([data-ward-rebuilt-screen="patient-now"])) .rail {
     flex-direction: column;
     align-items: stretch;
@@ -2465,7 +2523,7 @@
  * under a finger mid-tap. Until the rail knows it is in landscape (`data-tablet`, set on load), it
  * holds the icon rail's width and hides what only the full sidebar shows (the same list as the closed
  * rail), so its icon links stay usable and no cut-off labels flash before the icon rail arrives. */
-@media (min-width: 1001px) and (max-width: 1200px) {
+@media (min-width: 62.5625rem) and (max-width: 75rem) {
   .rail:not([data-tablet]) {
     width: var(--rail-closed-w);
     overflow: hidden;
@@ -2488,7 +2546,7 @@
   }
 }
 
-@media (min-width: 1001px) and (max-width: 1200px) {
+@media (min-width: 62.5625rem) and (max-width: 75rem) {
   .rail[data-tablet="landscape"] .railToggle {
     display: none;
   }
@@ -2503,7 +2561,7 @@
   }
 }
 
-@media (min-width: 46.5rem) and (max-width: 1000px) {
+@media (min-width: 46.5rem) and (max-width: 62.5rem) {
   .rail,
   .rail[data-rail="closed"] {
     display: none;
@@ -2524,7 +2582,7 @@
 
 /* When summaries and utilities fill a short desktop window, scroll the complete rail instead
    of squeezing its navigation to a few pixels. Pop-outs escape that scrollport beside the rail. */
-@media screen and (min-width: 1001px) and (max-height: 32rem) {
+@media screen and (min-width: 62.5625rem) and (max-height: 32rem) {
   .rail {
     overflow-x: hidden;
     overflow-y: auto;
@@ -2560,7 +2618,7 @@
  * handover countdown card, which opens the handover board, so the menu's own Handover item steps
  * aside. The icon rail (closed, or tablet landscape) hides the card and keeps the item. CSS rather
  * than script, so the server's page and the early script's closed rail never disagree. */
-@media (min-width: 1201px) {
+@media (min-width: 75.0625rem) {
   .rail[data-rail="open"]:not([data-tablet]) .countdownTwin {
     display: none;
   }

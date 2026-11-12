@@ -546,9 +546,11 @@ export function CommunityIndex({
     </FolderTabs>
   ) : inPlaces ? (
     <FolderTabs label="Places views" value="catchments" testId="places-track">
+      {/* Review finding 25 (12 Nov 2026): the linked switch draws its own nav, so it takes its own
+          name; two navs both called "Places views" failed axe's landmark-unique. */}
       <Segmented
         className={folderTabClasses.switch}
-        label="Places views"
+        label="Places or Catchments"
         size="md"
         value="catchments"
         items={[

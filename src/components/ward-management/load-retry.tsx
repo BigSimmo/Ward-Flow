@@ -15,12 +15,28 @@ import styles from "./load-retry.module.css";
  * one error line with a 44px Try again, which fetches again and draws the real panel once the code
  * arrives, including on every later open. A panel given `onClose` also gets a Close button. Kept
  * small: it sits in the code every page loads.
+ *
+ * Every `next/dynamic` loader in src goes through this (lint rule local/require-dynamic-load-retry):
+ * next/dynamic caches a rejected import, so without it a panel boundary's Try again re-throws until
+ * the page reloads. A failed fetch here resolves instead, so nothing is cached as failed.
  */
-export function withLoadRetry<P extends object>(
-  load: () => Promise<ComponentType<P>>,
-  title: string,
-): () => Promise<ComponentType<P>> {
-  let loaded: ComponentType<P> | undefined;
+/** A panel's props, including a panel whose props are all optional (`props = {}`). */
+type PanelProps<C> = C extends (props: infer P) => unknown
+  ? NonNullable<P>
+  : C extends new (props: infer P) => unknown
+    ? NonNullable<P>
+    : never;
+
+// Typed by the component rather than its props, so a panel whose props are optional keeps its own
+// prop types through `next/dynamic`.
+export function withLoadRetry<C extends ComponentType<never>>(
+  load: () => Promise<C>,
+  title = "This part did not load",
+  // A retained panel that stays mounted while closed (Home's Release bed sheet) passes how to tell it
+  // is closed, so the stand-in disappears when its Close clears the selection.
+  isClosed?: (props: PanelProps<C>) => boolean,
+): () => Promise<C> {
+  let loaded: ComponentType<PanelProps<C> & object> | undefined;
   const listeners = new Set<() => void>();
   const subscribe = (listener: () => void) => {
     listeners.add(listener);
@@ -30,18 +46,19 @@ export function withLoadRetry<P extends object>(
   };
   const loadOnce = () =>
     load().then((panel) => {
-      loaded = panel;
+      loaded = panel as ComponentType<PanelProps<C> & object>;
       for (const listener of listeners) listener();
       return panel;
     });
 
-  function LoadRetry(props: P) {
+  function LoadRetry(props: PanelProps<C> & object) {
     const Panel = useSyncExternalStore(
       subscribe,
       () => loaded,
       () => undefined,
     );
     if (Panel) return <Panel {...props} />;
+    if (isClosed?.(props)) return null;
     // A drawer that draws its own header (Referrals, Tasks) has no other close control on a phone.
     const { onClose } = props as { onClose?: () => void };
     return (
@@ -71,5 +88,5 @@ export function withLoadRetry<P extends object>(
     );
   }
 
-  return () => loadOnce().catch(() => LoadRetry);
+  return () => loadOnce().catch(() => LoadRetry as unknown as C);
 }

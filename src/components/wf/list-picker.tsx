@@ -235,7 +235,11 @@ export function ListPicker({
       event.stopPropagation();
       close(true);
     } else if (event.key === "Tab" && !isPhone) {
-      close(false);
+      // From the search box, park focus on the field button before the box unmounts, so the
+      // browser's (or a modal's) Tab step carries on from the field rather than dropping to the
+      // page. The closing panel goes inert so a modal's Tab cycle does not step back into it.
+      if (event.currentTarget !== buttonRef.current) panelRef.current?.setAttribute("inert", "");
+      close(event.currentTarget !== buttonRef.current);
     } else {
       return false;
     }

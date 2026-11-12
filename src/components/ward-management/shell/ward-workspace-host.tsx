@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { WardFlowProvider } from "../ward-flow-provider";
 import { WardSharedAccess, useWardShared, type WardSharedConnection } from "../ward-shared-access";
 import type { ExecutiveAggregateSnapshot } from "../ward-shared-client";
@@ -10,10 +11,13 @@ import { ExecutiveStatisticsUnavailable } from "../statistics/statistics-small-n
 import { parseStoredAccess } from "./ward-access-store";
 import { WardShellAuthorityProvider, WardShellPublicProvider, executiveShellPlaces } from "./ward-shell-public-context";
 import type { WardAccess } from "../ward-role-access";
-const ExecutiveChrome = dynamic(() => import("./ward-executive-chrome").then((module) => module.WardExecutiveChrome), {
-  // While the executive chrome's code loads, say so calmly, not "unavailable" (Josh, 31 Oct 2026).
-  loading: () => <ExecutiveStatisticsUnavailable loading />,
-});
+const ExecutiveChrome = dynamic(
+  withLoadRetry(() => import("./ward-executive-chrome").then((module) => module.WardExecutiveChrome)),
+  {
+    // While the executive chrome's code loads, say so calmly, not "unavailable" (Josh, 31 Oct 2026).
+    loading: () => <ExecutiveStatisticsUnavailable loading />,
+  },
+);
 /** Code-split independently of the operational phone chrome. */
 export function WardExecutiveChromeMount({ children }: { children: ReactNode }) {
   return <ExecutiveChrome>{children}</ExecutiveChrome>;

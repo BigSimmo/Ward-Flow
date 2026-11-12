@@ -99,6 +99,17 @@ describe("WardBar primary action — the five kinds, archived D-16", () => {
     expect(within(drawer).getByTestId("ward-referral-refer-to-ward")).toHaveAttribute("aria-pressed", "true");
   });
 
+  it("closes the New menu on Tab without dropping focus to the page", async () => {
+    const user = userEvent.setup();
+    renderBar({ kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU });
+    await user.click(screen.getByTestId("ward-bar-primary-action"));
+    await screen.findByTestId("ward-bar-new-menu");
+    await user.tab({ shift: true });
+    expect(screen.queryByTestId("ward-bar-new-menu")).toBeNull();
+    expect(document.activeElement).not.toBe(document.body);
+    expect(screen.getByTestId("ward-bar-primary-action")).not.toHaveFocus();
+  });
+
   it.each(["community", "ed"] as const)(
     'changes "Refer to" to %s on the slide-out\'s own switch',
     async (destination) => {

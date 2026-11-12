@@ -6,10 +6,14 @@
 // ward-screen-lazy.tsx.
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { preloadWhenIdle } from "../preload-when-idle";
 
 const loadBedDrawer = () => import("./ward-screen-overlays");
-export const WardScreenBedDrawer = dynamic(() => loadBedDrawer().then((m) => m.WardScreenBedDrawer), {
-  ssr: false,
-});
+export const WardScreenBedDrawer = dynamic(
+  withLoadRetry(() => loadBedDrawer().then((m) => m.WardScreenBedDrawer)),
+  {
+    ssr: false,
+  },
+);
 preloadWhenIdle(loadBedDrawer);

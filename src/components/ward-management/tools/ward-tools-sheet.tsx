@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
@@ -79,9 +80,12 @@ import { ToolCallLog } from "./ward-tool-call-log";
 import styles from "./ward-tools-sheet-v3.module.css";
 
 // Log a delay loads when it is first opened, so the shell's first download does not grow.
-const ToolLogDelay = dynamic(() => import("./ward-tool-log-delay").then((m) => m.ToolLogDelay), {
-  loading: () => <p role="status">Loading…</p>,
-});
+const ToolLogDelay = dynamic(
+  withLoadRetry(() => import("./ward-tool-log-delay").then((m) => m.ToolLogDelay)),
+  {
+    loading: () => <p role="status">Loading…</p>,
+  },
+);
 
 const root = "/ward-flow";
 

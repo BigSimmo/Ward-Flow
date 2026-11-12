@@ -219,6 +219,9 @@ describe("Ward Flow Master Search Hub — search and the type filter", () => {
     renderHub();
     fireEvent.change(screen.getByRole("searchbox", { name: /search/i }), { target: { value: "zzzz-no-place" } });
     expect(screen.getByTestId("hub-no-match")).toHaveTextContent(/matches “zzzz-no-place”/);
+    // Review finding 16: the line and the count sit in polite live regions.
+    expect(screen.getByTestId("hub-no-match").closest("[aria-live='polite']")).not.toBeNull();
+    expect(screen.getByTestId("hub-shown-count").closest("[aria-live='polite']")).not.toBeNull();
     expect(results().queryAllByRole("listitem")).toHaveLength(0);
     fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
     expect(screen.queryByTestId("hub-no-match")).not.toBeInTheDocument();

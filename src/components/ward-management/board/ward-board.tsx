@@ -851,6 +851,7 @@ export function WardBoard({
       shiftTiles.push({
         key: `discharge-${occupant.key}`,
         selectableKey: occupant.key,
+        subject: cardNameByKey.get(occupant.key),
         label: isConfirmed ? "Confirmed discharge" : "Expected discharge",
         tone: "warn",
         // No "when" word: the label already says discharge (device audit, 11 Oct 2026: a lone
@@ -890,6 +891,7 @@ export function WardBoard({
       shiftTiles.push({
         key: `away-${occupant.key}`,
         selectableKey: occupant.key,
+        subject: cardNameByKey.get(occupant.key),
         label: "Away at an ED",
         tone: "warn",
         when: `${occupant.awayAtEdHours}h ago`,
@@ -967,7 +969,8 @@ export function WardBoard({
       // DR-08 (25 Oct 2026): the button that opened this dialog and the patient's tile both leave
       // with the patient, so focus would fall to the page. It goes to the "Before handover" band.
       focusBackTo.current = null;
-      dialogTriggerRef.current = document.getElementById("ward-board-work-band-heading")?.closest("summary") ?? null;
+      dialogTriggerRef.current =
+        document.querySelector<HTMLElement>('[data-testid="ward-board-work-band"] > summary') ?? null;
     } else if (pendingConfirm.kind === "away_at_ed" && pendingConfirm.admissionId) {
       dispatchAndReport(
         () =>

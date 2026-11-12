@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useEffect, useRef, type ComponentProps } from "react";
 
 import type { Instant } from "../ward-clock";
@@ -20,13 +21,13 @@ import { useSenderPresentation } from "../ward-sender-presentation";
 const panelPending = () => null;
 
 const LazyPicker = dynamic(
-  () => import("./referral-information-needs-panel").then((m) => m.WardInformationNeedsPicker),
+  withLoadRetry(() => import("./referral-information-needs-panel").then((m) => m.WardInformationNeedsPicker)),
   {
     loading: panelPending,
   },
 );
 const LazyTickOff = dynamic(
-  () => import("./referral-information-needs-panel").then((m) => m.ReferralInformationNeedsPanel),
+  withLoadRetry(() => import("./referral-information-needs-panel").then((m) => m.ReferralInformationNeedsPanel)),
   { loading: panelPending },
 );
 

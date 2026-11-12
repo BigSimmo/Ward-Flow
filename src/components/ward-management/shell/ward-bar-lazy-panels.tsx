@@ -37,10 +37,12 @@ export const WardTasksDrawer = dynamic(
   withLoadRetry(() => loadTasksDrawer().then((m) => m.WardTasksDrawer), "Alerts did not load"),
 );
 
-export const ActivityPanel = dynamic(() =>
-  loadActivityPanel().then(
-    (m) => m.ActivityPanel,
-    () => ActivityPanelRetry,
+export const ActivityPanel = dynamic(
+  withLoadRetry(() =>
+    loadActivityPanel().then(
+      (m) => m.ActivityPanel,
+      () => ActivityPanelRetry,
+    ),
   ),
 );
 

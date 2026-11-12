@@ -160,6 +160,16 @@ describe("ListPicker", () => {
     expect(field()).toHaveTextContent("Choose");
   });
 
+  it("closes on Tab from the search box and moves on from the field", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.click(field());
+    expect(screen.getByRole("combobox", { name: "Search Emergency department" })).toHaveFocus();
+    await user.tab();
+    expect(screen.queryByRole("listbox")).toBeNull();
+    expect(screen.getByRole("button", { name: "After" })).toHaveFocus();
+  });
+
   it("closes on a press outside", async () => {
     const user = userEvent.setup();
     render(<Harness />);

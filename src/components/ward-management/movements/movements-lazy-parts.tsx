@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { preloadWhenIdle } from "../preload-when-idle";
 
@@ -15,17 +16,20 @@ import { preloadWhenIdle } from "../preload-when-idle";
  * phone turned to landscape normally finds it there.
  */
 // The import sits inside `dynamic()` so the build links it to the pipeline's stylesheet (see the timeline).
-export const StagePipeline = dynamic(() => import("./stage-pipeline").then((m) => m.StagePipeline));
+export const StagePipeline = dynamic(withLoadRetry(() => import("./stage-pipeline").then((m) => m.StagePipeline)));
 
 preloadWhenIdle(() => import("./stage-pipeline"));
 
-export const CommunityNoJourneys = dynamic(() => import("./community-no-journeys").then((m) => m.CommunityNoJourneys), {
-  loading: () => null,
-});
+export const CommunityNoJourneys = dynamic(
+  withLoadRetry(() => import("./community-no-journeys").then((m) => m.CommunityNoJourneys)),
+  {
+    loading: () => null,
+  },
+);
 
 // Note 7 (8 Nov 2026): the Check in drawer opens only on a click, so its code (and Transport's step
 // rules it reuses) loads on first use.
 export const MovementCheckInDrawer = dynamic(
-  () => import("./movement-check-in-drawer").then((m) => m.MovementCheckInDrawer),
+  withLoadRetry(() => import("./movement-check-in-drawer").then((m) => m.MovementCheckInDrawer)),
   { loading: () => null },
 );

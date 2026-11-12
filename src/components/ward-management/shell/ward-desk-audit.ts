@@ -171,14 +171,18 @@ function useWardDeskAudit(): { state: DeskAuditState; loadMore: () => void } {
       void load(true);
     };
     void load();
-    // Keep an explicitly extended history stable until the panel is reopened.
-    const timer = setInterval(() => {
-      if (!loadingMore && !expanded) void load();
-    }, ACTIVITY_AUDIT_REFRESH_MS);
+    // Keep an explicitly extended history stable until the panel is reopened. No reads while the
+    // tab is hidden; one straight away when it is shown again.
+    const refresh = () => {
+      if (document.visibilityState === "visible" && !loadingMore && !expanded) void load();
+    };
+    const timer = setInterval(refresh, ACTIVITY_AUDIT_REFRESH_MS);
+    document.addEventListener("visibilitychange", refresh);
     return () => {
       live = false;
       more.current = () => {};
       clearInterval(timer);
+      document.removeEventListener("visibilitychange", refresh);
     };
   }, [api, read, pageRead, owner]);
   return { state: read || pageRead ? state : { status: "unavailable" }, loadMore };

@@ -195,7 +195,9 @@ import type { OverridableWardFlowEvent } from "./ward-flow-overridable-events";
 export { departAdmission, recordedByLabel };
 import { isPatientCarePlanEvent } from "./ward-patient-care-plan-events";
 import { isHandoverWorkEvent } from "@/components/ward-management/handover-work-events";
-export { UNLINKED_CARE_REFUSAL } from "./ward-flow-protected-record-events";
+// From the reasons file, never the protected-record slice: a re-export loads its module, which put the
+// slice and the stay events in the first-load script every page downloads (D-162 finding 1).
+export { UNLINKED_CARE_REFUSAL } from "./ward-protected-refusal-reasons";
 
 /**
  * Stages `REFER_TO_UNITS` accepts, exported so a UI can pre-check referability before dispatching

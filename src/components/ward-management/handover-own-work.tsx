@@ -121,7 +121,7 @@ export function HandoverOwnWork({ now, layout = "page" }: { now: Instant; layout
     </span>
   );
 
-  const handTo = (item: HandedItemRef, pending: HandedItemRecord | undefined) => {
+  const handTo = (item: HandedItemRef, pending: HandedItemRecord | undefined, describedBy: string) => {
     const targets = handOverTargets(state, item);
     if (previewing || targets.length === 0) return null;
     return (
@@ -139,6 +139,7 @@ export function HandoverOwnWork({ now, layout = "page" }: { now: Instant; layout
           <button
             type="button"
             {...props}
+            aria-describedby={describedBy}
             className={buttonClass({ variant: "sec", size: "sm" })}
             data-testid="ward-handover-own-work-hand-to"
           >
@@ -163,11 +164,13 @@ export function HandoverOwnWork({ now, layout = "page" }: { now: Instant; layout
         {listOpen ? <span className={styles.note}>Shift ends within {HANDOVER_OWN_WORK_LEAD_MINUTES} min</span> : null}
       </h2>
       <ul className={styles.list} id={`${baseId}-list`}>
-        {incomingShown.map((record) => {
+        {incomingShown.map((record, index) => {
           const { what, who, href } = describe(record.item);
+          // Every row's button reads the same, so it names the row's item and patient (a11y review).
+          const whatId = `${baseId}-in-${index}`;
           return (
             <li key={record.id} className={styles.row} data-testid={`ward-handover-incoming-${record.id}`}>
-              <span className={styles.what}>
+              <span className={styles.what} id={whatId}>
                 <span className={styles.kind}>{what}</span>
                 {href ? (
                   <Link href={href} className={styles.link}>
@@ -185,6 +188,7 @@ export function HandoverOwnWork({ now, layout = "page" }: { now: Instant; layout
                   variant="sec"
                   size="sm"
                   data-testid="ward-handover-own-work-accept"
+                  aria-describedby={whatId}
                   onClick={() => void raise("ACCEPT_HANDED_ITEM", { handedItemId: record.id, ...acting })}
                 >
                   Accept
@@ -193,8 +197,9 @@ export function HandoverOwnWork({ now, layout = "page" }: { now: Instant; layout
             </li>
           );
         })}
-        {mineShown.map(({ key, item, sortAt, pending }) => {
+        {mineShown.map(({ key, item, sortAt, pending }, index) => {
           const { what, who, href } = describe(item);
+          const whatId = `${baseId}-own-${index}`;
           const when =
             item.kind === "referral"
               ? `Yours since ${at(sortAt)}`
@@ -203,7 +208,7 @@ export function HandoverOwnWork({ now, layout = "page" }: { now: Instant; layout
                 : `Best after ${at(sortAt)}`;
           return (
             <li key={key} className={styles.row} data-testid={`ward-handover-own-${key}`}>
-              <span className={styles.what}>
+              <span className={styles.what} id={whatId}>
                 <span className={styles.kind}>{what}</span>
                 {href ? (
                   <Link href={href} className={styles.link}>
@@ -216,7 +221,7 @@ export function HandoverOwnWork({ now, layout = "page" }: { now: Instant; layout
               <span className={styles.status} data-pending={pending ? "" : undefined}>
                 {pending ? `Handed to ${deskLabel(pending.to)}, not accepted yet · still yours` : when}
               </span>
-              {handTo(item, pending)}
+              {handTo(item, pending, whatId)}
             </li>
           );
         })}

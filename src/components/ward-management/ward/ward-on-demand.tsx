@@ -5,15 +5,19 @@
 // its script budget (4 Nov 2026, #1360). Nothing here renders before it is asked for.
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
-export const WardAcceptDialog = dynamic(() => import("./ward-answer-accept-dialog").then((m) => m.WardAcceptDialog), {
-  ssr: false,
-});
+export const WardAcceptDialog = dynamic(
+  withLoadRetry(() => import("./ward-answer-accept-dialog").then((m) => m.WardAcceptDialog)),
+  {
+    ssr: false,
+  },
+);
 export const WardScreenDecisionJobs = dynamic(
-  () => import("./ward-screen-decision-jobs").then((m) => m.WardScreenDecisionJobs),
+  withLoadRetry(() => import("./ward-screen-decision-jobs").then((m) => m.WardScreenDecisionJobs)),
   { ssr: false },
 );
 export const OverrideRegister = dynamic(
-  () => import("@/components/ward-management/override-register").then((m) => m.OverrideRegister),
+  withLoadRetry(() => import("@/components/ward-management/override-register").then((m) => m.OverrideRegister)),
   { ssr: false, loading: () => <p role="status">Loading overrides…</p> },
 );

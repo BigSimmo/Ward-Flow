@@ -9,6 +9,7 @@ import { PatientPeekLink } from "@/components/ward-management/patients/patient-p
 import Link from "next/link";
 import { movementHref } from "../shell/ward-facade";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useId } from "react";
 import { Ambulance, Check, ChevronLeft, ChevronRight, ClipboardCopy, Route, UserRound } from "lucide-react";
 import {
@@ -49,9 +50,12 @@ import styles from "./handover-refined.module.css";
 
 /* Q40, Q61 to Q63 (Josh, 31 Oct 2026): the site bed manager's own site sign-off. Its code loads only
    for that login, so no other desk's first load grows. */
-const SiteSignOff = dynamic(() => import("./handover-site-sign-off").then((m) => m.HandoverSiteSignOff), {
-  loading: () => null,
-});
+const SiteSignOff = dynamic(
+  withLoadRetry(() => import("./handover-site-sign-off").then((m) => m.HandoverSiteSignOff)),
+  {
+    loading: () => null,
+  },
+);
 
 /** The site sign-off, shown only to a site bed manager at its own site; nothing for any other desk. */
 export function HandoverSiteSignOffSlot({ phone, onScope }: { phone: boolean; onScope: (scopeValue: string) => void }) {

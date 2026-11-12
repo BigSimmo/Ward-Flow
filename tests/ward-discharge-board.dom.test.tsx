@@ -69,6 +69,21 @@ it("names identified release rows and distinguishes aggregate copying from print
   }
 });
 
+it("ties the Now and Recorded tabs to the list they switch", async () => {
+  renderBoard();
+  const now = screen.getByTestId("ward-discharge-now");
+  const recorded = screen.getByTestId("ward-discharge-history");
+  await waitFor(() => expect(now).not.toBeDisabled());
+  const panelId = now.getAttribute("aria-controls");
+  expect(panelId).toBeTruthy();
+  expect(recorded).toHaveAttribute("aria-controls", panelId!);
+  const panel = document.getElementById(panelId!);
+  expect(panel).toHaveAttribute("role", "tabpanel");
+  expect(panel).toHaveAttribute("aria-labelledby", now.id);
+  fireEvent.click(recorded);
+  expect(panel).toHaveAttribute("aria-labelledby", recorded.id);
+});
+
 it("copies Recorded's own seven-day figures, matching its headline (Codex review, #1374)", async () => {
   const writeText = vi.fn().mockResolvedValue(undefined);
   const originalClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");

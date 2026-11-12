@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { preloadWhenIdle } from "../preload-when-idle";
 
@@ -12,9 +13,12 @@ import { preloadWhenIdle } from "../preload-when-idle";
  */
 const loadOperatorSwitcher = () => import("./operator-switcher-modal");
 
-export const OperatorSwitcherModal = dynamic(() => loadOperatorSwitcher().then((m) => m.OperatorSwitcherModal), {
-  ssr: false,
-  loading: () => null,
-});
+export const OperatorSwitcherModal = dynamic(
+  withLoadRetry(() => loadOperatorSwitcher().then((m) => m.OperatorSwitcherModal)),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
 
 preloadWhenIdle(loadOperatorSwitcher);

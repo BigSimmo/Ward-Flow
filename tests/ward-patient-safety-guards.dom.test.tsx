@@ -37,7 +37,7 @@ describe("WardBoard Patient Safety Confirmations", () => {
       </WardFlowProvider>,
     );
 
-    const shiftButtons = screen.queryAllByRole("button", { name: "They have left" });
+    const shiftButtons = screen.queryAllByRole("button", { name: /^They have left(, |$)/ });
     if (shiftButtons.length === 0) {
       return;
     }
@@ -83,7 +83,7 @@ describe("WardBoard Patient Safety Confirmations", () => {
       </WardFlowProvider>,
     );
 
-    const shiftButtons = screen.queryAllByRole("button", { name: "They have left" });
+    const shiftButtons = screen.queryAllByRole("button", { name: /^They have left(, |$)/ });
     if (shiftButtons.length === 0) return;
 
     fireEvent.click(shiftButtons[0]);

@@ -4,11 +4,12 @@
 // home, where it is drawn, so no other page's first download grows (9 Nov 2026 budget check).
 import type { ReactNode } from "react";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { usePathname } from "next/navigation";
 import { HeroFootSlotProvider } from "@/components/wf";
 import { useDeskHomeHref } from "@/components/ward-management/shell/ward-access";
 
-const WardQuickHeroSlot = dynamic(() => import("./ward-quick-bar").then((m) => m.WardQuickHeroSlot));
+const WardQuickHeroSlot = dynamic(withLoadRetry(() => import("./ward-quick-bar").then((m) => m.WardQuickHeroSlot)));
 
 function QuickSlotOnHome() {
   const pathname = usePathname();
