@@ -824,9 +824,14 @@ export function inFlightCiGuard(
     return { name: "in-flight-ci", ok: true, note: "gh not available — in-flight CI check skipped (fail-open)" };
   }
 
+  // `gh pr view` fails both when the branch has no PR and when gh cannot read it (a cloud thread's
+  // gh, for example). Neither blocks, but the second is said out loud (D-166): most cancelled CI
+  // runs on 11-12 Nov 2026 came from pushes this guard could not see.
+  const unread = [];
   for (const branch of branches) {
     if (!branch || branch === "main" || branch === "master" || branch.startsWith("release/")) continue;
     const prPayload = prViewer(branch);
+    if (!prPayload) unread.push(branch);
     if (!prPayload || prPayload.state !== "OPEN") continue;
 
     const runsPayload = runFetcher(branch);
@@ -857,6 +862,14 @@ export function inFlightCiGuard(
     }
   }
 
+  if (unread.length > 0)
+    return {
+      name: "in-flight-ci",
+      ok: true,
+      note:
+        `could not read a pull request for ${unread.join(", ")}. If its required CI is running, this push cancels it. ` +
+        "Keep the PR in draft while iterating (drafts run only the quick checks) and batch fixes into one push once it is ready.",
+    };
   return { name: "in-flight-ci", ok: true };
 }
 

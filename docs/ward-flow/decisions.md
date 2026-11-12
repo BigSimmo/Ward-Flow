@@ -2029,3 +2029,12 @@ is inferred.
 - **Date:** 12 November 2026, 11:27 PM AWST (15:27 UTC). **Decided by:** Josh, "Go ahead and fix all recommendations" in the Ward Flow project thread "Tidy the Since the shift started strip", answering the two follow-up questions left open by D-161. Numbered D-164 because D-162 is claimed by open PR #1639.
 - **Decision:** the strip's counts run escalations, delays, referrals, beds freed, then acceptances withdrawn, discharge dates moved and records updated, so a phone line, which names one count, shows an escalation when there is one. New movements are left off the line and stay in the Review sheet; when movements are the only change, the line names them so Review stays reachable from Home.
 - **Boundary:** synthetic data only. Changes no clinical rule, only the order and choice of counts on one line. Approves no release.
+
+## D-166. CI runs faster without dropping a check (12 November 2026)
+
+- **Date:** 13 November 2026, 5:26 AM AWST (12 November, 21:26 UTC). **Decided by:** Josh, "Yes to all recommendations" in the Ward Flow project thread "Speed up CI without losing quality", answering its three numbered questions on the CI review. Numbered D-166 because D-165 is claimed by the patient screen redesign PR.
+- **Decision:**
+  1. **Draft lane:** a draft PR runs only the scope plan, static checks and production build. The unit shards, coverage, backend proof, browser journeys and release gate run when it is marked ready, and only that run can pass Ward Flow required.
+  2. **Phone release gate:** runs as two jobs (journeys then referrals, and checks alone). This reverses the phone half of the 4 November "fewer jobs" ruling; desktop keeps its three suites in one job.
+  3. **The rest of the review:** the unit shards are dealt from main's newest measured timings (falling back to `scripts/ward-flow/unit-durations.json`); the push guard warns when it cannot see a PR; threads keep PRs in draft while iterating; `npm run check:phone-budget` checks phone limits before a push; and main reuses a PR's unit evidence apart from the legal-figure sweep.
+- **Boundary:** no check is removed, skipped on a ready PR or loosened. Phone limits, coverage floors and test populations are unchanged. Approves no release, provider action or settings change.

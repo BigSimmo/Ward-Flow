@@ -81,7 +81,10 @@ describe("Ward backend CI", () => {
     expect(needs).toContain(job?.name);
     expect(workflow).toContain("BACKEND_RESULT: ${{ needs.backend.result }}");
     expect(workflow).toContain("BACKEND_SCOPE: ${{ needs.plan.outputs.backend }}");
-    expect(workflow).toContain('require_scope "$BACKEND_SCOPE" "$BACKEND_RESULT"');
+    // Ready runs gate the backend on its scope (or main reuse); drafts skip it (D-166).
+    expect(workflow).toContain('require_gate "$BACKEND_SCOPE" "$BACKEND_RESULT" "$BACKEND_REUSED"');
+    expect(workflow).toContain('test "$BACKEND_RESULT" = skipped');
+    expect(backendJob?.text).toContain("github.event.pull_request.draft != true");
     const evidence = step("Upload backend and shared-mode evidence");
     expect(jobAt(evidence.start)?.name).toBe("backend");
     expect(evidence.text).toContain("coverage/backend/");

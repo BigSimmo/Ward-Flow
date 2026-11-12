@@ -673,6 +673,19 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
     expect(result.message).toContain("#HSSHRG");
   });
 
+  it("inFlightCiGuard lets a push through but says so when gh cannot read the branch's PR (D-166)", () => {
+    const result = inFlightCiGuard(["claude/my-fix"], [], {
+      prViewer: () => null,
+      runFetcher: () => {
+        throw new Error("runFetcher must not be consulted without a PR");
+      },
+      ghAvailable: () => true,
+    });
+    expect(result.ok).toBe(true);
+    expect(result.note).toContain("could not read a pull request for claude/my-fix");
+    expect(result.note).toContain("Keep the PR in draft while iterating");
+  });
+
   it("inFlightCiGuard fails open when gh is unavailable", () => {
     const result = inFlightCiGuard(["claude/my-fix"], [], {
       prViewer: () => {

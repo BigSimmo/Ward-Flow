@@ -31,7 +31,9 @@ function greenJobs(): Job[] {
     ),
     passedJob("Ward Flow coverage", "Merge shard coverage and enforce thresholds"),
     passedJob("Ward Flow production build", "Build for production (Railway build command)"),
-    passedJob("Ward Flow release gate phone journeys, referrals and checks", ...releaseSteps),
+    // Phone runs as two jobs since D-166; desktop keeps its three suites in one.
+    passedJob("Ward Flow release gate phone journeys and referrals", ...releaseSteps.slice(0, 2)),
+    passedJob("Ward Flow release gate phone checks", releaseSteps[0]),
     passedJob("Ward Flow release gate desktop journeys, referrals and checks", ...releaseSteps),
     passedJob(
       "Ward Flow backend and shared production proof",
@@ -151,7 +153,7 @@ describe("independent main gate evidence", () => {
     const examples = [
       ["unit", "Ward Flow unit shard 1"],
       ["browser", "Ward Flow browser journeys 1"],
-      ["release", "Ward Flow release gate phone journeys, referrals and checks"],
+      ["release", "Ward Flow release gate phone checks"],
       ["build", "Ward Flow production build"],
       ["backend", "Ward Flow backend and shared production proof"],
       ["coverage", "Ward Flow coverage"],
@@ -196,13 +198,49 @@ describe("independent main gate evidence", () => {
   });
 
   it("requires every release suite on both phone and desktop", () => {
-    for (const device of ["phone", "desktop"]) {
-      for (const step of releaseSteps) {
+    for (const name of greenJobs()
+      .map((job) => job.name)
+      .filter((job) => job.startsWith("Ward Flow release gate "))) {
+      for (const step of greenJobs()
+        .find((job) => job.name === name)!
+        .steps.map((candidate) => candidate.name)) {
         const jobs = greenJobs();
-        const job = jobs.find((candidate) => candidate.name.startsWith(`Ward Flow release gate ${device}`))!;
+        const job = jobs.find((candidate) => candidate.name === name)!;
         job.steps = job.steps.filter((candidate) => candidate.name !== step);
-        expect(reusableGateEvidence(evidence({ jobs })).release, `${device}: ${step}`).toBe(false);
+        expect(reusableGateEvidence(evidence({ jobs })).release, `${name}: ${step}`).toBe(false);
       }
+      const jobs = greenJobs().filter((job) => job.name !== name);
+      expect(reusableGateEvidence(evidence({ jobs })).release, `without ${name}`).toBe(false);
+    }
+  });
+
+  it("reads each release job's parts from its name, so every part runs exactly once per device", () => {
+    const merged = greenJobs().filter((job) => !job.name.startsWith("Ward Flow release gate phone"));
+    // The single phone job of three suites (before D-166) still proves the whole gate.
+    expect(
+      reusableGateEvidence(
+        evidence({
+          jobs: [...merged, passedJob("Ward Flow release gate phone journeys, referrals and checks", ...releaseSteps)],
+        }),
+      ).release,
+    ).toBe(true);
+    // A job that ran fewer suite steps than its name lists proves less than it claims.
+    expect(
+      reusableGateEvidence(
+        evidence({
+          jobs: [
+            ...merged,
+            passedJob("Ward Flow release gate phone journeys, referrals and checks", ...releaseSteps.slice(0, 2)),
+          ],
+        }),
+      ).release,
+    ).toBe(false);
+    // A part covered twice, or an unknown part, is refused.
+    for (const name of ["phone checks", "phone journeys and audits"]) {
+      const jobs = greenJobs();
+      jobs.find((job) => job.name === "Ward Flow release gate phone journeys and referrals")!.name =
+        `Ward Flow release gate ${name}`;
+      expect(reusableGateEvidence(evidence({ jobs })).release, name).toBe(false);
     }
   });
 

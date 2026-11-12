@@ -2,7 +2,7 @@
 
 _Updated 2026-11-10 - CI rows for the protected safety tests, the pull-request patient-identifier scan with its exemptions, the identifier scan and the 5 KB raise cap scripts, and the audit and support tools; Documentation owns._
 
-Curated map of `scripts/` (177 files) and the `package.json` script surface (87 entries),
+Curated map of `scripts/` (177 files) and the `package.json` script surface (88 entries),
 grouped by what each part protects. `package.json` is the command surface; this page says why
 each group exists. `npm run docs:check-inventory` compares the two counts above exactly,
 and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs
@@ -71,7 +71,8 @@ baselines and the 834px tablet checks through `run-playwright.mjs` (front-end au
 and a manual run with "update baselines" writes new baselines to commit; a failed scheduled run opens
 or refreshes one issue through `ward-ci-public/nightly-browsers-issue.mjs`; it also writes the
 `ward-flow/skip-inventory.mjs` report to the run summary. CI also runs
-`check-script-budget.mjs` (phone first-load script budgets in `script-budget.json`),
+`check-script-budget.mjs` (phone first-load script budgets in `script-budget.json`; run it locally after a build with `npm run check:phone-budget`),
+`ward-ci-public/unit-durations-latest.mjs` (picks main's newest unit timings to balance the unit shards),
 `check-knip-baseline.mjs` (`npm run check:knip`), `ward-flow/related-tests.mjs`,
 `ward-flow/gate-tsc.mjs` and `ward-flow/selected-baseline-verdict.mjs`. Beside the knip ratchet,
 `npm run check:knip:production` lists app files that only tests reach (advisory, never fails; the
