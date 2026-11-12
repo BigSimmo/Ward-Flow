@@ -187,6 +187,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-162](#d-162-fixes-from-the-12-november-whole-site-component-review-12-november-2026)                                                                 | Fixes from the 12 November whole-site component review                                 | Active                                           |
 | [D-163](#d-163-pre-demo-audits-use-the-public-demo-after-d-162-is-live-12-november-2026)                                                                | Pre-demo audits use the public demo after D-162 is live                                | Active                                           |
 | [D-164](#d-164-homes-changes-since-strip-names-escalations-first-and-leaves-movements-off-12-november-2026)                                             | Home's changes-since strip names escalations first and leaves movements off            | Active                                           |
+| [D-165](#d-165-the-patient-screen-is-a-dashboard-grid-on-every-tab-13-november-2026)                                                                    | The patient screen is a dashboard grid on every tab                                    | Active                                           |
 
 ---
 
@@ -2029,3 +2030,14 @@ is inferred.
 - **Date:** 12 November 2026, 11:27 PM AWST (15:27 UTC). **Decided by:** Josh, "Go ahead and fix all recommendations" in the Ward Flow project thread "Tidy the Since the shift started strip", answering the two follow-up questions left open by D-161. Numbered D-164 because D-162 is claimed by open PR #1639.
 - **Decision:** the strip's counts run escalations, delays, referrals, beds freed, then acceptances withdrawn, discharge dates moved and records updated, so a phone line, which names one count, shows an escalation when there is one. New movements are left off the line and stay in the Review sheet; when movements are the only change, the line names them so Review stays reachable from Home.
 - **Boundary:** synthetic data only. Changes no clinical rule, only the order and choice of counts on one line. Approves no release.
+
+## D-165. The patient screen is a dashboard grid on every tab (13 November 2026)
+
+- **Date:** 13 November 2026, 5:21 AM AWST (12 November, 21:21 UTC). **Decided by:** Josh, "Yes, open the PR" on the card "Approve version 2 of the patient screen so I can open the PR?" in the Ward Flow project thread "Redesign the patient screen". He had asked for the screen to be overhauled so the Now cards stop stretching across the page, saw version 1, said the History figure strip looked better as it was and gave free rein for a visual upgrade, then approved version 2 as shown at 390, 820, 1280 and 1440 in light and dark, with its five recommended answers.
+- **Decision:** the screen opened by clicking a patient uses one 2:1 grid on every tab from tablet landscape up.
+  1. **Now, main column:** the next step; the status gates as rows, each with a tinted icon and its action on the right edge, joined to a one-line Destination, Transport and Review foot that shows titles only; Triage and risk and Carer call back as two rows of one card under that work; then Care and safety.
+  2. **Now, side column:** Legal now, Discharge readiness, the leave or absence card, Who to call (stacked when narrow, so a name is never cut short), Recent changes, Why, and one "Hand over and print" card in place of the separate print cards.
+  3. **Moved:** "Where the hours went" sits on History beside the record, for a moving patient only; "Record added in error" sits at the foot of Details.
+  4. **History** keeps its joined figure strip across the top, as it was.
+  5. **Top band:** every patient gets the same band (chips, figures, tags), whether moving or staying; on a phone it drops the duplicate "Ends ... as typed" line.
+- **Boundary:** synthetic data only. Layout and appearance only: no action, wording of a clinical rule, permission or saved record changes. Approves no release.
