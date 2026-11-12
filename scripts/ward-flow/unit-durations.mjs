@@ -14,8 +14,17 @@ const UNIT_DURATIONS = new URL("./unit-durations.json", import.meta.url);
  * @param {string | URL} [file]
  * @returns {Record<string, number>}
  */
-export function readUnitDurations(file = UNIT_DURATIONS) {
+export function readUnitDurations(file) {
+  // CI hands every unit shard the same chosen record (scripts/ward-ci-public/unit-durations-latest.mjs).
+  // A named record that cannot be read fails loudly: falling back on one shard but not the others
+  // would deal a different split there, so a file could run twice or not at all.
+  if (file === undefined && process.env.WARD_UNIT_DURATIONS_FILE) {
+    const seconds = JSON.parse(readFileSync(process.env.WARD_UNIT_DURATIONS_FILE, "utf8")).seconds;
+    if (!seconds || typeof seconds !== "object") throw new Error("WARD_UNIT_DURATIONS_FILE holds no seconds record");
+    return seconds;
+  }
   try {
+    file ??= UNIT_DURATIONS;
     const seconds = JSON.parse(readFileSync(file, "utf8")).seconds;
     return seconds && typeof seconds === "object" ? seconds : {};
   } catch {

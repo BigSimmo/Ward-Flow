@@ -37,21 +37,42 @@ function matrixGap(jobs, prefix, count, steps) {
   return null;
 }
 
+const RELEASE_PARTS = ["journeys", "referrals", "checks"];
+const RELEASE_STEPS = [
+  "Run the release-gate journeys",
+  "Run the second release-gate suite",
+  "Run the third release-gate suite",
+];
+
+/**
+ * Each job's name says its device and the parts it ran in order ("phone journeys and referrals",
+ * "desktop journeys, referrals and checks"; check-contracts.mjs ties every name to its matrix entry).
+ * Every device must cover every part exactly once, and each job must prove one suite step per part.
+ */
 function releaseGap(jobs) {
   const matching = jobs.filter((job) => job.name.startsWith("Ward Flow release gate "));
-  if (matching.length !== 2) return "release gate needs one phone and one desktop job";
-  const seen = new Set();
+  if (matching.length === 0) return "release gate needs one phone and one desktop job";
+  const covered = { phone: new Set(), desktop: new Set() };
   for (const job of matching) {
-    const devices = ["phone", "desktop"].filter((device) => new RegExp(`\\b${device}\\b`, "u").test(job.name));
-    if (devices.length !== 1 || seen.has(devices[0])) return "release gate has a duplicate or ambiguous device";
-    seen.add(devices[0]);
-    const gap = stepsGap(job, [
-      "Run the release-gate journeys",
-      "Run the second release-gate suite",
-      "Run the third release-gate suite",
-    ]);
+    const label = job.name.slice("Ward Flow release gate ".length);
+    const devices = ["phone", "desktop"].filter((device) => new RegExp(`\\b${device}\\b`, "u").test(label));
+    if (devices.length !== 1) return "release gate has a duplicate or ambiguous device";
+    const parts = label.split(/[\s,]+/u).filter((word) => word && word !== devices[0] && word !== "and");
+    if (
+      parts.length === 0 ||
+      parts.length > RELEASE_STEPS.length ||
+      parts.some((part) => !RELEASE_PARTS.includes(part))
+    )
+      return `${job.name} names no known release-gate parts`;
+    for (const part of parts) {
+      if (covered[devices[0]].has(part)) return "release gate has a duplicate or ambiguous device";
+      covered[devices[0]].add(part);
+    }
+    const gap = stepsGap(job, RELEASE_STEPS.slice(0, parts.length));
     if (gap) return gap;
   }
+  for (const device of ["phone", "desktop"])
+    if (covered[device].size !== RELEASE_PARTS.length) return "release gate needs one phone and one desktop job";
   return null;
 }
 

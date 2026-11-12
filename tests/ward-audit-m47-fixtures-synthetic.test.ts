@@ -104,6 +104,8 @@ describe("M47 CI artifacts come only from secret-free, synthetic runs", () => {
       "${{ runner.temp }}/ward-browser-build/",
       "${{ runner.temp }}/ward-browser-costs.json",
       "${{ runner.temp }}/ward-unit-costs.json",
+      // D-166: the unit shard timings this run deals from (test paths and seconds only).
+      "${{ runner.temp }}/ward-unit-durations/unit-durations.json",
       "${{ runner.temp }}/script-budget/measured.json",
     ]);
     const seen: string[] = [];
