@@ -202,3 +202,6 @@ open without the bed." instead of "has started"; only the toast words change, so
 After PR E (#1658) merged, `ward/ward-screen.tsx` passes the board clock to the bed-pulled toast so it can say
 "Undo until HH:MM" (D-192, FM-13); the RELEASE_PULL it undoes with and every other dispatch in the file are
 unchanged. Its 12 digests were refreshed.
+Then `ward/ward-screen.tsx` keeps the bed-pulled toast's id so a row's Undo pull can close it (review note 1), and
+moves part of its Home section into `ward/ward-screen-home-section.tsx` to stay within its line limit. No dispatch
+changed; its 12 digests were refreshed again.
