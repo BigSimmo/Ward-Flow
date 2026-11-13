@@ -15,7 +15,7 @@ import type { DowntimePack } from "./downtime-pack";
  * so the person says (root-cause fix 3.3, approved by Josh 13 Nov 2026). "Not yet" is the safe
  * choice: it records nothing, so the ward's warning stays.
  */
-export const PACK_PRINTED_QUESTION: ConfirmRequest = {
+const PACK_PRINTED_QUESTION: ConfirmRequest = {
   title: "Did it print?",
   message: "Record the print time only if the pack printed or the PDF saved.",
   confirmLabel: "Yes",

@@ -29,7 +29,7 @@ const PROTOTYPE_BADGE = (
  * so it named a date the board no longer shows and claimed a demo clock on the signed-in site too.
  * The signed-in site is the one that provides the shared save context.
  */
-export function footerClockWords(signedIn: boolean): string {
+function footerClockWords(signedIn: boolean): string {
   return signedIn ? "Real Perth time" : "Demo board clock";
 }
 

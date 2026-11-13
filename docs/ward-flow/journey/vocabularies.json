@@ -422,7 +422,7 @@
   "STOP_TRANSPORT_REASONS": {
    "file": "ward-change-reasons.ts",
    "members": [
-    "The examination was revoked",
+    "The examination made no order",
     "The referral was withdrawn",
     "The receiving ward can no longer take the patient",
     "Absconded in transit, whereabouts unknown"
