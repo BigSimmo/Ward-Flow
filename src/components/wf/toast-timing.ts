@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { clk } from "./format";
 
 /** A timed toast with up to this many words keeps its base time. */
 const BASE_WORDS = 12;
@@ -16,6 +17,27 @@ export function timedToastMs(baseMs: number, title: string, body?: string): numb
   const words = `${title} ${body ?? ""}`.trim().split(/\s+/).filter(Boolean).length;
   const extra = Math.max(0, words - BASE_WORDS) * PER_EXTRA_WORD_MS;
   return Math.min(MAX_TIMED_MS, baseMs + extra);
+}
+
+/**
+ * Shared design parts item 4 (Josh, 13 Nov 2026): an Undo toast that names its clock time stays at
+ * least ten seconds (hover or focus pauses it). Its Undo then stays on the row it refers to.
+ */
+export const UNDO_TOAST_MIN_MS = 10_000;
+
+/** The clock time an Undo window ends: a Date or instant as the Perth "HH:MM", a string as given. */
+export function undoUntilClock(until: Date | number | string): string {
+  return typeof until === "string" ? until : clk(until);
+}
+
+/** "Undo until 14:47", the one time an Undo toast names. */
+export function undoUntilText(until: Date | string): string {
+  return `Undo until ${undoUntilClock(until)}`;
+}
+
+/** How long an Undo toast shows: its own window, and never under ten seconds once it names a clock time. */
+export function undoToastMs(undo: { durationMs: number; until?: Date | string }): number {
+  return undo.until === undefined ? undo.durationMs : Math.max(undo.durationMs, UNDO_TOAST_MIN_MS);
 }
 
 function subscribeToVisibility(notify: () => void) {
