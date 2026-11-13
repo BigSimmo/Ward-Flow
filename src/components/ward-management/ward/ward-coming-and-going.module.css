@@ -17,8 +17,9 @@
 .groupHead {
   margin: 0 0 var(--wf-s-1);
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 6px;
+  gap: 0 6px;
   font-size: var(--wf-fs-13);
   line-height: var(--wf-lh-13);
   font-weight: 600;
@@ -33,7 +34,17 @@
   color: var(--wf-ink-1);
 }
 
+/* "3 Needs a look · now" stays one unit on one line; a long note wraps beside it or drops under it,
+   never squeezing the heading into "Needs a / look", a lone "·" and "now" (check B1). */
+.groupTitle {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+
 .groupAside {
+  flex: 1 1 14ch;
   margin-left: auto;
   font-weight: 400;
   font-size: var(--wf-fs-12);

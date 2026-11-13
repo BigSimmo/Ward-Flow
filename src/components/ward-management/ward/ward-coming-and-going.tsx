@@ -93,8 +93,10 @@ function GroupHead({
   return (
     // tabIndex -1: focus can land here when a row it held leaves the list (review FA-2).
     <h3 className={styles.groupHead} id={id} tabIndex={-1}>
-      <b className={styles.n}>{n}</b> {title}
-      <WindowWord word={windowWord} />
+      <span className={styles.groupTitle}>
+        <b className={styles.n}>{n}</b> {title}
+        <WindowWord word={windowWord} />
+      </span>
       {aside ? (
         <>
           {" "}
