@@ -4,6 +4,9 @@ import { fieldsMatchEveryWord } from "@/components/ward-management/search/search
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { clockZoneLabel, demoDayZero, formatSheetMoment } from "@/components/ward-management/ward-clock";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
+import { useOptionalWardFlowSelect, useWardClock } from "@/components/ward-management/ward-flow-provider";
 import Link from "next/link";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
@@ -230,6 +233,10 @@ export function CommunityIndex({
     () => [...teams].sort((left, right) => left.name.localeCompare(right.name) || left.id.localeCompare(right.id)),
     [teams],
   );
+
+  const boardDayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
+  const zone = useClockZoneLabel();
+  const boardNow = useWardClock(Number.NaN);
 
   // One call to the shared derivation, indexed by name for each row's marker.
   const collisionByName = useMemo(() => {
@@ -485,13 +492,18 @@ export function CommunityIndex({
   }
 
   function exportTeamList() {
+    // The board's time, as every other export is stamped (time audit D8). Outside a provider there is
+    // no board, so the device's own Perth time stands in, and that is real Perth time: AWST (F-113).
+    const onBoard = boardDayZero instanceof Date && Number.isFinite(boardNow);
+    const dayZero = onBoard ? boardDayZero : demoDayZero(new Date());
+    const at = onBoard ? boardNow : Math.floor((Date.now() - dayZero.getTime()) / 60_000);
     const lines: (string | number)[][] = [["Team", "Health service", "Catchment suburbs", "Reads like another name"]];
     for (const team of allTeams) {
       const facts = teamFacts.get(team.name);
       lines.push([team.name, facts?.service ?? "", facts?.suburbs ?? 0, collisionByName.has(team.name) ? "Yes" : "No"]);
     }
     downloadCsv("ward-flow-synthetic-community-team-list.csv", lines, {
-      asAt: `${new Date().toLocaleString("en-AU", { timeZone: "Australia/Perth", year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })} AWST`,
+      asAt: formatSheetMoment(at, dayZero, { includeYearAndZone: true, zone: onBoard ? zone : clockZoneLabel(true) }),
       scope: "Community team directory; all teams",
       period: "Reference directory at export time; not a clinical snapshot",
     });

@@ -15,6 +15,8 @@ import { activeTaskItems, taskItems } from "@/components/ward-management/ward-ac
 import { wardPlannedAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { acceptedPullTaskRows, alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
+import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-awaiting-pull";
 import { openAlertKindGroups } from "./helpers/alerts-kind-groups";
 
 /**
@@ -363,9 +365,15 @@ describe("Alerts phone Act now filter (page tops, 9 Nov 2026)", () => {
 });
 
 describe("Alerts counts agree (remaining-pages audit ops-3, 13 Oct 2026)", () => {
-  it("the Open tab's open count is and the Tasks list, running targets included", () => {
-    const lapsed = taskItems(seedWardFlowState(), NOW).find((item) => alertKindOf(item.id) === "hold");
-    expect(lapsed?.movementId, "the seed has a lapsed bed pull").toBeTruthy();
+  it("the Open tab's open count is the Tasks badge's, from the same list with running targets in it", () => {
+    // A16-13 (13 Nov 2026): seeded pulls now date from their own ED stay, so the one lapsed pull
+    // is an old stay whose acceptance target has already passed. Release the most recent pull
+    // instead, whose acceptance target is still running once the bed is let go.
+    const lapsed = seedWardFlowState()
+      .movements.filter((movement) => movement.stage === "pulled")
+      .sort((a, b) => b.openedAt - a.openedAt)
+      .map((movement) => ({ movementId: movement.id }))[0];
+    expect(lapsed?.movementId, "the seed has a pulled bed").toBeTruthy();
     let world: ReturnType<typeof useWardFlow> | undefined;
     function Probe() {
       world = useWardFlow();
@@ -389,8 +397,18 @@ describe("Alerts counts agree (remaining-pages audit ops-3, 13 Oct 2026)", () =>
     });
     const active = activeTaskItems(world!, NOW);
     expect(active.some((item) => alertKindOf(item.id) === "running")).toBe(true);
+    // Q260 (2 Nov 2026): the Tasks list the bell counts is these rows plus one row for each accepted
+    // referral with no bed pulled, and a running countdown is listed but not counted. This compared
+    // with `active.length` until A9-13 (D-181 item 12) added two such referrals: that only agreed while
+    // the seed had exactly one running countdown and one accepted referral.
+    const pullRows = acceptedPullTaskRows(
+      acceptedReferralsAwaitingPull(world!.referrals, world!.units, world!.movements),
+      NOW,
+    );
+    expect(pullRows.length).toBeGreaterThan(0);
+    const badge = alertsNowFigures([...active, ...pullRows], 0).outstanding;
     // Alerts redesign (1 Nov 2026): the band's meta reads "oldest … · n yours", so the Open tab (AL2) carries the open count.
-    expect(screen.getByRole("tab", { name: /^Open/u }).textContent?.replace(/\s+/gu, "")).toBe(`Open${active.length}`);
+    expect(screen.getByRole("tab", { name: /^Open/u }).textContent?.replace(/\s+/gu, "")).toBe(`Open${badge}`);
   });
 });
 

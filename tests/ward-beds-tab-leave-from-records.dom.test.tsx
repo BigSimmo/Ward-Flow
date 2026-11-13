@@ -145,7 +145,9 @@ describe("ward screen Beds tab places On Leave from the ward's leave records, no
   it("an incoming (not-yet-admitted) bed shows no length-of-stay or specialling flag borrowed from someone else", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardScreen unitId={RPH_ADULT_SECURE} />
+        {/* A16-13 (13 Nov 2026): RPH's secure ward no longer has a bed pulled for nobody; Bentley's
+            secure ward holds WF-004's pulled bed. */}
+        <WardScreen unitId="bty-adult-secure" />
       </WardFlowProvider>,
     );
 

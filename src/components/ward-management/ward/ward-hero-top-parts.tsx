@@ -3,7 +3,7 @@ import type { Unit } from "@/components/ward-management/ward-model";
 import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
-import { BED_RELEASES_HELD_UP_ANY_DATE_LABEL } from "@/components/ward-management/ward-derivations";
+import { BED_RELEASE_BLOCKED_FIGURE_LABEL } from "@/components/ward-management/ward-derivations";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 import { WardPackPrintedLine } from "./ward-pack-printed-line";
 
@@ -52,12 +52,14 @@ export function wardHeroTopParts({
       items={[
         {
           id: "ready",
-          // LEAD-a (H-0181): the ready figure says how many are still being made ready, to a screen reader.
+          // D-179 item 8: Ready leaves out beds still being made ready, which are said beside it.
           value: <span data-testid="ward-hero-ready">{states.ready}</span>,
           label: (
             <>
               ready now
-              {pendingPreparation > 0 ? <SrOnly>{`, ${pendingPreparation} being made ready`}</SrOnly> : null}
+              {pendingPreparation > 0 ? (
+                <span data-testid="ward-hero-being-made-ready">{`, ${pendingPreparation} being made ready`}</span>
+              ) : null}
             </>
           ),
           onClick: () => pickBedFilter("free"),
@@ -123,7 +125,7 @@ export function wardHeroTopParts({
           label: "Held up",
           value: heldUpCount,
           tone: heldUpCount > 0 ? "danger" : undefined,
-          ariaLabel: `${BED_RELEASES_HELD_UP_ANY_DATE_LABEL}: ${heldUpCount}`,
+          ariaLabel: `${BED_RELEASE_BLOCKED_FIGURE_LABEL}: ${heldUpCount}`,
         },
         { id: "past", label: "Past date", value: pastDateCount, ariaLabel: `Past expected date: ${pastDateCount}` },
         {

@@ -159,10 +159,11 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
   const restoreFocusRef = useRef(false);
   // A4-21 (audit 13 Oct 2026): a confirmed release records the departure from this sheet, with the
   // destination, through the same shared action the ward's bed drawer uses. The destination starts
-  // from the default for each release, so one person's choice is never recorded against the next.
-  const [departure, setDeparture] = useState<{ releaseId: string | null; destination: LeavingDestination }>({
+  // empty for each release, so one person's choice is never recorded against the next, and F-45
+  // (Josh, 13 Nov 2026: no clinical choice starts selected) holds here as on the ward's drawer.
+  const [departure, setDeparture] = useState<{ releaseId: string | null; destination: LeavingDestination | "" }>({
     releaseId: null,
-    destination: "discharged-to-the-community",
+    destination: "",
   });
   // Audit A1-12: a recorded departure offers Undo (`UNDO_DEPARTURE`), like the ward's bed drawer,
   // through the shared `useUndoableStep`; with no toast region the outcome is announced instead.
@@ -317,8 +318,10 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
             .map((release) => release.id),
         ]
       : groupedReleaseIds;
+  // Walk C item 6 (F-107, 13 Nov 2026): a record opened from the slipped-dates list opens over Now
+  // without moving the page to Recorded. Changing tab clears the selection, so none carries across.
   const opened =
-    selected && population === "records" && visibleRecords.some((record) => record.admissionId === selected.admissionId)
+    selected && visibleRecords.some((record) => record.admissionId === selected.admissionId)
       ? readDischargeRecord(
           recordActorFor(records.find((record) => record.admissionId === selected.admissionId)?.unitId),
           selected.admissionId,
@@ -349,8 +352,8 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
     releaseActor.role === "ward" || releaseActor.role === "coordinator" || releaseActor.role === "bed_manager";
   const canRecordDeparture =
     (releaseActor.role === "ward" || releaseActor.role === "coordinator") && detailRelease?.state === "confirmed";
-  const departureDestination: LeavingDestination =
-    departure.releaseId === detailRelease?.id ? departure.destination : "discharged-to-the-community";
+  const departureDestination: LeavingDestination | "" =
+    departure.releaseId === detailRelease?.id ? departure.destination : "";
   // One primary per area: on a phone a blocked release keeps Clear blocker as the primary.
   const phoneClearBlocker =
     canChangeRelease && isPhone && !!detailRelease?.blocker && detailRelease.state !== "discharged";

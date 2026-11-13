@@ -6,7 +6,8 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { observationAt } from "@/components/ward-management/ward-observation";
 import { acceptedAddressing } from "@/components/ward-management/ward-referrals";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { NOW_ANCHOR, allEmergencyDepartments } from "@/components/ward-management/ward-sites";
+import { startsAcceptedJourneyAtEd } from "@/components/ward-management/referrals/accepted-awaiting-pull";
 
 /**
  * WT-08 (walk-through, 26 Oct 2026; Josh approved one tap): the first Pull the bed tap started the
@@ -20,10 +21,15 @@ function onePull(state: WardFlowState): { event: WardFlowEvent; referralId: stri
   const accepted = acceptedAddressing(referral)!;
   const destination = accepted.destination;
   if (destination.kind !== "psychiatric_ward") throw new Error("seed referral was not accepted at a ward");
+  // A9-13: a referral made in an ED starts at that department, as the pull sheet sends it.
+  const ed = startsAcceptedJourneyAtEd(referral.source)
+    ? allEmergencyDepartments().find((place) => place.siteCode === referral.originSiteCode)
+    : undefined;
   const event: WardFlowEvent = {
     type: "RAISE_REFERRAL",
     role: "coordinator",
     now: NOW_ANCHOR,
+    ...(ed ? { edId: ed.id } : {}),
     referralId: referral.id,
     acceptedUnitId: unitId,
     pullBed: true,

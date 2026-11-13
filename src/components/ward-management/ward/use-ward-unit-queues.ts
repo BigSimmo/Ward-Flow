@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { isOpen, isStoppedTransportAwaitingRelease } from "@/components/ward-management/ward-derivations";
+import { awaitingWardAnswer, isWaitlistReason } from "@/components/ward-management/ward-waitlist";
 import type { BedRelease, DeclineReason, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
 
 /**
@@ -35,9 +36,7 @@ export function useWardUnitQueues({
         : movements
             .filter(
               (movement) =>
-                isOpen(movement) &&
-                movement.stage === "destination_review" &&
-                movement.referredUnitIds.includes(unit.id),
+                isOpen(movement) && movement.stage === "destination_review" && awaitingWardAnswer(movement, unit.id),
             )
             .sort((left, right) => left.openedAt - right.openedAt),
     [movements, unit],
@@ -64,7 +63,7 @@ export function useWardUnitQueues({
               const wardAnswers: Array<{
                 key: string;
                 movementId: string;
-                outcome: "Accepted" | "Declined";
+                outcome: "Accepted" | "Declined" | "Waitlisted";
                 at?: Instant;
                 reason?: DeclineReason;
               }> = [];
@@ -84,7 +83,8 @@ export function useWardUnitQueues({
                   wardAnswers.push({
                     key: `${movement.id}-declined-${index}`,
                     movementId: movement.id,
-                    outcome: "Declined",
+                    // A9-05: "No suitable bed" puts the referral on this ward's wait list.
+                    outcome: isWaitlistReason(decline.reason) ? "Waitlisted" : "Declined",
                     at: decline.at,
                     reason: decline.reason,
                   });

@@ -84,9 +84,16 @@ export const TIER_QUALIFIER: Record<UrgencyLevel, string> = {
  * than a correctness one, and it is not the case this export's rationale singles out: **nobody
  * chooses a value from a badge.**
  */
-export function urgencyTierLabel(urgency: UrgencyLevel): string {
-  return `Tier ${urgency} · ${TIER_QUALIFIER[urgency]}`;
+export function urgencyTierLabel(urgency: UrgencyLevel | undefined): string {
+  return urgency === undefined ? TIER_NOT_RECORDED : `Tier ${urgency} · ${TIER_QUALIFIER[urgency]}`;
 }
+
+/**
+ * D-187 (F-30, Q33, Josh 13 Nov 2026): a referral with no urgency tier reads this wherever its tier
+ * is shown, never a tier it does not have. Its overdue window stays tier 3's
+ * (`tierOverdueAfterMinutes`); only the words change.
+ */
+export const TIER_NOT_RECORDED = "Tier not recorded";
 
 /**
  * Whether `movement.blocker` names something actually holding the movement up.
@@ -127,7 +134,12 @@ function hasActiveBlocker(blocker: string): boolean {
  * `movement.examination` (owner, 2026-08-24: priority is urgency and waiting time alone). Do not
  * reintroduce either here, and do not substitute a proxy.
  */
-export function waitFactors(movement: Movement, now: Instant, thresholds: DueSoonThresholds): WaitFactor[] {
+export function waitFactors(
+  movement: Movement,
+  now: Instant,
+  thresholds: DueSoonThresholds,
+  dayZero?: Date,
+): WaitFactor[] {
   const factors: WaitFactor[] = [];
 
   const waitedMinutes = Math.max(0, now - movement.openedAt);
@@ -150,7 +162,7 @@ export function waitFactors(movement: Movement, now: Instant, thresholds: DueSoo
     // Legal times only as typed (31 Oct 2026): "Form 4C ends 15:42 as typed", never a count.
     factors.push({
       label: FORM_TIMING_FACTOR_LABEL,
-      detail: `Form ${legalForm.code} ${typedTimePhrase(dueAt, now)}`,
+      detail: `Form ${legalForm.code} ${typedTimePhrase(dueAt, now, dayZero)}`,
     });
   }
 

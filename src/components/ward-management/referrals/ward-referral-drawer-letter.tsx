@@ -6,6 +6,7 @@ import { referralBoardHref } from "../ed/ed-bed-search-step";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
+import { TIER_NOT_RECORDED } from "@/components/ward-management/ward-priority";
 import styles from "./ward-referral-drawer.module.css";
 import { ContactFields, UseMyDetailsButton, ReferralDocumentLinks } from "./referral-flow-panels";
 import { chartsCountText } from "./referral-document-links";
@@ -17,6 +18,7 @@ import { countOf, DESTINATION_LABELS } from "./ward-referral-drawer-model";
 import { referralCatchmentWords, referrerContactWords, transportLabel } from "./referral-submission";
 import { CardHead } from "./ward-referral-drawer-fields";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 /** The read-only letter, as it will be sent: styled paper, its copy text and its PDF (RF2). */
 export function ReferralLetterPreview({
@@ -31,6 +33,7 @@ export function ReferralLetterPreview({
 }) {
   const { now, letterInput, copyText } = s;
   const draftedAt = formatInstant(now);
+  const zone = useClockZoneLabel();
   return (
     <section className={styles.letterSection} data-testid="ward-referral-letter-preview">
       <div className={styles.letterActions}>
@@ -40,9 +43,9 @@ export function ReferralLetterPreview({
           className={styles.btn}
           data-testid="ward-referral-copy-letter"
           onClick={() => {
-            const text = referralLetterText(letterInput, draftedAt);
+            const text = referralLetterText(letterInput, draftedAt, zone);
             // A sent letter copies with its referral ID and sent time, as it reads on screen.
-            copyText(stamp ? text.replace(`Draft ${draftedAt} AWST`, stamp) : text, "Letter copied");
+            copyText(stamp ? text.replace(`Draft ${draftedAt} ${zone}`, stamp) : text, "Letter copied");
           }}
         >
           <Copy aria-hidden="true" />
@@ -58,7 +61,7 @@ export function ReferralLetterPreview({
           Print or save PDF
         </button>
       </div>
-      <ReferralLetterDocument input={letterInput} stamp={stamp ?? `Draft ${draftedAt} AWST`} />
+      <ReferralLetterDocument input={letterInput} stamp={stamp ?? `Draft ${draftedAt} ${zone}`} />
     </section>
   );
 }
@@ -92,6 +95,7 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
     copyText,
     onClose,
   } = s;
+  const zone = useClockZoneLabel();
   return (
     <form
       id="referralConfirmForm"
@@ -149,7 +153,7 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
           {/* RF2 (Josh, 4 Nov 2026): the letter as sent, to copy, print or save as a PDF. */}
           <ReferralLetterPreview
             s={s}
-            stamp={`${sentReferralId} · sent ${sentAt === null ? formatInstant(now) : formatInstantWithDay(sentAt, now)} AWST`}
+            stamp={`${sentReferralId} · sent ${sentAt === null ? formatInstant(now) : formatInstantWithDay(sentAt, now)} ${zone}`}
             hint="The letter as sent."
           />
           <section className={styles.refCard} data-testid="ward-referral-isbar">
@@ -236,7 +240,13 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
                       <dt>Proposed arrival</dt>
                       <dd>
                         {transportLabel(sentDetails.arrival.transport)} ·{" "}
-                        {formatReferralIntakeTime(sentDetails.arrival.estimatedAt, sentDetails.arrival, s.dayZero, now)}
+                        {formatReferralIntakeTime(
+                          sentDetails.arrival.estimatedAt,
+                          sentDetails.arrival,
+                          s.dayZero,
+                          now,
+                          zone,
+                        )}
                       </dd>
                     </div>
                   ) : null}
@@ -279,11 +289,16 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
                 </div>
                 <div>
                   <dt>Charts</dt>
-                  <dd>{chartsCountText(documentation.charts.length, documentation.toFollow?.length ?? 0)}</dd>
+                  {/* F-44 (C22): a community team referral asks for no charts (A9-06), so it never reads "0 attached". */}
+                  <dd data-testid="ward-referral-confirm-charts">
+                    {destType === "community"
+                      ? "Not needed"
+                      : chartsCountText(documentation.charts.length, documentation.toFollow?.length ?? 0)}
+                  </dd>
                 </div>
                 <div>
                   <dt>Urgency</dt>
-                  <dd>{tier === undefined ? "Not recorded" : `Tier ${tier}`}</dd>
+                  <dd>{tier === undefined ? TIER_NOT_RECORDED : `Tier ${tier}`}</dd>
                 </div>
                 <div>
                   <dt>Legal status</dt>

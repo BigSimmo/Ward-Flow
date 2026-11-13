@@ -1,4 +1,9 @@
-import type { Instant } from "@/components/ward-management/ward-clock";
+import {
+  clockZoneLabel,
+  formatSince,
+  type ClockZoneLabel,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { MOVEMENT_STAGES } from "@/components/ward-management/ward-model";
@@ -10,7 +15,6 @@ import {
   type PatientNowRecord,
   type DocumentRecord,
   clock,
-  dur,
 } from "@/components/ward-management/patients/patient-now-records";
 import { NAME_NOT_RECORDED, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Admission } from "@/components/ward-management/ward-admissions";
@@ -232,7 +236,7 @@ function presentationLength(movement: Movement, admission: Admission | undefined
       : movement.closure && (movement.closure.outcome === "did_not_proceed" || !admission)
         ? movement.closure.at
         : now;
-  return end === undefined ? "Not recorded" : dur(Math.max(0, end - movement.openedAt));
+  return end === undefined ? "Not recorded" : formatSince(movement.openedAt, end);
 }
 
 function presentationAnswers(
@@ -292,6 +296,8 @@ export function resolvePatientNowRecord(
   admissions: readonly Admission[],
   units: readonly Unit[],
   now: Instant,
+  /** The board's clock words (`useClockZoneLabel`, F-113). */
+  zone?: ClockZoneLabel,
 ): ResolvedPatientNow | undefined;
 export function resolvePatientNowRecord(
   id: string,
@@ -301,6 +307,7 @@ export function resolvePatientNowRecord(
   unitsOrAdmissions: readonly Unit[] | readonly Admission[],
   nowOrUnits?: Instant | readonly Unit[],
   maybeNow?: Instant,
+  zone: ClockZoneLabel = clockZoneLabel(false),
 ): ResolvedPatientNow | undefined {
   let admissions: readonly Admission[] = [];
   let units: readonly Unit[] = [];
@@ -408,7 +415,7 @@ export function resolvePatientNowRecord(
               ? [["CAD (dispatch) number", movement.transport.cadNumber] as [string, string]]
               : []),
             ...(movement.transport.estimatedAt
-              ? [["Quoted ETA", `${clock(movement.transport.estimatedAt)} AWST`] as [string, string]]
+              ? [["Quoted ETA", `${clock(movement.transport.estimatedAt)} ${zone}`] as [string, string]]
               : []),
           ]
         : [["Status", "No transport booking recorded"]],
@@ -417,7 +424,7 @@ export function resolvePatientNowRecord(
         : "Transport job is logged once receiving bed is confirmed.",
       transportBooked: movement.transport !== undefined,
       cadNumber: movement.transport?.cadNumber,
-      eta: movement.transport?.estimatedAt ? `${clock(movement.transport.estimatedAt)} AWST` : undefined,
+      eta: movement.transport?.estimatedAt ? `${clock(movement.transport.estimatedAt)} ${zone}` : undefined,
       transportProvider: movement.transport?.provider,
       transportLegalStatus: movement.transport?.transportLegalStatus,
       escortRequired: movement.transport?.escortRequired,
@@ -626,7 +633,7 @@ export function resolvePatientNowRecord(
                 ? [["CAD (dispatch) number", activeMovement.transport.cadNumber] as [string, string]]
                 : []),
               ...(activeMovement.transport.estimatedAt
-                ? [["Quoted ETA", `${clock(activeMovement.transport.estimatedAt)} AWST`] as [string, string]]
+                ? [["Quoted ETA", `${clock(activeMovement.transport.estimatedAt)} ${zone}`] as [string, string]]
                 : []),
             ]
           : [["Status", "No transport booking recorded"]],
@@ -635,7 +642,9 @@ export function resolvePatientNowRecord(
           : "Transport job is logged once receiving bed is confirmed.",
         transportBooked: activeMovement.transport !== undefined,
         cadNumber: activeMovement.transport?.cadNumber,
-        eta: activeMovement.transport?.estimatedAt ? `${clock(activeMovement.transport.estimatedAt)} AWST` : undefined,
+        eta: activeMovement.transport?.estimatedAt
+          ? `${clock(activeMovement.transport.estimatedAt)} ${zone}`
+          : undefined,
         transportProvider: activeMovement.transport?.provider,
         transportLegalStatus: activeMovement.transport?.transportLegalStatus,
         escortRequired: activeMovement.transport?.escortRequired,
@@ -759,7 +768,7 @@ export function resolvePatientNowRecord(
             current: true,
             where: unitName,
             to: unitName,
-            los: activeAdmission.arrivedAt ? dur(Math.max(0, now - activeAdmission.arrivedAt)) : "Inpatient",
+            los: activeAdmission.arrivedAt ? formatSince(activeAdmission.arrivedAt, now) : "Inpatient",
             losFull: `Inpatient at ${unitName}`,
             source: "Inpatient ward",
             route: "Bed allocation",

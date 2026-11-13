@@ -141,8 +141,8 @@ describe("fixture sanity: South Metro actually splits the open population both w
       "WF-023",
       "WF-030",
       "WF-308",
-      "WF-RD11",
-      "WF-RD12",
+      // A16-14 (13 Nov 2026): WF-RD11 and WF-RD12 were the legal-form worked examples, now off by
+      // default (switched on by the presenter), so the ordinary day does not hold them.
     ]);
 
     expect(MARKABLE_OWNER, "no owner has any member under South Metro — the marks test below needs one").toBeDefined();

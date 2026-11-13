@@ -5,7 +5,8 @@
 // compared with the range forecast for it the day before. Nothing is scored by a model: a day is
 // either inside the range or not, and the miss is a count of beds.
 //
-// 🔒 **COUNTS AND A DEMO DAY ONLY.** Kept in the browser's localStorage per scenario, and shared by
+// 🔒 **COUNTS AND A DEMO DAY ONLY.** Kept in the browser's localStorage per scenario, reseed and demo
+// day 0 (so `day` always counts from the day 0 it was taken under; time audit C3/G7), and shared by
 // the desk once the server has migration 16 (proposal 013, forecast-shared-history.ts).
 import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
 

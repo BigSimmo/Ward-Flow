@@ -38,6 +38,7 @@ import { NextShellBoundary } from "@/components/ward-management/shell-next/next-
 import { WardMainFocusTarget } from "@/components/ward-management/shell/ward-main-focus-target";
 import { WardSkipToActNow } from "@/components/ward-management/shell/ward-skip-to-act-now";
 import { TvLockGuard } from "@/components/ward-management/bed-meeting/tv-lock-guard";
+import { TvLockFallbackHost } from "@/components/ward-management/bed-meeting/tv-lock-fallback-host-lazy";
 import { ReferralSheetHost } from "@/components/ward-management/referrals/referral-sheet-host";
 import {
   WardWorkspaceHost,
@@ -336,6 +337,7 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                   <WardIdleLock />
                   {/* A11: a browser locked as a TV shows only TV views until someone unlocks it. */}
                   <TvLockGuard />
+                  <TvLockFallbackHost />
                 </div>
               </div>
             </ToastProvider>

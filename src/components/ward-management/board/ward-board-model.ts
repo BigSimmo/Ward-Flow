@@ -17,12 +17,7 @@ import {
 import { tentativeDiagnosisPhrase, type TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import { clinicallyReadyOf, type ClinicallyReadyLine } from "@/components/ward-management/ward-delayed-discharge";
 import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
-import {
-  formatInstantWithDay,
-  minuteOfDay,
-  MINUTES_PER_DAY,
-  type Instant,
-} from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import { bedStates, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import type {
   BedRelease,
@@ -36,6 +31,7 @@ import type {
 } from "@/components/ward-management/ward-model";
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 import styles from "./board.module.css";
+import { daysUntilExpected } from "./ward-daily-sheet-model";
 
 /** The four band fills, in `STAY_BANDS` order. One hue, four deepening steps — see the
  *  `--wb-band-*` tokens in `board.module.css`. Keyed by band id rather than by array index so a
@@ -79,7 +75,12 @@ export type Tile =
     }
   | { kind: "blocked"; key: string }
   | { kind: "closed"; key: string }
-  | { kind: "empty"; key: string };
+  | {
+      kind: "empty";
+      key: string;
+      /** D-179 item 8: empty, but still being made ready, so not counted as Ready (`bedStates`). */
+      preparing?: true;
+    };
 
 export const BOARD_FILTERS = ["all", "look", "ready", "quiet"] as const;
 export type BoardFilter = (typeof BOARD_FILTERS)[number];
@@ -262,8 +263,15 @@ export function buildTiles(
   }
 
   const emptyCount = Math.max(0, emptyPoolCount - closedCount - namedCount);
+  // D-179 item 8: the beds `bedStates` counts as being made ready are drawn empty but not Ready,
+  // after the Ready tiles, so the Ready tiles always match the Ready figure.
+  const preparingCount = Math.min(states.beingMadeReady, emptyCount);
   for (let index = 0; index < emptyCount; index += 1) {
-    tiles.push({ kind: "empty", key: `empty-${index}` });
+    tiles.push(
+      index < emptyCount - preparingCount
+        ? { kind: "empty", key: `empty-${index}` }
+        : { kind: "empty", key: `empty-${index}`, preparing: true },
+    );
   }
   return tiles;
 }
@@ -353,22 +361,6 @@ export function departureTimeInputValue(instant: Instant): string {
 }
 
 /**
- * Whole days from `now` to the ward's own expected date, or `null` when there is none.
- *
- * The same `Math.floor((expected - now) / MINUTES_PER_DAY)` `arrowTargets` uses, deliberately
- * WITHOUT its floor at zero. That floor is right there — the destinations panel groups people by
- * how soon the nearest one leaves, and a negative "soonest" is meaningless in an ordering — and it
- * would be wrong here, where the sign is the fact: this panel distinguishes a date still ahead
- * from one already passed, and clamping would silently present every passed date as "under a day
- * away". The two panels therefore agree on magnitude and differ only where they are documented to.
- */
-function daysUntilExpected(admission: Admission, now: Instant): number | null {
-  const expected = expectedInstant(admission);
-  if (expected === null || !Number.isFinite(now)) return null;
-  return Math.floor((expected - now) / MINUTES_PER_DAY);
-}
-
-/**
  * Who is in this ward's beds, soonest expected out first.
  *
  * **Scoped with `admissionsForUnit(admissions, unit.id)` and filtered with `bedIsOccupied` — the
@@ -441,8 +433,8 @@ export function buildOccupants(
     }));
 }
 
-/** The expected date in words. Never a calendar date: the model holds instants on a synthetic
- *  operating day and no calendar at all, so a printed "14 March" would be invented. */
+/** The expected date in words, counted in Perth calendar days from today. Never a printed date:
+ *  this panel speaks relative to now, and a date belongs only where somebody would say one aloud. */
 export function expectedPhrase(expectedDays: number | null): string {
   if (expectedDays === null) return "No expected date set";
   // Sign, not magnitude, is what changes the sentence — see `daysUntilExpected` on why the zero
@@ -451,9 +443,8 @@ export function expectedPhrase(expectedDays: number | null): string {
     const past = -expectedDays;
     return `${past} day${past === 1 ? "" : "s"} past the ward's expected date`;
   }
-  // Floors to 0 for anything inside the next day. "Within a day" rather than "today": the model
-  // has no calendar, so it cannot say which day anything falls on.
-  if (expectedDays === 0) return "Expected out within a day";
+  // A Perth calendar day count (time audit T1), so 0 is today whatever the clock face.
+  if (expectedDays === 0) return "Expected out today";
   return `Expected out in ${expectedDays} day${expectedDays === 1 ? "" : "s"}`;
 }
 
@@ -584,7 +575,7 @@ export type Incoming = {
 export function buildIncoming(
   unit: Unit,
   admissions: readonly Admission[],
-  movements: readonly { id: string; pullExpiresAt?: Instant }[],
+  movements: readonly { id: string; pullExpiresAt?: Instant; admissionId?: string }[],
   now: Instant,
 ): Incoming[] {
   const arriving = admissionsForUnit(admissions, unit.id).filter(
@@ -595,13 +586,23 @@ export function buildIncoming(
       .filter((movement) => movement.pullExpiresAt !== undefined)
       .map((movement) => [movement.id, movement.pullExpiresAt as Instant]),
   );
+  // A16-13: a seeded pull is named from the stay's side only (`Movement.admissionId`, no backpointer),
+  // so its limit is found that way too rather than reading as a pull with no limit.
+  const pullByAdmissionId = new Map(
+    movements
+      .filter((movement) => movement.pullExpiresAt !== undefined && movement.admissionId !== undefined)
+      .map((movement) => [movement.admissionId as string, movement.pullExpiresAt as Instant]),
+  );
 
   return arriving
     .map((admission) => {
       const pulledAt = admission.pulledAt;
       const usablePull =
         admission.state === "pulled" && pulledAt !== null && Number.isFinite(pulledAt) && Number.isFinite(now);
-      const pullExpiresAt = admission.movementId !== null ? (pullByMovementId.get(admission.movementId) ?? null) : null;
+      const pullExpiresAt =
+        admission.movementId !== null
+          ? (pullByMovementId.get(admission.movementId) ?? null)
+          : (pullByAdmissionId.get(admission.id) ?? null);
       return {
         key: admission.id,
         state: admission.state === "pulled" ? ("pulled" as const) : ("waitlisted" as const),
@@ -627,6 +628,14 @@ export function bedGonePhrase(hours: number | null): string {
   if (hours === null) return "Bed given away — when is not recorded";
   if (hours === 0) return "Bed given away within the hour";
   return `Bed given away ${hours} hour${hours === 1 ? "" : "s"} ago`;
+}
+
+/** The pulled-bed shift tile's short time and tag, from the same hours as `bedGonePhrase`: never
+ *  "0h ago", and never "Today" for a time nobody recorded (time audit D15, 13 Nov 2026). */
+export function pulledTileTiming(hours: number | null): { when: string; chip: string } {
+  if (hours === null) return { when: "Time not recorded", chip: "Pulled" };
+  if (hours === 0) return { when: "Within the hour", chip: "Travelling" };
+  return { when: `${hours}h ago`, chip: `${hours}h travelling` };
 }
 
 /** The DOM id of a tile's own button, so closing the slide-out can hand focus back to exactly the

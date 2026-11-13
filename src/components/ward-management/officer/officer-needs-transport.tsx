@@ -13,7 +13,7 @@ import {
   bookTransportBlockedReason,
   transportLegalFormNotice,
 } from "@/components/ward-management/ed/ed-blocked-reasons";
-import { formatElapsed, type Instant } from "@/components/ward-management/ward-clock";
+import { formatSince, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { legalNowText } from "@/components/ward-management/ward-transport-checks";
 import {
@@ -134,8 +134,8 @@ export function heldClock(movement: Movement, now: Instant): { figure: string; l
   for (const change of movement.stageChanges) if (change.to === "pulled") pulledAt = change.at;
   const since = pulledAt ?? movement.openedAt;
   return {
-    figure: formatElapsed(Math.max(0, now - since)).replace(/ waiting$/, ""),
-    label: pulledAt === undefined ? "waiting" : "bed held",
+    figure: formatSince(since, now),
+    label: pulledAt === undefined ? "waiting" : "bed pulled",
   };
 }
 

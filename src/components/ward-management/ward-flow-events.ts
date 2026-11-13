@@ -93,6 +93,7 @@ import type {
   TransportProvider,
   AbsenceStep,
   OverrideSignOff,
+  PullFormField,
 } from "@/components/ward-management/ward-model";
 import type { WardScenario } from "@/components/ward-management/ward-scenarios";
 
@@ -217,6 +218,13 @@ export type WardFlowEvent =
       acceptedUnitId?: string;
       /** WT-08: also pull the accepted ward's bed in the same tap. A refused pull starts nothing. */
       pullBed?: boolean;
+      /**
+       * D-191 (Josh, 13 Nov 2026): which of the pull form's facts the pulling desk changed from what
+       * the record holds. Only with `pullBed`; each of `PULL_FORM_FIELDS` at most once, else refused.
+       * Stored on the pull's own `to: "pulled"` stage change, whose `by` and `at` name the desk and
+       * time. It never changes the record's own legal status, form or observation level.
+       */
+      changedOnPull?: readonly PullFormField[];
       actingUnitId?: string;
       /**
        * THE FRONT-DOOR REFERRAL THIS JOURNEY IS BEING RAISED FROM, when there is one.
@@ -645,7 +653,17 @@ export type WardFlowEvent =
     }
   | { type: "ADVANCE_CLOCK"; role: WardFlowRole; now: Instant; minutes: number }
   | { type: "RESET_SCENARIO"; role: WardFlowRole; now: Instant }
-  | { type: "SET_SCENARIO"; role: WardFlowRole; now: Instant; scenario: WardScenario }
+  | {
+      type: "SET_SCENARIO";
+      role: WardFlowRole;
+      now: Instant;
+      scenario: WardScenario;
+      /**
+       * A16-14 (Josh, 13 Nov 2026): the legal-form worked examples are off by default and the
+       * presenter switches them on from Tools, Demo. Only the standard and scarce days carry them.
+       */
+      workedExamples?: boolean;
+    }
   /**
    * Task 3 of the audit-wiring plan, 2026-09-16: a coordinator saves an edited draft of
    * `WardFlowState.configuration` from the settings screen. `payload` is `unknown` on the event
@@ -2705,6 +2723,8 @@ export type WardFlowEvent =
       recordSeq?: number;
       movementId?: string;
       referralId?: string;
+      /** A ward undoing a step it recorded as a named ward (the sending ward's transport need) names itself. */
+      actingUnitId?: string;
     }
   | {
       /** Takes back the newest transport stage step (accepted, en route, collected, arrived). */

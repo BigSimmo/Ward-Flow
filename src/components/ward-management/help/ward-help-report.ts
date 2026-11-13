@@ -14,6 +14,7 @@
  */
 
 import { pictureLine } from "./ward-help-report-picture";
+import { perthDateText } from "@/components/ward-management/ward-clock";
 
 export type PatientDetailKind =
   "record-number" | "medicare" | "phone" | "email" | "date" | "titled-name" | "surname-first";
@@ -111,17 +112,21 @@ export function browserSummary(userAgent: string): string {
   return system ? `${name} on ${system}` : name;
 }
 
-/** "Sun 8 Nov 2026, 2:05 pm AWST (2026-11-08T06:05:00.000Z)": local for the reader, exact for the lead. */
+/**
+ * "Sun 8 Nov 2026, 14:05 AWST (2026-11-08T06:05:00.000Z)": Perth and 24-hour for the reader, as every
+ * other Ward Flow time, whatever the device's zone (time audit D10, 13 Nov 2026); exact for the lead.
+ */
 export function reportTime(now: Date): string {
-  const local = new Intl.DateTimeFormat("en-AU", {
+  const local = perthDateText(now, {
     weekday: "short",
     day: "numeric",
     month: "short",
     year: "numeric",
-    hour: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
+    hourCycle: "h23",
     timeZoneName: "short",
-  }).format(now);
+  });
   return `${local} (${now.toISOString()})`;
 }
 

@@ -171,6 +171,8 @@ export function ReferralMatchView({
         : unitId;
   const s = useReferralMatchState({ referral, rejections, dispatch, now });
   const localBedFocus = useRef(false);
+  // F-57 (A9-28): where focus goes once Decline opens its reasons ("reasons") or Back closes them ("open").
+  const declineFocus = useRef<"reasons" | "open" | null>(null);
   // Fix plan item 16 (D-76): asking more wards about an open community referral.
   const askMore = useAskMoreWards({ referral, units, now, dispatch, rejections });
   const turnaroundState = useOptionalWardFlowSelect(
@@ -1122,7 +1124,7 @@ export function ReferralMatchView({
         <>
           <p className={ph.ch}>Why decline?</p>
           <RadioGroup className={ph.cands} aria-label="Why decline?">
-            {REFERRAL_DECLINE_REASONS.map((reason) => (
+            {REFERRAL_DECLINE_REASONS.map((reason, index) => (
               <button
                 key={reason}
                 type="button"
@@ -1131,6 +1133,14 @@ export function ReferralMatchView({
                 className={ph.cand}
                 data-testid={`ward-referral-match-phone-decline-${reason}`}
                 onClick={() => setDeclineReason(reason)}
+                // F-57 (A9-28): Decline puts focus on the reason (the chosen one, else the first), not
+                // on Back nine Tab presses away.
+                ref={(node) => {
+                  if (!node || declineFocus.current !== "reasons") return;
+                  if (declineReason === undefined ? index !== 0 : declineReason !== reason) return;
+                  declineFocus.current = null;
+                  node.focus();
+                }}
               >
                 <span className={declineReason === reason ? `${ph.rad} ${ph.radOn}` : ph.rad} aria-hidden="true" />
                 <span className={ph.nm}>{DECLINE_REASON_LABELS[reason] ?? reason}</span>
@@ -1278,7 +1288,14 @@ export function ReferralMatchView({
               <AskMoreWardsFoot ask={askMore} />
             ) : phoneDeclining ? (
               <>
-                <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(false)}>
+                <button
+                  type="button"
+                  className={ph.sec}
+                  onClick={() => {
+                    declineFocus.current = "open";
+                    setPhoneDeclining(false);
+                  }}
+                >
                   Back
                 </button>
                 <Button
@@ -1310,7 +1327,16 @@ export function ReferralMatchView({
                   data-placement-action
                   type="button"
                   data-testid="ward-referral-match-decline-open"
-                  onClick={() => setPhoneDeclining(true)}
+                  onClick={() => {
+                    declineFocus.current = "reasons";
+                    setPhoneDeclining(true);
+                  }}
+                  // F-57: Back from the reasons returns focus to Decline.
+                  ref={(node: HTMLButtonElement | null) => {
+                    if (!node || declineFocus.current !== "open") return;
+                    declineFocus.current = null;
+                    node.focus();
+                  }}
                 >
                   Decline
                 </Button>

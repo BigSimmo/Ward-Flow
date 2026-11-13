@@ -21,8 +21,16 @@ import {
   type WardAccess,
   type WardAccessRole,
 } from "../ward-role-access";
-import { exitDemoRole, selectDemoRole, useDemoRoleSession } from "./ward-demo-role-session";
+import {
+  exitDemoRole,
+  restoreDemoRoleFlagAfterReload,
+  selectDemoRole,
+  useDemoRoleSession,
+} from "./ward-demo-role-session";
 import styles from "./ward-demo-roles.module.css";
+
+/** The Midland demo team's page id, the one `MIDLAND_DEMO_TEAM` matches (kept apart from its 24 KB module). */
+export const DEMO_COMMUNITY_TEAM_ID = "midland";
 
 /** The router, or null where the panel renders outside the app router (a panel rendered on its own in a test). */
 function useOptionalRouter(): ReturnType<typeof useRouter> | null {
@@ -110,6 +118,8 @@ export function useExitDemoRole(enabled: boolean): () => void {
         // Give that desk an explicit way back without inventing its previous role.
         setWardAccess(STATEWIDE_COORDINATOR);
         dispatchPersonaSyncForRole("coordinator");
+        // F-65: the role access setting the demo desk turned on goes back too.
+        restoreDemoRoleFlagAfterReload();
         go(STATEWIDE_COORDINATOR);
       }
     };
@@ -146,11 +156,16 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
     const eds = network.sites.flatMap((site) => (site.emergencyDepartment ? [site.emergencyDepartment] : []));
     const ed =
       eds.find((candidate) => world.movements.some((movement) => movement.originEdId === candidate.id)) ?? eds[0];
+    // F-108 (A14-15): the Midland team is the one the demo builds a full team page for
+    // (`MIDLAND_DEMO_TEAM`, `community/team-2026/midland-demo.ts`), so the community desk opens there
+    // rather than on a team with nobody on its caseload. Any other scenario keeps the first team with people.
     const team =
+      COMMUNITY_TEAM_PAGES.find((candidate) => candidate.id === DEMO_COMMUNITY_TEAM_ID) ??
       COMMUNITY_TEAM_PAGES.find((candidate) => {
         const lists = communityHubLists(world.admissions, candidate, world.referrals);
         return lists.currentlyAdmitted.length + lists.dischargedIntoTheArea.length + lists.otherDepartures.length > 0;
-      }) ?? COMMUNITY_TEAM_PAGES[0];
+      }) ??
+      COMMUNITY_TEAM_PAGES[0];
     return { unit, ed, team };
   }, [world.units, world.movements, world.admissions, world.referrals, network]);
   const choices: Record<WardAccessRole, WardAccess | null> = {

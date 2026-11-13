@@ -369,7 +369,8 @@ describe("DischargeBoard", () => {
 
     expect(
       within(releaseGroup("blocked")).getByRole("heading", {
-        name: new RegExp(`^Held up\\s+${expectedGroups.blocked.length}$`, "u"),
+        // D-191 item 5: this board's held-up group is every date, and its heading says so.
+        name: new RegExp(`^Held up · any date\\s+${expectedGroups.blocked.length}$`, "u"),
       }),
     ).toBeInTheDocument();
     expect(

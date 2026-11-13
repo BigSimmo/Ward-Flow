@@ -2,6 +2,7 @@ import { useEffect, type Dispatch, type SetStateAction } from "react";
 import { flushSync } from "react-dom";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 import { durMinutes } from "@/components/wf";
+import { HELD_UP_ANY_DATE_LABEL } from "@/components/ward-management/ward-held-up";
 import { BLOCKER_CATEGORIES, barrierCategory, barrierLabel, type GroupKey } from "./discharge-board-model";
 
 /**
@@ -38,8 +39,10 @@ export function releaseActionPart(
 export const HELD_UP = "Held up";
 
 /** Group headings on this page: "Held up" for the model's `blocked` group. */
+/** D-191 item 5 (Josh, 13 Nov 2026): this board's held-up group is every date, and says so; held
+ *  up elsewhere means due by tomorrow (`ward-held-up.ts`). */
 export const GROUP_TITLES: Record<GroupKey, string> = {
-  blocked: HELD_UP,
+  blocked: HELD_UP_ANY_DATE_LABEL,
   confirmed: "Confirmed",
   expected: "Expected",
   "discharged-today": "Discharged in last 24 hours",

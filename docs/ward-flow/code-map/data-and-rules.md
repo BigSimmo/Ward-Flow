@@ -209,12 +209,12 @@ capacity figure anywhere in this group is real.
   and ED destinations. Never uses `homeRegion` (owner ruling Q-2). Key exports:
   `movementBelongsToService`, `referralBelongsToService`, `unitHealthService`, `edHealthService`,
   `urgentMovementsOutsideService`, `SERVICE_SCOPED_SCREENS`.
-- **`src/components/ward-management/ward-travel-bands.ts`** (98 lines, 6 importers) — The four
-  invented travel bands (`under_an_hour` … `air_transport_only`) and the synthetic home-region →
-  site band table, `SYNTHETIC_TRAVEL_BANDS`. `TRAVEL_BANDS_ARE_INVENTED = true` is an exported
-  flag, not just a comment. A band is a fact about a pair (region, site) and is never stored on any
-  record — only ever looked up. Key exports: `TRAVEL_BANDS`, `SYNTHETIC_TRAVEL_BANDS`,
-  `TRAVEL_BANDS_ARE_INVENTED`.
+- **`src/components/ward-management/ward-travel-bands.ts`** — The four travel bands
+  (`under_an_hour` … `air_transport_only`) and the only bands the app shows: `CHECKED_TRAVEL_BANDS`,
+  each with who checked it and when (empty until Josh gives some; A16-04, 13 Nov 2026). Every other
+  pair reads as not recorded. Tests use their own invented table, `tests/helpers/ward-test-travel-bands.ts`.
+  A band is a fact about a pair (region, site) and is never stored on any record, only looked up.
+  Key exports: `TRAVEL_BANDS`, `CHECKED_TRAVEL_BANDS`, `SHOWN_TRAVEL_BANDS`, `travelBandTable`.
 - **`src/components/ward-management/ward-distance.ts`** (83 lines, 11 importers) — The single entry
   point for "how far is this bed from where this person lives", built on top of
   `ward-travel-bands.ts` (re-exports `TRAVEL_BANDS`/`TravelBand`). Never writes a band onto a

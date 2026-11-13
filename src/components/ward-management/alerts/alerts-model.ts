@@ -21,6 +21,7 @@ import {
 } from "@/components/ward-management/shell/ward-facade";
 import { plannedInitialsLabel } from "@/components/ward-management/ward-flow-demo-storage-constants";
 import { originName } from "@/components/ward-management/ward-movement-origin";
+import { askWardsHref } from "@/components/ward-management/movements/movement-next-step";
 
 /**
  * Alerts, Command queue (9 Oct 2026, round 2 option A). What each inbox row is, where it sits in
@@ -92,9 +93,14 @@ export function shownAgeFrom(item: InboxItem, raised: Instant | undefined): Inst
 }
 
 /** A copied line's time: " Ended 10:02 as typed." for a passed legal form, else " Open 1h 15m.". */
-export function copiedAge(item: InboxItem, raised: Instant | undefined, now: Instant): string {
+export function copiedAge(
+  item: InboxItem,
+  raised: Instant | undefined,
+  now: Instant,
+  dayZero: Date | undefined,
+): string {
   const ended = legalTypedEnd(item);
-  if (ended !== undefined) return ` ${typedTimeLine(ended, now)}.`;
+  if (ended !== undefined) return ` ${typedTimeLine(ended, now, dayZero)}.`;
   return raised !== undefined ? ` Open ${minutesText(Math.max(0, now - raised))}.` : "";
 }
 
@@ -304,8 +310,13 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
     case "legal":
       return { kind: "link", label: "Open forms", href: "/ward-flow/legal-forms" };
     case "declines":
-      // Home's placement panel, since the Network screen was retired (19 Oct 2026).
-      return { kind: "link", label: "Find a bed", href: "/ward-flow" };
+      // A14-13 (Audit 14): this used to link to Home, so pressed on Home the panel closed and nothing
+      // else happened. It opens that person's Patient page with its Ask wards list open instead.
+      return {
+        kind: "link",
+        label: "Find a bed",
+        href: item.movementId ? askWardsHref(item.movementId) : "/ward-flow/movements",
+      };
     case "unsuitable":
       return { kind: "link", label: "Review", href: patientHref };
     case "hold":

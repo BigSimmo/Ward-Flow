@@ -14,7 +14,6 @@ import { Field, Select, StatusGlyph } from "@/components/wf";
 import { CommunityFollowUp } from "./community-follow-up";
 import { CommunityFollowUpReply } from "./community-follow-up-reply";
 import styles from "./community.module.css";
-import { DEMO_COMMUNITY_EGRESS } from "./community-demo-cohort";
 import { unitName, expectedBackLabel, departureLabel, otherDepartureDestinations } from "./community-screen-helpers";
 import type { CommunityScreenView } from "./community-screen";
 
@@ -33,6 +32,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
     egressFilter,
     setEgressFilter,
     isDemoMode,
+    demoEgress,
     demoVisibleEgress,
     handleCompleteContact,
     lists,
@@ -62,7 +62,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                 onClick={() => setEgressFilter("all")}
               >
                 <span>All egress</span>
-                <span className={styles.badgePill}>{DEMO_COMMUNITY_EGRESS.length}</span>
+                <span className={styles.badgePill}>{demoEgress.length}</span>
               </button>
               <button
                 type="button"
@@ -72,7 +72,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
               >
                 <span>Overdue (priority follow-up)</span>
                 <span className={`${styles.badgePill} ${styles.inkDanger}`}>
-                  {DEMO_COMMUNITY_EGRESS.filter((e) => e.status === "overdue").length}
+                  {demoEgress.filter((e) => e.status === "overdue").length}
                 </span>
               </button>
               <button
@@ -82,9 +82,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                 onClick={() => setEgressFilter("today")}
               >
                 <span>Due today</span>
-                <span className={styles.badgePill}>
-                  {DEMO_COMMUNITY_EGRESS.filter((e) => e.status === "today").length}
-                </span>
+                <span className={styles.badgePill}>{demoEgress.filter((e) => e.status === "today").length}</span>
               </button>
               <button
                 type="button"
@@ -93,9 +91,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                 onClick={() => setEgressFilter("upcoming")}
               >
                 <span>Upcoming discharges</span>
-                <span className={styles.badgePill}>
-                  {DEMO_COMMUNITY_EGRESS.filter((e) => e.status === "upcoming").length}
-                </span>
+                <span className={styles.badgePill}>{demoEgress.filter((e) => e.status === "upcoming").length}</span>
               </button>
             </div>
             <div className={styles.filterMeta}>7-day follow-up after discharge (example measure)</div>

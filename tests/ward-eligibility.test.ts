@@ -239,6 +239,16 @@ describe("clinical and operational gates", () => {
     expect(verdict.gates.find((gate) => gate.gate === "prior_decline")?.pass).toBe(false);
   });
 
+  it("does not count a wait list answer that still stands (No suitable bed) as a decline (A9-05)", () => {
+    const waitlisted = movement({
+      referredUnitIds: ["u-test"],
+      waitlistedUnitIds: ["u-test"],
+      declines: [{ unitId: "u-test", at: NOW - 60, reason: "no_suitable_bed" }],
+    });
+    const verdict = eligibility(waitlisted, unit(), NOW);
+    expect(verdict.gates.find((gate) => gate.gate === "prior_decline")?.pass).toBe(true);
+  });
+
   it("drops a unit whose allocatable figure has gone stale rather than showing it hopefully", () => {
     const stale = unit({
       allocatable: { value: 4, source: "ward", confirmedAt: NOW - 200, staleAfterMinutes: 120 },

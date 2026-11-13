@@ -1,14 +1,14 @@
 {
   "$comment": "Phone first-load script budgets in KB gzipped, checked by scripts/check-script-budget.mjs after the production build. Set on 16 October 2026 at the measured size plus about 10 KB, and lowered the same day after the rail and search left a phone's first load. Lower a budget when a route shrinks. Raise one only with a reason in the PR. Raise and lowering history: docs/script-budget-history.md up to 4 November 2026, then one file per PR in docs/script-budget-history/ (see its README), not here.",
   "budgets": {
-    "/ward-flow": 586.6,
-    "/ward-flow/referrals": 591.9,
-    "/ward-flow/ed": 540.1,
-    "/ward-flow/ward/rph-adult-secure": 621.6,
-    "/ward-flow/movements/WF-001": 618.5,
-    "/ward-flow/capacity": 666.4,
-    "/ward-flow/ed/arm-ed": 676.9,
-    "/ward-flow/bed-meeting": 599.0,
-    "/ward-flow/statistics": 639.1
+    "/ward-flow": 590.6,
+    "/ward-flow/referrals": 598.3,
+    "/ward-flow/ed": 548.5,
+    "/ward-flow/ward/rph-adult-secure": 627.0,
+    "/ward-flow/movements/WF-001": 625.0,
+    "/ward-flow/capacity": 664.0,
+    "/ward-flow/ed/arm-ed": 686.3,
+    "/ward-flow/bed-meeting": 598.0,
+    "/ward-flow/statistics": 646.2
   }
 }

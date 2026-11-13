@@ -3,6 +3,7 @@ import { expect, test, type Locator, type Page } from "playwright/test";
 import { decodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { allUnits, unitById } from "@/components/ward-management/ward-sites";
+import { CHECKED_TRAVEL_BANDS } from "@/components/ward-management/ward-travel-bands";
 
 import {
   capacityReady,
@@ -40,6 +41,19 @@ import { escapeForRegExp } from "./helpers/ward-place-names";
  *
  * Desktop Chrome (1440px) and phone (390x844), one typed URL, then only the app's own links,
  * drawers and desks, with an axe WCAG 2.1 AA check at each key step. Synthetic data only.
+ *
+ * Josh 13 Nov 2026: travel times deferred until after the demo. The Out of area page lists only
+ * people whose home region and hospital have a CHECKED travel band (`CHECKED_TRAVEL_BANDS` in
+ * `ward-travel-bands.ts`, A16-04), and none is checked yet, so it lists nobody and offers no
+ * "Plan return" to start this journey from. No other in-app route opens a movement that carries an
+ * occupied stay (a ward-raised or step-down referral stops at acceptance or a referral bed hold,
+ * and the care journey's "Ward transfer" is one coordinator step), so while the list is empty the
+ * gate checks the starting figures and then that the page honestly shows "no travel time
+ * recorded". Steps 1 to 7 below (record the return, refer, accept and hold, transport and
+ * handover, arrival, the sending bed freeing, the capacity board agreeing) cannot be reached and
+ * do not run. When checked times are added, the branch below stops returning early and the whole
+ * journey runs again unchanged; if AD-RPHS-18 is then still not listed, the gate fails and needs a
+ * stay that is.
  */
 
 test.describe.configure({ timeout: 240_000 });
@@ -85,6 +99,53 @@ async function openReturnPlan(page: Page, admissionId: string) {
   const plan = page.getByTestId("ward-out-of-area-subject");
   await expect(plan).toBeVisible();
   return plan;
+}
+
+/**
+ * Josh 13 Nov 2026: travel times deferred until after the demo. With no checked travel band the
+ * Out of area page must say so rather than read as "nobody is far from home": nobody listed, the
+ * count of people with no travel time recorded above zero, no table or card for this stay, and no
+ * return plan to open. Restore: delete this helper and its call once `CHECKED_TRAVEL_BANDS` holds
+ * checked bands, and the journey below runs from the stay's "Plan return" again.
+ */
+async function expectOutOfAreaNotRecorded(page: Page, admissionId: string): Promise<void> {
+  await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
+  await goViaNav(page, "/ward-flow/out-of-area", "ward-out-of-area-board");
+  // The page's own counts, on both layouts.
+  await expect(page.getByTestId("ward-out-of-area-count-people")).toHaveText(
+    "0 people are recorded as being in a bed far from home.",
+  );
+  const notBandedText = (await page.getByTestId("ward-out-of-area-count-not-banded").textContent()) ?? "";
+  const notBanded = Number(/^(\d+) more could not be placed in a band\.$/u.exec(notBandedText)?.[1] ?? Number.NaN);
+  expect(notBanded, `people with no travel time recorded: "${notBandedText}"`).toBeGreaterThan(0);
+  if (isPhoneLayout(page)) {
+    // The phone has no empty-list sentence; Everyone lists nobody, and this stay has no card.
+    const everyone = page.getByRole("radio", { name: /^Everyone/u });
+    if ((await everyone.getAttribute("aria-checked")) !== "true") await everyone.click();
+    await expect(page.getByTestId("ward-out-of-area-cards").locator("li")).toHaveCount(0);
+    await expect(page.getByTestId(`ward-out-of-area-card-${admissionId}`)).toHaveCount(0);
+    // The phone's plan sheet carries the subject test id, and no plan is open.
+    await expect(page.getByTestId("ward-out-of-area-subject")).toHaveCount(0);
+  } else {
+    await expect(page.getByTestId("ward-out-of-area-empty")).toHaveText(
+      `Nobody is shown as far from home. ${notBanded} ${notBanded === 1 ? "person has" : "people have"} no travel time recorded.`,
+    );
+    await expect(page.getByTestId("ward-out-of-area-table")).toHaveCount(0);
+    await expect(page.getByTestId(`ward-out-of-area-row-${admissionId}`)).toHaveCount(0);
+    // With nobody chosen, the desktop's subject test id sits on the Ready to go home card (the
+    // help tour points at it), and that card lists nobody either.
+    const subject = page.getByTestId("ward-out-of-area-subject");
+    await expect(subject.getByTestId("ward-out-of-area-subject-empty")).toContainText(
+      "Nobody is past their discharge date",
+    );
+    await expect(subject.getByRole("button")).toHaveCount(0);
+  }
+  await expect(
+    page.getByRole("button", { name: /^(Plan return|Continue return plan|View recorded return)$/u }),
+  ).toHaveCount(0);
+  // No return plan is open on either layout.
+  await expect(page.locator("#ward-out-of-area-plan-title")).toHaveCount(0);
+  await expect(page.getByTestId("ward-out-of-area-subject-facts")).toHaveCount(0);
 }
 
 /**
@@ -142,6 +203,17 @@ test("Inpatient transfer: a stay on one ward is referred, accepted and held at a
     sendingCapacityReadyBefore,
   );
   await expectAccessible(page, testInfo, "sending ward Home");
+
+  // Josh 13 Nov 2026: travel times deferred until after the demo. With no checked band the Out of
+  // area page lists nobody, so there is no "Plan return" to start from and steps 1 to 7 cannot be
+  // reached (see this file's head comment). Assert the honest state instead of failing on a row
+  // that cannot exist. Restore: remove this block when checked travel times are added.
+  if (CHECKED_TRAVEL_BANDS.length === 0) {
+    await expectOutOfAreaNotRecorded(page, admissionId);
+    await expectAccessible(page, testInfo, "out of area, no travel time recorded");
+    await expectNoReloadSince(page, "checking the out of area page");
+    return;
+  }
 
   // 1. Request: the coordinator records the return with the receiving ward's agreement.
   const plan = await openReturnPlan(page, admissionId);

@@ -2667,6 +2667,13 @@ details[open] > summary > .phoneFoldChevron {
   background: var(--wf-data-closed);
 }
 
+/* D-179 item 8: empty but still being made ready, so not Ready. Hollow, edged in the ready colour. */
+.cell.cell.fillPreparing,
+.swatch.fillPreparing {
+  border: 1px dashed var(--wf-success);
+  background: var(--wf-surface);
+}
+
 .cell.cell.fillOccupied {
   border: 1px solid var(--wf-line);
   background: var(--wf-surface-2);

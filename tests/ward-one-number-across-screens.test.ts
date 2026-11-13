@@ -74,9 +74,14 @@ function boardFigures(state: WardFlowState, now: Instant, unit: Unit) {
   return {
     readyNow: headlineAvailable(unit, state.admissions, state.bedReleases, state.leaveBeds, now, holds),
     readyFigure: states.ready,
+    // D-179 item 8: an empty tile still being made ready is not a Ready tile.
     readyTiles: buildTiles(unit, state.admissions, state.bedReleases, now, { holds }).filter(
-      (tile) => tile.kind === "empty",
+      (tile) => tile.kind === "empty" && tile.preparing !== true,
     ).length,
+    preparingTiles: buildTiles(unit, state.admissions, state.bedReleases, now, { holds }).filter(
+      (tile) => tile.kind === "empty" && tile.preparing === true,
+    ).length,
+    beingMadeReady: states.beingMadeReady,
     occupied: states.occupied,
     pulledNotArrived: incoming.filter((person) => person.state === "pulled").length,
   };
@@ -366,7 +371,11 @@ describe("one number, one answer across Home, the board, the TV, Statistics and 
    *    Statistics, but 25 on the TV and print (WF-FIG-017).
    */
   it("Beds ready now (D-115): a referral's named bed is ready on no screen", () => {
-    const unitId = "rph-older-adult";
+    // A16-13 (13 Nov 2026): rph-older-adult has no ready bed left to name since its bed pulled for
+    // nobody became an arrival, so the named hold went on scgh-older-adult's ready bed. That ward is
+    // now the sample day's closed ward (no ward carries two adverse examples), so it goes on
+    // bty-older-adult's ready bed.
+    const unitId = "bty-older-adult";
     const accepted = wardFlowReducer(state, {
       type: "ACCEPT_REFERRAL",
       role: "ward",
@@ -424,7 +433,7 @@ describe("one number, one answer across Home, the board, the TV, Statistics and 
     expect(
       mismatches([
         { screen: "board headline", value: board.readyNow },
-        { screen: "Statistics bed map Ready and preparing", value: map.counts.ready + map.counts.prep },
+        { screen: "Statistics bed map Ready", value: map.counts.ready },
         { screen: "Statistics network row", value: row.states.ready },
       ]),
     ).toEqual([]);

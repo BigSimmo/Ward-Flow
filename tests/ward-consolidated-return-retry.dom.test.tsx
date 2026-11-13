@@ -9,6 +9,10 @@ import { outOfAreaLedger } from "@/components/ward-management/ward-referrals";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+// A16-04: the app shows only travel bands someone has checked (none yet). This file tests a
+// mechanism that needs bands, so importing this swaps in the tests' own invented table.
+import "./helpers/ward-test-travel-bands";
+
 configure({ getElementError: () => new Error("Synthetic return retry query failed; record text suppressed.") });
 afterEach(cleanup);
 

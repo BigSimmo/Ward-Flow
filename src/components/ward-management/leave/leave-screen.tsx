@@ -39,6 +39,7 @@ import { wardNames } from "@/components/ward-management/tools/ward-tool-remind-s
 import pageTopStyles from "@/components/ward-management/page-top-title.module.css";
 import { LEAVE_STATUS_LABEL, leaveTrackerRows, type LeaveStatus } from "./leave-tracker";
 import styles from "./leave-screen.module.css";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 /** Red for act now, as the Tools sheet's Due back already marks it: a person missing or overdue back. */
 const STATUS_TONE: Record<LeaveStatus, WfTone> = {
@@ -77,6 +78,7 @@ const LEAVE_ROWS = 8;
  * Print uses the browser's own print, as the other lists do. Synthetic records only.
  */
 export function LeaveScreen() {
+  const zone = useClockZoneLabel();
   const { leaveBeds, units, admissions, bedReleases, movements, referrals, resolvePatientIdentity, dayZero } =
     useWardFlowSelect(
       "leaveBeds",
@@ -165,7 +167,7 @@ export function LeaveScreen() {
       {/* On paper only: what the list holds and when, as the other printed lists say. */}
       <p className={styles.printScope} data-testid="ward-leave-print-scope">
         {needsActionOnly ? "Overdue or absent only" : "Everyone on leave"} · As at{" "}
-        {formatSheetMoment(now, dayZero, { includeYearAndZone: true })} · Identifiers may be included
+        {formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })} · Identifiers may be included
       </p>
       <Card aria-labelledby="ward-leave-list" className={styles.listCard}>
         <CardHead

@@ -92,8 +92,9 @@ describe("Audit 24-7 undo toasts", () => {
       fireEvent.click(screen.getByText("Record"));
     });
     const toast = screen.getByTestId("toast");
-    // CT-10: the toast says the engine's window, read from the shared constant.
-    expect(toast).toHaveTextContent("Undo within 5 min.");
+    // CT-10: the toast says the engine's window, read from the shared constant. D-192 (shared design
+    // parts item 4): as the clock time it ends, 10:42 plus 5 minutes.
+    expect(toast).toHaveTextContent("Referred · Undo until 10:47");
     fireEvent.click(within(toast).getByRole("button", { name: "Undo" }));
     fireEvent.click(screen.getByText("Leave"));
     expect(screen.queryByText("Record")).toBeNull();

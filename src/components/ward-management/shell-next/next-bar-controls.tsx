@@ -489,8 +489,8 @@ function WardBarNewMenuButton({
         aria-haspopup="menu"
         aria-expanded={open !== null}
         aria-controls={open !== null ? NEW_MENU_ID : undefined}
-        onPointerEnter={() => void loadNewMenu()}
-        onFocus={() => void loadNewMenu()}
+        onPointerEnter={() => void loadNewMenu().catch(() => undefined)}
+        onFocus={() => void loadNewMenu().catch(() => undefined)}
         onKeyDown={onKeyDown}
         onClick={(event) => {
           if (open !== null) setOpen(null);

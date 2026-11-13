@@ -8,6 +8,7 @@ import { notWaitingParts, waitingSplit } from "@/components/ward-management/ward
 import {
   ED_SEVERE_PRESSURE_WAIT_MINUTES,
   LONG_WAIT_MINUTES,
+  LONG_WAIT_TEXT,
 } from "@/components/ward-management/ward-operational-defaults";
 
 export type WaitBandId = "over24" | "over8" | "under8";
@@ -26,12 +27,13 @@ export const WAIT_BANDS: readonly {
 }[] = [
   {
     id: "over24",
-    title: "Past 24 hours",
+    // Time audit T8: from the long-wait value and its words, never a typed 24 * 60.
+    title: LONG_WAIT_TEXT.charAt(0).toUpperCase() + LONG_WAIT_TEXT.slice(1),
     // D-122 (Josh, 10 Nov 2026): no "past the access target" here, as that target is a setting and this band is fixed.
     note: "longest first",
     tone: "danger",
     limit: Number.POSITIVE_INFINITY,
-    test: (row) => row.waited >= 24 * 60,
+    test: (row) => row.waited >= LONG_WAIT_MINUTES,
   },
   {
     id: "over8",

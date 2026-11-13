@@ -31,7 +31,7 @@ import {
   observationStaffOnWard,
   type LeavingDestination,
 } from "@/components/ward-management/ward-admissions";
-import { bedsPendingPreparation, releaseBand } from "@/components/ward-management/ward-bed-availability";
+import { heldUpDueByTomorrow, releaseBand } from "@/components/ward-management/ward-bed-availability";
 import { currentShiftStartInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
 import {
   OVERRIDE_REASONS,
@@ -42,7 +42,7 @@ import {
 import { dayOf, formatInstant, formatInstantWithDay, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
-  BED_RELEASES_HELD_UP_ANY_DATE_LABEL,
+  BED_RELEASE_BLOCKED_FIGURE_LABEL,
   deriveAfternoonDischarges,
   overridesAgainstUnit,
 } from "@/components/ward-management/ward-derivations";
@@ -70,6 +70,11 @@ import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/compon
 import { type DeclineReason, EXTRA_TRAVEL_HOLD_MINUTES, type Rejection } from "@/components/ward-management/ward-model";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
+import {
+  bedPullUndoFields,
+  type BedPullUndoTarget,
+  nextPullTarget,
+} from "@/components/ward-management/ward-bed-pull-undo";
 import { wardTransferNeedsCoordinator } from "@/components/ward-management/ward-referrals";
 import { useDeskRoleSwitch, useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
@@ -80,6 +85,8 @@ import { CheckingFoot, durMinutes, Menu, type MenuItem, useIsPhone, useOptionalT
 import { savedAtToast } from "@/components/ward-management/ward-saved-at-toast";
 import { useActionToast } from "@/components/ward-management/use-action-toast";
 import { useWardUnitQueues } from "./use-ward-unit-queues";
+import { declineToastText } from "./ward-decline-toast-text";
+import { bedPulledToast, undoableToast } from "./ward-undo-toast";
 import styles from "./ward.module.css";
 import { wardAlerts } from "./ward-alert-counts";
 import type { WaitingReferral } from "./ward-bed-board";
@@ -105,6 +112,7 @@ import {
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 import { type OpenBedAsk, WardBedMoveReasonForm } from "./ward-bed-move-reason-form";
 import { OPEN_BED_MOVE_REASON_REQUIRED } from "@/components/ward-management/ward-bed-move-reason";
+import { pullHoldText } from "@/components/ward-management/ward-bed-hold";
 import {
   type BoardCheck,
   boardUndoEvent,
@@ -414,14 +422,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const online = useOnlineStatus();
   const [confirmNumbersOpen, setConfirmNumbersOpen] = useState(false);
   const [dailySheetOpen, setDailySheetOpen] = useState(false);
-  const [drawerLeavingDestination, setDrawerLeavingDestination] =
-    useState<LeavingDestination>("discharged-to-the-community");
+  // A9-14 (Audit 9, Josh 13 Nov 2026: no clinical choice starts selected): no destination is chosen
+  // until a person chooses one, and "Record that they have left" waits for it.
+  const [drawerLeavingDestination, setDrawerLeavingDestination] = useState<LeavingDestination | "">("");
   // A destination belongs to the bed it was chosen for: opening or stepping to another bed starts
-  // from the default again, so one person's choice is never recorded against the next.
+  // with none chosen again, so one person's choice is never recorded against the next.
   const [destinationBed, setDestinationBed] = useState<number | null>(null);
   if (destinationBed !== selectedBed) {
     setDestinationBed(selectedBed);
-    setDrawerLeavingDestination("discharged-to-the-community");
+    setDrawerLeavingDestination("");
   }
 
   useEffect(() => {
@@ -608,60 +617,54 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         (check.outcome && undo.kind === "movement" && recordSeq === undefined
           ? "No Undo record is available for this step."
           : undefined);
-      toast.push({
-        tone: "success",
-        title: check.success,
-        ...(undoLimit
-          ? { body: `Undo: ${undoLimit}` }
-          : {
-              undo: {
-                durationMs: UNDO_TOAST_MS,
-                onUndo: () => {
-                  if (wardUndoBlocked(check.outcome, warnToast)) return false;
-                  return runBoardCommand(
-                    () => {
-                      // Literal types, one per kind, so the override-surface guard reads each one.
-                      const at = nowRef.current;
-                      if (undo.kind === "stay")
-                        return dispatch({
-                          type: "UNDO_PLACE_IN_BED",
-                          role: "ward",
-                          now: at,
-                          admissionId: undo.admissionId,
-                          ...(recordSeq === undefined ? {} : { recordSeq }),
-                          actingUnitId: undo.unitId,
-                        });
-                      else if (undo.kind === "movement")
-                        return dispatch({
-                          type: "UNDO_ACCEPT_IN_PRINCIPLE",
-                          role: "ward",
-                          now: at,
-                          movementId: undo.movementId,
-                          recordSeq,
-                          actingUnitId: undo.unitId,
-                        });
-                      else
-                        return dispatch({
-                          type: "UNDO_REFERRAL_DECISION",
-                          role: "ward",
-                          now: at,
-                          referralId: undo.referralId,
-                          ...(recordSeq === undefined ? {} : { recordSeq }),
-                          actingUnitId: undo.unitId,
-                        });
-                    },
-                    {
-                      prior: rejectionCountRef.current,
-                      bed: check.bed,
-                      key: wardCommandKey("undo-board", check.bed),
-                      success: "Undone. The bed and the person are back where they were.",
-                      who: check.who,
-                    },
-                  );
-                },
+      toast.push(
+        undoableToast(check.success, undoLimit, {
+          durationMs: UNDO_TOAST_MS,
+          onUndo: () => {
+            if (wardUndoBlocked(check.outcome, warnToast)) return false;
+            return runBoardCommand(
+              () => {
+                // Literal types, one per kind, so the override-surface guard reads each one.
+                const at = nowRef.current;
+                if (undo.kind === "stay")
+                  return dispatch({
+                    type: "UNDO_PLACE_IN_BED",
+                    role: "ward",
+                    now: at,
+                    admissionId: undo.admissionId,
+                    ...(recordSeq === undefined ? {} : { recordSeq }),
+                    actingUnitId: undo.unitId,
+                  });
+                else if (undo.kind === "movement")
+                  return dispatch({
+                    type: "UNDO_ACCEPT_IN_PRINCIPLE",
+                    role: "ward",
+                    now: at,
+                    movementId: undo.movementId,
+                    recordSeq,
+                    actingUnitId: undo.unitId,
+                  });
+                else
+                  return dispatch({
+                    type: "UNDO_REFERRAL_DECISION",
+                    role: "ward",
+                    now: at,
+                    referralId: undo.referralId,
+                    ...(recordSeq === undefined ? {} : { recordSeq }),
+                    actingUnitId: undo.unitId,
+                  });
               },
-            }),
-      });
+              {
+                prior: rejectionCountRef.current,
+                bed: check.bed,
+                key: wardCommandKey("undo-board", check.bed),
+                success: "Undone. The bed and the person are back where they were.",
+                who: check.who,
+              },
+            );
+          },
+        }),
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `toast`, `routeRole` and `dispatch` are stable for the screen's life and the command helpers are read as they are now; the token drives this.
   }, [boardToken, rejections]);
@@ -845,10 +848,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     record: () => ReturnType<WardCommandDispatch>,
     undo?: { movementId: string; unitId: string },
     report?: DecisionReport,
+    pull?: BedPullUndoTarget,
   ) {
     const prior = rejections.length;
     completeCommand(`movement:${movementId}`, record, (outcome) => {
-      movementCheckRef.current = { prior, movementId, attempted, outcome, undo };
+      movementCheckRef.current = { prior, movementId, attempted, outcome, undo, pull };
       setCheckToken((token) => token + 1);
       report?.(outcome ? outcome.status === "accepted" : undefined);
     });
@@ -887,7 +891,32 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (refused && check.attempted === "ACCEPT_IN_PRINCIPLE") warnToast(namedNotRecordedMessage(refused.reason, who));
     // Design audit DA-11 (main): a pull says it worked, and focus stays with the arrival it changed.
     if (!refused && check.attempted === "PULL_PATIENT") {
-      toast?.push({ tone: "success", title: `Bed pulled for ${who}.` });
+      // A9-02: the same Undo as the patient page, kept for the whole Undo window or until dismissed.
+      const pull = check.pull;
+      const pullRole = routeRole === "bed_manager" ? "bed_manager" : "ward";
+      // Runs only from the toast's Undo press (a person's own Undo, D-187), never from this effect.
+      const onUndoPull = (target: BedPullUndoTarget) => {
+        if (wardUndoBlocked(check.outcome, warnToast)) return false;
+        return runBoardCommand(
+          // A literal type, so the override-surface guard reads it.
+          () => dispatch({ type: "RELEASE_PULL", role: pullRole, now: nowRef.current, ...bedPullUndoFields(target) }),
+          {
+            prior: rejectionCountRef.current,
+            bed: 0,
+            key: wardCommandKey("undo-pull", target.movementId),
+            success: `Bed pull undone for ${who}.`,
+            who,
+          },
+        );
+      };
+      toast?.push(
+        bedPulledToast(
+          who,
+          roleLimitReason(pullRole, "RELEASE_PULL"),
+          pull && (() => onUndoPull(pull)),
+          nowRef.current,
+        ),
+      );
       focusWardArrival(check.movementId);
     }
     if (!refused && check.undo && toast) {
@@ -896,37 +925,31 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       const undoLimit =
         roleLimitReason(routeRole, "UNDO_ACCEPT_IN_PRINCIPLE") ??
         (check.outcome && recordSeq === undefined ? "No Undo record is available for this step." : undefined);
-      toast.push({
-        tone: "success",
-        title: `Accepted ${who} in principle.`,
-        ...(undoLimit
-          ? { body: `Undo: ${undoLimit}` }
-          : {
-              undo: {
-                durationMs: UNDO_TOAST_MS,
-                onUndo: () => {
-                  if (wardUndoBlocked(check.outcome, warnToast)) return false;
-                  return runBoardCommand(
-                    () =>
-                      dispatch({
-                        type: "UNDO_ACCEPT_IN_PRINCIPLE",
-                        role: "ward",
-                        now: nowRef.current,
-                        movementId: undo.movementId,
-                        recordSeq,
-                        actingUnitId: undo.unitId,
-                      }),
-                    {
-                      prior: rejectionCountRef.current,
-                      bed: 0,
-                      key: wardCommandKey("undo-accept", undo.movementId),
-                      success: `Acceptance undone for ${who}. The referral is back with this ward.`,
-                    },
-                  );
-                },
+      toast.push(
+        undoableToast(`Accepted ${who} in principle.`, undoLimit, {
+          durationMs: UNDO_TOAST_MS,
+          onUndo: () => {
+            if (wardUndoBlocked(check.outcome, warnToast)) return false;
+            return runBoardCommand(
+              () =>
+                dispatch({
+                  type: "UNDO_ACCEPT_IN_PRINCIPLE",
+                  role: "ward",
+                  now: nowRef.current,
+                  movementId: undo.movementId,
+                  recordSeq,
+                  actingUnitId: undo.unitId,
+                }),
+              {
+                prior: rejectionCountRef.current,
+                bed: 0,
+                key: wardCommandKey("undo-accept", undo.movementId),
+                success: `Acceptance undone for ${who}. The referral is back with this ward.`,
               },
-            }),
-      });
+            );
+          },
+        }),
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Runs once per command completion (the token); `movements` and the helpers are read as committed then, not on every change.
   }, [rejections, checkToken]);
@@ -981,9 +1004,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // and "Confirmed 1, Expected 0" one screen over, for the exact same release. This screen now reads
   // the same breakdown so both screens describe the same beds the same way. `unitCapacity()` itself
   // is untouched — see its own doc comment on `potential` in `ward-derivations.ts`.
-  // Owner ruling 2026-09-05: shown BESIDE the Ready figure, never subtracted from it. The
-  // reducer's own helper, so this screen and the PULL_PATIENT refusal read one source.
-  const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
+  // D-179 item 8 (Josh, 13 Nov 2026): beds still being made ready are off Ready and counted on
+  // their own, from the same `bedStates` call as the Ready figure.
+  const pendingPreparation = states.beingMadeReady;
   // TypeScript's narrowing of `unit` above does not reach into the `submitDecline` /
   // `submitCapacity` closures defined further down (the same reason `shortlist-panel.tsx`'s
   // `handleRefer` closes over a plain `movementId` rather than re-checking `movement`), so this
@@ -1067,7 +1090,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const activeAnswerIndex = Math.min(answerIndex, Math.max(incoming.length - 1, 0));
   const visibleIncoming =
     presentation === "answer" ? incoming.slice(activeAnswerIndex, activeAnswerIndex + 1) : incoming;
-  const blockedReleases = pendingBedReleases.filter((release) => release.blocker !== null);
+  // D-191 item 5 (Josh, 13 Nov 2026): held up on the Ward page is due by tomorrow, as on Capacity,
+  // the TV and the sheet; a later held-up release is still listed on Discharges.
+  const blockedReleases = heldUpDueByTomorrow(pendingBedReleases, now);
 
   const rollupConfirmation = morningRollupConfirmations?.[unit.id];
   const isRollupConfirmedToday = Boolean(rollupConfirmation && dayOf(rollupConfirmation.confirmedAt) === dayOf(now));
@@ -1394,6 +1419,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         }
         setDeclineOpenFor(undefined);
         setDeclineReason(undefined);
+        // A9-05: say what was recorded, as the Answer view does ("waitlisted" or "declined").
+        setToastMessage(declineToastText(declineReason));
       },
     );
   }
@@ -1424,12 +1451,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   function handlePullPatient(movementId: string, unitId: string) {
     if (!units.some((u) => u.id === unitId)) return;
-    runMovementCommand(movementId, "PULL_PATIENT", () =>
-      raise("PULL_PATIENT", {
-        movementId,
-        unitId,
-        actingUnitId: unitId,
-      }),
+    runMovementCommand(
+      movementId,
+      "PULL_PATIENT",
+      () => raise("PULL_PATIENT", { movementId, unitId, actingUnitId: unitId }),
+      undefined,
+      undefined,
+      nextPullTarget(movements, movementId, unitId, unitId),
     );
   }
 
@@ -1690,10 +1718,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     );
   }
 
-  // Name departures through the scoped resolver. Released beds retain no patient label.
+  // Name departures through the scoped resolver. A9-30 (F-27): the bed is the stay's seat in `bedsList`.
+  const stayBedLabel = (admissionId: string) => bedsList.find((bed) => bed.stayAdmissionId === admissionId)?.bedLabel;
   function bedRecordLabel(admissionId: string): string {
     const who = resolvePatientIdentity(admissions.find((admission) => admission.id === admissionId)).formalName;
-    return `${who} (bed not recorded)`;
+    return `${who} (${stayBedLabel(admissionId) ?? "bed not recorded"})`;
   }
 
   // Q93: the UMRN and date of birth a bulk sign-off lists under each name.
@@ -1780,7 +1809,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     id: leaveBed.id,
     title: leaveBed.absentWithoutLeave
       ? `Bed held · absent without leave since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}`
-      : `Bed on leave · back ${formatInstant(leaveBed.expectedReturn)}`,
+      : `${stayBedLabel(leaveBed.admissionId) ?? "Bed"} on leave · back ${formatInstant(leaveBed.expectedReturn)}`,
   }));
   // The ward answers its own referrals: the site bed manager sees them but has no Accept (D-80).
   const answerBlockedReason = routeRole === "bed_manager" ? `${unit.name} answers its own referrals.` : undefined;
@@ -1980,7 +2009,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           },
           {
             id: "held",
-            label: BED_RELEASES_HELD_UP_ANY_DATE_LABEL,
+            label: BED_RELEASE_BLOCKED_FIGURE_LABEL,
             value: blockedReleases.length,
             tone: blockedReleases.length > 0 ? "danger" : undefined,
           },
@@ -2507,10 +2536,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             now={now}
             extended={cockpitHold?.movementId === cockpitAcceptMovement.id && cockpitHold.extended}
             holdChoices={[
-              { extended: false, label: `${durMinutes(configuration.pullHoldMinutes)} standard` },
+              { extended: false, label: `${pullHoldText(configuration.pullHoldMinutes)} standard` },
               {
                 extended: true,
-                label: `${durMinutes(configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES)} with extra travel`,
+                label: `${pullHoldText(configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES)} with extra travel`,
               },
             ]}
             dialogRef={cockpitAcceptRef}

@@ -14,6 +14,10 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { HOME_REGIONS, type Movement } from "@/components/ward-management/ward-model";
 import { occupiedBeds } from "@/components/ward-management/statistics/statistics-occupancy";
 
+// A16-04: the app shows only travel bands someone has checked (none yet). This file tests a
+// mechanism that needs bands, so importing this swaps in the tests' own invented table.
+import "./helpers/ward-test-travel-bands";
+
 const DAY = MINUTES_PER_DAY;
 // Wednesday 7 October 2026: day 0. The last full week is Mon 28 Sep (day -9) to Sun 4 Oct (day -3).
 // Perth midnight, not the test machine's local midnight (audit TC2-08: a Sydney zone failed).

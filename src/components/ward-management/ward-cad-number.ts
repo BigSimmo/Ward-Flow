@@ -9,6 +9,8 @@
  * number field, either of which reads on screen as though a job number had been given.
  */
 
+import { TYPED_TEXT_NOT_KEPT } from "./ward-flow-demo-storage-constants";
+
 /** Longest number accepted. Dispatch numbers are short; anything longer is free text. */
 export const CAD_NUMBER_MAX_LENGTH = 24;
 
@@ -96,4 +98,17 @@ export function cadNumberToFollow(
     providerNeedsCadNumber(transport.provider) &&
     (transport.cadNumber ?? "").trim().length === 0
   );
+}
+
+/**
+ * F-119 (Audit 9, walk 1): a CAD number typed on this device is not kept after a reload; the record
+ * then holds the "Typed text not kept on this device" placeholder, which read as "CAD Typed text not
+ * kept on this device" on the patient's Transport row. Said in the field's own words instead.
+ */
+const CAD_NUMBER_NOT_KEPT = "CAD number not kept on this device";
+
+/** "CAD 4471", or `CAD_NUMBER_NOT_KEPT` for a number this device did not keep. */
+export function cadNumberLine(cadNumber: string): string {
+  if (cadNumber === TYPED_TEXT_NOT_KEPT) return CAD_NUMBER_NOT_KEPT;
+  return /^CAD/i.test(cadNumber) ? cadNumber : `CAD ${cadNumber}`;
 }

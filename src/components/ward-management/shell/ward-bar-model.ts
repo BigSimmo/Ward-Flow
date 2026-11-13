@@ -255,6 +255,8 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
     (/^\/ward-flow\/reports\/downtime\/?$/u.test(pathname) ? "Downtime pack" : undefined) ??
     // Feature plan item 29: the coordinator's overnight page names itself, not "Ward Flow".
     (/^\/ward-flow\/night\/?$/u.test(pathname) ? "Night view" : undefined) ??
+    // F-77 (Audit 15, A15-25): About this demo names itself.
+    (/^\/ward-flow\/about\/?$/u.test(pathname) ? "About this demo" : undefined) ??
     (/^\/ward-flow\/reports\/chronology\/?$/u.test(pathname) ? "Patient chronology" : undefined) ??
     (pathname === WARD_ADD_PERSON_HREF ? "Add patient" : undefined) ??
     (/^\/ward-flow\/people\/[^/]+\/?$/u.test(pathname) ? "Patient" : undefined) ??

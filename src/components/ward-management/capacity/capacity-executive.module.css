@@ -1,0 +1,36 @@
+/* A9-17 (Josh, 13 Nov 2026): the Executive desk's Capacity table, drawn with the kit's table
+ * (`tableClasses`) as Statistics > Wards is. These rules only set what the kit leaves to the page:
+ * row headings in sentence case, numbers to the right, a totals row and a sideways scroll on a phone. */
+
+.tableWrap {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.table {
+  min-width: 36rem;
+}
+
+.table thead th:not(:first-child) {
+  text-align: right;
+}
+
+.table tbody th,
+.table tfoot th {
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+  text-transform: none;
+  letter-spacing: 0;
+  text-align: left;
+  white-space: normal;
+}
+
+.total > * {
+  font-weight: 600;
+  background: var(--wf-surface-2);
+  border-top: 1px solid var(--wf-line-2);
+}
+
+.total > th {
+  font-weight: 600;
+}

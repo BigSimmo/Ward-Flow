@@ -11,7 +11,7 @@ import {
  * the long wait and the very long wait), so no second ladder exists. The showcase's 12 hour step and
  * 22 hour edge are not used.
  *
- * ⚠️ The step names are plain ("Step 2, over 8 hours"). No WA Health escalation names are sourced
+ * ⚠️ The step names are plain ("Step 2, from 8 hours"). No WA Health escalation names are sourced
  * in this repository, so none is invented; naming each step is left to Josh. Like "Waiting over 24
  * hours" (D-24), a step is a neutral fact, never a breach.
  */
@@ -19,7 +19,7 @@ export type EdWaitStep = {
   step: 1 | 2 | 3 | 4;
   /** From this many minutes in the department. */
   fromMinutes: number;
-  /** "Step 2, over 8 hours". */
+  /** "Step 2, from 8 hours": the step starts AT its threshold, and the label says so (K27). */
   label: string;
   /** The suggested next step for this wait (D-108). A prompt for a person, never an automatic action. */
   nextStep: string;
@@ -73,9 +73,16 @@ const STEP_THRESHOLDS: readonly { step: EdWaitStep["step"]; fromMinutes: number 
   { step: 1, fromMinutes: ED_ELEVATED_PRESSURE_WAIT_MINUTES },
 ];
 
+/**
+ * K27, RC 3.2 (F-32, 13 Nov 2026): the label used to say "over 8 hours" while the step starts at
+ * exactly 8 hours (`>=` below). The boundary stays at or past each threshold, because Josh ruled
+ * one boundary for every screen (11 Nov 2026, `isLongWait`: exactly 24 hours counts), so Step 3 and
+ * the "past 24 hours" flag still start in the same minute. The word changes instead: "from", which
+ * includes the threshold minute. The thresholds themselves are untouched.
+ */
 function hoursWords(minutes: number): string {
   const hours = minutes / 60;
-  return `over ${Number.isInteger(hours) ? hours : hours.toFixed(1)} ${hours === 1 ? "hour" : "hours"}`;
+  return `from ${Number.isInteger(hours) ? hours : hours.toFixed(1)} ${hours === 1 ? "hour" : "hours"}`;
 }
 
 /**

@@ -17,7 +17,7 @@ import type { Referral } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { formatReferralIntakeTime } from "@/components/ward-management/ward-referral-seed-time";
+import { referralIntakeExpected } from "@/components/ward-management/ward-referral-seed-time";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { REFERRAL_SOURCE_WORDS, askingForShort, waitWords } from "./referral-board-parts";
@@ -32,6 +32,7 @@ import type { ReferralSheetTab } from "./referral-sheet-bus";
 import { ReferralSentTo } from "./referral-sheet-sent-to";
 import s from "./referral-tabs.module.css";
 import t from "./referral-sheet-tabs.module.css";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 const TAB_PREFIX = "ward-referral-sheet";
 
@@ -91,6 +92,7 @@ export function ReferralSummarySheet({
   initialTab?: ReferralSheetTab;
 }) {
   const { dayZero, units } = useWardFlowSelect("dayZero", "units");
+  const zone = useClockZoneLabel();
   const access = useEffectiveWardAccess();
   const sentVisible = referralSentToVisible(access, referral, units);
   const [chosen, setChosen] = useState<ReferralSheetTab>(initialTab);
@@ -218,7 +220,7 @@ export function ReferralSummarySheet({
                     {intake
                       ? intake.medicalClearance.cleared
                         ? "Cleared"
-                        : `Pending, expected ${formatReferralIntakeTime(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero, now)}`
+                        : `Pending, expected ${referralIntakeExpected(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero, now, zone)}`
                       : "Not recorded"}
                   </dd>
                 </div>
@@ -274,7 +276,7 @@ export function ReferralSummarySheet({
                       Letter:{" "}
                       {intake.medicalClearance.cleared
                         ? "cleared"
-                        : `pending, expected ${formatReferralIntakeTime(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero, now)}`}
+                        : `pending, expected ${referralIntakeExpected(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero, now, zone)}`}
                     </span>
                   ) : null}
                 </dd>

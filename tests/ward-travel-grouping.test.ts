@@ -37,6 +37,11 @@ import { NOW_ANCHOR, allUnits } from "../src/components/ward-management/ward-sit
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
+
+// A16-04: the app shows only travel bands someone has checked (none yet). This file tests a
+// mechanism that needs bands, so importing this swaps in the tests' own invented table.
+import "./helpers/ward-test-travel-bands";
+
 /**
  * Phase 8 Task 3. The same boundary `tests/ward-travel-bands.test.ts` sets for itself applies here
  * and for the same reason: every value in `SYNTHETIC_TRAVEL_BANDS` is invented, sits beside REAL

@@ -11,6 +11,7 @@ import {
   isClockBreached,
   splitDuration,
 } from "@/components/ward-management/ward-clock";
+import { targetHoursText } from "@/components/ward-management/ward-target-hours";
 import { typedClock, typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import {
   currentLegalPosition,
@@ -113,7 +114,7 @@ export function renderEdBoardTableRow(
   const formExpiryFullWords = legal.ended
     ? FORM_RECORDED_ENDED
     : legal.dueAt !== undefined
-      ? `${typedTimePhrase(legal.dueAt, now)} (limits not legally checked)`
+      ? `${typedTimePhrase(legal.dueAt, now, dayZero)} (limits not legally checked)`
       : undefined;
   const clearedWords =
     medicalClearance === undefined ? "Pending" : medicalClearance.cleared ? "Cleared" : "Not cleared";
@@ -168,7 +169,9 @@ export function renderEdBoardTableRow(
           </span>
         ) : null}
       </span>
-      <span className={styles.a2Facts}>{referredFact}</span>
+      {/* D-192 (shared design parts item 9): the place wraps to two lines before any "…", so
+          "Bunbury Acute Psychiatric Unit" is never cut at 1440 or 1280. */}
+      <span className={`${styles.a2Facts} ${styles.a2Place}`}>{referredFact}</span>
     </>
   );
   const nextCell =
@@ -299,7 +302,8 @@ export function renderEdBoardTableRow(
             <EscalationLastOutcome movement={movement} step={waitStep.step} now={now} />
           </span>
         ) : null}
-        {/* Six features build (Josh's sign-off, 9 Nov 2026): the step's suggested next step, as a prompt.
+        {/* Six features build (Josh's sign-off, 9 Nov 2026): the step's next escalation step, as a prompt
+            (D-192: "Next escalation step", was "Suggested next step").
             3.1: once the step's own action is recorded, the journey's neutral words stand instead. */}
         {waitStep && waitStep.actionDone ? (
           <span className={styles.a2Sub} data-testid={`ward-ed-wait-journey-${movement.id}`}>
@@ -309,10 +313,10 @@ export function renderEdBoardTableRow(
           <span
             className={styles.a2Sub}
             data-testid={`ward-ed-wait-next-step-${movement.id}`}
-            title={`Suggested next step: ${waitStep.nextStep}`}
+            title={`Next escalation step: ${waitStep.nextStep}`}
           >
             <span aria-hidden="true">{waitStep.nextStepShort}</span>
-            <span className="sr-only">Suggested next step: {waitStep.nextStep}</span>
+            <span className="sr-only">Next escalation step: {waitStep.nextStep}</span>
           </span>
         ) : null}
         {/* Escalation calls (item 3, D-133): who to call at this step, and what happened. A closed
@@ -331,16 +335,16 @@ export function renderEdBoardTableRow(
           className={overTarget ? handover.overTarget : "sr-only"}
           data-testid={`ward-ed-access-target-${movement.id}`}
           data-state={overTarget ? "over" : "under"}
-          title={`Access target ${splitDuration(accessTarget)}`}
+          title={`Access target ${targetHoursText(accessTarget)}`}
         >
           {overTarget ? (
             <span aria-hidden="true">{minutesInDepartment > accessTarget ? "Over target" : "At target"}</span>
           ) : null}
           <span className="sr-only">
-            Access target {splitDuration(accessTarget)}.
+            Access target {targetHoursText(accessTarget)}.
             {overTarget
               ? minutesInDepartment > accessTarget
-                ? ` ${splitDuration(minutesInDepartment - accessTarget)} over target (${splitDuration(accessTarget)})`
+                ? ` ${splitDuration(minutesInDepartment - accessTarget)} over target (${targetHoursText(accessTarget)})`
                 : " At the access target."
               : ""}
           </span>
@@ -386,7 +390,8 @@ export function renderEdBoardTableRow(
                   {formExpiryWarningText !== undefined ? (
                     <StatusGlyph tone={formExpiryPassed ? "danger" : "warning"} size={8} />
                   ) : null}{" "}
-                  {isClockBreached(legal.dueAt, now) ? "ended" : "ends"} {typedClock(legal.dueAt, now)}, not checked
+                  {isClockBreached(legal.dueAt, now) ? "ended" : "ends"} {typedClock(legal.dueAt, now, dayZero)}, not
+                  checked
                 </span>
               ) : null}
             </FormCell>

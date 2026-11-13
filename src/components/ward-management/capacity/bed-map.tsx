@@ -33,6 +33,8 @@ export type BedMapWard = {
   unit: Unit;
   /** `bedStates().ready` — the same partition as the network table. */
   ready: number;
+  /** `bedStates().beingMadeReady` — taken off Ready and drawn as its own square (D-179 item 8). */
+  beingMadeReady: number;
   /** `bedStates().pulled` — allocated to a named patient who has not arrived yet. */
   pulled: number;
   /** `bedStates().closed` — physically empty, not offered (out-of-service beds fold in here). */
@@ -42,13 +44,10 @@ export type BedMapWard = {
   /** Inside `occupied`: beds held for a patient on leave. A marker beside the squares, never one. */
   onLeave: number;
   /**
-   * How many discharged beds are still being made ready — `bedsPendingPreparation`, the same function
-   * whose result gates `PULL_PATIENT` in the reducer. **Never subtracted from `ready`**: owner
-   * ruling 2026-09-05 (see `capacity-derivations.ts`'s `NetworkWardRow.pendingPreparation`), because
-   * a bed being cleaned does not change what the ward can staff. This map draws it as a hatch OVER
-   * a ready square rather than as a different-coloured square, for exactly that reason — it is
-   * not usable this minute. If a later capacity observation no longer offers it as Ready, the
-   * preparation record remains visible in words without implying another available bed.
+   * How many discharged beds are still being made ready — `bedsPendingPreparation`, every record,
+   * said in words beside the squares. Since D-179 item 8 (Josh, 13 Nov 2026) these are not Ready:
+   * the ones the ward was offering are `beingMadeReady`, drawn as their own squares. A record beyond
+   * what the ward offers is already inside Closed and is said in words only, never drawn twice.
    */
   pendingPreparation: number;
 };
@@ -84,6 +83,7 @@ export function bedMapWards(
     return {
       unit,
       ready: states.ready,
+      beingMadeReady: states.beingMadeReady,
       pulled: states.pulled,
       closed: states.closed,
       occupied: states.occupied,

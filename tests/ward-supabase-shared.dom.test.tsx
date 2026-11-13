@@ -725,7 +725,7 @@ describe("sign-out across tabs and the session limit (Audit 5 PS-08, Audit 4 A4-
   const startedAt = 1_790_000_000; // seconds, the token's first sign-in factor
   const payload = btoa(JSON.stringify({ amr: [{ method: "password", timestamp: startedAt }] })).replace(/=+$/, "");
   const access = `header.${payload}.signature`;
-  async function signedIn() {
+  async function signedIn(serverAheadMs?: number) {
     channels.length = 0;
     vi.stubGlobal(
       "BroadcastChannel",
@@ -746,7 +746,12 @@ describe("sign-out across tabs and the session limit (Audit 5 PS-08, Audit 4 A4-
       "fetch",
       vi.fn(async (url) =>
         String(url).includes("/v1/workspace")
-          ? Response.json({ snapshot: null }, { status: 503 })
+          ? Response.json(
+              serverAheadMs === undefined
+                ? { snapshot: null }
+                : { snapshot: null, serverTime: Date.now() + serverAheadMs },
+              { status: 503 },
+            )
           : String(url).endsWith("/user")
             ? Response.json(user)
             : String(url).includes("/logout")
@@ -830,6 +835,16 @@ describe("sign-out across tabs and the session limit (Audit 5 PS-08, Audit 4 A4-
     await waitFor(() =>
       expect(result.current.sessionEndsAt).toBe(startedAt * 1000 + CLINICAL_VALUES.sessionLimit.value * 3_600_000),
     );
+  });
+
+  it("moves the session limit onto this device's clock when the server's clock differs (time audit C2)", async () => {
+    // The server's clock is ten minutes ahead of this device's, so the limit comes ten minutes
+    // sooner here, as TC2-05 does for the access deadline. An answer without `serverTime` is above.
+    const { result } = await signedIn(10 * 60_000);
+    const serverEnd = startedAt * 1000 + CLINICAL_VALUES.sessionLimit.value * 3_600_000;
+    await waitFor(() => expect(result.current.sessionEndsAt).not.toBeNull());
+    expect(result.current.sessionEndsAt).toBeGreaterThan(serverEnd - 10 * 60_000 - 1_000);
+    expect(result.current.sessionEndsAt).toBeLessThanOrEqual(serverEnd - 10 * 60_000 + 1_000);
   });
 });
 

@@ -1,21 +1,25 @@
 "use client";
 
 import { History, ListChecks } from "lucide-react";
-import { Button, Card, CardHead, Meter, StatusGlyph } from "@/components/wf";
+import { Button, Card, CardHead, Meter, StatusGlyph, WhoDoesThis } from "@/components/wf";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import type { NextStep, StayProgress } from "./patient-now-ward";
 import { dischargeReadiness, recentStayEvents } from "./patient-now-ward-recent";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import styles from "./patient-now-ward-cards.module.css";
 import { PatientNextStepButton } from "./patient-now-ward-button";
+import { useRouteRole, type RoleLimit } from "@/components/ward-management/ward-role-gate";
+import { whoDoesThisLine } from "@/components/ward-management/ward-who-does-this";
 
 /**
  * Next step first (Josh, 3 Nov 2026): one card leading Now with the single thing due and one button.
  * On a phone the pinned bar already carries the same action as the page's one filled button, so the
  * card's button is the quiet secondary there (`quiet`).
  */
+/** D-192 (shared design parts item 6): the Next step card's words when no step is this desk's. */
+export const NOTHING_FOR_YOUR_DESK = "Nothing for your desk now.";
+
 export function PatientNextStepCard({
   step,
   quiet = false,
@@ -23,24 +27,32 @@ export function PatientNextStepCard({
 }: {
   step: NextStep;
   quiet?: boolean;
-  roleLimit?: (event: WardFlowEventType) => string | undefined;
+  roleLimit?: RoleLimit;
 }) {
+  const routeRole = useRouteRole();
+  // F-54 (A9-35): this desk can never take the step. D-192 (shared design parts item 6): the card
+  // then says "Nothing for your desk now.", keeps the fact, and one quiet line names who takes it.
+  const neverEvent = step.action?.event && roleLimit?.(step.action.event) === null ? step.action.event : undefined;
+  const who = neverEvent ? whoDoesThisLine(routeRole, [neverEvent]) : undefined;
   return (
     <Card
       className={styles.next}
       data-testid="ward-patient-next-step"
       data-in-bar={quiet || undefined}
+      data-not-for-desk={neverEvent ? "" : undefined}
       aria-labelledby="pn-next-step"
     >
       <div className={styles.nextBody}>
         <span className={styles.eyebrow}>Next step</span>
         <h2 id="pn-next-step" className={styles.nextTitle}>
-          <StatusGlyph tone={step.tone} size={12} />
-          <span>{step.title}</span>
+          <StatusGlyph tone={neverEvent ? "neutral" : step.tone} size={12} />
+          <span>{neverEvent ? NOTHING_FOR_YOUR_DESK : step.title}</span>
         </h2>
         <p className={styles.nextDetail}>{step.detail}</p>
+        {who ? <WhoDoesThis className={styles.nextWho}>{who}</WhoDoesThis> : null}
       </div>
-      {step.action ? (
+      {/* F-54 (A9-35): no empty button slot when this desk can never take the step. */}
+      {step.action && !neverEvent ? (
         <div className={styles.nextAction}>
           <PatientNextStepButton
             action={step.action}

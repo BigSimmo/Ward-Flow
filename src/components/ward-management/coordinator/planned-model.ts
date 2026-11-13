@@ -2,6 +2,7 @@ import { placeDisplayName } from "@/components/ward-management/ward-place-names"
 import type { WardConfiguration } from "@/components/ward-management/ward-configuration";
 import { bedIsOccupied, type Admission, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { targetHoursText } from "@/components/ward-management/ward-target-hours";
 import { decisionTargetReading } from "@/components/ward-management/ward-decision-targets";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -129,7 +130,7 @@ export function plannedRows(input: PlannedInput): PlannedRow[] {
         id: `ed-target:${movement.id}`,
         at: movement.openedAt + configuration.edAccessTargetMinutes,
         kind: "target",
-        what: `Reaches your ${splitDuration(configuration.edAccessTargetMinutes)} ED access target`,
+        what: `Reaches your ED access target (${targetHoursText(configuration.edAccessTargetMinutes)})`,
         ...person,
         where: origin(movement),
       });

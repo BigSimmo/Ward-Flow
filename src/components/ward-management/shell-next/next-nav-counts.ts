@@ -19,6 +19,7 @@ import { wardPlaceIdFor } from "@/components/ward-management/ward-place";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { unitInScope } from "@/components/ward-management/ward-role-access";
 import { totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { wardDeskAnswerCount } from "@/components/ward-management/referrals/home-ward-offers";
 
 /**
  * The real hook's role, counts and place id (see its file for why the rail, dock and menu share one
@@ -72,19 +73,33 @@ export function useNextNavCounts(): {
     thresholds,
     service,
   });
+  // A9-30 (F-27, 13 Nov 2026): on a ward desk, a bed offered straight to the ward is the ward's to
+  // answer too, so its Referrals badge counts it, as the board's title and My ward's "Awaiting your
+  // answer" do (`wardDeskAnswerCount`). Other desks keep the referral queue alone: an offer waits on
+  // a ward, not on them.
+  const deskCounts: WardNavCounts =
+    scope.kind === "ward" && counts.referrals
+      ? {
+          ...counts,
+          referrals: {
+            ...counts.referrals,
+            value: wardDeskAnswerCount(counts.referrals.value, movements, referrals),
+          },
+        }
+      : counts;
   return {
     role: deskRole === WARD_SHELL_ROLE ? routeRole : deskRole,
     shellRole: deskRole,
     counts:
-      placeUnits && counts.capacity
+      placeUnits && deskCounts.capacity
         ? {
-            ...counts,
+            ...deskCounts,
             capacity: {
-              ...counts.capacity,
+              ...deskCounts.capacity,
               value: totalReadyBedsNow(placeUnits, admissions ?? [], bedReleases, [...movements, ...referrals]),
             },
           }
-        : counts,
+        : deskCounts,
     placeId: wardPlaceIdFor(pathname),
   };
 }

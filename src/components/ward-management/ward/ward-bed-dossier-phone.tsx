@@ -41,6 +41,8 @@ interface PhoneBedSheetProps {
   bedLabel: string;
   bedItem: BedItem | undefined;
   isReady: boolean;
+  /** C03: a closed bed with nobody in it, in the bed list's words, or null. */
+  closedEmpty: { state: string; reason: string } | null;
   occupantAlias: string;
   isOccupied: boolean;
   isAwayAtEd: boolean;
@@ -58,10 +60,10 @@ interface PhoneBedSheetProps {
   selectedBlocker: BedReleaseBlocker | "";
   setSelectedBlocker: (blocker: BedReleaseBlocker | "") => void;
   blockerSelectRef: React.RefObject<HTMLDivElement | null>;
-  drawerLeavingDestination: LeavingDestination;
+  drawerLeavingDestination: LeavingDestination | "";
   setDrawerLeavingDestination: (dest: LeavingDestination) => void;
   onClose: () => void;
-  onRecordLeft: (admissionId: string, who: string, destination: LeavingDestination) => void;
+  onRecordLeft: (admissionId: string, who: string, destination: LeavingDestination | "") => void;
   /** The blocker save; its `submit` is absent where this desk may not record one. */
   blockerSave: BlockerSave;
   onSetObservation?: (
@@ -116,6 +118,7 @@ export function PhoneBedSheet({
   bedLabel,
   bedItem,
   isReady,
+  closedEmpty,
   occupantAlias,
   isOccupied,
   tone,
@@ -156,7 +159,7 @@ export function PhoneBedSheet({
 }: PhoneBedSheetProps) {
   const chip = tone ? CHIP_LABEL.get(tone) : undefined;
   // Redesign: sex moves up from a fact tile to the line under the name, as on the desktop drawer.
-  const sub = [bedItem?.umrn, isReady ? null : bedItem?.sex, bedItem?.podLabel ?? bedItem?.designation]
+  const sub = [bedItem?.umrn, isReady || closedEmpty ? null : bedItem?.sex, bedItem?.podLabel ?? bedItem?.designation]
     .filter(Boolean)
     .join(" · ");
   const admissionId = bedItem?.admissionId;
@@ -201,7 +204,13 @@ export function PhoneBedSheet({
           <div className={styles.drawerHeading}>
             <h2 id="drawer-bed-title" className={styles.phoneTitle}>
               {bedLabel} ·{" "}
-              {isReady ? (bedItem?.preparing ? BED_STATE_LABELS.beingMadeReady : "Ready bed") : occupantAlias}
+              {isReady
+                ? bedItem?.preparing
+                  ? BED_STATE_LABELS.beingMadeReady
+                  : "Ready bed"
+                : closedEmpty
+                  ? "Closed bed"
+                  : occupantAlias}
             </h2>
             {sub ? <p className={styles.drawerKicker}>{sub}</p> : null}
             {/* WH4 polish: the same soft pill as the desktop hero, tinted by the bed's tone. */}
@@ -225,7 +234,24 @@ export function PhoneBedSheet({
         </header>
 
         <div className={styles.phoneBody}>
-          {isReady ? (
+          {closedEmpty ? (
+            <>
+              <div className={styles.phoneFacts}>
+                <FactTile label="Now" value="Closed" tone="closed" />
+                <FactTile label="Offered" value="Not offered" />
+              </div>
+              <dl className={styles.phoneKv} data-testid="ward-drawer-closed-reason">
+                <Row label="Closed">{closedEmpty.state}</Row>
+                <Row label="Reason">{closedEmpty.reason}</Row>
+              </dl>
+              {timeline.length > 0 ? (
+                <>
+                  <h3 className={styles.phoneSec}>History</h3>
+                  {timelineList}
+                </>
+              ) : null}
+            </>
+          ) : isReady ? (
             <>
               <div className={styles.phoneFacts}>
                 <FactTile
@@ -273,6 +299,7 @@ export function PhoneBedSheet({
                   now={now}
                   showCurrent={false}
                   editingToken={observationToken}
+                  draftKey={`observation:${admissionId}`}
                   onSave={
                     onSetObservation ? (next, expected) => onSetObservation(admissionId, next, expected) : undefined
                   }
@@ -327,7 +354,8 @@ export function PhoneBedSheet({
                 <p className={styles.footDestination} id="drawer-leaving-summary-phone">
                   Going to{" "}
                   <strong>
-                    {LEAVING_DESTINATIONS.find((destination) => destination.id === drawerLeavingDestination)?.label}
+                    {LEAVING_DESTINATIONS.find((destination) => destination.id === drawerLeavingDestination)?.label ??
+                      "Not chosen yet"}
                   </strong>
                 </p>
                 {leavingCriteriaNote ? (

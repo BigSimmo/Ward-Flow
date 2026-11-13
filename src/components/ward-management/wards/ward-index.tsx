@@ -1084,7 +1084,11 @@ function WardProfileFacts({
       {row.pendingPreparation > 0 ? (
         <>
           <dt>Being made ready</dt>
-          <dd>{row.pendingPreparation} of the ready beds</dd>
+          <dd>
+            {row.pendingPreparation === 1
+              ? "1 bed, not counted as ready"
+              : `${row.pendingPreparation} beds, not counted as ready`}
+          </dd>
         </>
       ) : null}
       {showStaff ? (

@@ -1,5 +1,5 @@
 import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import type { Referral, ReferralContactEntry, ReferralOwnerEntry, Unit } from "@/components/ward-management/ward-model";
 import { referralState } from "@/components/ward-management/ward-referrals";
 
@@ -47,17 +47,15 @@ export function referralContactTargetLabel(
   }
 }
 
-/** "5 min ago", "1h 40m ago", or "just now". */
+/** "5m ago", "1h 40m ago", "2d 3h ago" (`splitDuration`, F-35), or "just now". */
 export function minutesAgoLabel(at: Instant, now: Instant): string {
   const minutes = Math.max(0, Math.round(now - at));
   if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes} min ago`;
-  const hours = Math.floor(minutes / 60);
-  return `${hours}h ${String(minutes % 60).padStart(2, "0")}m ago`;
+  return `${splitDuration(minutes)} ago`;
 }
 
 /**
- * The queue row's short line: "Owner Bed coordinator · last call 40 min ago", either half alone,
+ * The queue row's short line: "Owner Bed coordinator · last call 40m ago", either half alone,
  * or `undefined` when the referral has neither.
  */
 export function referralFollowUpLine(referral: Referral, now: Instant): string | undefined {

@@ -11,7 +11,8 @@ import { ClipboardList, Printer, ShieldAlert } from "lucide-react";
 
 import { Badge, Button, Meter, Segmented } from "@/components/wf";
 import type { PilotFigures } from "@/components/ward-management/reports/pilot-measures-section";
-import { PeopleNotListed } from "@/components/ward-management/statistics/statistics-small-numbers";
+import { countInSentence, PeopleNotListed } from "@/components/ward-management/statistics/statistics-small-numbers";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { READMISSION_WINDOW_DAYS } from "@/components/ward-management/ward-readmission";
 
 import {
@@ -90,8 +91,9 @@ function total(value: Decisions): number | undefined {
     : undefined;
 }
 
+/** F-55 (A9-36): a withheld count reads "an unstated number of requests", not "of not shown requests". */
 function plural(count: Count, one: string, many: string): string {
-  return `${count} ${count === 1 ? one : many}`;
+  return countInSentence(count, one, many);
 }
 
 function ReasonBars({ decisions, label, testId }: { decisions: Decisions; label: string; testId: string }) {
@@ -121,6 +123,7 @@ function ReasonBars({ decisions, label, testId }: { decisions: Decisions; label:
 export function WeeklyBody(props: WeeklyBodyProps) {
   const { isPhone, pilot, targetText, edWaits, outOfArea, delayed, occupancy } = props;
   const [reasons, setReasons] = useState("declines");
+  const canOpen = useCanOpenHref();
   const stepMax = Math.max(1, ...pilot.steps.map((step) => step.minutes ?? 0));
   const longestStep = pilot.steps.find((step) => step.id === pilot.longestStepId);
   const stillWaiting = edWaits.rows?.filter((row) => row.stillWaiting).length ?? 0;
@@ -441,7 +444,14 @@ export function WeeklyBody(props: WeeklyBodyProps) {
           id="rd-waits"
           title={`ED waits first passing ${targetText}`}
           meta={`${edWaits.count} in the week`}
-          foot={<Foot link={<MoreLink href={props.waitingHref}>Open Waiting</MoreLink>}>{edWaits.waitedTo}</Foot>}
+          // F-54 (A9-35): only a desk that may open Waiting is linked to it (the executive desk is not).
+          foot={
+            <Foot
+              link={canOpen(props.waitingHref) ? <MoreLink href={props.waitingHref}>Open Waiting</MoreLink> : undefined}
+            >
+              {edWaits.waitedTo}
+            </Foot>
+          }
         >
           {edWaits.rows === undefined ? (
             <div className={s.empty}>

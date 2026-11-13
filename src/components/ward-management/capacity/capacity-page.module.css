@@ -710,6 +710,21 @@
 .mapCard .cellClosed {
   background: var(--wf-data-closed);
 }
+/* D-179 item 8: empty but still being made ready, so not Ready. Hollow, in the ready colour. */
+.cellPreparing,
+.mapCard .cellPreparing {
+  background: var(--wf-surface);
+  box-shadow: inset 0 0 0 1px var(--wf-data-ready);
+}
+@media (forced-colors: active) {
+  .cellPreparing,
+  .mapCard .cellPreparing {
+    background: Canvas;
+    box-shadow: none;
+    border: 1px solid Highlight;
+    box-sizing: border-box;
+  }
+}
 @media (forced-colors: active) {
   .cellReady,
   .mapCard .cellReady {

@@ -98,7 +98,8 @@ describe("v6 time formats", () => {
     expect(dur(7 * 60 * MIN)).toBe("7h");
     expect(dur(7 * 60 * MIN + 5 * MIN)).toBe("7h 05m");
     expect(dur(26 * 60 * MIN)).toBe("1d 2h");
-    expect(dur(-18 * MIN)).toBe("18m");
+    // RC 2.5 (F-35): a negative length keeps its sign, as splitDuration does, never its bare size.
+    expect(dur(-18 * MIN)).toBe("-18m");
     expect(durMinutes(257)).toBe("4h 17m");
   });
 

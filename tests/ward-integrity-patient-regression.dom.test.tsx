@@ -119,6 +119,8 @@ describe("patient record save identity and confirmation", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: leave ? "Start leave" : "Discharge date" }));
+    // A9-15 (Josh, 13 Nov 2026): no kind of leave starts chosen.
+    if (leave) fireEvent.click(screen.getByRole("button", { name: "Off-ward leave" }));
     fireEvent.change(screen.getByLabelText(inputLabel), { target: { value: "23:59" } });
     fireEvent.click(screen.getByRole("button", { name: saveLabel }));
     expect(screen.getByLabelText(inputLabel)).toHaveValue("23:59");
@@ -198,6 +200,7 @@ describe("patient record save identity and confirmation", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Start leave" }));
+    fireEvent.click(screen.getByRole("button", { name: "Off-ward leave" }));
     fireEvent.change(screen.getByLabelText("Expected back time"), { target: { value: "23:59" } });
     fireEvent.click(screen.getByRole("button", { name: "Record leave" }));
     expect(control.calls).toHaveLength(1);

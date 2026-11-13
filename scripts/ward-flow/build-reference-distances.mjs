@@ -13,8 +13,8 @@
  * maps a WA HOME REGION to a hospital site and covers Kimberley, Pilbara, Mid West and Great
  * Southern. This file covers 26 METROPOLITAN entities and contains no regional pair at all. The two
  * populations do not overlap, so filling one from the other would be answering a different question
- * with a real-looking number. `TRAVEL_BANDS_ARE_INVENTED` therefore stays `true`; that file's own
- * comment calls flipping it a governance act, and nothing here earns it.
+ * with a real-looking number. Since A16-04 that file shows only bands somebody has checked, each with
+ * who checked it and when; nothing here earns one.
  *
  * ⚠️ AN INDICATIVE ROUTE IS NOT A CLINICAL TRAVEL TIME. No traffic, no peak, no ambulance
  * behaviour, no handover time, and the ED pin is the hospital campus rather than its ED door. Every
@@ -77,7 +77,7 @@ function render({ rows, retrievedOn }) {
 //
 // 🔴 METROPOLITAN ONLY. There is no regional pair here, so this can never fill
 // \`ward-travel-bands.ts\`, which maps WA HOME REGIONS (Kimberley, Pilbara, Mid West, Great
-// Southern) to sites. Those bands stay invented and \`TRAVEL_BANDS_ARE_INVENTED\` stays true.
+// Southern) to sites. A band there is shown only once someone has checked it (A16-04).
 //
 // 🔴 INDICATIVE, NOT CLINICAL. No traffic, no peak, no ambulance behaviour, no handover. The ED pin
 // is the hospital campus, not its door. Show \`REFERENCE_DISTANCE_CAVEAT\` wherever one is rendered.

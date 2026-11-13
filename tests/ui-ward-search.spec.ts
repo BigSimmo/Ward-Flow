@@ -20,7 +20,8 @@ import { expect, test, type Locator, type Page } from "playwright/test";
  * harm lives entirely in geometry a unit test cannot see.
  *
  * FIXTURE ARITHMETIC: "marrowb" matches EXACTLY Ines Marrowby (UM100003, on a ward) and Devan
- * Marrowbee (UM100004, waiting in ED) in the census and nobody else; "a" fills the census with rows.
+ * Marrowbee (UM100004, waiting in ED once the worked examples are on) in the census and nobody
+ * else; "a" fills the census with rows.
  *
  * 9 Oct 2026 (PR #194): the Patients census replaced the caseload and the typeahead's popup on
  * this page. Rows are read from the painted `ward-patient-search-results-console` only, because a
@@ -39,6 +40,32 @@ async function gotoSearch(page: Page): Promise<void> {
     "React's streamed content is still staged, so the whole screen is duplicated in the document",
   ).toHaveCount(0, { timeout: 15_000 });
   await expect(page.getByTestId("ward-patient-search")).toBeVisible({ timeout: 15_000 });
+}
+
+/**
+ * A16-14 / D-197 item 14 (13 Nov 2026): worked examples are off until a presenter switches them on
+ * in Tools, Demo. Switches them on the way a user does, on the page already open, so no reload
+ * reseeds the board: Tools, the footer's Board time pill (Open demo controls), the toggle, then the
+ * confirm dialog. Done at a desktop width, where Tools is in the bar; the caller resizes after.
+ */
+async function showWorkedExamples(page: Page): Promise<void> {
+  await page.getByTestId("ward-bar-tools-trigger").click();
+  const sheet = page.getByTestId("ward-bar-tools-sheet");
+  await expect(sheet).toBeVisible();
+  await sheet.getByRole("button", { name: /Open demo controls$/u }).click();
+  const toggle = sheet
+    .getByRole("region", { name: "Scenario and clock" })
+    .getByTestId("ward-tools-demo-worked-examples-toggle");
+  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  await toggle.click();
+  const confirm = page.getByRole("dialog", { name: "Show worked examples?" });
+  await confirm.getByRole("button", { name: "Show worked examples", exact: true }).click();
+  await expect(confirm).toHaveCount(0);
+  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+  // The open sheet covers its own trigger, so it is closed by its Close button (as
+  // `ui-ward-roles.spec.ts`'s `ensureToolsClosed` does), and its backdrop must be gone before typing.
+  await page.getByRole("dialog", { name: "Tools" }).getByRole("button", { name: "Close", exact: true }).click();
+  await expect(sheet).toBeHidden();
 }
 
 function typeaheadInput(page: Page): Locator {
@@ -208,10 +235,16 @@ test.describe("@mockup Ward patient search", () => {
    * Marrowbee waits in ED, so the phone census, which shows one group at a time, once showed only
    * one of them for "marrowb". A search now lists every match across groups, and each matching row
    * carries the two facts that tell the pair apart: UMRN and date of birth.
+   *
+   * Devan Marrowbee's ED wait (WF-RD11) is a worked example (A16-14 / D-197 item 14), off by default,
+   * when he lists only as a person with no open record. So this switches the worked examples on in
+   * Tools first, keeping the pair split across groups as this test intends.
    */
   test("both Marrowby/Marrowbee rows and their identifying details stay on screen at 375px", async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 800 });
+    await page.setViewportSize({ width: 1280, height: 900 });
     await gotoSearch(page);
+    await showWorkedExamples(page);
+    await page.setViewportSize({ width: 375, height: 800 });
 
     await typeaheadInput(page).fill("marrowb");
 

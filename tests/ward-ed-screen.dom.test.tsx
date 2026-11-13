@@ -26,6 +26,7 @@ import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { bedReleases, referrals as seededReferrals, wardMovements } from "@/components/ward-management/ward-movements";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { formTitleForCode } from "@/lib/form-register";
 import {
   chooseEdChoice,
@@ -907,7 +908,8 @@ describe("the statewide capacity table the ED page links to says which ready bed
     ).toContain(PREPARING_UNIT);
   });
 
-  it("shows the cleaning count beside that ward's Ready figure, and the figure itself is untouched", () => {
+  // D-179 item 8 (Josh, 13 Nov 2026) replaced the 2026-09-05 ruling above: Ready leaves out the bed.
+  it("shows the cleaning count beside that ward's Ready figure, and Ready leaves that bed out", () => {
     renderEd();
     expect(within(screen.getByTestId("ward-ed-elsewhere")).getByRole("link", { name: /capacity/iu })).toHaveAttribute(
       "href",
@@ -929,8 +931,8 @@ describe("the statewide capacity table the ED page links to says which ready bed
      */
     const figure = (card.querySelector('[class*="wardReadyN"]')?.textContent ?? "").trim();
     const unit = allUnits().find((candidate) => candidate.id === PREPARING_UNIT)!;
-    expect(figure, "the cleaning count was subtracted from Ready; the owner ruled the number does not move").toBe(
-      String(unitCapacity(unit, bedReleases).available),
+    expect(figure, "Ready still counts a bed being made ready (D-179 item 8)").toBe(
+      String(unitCapacity(unit, bedReleases).available - bedsPendingPreparation(unit.id, bedReleases)),
     );
   });
 

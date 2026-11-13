@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { Button, Card, CardBody, CardHead, useToast } from "@/components/wf";
-import { UNDO_TOAST_MS, UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { UNDO_WINDOW_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
+import { undoWindowUntil } from "@/components/ward-management/ward-undo-until";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -131,6 +132,12 @@ function ArchiveConfirm({
   const raise = useWardRaise(useRouteRole());
   const router = useRouter();
   const toast = useOptionalToast();
+  // The board clock when the archive is accepted: the Undo window is counted from the step.
+  const now = useWardFlowClock();
+  const nowRef = useRef(now);
+  useEffect(() => {
+    nowRef.current = now;
+  }, [now]);
   const pending = useRef(false);
   const [saving, setSaving] = useState(false);
   const mounted = useRef(true);
@@ -147,10 +154,13 @@ function ArchiveConfirm({
     const seq = outcome.undoStep?.undoType === "UNDO_PATIENT_RECORD" ? outcome.undoStep.seq : undefined;
     toast.push({
       tone: "success",
-      title: `${displayName}'s record archived.`,
-      body: `Undo within ${UNDO_WINDOW_MINUTES} min.`,
+      // D-192 (shared design parts item 4): one clock time, "… record archived · Undo until 14:47".
+      // The record leaves every list, so the toast is its one Undo (no row keeps one).
+      title: `${displayName}'s record archived`,
       undo: {
-        durationMs: UNDO_TOAST_MS,
+        until: undoWindowUntil(nowRef.current),
+        // D-187 (F-49): kept for the whole window the words name.
+        durationMs: UNDO_WINDOW_TOAST_MS,
         onUndo: () => {
           // The same fences as useUndoableStep: no Undo after a workspace or role change, or before the board is ready.
           if (outcome.isCurrent && !outcome.isCurrent()) {

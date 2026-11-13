@@ -42,7 +42,6 @@ const options = {
   acceptedUnitName: undefined as string | undefined,
   fallback: "In department",
   referredTo: undefined as string | undefined,
-  holdLabel: "4h",
   now: 1_000,
 };
 

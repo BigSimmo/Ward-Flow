@@ -9,16 +9,18 @@ import { ownerShort, type QueueEntry } from "@/components/ward-management/alerts
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { StatusGlyph } from "@/components/wf";
 
 import p from "./home-placement-drawer.module.css";
 
 export function ChosenAlertCard({ entry, now }: { entry: QueueEntry; now: Instant }) {
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   // A passed legal form shows its typed time, never an age since it (legal times only as typed).
   const legalEnded = legalTypedEnd(entry.item);
   const age =
     legalEnded !== undefined
-      ? typedTimeLine(legalEnded, now)
+      ? typedTimeLine(legalEnded, now, dayZero)
       : entry.raised === undefined
         ? "Time not recorded"
         : `${minutesText(Math.max(0, now - entry.raised))} ago`;

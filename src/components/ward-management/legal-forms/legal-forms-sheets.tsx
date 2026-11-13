@@ -46,7 +46,7 @@ import {
 import { onceOnlyExtensionWarning } from "./legal-form-ledger";
 import styles from "./legal-forms.module.css";
 import asWritten from "./legal-forms-add-time.module.css";
-import { typedTimeLine } from "./legal-time-as-typed";
+import { typedClock, typedTimeLine } from "./legal-time-as-typed";
 
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 const MINUTES_PER_DAY = 1440;
@@ -654,7 +654,7 @@ function ExtendSheetContent({
             <div className={styles.dueLine}>
               <Badge tone={STANDING_TONE[standing]}>{standingWord(standing, thresholds)}</Badge>
               {/* Legal times only as typed (31 Oct 2026): the typed time in words, never a countdown. */}
-              <span className={styles.mono}>{typedTimeLine(target.legalForm.dueAt, now)}</span>
+              <span className={styles.mono}>{typedTimeLine(target.legalForm.dueAt, now, dayZero)}</span>
               <span className={styles.meta}>{target.legalForm ? legalFormName(target.legalForm) : ""}</span>
             </div>
           ) : null}
@@ -697,9 +697,9 @@ function ExtendSheetContent({
           {parsedDueAt !== null ? (
             // The resolved day is shown before Confirm records it.
             <p className={styles.note} role="status" data-testid="ward-legal-forms-renew-resolved">
-              Records the new expiry as {formatInstantWithDay(parsedDueAt, now)}.
+              Records the new expiry as {typedClock(parsedDueAt, now, dayZero)}.
               {shortens && currentDueAt !== undefined
-                ? ` This is earlier than the expiry already recorded (${formatInstantWithDay(currentDueAt, now)}). Check the form.`
+                ? ` This is earlier than the expiry already recorded (${typedClock(currentDueAt, now, dayZero)}). Check the form.`
                 : null}
             </p>
           ) : null}

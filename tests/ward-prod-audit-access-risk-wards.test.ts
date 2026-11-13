@@ -14,7 +14,7 @@ const row = (acceptedUnitName: string | null): EdAccessRiskRow => ({
   minutesLeft: 600,
   slotAt: null,
   ahead: 0,
-  nextRelease: { unitId: "unit-b", unitName: "Ward B", at: 300, blocker: null },
+  nextRelease: { unitId: "unit-b", unitName: "Ward B", at: 300 },
   acceptedUnitName,
   declines: 1,
 });

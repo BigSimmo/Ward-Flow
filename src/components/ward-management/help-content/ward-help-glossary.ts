@@ -117,6 +117,8 @@ const GROUP_TERMS: readonly (readonly string[])[] = [
     "Bed meeting",
     "Ward promise",
     "Surge",
+    "Undo window",
+    "Wards asked at once",
   ],
 ];
 export const SAVE_HELP_TERMS: readonly GlossaryTerm[] = [

@@ -2313,7 +2313,7 @@ describe("bed release privacy", () => {
       expect(releasedM.admissionId).toBeUndefined();
       expect(releasedM.blocker).toBe(STAGE_TRANSITION_BLOCKERS.didNotProceed);
       expect(releasedM.closure?.outcome).toBe("did_not_proceed");
-      expect(releasedM.closure?.reason).toBe("examination_revoked");
+      expect(releasedM.closure?.reason).toBe("Pulled bed released after the examination (no order made)");
     });
 
     it("DEC-L5-02: refuses SET_ARRIVAL_DETAILS, BOOK_TRANSPORT, RECORD_TRANSPORT_NEED when ward authority does not match", () => {

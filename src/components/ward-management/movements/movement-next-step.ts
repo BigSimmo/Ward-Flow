@@ -73,11 +73,16 @@ export function isCoordinatorStep(step: MovementNextStep | null): step is Moveme
   return step !== null && step.owner === COORDINATOR_OWNER;
 }
 
+/** The Patient page with its Ask wards list open, for one movement (`taskAction=refer`). */
+export function askWardsHref(movementId: string): string {
+  return `${movementHref(movementId)}?taskAction=refer`;
+}
+
 /** Where a coordinator step is recorded: escalation lives on the coordinator screen, the rest on the Patient page. */
 export function nextStepTarget(step: MovementNextStep, movementId: string): { href: string; where: string } {
   // D-77, revised 8 Nov 2026 (Josh): Ask wards opens the Patient peek over the page (PatientPeekLink);
   // this href stays for a new tab, where the Patient page opens with its Ask wards list open.
-  if (step.kind === "refer") return { href: `${movementHref(movementId)}?taskAction=refer`, where: "the Patient page" };
+  if (step.kind === "refer") return { href: askWardsHref(movementId), where: "the Patient page" };
   return step.kind === "escalate"
     ? { href: "/ward-flow", where: "the coordinator screen" }
     : { href: movementHref(movementId), where: "the Patient page" };

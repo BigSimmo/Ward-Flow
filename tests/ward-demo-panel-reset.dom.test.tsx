@@ -52,6 +52,8 @@ describe("Reset demo in Tools, Demo (DA-10)", () => {
     expect(dialog).toHaveTextContent("replaces the demo data in this browser only. Other devices are not changed");
     expect(dialog).not.toHaveTextContent("everyone");
     expect(dialog).toHaveTextContent("There is no undo");
+    // F-34: the confirm says what Reset does to the clock today; it does not rewind to the start time.
+    expect(dialog).toHaveTextContent("The demo clock keeps running: this does not set it back to its start time.");
     // Nothing happens until the confirm.
     expect(screen.getByTestId("clock").textContent).toBe(moved);
 

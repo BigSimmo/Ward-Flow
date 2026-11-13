@@ -33,8 +33,10 @@ import { allUnits } from "@/components/ward-management/ward-sites";
  * the word "waiting" in their text, which would have left the comparisons below with no subjects.
  */
 
-/** A unit whose grid carries both tile kinds; asserted rather than assumed, below. */
-const UNIT_ID = "rph-adult-secure";
+/** A unit whose grid carries both tile kinds; asserted rather than assumed, below. Was
+ *  `rph-adult-secure` until A16-13 (13 Nov 2026) made its two pulled-for-nobody beds arrivals; Bentley's
+ *  secure ward keeps WF-004's pulled bed beside a ready one. */
+const UNIT_ID = "bty-adult-secure";
 
 function renderBoard(unitId: string) {
   return render(

@@ -19,7 +19,9 @@ const midland = communityTeamById("midland")!;
 const desk = (teamName: string): WardAccess => ({ role: "community", scope: { kind: "team", teamName } });
 
 function scoped(access: WardAccess) {
-  const state = seedWardFlowState();
+  // A16-14: the Midland open-episode patient in ED is WF-RD03, a legal-form worked example that is
+  // off by default since 13 Nov 2026, so this file switches the examples on.
+  const state = seedWardFlowState("standard", { workedExamples: true });
   return { state, view: scopeWorkspace(state, access, { now: NOW, places: wardPlaceLookup(state.units) }) };
 }
 

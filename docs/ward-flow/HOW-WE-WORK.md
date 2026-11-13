@@ -117,8 +117,8 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
 - **Daily release (Josh, 24 Oct 2026).** Railway deploys the live site from the `live` branch, not
   `main`. Merging into `main` does not change the live site. At 6 am Perth the
   [daily release workflow](../../.github/workflows/daily-release.yml) fast-forwards `live` to the
-  newest CI-passed `main` commit and writes a GitHub Release (`live-YYYY-MM-DD-HHMM`) with a short
-  "what changed" note; the coordinator posts its New and Fixed lines in project chat. "Release now"
+  newest CI-passed `main` commit and writes a GitHub Release tagged `live-<sha>` (the full commit
+  id) and named "Live release YYYY-MM-DD-HHMM (Perth)", with a short "what changed" note; the coordinator posts its New and Fixed lines in project chat. "Release now"
   for an urgent fix means a manual run of that workflow after Josh says so. Never push to `live` by
   hand; rolling back to an earlier `live-*` tag needs Josh's yes, and starts by pausing the daily
   release with the `WARD_RELEASE_PAUSED` repository variable

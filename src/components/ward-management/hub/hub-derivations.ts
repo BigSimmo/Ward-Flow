@@ -176,9 +176,8 @@ export function hubEntries(input: {
       security: wardSecurity(unit),
       authorised: unit.authorised,
       beds: unit.beds,
-      // `bedStates().ready` IS Ready — never reduced by pending-preparation beds. A bed the feed
-      // calls free but the ward is still cleaning is still Ready; `pendingPreparation` sits beside
-      // it as its own number, per the owner's 2026-09-05 ruling.
+      // `bedStates().ready` IS Ready, and leaves out beds still being made ready (D-179 item 8);
+      // `pendingPreparation` sits beside it as its own number.
       ready: states.ready,
       pulled: states.pulled,
       closed: states.closed,

@@ -59,7 +59,7 @@ export interface ServiceBedAlertsSummary {
   services: ServiceBedAlert[];
   /** Sum of each row's freeBeds (`readyBedsNow`) — must equal the header. */
   totalFreeBeds: number;
-  /** Released beds still being made ready (`bedsPendingPreparation`); a note, already inside the ward figures. */
+  /** Released beds still being made ready (`bedsPendingPreparation`), counted apart from free beds (D-179 item 8). */
   totalBeingMadeReady: number;
   /** Occupied/total for the three metro services only; null when they have no beds. */
   metroOccupancyPercent: number | null;

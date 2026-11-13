@@ -130,12 +130,13 @@ describe("Compare uses its released aggregate model", () => {
     render(wrap(<StatisticsCompareScreen />, protectedReport()));
     fireEvent.click(within(wardCard()).getByRole("radio", { name: "Data" }));
     fireEvent.click(within(edCard()).getByRole("radio", { name: "Data" }));
-    expect(screen.getByTestId("ward-statistics-compare-wards")).toHaveTextContent("not shown of not shown met");
+    // F-55 (A9-36), D-197: when both counts are withheld the cell says "not shown" once.
+    expect(screen.getByTestId("ward-statistics-compare-wards")).not.toHaveTextContent("an unstated number of an");
     expect(screen.getByTestId("ward-statistics-compare-eds")).toHaveTextContent("not shown");
     fireEvent.click(within(wardCard()).getByRole("button", { name: "CSV" }));
     const wardLines = vi.mocked(downloadCsv).mock.calls.at(-1)![1];
     expect(wardLines[1].slice(2)).toContain("not shown");
-    expect(wardLines[1]).toContain("not shown of not shown met");
+    expect(wardLines[1].join(" ")).not.toContain("unstated number of an unstated");
     fireEvent.click(within(edCard()).getByRole("button", { name: "CSV" }));
     expect(vi.mocked(downloadCsv).mock.calls.at(-1)![1][1].slice(2, 5)).toEqual([
       "not shown",

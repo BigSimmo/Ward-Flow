@@ -7,8 +7,8 @@ Every limit is raised, on top of `main` at `ea4cd8b` (after PR #1657 merged), ea
 - ED `/ward-flow/ed`: 538.5 to 540.1 (+1.6)
 - Ward `/ward-flow/ward/rph-adult-secure`: 618.2 to 621.6 (+3.4)
 - Movement `/ward-flow/movements/WF-001`: 616.9 to 618.5 (+1.6)
-- Capacity `/ward-flow/capacity`: 662.4 to 666.4 (+4.0)
-- ED site `/ward-flow/ed/arm-ed`: 677.9 to 676.9 (-1.0)
+- Capacity `/ward-flow/capacity`: 662.4 to 666.0 (+3.6)
+- ED site `/ward-flow/ed/arm-ed`: 677.9 to 682.2 (+4.3). Raised 0.3 KB more on 13 Nov 16:40Z: the coverage-gap fixes (Appearance radios, demo confirm hold, timeline reasons) measured just over 681.9 KB in CI.
 - Bed meeting `/ward-flow/bed-meeting`: 596.3 to 599.0 (+2.7)
 - Statistics `/ward-flow/statistics`: 636.4 to 639.1 (+2.7)
 
@@ -22,4 +22,20 @@ What was trimmed first, about 0.6 to 0.9 KB on every route: the loading placehol
 
 Second step, same PR: the fixes that make the built screens match the approved pictures (count and window on one line, the not-yet reason drawn on the patient card, the synthetic tag placed by width on the full-screen timeline) added 0.5 to 1.0 KB on three routes. Measured: Referrals 589.0, Ward 619.0, ED site 678.8; each limit is the measurement plus 0.2. Every rise stays within 5 KB of `main`.
 
-Third step, 13 Nov 17:47Z, measured in CI: Capacity 666.2 KB (the Sheet's Tab pass-through and kit barrel fixes), so its limit is 666.4. The ED site page measured 676.7 KB, below `main`, so its limit is lowered to 676.9.
+## After PR C (#1660) merged
+
+PR C set every limit afresh, so E's limits are set again on top of PR C's (the C-only build measured, in KB: Home 588.1, Referrals 595.3, ED 545.5, Ward 624.8, Movement 621.1, Capacity 660.3, ED site 680.3, Bed meeting 594.8 and Statistics 640.1). Each limit is E on C measured plus 0.2:
+
+- Home `/ward-flow`: 589.1 to 590.6 (+1.5)
+- Referrals `/ward-flow/referrals`: 595.3 to 598.3 (+3.0)
+- ED `/ward-flow/ed`: 545.8 to 548.5 (+2.7)
+- Ward `/ward-flow/ward/rph-adult-secure`: 625.6 to 627.0 (+1.4)
+- Movement `/ward-flow/movements/WF-001`: 621.5 to 625.0 (+3.5)
+- Capacity `/ward-flow/capacity`: 662.4 to 664.0 (+1.6)
+- ED site `/ward-flow/ed/arm-ed`: 680.6 to 686.3 (+5.7)
+- Bed meeting `/ward-flow/bed-meeting`: 596.3 to 598.0 (+1.7)
+- Statistics `/ward-flow/statistics`: 640.6 to 646.2 (+5.6)
+
+The ED site page and Statistics rise more than 5 KB over PR C's limits. Josh approved that for this PR once a trim had been tried ("Go ahead with all recommendations", D-202, 14 November 2026). The trim was tried first: a module-by-module comparison of the C-only and E-on-C builds found no dead code and nothing that loads before it is needed. The growth is the D-192 behaviour listed above, plus the parts that PR C's screens now carry: on the ED site page, the full-screen frame and synthetic-data mark on the enlarged ED board (about 1.3 KB), and the Sheet's scroll body staying reachable by keyboard (about 0.5 KB). Statistics also loads the Field and date box changes. The one unused option (`Field`'s `reserveLine`) stays, because it is a tested part of spec items 10 and 17.
+
+Measured with a local cloud `next build --webpack` and `scripts/check-script-budget.mjs`; CI may differ by a few tenths.

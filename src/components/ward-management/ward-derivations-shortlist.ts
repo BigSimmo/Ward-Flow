@@ -358,7 +358,7 @@ function closureAwareVerdict(unit: Unit, verdict: ReturnType<typeof eligibility>
     eligible: false,
     gates: verdict.gates.map((gate) =>
       gate.gate === "allocatable_bed"
-        ? { ...gate, pass: false, detail: `${unit.name} is closed; a new bed cannot be reserved there` }
+        ? { ...gate, pass: false, detail: `${unit.name} is closed; a new bed cannot be pulled there` }
         : gate,
     ),
   };

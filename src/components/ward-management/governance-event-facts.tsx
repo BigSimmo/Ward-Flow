@@ -6,6 +6,8 @@
 import { observationSummary, type Observation } from "./ward-observation";
 import type { ReactNode } from "react";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import type { WardConfiguration } from "./ward-configuration";
 import type { AuditEvent, BedReleaseAuditFacts, BedReleaseAuditRequest } from "./ward-audit";
@@ -30,9 +32,19 @@ import {
   when,
 } from "./governance-shared";
 
-function observationFact(observation: Observation | null, now: Instant): string {
+function observationFact(observation: Observation | null, now: Instant): ReactNode {
   if (!observation) return "Not recorded";
-  return `${observationSummary(observation)}; review ${observation.reviewAt === null ? "not recorded" : formatInstantWithDay(observation.reviewAt, now)}`;
+  const summary = observationSummary(observation);
+  if (observation.reviewAt === null) return `${summary}; review not recorded`;
+  const review = formatInstantWithDay(observation.reviewAt, now);
+  // Time audit T7: a review time that has passed says so, in warning tone.
+  if (observation.reviewAt < now)
+    return (
+      <>
+        {summary}; <Badge tone="warning">review was due {review}</Badge>
+      </>
+    );
+  return `${summary}; review ${review}`;
 }
 
 export function FactList({ facts }: { facts: readonly (readonly [string, ReactNode])[] }) {
@@ -140,6 +152,7 @@ function wardName(units: readonly Unit[], unitId: string | null): string {
   return matches.length === 1 ? matches[0]!.name : "Not recorded";
 }
 export function EventFacts({ event, units, now }: { event: AuditEvent; units: Unit[]; now: Instant }) {
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   switch (event.category) {
     case "referral":
     case "override":
@@ -237,7 +250,7 @@ export function EventFacts({ event, units, now }: { event: AuditEvent; units: Un
             ],
             [
               "Expiry typed",
-              event.details.dueAt === null ? "Not recorded" : formatInstantWithDay(event.details.dueAt, now),
+              event.details.dueAt === null ? "Not recorded" : typedClock(event.details.dueAt, now, dayZero),
             ],
             // Owner ruling 2026-10-13 22:13 AWST (PR #279): a continuation names the form it continued.
             ...(event.details.operation === "continuation-recorded"

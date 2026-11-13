@@ -24,7 +24,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
  * P069 in the real Alerts list. Recording the arrival closes the "Bed pull expired" alert, so the alert
- * detail (and the control inside it) leaves the list at once. The toast with its 10 s Undo must still
+ * detail (and the control inside it) leaves the list at once. The toast with its Undo (the whole window, D-187) must still
  * appear, and Undo must bring the alert back. The standalone test in `ward-alerts-arrived-at-ward.dom.test.tsx`
  * keeps the control mounted and cannot see this. Synthetic seed data only.
  */
@@ -75,7 +75,7 @@ function Stage({ movementId }: { movementId: string }) {
 }
 
 describe("Arrived at ward from the real Alerts list (P069)", () => {
-  it("still shows the toast with 10 s Undo after the alert leaves the list, and Undo brings the alert back", async () => {
+  it("still shows the toast with its Undo after the alert leaves the list, and Undo brings the alert back", async () => {
     const { movementId, steps } = pulledNoTransport();
     const { container } = render(
       <WardFlowProvider initialNow={LATER}>
@@ -105,7 +105,8 @@ describe("Arrived at ward from the real Alerts list (P069)", () => {
 
     // The toast and its Undo outlive the alert.
     expect(await screen.findByText(/ arrived at /)).toBeInTheDocument();
-    expect(screen.getByText("10s left")).toBeInTheDocument();
+    // D-192 (shared design parts item 4): one clock time in the words, no "min left" countdown.
+    expect(screen.getByText(/^· Undo until \d{2}:\d{2}$/u)).toBeInTheDocument();
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /Undo/ }));
     });

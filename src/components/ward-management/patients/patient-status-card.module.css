@@ -681,3 +681,8 @@
   background: var(--wf-surface);
   color: var(--wf-ink-2);
 }
+
+/* D-192 (shared design parts item 6): the "who does this" foot line under the gates. */
+.whoFoot {
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+}

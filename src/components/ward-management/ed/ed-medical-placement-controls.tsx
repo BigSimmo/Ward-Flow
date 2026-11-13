@@ -110,7 +110,7 @@ export function EdMedicalPlacementControls({
             ? paused || movement?.medicalDeterioration?.resumedAt !== undefined
               ? "Recorded medically cleared. A cancelled allocation is not restored; coordinator placement is required."
               : "Recorded medically cleared."
-            : "Recorded not medically cleared. Onward transfer is blocked; this does not cancel a reservation."
+            : "Recorded not medically cleared. Onward transfer is blocked; this does not release the pulled bed."
         : attempt?.outcome
           ? wardCommandFailure(attempt.outcome)
           : undefined;
@@ -236,7 +236,7 @@ export function EdMedicalPlacementControls({
                   ? "Medical Deterioration - ED Resuscitation Required. Cancel the allocation, release the reserved bed, cancel any uncollected transport and pause psychiatric placement?"
                   : confirmation.kind === "cleared"
                     ? "Record the clinician's medical clearance now? After deterioration this must be a fresh record; it does not restore the old allocation."
-                    : "Record that medical clearance is not granted? This blocks onward transfer without releasing the reservation."}
+                    : "Record that medical clearance is not granted? This blocks onward transfer without releasing the pulled bed."}
               </p>
               <button
                 type="button"

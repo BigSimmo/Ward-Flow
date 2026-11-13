@@ -19,6 +19,7 @@ import {
   type AdmissionStagePosition,
 } from "@/components/ward-management/statistics/statistics-derivations";
 import { statisticsSectionById } from "@/components/ward-management/statistics/statistics-sections";
+import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -187,13 +188,17 @@ describe("the statistics overview now carries real figures, honestly", () => {
     expect(value("ward-statistics-overview-refused-so-far-escalated")).toBe(String(expected.escalatedCount));
   });
 
-  it("renders Ready/Empty/Allocatable exactly as unitCapacity sums it across every unit", () => {
+  // D-179 item 8: Ready no longer includes a bed still being made ready, so each ward's unitCapacity
+  // figure loses its beds being made ready (arm-adult-open's "Being cleaned" bed in the seed).
+  it("renders Ready/Empty/Allocatable as unitCapacity sums it across every unit, less beds being made ready", () => {
     const seed = seedWardFlowStateAt(0);
     let ready = 0;
     let empty = 0;
     let allocatable = 0;
     for (const unit of seed.units) {
-      ready += unitCapacity(unit, seed.bedReleases).available;
+      ready +=
+        unitCapacity(unit, seed.bedReleases).available -
+        bedStates(unit, seed.admissions, [...seed.bedReleases], [], []).beingMadeReady;
       empty += unit.empty.value;
       allocatable += unit.allocatable.value;
     }

@@ -15,6 +15,7 @@ import { Clock8, FileClock, Hourglass } from "lucide-react";
 
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { StatusGlyph } from "@/components/wf";
 import { H24, H8, OVER_24H, OVER_8H, RUNWAY_WINDOW, type BoardRow } from "./delays-board-model";
 import { ShowMoreRow } from "@/components/wf";
@@ -59,6 +60,7 @@ export function NextCrossings({
   onPick: (id: string) => void;
 }) {
   const patientOf = usePatientOf();
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   // Role views (`waiting-desk-words.ts`): "on you" is said from the desk's side.
   const desk = useWaitingDeskWords();
   const [all, setAll] = useState(false);
@@ -71,7 +73,7 @@ export function NextCrossings({
   const x = (minutes: number) => `${(minutes / RUNWAY_WINDOW) * 100}%`;
   const what = (item: Crossing) =>
     item.kind === "form"
-      ? `Form ${item.row.movement.legalForm?.code ?? ""} ${typedTimePhrase(now + item.at, now)}`
+      ? `Form ${item.row.movement.legalForm?.code ?? ""} ${typedTimePhrase(now + item.at, now, dayZero)}`
       : `Passes ${item.kind === "8h" ? H8 : H24} at ${formatInstantWithDay(now + item.at, now)}`;
 
   return (

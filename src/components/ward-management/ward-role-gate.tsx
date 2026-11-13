@@ -125,7 +125,29 @@ export type RoleGate = {
   buttonProps: { disabled?: true; "aria-describedby"?: string };
   /** The visible reason to render beside the button, or null when allowed. */
   note: ReactNode;
+  /**
+   * F-54 (A9-35): true when this desk can never take the action: its role may not, and it cannot
+   * switch desk to one that may. DESIGN-SYSTEM.md, Actions: such a control is not shown. A greyed
+   * control (`allowed` false, `never` false) stays for "not now" and for a desk that can switch.
+   */
+  never?: boolean;
 };
+
+/**
+ * A screen's role limit for one event: `undefined` when the desk may take it, the reason to show
+ * beside a greyed control when it may not for now, and `null` when this desk can never take it, so
+ * the control is left out (F-54, A9-35).
+ */
+export type RoleLimit = (eventType: WardFlowEventType) => string | null | undefined;
+
+/** `RoleLimit` from a `useRoleGate()` gate. */
+export function roleLimitFrom(gate: (eventType: WardFlowEventType) => RoleGate): RoleLimit {
+  return (eventType) => {
+    const result = gate(eventType);
+    if (result.allowed) return undefined;
+    return result.never ? null : (result.reason ?? "");
+  };
+}
 
 /**
  * Returns `gate(eventType, key?)`. `key` keeps the reason's id unique when one screen shows two
@@ -167,6 +189,7 @@ export function useRoleGate(record?: {
       return {
         allowed: false,
         reason,
+        never: !canSwitchDesk,
         buttonProps: { disabled: true, "aria-describedby": id },
         note: (
           <span className="lockline">

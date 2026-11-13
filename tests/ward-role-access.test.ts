@@ -84,8 +84,8 @@ describe("the access table", () => {
     expect(screenDecision(wardDesk, address, places)).toEqual({ open: false, why: "role" });
   });
 
-  it("gives the transport officer only transport, alerts, on-call and settings", () => {
-    expect(Object.keys(ROLE_SCREENS.officer).sort()).toEqual(["alerts", "officer", "on-call", "settings"]);
+  it("gives the transport officer only transport, alerts, on-call, settings and About this demo", () => {
+    expect(Object.keys(ROLE_SCREENS.officer).sort()).toEqual(["about", "alerts", "officer", "on-call", "settings"]);
   });
 
   it("pins every role's screens and how much of each it gets, key by key (access audit, 31 Oct 2026)", () => {
@@ -111,6 +111,8 @@ describe("the access table", () => {
         search: "own",
         seclusion: "own",
         leave: "own",
+        // F-77 (13 Nov 2026): About this demo, open to every desk.
+        about: "own",
         settings: "own",
         statistics: "counts",
         ward: "own",
@@ -137,6 +139,8 @@ describe("the access table", () => {
         search: "own",
         seclusion: "own",
         leave: "own",
+        // F-77 (13 Nov 2026): About this demo, open to every desk.
+        about: "own",
         settings: "own",
         statistics: "counts",
         ward: "own",
@@ -158,6 +162,8 @@ describe("the access table", () => {
         triage: "own",
         referrals: "own",
         search: "own",
+        // F-77 (13 Nov 2026): About this demo, open to every desk.
+        about: "own",
         settings: "own",
         statistics: "counts",
       },
@@ -175,12 +181,14 @@ describe("the access table", () => {
         triage: "own",
         referrals: "own",
         search: "own",
+        // F-77 (13 Nov 2026): About this demo, open to every desk.
+        about: "own",
         settings: "own",
         statistics: "counts",
       },
-      officer: { alerts: "own", officer: "own", "on-call": "all", settings: "own" },
-      executive: { capacity: "counts", settings: "own", statistics: "counts" },
-      admin: { governance: "own", settings: "own" },
+      officer: { about: "own", alerts: "own", officer: "own", "on-call": "all", settings: "own" },
+      executive: { about: "own", capacity: "counts", settings: "own", statistics: "counts" },
+      admin: { about: "own", governance: "own", settings: "own" },
     });
   });
 

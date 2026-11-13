@@ -20,6 +20,9 @@ import { loadedScenarioNetworks } from "./ward-scenario-network-registry";
 import { rulingsDemoOverlay } from "@/components/ward-management/ward-rulings-demo";
 import { NOW_ANCHOR } from "./ward-sites";
 import { syntheticMovementReferralDossier } from "./ward-referral-intake-seed";
+// A16-02 (Audit 16, 13 Nov 2026): every doctor below comes from the one staff name list, never from
+// the patients' name lists, so a referrer cannot share a name with the person in a bed.
+import { HOSPITAL_DOCTORS, staffEmail, staffFullName } from "./ward-staff-names-seed";
 
 export type DossierRow = { label: string; detail: string };
 
@@ -86,7 +89,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "done", detail: "0.000" },
         { label: "Observations", status: "done", detail: "Stable, within normal range" },
       ],
-      contact: "Dr Orla Linforth, ED registrar · 08 5550 0701",
+      contact: `${staffFullName(HOSPITAL_DOCTORS[0])}, ED registrar · 08 5550 0701`,
     },
     physicalHealth: [
       { label: "Conditions", detail: "AF, type 2 diabetes, CKD stage 3a, osteoarthritis" },
@@ -117,11 +120,11 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
       { label: "Carer role", detail: "Main carer for his wife, who has dementia and is now in respite." },
     ],
     referrer: {
-      name: "Dr Kalan Moongate",
+      name: staffFullName(HOSPITAL_DOCTORS[1]),
       role: "Psychiatry liaison registrar",
       location: "Emergency department",
       phone: "08 5550 0601",
-      email: "kalan.moongate@example.org",
+      email: staffEmail(HOSPITAL_DOCTORS[1]),
     },
     arrival: [
       { label: "Coming by", detail: "Patient transport" },
@@ -157,7 +160,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "done", detail: "0.000" },
         { label: "Observations", status: "done", detail: "Stable" },
       ],
-      contact: "Dr Maren Glasswell, ED consultant · 08 5550 0702",
+      contact: `${staffFullName(HOSPITAL_DOCTORS[2])}, ED consultant · 08 5550 0702`,
     },
     physicalHealth: [
       { label: "Conditions", detail: "Recent AKI, now resolved. Hypertension. Benign prostatic hyperplasia." },
@@ -182,11 +185,11 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
       { label: "Living", detail: "Lives alone in a unit. Son visits daily." },
     ],
     referrer: {
-      name: "Dr Junia Huntmire",
+      name: staffFullName(HOSPITAL_DOCTORS[3]),
       role: "Psychiatry liaison registrar",
       location: "Emergency department",
       phone: "08 5550 0602",
-      email: "junia.huntmire@example.org",
+      email: staffEmail(HOSPITAL_DOCTORS[3]),
     },
     arrival: [
       { label: "Coming by", detail: "Patient transport" },
@@ -222,7 +225,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "done", detail: "0.000" },
         { label: "Observations", status: "done", detail: "Stable after fluids" },
       ],
-      contact: "Dr Nolan Inkstone, ED registrar · 08 5550 0703",
+      contact: `${staffFullName(HOSPITAL_DOCTORS[4])}, ED registrar · 08 5550 0703`,
     },
     physicalHealth: [
       { label: "Conditions", detail: "Asthma, mild" },
@@ -245,11 +248,11 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
       { label: "Living", detail: "Lives alone. Works part time in retail." },
     ],
     referrer: {
-      name: "Dr Reya Jorrowfen",
+      name: staffFullName(HOSPITAL_DOCTORS[5]),
       role: "Psychiatry liaison registrar",
       location: "Emergency department",
       phone: "08 5550 0603",
-      email: "reya.jorrowfen@example.org",
+      email: staffEmail(HOSPITAL_DOCTORS[5]),
     },
     arrival: [
       { label: "Coming by", detail: "Patient transport with security" },
@@ -290,7 +293,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "done", detail: "0.000" },
         { label: "Observations", status: "done", detail: "Stable" },
       ],
-      contact: "Dr Sabine Kellbourne, ED registrar · 08 5550 0704",
+      contact: `${staffFullName(HOSPITAL_DOCTORS[6])}, ED registrar · 08 5550 0704`,
     },
     physicalHealth: [
       { label: "Conditions", detail: "Obesity, prediabetes" },
@@ -313,11 +316,11 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
       { label: "Living", detail: "Lives with his mother." },
     ],
     referrer: {
-      name: "Dr Lark Pallowmere",
+      name: staffFullName(HOSPITAL_DOCTORS[7]),
       role: "Consultant psychiatrist, liaison",
       location: "Emergency department",
       phone: "08 5550 0604",
-      email: "lark.pallowmere@example.org",
+      email: staffEmail(HOSPITAL_DOCTORS[7]),
     },
     arrival: [
       { label: "Coming by", detail: "Secure transport" },
@@ -353,7 +356,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "not_indicated" },
         { label: "Observations", status: "done", detail: "Stable" },
       ],
-      contact: "Dr Calder Moongate, medical registrar · 08 5550 0705",
+      contact: `${staffFullName(HOSPITAL_DOCTORS[8])}, medical registrar · 08 5550 0705`,
     },
     physicalHealth: [
       { label: "Conditions", detail: "Paracetamol hepatotoxicity, resolving" },
@@ -377,11 +380,11 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
       { label: "Living", detail: "Was staying with her former partner. Now without accommodation." },
     ],
     referrer: {
-      name: "Dr Tansy Quenfold",
+      name: staffFullName(HOSPITAL_DOCTORS[9]),
       role: "Psychiatry liaison registrar",
       location: "Medical ward",
       phone: "08 5550 0605",
-      email: "tansy.quenfold@example.org",
+      email: staffEmail(HOSPITAL_DOCTORS[9]),
     },
     arrival: [
       { label: "Coming by", detail: "Patient transport, country" },
@@ -417,7 +420,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "done", detail: "0.000" },
         { label: "Observations", status: "done", detail: "Stable" },
       ],
-      contact: "Dr Bramwen Linforth, ED registrar · 08 5550 0706",
+      contact: `${staffFullName(HOSPITAL_DOCTORS[10])}, ED registrar · 08 5550 0706`,
     },
     physicalHealth: [
       { label: "Conditions", detail: "Nil significant" },
@@ -440,11 +443,11 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
       { label: "Living", detail: "Lives with her partner. No children." },
     ],
     referrer: {
-      name: "Dr Eamon Ferrowmoor",
+      name: staffFullName(HOSPITAL_DOCTORS[11]),
       role: "Psychiatry liaison registrar",
       location: "Emergency department",
       phone: "08 5550 0606",
-      email: "eamon.ferrowmoor@example.org",
+      email: staffEmail(HOSPITAL_DOCTORS[11]),
     },
     arrival: [
       { label: "Coming by", detail: "Partner's car" },
@@ -480,7 +483,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "done", detail: "0.000" },
         { label: "Observations", status: "done", detail: "Heart rate settling" },
       ],
-      contact: "Dr Orla Norrowfield, ED registrar · 08 5550 0707",
+      contact: `${staffFullName(HOSPITAL_DOCTORS[12])}, ED registrar · 08 5550 0707`,
     },
     physicalHealth: [
       { label: "Conditions", detail: "Hepatitis C, treated 2023" },
@@ -500,11 +503,11 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
       { label: "Living", detail: "Lives with his mother." },
     ],
     referrer: {
-      name: "Dr Gareth Moongate",
+      name: staffFullName(HOSPITAL_DOCTORS[13]),
       role: "Psychiatry liaison registrar",
       location: "Emergency department",
       phone: "08 5550 0607",
-      email: "gareth.moongate@example.org",
+      email: staffEmail(HOSPITAL_DOCTORS[13]),
     },
     arrival: [
       { label: "Coming by", detail: "Patient transport" },
@@ -566,6 +569,9 @@ const STATUS_WORDS: Record<DossierCheckStatus, string> = {
   not_indicated: "Not indicated",
 };
 
+/** Minutes between the last result a referral letter reports and the letter itself. */
+const LETTER_AFTER_RESULTS_MINUTES = 5;
+
 /** The documents attached to a seeded referral, written from the same synthetic details so the
  *  two can never disagree. */
 function dossierDocuments(movementId: string, dossier: ReferralDossier): DossierDocument[] {
@@ -575,21 +581,7 @@ function dossierDocuments(movementId: string, dossier: ReferralDossier): Dossier
     return check ? `${STATUS_WORDS[check.status]}${check.detail ? `. ${check.detail}` : ""}.` : "Not recorded.";
   };
   const clearedAt = medicalClearance.clearedAfterMinutes ?? 0;
-  return [
-    {
-      id: `${movementId}-letter`,
-      title: "Referral letter",
-      pages: 2,
-      author: referrer.name,
-      addedAfterMinutes: 3,
-      paragraphs: [
-        "Dear colleague,",
-        dossier.reasonForReferral,
-        `Working diagnosis: ${dossier.workingDiagnosis}`,
-        ...dossier.risk.map((row) => `${row.label} risk: ${row.detail}`),
-        `Kind regards, ${referrer.name}, ${referrer.role}. Phone ${referrer.phone}.`,
-      ],
-    },
+  const results: DossierDocument[] = [
     {
       id: `${movementId}-clearance`,
       title: "Medical clearance",
@@ -623,5 +615,25 @@ function dossierDocuments(movementId: string, dossier: ReferralDossier): Dossier
       addedAfterMinutes: Math.max(0, clearedAt - 15),
       paragraphs: [`${checkLine("Bloods")}`, `Drug screen: ${checkLine("Drug screen")}`],
     },
+  ];
+  // A16-03 (Audit 16, 13 Nov 2026): the letter reports the clearance, the tests and the treatment
+  // given, so it is written after the latest of those documents, never minutes after arrival.
+  const letterAt = Math.max(...results.map((document) => document.addedAfterMinutes)) + LETTER_AFTER_RESULTS_MINUTES;
+  return [
+    {
+      id: `${movementId}-letter`,
+      title: "Referral letter",
+      pages: 2,
+      author: referrer.name,
+      addedAfterMinutes: letterAt,
+      paragraphs: [
+        "Dear colleague,",
+        dossier.reasonForReferral,
+        `Working diagnosis: ${dossier.workingDiagnosis}`,
+        ...dossier.risk.map((row) => `${row.label} risk: ${row.detail}`),
+        `Kind regards, ${referrer.name}, ${referrer.role}. Phone ${referrer.phone}.`,
+      ],
+    },
+    ...results,
   ];
 }

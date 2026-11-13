@@ -111,6 +111,15 @@
   color: var(--wf-ink-1);
 }
 
+/* F-55 (A9-36): a withheld count in words, on one line in a small size, sitting on the bar. */
+.nodeCount[data-worded] {
+  top: calc(var(--node-top) - 22px);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0;
+  white-space: nowrap;
+  color: var(--wf-ink-2);
+}
+
 .nodeLabel {
   position: absolute;
   left: 0;

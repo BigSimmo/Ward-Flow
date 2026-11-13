@@ -27,6 +27,8 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
+
+import { WorkedExamplesOn, workedExamplesWorld } from "./helpers/ward-worked-examples-on";
 const NOW = NOW_ANCHOR;
 
 function scopedStorageKey(scopeKey: string, userId: string, scenario: string, generation: number) {
@@ -34,19 +36,21 @@ function scopedStorageKey(scopeKey: string, userId: string, scenario: string, ge
 }
 
 /** Q99 (1 Nov 2026): the review lives in the app bar's Activity panel, so the bar is drawn too. */
-function renderCommand() {
+function renderCommand({ workedExamples = false }: { workedExamples?: boolean } = {}) {
   return render(
     <WardFlowProvider initialNow={NOW}>
+      {workedExamples ? <WorkedExamplesOn /> : null}
       <WardBar />
       <CoordinatorScreen />
     </WardFlowProvider>,
   );
 }
 
-function seededSnapshot() {
-  const state = seedWardFlowState();
+function seededSnapshot({ workedExamples = false }: { workedExamples?: boolean } = {}) {
+  const state = workedExamples ? workedExamplesWorld() : seedWardFlowState();
   return takeLastLookSnapshot(
     {
+      worldGeneration: state.worldGeneration,
       scenario: state.scenario,
       referrals: state.referrals,
       movements: state.movements,
@@ -143,7 +147,9 @@ describe("the Command screen's changes since the last review (Activity panel)", 
   });
 
   it("lists what is new since the remembered picture, and clears when marked reviewed", async () => {
-    const snapshot = seededSnapshot();
+    // A16-14 (D-175 item 1): the absence without leave at 10:07 is WL-RD07, a worked example that is
+    // off by default, so this test switches the examples on for both the picture and the screen.
+    const snapshot = seededSnapshot({ workedExamples: true });
     const droppedReferral = snapshot.referralIds[snapshot.referralIds.length - 1]!;
     const unitId = Object.keys(snapshot.readyByUnit).find((id) => snapshot.readyByUnit[id]! > 0)!;
     window.sessionStorage.setItem(
@@ -156,7 +162,7 @@ describe("the Command screen's changes since the last review (Activity panel)", 
       }),
     );
 
-    renderCommand();
+    renderCommand({ workedExamples: true });
     // Activity opens on Changes while there are changes, and counts them in its review button.
     await openActivity();
     const panel = within(activityPanel());

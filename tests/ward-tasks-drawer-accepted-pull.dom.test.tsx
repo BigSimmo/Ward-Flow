@@ -41,8 +41,9 @@ describe("the bell's drawer lists what the badge counts", () => {
     );
     const drawer = screen.getByRole("complementary", { name: "Alerts" });
     expect(within(drawer).getByTestId("ward-tasks-drawer-count")).toHaveTextContent(`${badge} open`);
-    const row = within(drawer).getByTestId(`ward-task-${rows[0]!.id}`);
-    expect(row).toHaveTextContent("Accepted, bed not pulled");
+    // A9-13: the seed now has more than one such row, which the drawer groups under the one title.
+    expect(drawer).toHaveTextContent("Accepted, bed not pulled");
+    expect(within(drawer).getByTestId(`ward-task-${rows[0]!.id}`)).toBeInTheDocument();
     const action = within(drawer).getByTestId(`ward-task-action-${rows[0]!.id}`);
     expect(action).toHaveTextContent("Pull the bed");
     expect(action).toHaveAttribute("href", "/ward-flow/alerts");

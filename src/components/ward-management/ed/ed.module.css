@@ -5106,6 +5106,17 @@
   color: var(--wf-ink-2);
 }
 
+/* D-192 (shared design parts item 9): a place name in the Referral cell wraps to two lines before any
+ * "…", as the Wait column's step line does (.a2Sub). */
+.a2Facts.a2Place > *,
+.a2Facts.a2Place [class]:not(svg) {
+  display: -webkit-box;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
 /* A bed-hold or transit pill stays one line with its status glyph beside the words; the glyph
  * keeps its own tone colour. */
 .a2Facts .transitBadge,

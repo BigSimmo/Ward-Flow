@@ -25,7 +25,7 @@ import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
-import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
+import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
@@ -205,6 +205,7 @@ export function MovementDrawer({
   const isPhone = useIsPhone();
   // The typed legal time's colour reads the user's own warning settings, as Waiting and Legal forms do.
   const thresholds = useDueSoonThresholds();
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
 
   if (movement === undefined) return null;
 
@@ -281,7 +282,7 @@ export function MovementDrawer({
           : "no recorded expiry"
         : ""
       : // Legal times only as typed (D-93): "ended 15:42 as typed · passed", never a count.
-        `${typedTimePhrase(dueAt, now)}${standingSuffix(standing)}`;
+        `${typedTimePhrase(dueAt, now, dayZero)}${standingSuffix(standing)}`;
   const legalTyped = dueAt !== undefined;
 
   // Every ward ever asked: live requests, recorded declines and the accepting ward. A decline

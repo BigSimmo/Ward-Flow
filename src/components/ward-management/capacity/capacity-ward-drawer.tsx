@@ -180,7 +180,13 @@ export function CapacityWardSidebar({
                 <span>ready of {row.unit.beds} beds</span>
                 <span className={`${local.tag} ${local.wdKind}`}>{bedKindsServed(row.unit)}</span>
               </p>
-              <BedCells beds={row.unit.beds} ready={row.ready} used={occupied} parts={parts} />
+              <BedCells
+                beds={row.unit.beds}
+                ready={row.ready}
+                preparing={row.beingMadeReady}
+                used={occupied}
+                parts={parts}
+              />
               {releaseNotes.length > 0 ? (
                 <ul className={`${local.mutedXs} ${local.wdPartsKey}`} aria-label="Beds in use by discharge state">
                   {releaseNotes.map((note) => (

@@ -160,12 +160,13 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
     });
   });
 
-  // Owner decision (Josh, 25 Sept 2026, approving the audit's arrival fix): PATIENT_ARRIVED never
-  // invents an admission for a movement that has none; the invented one was locked without taking a
-  // locked bed and back-dated to when the referral opened. This test used to pin that invention; it
-  // now pins its absence, while still checking the arrival itself and the empty-bed decrement.
-  describe("Task 1.3: PATIENT_ARRIVED leaves an absent admission absent", () => {
-    it("records the arrival without inventing an Admission when the movement has no admissionId", () => {
+  // Owner decision (Josh, 25 Sept 2026, approving the audit's arrival fix): the stay once invented
+  // here was locked without taking a locked bed and back-dated to when the referral opened. A9-08
+  // (Audit 9, approved by Josh 13 Nov 2026): with no stay at all, the arrived person sat on no bed and
+  // a closed bed read as an unnamed occupied one. The arrival now records the person's own stay, at
+  // arrival time, and takes its bed kind out of the free figures as a pull does.
+  describe("Task 1.3: PATIENT_ARRIVED with no pulled stay", () => {
+    it("records the arrival with a stay made now, taking a ready bed of the kind it records", () => {
       const state = seedWardFlowState("standard");
       // WF-014 in seed is in 'moving' stage and has no admissionId
       const targetMovement = state.movements.find((m) => m.id === "WF-014");
@@ -186,18 +187,19 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
       });
 
       expect(afterState.rejections).toHaveLength(0);
-      // No admission invented: the same ids, in the same order, and none for this movement.
-      expect(afterState.admissions.map((a) => a.id)).toEqual(beforeAdmissionIds);
-      expect(afterState.admissions.some((a) => a.movementId === "WF-014" && a.id.startsWith("AD-ARR-"))).toBe(false);
+      // Every earlier stay unchanged, in order, and one new stay for this movement.
+      expect(afterState.admissions.slice(0, beforeAdmissionIds.length).map((a) => a.id)).toEqual(beforeAdmissionIds);
+      const stay = afterState.admissions.at(-1)!;
+      expect(stay).toMatchObject({ movementId: "WF-014", state: "occupied", pulledAt: NOW, arrivedAt: NOW });
 
       const arrivedMovement = afterState.movements.find((m) => m.id === "WF-014")!;
       expect(arrivedMovement.stage).toBe("arrived");
-      expect(arrivedMovement.admissionId).toBeUndefined();
+      expect(arrivedMovement.admissionId).toBe(stay.id);
 
-      // The arrival still takes the physical bed, and the locked-bed count does not move.
+      // The arrival takes the physical bed, and the locked count moves only for a locked stay.
       const afterUnit = afterState.units.find((u) => u.id === targetMovement!.acceptedUnitId)!;
       expect(afterUnit.empty.value).toBe(Math.max(0, emptyBedsBefore - 1));
-      expect(afterUnit.allocatableLocked).toBe(lockedBefore);
+      expect(afterUnit.allocatableLocked).toBe(lockedBefore - (stay.bedKind === "locked" ? 1 : 0));
     });
   });
 

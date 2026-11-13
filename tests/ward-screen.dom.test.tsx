@@ -17,6 +17,7 @@ vi.mock("next/link", () => ({
 
 import { unitHasLockedBeds } from "@/components/ward-management/ward-bed-designation";
 import { capacityBreakdown, releaseBand } from "@/components/ward-management/ward-bed-availability";
+import { heldUpDueByTomorrow } from "@/components/ward-management/ward-held-up";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { ToastProvider } from "@/components/wf/toast-provider";
@@ -288,15 +289,17 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
     expect(chipRow).toHaveTextContent(`On leave ${breakdown.onLeave}`);
 
     // The four physical states, in the ruled vocabulary (`ward-bed-states.ts`): Ready · Pulled ·
-    // Closed · Occupied. The two seeded pulls on this ward are their own box, out of Occupied, and
+    // Closed · Occupied. Pulls are their own box, out of Occupied (this ward has none since A16-13), and
     // the empty bed the ward is not offering is Closed — "Held" now means only a leave bed. No
     // Blocked chip: out of service is not recorded (owner ruling 2026-09-25) and folds into Closed.
     // Integration QA (3 Nov 2026): Ready and Occupied sit once, in the hero, not in this row.
+    // A16-13 (13 Nov 2026): this ward's two seeded pulls were held for nobody, so they are now
+    // people who arrived this morning: 18 occupied and no Pulled chip.
     expect(screen.getByTestId("ward-hero-ready")).toHaveTextContent("1");
-    expect(screen.getByRole("group", { name: "Ward capacity" })).toHaveTextContent(/16\D*20\s*occupied/u);
+    expect(screen.getByRole("group", { name: "Ward capacity" })).toHaveTextContent(/18\D*20\s*occupied/u);
     expect(chipRow).not.toHaveTextContent("Ready");
     expect(chipRow).not.toHaveTextContent("Occupied");
-    expect(chipRow).toHaveTextContent("Pulled 2");
+    expect(chipRow).not.toHaveTextContent(/Pulled [1-9]/u);
     expect(chipRow).toHaveTextContent("Closed 1");
     expect(chipRow).not.toHaveTextContent("Held");
     expect(chipRow).not.toHaveTextContent("Blocked Not recorded");
@@ -327,13 +330,16 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
     // pinned to the old single-release fixture's 0.
     const breakdown = capacityBreakdown(unitById("rph-adult-secure")!, bedReleases, leaveBeds, NOW_ANCHOR);
     expect(chipRow).toHaveTextContent(`Confirmed ${breakdown.confirmedToday}`);
-    // v10 (10 Oct 2026): "counts agree across a page". Held up counts every open release with a
-    // blocker, on any day, the same population This shift and the Discharges tab list.
-    const heldUp = bedReleases.filter(
-      (release) => release.unitId === "rph-adult-secure" && release.state !== "discharged" && release.blocker !== null,
+    // D-191 item 5 (Josh, 13 Nov 2026): held up on the Ward page is due by tomorrow, the same count
+    // as `capacityBreakdown().blockedToday` beside it, and the label says the window.
+    const heldUp = heldUpDueByTomorrow(
+      bedReleases.filter((release) => release.unitId === "rph-adult-secure"),
+      NOW_ANCHOR,
     ).length;
-    expect(heldUp).toBeGreaterThanOrEqual(breakdown.blockedToday);
-    expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(`Releases held up ${heldUp}`);
+    expect(heldUp).toBe(breakdown.blockedToday);
+    expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(
+      `Releases held up, due by tomorrow ${heldUp}`,
+    );
     // ...and no chip reads "Blocked" as a bed state beside it: the out-of-service box is gone and
     // the empty bed the ward is not offering is the separately worded Closed chip.
     expect(chipRow).not.toHaveTextContent(/\bBlocked\b/u);
@@ -367,10 +373,13 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
 
     const chipRow = screen.getByTestId("ward-unit-beds");
     expect(chipRow).toHaveTextContent(`Confirmed ${before.confirmedToday}`);
-    const heldBefore = bedReleases.filter(
-      (release) => release.unitId === unit.id && release.state !== "discharged" && release.blocker !== null,
+    const heldBefore = heldUpDueByTomorrow(
+      bedReleases.filter((release) => release.unitId === unit.id),
+      NOW_ANCHOR,
     ).length;
-    expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(`Releases held up ${heldBefore + 1}`);
+    expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(
+      `Releases held up, due by tomorrow ${heldBefore + 1}`,
+    );
     const row = screen.getByTestId(`ward-barrier-${CONFIRMED_RELEASE!.id}`);
     expect(row).toHaveTextContent("Confirmed");
     expect(row).toHaveTextContent("Held up");

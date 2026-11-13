@@ -79,54 +79,65 @@ sub-labels under those four, in order: **Referred**, **Review**, **Accepted**, *
 
 ## People, services and short forms
 
-| Say               | Means                                                                                     |
-| ----------------- | ----------------------------------------------------------------------------------------- |
-| **ECT**           | Electroconvulsive therapy.                                                                |
-| **NIC**           | Nurse in charge.                                                                          |
-| **NUM**           | Nurse unit manager.                                                                       |
-| **CAHS**          | Child and Adolescent Health Service.                                                      |
-| **EMHS**          | East Metropolitan Health Service.                                                         |
-| **NMHS**          | North Metropolitan Health Service.                                                        |
-| **SMHS**          | South Metropolitan Health Service.                                                        |
-| **WACHS**         | WA Country Health Service.                                                                |
-| **ED**            | Emergency department, after first use.                                                    |
-| **AWOL**          | Absent without leave. On screen, written in full where there is room.                     |
-| **CTO**           | Community treatment order.                                                                |
-| **EDD**           | Expected date of discharge.                                                               |
-| **ETA**           | Estimated time of arrival, as quoted by the transport provider or the ward.               |
-| **MDT**           | Multidisciplinary team.                                                                   |
-| **MHA**           | The Mental Health Act, the WA law the legal forms are named from. Never "MHA 2014".       |
-| **ATS**           | Australasian Triage Scale category, as recorded at ED triage.                             |
-| **RAMP**          | Risk Assessment and Management Plan, the WA mental health form.                           |
-| **PSP**           | Personal support person: a carer, close family member, nominated person or guardian.      |
-| **MHAS**          | Mental Health Advocacy Service.                                                           |
-| **GP**            | General practitioner.                                                                     |
-| **BPSD**          | Behavioural and psychological symptoms of dementia.                                       |
-| **AWST**          | Australian Western Standard Time, Perth time. Every time in Ward Flow is in AWST.         |
-| **CAMHS**         | Child and Adolescent Mental Health Service.                                               |
-| **HDU**           | High dependency unit: a ward area for patients who need closer care.                      |
-| **KPI**           | Key performance indicator, such as the national seven-day follow-up measure.              |
-| **MHERL**         | Mental Health Emergency Response Line, the WA crisis phone line.                          |
-| **PIR**           | Post-incident review. The PIR chronology lists one patient's events in time order.        |
-| **QR code**       | A square barcode a phone camera can read to open a link, such as a desk's Ward Flow link. |
-| **ATSI**          | Aboriginal and Torres Strait Islander.                                                    |
-| **CMHT**          | Community mental health team.                                                             |
-| **CNS**           | Clinical nurse specialist.                                                                |
-| **DOB**           | Date of birth.                                                                            |
-| **ECG**           | Electrocardiogram, a recording of the heart's rhythm.                                     |
-| **EMR**           | Electronic medical record.                                                                |
-| **FDV**           | Family and domestic violence. The FDV951 is WA Health's screening form.                   |
-| **HMDC**          | Hospital Morbidity Data Collection, WA Health's record of hospital stays.                 |
-| **ISBAR**         | Identify, Situation, Background, Assessment, Recommendation: the order of a handover.     |
-| **MBBS**          | Bachelor of Medicine, Bachelor of Surgery, a medical degree.                              |
-| **MHN**           | Mental health nurse.                                                                      |
-| **NICE**          | National Institute for Health and Care Excellence, the UK guideline body.                 |
-| **PAS**           | Patient administration system, the hospital's admissions and bed record.                  |
-| **PSOLIS**        | Psychiatric Services Online Information System, WA's mental health record.                |
-| **RN**            | Registered nurse.                                                                         |
-| **SMHMR**         | The form-number prefix for WA's statewide standardised mental health documents.           |
-| **SW**            | Social worker.                                                                            |
-| Sign in, sign out | Never log in or log out.                                                                  |
+| Say               | Means                                                                                                          |
+| ----------------- | -------------------------------------------------------------------------------------------------------------- |
+| **ECT**           | Electroconvulsive therapy.                                                                                     |
+| **NIC**           | Nurse in charge.                                                                                               |
+| **NUM**           | Nurse unit manager.                                                                                            |
+| **CAHS**          | Child and Adolescent Health Service.                                                                           |
+| **EMHS**          | East Metropolitan Health Service.                                                                              |
+| **NMHS**          | North Metropolitan Health Service.                                                                             |
+| **SMHS**          | South Metropolitan Health Service.                                                                             |
+| **WACHS**         | WA Country Health Service.                                                                                     |
+| **ED**            | Emergency department, after first use.                                                                         |
+| **AWOL**          | Absent without leave. On screen, written in full where there is room.                                          |
+| **CTO**           | Community treatment order.                                                                                     |
+| **EDD**           | Expected date of discharge.                                                                                    |
+| **ETA**           | Estimated time of arrival, as quoted by the transport provider or the ward.                                    |
+| **MDT**           | Multidisciplinary team.                                                                                        |
+| **MHA**           | The Mental Health Act, the WA law the legal forms are named from. Never "MHA 2014".                            |
+| **ATS**           | Australasian Triage Scale category, as recorded at ED triage.                                                  |
+| **RAMP**          | Risk Assessment and Management Plan, the WA mental health form.                                                |
+| **PSP**           | Personal support person: a carer, close family member, nominated person or guardian.                           |
+| **MHAS**          | Mental Health Advocacy Service.                                                                                |
+| **GP**            | General practitioner.                                                                                          |
+| **BPSD**          | Behavioural and psychological symptoms of dementia.                                                            |
+| **AWST**          | Australian Western Standard Time, Perth time. Signed-in times are AWST; the demo's board clock says demo time. |
+| **CAMHS**         | Child and Adolescent Mental Health Service.                                                                    |
+| **HDU**           | High dependency unit: a ward area for patients who need closer care.                                           |
+| **KPI**           | Key performance indicator, such as the national seven-day follow-up measure.                                   |
+| **MHERL**         | Mental Health Emergency Response Line, the WA crisis phone line.                                               |
+| **PIR**           | Post-incident review. The PIR chronology lists one patient's events in time order.                             |
+| **QR code**       | A square barcode a phone camera can read to open a link, such as a desk's Ward Flow link.                      |
+| **ATSI**          | Aboriginal and Torres Strait Islander.                                                                         |
+| **CMHT**          | Community mental health team.                                                                                  |
+| **CNS**           | Clinical nurse specialist.                                                                                     |
+| **DOB**           | Date of birth.                                                                                                 |
+| **ECG**           | Electrocardiogram, a recording of the heart's rhythm.                                                          |
+| **EMR**           | Electronic medical record.                                                                                     |
+| **FDV**           | Family and domestic violence. The FDV951 is WA Health's screening form.                                        |
+| **HMDC**          | Hospital Morbidity Data Collection, WA Health's record of hospital stays.                                      |
+| **ISBAR**         | Identify, Situation, Background, Assessment, Recommendation: the order of a handover.                          |
+| **MBBS**          | Bachelor of Medicine, Bachelor of Surgery, a medical degree.                                                   |
+| **MHN**           | Mental health nurse.                                                                                           |
+| **NICE**          | National Institute for Health and Care Excellence, the UK guideline body.                                      |
+| **PAS**           | Patient administration system, the hospital's admissions and bed record.                                       |
+| **PSOLIS**        | Psychiatric Services Online Information System, WA's mental health record.                                     |
+| **RN**            | Registered nurse.                                                                                              |
+| **SMHMR**         | The form-number prefix for WA's statewide standardised mental health documents.                                |
+| **SW**            | Social worker.                                                                                                 |
+| **AHD**           | Advance health directive.                                                                                      |
+| **BD**            | Twice a day, on a medicine line.                                                                               |
+| **CK**            | Creatine kinase, a blood test.                                                                                 |
+| **CR**            | Controlled release, on a medicine line.                                                                        |
+| **IM**            | Intramuscular, given as an injection into a muscle.                                                            |
+| **MRO**           | Multi-resistant organism.                                                                                      |
+| **MSE**           | Mental state examination.                                                                                      |
+| **OT**            | Occupational therapist.                                                                                        |
+| **RACF**          | Residential aged care facility.                                                                                |
+| **RAT**           | Rapid antigen test.                                                                                            |
+| **SAT**           | State Administrative Tribunal, WA's tribunal for guardianship and administration.                              |
+| Sign in, sign out | Never log in or log out.                                                                                       |
 
 **Bed coordinator** is the coordinator's name on every screen (Josh, 26 October 2026, A19). Do not say
 "flow coordinator" or "bed manager" for this role. "Bed flow coordinator" stays only as an on-call title.
@@ -161,7 +172,7 @@ Added 26 October 2026 with the Help glossary, so the two stay in step.
 | **Shift brief**          | A ward's sheet for the shift: who came in, is going, is stuck or is overdue.                         |
 | **Notices**              | A ward's own messages under the bell: buzzes, urgent tasks and notices.                              |
 | **Activity**             | The header drawer of recent changes and notices.                                                     |
-| **Board time**           | The clock every screen works from, in Perth time (AWST).                                             |
+| **Board time**           | The clock every screen works from: "demo time" in the demo, Perth time (AWST) when signed in.        |
 | **Demo**                 | The Demo panel: scenario, clock and reset for the invented data. The live pill reads "Demo 10:42".   |
 | **Synthetic**            | Invented. Every patient, bed figure and record in Ward Flow is made up.                              |
 
@@ -170,35 +181,37 @@ Added 26 October 2026 with the Help glossary, so the two stay in step.
 Added with the Help glossary for the chronology, statistics and the newly walked screens, so the two stay in
 step.
 
-| Say                     | Means                                                                                          |
-| ----------------------- | ---------------------------------------------------------------------------------------------- |
-| **Accept in principle** | A ward agrees it can take the patient. A bed is pulled as a separate step.                     |
-| **Gate**                | One of a ward's own checks for a patient, marked Pass or Does not pass. It informs the answer. |
-| **Stranded**            | A prompt, not a judgement: a long stay with no expected discharge date, or waiting on others.  |
-| **Step-down**           | A patient the ward has marked as a candidate for subacute care.                                |
-| **Stale count**         | A ward's bed figures not confirmed lately, so they may be out of date.                         |
-| **Mismatch**            | People waiting against beds that fit, for each kind of bed, on Capacity.                       |
-| **Chronology**          | One patient's events in time order, built from the records for a post-incident review.         |
-| **Audit trail**         | Coordinator changes and overrides, with their reasons.                                         |
-| **Session log**         | What this browser session recorded, for this session only.                                     |
-| **CSV**                 | A plain spreadsheet file. Download CSV saves what you are looking at.                          |
-| **Downtime pack**       | A printable copy of the last snapshot, for when the system is down.                            |
-| **Snapshot**            | A copy of the figures at one time. Only the bed coordinator takes a new one.                   |
-| **Caseload**            | The people a community team is looking after.                                                  |
-| **Read alike**          | Community team names that look similar, set side by side.                                      |
-| **Cover**               | One ward or one ED handed to another desk for at most 12 hours.                                |
-| **In use**              | Beds occupied or pulled, as a share of a ward's beds.                                          |
-| **Occupancy**           | The share of beds in use.                                                                      |
-| **Typical**             | The median: half took less time and half took more.                                            |
-| **Slowest 1 in 10**     | The time the slowest tenth took longer than.                                                   |
-| **Stay so far**         | How long people in a bed now have been there. Not a finished length of stay.                   |
-| **Open ED movement**    | A movement that started at an ED and has not closed, including people in transit.              |
-| **Fewer than 5**        | Shown in place of a small count of people, so no one can be picked out.                        |
-| **Not recorded**        | Nobody recorded this figure. Ward Flow does not guess it.                                      |
-| **Pilot measures**      | The weekly report's own measures, such as referral to arrival.                                 |
-| **Bed meeting**         | The regular meeting on beds, with an agenda built from fixed rules.                            |
-| **Ward promise**        | A time a ward said it would ring back.                                                         |
-| **Surge**               | A Settings choice that tightens some rules at once for a busy period.                          |
+| Say                     | Means                                                                                                          |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Accept in principle** | A ward agrees it can take the patient. A bed is pulled as a separate step.                                     |
+| **Gate**                | One of a ward's own checks for a patient, marked Pass or Does not pass. It informs the answer.                 |
+| **Stranded**            | A prompt, not a judgement: a long stay with no expected discharge date, or waiting on others.                  |
+| **Step-down**           | A patient the ward has marked as a candidate for subacute care.                                                |
+| **Stale count**         | A ward's bed figures not confirmed lately, so they may be out of date.                                         |
+| **Mismatch**            | People waiting against beds that fit, for each kind of bed, on Capacity.                                       |
+| **Chronology**          | One patient's events in time order, built from the records for a post-incident review.                         |
+| **Audit trail**         | Coordinator changes and overrides, with their reasons.                                                         |
+| **Session log**         | What this browser session recorded, for this session only.                                                     |
+| **CSV**                 | A plain spreadsheet file. Download CSV saves what you are looking at.                                          |
+| **Downtime pack**       | A printable copy of the last snapshot, for when the system is down.                                            |
+| **Snapshot**            | A copy of the figures at one time. Only the bed coordinator takes a new one.                                   |
+| **Caseload**            | The people a community team is looking after.                                                                  |
+| **Read alike**          | Community team names that look similar, set side by side.                                                      |
+| **Cover**               | One ward or one ED handed to another desk for at most 12 hours.                                                |
+| **In use**              | Beds occupied or pulled, as a share of a ward's beds.                                                          |
+| **Occupancy**           | The share of beds in use.                                                                                      |
+| **Typical**             | The median: half took less time and half took more.                                                            |
+| **Slowest 1 in 10**     | The time the slowest tenth took longer than.                                                                   |
+| **Stay so far**         | How long people in a bed now have been there. Not a finished length of stay.                                   |
+| **Open ED movement**    | A movement that started at an ED and has not closed, including people in transit.                              |
+| **Fewer than 5**        | Shown in place of a small count of people, so no one can be picked out.                                        |
+| **Not recorded**        | Nobody recorded this figure. Ward Flow does not guess it.                                                      |
+| **Pilot measures**      | The weekly report's own measures, such as referral to arrival.                                                 |
+| **Bed meeting**         | The regular meeting on beds, with an agenda built from fixed rules.                                            |
+| **Ward promise**        | A time a ward said it would ring back.                                                                         |
+| **Surge**               | A Settings choice that tightens some rules at once for a busy period.                                          |
+| **Undo window**         | How long a recorded decision or bed move can still be undone: 5 minutes. A software limit, not a clinical one. |
+| **Wards asked at once** | A coordinator normally asks up to three wards at once. A fourth needs a recorded reason.                       |
 
 ## Save problems
 
@@ -250,6 +263,7 @@ away; pulled is a bed kept for an incoming patient; held up is a delay.
 | 4h                             | minutes for a long duration ("240 minutes")                           |
 | on the board                   | demo night (the live pill "Demo 10:42" stays, HOW-WE-WORK §6)         |
 | Nobody                         | No one ("Nobody waiting", not "No one waiting")                       |
+| Next escalation step           | Suggested next step, as the ED wait step label (D-192)                |
 
 ## Plain words (wording audit, 26 October 2026)
 

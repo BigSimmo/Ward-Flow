@@ -161,3 +161,6 @@ export { NETWORK_WIDE, ScopeNote } from "./figure-scope";
 // Shared design parts (D-192, 13 Nov 2026): the full-screen frame that keeps the synthetic-data mark
 // in view when a table or chart is enlarged. (The loading row imports the mark by its own file.)
 export { FullScreenFrame, FullScreenMarkSlot } from "./full-screen-frame";
+// Shared design parts (D-192): who does an action that is never yours, and the in-row Undo.
+export { WhoDoesThis } from "./who-does-this";
+export { RowUndo } from "./row-undo";

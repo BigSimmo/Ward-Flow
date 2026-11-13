@@ -19,7 +19,9 @@ import { Dialog, Field, StateLine, TextInput } from "@/components/wf";
 import { StepUpReauthContext } from "@/components/ward-management/shell/ward-step-up-context";
 import { WardAuthError } from "@/components/ward-management/ward-auth-link";
 
-import { lockTv, readLock, useTvLock, writeLock } from "./tv-lock-guard";
+import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
+
+import { lockTv, noteTvLockControl, readLock, useTvLock, writeLock } from "./tv-lock-guard";
 import styles from "./tv-lock.module.css";
 
 export { TV_LOCK_STORAGE_KEY, TvLockGuard, lockTv, useTvLock } from "./tv-lock-guard";
@@ -29,8 +31,20 @@ export { TV_LOCK_STORAGE_KEY, TvLockGuard, lockTv, useTvLock } from "./tv-lock-g
  * for the password (shared workspace) or a confirm (demo); "Leave TV view" then shows again. In the
  * shared workspace with no connection, unlocking waits until the password can be checked.
  */
-export function TvLockControl({ href, className, shared }: { href: string; className: string; shared: boolean }) {
+export function TvLockControl({
+  href,
+  className,
+  shared,
+  standIn = false,
+}: {
+  href: string;
+  className: string;
+  shared: boolean;
+  /** The layout's stand-in (F-65), which must not count as the TV view's own control. */
+  standIn?: boolean;
+}) {
   const locked = useTvLock();
+  useEffect(() => (standIn ? undefined : noteTvLockControl()), [standIn]);
   const reauthenticate = useContext(StepUpReauthContext);
   const needsPassword = shared;
   const offline = shared && reauthenticate === null;
@@ -177,5 +191,19 @@ export function TvLockControl({ href, className, shared }: { href: string; class
         )}
       </Dialog>
     </>
+  );
+}
+
+/**
+ * F-65 (K8, RC 5.3, A14-24): the stand-in Unlock for a locked browser whose TV view shows no control of
+ * its own, so the lock can never trap it. The same control and the same password or confirm.
+ */
+export function TvLockFallback({ href }: { href: string }) {
+  const shared = useContext(SharedSessionContext) !== null;
+  return (
+    <div className={styles.fallback} role="region" aria-label="TV lock" data-testid="tv-lock-fallback">
+      <p>This browser is locked to the TV view.</p>
+      <TvLockControl href={href} className={styles.fallbackButton} shared={shared} standIn />
+    </div>
   );
 }

@@ -13,9 +13,10 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { FullScreenFrame, FullScreenMarkSlot } from "@/components/wf/full-screen-frame";
 import { SyntheticMark } from "@/components/wf/synthetic-mark";
 
@@ -126,6 +127,23 @@ describe("enlarged views carry the mark", () => {
     }
   });
 
-  // The ED handover board waits for PR C (#1660, avoid list); this case returns when the mark is wired there.
-  it.todo("the enlarged ED handover table");
+  it("the enlarged ED handover table", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <EdScreen edId={allEmergencyDepartments()[0].id} />
+      </WardFlowProvider>,
+    );
+    const board = screen.getByRole("region", { name: "This department's patients" });
+    expect(marksIn(board)).toHaveLength(0);
+    fireEvent.click(within(board).getByRole("button", { name: "Enlarge" }));
+    const enlarged = screen.getByRole("region", { name: "This department's patients" });
+    expect(enlarged).toHaveAttribute("data-wf-full-screen", "true");
+    expect(marksIn(enlarged)).toHaveLength(1);
+    expect(within(enlarged).getByTitle(FULL)).toBeInTheDocument();
+    // On the filter row, under Exit full screen, never in place of it.
+    expect(marksIn(within(enlarged).getByRole("group", { name: "Filter the board" }).parentElement!)).toHaveLength(1);
+    expect(within(enlarged).getByRole("button", { name: "Exit full screen" })).toBeInTheDocument();
+    fireEvent.click(within(enlarged).getByRole("button", { name: "Exit full screen" }));
+    expect(marksIn(screen.getByRole("region", { name: "This department's patients" }))).toHaveLength(0);
+  });
 });

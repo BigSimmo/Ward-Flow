@@ -40,8 +40,9 @@ function chartAnswered(draft: DocumentationDraft, kind: FollowableChartKind): bo
 export function intakeCharts(
   draft: DocumentationDraft,
   community: boolean,
-): Pick<ReferralIntakeDetails, "charts" | "chartsToFollow"> {
-  if (community) return { charts: [] };
+): Pick<ReferralIntakeDetails, "charts" | "chartsToFollow" | "chartsNotNeeded"> {
+  // A9-06: said in a form the intake check accepts, so a community referral can be sent.
+  if (community) return { charts: [], chartsNotNeeded: true };
   const chartsToFollow = [
     ...(draft.toFollow ?? []).filter((kind) => !draft.charts.some((chart) => chart.kind === kind)),
     ...REQUIRED_CHARTS.filter((kind) => !chartAnswered(draft, kind)),

@@ -259,7 +259,7 @@ describe("history wording", () => {
 describe("minutesAgoLabel", () => {
   it("reads as minutes, then hours and minutes", () => {
     expect(minutesAgoLabel(NOW, NOW)).toBe("just now");
-    expect(minutesAgoLabel(NOW - 40, NOW)).toBe("40 min ago");
+    expect(minutesAgoLabel(NOW - 40, NOW)).toBe("40m ago");
     expect(minutesAgoLabel(NOW - 125, NOW)).toBe("2h 05m ago");
   });
 });

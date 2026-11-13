@@ -104,6 +104,7 @@ import { useWaitingDeskWords } from "./waiting-desk-words";
 import { WaitingOwnerTiles } from "./waiting-owner-tiles";
 import { useShorterColumnAnchor } from "./waiting-column-anchor";
 import { SearchField } from "@/components/wf";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 /** Groups shown open on first load: the severe ones and "Waiting on you". The rest start folded. */
 const OPEN_BY_DEFAULT: readonly DelayCause[] = [
@@ -175,6 +176,7 @@ export function DelaysBoard({
   empty,
   openRequest,
 }: DelaysBoardProps) {
+  const zone = useClockZoneLabel();
   const thresholds = useDueSoonThresholds();
   const patientOf = usePatientOf();
   // Role views (nurse in charge, ED clinician): the desk's own words and lenses (`waiting-desk-words.ts`).
@@ -304,10 +306,10 @@ export function DelaysBoard({
         serviceName: (row) => catchmentName(row.origin),
         causeTitle: (row) => desk.causeTitle(row.cause),
         ownerName: (row) => desk.ownerName(row.owner),
-        legalTime: (row) => legalTimeAsTypedWords(row.movement, now),
+        legalTime: (row) => legalTimeAsTypedWords(row.movement, now, dayZero),
       },
       {
-        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone }),
         scope: filtered
           ? `Waiting; the ${shown.length} of ${rows.length} people the current filters and search show`
           : "Waiting; everyone on the list, no filter or search applied",
@@ -543,7 +545,7 @@ export function DelaysBoard({
               <FormalName name={patient.formalName} />
             </b>
             <span className={`${styles.ellBlock} ${waitingKeys.phWrapLine}`} data-ward-type-floor="delays-profile">
-              {isPhone ? phonePrefix(row, now, thresholds) : null}
+              {isPhone ? phonePrefix(row, now, thresholds, dayZero) : null}
               {/* Josh, 30 Oct 2026: on a phone the ED leads, so a form shown first never cuts it off.
                   Role view (as ED clinician): every row is this ED's, so its code is left off. */}
               {(isPhone
@@ -598,7 +600,7 @@ export function DelaysBoard({
           </span>
         </td>
         <td role="cell" className={styles.cLegal}>
-          {legalCell(row, now, thresholds)}
+          {legalCell(row, now, thresholds, dayZero)}
         </td>
         <td role="cell" className={styles.cUpd} data-ward-type-floor="delays-since">
           {isPhone ? phoneUpdate(row) : updateCell(row, now)}

@@ -36,6 +36,7 @@ export function useWardScreenFigures(
       unit && {
         capacity: unitCapacity(unit, bedReleases),
         // A16-25 (3.4): the ward's named holds, as its board counts them, so Ready matches Capacity.
+        // A9-13 (Audit 9): a bed pulled on the board for an accepted referral now lowers the hero too.
         states: bedStates(
           unit,
           admissions,
@@ -58,8 +59,9 @@ export function useWardScreenFigures(
   const liveFormAlerts = useMemo(
     () =>
       unit &&
-      wardLiveFormAlerts({ resolvePatientIdentity, accepted, now, thresholds, overdueLeaveBeds, unit }).liveFormAlerts,
-    [resolvePatientIdentity, accepted, now, thresholds, overdueLeaveBeds, unit],
+      wardLiveFormAlerts({ resolvePatientIdentity, accepted, now, thresholds, overdueLeaveBeds, unit, dayZero })
+        .liveFormAlerts,
+    [resolvePatientIdentity, accepted, now, thresholds, overdueLeaveBeds, unit, dayZero],
   );
   const states = steady?.states;
   const roster = useMemo(

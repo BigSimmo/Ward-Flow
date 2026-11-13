@@ -90,6 +90,14 @@ const BANNED: readonly Banned[] = [
   // #1476 review (5 Nov 2026): the §6 "Nobody, not No one" rule, now kept by this test.
   // The ED board mock-up copies under ward-redesign/ stay as drawn (D-91), so this rule skips them.
   { id: "No one", pattern: /\bNo one\b/, instead: "Nobody", skip: /^src\/components\/ward-redesign\// },
+  // D-192 (Josh, 13 Nov 2026): the ED wait step's label. Only the label: the steps themselves are
+  // unchanged. The approved mock-up copies under ward-redesign/ stay as drawn (D-91).
+  {
+    id: "Suggested next step",
+    pattern: /\bSuggested next step\b/,
+    instead: "Next escalation step",
+    skip: /^src\/components\/ward-redesign\//,
+  },
   // Australian spelling.
   {
     id: "US spelling",

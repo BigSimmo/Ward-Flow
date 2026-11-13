@@ -90,7 +90,7 @@ describe("This shift card: bed counts confirmed", () => {
 
   it("says no discharge is held up when none is, without the word blocker (#1476 review)", () => {
     render(<ShiftChecks model={shiftModel([confirmedAt(a!, since)])} onAskWard={vi.fn()} />);
-    expect(screen.getByText("No discharge is recorded as held up.")).toBeInTheDocument();
+    expect(screen.getByText("No discharge due by tomorrow is recorded as held up.")).toBeInTheDocument();
     expect(screen.queryByText(/blocker/iu)).toBeNull();
   });
 });

@@ -51,14 +51,17 @@ export function MeetingTvTop({
   screen: string;
 }) {
   const { capacity, discharges, ed, delays } = sheet;
-  // Held up discharges are due too: the panel lists them, so the figure counts them.
-  const dischargesDue = discharges.heldUp + discharges.confirmed + discharges.expected;
+  // The TV's headline is the on-screen sheet's "Beds freeing today", from the same shared rule
+  // (`bedsFreeingTodayTotal`, A16-05: a date already passed is not freeing), so the two screens in the
+  // meeting room never show different discharge figures. The by-tomorrow window (D-191 item 5) stays
+  // in the held-up line and the service table's "Due by tomorrow" column, where it is named.
+  const freeingToday = discharges.freeingToday;
   const longest = ed.longestWaits[0];
   // Plan item 43 (D-137): a figure that changed since the last refresh says when, for a while. A
   // screen that is not live records no change.
   const changed = useTvChangeMarks(
     screen,
-    { ed: ed.waiting, ready: capacity.ready, discharges: dischargesDue, delays: delays.total },
+    { ed: ed.waiting, ready: capacity.ready, discharges: freeingToday, delays: delays.total },
     now,
     !live,
   );
@@ -109,8 +112,9 @@ export function MeetingTvTop({
                 },
                 {
                   id: "discharges",
-                  value: dischargesDue,
-                  label: labelOf("discharges", "discharges due"),
+                  value: freeingToday,
+                  // A14-11, F-105: the same figure and words as the on-screen sheet's headline.
+                  label: labelOf("discharges", "beds freeing today"),
                   testId: "bed-meeting-tv-discharges",
                 },
                 {

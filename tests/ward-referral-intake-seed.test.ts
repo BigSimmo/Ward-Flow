@@ -16,7 +16,8 @@ import { WARD_SCENARIOS } from "@/components/ward-management/ward-scenarios";
 describe("complete synthetic referral form content", () => {
   it("provides a valid deterministic intake for every actual referral in every scenario", () => {
     for (const scenario of WARD_SCENARIOS) {
-      const state = seedWardFlowState(scenario);
+      // A16-14 (D-175 item 1): worked examples on, so RF-RD06's intake is still checked (36, not 35).
+      const state = seedWardFlowState(scenario, { workedExamples: true });
       // S6 example data (3 Nov 2026): 5 example referrals on the standard nights, 9 on the networks.
       expect(state.referrals.length, scenario).toBe(scenario === "standard" || scenario === "scarce" ? 36 : 18);
       const before = structuredClone(state.referrals);

@@ -68,7 +68,7 @@ function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
   } = ctx;
   const minutesInDepartment = Math.max(Math.min(now, recordedEdDeparture(movement) ?? now) - movement.openedAt, 0);
   const medicalClearance = movementMedicalClearance(movement, referrals);
-  const formExpiryText = movement.legalForm ? formExpiryLine(movement.legalForm, now) : undefined;
+  const formExpiryText = movement.legalForm ? formExpiryLine(movement.legalForm, now, dayZero) : undefined;
   const formExpiryWarningText = movement.legalForm ? formExpiryWarning(movement.legalForm, now, thresholds) : undefined;
   const item = outstandingItem(movement);
   // Owner, 26 Sept 2026: resolved early so the blocked-reason sentences below can

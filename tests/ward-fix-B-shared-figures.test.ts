@@ -257,7 +257,7 @@ describe("the ED access card uses the ward's ready beds (A16-07, 3.6)", () => {
 
   it("says 'ahead in the line' only when someone is ahead", () => {
     const row = risk.atRisk[0]!;
-    const withRelease = { ...row, nextRelease: { unitId: "u", unitName: "Ward B", at: NOW + 60, blocker: null } };
+    const withRelease = { ...row, nextRelease: { unitId: "u", unitName: "Ward B", at: NOW + 60 } };
     expect(releaseText({ ...withRelease, ahead: 0 }, NOW, true)).not.toMatch(/ahead in the line/u);
     expect(releaseText({ ...withRelease, ahead: 1 }, NOW, true)).toMatch(/1 person ahead in the line\.$/u);
     expect(releaseText({ ...withRelease, ahead: 3 }, NOW, true)).toMatch(/3 people ahead in the line\.$/u);
@@ -290,11 +290,12 @@ describe("figures that count different spans say so (A16-19, A16-25)", () => {
     expect(brief.map((line) => line.text).join(" ")).toMatch(/overdue discharges? not held up/u);
   });
 
-  it("held up: Capacity any date, the sheet and TV due by tomorrow, the sheet's today line today", () => {
+  it("held up: Capacity, the sheet and TV all due by tomorrow (D-191 item 5), the sheet's today line today", () => {
     const open = seed.bedReleases.filter((each) => each.state !== "discharged" && each.blocker !== null);
-    expect(heldUpReleases(seed.bedReleases, NOW).total).toBe(open.length);
+    const byTomorrow = open.filter((each) => dayOf(each.expectedAt) - dayOf(NOW) <= 1).length;
+    expect(heldUpReleases(seed.bedReleases, NOW).total).toBe(byTomorrow);
     const sheet = sheetOf(seed);
-    expect(sheet.discharges.heldUp).toBe(open.filter((each) => dayOf(each.expectedAt) - dayOf(NOW) <= 1).length);
+    expect(sheet.discharges.heldUp).toBe(byTomorrow);
     expect(sheet.discharges.heldUpToday).toBe(open.filter((each) => isFreeingToday(each, NOW)).length);
   });
 

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { capacityBreakdown, releaseBand } from "../src/components/ward-management/ward-bed-availability";
+import {
+  bedsPendingPreparation,
+  capacityBreakdown,
+  releaseBand,
+} from "../src/components/ward-management/ward-bed-availability";
 import { BED_PREPARATION_NOTES, BED_RELEASE_BLOCKERS } from "../src/components/ward-management/ward-change-reasons";
 import { unitCapacity } from "../src/components/ward-management/ward-derivations";
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
@@ -328,7 +332,9 @@ describe("ward bed release lifecycle", () => {
    * against the unit's own bed figures, which is where a gating implementation would have to
    * write — `capacityBreakdown`'s `availableNow` reads those and never a release.
    */
-  it("2f. marking a released bed as being made ready changes no bed figure at all", () => {
+  // D-179 item 8 (Josh, 13 Nov 2026): a bed being made ready is no longer Ready, so marking it
+  // takes it off availableNow by one and changes nothing else.
+  it("2f. marking a released bed as being made ready takes it off Ready and changes no other figure", () => {
     // CHANGED 25 September 2026: WR-008 no longer exists. The picker takes a released bed that is
     // not already being made ready (the seed authors one that is, at Armadale), so before and after
     // genuinely differ without a reset step. The property under test is unchanged.
@@ -356,10 +362,8 @@ describe("ward bed release lifecycle", () => {
     expect(release(next, target.id).preparationNote).toBe("Being cleaned");
 
     const after = capacityBreakdown(unit(next, target.unitId), next.bedReleases, next.leaveBeds, NOW);
-    expect(after).toEqual(before);
-    // Non-vacuity: this unit really does have a bed to withhold, so a gating implementation had
-    // somewhere to go wrong.
-    expect(after.availableNow).toBeGreaterThan(0);
+    expect(after).toEqual({ ...before, availableNow: before.availableNow - 1 });
+    expect(before.availableNow).toBeGreaterThan(0);
   });
 
   /**
@@ -496,7 +500,9 @@ describe("ward bed release lifecycle", () => {
     expect(release(next, target.id)).toEqual(target);
   });
 
-  it("4. recording the leaving completes the release and availableNow rises by one", () => {
+  // D-179 item 8: the freed bed is being made ready (`departAdmission`), so it is counted on its
+  // own and joins Ready only once the ward marks it ready.
+  it("4. recording the leaving completes the release and the bed is counted as being made ready", () => {
     // CHANGED 25 September 2026: owner decision 2026-09-25 made a bed release complete only once
     // its named admission has actually left (RECORD_LEAVING -> `departAdmission`), never directly
     // through RELEASE_BED while the person is still occupying the bed — see the reducer's own
@@ -526,7 +532,11 @@ describe("ward bed release lifecycle", () => {
     expect(release(left, target.id).waitingOn).toBeNull();
     expect(release(left, target.id).blocker).toBeNull();
     const after = capacityBreakdown(unit(left, target.unitId), left.bedReleases, left.leaveBeds, NOW);
-    expect(after.availableNow).toBe(before.availableNow + 1);
+    expect(release(left, target.id).preparing).toBe(true);
+    expect(after.availableNow).toBe(before.availableNow);
+    expect(bedsPendingPreparation(target.unitId, left.bedReleases)).toBe(
+      bedsPendingPreparation(target.unitId, state.bedReleases) + 1,
+    );
   });
 
   it("fix round 1 (Critical): recording a leaving at full vacancy still reconciles to unit.beds", () => {

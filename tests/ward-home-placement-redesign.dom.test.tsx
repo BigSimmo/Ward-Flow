@@ -267,7 +267,11 @@ describe("Placement panel redesign", () => {
       .find((candidate) => within(candidate).queryByTestId("legal-limits-not-checked"));
     expect(line, "the legal line lost its not-legally-checked tag").toBeDefined();
     if (!line) return;
-    expect(line).toHaveTextContent(formTimeAsTyped(movement.legalForm!, now));
+    // Two days on, the typed time carries its Perth date from the board's day 0, never an age (D1, D-93).
+    const [formName] = formTimeAsTyped(movement.legalForm!, now, undefined).split(" · ");
+    expect(line).toHaveTextContent(`${formName} · ended`);
+    expect(line.textContent).toMatch(/ended \w{3} \d{1,2} \w{3} \d{2}:\d{2} as typed/u);
+    expect(line.textContent).not.toMatch(/\bago\b|earlier day/u);
     expect(line).not.toHaveTextContent(splitDuration(3413));
     expect(line.textContent).not.toMatch(/\d+ min ago/u);
     // Owner rule D5: wherever a legal limit shows, it says it was not legally checked.

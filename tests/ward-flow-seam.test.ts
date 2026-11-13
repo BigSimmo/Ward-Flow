@@ -108,6 +108,13 @@ const APPROVED_SHARED_MODULES = new Map([
       "It also owns the Glare mode preference for the same reason.",
   ],
   [
+    "@/components/wf/format",
+    "the kit's leaf of time formats (no React, no styles). RC 2.5 (F-35, 13 Nov 2026): the clock's " +
+      '"Start time is in the future" is one sentence the kit\'s Live timer also shows, so ward-clock.ts ' +
+      "reads it from here rather than keep a second copy. It is inside the already-approved wf folder, " +
+      "so extracting Ward Flow carries it anyway; the barrel would pull the whole kit into the clock.",
+  ],
+  [
     "@/components/wf/missing-value",
     "the shared empty-value renderer, which distinguishes a field that CANNOT apply from one nobody filled in -- arrived with main and is a clinical-meaning distinction, not a convenience",
   ],
@@ -323,7 +330,11 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // components themselves live inside Ward Flow.
     // 14 -> 13 on 2026-11-01: @/components/clinical-dashboard/brand was deleted (Q96); nothing in
     // Ward Flow imported it.
-    expect(APPROVED_SHARED_MODULES.size).toBe(14);
+    // 13 -> 14 on 2026-11-13: @/components/wf/format, the future-start sentence the clock shares with
+    // the kit's Live timer (RC 2.5, F-35), read from the kit's leaf rather than its barrel.
+    // 14 -> 15 on 2026-11-13: @/components/wf/synthetic-mark, the loading row's mark, kept off the barrel
+    // so the loading boundary does not carry the whole kit (D-192).
+    expect(APPROVED_SHARED_MODULES.size).toBe(15);
     // ⚠️ AND THE MEMBERSHIP, NOT ONLY THE COUNT. A size pin cannot tell a widening from a SWAP:
     // remove one approved module, add another, and the count stays unchanged while Ward Flow's seam
     // has changed — which is the thing this list exists to control. The argument is already made
@@ -335,6 +346,7 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
       "@/components/contextual-back-link",
       "@/components/ui-primitives",
       "@/components/wf",
+      "@/components/wf/format",
       "@/components/wf/missing-value",
       "@/components/wf/sheet",
       "@/components/wf/sheet-focus",

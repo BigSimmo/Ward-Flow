@@ -31,8 +31,11 @@ import { scopeWardFlowState } from "@/components/ward-management/ward-access-sta
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
 
-// A site whose bed manager (read-only, D-80) sees a referral still in the queue.
-const SEED = seedWardFlowState();
+import { WorkedExamplesOn } from "./helpers/ward-worked-examples-on";
+
+// A site whose bed manager (read-only, D-80) sees a referral still in the queue. A16-14 (D-175 item 1):
+// with the worked examples off no queued referral names a ward, so this reads the worked example RF-RD06.
+const SEED = seedWardFlowState("standard", { workedExamples: true });
 const QUEUED_IDS = new Set(referralQueueOrder(SEED.referrals).map(({ id }) => id));
 const QUEUED_SITE = [...new Set(SEED.units.map((unit) => unit.siteCode))].find((siteCode) =>
   scopeWardFlowState(
@@ -67,9 +70,10 @@ function Decisions() {
   return <output data-testid="answered-count">{answered}</output>;
 }
 
-function renderBoard() {
+function renderBoard({ workedExamples = false }: { workedExamples?: boolean } = {}) {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
+      {workedExamples ? <WorkedExamplesOn /> : null}
       <WardAccessScope>
         <ReferralBoard defaultSelectFirst />
       </WardAccessScope>
@@ -153,7 +157,7 @@ describe("decision keys on the Referrals board", () => {
       setWardFeatureFlagOnDevice("role-access", true);
       setWardAccess({ role: "bed_manager", scope: { kind: "site", siteCode: QUEUED_SITE } });
     });
-    renderBoard();
+    renderBoard({ workedExamples: true });
     const rows = await screen.findAllByTestId(/^ward-referral-board-select-(?!decided)/);
     fireEvent.click(rows[0]!);
     expect(within(detail()).getByTestId("ward-referral-read-only")).toBeInTheDocument();

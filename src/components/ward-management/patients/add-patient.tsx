@@ -18,7 +18,7 @@ import { type FormEvent, type KeyboardEvent, type MouseEvent, useEffect, useMemo
 import { takeHandedOffPatientQuery } from "@/components/ward-management/search/patient-query-handoff";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { calendarDateOf, perthIsoDay } from "@/components/ward-management/ward-clock";
-import { patientRegistrationScope } from "@/components/ward-management/ward-patient-registration";
+import { latestDateOfBirth, patientRegistrationScope } from "@/components/ward-management/ward-patient-registration";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
@@ -30,6 +30,7 @@ import {
   duplicateCandidates,
   duplicateCheckHasInput,
   DUPLICATE_MATCH_LABEL,
+  formatDateOfBirth,
   NEAR_MATCH_MINIMUM_TERM_LENGTH,
   orderedDuplicateMatches,
   GENDERS,
@@ -224,6 +225,9 @@ export function AddPatientForm() {
   const now = useWardFlowClock();
   // TC2-10: a birth date is checked against the demo's own day, not the computer's date.
   const demoToday = perthIsoDay(calendarDateOf(now, dayZero));
+  // RC 2.6 (F-113): and against the engine's own bound (`latestDateOfBirth`), which is the earlier
+  // of the demo day and the real Perth day, so the form never accepts a date the engine refuses.
+  const latestBirthDay = latestDateOfBirth(new Date(), demoToday);
   const role = useRouteRole();
   const access = useEffectiveWardAccess();
   // A ward adds a patient in its own name, registered to its own ward (role access plan v2, D-80).
@@ -573,7 +577,7 @@ export function AddPatientForm() {
       showMissingFields();
       return;
     }
-    if (answered.dateOfBirth > demoToday) {
+    if (answered.dateOfBirth > latestBirthDay) {
       setAttemptedSubmit(true);
       document.getElementById("ward-add-patient-date-of-birth")?.focus();
       return;
@@ -704,7 +708,7 @@ export function AddPatientForm() {
     const value = draft[key].trim();
     if (key === "umrn" && duplicateUmrn !== null && value.toLowerCase() === duplicateUmrn.toLowerCase())
       return "This UMRN is already on file.";
-    if (key === "dateOfBirth" && value > demoToday) return "The date of birth is after today.";
+    if (key === "dateOfBirth" && value > latestBirthDay) return "The date of birth is after today.";
     if (!attemptedSubmit || value !== "") return undefined;
     return REQUIRED_CONTROLS.find((control) => control.key === key)?.missing;
   }
@@ -763,7 +767,10 @@ export function AddPatientForm() {
                 <p className={styles.dupLead} data-testid="ward-add-patient-duplicate-umrn">
                   {draft.umrn.trim()} already belongs to{" "}
                   {candidates.recordNumberCollision
-                    .map((patient) => `${patient.familyName}, ${patient.givenName} (born ${patient.dateOfBirth})`)
+                    .map(
+                      (patient) =>
+                        `${patient.familyName}, ${patient.givenName} (born ${formatDateOfBirth(patient.dateOfBirth)})`,
+                    )
                     .join(", ")}
                   .
                 </p>
@@ -805,7 +812,8 @@ export function AddPatientForm() {
                     <span className={styles.dupMeta}>
                       <span className={styles.mono}>{patient.umrn}</span>
                       <span> · born </span>
-                      <span className={styles.mono}>{patient.dateOfBirth}</span>
+                      {/* F-119 (Audit 9 walk 2): the date as every other screen prints it, never ISO. */}
+                      <span className={styles.mono}>{formatDateOfBirth(patient.dateOfBirth)}</span>
                       {patient.gender ? <span> · {patient.gender}</span> : null}
                       {patient.suburb ? <span> · {patient.suburb}</span> : null}
                     </span>

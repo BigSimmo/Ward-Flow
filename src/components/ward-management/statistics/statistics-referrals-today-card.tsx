@@ -12,7 +12,7 @@ import {
   Tile,
 } from "@/components/ward-management/statistics/redesign/statistics-redesign-parts";
 import type { SummaryModel } from "./statistics-network-cards";
-import type { StatisticsCount } from "./statistics-small-numbers";
+import { countInSentence, type StatisticsCount } from "./statistics-small-numbers";
 
 export function StatisticsReferralsTodayCard({
   model,
@@ -62,9 +62,9 @@ export function StatisticsReferralsTodayCard({
           fig={refAllHeld ? undefined : small(refOpen)}
           sub={
             <span data-testid="ward-statistics-refused-so-far-escalated">
-              <span aria-hidden="true">{small(refused.escalatedCount)} escalated</span>
+              <span aria-hidden="true">{countInSentence(small(refused.escalatedCount))} escalated</span>
               <span className="sr-only">
-                {` ${small(refused.escalatedCount)} open ${refused.escalatedCount === 1 ? "movement carries" : "movements carry"} a recorded escalation.`}
+                {` ${countInSentence(small(refused.escalatedCount), "open movement carries", "open movements carry")} a recorded escalation.`}
               </span>
             </span>
           }
@@ -77,9 +77,13 @@ export function StatisticsReferralsTodayCard({
               <span className="sr-only" role="heading" aria-level={3}>
                 Referrals where every ward asked so far has refused
               </span>
+              {/* F-55 (A9-36): a withheld count reads as a sentence, never "0 of not shown refused so far". */}
               <span data-testid="ward-statistics-refused-so-far-count">
-                <span data-testid="ward-statistics-refused-so-far-value">{small(refused.count)}</span> of{" "}
-                <span data-testid="ward-statistics-refused-so-far-open-count">{small(refused.openMovementCount)}</span>{" "}
+                <span data-testid="ward-statistics-refused-so-far-value">{countInSentence(small(refused.count))}</span>{" "}
+                of{" "}
+                <span data-testid="ward-statistics-refused-so-far-open-count">
+                  {countInSentence(small(refused.openMovementCount))}
+                </span>{" "}
                 refused so far
               </span>
             </span>

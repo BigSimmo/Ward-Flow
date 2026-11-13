@@ -34,7 +34,11 @@ import type { BreakGlassGrant } from "@/components/ward-management/ward-access-s
 import { withCover } from "@/components/ward-management/ward-access-shell-rules";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
+import {
+  onWardDemoReset,
+  onWardSessionEnd,
+  type WardDemoResetScope,
+} from "@/components/ward-management/ward-browser-data";
 import { useWardFeatureFlag } from "./ward-feature-flag-store";
 import { syncWardDeskHeldCookie } from "./ward-desk-early";
 
@@ -196,9 +200,38 @@ export function sharedAccessNeedsService(value: unknown): boolean {
   return s.kind === "jobs" && s.service === undefined;
 }
 
+/**
+ * F-115 (RC 5.6, Audit 7 claim 5): the desk cookie is shared by every tab in the browser, so the last
+ * tab to write it won. A ward desk tab reloaded after a coordinator tab wrote "0" was sent the
+ * coordinator's page by the server. Each tab now writes its own stored desk back whenever it comes to
+ * the front and as it unloads, so the request a reload sends carries this tab's desk. A tab with no
+ * stored desk writes nothing (D-137: the cookie is left as it is, and the server holds the page).
+ * Read from storage each time, so a sign-out that removed the desk is never written back.
+ */
+export function syncStoredDeskCookie(): void {
+  let stored: WardAccess | null;
+  try {
+    stored = parseStoredAccess(window.sessionStorage.getItem(WARD_ACCESS_STORAGE_KEY));
+  } catch {
+    return;
+  }
+  if (stored) syncWardDeskHeldCookie(accessIsWholeNetwork(stored));
+}
+
+function watchDeskCookie(): void {
+  window.addEventListener("focus", syncStoredDeskCookie);
+  window.addEventListener("pageshow", syncStoredDeskCookie);
+  window.addEventListener("pagehide", syncStoredDeskCookie);
+  window.addEventListener("beforeunload", syncStoredDeskCookie);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") syncStoredDeskCookie();
+  });
+}
+
 function load(): void {
   if (loaded || typeof window === "undefined") return;
   loaded = true;
+  watchDeskCookie();
   try {
     const stored = parseStoredAccess(window.sessionStorage.getItem(WARD_ACCESS_STORAGE_KEY));
     if (stored) snapshot = { ...snapshot, access: covered(stored, snapshot.covers), desk: stored };
@@ -413,6 +446,20 @@ function forgetAccountAccess(): void {
   emit({ desk: snapshot.desk, records: [], previewOf: null, covers: [], coversGiven: [] });
 }
 onWardSessionEnd(forgetAccountAccess);
+
+/**
+ * F-65 (K8, A12-03, A14-17, approved by Josh 13 Nov 2026): Reset demo puts this tab back on the bed
+ * coordinator's desk and drops the demo day's break glass openings, cover and any preview, all
+ * memory only. Left alone where the shared server owns the desk (`desk` false).
+ */
+function resetDemoDesk({ desk }: WardDemoResetScope): void {
+  if (!desk) return;
+  load();
+  persist(STATEWIDE_COORDINATOR);
+  clearPersonalKeys();
+  emit({ desk: STATEWIDE_COORDINATOR, records: [], previewOf: null, covers: [], coversGiven: [] });
+}
+onWardDemoReset(resetDemoDesk);
 
 /**
  * Open one patient record outside the desk's care, read only, for a set time (plan section 7).

@@ -11,7 +11,7 @@ own, so its row names the test it sits in; a title passed through a helper names
 Indirect registrations such as `(cond ? it.skip : it)(…)` are listed by condition. The reason column is the
 skip's own condition or message; read the comment above the call for the why.
 
-Total: 33
+Total: 31
 
 | Location                                                  | Kind                  | Title                                                                                                          | Condition or message                                                                                           |
 | --------------------------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -46,5 +46,3 @@ Total: 33
 | `tests/ward-flow-remote-boundary.test.ts`                 | it.runIf              | enforces destination identity through the Git hook                                                             | runs only when `existsSync(shell)`                                                                             |
 | `tests/ward-public-ci-setup.test.ts`                      | it.skipIf             | terminates a deliberately stalled local command within its budget                                              | skipped when `process.platform === "win32"`                                                                    |
 | `tests/ward-screen-verification-lib.test.ts`              | it.skipIf             | refuses symlinked inputs rather than reading another project's source                                          | skipped when `process.platform === "win32"`                                                                    |
-| `tests/ward-travel-bands.test.ts`                         | it.skipIf             | `COMPLETENESS_GUARD_TITLE`                                                                                     | skipped when `!TRAVEL_BANDS_ARE_INVENTED`                                                                      |
-| `tests/wf-synthetic-mark-full-screen.dom.test.tsx`        | it.todo               | the enlarged ED handover table                                                                                 | -                                                                                                              |

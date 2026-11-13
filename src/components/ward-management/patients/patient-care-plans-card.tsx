@@ -3,21 +3,7 @@
 import { useMemo, useState } from "react";
 import { ClipboardList } from "lucide-react";
 
-import {
-  Badge,
-  Button,
-  Card,
-  CardBody,
-  CardHead,
-  Checkbox,
-  DateField,
-  Field,
-  isoDateAsTyped,
-  ListPicker,
-  Segmented,
-  TextInput,
-  TimeField,
-} from "@/components/wf";
+import { Badge, Button, Card, CardBody, CardHead, Checkbox, DateField, Field, isoDateAsTyped, ListPicker, Segmented, TextInput, TimeField, WhoDoesThis } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import type { WardFlowEvent, WardFlowRole } from "../ward-flow-events";
 import type { Patient } from "../ward-patients";
@@ -49,9 +35,11 @@ import type { Movement } from "../ward-model";
 import { createPatientResolver } from "../ward-patient-resolver";
 import { supportNotificationSubjects } from "../ward-support-notifications";
 import { recordedDayPassed } from "./patient-date-passed";
+import { whoDoesThisLine } from "../ward-who-does-this";
 import styles from "./patient-care-plans-card.module.css";
 
-type Gate = (eventType: WardFlowEvent["type"]) => { allowed: boolean; reason?: string };
+// `never`: this desk can never take the action, so its control is left out (F-54, A9-35).
+type Gate = (eventType: WardFlowEvent["type"]) => { allowed: boolean; reason?: string; never?: boolean };
 
 const OCCASION_LABEL: Record<CarerToldMoment["occasion"], string> = {
   admission: "Admission",
@@ -154,6 +142,19 @@ export function PatientCarePlansCard({
   const hearingGate = gate("RECORD_TRIBUNAL_HEARING");
   const outcomeGate = gate("RECORD_TRIBUNAL_OUTCOME");
   const culturalGate = gate("SET_CULTURAL_SUPPORT_REQUEST");
+  // D-192 (shared design parts item 6): the card shows values only for what this desk can never
+  // record, and one quiet foot line names who records them.
+  const whoDoesThis = whoDoesThisLine(
+    role,
+    (
+      [
+        ["RECORD_CARE_PLAN", planGate],
+        ["RECORD_TRIBUNAL_HEARING", hearingGate],
+        ["RECORD_TRIBUNAL_OUTCOME", hearing && !hearing.outcome ? outcomeGate : undefined],
+        ["SET_CULTURAL_SUPPORT_REQUEST", culturalGate],
+      ] as const
+    ).flatMap(([eventType, stepGate]) => (stepGate?.never ? [eventType] : [])),
+  );
 
   function open(next: "plan" | "hearing") {
     setProblem(null);
@@ -248,7 +249,7 @@ export function PatientCarePlansCard({
         title="Care and safety"
         level={3}
         action={
-          form === "plan" ? null : (
+          form === "plan" || planGate.never ? null : (
             <Button
               size="sm"
               variant="sec"
@@ -489,15 +490,17 @@ export function PatientCarePlansCard({
                 </span>
               ) : (
                 <span className={styles.inline}>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => open("hearing")}
-                    disabledReason={hearingGate.allowed ? undefined : hearingGate.reason}
-                  >
-                    {hearing ? "New hearing date" : "Record hearing date"}
-                  </Button>
-                  {hearing && !hearing.outcome ? (
+                  {hearingGate.never ? null : (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => open("hearing")}
+                      disabledReason={hearingGate.allowed ? undefined : hearingGate.reason}
+                    >
+                      {hearing ? "New hearing date" : "Record hearing date"}
+                    </Button>
+                  )}
+                  {hearing && !hearing.outcome && !outcomeGate.never ? (
                     <span className={styles.outcomeGroup}>
                       <span className={styles.quietInline}>Outcome</span>
                       {TRIBUNAL_OUTCOMES.map((outcome) => (
@@ -555,23 +558,31 @@ export function PatientCarePlansCard({
           <div data-testid="ward-patient-cultural-support">
             <dt>Cultural support</dt>
             <dd>
-              <ListPicker
-                label="Asked for by the person or family"
-                value={patient.culturalSupportRequested ?? "none"}
-                options={[
-                  { value: "none", label: "Not requested" },
-                  ...CULTURAL_SUPPORT_REQUESTS.map((request) => ({ value: request, label: `${request} requested` })),
-                ]}
-                onChange={(next) => {
-                  const choice = (next ?? "none") as CulturalSupportRequest | "none";
-                  if (choice !== (patient.culturalSupportRequested ?? "none")) setCultural(choice);
-                }}
-                disabledReason={culturalGate.allowed ? undefined : culturalGate.reason}
-                testId="ward-patient-cultural-support-picker"
-              />
+              {culturalGate.never ? (
+                // F-54 (A9-35): a desk that can never record it reads the answer, with no picker.
+                <span data-testid="ward-patient-cultural-support-value">
+                  {patient.culturalSupportRequested ? `${patient.culturalSupportRequested} requested` : "Not requested"}
+                </span>
+              ) : (
+                <ListPicker
+                  label="Asked for by the person or family"
+                  value={patient.culturalSupportRequested ?? "none"}
+                  options={[
+                    { value: "none", label: "Not requested" },
+                    ...CULTURAL_SUPPORT_REQUESTS.map((request) => ({ value: request, label: `${request} requested` })),
+                  ]}
+                  onChange={(next) => {
+                    const choice = (next ?? "none") as CulturalSupportRequest | "none";
+                    if (choice !== (patient.culturalSupportRequested ?? "none")) setCultural(choice);
+                  }}
+                  disabledReason={culturalGate.allowed ? undefined : culturalGate.reason}
+                  testId="ward-patient-cultural-support-picker"
+                />
+              )}
             </dd>
           </div>
         </dl>
+        {whoDoesThis ? <WhoDoesThis className={styles.whoFoot}>{whoDoesThis}</WhoDoesThis> : null}
       </CardBody>
     </Card>
   );

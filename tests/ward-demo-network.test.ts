@@ -102,7 +102,8 @@ describe.each(VARIANTS)("the EMHS %s network", (variant) => {
   it("carries one involuntary transfer in transit with every booking fact", () => {
     const moving = network.movements.filter((movement) => movement.stage === "moving");
     expect(moving).toHaveLength(1);
-    expect(moving[0].legalStatus).toBe("Involuntary inpatient");
+    // D-170 item 4: on a Form 4A with no examination recorded, the sample person is referred.
+    expect(moving[0].legalStatus).toBe("Referred for psychiatric examination");
     expect(moving[0].transport?.cadNumber).toBeTruthy();
     expect(moving[0].transport?.transportLegalStatus).toBe("involuntary");
     expect(moving[0].transport?.estimatedAt).toBeGreaterThan(NOW_ANCHOR);

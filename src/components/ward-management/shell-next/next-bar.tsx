@@ -16,6 +16,7 @@ import { formatInstant } from "@/components/ward-management/ward-clock";
 import { WARD_HISTORY_TRAVERSAL_CANCELLED } from "@/components/ward-management/use-dirty-state-guard";
 import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useTrainingMode } from "@/components/ward-management/demo-reset/ward-training-mode";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search-lazy";
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
 import { WARD_ALERTS_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
@@ -104,7 +105,7 @@ import { usePhoneActivitySheet } from "@/components/ward-management/shell-next/n
 import styles from "@/components/ward-management/shell/ward-bar.module.css";
 import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
-import type { WardAccess } from "@/components/ward-management/ward-role-access";
+import { accessIsWholeNetwork, type WardAccess } from "@/components/ward-management/ward-role-access";
 import polish from "@/components/ward-management/shell-next/next-bar.module.css";
 // The shell's one close-menus event, from its own small module so the bar does not carry the rail's parts.
 import { CLOSE_MENUS_EVENT } from "@/components/ward-management/shell/ward-menu-events";
@@ -301,6 +302,11 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
   const now = useWardFlowClock();
   // Phone Live chips read "Live HH:MM" from this one clock (v10 phone hero, `publishLiveClock`).
   const liveClockFace = formatInstant(now);
+  // D-194 (Josh, 13 Nov 2026, under D-150): training keeps its scripted clock, so the header names it
+  // "Training clock" rather than passing it off as the real Perth time.
+  const training = useTrainingMode();
+  // RC 2.6 (F-113): outside training the board clock is the demo's scripted time, with no real-time zone label.
+  const clockWords = training ? `Training clock ${liveClockFace}` : `Board time ${liveClockFace}`;
   // UX audit (21 Oct 2026): offline, the clock's live dot turns amber so it agrees with the banner.
   const online = useOnlineStatus();
   useEffect(() => {
@@ -313,6 +319,11 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
   const { role, shellRole, placeId } = useWardNavCounts();
   const deskAccess = useEffectiveWardAccess();
   const deskRoleLabel = useDeskRoleLabel(role);
+  // Walk C item 5 (F-54/F-65, 13 Nov 2026): the Tools header names the signed-in desk (as the rail
+  // does), not the page's route role, with the desk's real scope: "whole network" only for the
+  // statewide coordinator, otherwise its ward, ED, site, team or service (`accessPlaceLabel`).
+  const toolsDeskLabel = useDeskRoleLabel(shellRole);
+  const toolsDeskScope = accessIsWholeNetwork(deskAccess) ? "whole network" : accessPlaceLabel(deskAccess, units);
   // One Alerts queue (Josh, 16 Oct 2026): the Tasks button is the Alerts button. On the Alerts
   // screen it does not open a second copy of the list; it takes the person to the queue.
   // Only for the desk whose list it is (the bed coordinator, as the task gate below) and whose role
@@ -1092,12 +1103,12 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
         <WardDemoClockPopover
           className={`${styles.demoClock} ${polish.clockKeep}`}
           testId="ward-bar-demo-clock"
-          title={`Board time ${liveClockFace} AWST${online ? "" : ". Offline"}`}
-          aria-label={`Board time ${liveClockFace} AWST${online ? "" : ". Offline"}`}
+          title={`${clockWords}${online ? "" : ". Offline"}`}
+          aria-label={`${clockWords}${online ? "" : ". Offline"}`}
         >
           <span className={styles.demoClockDot} data-offline={online ? undefined : "true"} aria-hidden="true" />
-          <span className={styles.demoClockLabel}>Board time</span>{" "}
-          <span className={styles.demoClockTime}>{liveClockFace}</span> <span className={styles.demoClockTz}>AWST</span>
+          <span className={styles.demoClockLabel}>{training ? "Training clock" : "Board time"}</span>{" "}
+          <span className={styles.demoClockTime}>{liveClockFace}</span>
         </WardDemoClockPopover>
 
         {/* The shell's synthetic-data marker for screen readers (visually hidden, so no pill shows). */}
@@ -1254,7 +1265,7 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
         // Tools header polish (Josh, 6 Nov 2026): the desk as a quiet pill under a larger title.
         descriptionContent={
           <p className={polish.toolsDesk}>
-            <strong>{deskRoleLabel}</strong> · whole network
+            <strong>{toolsDeskLabel}</strong> · {toolsDeskScope}
           </p>
         }
         placement="right"

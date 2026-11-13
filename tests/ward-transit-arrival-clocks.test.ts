@@ -189,10 +189,11 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const pill = screen.getByTestId(`ward-queue-transit-eta-${movementHoldArrival.id}`);
       expect(pill).toBeInTheDocument();
-      expect(pill).toHaveTextContent("In transit, bed pulled for 4h · Self Arrival");
+      // D-187 (F-46): no limit recorded on this pull, so it says so rather than the configured 4h.
+      expect(pill).toHaveTextContent("In transit, bed pulled · No limit recorded · Self Arrival");
     });
 
-    it("renders default 4h hold pill when movement.stage is pulled without arrivalDetails", () => {
+    it("says no limit is recorded when movement.stage is pulled without arrivalDetails (D-187)", () => {
       render(
         React.createElement(PriorityQueue, {
           movements: [movementPulled],
@@ -206,7 +207,8 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const pill = screen.getByTestId(`ward-queue-transit-hold-${movementPulled.id}`);
       expect(pill).toBeInTheDocument();
-      expect(pill).toHaveTextContent("Bed pulled for 4h");
+      expect(pill).toHaveTextContent("Bed pulled · No limit recorded");
+      expect(pill).not.toHaveTextContent("4h");
     });
   });
 
@@ -282,7 +284,8 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
       const card = screen.getByTestId("ward-shortlist-transit-card");
       expect(card).toBeInTheDocument();
       expect(screen.getByTestId("ward-shortlist-transit-countdown")).toHaveTextContent(
-        "4h pull, end time not recorded",
+        // D-187 (F-46): no limit recorded is said, never the configured default.
+        "Bed pull · No limit recorded",
       );
       // Audit A1-4: no arrival mode is invented when nothing is booked.
       expect(screen.getByTestId("ward-shortlist-transit-mode")).toHaveTextContent("Not booked");
@@ -313,10 +316,12 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
       render(React.createElement(EdScreen, { edId: "jhc-ed" }));
 
       // Change 2 (D-77): the hold moved from a chip under the name into the Referral column, in the
-      // ED's words. Audit A4-4: with no hold end recorded it states the configured length only.
+      // ED's words. D-187 (F-46) replaces Audit A4-4's configured length: with no hold end recorded
+      // it says no limit is recorded.
       expect(screen.queryByTestId(`ward-ed-transit-badge-${movementPulled.id}`)).not.toBeInTheDocument();
       const referral = screen.getByTestId(`ward-ed-referral-${movementPulled.id}`);
-      expect(referral).toHaveTextContent(/Accepted, bed pulled, 4h pull time limit/i);
+      expect(referral).toHaveTextContent(/Accepted, bed pulled, no limit recorded/i);
+      expect(referral).not.toHaveTextContent(/4h pull time limit/i);
       expect(referral).not.toHaveTextContent(/clock active/i);
     });
 

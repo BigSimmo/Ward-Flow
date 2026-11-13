@@ -286,20 +286,26 @@ export function WardWalkRound({
   // WH4: the card is a screen of its own, so the phone's Back closes it and comes back to the
   // round, as the bed panel's own entry does (`WARD_BED_DRAWER_ENTRY`). Opening pushes one marked
   // entry; closing from the card steps back over it, so Back never reopens a closed card.
+  // Leaving the page with the card open (Menu, Switch desk) is not a close: stepping back then
+  // undid the move to the other desk, so only a close while the round is still shown steps back.
+  const pushedEntry = useRef(false);
   useEffect(() => {
-    if (!walkingOpen || typeof window === "undefined") return;
+    if (typeof window === "undefined") return;
     const ownState = () => ownHistoryState(window.history.state);
+    if (!walkingOpen) {
+      if (pushedEntry.current && ownState()[WALK_ROUND_ENTRY]) window.history.back();
+      pushedEntry.current = false;
+      return;
+    }
     if (!ownState()[WALK_ROUND_ENTRY]) {
       window.history.pushState({ ...ownState(), [WALK_ROUND_ENTRY]: true }, "", window.location.href);
     }
+    pushedEntry.current = true;
     const onPopState = () => {
       if (!ownState()[WALK_ROUND_ENTRY]) setRound((previous) => ({ ...previous, walking: null }));
     };
     window.addEventListener("popstate", onPopState);
-    return () => {
-      window.removeEventListener("popstate", onPopState);
-      if (ownState()[WALK_ROUND_ENTRY]) window.history.back();
-    };
+    return () => window.removeEventListener("popstate", onPopState);
   }, [walkingOpen, setRound]);
 
   const swipeFrom = useRef<{ x: number; y: number } | null>(null);

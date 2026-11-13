@@ -221,6 +221,52 @@ export const BED_RELEASE_BLOCKERS = [
 export type BedReleaseBlocker = (typeof BED_RELEASE_BLOCKERS)[number];
 
 /**
+ * Which bed a hold-up reason can belong to: a bed with somebody in it whose discharge is held up,
+ * an empty bed that cannot yet take the next person, or either.
+ */
+export const HOLD_UP_BED_STATES = ["occupied", "empty", "either"] as const;
+export type HoldUpBedState = (typeof HOLD_UP_BED_STATES)[number];
+
+/**
+ * SIGNED AS DRAFTED (A16-06, root cause R5; the split approved 13 Nov 2026, and both lists signed
+ * by Josh the same day as drafted, D-181 item 6). One list of reasons served every bed in every
+ * state, so a 210-day stay could read "Held up · Awaiting clean". Each reason now says which bed it
+ * belongs to, and the "Record hold-up" dialog, the bed drawer's "Held up by" choice and the seed
+ * builder (`unitOccupants`) offer or accept only the reasons that fit the bed in front of them: an
+ * empty bed can only be "Awaiting clean"; an occupied bed takes every other reason.
+ *
+ * The wording was first drafted by an agent from the words alone; Josh signed it unchanged. A
+ * change here is a change to a signed list and needs his say. Typed as a total `Record`, so a
+ * reason added to `BED_RELEASE_BLOCKERS` fails the compiler until it is placed.
+ *
+ * Known overlap: when a person arrives and the ward has no empty bed, the arrival marks their stay
+ * "Awaiting clean" (bed turnaround, `ward-flow-transport-events.ts`). That path records the reason
+ * on an occupied stay and is not changed by these lists.
+ */
+export const BED_RELEASE_BLOCKER_BED_STATE: Readonly<Record<BedReleaseBlocker, HoldUpBedState>> = {
+  "Awaiting clean": "empty",
+  "Awaiting pharmacy": "occupied",
+  "Awaiting placement confirmation": "occupied",
+  "Awaiting service coordination": "occupied",
+  "Awaiting accommodation": "occupied",
+  "Awaiting transport": "occupied",
+  "Awaiting receiving-service acceptance": "occupied",
+  "Awaiting family or carer arrangement": "occupied",
+  "Funding or plan decision pending": "occupied",
+};
+
+/** Whether a hold-up reason fits a bed in this state (the signed lists above, D-181 item 6). */
+export function holdUpReasonFits(reason: BedReleaseBlocker, bed: "occupied" | "empty"): boolean {
+  const belongs = BED_RELEASE_BLOCKER_BED_STATE[reason];
+  return belongs === "either" || belongs === bed;
+}
+
+/** The hold-up reasons to offer for a bed in this state, in `BED_RELEASE_BLOCKERS` order. */
+export function holdUpReasonsFor(bed: "occupied" | "empty"): BedReleaseBlocker[] {
+  return BED_RELEASE_BLOCKERS.filter((reason) => holdUpReasonFits(reason, bed));
+}
+
+/**
  * The bed-model rework of 2026-08-28 (`docs/history/ward-flow-phase-6-7-decisions.md`, Q4). Once a bed is
  * released it may carry a short indication that it is being MADE READY — the owner's example was
  * cleaning. His own clinical reasoning is why this is a note and not a fifth lifecycle stage:

@@ -23,6 +23,8 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
 
+import { WorkedExamplesOn } from "./helpers/ward-worked-examples-on";
+
 /**
  * Remaining-pages audit, 13 Oct 2026, Should items on Statistics.
  *
@@ -67,6 +69,8 @@ function renderInProvider(node: ReactNode, initialDayZero = PINNED_DAY_ZERO) {
   );
 }
 
+// A16-14 (D-175 item 1): the last full week's shorter waits are the Armadale worked examples, which
+// are now opt-in, so these two cases turn them on (without them the week holds at most one wait).
 describe("Weekly ED waits (stats-9)", () => {
   it("tones a wait of two days or more red, as the ED page does, and says when the figure stops", () => {
     asPhone();
@@ -78,6 +82,7 @@ describe("Weekly ED waits (stats-9)", () => {
           initialNow={NOW_ANCHOR}
           initialDayZero={demoDayZero(new Date("2026-10-07T12:00:00+08:00")).getTime()}
         >
+          <WorkedExamplesOn />
           <WeeklyReportScreen />
         </WardFlowProvider>
       </ToastProvider>,
@@ -105,7 +110,13 @@ describe("Weekly ED waits (stats-9)", () => {
   it("exercises both red and nonred waits in a deliberate Monday reporting calendar", () => {
     asPhone();
     const monday = demoDayZero(new Date("2026-10-12T12:00:00+08:00")).getTime();
-    renderInProvider(<WeeklyReportScreen />, monday);
+    renderInProvider(
+      <>
+        <WorkedExamplesOn />
+        <WeeklyReportScreen />
+      </>,
+      monday,
+    );
     const rows = within(screen.getByRole("table", { name: /^ED waits first passing/u }))
       .getAllByRole("row")
       .slice(1);

@@ -571,6 +571,10 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
     "The printable downtime pack. Reached from the Tools sheet's Print and share group (tools/ward-tools-sheet.tsx).",
   ],
   [
+    "/ward-flow/about",
+    "About this demo (F-77, Audit 15 A15-25): invented data, what the browser keeps and sends, how to leave. Reached from the About card in Settings (settings/settings-help-and-demo.tsx).",
+  ],
+  [
     "/ward-flow/night",
     "Night view (feature plan item 29). Reached from the More menu on Home's list tabs (coordinator/coordinator-screen.tsx), beside Today's review.",
   ],
@@ -837,6 +841,7 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   if (isUnder("/ward-flow/governance")) return "Governance";
   if (normalized === "/ward-flow/review") return "Today's review";
   if (normalized === "/ward-flow/night") return "Night view";
+  if (normalized === "/ward-flow/about") return "About this demo";
   if (normalized === "/ward-flow/reports/downtime") return "Downtime pack";
   if (normalized === "/ward-flow/reports/chronology") return "Patient chronology";
   if (normalized === "/ward-flow/referrals/new") return "New referral";

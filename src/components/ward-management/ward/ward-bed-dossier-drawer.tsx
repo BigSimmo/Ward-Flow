@@ -23,7 +23,7 @@ import { stalePreparingReleases } from "@/components/ward-management/ward-bed-av
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { BlockerEditor, useBlockerSave } from "./ward-bed-blocker-editor";
-import { BedClosureControls, type BedClosureActions } from "./ward-bed-closure-controls";
+import { BedClosureControls, closedBedWords, type BedClosureActions } from "./ward-bed-closure-controls";
 import { wardClosureReasonLabel } from "../ward-bed-closure-reason";
 import {
   openJourneyFromStay,
@@ -93,9 +93,9 @@ interface WardBedDossierDrawerProps {
   bedItem: BedItem | undefined;
   unit: Unit;
   onClose: () => void;
-  drawerLeavingDestination: LeavingDestination;
+  drawerLeavingDestination: LeavingDestination | "";
   setDrawerLeavingDestination: (dest: LeavingDestination) => void;
-  onRecordLeft: (admissionId: string, who: string, destination: LeavingDestination) => void;
+  onRecordLeft: (admissionId: string, who: string, destination: LeavingDestination | "") => void;
   /** Records or clears the stay's discharge blocker. Absent where this desk may not: the blocker
    *  controls are then not offered, rather than a Save that does nothing. */
   onUpdateBlocker?: (admissionId: string, blocker: string | null) => ReturnType<WardCommandDispatch>;
@@ -275,6 +275,9 @@ export function WardBedDossierDrawer({
   const readyWord = isPreparing ? BED_STATE_LABELS.beingMadeReady : "Ready bed";
   const occupantAlias = bedItem?.patientAlias ?? "No occupant recorded";
   const isOccupied = Boolean(bedItem?.patientAlias);
+  // C03: a closed bed with nobody in it shows the closure and its reason, in the empty-bed layout.
+  const closedEmpty =
+    bedItem?.status === "closed" && !isOccupied ? closedBedWords(unit, selectedBed, bedItem.closedReview) : null;
   const isAwayAtEd = bedItem?.awayAtEdHours !== null && bedItem?.awayAtEdHours !== undefined;
   const admission = bedItem?.admissionId ? admissions.find((a) => a.id === bedItem.admissionId) : undefined;
   // Both layouts send the same token, so a colleague's level change made while the form is open is refused.
@@ -282,7 +285,7 @@ export function WardBedDossierDrawer({
   const observationToken =
     admission && observationEditingToken("admission", admission.id, admission.observation, observationChanges);
   const leavePaper =
-    useLeaveNeedsPaperAuthority(admission, drawerLeavingDestination) && admission ? (
+    useLeaveNeedsPaperAuthority(admission, drawerLeavingDestination || null) && admission ? (
       <WardLeavePaperAuthority
         key={admission.id}
         admissionId={admission.id}
@@ -300,19 +303,20 @@ export function WardBedDossierDrawer({
 
   const stayDays = typeof bedItem?.stayDays === "number" ? bedItem.stayDays : null;
   const ageSex = [typeof bedItem?.age === "number" ? String(bedItem.age) : null, bedItem?.sex ?? null];
-  const subline = isReady
-    ? "Empty bed."
-    : [
-        ...ageSex,
-        bedItem?.stayBand ??
-          (bedItem?.status === "incoming"
-            ? typeof bedItem?.deliveredAt === "number"
-              ? "Arrived at ward, confirm arrival"
-              : "Arriving"
-            : null),
-      ]
-        .filter(Boolean)
-        .join(" · ") || "On this ward";
+  const subline =
+    isReady || closedEmpty
+      ? "Empty bed."
+      : [
+          ...ageSex,
+          bedItem?.stayBand ??
+            (bedItem?.status === "incoming"
+              ? typeof bedItem?.deliveredAt === "number"
+                ? "Arrived at ward, confirm arrival"
+                : "Arriving"
+              : null),
+        ]
+          .filter(Boolean)
+          .join(" · ") || "On this ward";
 
   // Redesign: the expected date is a day, not a moment, so it reads "2 days ago" rather than "10:42, 2 days ago".
   const expectedDay = (() => {
@@ -695,7 +699,12 @@ export function WardBedDossierDrawer({
           {
             id: "leave" as const,
             label: "Record that they have left",
-            disabledReason: leavePaper ? "Record the paper authority first, under Leaving." : undefined,
+            // A9-14: nothing is recorded as where they went until a person chooses it.
+            disabledReason: !drawerLeavingDestination
+              ? "Choose where they are going first, under Leaving."
+              : leavePaper
+                ? "Record the paper authority first, under Leaving."
+                : undefined,
             describedBy: criteriaDepartureNote
               ? "drawer-leaving-summary drawer-leaving-criteria"
               : "drawer-leaving-summary",
@@ -762,6 +771,7 @@ export function WardBedDossierDrawer({
           bedLabel={bedLabel}
           bedItem={bedItem}
           isReady={isReady}
+          closedEmpty={closedEmpty}
           occupantAlias={occupantAlias}
           isOccupied={isOccupied}
           isAwayAtEd={isAwayAtEd}
@@ -964,7 +974,7 @@ export function WardBedDossierDrawer({
               {/* The destination is chosen on Leaving, so the footer always says which one
                   "Record that they have left" will record. */}
               <p className={styles.footDestination} id="drawer-leaving-summary">
-                Going to <strong>{leavingLabel}</strong>
+                Going to <strong>{leavingLabel ?? "Not chosen yet"}</strong>
                 {tab !== "leave" ? (
                   <button
                     type="button"
@@ -1034,7 +1044,7 @@ export function WardBedDossierDrawer({
       <PanelDrawer
         open
         onClose={onClose}
-        title={isReady ? readyWord : occupantAlias}
+        title={isReady ? readyWord : closedEmpty ? "Closed bed" : occupantAlias}
         titleId="drawer-bed-title"
         subtitle={subline}
         tag={<StatusPill tone={tone ?? undefined}>{bedLabel}</StatusPill>}
@@ -1045,29 +1055,40 @@ export function WardBedDossierDrawer({
         foot={foot}
       >
         {nav}
-        {isReady ? (
+        {isReady || closedEmpty ? (
           <>
             <section className={styles.hero} aria-label="This bed" data-testid="bed-record-hero">
               <div className={styles.heroTop}>
                 <span className={styles.heroWhen}>
-                  <span className={styles.heroFigure}>{isPreparing ? BED_STATE_LABELS.beingMadeReady : "Ready"}</span>
+                  <span className={styles.heroFigure}>
+                    {closedEmpty ? "Closed" : isPreparing ? BED_STATE_LABELS.beingMadeReady : "Ready"}
+                  </span>
                   <span className={styles.heroSub}>
-                    {bedItem.designation ? `${bedItem.designation} bed` : "Empty bed"}
+                    {closedEmpty?.state ?? (bedItem?.designation ? `${bedItem.designation} bed` : "Empty bed")}
                   </span>
                 </span>
-                <span className={styles.heroPill} data-tone={isPreparing ? "neutral" : "success"}>
-                  {isPreparing ? "Not offered yet" : "Offered"}
+                <span className={styles.heroPill} data-tone={closedEmpty || isPreparing ? "neutral" : "success"}>
+                  {closedEmpty ? "Not offered" : isPreparing ? "Not offered yet" : "Offered"}
                 </span>
               </div>
               <dl className={styles.heroFacts}>
-                <div>
-                  <dt>Pulled for</dt>
-                  <dd>Nobody</dd>
-                </div>
-                <div>
-                  <dt>Candidate</dt>
-                  <dd>None recorded</dd>
-                </div>
+                {closedEmpty ? (
+                  <div data-testid="ward-drawer-closed-reason">
+                    <dt>Reason</dt>
+                    <dd>{closedEmpty.reason}</dd>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <dt>Pulled for</dt>
+                      <dd>Nobody</dd>
+                    </div>
+                    <div>
+                      <dt>Candidate</dt>
+                      <dd>None recorded</dd>
+                    </div>
+                  </>
+                )}
               </dl>
               {readyNote}
             </section>
@@ -1139,6 +1160,7 @@ export function WardBedDossierDrawer({
                       now={now}
                       showCurrent={false}
                       editingToken={observationToken}
+                      draftKey={`observation:${bedItem.admissionId}`}
                       onSave={
                         onSetObservation
                           ? (next, expected) => onSetObservation(bedItem.admissionId!, next, expected)

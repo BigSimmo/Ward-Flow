@@ -410,19 +410,11 @@ describe("unavailable browser storage", () => {
       throw new DOMException("denied", "SecurityError");
     });
     expect(() => mount()).not.toThrow();
-    // A typed date of birth is one of the typed values the device copy cannot hold (Josh, 21 Oct
-    // 2026), so the last safe save is kept and marked as not the latest (SD-01, 5 Nov 2026), which
-    // is the path a throwing removeItem must not break.
+    // An event whose typed text cannot be read gets no device copy (since A9-07, 13 Nov 2026, a typed
+    // date of birth does), so the last safe save is kept and marked as not the latest (SD-01, 5 Nov
+    // 2026), which is the path a throwing removeItem must not break.
     act(() =>
-      current.dispatch({
-        type: "ADD_PATIENT",
-        role: "coordinator",
-        now: current.now,
-        umrn: "UMRN-SYNTHETIC-9",
-        givenName: "Synthetic",
-        familyName: "Private",
-        dateOfBirth: "1990-01-01",
-      }),
+      current.dispatch({ type: "SYNTHETIC_UNCLASSIFIED_EVENT", role: "coordinator", now: current.now } as never),
     );
     expect(screen.getByRole("status")).toHaveTextContent("stay in memory");
     expect(() => clearWardFlowDemoState()).not.toThrow();

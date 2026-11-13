@@ -9,7 +9,7 @@ import {
   legalFormEnd,
   NEXT_FORM_TO_RECORD,
 } from "@/components/ward-management/ward-legal-form-progression";
-import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { typedClock, typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
 import {
   daysInBed as admissionStayDays,
@@ -123,10 +123,15 @@ export function wardBedRoster({
   // A4-24: a vacated bed reads "Being made ready" until someone taps Ready. Each marker belongs to
   // one discharged release, oldest first; the tile it sits on is chosen once bed numbers are known
   // (below), so Ready on a bed clears that bed's own release.
+  // D-179 item 8: as many markers as `bedStates` takes off Ready, so the tiles match the figure.
   const preparingReleases = bedReleases
     .filter((r) => r.unitId === unit.id && r.state === "discharged" && r.preparing)
-    .sort((left, right) => left.confirmedAt - right.confirmedAt);
+    .sort((left, right) => left.confirmedAt - right.confirmedAt)
+    .slice(0, states.beingMadeReady);
 
+  // D-179 item 8: Ready leaves out a bed still being made ready, but that bed is still an empty tile
+  // here, marked "Being made ready" below. So the empty tiles are Ready plus being made ready.
+  const freeSlots = states.ready + states.beingMadeReady;
   const rawBeds = Array.from({ length: unit.beds }, (_, i) => {
     const bedNumber = i + 1;
     const designation: "Locked" | "Open" | undefined = isMixed ? (i < lockedBeds ? "Locked" : "Open") : undefined;
@@ -137,15 +142,15 @@ export function wardBedRoster({
     // v10 "counts agree": the tiles follow the ruled four bed states (`bedStates`), the same
     // partition the hero, the key and the bed figures count. Ready first, then each leave record,
     // then the pulled beds, the occupied beds, and the closed beds last.
-    const leaveSlotIndex = i - states.ready;
+    const leaveSlotIndex = i - freeSlots;
     const isLeaveSlot = leaveSlotIndex >= 0 && leaveSlotIndex < unitLeaveBeds.length;
-    const pulledSlotIndex = i - states.ready - unitLeaveBeds.length;
+    const pulledSlotIndex = i - freeSlots - unitLeaveBeds.length;
     const isIncomingSlot = !isLeaveSlot && pulledSlotIndex >= 0 && pulledSlotIndex < states.pulled;
-    const isClosedSlot = i >= unit.beds - states.closed && !isLeaveSlot && !isIncomingSlot && i >= states.ready;
+    const isClosedSlot = i >= unit.beds - states.closed && !isLeaveSlot && !isIncomingSlot && i >= freeSlots;
 
     let status: "ready" | "occupied" | "leave" | "incoming" | "closed" = "occupied";
     let statusText = "Inpatient";
-    if (i < states.ready) {
+    if (i < freeSlots) {
       status = "ready";
       statusText = "Ready";
     } else if (isLeaveSlot) {
@@ -439,6 +444,8 @@ type WardLiveFormAlertsInputs = {
   thresholds: DueSoonThresholds;
   overdueLeaveBeds: LeaveBed[];
   unit: Unit;
+  /** The board's day 0, so a typed legal time on another day prints its date (D1, D-93). */
+  dayZero?: Date;
 };
 
 export function wardLiveFormAlerts({
@@ -448,6 +455,7 @@ export function wardLiveFormAlerts({
   thresholds,
   overdueLeaveBeds,
   unit,
+  dayZero,
 }: WardLiveFormAlertsInputs) {
   const liveFormAlerts = [
     // Integration QA (3 Nov 2026): a referral waiting is one row, "Referrals waiting", raised by
@@ -472,9 +480,9 @@ export function wardLiveFormAlerts({
           tone: remaining <= thresholds.urgentMinutes ? "critical" : "warning",
           title: movement.legalForm ? `Form ${movement.legalForm.code} recorded due time` : "Legal form due",
           // Legal times only as typed (31 Oct 2026): "Ends 15:42 as typed", never "1h 15m left".
-          countdown: typedTimeLine(dueAt, now),
+          countdown: typedTimeLine(dueAt, now, dayZero),
           // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-          text: `${patientName}: recorded due ${formatInstantWithDay(dueAt, now)}.`,
+          text: `${patientName}: recorded due ${typedClock(dueAt, now, dayZero)}.`,
           actionLabel: "Open arrival",
           actionTarget: "arrival",
           movementId: movement.id,

@@ -25,6 +25,7 @@ import {
   durMinutes,
 } from "@/components/wf";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
 import type { MovementStage } from "@/components/ward-management/ward-model";
 import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
@@ -155,7 +156,7 @@ export function HandoverFlowPanel({
       "Form time",
       row.formCode
         ? row.formDueAt !== undefined
-          ? `${formatInstantWithDay(row.formDueAt, now)}, as typed`
+          ? `${typedClock(row.formDueAt, now, ctx.dayZero)}, as typed`
           : "None typed"
         : noFormWords(row.legalStatus),
     ],
@@ -361,7 +362,7 @@ export function HandoverFlowPanel({
       <div className={styles.section}>
         <span className={styles.sectionHead}>ISBAR</span>
         <dl className={styles.isbar}>
-          {isbarLines(row, now, ctx.readyBeds).map((line) => (
+          {isbarLines(row, now, ctx.readyBeds, ctx.dayZero).map((line) => (
             <div key={line.key}>
               <dt title={line.label}>{line.key}</dt>
               <dd title={line.text}>{line.text}</dd>

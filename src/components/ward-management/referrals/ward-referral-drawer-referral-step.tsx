@@ -13,6 +13,7 @@ import {
 } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 import styles from "./ward-referral-drawer.module.css";
 import { TENTATIVE_DIAGNOSIS_BLOCKS } from "../ward-diagnosis";
 import {
@@ -132,6 +133,7 @@ function CommunityPurposeAndFollowUp({ s }: { s: WardReferralDrawerState }) {
 
 /** Step 2, Referral: where it comes from, legal status and urgency, the presentation and the destination's needs. */
 export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
+  const zone = useClockZoneLabel();
   const {
     sectionId,
     setSelectedUnitIds,
@@ -644,7 +646,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                 onChange={(v) => setEdNeeds((n) => ({ ...n, medicalReviewFirst: v === "Yes" }))}
               />
               <Field
-                label="Expected arrival, AWST"
+                label={`Expected arrival, ${zone}`}
                 htmlFor={`${sectionId}-ed-arrival`}
                 hint="HH:MM"
                 error={attempted.referral && edArrivalWrong ? TIME_FIELD_ERROR : null}

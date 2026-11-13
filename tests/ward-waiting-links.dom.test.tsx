@@ -138,6 +138,7 @@ describe("screens link into a view", () => {
         rows={[]}
         closedToday={[]}
         now={NOW_ANCHOR}
+        dayZero={new Date(0)}
         highlight={null}
         highlightCounts={{ long: 0, form: 0, edd: 0, aed: 0 } as never}
         onSelect={() => {}}

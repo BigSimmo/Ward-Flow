@@ -111,9 +111,9 @@ describe("referral owner and call log", () => {
     fireEvent.click(log);
     const calls = within(screen.getByRole("list", { name: "Calls logged" }));
     expect(calls.getByText(new RegExp(`${WARD.name}: Said yes`))).toBeInTheDocument();
-    expect(calls.getByText(/Bed coordinator, 40 min ago/)).toBeInTheDocument();
+    expect(calls.getByText(/Bed coordinator, 40m ago/)).toBeInTheDocument();
     // "Said yes" on the phone is not an acceptance.
-    expect(screen.getByTestId("record")).toHaveTextContent("queued|Last call 40 min ago");
+    expect(screen.getByTestId("record")).toHaveTextContent("queued|Last call 40m ago");
     expect(screen.getByTestId("timeline")).toHaveTextContent(`Bed coordinator rang ${WARD.name}: Said yes`);
   });
 

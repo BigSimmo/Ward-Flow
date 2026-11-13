@@ -59,8 +59,8 @@ describe("public chrome mechanical reuse", () => {
         <WardDemoClockPopover onOpen={open} />
       </WardShellPublicProvider>,
     );
-    const button = screen.getByRole("button", { name: "Board time 10:42 AWST. Open demo controls" });
-    expect(button).toHaveTextContent("Board time 10:42 AWST");
+    const button = screen.getByRole("button", { name: "Board time 10:42. Open demo controls" });
+    expect(button).toHaveTextContent("Board time 10:42");
     fireEvent.click(button);
     expect(open).toHaveBeenCalledWith(button);
   });
@@ -76,7 +76,7 @@ describe("public chrome mechanical reuse", () => {
       );
       const offline = screen.getByTestId("clock");
       expect(offline).toHaveTextContent(/^Offline$/);
-      expect(offline).toHaveAccessibleName("Offline. Board time 10:42 AWST. Open demo controls");
+      expect(offline).toHaveAccessibleName("Offline. Board time 10:42. Open demo controls");
       unmount();
     } finally {
       onLine.mockRestore();
@@ -90,7 +90,7 @@ describe("public chrome mechanical reuse", () => {
       );
       const stale = screen.getByTestId("clock");
       expect(stale).toHaveTextContent(/^Not updating since 10:26$/);
-      expect(stale).toHaveAccessibleName("Not updating since 10:26. Board time 10:42 AWST. Open demo controls");
+      expect(stale).toHaveAccessibleName("Not updating since 10:26. Board time 10:42. Open demo controls");
     } finally {
       act(() => publishLiveRefresh(undefined));
     }

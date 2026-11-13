@@ -6,6 +6,8 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { candidateReason, referralEligibility } from "@/components/ward-management/ward-eligibility";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { dispatchPermission } from "@/components/ward-management/ward-role-permissions";
 import {
   type Referral,
   type ReferralAddressing,
@@ -64,8 +66,14 @@ export function useAskMoreWards({
   const template = wardArms[0]?.destination;
   // The cap is the network's own setting, so outside a provider (some screen tests) there is no card.
   const cap = configuration?.parallelReferralCap ?? 0;
+  // F-108 (A14-14): asking more wards is the coordinator's (`EVENT_ROLE.ASK_MORE_WARDS`). The card
+  // raised it as the coordinator whatever the desk, so a ward desk could ask a fourth ward itself. It
+  // is now raised as the desk's own role and left out where that role may never ask.
+  const role = useRouteRole();
+  const roleMayAsk = dispatchPermission(role, "ASK_MORE_WARDS").allowed;
   // The engine's own preconditions, so the card never offers what ASK_MORE_WARDS would refuse.
   const applies =
+    roleMayAsk &&
     configuration !== undefined &&
     referral.source === "community" &&
     template !== undefined &&
@@ -152,7 +160,7 @@ export function useAskMoreWards({
       setAttemptedAt(rejections.length);
       const asked = opening.current;
       save.submit(
-        () => wardRaise(dispatch, "coordinator", now)("ASK_MORE_WARDS", { referralId: referral.id, unitIds: chosen }),
+        () => wardRaise(dispatch, role, now)("ASK_MORE_WARDS", { referralId: referral.id, unitIds: chosen }),
         () => {
           if (opening.current === asked) close();
         },

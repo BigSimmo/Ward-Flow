@@ -338,7 +338,7 @@ function IsbarSheet({
         />
         <h3 className={styles.isbarHead}>ISBAR</h3>
         <dl className={styles.isbar}>
-          {isbarLines(row, ctx.now, ctx.readyBeds).map((line) => (
+          {isbarLines(row, ctx.now, ctx.readyBeds, ctx.dayZero).map((line) => (
             <div key={line.key}>
               <dt>
                 <b aria-hidden="true">{line.key}</b>

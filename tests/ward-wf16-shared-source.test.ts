@@ -94,7 +94,8 @@ describe("WF-16 shared figure sources", () => {
   });
 
   it("spare that fit is bedsThatFit - waiting from bedKindGaps (not all ready beds)", () => {
-    const gaps = bedKindGaps([...movements], [...units], now, admissions);
+    // D-179 item 8: the releases say which beds are being made ready, which are not ready that fit.
+    const gaps = bedKindGaps([...movements], [...units], now, admissions, [], [...bedReleases]);
     for (const row of gaps) {
       expect(row.gap).toBe(row.bedsThatFit - row.waiting);
     }
