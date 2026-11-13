@@ -3,6 +3,11 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { PatientHistoryTab } from "@/components/ward-management/patients/patient-history-tab";
 import type { PatientNowRecord } from "@/components/ward-management/patients/patient-now-records";
+import { sampleDayText } from "@/components/ward-management/ward-sample-days";
+
+// PT-023's ED visit, 140 days before the day its sample was written for (root cause 2.3: the sample's
+// dates move with the board day), shown as day and month.
+const EARLIER_VISIT = new RegExp(sampleDayText(-140).split(" ").slice(0, 2).join(" "));
 
 // On a movement route the record's id is the movement (WF-*), not the patient (PT-*). History must
 // still find the linked patient's earlier episodes, as Community, Details and Documents do. Synthetic.
@@ -26,11 +31,11 @@ function renderHistory(patientId?: string) {
 describe("History on a movement route", () => {
   it("shows the linked patient's earlier episodes", () => {
     renderHistory("PT-023");
-    expect(screen.getAllByText(/14 Jun/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(EARLIER_VISIT).length).toBeGreaterThan(0);
   });
 
   it("shows none when no patient is linked", () => {
     renderHistory(undefined);
-    expect(screen.queryAllByText(/14 Jun/)).toHaveLength(0);
+    expect(screen.queryAllByText(EARLIER_VISIT)).toHaveLength(0);
   });
 });

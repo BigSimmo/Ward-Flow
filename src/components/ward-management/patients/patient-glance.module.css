@@ -83,8 +83,13 @@
   margin: 2px 0 0;
 }
 
-/* Note 5 (Josh, 9 Nov 2026): Record CTO reads as a quiet underlined line inside Legal. */
+/* Note 5 (Josh, 9 Nov 2026): Record CTO reads as a quiet underlined line inside Legal.
+   The button's own box is at least 24px (--wf-target-min, WCAG 2.2 target size); it sits over the
+   chip's open cover, so spacing cannot excuse it. The negative block margin keeps the chip's height
+   and the line where it was. */
 .actButton {
+  min-block-size: var(--wf-target-min);
+  margin-block: calc((var(--wf-lh-12) + 4px - var(--wf-target-min)) / 2);
   padding: 2px 0;
   border: 0;
   background: none;
@@ -94,6 +99,13 @@
   text-decoration-color: color-mix(in srgb, var(--wf-hero-ink) 40%, transparent);
   text-underline-offset: 3px;
   cursor: pointer;
+}
+
+/* The patient page clears every button's minimum height on a fine pointer
+   (`.screen[data-ward-design="v6"] button` in patient-now.module.css, specificity 0-2-1), which
+   took this one back to 20px. The doubled class outranks it for this button only. */
+.act .actButton.actButton {
+  min-block-size: var(--wf-target-min);
 }
 
 .actButton[aria-disabled="true"] {

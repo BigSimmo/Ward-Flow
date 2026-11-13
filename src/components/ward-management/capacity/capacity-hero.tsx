@@ -170,9 +170,9 @@ export function CapacityHero({
         ]),
     {
       id: "held-up",
-      // A16-25: this is every held-up discharge on any date, as Discharges' Held up group; the meeting
-      // sheet and TV count only those due by tomorrow, so each figure names its span.
-      label: heldUp.total === 1 ? "Held-up discharge, any date" : "Held-up discharges, any date",
+      // D-191 item 5 (Josh, 13 Nov 2026): held up is due by tomorrow, as the meeting sheet and TV
+      // count it (`heldUpDueByTomorrow`); the label names the span.
+      label: heldUp.total === 1 ? "Held-up discharge, due by tomorrow" : "Held-up discharges, due by tomorrow",
       icon: <Clock {...ICON} />,
       count: heldUp.total,
       countTone: "quiet",

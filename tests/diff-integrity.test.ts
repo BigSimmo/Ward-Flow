@@ -101,7 +101,8 @@ describe("countTestCases", () => {
       // with PsychSift on 26 September; these two Ward Flow files use the same curried modifiers
       // (it.skipIf, describe.runIf). Counts checked against `vitest list` and a line count. The
       // chat-control sample went with the old Database-checkout scripts on 15 October 2026.
-      "tests/ward-travel-bands.test.ts": 13,
+      // ward-travel-bands lost its one it.skipIf with A16-04 (13 Nov 2026); kept as a plain count.
+      "tests/ward-travel-bands.test.ts": 12,
       "tests/owned-formatting.test.ts": 11,
     };
     for (const [path, expected] of Object.entries(counts)) {

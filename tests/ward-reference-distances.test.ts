@@ -6,27 +6,28 @@ import {
   referenceDistance,
 } from "../src/components/ward-management/reference/ward-reference-distances";
 import { referenceEntity } from "../src/components/ward-management/reference/ward-reference-registry";
-import { TRAVEL_BANDS_ARE_INVENTED } from "../src/components/ward-management/ward-travel-bands";
+import { CHECKED_TRAVEL_BANDS } from "../src/components/ward-management/ward-travel-bands";
 import { allEmergencyDepartments, wardSites } from "../src/components/ward-management/ward-sites";
 
 /**
  * Real measured road distances between metropolitan EDs and metropolitan hospital sites.
  *
- * 🔴 THE MOST IMPORTANT TEST HERE IS THE ONE ABOUT `TRAVEL_BANDS_ARE_INVENTED`. Ward Flow already
- * has a travel model: `ward-travel-bands.ts` maps a WA HOME REGION to a site, across Kimberley,
- * Pilbara, Mid West and Great Southern, and every value in it is invented on purpose — chosen by
- * list position so no step of the authoring could smuggle in a judgement about real geography.
+ * 🔴 THE MOST IMPORTANT TEST HERE IS THE FIRST ONE. Ward Flow already has a travel model:
+ * `ward-travel-bands.ts` maps a WA HOME REGION to a site, and since A16-04 (Josh, 13 Nov 2026) it
+ * shows only bands somebody has checked, each with who checked it and when.
  *
  * ⚠️ IT WOULD BE VERY EASY, AND WRONG, TO "FILL IT IN" FROM THIS FILE. The two cover different
  * populations: this one is 26 metropolitan entities and contains no regional pair at all. Answering
  * the regional question with a metropolitan measurement would produce a real-looking number that
- * measured something else. `ward-travel-bands.ts` calls flipping its flag a governance act; nothing
- * here earns it, and the test below fails if somebody flips it while this file still cannot support
- * the claim.
+ * measured something else. Each checked band is a named person's act; nothing here earns one, and
+ * the test below fails if a band appears without who checked it and when.
  */
 describe("measured metropolitan road distances", () => {
-  it("does not let the invented regional travel bands be declared measured", () => {
-    expect(TRAVEL_BANDS_ARE_INVENTED).toBe(true);
+  it("does not let a travel band be shown without who checked it and when", () => {
+    for (const entry of CHECKED_TRAVEL_BANDS) {
+      expect(entry.checkedBy.trim(), `${entry.homeRegion} to ${entry.siteCode}`).not.toBe("");
+      expect(entry.checkedOn, `${entry.homeRegion} to ${entry.siteCode}`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
   });
 
   it("contains no regional pair, which is what makes the rule above hold", () => {

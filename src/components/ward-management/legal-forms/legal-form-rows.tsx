@@ -1,8 +1,8 @@
 "use client";
 
 import { DataRow, PhoneListRow, StatusGlyph, cx, tableClasses } from "@/components/wf";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
+import type { Instant } from "@/components/ward-management/ward-clock";
+import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
 
@@ -85,6 +85,7 @@ export function FormRow({
   onAddTime,
 }: FormRowProps) {
   const thresholds = useDueSoonThresholds();
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const legalForm = movement.legalForm;
   if (!legalForm) {
     throw new Error(`FormRow rendered for movement ${movement.id}, which carries no legal form`);
@@ -92,10 +93,10 @@ export function FormRow({
   const classification = legalFormRowClassification(movement, now, thresholds);
   const standing = clockStanding(movement, now, thresholds);
   // The spoken line carries the colour's words too ("… ends 15:42 as typed · within 1h"), never a count.
-  const reason = `${legalDeadlineText(movement, now)}${standingSuffix(typedTimeStanding(movement, now, thresholds))}`;
+  const reason = `${legalDeadlineText(movement, now, dayZero)}${standingSuffix(typedTimeStanding(movement, now, thresholds))}`;
   const facts = recordedFacts(movement);
   const done = facts.filter((fact) => fact.at !== undefined).length;
-  const step = nextStep(movement, now);
+  const step = nextStep(movement, now, dayZero);
   const canAddTime = movement.formedAt === undefined && isOwnedLegalFormCode(legalForm.code);
   // Audit S-6: an ended form's typed expiry is history, so the row shows it ended, not a countdown.
   const progression = formProgression(movement);
@@ -153,7 +154,7 @@ export function FormRow({
           <>
             <span className={styles.leftLine}>
               <StatusGlyph tone={STANDING_TONE[standing]} size={9} />
-              <strong className={styles.leftValue}>{typedClock(dueAt!, now)}</strong>
+              <strong className={styles.leftValue}>{typedClock(dueAt!, now, dayZero)}</strong>
               <span className={styles.sub}>{standingWord(standing, thresholds)}</span>
             </span>
             <span className={styles.sub}>
@@ -208,10 +209,11 @@ export function FormRow({
  */
 export function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimmed, onSelect }: FormRowProps) {
   const thresholds = useDueSoonThresholds();
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const legalForm = movement.legalForm!;
   const standing = clockStanding(movement, now, thresholds);
   // FS1: the row names its one next step, the same one the sheet leads with.
-  const step = nextStep(movement, now);
+  const step = nextStep(movement, now, dayZero);
   const where = wardName ? `${edName} to ${wardName}` : edName;
   const dueAt = currentLegalDueAt(movement);
   const hasDue = dueAt !== undefined;
@@ -242,7 +244,7 @@ export function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimm
         hasDue ? (
           <span className={styles.leftLine}>
             <StatusGlyph tone={STANDING_TONE[standing]} size={9} />
-            {typedClock(dueAt!, now)}{" "}
+            {typedClock(dueAt!, now, dayZero)}{" "}
             <span className={styles.phoneTimeWord}>{standing === "passed" ? "ended, as typed" : "as typed"}</span>
           </span>
         ) : (
@@ -257,7 +259,7 @@ export function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimm
       time={
         <>
           {typed.word}
-          <span className="sr-only">{`. ${umrn}, ${legalFormName(legalForm)}, ${legalDeadlineText(movement, now)}${standingSuffix(typed)}`}</span>
+          <span className="sr-only">{`. ${umrn}, ${legalFormName(legalForm)}, ${legalDeadlineText(movement, now, dayZero)}${standingSuffix(typed)}`}</span>
         </>
       }
       onSelect={() => onSelect(movement)}
@@ -285,6 +287,7 @@ export function ChecklistView({
   highlightOn: boolean;
   onSelect: (movement: Movement) => void;
 }) {
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const gaps: RecordGap[] = ["written", "received", "examination"];
   return (
     <div className={styles.table} role="region" aria-label="Checklist">
@@ -337,7 +340,7 @@ export function ChecklistView({
                   <span key={gap} className={styles.leftLine} data-label={GAP_LABEL[gap]}>
                     <StatusGlyph tone={fact.at !== undefined ? "success" : "neutral"} size={9} />
                     <span className={cx(styles.sub, fact.at !== undefined && styles.mono)}>
-                      {fact.at !== undefined ? formatInstantWithDay(fact.at, now) : "To record"}
+                      {fact.at !== undefined ? typedClock(fact.at, now, dayZero) : "To record"}
                     </span>
                   </span>
                 );

@@ -1,5 +1,6 @@
 import { HEALTH_SERVICES, TRAVEL_MODES, type HealthService, type ReferralGender, type TravelMode } from "../ward-model";
 import { isSyntheticReferralTimelineBase } from "../ward-referral-seed-time";
+import { clockZoneLabel, type ClockZoneLabel } from "../ward-clock";
 import {
   CLEARANCE_CHECKS,
   CLEARANCE_CHECK_LABELS,
@@ -17,6 +18,8 @@ import {
 export const REFERRAL_GENDER_NOT_RECORDED = "not_recorded";
 /** WS-01: the Send refusal while a ward referral's gender identity is unanswered. */
 export const GENDER_UNANSWERED = 'Choose the gender identity, or "Not yet recorded".';
+/** A9-10: the Send refusal while a ward referral's bed security is unanswered. */
+export const BED_SECURITY_UNANSWERED = "Choose the bed security.";
 /** The drawer's gender answer: unanswered (""), not yet recorded, or a recorded gender. */
 export type ReferralGenderAnswer = ReferralGender | "" | typeof REFERRAL_GENDER_NOT_RECORDED;
 
@@ -89,12 +92,15 @@ export type ReferralNeeds =
       kind: "ed";
       comingBy?: (typeof SAVED_ED_ARRIVAL_MODES)[number];
       medicalReviewFirst?: boolean;
-      /** Clock time as typed, "HH:MM" AWST. */
+      /** Clock time as typed, "HH:MM" on the board's clock (AWST signed in, demo time in the demo). */
       expectedArrival?: string;
     };
 
-/** "First contact within 72 hours, Home visit". Unanswered items are left out. */
-export function referralNeedsWords(needs: ReferralNeeds): string[] {
+/**
+ * "First contact within 72 hours, Home visit". Unanswered items are left out. `zone` is the board's
+ * clock words (`useClockZoneLabel`, F-113): "AWST" signed in, "demo time" in the demo.
+ */
+export function referralNeedsWords(needs: ReferralNeeds, zone: ClockZoneLabel = clockZoneLabel(false)): string[] {
   if (needs.kind === "community")
     return [
       needs.firstContact ? `First contact within ${needs.firstContact}` : "",
@@ -109,7 +115,7 @@ export function referralNeedsWords(needs: ReferralNeeds): string[] {
       : needs.medicalReviewFirst
         ? "Medical review before psychiatry"
         : "No medical review needed first",
-    needs.expectedArrival ? `Expected ${needs.expectedArrival} AWST` : "",
+    needs.expectedArrival ? `Expected ${needs.expectedArrival} ${zone}` : "",
   ].filter(Boolean);
 }
 
@@ -155,6 +161,12 @@ export type ReferralIntakeDetails = {
   charts: ReferralChart[];
   /** Required charts the referrer marked to follow instead of attaching (A27). Absent when none. */
   chartsToFollow?: FollowableChartKind[];
+  /**
+   * A9-06: a referral to a community team asks for no charts (D-77, the short form has no charts
+   * step), so it says so here and the charts rule is not applied. RECEIVE_REFERRAL accepts it only
+   * when every recipient is a community team.
+   */
+  chartsNotNeeded?: true;
   additionalDocuments: boolean;
   referrer: ReferralContact;
   arrival?: { transport: string; reference: string; estimatedAt?: string; syntheticTimelineBase?: string };
@@ -301,6 +313,7 @@ export function referralIntakeError(intake: ReferralIntakeDetails): string | nul
       "triageAndRampCompleted",
       "charts",
       "chartsToFollow",
+      "chartsNotNeeded",
       "additionalDocuments",
       "referrer",
       "arrival",
@@ -385,7 +398,16 @@ export function referralIntakeError(intake: ReferralIntakeDetails): string | nul
     return "Mark a chart to follow only when it is not attached.";
   const ready = (kind: FollowableChartKind) =>
     intake.charts.some((chart) => chart.kind === kind) || (toFollow?.includes(kind) ?? false);
-  if (!ready("medication") || !ready("observation"))
+  if (intake.chartsNotNeeded !== undefined) {
+    // A9-06: a community team referral carries no charts, none to follow and no other document.
+    if (
+      intake.chartsNotNeeded !== true ||
+      intake.charts.length > 0 ||
+      toFollow !== undefined ||
+      intake.additionalDocuments
+    )
+      return "A community team referral carries no charts.";
+  } else if (!ready("medication") || !ready("observation"))
     return "Attach the medication and observation charts, or mark them to follow.";
   if (intake.additionalDocuments && !intake.charts.some((chart) => chart.kind === "other"))
     return "Attach the additional document or choose No.";

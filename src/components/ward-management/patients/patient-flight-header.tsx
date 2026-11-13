@@ -10,6 +10,12 @@ function australianDate(iso: string): string {
   return match ? `${match[3]}/${match[2]}/${match[1]}` : iso;
 }
 
+/** Whole years, or words when the date of birth is not a date (a typed one not kept on this device). */
+function ageWords(patient: Patient, today: Date): string {
+  const years = patientAgeYears(patient, today);
+  return Number.isFinite(years) && years >= 0 ? `${years} y` : "age not recorded";
+}
+
 /**
  * v6 (Patient.png): the page's one hero band. The name is the page heading, the identity line sits
  * under it, the movement facts on the right; the second row holds the seven stages, then the record
@@ -93,7 +99,7 @@ export function PatientFlightHeader({
         <>
           <strong className={styles.v6Mono}>{patient.umrn}</strong>
           <span>
-            {patientAgeYears(patient, displayToday)} y, {patient.sex ? patient.sex.toLowerCase() : "sex not recorded"}
+            {ageWords(patient, displayToday)}, {patient.sex ? patient.sex.toLowerCase() : "sex not recorded"}
           </span>
           <span>DOB {australianDate(patient.dateOfBirth)}</span>
           {/* Page tops: the place joins the identity line (it was the eyebrow). */}
@@ -120,7 +126,7 @@ export function PatientFlightHeader({
       {patient ? (
         <>
           <strong className={styles.v6Mono}>{patient.umrn}</strong>
-          {` · ${patientAgeYears(patient, displayToday)} y, ${patient.sex === "Female" ? "F" : patient.sex === "Male" ? "M" : (patient.sex ?? "sex not recorded")}`}
+          {` · ${ageWords(patient, displayToday)}, ${patient.sex === "Female" ? "F" : patient.sex === "Male" ? "M" : (patient.sex ?? "sex not recorded")}`}
         </>
       ) : (
         "Demographics not recorded"

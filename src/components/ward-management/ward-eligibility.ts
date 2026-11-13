@@ -1,5 +1,6 @@
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { waitlistStands } from "@/components/ward-management/ward-waitlist";
 import {
   designationSummary,
   lockedBedsFree,
@@ -374,7 +375,10 @@ export type EligibilitySubject = Pick<
 
 export function eligibility(movement: EligibilitySubject, unit: Unit, now: Instant): EligibilityVerdict {
   const authorisationNeeded = requiresAuthorisedDestination(movement.legalStatus);
-  const declined = movement.declines.some((decline) => decline.unitId === unit.id);
+  // A9-05: a wait list answer ("No suitable bed") that still stands keeps the ward's live referral,
+  // so it is not a refusal and must not read as "Already declined" on that ward's referral.
+  const waitlisted = waitlistStands(movement, unit.id);
+  const declined = !waitlisted && movement.declines.some((decline) => decline.unitId === unit.id);
   const genderDesignation = genderDesignationResult(movement.gender, unit, movement.genderPlacements);
 
   const gates: GateResult[] = [
@@ -442,7 +446,11 @@ export function eligibility(movement: EligibilitySubject, unit: Unit, now: Insta
     {
       gate: "prior_decline",
       pass: !declined,
-      detail: declined ? "Already declined this movement" : "No prior decline",
+      detail: declined
+        ? "Already declined this movement"
+        : waitlisted
+          ? "On this ward's wait list"
+          : "No prior decline",
     },
     freshnessGate(unit, now),
     {

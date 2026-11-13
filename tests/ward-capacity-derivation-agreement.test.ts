@@ -48,13 +48,16 @@ describe("the two capacity derivations agree, unit by unit", () => {
       const unit = units.find((candidate) => candidate.id === unitId)!;
       const breakdown = capacityBreakdown(unit, bedReleases, leaveBeds, NOW_ANCHOR);
       const grid = unitCapacity(unit, bedReleases);
+      // D-179 item 8 (Josh, 13 Nov 2026): Ready leaves out a bed still being made ready, in both.
+      const ready = Math.max(0, grid.available - bedsPendingPreparation(unit.id, bedReleases));
 
       expect(
         breakdown.availableNow,
-        `Ready has drifted for ${unitId}. Capacity shows ${grid.available} and the morning rollup ` +
+        `Ready has drifted for ${unitId}. Capacity shows ${ready} and the morning rollup ` +
           `shows ${breakdown.availableNow}. Both render as a plain integer, so whichever screen a ` +
           "coordinator happens to be on decides how many free beds they believe there are.",
-      ).toBe(grid.available);
+      ).toBe(ready);
+      expect(breakdown.availableNow).toBe(openBedsNow(unit, bedReleases));
 
       expect(breakdown.held, `Held has drifted for ${unitId}: ${breakdown.held} against ${grid.held}.`).toBe(grid.held);
     },
@@ -113,7 +116,7 @@ describe("the two capacity derivations agree, unit by unit", () => {
   });
 
   it.each(units.map((unit) => [unit.id] as const))(
-    "%s: the pullable count is Ready minus the beds still being made ready, and Ready itself is untouched",
+    "%s: open beds now are the base figure minus the beds still being made ready (D-179 item 8)",
     (unitId) => {
       const unit = units.find((candidate) => candidate.id === unitId)!;
       const ready = unitCapacity(unit, bedReleases).available;

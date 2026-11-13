@@ -74,10 +74,11 @@ describe("seeded planned admissions", () => {
     const state = seedWardFlowState();
     expect(state.plannedAdmissions.map((planned) => planned.id)).toEqual(["PA-SEED-01", "PA-SEED-02", "PA-SEED-03"]);
     expect(state.plannedAdmissions.every((planned) => planned.state === "booked")).toBe(true);
-    // Exactly one names an existing patient; the others carry initials only.
-    expect(state.plannedAdmissions.filter((planned) => planned.patientId !== null)).toHaveLength(1);
-    const linked = state.plannedAdmissions.find((planned) => planned.patientId !== null)!;
-    expect(state.patients.some((patient) => patient.id === linked.patientId)).toBe(true);
+    // F-148 (13 Nov 2026): every sample booking names a synthetic person on file; none shows initials.
+    for (const linked of state.plannedAdmissions) {
+      expect(linked.initials).toBeNull();
+      expect(state.patients.some((patient) => patient.id === linked.patientId)).toBe(true);
+    }
     expect(seedWardFlowState("emhs-demo").plannedAdmissions).toEqual([]);
   });
 
@@ -87,7 +88,8 @@ describe("seeded planned admissions", () => {
     expect(isValidStoredWardFlowState(roundTrip)).toBe(true);
 
     const withBoth = JSON.parse(JSON.stringify(state));
-    withBoth.plannedAdmissions[0].patientId = "PT-002";
+    // The test's own initials-only booking, given a patient as well.
+    withBoth.plannedAdmissions.at(-1).patientId = "PT-002";
     expect(isValidStoredWardFlowState(withBoth)).toBe(false);
 
     const longInitials = JSON.parse(JSON.stringify(state));
@@ -475,7 +477,11 @@ describe("overdue planned arrivals surface in the action inbox", () => {
     const state = seedWardFlowState();
     const rows = buildActionInbox([], NOW, state.units, { plannedAdmissions: state.plannedAdmissions });
     expect(rows.map((row) => row.id)).toEqual(["planned-arrival-PA-SEED-03"]);
-    expect(rows[0]).toMatchObject({ kind: "fact", tone: "warning", movementId: "", personLabel: "Initials RK" });
+    // F-148: the sample booking names a person on file, so the row carries the booking (the screen
+    // names the person through the resolver) and no initials label.
+    expect(rows[0]).toMatchObject({ kind: "fact", tone: "warning", movementId: "" });
+    expect(rows[0]!.personLabel).toBeUndefined();
+    expect(resolveSubjectPatient(rows[0]!.plannedAdmission!, state).displayName).toBe("Rhea Kindlewater");
     expect(rows[0]!.title).toBe("Planned arrival not recorded");
     // The person is named; the booking id is never shown.
     expect(`${rows[0]!.title} ${rows[0]!.detail} ${rows[0]!.owner}`).not.toMatch(/PA-/);
@@ -851,14 +857,20 @@ describe("review follow-up: the restore fence", () => {
 
 describe("review follow-up: an initials-only arrival keeps its name", () => {
   it("names the converted stay by the booking's initials through the resolver", () => {
-    const arrived = apply(seedWardFlowState(), {
+    // F-148: the sample books nobody by initials, so this test books its own initials-only arrival.
+    const seed = seedWardFlowState();
+    const booked = book(seed, { initials: "rk" });
+    expect(booked.rejections).toEqual(seed.rejections);
+    const bookingId = newest(booked).id;
+    const arrived = apply(booked, {
       type: "CONVERT_PLANNED_ADMISSION",
       role: "coordinator",
       now: NOW,
-      plannedAdmissionId: "PA-SEED-03",
+      plannedAdmissionId: bookingId,
       unitId: UNIT,
     });
-    const booking = arrived.plannedAdmissions.find((planned) => planned.id === "PA-SEED-03")!;
+    expect(arrived.rejections).toEqual(booked.rejections);
+    const booking = arrived.plannedAdmissions.find((planned) => planned.id === bookingId)!;
     const admission = arrived.admissions.find((entry) => entry.id === booking.admissionId)!;
     expect(resolveSubjectPatient(admission, arrived)).toMatchObject({
       displayName: "Initials RK",

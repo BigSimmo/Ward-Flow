@@ -5,12 +5,15 @@
  * (a part rendered alone in a test) the dates stay as the mock-up wrote them.
  */
 
-import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { MIDLAND_AUTHORED_DAY, rebaseMidlandData, rebaseMidlandText } from "./midland-dates";
+import { useOptionalWardFlowSelect, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { MIDLAND_AUTHORED_DAY, midlandBoardDay, rebaseMidlandData, rebaseMidlandText } from "./midland-dates";
 import * as demo from "./midland-demo";
 
+/** The board's own day (`midlandBoardDay`), so the dates follow the board clock past midnight. */
 function useBoardDayZero(): Date {
-  return useOptionalWardFlowSelect("dayZero")?.dayZero ?? MIDLAND_AUTHORED_DAY;
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
+  const now = useWardFlowClock(0);
+  return dayZero === undefined ? MIDLAND_AUTHORED_DAY : midlandBoardDay(dayZero, now);
 }
 
 /** Rebases a written date in fixed copy ("Wed 4 Nov") onto the board's day. */

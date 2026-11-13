@@ -21,7 +21,9 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { exampleTriage } from "./helpers/triage-example";
 
-const seed = seedWardFlowState();
+// A16-14 (D-175 item 1): worked examples on. Only the worked example WF-RD03 sends PT-001 to a ward,
+// so without them no ward desk is sent this person and the shared-mode case has nothing to check.
+const seed = seedWardFlowState("standard", { workedExamples: true });
 const PATIENT_ID = seed.patients[0]!.id;
 
 function sign(state: WardFlowState, overrides: Partial<TriageSignedEvent> = {}, now = NOW_ANCHOR) {

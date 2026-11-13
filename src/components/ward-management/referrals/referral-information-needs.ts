@@ -32,3 +32,39 @@ export function openInformationNeeds<T extends { need: ReferralInformationNeed; 
 ): T[] {
   return (needs ?? []).filter((entry) => entry.metAt === undefined);
 }
+
+/**
+ * F-41 (A9-32): the needs the referrer has marked provided, newest first, so the ward sees "provided"
+ * and when, not an item that silently leaves its list. A need asked again and still waiting is
+ * listed only as waiting.
+ */
+export function providedInformationNeeds<T extends { need: ReferralInformationNeed; metAt?: number }>(
+  needs: readonly T[] | undefined,
+): (T & { metAt: number })[] {
+  const waitingAgain = new Set(openInformationNeeds(needs).map((entry) => entry.need));
+  return (needs ?? [])
+    .filter((entry): entry is T & { metAt: number } => entry.metAt !== undefined && !waitingAgain.has(entry.need))
+    .sort((a, b) => b.metAt - a.metAt);
+}
+
+/**
+ * F-41 (A9-32): what the sender's board row says when a ward is waiting on them: "Ward asked for 2
+ * items", counting the open asks on every ward arm still waiting for an answer (the same arms the
+ * sender's tick-off panel lists). Undefined when nothing is waiting.
+ */
+export function wardAskedWords(referral: {
+  destinations: readonly {
+    state: string;
+    withdrawnAt?: number;
+    destination: { kind: string };
+    informationNeeds?: readonly { need: ReferralInformationNeed; metAt?: number }[];
+  }[];
+}): string | undefined {
+  const open = referral.destinations
+    .filter(
+      (arm) => arm.destination.kind === "psychiatric_ward" && arm.state === "queued" && arm.withdrawnAt === undefined,
+    )
+    .reduce((count, arm) => count + openInformationNeeds(arm.informationNeeds).length, 0);
+  if (open === 0) return undefined;
+  return `Ward asked for ${open} ${open === 1 ? "item" : "items"}`;
+}

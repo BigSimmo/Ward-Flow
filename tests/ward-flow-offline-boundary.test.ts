@@ -85,8 +85,15 @@ describe("Ward Flow's isolated demo and shared-adapter boundary", () => {
       }
       // front-door-pass-client.ts is the front door's one same-origin call to this app's own
       // /api/session, for the pass the server gate checks (D-88). It reaches no provider.
+      // shell/ward-offline-links.tsx asks this app's own /api/health, which reads and calls nothing,
+      // whether the server answers before a full page load (Audit 4, D-178). It reaches no provider.
       if (
-        !["ward-supabase-auth.ts", "ward-shared-client.ts", "front-door/front-door-pass-client.ts"].includes(relative)
+        ![
+          "ward-supabase-auth.ts",
+          "ward-shared-client.ts",
+          "front-door/front-door-pass-client.ts",
+          "shell/ward-offline-links.tsx",
+        ].includes(relative)
       ) {
         for (const call of networkCalls) violations.push(`${file} calls ${call}`);
       }

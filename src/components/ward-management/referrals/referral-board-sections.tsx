@@ -124,7 +124,7 @@ const MS_PER_MINUTE = 60_000;
 
 /** The referral's due time as a countdown, or how far past it is, from the shared Timer. */
 function DueTimer({ dueAt, now }: { dueAt: Instant; now: Instant }) {
-  const timer = <Timer at={dueAt * MS_PER_MINUTE} now={now * MS_PER_MINUTE} direction="in" hideFlagWord />;
+  const timer = <Timer at={dueAt * MS_PER_MINUTE} now={now * MS_PER_MINUTE} wholeMinutes direction="in" hideFlagWord />;
   return dueAt > now ? (
     <span className={styles.v6Due}>due {timer}</span>
   ) : (

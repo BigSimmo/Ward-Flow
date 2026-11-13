@@ -2,9 +2,7 @@ import {
   clockState,
   type DueSoonThresholds,
   formatInstantWithDay,
-  formatRemaining,
   type Instant,
-  minutesUntil,
 } from "@/components/ward-management/ward-clock";
 import {
   destinationNoLongerLawful,
@@ -96,14 +94,15 @@ export const declineReasonLabels: Record<DeclineReason, string> = DECLINE_REASON
  * breached deadline also says so in words, from `clockState`, because the wrong-day clock face is
  * exactly the kind of silent wrongness this line must not repeat with a silent breach.
  */
-export function legalFormReadinessLine(legalForm: LegalForm, now: Instant): string {
+/** `dayZero` dates a typed time on another day (D1, D-93); left out, it never shows an age. */
+export function legalFormReadinessLine(legalForm: LegalForm, now: Instant, dayZero?: Date): string {
   // A code this model holds no label for — Form 3D — is named by its code alone, never by a
   // guessed expansion and never by the word "undefined".
   const named = legalFormNameLabelFirst(legalForm);
   if (legalForm.dueAt === undefined) return `${named} · no deadline recorded`;
   // Legal times only as typed (31 Oct 2026): "ends 15:42 as typed", or "ended … as typed" once
   // passed, which still says the breach in words; never "1h 15m overdue".
-  return `${named} · ${typedTimePhrase(legalForm.dueAt, now)}`;
+  return `${named} · ${typedTimePhrase(legalForm.dueAt, now, dayZero)}`;
 }
 
 /**
@@ -315,6 +314,7 @@ export function attentionItems({
   open,
   blockerIsActive,
   presentation,
+  dayZero,
 }: {
   movement: Movement;
   units: Unit[];
@@ -324,6 +324,8 @@ export function attentionItems({
   open: boolean;
   blockerIsActive: boolean;
   presentation?: MovementPresentation;
+  /** The board's day 0, so a typed legal time on another day prints its date (D1, D-93). */
+  dayZero?: Date;
 }): Attention[] {
   if (!open) {
     /*
@@ -370,7 +372,7 @@ export function attentionItems({
         who: legalFormNameLabelFirst(movement.legalForm),
         chip: "Overdue",
         level: "urgent",
-        say: `The form ${typedTimePhrase(deadline, now)}. Not recorded as dealt with.`,
+        say: `The form ${typedTimePhrase(deadline, now, dayZero)}. Not recorded as dealt with.`,
       });
     } else if (state === "critical" || state === "due") {
       items.push({
@@ -378,7 +380,7 @@ export function attentionItems({
         who: legalFormNameLabelFirst(movement.legalForm),
         chip: "Due soon",
         level: "stalled",
-        say: `The form ${typedTimePhrase(deadline, now)}.`,
+        say: `The form ${typedTimePhrase(deadline, now, dayZero)}.`,
       });
     }
   }
@@ -389,7 +391,9 @@ export function attentionItems({
       who: destination ? `Bed pulled at ${destination.name}` : "Bed pulled for this patient",
       chip: "Pull expired",
       level: "urgent",
-      say: `The pull ran out at ${formatInstantWithDay(movement.pullExpiresAt, now)} — ${formatRemaining(minutesUntil(movement.pullExpiresAt, now))}. The bed may no longer be held.`,
+      // D-187: a pull is never released automatically; a person releases it. The time limit passing
+      // changes nothing in the engine, so this never says the bed may have gone.
+      say: `The pull time limit passed at ${formatInstantWithDay(movement.pullExpiresAt, now)}. The bed stays pulled until someone releases it.`,
     });
   }
 

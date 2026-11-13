@@ -186,3 +186,16 @@
   color: var(--wf-ink-1);
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
+
+/* F-106 (A14-P2): the top lines' box. Its height only grows (see useHeightThatNeverShrinks). */
+.status {
+  display: grid;
+  align-content: start;
+  gap: var(--wf-s-3);
+}
+
+/* F-106 (A14-P2): a warning line kept as an empty slot while it is not needed, so the controls
+   below it do not move when it appears. It takes its line's height and shows nothing. */
+.slotEmpty {
+  visibility: hidden;
+}

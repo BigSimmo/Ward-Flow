@@ -20,6 +20,7 @@ import { CONTINUATION_LEGAL_FORMS } from "@/components/ward-management/ward-lega
 import { CLINICAL_VALUES, formatClinicalFigure } from "@/components/ward-management/ward-clinical-values";
 import { WARD_COMMAND_HREF } from "@/components/ward-management/ward-nav";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
+import { UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import type { SiteIdentity } from "@/components/ward-management/ward-sites";
 
 import type { WardTourRole } from "./ward-help-store";
@@ -1114,7 +1115,11 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
     meaning:
       "How long a pulled bed is kept for the patient. When it passes, the bed shows Pull expired and a person moves or releases it.",
   },
-  { term: "Being made ready", meaning: "A released bed still being prepared. It may not be offered as Ready yet." },
+  {
+    term: "Being made ready",
+    meaning:
+      "A released bed still being prepared. It is not counted as Ready, but a patient can still be pulled into it.",
+  },
   { term: "Ready", meaning: "A bed the ward has confirmed is clean and staffed for an admission." },
   { term: "Held up", meaning: "A discharge or move that is delayed. It is not a bed state." },
   {
@@ -1178,7 +1183,8 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
 
   {
     term: "Board time",
-    meaning: "The clock every screen works from, in Perth time (AWST). It opens the demo controls.",
+    meaning:
+      "The demo's own clock, which every screen works from. It starts at the sample day's time and runs on from there, so it is not the real time. It opens the demo controls.",
   },
   {
     term: "Constant observation",
@@ -1228,7 +1234,11 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "NMHS", meaning: "North Metropolitan Health Service." },
   { term: "SMHS", meaning: "South Metropolitan Health Service." },
   { term: "WACHS", meaning: "WA Country Health Service." },
-  { term: "AWST", meaning: "Australian Western Standard Time, Perth time. Every time in Ward Flow is in AWST." },
+  {
+    term: "AWST",
+    meaning:
+      "Australian Western Standard Time, Perth time. Signed-in times are AWST; the demo's board clock says demo time.",
+  },
   { term: "CAMHS", meaning: "Child and Adolescent Mental Health Service." },
   { term: "HDU", meaning: "High dependency unit: a ward area for patients who need closer care." },
   { term: "KPI", meaning: "Key performance indicator, such as the national seven-day follow-up measure." },
@@ -1334,6 +1344,15 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
     meaning: "The regular meeting on beds. Its agenda is built from fixed rules and its actions have an owner.",
   },
   { term: "Surge", meaning: "A Settings choice that tightens some rules at once for a busy period." },
+  // F-96 (pack F3, D-176 item 6): two software limits the app runs on, as `clinical-values.md` lists them.
+  {
+    term: "Undo window",
+    meaning: `How long a recorded decision or bed move can still be undone: ${UNDO_WINDOW_MINUTES} minutes. A software limit, not a clinical one.`,
+  },
+  {
+    term: "Wards asked at once",
+    meaning: "A coordinator normally asks up to three wards at once. A fourth needs a recorded reason.",
+  },
   {
     term: "Cover",
     meaning: "One ward or one ED handed to another desk for a time. It lasts for a set time and ends by itself.",
@@ -1369,6 +1388,18 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
     meaning: "A WA Act, in operation from 1 September 2024. Always written in full.",
   },
   { term: "SW", meaning: "Social worker." },
+  // F-91 (K24, Josh 13 Nov 2026): short forms the screens show in sample text, spelled out.
+  { term: "AHD", meaning: "Advance health directive." },
+  { term: "BD", meaning: "Twice a day, on a medicine line." },
+  { term: "CK", meaning: "Creatine kinase, a blood test." },
+  { term: "CR", meaning: "Controlled release, on a medicine line." },
+  { term: "IM", meaning: "Intramuscular, given as an injection into a muscle." },
+  { term: "MRO", meaning: "Multi-resistant organism." },
+  { term: "MSE", meaning: "Mental state examination." },
+  { term: "OT", meaning: "Occupational therapist." },
+  { term: "RACF", meaning: "Residential aged care facility." },
+  { term: "RAT", meaning: "Rapid antigen test." },
+  { term: "SAT", meaning: "State Administrative Tribunal, WA's tribunal for guardianship and administration." },
 ];
 
 /**

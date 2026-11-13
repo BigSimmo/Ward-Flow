@@ -92,6 +92,16 @@ function selectOccupiedBoardBed() {
   fireEvent.click(occupied);
 }
 
+// A9-14 (Josh, 13 Nov 2026): no destination starts chosen; the person chooses one first.
+function chooseCommunityDestination() {
+  fireEvent.click(
+    within(screen.getAllByTestId("drawer-leaving-dest")[0]).getByRole("button", {
+      name: "Discharged to the community",
+      hidden: true,
+    }),
+  );
+}
+
 beforeEach(() => {
   window.history.replaceState(null, "", "/");
   route.pathname = `/mockups/ward-flow/ward/${UNIT}`;
@@ -104,6 +114,7 @@ describe("Ward command feedback", () => {
       const control = commands();
       mount(control, <WardScreen unitId={UNIT} />);
       selectOccupiedBoardBed();
+      chooseCommunityDestination();
       fireEvent.click(screen.getByRole("button", { name: "Record that they have left" }));
       fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
       expect(control.record.mock.calls[0]?.[0].type).toBe("RECORD_LEAVING");
@@ -143,6 +154,7 @@ describe("Ward command feedback", () => {
     const control = commands();
     mount(control, <WardScreen unitId={UNIT} />);
     selectOccupiedBoardBed();
+    chooseCommunityDestination();
     fireEvent.click(screen.getByRole("button", { name: "Record that they have left" }));
     fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
     await act(() => control.accept());

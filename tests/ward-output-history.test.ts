@@ -80,7 +80,7 @@ describe("output audit: observation chronology", () => {
     expect(rows[0]).toMatchObject({ source: "Record", who: "Bed coordinator", recordedAt: f.change.now });
     expect(rows[0]?.before).toContain("General");
     expect(rows[0]?.after).toContain("Constant within sight");
-    expect(rows[0]?.after).toContain("AWST");
+    expect(rows[0]?.after).toContain("demo time");
   });
 
   it("retains record history when audit is unavailable and deduplicates only linked mirrors", () => {

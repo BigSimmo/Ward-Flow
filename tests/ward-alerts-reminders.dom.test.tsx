@@ -27,6 +27,7 @@ describe("Alerts shows due Remind me reminders", () => {
         targetLabel: "Ward 3B",
         reason: "Call back",
         dueAt: (now - HOUR) as Instant,
+        dayZero: 0,
       });
       addReminder({
         kind: "ward",
@@ -34,6 +35,7 @@ describe("Alerts shows due Remind me reminders", () => {
         targetLabel: "Ward 4A",
         reason: "Check the bed",
         dueAt: (now + HOUR) as Instant,
+        dayZero: 0,
       });
     });
     render(<AlertsRemindersGroup now={now} />);
@@ -54,6 +56,7 @@ describe("Alerts shows due Remind me reminders", () => {
         targetLabel: "Ward 4A",
         reason: "Check the bed",
         dueAt: (now + HOUR) as Instant,
+        dayZero: 0,
       });
     });
     const { container } = render(<AlertsRemindersGroup now={now} />);

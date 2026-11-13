@@ -15,6 +15,8 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 
+import { WorkedExamplesOn } from "./helpers/ward-worked-examples-on";
+
 /*
  * UX audit (21 Oct 2026), patient record and legal findings: the record says each fact once, and the
  * patient record can start a legal form for its own movement.
@@ -114,6 +116,8 @@ describe("Legal now on the patient record", () => {
   it("offers Record a form, which opens Legal forms for this movement with the sheet open", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
+        {/* A16-14: PT-001's open ED stay is WF-RD01, a worked example that is off by default. */}
+        <WorkedExamplesOn />
         <PatientNowScreen patientId="PT-001" />
       </WardFlowProvider>,
     );

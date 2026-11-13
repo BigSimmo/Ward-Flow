@@ -5,6 +5,7 @@ import { useContext, useEffect, useState, type ReactNode } from "react";
 import { Button, Drawer, durMinutes } from "@/components/wf";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { DemoPhoneNumber } from "@/components/ward-management/demo-phone-number";
 import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
@@ -35,6 +36,7 @@ import { documentLabel } from "@/components/ward-management/referrals/referral-d
 import { riskFlagLabel } from "@/components/ward-management/referrals/referral-risk-flags";
 import { FIT_NOT_CHECKED_LINE, referralFit, type ReferralFit } from "./ward-referral-fit";
 import styles from "./ward-referral-detail.module.css";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 const NOT_RECORDED = "Not recorded on this referral.";
 
@@ -133,6 +135,7 @@ export function WardReferralDetail({
   onUpdateBeds,
 }: WardReferralDetailProps) {
   const { dayZero } = useWardFlowSelect("dayZero");
+  const zone = useClockZoneLabel();
   const [openDocumentId, setOpenDocumentId] = useState<string | null>(null);
   const patient = identity.patient;
   // Ward projections do not expose another ward's stay. Never turn that missing link into an ED.
@@ -163,7 +166,7 @@ export function WardReferralDetail({
     },
     ...(movement.legalFormReceivedAt === undefined
       ? []
-      : [{ label: "Form received", detail: formatInstantWithDay(movement.legalFormReceivedAt, now) }]),
+      : [{ label: "Form received", detail: typedClock(movement.legalFormReceivedAt, now, dayZero) }]),
     ...(intake && intake.legalStatus !== movement.legalStatus
       ? [{ label: "On the referral", detail: intake.legalStatus }]
       : []),
@@ -186,7 +189,7 @@ export function WardReferralDetail({
       label: "Status",
       detail: intake.medicalClearance.cleared
         ? "Cleared"
-        : `Not yet cleared${intake.medicalClearance.expectedAt ? `, expected ${formatReferralIntakeTime(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero)}` : ""}`,
+        : `Not yet cleared${intake.medicalClearance.expectedAt ? `, expected ${formatReferralIntakeTime(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero, undefined, zone)}` : ""}`,
     });
   else {
     // Audit 24-1 A-03: no recorded clearance reads "Not recorded", as the answer card says. The

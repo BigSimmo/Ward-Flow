@@ -6,6 +6,8 @@ import { HomeTeamHeadsUpCard } from "@/components/ward-management/home-team-head
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+import { WorkedExamplesOn } from "./helpers/ward-worked-examples-on";
+
 /*
  * Item 46 (D-133): the team page card shows the ED name and time, and nothing for another team.
  * D-141 (11 Nov 2026): it leads with the patient's UMRN in Geist Mono, never their name.
@@ -14,6 +16,8 @@ describe("home team heads-up card", () => {
   it("lists the open-episode patient in ED on the Midland page: UMRN, ED name and time only", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
+        {/* A16-14: the Midland patient in ED is WF-RD03, a worked example that is off by default. */}
+        <WorkedExamplesOn />
         <HomeTeamHeadsUpCard team={communityTeamById("midland")!} now={NOW_ANCHOR} />
       </WardFlowProvider>,
     );

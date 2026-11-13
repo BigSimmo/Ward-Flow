@@ -142,8 +142,9 @@ describe("the sheet on Capacity", () => {
     for (const id of ["bed-meeting-capacity", "bed-meeting-discharges", "bed-meeting-ed", "bed-meeting-delays"]) {
       expect(within(copy).getByTestId(id)).toBeTruthy();
     }
+    // RC 2.6 (F-113, D-190): the local demo's scripted clock reads "demo time", never AWST.
     expect(within(copy).getByTestId("bed-meeting-sheet-as-at").textContent).toMatch(
-      /^As at Thu,? 31 Dec 2026, \d\d:\d\d AWST$/u,
+      /^As at Thu,? 31 Dec 2026, \d\d:\d\d demo time$/u,
     );
     expect(copy.textContent).toMatch(/Synthetic prototype/u);
     expect(copy.textContent).toMatch(/your default, not a legal limit/u);

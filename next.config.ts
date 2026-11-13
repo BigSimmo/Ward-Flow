@@ -170,6 +170,25 @@ const nextConfig: NextConfig = {
           enforce: true,
           priority: 25,
         },
+        // Phone size trim 3 (13 Nov 2026): the same 20 KB minimum left more shared pieces copied
+        // into two to four first-load chunks of one page: the desk guards (unsaved-changes guard,
+        // role gate, service store, prototype footer), Next's link and lazy-load helpers, and
+        // lucide's icon base. Same code, same behaviour; one copy each. Scripts only, so no
+        // stylesheet moves and the cascade is unchanged.
+        wfDeskShared: {
+          test: /[\\/]src[\\/]components[\\/](ward-management[\\/](use-dirty-state-guard|ward-role-gate|ward-role-permissions|shell[\\/]ward-service-store|shell[\\/]ward-prototype-footer)|contextual-back-link)\.tsx?$/,
+          name: "wf-desk-shared",
+          chunks: "all",
+          enforce: true,
+          priority: 25,
+        },
+        nextClientShared: {
+          test: /[\\/]node_modules[\\/](next[\\/]dist[\\/](client[\\/](app-dir[\\/]link|use-merged-ref)|shared[\\/]lib[\\/](utils|router[\\/]utils[\\/](format-url|is-local-url)))|lucide-react[\\/]dist[\\/]esm[\\/](Icon|context|createLucideIcon|defaultAttributes|shared[\\/].+|utils[\\/].+))\.m?js$/,
+          name: "next-client-shared",
+          chunks: "all",
+          enforce: true,
+          priority: 25,
+        },
       };
     }
     return config;

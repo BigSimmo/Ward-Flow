@@ -48,6 +48,7 @@ import {
   undoMidlandDecision,
   useMidlandDecisions,
 } from "./midland-decisions";
+import { useMidlandBoardMoment } from "./use-midland-board-moment";
 import wt from "@/components/ward-management/ward-table/ward-table.module.css";
 import t from "./team-2026.module.css";
 
@@ -89,12 +90,13 @@ function TimeCard({ r }: { r: DemoReferral }) {
 export function useAnswer(name: string, id?: string) {
   const toast = useOptionalToast();
   const decisions = useMidlandDecisions();
+  const boardMoment = useMidlandBoardMoment();
   const [local, setLocal] = useState<string | null>(null);
   const accepted = id ? (decisions[id]?.line ?? null) : local;
   const undo = () => (id ? undoMidlandDecision(id) : setLocal(null));
   const accept = (line: string) => {
     let persisted = true;
-    if (id) persisted = recordMidlandDecision(id, line);
+    if (id) persisted = recordMidlandDecision(id, line, boardMoment);
     else setLocal(line);
     toast?.push({
       tone: persisted ? "success" : "warning",
@@ -106,6 +108,14 @@ export function useAnswer(name: string, id?: string) {
   const say = (title: string) => toast?.push({ tone: "info", title });
   return { accepted, accept, undo, say };
 }
+
+/**
+ * F-53 (C28, design critique v2, Josh 13 Nov 2026): these two said a form opens, and none does. A
+ * decline reason list and a message to the referrer would be new features (D-128/D-134 pause), so
+ * the toast says plainly that they are not wired here, in the phone page's own words.
+ */
+const DECLINE_NOT_WIRED = "Decline is not wired in this prototype.";
+const ASK_NOT_WIRED = "Ask for more is not wired in this prototype.";
 
 function Done({ line, undo }: { line: string; undo: () => void }) {
   return (
@@ -199,7 +209,7 @@ function SidePanel({ r, openPage }: { r: DemoReferral; openPage: () => void }) {
             >
               Accept for Midland
             </Button>
-            <Button onClick={() => say("Decline opens a reason list and where to send the person")}>Decline</Button>
+            <Button onClick={() => say(DECLINE_NOT_WIRED)}>Decline</Button>
           </div>
         </>
       )}
@@ -430,12 +440,7 @@ export function ReferralPage({ index, go, back }: { index: number; go: (index: n
               </>
             }
             aside={
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={Send}
-                onClick={() => say("Ask for more opens a message to the referrer")}
-              >
+              <Button variant="ghost" size="sm" icon={Send} onClick={() => say(ASK_NOT_WIRED)}>
                 Ask for more
               </Button>
             }
@@ -599,12 +604,10 @@ export function ReferralPage({ index, go, back }: { index: number; go: (index: n
                       Accept for Midland
                     </Button>
                     <div className={t.dRow}>
-                      <Button icon={Send} onClick={() => say("Ask for more opens a message to the referrer")}>
+                      <Button icon={Send} onClick={() => say(ASK_NOT_WIRED)}>
                         Ask for more
                       </Button>
-                      <Button onClick={() => say("Decline opens a reason list and where to send the person")}>
-                        Decline
-                      </Button>
+                      <Button onClick={() => say(DECLINE_NOT_WIRED)}>Decline</Button>
                     </div>
                   </div>
                   <p className={`${t.small} ${t.after}`}>

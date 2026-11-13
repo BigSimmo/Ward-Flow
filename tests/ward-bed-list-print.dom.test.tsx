@@ -50,7 +50,8 @@ describe("printed bed list", () => {
     expect(first.getByText("Form 6A Involuntary inpatient")).toBeInTheDocument();
     // Dated, never "tomorrow": the sheet outlives the day it was printed (review: Codex).
     expect(first.getByText(/^Ends Mon 2 Nov, 12:42 as typed$/u)).toBeInTheDocument();
-    expect(screen.getByText(/^As at Mon 2 Nov 2026, \d{2}:\d{2} AWST\./u)).toBeInTheDocument();
+    // RC 2.6 (F-113, D-190): the local demo's scripted clock reads "demo time", never AWST.
+    expect(screen.getByText(/^As at Mon 2 Nov 2026, \d{2}:\d{2} demo time\./u)).toBeInTheDocument();
     expect(first.getByText("General, hourly")).toBeInTheDocument();
   });
 

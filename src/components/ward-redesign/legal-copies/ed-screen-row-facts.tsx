@@ -28,6 +28,7 @@ import type { EdBoardRowModel } from "@/components/ward-management/ed/ed-screen-
 import type { EdScreenContext } from "@/components/ward-management/ed/ed-screen-context";
 import { formExpiryWithName } from "./ed-form-expiry";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
+import { examinationOutcomeShort } from "@/components/ward-management/ward-legal-forms";
 import { edStageLabel } from "@/components/ward-management/ed/ed-referral-status";
 import styles from "@/components/ward-management/ed/ed.module.css";
 
@@ -162,7 +163,7 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
         <ul className={styles.sub} data-testid={`ward-ed-examination-history-${movement.id}`}>
           {movement.supersededExaminations.map((record, index) => (
             <li key={index}>
-              {`Earlier examination · ${record.outcome.replace(/_/g, " ")} — ${formatInstantWithDay(record.at, now)}`}
+              {`Earlier examination · ${examinationOutcomeShort(record.outcome)} — ${formatInstantWithDay(record.at, now)}`}
             </li>
           ))}
         </ul>

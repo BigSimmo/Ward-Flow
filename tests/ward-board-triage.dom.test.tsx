@@ -104,11 +104,18 @@ describe("ward board triage bar — the home page's six figures, in the home pag
       // The seeded unit, as the board reads it: the demo seed closes one bed by number (item 6).
       const seeded = seededState.units.find((candidate) => candidate.id === unit.id) ?? unit;
       const breakdown = capacityBreakdown(seeded, [...releases], [...seededState.leaveBeds], WARD_ADMISSIONS_ANCHOR);
+      // D-179 item 8: Ready leaves out a bed still being made ready, which only the live releases record.
+      const ready = capacityBreakdown(
+        seeded,
+        [...seededState.bedReleases],
+        [...seededState.leaveBeds],
+        WARD_ADMISSIONS_ANCHOR,
+      ).availableNow;
 
       for (const key of FIGURE_KEYS) {
         const figure = figureFor(key);
         const value = Number((figure.textContent ?? "").match(/\d+/)?.[0]);
-        expect(value, `${unit.id} ${key}`).toBe(breakdown[key]);
+        expect(value, `${unit.id} ${key}`).toBe(key === "availableNow" ? ready : breakdown[key]);
         // POSSIBLE, not merely computed. No capacity figure for one ward can exceed that ward's
         // own bed count — which is exactly the check the "28 people on a 20-bed ward" defect would
         // have failed while its own derivation tests all passed.
@@ -219,12 +226,20 @@ describe("ward board flow column — who is coming in", () => {
   });
 
   it("draws a given-away bed and a waitlisted person as different things", () => {
-    // `scgh-adult-open` is the one seeded ward carrying both a pulled bed and a waitlisted person,
-    // which is what makes the distinction checkable at all rather than assumed.
-    const { container } = renderWardBoard("scgh-adult-open");
-    const rows = [...container.querySelectorAll<HTMLElement>("[data-incoming-state]")];
-    const pulled = rows.filter((row) => row.getAttribute("data-incoming-state") === "pulled");
-    const waiting = rows.filter((row) => row.getAttribute("data-incoming-state") === "waitlisted");
+    // A16-13 (13 Nov 2026): `scgh-adult-open`'s pulled beds were held for nobody and are gone, so no
+    // seeded ward carries both now. The pulled rows come from SJGM Adult Open (two beds, each held
+    // for a named ED stay) and the waitlisted one from `scgh-adult-open`, drawn by the same board.
+    const rowsOf = (unitId: string) => {
+      const { container, unmount } = renderWardBoard(unitId);
+      const found = [...container.querySelectorAll<HTMLElement>("[data-incoming-state]")].map((row) => ({
+        state: row.getAttribute("data-incoming-state"),
+        textContent: row.textContent,
+      }));
+      unmount();
+      return found;
+    };
+    const pulled = rowsOf("sjgm-adult-open").filter((row) => row.state === "pulled");
+    const waiting = rowsOf("scgh-adult-open").filter((row) => row.state === "waitlisted");
     expect(pulled.length).toBeGreaterThan(0);
     expect(waiting.length).toBeGreaterThan(0);
 

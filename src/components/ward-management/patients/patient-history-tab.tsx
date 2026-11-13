@@ -40,6 +40,7 @@ import { LEAVING_DESTINATIONS, type Admission } from "../ward-admissions";
 import type { Patient } from "../ward-patients";
 import type { PatientRegistrationScope } from "../ward-patient-registration";
 import { calendarDateOf, perthDateLabel, perthDayLabel } from "../ward-clock";
+import { MONTH_SHORT, monthIndexOfShort } from "@/components/ward-management/ward-month-names";
 import { CLINICAL_VALUES } from "../ward-clinical-values";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { originName } from "@/components/ward-management/ward-movement-origin";
@@ -58,15 +59,15 @@ const SAFEGUARD = "Events are the ones recorded. Missing transitions are not inf
 
 // ── Dates ─────────────────────────────────────────────────────────────────────────────────────
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS = MONTH_SHORT;
 
 /** A typed date: "2 Jul 2026" has a day; "Mar 2025" is a month only. */
 type DayParts = { y: number; m: number; d?: number };
 
 function parseTyped(text: string | undefined): DayParts | undefined {
-  const match = text?.match(/^(?:(\d{1,2}) )?([A-Z][a-z]{2}) (\d{4})$/u);
+  const match = text?.match(/^(?:(\d{1,2}) )?([A-Z][a-z]{2,3}) (\d{4})$/u);
   if (!match) return undefined;
-  const m = MONTHS.indexOf(match[2]);
+  const m = monthIndexOfShort(match[2]);
   if (m < 0) return undefined;
   return { y: Number(match[3]), m, d: match[1] ? Number(match[1]) : undefined };
 }

@@ -63,7 +63,21 @@ describe("Discharges charts under the table (direction A)", () => {
     // can only hold as many or more. Nobody is hidden: the day's extra people join the rows to work
     // (lit rows first; a group's unlit rows past its cap stay behind Show more).
     expect(lit.length).toBeGreaterThanOrEqual(due);
-    expect(rows.slice(0, 1)).toEqual(lit.slice(0, 1));
+    // Lit rows come first in each group. This read "the list's first row is lit" until A16-12 and
+    // A16-19 (13 Nov 2026) moved the sample's discharge days: the chosen day's people are now all in
+    // Expected, below the Held up group, whose own unlit rows rightly come first.
+    const groups: HTMLElement[][] = [[]];
+    for (const row of within(screen.getByRole("region", { name: "Discharge worklist" })).getAllByRole("row")) {
+      if (within(row).queryAllByRole("button").length === 0) groups.push([]);
+      else if (row.hasAttribute("data-release-id")) groups.at(-1)!.push(row);
+    }
+    for (const group of groups) {
+      const litFlags = group.map((row) => row.getAttribute("data-highlighted") === "true");
+      expect(litFlags, "a group lists its lit rows before its unlit ones").toEqual(
+        [...litFlags].sort((a, b) => Number(b) - Number(a)),
+      );
+    }
+    expect(groups.some((group) => group[0]?.getAttribute("data-highlighted") === "true")).toBe(true);
     expect(screen.getByTestId("ward-discharge-highlight-note")).toHaveTextContent(
       new RegExp(`^${lit.length} of ${toWork + extra} highlighted, all rows stay`, "u"),
     );

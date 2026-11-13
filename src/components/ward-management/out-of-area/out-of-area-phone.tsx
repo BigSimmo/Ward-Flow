@@ -188,6 +188,7 @@ function PersonCard({
 export function OutOfAreaPhone({
   hero,
   people,
+  emptyLine,
   query,
   onQuery,
   anyHighlight,
@@ -207,6 +208,8 @@ export function OutOfAreaPhone({
   /** The page top (the shared hero), drawn above the folder tabs. */
   hero: ReactNode;
   people: PhonePerson[];
+  /** D-193: read out in Everyone when it lists nobody, the same words as the desktop list. */
+  emptyLine: string;
   query: string;
   onQuery: (value: string) => void;
   anyHighlight: boolean;
@@ -411,6 +414,11 @@ export function OutOfAreaPhone({
               <Button variant="ghost" size="sm" onClick={onClear}>
                 Clear
               </Button>
+            </p>
+          ) : null}
+          {people.length === 0 ? (
+            <p className={styles.emptyLine} data-testid="ward-out-of-area-phone-empty">
+              {emptyLine}
             </p>
           ) : null}
           <ul className={styles.phoneList} data-testid="ward-out-of-area-cards">

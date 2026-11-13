@@ -35,8 +35,8 @@ type WardScreenBedDrawerProps = {
   unit: Unit;
   closeBedDrawer: (returnToCensus?: boolean) => void;
   setSelectedBed: Dispatch<SetStateAction<number | null>>;
-  drawerLeavingDestination: LeavingDestination;
-  setDrawerLeavingDestination: Dispatch<SetStateAction<LeavingDestination>>;
+  drawerLeavingDestination: LeavingDestination | "";
+  setDrawerLeavingDestination: Dispatch<SetStateAction<LeavingDestination | "">>;
   handleDrawerRecordLeft: (admissionId: string, who: string) => void;
   pathname: string;
   routeRole: WardChromeRole;

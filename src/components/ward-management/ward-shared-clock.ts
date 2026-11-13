@@ -41,10 +41,9 @@ export function notModifiedUpdate<S extends { now: Instant }>(
  * older server sends no `serverTime`, and its deadline is used as before. Mutates and returns the parsed answer.
  */
 export function onDeviceClock<T>(value: T, deviceNowMs: number): T {
-  if (!value || typeof value !== "object") return value;
-  const answer = value as { serverTime?: unknown; accessUntil?: unknown; snapshot?: { accessUntil?: unknown } };
-  if (typeof answer.serverTime !== "number" || !Number.isFinite(answer.serverTime)) return value;
-  const offset = answer.serverTime - deviceNowMs;
+  const offset = serverClockLead(value, deviceNowMs);
+  if (offset === undefined) return value;
+  const answer = value as { accessUntil?: unknown; snapshot?: { accessUntil?: unknown } };
   if (typeof answer.accessUntil === "number" && Number.isFinite(answer.accessUntil)) answer.accessUntil -= offset;
   const snapshot = answer.snapshot;
   if (
@@ -55,4 +54,17 @@ export function onDeviceClock<T>(value: T, deviceNowMs: number): T {
   )
     snapshot.accessUntil -= offset;
   return value;
+}
+
+/**
+ * How far the server's clock is ahead of this device's in this answer (negative when behind), or
+ * `undefined` when the answer carries no `serverTime` (an older server). `onDeviceClock` moves the
+ * access deadline by it; time audit C2 (13 Nov 2026) moves the session limit by the same amount.
+ */
+export function serverClockLead(value: unknown, deviceNowMs: number): number | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const serverTime = (value as { serverTime?: unknown }).serverTime;
+  return typeof serverTime === "number" && Number.isFinite(serverTime) && Number.isFinite(deviceNowMs)
+    ? serverTime - deviceNowMs
+    : undefined;
 }

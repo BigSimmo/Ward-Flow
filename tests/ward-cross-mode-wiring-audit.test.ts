@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 import { bedsForecast } from "@/components/ward-management/capacity/beds-forecast";
 import { bedKindGaps, networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
 import { plannedAdmissionsStillNeedingABed } from "@/components/ward-management/capacity/planned-admissions-reducer";
-import { forecastByKind } from "@/components/ward-management/forecast/forecast-by-kind";
+import {
+  forecastByKind,
+  forecastGapTables,
+  forecastTotalsByKind,
+  type ForecastGapTables,
+} from "@/components/ward-management/forecast/forecast-by-kind";
 import { sevenDayHorizon } from "@/components/ward-management/forecast/forecast-horizon";
 import { occupiedBeds } from "@/components/ward-management/statistics/statistics-occupancy";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
@@ -13,8 +18,27 @@ import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { nextEvent, nowFor, seededRandom } from "./helpers/ward-engine-fuzz";
 
-function forecast(state: WardFlowState, now = NOW_ANCHOR) {
-  return bedsForecast(state.units, state.bedReleases, state.admissions, state.movements, now, state.plannedAdmissions);
+function forecast(state: WardFlowState, now = NOW_ANCHOR, tables?: ForecastGapTables) {
+  // As Capacity shows it: the by-type totals go in (D-191 item 6, `capacity-model.ts`).
+  return bedsForecast(
+    state.units,
+    state.bedReleases,
+    state.admissions,
+    state.movements,
+    now,
+    state.plannedAdmissions,
+    [],
+    forecastTotalsByKind(
+      state.units,
+      state.bedReleases,
+      state.admissions,
+      state.movements,
+      now,
+      state.plannedAdmissions,
+      [],
+      tables,
+    ),
+  );
 }
 
 function send(state: WardFlowState, event: WardFlowEvent): WardFlowState {
@@ -60,7 +84,10 @@ describe("cross-mode calculations after synthetic event sequences", () => {
         );
         expect(stats.inUse, `${label}: bed boxes in use`).toBe(sum("occupied") + sum("pulled"));
         const gaps = bedKindGaps(state.movements, state.units, now, state.admissions);
-        const network = forecast(state, now);
+        // The gap tables do not depend on the horizon: work them out once per event, as the
+        // by-type totals do, so the replay stays inside its time limit on the slower CI runners.
+        const tables = forecastGapTables(state.units, state.bedReleases, state.admissions, state.movements, now);
+        const network = forecast(state, now, tables);
         for (const days of [1, 2]) {
           const horizon = network.horizons[days - 1];
           const kind = forecastByKind(
@@ -71,6 +98,8 @@ describe("cross-mode calculations after synthetic event sequences", () => {
             now,
             days,
             state.plannedAdmissions,
+            [],
+            tables,
           );
           for (const key of [
             "low",

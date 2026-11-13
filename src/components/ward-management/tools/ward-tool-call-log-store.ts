@@ -6,9 +6,12 @@
  * so nothing a person types is ever stored. Emptied at sign-out. It never changes a ward's bed
  * figures: only the ward confirms its own beds. Prototype only: synthetic data.
  */
+import { useMemo } from "react";
+
 import { createBrowserStore } from "@/lib/client-store-factory";
-import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
+import { onWardDemoReset, onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { onDemoDay, useDemoDayZero } from "./ward-tool-remind-store";
 
 const CALL_OUTCOMES = ["as-shown", "later", "none", "no-answer"] as const;
 export type CallOutcome = (typeof CALL_OUTCOMES)[number];
@@ -23,6 +26,8 @@ export type CallLogEntry = {
   bedAt?: Instant;
   /** Board clock time the call was logged. */
   at: Instant;
+  /** The demo's day 0 (epoch ms) that `at` and `bedAt` count from (time audit C4). */
+  dayZero: number;
 };
 
 const KEY = "wf-mock-tools-call-log";
@@ -40,6 +45,7 @@ function isEntry(value: unknown): value is CallLogEntry {
     typeof e.wardId === "string" &&
     typeof e.wardLabel === "string" &&
     typeof e.at === "number" &&
+    typeof e.dayZero === "number" &&
     (e.bedAt === undefined || typeof e.bedAt === "number") &&
     (CALL_OUTCOMES as readonly unknown[]).includes(e.outcome)
   );
@@ -81,12 +87,19 @@ onWardSessionEnd((scope) => {
   set(EMPTY);
 });
 
+// D-197 item 2: Reset demo clears the demo day's call log too, as it does the reminders.
+onWardDemoReset(() => {
+  if (typeof window === "undefined") return;
+  load();
+  set(EMPTY);
+});
+
 function subscribe(onChange: () => void) {
   listeners.add(onChange);
   return () => listeners.delete(onChange);
 }
 
-export const useCallLog = createBrowserStore(
+const useStoredCallLog = createBrowserStore(
   subscribe,
   () => {
     load();
@@ -95,11 +108,18 @@ export const useCallLog = createBrowserStore(
   EMPTY,
 );
 
+/** This demo day's calls. An earlier day's stay hidden, and go when the next call is logged. */
+export function useCallLog(): readonly CallLogEntry[] {
+  const stored = useStoredCallLog();
+  const dayZero = useDemoDayZero();
+  return useMemo(() => onDemoDay(stored, dayZero), [stored, dayZero]);
+}
+
 /** Newest first; the oldest drop off past the last thirty. */
 export function addCallLog(input: Omit<CallLogEntry, "id">): void {
   load();
   const id = `c-${Date.now().toString(36)}-${entries.length}`;
-  set([{ ...input, id }, ...entries].slice(0, KEEP));
+  set([{ ...input, id }, ...onDemoDay(entries, input.dayZero)].slice(0, KEEP));
 }
 
 export function removeCallLog(id: string): void {

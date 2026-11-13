@@ -15,11 +15,14 @@ import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-m
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardAccessScope } from "@/components/ward-management/shell/ward-access";
 
-/** Converts the seeded initials-only booking, then names the stay it became through both screen resolvers. */
+/**
+ * Books an initials-only admission, converts it, then names the stay it became through both screen
+ * resolvers. F-148: the sample books nobody by initials, so the test makes its own booking.
+ */
 function ConvertedStayNames() {
   const { admissions, plannedAdmissions = [], resolvePatientIdentity, dispatch } = useWardFlow();
   const patientOf = usePatientOf();
-  const booking = plannedAdmissions.find((planned) => planned.id === "PA-SEED-03");
+  const booking = plannedAdmissions.findLast((planned) => planned.initials !== null);
   const stay = admissions.find((admission) => admission.id === booking?.admissionId);
   return (
     <div>
@@ -27,10 +30,33 @@ function ConvertedStayNames() {
         type="button"
         onClick={() => {
           dispatch({
+            type: "BOOK_PLANNED_ADMISSION",
+            role: "coordinator",
+            now: NOW_ANCHOR,
+            initials: "rk",
+            sex: "Female",
+            gender: "Female",
+            reason: "respite",
+            unitId: "fre-adult-open",
+            expectedArrivalAt: NOW_ANCHOR + 24 * 60,
+            expectedStayDays: 7,
+            legalStatus: "Voluntary",
+            ageBand: "Adult",
+            calendarDate: "2026-10-09",
+          });
+        }}
+      >
+        Book
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          if (!booking) return;
+          dispatch({
             type: "CONVERT_PLANNED_ADMISSION",
             role: "coordinator",
             now: NOW_ANCHOR,
-            plannedAdmissionId: "PA-SEED-03",
+            plannedAdmissionId: booking.id,
             unitId: "fre-adult-open",
           });
         }}
@@ -87,7 +113,9 @@ describe("planned admissions panel", () => {
     const list = screen.getByRole("list", { name: "Booked planned admissions" });
     expect(within(list).getAllByRole("listitem")).toHaveLength(3);
     expect(screen.getByTestId("ward-planned-PA-SEED-03")).toHaveTextContent(/arrival not recorded/);
-    expect(screen.getByTestId("ward-planned-PA-SEED-01")).toHaveTextContent("Initials JM");
+    // F-148: every sample booking names a synthetic person; none reads by initials.
+    expect(screen.getByTestId("ward-planned-PA-SEED-01")).toHaveTextContent(/Mallowbrook/);
+    expect(screen.getByTestId("ward-capacity-planned-admissions")).not.toHaveTextContent(/Initials/);
     // A linked patient is shown by name through the resolver, never by record id.
     expect(screen.getByTestId("ward-planned-PA-SEED-02")).not.toHaveTextContent("PT-007");
     // No booking id is ever shown.
@@ -140,7 +168,9 @@ describe("planned admissions panel", () => {
         <AlertsScreen />
       </WardFlowProvider>,
     );
-    expect(screen.getAllByText("Initials RK").length).toBeGreaterThan(0);
+    // F-148: the sample's overdue booking names a synthetic person on file.
+    expect(document.body.textContent).toMatch(/Kindlewater/);
+    expect(document.body.textContent).not.toMatch(/Initials RK/);
     expect(document.body.textContent).not.toMatch(/PA-SEED/);
     for (const link of Array.from(document.querySelectorAll("a[href]")))
       expect(link.getAttribute("href")).not.toMatch(/PA-/);
@@ -220,9 +250,9 @@ describe("planned admissions panel", () => {
         <AlertsScreen />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getAllByRole("button", { name: / for Initials RK$/ })[0]!);
+    fireEvent.click(screen.getAllByRole("button", { name: / for .*Kindlewater.*$/ })[0]!);
     const drawer = screen.getByRole("complementary", { name: "Selected alert" });
-    expect(drawer).toHaveTextContent("Initials RK");
+    expect(drawer).toHaveTextContent(/Kindlewater/);
     const booking = within(drawer).getByTestId("alerts-drawer-booking");
     expect(booking).toHaveTextContent("Legal status");
     expect(booking).toHaveTextContent("Voluntary");
@@ -238,6 +268,7 @@ describe("planned admissions panel", () => {
         <ConvertedStayNames />
       </WardFlowProvider>,
     );
+    fireEvent.click(screen.getByRole("button", { name: "Book" }));
     fireEvent.click(screen.getByRole("button", { name: "Convert" }));
     expect(screen.getByTestId("provider-name")).toHaveTextContent("Initials RK");
     expect(screen.getByTestId("hook-name")).toHaveTextContent("Initials RK");

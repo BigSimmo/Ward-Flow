@@ -137,6 +137,16 @@ function AcceptedReferralWard({
   );
 }
 
+// A9-14 (Josh, 13 Nov 2026): no destination starts chosen; the person chooses one first.
+function chooseCommunityDestination() {
+  fireEvent.click(
+    within(screen.getAllByTestId("drawer-leaving-dest")[0]).getByRole("button", {
+      name: "Discharged to the community",
+      hidden: true,
+    }),
+  );
+}
+
 describe("ward command feedback follows its own completion", () => {
   it.each(["did_not_proceed", "arrived"] as const)(
     "offers continuation after %s only when another journey is permitted",
@@ -163,6 +173,7 @@ describe("ward command feedback follows its own completion", () => {
       const reply = deferred();
       const { occupied, record } = renderWard(reply);
       fireEvent.click(occupied);
+      chooseCommunityDestination();
       const leave = screen.getByRole("button", { name: /^Record that they have left/ });
       // Audit 1 (CS-07): each tap asks once before it records; a second confirm still records once.
       fireEvent.click(leave);
@@ -184,6 +195,7 @@ describe("ward command feedback follows its own completion", () => {
     const reply = deferred();
     const { occupied, record } = renderWard(reply);
     fireEvent.click(occupied);
+    chooseCommunityDestination();
     fireEvent.click(screen.getByRole("button", { name: /^Record that they have left/ }));
     fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
     const admissionId = record.mock.calls[0][0] as string;

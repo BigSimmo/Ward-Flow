@@ -24,6 +24,10 @@ import { projectExecutiveReportingFoundation } from "@/components/ward-managemen
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 
+// A16-04: the app shows only travel bands someone has checked (none yet). This file tests a
+// mechanism that needs bands, so importing this swaps in the tests' own invented table.
+import "./helpers/ward-test-travel-bands";
+
 /**
  * Executive Statistics on the Overview and one health service (role access plan, Josh's yes 15 Oct
  * 2026): counts only. A small count of people below the hero reads "fewer than 5", a part beside a
@@ -182,7 +186,9 @@ describe("one health service on the executive desk, counts only", () => {
     }
     expect(text("ward-statistics-service-out-of-area-band-three_hours_or_more-count")).toBe("0");
 
-    expect(text("ward-statistics-service-ready-total")).toBe("4");
+    // 4 -> 3 (13 Nov 2026): the sample day's closed ward is now SCGH Older Adult (no ward carries two
+    // adverse examples), so its ready bed is closed to admissions.
+    expect(text("ward-statistics-service-ready-total")).toBe("3");
     expect(text("ward-statistics-service-exec-total-beds")).toBe("65");
   });
 
@@ -237,7 +243,9 @@ describe("one health service on the executive desk, counts only", () => {
 
     asDesk("executive", false);
     renderScreen(<StatisticsServiceScreen serviceId="East Metro" />);
-    expect(text("ward-statistics-service-placement-not-yet")).toBe("17"); // 15 -> 17 (3 Nov 2026): two S6 example referrals from East Metro sites, declined, not placed
+    // 15 -> 17 (3 Nov 2026): two S6 example referrals from East Metro sites, declined, not placed.
+    // 17 -> 16 (A16-14, 13 Nov 2026): the Armadale legal-form worked examples are off by default.
+    expect(text("ward-statistics-service-placement-not-yet")).toBe("16");
     expect(within(screen.getByTestId("ward-statistics-service-repatriation")).getByRole("table")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-statistics-people-not-listed")).toBeNull();
   });

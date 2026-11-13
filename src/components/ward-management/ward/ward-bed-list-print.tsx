@@ -8,6 +8,7 @@ import { observationSummary } from "@/components/ward-management/ward-observatio
 
 import type { WardScreenBed } from "./ward-screen-derivations";
 import styles from "./ward-bed-list-print.module.css";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 const subscribePrintReadiness = () => () => {};
 const clientPrintReady = () => true;
@@ -39,6 +40,7 @@ export function WardBedListPrint({
   /** Anchors every time on the sheet to a calendar date: a printout outlives the day it was taken. */
   dayZero: Date;
 }) {
+  const zone = useClockZoneLabel();
   // A streamed server table may still be hidden; only its own hydration proves it is printable.
   const ready = useSyncExternalStore(subscribePrintReadiness, clientPrintReady, serverPrintReady);
   if (beds.length === 0) return null;
@@ -52,8 +54,8 @@ export function WardBedListPrint({
       <div className={styles.head}>
         <h2 className={styles.title}>{unit.name} bed list</h2>
         <p className={styles.meta}>
-          As at {formatSheetMoment(now, dayZero, { includeYearAndZone: true })}. {beds.length} beds. Legal times are as
-          typed from the form, not legally checked. Synthetic data.
+          As at {formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })}. {beds.length} beds. Legal times
+          are as typed from the form, not legally checked. Synthetic data.
         </p>
       </div>
       <table className={styles.table}>

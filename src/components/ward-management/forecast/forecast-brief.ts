@@ -27,7 +27,7 @@ export function forecastBrief(
 function tightest(tomorrow: ForecastByKind): string {
   const worst = [...tomorrow.kinds].sort((a, b) => a.likely - b.likely)[0];
   if (!worst || worst.likely >= 0) return "No bed type is short tomorrow on what wards have recorded.";
-  return `${BED_KIND_LABEL[worst.id]} beds. ${worst.waiting} waiting, ${worst.bedsThatFit} fit now, likely ${kindRangeWord(worst.likely)} tomorrow.`;
+  return `${BED_KIND_LABEL[worst.id]} beds. ${worst.waiting} waiting, ${worst.bedsThatFit} fit now, ${kindRangeWord(worst.likely)} tomorrow, from ward dates.`; // D-192 item 4: no "likely".
 }
 
 function biggestBlocker(levers: readonly ForecastLever[]): string {

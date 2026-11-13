@@ -237,28 +237,26 @@ describe("capacity breakdown", () => {
    * implementation is as likely to quarantine the bed out of `confirmedToday` as out of
    * `availableNow`.
    */
-  it("never lets a preparation note change any figure — a bed being made ready is still available", () => {
-    const plain = release({ state: "discharged", preparing: false, preparationNote: null });
-    const beingPrepared = release({ state: "discharged", preparing: true, preparationNote: null });
-
-    expect(capacityBreakdown(unit, [beingPrepared], [], NOW_ANCHOR)).toEqual(
-      capacityBreakdown(unit, [plain], [], NOW_ANCHOR),
+  // D-179 item 8 (Josh, 13 Nov 2026) replaced the 5 Sept 2026 rule pinned here: a bed being made
+  // ready is no longer counted as available. It comes off Ready by one, and nothing else moves.
+  it("takes a bed being made ready off availableNow, and changes no other figure", () => {
+    const plain = capacityBreakdown(
+      unit,
+      [release({ state: "discharged", preparing: false, preparationNote: null })],
+      [],
+      NOW_ANCHOR,
     );
-    // Non-vacuity: the unit really does have beds to lose, so an implementation that withheld one
-    // while it was being cleaned would have somewhere to lose it from.
-    expect(capacityBreakdown(unit, [beingPrepared], [], NOW_ANCHOR).availableNow).toBeGreaterThan(0);
+    const beingPrepared = capacityBreakdown(
+      unit,
+      [release({ state: "discharged", preparing: true, preparationNote: null })],
+      [],
+      NOW_ANCHOR,
+    );
+    expect(plain.availableNow).toBeGreaterThan(0);
+    expect(beingPrepared).toEqual({ ...plain, availableNow: plain.availableNow - 1 });
   });
 
-  /**
-   * List 3 (2026-08-28) filled `BED_PREPARATION_NOTES`, so `preparationNote` can carry a real
-   * value for the first time — and the flag test above, written while every note was `null`,
-   * could not have caught a figure that keyed on the NOTE rather than on the boolean.
-   *
-   * This closes that hole: EVERY permitted note is swept, and every figure must be byte-identical
-   * to the un-prepared bed's. That is the owner's Q4 answer stated as an assertion — "once a bed
-   * is available, a patient will be pulled" — and it is the rule this whole list must never break.
-   */
-  it("never lets ANY specific preparation note change a figure, sweeping the whole owner-approved list", () => {
+  it("treats every owner-approved preparation note the same: off Ready by one, nothing else", () => {
     const plain = capacityBreakdown(unit, [release({ state: "discharged", preparing: false })], [], NOW_ANCHOR);
     expect(plain.availableNow).toBeGreaterThan(0);
 
@@ -269,7 +267,10 @@ describe("capacity breakdown", () => {
         [],
         NOW_ANCHOR,
       );
-      expect(withNote, `"${note}" must change no bed figure — a bed being made ready is still offered`).toEqual(plain);
+      expect(withNote, `"${note}" takes the bed off Ready only`).toEqual({
+        ...plain,
+        availableNow: plain.availableNow - 1,
+      });
     }
   });
 

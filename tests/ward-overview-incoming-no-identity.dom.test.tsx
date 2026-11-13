@@ -55,7 +55,7 @@ describe("the ward overview before a ward accepts", () => {
 
     expect(detail).toHaveTextContent(/nihilistic ideas/i);
     expect(detail).toHaveTextContent("Passes the 7 bed checks.");
-    expect(within(detail).getByTestId("ward-referral-referrer")).toHaveTextContent("Dr Kalan Moongate");
+    expect(within(detail).getByTestId("ward-referral-referrer")).toHaveTextContent("Dr Rafe Velloran");
     for (const name of otherWardNames) expect(detail).not.toHaveTextContent(name);
     expect(detail.textContent ?? "").not.toMatch(/WF-/u);
 

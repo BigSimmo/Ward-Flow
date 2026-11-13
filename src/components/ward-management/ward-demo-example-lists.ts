@@ -25,7 +25,7 @@ import { GENERAL_OBSERVATION } from "./ward-observation";
 import { createPatientResolver } from "./ward-patient-resolver";
 import type { Patient, PatientId } from "./ward-patients";
 import { completeSyntheticReferralIntake } from "./ward-referral-intake-seed";
-import { adverseExampleWard, mayCarryAdverseExample } from "./ward-demo-adverse-wards";
+import { mayCarryAdverseExample, staffRequestExampleWard } from "./ward-demo-adverse-wards";
 import { wardReferralInboxEntries } from "./referrals/referral-inbox";
 import { currentShiftStartInstant } from "./ward-board-time-features";
 import type { StaffRequestRecord } from "./staffing/staff-requests";
@@ -172,7 +172,7 @@ function addFinishedStays(state: Draft, people: People, anchor: Instant) {
 
 /**
  * One referral for every ward whose inbox is empty, sent to up to three wards of one age group and
- * declined by each early this morning. Already answered, so no queue or live count grows, and the
+ * declined by each early this morning (a GP or community one yesterday afternoon). Already answered, so no queue or live count grows, and the
  * decisions sit below the scenario's own most recent ones.
  */
 function addInboxReferrals(state: Draft, people: People, anchor: Instant) {
@@ -188,7 +188,14 @@ function addInboxReferrals(state: Draft, people: People, anchor: Instant) {
       const chunk = wards.slice(start, start + 3);
       const first = chunk[0]!;
       const sex = sexFor(first, count);
-      const raisedAt = anchor - 480 + ((count * 37) % 150);
+      const source = SOURCES[(count + 1) % SOURCES.length]!;
+      // A16-20 (13 Nov 2026): a GP or community team refers in working hours, so those example
+      // referrals were raised yesterday between 13:00 and 15:30 (a synthetic sample choice) rather
+      // than between 02:42 and 05:10. The others keep the early-morning spread.
+      const raisedAt =
+        source === "gp" || source === "community"
+          ? anchor - (anchor % MINUTES_PER_DAY) - MINUTES_PER_DAY + 13 * 60 + ((count * 37) % 150)
+          : anchor - 480 + ((count * 37) % 150);
       const destinations: ReferralAddressing[] = chunk.map((unit, arm) => {
         const destination = {
           kind: "psychiatric_ward" as const,
@@ -209,20 +216,23 @@ function addInboxReferrals(state: Draft, people: People, anchor: Instant) {
       });
       count++;
       state.referrals.push(
-        completeSyntheticReferralIntake({
-          id: `RF-EX-${String(count).padStart(3, "0")}`,
-          patientId: people.add(first.cohort, sex),
-          destinations,
-          ageBand: first.cohort,
-          homeRegion: "Perth Metropolitan",
-          suburb: { kind: "unknown", reason: "not_known" },
-          source: SOURCES[count % SOURCES.length]!,
-          raisedAt,
-          urgency: count % 3 === 0 ? 2 : 3,
-          originSiteCode: first.siteCode,
-          transportNeeded: true,
-          history: "Synthetic example referral: low mood and poor sleep over several weeks; agreeable to admission.",
-        }),
+        completeSyntheticReferralIntake(
+          {
+            id: `RF-EX-${String(count).padStart(3, "0")}`,
+            patientId: people.add(first.cohort, sex),
+            destinations,
+            ageBand: first.cohort,
+            homeRegion: "Perth Metropolitan",
+            suburb: { kind: "unknown", reason: "not_known" },
+            source,
+            raisedAt,
+            urgency: count % 3 === 0 ? 2 : 3,
+            originSiteCode: first.siteCode,
+            transportNeeded: true,
+            history: "Synthetic example referral: low mood and poor sleep over several weeks; agreeable to admission.",
+          },
+          { anchor },
+        ),
       );
     }
   }
@@ -275,27 +285,32 @@ export function applyExampleListsOverlay(state: WardFlowState, anchor: Instant):
   addFinishedStays(draft, people, anchor);
   addReadmissionAndHoldUpLog(draft, anchor);
   // Batch 3 items 21 and 23: a carer call back owed, and one handed on and not accepted yet.
-  return { ...state, ...draft, ...seededStaffRequest(state, anchor), ...seededHandoverWork(draft, anchor) };
+  // The staff request is built here at the anchor, keeping its place in the state, and built again
+  // from the board's own now once a reseed has moved the clock (time audit G1).
+  return { ...withSeededStaffRequest({ ...state, ...draft }, anchor), ...seededHandoverWork(draft, anchor) };
 }
 
 /**
  * Staff needed (feature 10): one synthetic open request, so the tag shows in the demo. A15-27: a
  * staff request is adverse, so it goes on the first ward the shared rule allows, not on a ward
  * carrying a real ward's own name (it used to name SCGH's Mental Health Unit).
+ *
+ * It asks for the shift on at `now`, so a reseed builds it again after the seed is moved to the
+ * board's clock (time audit G1, `ward-seed-clock.ts`), never shifted by minutes onto another shift.
  */
-function seededStaffRequest(state: WardFlowState, anchor: Instant): Pick<WardFlowState, "staffRequests"> {
-  const unit = adverseExampleWard(state.units);
-  if (!unit) return {};
+export function withSeededStaffRequest(state: WardFlowState, now: Instant): WardFlowState {
+  const unit = staffRequestExampleWard(state.units);
+  if (!unit) return state;
   const request: StaffRequestRecord = {
     id: "SR-1",
     unitId: unit.id,
-    shiftStartAt: currentShiftStartInstant(anchor),
+    shiftStartAt: currentShiftStartInstant(now),
     count: 2,
     reasons: ["constant_observation", "staff_short"],
-    requestedAt: anchor - 35,
+    requestedAt: now - 35,
     requestedBy: "ward",
   };
-  return { staffRequests: [request] };
+  return { ...state, staffRequests: [request] };
 }
 
 /**

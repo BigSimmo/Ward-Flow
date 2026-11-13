@@ -70,6 +70,7 @@ export function deriveEdScreen({
   inboxSnoozes,
   admissions,
   now,
+  dayZero,
   accessTarget,
   thisEdId,
   boardFilter,
@@ -92,6 +93,8 @@ export function deriveEdScreen({
   inboxSnoozes: WardFlowContextValue["inboxSnoozes"];
   admissions: WardFlowContextValue["admissions"];
   now: Instant;
+  /** The board's day 0, so a typed legal time on another day prints its date (D1, D-93). */
+  dayZero?: Date;
   accessTarget: number;
   thisEdId: string;
   boardFilter: "all" | "not_reviewed" | "under_form" | "no_destination" | "discharge" | "withdrawn";
@@ -396,8 +399,8 @@ export function deriveEdScreen({
         personName: flagPatientInfo.formalName,
         meta: `${m.cohort} · ${m.sex}`,
         // Legal times only as typed (31 Oct 2026): the typed time in words, never "passed 1h 05m ago".
-        why: `${currentLegalPosition(m).formWords} ${typedTimePhrase(formDueAt, now)}. The movement stands at ${stageCopy[m.stage].label.toLowerCase()}.`,
-        when: typedTimePhrase(formDueAt, now),
+        why: `${currentLegalPosition(m).formWords} ${typedTimePhrase(formDueAt, now, dayZero)}. The movement stands at ${stageCopy[m.stage].label.toLowerCase()}.`,
+        when: typedTimePhrase(formDueAt, now, dayZero),
         actionLabel: "Renew or discharge the form",
         onAction: () => setSelectedPatientId(m.id),
       });

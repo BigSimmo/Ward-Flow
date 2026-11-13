@@ -44,7 +44,7 @@ import {
   type WardRequestWithdrawalReason,
 } from "@/components/ward-management/ward-change-reasons";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
+import { capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import {
   dayOf,
@@ -54,13 +54,12 @@ import {
   isClockBreached,
   MINUTES_PER_DAY,
   minuteOfDayFromClockText,
-  splitDuration,
 } from "@/components/ward-management/ward-clock";
+import { targetHoursText } from "@/components/ward-management/ward-target-hours";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import { formTimeAsTyped } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { isOwnedLegalFormCode } from "@/components/ward-management/legal-forms/legal-forms-view";
-import { bedHold } from "@/components/ward-management/ward-bed-hold";
-import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
+import { bedHold, PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
   OPERATIONAL_DEFAULT_LABEL,
@@ -182,10 +181,6 @@ type ShortlistPanelProps = {
   /** Task 7 of the audit-wiring plan, 2026-09-16: the coordinator-configured parallel referral
    *  cap — previously the constant PARALLEL_REFERRAL_CAP, read directly in this file. */
   parallelReferralCap: number;
-  /** The configured pull hold (`state.configuration.pullHoldMinutes`), the same figure
-   *  `coordinator/priority-queue.tsx` reads for its own hold labels. Optional, defaulted, only so
-   *  existing direct-render tests keep their older prop set. */
-  pullHoldMinutes?: number;
   /**
    * Home (option B, Josh, 13 Oct 2026; D-30): when given, Refer hands the chosen wards (none is
    * fine) to the page, which opens the referral slide-out for this person so the referral reaches
@@ -244,7 +239,7 @@ type OverrideRecord = { unitIds: string[]; at: Instant; reason: string };
  * either direction — asserting an absence is the same overreach as asserting the seven-day figure
  * that was deleted on 2026-08-23.
  */
-function legalFormLine(movement: Movement, now: Instant) {
+function legalFormLine(movement: Movement, now: Instant, dayZero: Date | undefined) {
   if (!movement.legalForm) return "No legal form recorded";
   const formCode = `Form ${movement.legalForm.code}`;
   // The recorded end is read before the neutral 5A/5B arrival wording, as the Legal forms page reads it.
@@ -260,7 +255,7 @@ function legalFormLine(movement: Movement, now: Instant) {
   }
   // Legal times only as typed (Josh, 31 Oct 2026, replacing D-71 item 5): "Form 4C (Transfer order)
   // · ends 15:42 as typed", never "due in 2h" or "passed its deadline 1h ago".
-  return formTimeAsTyped(movement.legalForm, now);
+  return formTimeAsTyped(movement.legalForm, now, dayZero);
 }
 
 /**
@@ -285,7 +280,7 @@ export function ReferralPlacementPanel({
   footerSlot?: HTMLElement | null;
 }) {
   // Elapsed since the referral was raised, by the same `formatElapsed` every elapsed line here uses.
-  const waitingLabel = formatElapsed(Math.max(now - referral.raisedAt, 0));
+  const waitingLabel = formatElapsed(now - referral.raisedAt);
   // The patient's name through the same resolver the Referral board uses, never the raw record id.
   const { patients, referrals, movements, units } = useWardFlowSelect("patients", "referrals", "movements", "units");
   const patientInfo = resolveSubjectPatient(referral, { patients, referrals, movements });
@@ -359,7 +354,6 @@ export function ShortlistPanel({
   onSelectUnit,
   dispatch,
   parallelReferralCap,
-  pullHoldMinutes = defaultWardConfiguration().pullHoldMinutes,
   onRefer,
   variant = "column",
   footerSlot,
@@ -374,6 +368,7 @@ export function ShortlistPanel({
   // S-8: "Accept for this ward" offers Undo on the toast, like the ward's own acceptance. Read
   // through the context, not `useWardFlow()`, so a direct render without a provider still works.
   const flowContext = useOptionalWardFlowSelect("rejections", "setFocusMovementId", "worldGeneration", "movements");
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const flowRejections = flowContext?.rejections ?? NO_REJECTIONS;
   const flowSetFocusMovementId = flowContext?.setFocusMovementId;
   const [outcomeMessage, setOutcomeMessage] = useState<string | null>(null);
@@ -385,7 +380,6 @@ export function ShortlistPanel({
     onMessage: setOutcomeMessage,
   });
   const releaseUndo = (success: string, undone: string) => releaseUndoStep(movementId, success, undone);
-  const holdLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}h` : splitDuration(pullHoldMinutes);
   /**
    * ⚠️ EVERY WARD, NOT A FILTERED THREE. This was `eligibleCandidatesAmong(…, PARALLEL_REFERRAL_CAP)`,
    * which dropped every unit of a different cohort BEFORE eligibility was computed and then cut the
@@ -481,10 +475,9 @@ export function ShortlistPanel({
     () => (activeUnit ? capacityBreakdown(activeUnit, bedReleases, leaveBeds, now) : undefined),
     [activeUnit, bedReleases, leaveBeds, now],
   );
-  // 🔴 THE READY FIGURE IS CORRECT AND MUST NOT CHANGE. Nothing is subtracted from it for this —
-  // see `capacityLine`'s own comment above and `flow-diagram.tsx`'s `UnitNode` for the ruling this
-  // repeats a third time. `activeCapacity.ready` is rendered untouched below.
-  const activePendingPreparation = activeUnit ? bedsPendingPreparation(activeUnit.id, bedReleases) : 0;
+  // D-179 item 8: Ready (`activeCapacity.ready`) leaves out beds still being made ready; they are
+  // counted on their own here, from the same `bedStates` call.
+  const activePendingPreparation = activeCapacity?.beingMadeReady ?? 0;
 
   const [overrideRecord, setOverrideRecord] = useState<OverrideRecord | undefined>(undefined);
   const [overrideOpen, setOverrideOpen] = useState(false);
@@ -810,7 +803,7 @@ export function ShortlistPanel({
     "Choose at least one candidate ward before overriding — nothing is overridden against a default.";
   const activeNotice = activeUnit ? restrictionNotice(movement, activeUnit) : undefined;
 
-  const factors = waitFactors(movement, now, thresholds);
+  const factors = waitFactors(movement, now, thresholds, dayZero);
 
   /** Adds or removes a unit from the referral selection, capped at the coordinator-configured
    * `parallelReferralCap` (Task 7 of the audit-wiring plan, 2026-09-16 — previously the constant
@@ -1409,13 +1402,13 @@ export function ShortlistPanel({
             data-testid="ward-shortlist-wait-line"
           >
             {overTarget ? <StatusGlyph tone="danger" size={9} /> : null}
-            {`Waiting ${durMinutes(waitedMinutes)} (target ${durMinutes(targetMinutes)})`}
+            {`Waiting ${durMinutes(waitedMinutes)} (target ${targetHoursText(targetMinutes)})`}
             {overTarget ? <span className={shortlistStyles.waitOverdue}>· overdue</span> : null}
           </p>
         </div>
         {movement.legalForm ? (
           <p className={shortlistStyles.legalLine} data-urgent={legalBreached ? "true" : undefined}>
-            {`${legalFormLine(movement, now)} · ${movement.legalStatus}`}
+            {`${legalFormLine(movement, now, dayZero)} · ${movement.legalStatus}`}
             {legalDueAt !== undefined ? <LegalLimitsNotChecked variant="tag" /> : null}
           </p>
         ) : null}
@@ -1658,7 +1651,8 @@ export function ShortlistPanel({
                     : `ETA in ${Math.max(0, movement.arrivalDetails.estimatedArrivalAt - now)}m`
                   : hold
                     ? hold.label
-                    : `${holdLabel} pull, end time not recorded`
+                    : // D-187 (F-46): this pull's own limit, or that none is recorded; never the default.
+                      `Bed pull · ${PULL_NO_LIMIT_RECORDED}`
               }
               urgent={
                 movement.arrivalDetails?.estimatedArrivalAt !== undefined
@@ -2169,16 +2163,16 @@ export function ShortlistPanel({
                 {/*
               BELOW the chip row, never a seventh chip — the same owner ruling `flow-diagram.tsx`'s
               `UnitNode` and `capacityLine` above both already carry: "Ready 2" followed by "1"
-              reads as 21. An absence is silence, never "0 being made ready". Nothing is subtracted
-              from `activeCapacity.available` above for this — the Ready figure is untouched.
+              reads as 21. An absence is silence, never "0 being made ready". Ready above already
+              leaves these beds out (D-179 item 8).
             */}
                 {activePendingPreparation > 0 ? (
                   <span
                     className={`${styles.diagramBeingMadeReady} ${shortlistStyles.tabularNum}`}
                     data-testid={`ward-shortlist-ward-detail-pending-${activeUnit.id}`}
                   >
-                    {activePendingPreparation} of the ready {activePendingPreparation === 1 ? "bed is" : "beds are"}{" "}
-                    still being made ready
+                    {activePendingPreparation} more {activePendingPreparation === 1 ? "bed is" : "beds are"} being made
+                    ready, not counted as ready
                   </span>
                 ) : null}
                 <WardDetailIntakeNotes unit={activeUnit} now={now} className={styles.diagramBeingMadeReady} />

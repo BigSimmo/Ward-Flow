@@ -92,6 +92,7 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
     renderScreen();
     for (const { ward, card } of cardsByWard()) {
       expect(bedSquaresOf(card, "ready"), ward.unit.id).toHaveLength(ward.ready);
+      expect(bedSquaresOf(card, "preparing"), ward.unit.id).toHaveLength(ward.beingMadeReady);
       expect(bedSquaresOf(card, "used"), ward.unit.id).toHaveLength(ward.occupied + ward.pulled);
       expect(bedSquaresOf(card, "closed"), ward.unit.id).toHaveLength(ward.closed);
       expect(bedSquares(card), `${ward.unit.id}: drawn squares do not sum to its ${ward.unit.beds} beds`).toHaveLength(
@@ -100,7 +101,8 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
     }
   });
 
-  it("states every bed still being made ready in words, and never takes it off the ready squares", () => {
+  // D-179 item 8 (Josh, 13 Nov 2026): a bed being made ready is off the ready squares, drawn and said apart.
+  it("states every bed still being made ready in words, and draws it apart from the ready squares", () => {
     const preparing = seededWards.filter((ward) => ward.pendingPreparation > 0);
     expect(preparing.length, "no ward has a bed pending preparation — this guard proves nothing").toBeGreaterThan(0);
     renderScreen();
@@ -110,8 +112,8 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
       } else {
         expect(card.textContent ?? "", ward.unit.id).not.toMatch(/being made ready/u);
       }
-      // Owner ruling 2026-09-05: a bed being cleaned is never subtracted from Ready.
       expect(bedSquaresOf(card, "ready"), ward.unit.id).toHaveLength(ward.ready);
+      expect(bedSquaresOf(card, "preparing"), ward.unit.id).toHaveLength(ward.beingMadeReady);
     }
   });
 

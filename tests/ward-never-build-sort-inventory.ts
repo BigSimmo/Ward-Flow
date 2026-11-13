@@ -609,6 +609,15 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
     reason:
       "The matched comparator is the opt-in urgency view: a fixed table of the referrer's recorded tiers (A first, none asked last), longest waiting within a tier, no score. The default view is wait order (D-71 item 3).",
   },
+  {
+    file: "ward-demo-network.ts",
+    match: "(a, b) => rank(a.index) - rank(b.index) || b.waited - a.waited",
+    list: "patients",
+    key: "fixed stage-cycle table (pulled, then accepted, then any), then longest wait",
+    order: "fixed order",
+    reason:
+      "Builds the synthetic seed only (A16-13): picks which ED wait carries the bed hold about to lapse. No screen shows this order, and no ward or bed is suggested, ranked or offered.",
+  },
   // ---------------------------------------------------------------- wait order
   {
     file: "capacity/shift-confirmations.ts",

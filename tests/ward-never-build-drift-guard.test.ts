@@ -12,6 +12,10 @@ import { wardAdmissions } from "@/components/ward-management/ward-admissions-see
 import { outOfAreaLedger } from "@/components/ward-management/ward-referrals";
 import { eligibleCandidatesAmong } from "@/components/ward-management/ward-derivations-shortlist";
 
+// A16-04: the app shows only travel bands someone has checked (none yet). This file tests a
+// mechanism that needs bands, so importing this swaps in the tests' own invented table.
+import "./helpers/ward-test-travel-bands";
+
 /*
  * Never-build drift guard (Josh's standing rule, 19 Oct 2026; sweep of 24 Oct 2026). The rule
  * forbids risk or acuity scores, "best match" ward suggestions, automatic placement, re-sorting the

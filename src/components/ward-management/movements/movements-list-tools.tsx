@@ -4,6 +4,7 @@ import type { ComponentProps } from "react";
 import { ListExportButton } from "@/components/ward-management/ward-list-export-button";
 import { ListPrintButton } from "@/components/ward-management/ward-list-print-button";
 import type { exportMovementsList } from "@/components/ward-management/ward-movements-export";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 type ExportInput = Parameters<typeof exportMovementsList>[0];
 
@@ -16,13 +17,14 @@ export function MovementsListTools(
   props: ExportInput & Pick<ComponentProps<typeof ListPrintButton>, "disabled" | "iconOnly">,
 ) {
   const { disabled, iconOnly, ...input } = props;
+  const zone = useClockZoneLabel();
   return (
     <>
       <ListPrintButton iconOnly={iconOnly} disabled={disabled} testId="ward-movements-print" />
       <ListExportButton
         iconOnly={iconOnly}
         load={async () =>
-          (await import("@/components/ward-management/ward-movements-export")).exportMovementsList(input)
+          (await import("@/components/ward-management/ward-movements-export")).exportMovementsList({ ...input, zone })
         }
         disabled={disabled}
         testId="ward-movements-export"

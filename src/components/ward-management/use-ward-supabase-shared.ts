@@ -435,8 +435,15 @@ export function useWardSupabaseShared(
       }
       if (closed || connection.current !== client) return;
       if (sessionEnded()) return;
+      // Time audit C2 (13 Nov 2026): the limit is a moment on the server's clock, so it moves onto
+      // this device's clock by the offset the first read saw, as the access deadline does (TC2-05).
+      // The notice and the report lifetime then compare it with `Date.now()` like every other deadline.
       void instance.token().then(
-        (token) => !closed && connection.current === client && setEndsAt(sessionEndsAt(token)),
+        (token) => {
+          if (closed || connection.current !== client) return;
+          const end = sessionEndsAt(token);
+          setEndsAt(end === null ? null : client.toDeviceClock(end));
+        },
         () => {},
       );
       void rememberPhonePushOwnership({

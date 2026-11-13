@@ -37,15 +37,15 @@ function report() {
 it("carries complete Perth period boundaries and a dated generation stamp on detached reports", () => {
   report();
   const period = screen.getByTestId("ward-weekly-period");
-  expect(period).toHaveTextContent("Mon 12 Oct 2026, 00:00 AWST (inclusive)");
-  expect(period).toHaveTextContent("Mon 19 Oct 2026, 00:00 AWST (exclusive)");
+  expect(period).toHaveTextContent("Mon 12 Oct 2026, 00:00 demo time (inclusive)");
+  expect(period).toHaveTextContent("Mon 19 Oct 2026, 00:00 demo time (exclusive)");
   expect(period).not.toHaveTextContent("Counted to");
-  expect(screen.getByTestId("ward-weekly-range")).toHaveTextContent("Generated Fri 23 Oct 2026, 10:42 AWST");
+  expect(screen.getByTestId("ward-weekly-range")).toHaveTextContent("Generated Fri 23 Oct 2026, 10:42 demo time");
 
   chooseWeek(-1);
-  expect(period).toHaveTextContent("Mon 19 Oct 2026, 00:00 AWST (inclusive)");
-  expect(period).toHaveTextContent("Mon 26 Oct 2026, 00:00 AWST (exclusive)");
-  expect(period).toHaveTextContent("Counted to Fri 23 Oct 2026, 10:42 AWST (exclusive)");
+  expect(period).toHaveTextContent("Mon 19 Oct 2026, 00:00 demo time (inclusive)");
+  expect(period).toHaveTextContent("Mon 26 Oct 2026, 00:00 demo time (exclusive)");
+  expect(period).toHaveTextContent("Counted to Fri 23 Oct 2026, 10:42 demo time (exclusive)");
 });
 
 it("keeps a historical selected week and its honest occupied-time label when the phone print tree takes over", () => {
@@ -75,7 +75,7 @@ it("keeps a historical selected week and its honest occupied-time label when the
   // The phone hero names the week; the line under the week switch says only when it was made.
   expect(document.body).toHaveTextContent("Mon 5 Oct to Sun 11 Oct");
   expect(screen.getByTestId("ward-weekly-range")).toHaveTextContent(/^Generated /);
-  expect(screen.getByTestId("ward-weekly-period")).toHaveTextContent("Mon 5 Oct 2026, 00:00 AWST (inclusive)");
+  expect(screen.getByTestId("ward-weekly-period")).toHaveTextContent("Mon 5 Oct 2026, 00:00 demo time (inclusive)");
   expect(screen.getByTestId("ward-weekly-occupancy")).toHaveTextContent(historicalPercent!);
   expect(screen.queryByText("Average in use, this week so far")).not.toBeInTheDocument();
   // the phone band says "Occupied bed time"; the tile keeps the full, honest name.

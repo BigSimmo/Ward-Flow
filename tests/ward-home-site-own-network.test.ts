@@ -8,16 +8,33 @@ import { describe, expect, it } from "vitest";
 
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import {
+  patientRecordIsInvoluntary,
   seedWardFlowState,
   seedWardFlowStateAt,
   wardFlowReducer,
 } from "@/components/ward-management/ward-flow-reducer";
+import { stayLegalStatusIsInvoluntary } from "@/components/ward-management/ward-discharge-records";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { scrubTypedTextFields } from "@/components/ward-management/ward-flow-typed-text-scrub";
 import { scenarioHasSite, WARD_SCENARIOS } from "@/components/ward-management/ward-scenarios";
 import { activeWardNetwork, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
-const ADMISSION = "AD-WS-0005";
+/**
+ * A voluntary stay in the wa-synthetic world, found rather than named: the events below record a
+ * voluntary return. It was AD-WS-0005 until A16-13 (13 Nov 2026) re-timed the demo network's held
+ * beds, which moved that id onto a bed held for a person referred for examination.
+ */
+const ADMISSION = (() => {
+  const world = seedWardFlowState("wa-synthetic");
+  const stay = world.admissions.find(
+    (admission) =>
+      admission.state === "occupied" &&
+      !stayLegalStatusIsInvoluntary(world, admission) &&
+      !patientRecordIsInvoluntary(world.patients.find((patient) => patient.id === admission.patientId)?.legalStatus),
+  );
+  if (!stay) throw new Error("the wa-synthetic world no longer has a voluntary stay");
+  return stay.id;
+})();
 
 const homeReturn = (homeHospital: string): WardFlowEvent => ({
   type: "RECORD_HOME_SERVICE_RETURN",

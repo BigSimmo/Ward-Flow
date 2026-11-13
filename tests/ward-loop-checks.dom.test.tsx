@@ -34,21 +34,25 @@ function Move({ movementId }: { movementId: string }) {
   return <MovementLoopChecks movement={movement} units={units} now={now} />;
 }
 
+/**
+ * A16-17 (D-175 item 1): the demo closes no ward an open request asks, so not Graylands Older Adult;
+ * and none that carries another adverse example, so not RPH Older Adult (the staff request).
+ */
+const CLOSED_WARD = "scgh-older-adult";
+
 const wrap = (children: ReactNode) => render(<WardFlowProvider initialNow={NOW_ANCHOR}>{children}</WardFlowProvider>);
 
 describe("closing the loop on screen", () => {
   it("lists what points at a closed ward, marks one dealt with, and shows the overdue review", async () => {
-    wrap(<Ward unitId="gry-older-adult" actor={{ role: "coordinator" }} />);
+    wrap(<Ward unitId={CLOSED_WARD} actor={{ role: "coordinator" }} />);
     const reviews = await screen.findByTestId("ward-restriction-review-admissions_closure");
     expect(within(reviews).getByText("Review overdue")).toBeInTheDocument();
     const list = await screen.findByTestId("ward-closure-transition");
     expect(list.textContent ?? "").not.toMatch(/\b(WF|RF|PT|AD|WR)-\d/);
     expect(list.textContent ?? "").not.toMatch(/suggest|recommend|best/i);
     // CT-19: each risky mark names the ward at the button.
-    expect(screen.getByTestId("ward-closure-item-done-0")).toHaveAccessibleName(
-      /dealt with for Graylands Older Adult$/,
-    );
-    expect(screen.getByTestId("ward-closure-reopen")).toHaveTextContent("Reopen Graylands Older Adult to admissions");
+    expect(screen.getByTestId("ward-closure-item-done-0")).toHaveAccessibleName(/dealt with for SCGH Older Adult$/);
+    expect(screen.getByTestId("ward-closure-reopen")).toHaveTextContent("Reopen SCGH Older Adult to admissions");
     fireEvent.click(screen.getByTestId("ward-closure-item-done-0"));
     expect(
       within(screen.getByTestId("ward-closure-item-0")).getByText(/Dealt with · Bed coordinator/),
@@ -58,7 +62,7 @@ describe("closing the loop on screen", () => {
   });
 
   it("refuses another ward's marks with a stated reason", async () => {
-    wrap(<Ward unitId="gry-older-adult" actor={{ role: "ward", actingUnitId: "rph-adult-secure" }} />);
+    wrap(<Ward unitId={CLOSED_WARD} actor={{ role: "ward", actingUnitId: "rph-adult-secure" }} />);
     const done = await screen.findByTestId("ward-closure-item-done-0");
     expect(done).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(done);

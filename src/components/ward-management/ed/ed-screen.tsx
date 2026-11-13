@@ -7,6 +7,8 @@ import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-fo
 import { useMemo, type FormEvent } from "react";
 import { createReadmissionIndex } from "@/components/ward-management/ward-readmission";
 import { splitDuration } from "@/components/ward-management/ward-clock";
+import { pullHoldText } from "@/components/ward-management/ward-bed-hold";
+import { targetHoursText } from "@/components/ward-management/ward-target-hours";
 import {
   useDueSoonThresholds,
   useWardFlowClock,
@@ -34,7 +36,7 @@ import type { EdScreenContext } from "./ed-screen-context";
 import { deriveEdScreen } from "./ed-screen-derivations";
 import { EdListsSection } from "./ed-screen-lists";
 import { EdListsCard } from "./ed-lists-desktop";
-import { edStepSaid, edStepUndone, instantFromDateAndTimeInputs, waitLine, type EdStepEvent } from "./ed-screen-model";
+import { edStepSaid, edStepUndone, instantFromDateAndTimeInputs, type EdStepEvent } from "./ed-screen-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { EdPatientDialog } from "./ed-screen-patient-dialog";
 import { EdBoardTabs } from "./ed-screen-phone";
@@ -125,10 +127,7 @@ export function EdScreen({ edId }: EdScreenProps) {
   );
   const accessTarget = configuration.edAccessTargetMinutes;
   // The configured pull hold; until 25 Sept 2026 the transit badges said "4h hold" whatever it was.
-  const holdLabel =
-    configuration.pullHoldMinutes % 60 === 0
-      ? `${configuration.pullHoldMinutes / 60}h`
-      : splitDuration(configuration.pullHoldMinutes);
+  const holdLabel = pullHoldText(configuration.pullHoldMinutes);
   const department = edById(edId);
   const departments = allEmergencyDepartments();
 
@@ -267,6 +266,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     inboxSnoozes,
     admissions,
     now,
+    dayZero,
     accessTarget,
     thisEdId,
     boardFilter: boardView.boardFilter,
@@ -477,7 +477,7 @@ export function EdScreen({ edId }: EdScreenProps) {
             },
             { id: "held", label: "Accepted", value: waitingForBed },
             { id: "leaving", label: "Leaving for a ward", value: leavingForWard },
-            { id: "target", label: "Access target", value: waitLine(accessTarget) },
+            { id: "target", label: "Access target", value: targetHoursText(accessTarget) },
           ]}
           // Option B (Josh, 13 Oct 2026): one referral flow. Raise referral opens the referral
           // slide-out from this department; the inline form below now only raises a movement from a

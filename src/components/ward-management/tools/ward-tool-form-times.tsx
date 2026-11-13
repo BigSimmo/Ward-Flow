@@ -17,7 +17,7 @@ import {
   type DueSoonThresholds,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { typedClockParts } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { formatReminderHours } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { parseDateTimeInput } from "@/components/ward-management/tools/ward-form-time-input";
 import {
@@ -90,8 +90,8 @@ function FormTimesView({ dayZero, now, onNavigate }: { dayZero: Date; now: Insta
   const typed = code && date && time ? parseDateTimeInput(date, time) : null;
   const dueAt = typed ? Math.round((typed.getTime() - dayZero.getTime()) / 60_000) : null;
   const tone = dueAt === null ? null : standing(dueAt, now, thresholds);
-  // "15:42", "15:42 tomorrow" or "15:42, 2 days ago": the clock face large, the day beside it.
-  const [clock = "", ...day] = dueAt === null ? [] : typedClock(dueAt, now).split(" ");
+  // "15:42", "15:42 tomorrow" or "Tue 10 Nov 15:42": the clock face large, the day beside it.
+  const { clock, day } = dueAt === null ? { clock: "", day: "" } : typedClockParts(dueAt, now, dayZero);
 
   return (
     <div className={styles.body} data-testid="ward-form-times">
@@ -139,8 +139,8 @@ function FormTimesView({ dayZero, now, onNavigate }: { dayZero: Date; now: Insta
             <span className={styles.resultForm}>{formLabel(code)}</span>
             <span className={styles.resultLine}>
               <span className={styles.resultWord}>{isClockBreached(dueAt, now) ? "Ended" : "Ends"}</span>
-              <span className={styles.clock}>{clock.replace(/,$/u, "")}</span>
-              {day.length ? <span className={styles.day}>{day.join(" ")}</span> : null}
+              <span className={styles.clock}>{clock}</span>
+              {day ? <span className={styles.day}>{day}</span> : null}
               <span className={styles.resultWord}>as typed</span>
             </span>
             {tone.word ? (

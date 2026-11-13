@@ -13,7 +13,7 @@ import {
 
 import { Button, StatusGlyph } from "@/components/wf";
 import { isClockBreached, type Instant } from "@/components/ward-management/ward-clock";
-import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
+import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Movement } from "@/components/ward-management/ward-model";
 
 import { ageBandWord, extendedWord, onceOnlyExtensionWarning, regionWord } from "./legal-form-ledger";
@@ -60,6 +60,7 @@ export function LegalFormSummary({
   onRequirements?: (code: string) => void;
 }) {
   const thresholds = useDueSoonThresholds();
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const legalForm = movement.legalForm;
   const end = legalFormEnd(movement);
   const standing = clockStanding(movement, now, thresholds);
@@ -78,7 +79,7 @@ export function LegalFormSummary({
           <StatusGlyph tone={STANDING_TONE[standing]} size={10} />
           {dueAt !== undefined ? (
             <>
-              <span className={p.clockBig}>{typedClock(dueAt, now)}</span>
+              <span className={p.clockBig}>{typedClock(dueAt, now, dayZero)}</span>
               <span className={p.clockWord}>
                 {isClockBreached(dueAt, now) ? "Ended" : "Ends"}, as typed from the form
                 {standingSuffix(typedStanding)}
@@ -95,7 +96,7 @@ export function LegalFormSummary({
                       ? "No expiry typed"
                       : standingWord(standing, thresholds)}
               </span>
-              <span className={p.clockWord}>{legalDeadlineText(movement, now)}</span>
+              <span className={p.clockWord}>{legalDeadlineText(movement, now, dayZero)}</span>
             </>
           )}
         </span>
@@ -167,7 +168,8 @@ export function LegalFormNextStep({
   onExtend?: () => void;
   extendUnavailable?: string;
 }) {
-  const step = nextStep(movement, now);
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
+  const step = nextStep(movement, now, dayZero);
   const NextIcon = NEXT_ICON[step.action];
   return (
     <div className={p.next} data-action={step.action} data-testid="ward-legal-next-step">

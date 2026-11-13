@@ -579,10 +579,8 @@ export const PATIENT_NOW_RECORDS: Record<string, PatientNowRecord> = {
 
 export function dur(min: number): string {
   // UX audit 21 Oct 2026: "169h 0m" here read as a different wait from "7d 1h" on every other screen.
-  if (min >= 1440) return splitDuration(min);
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  // RC 2.5 (F-35, 13 Nov 2026): one formatter, so "6h 05m" here as everywhere, never "6h 5m".
+  return splitDuration(min);
 }
 
 export function clock(min: number): string {

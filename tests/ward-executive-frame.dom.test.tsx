@@ -175,7 +175,9 @@ describe("the executive chrome in the new frame", () => {
     expect(card).toHaveTextContent(/over 85%/);
     expect(card).toHaveTextContent(`${report.network.beds.ready} beds ready now`);
     expect(card).toHaveTextContent("Metro");
-    expect(card.getAttribute("aria-label")).toMatch(/^Bed alerts: (None|\d+) at or over 85% full\. Metro /);
+    // A9-26 (F-27): statewide, the rows are the three fullest services and Metro is the foot line,
+    // as on every other network desk, so the count over the line counts services, never Metro.
+    expect(card.getAttribute("aria-label")).toMatch(/^Bed alerts: (None|\d+) at or over 85% full\. \S.*, Metro /);
     fireEvent.click(card);
     const rows = screen.getAllByTestId("ward-rail-bed-alert-row");
     expect(rows).toHaveLength(report.services.length);

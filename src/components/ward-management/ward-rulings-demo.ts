@@ -1,8 +1,16 @@
 /**
- * Additive Wave 3 rulings examples for the Ward Flow demo.
+ * Additive Wave 3 rulings examples for the Ward Flow demo: worked examples of each legal form, all
+ * at Armadale ED.
  *
- * `seedWardFlowState` merges this overlay additively via `applyRulingsDemoOverlay`. Existing
- * fixture rows are kept; overlay rows whose ids already exist in that night are skipped.
+ * OPT-IN (A16-14, root cause R8; Josh approved 13 Nov 2026). These were merged into every Standard
+ * day, so Armadale's headline count, the longest wait and the detained count were mostly planted
+ * rows. They are now off by default, as the hard cases in `ward-hard-cases-demo.ts` are: the
+ * presenter switches them on in Tools, Demo ("Show worked examples"), which loads the day through
+ * `SET_SCENARIO` with `workedExamples: true`, and `seedWardFlowState(scenario, { workedExamples:
+ * true })` merges them via `applyRulingsDemoOverlay`. A test opts in the same way. Existing fixture
+ * rows are kept; overlay rows whose ids already exist in that night are skipped. With the examples
+ * off, the seeded people they reuse (PT-001, PT-004, PT-043, PT-065 to PT-078) stay on the patient
+ * list with no journey, as any person with nothing open does.
  *
  * Ids are `RD-01` onward in `exampleIds`. Record ids follow each type's prefix (`WF-`, `RF-`,
  * `AD-`, `PT-`, `WL-`) so they type-check. `writtenAt` does not exist on Movement or LegalForm —
@@ -407,7 +415,7 @@ export function rulingsDemoOverlay(now: Instant): RulingsDemoOverlay {
     ],
     movements: [rd01, rd02, rd03, rd05, rd10, rd11, rd12, ...clockMovements],
     admissions: [rd04],
-    referrals: completeSyntheticReferralIntakes([rd06]),
+    referrals: completeSyntheticReferralIntakes([rd06], { anchor: now }),
     patients: [patient("PT-RD04", "Neris", "Quellane", "Female"), patient("PT-RD06", "Orla", "Vallowen", "Female")],
     leaveBeds: [leaveOffWard, leaveMedical],
     skipped: SKIPPED,
@@ -445,4 +453,24 @@ export function applyRulingsDemoOverlay<
     patients: appendNewById(state.patients, overlay.patients),
     leaveBeds: appendNewById(state.leaveBeds, overlay.leaveBeds),
   };
+}
+
+/** Every record id the worked examples add, read off the overlay rather than listed by hand. */
+function workedExampleRecordIds(now: Instant): Set<string> {
+  const overlay = rulingsDemoOverlay(now);
+  return new Set(
+    [...overlay.movements, ...overlay.referrals, ...overlay.admissions, ...overlay.leaveBeds].map((row) => row.id),
+  );
+}
+
+/**
+ * True when the worked examples are on in this state, so Reset demo keeps them. Ids are fixed, so
+ * the overlay's own clock does not matter here.
+ */
+export function workedExamplesShown(state: {
+  movements: readonly Movement[];
+  referrals: readonly Referral[];
+}): boolean {
+  const ids = workedExampleRecordIds(0);
+  return state.movements.some((row) => ids.has(row.id)) || state.referrals.some((row) => ids.has(row.id));
 }

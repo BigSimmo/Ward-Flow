@@ -54,6 +54,7 @@ import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
 import { ArrivalIdentityDialog } from "@/components/ward-management/arrival-identity-dialog";
 import {
+  AGE_NOT_RECORDED,
   cohortFitsAge,
   patientCohort,
   patientListName,
@@ -368,10 +369,14 @@ export function PlannedAdmissionsPanel({
         if (patient && dayZero instanceof Date) {
           const arrivalDay = calendarDateOf(expectedArrivalAt, dayZero);
           const wardCohort = units.find((unit) => unit.id === draft.unitId)?.cohort;
+          const recorded = patientCohort(patient.dateOfBirth, arrivalDay);
+          // D-181 item 11: a record with no age is never booked as Adult from its date of birth.
           ageBand =
             wardCohort && cohortFitsAge(wardCohort, patient.dateOfBirth, arrivalDay)
               ? wardCohort
-              : patientCohort(patient.dateOfBirth, arrivalDay);
+              : recorded === AGE_NOT_RECORDED
+                ? ageBand
+                : recorded;
         }
       }
       refuse(null);

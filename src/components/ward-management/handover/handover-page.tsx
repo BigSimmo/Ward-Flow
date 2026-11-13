@@ -138,6 +138,7 @@ import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard
 import { HandoverDigestSlot, useHandoverDigestOpen } from "./handover-digest-slot";
 import { handoverSinceItems } from "./handover-since-items";
 import { useDigestNight } from "./handover-digest-first-look";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 export {
   handoverScopeLabel,
@@ -228,6 +229,7 @@ export function HandoverPage() {
     "staffRequests",
   );
   const now = useWardFlowClock();
+  const zone = useClockZoneLabel();
   const carerDue = useCarerDue(now).length; // batch 3 item 23: carer call backs join the promises count
   const partialDisplay = useWardPartialDisplay();
   const partialHost = useWardPartialDisplayHost();
@@ -280,7 +282,9 @@ export function HandoverPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
   const [present, setPresent] = useState(false);
-  const [meetingStartedAt, setMeetingStartedAt] = useState<number | null>(null);
+  // `ms` drives the chip's running timer; `at` is the board instant the length is measured from (C9).
+  const [meetingStarted, setMeetingStarted] = useState<{ ms: number; at: Instant } | null>(null);
+  const meetingStartedAt = meetingStarted?.ms ?? null;
   const [meetings, setMeetings] = useState<{ at: Instant; minutes: number }[]>([]);
   const [preparedAt, setPreparedAt] = useState<Instant | null>(null);
   const [printOptions, setPrintOptions] = useState(DEFAULT_PRINT_OPTIONS);
@@ -355,15 +359,15 @@ export function HandoverPage() {
     [admissions, wards, patients, referrals, now],
   );
   const wardOf = useCallback((unitId: string) => allWards.find((ward) => ward.id === unitId), [allWards]);
-  // Beds a pull can take now: free beds still being made ready are refused by the engine.
+  // The ward's Ready figure, which already leaves out beds still being made ready (D-179 item 8).
   const readyBeds = useCallback(
     (unitId: string) => {
       const ward = wardOf(unitId);
-      return ward ? Math.max(0, ward.ready - ward.pendingPreparation) : 0;
+      return ward ? ward.ready : 0;
     },
     [wardOf],
   );
-  const ctx: ColumnContext = useMemo(() => ({ now, cutoff, readyBeds }), [now, cutoff, readyBeds]);
+  const ctx: ColumnContext = useMemo(() => ({ now, cutoff, readyBeds, dayZero }), [now, cutoff, readyBeds, dayZero]);
 
   /* highlight, never hide */
   const anyHighlight = pill !== null || chips.size > 0;
@@ -525,21 +529,23 @@ export function HandoverPage() {
   };
 
   /* meeting timer: session only, the length goes to History */
+  // Time audit C9 (13 Nov 2026): the length is measured on the board clock, the clock History shows
+  // it against, so a moved demo clock does not stamp a real-time length with a board time.
   const toggleMeeting = useCallback(() => {
-    if (meetingStartedAt === null) {
-      setMeetingStartedAt(Date.now());
+    if (meetingStarted === null) {
+      setMeetingStarted({ ms: Date.now(), at: now });
       return;
     }
-    const minutes = Math.max(1, Math.round((Date.now() - meetingStartedAt) / 60_000));
+    const minutes = Math.max(1, now - meetingStarted.at);
     setMeetings((list) => [{ at: now, minutes }, ...list]);
-    setMeetingStartedAt(null);
+    setMeetingStarted(null);
     announceToWardShell(`Meeting took ${minutes} min. Added to History.`);
-  }, [meetingStartedAt, now]);
+  }, [meetingStarted, now]);
 
   /* copy */
   const shiftLine = `${shiftInfo.label.toLowerCase()}, ${formatInstantWithDay(shiftAt, now)}`;
   const copySummary = useCallback(() => {
-    const text = summaryText(groups, scopeLabel, shiftLine, now, now);
+    const text = summaryText(groups, scopeLabel, shiftLine, now, now, zone, dayZero);
     void copyTextToClipboard(text).then(
       () => {
         setCopied(true);
@@ -547,15 +553,15 @@ export function HandoverPage() {
       },
       () => announceToWardShell("Copy was blocked by the browser."),
     );
-  }, [groups, scopeLabel, shiftLine, now, rows.length]);
+  }, [groups, scopeLabel, shiftLine, now, zone, dayZero, rows.length]);
   const copyIsbar = useCallback(
     (row: HandoverRow) => {
-      void copyTextToClipboard(isbarText(row, now, readyBeds)).then(
+      void copyTextToClipboard(isbarText(row, now, readyBeds, dayZero)).then(
         () => announceToWardShell(`ISBAR for ${row.name} copied.`),
         () => announceToWardShell("Copy was blocked by the browser."),
       );
     },
-    [now, readyBeds],
+    [now, readyBeds, dayZero],
   );
 
   /* keyboard */

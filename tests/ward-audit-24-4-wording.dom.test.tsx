@@ -34,7 +34,7 @@ const scenario = WARD_SCENARIOS[0]!;
 const state = seedWardFlowState(scenario);
 
 describe("audit 24-4 wording", () => {
-  it("NA2-02: the menu figure is releases held up, today and tomorrow", () => {
+  it("NA2-02: the menu figure is releases held up, due by tomorrow (D-191)", () => {
     const nav = wardNavCounts({
       movements: state.movements,
       units: state.units,
@@ -46,7 +46,7 @@ describe("audit 24-4 wording", () => {
       now: NOW_ANCHOR,
       thresholds: dueSoonThresholdsOf(state.configuration),
     });
-    expect(RELEASES_HELD_UP_LABEL).toBe("Releases held up, today and tomorrow");
+    expect(RELEASES_HELD_UP_LABEL).toBe("Releases held up, due by tomorrow");
     // A9-04 (Josh, 13 Nov 2026): the menu line is the TV's words, "held up due by tomorrow".
     expect(nav.discharges?.noun).toBe("held up due by tomorrow");
   });

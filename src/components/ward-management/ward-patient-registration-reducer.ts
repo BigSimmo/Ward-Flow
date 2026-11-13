@@ -1,10 +1,13 @@
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { WardFlowEvent } from "./ward-flow-events";
 import { ADMIN_DETAIL_FIELDS, GENDERS, sameRecordNumber, type AdminDetailField, type Patient } from "./ward-patients";
-import { isPatientRegistrationScope } from "./ward-patient-registration";
-import { perthIsoDay } from "./ward-clock";
+import { isCalendarDay, isPatientRegistrationScope, latestDateOfBirth } from "./ward-patient-registration";
 import { RECORDED_SEXES } from "./ward-model-vocabulary";
 import { ABORIGINAL_OR_TORRES_STRAIT_ISLANDER_STATUSES } from "./ward-patient-aboriginal-status";
+
+// The bound lives in `ward-patient-registration.ts` so Add patient can share it without loading this
+// lazy slice; it is still read from here beside `dateOfBirthProblem`.
+export { latestDateOfBirth };
 
 /**
  * Why a date of birth cannot be stored, or undefined when it can (production audit 24 Oct 2026,
@@ -19,18 +22,8 @@ export function dateOfBirthProblem(dateOfBirth: unknown, today: Date, demoDay?: 
       : "ADD_PATIENT date of birth must be a date written YYYY-MM-DD";
   }
   if (dateOfBirth < "1900-01-01") return "ADD_PATIENT date of birth is before 1900";
-  const realDay = perthIsoDay(today);
-  const bound = isCalendarDay(demoDay) && demoDay < realDay ? demoDay : realDay;
-  if (dateOfBirth > bound) return "ADD_PATIENT date of birth is in the future";
+  if (dateOfBirth > latestDateOfBirth(today, demoDay)) return "ADD_PATIENT date of birth is in the future";
   return undefined;
-}
-
-function isCalendarDay(value: unknown): value is string {
-  const match = typeof value === "string" ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(value) : null;
-  if (!match) return false;
-  const [year, month, day] = match.slice(1).map(Number) as [number, number, number];
-  const read = new Date(Date.UTC(year, month - 1, day));
-  return read.getUTCFullYear() === year && read.getUTCMonth() === month - 1 && read.getUTCDate() === day;
 }
 
 /** Registration mutation; the reducer's event permission and audit wrapper remain authoritative. */

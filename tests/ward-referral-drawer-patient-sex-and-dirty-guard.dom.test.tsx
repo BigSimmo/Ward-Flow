@@ -127,6 +127,13 @@ describe("Task 2 — Referral drawer patient sex retention, dirty guards, and se
     // 3. Choose Adult in the Age band select and advance to Wards (Step 4): legend must show "Adult · open ·",
     // not "Not recorded", and ward rows must display site codes rather than raw unitId slugs (e.g., rph-adult-secure).
     fireEvent.change(screen.getByLabelText(/Age band/), { target: { value: "Adult" } });
+    // A9-10 (Q2 ruling): bed security starts unanswered for a person with none recorded, so choose it.
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", {
+        name: "Referral",
+      }),
+    );
+    fireEvent.click(within(screen.getByRole("group", { name: "Bed security" })).getByRole("radio", { name: "Open" }));
     fireEvent.click(
       within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", {
         name: "Wards",

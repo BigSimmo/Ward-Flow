@@ -24,3 +24,14 @@ export function wardOffersOutsideQueue(movements: readonly Movement[], referrals
     )
     .sort((a, b) => (a.referredAt ?? a.openedAt) - (b.referredAt ?? b.openedAt));
 }
+
+/**
+ * A9-30 (F-27, 13 Nov 2026): what a WARD desk has to answer, one count for the Referrals title, the
+ * dock and menu badge and the empty line: the referrals queued for it plus the beds offered straight
+ * to it (`wardOffersOutsideQueue`). The board used to say "Nothing for <ward> to answer" and badge 0
+ * above "Offered to your ward 1, waiting on your answer". Off the ward desk an offer waits on a
+ * ward, not on the reader, so other desks keep the queue count alone.
+ */
+export function wardDeskAnswerCount(queued: number, movements: readonly Movement[], referrals: Referral[]): number {
+  return queued + wardOffersOutsideQueue(movements, referrals).length;
+}

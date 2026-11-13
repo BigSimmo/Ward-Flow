@@ -66,7 +66,7 @@ const BED_MAP_DETAILS: Record<BedMapKind, string> = {
   leave: "Held for a patient on leave; counted in Occupied",
   pulled: BED_STATE_DETAILS.pulled,
   ready: BED_STATE_DETAILS.ready,
-  prep: "Released and still being made ready; nobody can be pulled into it yet",
+  prep: "Released and still being made ready; not counted as ready",
   closed: BED_STATE_DETAILS.closed,
 };
 
@@ -102,16 +102,16 @@ export function bedMapCells(
     .filter((admission) => admission.state === "pulled")
     .sort((a, b) => (a.pulledAt ?? 0) - (b.pulledAt ?? 0));
 
-  // The same count `bedStates` reports as `beingMadeReady`, read where the ruling says to read it.
+  // D-179 item 8: `bedStates` already takes the beds being made ready off Ready. A record beyond
+  // what the ward offers is drawn from Closed, as before.
   const beingMadeReady = bedsPendingPreparation(unit.id, bedReleases);
-  const prepFromReady = Math.min(beingMadeReady, states.ready);
-  const prepFromClosed = Math.min(beingMadeReady - prepFromReady, states.closed);
+  const prepFromClosed = Math.min(Math.max(0, beingMadeReady - states.beingMadeReady), states.closed);
   const counts: Record<BedMapKind, number> = {
     occupied: Math.max(0, states.occupied - states.onLeave),
     leave: states.onLeave,
     pulled: states.pulled,
-    ready: states.ready - prepFromReady,
-    prep: prepFromReady + prepFromClosed,
+    ready: states.ready,
+    prep: states.beingMadeReady + prepFromClosed,
     closed: states.closed - prepFromClosed,
   };
 

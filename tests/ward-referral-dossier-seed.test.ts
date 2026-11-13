@@ -4,7 +4,8 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { seededReferralDossier } from "@/components/ward-management/ward-referral-dossier-seed";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
-const dossiers = seedWardFlowState().movements.flatMap((movement) => {
+// A16-14 (D-175 item 1): worked examples on, so WF-RD02's authored dossier is still the seventh.
+const dossiers = seedWardFlowState("standard", { workedExamples: true }).movements.flatMap((movement) => {
   const dossier = seededReferralDossier(movement.id);
   return dossier ? [{ movement, dossier }] : [];
 });

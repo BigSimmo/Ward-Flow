@@ -513,7 +513,30 @@ export type StageChange = {
   /** Destination responsible for this entry, when it records one ward's answer. Older entries
    * have no attribution and are projected using the matching recorded answer instead. */
   unitId?: string;
+  /**
+   * D-191 (Josh, 13 Nov 2026): on a `to: "pulled"` entry only, the facts the desk that pulled
+   * changed on the pull form, so that entry's `by` (the desk's role) and `at` name who changed
+   * them and when ("changed by …"). The values themselves stay on the pull form: a change there
+   * never updates the patient record. Absent when nothing was changed, or the pull predates it.
+   */
+  changedOnPull?: readonly PullFormField[];
 };
+
+/** The pull form's facts a desk may change when it pulls a bed (D-191 item 1, settling D-188). */
+export const PULL_FORM_FIELDS = ["legalStatus", "legalForm", "observation"] as const;
+export type PullFormField = (typeof PULL_FORM_FIELDS)[number];
+
+/** Why a `RAISE_REFERRAL.changedOnPull` is refused, or null when it is a list of distinct
+ *  `PULL_FORM_FIELDS`. Names no supplied value, so nothing a caller sent is echoed back. */
+export function changedOnPullRefusal(value: unknown): string | null {
+  if (
+    !Array.isArray(value) ||
+    value.some((field) => !(PULL_FORM_FIELDS as readonly unknown[]).includes(field)) ||
+    new Set(value).size !== value.length
+  )
+    return "A change on the pull form names legal status, legal form or observation level, each at most once";
+  return null;
+}
 
 /**
  * A MOVEMENT's id — one person's journey through the system, never the person.

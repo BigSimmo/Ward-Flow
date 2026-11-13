@@ -6,7 +6,10 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { WardBoard } from "@/components/ward-management/board/ward-board";
 import { WARD_ADMISSIONS_ANCHOR } from "@/components/ward-management/ward-admissions-seed";
-import { BED_RELEASE_BLOCKERS } from "@/components/ward-management/ward-change-reasons";
+import { holdUpReasonsFor } from "@/components/ward-management/ward-change-reasons";
+
+// A16-06: the dialog offers only the reasons for an occupied bed (draft split, awaiting Josh).
+const BED_RELEASE_BLOCKERS = holdUpReasonsFor("occupied");
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 
 afterEach(cleanup);
@@ -25,10 +28,11 @@ function openBlockerDialog(): HTMLElement {
 }
 
 describe("Record a blocker dialog", () => {
-  it("offers every reason word for word, with none chosen", () => {
+  it("offers every reason for an occupied bed word for word, with none chosen", () => {
     const dialog = openBlockerDialog();
     const radios = within(dialog).getAllByRole("radio");
     expect(radios.map((radio) => radio.getAttribute("value"))).toEqual([...BED_RELEASE_BLOCKERS]);
+    expect(within(dialog).queryByRole("radio", { name: "Awaiting clean" })).toBeNull();
     for (const reason of BED_RELEASE_BLOCKERS) {
       expect(within(dialog).getByRole("radio", { name: reason })).not.toBeChecked();
     }

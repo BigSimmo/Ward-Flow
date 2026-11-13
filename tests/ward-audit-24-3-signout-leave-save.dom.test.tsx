@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { LAST_LOOK_STORAGE_KEY } from "@/components/ward-management/coordinator/since-last-look";
 import { useSinceLastLook } from "@/components/ward-management/coordinator/since-last-look-panel";
 import { FORECAST_LAST_LOOK_STORAGE_KEY } from "@/components/ward-management/forecast/forecast-last-look";
+import { demoDayZero } from "@/components/ward-management/ward-clock";
 import { useForecastChange, useForecastModel } from "@/components/ward-management/forecast/use-forecast-model";
 import {
   SharedAccessContext,
@@ -57,7 +58,8 @@ function forecastKey(actorId: string) {
     "coordinator",
     { kind: "statewide" },
   ]);
-  return `${FORECAST_LAST_LOOK_STORAGE_KEY}:${encodeURIComponent(actorId)}:${encodeURIComponent(scope)}`;
+  // Keyed by the demo's day 0 as well (time audit, 13 Nov 2026).
+  return `${FORECAST_LAST_LOOK_STORAGE_KEY}:${encodeURIComponent(actorId)}:${encodeURIComponent(scope)}:${demoDayZero(new Date()).getTime()}`;
 }
 
 /** The sign-out invariant covers legacy and scoped keys, including any other desk for this actor. */

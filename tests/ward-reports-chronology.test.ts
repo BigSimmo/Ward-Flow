@@ -492,7 +492,7 @@ describe("PIR chronology CSV", () => {
     const lines = csv.trimEnd().split("\r\n");
     expect(lines[0]).toMatch(/^"Synthetic demo data\. Not a clinical record\."/u);
     expect(lines[0]).toContain("2026");
-    expect(lines[0]).toContain("AWST");
+    expect(lines[0]).toContain("demo time");
     expect(lines[1]).toBe(`"Scope","Selected patient's retained chronology"`);
     expect(lines[2]).toContain('"Period"');
     expect(lines[3]).toBe(CHRONOLOGY_CSV_HEADER.map((cell) => `"${cell}"`).join(","));

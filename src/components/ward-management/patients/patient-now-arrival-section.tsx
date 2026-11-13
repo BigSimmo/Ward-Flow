@@ -10,7 +10,7 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
-import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type ClockZoneLabel } from "@/components/ward-management/ward-clock";
 import { clock } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import type { Dispatch, SetStateAction } from "react";
@@ -33,6 +33,8 @@ export type PatientArrivalSectionContext = {
   setShowArrivalTimeModal: Dispatch<SetStateAction<boolean>>;
   setShowUploadFormsModal: Dispatch<SetStateAction<boolean>>;
   uploadedForms: MovementUploadedForm[];
+  /** The board's clock words (`useClockZoneLabel`, F-113). */
+  zone: ClockZoneLabel;
 };
 
 export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
@@ -49,6 +51,7 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
     setShowArrivalTimeModal,
     setShowUploadFormsModal,
     uploadedForms,
+    zone,
   } = ctx;
   // Audit 24-1 A-02: an arrival plan does not stop the pull time limit (the engine keeps it, E-13),
   // so the recorded `pullExpiresAt` shows either way. Read as recorded, never a typed length.
@@ -71,7 +74,7 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
                   <Clock size={14} aria-hidden="true" />
                   <span>
                     {liveMovement?.arrivalDetails?.estimatedArrivalAt !== undefined
-                      ? `ETA: ${formatInstantWithDay(liveMovement.arrivalDetails.estimatedArrivalAt, now)} AWST`
+                      ? `ETA: ${formatInstantWithDay(liveMovement.arrivalDetails.estimatedArrivalAt, now)} ${zone}`
                       : "ETA not recorded"}
                   </span>
                 </span>
@@ -100,7 +103,7 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
                   <strong>Arrival overdue:</strong> Patient is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past
                   estimated arrival time (
                   {liveMovement?.arrivalDetails?.estimatedArrivalAt !== undefined
-                    ? `${formatInstantWithDay(liveMovement.arrivalDetails.estimatedArrivalAt, now)} AWST`
+                    ? `${formatInstantWithDay(liveMovement.arrivalDetails.estimatedArrivalAt, now)} ${zone}`
                     : "not recorded"}
                   ).
                 </div>
@@ -128,8 +131,8 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
                   {!pull
                     ? "No pull time limit recorded"
                     : pull.state === "lapsed"
-                      ? `Passed at ${formatInstantWithDay(pull.expiresAt, now)} AWST. ${pull.label}. ${pull.nextStep}.`
-                      : `Until ${formatInstantWithDay(pull.expiresAt, now)} AWST. ${pull.label}.`}
+                      ? `Passed at ${formatInstantWithDay(pull.expiresAt, now)} ${zone}. ${pull.label}. ${pull.nextStep}.`
+                      : `Until ${formatInstantWithDay(pull.expiresAt, now)} ${zone}. ${pull.label}.`}
                 </span>
               </div>
             </div>

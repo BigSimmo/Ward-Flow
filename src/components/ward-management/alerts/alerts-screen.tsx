@@ -182,6 +182,7 @@ function AlertsWorkspace() {
     "supportNotifications",
     "leaveBeds",
     "eventLog",
+    "dayZero",
   );
   const {
     movements,
@@ -229,10 +230,12 @@ function AlertsWorkspace() {
           plannedAdmissions,
           leaveBeds,
           stuckHandoverMinutes: configuration.transportBookedTargetMinutes,
+          dayZero: state.dayZero,
         },
         now,
       ).filter(isQueueItem),
     [
+      state.dayZero,
       movements,
       units,
       configuration,
@@ -901,6 +904,7 @@ function AlertsWorkspace() {
       ],
       activeBroadcast,
       now,
+      state.dayZero,
     );
     copyTextToClipboard(text).then(
       () => setBroadcastSuccessNotice(`Copied ${allEntries.length} alerts for handover.`),

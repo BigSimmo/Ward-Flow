@@ -44,7 +44,6 @@ import { HEALTH_SERVICES } from "../src/components/ward-management/ward-model";
 import { ExecutiveCountRelease } from "../src/components/ward-management/statistics/executive-statistics-release";
 import { scopeWardFlowState } from "../src/components/ward-management/ward-access-state";
 import { openEdJourneys } from "../src/components/ward-management/ward-shared-figures";
-import { unitCapacity } from "../src/components/ward-management/ward-derivations";
 import { ExecutiveStatisticsProvider } from "../src/components/ward-management/statistics/executive-statistics-context";
 import { executiveSessionTrends } from "../src/components/ward-management/statistics/executive-statistics-derivations";
 import { sessionTrends } from "../src/components/ward-management/statistics/statistics-session-trends";
@@ -269,7 +268,12 @@ describe("the inactive full reporting bundle", () => {
       if (shown.kind === "exact") expect(shown.value).toBe(sourceReferrals[key]);
     }
     expect(dto.capacity).toEqual({
-      ready: state.units.reduce((sum, unit) => sum + unitCapacity(unit, state.bedReleases).available, 0),
+      // D-179 item 8: the one Ready figure, which leaves out beds still being made ready.
+      ready: state.units.reduce(
+        (sum, unit) =>
+          sum + readyBedsNow(unit, state.admissions, state.bedReleases, [...state.movements, ...state.referrals]),
+        0,
+      ),
       empty: state.units.reduce((sum, unit) => sum + unit.empty.value, 0),
       allocatable: state.units.reduce((sum, unit) => sum + unit.allocatable.value, 0),
       openNow: state.units.reduce((sum, unit) => sum + openBedsNow(unit, state.bedReleases), 0),
@@ -1414,7 +1418,11 @@ function LivePreviewProbe() {
 describe("executive projection with a named hold (D-115)", () => {
   it("takes the named bed out of ready but leaves beds in use as a stay count", () => {
     const state = seedWardFlowState();
-    const unitId = "rph-older-adult";
+    // A16-13 (13 Nov 2026): rph-older-adult has no ready bed left to name since its bed pulled for
+    // nobody became an arrival, so the named hold went on scgh-older-adult's ready bed. That ward is
+    // now the sample day's closed ward (no ward carries two adverse examples), so it goes on
+    // bty-older-adult's ready bed.
+    const unitId = "bty-older-adult";
     const accepted = wardFlowReducer(state, {
       type: "ACCEPT_REFERRAL",
       role: "ward",

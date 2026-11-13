@@ -199,10 +199,12 @@ describe("the bed meeting TV view", () => {
     // P025: the network mixes 60 and 90 minute wards, so the TV names the range.
     expect(screen.getByTestId("bed-meeting-tv-checking")).toHaveTextContent(/late after \d+( to \d+)? min/);
     expect(heroFigure("bed-meeting-tv-ed")).toBe(String(sheet.ed.waiting));
-    const { heldUp, confirmed, expected } = sheet.discharges;
-    // Held up discharges are listed in the panel, so the headline counts them.
+    const { heldUp, freeingToday } = sheet.discharges;
     expect(heldUp).toBeGreaterThan(0);
-    expect(heroFigure("bed-meeting-tv-discharges")).toBe(String(heldUp + confirmed + expected));
+    // F-105: the TV's discharges figure is the on-screen sheet's "Beds freeing today" (the same
+    // field the sheet dialog reads), never the by-tomorrow total, so the two screens agree.
+    expect(heroFigure("bed-meeting-tv-discharges")).toBe(String(freeingToday));
+    expect(screen.getByRole("columnheader", { name: "Due by tomorrow" })).toBeInTheDocument();
     expect(heroFigure("bed-meeting-tv-delays")).toBe(String(sheet.delays.total));
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Bed meeting · All services");
     // The state screen reads in handover order: waiting, beds, discharges, movements; the longest
@@ -210,7 +212,7 @@ describe("the bed meeting TV view", () => {
     const labels = Array.from(
       screen.getByRole("group", { name: "Figures" }).querySelectorAll("[data-wf-hero-figure]"),
     ).map((item) => item.querySelector("span")?.textContent);
-    expect(labels).toEqual(["waiting in ED", "beds ready", "discharges due", "open movements"]);
+    expect(labels).toEqual(["waiting in ED", "beds ready", "beds freeing today", "open movements"]);
     const longest = sheet.ed.longestWaits[0];
     if (!longest) throw new Error("expected someone waiting");
     expect(screen.getByTestId("bed-meeting-tv-longest")).toHaveTextContent(
@@ -438,6 +440,10 @@ describe("the ward and ED TV views", () => {
     expect(figure("ward-tv-asked")).toBe(shown(sheet.askedCount));
     expect(figure("ward-tv-going")).toBe(
       shown(sheet.discharges.heldUp + sheet.discharges.confirmed + sheet.discharges.expected),
+    );
+    // D-197 item 5: the held-up count is confirmed discharges held up by tomorrow, and says so.
+    expect(screen.getByTestId("ward-tv-going")).toHaveTextContent(
+      `Due by tomorrow. ${sheet.discharges.confirmed} confirmed, ${sheet.discharges.heldUp} confirmed held up`,
     );
     expect(figure("ward-tv-overdue")).toBe(shown(sheet.overdue.length));
     expect(sheet.incoming.total).toBeGreaterThan(0);

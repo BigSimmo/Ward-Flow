@@ -18,6 +18,7 @@ import {
   type WardClinicalRow,
 } from "@/components/ward-management/bed-meeting/tv-clinical-derivations";
 import { WardClinicalTvView } from "@/components/ward-management/bed-meeting/tv-clinical-views";
+import { WardTodayTvView } from "@/components/ward-management/bed-meeting/tv-function-views";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { WARD_BED_MEETING_TV_HREF, bedMeetingTvHref } from "@/components/ward-management/ward-nav";
@@ -120,6 +121,82 @@ describe("ward clinical rows", () => {
     expect(row?.where).toBe("awol");
     expect(row?.whereabouts).toEqual({ text: expect.stringMatching(/^Absent without leave since/u), tone: "danger" });
     expect(row?.attention[0]?.group).toBe("missing");
+  });
+});
+
+describe("the Today lane's held up window (D-197 item 6, D-191 item 5)", () => {
+  it("counts a held-up discharge due by tomorrow, and leaves one due later on its row only", () => {
+    const { state, records } = seed();
+    const DAY = 24 * 60;
+    const release = state.bedReleases.find(
+      (candidate) =>
+        candidate.state !== "discharged" &&
+        state.admissions.some((stay) => stay.id === candidate.admissionId && stay.state === "occupied"),
+    );
+    if (!release) throw new Error("expected an open release for an occupied bed");
+    const unit = state.units.find((candidate) => candidate.id === release.unitId)!;
+    // The ward's own date is three days away, so the person is neither going today nor overdue.
+    const admissions = state.admissions.map((stay) =>
+      stay.id === release.admissionId ? { ...stay, expectedDischargeAt: NOW_ANCHOR + 3 * DAY } : stay,
+    );
+    const rowWith = (expectedAt: number) =>
+      wardClinicalRows({
+        ...records,
+        unit,
+        admissions,
+        leaveBeds: state.leaveBeds,
+        bedReleases: state.bedReleases.map((candidate) =>
+          candidate.id === release.id ? { ...release, blocker: "Awaiting pharmacy", expectedAt } : candidate,
+        ),
+        now: NOW_ANCHOR,
+        nameOf: (subject) => subject.id,
+      }).find((row) => row.key === release.admissionId)!;
+
+    const tomorrow = rowWith(NOW_ANCHOR + DAY);
+    const later = rowWith(NOW_ANCHOR + 3 * DAY);
+    expect(tomorrow.stuck).toBe(true);
+    expect(tomorrow.attention.some((item) => item.group === "stuck")).toBe(true);
+    // Held up after tomorrow: the row still says so, but it is not in the held-up lane or count.
+    expect(later.plan?.text).toBe("Held up: Awaiting pharmacy");
+    expect(later.stuck).toBe(false);
+    expect(later.attention.some((item) => item.group === "stuck")).toBe(false);
+
+    for (const [row, listed] of [
+      [tomorrow, true],
+      [later, false],
+    ] as const) {
+      const { container, unmount } = render(<WardTodayTvView rows={[row]} footer={null} />);
+      // The Today board names the by-tomorrow window, and counts only the person held up by then.
+      expect(container.querySelector('[data-lane="stuck"] h2')).toHaveTextContent(
+        `Held up · by tomorrow, or overdue ${listed ? 1 : 0}`,
+      );
+      unmount();
+    }
+  });
+});
+
+describe("TV leave lateness (time audit T9)", () => {
+  it("calls leave late only once the return time has passed, as the patient pages do", () => {
+    const { state, records } = seed();
+    const unit = wardWithLeave();
+    const leave = state.leaveBeds.find((record) => record.unitId === unit.id && !record.absentWithoutLeave);
+    if (!leave) throw new Error("expected a leave record");
+    const rowAt = (expectedReturn: number) =>
+      wardClinicalRows({
+        ...records,
+        unit,
+        admissions: state.admissions,
+        leaveBeds: state.leaveBeds.map((record) => (record === leave ? { ...leave, expectedReturn } : record)),
+        bedReleases: state.bedReleases,
+        now: NOW_ANCHOR,
+        nameOf: (subject) => subject.id,
+      }).find((candidate) => candidate.key === leave.admissionId);
+    const onTime = rowAt(NOW_ANCHOR);
+    expect(onTime?.whereabouts?.text).toMatch(/, due back /u);
+    expect(onTime?.whereabouts?.tone).toBeUndefined();
+    const late = rowAt(NOW_ANCHOR - 1);
+    expect(late?.whereabouts?.text).toMatch(/was due back /u);
+    expect(late?.whereabouts?.tone).toBe("danger");
   });
 });
 
@@ -279,6 +356,7 @@ describe("clinical TV paging can be stopped (WCAG 2.2.2)", () => {
       plan: null,
       arrivedToday: false,
       goingToday: false,
+      stuck: false,
       attention: [],
     }));
   }

@@ -451,11 +451,11 @@ describe("read-only report screens", () => {
         </WardFlowProvider>
       </ToastProvider>,
     );
-    expect(screen.getByTestId("ward-downtime-print-provenance").textContent).toMatch(/2026.*AWST/u);
+    expect(screen.getByTestId("ward-downtime-print-provenance").textContent).toMatch(/2026.*demo time/u);
     const previousYear = within(screen.getByTestId("ward-downtime-legal"))
       .getAllByRole("cell")
       .find((cell) => cell.textContent?.includes("2025"));
-    expect(previousYear?.textContent).toContain("AWST");
+    expect(previousYear?.textContent).toContain("demo time");
   });
 
   it("keeps the offline warning and last sync in the complete print provenance", () => {
@@ -467,7 +467,7 @@ describe("read-only report screens", () => {
     };
     inProvider(<DowntimePackScreen />, { pack });
     expect(screen.getByTestId("ward-downtime-print-provenance").textContent).toMatch(
-      /Taken offline .* AWST · last updated .* AWST/u,
+      /Taken offline .* demo time · last updated .* demo time/u,
     );
   });
 

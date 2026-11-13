@@ -262,6 +262,14 @@
     "not_asked"
    ]
   },
+  "PULL_FORM_FIELDS": {
+   "file": "ward-model-movement-parts.ts",
+   "members": [
+    "legalStatus",
+    "legalForm",
+    "observation"
+   ]
+  },
   "EXAMINATION_OUTCOMES": {
    "file": "ward-model-movement-parts.ts",
    "members": [
@@ -470,6 +478,14 @@
     "Awaiting receiving-service acceptance",
     "Awaiting family or carer arrangement",
     "Funding or plan decision pending"
+   ]
+  },
+  "HOLD_UP_BED_STATES": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "occupied",
+    "empty",
+    "either"
    ]
   },
   "WITHDRAWAL_REASONS": {

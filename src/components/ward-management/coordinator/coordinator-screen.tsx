@@ -1020,7 +1020,6 @@ export function CoordinatorScreen() {
                   filterEdId={activeEdId}
                   onClearFilter={() => setSelectedEdId(undefined)}
                   serviceScope={queueServiceScope}
-                  pullHoldMinutes={configuration.pullHoldMinutes}
                   delaysHref={DELAYS_HREF}
                   highlight={highlight}
                   onClearHighlight={() => {

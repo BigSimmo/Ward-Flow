@@ -63,7 +63,9 @@ describe("delay timeline measurements", () => {
 });
 
 describe("delay graph population and boundaries", () => {
-  const state = seedWardFlowState();
+  // A16-14 (D-175 item 1): the Armadale worked examples are off by default; the counts below were
+  // measured with them on (East Metro's 17 of them), so this population keeps them on.
+  const state = seedWardFlowState("standard", { workedExamples: true });
   const rows = delayGroups(state.movements, state.units, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).flatMap((group) =>
     group.movements.map((movement) => ({ movement, cause: group.cause })),
   );

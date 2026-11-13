@@ -12,13 +12,11 @@ import { boundedBedAvailability } from "@/components/ward-management/ward-ready-
  * is ever added into `availableNow`.** A coordinator must be able to point at that number and say
  * "that is a bed I can fill this minute", and it must never have been softened by an expectation.
  *
- * The rule's mirror image, added by the bed-model rework of 2026-08-28 (Q4) and just as binding:
- * **nothing is ever SUBTRACTED from `availableNow` for a preparation note either.** A released bed
- * being made ready (cleaning, and whatever the owner's pending list eventually names) is still
- * offered and still counted, because pulling the next patient takes hours anyway — see
- * `BED_PREPARATION_NOTES`. `availableNow` is derived from the unit's own `allocatable`/`empty`
- * figures and reads no `BedRelease` field at all, which is what makes both halves of the rule
- * structural rather than remembered.
+ * A released bed still being made ready is NOT in `availableNow` (Josh, 13 Nov 2026, D-179 item 8;
+ * A9-13, Audit 9 question 11).
+ * This replaces the 5 September 2026 ruling (bed-model rework, Q4) that such a bed is still offered
+ * and still counted. It is counted and shown on its own (`bedsPendingPreparation`, and
+ * `bedStates().beingMadeReady` beside Ready), and it may still be pulled (D-181 item 5).
  */
 
 const MIDDAY_MINUTES = 12 * 60; // 720
@@ -166,8 +164,8 @@ export function bedsPendingPreparation(unitId: string, releases: BedRelease[]): 
 
 /**
  * Pre-match a bed while it is being made ready (Top 25 item 15).
- * A bed being made ready stays offered and counted (`SET_BED_PREPARATION`), so a patient can be
- * matched to its ward while it is cleaned; only the pull waits. This says whether the ward a
+ * A bed being made ready is counted apart from Ready (D-179 item 8), but a patient can still be
+ * matched to its ward and pulled while it is cleaned (D-181 item 5). This says whether the ward a
  * patient is matched or offered to has a bed being made ready, and whether the patient's placement
  * is paused for an unresumed ED medical deterioration (`Movement.medicalDeterioration`, D-34).
  * Replaces the showcase's `canPreMatchCleaningBed`, which read a deterioration off the bed.
@@ -203,26 +201,30 @@ export function stalePreparingReleases(
 }
 
 /**
- * Beds a patient may actually be PULLED into right now — available, and ready.
- *
- * ⚠️ **THIS IS NOT `availableNow`, AND THE DIFFERENCE IS DELIBERATE.** This file's own header says
- * nothing is ever subtracted from `availableNow` for a preparation note, reasoning that a bed being
- * cleaned is still worth counting because pulling the next patient takes hours anyway. **The owner
- * overruled that reasoning on 2026-09-01** — *"A pull cannot occur unless the bed is actually
- * available and open, not pending (i.e. being cleaned)"*.
- *
- * **But he overruled it for the PULL, not for the board.** He was asked directly whether a bed being
- * cleaned should drop the ward's number or merely refuse the pull, and chose the refusal: the ward has
- * not changed what it can staff, so its figures must not lurch as cleaning starts and stops. So
- * `availableNow` is untouched and every existing screen still reads exactly what it read before.
- *
- * **This function exists to be read by a REDUCER REFUSAL, not by a screen.** A test asserting that a
- * screen says "pending" would pass against a build where the refusal was never written; the property
- * that matters is that the pull is refused.
+ * Beds open and ready now: available, less the beds still being made ready (D-179 item 8). The
+ * same figure as `capacityBreakdown().availableNow`. It does not take off pulls or named holds; the
+ * Ready every screen prints is `readyBedsNow` (`ward-bed-states.ts`). A bed being made ready may
+ * still be pulled (D-181 item 5), so the pull gate does not read this.
  */
 export function openBedsNow(unit: Unit, releases: BedRelease[]): number {
   const { available } = boundedBedAvailability(unit);
   return Math.max(0, available - bedsPendingPreparation(unit.id, releases));
+}
+
+/**
+ * Held up, one meaning (Josh, 13 Nov 2026, D-191 item 5; F-105): an open release with a recorded
+ * blocker, due by tomorrow (an overdue date, today or tomorrow: `releaseBand` short of
+ * "beyond-today"). `capacityBreakdownLists().blockedToday` below, Capacity, Ward, TV, the sheet and
+ * the menu all count it this way; `ward-held-up.ts` carries the labels. Discharges keeps its own
+ * "any date" group.
+ */
+export function isHeldUpDueByTomorrow(release: BedRelease, now: Instant): boolean {
+  return release.state !== "discharged" && release.blocker !== null && releaseBand(release, now) !== "beyond-today";
+}
+
+/** The releases `isHeldUpDueByTomorrow` counts, in the order given. */
+export function heldUpDueByTomorrow<T extends BedRelease>(releases: readonly T[], now: Instant): T[] {
+  return releases.filter((release) => isHeldUpDueByTomorrow(release, now));
 }
 
 export type CapacityBreakdownLists = {
@@ -267,7 +269,7 @@ export function capacityBreakdownLists(
     // this if/else — that is the defect, not a refinement of it.
     if (release.state === "confirmed") lists.confirmedToday.push(release);
     else lists.expectedToday.push(release);
-    if (release.blocker !== null) lists.blockedToday.push(release);
+    if (isHeldUpDueByTomorrow(release, now)) lists.blockedToday.push(release);
     if (release.blocker !== null && release.state === "confirmed") lists.confirmedHeldUpToday.push(release);
   }
   return lists;
@@ -279,8 +281,10 @@ export function capacityBreakdown(
   leave: LeaveBed[],
   now: Instant,
 ): CapacityBreakdown {
-  // Shared with the five-state bed grid so stale counts cannot make this screen disagree.
-  const { available: availableNow, held } = boundedBedAvailability(unit);
+  // Shared with the five-state bed grid so stale counts cannot make this screen disagree. A bed
+  // still being made ready is not Ready (D-179 item 8).
+  const { held } = boundedBedAvailability(unit);
+  const availableNow = openBedsNow(unit, releases);
   const lists = capacityBreakdownLists(unit, releases, leave, now);
   return {
     availableNow,

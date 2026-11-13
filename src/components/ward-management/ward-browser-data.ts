@@ -89,6 +89,89 @@ export function clearWardFlowBrowserData(storages: readonly SweepableStorage[] =
 }
 
 /**
+ * F-65 (K8, RC 5.1, A12-03, A14-17, A14-24, approved by Josh 13 Nov 2026): what Reset demo clears
+ * from this browser. Each entry belongs to the demo day, not to the person or the device, and
+ * outlived a reset before: the Midland team's decisions, the TV lock, the "My list" and place pins,
+ * the Home ED filter, "since you last looked" pictures and the census bed opener. An entry also
+ * covers its own `entry:...` keys. Device display settings, the saved day itself (the provider
+ * reseeds and saves it) and drafts (cleared on every world change) are not on it. The device-only
+ * Tools reminders and call log (RC 5.2, D-197 item 2) are on it too, because their stores load only
+ * with the Tools sheet, Alerts reminders or Leave: Settings' Clear session data can run before either
+ * store has loaded. A loaded store also empties what it holds through its own `onWardDemoReset`.
+ * `tests/ward-fix-T-demo-reset-browser.dom.test.tsx` keeps it equal to each store's own key.
+ */
+export const WARD_DEMO_DAY_STORAGE_KEYS = [
+  "ward-flow:midland-decisions:v1",
+  "ward-flow:tv-lock:v1",
+  "ward-flow-my-patients",
+  "ward-flow-my-wards",
+  "ward-hub-pinned",
+  "ward_flow_home_ed_filter",
+  "ward-flow-coordinator-last-look",
+  "wardflow:census-bed-opener",
+  "wardflow:census-bed-opener-target",
+  "wf-mock-tools-reminders",
+  "wf-mock-tools-call-log",
+] as const;
+
+function isDemoDayKey(key: string): boolean {
+  return WARD_DEMO_DAY_STORAGE_KEYS.some((entry) => key === entry || key.startsWith(`${entry}:`));
+}
+
+/** What a Reset demo clears besides the browser keys: `desk` is false where the server owns the desk. */
+export type WardDemoResetScope = { readonly desk: boolean };
+const demoResets = new Set<(scope: WardDemoResetScope) => void>();
+
+/**
+ * Register a store's part of Reset demo (F-65), run after the keys are cleared: the desk and the
+ * role demo put this tab back on the bed coordinator's desk. A store registers when its module loads.
+ */
+export function onWardDemoReset(reset: (scope: WardDemoResetScope) => void): void {
+  demoResets.add(reset);
+}
+
+/**
+ * Reset demo's browser half (F-65): clears every demo-day key from local and session storage, tells
+ * any screen showing one (a storage event per key, which every such store already listens for), then
+ * runs the registered resets. Returns the removed key names (names only) for tests.
+ */
+export function resetWardDemoBrowserState(
+  scope: WardDemoResetScope,
+  storages: readonly SweepableStorage[] = browserStorages(),
+): string[] {
+  const removed: string[] = [];
+  for (const storage of storages) {
+    try {
+      const doomed: string[] = [];
+      for (let index = 0; index < storage.length; index++) {
+        const key = storage.key(index);
+        if (key !== null && isDemoDayKey(key)) doomed.push(key);
+      }
+      for (const key of doomed) storage.removeItem(key);
+      removed.push(...doomed);
+    } catch {
+      // Keep going: the other store still needs clearing.
+    }
+  }
+  if (typeof window !== "undefined")
+    for (const key of new Set(removed)) {
+      try {
+        window.dispatchEvent(new StorageEvent("storage", { key, newValue: null }));
+      } catch {
+        // No StorageEvent here: a reload shows the cleared value.
+      }
+    }
+  for (const reset of demoResets) {
+    try {
+      reset(scope);
+    } catch {
+      // Keep going: the remaining resets still run.
+    }
+  }
+  return removed;
+}
+
+/**
  * Per-account memory held at module level (break glass records, cover, previews, step-up confirms,
  * search recents, handed-off typed text, the downtime pack) survives a sign-out in the same tab, so
  * each such store registers how to forget itself here (Codex review on PR #487). A store registers

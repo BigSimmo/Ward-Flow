@@ -1,3 +1,4 @@
+import { MONTH_SHORT } from "@/components/ward-management/ward-month-names";
 import type { DocumentCategory, PastEpisode, RecordExtras } from "./patient-record-extras";
 
 /**
@@ -63,7 +64,7 @@ export type RegisterRow = {
 };
 
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-const MONTH_WORDS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTH_WORDS = MONTH_SHORT;
 
 type ParsedDate = { ms: number; day?: number; month: number; year: number };
 

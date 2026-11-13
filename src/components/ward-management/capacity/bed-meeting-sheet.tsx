@@ -7,9 +7,10 @@ import { Printer } from "lucide-react";
 import { Button } from "@/components/wf";
 
 import { WardPrintFooter } from "@/components/ward-management/shell/ward-access";
-import { asAtStamp } from "@/components/ward-management/board/ward-daily-sheet";
+import { asAtStamp } from "@/components/ward-management/board/ward-daily-sheet-model";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import {
   LONG_WAIT_MINUTES,
@@ -72,7 +73,8 @@ function BedMeetingSheetView({
   actions?: readonly BedMeetingSheetAction[];
 }) {
   const flow = useOptionalWardFlowSelect("dayZero");
-  const stamp = asAtStamp(now, flow?.dayZero);
+  const zone = useClockZoneLabel();
+  const stamp = asAtStamp(now, flow?.dayZero, zone);
   const { capacity, discharges, ed, delays, waitingLongest, stuckReferrals } = sheet;
   const scope = sheet.service === null ? "All services" : sheet.service;
 

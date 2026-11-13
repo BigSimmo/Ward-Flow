@@ -46,6 +46,7 @@ import {
   MINUTES_PER_DAY,
   type Instant,
 } from "@/components/ward-management/ward-clock";
+import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
 import type { AccessEntry } from "./access-record";
 import {
   CENSUS_GROUPS,
@@ -613,6 +614,8 @@ export type ShiftSummaryProps = {
   rows: readonly CensusRow[];
   closedToday: readonly ClosedTodayRow[];
   now: Instant;
+  /** The board's day 0, so the next typed form time on another day prints its date (D1, D-93). */
+  dayZero: Date;
   highlight: CensusHighlight | null;
   highlightCounts: Record<CensusHighlight, number>;
   onSelect: (row: CensusRow) => void;
@@ -670,7 +673,7 @@ export function ShiftSummary(props: ShiftSummaryProps) {
       id: "form",
       glyph: "wait",
       title: "Forms with a due time",
-      sub: dues[0] ? `Next ${formatInstantWithDay(dues[0].formDueAt ?? now, now)} · ${dues[0].name}` : "None",
+      sub: dues[0] ? `Next ${typedClock(dues[0].formDueAt ?? now, now, props.dayZero)} · ${dues[0].name}` : "None",
       value: dues.length,
       chip: "form",
     },

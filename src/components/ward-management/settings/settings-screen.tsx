@@ -48,6 +48,7 @@ import {
 } from "@/components/ward-management/ward-configuration";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { clearReferralDraftSession } from "@/components/ward-management/referrals/referral-draft-lifecycle";
+import { resetWardDemoBrowserState } from "@/components/ward-management/ward-browser-data";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import {
@@ -621,7 +622,11 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       }
       keys.forEach((key) => window.sessionStorage.removeItem(key));
       // A2-7: the provider re-saves the day it shows after each change, so the local demo resets too.
-      if (operational && !sharedEnabled) operational.resetDemoState();
+      if (operational && !sharedEnabled) {
+        operational.resetDemoState();
+        // F-65: the demo day's browser leftovers go with it, and the tab returns to the coordinator.
+        resetWardDemoBrowserState({ desk: true });
+      }
       showToast(
         `Session data for this tab cleared.${operational && !sharedEnabled ? " The demonstration has restarted." : ""}`,
       );

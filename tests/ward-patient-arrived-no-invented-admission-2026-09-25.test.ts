@@ -40,7 +40,7 @@ function unit(state: WardFlowState, id: string) {
   return found;
 }
 
-describe("PATIENT_ARRIVED leaves an absent admission exactly alone (audit 2026-09-25 §3 items 2, 5, 6)", () => {
+describe("PATIENT_ARRIVED with no pulled stay (audit 2026-09-25 §3 items 2, 5, 6; A9-08)", () => {
   it("anti-vacuity — the specimen really has no admissionId and is eligible to arrive", () => {
     const state = seedWardFlowState("standard");
     const found = movement(state, TARGET);
@@ -51,7 +51,14 @@ describe("PATIENT_ARRIVED leaves an absent admission exactly alone (audit 2026-0
     expect(found.security).toBe("Secure");
   });
 
-  it("does not fabricate an AD-ARR admission, and does not let allocatableLocked creep", () => {
+  /*
+   * A9-08 (Audit 9, approved by Josh 13 Nov 2026) replaces "no admission": with none, the arrived
+   * person sat on no bed and a closed bed read as an unnamed occupied one. The stay is now made at
+   * arrival, at arrival time, and takes its bed kind out of the free figures exactly as a pull does,
+   * so the three faults this file was written for (no decrement, back-dating, creep on departure)
+   * cannot return.
+   */
+  it("records the arrived stay at arrival time, and takes its bed kind out of the free figures", () => {
     const before = seedWardFlowState("standard");
     const unitBefore = unit(before, UNIT);
 
@@ -70,15 +77,15 @@ describe("PATIENT_ARRIVED leaves an absent admission exactly alone (audit 2026-0
 
     const moved = movement(after, TARGET);
     expect(moved.closure?.outcome).toBe("arrived");
-    // No admission is fabricated for a movement that never had one.
-    expect(moved.admissionId, "arrival must not attach a fabricated admission").toBeUndefined();
-    expect(after.admissions.some((candidate) => candidate.id.startsWith("AD-ARR-"))).toBe(false);
-    expect(after.admissions).toEqual(before.admissions);
+    const stays = after.admissions.filter((candidate) => !before.admissions.includes(candidate));
+    expect(stays).toHaveLength(1);
+    const [stay] = stays;
+    expect(moved.admissionId).toBe(stay.id);
+    expect(stay).toMatchObject({ unitId: UNIT, state: "occupied", movementId: TARGET, pulledAt: NOW, arrivedAt: NOW });
+    expect(stay.patientId).toBe(movement(before, TARGET).patientId ?? null);
 
-    // The bug's own signature: a locked bed never taken through PULL_PATIENT, so the free-locked
-    // count must be exactly unchanged by arrival — not creeping up as it would once the phantom
-    // admission later departed.
     const unitAfter = unit(after, UNIT);
-    expect(unitAfter.allocatableLocked).toBe(unitBefore.allocatableLocked);
+    expect(unitAfter.allocatable.value).toBe(unitBefore.allocatable.value - 1);
+    expect(unitAfter.allocatableLocked).toBe(unitBefore.allocatableLocked - (stay.bedKind === "locked" ? 1 : 0));
   });
 });

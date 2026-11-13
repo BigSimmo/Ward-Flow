@@ -1,5 +1,7 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
 
+import { isOpen } from "@/components/ward-management/ward-derivations";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { edById, unitById } from "@/components/ward-management/ward-sites";
 import { clearToasts } from "./helpers/clear-toasts";
 
@@ -598,6 +600,11 @@ test.describe("@mockup Movements — transport panel", () => {
    * booked-transport count did not. Re-derived from the fixture itself (`isOpen` plus
    * `transport.acceptedAt !== undefined`, counted across `wardMovements` and the overlay together),
    * not adjusted by guesswork.
+   *
+   * 🔴 **13 Nov 2026 (A16-14 / D-197 item 14):** worked examples are off until switched on in Tools,
+   * so the rulings overlay no longer loads by default and the open total is back to 53. It is now
+   * read from the default seed with the screen's own `isOpen`, not pinned, so the next seed change
+   * cannot leave a stale figure here.
    */
   test("lists exactly the movements that carry a transport job, and states the rest explicitly", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1024 });
@@ -609,9 +616,7 @@ test.describe("@mockup Movements — transport panel", () => {
     await expect(page.getByTestId("ward-movements-page")).toHaveCount(1, { timeout: 15_000 });
     await expect(page.getByTestId("ward-movements-page")).toBeVisible({ timeout: 15_000 });
 
-    // 2026-09-25 re-measure: the rulings overlay (1b1c5bb2ba/6e4ba553f3) adds 17 open movements,
-    // none with transport, so 53/13/40 became 70/13/57. Checked against the fixture, not only the
-    // screen: 13 legs as re-measured 17 Sept, plus zero from the overlay.
+    // 13 legs as re-measured 17 Sept; the worked examples (off by default since A16-14) add none.
     await expect(transportLegRows(page)).toHaveCount(13);
     // The explicit absence now lives in "The day"'s own figures. Each is read from its own metric
     // (`movements-day-metric`), anchored on the label, so the excluded count cannot be satisfied by
@@ -633,7 +638,9 @@ test.describe("@mockup Movements — transport panel", () => {
     // vehicle (pulled, handover ready or moving) and have none, so 57 became 8. Re-derived from the
     // seed with the screen's own `withoutTransport` filter, not adjusted by guesswork.
     await expect(tile(/No transport leg$/)).toHaveText("8");
-    await expect(dayMetric(/open movements$/u)).toHaveText("70");
+    // The default seed (worked examples off), counted with the screen's own `isOpen`.
+    const openInSeed = seedWardFlowState().movements.filter(isOpen).length;
+    await expect(dayMetric(/open movements$/u)).toHaveText(String(openInSeed));
   });
 });
 

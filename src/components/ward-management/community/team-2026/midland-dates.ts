@@ -6,13 +6,19 @@
  * so "in 2 days" and its date always agree. The mock-up's wording and layout are unchanged.
  */
 
-import { MINUTES_PER_DAY, perthDayLabel, perthMidnight } from "@/components/ward-management/ward-clock";
+import {
+  dayOf,
+  MINUTES_PER_DAY,
+  perthDayLabel,
+  perthMidnight,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
+import { monthIndexOfShort } from "@/components/ward-management/ward-month-names";
 
 /** The board day the Midland mock-up was written against: Mon 2 Nov 2026, Perth. */
 export const MIDLAND_AUTHORED_DAY = perthMidnight(2026, 10, 2);
 const AUTHORED_YEAR = 2026;
 const MS_PER_DAY = MINUTES_PER_DAY * 60_000;
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
 const WEEKDAY = "(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)";
 // "Wed 4 Nov" or "4 Nov", as the mock-up writes them; a time after the date is left as it is.
 const WRITTEN_DATE = new RegExp(
@@ -20,11 +26,21 @@ const WRITTEN_DATE = new RegExp(
   "g",
 );
 
-/** Every written date in `text` moved from the authored day to the board's own day 0. */
+/**
+ * RC 2.6 (F-113, 13 Nov 2026): the board's own day, as the day the Midland dates are rebased onto.
+ * They used to be rebased onto day 0, the day the tab opened, so once the board clock passed
+ * midnight "today" in the mock-up was a day behind every other screen. Same day 0 object on day 0.
+ */
+export function midlandBoardDay(dayZero: Date, now: Instant): Date {
+  const day = dayOf(now);
+  return day === 0 ? dayZero : new Date(dayZero.getTime() + day * MS_PER_DAY);
+}
+
+/** Every written date in `text` moved from the authored day to `dayZero` (the board's day). */
 export function rebaseMidlandText(text: string, dayZero: Date): string {
   if (dayZero.getTime() === MIDLAND_AUTHORED_DAY.getTime()) return text;
   return text.replace(WRITTEN_DATE, (_whole, weekday: string | undefined, day: string, month: string) => {
-    const monthIndex = MONTHS.indexOf(month === "Sep" ? "Sept" : month);
+    const monthIndex = monthIndexOfShort(month);
     const authored = perthMidnight(AUTHORED_YEAR, monthIndex, Number(day));
     const offsetDays = Math.round((authored.getTime() - MIDLAND_AUTHORED_DAY.getTime()) / MS_PER_DAY);
     // Noon, so the day can never slip across a midnight.

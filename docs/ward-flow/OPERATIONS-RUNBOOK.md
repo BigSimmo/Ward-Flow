@@ -47,7 +47,7 @@ in [backend/ward-flow/migrations](../../backend/ward-flow/migrations), currently
 
 Both sites can require sign-in before any page or API answers (Josh, 27 October 2026). Josh
 approved switching it on (D-129). The public demo has asked for the demo code since 10 November
-2026 (D-130); the signed-in site has not been checked from the cloud. The settings are
+2026 (D-130; K30, Audit 15, 13 Nov 2026); the signed-in site has not been checked from the cloud. The settings are
 server-only, read on each request, so changing them needs a restart, not a rebuild:
 
 - `WARD_FRONT_DOOR=required` turns it on and `WARD_FRONT_DOOR=off` turns it off. On Railway an

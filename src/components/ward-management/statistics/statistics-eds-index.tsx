@@ -422,7 +422,7 @@ function EdsIndexView({
       {isPhone ? (
         <PhoneBody testId="ward-statistics-eds-phone">
           <p className={styles.muted} data-testid="ward-statistics-eds-population">
-            {stillInEdShown} still in ED · {inTransitShown} in transit or recorded departure. Times run from journey
+            {stillInEdShown} still in ED · {inTransitShown} in transit or recorded departure. Times run from movement
             opening.
           </p>
           <PhoneList label="Emergency departments, busiest first">
@@ -507,9 +507,9 @@ function EdsIndexView({
                 executive
                   ? undefined
                   : [
-                      "Each mark is one open ED movement. Times run from when the journey opened.",
+                      "Each mark is one open ED movement. Times run from when the movement opened.",
                       `The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults, not legal limits.`,
-                      "An open journey stays the ED’s until arrival.",
+                      "An open movement stays the ED’s until arrival.",
                     ]
               }
             >
@@ -639,7 +639,7 @@ function EdsIndexView({
                   }))}
                 />
               </div>
-              <Foot>The bands add up to every open journey</Foot>
+              <Foot>The bands add up to every open movement</Foot>
             </StatCard>
           </Grid>
         </>

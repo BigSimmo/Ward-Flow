@@ -42,12 +42,20 @@ export const UNDO_WINDOW_MINUTES = 5;
 export const ASK_WARDS_MINUTES = 4 * MINUTES_PER_HOUR;
 /** The same window in words, for the Ask wards lines. */
 export const ASK_WARDS_WINDOW_TEXT = `${ASK_WARDS_MINUTES / MINUTES_PER_HOUR} hours`;
-/** How long an Undo toast stays on screen (pass 2 engine: 8 seconds). The engine's
+/** How long an Undo toast that names no time stays on screen (pass 2 engine: 8 seconds). A toast
+ *  that says "Undo within 5 min" uses `UNDO_WINDOW_TOAST_MS` instead (D-187). The engine's
  *  `UNDO_WINDOW_MINUTES` still decides whether an undo is accepted. */
 export const UNDO_TOAST_MS = 8000;
-/** How long the Undo toast stays up after "Arrived at ward" on a pulled-bed alert: Josh approved 10 seconds
- *  for that step (P069, 27 Oct 2026). Undo is still accepted for `UNDO_WINDOW_MINUTES`. */
-export const ARRIVED_AT_WARD_UNDO_TOAST_MS = 10_000;
+/** D-187 (F-49, Josh 13 Nov 2026): an Undo toast that says "Undo within 5 min" stays for the whole
+ *  Undo window, or until dismissed, so its words are true while it shows. Derived from
+ *  `UNDO_WINDOW_MINUTES`, not a new value. First built for the bed pull (A9-02). */
+export const UNDO_WINDOW_TOAST_MS = UNDO_WINDOW_MINUTES * 60_000;
+/** "Arrived at ward" on a pulled-bed alert (P069) says "Undo within 5 min", so it keeps Undo for the
+ *  whole window (D-187 replaces the 10 seconds approved on 27 Oct 2026). */
+export const ARRIVED_AT_WARD_UNDO_TOAST_MS = UNDO_WINDOW_MINUTES * 60_000;
+/** A9-02 (Audit 9, Josh 13 Nov 2026): a bed pull's Undo message stays for the whole Undo window, or
+ *  until dismissed, so "Undo within 5 min" is true while it shows. Derived, not a new value. */
+export const BED_PULL_UNDO_TOAST_MS = UNDO_WINDOW_MINUTES * 60_000;
 
 /** How often an open shared workspace asks for a fresh snapshot (a software setting, not a
  *  clinical figure). Add patient waits this long for its new record before finishing without it. */

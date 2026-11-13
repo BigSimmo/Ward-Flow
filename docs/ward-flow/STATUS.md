@@ -155,8 +155,8 @@ gone. The 16 November date for the sign-in test was dropped (Q390). Two asks are
 
 ## What is built
 
-**Route and screen overview.** The <!-- fact:ward-route-count -->61<!-- /fact --> Ward page routes
-form part of the <!-- fact:app-route-count -->65<!-- /fact --> scoped app pages/handlers including
+**Route and screen overview.** The <!-- fact:ward-route-count -->62<!-- /fact --> Ward page routes
+form part of the <!-- fact:app-route-count -->66<!-- /fact --> scoped app pages/handlers including
 sign-in and digest. The separate root redirect is additional. Engine and components are under
 `src/components/ward-management/` and `src/components/wf/`. Redirect routes are retained
 for old links; their presence does not establish an independent screen:

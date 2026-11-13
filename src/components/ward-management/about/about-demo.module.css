@@ -1,0 +1,228 @@
+/*
+ * F-77 "About this demo". Page frame as Night view; a main column and a side rail at 2:1 on desktop
+ * (DESIGN-SYSTEM §5), stacked below the content stack point. Rows follow Home's lists: a bold title,
+ * one quiet line, the fact's scope in mono on the right. Kit parts and tokens only.
+ */
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  width: 100%;
+  min-width: 0;
+  padding: var(--wf-s-4) var(--wf-s-6) var(--wf-s-6);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: var(--wf-s-4);
+  align-items: start;
+}
+
+.column,
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  min-width: 0;
+}
+
+/* The rail stays beside the long privacy list as the page scrolls (Home's right column does the same). */
+.rail {
+  position: sticky;
+  top: var(--ward-sticky-top, 4.5rem);
+}
+
+.lead {
+  margin: 0;
+  padding: var(--wf-s-4) var(--wf-s-4) 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-15);
+  line-height: var(--wf-lh-16);
+  text-wrap: pretty;
+  max-width: 68ch;
+}
+
+.isGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-4);
+  padding: var(--wf-s-4);
+}
+
+.capsLabel,
+.groupHead {
+  margin: 0 0 var(--wf-s-2);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  background: var(--wf-surface-2);
+  border-top: 1px solid var(--wf-line);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.groupCount {
+  letter-spacing: 0;
+}
+
+.isList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  color: var(--wf-ink-1);
+}
+
+.isList li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+}
+
+.isGlyph,
+.isNotGlyph {
+  flex: none;
+  margin-top: 3px;
+}
+
+.isGlyph {
+  color: var(--wf-success);
+}
+
+.isNotGlyph {
+  color: var(--wf-ink-3);
+}
+
+.rows,
+.steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row,
+.steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.row:first-child,
+.steps li:first-child {
+  border-top: 0;
+}
+
+.rowMain {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rowTitle {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  font-weight: 600;
+}
+
+.rowSub {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.rowFigure {
+  flex: none;
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  line-height: var(--wf-lh-14);
+  text-align: right;
+}
+
+.rowTag {
+  flex: none;
+}
+
+.stepNo {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--wf-s-6);
+  height: var(--wf-s-6);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+}
+
+.quietFoot {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.quietFoot {
+  margin-top: var(--wf-s-3);
+  color: var(--wf-ink-3);
+}
+
+.foot {
+  display: flex;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.foot > * {
+  width: 100%;
+}
+
+/* The content stack point (Q291): the rail drops under the main column. */
+@media (max-width: 56.25rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rail {
+    position: static;
+  }
+}
+
+@media (max-width: 46.4375rem) {
+  .main {
+    padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-6);
+  }
+
+  .isGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rowFigure {
+    font-size: var(--wf-fs-12);
+  }
+}

@@ -175,7 +175,8 @@ export function legalFormOrdered(movements: Movement[], now: Instant): Movement[
  * `legalFormPopulation`/`legalFormOrdered`, which already filter to movements that carry one, so a
  * call here with none is a caller error, not a state this screen can honestly render.
  */
-export function legalDeadlineText(movement: Movement, now: Instant): string {
+/** `dayZero` dates a typed time on another day (D1, D-93); left out, it never shows an age. */
+export function legalDeadlineText(movement: Movement, now: Instant, dayZero?: Date): string {
   const legalForm = movement.legalForm;
   if (!legalForm) {
     throw new Error(`legalDeadlineText called on movement ${movement.id}, which carries no legal form`);
@@ -189,11 +190,11 @@ export function legalDeadlineText(movement: Movement, now: Instant): string {
   if (end?.kind === "recorded") {
     return legalForm.dueAt === undefined
       ? "Form ended"
-      : `Form ended; expiry as typed was ${typedClock(legalForm.dueAt, now)}`;
+      : `Form ended; expiry as typed was ${typedClock(legalForm.dueAt, now, dayZero)}`;
   }
   if (legalForm.dueAt !== undefined) {
     // Legal times only as typed (31 Oct 2026): "Form expiry ends 15:42 as typed", never a count.
-    return `Form expiry ${typedTimePhrase(legalForm.dueAt, now)}`;
+    return `Form expiry ${typedTimePhrase(legalForm.dueAt, now, dayZero)}`;
   }
   /*
    * 🔴 ONE WORDING FOR AN ABSENT DEADLINE, NOT TWO — Ward Lead's ruling, 2026-09-12.

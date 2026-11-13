@@ -47,12 +47,13 @@ function laterAt(step: LaterStep, now: number): number {
  * browser only; it never changes a ward's figures, which only the ward confirms.
  */
 export function ToolCallLog() {
-  const { units, admissions, bedReleases, movements, referrals } = useWardFlowSelect(
+  const { units, admissions, bedReleases, movements, referrals, dayZero } = useWardFlowSelect(
     "units",
     "admissions",
     "bedReleases",
     "movements",
     "referrals",
+    "dayZero",
   );
   const now = useWardFlowClock();
   const log = useCallLog();
@@ -95,9 +96,17 @@ export function ToolCallLog() {
 
   function save() {
     if (!ward || !outcome) return;
-    addCallLog({ wardId: ward.id, wardLabel, outcome, bedAt, at: now });
+    const day = dayZero.getTime();
+    addCallLog({ wardId: ward.id, wardLabel, outcome, bedAt, at: now, dayZero: day });
     if (offersRingBack && ringBack) {
-      addReminder({ kind: "ward", targetId: ward.id, targetLabel: wardLabel, reason: "Call back", dueAt: ringAt });
+      addReminder({
+        kind: "ward",
+        targetId: ward.id,
+        targetLabel: wardLabel,
+        reason: "Call back",
+        dueAt: ringAt,
+        dayZero: day,
+      });
     }
     setSaved(
       `Saved: ${wardLabel}, ${OUTCOME_WORDS[outcome].toLowerCase()}${offersRingBack && ringBack ? `. Ring-back set for ${formatInstantWithDay(ringAt, now)}` : ""}.`,

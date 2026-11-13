@@ -5,7 +5,9 @@ import { useState } from "react";
 import { referralDraftAgeText } from "./referral-draft-store";
 import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival-time-modal";
 import styles from "./ward-referral-drawer.module.css";
-import { duplicateCaseHref, duplicateSentence } from "./referral-duplicate";
+import { DUPLICATE_SENTENCES, duplicateCaseHref, duplicateSentence } from "./referral-duplicate";
+import { openRequestNotice } from "./referral-open-request-notice";
+import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { StatusGlyph, Button } from "@/components/wf";
 import {
@@ -81,9 +83,23 @@ function WardReferralDrawerContent(props: WardReferralDrawerContentProps) {
     patientRecord,
   } = s;
   // Archived D-19: one place-free, count-free sentence about the person already named on this form.
-  const alreadyOpen = patientRecord ? duplicateSentence({ patientId: patientRecord.id, referrals }) : undefined;
   // L5 / decision 2: the link follows the case's stage to the page that actually lists it.
-  const alreadyOpenHref = patientRecord ? duplicateCaseHref({ patientId: patientRecord.id, referrals }) : undefined;
+  // F-41 (A9-25 a): an open bed request at this same department says so too, not only a referral.
+  const openNotice = openRequestNotice({
+    personHref: patientRecord ? patientHref(patientRecord.id) : undefined,
+    referralNotice: patientRecord
+      ? {
+          sentence: duplicateSentence({ patientId: patientRecord.id, referrals }),
+          href: duplicateCaseHref({ patientId: patientRecord.id, referrals }),
+        }
+      : { sentence: undefined, href: undefined },
+    sameSentence: DUPLICATE_SENTENCES[0],
+    openJourney: s.openJourney,
+    originSiteCode: s.originSiteCode,
+    liveMovementId: liveMovement?.id,
+  });
+  const alreadyOpen = openNotice?.sentence;
+  const alreadyOpenHref = openNotice?.href;
 
   return (
     <>

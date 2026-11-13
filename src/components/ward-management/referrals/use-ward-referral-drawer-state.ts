@@ -15,6 +15,7 @@ import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-managemen
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 import { referralAgeBand } from "./referral-age-band";
 import { cleanReferralContact, cleanReferralFields, cleanReferralText } from "./referral-text-clean";
 import { referralDraftKeptOnScreen } from "./referral-draft-kept-check";
@@ -86,6 +87,7 @@ import {
   type ReferralIntakeDetails,
   clearanceChecklistWords,
   referralNeedsWords,
+  BED_SECURITY_UNANSWERED,
 } from "./referral-submission";
 import * as warn from "./referral-send-warnings";
 import {
@@ -94,6 +96,8 @@ import {
   wardReferralDestinations,
   SAMPLE_PATIENTS,
   NO_PATIENT_KEY,
+  recordedBedSecurity,
+  transportRequested,
   PATIENT_KEY_PREFIX,
   sampleProfile,
   ageSexLabel,
@@ -180,6 +184,7 @@ export function useWardReferralDrawerState({
   );
   const { scenario, worldGeneration } = useWardFlowSelect("scenario", "worldGeneration");
   const now = useWardFlowClock();
+  const zone = useClockZoneLabel();
   const { sendGate, sendingWard, senderMissing } = useSheetSender(gate, units, pathname, searchId);
   const toast = useOptionalToast();
   const urlPrefill = useReferralUrlPrefill({
@@ -351,9 +356,8 @@ export function useWardReferralDrawerState({
       (urlPrefill?.ats ? (urlPrefill.ats <= 2 ? "1" : urlPrefill.ats === 3 ? "2" : "3") : defaultPatient.urgency),
   );
   const [atsCategory, setAtsCategory] = useState<AtsCategory | undefined>(kept?.atsCategory ?? urlPrefill?.ats);
-  const [security, setSecurity] = useState(
-    start.security ?? (defaultPatient.security.toLowerCase().includes("secure") ? "Secure" : "Open"),
-  );
+  // A9-10: from the record, or empty until the referrer answers (never "Open" by default).
+  const [security, setSecurity] = useState<string>(start.security ?? recordedBedSecurity(defaultPatient.security));
   const [provisionalDiag, setProvisionalDiag] = useState(
     kept?.provisionalDiag ??
       (urlPrefill?.complaint && isTentativeDiagnosisBlock(urlPrefill.complaint)
@@ -549,7 +553,7 @@ export function useWardReferralDrawerState({
     setGuardOpen(false);
     approveNextHistoryNavigation();
     onClose();
-    noticeDraftKept(toast, kept);
+    noticeDraftKept(toast, kept, now, dayZero);
   }
   function handleDrawerClose() {
     if (isSearchOpen) {
@@ -606,7 +610,9 @@ export function useWardReferralDrawerState({
     profiles: sampleProfiles,
     record: profileRecord,
     now,
-    dirty,
+    // A9-06: "Change patient?" only when a person is already on the form and details were entered
+    // (choosing where to refer, before anyone is chosen, discards nobody's details).
+    dirty: newPatientDirty || !!unidentified?.trim() || (!noPatientChosen && referralDirty),
     revision: JSON.stringify([draftJson, worldGeneration, sendPending, sentReferralId, access]),
     ownerVersion: draftOwnerVersion,
     registrationDraft,
@@ -670,7 +676,7 @@ export function useWardReferralDrawerState({
     setLegalStatus(warn.legalStatusAnswer(nextCarry.legalStatus ?? baseLegal));
     setUrgency(p.urgency);
     setAtsCategory(undefined);
-    setSecurity(nextCarry.security ?? (p.security.toLowerCase().includes("secure") ? "Secure" : "Open"));
+    setSecurity(nextCarry.security ?? recordedBedSecurity(p.security));
     setProvisionalDiag(p.provisionalDiag);
     setDoctorNote(p.doctorNote);
     setClinicalSummary(p.clinicalSummary);
@@ -715,7 +721,7 @@ export function useWardReferralDrawerState({
     );
     const readyBedsCount = matchingRecords.reduce((sum, r) => sum + r.readyBeds, 0);
     const pulledBedsCount = matchingRecords.reduce((sum, r) => sum + r.pulledBeds, 0);
-    // Owner ruling, 2026-09-05: `readyBedsCount` subtracts NOTHING for this, so a figure never lurches with cleaning.
+    // D-179 item 8 (13 Nov 2026): `readyBedsCount` leaves these out; they are counted on their own.
     const pendingPreparationCount = matchingRecords.reduce((sum, r) => sum + (r.pendingPreparation ?? 0), 0);
     // Audit 1 (decision 6), Josh 20 Oct: a fixed, neutral order (health service, then ward name),
     // never catchment first or most ready beds. Every matching ward stays listed.
@@ -790,6 +796,8 @@ export function useWardReferralDrawerState({
   }
   // WS-01: a ward referral answers gender before Send ("Not yet recorded" counts as an answer).
   const genderUnanswered = destType === "ward" && referralGender === "";
+  // A9-10: a ward referral answers bed security; it no longer starts on "Open".
+  const securityUnanswered = destType === "ward" && security !== "Secure" && security !== "Open";
   const originValid = !!sendingWard || (!senderMissing && isListedOrigin(originSiteCode, sourceKind));
   // FORM-REF: the reason warns (`sendWarnings`); these block. Josh, 5 Nov 2026 (finding 2): the location and referring
   // service come from the sending desk and block only when nothing fills them: an accepted referral needs both to move.
@@ -799,6 +807,7 @@ export function useWardReferralDrawerState({
       return sourceKind === "ed" ? "Choose the referring emergency department." : "Choose the location of referral.";
     if (sendingTeamMissing) return "Record the referring community service.";
     if (legalStatus === "") return warn.LEGAL_STATUS_UNANSWERED;
+    if (securityUnanswered) return BED_SECURITY_UNANSWERED;
     if (!URGENCY_LEVELS.some((tier) => String(tier) === shownUrgency))
       return community ? "Choose when the team should first make contact." : "Choose the referral urgency.";
     if (genderUnanswered) return GENDER_UNANSWERED;
@@ -823,6 +832,7 @@ export function useWardReferralDrawerState({
         !originValid,
         sendingTeamMissing,
         legalStatus === "",
+        securityUnanswered,
         !URGENCY_LEVELS.some((tier) => String(tier) === shownUrgency),
         community && !communityPurpose,
         doctorNote.length > reasonRoom,
@@ -839,7 +849,8 @@ export function useWardReferralDrawerState({
     4 +
     (sendingWard ? 0 : 1) +
     (needsSendingTeam ? 1 : 0) +
-    (destType === "ward" ? 1 : 0) +
+    // A ward referral's gender identity and, since A9-10, its bed security.
+    (destType === "ward" ? 2 : 0) +
     (community ? 2 : documentationItems(documentation)) +
     1;
   // D-77: the community short form has no Documents step, so its checks skip triage and charts.
@@ -985,7 +996,8 @@ export function useWardReferralDrawerState({
       sendingTeamName: needsSendingTeam && sendingTeam.trim() ? cleanReferralText(sendingTeam) : undefined,
       urgency: tier,
       ...(atsCategory === undefined ? {} : { atsCategory }),
-      transportNeeded: destType === "ward" && transport !== "carer" && transport !== "Family or carer",
+      // A9-11: only a chosen vehicle is a transport request; "Not chosen" ("") asks for nothing.
+      transportNeeded: transportRequested(destType, transport),
       history: cleanReferralText(unidentifiedHistory),
       tentativeDiagnosis: isTentativeDiagnosisBlock(provisionalDiag) ? provisionalDiag : undefined,
       ...alternatives.eventField,
@@ -1126,7 +1138,7 @@ export function useWardReferralDrawerState({
     risks: recordedFlags.map((key) => RISK_FLAG_LABELS[key]),
     clearance: clearance.label,
     clearanceChecklist: destType === "ward" ? clearanceChecklistWords(clearanceChecks) : "",
-    needs: draftNeeds ? referralNeedsWords(draftNeeds) : [],
+    needs: draftNeeds ? referralNeedsWords(draftNeeds, zone) : [],
     chartKinds: letterCharts.charts.map(({ kind }) => kind),
     chartsToFollow: letterCharts.chartsToFollow,
     referrer: { name: contact.name, role: contact.role, phone: contact.phone },

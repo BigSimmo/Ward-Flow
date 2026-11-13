@@ -93,8 +93,8 @@ export function ToolLogDelay() {
           onChange={(event) => setQuery(event.target.value)}
           onClear={() => setQuery("")}
           disabled={save.pending}
-          placeholder="Name or UR number"
-          aria-label="Find a person by name or UR number"
+          placeholder="Name or UMRN"
+          aria-label="Find a person by name or UMRN"
           autoComplete="off"
         />
         {shown.length === 0 ? (

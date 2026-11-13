@@ -5,6 +5,7 @@ import {
   formatInstantWithDay,
   minuteOfDay,
   MINUTES_PER_DAY,
+  splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import { travelBand, type TravelBand } from "@/components/ward-management/ward-distance";
@@ -275,10 +276,20 @@ function bedOption(unit: Unit, band: TravelBand, now: Instant): BedOption {
   };
 }
 
-/** "8m ago", "1h 05m ago": how old a ward's confirmed bed figure is. */
+/** "8m ago", "1h 05m ago", "2d 3h ago": how old a ward's confirmed bed figure is (`splitDuration`, F-35). */
 export function confirmedAgeText(minutes: number): string {
-  if (minutes < 60) return `${minutes}m ago`;
-  return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, "0")}m ago`;
+  return `${splitDuration(minutes)} ago`;
+}
+
+/**
+ * What the Out of area list says when it lists nobody, on desktop and phone alike (A16-04, D-193).
+ * Only checked travel times are shown, so an empty list can mean no travel time is recorded, not
+ * that nobody is far from home.
+ */
+export function outOfAreaEmptyLine(notBanded: number): string {
+  return notBanded > 0
+    ? `Nobody is shown as far from home. ${notBanded} ${notBanded === 1 ? "person has" : "people have"} no travel time recorded.`
+    : "Nobody on these records is in a bed far from home.";
 }
 
 /**

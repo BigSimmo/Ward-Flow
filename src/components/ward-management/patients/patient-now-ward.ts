@@ -112,7 +112,8 @@ export function patientNextStep(
     return {
       key: "leave-return",
       title: "Record return",
-      detail: `Due back ${formatInstantWithDay(bed.expectedReturn, now)}, typed by the ward.${
+      // A9-15 (Audit 9, 13 Nov 2026): the time may be chosen from a list or typed, so not "typed".
+      detail: `Due back ${formatInstantWithDay(bed.expectedReturn, now)}, recorded by the ward.${
         overdue ? " That time has passed." : ""
       }`,
       tone: overdue ? "warning" : "neutral",
@@ -188,7 +189,8 @@ export function stayProgress(admission: Admission | undefined, now: Instant): St
   const past = isPastExpectedDischarge(admission, now);
   let note: string;
   if (past) {
-    const daysPast = daysBetween(expected, now);
+    // Perth calendar days (time audit D2): 22:00 yesterday is a day past at 01:00, not "today".
+    const daysPast = dayOf(now) - dayOf(expected);
     note = daysPast >= 1 ? `${plural(daysPast, "day", "days")} past the expected date` : "Past the expected time today";
   } else {
     const remaining = dayOf(expected) - dayOf(now);

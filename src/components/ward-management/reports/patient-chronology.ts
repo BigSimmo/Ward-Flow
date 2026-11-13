@@ -11,7 +11,12 @@ import {
   legalFormReceiptCorrectionReasonLabels,
   withdrawalReasonLabels,
 } from "@/components/ward-management/ward-change-reasons";
-import { formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  clockZoneLabel,
+  formatSheetMoment,
+  type ClockZoneLabel,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import type { EventLogEntry } from "@/components/ward-management/ward-event-log";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import {
@@ -77,6 +82,8 @@ export type ChronologyInput = {
   eventLog: readonly EventLogEntry[];
   /** Day 0 of the session, so a typed time can be written as a date. */
   dayZero: Date;
+  /** The board's clock words (`useClockZoneLabel`, F-113); the demo's "demo time" when not given. */
+  zone?: ClockZoneLabel;
 };
 
 export type PatientChronology = {
@@ -253,11 +260,16 @@ const ACTION_EVENT_TYPES: ReadonlyMap<string, readonly string[]> = new Map<strin
 );
 
 /** Preserve typed review changes as well as level changes. */
-function observationText(observation: Observation, dayZero: Date): string {
-  return `${observationSummary(observation)}; review ${observation.reviewAt === null ? "not recorded" : formatSheetMoment(observation.reviewAt, dayZero, { includeYearAndZone: true })}`;
+function observationText(observation: Observation, dayZero: Date, zone: ClockZoneLabel): string {
+  return `${observationSummary(observation)}; review ${observation.reviewAt === null ? "not recorded" : formatSheetMoment(observation.reviewAt, dayZero, { includeYearAndZone: true, zone })}`;
 }
 
-function observationRows(movements: readonly Movement[], admissions: readonly Admission[], dayZero: Date): RowDraft[] {
+function observationRows(
+  movements: readonly Movement[],
+  admissions: readonly Admission[],
+  dayZero: Date,
+  zone: ClockZoneLabel,
+): RowDraft[] {
   const rows: RowDraft[] = [];
   const sameChange = (a: ObservationChange, b: ObservationChange) =>
     a.at === b.at && sameObservation(a.from, b.from) && sameObservation(a.to, b.to);
@@ -268,8 +280,8 @@ function observationRows(movements: readonly Movement[], admissions: readonly Ad
       recordedAt: finite(change.at),
       who: NOT_RECORDED,
       action: "Observation level changed",
-      before: observationText(change.from, dayZero),
-      after: observationText(change.to, dayZero),
+      before: observationText(change.from, dayZero, zone),
+      after: observationText(change.to, dayZero, zone),
       eventTypes: ["RECORD_OBSERVATION_LEVEL"],
     });
   for (const movement of movements) {
@@ -290,8 +302,8 @@ function observationRows(movements: readonly Movement[], admissions: readonly Ad
           (candidate) =>
             candidate.record === `Movement ${movement.id}` &&
             candidate.recordedAt === change.at &&
-            candidate.before === observationText(change.from, dayZero) &&
-            candidate.after === observationText(change.to, dayZero) &&
+            candidate.before === observationText(change.from, dayZero, zone) &&
+            candidate.after === observationText(change.to, dayZero, zone) &&
             !candidate.matchingRecords?.includes(`Admission ${admission.id}`),
         );
         if (row) row.matchingRecords = [...(row.matchingRecords ?? []), `Admission ${admission.id}`];
@@ -301,7 +313,7 @@ function observationRows(movements: readonly Movement[], admissions: readonly Ad
   return rows;
 }
 
-function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date): RowDraft[] {
+function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date, zone: ClockZoneLabel): RowDraft[] {
   const unitName = (id: string | undefined) => (id ? (units.find((unit) => unit.id === id)?.name ?? id) : "");
   const record = `Movement ${movement.id}`;
   const rows: RowDraft[] = [];
@@ -468,7 +480,7 @@ function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date)
       recordedAt: finite(expiry.at),
       who: whoLabel(expiry.by),
       action: expiry.basis === "extension" ? "Form extension recorded" : "Form expiry recorded",
-      after: `Typed expiry ${formatSheetMoment(expiry.dueAt, dayZero, { includeYearAndZone: true })}`,
+      after: `Typed expiry ${formatSheetMoment(expiry.dueAt, dayZero, { includeYearAndZone: true, zone })}`,
     });
   }
   for (const correction of movement.legalFormReceiptCorrections ?? []) {
@@ -476,7 +488,7 @@ function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date)
       recordedAt: finite(correction.at),
       who: whoLabel(correction.by),
       action: "Form receipt time corrected",
-      before: chronologyTime(finite(correction.receivedAt), dayZero),
+      before: chronologyTime(finite(correction.receivedAt), dayZero, zone),
       after: "Cleared",
       reason: reasonLabel(correction.reason),
     });
@@ -504,7 +516,7 @@ function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date)
       after: movement.transportNeed.needed ? "Needed" : "Not needed",
     });
   }
-  rows.push(...transportRows(movement, record, dayZero, unitName(movement.acceptedUnitId)));
+  rows.push(...transportRows(movement, record, dayZero, unitName(movement.acceptedUnitId), zone));
   for (const form of movement.uploadedForms ?? []) {
     add({
       recordedAt: finite(form.uploadedAt),
@@ -541,7 +553,13 @@ function dedupeType(type: string, role: string | null | undefined): string {
   return isTransportDelivery(type, role) ? OFFICER_DELIVERY_KEY : type;
 }
 
-function transportRows(movement: Movement, record: string, dayZero: Date, wardName: string): RowDraft[] {
+function transportRows(
+  movement: Movement,
+  record: string,
+  dayZero: Date,
+  wardName: string,
+  zone: ClockZoneLabel,
+): RowDraft[] {
   const job = movement.transport;
   if (!job) return [];
   const rows: RowDraft[] = [];
@@ -550,7 +568,7 @@ function transportRows(movement: Movement, record: string, dayZero: Date, wardNa
     : "";
   const eta =
     finite(job.estimatedAt) !== null
-      ? `, typed ETA ${formatSheetMoment(job.estimatedAt!, dayZero, { includeYearAndZone: true })}`
+      ? `, typed ETA ${formatSheetMoment(job.estimatedAt!, dayZero, { includeYearAndZone: true, zone })}`
       : "";
   rows.push({
     record,
@@ -709,13 +727,17 @@ function auditRecord(event: AuditEvent): string | null {
   return null;
 }
 
-function auditBeforeAfter(event: AuditEvent, dayZero: Date): Pick<ChronologyRow, "before" | "after" | "reason"> {
+function auditBeforeAfter(
+  event: AuditEvent,
+  dayZero: Date,
+  zone: ClockZoneLabel,
+): Pick<ChronologyRow, "before" | "after" | "reason"> {
   switch (event.category) {
     case "patient-record":
       return event.action === "RECORD_OBSERVATION_LEVEL"
         ? {
-            before: event.details.before ? observationText(event.details.before, dayZero) : "",
-            after: event.details.after ? observationText(event.details.after, dayZero) : "",
+            before: event.details.before ? observationText(event.details.before, dayZero, zone) : "",
+            after: event.details.after ? observationText(event.details.after, dayZero, zone) : "",
             reason: "",
           }
         : { before: "", after: "", reason: "" };
@@ -754,6 +776,7 @@ function auditRows(
   recordKeys: Set<string>,
   wardOfRecord: (record: string) => string | undefined,
   dayZero: Date,
+  zone: ClockZoneLabel,
 ): RowDraft[] {
   const rows: RowDraft[] = [];
   for (const event of events) {
@@ -771,7 +794,7 @@ function auditRows(
       action: `${wording}${outcome}`,
       eventTypes: [dedupeType(event.action, event.actor.role)],
       ...(event.action === "RECORD_OBSERVATION_LEVEL" ? { observationAccepted: event.outcome === "accepted" } : {}),
-      ...auditBeforeAfter(event, dayZero),
+      ...auditBeforeAfter(event, dayZero, zone),
     });
   }
   return rows;
@@ -798,6 +821,7 @@ function sortInstant(row: ChronologyRow): number {
 }
 
 export function patientChronology(input: ChronologyInput): PatientChronology {
+  const zone = input.zone ?? clockZoneLabel(false);
   const { personId, units } = input;
   const patient = input.patients.find((candidate) => candidate.id === personId);
   const recordIds = patientRecordIds(personId, input.patients, input.movements, input.referrals, input.admissions);
@@ -812,12 +836,15 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
 
   const drafts: { draft: RowDraft; source: ChronologySource }[] = [
     ...pick(input.referrals, recordIds.referrals).flatMap((referral) => referralRows(referral, units)),
-    ...pick(input.movements, recordIds.movements).flatMap((movement) => movementRows(movement, units, input.dayZero)),
+    ...pick(input.movements, recordIds.movements).flatMap((movement) =>
+      movementRows(movement, units, input.dayZero, zone),
+    ),
     ...pick(input.admissions, recordIds.admissions).flatMap((admission) => admissionRows(admission, units)),
     ...observationRows(
       pick(input.movements, recordIds.movements),
       pick(input.admissions, recordIds.admissions),
       input.dayZero,
+      zone,
     ),
   ].map((draft) => ({ draft, source: "Record" as const }));
 
@@ -828,7 +855,7 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
   ]);
   if (input.auditEvents) {
     const attributed = new Set<RowDraft>();
-    for (const draft of auditRows(input.auditEvents, recordKeys, wardOfRecord, input.dayZero)) {
+    for (const draft of auditRows(input.auditEvents, recordKeys, wardOfRecord, input.dayZero, zone)) {
       const mirrored =
         draft.action === "Observation level changed"
           ? drafts.find(
@@ -943,8 +970,12 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
 }
 
 /** A time for paper or a spreadsheet: weekday, date and clock face, or "Not recorded". */
-export function chronologyTime(instant: Instant | null, dayZero: Date): string {
-  return instant === null ? NOT_RECORDED : formatSheetMoment(instant, dayZero, { includeYearAndZone: true });
+export function chronologyTime(
+  instant: Instant | null,
+  dayZero: Date,
+  zone: ClockZoneLabel = clockZoneLabel(false),
+): string {
+  return instant === null ? NOT_RECORDED : formatSheetMoment(instant, dayZero, { includeYearAndZone: true, zone });
 }
 
 export const CHRONOLOGY_CSV_HEADER = [
@@ -972,11 +1003,12 @@ export function chronologyCsv(
   dayZero: Date,
   generatedAt: Instant,
   umrn?: string,
+  zone: ClockZoneLabel = clockZoneLabel(false),
 ): string {
   const lines = [
     [
       csvCell("Synthetic demo data. Not a clinical record."),
-      csvCell(`Generated ${formatSheetMoment(generatedAt, dayZero, { includeYearAndZone: true })}`),
+      csvCell(`Generated ${formatSheetMoment(generatedAt, dayZero, { includeYearAndZone: true, zone })}`),
     ].join(","),
     ...(umrn ? [[csvCell("UMRN"), csvCell(umrn)].join(",")] : []),
     [csvCell("Scope"), csvCell("Selected patient's retained chronology")].join(","),
@@ -984,8 +1016,8 @@ export function chronologyCsv(
     CHRONOLOGY_CSV_HEADER.map(csvCell).join(","),
     ...rows.map((row) =>
       [
-        chronologyTime(row.occurredAt, dayZero),
-        chronologyTime(row.recordedAt, dayZero),
+        chronologyTime(row.occurredAt, dayZero, zone),
+        chronologyTime(row.recordedAt, dayZero, zone),
         row.who,
         row.action,
         row.record,

@@ -34,6 +34,7 @@ import { TYPED_TEXT_NOT_KEPT } from "@/components/ward-management/ward-flow-demo
 import { STAGE_TRANSITION_BLOCKERS } from "@/components/ward-management/ward-flow-reducer";
 import type { BedRelease, LeaveBed, Movement, Notice, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
+import { seatReplayOrder, seatStart } from "@/components/ward-management/ward/ward-bed-layout";
 import {
   edInScope,
   unitInScope,
@@ -896,6 +897,55 @@ function edReferralCopy(referral: Referral): Referral {
 }
 
 /**
+ * F-150 (audit G FS-4): a ward's bed numbers come from replaying all its stays (`wardStaySeats`).
+ * A desk not sent some of an own ward's stays (a ward desk drops a departed stay after its hand-off
+ * window) replayed fewer stays, so Dabakarn's beds 10, 11 and 12 read 12, 10 and 11 on the ward
+ * desk. Each own ward now carries those stays as seat history: bed times only, under a stand-in id,
+ * so nothing names the stay or the person. The replay breaks a tie on time by id, so each stand-in
+ * is the id of the stay it follows in the replay order (or none), then a NUL and its rank: it sorts
+ * exactly where the real id would among everything the desk replays.
+ */
+function withSeatHistory(
+  units: readonly Unit[],
+  whole: readonly Admission[],
+  sent: readonly Admission[],
+  unitIn: (unitId: string) => boolean,
+): readonly Unit[] {
+  const sentIds = new Set(sent.map((admission) => admission.id));
+  return units.map((unit) => {
+    const stays = whole.filter((stay) => stay.unitId === unit.id && stay.state !== "waitlisted");
+    if (!unitIn(unit.id) || stays.every((stay) => sentIds.has(stay.id))) return unit;
+    // The released pull spans replay as `released:<id>` on every desk (`wardStaySeats`).
+    const order: { start: number; id: string; stay?: Admission }[] = [
+      ...stays.map((stay) => ({ start: seatStart(stay), id: stay.id, stay: sentIds.has(stay.id) ? undefined : stay })),
+      ...(unit.releasedPullSpans ?? []).map((span) => ({ start: span.pulledAt, id: `released:${span.admissionId}` })),
+    ].sort(seatReplayOrder);
+    let before = "";
+    const seatHistoryStays = order.flatMap(({ start, id, stay }, rank) => {
+      if (rank > 0 && order[rank - 1].start !== start) before = "";
+      if (stay === undefined) {
+        before = id;
+        return [];
+      }
+      const { state, pulledAt, arrivedAt, leftAt, bedKind, bedNumber } = stay;
+      return [
+        {
+          id: `${before}\u0000${String(rank).padStart(6, "0")}`,
+          state,
+          pulledAt,
+          arrivedAt,
+          leftAt,
+          // No key for an absent value: the shared state check refuses one set to undefined.
+          ...(bedKind !== undefined && { bedKind }),
+          ...(bedNumber !== undefined && { bedNumber }),
+        },
+      ];
+    });
+    return { ...unit, seatHistoryStays };
+  });
+}
+
+/**
  * The workspace one role at one place may see. Returns the input itself, untouched, for a
  * statewide coordinator, so the whole view costs nothing.
  */
@@ -1344,6 +1394,7 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
 
   return {
     ...workspace,
+    units: withSeatHistory(workspace.units, workspace.admissions, admissions, unitIn),
     movements,
     referrals,
     admissions,

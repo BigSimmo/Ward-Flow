@@ -18,12 +18,16 @@ import { type Admission } from "@/components/ward-management/ward-admissions";
 import { readyBedsNow, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { dayOf, MINUTES_PER_DAY, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
-import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import type { BedRelease, Movement, Unit } from "@/components/ward-management/ward-model";
 import { bedKindOfBed, bedKindOfNeed, isWaitingForBed } from "./forecast-by-kind";
 import { forecastReleaseAt } from "./forecast-release-date";
 
-type EdAccessRelease = { unitId: string; unitName: string; at: Instant; blocker: BedReleaseBlocker | null };
+/**
+ * A release the line counts (F-24, 13 Nov 2026): one that is not held up. The card used to name the
+ * earliest release of any kind, held up or not, while the line it sits in skipped held-up releases,
+ * so it could name a bed the count had ignored. Both now read the same supply (`lineSupply` below).
+ */
+type EdAccessRelease = { unitId: string; unitName: string; at: Instant };
 
 /** "24 hour" for a whole-hour target, else "20h 30m": the access target as Settings states it. The card and
  * the brief both read it (H-0361), so a 4h 30m target is never rounded to whole hours. */
@@ -46,7 +50,11 @@ export type EdAccessRiskRow = {
    * says "ahead in the line" only when someone is.
    */
   ahead: number;
-  /** The earliest release of the right kind on record (at the accepting ward when there is one). */
+  /**
+   * The earliest release in this person's own line (F-24): of the right kind, at the accepting ward
+   * when there is one, not held up, and within `RELEASE_LOOKAHEAD_DAYS`. The same supply `slotAt`
+   * and `ahead` are worked out from, so the card never names a release the line skipped.
+   */
   nextRelease: EdAccessRelease | null;
   acceptedUnitName: string | null;
   declines: number;
@@ -81,7 +89,7 @@ export function edAccessRisk(
   const open = new Map(units.filter((unit) => !unit.isClosed).map((unit) => [unit.id, unit]));
   const admissionById = new Map(admissions.map((admission) => [admission.id, admission]));
   const expectedAt = (release: BedRelease) => forecastReleaseAt(release, admissionById.get(release.admissionId));
-  const gaps = bedKindGaps([...movements], [...units], now, admissions, referrals);
+  const gaps = bedKindGaps([...movements], [...units], now, admissions, referrals, releases);
   const namedHolds: readonly ReservationReferral[] = [...movements, ...referrals];
   const pending = releases
     .filter(
@@ -94,6 +102,9 @@ export function edAccessRisk(
       at: Math.max(expectedAt(release), now),
     }))
     .sort((a, b) => a.at - b.at);
+  // F-24: the releases a line can use. A held-up release frees no bed, so neither the line nor the
+  // release the card names may count it.
+  const lineSupply = pending.filter((entry) => entry.release.blocker === null);
 
   const waiting = movements.filter(isWaitingForBed).sort((a, b) => a.openedAt - b.openedAt || a.id.localeCompare(b.id));
   const slotOf = new Map<string, Instant | null>();
@@ -101,7 +112,7 @@ export function edAccessRisk(
   for (const gap of gaps) {
     const slots: Instant[] = [
       ...Array.from({ length: Math.max(0, gap.bedsThatFit) }, () => now),
-      ...pending.filter((entry) => entry.kind === gap.id && entry.release.blocker === null).map((entry) => entry.at),
+      ...lineSupply.filter((entry) => entry.kind === gap.id).map((entry) => entry.at),
     ];
     waiting
       .filter((movement) => bedKindOfNeed(movement) === gap.id)
@@ -139,8 +150,8 @@ export function edAccessRisk(
     for (const kind of new Set(accepted.map(bedKindOfNeed))) {
       const line = accepted.filter((movement) => bedKindOfNeed(movement) === kind);
       const readyNow = Math.min(kindBeds(kind, unit.id), wardReady);
-      const wardReleases = pending
-        .filter((entry) => entry.release.unitId === unit.id && entry.kind === kind && entry.release.blocker === null)
+      const wardReleases = lineSupply
+        .filter((entry) => entry.release.unitId === unit.id && entry.kind === kind)
         .map((entry) => entry.at);
       line.forEach((movement, place) => {
         slotOf.set(movement.id, place < readyNow ? now : (wardReleases[place - readyNow] ?? null));
@@ -168,7 +179,7 @@ export function edAccessRisk(
     if (slotAt !== null && slotAt <= passesAt) continue;
     const kind = bedKindOfNeed(movement);
     const accepted = movement.acceptedUnitId ? open.get(movement.acceptedUnitId) : undefined;
-    const candidates = pending.filter(
+    const candidates = lineSupply.filter(
       (entry) =>
         entry.kind === kind &&
         entry.at <= now + RELEASE_LOOKAHEAD_DAYS * MINUTES_PER_DAY &&
@@ -189,7 +200,6 @@ export function edAccessRisk(
             unitId: first.release.unitId,
             unitName: open.get(first.release.unitId)!.name,
             at: first.at,
-            blocker: first.release.blocker,
           }
         : null,
       acceptedUnitName: accepted?.name ?? null,

@@ -7,10 +7,11 @@ import { journeySentByDesk } from "@/components/ward-management/ward-referral-se
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ArrowRight, BedSingle, Check, Hospital, Info, ShieldCheck, Ambulance } from "lucide-react";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
+import { wardRaise } from "../ward-flow-raise";
 import { candidateReason, eligibility, gateMark } from "../ward-eligibility";
 import { stageCopy } from "../ward-derivations";
 import { legalFormName } from "../ward-legal-forms";
-import { CAD_TO_FOLLOW, cadNumberToFollow } from "../ward-cad-number";
+import { CAD_TO_FOLLOW, cadNumberLine, cadNumberToFollow } from "../ward-cad-number";
 import {
   MOVEMENT_STAGES,
   genderReviewNeeded,
@@ -28,13 +29,17 @@ import {
   type OverrideReason,
   RELEASE_PULL_REASONS,
   type ReleasePullReason,
+  CANCEL_TRANSPORT_REASONS,
+  type CancelTransportReason,
   changeReasonLabels,
 } from "../ward-change-reasons";
 import { MovementWorkspaceCockpit } from "../movements/movement-workspace-cockpit";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { StatusGlyph, buttonClass } from "@/components/wf";
+import { ChipGroup, FilterChip, StatusGlyph, buttonClass } from "@/components/wf";
 import { useUndoableStep } from "../use-undoable-step";
+import { BED_PULL_UNDONE, bedPullUndoEvent } from "../ward-bed-pull-undo";
+import { BED_PULL_UNDO_TOAST_MS } from "../ward-operational-defaults";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
 import {
   arrivalGaps,
@@ -54,6 +59,7 @@ import styles from "./patient-transit-operations.module.css";
 import { FindAWard, wardMatchesQuery } from "@/components/ward-management/referrals/find-a-ward";
 import { ExtendHoldControl } from "@/components/ward-management/ward-extend-hold";
 import { splitDuration } from "@/components/ward-management/ward-clock";
+import { PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
 
 /** All operational facts and eligibility are calculated from the current provider state. */
 /**
@@ -151,6 +157,7 @@ export function PatientTransitOperations({
   // Walk-through WT-11: an arrival with nothing open still checks the name and UMRN first.
   const [arriveConfirm, setArriveConfirm] = useState(false);
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | "">("");
+  const [cancelReason, setCancelReason] = useState<CancelTransportReason | "">("");
   const [backTo, setBackTo] = useState<MovementStage | "">("");
   const [backReason, setBackReason] = useState<StepBackReason | "">("");
   const [confirmWithdraw, setConfirmWithdraw] = useState(false);
@@ -189,11 +196,25 @@ export function PatientTransitOperations({
   const notAskedRows = candidates
     .filter((c) => !movement.referredUnitIds.includes(c.unit.id))
     .map(({ unit, verdict }) => ({ unit, fit: verdict.eligible, reason: candidateReason(verdict) }));
+  // F-108 (A14-14): asking wards and withdrawing the bed search are the coordinator's
+  // (`EVENT_ROLE.REFER_TO_UNITS`). Both are raised as the coordinator below, so a desk that may never
+  // ask (a ward desk) is not offered them at all: no Ask button and no Withdraw referral.
+  const referAllowed = gate("REFER_TO_UNITS").allowed;
   const canRefer =
-    open && ["placement_requested", "destination_review"].includes(movement.stage) && !movement.acceptedUnitId;
+    referAllowed &&
+    open &&
+    ["placement_requested", "destination_review"].includes(movement.stage) &&
+    !movement.acceptedUnitId;
   const job = movement.transport;
   const activeJob = job && job.cancelledAt === undefined;
   const noTransport = movement.transportNeed?.needed === false && !activeJob;
+  // A9-12 (Audit 9, 13 Nov 2026): the cancel the release hint names, here on the patient page. The
+  // coordinator and the ED may cancel any job the engine would (CANCEL_TRANSPORT); other desks ask.
+  const canCancelTransport =
+    activeJob &&
+    job.collectedAt === undefined &&
+    job.arrivedAt === undefined &&
+    (routeRole === "coordinator" || routeRole === "ed");
   // Reasons a correction button is unavailable. The buttons stay focusable (aria-disabled, not native
   // disabled) and point at these reasons so keyboard and screen-reader users hear why.
   const releasePullBlocked = !releaseReason
@@ -448,56 +469,58 @@ export function PatientTransitOperations({
           </label>
         </div>
       )}
-      <div className={styles.cardFooter}>
-        <span data-testid="ward-ask-count">
-          {selectedTargets.length} of {askSlots} chosen
-        </span>
-        {overCap ? (
-          <span role="status" className={styles.deckHint} data-testid="ward-ask-over-cap">
-            This asks more wards than the usual limit of {referralCap}. You can still ask.
+      {referAllowed ? (
+        <div className={styles.cardFooter}>
+          <span data-testid="ward-ask-count">
+            {selectedTargets.length} of {askSlots} chosen
           </span>
-        ) : null}
-        {selectedTargets.length === 0 ? (
-          <span id={`${baseId}-refer-wards-disabled-guidance`} className="sr-only">
-            Tick at least one ward that fits before asking.
-          </span>
-        ) : null}
-        <button
-          type="button"
-          className={styles.primary}
-          aria-disabled={askButtonUnavailable ? "true" : undefined}
-          aria-describedby={selectedTargets.length === 0 ? `${baseId}-refer-wards-disabled-guidance` : undefined}
-          onClick={
-            askButtonUnavailable
-              ? ignoreUnavailableActivation
-              : () => {
-                  setOverrideUnitIds(selectedTargets);
-                  noteAttempt();
-                  askSave.submit(
-                    () =>
-                      dispatch({
-                        type: "REFER_TO_UNITS",
-                        role: "coordinator",
-                        now,
-                        movementId: movement.id,
-                        unitIds: selectedTargets,
-                        ...(needsGenderPlacement && genderReason && wardChecked
-                          ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
-                          : {}),
-                      }),
-                    () => setSelected([]),
-                  );
-                }
-          }
-        >
-          {selectedTargets.length === 0
-            ? askSlots === 0
-              ? "Pick a ward"
-              : `Pick up to ${askSlots} ward${askSlots === 1 ? "" : "s"}`
-            : `Ask ${selectedTargets.length} ward${selectedTargets.length === 1 ? "" : "s"}`}{" "}
-          <ArrowRight size={16} aria-hidden="true" />
-        </button>
-      </div>
+          {overCap ? (
+            <span role="status" className={styles.deckHint} data-testid="ward-ask-over-cap">
+              This asks more wards than the usual limit of {referralCap}. You can still ask.
+            </span>
+          ) : null}
+          {selectedTargets.length === 0 ? (
+            <span id={`${baseId}-refer-wards-disabled-guidance`} className="sr-only">
+              Tick at least one ward that fits before asking.
+            </span>
+          ) : null}
+          <button
+            type="button"
+            className={styles.primary}
+            aria-disabled={askButtonUnavailable ? "true" : undefined}
+            aria-describedby={selectedTargets.length === 0 ? `${baseId}-refer-wards-disabled-guidance` : undefined}
+            onClick={
+              askButtonUnavailable
+                ? ignoreUnavailableActivation
+                : () => {
+                    setOverrideUnitIds(selectedTargets);
+                    noteAttempt();
+                    askSave.submit(
+                      () =>
+                        dispatch({
+                          type: "REFER_TO_UNITS",
+                          role: "coordinator",
+                          now,
+                          movementId: movement.id,
+                          unitIds: selectedTargets,
+                          ...(needsGenderPlacement && genderReason && wardChecked
+                            ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
+                            : {}),
+                        }),
+                      () => setSelected([]),
+                    );
+                  }
+            }
+          >
+            {selectedTargets.length === 0
+              ? askSlots === 0
+                ? "Pick a ward"
+                : `Pick up to ${askSlots} ward${askSlots === 1 ? "" : "s"}`
+              : `Ask ${selectedTargets.length} ward${selectedTargets.length === 1 ? "" : "s"}`}{" "}
+            <ArrowRight size={16} aria-hidden="true" />
+          </button>
+        </div>
+      ) : null}
       {askSave.error ? (
         <p className={styles.deckHint} role="alert" data-testid="ward-transit-ask-failure">
           {askSave.error}
@@ -574,16 +597,15 @@ export function PatientTransitOperations({
                     },
                     {
                       success: "Bed pulled",
-                      undo: (at) => ({
-                        type: "RELEASE_PULL",
-                        role: routeRole,
-                        now: at,
-                        movementId: movement.id,
-                        reason: "pull_made_in_error",
-                        ...(routeRole === "ward" ? { actingUnitId: destination.id } : {}),
-                        expectedPull,
-                      }),
-                      undone: "Bed pull undone.",
+                      undo: (at) =>
+                        bedPullUndoEvent(routeRole, at, {
+                          movementId: movement.id,
+                          ...expectedPull,
+                          ...(routeRole === "ward" ? { actingUnitId: destination.id } : {}),
+                        }),
+                      undone: BED_PULL_UNDONE,
+                      // A9-02: the Undo stays offered for the whole Undo window, or until dismissed.
+                      undoToastMs: BED_PULL_UNDO_TOAST_MS,
                     },
                   );
                 }}
@@ -594,8 +616,16 @@ export function PatientTransitOperations({
               {holdGate.note}
             </>
           )}
-          {remaining !== undefined && (
-            <p className={styles.hold} role="status">
+          {/* F-106 (A14-04): once the person has arrived, or the journey is closed, the bed is no
+              longer held for them, so the pull timer goes with it rather than lingering until Esc. */}
+          {open && remaining === undefined && movement.stage === "pulled" && (
+            // D-187 (F-46): a pull with no limit recorded says so, never a default.
+            <p className={styles.hold} role="status" data-testid="ward-patient-transit-pull-timer">
+              Bed pulled · {PULL_NO_LIMIT_RECORDED}
+            </p>
+          )}
+          {open && remaining !== undefined && (
+            <p className={styles.hold} role="status" data-testid="ward-patient-transit-pull-timer">
               {remaining <= 0
                 ? "Pull time limit passed. The bed stays pulled until released or given a new limit."
                 : `Bed pulled · ${splitDuration(remaining)} left · Pull time limit ${clock(movement.pullExpiresAt!)}${movement.pullExtensions?.length ? " · extended" : ""}`}
@@ -841,6 +871,46 @@ export function PatientTransitOperations({
             </div>
           </div>
           <div className={styles.cardBody}>
+            {canCancelTransport && (
+              <details data-testid="ward-patient-cancel-transport">
+                <summary>Cancel transport</summary>
+                <ChipGroup label="Reason for cancelling">
+                  {CANCEL_TRANSPORT_REASONS.map((r) => (
+                    <FilterChip key={r} pressed={cancelReason === r} onPressedChange={() => setCancelReason(r)}>
+                      {changeReasonLabels[r]}
+                    </FilterChip>
+                  ))}
+                </ChipGroup>
+                <p className={styles.deckHint} id={`${baseId}-cancel-transport-who`}>
+                  For {identity}. The bed stays pulled.
+                </p>
+                <button
+                  type="button"
+                  className={styles.secondary}
+                  aria-disabled={cancelReason ? undefined : "true"}
+                  aria-describedby={`${baseId}-cancel-transport-who`}
+                  title={cancelReason ? undefined : "Choose a reason first"}
+                  onClick={(e) => {
+                    if (!cancelReason) {
+                      ignoreUnavailableActivation(e);
+                      return;
+                    }
+                    noteAttempt();
+                    wardRaise(
+                      dispatch,
+                      routeRole,
+                      now,
+                    )("CANCEL_TRANSPORT", {
+                      movementId: movement.id,
+                      reason: cancelReason,
+                    });
+                    setCancelReason("");
+                  }}
+                >
+                  Cancel transport
+                </button>
+              </details>
+            )}
             {movement.stage === "pulled" && (
               <details>
                 <summary>Release bed pull</summary>
@@ -894,7 +964,9 @@ export function PatientTransitOperations({
                 </button>
                 {activeJob && (
                   <p className={styles.deckHint}>
-                    Cancel the transport job in additional controls before releasing the bed.
+                    {canCancelTransport
+                      ? "Cancel transport above before releasing the bed."
+                      : "The team that booked transport cancels it before the bed can be released."}
                   </p>
                 )}
               </details>
@@ -1077,7 +1149,9 @@ export function PatientTransitOperations({
                   : cadNumberToFollow(job)
                     ? // CAD to follow (Josh, 27 Oct 2026): a dispatched job booked before the number came.
                       CAD_TO_FOLLOW
-                    : `CAD ${job.cadNumber ?? "not recorded"}`
+                    : job.cadNumber
+                      ? cadNumberLine(job.cadNumber)
+                      : "CAD not recorded"
                 : "Sending team records booking"}
             </small>
           </div>

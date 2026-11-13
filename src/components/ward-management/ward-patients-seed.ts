@@ -1,6 +1,16 @@
 import type { Patient } from "@/components/ward-management/ward-patients";
 import type { RecordedSex, ReferralGender } from "@/components/ward-management/ward-model";
 
+import { GENERATED_FAMILY_NAMES, GENERATED_GIVEN_NAMES_BY_SEX, GIVEN_NAME_COUNT } from "./ward-generated-names-seed";
+import { sampleIsoDay } from "./ward-sample-days";
+import { GENERAL_PRACTITIONERS, generalPractitionerLine } from "./ward-staff-names-seed";
+
+/** A16-21 (Audit 16, 13 Nov 2026): every GP line comes from the one staff name list, so no GP shares
+ *  a name with a patient or with the signed-in desk, and no practice is a real suburb or a pun. */
+function gp(slot: number): string {
+  return generalPractitionerLine(GENERAL_PRACTITIONERS[slot % GENERAL_PRACTITIONERS.length]!);
+}
+
 /**
  * Synthetic patients, and the names are a deliberate choice rather than filler.
  *
@@ -63,7 +73,7 @@ export const wardPatients: Patient[] = [
     gender: "Female",
     address: "No. 7, Ashfield",
     suburb: "Ashfield",
-    generalPractitioner: "Dr A. Farrowmere, Hallowcrest Family Medical",
+    generalPractitioner: gp(0),
     catchmentCommunityTeam: "Midland Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -80,14 +90,14 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 23, Bassendean",
     suburb: "Bassendean",
-    generalPractitioner: "Dr T. Oakenfell, Marrowvale Medical Centre",
+    generalPractitioner: gp(1),
     catchmentCommunityTeam: "Midland Community Team",
     legalStatus: "Involuntary inpatient",
     aboriginalOrTorresStraitIslanderStatus: "Not stated",
     interpreterLanguage: "Vietnamese — interpreter required",
     // Care plans and safety flags (9 Nov 2026), synthetic: a hearing date that has passed with no
     // outcome recorded, and cultural support the family asked for.
-    tribunalHearing: { date: "2026-11-04", time: "10:00", recordedAt: -2880, recordedBy: "ward" },
+    tribunalHearing: { date: sampleIsoDay(-5), time: "10:00", recordedAt: -2880, recordedBy: "ward" },
     culturalSupportRequested: "Other cultural support",
   },
   {
@@ -101,7 +111,7 @@ export const wardPatients: Patient[] = [
     gender: "Female",
     address: "No. 5, Cannington",
     suburb: "Cannington",
-    generalPractitioner: "Dr S. Brackenridge, Quillcross Family Practice",
+    generalPractitioner: gp(2),
     catchmentCommunityTeam: "Bentley Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Aboriginal, not Torres Strait Islander",
@@ -118,7 +128,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 118, Beckenham",
     suburb: "Beckenham",
-    generalPractitioner: "Dr L. Winterthorn, Oquincrest Medical",
+    generalPractitioner: gp(3),
     catchmentCommunityTeam: "Bentley Community Team",
     legalStatus: "Community treatment order",
     aboriginalOrTorresStraitIslanderStatus: "Not stated",
@@ -135,7 +145,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 61, Bertram",
     suburb: "Bertram",
-    generalPractitioner: "Dr M. Ashgrove, Vandersloot Family Clinic",
+    generalPractitioner: gp(4),
     catchmentCommunityTeam: "Rockingham Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Torres Strait Islander, not Aboriginal",
@@ -152,7 +162,7 @@ export const wardPatients: Patient[] = [
     gender: "Female",
     address: "No. 34, Caversham",
     suburb: "Caversham",
-    generalPractitioner: "Dr R. Thistledown, Blennerhast Medical Group",
+    generalPractitioner: gp(5),
     catchmentCommunityTeam: "Midland Community Team",
     legalStatus: "Involuntary inpatient",
     aboriginalOrTorresStraitIslanderStatus: "Not stated",
@@ -172,7 +182,7 @@ export const wardPatients: Patient[] = [
     sex: "Female",
     address: "No. 9, Como",
     suburb: "Como",
-    generalPractitioner: "Dr J. Hollowfield, Farrowmere Medical Centre",
+    generalPractitioner: gp(6),
     catchmentCommunityTeam: "Bentley Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Aboriginal and Torres Strait Islander",
@@ -189,7 +199,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 88, East Fremantle",
     suburb: "East Fremantle",
-    generalPractitioner: "Dr E. Cresswick, Oakenfell Community Health",
+    generalPractitioner: gp(7),
     catchmentCommunityTeam: "Alma Street (Fremantle) Community Team",
     legalStatus: "Community treatment order",
     aboriginalOrTorresStraitIslanderStatus: "Not stated",
@@ -206,7 +216,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 14, Dianella",
     suburb: "Dianella",
-    generalPractitioner: "Dr K. Sunder, Dianella Family Practice",
+    generalPractitioner: gp(8),
     catchmentCommunityTeam: "Mirrabooka Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -223,7 +233,7 @@ export const wardPatients: Patient[] = [
     gender: "Female",
     address: "No. 29, Mirrabooka",
     suburb: "Mirrabooka",
-    generalPractitioner: "Dr N. Al-Mansoor, Mirrabooka Health Centre",
+    generalPractitioner: gp(9),
     catchmentCommunityTeam: "Mirrabooka Community Team",
     legalStatus: "Involuntary inpatient",
     aboriginalOrTorresStraitIslanderStatus: "Not stated",
@@ -240,7 +250,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 41, Fremantle",
     suburb: "Fremantle",
-    generalPractitioner: "Dr G. Vance, Portside Medical Practice",
+    generalPractitioner: gp(10),
     catchmentCommunityTeam: "Alma Street (Fremantle) Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -257,7 +267,7 @@ export const wardPatients: Patient[] = [
     gender: "Female",
     address: "No. 76, Rockingham",
     suburb: "Rockingham",
-    generalPractitioner: "Dr C. Lindell, Coastline Medical Group",
+    generalPractitioner: gp(11),
     catchmentCommunityTeam: "Rockingham Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -274,7 +284,7 @@ export const wardPatients: Patient[] = [
     gender: "Female",
     address: "No. 53, Midland",
     suburb: "Midland",
-    generalPractitioner: "Dr M. Bellini, Swan Valley Health Clinic",
+    generalPractitioner: gp(12),
     catchmentCommunityTeam: "Midland Community Team",
     legalStatus: "Involuntary inpatient",
     aboriginalOrTorresStraitIslanderStatus: "Not stated",
@@ -291,7 +301,7 @@ export const wardPatients: Patient[] = [
     gender: "Female",
     address: "No. 19, Midland",
     suburb: "Midland",
-    generalPractitioner: "Dr H. Zhang, Midland Central Medical",
+    generalPractitioner: gp(13),
     catchmentCommunityTeam: "Midland Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -308,7 +318,7 @@ export const wardPatients: Patient[] = [
     gender: "Female",
     address: "No. 82, Armadale",
     suburb: "Armadale",
-    generalPractitioner: "Dr T. Harbi, Armadale Family Clinic",
+    generalPractitioner: gp(0),
     catchmentCommunityTeam: "Armadale Community Team",
     legalStatus: "Involuntary inpatient",
     aboriginalOrTorresStraitIslanderStatus: "Not stated",
@@ -327,7 +337,7 @@ export const wardPatients: Patient[] = [
     gender: "Non-binary",
     address: "No. 104, Bentley",
     suburb: "Bentley",
-    generalPractitioner: "Dr D. Winter, Hillview Health Practice",
+    generalPractitioner: gp(1),
     catchmentCommunityTeam: "Bentley Community Team",
     legalStatus: "Community treatment order",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -344,7 +354,7 @@ export const wardPatients: Patient[] = [
     gender: "Female",
     address: "No. 12, Caversham",
     suburb: "Caversham",
-    generalPractitioner: "Dr R. Thistledown, Blennerhast Medical Group",
+    generalPractitioner: gp(5),
     catchmentCommunityTeam: "Midland Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Aboriginal, not Torres Strait Islander",
@@ -361,7 +371,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 67, Como",
     suburb: "Como",
-    generalPractitioner: "Dr J. Hollowfield, Farrowmere Medical Centre",
+    generalPractitioner: gp(6),
     catchmentCommunityTeam: "Bentley Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -378,7 +388,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 44, Armadale",
     suburb: "Armadale",
-    generalPractitioner: "Dr T. Harbi, Armadale Family Clinic",
+    generalPractitioner: gp(0),
     catchmentCommunityTeam: "Armadale Community Team",
     legalStatus: "Community treatment order",
     aboriginalOrTorresStraitIslanderStatus: "Aboriginal, not Torres Strait Islander",
@@ -395,7 +405,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 19, Fremantle",
     suburb: "Fremantle",
-    generalPractitioner: "Dr C. Rowan, Port City Practice",
+    generalPractitioner: gp(2),
     catchmentCommunityTeam: "Alma Street (Fremantle) Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -412,7 +422,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 52, Rockingham",
     suburb: "Rockingham",
-    generalPractitioner: "Dr M. O'Shea, Coastal Family Medical",
+    generalPractitioner: gp(3),
     catchmentCommunityTeam: "Rockingham Community Team",
     legalStatus: "Involuntary inpatient",
     aboriginalOrTorresStraitIslanderStatus: "Not stated",
@@ -429,7 +439,7 @@ export const wardPatients: Patient[] = [
     gender: "Female",
     address: "No. 8, Subiaco",
     suburb: "Subiaco",
-    generalPractitioner: "Dr H. Vance, Parkview Health",
+    generalPractitioner: gp(4),
     catchmentCommunityTeam: "Inner City Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -446,7 +456,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 14, Greenfields",
     suburb: "Greenfields",
-    generalPractitioner: "Dr E. Waters, Peel Family Practice",
+    generalPractitioner: gp(5),
     catchmentCommunityTeam: "Peel Community Team",
     legalStatus: "Involuntary inpatient",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -457,13 +467,14 @@ export const wardPatients: Patient[] = [
     umrn: "UM100024",
     givenName: "Ivo",
     familyName: "Bramblewick",
-    dateOfBirth: "2002-04-11",
+    // Time audit G5: 2003, not 2002, so this youth-ward person is still 24 at most through 2027.
+    dateOfBirth: "2003-04-11",
     preferredName: "Ivo",
     sex: "Male",
     gender: "Male",
     address: "No. 16, Joondalup",
     suburb: "Joondalup",
-    generalPractitioner: "Dr S. Chen, Lakeside Medical Group",
+    generalPractitioner: gp(6),
     catchmentCommunityTeam: "Joondalup Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Torres Strait Islander, not Aboriginal",
@@ -480,7 +491,7 @@ export const wardPatients: Patient[] = [
     gender: "Female",
     address: "No. 29, Stirling",
     suburb: "Stirling",
-    generalPractitioner: "Dr K. Patel, Stirling Cross Health",
+    generalPractitioner: gp(7),
     catchmentCommunityTeam: "Stirling Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -497,7 +508,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 102, Albany",
     suburb: "Albany",
-    generalPractitioner: "Dr G. Hughes, Harbour Medical",
+    generalPractitioner: gp(8),
     catchmentCommunityTeam: "Albany Community Team",
     legalStatus: "Involuntary inpatient",
     aboriginalOrTorresStraitIslanderStatus: "Aboriginal, not Torres Strait Islander",
@@ -514,7 +525,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 14, Bunbury",
     suburb: "Bunbury",
-    generalPractitioner: "Dr B. Craig, South West Health",
+    generalPractitioner: gp(9),
     catchmentCommunityTeam: "Bunbury Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -531,7 +542,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 37, Geraldton",
     suburb: "Geraldton",
-    generalPractitioner: "Dr N. Brand, Batavia Medical",
+    generalPractitioner: gp(10),
     catchmentCommunityTeam: "Geraldton Community Team",
     legalStatus: "Community treatment order",
     aboriginalOrTorresStraitIslanderStatus: "Aboriginal and Torres Strait Islander",
@@ -548,7 +559,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 88, Kalgoorlie",
     suburb: "Kalgoorlie",
-    generalPractitioner: "Dr W. Gold, Goldfields Medical Centre",
+    generalPractitioner: gp(11),
     catchmentCommunityTeam: "Kalgoorlie Community Team",
     legalStatus: "Involuntary inpatient",
     aboriginalOrTorresStraitIslanderStatus: "Not stated",
@@ -565,7 +576,7 @@ export const wardPatients: Patient[] = [
     gender: "Female",
     address: "No. 5, Falcon",
     suburb: "Falcon",
-    generalPractitioner: "Dr E. Waters, Peel Family Practice",
+    generalPractitioner: gp(5),
     catchmentCommunityTeam: "Peel Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -582,7 +593,7 @@ export const wardPatients: Patient[] = [
     gender: "Female",
     address: "No. 63, Midland",
     suburb: "Midland",
-    generalPractitioner: "Dr A. Farrowmere, Hallowcrest Family Medical",
+    generalPractitioner: gp(0),
     catchmentCommunityTeam: "Midland Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -599,7 +610,7 @@ export const wardPatients: Patient[] = [
     gender: "Female",
     address: "No. 91, Cannington",
     suburb: "Cannington",
-    generalPractitioner: "Dr S. Brackenridge, Quillcross Family Practice",
+    generalPractitioner: gp(2),
     catchmentCommunityTeam: "Bentley Community Team",
     legalStatus: "Involuntary inpatient",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -616,7 +627,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 22, Victoria Park",
     suburb: "Victoria Park",
-    generalPractitioner: "Dr J. Hollowfield, Farrowmere Medical Centre",
+    generalPractitioner: gp(6),
     catchmentCommunityTeam: "Bentley Community Team",
     legalStatus: "Community treatment order",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -633,7 +644,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 110, Perth",
     suburb: "Perth",
-    generalPractitioner: "Dr H. Vance, Parkview Health",
+    generalPractitioner: gp(4),
     catchmentCommunityTeam: "Inner City Community Team",
     legalStatus: "Involuntary inpatient",
     aboriginalOrTorresStraitIslanderStatus: "Aboriginal, not Torres Strait Islander",
@@ -650,7 +661,7 @@ export const wardPatients: Patient[] = [
     gender: "Female",
     address: "No. 18, Balcatta",
     suburb: "Balcatta",
-    generalPractitioner: "Dr V. Karrin, Balcatta Family Practice",
+    generalPractitioner: gp(12),
     catchmentCommunityTeam: "Stirling Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -667,7 +678,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 47, Guildford",
     suburb: "Guildford",
-    generalPractitioner: "Dr T. Swan, Swan Valley Medical Centre",
+    generalPractitioner: gp(13),
     catchmentCommunityTeam: "Midland Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Not stated",
@@ -678,8 +689,8 @@ export const wardPatients: Patient[] = [
         id: "PT-036-CP-1",
         type: "Community care plan",
         agreedBy: "Midland Community Team",
-        agreedOn: "2026-03-12",
-        reviewOn: "2026-09-12",
+        agreedOn: sampleIsoDay(-242),
+        reviewOn: sampleIsoDay(-58),
         helps: ["Known staff member"],
         status: "Superseded",
         recordedAt: -2880,
@@ -689,8 +700,8 @@ export const wardPatients: Patient[] = [
         id: "PT-036-CP-2",
         type: "Frequent presenter plan",
         agreedBy: "Midland Community Team with ED",
-        agreedOn: "2026-10-06",
-        reviewOn: "2027-01-06",
+        agreedOn: sampleIsoDay(-34),
+        reviewOn: sampleIsoDay(58),
         contactName: "Case manager, Midland team",
         contactPhone: "08 5550 0990",
         helps: ["Quiet space", "Family or carer involved early", "Contact the community team"],
@@ -713,7 +724,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 31, Ellenbrook",
     suburb: "Ellenbrook",
-    generalPractitioner: "Dr T. Oakenfell, Marrowvale Medical Centre",
+    generalPractitioner: gp(1),
     catchmentCommunityTeam: "Midland Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -730,7 +741,7 @@ export const wardPatients: Patient[] = [
     gender: "Female",
     address: "No. 76, Claremont",
     suburb: "Claremont",
-    generalPractitioner: "Dr H. Vance, Parkview Health",
+    generalPractitioner: gp(4),
     catchmentCommunityTeam: "Inner City Community Team",
     legalStatus: "Community treatment order",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -747,7 +758,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 58, Baldivis",
     suburb: "Baldivis",
-    generalPractitioner: "Dr M. O'Shea, Coastal Family Medical",
+    generalPractitioner: gp(3),
     catchmentCommunityTeam: "Rockingham Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -764,7 +775,7 @@ export const wardPatients: Patient[] = [
     gender: "Female",
     address: "No. 83, Scarborough",
     suburb: "Scarborough",
-    generalPractitioner: "Dr K. Patel, Stirling Cross Health",
+    generalPractitioner: gp(7),
     catchmentCommunityTeam: "Stirling Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Aboriginal, not Torres Strait Islander",
@@ -781,7 +792,7 @@ export const wardPatients: Patient[] = [
     gender: "Female",
     address: "No. 42, Joondalup",
     suburb: "Joondalup",
-    generalPractitioner: "Dr S. Chen, Lakeside Medical Group",
+    generalPractitioner: gp(6),
     catchmentCommunityTeam: "Joondalup Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -798,7 +809,7 @@ export const wardPatients: Patient[] = [
     gender: "Male",
     address: "No. 19, Midland",
     suburb: "Midland",
-    generalPractitioner: "Dr T. Oakenfell, Marrowvale Medical Centre",
+    generalPractitioner: gp(1),
     catchmentCommunityTeam: "East Metro Youth Community Team",
     legalStatus: "Detained awaiting examination",
     aboriginalOrTorresStraitIslanderStatus: "Neither Aboriginal nor Torres Strait Islander",
@@ -815,7 +826,7 @@ export const wardPatients: Patient[] = [
     gender: "Female",
     address: "No. 88, Nedlands",
     suburb: "Nedlands",
-    generalPractitioner: "Dr H. Vance, Parkview Health",
+    generalPractitioner: gp(4),
     catchmentCommunityTeam: "Inner City Community Team",
     legalStatus: "Detained awaiting examination",
     aboriginalOrTorresStraitIslanderStatus: "Not stated",
@@ -1472,6 +1483,30 @@ export const wardPatients: Patient[] = [
     suburb: "Kalgoorlie",
     catchmentCommunityTeam: "Kalgoorlie Community Team",
   },
+  // F-148 (13 Nov 2026): every sample planned admission names a synthetic person, so a booking shows a
+  // full name beside its UMRN, never "Initials JM" (D-113 two-point ID).
+  {
+    id: "PT-105", // PA-SEED-01
+    umrn: "UM100105",
+    givenName: "Jonah",
+    familyName: "Mallowbrook",
+    dateOfBirth: "1977-09-03",
+    sex: "Male",
+    gender: "Male",
+    suburb: "Cannington",
+    catchmentCommunityTeam: "Bentley Community Team",
+  },
+  {
+    id: "PT-106", // PA-SEED-03
+    umrn: "UM100106",
+    givenName: "Rhea",
+    familyName: "Kindlewater",
+    dateOfBirth: "1986-04-19",
+    sex: "Female",
+    gender: "Female",
+    suburb: "East Fremantle",
+    catchmentCommunityTeam: "Alma Street (Fremantle) Community Team",
+  },
 ];
 
 /**
@@ -1502,59 +1537,6 @@ export const wardPatients: Patient[] = [
  * `PT-G-<record id>` is not a plausible record id (no seeded id anywhere in this fixture takes that
  * shape), and `UM5xxxxx` is a distinct number band from the hand-authored `UM1000xx` series.
  */
-
-/** Two fixed lists a generated patient's name is drawn from "by index" (section 3) — deliberately
- *  a different naming style from the hand-authored compound surnames above, so a generated patient
- *  is recognisably from this list rather than a copy of a hand-authored one. Checked against every
- *  family name above: none shares a name or a near-miss spelling with the hand-authored set, so
- *  `nearPatients`/`findPatients` cannot confuse a generated occupant with a named record. */
-// Every given name holds an "a", so typing "a" finds every seeded person (the typeahead scroll
-// test's invariant, pinned in tests/ward-patient-model.test.ts as WF-PAT-02).
-const GENERATED_GIVEN_NAMES = [
-  "Alaric",
-  "Bramwen",
-  "Calder",
-  "Delia",
-  "Eamon",
-  "Fiora",
-  "Gareth",
-  "Hazelle",
-  "Isadora",
-  "Junia",
-  "Kalan",
-  "Lark",
-  "Maren",
-  "Nolan",
-  "Orla",
-  "Petra",
-  "Quinta",
-  "Reya",
-  "Sabine",
-  "Tansy",
-] as const;
-
-const GENERATED_FAMILY_NAMES = [
-  "Ferrowmoor",
-  "Glasswell",
-  "Huntmire",
-  "Inkstone",
-  "Jorrowfen",
-  "Kellbourne",
-  "Linforth",
-  "Moongate",
-  "Norrowfield",
-  "Oxleyburn",
-  "Pallowmere",
-  "Quenfold",
-  "Ridgeholt",
-  "Stonevale",
-  "Trelling",
-  "Umberleigh",
-  "Vosswick",
-  "Whistlecombe",
-  "Yarrowfen",
-  "Zelmsworth",
-] as const;
 
 export type GeneratedSeedPatientCohort = "Youth" | "Adult" | "Older adult";
 
@@ -1589,10 +1571,16 @@ export type GeneratedSeedPatientInput = {
 };
 
 /** Whole-year age band per cohort that `cohortFitsAge` accepts (`ward-patients.ts`): Youth up to 24
- *  (a youth service may accept 18 to 24), Older adult 65 or over, Adult between. */
+ *  (a youth service may accept 18 to 24), Older adult 65 or over, Adult between.
+ *
+ *  Time audit G5 (13 Nov 2026): the demo's day is the real Perth date, so a seeded person ages. A
+ *  band that used its full span put its oldest people out of band at their first birthday in the
+ *  next year (from February 2027 a 24 year old "Youth" read as an adult outside the youth band). Each
+ *  band whose top is a cohort boundary keeps one year of headroom, so nobody generated in
+ *  `REFERENCE_YEAR` leaves their band before the end of the following year. */
 const COHORT_AGE_RANGE: Record<GeneratedSeedPatientCohort, { readonly min: number; readonly span: number }> = {
-  Youth: { min: 16, span: 9 }, // 16–24
-  Adult: { min: 25, span: 40 }, // 25–64
+  Youth: { min: 16, span: 8 }, // 16–23, so 24 at most through the end of the next year
+  Adult: { min: 25, span: 39 }, // 25–63, so 64 at most through the end of the next year
   "Older adult": { min: 65, span: 20 }, // 65–84
 };
 
@@ -1603,6 +1591,31 @@ const REFERENCE_YEAR = 2026;
 
 function pad2(value: number): string {
   return String(value).padStart(2, "0");
+}
+
+/**
+ * A16-01 (Audit 16, 13 Nov 2026): the old pairing moved the surname on once every twenty people, and
+ * occupants are listed ward by ward, so one surname filled a whole ward. Now the surname steps by
+ * `SURNAME_STRIDE` places from one person to the next, so neighbours on a ward differ, and the given
+ * name comes from the recorded sex's list.
+ *
+ * Why the caller's index and not a hash of the record id: the index is already this person's stable,
+ * unique number, and a stride over it is one to one. Each (given slot, surname slot) pair is used once
+ * for the first 400 indexes (20 x 20), so no two generated people share a full name (CS-16, Audit 1).
+ * A hash of the record id cannot promise that with lists this short. The stride is coprime with the
+ * surname count, and so is `GIVEN_NAME_COUNT x SURNAME_STRIDE + 1`, which is what makes it one to one.
+ */
+const SURNAME_STRIDE = 7;
+
+function generatedName(sex: RecordedSex, index: number): { givenName: string; familyName: string } {
+  const list =
+    sex === "Female" || sex === "Male"
+      ? GENERATED_GIVEN_NAMES_BY_SEX[sex]
+      : GENERATED_GIVEN_NAMES_BY_SEX["Not recorded"];
+  const givenSlot = index % GIVEN_NAME_COUNT;
+  const round = Math.floor(index / GIVEN_NAME_COUNT);
+  const surnameSlot = (index * SURNAME_STRIDE + round) % GENERATED_FAMILY_NAMES.length;
+  return { givenName: list[givenSlot]!, familyName: GENERATED_FAMILY_NAMES[surnameSlot]! };
 }
 
 /**
@@ -1623,11 +1636,7 @@ export function generateSeedPatient(input: GeneratedSeedPatientInput): Patient {
   const birthMonth = (index % 7) + 1; // January–July, always before the August reference day
   const birthDay = (index % 27) + 1; // 1–27, valid in every month
 
-  const givenName = GENERATED_GIVEN_NAMES[index % GENERATED_GIVEN_NAMES.length];
-  // The family name moves on once every twenty patients, so the two lists pair up 400 ways rather
-  // than the same twenty pairs repeating.
-  const familyName =
-    GENERATED_FAMILY_NAMES[Math.floor(index / GENERATED_GIVEN_NAMES.length) % GENERATED_FAMILY_NAMES.length];
+  const { givenName, familyName } = generatedName(sex, index);
   // UM5xxxxx — a distinct number band from the hand-authored UM1000xx series (section 3), and from
   // UM9xxxxx, which the tests type in as a new person's number and so must never already belong to
   // a seeded one.
@@ -1643,6 +1652,24 @@ export function generateSeedPatient(input: GeneratedSeedPatientInput): Patient {
     ...(gender === undefined ? {} : { gender }),
   };
 }
+
+/**
+ * A16-21 (Audit 16, 13 Nov 2026): the deliberate look-alikes the file comment above describes,
+ * marked in source so the name check can tell a planted near-miss from an accidental one. Any other
+ * two patients whose surnames differ by one or two letters fail `tests/ward-fix-A1-staff-names.test.ts`.
+ */
+export const DELIBERATE_LOOKALIKE_PATIENT_IDS: ReadonlySet<string> = new Set([
+  "PT-001", // Halloway, beside Hallowin
+  "PT-002",
+  "PT-003", // Marrowby, beside Marrowbee
+  "PT-004",
+  "PT-005", // O'Quinn, beside Oquinn
+  "PT-006",
+  "PT-009", // Davenport, beside Davenporton
+  "PT-010",
+  "PT-041", // Thornecliff, beside Thornecliffe
+  "PT-042",
+]);
 
 /**
  * The "combined export" section 4 of the audit plan asks this file to carry: hand-authored

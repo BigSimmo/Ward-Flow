@@ -79,27 +79,27 @@ describe("M103 rendered sheets: print time", () => {
 
   it("the patient chronology says when it was generated, with the full date and zone", () => {
     const { container } = render(inProvider(<PatientChronologyScreen initialPatientId="PT-026" />));
-    expect(text(container)).toMatch(/Generated \w{3} \d{1,2} \w{3} \d{4}, \d{2}:\d{2} AWST/u);
+    expect(text(container)).toMatch(/Generated \w{3} \d{1,2} \w{3} \d{4}, \d{2}:\d{2} demo time/u);
   });
 
   it("the weekly report says when it was generated", () => {
     const { container } = render(inProvider(<WeeklyReportScreen />));
-    expect(text(container)).toMatch(/Generated \w{3} \d{1,2} \w{3} \d{4}\s*,?\s*\d{2}:\d{2} AWST/u);
+    expect(text(container)).toMatch(/Generated \w{3} \d{1,2} \w{3} \d{4}\s*,?\s*\d{2}:\d{2} demo time/u);
   });
 
   it("the discharge board says when its list is as of", () => {
     const { container } = render(inProvider(<DischargeBoard />));
-    expect(text(container)).toMatch(/As of \w{3} \d{1,2} \w{3} \d{4}, \d{2}:\d{2} AWST/u);
+    expect(text(container)).toMatch(/As of \w{3} \d{1,2} \w{3} \d{4}, \d{2}:\d{2} demo time/u);
   });
 
   it("the referral letter carries its draft time", () => {
     const { container } = render(inProvider(<Letter />));
-    expect(text(container)).toMatch(/Draft \d{2}:\d{2} AWST/u);
+    expect(text(container)).toMatch(/Draft \d{2}:\d{2} demo time/u);
   });
 
   it("the daily sheet carries a shift timestamp", () => {
     const { container } = render(inProvider(<WardDailySheet now={NOW_ANCHOR} people={[]} />));
-    expect(text(container)).toMatch(/Shift timestamp: \w{3} \d{1,2} \w{3} \d{4}, \d{2}:\d{2} AWST/u);
+    expect(text(container)).toMatch(/Shift timestamp: \w{3} \d{1,2} \w{3} \d{4}, \d{2}:\d{2} demo time/u);
   });
 });
 

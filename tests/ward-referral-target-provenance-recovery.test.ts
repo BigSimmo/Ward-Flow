@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { seedWardFlowStateAt, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
+import { fixtureWorlds } from "@/components/ward-management/ward-flow-provider-container";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import {
   redactTypedTextForDevice,
@@ -58,7 +59,9 @@ describe("generated referral intake survives reanchored device recovery", () => 
   );
 
   it("keeps all 31 standard intakes after reset onto a positive elapsed anchor", () => {
-    const seed = seedWardFlowStateAt(60);
+    // A16-14 (D-175 item 1): worked examples on, so the reset keeps RF-RD06's intake as well (36),
+    // and the copy is checked against the provider's own fixture worlds, which list them.
+    const seed = seedWardFlowStateAt(60, "standard", { workedExamples: true });
     const advanced = wardFlowReducer(seed, { type: "ADVANCE_CLOCK", role: "demo", now: NOW_ANCHOR + 60, minutes: 45 });
     const reset = freeze(
       wardFlowReducer(advanced, { type: "RESET_SCENARIO", role: "demo", now: NOW_ANCHOR + 60 + 45 + 17 }),
@@ -66,7 +69,7 @@ describe("generated referral intake survives reanchored device recovery", () => 
     expect(reset.auditCaptureStartedAt).toBe(NOW_ANCHOR + 77);
     // 31 -> 36 (3 Nov 2026): the five S6 example referrals carry intakes too.
     expect(reset.referrals.filter((referral) => referral.intake)).toHaveLength(36);
-    const copy = redactTypedTextForDevice(reset, [], worlds);
+    const copy = redactTypedTextForDevice(reset, [], fixtureWorlds);
     expect(copy).not.toBeNull();
     expect(copy!.referrals.filter((referral) => referral.intake)).toHaveLength(36);
     expect(copy!.referrals).toEqual(stored(reset.referrals));

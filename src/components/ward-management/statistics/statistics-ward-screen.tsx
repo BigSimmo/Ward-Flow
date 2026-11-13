@@ -48,6 +48,7 @@ import { wardStatisticsHref } from "@/components/ward-management/shell/ward-faca
 import { STAY_BANDS, daysInBed, stayBand, type Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { MINUTES_PER_DAY, dayOf, formatSheetMoment } from "@/components/ward-management/ward-clock";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 import { SMALL_NUMBER_NOT_SHOWN } from "@/components/ward-management/ward-access-scope";
 import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
@@ -64,6 +65,7 @@ import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { FlushRow, FlushStack } from "./statistics-layout";
 import { occupancyPercent, occupiedBeds } from "./statistics-occupancy";
 import {
+  countInSentence,
   ExecutiveStatisticsUnavailable,
   statisticsCountText,
   exactStatisticsCount,
@@ -325,11 +327,10 @@ function OperationalWardScreen({
           (admission) =>
             admission.state !== "pulled" &&
             admission.expectedDischargeAt !== null &&
-            admission.expectedDischargeAt >= now &&
             dayOf(admission.expectedDischargeAt) === today + offset,
         ).length,
       })),
-    [current, now, today],
+    [current, today],
   );
   const dueThisWeek = useMemo(() => dueByDay.reduce((sum, day) => sum + day.count, 0), [dueByDay]);
   const oldestPulled = useMemo(
@@ -692,14 +693,8 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
   );
 }
 
-/**
- * A count in a sentence. A part withheld only for its total (`SMALL_NUMBER_NOT_SHOWN`) reads "an
- * unstated number"; a worded one takes the plural, so the grammar never gives a 1 away.
- */
-function said(shown: number | string, one?: string, many?: string): string {
-  if (shown === SMALL_NUMBER_NOT_SHOWN) return many ? `an unstated number of ${many}` : "an unstated number";
-  return many ? `${shown} ${shown === 1 ? one : many}` : String(shown);
-}
+/** A count in a sentence: the shared wording (`countInSentence`, F-55). */
+const said = countInSentence;
 
 /** The ward page's day buckets for people in beds now (its "This shift, Stay" chart). */
 const STAY_DAY_BUCKETS = [
@@ -1028,6 +1023,7 @@ function Roster({
   const [filter, setFilter] = useState<RosterFilter>("all");
   // Redesign (owner rule): a long roster opens on its first rows, then "Show more".
   const [expanded, setExpanded] = useState(false);
+  const zone = useClockZoneLabel();
 
   // The admission model records a ward, not a numbered bed: each row is a recorded admission.
   const rows = current.map((admission) => {
@@ -1073,7 +1069,7 @@ function Roster({
       ]),
     ];
     downloadCsv(`ward-flow-synthetic-${unit.id}-roster.csv`, lines, {
-      asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+      asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone }),
       // Audit 24-7 (CT-15): say a search narrowed the rows, never the typed text itself.
       scope: `${unit.name}; matching roster rows; status filter: ${filter}${needle ? "; search applied" : ""}`,
     });

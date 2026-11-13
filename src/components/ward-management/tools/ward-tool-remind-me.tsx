@@ -57,7 +57,7 @@ function movementFrom(edId: string | undefined): string {
 
 export function ToolRemindMe({ onNavigate }: { onNavigate: () => void }) {
   void onNavigate;
-  const { units, movements } = useWardFlowSelect("units", "movements");
+  const { units, movements, dayZero } = useWardFlowSelect("units", "movements", "dayZero");
   const now = useWardFlowClock();
   const access = useEffectiveWardAccess();
   const reminders = useReminders();
@@ -117,7 +117,7 @@ export function ToolRemindMe({ onNavigate }: { onNavigate: () => void }) {
 
   function save() {
     if (!target || !reason) return;
-    addReminder({ kind, targetId: target.id, targetLabel: target.label, reason, dueAt });
+    addReminder({ kind, targetId: target.id, targetLabel: target.label, reason, dueAt, dayZero: dayZero.getTime() });
     setReason(null);
   }
 

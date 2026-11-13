@@ -14,6 +14,7 @@ import {
 import type { Instant } from "@/components/ward-management/ward-clock";
 import {
   useDueSoonThresholds,
+  useOptionalWardFlowSelect,
   useWardFlowSelect,
   useWardNetwork,
 } from "@/components/ward-management/ward-flow-provider";
@@ -84,6 +85,7 @@ export function useWardBarTasks({
   | "plannedAdmissions"
   | "leaveBeds"
 > & { shellRole: WardChromeRole; now: Instant }) {
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   // ⚠️ Audit finding STILL-06 (ward-flow-task-ledger.md §6.3 item 5, 2026-09-16): `buildActionInbox` returns the WHOLE network's
   // outstanding work, and `ACKNOWLEDGE_INBOX_ITEM`/`COMPLETE_INBOX_ITEM`/`REOPEN_INBOX_ITEM` are all
   // `EVENT_ROLE`-gated to `"coordinator"` alone (`ward-flow-events.ts`). `WardTasksDrawer` trusts its
@@ -114,11 +116,13 @@ export function useWardBarTasks({
         plannedAdmissions,
         leaveBeds,
         stuckHandoverMinutes: configuration.transportBookedTargetMinutes,
+        dayZero,
       },
       now,
     );
     return [...rows, ...pullRows];
   }, [
+    dayZero,
     movements,
     now,
     units,

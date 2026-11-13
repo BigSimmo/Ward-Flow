@@ -29,7 +29,7 @@ const TRANSPORT_ITEMS: { id: "" | "waiting" | "collected"; label: string }[] = [
  */
 export function useDischargeDepartureField(
   release: BedRelease | undefined,
-  destination: LeavingDestination,
+  destination: LeavingDestination | "",
   setDeparture: (choice: { releaseId: string; destination: LeavingDestination }) => void,
 ) {
   const [answer, setAnswer] = useState<{ releaseId: string; waiting: boolean } | null>(null);
@@ -38,7 +38,8 @@ export function useDischargeDepartureField(
   // The same reading as the ward board and the reducer: the stay's own hold-up counts too.
   const stay = admissions.find((admission) => admission.id === release.admissionId);
   const pending = stay ? transportPendingFor(stay, [release]) : releaseTransportPending(release);
-  const asks = pending && leftWardAllowedFor(destination);
+  // F-45: nothing is asked about transport until a destination is chosen.
+  const asks = pending && destination !== "" && leftWardAllowedFor(destination);
   const waiting = asks && answer?.releaseId === release.id ? answer.waiting : undefined;
   const field = (
     <>
@@ -51,6 +52,7 @@ export function useDischargeDepartureField(
             setDeparture({ releaseId: release.id, destination: event.target.value as LeavingDestination })
           }
         >
+          <option value="">Choose…</option>
           {LEAVING_DESTINATIONS.map((option) => (
             <option key={option.id} value={option.id}>
               {option.label}
@@ -72,5 +74,9 @@ export function useDischargeDepartureField(
       ) : null}
     </>
   );
-  return { field, unanswered: asks && waiting === undefined, awaitingTransport: waiting === true };
+  return {
+    field,
+    unanswered: destination === "" || (asks && waiting === undefined),
+    awaitingTransport: waiting === true,
+  };
 }
