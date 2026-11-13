@@ -29,7 +29,13 @@ export function useCapacityWardTabs(unitId: string | undefined): {
   return {
     tabs: [
       { id: "ward", label: "Ward" },
-      { id: "discharges", label: "Discharges", count: unitId ? openBedReleases(bedReleases, unitId).length : 0 },
+      // Every open release, whatever its date, as on the ward page (shared design parts item 2).
+      {
+        id: "discharges",
+        label: "Discharges",
+        count: unitId ? openBedReleases(bedReleases, unitId).length : 0,
+        window: "any date",
+      },
     ],
     tab: chosen.unitId === unitId ? chosen.tab : "ward",
     onTabChange: (next) => setChosen({ unitId, tab: next }),

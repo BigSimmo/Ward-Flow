@@ -1199,13 +1199,15 @@ export function WardHomeTab({
           <Segmented
             label="Ward flow list"
             items={[
-              { id: "referrals", label: "Referrals", count: incoming.length },
-              { id: "admissions", label: "Admissions", count: expectedRows.length + leaveRows.length },
+              // Count windows (design parts item 2): admissions and discharges are open items at any date.
+              { id: "referrals", label: "Referrals", count: incoming.length, window: "now" },
               {
-                id: "discharges",
-                label: "Discharges",
-                count: outRows.length,
+                id: "admissions",
+                label: "Admissions",
+                count: expectedRows.length + leaveRows.length,
+                window: "any date",
               },
+              { id: "discharges", label: "Discharges", count: outRows.length, window: "any date" },
             ]}
             value={flowTab}
             onChange={setFlowTab}
@@ -1716,10 +1718,10 @@ export function WardHomeTab({
               <span className={styles.needsText}>
                 <b>Ward flow</b>
                 <span>
-                  {incoming.length} {incoming.length === 1 ? "referral" : "referrals"} ·{" "}
+                  {incoming.length} {incoming.length === 1 ? "referral" : "referrals"} now ·{" "}
                   {expectedRows.length + leaveRows.length}{" "}
-                  {expectedRows.length + leaveRows.length === 1 ? "admission" : "admissions"} · {outRows.length}{" "}
-                  {outRows.length === 1 ? "discharge" : "discharges"}
+                  {expectedRows.length + leaveRows.length === 1 ? "admission" : "admissions"} any date ·{" "}
+                  {outRows.length} {outRows.length === 1 ? "discharge" : "discharges"} any date
                 </span>
               </span>
               <ChevronRight strokeWidth={1.75} size={18} aria-hidden="true" className={styles.needsChevron} />
