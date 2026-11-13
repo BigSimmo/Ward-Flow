@@ -663,7 +663,8 @@ describe("the ward drawer's Discharges tab names its window (D-191 item 5)", () 
     );
     const drawer = openWardDrawer("fre-adult-open");
     const tab = within(drawer).getByRole("tab", { name: /^Discharges/u });
-    expect(tab).toHaveTextContent(/Discharges · any date/u);
+    // Shared design parts item 2: the window word follows the count as a quiet "· any date".
+    expect(tab).toHaveTextContent(/^Discharges\s*\d*\s*· any date$/u);
     expect(tab).not.toHaveTextContent(/Discharges · open/u);
   });
 });

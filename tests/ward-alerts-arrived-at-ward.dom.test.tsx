@@ -14,7 +14,6 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 /**
  * P069, approved by Josh in chat, Oct 27, 2026, 10:02 PM AWST: "P069: yes, approve the Arrived at
@@ -93,9 +92,12 @@ describe("Arrived at ward on a pulled-bed alert (P069)", () => {
       fireEvent.click(screen.getByRole("button", { name: "Mark arrived" }));
     });
     expect(screen.getByTestId("stage")).not.toHaveTextContent("pulled");
-    expect(await screen.findByText(`Synthetic patient arrived at ${unitName}`)).toBeInTheDocument();
+    // D-192 (shared design parts item 4): one clock time in the words, no "min left" countdown.
+    const toast = await screen.findByTestId("toast");
+    expect(toast).toHaveTextContent(`Synthetic patient arrived at ${unitName} · Undo until`);
+    expect(toast).toHaveTextContent(/ · Undo until \d{2}:\d{2}/u);
+    expect(toast).not.toHaveTextContent("min left");
     expect(screen.getByRole("button", { name: /Undo/ })).toBeInTheDocument();
-    expect(screen.getByText(`${UNDO_WINDOW_MINUTES} min left`)).toBeInTheDocument();
   });
 
   it("Cancel records nothing", () => {

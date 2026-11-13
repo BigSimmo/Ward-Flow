@@ -1026,7 +1026,6 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
           aria-label={`${placeSwitch.actionLabel}: ${placeSwitch.label}`}
           onClick={placeSwitch.onPress}
         >
-          <span className={styles.scopeDot} aria-hidden="true" />
           <span className={styles.scopeBadgeLabel}>{placeSwitch.label}</span>
           <ChevronDown className={styles.scopeCaret} aria-hidden="true" strokeWidth={1.75} />
         </button>

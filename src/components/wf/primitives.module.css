@@ -33,6 +33,31 @@
   white-space: nowrap;
 }
 
+/* A count's time window (`WindowWord`): quiet words after a middle dot, never a chip. */
+.win {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.winSep {
+  color: inherit;
+}
+
+/* `WindowWord` with `of`: a count phrase and its window on one line, so running text wraps only
+   between counts. The window keeps its quiet ink-3 against whatever ink the phrase takes. */
+.winGroup {
+  white-space: nowrap;
+}
+
+.winGroup > .win {
+  font-weight: inherit;
+}
+
 /* `.k` count: rounded square, tabular sans (v9), inside tabs, segments and buttons. */
 .count {
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);

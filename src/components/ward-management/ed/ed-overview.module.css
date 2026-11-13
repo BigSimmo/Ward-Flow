@@ -300,39 +300,6 @@
     inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
   }
 
-  .tile::before {
-    flex: none;
-    width: 8px;
-    height: 8px;
-    border-radius: var(--wf-r-pill);
-    background: var(--svc, var(--wf-ink-3));
-    content: "";
-  }
-
-  .tile[data-service="North Metro"] {
-    --svc: var(--wf-svc-north);
-  }
-
-  .tile[data-service="South Metro"] {
-    --svc: var(--wf-svc-south);
-  }
-
-  .tile[data-service="East Metro"] {
-    --svc: var(--wf-svc-east);
-  }
-
-  .tile[data-service="WACHS"] {
-    --svc: var(--wf-svc-wachs);
-  }
-
-  .tile[data-service="CAHS"] {
-    --svc: var(--wf-svc-cahs);
-  }
-
-  .tile[data-service="Private"] {
-    --svc: var(--wf-svc-private);
-  }
-
   .tile.current {
     padding: 0 calc(var(--wf-phone-pill-px) - 1px);
     border: 2px solid var(--wf-accent);

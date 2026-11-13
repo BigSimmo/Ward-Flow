@@ -117,10 +117,7 @@ export function PhoneFocal({
             </button>
           ))}
         </RadioGroup>
-        <span className={styles.focalLabel}>
-          <ServiceTag service={entry.service} label="" />
-          {keyLineLabel(entry)}
-        </span>
+        <span className={styles.focalLabel}>{keyLineLabel(entry)}</span>
         <span className={styles.focalNumber}>{number ?? "Not recorded"}</span>
         <span className={styles.focalUntil}>
           <Until entry={entry} minute={actions.minute} />
@@ -144,7 +141,6 @@ export function PhoneFocal({
       {crisis ? (
         <div className={styles.focalMini}>
           <button type="button" className={styles.focalMiniOpen} onClick={() => onOpen(crisis.id)}>
-            <ServiceTag service={crisis.service} label="" />
             <b>MHERL crisis line</b>
             <span className={styles.spacer} />
             <span className={styles.mono}>{numberAt(crisis, actions.minute) ?? "Not recorded"}</span>
@@ -189,7 +185,7 @@ function PhoneRow({
       <button type="button" className={styles.phoneRowOpen} onClick={() => onOpen(entry.id)}>
         <span className={styles.phoneRowName}>
           <b>
-            {byRole ? <ServiceTag service={entry.service} label="" /> : null}
+            {byRole ? <ServiceTag service={entry.service} /> : null}
             {name}
           </b>
           <span className={styles.phoneRowMeta}>

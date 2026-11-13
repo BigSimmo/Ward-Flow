@@ -184,6 +184,88 @@ describe("chip strip edge fade", () => {
   });
 });
 
+/*
+ * F-61 (PR E review, 13 Nov 2026): a kit strip that scrolls sideways fades at its start too once it
+ * has scrolled away from the start (never before), and its scroll padding keeps a focused or snapped
+ * chip clear of the fades, as the hero and the phone scroll track already did at the right.
+ */
+
+const kitCss = (file: string) => readCss(`src/components/wf/${file}`).replace(/\/\*[\s\S]*?\*\//g, "");
+
+/** The keyframe stops of a named animation, as `{ "0%": body, ... }`. */
+function keyframes(source: string, name: string): Record<string, string> {
+  const start = source.indexOf(`@keyframes ${name} {`);
+  expect(start, name).toBeGreaterThan(-1);
+  const body = source.slice(start, source.indexOf("\n}", start));
+  const stops: Record<string, string> = {};
+  for (const match of body.matchAll(/\n\s*([\d%,\s]+?)\s*\{([^}]*)\}/gu)) {
+    for (const stop of match[1].split(",")) stops[stop.trim()] = match[2];
+  }
+  return stops;
+}
+
+const startFadeProperty = /@property --wf-row-fade-start \{[^}]*syntax: "<length>";[^}]*initial-value: 0px;/u;
+const twoSidedMask =
+  /mask-image: linear-gradient\(\s*(?:to right|90deg),\s*transparent 0,\s*(?:black|#000) var\(--wf-row-fade-start\),/u;
+
+describe("kit chip strips fade at the start once scrolled", () => {
+  it("adds a start fade to the scroll-driven tab, segment and chip rows, 0 at the start", () => {
+    for (const file of ["choice.module.css", "v10-pass2.module.css"]) {
+      const source = kitCss(file);
+      expect(source, file).toMatch(startFadeProperty);
+      const stops = keyframes(source, "wfRowFade");
+      expect(stops["0%"], file).toMatch(/--wf-row-fade-start: 0px;/u);
+      expect(stops["0%"], file).toMatch(/--wf-row-fade: 24px;/u);
+      expect(stops["100%"], file).toMatch(/--wf-row-fade-start: 24px;/u);
+      expect(stops["100%"], file).toMatch(/--wf-row-fade: 0px;/u);
+    }
+    const choice = kitCss("choice.module.css");
+    const tabs = choice.match(/\n {2}\.tabs \{([^}]*)\}/u)?.[1] ?? "";
+    expect(tabs).toMatch(twoSidedMask);
+    expect(tabs).toMatch(/scroll-padding-inline: 24px;/u);
+    const tracks = choice.match(/\.seg,\s*\.trk \{([^}]*mask-image[^}]*)\}/u)?.[1] ?? "";
+    expect(tracks).toMatch(twoSidedMask);
+    expect(tracks).toMatch(/scroll-padding-inline: 24px;/u);
+
+    const pass2 = kitCss("v10-pass2.module.css");
+    const chips = pass2.match(/\.chips \{([^}]*animation-name: wfRowFade;[^}]*)\}/u)?.[1] ?? "";
+    expect(chips).toMatch(twoSidedMask);
+    expect(chips).toMatch(/scroll-padding-inline: 24px;/u);
+  });
+
+  it("adds a start fade to the hero chips and cells, with the snap stop clear of it", () => {
+    const hero = kitCss("hero-top.module.css");
+    expect(hero).toMatch(startFadeProperty);
+    const stops = keyframes(hero, "wfRowFadeStart");
+    expect(stops["0%"]).toMatch(/--wf-row-fade-start: 0px;/u);
+    expect(stops["100%"]).toMatch(/--wf-row-fade-start: 36px;/u);
+    const strip = hero.match(/\.chips,\s*\.cells \{([^}]*overflow-x: auto;[^}]*)\}/u)?.[1] ?? "";
+    expect(strip).toMatch(twoSidedMask);
+    expect(strip).toMatch(/black calc\(100% - 36px\)/u);
+    expect(strip).toMatch(/scroll-padding-right: 48px;/u);
+    const scrolled =
+      hero.match(/@supports \(animation-timeline: scroll\(\)\) \{\s*\.chips,\s*\.cells \{([^}]*)\}/u)?.[1] ?? "";
+    expect(scrolled).toMatch(/scroll-padding-left: 48px;/u);
+    expect(scrolled).toMatch(/animation-name: wfRowFadeStart;\s*animation-duration: 1ms;/u);
+    expect(scrolled).toMatch(/animation-timeline: scroll\(self inline\);/u);
+  });
+
+  it("adds a start fade to the shared phone chip row, with focus clear of both fades", () => {
+    const rows = kitCss("phone-rows.module.css");
+    expect(rows).toMatch(startFadeProperty);
+    const stops = keyframes(rows, "wfRowFadeStart");
+    expect(stops["0%"]).toMatch(/--wf-row-fade-start: 0px;/u);
+    expect(stops["100%"]).toMatch(/--wf-row-fade-start: 28px;/u);
+    const row = rows.match(/\.chipRow\.chipRow \{([^}]*overflow-x: auto;[^}]*)\}/u)?.[1] ?? "";
+    expect(row).toMatch(twoSidedMask);
+    expect(row).toMatch(/scroll-padding-inline: 28px;/u);
+    const scrolled =
+      rows.match(/@supports \(animation-timeline: scroll\(\)\) \{\s*\.chipRow\.chipRow \{([^}]*)\}/u)?.[1] ?? "";
+    expect(scrolled).toMatch(/animation-name: wfRowFadeStart;\s*animation-duration: 1ms;/u);
+    expect(scrolled).toMatch(/animation-timeline: scroll\(self inline\);/u);
+  });
+});
+
 describe("K2: fields outside the kit take the kit focus ring", () => {
   it("draws a 2px solid ring with a 2px gap, from the kit token", () => {
     const globals = read("src/app/globals.css");

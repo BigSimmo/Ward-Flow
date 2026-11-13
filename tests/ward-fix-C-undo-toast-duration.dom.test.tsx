@@ -49,7 +49,8 @@ async function advance(ms: number) {
 
 /** Still open with a live Undo just before the window ends, then gone just after it. */
 async function expectOpenForTheWholeWindow() {
-  expect(theToast()).toHaveTextContent(`Undo within ${UNDO_WINDOW_MINUTES} min.`);
+  // D-192 ruling 3: one clock time ("Undo until 10:47") in place of "Undo within 5 min".
+  expect(theToast()).toHaveTextContent(/Undo until \d{2}:\d{2}/u);
   // Well past the old 8 s and 10 s toasts.
   await advance(10_000);
   expect(undoButton()).not.toHaveAttribute("aria-disabled");
@@ -101,7 +102,7 @@ function ArrivedHarness({ movementId, steps }: { movementId: string; steps: Ward
 function BedPullHarness({ onUndo }: { onUndo: () => void }) {
   const toast = useToast();
   return (
-    <button type="button" onClick={() => toast.push(bedPulledToast("Synthetic patient", undefined, onUndo))}>
+    <button type="button" onClick={() => toast.push(bedPulledToast("Synthetic patient", undefined, onUndo, NOW))}>
       Pull bed
     </button>
   );
@@ -137,7 +138,7 @@ describe("F-49 (D-187): an Undo toast stays open for the 5 minutes it promises",
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Pull bed" }));
     });
-    expect(theToast()).toHaveTextContent("Bed pulled for Synthetic patient.");
+    expect(theToast()).toHaveTextContent("Bed pulled for Synthetic patient · Undo until");
     await expectOpenForTheWholeWindow();
     expect(onUndo).not.toHaveBeenCalled();
   });

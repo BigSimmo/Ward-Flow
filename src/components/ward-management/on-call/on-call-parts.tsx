@@ -45,7 +45,10 @@ export function placeOf(entry: DirectoryEntry): string {
   return entry.place;
 }
 
-/** Service colour as a dot, with the short name when asked. Colour is never the only signal. */
+/**
+ * A service is named, never coloured (F-78). With a label it is that word; without one it is the
+ * short name ("NMHS") in the kit's neutral tag, for rows where the service is not written elsewhere.
+ */
 export function ServiceTag({
   service,
   label,
@@ -56,10 +59,16 @@ export function ServiceTag({
   strong?: boolean;
 }) {
   const meta = SERVICE_META[service];
+  if (label === undefined) {
+    return (
+      <Badge variant="tag" size="sm" className={styles.svcTag}>
+        {meta.short}
+      </Badge>
+    );
+  }
   return (
     <span className={cx(styles.svc, strong && styles.svcStrong)} data-tone={meta.tone}>
-      <span className={styles.svcDot} aria-hidden="true" />
-      {label === undefined ? meta.short : label}
+      {label}
     </span>
   );
 }

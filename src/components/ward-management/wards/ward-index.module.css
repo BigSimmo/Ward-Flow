@@ -786,37 +786,6 @@
   color: var(--wf-ink-2);
 }
 
-.phoneGroupDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--wf-ink-3);
-}
-
-.phoneGroupDot[data-service="North Metro"] {
-  background: var(--wf-svc-north);
-}
-
-.phoneGroupDot[data-service="East Metro"] {
-  background: var(--wf-svc-east);
-}
-
-.phoneGroupDot[data-service="South Metro"] {
-  background: var(--wf-svc-south);
-}
-
-.phoneGroupDot[data-service="WACHS"] {
-  background: var(--wf-svc-wachs);
-}
-
-.phoneGroupDot[data-service="CAHS"] {
-  background: var(--wf-svc-cahs);
-}
-
-.phoneGroupDot[data-service="Private"] {
-  background: var(--wf-svc-private);
-}
-
 .phoneGroupShare {
   margin-left: auto;
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);

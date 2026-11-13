@@ -19,6 +19,45 @@ export function Kbd({ children, className }: { children: ReactNode; className?: 
 }
 
 /**
+ * The only words a count's time window may use (shared design parts item 2, 13 Nov 2026; F-105
+ * decides which window each count takes). "today" is the board day, midnight to midnight; "this
+ * week" is Monday to Sunday; "any date" is every open item.
+ */
+export type CountWindow =
+  "now" | "today" | "by tomorrow" | "next 4h" | "next 24h" | "last 24h" | "this week" | "since 07:00" | "any date";
+
+/**
+ * A count's time window, drawn quiet (ink-3) after a middle dot: "Discharges 14 · any date". The
+ * dot is hidden from screen readers, so the name reads "Discharges 14 any date". A part that stacks
+ * the word under its label (phone, equal-width segments) hides the dot through its `className`.
+ *
+ * In running text ("0 referrals now · 14 discharges any date") pass the count phrase as `of`: the
+ * phrase and its window are kept on one line, with no dot of their own, so a wrapping summary
+ * breaks only between counts, never between a number and its words (design parts item 2).
+ */
+export function WindowWord({ word, of, className }: { word: CountWindow; of?: ReactNode; className?: string }) {
+  if (of !== undefined) {
+    return (
+      <span className={cx(styles.winGroup, className)}>
+        {of}{" "}
+        <span className={styles.win} data-wf-window={word}>
+          {word}
+        </span>
+      </span>
+    );
+  }
+  return (
+    <span className={cx(styles.win, className)} data-wf-window={word}>
+      {" "}
+      <span className={styles.winSep} aria-hidden="true">
+        ·
+      </span>{" "}
+      <span>{word}</span>
+    </span>
+  );
+}
+
+/**
  * Count in a rounded square (`.k`), mono. Sits behind a hairline in tabs, segments and buttons.
  * Pass `label` when the number alone would be ambiguous to a screen reader ("7 open").
  */

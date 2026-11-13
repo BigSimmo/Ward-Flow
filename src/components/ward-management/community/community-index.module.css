@@ -679,7 +679,8 @@
 }
 
 /* v10 phone A to Z (11 Oct 2026): search and filters sit on the sheet; the list is one card of
- * two-line rows (name, then the service dot, service and suburbs) with the reads-alike dot and a
+ * two-line rows (name, then the service and suburbs; F-78, D-192: the service is named, never coloured)
+ * with the reads-alike dot and a
  * chevron at the end. No letter rail and no column head on phone; the letter rows carry the count.
  * Phone only. */
 @media (max-width: 46.4375rem) {
@@ -810,35 +811,6 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
-  }
-
-  .letterSection .teamRow > .service::before {
-    flex: none;
-    width: 7px;
-    height: 7px;
-    border-radius: var(--wf-r-pill);
-    background: var(--svc, var(--wf-ink-3));
-    content: "";
-  }
-
-  .letterSection .teamRow > .service[data-service="NMHS"] {
-    --svc: var(--wf-svc-north);
-  }
-
-  .letterSection .teamRow > .service[data-service="SMHS"] {
-    --svc: var(--wf-svc-south);
-  }
-
-  .letterSection .teamRow > .service[data-service="EMHS"] {
-    --svc: var(--wf-svc-east);
-  }
-
-  .letterSection .teamRow > .service[data-service="WACHS"] {
-    --svc: var(--wf-svc-wachs);
-  }
-
-  .letterSection .teamRow > .service[data-service="CAHS"] {
-    --svc: var(--wf-svc-cahs);
   }
 
   .letterSection .teamRow > .suburbs {

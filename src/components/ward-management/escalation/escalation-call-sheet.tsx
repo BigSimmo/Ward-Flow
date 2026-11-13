@@ -82,7 +82,7 @@ export function EscalationCallSheet({
       {step ? (
         <>
           <p className={contact.contactHead}>
-            {patientName} · {step.label}. Suggested next step: {step.nextStep}. Synthetic numbers, nothing dials.
+            {patientName} · {step.label}. Next escalation step: {step.nextStep}. Synthetic numbers, nothing dials.
           </p>
           {who ? (
             <div className={contact.contactRow} data-testid="ward-escalation-contact">

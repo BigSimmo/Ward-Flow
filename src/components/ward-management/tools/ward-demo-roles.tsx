@@ -62,6 +62,71 @@ export function WardDemoRoles({ enabled }: { enabled: boolean }) {
   return <LocalDemoRoles enabled={enabled} />;
 }
 
+/** Opens a desk's home, remembering where it was left from. */
+function useGoToDesk(): (next: WardAccess) => void {
+  const pathname = usePathname();
+  const router = useOptionalRouter();
+  return (next) => {
+    const href = homeHrefFor(next, communityTeamSlug);
+    markDeskSwitch(pathname === href ? undefined : (pathname ?? undefined));
+    if (router) router.push(href);
+    else window.location.assign(href);
+  };
+}
+
+/**
+ * Leaves a role demo for the desk it started from (the coordinator when that place has gone), as
+ * See it as's Exit does. Shared with the Viewing as bar under the app bar (shared design parts item
+ * 8, 13 Nov 2026), so both use the one way back.
+ */
+export function useExitDemoRole(enabled: boolean): () => void {
+  // A confirmation belongs to this enabled lifetime, not to a hidden or replacement control.
+  const activeLifetime = useRef<{ enabled: boolean } | null>(null);
+  useEffect(() => {
+    const lifetime = { enabled };
+    activeLifetime.current = lifetime;
+    return () => {
+      if (activeLifetime.current === lifetime) activeLifetime.current = null;
+    };
+  }, [enabled]);
+  const world = useUnscopedWardFlow();
+  const network = useWardNetwork();
+  const session = useDemoRoleSession();
+  const go = useGoToDesk();
+  return () => {
+    const lifetime = activeLifetime.current;
+    if (!enabled || !lifetime?.enabled) return;
+    const proceed = () => {
+      if (activeLifetime.current !== lifetime) return;
+      const saved = session?.desk;
+      const scope = saved?.scope;
+      const placeExists =
+        scope?.kind === "ward"
+          ? scope.unitIds.length > 0 &&
+            scope.unitIds.every((id) => world.units.some((candidate) => candidate.id === id))
+          : scope?.kind === "ed"
+            ? network.sites.some((site) => site.emergencyDepartment?.id === scope.edId)
+            : scope?.kind === "site"
+              ? network.sites.some((site) => site.code === scope.siteCode)
+              : scope?.kind === "service"
+                ? network.sites.some((site) => site.service === scope.service)
+                : true;
+      const original = exitDemoRole(placeExists ? saved : STATEWIDE_COORDINATOR);
+      if (original) go(original);
+      else {
+        // A reload keeps the existing local desk, but loses the memory-only return history.
+        // Give that desk an explicit way back without inventing its previous role.
+        setWardAccess(STATEWIDE_COORDINATOR);
+        dispatchPersonaSyncForRole("coordinator");
+        // F-65: the role access setting the demo desk turned on goes back too.
+        restoreDemoRoleFlagAfterReload();
+        go(STATEWIDE_COORDINATOR);
+      }
+    };
+    if (confirmLeavingShell(proceed)) proceed();
+  };
+}
+
 function LocalDemoRoles({ enabled }: { enabled: boolean }) {
   // A confirmation belongs to this enabled lifetime, not to a hidden or replacement selector.
   const activeLifetime = useRef<{ enabled: boolean } | null>(null);
@@ -80,8 +145,6 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
   const persona = useShellPersonaRole();
   const personaDeskId = usePersonaDeskId();
   const session = useDemoRoleSession();
-  const pathname = usePathname();
-  const router = useOptionalRouter();
   const noteId = useId();
   const { unit, ed, team } = useMemo(() => {
     const unit =
@@ -138,12 +201,8 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
         return null;
     }
   }
-  function go(next: WardAccess) {
-    const href = homeHrefFor(next, communityTeamSlug);
-    markDeskSwitch(pathname === href ? undefined : (pathname ?? undefined));
-    if (router) router.push(href);
-    else window.location.assign(href);
-  }
+  const go = useGoToDesk();
+  const exit = useExitDemoRole(enabled);
   function choose(role: WardAccessRole) {
     const next = choices[role];
     const lifetime = activeLifetime.current;
@@ -160,43 +219,9 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
     };
     if (confirmLeavingShell(proceed)) proceed();
   }
-  function exit() {
-    const lifetime = activeLifetime.current;
-    if (!enabled || !lifetime?.enabled) return;
-    const proceed = () => {
-      if (activeLifetime.current !== lifetime) return;
-      const saved = session?.desk;
-      const scope = saved?.scope;
-      const placeExists =
-        scope?.kind === "ward"
-          ? scope.unitIds.length > 0 &&
-            scope.unitIds.every((id) => world.units.some((candidate) => candidate.id === id))
-          : scope?.kind === "ed"
-            ? network.sites.some((site) => site.emergencyDepartment?.id === scope.edId)
-            : scope?.kind === "site"
-              ? network.sites.some((site) => site.code === scope.siteCode)
-              : scope?.kind === "service"
-                ? network.sites.some((site) => site.service === scope.service)
-                : true;
-      const original = exitDemoRole(placeExists ? saved : STATEWIDE_COORDINATOR);
-      if (original) go(original);
-      else {
-        // A reload keeps the existing local desk, but loses the memory-only return history.
-        // Give that desk an explicit way back without inventing its previous role.
-        setWardAccess(STATEWIDE_COORDINATOR);
-        dispatchPersonaSyncForRole("coordinator");
-        // F-65: the role access setting the demo desk turned on goes back too.
-        restoreDemoRoleFlagAfterReload();
-        go(STATEWIDE_COORDINATOR);
-      }
-    };
-    if (confirmLeavingShell(proceed)) proceed();
-  }
   return (
     <section className={styles.section} aria-label="See it as">
-      <h3>
-        See it as <span id={noteId}>Opens that role&rsquo;s demo desk · the scenario stays loaded</span>
-      </h3>
+      <h3>See it as</h3>
       <div className={styles.grid} role="group" aria-label="Demo role">
         {WARD_ACCESS_ROLES.map((role) => (
           <button
@@ -214,6 +239,9 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
           </button>
         ))}
       </div>
+      <p id={noteId} className={styles.note}>
+        Opens that role&rsquo;s demo desk · the scenario stays loaded
+      </p>
       <div className={styles.roleLine}>
         {/* The grid's "Current" shows the role; this line names it for screen readers and adds the
             desk's place and limits on screen. */}

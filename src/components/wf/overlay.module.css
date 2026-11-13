@@ -156,18 +156,27 @@
   color: var(--wf-ink-3);
 }
 
-/* Note 14 (Josh, 8 Nov 2026): one toast place for the whole app, the bottom centre of the window,
-   where the pinned notes rest too (ward-flow-layout.module.css). Toasts stack above a showing note
-   and above a page's pinned foot bar (data-wf-foot-bar), so neither Save nor the note is covered.
-   Phone keeps the pill above the dock (below). Every toast has its close button. */
+/* Shared design parts item 4 (Josh, 13 Nov 2026; replaces note 14's bottom centre): one toast place
+   for the whole app, bottom right of the work area, 24px in, so a toast never sits centred over the
+   row it names. Toasts stack above a showing note (ward-flow-layout.module.css) and above a page's
+   pinned foot bar (data-wf-foot-bar), so neither Save nor the note is covered. The card is the solid
+   overlay surface, not glass, so the page never shows through it (below). Phone keeps the pill above
+   the dock (further below). Every toast has its close button. */
 @media (min-width: 46.5rem) {
   .toastRegion {
     --wf-toast-rest: calc(var(--wf-foot-bar-lift, 0px) + var(--wf-toast-note-lift, 0px));
     top: auto;
-    right: 0;
-    bottom: var(--wf-toast-rest);
-    left: 0;
-    align-items: center;
+    right: var(--wf-s-6);
+    bottom: calc(var(--wf-s-6) + var(--wf-toast-rest));
+    left: auto;
+    padding: 0 0 env(safe-area-inset-bottom, 0px);
+    align-items: flex-end;
+  }
+
+  .toast {
+    background-color: var(--wf-overlay);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 
   /* Live audit, 8 Nov 2026: top right, an Undo toast covered an open sheet's tabs (Referral
@@ -177,12 +186,12 @@
     .toastRegion {
     top: auto;
     right: auto;
-    bottom: 0;
-    left: 0;
+    bottom: var(--wf-s-6);
+    left: var(--wf-s-6);
     align-items: flex-start;
     /* Bottom left already clears the note and the foot bar under a sheet. */
     --wf-toast-rest: 0px;
-    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    padding: 0 0 env(safe-area-inset-bottom, 0px);
     /* Review (8 Nov 2026): on a tablet a 500px right drawer leaves about 268px beside it, so the
        toast narrows to stay clear of the drawer's footer actions; its text ellipsises as usual. */
     --wf-toast-max: max(240px, min(560px, calc(100vw - 33rem)));
@@ -229,9 +238,11 @@
   line-height: var(--wf-lh-12);
 }
 
-/* A toast that must be read whole (`wrap`) keeps every word instead of an ellipsis. */
+/* A toast that must be read whole (`wrap`) keeps every word instead of an ellipsis. So does an Undo
+   toast that names its clock time: "Undo until 14:47" is never cut. */
 .toast[data-wrap="true"] .toastTitle,
-.toast[data-wrap="true"] .toastBody {
+.toast[data-wrap="true"] .toastBody,
+.toast[data-undo-until] .toastTitle {
   overflow: visible;
   white-space: normal;
   overflow-wrap: anywhere;
@@ -310,7 +321,7 @@
 }
 
 /* Phone toast (v10 all-pages mockup, .toast and .frame.phone > .toasts): a dark pill, not glass,
-   left and right 12px and 92px up, text may wrap. The tip colours are the tooltip's own recipe
+   16px gutters (shared design parts item 4, 13 Nov 2026), above the dock, text may wrap. The tip colours are the tooltip's own recipe
    (ui/tooltip.module.css): ink on light, track in dark with the line-2 ring. Desktop and tablet
    keep the glass card above. Every toast keeps its X (GEN1, 3 Nov 2026). */
 @media (max-width: 46.4375rem) {
@@ -321,17 +332,24 @@
     --wf-toast-rest: calc(
       var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + var(--wf-toast-dock-gap, 12px)
     );
-    left: 12px;
-    right: 12px;
+    left: var(--wf-s-4);
+    right: var(--wf-s-4);
     bottom: calc(var(--wf-toast-rest) + var(--wf-toast-note-lift, 0px) + var(--wf-phone-foot-lift, 0px));
     padding: 0;
-    align-items: center;
+    /* Item 4 (approved picture): the toast runs the full width less the 16px gutters, never only as
+       wide as its words. */
+    align-items: stretch;
   }
 
-  /* A page's sticky phone action bar (Patient's "Record search done") sits just above the dock:
-     the toast lifts over it (the bar's 48px button plus its padding) so Undo never covers it. */
+  /* A page's sticky phone action bar (Patient's "Record search done") sits on the dock: the toast
+     rests 24px above the bar (item 4, 13 Nov 2026), not over its one filled button. The bar's top
+     stands 65px above the dock's clear line (its hairline, 8px, the 48px button, 8px; measured at
+     390 x 844, where 85px left the toast 44px up); a page may set its own height. */
   :global(html:has([data-wf-phone-action-bar])) .toastRegion {
-    bottom: calc(var(--wf-toast-rest) + 76px);
+    bottom: calc(
+      var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) +
+        var(--wf-phone-action-bar-h, 65px) + var(--wf-s-6)
+    );
   }
 
   /* A sheet or dialog is open: sit higher so its footer buttons stay clear. */
@@ -340,16 +358,14 @@
   }
 
   .toast {
-    --toast-bg: light-dark(
-      color-mix(in srgb, var(--wf-ink-1) 92%, transparent),
-      color-mix(in srgb, var(--wf-track) 97%, transparent)
-    );
+    /* D-192: the phone toast is a solid surface, so the row under it never shows through. */
+    --toast-bg: light-dark(var(--wf-ink-1), var(--wf-track));
     --toast-ink: light-dark(var(--wf-surface), var(--wf-ink-1));
     --toast-ring: light-dark(transparent, var(--wf-line-2));
     gap: 10px;
-    min-height: 44px;
+    min-height: 52px;
     max-width: 100%;
-    padding: 0 6px 0 14px;
+    padding: 6px 6px 6px var(--wf-s-4);
     border: 0;
     border-radius: var(--wf-r-lg);
     background: var(--toast-bg);
@@ -388,12 +404,12 @@
     display: none;
   }
 
-  /* Undo and other actions: tip ink on a 14% tint, 28px tall, with a 48px hit area. */
+  /* Undo and other actions: tip ink on a 14% tint, drawn 40px with a 48px cover (item 4, 13 Nov 2026). */
   .toast .toastAction,
   .toast .toastClose {
-    height: 28px;
-    min-height: 28px;
-    padding: 0 12px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0 var(--wf-s-4);
     border-color: transparent;
     border-radius: var(--wf-r-sm);
     box-shadow: none;
@@ -407,8 +423,8 @@
   }
 
   .toast .toastClose {
-    width: 28px;
-    min-width: 28px;
+    width: 40px;
+    min-width: 40px;
     padding: 0;
     background: transparent;
   }
@@ -418,11 +434,13 @@
     background: color-mix(in srgb, var(--toast-ink) 14%, transparent);
   }
 
+  /* The cover starts inside the button's 1px border, so 5px each way makes the phone toast's Undo
+     and close 48px targets (review EH-3, as the kit buttons, E-16). */
   .toast .toastAction::after,
   .toast .toastClose::after {
     content: "";
     position: absolute;
-    inset: -10px -4px;
+    inset: -5px;
   }
 
   .undoBar {

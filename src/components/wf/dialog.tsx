@@ -7,6 +7,7 @@ import { Button } from "./button";
 import { cx, present } from "./cx";
 import styles from "./dialog.module.css";
 import { useModalFocus } from "./use-modal-focus";
+import { useScrollBodyFocus } from "./use-scroll-body-focus";
 
 export type DialogAction = {
   label: string;
@@ -78,6 +79,7 @@ export function Dialog({
   const descId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
   // The scrim closes the dialog only when the press starts on it, so a drag that begins inside the
   // panel and ends on the scrim does not dismiss.
@@ -96,6 +98,8 @@ export function Dialog({
     fallbackFocusRef: closeRef,
     returnFocusRef,
   });
+  // A body that scrolls with nothing to focus inside takes a named tab stop, so arrow keys scroll it.
+  useScrollBodyFocus(bodyRef, title, open);
 
   if (!open) return null;
 
@@ -142,7 +146,7 @@ export function Dialog({
             ) : null}
           </div>
           {present(description) || present(children) ? (
-            <div className={styles.body}>
+            <div ref={bodyRef} className={styles.body}>
               {present(description) ? (
                 <p id={descId} className={styles.description}>
                   {description}

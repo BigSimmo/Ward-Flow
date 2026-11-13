@@ -13,12 +13,22 @@
   align-self: end;
 }
 
+/* Item 12 (13 Nov 2026): the status words at the left, the synthetic-data mark at the right. */
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
 .status {
   display: inline-flex;
   align-items: center;
   gap: var(--wf-s-2);
+  min-width: 0;
   margin: 0;
-  color: var(--wf-ink-2);
+  color: var(--wf-ink-3);
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
@@ -29,17 +39,25 @@
   flex-wrap: wrap;
 }
 
+/* Item 12 (approved picture): until it shows, the line takes no space either (0 by 0, clipped), so
+   "Loading page" and the synthetic-data mark share one row and no gap opens above the rows. */
 .slow {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
+  max-width: 0;
+  max-height: 0;
+  overflow: hidden;
   visibility: hidden;
   animation: wardLoadingSlowShow 0s 15s forwards;
 }
 
 @keyframes wardLoadingSlowShow {
   to {
+    max-width: none;
+    max-height: none;
+    overflow: visible;
     visibility: visible;
   }
 }
@@ -72,31 +90,6 @@
   .retry {
     min-block-size: 40px;
     padding: 0 14px;
-  }
-}
-
-/* The kit Spinner's rule (wf/primitives.module.css), copied so this boundary stays light. */
-.spin {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  flex: 0 0 14px;
-  border-radius: 50%;
-  border: 2px solid currentColor;
-  border-right-color: transparent;
-  box-sizing: border-box;
-  animation: wardLoadingSpin 0.8s linear infinite;
-}
-
-@keyframes wardLoadingSpin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .spin {
-    animation-duration: 1.6s;
   }
 }
 

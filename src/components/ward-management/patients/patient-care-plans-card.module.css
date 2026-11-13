@@ -166,3 +166,8 @@
     gap: var(--wf-s-1);
   }
 }
+
+/* D-192 (shared design parts item 6): the "who records these" foot line, inset like the facts. */
+.whoFoot {
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
+}

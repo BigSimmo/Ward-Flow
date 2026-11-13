@@ -534,16 +534,20 @@
 }
 /* Psychiatry review tracker (Josh, 9 Nov 2026): the next step and the review stage on the left,
    one small action on the right, so a row stays one line tall where it fits. */
+/* F-61 (A5-17a): at 820 the review button sat on the tag and line. The text keeps at least 10rem;
+   below that the button wraps under it, right-aligned, instead of overlapping. */
 .listReview {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--wf-s-3);
+  gap: var(--wf-s-1) var(--wf-s-3);
   min-width: 0;
 }
 .listReview > button,
 .listReviewSeen {
   flex: none;
+  margin-left: auto;
   white-space: nowrap;
 }
 .listReviewSeen {
@@ -557,6 +561,7 @@
 }
 .listReviewText {
   display: grid;
+  flex: 1 1 10rem;
   justify-items: start;
   gap: 2px;
   min-width: 0;
@@ -702,4 +707,16 @@
 }
 .listWrap {
   white-space: normal;
+}
+
+/* D-192 (shared design parts item 7, F-39): enlarged, the table covers the page footer, so the filter
+   row carries the synthetic-data mark at its right; the corner above holds Exit full screen. */
+.handover[data-enlarged="true"] .handoverFilters {
+  display: flex;
+  align-items: center;
+  background: var(--wf-surface-2);
+}
+.handover[data-enlarged="true"] .handoverFilters > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
 }

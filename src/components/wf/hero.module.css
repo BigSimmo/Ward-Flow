@@ -170,6 +170,32 @@
   text-overflow: ellipsis;
 }
 
+/* A count's time window (`HeroStat window`): hero ink-3 after the label and a middle dot. On a
+   phone it moves under the label rather than widening the strip. */
+.labelRow {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+}
+
+.labelRow .win {
+  flex: none;
+  color: var(--wf-hero-ink-3);
+}
+
+@media (max-width: 46.4375rem) {
+  .labelRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+  }
+
+  .labelRow .win > :first-child {
+    display: none;
+  }
+}
+
 .trend {
   color: var(--wf-hero-ink-2);
 }

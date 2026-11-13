@@ -3,14 +3,15 @@ import { cx } from "./cx";
 import { StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./badge.module.css";
 
-type BadgeVariant = "default" | "plain" | "solid" | "onHero" | "mono";
+type BadgeVariant = "default" | "plain" | "tag" | "solid" | "onHero" | "mono";
 
 export type BadgeProps = {
   /** Glyph shape and colour. Omit for a neutral label with no glyph. */
   tone?: WfTone;
   /**
-   * `default` neutral chip. `plain` drops the chip (table rows, running text). `solid` slate, for
-   * an active filter count only. `onHero` on the hero band. `mono` for ids such as UM100023.
+   * `default` neutral chip. `plain` drops the chip (table rows, running text). `tag` is the plain
+   * look on a hairline, for a neutral name such as a health service's short name (F-78). `solid`
+   * slate, for an active filter count only. `onHero` on the hero band. `mono` for ids such as UM100023.
    */
   variant?: BadgeVariant;
   size?: "sm" | "md";
@@ -32,6 +33,7 @@ export function Badge({ tone, variant = "default", size = "md", n, children, cla
         styles.bd,
         size === "sm" && styles.sm,
         variant === "plain" && styles.plain,
+        variant === "tag" && styles.tag,
         variant === "solid" && styles.solid,
         variant === "onHero" && styles.onHero,
         variant === "mono" && styles.mono,

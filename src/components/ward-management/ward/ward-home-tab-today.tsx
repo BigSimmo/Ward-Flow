@@ -6,8 +6,8 @@
 // lists. The band above already shows Ready now and Ready by shift end, so these do not repeat it.
 
 import Link from "next/link";
-import { CalendarClock, ChevronRight, ListChecks } from "lucide-react";
-import { buttonClass } from "@/components/wf";
+import { ArrowLeftRight, CalendarClock, ChevronRight, ListChecks } from "lucide-react";
+import { buttonClass, WindowWord } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
@@ -299,6 +299,50 @@ export function WardHomeTileText({
         </span>
       ) : null}
     </>
+  );
+}
+
+/**
+ * Phone My list, Ward flow row: "0 referrals now · 3 admissions any date · 14 discharges any date".
+ * Each count stays on one line with its window word, and the dot stays with the count before it, so
+ * the line wraps only between counts (design parts item 2). It opens the Ward flow sheet.
+ */
+export function WardPhoneFlowRow({
+  referrals,
+  admissions,
+  discharges,
+  onSheet,
+}: {
+  referrals: number;
+  admissions: number;
+  discharges: number;
+  onSheet?: (panel: "flow") => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={styles.needsRow}
+      aria-haspopup="dialog"
+      onClick={() => {
+        onSheet?.("flow");
+      }}
+      data-testid="ward-phone-row-flow"
+    >
+      <span className={styles.needsIcon} data-tone="info" aria-hidden="true">
+        <ArrowLeftRight strokeWidth={1.75} size={18} aria-hidden="true" />
+      </span>
+      <span className={styles.needsText}>
+        <b>Ward flow</b>
+        <span>
+          <WindowWord word="now" of={`${referrals} ${referrals === 1 ? "referral" : "referrals"}`} />
+          {"\u00a0· "}
+          <WindowWord word="any date" of={`${admissions} ${admissions === 1 ? "admission" : "admissions"}`} />
+          {"\u00a0· "}
+          <WindowWord word="any date" of={`${discharges} ${discharges === 1 ? "discharge" : "discharges"}`} />
+        </span>
+      </span>
+      <ChevronRight strokeWidth={1.75} size={18} aria-hidden="true" className={styles.needsChevron} />
+    </button>
   );
 }
 
