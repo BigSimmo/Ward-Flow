@@ -18,7 +18,8 @@
  *      production-build attempt, even when the head was up to date. A previous attempt's notices
  *      cannot excuse a latest build that only warned about its budget.
  * Missing gate evidence is never filled from older green runs. Unit and coverage outputs are
- * coupled so a fresh coverage merge always receives fresh unit shard blobs.
+ * coupled so a fresh coverage merge always receives fresh unit shard blobs, except that a run
+ * which left only the legal-figure sweep out lets main run just the sweep (mainReuseOutputs).
  *
  * Discovery errors return false flags; the workflow then runs fresh gates.
  */
@@ -36,7 +37,7 @@ function refuse(reason) {
     verified: false,
     backendVerified: false,
     reason,
-    gates: Object.fromEntries(GATES.map((gate) => [gate, false])),
+    gates: Object.fromEntries([...GATES, "unitExceptSweep"].map((gate) => [gate, false])),
     reasons: Object.fromEntries(GATES.map((gate) => [gate, reason])),
   };
 }
@@ -202,14 +203,21 @@ export function backendProved(jobs) {
   });
 }
 
-/** Workflow flags keep unit shards and their coverage merge together when either needs fresh work. */
+/**
+ * Workflow flags keep unit shards and their coverage merge together when either needs fresh work.
+ * One exception (D-166): a pull request run that left only the legal-figure sweep out proved every
+ * other unit file and the coverage floors on this tree, so main reuses its coverage and runs just
+ * the sweep files in the shards (`sweep_only`). Coverage can only rise with the sweep added.
+ */
 export function mainReuseOutputs(decision) {
   const gates = decision.gates ?? {};
   const unitCoverage = gates.unit === true && gates.coverage === true;
+  const sweepOnly = !unitCoverage && gates.unitExceptSweep === true && gates.coverage === true;
   return {
     verified: decision.verified === true,
     unit_verified: unitCoverage,
-    coverage_verified: unitCoverage,
+    coverage_verified: unitCoverage || sweepOnly,
+    sweep_only: sweepOnly,
     browser_verified: gates.browser === true,
     release_verified: gates.release === true,
     build_verified: gates.build === true,
@@ -357,7 +365,10 @@ if (process.argv[1]?.replaceAll("\\", "/").endsWith("/scripts/ward-ci-public/mai
   const outputs = mainReuseOutputs(decision);
   const reused = GATES.filter((gate) => outputs[`${gate}_verified`]);
   const fresh = GATES.filter((gate) => !outputs[`${gate}_verified`]);
-  const line = `Ward main reuse: ${reused.length ? `verified ${reused.join(", ")}` : "none verified"}. ${decision.reason}${decision.runUrl ? `: ${decision.runUrl}` : ""}. ${fresh.length ? `Running fresh ${fresh.join(", ")}. ` : ""}Static checks and the secret scan still run.`;
+  const sweepNote = outputs.sweep_only
+    ? "The pull request run left the legal-figure sweep out, so the unit shards run only the sweep files. "
+    : "";
+  const line = `Ward main reuse: ${reused.length ? `verified ${reused.join(", ")}` : "none verified"}. ${decision.reason}${decision.runUrl ? `: ${decision.runUrl}` : ""}. ${fresh.length ? `Running fresh ${fresh.join(", ")}. ` : ""}${sweepNote}Static checks and the secret scan still run.`;
   console.log(line);
   try {
     if (process.env.GITHUB_OUTPUT)

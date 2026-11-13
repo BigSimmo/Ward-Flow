@@ -733,7 +733,29 @@ function requireWorkflow(source, action) {
     /node node_modules\/vitest\/vitest.mjs run --merge-reports="\$WARD_SHARD_BLOBS" --coverage\n/u,
   );
   assert.match(jobs.get("coverage"), /WARD_SHARD_COUNT: "4"/u);
-  assert.match(jobs.get("unit"), /WARD_COVERAGE_BLOB_DIR: \$\{\{ runner.temp \}\}\/ward-coverage-blobs/u);
+  // D-166: only a sweep-only main run (main reused the merged pull request's coverage) drops the blobs.
+  assert.match(
+    step("unit", "Run reconciled unit suite shard").text,
+    /WARD_COVERAGE_BLOB_DIR: \$\{\{ needs\.reuse\.outputs\.sweep_only != 'true' && format\('\{0\}\/ward-coverage-blobs', runner\.temp\) \|\| '' \}\}\n/u,
+  );
+  assert.match(
+    step("unit", "Run reconciled unit suite shard").text,
+    /WARD_GATE_ONLY_LEGAL_SWEEP: \$\{\{ needs\.reuse\.outputs\.sweep_only == 'true' && '1' \|\| '0' \}\}\n/u,
+  );
+  for (const name of ["Upload shard coverage blob", "Save the Vitest module cache on main"])
+    assert.match(
+      step("unit", name).fields.get("if") ?? "",
+      / && needs\.reuse\.outputs\.sweep_only != 'true' \}\}$/u,
+      name,
+    );
+  assert.equal(
+    jobs
+      .get("reuse")
+      .split("\n")
+      .filter((line) => line.includes("sweep_only"))
+      .join("\n"),
+    "      sweep_only: ${{ steps.check.outputs.sweep_only }}",
+  );
   assert.match(jobs.get("unit"), /if-no-files-found: error/u);
   for (const [job, key, variable, count] of [
     ["unit", "shard", "WARD_GATE_SHARD", 4],
@@ -903,6 +925,7 @@ function requireWorkflow(source, action) {
     BROWSER_REUSED: "needs.reuse.outputs.browser_verified",
     RELEASE_REUSED: "needs.reuse.outputs.release_verified",
     BUILD_REUSED: "needs.reuse.outputs.build_verified",
+    SWEEP_ONLY: "needs.reuse.outputs.sweep_only",
     PLAN_RESULT: "needs.plan.result",
     REUSE_RESULT: "needs.reuse.result",
     STATIC_RESULT: "needs.static.result",
@@ -961,7 +984,17 @@ function requireWorkflow(source, action) {
             echo "::error title=Draft fast lane::Quick checks passed. Unit, backend, browser, phone and accessibility checks run when this pull request is marked ready; only that run can pass this check."
             exit 1
           fi
-          test "$UNIT_REUSED" = "$COVERAGE_REUSED"
+          case "$SWEEP_ONLY" in
+            true)
+              test "$GITHUB_EVENT_NAME" = push
+              test "$GITHUB_REF" = refs/heads/main
+              test "$REUSE_RESULT" = success
+              test "$UNIT_REUSED" = false
+              test "$COVERAGE_REUSED" = true
+              ;;
+            false|"") test "$UNIT_REUSED" = "$COVERAGE_REUSED" ;;
+            *) exit 1 ;;
+          esac
           require_gate "$BACKEND_SCOPE" "$BACKEND_RESULT" "$BACKEND_REUSED"
           require_gate "$UNIT_SCOPE" "$UNIT_RESULT" "$UNIT_REUSED"
           require_gate "$UNIT_SCOPE" "$COVERAGE_RESULT" "$COVERAGE_REUSED"
@@ -1011,6 +1044,7 @@ for (let bits = 0; bits < 16; bits++) {
       BROWSER_REUSED: String(reused(2)),
       RELEASE_REUSED: String(reused(3)),
       BUILD_REUSED: String(reused(4)),
+      SWEEP_ONLY: mask ? "false" : "",
       DRAFT: "false",
       GITHUB_EVENT_NAME: mask ? "push" : "pull_request",
       GITHUB_REF: mask ? "refs/heads/main" : "refs/pull/1/merge",
@@ -1057,6 +1091,27 @@ for (let bits = 0; bits < 16; bits++) {
       "unit and coverage evidence must be reused together",
     );
     verdictCases += 3;
+    // D-166: main ran only the sweep in fresh shards and reused the pull request run's coverage.
+    if (mask && enabled(1) && !reused(1)) {
+      const sweepOnly = { ...values, SWEEP_ONLY: "true", COVERAGE_REUSED: "true", COVERAGE_RESULT: "skipped" };
+      assert.equal(runVerdict(sweepOnly), 0, JSON.stringify({ bits, mask, sweepOnly: true }));
+      verdictCases++;
+      for (const change of [
+        { UNIT_RESULT: "skipped" },
+        { UNIT_RESULT: "failure" },
+        { UNIT_REUSED: "true", UNIT_RESULT: "skipped" },
+        { COVERAGE_REUSED: "false" },
+        { COVERAGE_RESULT: "success" },
+        { GITHUB_EVENT_NAME: "pull_request" },
+        { GITHUB_REF: "refs/heads/other" },
+        { REUSE_RESULT: "failure" },
+        { SWEEP_ONLY: "yes" },
+        { UNIT_SCOPE: "false", UNIT_RESULT: "skipped" },
+      ]) {
+        assert.notEqual(runVerdict({ ...sweepOnly, ...change }), 0, JSON.stringify(change));
+        verdictCases++;
+      }
+    }
     if (mask)
       for (const [key, value] of [
         ["GITHUB_EVENT_NAME", "pull_request"],
@@ -1101,8 +1156,15 @@ for (const [before, after] of [
   ["if: always()", "if: success()"],
   ['          if [ "$DRAFT" = true ]; then', '          if [ "$DRAFT" = never ]; then'],
   [
-    '            exit 1\n          fi\n          test "$UNIT_REUSED" = "$COVERAGE_REUSED"',
-    '            true\n          fi\n          test "$UNIT_REUSED" = "$COVERAGE_REUSED"',
+    '            exit 1\n          fi\n          case "$SWEEP_ONLY" in',
+    '            true\n          fi\n          case "$SWEEP_ONLY" in',
+  ],
+  ['            false|"") test "$UNIT_REUSED" = "$COVERAGE_REUSED" ;;', '            false|"") true ;;'],
+  ['              test "$COVERAGE_REUSED" = true\n', "              true\n"],
+  ['              test "$UNIT_REUSED" = false\n', "              true\n"],
+  [
+    "          WARD_GATE_ONLY_LEGAL_SWEEP: ${{ needs.reuse.outputs.sweep_only == 'true' && '1' || '0' }}",
+    "          WARD_GATE_ONLY_LEGAL_SWEEP: '1'",
   ],
   ["    types: [opened, synchronize, reopened, ready_for_review]", "    types: [opened, synchronize, reopened]"],
   ["&& github.event.pull_request.draft != true }}", "}}"],

@@ -59,6 +59,7 @@ describe("independent main gate evidence", () => {
   it("reuses every gate only after its real work passed on the exact tree", () => {
     expect(reusableGateEvidence(evidence())).toEqual({
       unit: true,
+      unitExceptSweep: true,
       browser: true,
       release: true,
       build: true,
@@ -68,19 +69,28 @@ describe("independent main gate evidence", () => {
     });
   });
 
-  it("reruns unit and coverage when the legal sweep was omitted, retaining other gate evidence", () => {
+  it("reruns the sweep when it was omitted, keeping the rest of unit, coverage and other gate evidence", () => {
     const jobs = greenJobs();
     jobs[2].steps.pop();
     const result = reusableGateEvidence(evidence({ jobs }));
     expect(result).toMatchObject({
       unit: false,
-      coverage: false,
+      unitExceptSweep: true,
+      coverage: true,
       browser: true,
       release: true,
       build: true,
       backend: true,
     });
     expect(result.reasons.unit).toContain("Confirm the legal-figure sweep ran");
+    expect(result.reasons.coverage).toBeUndefined();
+  });
+
+  it("refuses coverage when a shard did not run the rest of the unit suite", () => {
+    const jobs = greenJobs();
+    jobs[2].steps.shift();
+    const result = reusableGateEvidence(evidence({ jobs }));
+    expect(result).toMatchObject({ unit: false, unitExceptSweep: false, coverage: false });
     expect(result.reasons.coverage).toMatch(/unit/iu);
   });
 
