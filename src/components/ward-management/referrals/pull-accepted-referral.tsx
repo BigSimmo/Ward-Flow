@@ -18,12 +18,14 @@ import { ORIGIN_NOT_RECORDED, type LegalStatus } from "../ward-model";
 import {
   INTERMITTENT_INTERVAL_MINUTES,
   OBSERVATION_LEVELS,
-  OBSERVATION_NOT_RECORDED,
   observationAt,
+  observationIsRecorded,
   observationLevelName,
   type Observation,
-  type RecordedObservationLevel,
 } from "../ward-observation";
+
+/** A level a person can choose on the form ("not recorded" is not a level). */
+type RecordedObservationLevel = (typeof OBSERVATION_LEVELS)[number];
 import { usePatientOf } from "../ward-patient-name";
 import { acceptedAddressing } from "../ward-referrals";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
@@ -159,9 +161,9 @@ export function PullAcceptedReferral({
   // D-188 (tightened 13 Nov): an observation level the ED board records as "not recorded"
   // is not a level. It opens with nothing chosen, and the bed cannot be pulled until one is chosen.
   const recordedLevel: RecordedObservationLevel | "" =
-    recorded.observation === undefined || recorded.observation.level === OBSERVATION_NOT_RECORDED
-      ? ""
-      : recorded.observation.level;
+    recorded.observation !== undefined && observationIsRecorded(recorded.observation)
+      ? (recorded.observation.level as RecordedObservationLevel)
+      : "";
   const [legalStatus, setLegalStatus] = useState<LegalStatus | "">(recorded.legalStatus ?? "");
   const [legalForm, setLegalForm] = useState(recordedForm);
   const [level, setLevel] = useState<RecordedObservationLevel | "">(recordedLevel);
@@ -249,10 +251,12 @@ export function PullAcceptedReferral({
     if (level === "intermittent" && intervalMinutes === "") return;
     setMessage(undefined);
     // The recorded level is carried whole, with any review time a person typed; a changed level is new.
+    const recordedObservation = recorded.observation;
     const observation: Observation =
-      recorded.observation?.level === level &&
-      (level !== "intermittent" || recorded.observation.intervalMinutes === intervalMinutes)
-        ? { ...recorded.observation }
+      recordedObservation !== undefined &&
+      recordedObservation.level === level &&
+      (level !== "intermittent" || recordedObservation.intervalMinutes === intervalMinutes)
+        ? { ...recordedObservation }
         : level === "intermittent" && intervalMinutes !== ""
           ? { ...observationAt(level), intervalMinutes }
           : observationAt(level);
