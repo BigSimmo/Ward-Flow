@@ -95,10 +95,6 @@ If the code screen says "Too many tries", someone on the same network has typed 
 presenter already inside is not affected. Open the demo from another network (a phone hotspot), or
 wait up to 10 minutes and try again.
 
-If the code screen says "Too many tries", someone on the same network has typed wrong codes. A
-presenter already inside is not affected. Open the demo from another network (a phone hotspot), or
-wait up to 10 minutes and try again.
-
 ## Run of show
 
 | Act | Minutes     | Screen                                       | What the audience sees                            |
@@ -169,11 +165,11 @@ filters **Under a form** and **No bed yet**.
 > under which legal form. The ED's list stays in the order the ED keeps it. Ward Flow does not
 > re-sort it or score anyone."
 
-**Do:** click **Pellingworth, Keira**. A panel opens. Point to **Where the referral is** (Referral
+**Do:** scroll down to **Under 8 hours** and click **Pellingworth, Keira**. A panel opens. Point to **Where the referral is** (Referral
 sent, Dabakarn accepted, Bed pulled for this patient: No bed yet, Transport: Not booked yet), then
-to the panel's **Legal form** card: Form 3B is still shown as recorded, with the next form to
+scroll down inside the panel to its **Legal form** card: Form 3B is still shown as recorded, with the next form to
 record. Press **Esc** to close the panel. Then point to **Flint, Oona**'s form column on the same
-board (scroll down to her row first; it is under the pinned column heads on a laptop screen):
+board (the row just below Keira's):
 "Form 1A", "Time not entered".
 
 **Say:**
@@ -189,9 +185,9 @@ board (scroll down to her row first; it is under the pinned column heads on a la
 > expires. If a time is shown, it is the one typed from the paper form. If it wasn't written, the
 > app says so rather than guessing."
 
-**Do:** in the left-hand menu press **Home**. Under **Later today** (or **Past planned time**, if
-her planned move has passed), scroll down to and click **Pellingworth, Keira** ("Planned move, bed
-not pulled yet"). Her page opens. If you cannot find her on Home, press **/**, type `Keira` or
+**Do:** in the left-hand menu press **Home**. Under **Later today**, scroll down to **Rest of your
+shift** and press **Show … more**, then click **Pellingworth, Keira** ("Planned move, bed not
+pulled yet"). After her planned time she moves up to **Past planned time · not done yet**. Her page opens. If you cannot find her on Home, press **/**, type `Keira` or
 `UM100045` and press **Enter**. Or press **Reset demo** and start Act 2 again. Point to the strip at
 the top of her page (In ED, Bed agreed, Moving, On ward, Discharge, Community). Press **Placement
 steps**: step 3 of seven is lit. Then press **Hide placement steps**. Then point to the status
@@ -279,7 +275,7 @@ is collecting** choose **Ambulance (St John)**. Type a synthetic number such as 
 except typed text." **From here, avoid reloads and typed addresses.**
 
 **Do:** press **Mark handover ready** (**Placement steps** now lights step 5 of seven). Wait for the
-"Handover ready" message to clear, or press its **X**, then press the **Destination** row ("Dabakarn
+"Handover ready" message to clear, or press its **X**. On a 1366 x 768 screen, scroll down a little, then press the **Destination** row ("Dabakarn
 accepted · bed pulled"). The **Destination and placement** panel opens. Press, in order, **Provider
 accepted job**, **Vehicle en route** and **Mark moving · patient collected**.
 
