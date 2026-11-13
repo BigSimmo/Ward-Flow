@@ -192,6 +192,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-167](#d-167-the-triage-page-has-a-left-sign-off-nav-and-joined-section-steps-13-november-2026)                                                       | The Triage page has a left sign-off nav and joined section steps                       | Active                                           |
 | [D-168](#d-168-the-demo-script-follows-the-13-november-pre-demo-audit-13-november-2026)                                                                 | The demo script follows the 13 November pre-demo audit                                 | Active                                           |
 | [D-169](#d-169-demo-script-wording-follows-the-hard-questions-audit-13-november-2026)                                                                   | Demo script wording follows the hard questions audit                                   | Active                                           |
+| [D-173](#d-173-turning-off-supabase-open-sign-up-is-deferred-13-november-2026)                                                                          | Turning off Supabase open sign-up is deferred                                          | Active                                           |
 
 ---
 
@@ -2084,3 +2085,10 @@ is inferred.
   2. **Invented ward descriptions:** the next on-screen audit checks where the "what each ward admits" lines show under real ward names.
   3. **Cost:** the answer in the room is that there is no price today.
 - **Boundary:** documentation only. Changes no app behaviour, clinical rule or permission. Gives no regulatory, legal or clinical view. Approves no release.
+
+## D-173. Turning off Supabase open sign-up is deferred (13 November 2026)
+
+- **Date:** 13 November 2026 (`2026-11-13`). **Decided by:** Josh, in the Ward Flow project chat: "defer supabase issue" (05:46 UTC), alongside his yes to the remaining live audit recommendations. Numbered D-173 because D-170 to D-172 are claimed by open PRs.
+- **Decision:** Josh's own action from D-145 item 5, turning off Supabase open sign-up, is deferred. The site stays on synthetic data, so nothing changes now. It must still be done before any real data, and it stays on the real-data gate.
+- **Why:** the shared site holds synthetic data only, so an outside Supabase account that gets past the site lock reaches no real patient information.
+- **Boundary:** synthetic data only. No code change and no provider change. Changes no clinical rule or signed value, and approves no release.

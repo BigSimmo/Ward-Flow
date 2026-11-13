@@ -13,8 +13,7 @@ import styles from "./discharge-ready-to-leave.module.css";
  * Ready to leave (v10 Discharges, row panel > Milestones). Five items a release needs before the
  * person goes. The items come from the coordinator brief and the starting ticks are invented for
  * the demo (open for Josh: wording, and whether each item needs an owner and a time). Ticking is
- * page state only; it never changes a release, a record or the engine. The signed-in shared site
- * hides it (audit 7): invented ticks must never sit beside shared records.
+ * page state only; it never changes a release, a record or the engine.
  */
 const READY_TO_LEAVE_ITEMS = [
   { id: "crisis-plan", label: "Crisis plan" },
@@ -61,7 +60,6 @@ export function ReadyToLeave({
   const signedIn = useContext(SharedSessionContext) !== null;
   // v10 phone: a glyph list (green tick or open circle), not checkbox squares.
   const isPhone = useIsPhone();
-  const sharedMode = useOptionalWardFlowSelect("shared")?.shared?.enabled === true;
   const items: readonly { id: ReadyToLeaveItemId; label: string }[] = onCto
     ? [...READY_TO_LEAVE_ITEMS, CTO_HANDOVER_ITEM]
     : READY_TO_LEAVE_ITEMS;
