@@ -123,7 +123,7 @@ export type ForecastGapTables = {
  * The two gap tables a by-type forecast starts from. They do not depend on the horizon, so a caller
  * forecasting several days works them out once (the cross-mode audit replays every event).
  */
-function forecastGapTables(
+export function forecastGapTables(
   units: readonly Unit[],
   releases: readonly BedRelease[],
   admissions: readonly Admission[],
@@ -270,8 +270,9 @@ export function forecastTotalsByKind(
   now: Instant,
   plannedAdmissions: readonly PlannedAdmission[] = [],
   referrals: Parameters<typeof bedKindGaps>[4] = [],
+  /** The gap tables from `forecastGapTables` for the same inputs, when the caller already has them. */
+  tables: ForecastGapTables = forecastGapTables(units, releases, admissions, movements, now, referrals),
 ): (days: number) => { low: number; likely: number; high: number } {
-  const tables = forecastGapTables(units, releases, admissions, movements, now, referrals);
   return (days) =>
     forecastByKind(units, releases, admissions, movements, now, days, plannedAdmissions, referrals, tables).total;
 }
