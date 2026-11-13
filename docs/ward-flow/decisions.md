@@ -215,6 +215,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-195](#d-195-merge-each-pull-request-when-its-checks-pass-13-november-2026)                                                                           | Merge each pull request when its checks pass                                           | Active                                           |
 | [D-196](#d-196-threads-decide-on-their-own-to-keep-work-moving-13-november-2026)                                                                        | Threads decide on their own to keep work moving                                        | Active                                           |
 | [D-197](#d-197-system-fixes-calls-taken-under-d-196-13-november-2026)                                                                                   | System-fixes calls taken under D-196                                                   | Active                                           |
+| [D-199](#d-199-ed-and-ward-phone-limits-raised-past-the-allowance-13-november-2026)                                                                     | ED and Ward phone limits raised past the allowance                                     | Active                                           |
 
 ---
 
@@ -2373,3 +2374,9 @@ is inferred.
   16. **Month words:** dates keep the Australian "Sept" from the shared formatter.
   17. **Comparison tables:** a "Dates met" cell whose two counts are both withheld reads "not shown", not "an unstated number of an unstated number met"; one withheld count keeps the F-55 sentence.
 - **Boundary:** clinical values, legal calls, Josh's sign-off gates, anything irreversible or outward-facing, and project-rule exceptions still go to Josh.
+
+## D-199. ED and Ward phone limits raised past the allowance (13 November 2026)
+
+- **Date:** 13 November 2026, 11:37 PM AWST (15:37 UTC). D-198 is claimed by open PR #1658. **Decided by:** Josh, choosing "Yes, raise ED and Ward by ~7 KB" on a decision card in the Fixes thread.
+- **Decision:** PR C (#1660) raises the ED page's phone script limit from 538.5 to 545.5 KB (+7.0) and the Ward page's from 618.2 to 625.4 KB (+7.2), past the 5 KB a pull request may add without asking (D-82, D-111).
+- **Why:** both pages' own code is the same size as main; the growth is the shared script every page loads (real fix and time-audit code), after a trim that took 6 to 20 KB off every page. The next lever, swapping `tailwind-merge`, is too large a change before the demo. Detail: `docs/script-budget-history/2026-11-13-pr-c-system-fixes.md`.

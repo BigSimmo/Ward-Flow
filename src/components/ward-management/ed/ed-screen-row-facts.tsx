@@ -12,7 +12,7 @@ import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
 import { examinationOutcomeShort } from "@/components/ward-management/ward-legal-forms";
 import { currentLegalPosition, legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
-import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
 import { movementReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";

@@ -25,7 +25,7 @@ import {
   durMinutes,
 } from "@/components/wf";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
 import type { MovementStage } from "@/components/ward-management/ward-model";
 import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";

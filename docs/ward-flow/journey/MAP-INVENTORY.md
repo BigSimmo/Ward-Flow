@@ -3,7 +3,7 @@
 The route is selective. Its action notes and the additional command models have source review evidence; source digests detect later edits. This does not establish runtime or clinical acceptance.
 
 ## 206 CURRENT ENGINE EVENTS
-Source-contract SHA256: 862d3d5ee4bea0f0e785d5b8f8203a062de573ba69faf42afb9da232b6d5c886
+Source-contract SHA256: cb79f02a6b943e7b64ad3c49f784622f8f8f1b9eb91a5cc24da5be2d7f7c3bbf
 - RECORD_ADMISSION_CARE — diagram-reviewed; event roles: ward, coordinator, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:20
@@ -114,28 +114,28 @@ Source-contract SHA256: 862d3d5ee4bea0f0e785d5b8f8203a062de573ba69faf42afb9da232
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:94
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1942
-  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:87
+  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:88
 - TRANSPORT_ACCEPTED — diagram-reviewed; event roles: officer, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:95
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1943
-  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:130
+  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:131
 - TRANSPORT_EN_ROUTE — diagram-reviewed; event roles: officer, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:96
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1944
-  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:180
+  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:181
 - PATIENT_COLLECTED — diagram-reviewed; event roles: officer, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:97
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1945
-  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:231
+  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:232
   Event/dispatch reference: src/components/ward-management/ward-transport-collection-events.ts:11
 - PATIENT_ARRIVED — diagram-reviewed; event roles: officer, ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:98
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1516
-  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:317
+  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:318
 - CONFIRM_CAPACITY — diagram-reviewed; event roles: ward, bed_manager, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:100
@@ -222,22 +222,22 @@ Source-contract SHA256: 862d3d5ee4bea0f0e785d5b8f8203a062de573ba69faf42afb9da232
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:155
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1947
-  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:735
+  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:749
 - CANCEL_TRANSPORT — diagram-reviewed; event roles: coordinator, ed, ward, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:177
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1948
-  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:921
+  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:935
 - STOP_TRANSPORT — diagram-reviewed; event roles: coordinator, ed
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:187
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1949
-  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:1099
+  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:1113
 - RECORD_TRANSPORT_CAD — modelled; event roles: ed, ward, community, coordinator, officer
   Source-reviewed command model: Same job carrying a trimmed CAD number and cadAdded time/role.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:190
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1952
-  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:1212
+  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:1226
   Event/dispatch reference: src/components/ward-management/ward-transport-collection-events.ts:30
   Subject: A movement’s current transport job
   Before: Live, unarrived, uncancelled transport with no nonblank CAD number
@@ -249,7 +249,7 @@ Source-contract SHA256: 862d3d5ee4bea0f0e785d5b8f8203a062de573ba69faf42afb9da232
   guards: Reject blank or placeholder CAD values; ward’s actingUnitId must identify the sending ward
   effects: Updates only movement.transport.cadNumber and cadAdded; does not dispatch, accept or advance the job
   tests: tests/ward-transport-cad-to-follow.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-transport-events.ts:1126; SHA256 4ed36dee7bec0a171d99f48b9e4c7780dd5735f7bbc953dbf2077fa2af90dc4c
+  Reviewed source: src/components/ward-management/ward-flow-transport-events.ts:1126; SHA256 c678f3bd04a6823df46daf7ff4c1e20e9066371921458cbeb58fb4424a8707e5
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:191; SHA256 808d614bd517bb11c0ef517ce5632dd3caba8a71758476401f35da82fe26afda
   Reviewed source: src/components/ward-management/ward-transport-collection-events.ts:30; SHA256 1ebf665a65645eb14f53647d07db90bef0a947b2a7e298f2b6f203b7c78d3496
   Reviewed source: src/components/ward-management/ward-access-state.ts:709; SHA256 6749082a89387b340bc0b52cfe76a13f8375532e44cbbcdf17a85d696c94e703
@@ -1265,7 +1265,7 @@ Source-contract SHA256: 862d3d5ee4bea0f0e785d5b8f8203a062de573ba69faf42afb9da232
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:542
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1950
-  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:1251
+  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:1265
 - SET_STEP_DOWN_CANDIDATE — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:543
@@ -1466,7 +1466,7 @@ Source-contract SHA256: 862d3d5ee4bea0f0e785d5b8f8203a062de573ba69faf42afb9da232
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:567
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1951
-  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:1341
+  Event/dispatch reference: src/components/ward-management/ward-flow-transport-events.ts:1355
 - RELEASE_AND_REOPEN_SEARCH — diagram-reviewed; event roles: coordinator, ward
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:568

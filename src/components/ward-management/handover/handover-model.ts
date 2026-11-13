@@ -19,7 +19,7 @@ import {
   minuteOfDay,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
 import { isStoppedTransportAwaitingRelease, transportLeg } from "@/components/ward-management/ward-derivations";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";

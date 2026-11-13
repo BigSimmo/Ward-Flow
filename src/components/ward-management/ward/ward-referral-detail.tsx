@@ -5,7 +5,7 @@ import { useContext, useEffect, useState, type ReactNode } from "react";
 import { Button, Drawer, durMinutes } from "@/components/wf";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { DemoPhoneNumber } from "@/components/ward-management/demo-phone-number";
 import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";

@@ -25,7 +25,7 @@ import {
 import type { DischargeRecord, WardRecordActor } from "../ward-discharge-records";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { formatInstantWithDay, perthDateTimeLocal } from "../ward-clock";
-import { typedClock } from "../legal-forms/legal-time-as-typed";
+import { typedClock } from "../ward-legal-time-as-typed";
 import { useWardFormSave } from "../use-ward-form-save";
 import { isPhoneWidth } from "@/components/ward-management/ward-phone-width";
 import styles from "./discharges-third-edition.module.css";

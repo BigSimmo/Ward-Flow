@@ -1,6 +1,6 @@
 import type { Admission } from "../ward-admissions";
 import { calendarDateOf, perthDateText, type Instant } from "../ward-clock";
-import { typedClock } from "../legal-forms/legal-time-as-typed";
+import { typedClock } from "../ward-legal-time-as-typed";
 import type { Cohort, Movement, Referral } from "../ward-model";
 import type { Patient } from "../ward-patients";
 import { resolveSubjectPatient } from "../ward-patient-resolver";

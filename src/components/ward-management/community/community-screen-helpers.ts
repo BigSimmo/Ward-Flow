@@ -19,7 +19,7 @@ import { elapsedDaysPhrase } from "@/components/ward-management/community/commun
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
-import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
 import type {
   CommunityScopedAddressing,
   CommunityScopedReferral,

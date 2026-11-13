@@ -1,11 +1,11 @@
 # 13 Nov 2026, system fixes (PR C, D-190)
 
-Seven limits are raised, on top of `main` at `ea4cd8b57` (after PR #1657):
+Nine limits are raised, on top of `main` at `ea4cd8b57` (after PR #1657):
 
 - Coordinator `/ward-flow`: 585.2 to 588.8
 - Referrals `/ward-flow/referrals`: 589.9 to 594.9
-- ED `/ward-flow/ed`: 538.5 to 543.5 (needs 545.5; the further 2.0 waits on Josh's yes, because it is over the 5 KB allowance)
-- Ward `/ward-flow/ward/rph-adult-secure`: 618.2 to 623.2 (needs 625.4; the further 2.2 waits on Josh's yes)
+- ED `/ward-flow/ed`: 538.5 to 545.5 (+7.0, over the 5 KB allowance: Josh's yes, 13 Nov 2026 15:37Z)
+- Ward `/ward-flow/ward/rph-adult-secure`: 618.2 to 625.4 (+7.2, over the 5 KB allowance: Josh's yes, 13 Nov 2026 15:37Z)
 - Movement `/ward-flow/movements/WF-001`: 616.9 to 621.2
 - ED board `/ward-flow/ed/arm-ed`: 677.9 to 680.4
 - Statistics `/ward-flow/statistics`: 636.4 to 640.2

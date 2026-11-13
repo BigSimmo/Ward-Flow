@@ -1573,7 +1573,7 @@
         "moves": [
           {
             "action": "PATIENT_ARRIVED",
-            "effect": "Usually −1, floored at zero; a pre-counted seeded pull is not decremented twice. An arrival with no pulled stay takes a ready bed (empty and allocatable −1) or, with none ready (no empty bed, or no allocatable one), changes neither and is counted once, as the conflict. Arrival into no empty or ready bed is recorded as a capacity conflict."
+            "effect": "Usually −1, floored at zero; a pre-counted seeded pull is not decremented twice. An arrival with no pulled stay takes a ready bed (empty and allocatable −1) where a pull could reserve one now, or, with none ready (no empty or allocatable bed, a closed ward or closed beds, or beds held for other journeys), changes neither and is counted once, as the conflict, which names the new stay. Arrival into no empty or ready bed is recorded as a capacity conflict."
           },
           {
             "action": "RECORD_LEAVING",
@@ -1874,7 +1874,7 @@
       {
         "path": "src/components/ward-management/ward-flow-transport-events.ts",
         "line": 85,
-        "sha256": "4ed36dee7bec0a171d99f48b9e4c7780dd5735f7bbc953dbf2077fa2af90dc4c"
+        "sha256": "c678f3bd04a6823df46daf7ff4c1e20e9066371921458cbeb58fb4424a8707e5"
       },
       {
         "path": "src/components/ward-management/ward-flow-undo-events.ts",

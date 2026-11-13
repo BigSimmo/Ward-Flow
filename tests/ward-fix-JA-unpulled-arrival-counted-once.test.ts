@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { storedStateRestoreProblem } from "@/components/ward-management/ward-flow-storage-validation";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /*
@@ -69,6 +70,20 @@ describe("an arrival with no pulled stay on a ward with no empty bed", () => {
     expect(after.empty.value).toBe(0);
   });
 
+  // Codex review on #1660: the conflict names the stay the arrival is given, so the session restores.
+  it("names the new stay on its capacity conflict, so the saved session restores", () => {
+    const arrived = send(full, {
+      type: "PATIENT_ARRIVED",
+      role: "ward",
+      actingUnitId: unitId,
+      movementId: movement.id,
+    });
+    const stayId = arrived.movements.find((candidate) => candidate.id === movement.id)!.admissionId;
+    expect(stayId).toBeDefined();
+    expect(unitOf(arrived, unitId).arrivalCapacityConflicts?.[0]?.admissionId).toBe(stayId);
+    expect(storedStateRestoreProblem(JSON.parse(JSON.stringify(arrived)))).toBeUndefined();
+  });
+
   it("leaves the ward's figures as they were once that stay has left again", () => {
     const arrived = send(full, {
       type: "PATIENT_ARRIVED",
@@ -89,5 +104,42 @@ describe("an arrival with no pulled stay on a ward with no empty bed", () => {
     expect(after.allocatable.value).toBe(before.allocatable.value);
     expect(after.allocatableLocked).toBe(before.allocatableLocked);
     expect(after.empty.value).toBe(before.empty.value);
+  });
+});
+
+describe("an arrival with no pulled stay at a ward that closed while they travelled", () => {
+  // Codex review on #1660: a closed ward's raw Empty and allocatable counts can stay positive, but a
+  // pull could not reserve a bed there, so the arrival takes none and is one capacity conflict.
+  const seed = seedWardFlowState();
+  const movement = inTransitWithoutPulledBed(seed);
+  const unitId = movement.acceptedUnitId!;
+  const closed: WardFlowState = {
+    ...seed,
+    units: seed.units.map((unit) =>
+      unit.id === unitId
+        ? {
+            ...unit,
+            isClosed: true,
+            empty: { ...unit.empty, value: Math.max(1, unit.empty.value) },
+            allocatable: { ...unit.allocatable, value: Math.max(1, unit.allocatable.value) },
+            arrivalCapacityConflicts: [],
+          }
+        : unit,
+    ),
+  };
+  const before = unitOf(closed, unitId);
+
+  it("takes no allocatable bed and records one capacity conflict", () => {
+    const arrived = send(closed, {
+      type: "PATIENT_ARRIVED",
+      role: "ward",
+      actingUnitId: unitId,
+      movementId: movement.id,
+    });
+    const after = unitOf(arrived, unitId);
+    expect(after.arrivalCapacityConflicts).toHaveLength(1);
+    expect(after.allocatable.value).toBe(before.allocatable.value);
+    expect(after.empty.value).toBe(before.empty.value);
+    expect(storedStateRestoreProblem(JSON.parse(JSON.stringify(arrived)))).toBeUndefined();
   });
 });

@@ -3,8 +3,8 @@
   "budgets": {
     "/ward-flow": 588.8,
     "/ward-flow/referrals": 594.9,
-    "/ward-flow/ed": 543.5,
-    "/ward-flow/ward/rph-adult-secure": 623.2,
+    "/ward-flow/ed": 545.5,
+    "/ward-flow/ward/rph-adult-secure": 625.4,
     "/ward-flow/movements/WF-001": 621.2,
     "/ward-flow/capacity": 662.4,
     "/ward-flow/ed/arm-ed": 680.4,

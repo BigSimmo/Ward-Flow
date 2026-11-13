@@ -29,7 +29,8 @@ import {
 } from "@/components/ward-management/ward-model";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { transportExceptionRecord } from "@/components/ward-management/ward-transport-checks";
-import { movementBedReservation } from "./ward-movement-bed-hold";
+import { movementBedReservation, pendingNumberedReservations } from "./ward-movement-bed-hold";
+import { pulledBedAvailability } from "./ward-ready-beds";
 import { openRestrictivePracticeRefusal } from "./restrictive-practice/ward-restrictive-practice";
 import { sameObservation, journeyObservationWins } from "./ward-observation";
 import type { TransportEventHelpers, WardFlowState } from "./ward-flow-reducer";
@@ -477,13 +478,26 @@ export function reduceTransportEvent(
       // the empty count, so a closed bed read as an unnamed occupied one. With no ready bed it waits
       // for one, as an arrival on a full ward does, and never takes a closed bed.
       const unpulled = linkedAdmission === undefined;
-      const freeLocked = lockedBedsFree(unit);
-      const freeOpen = openBedsFree(unit);
-      // Ready is never above Empty (`boundedBedAvailability`). A ward whose allocatable count is
-      // above an empty count of zero has no ready bed, so that arrival is one capacity conflict and
-      // takes no allocatable bed too; otherwise the departure that resolves the conflict would never
-      // give that bed back (journey review, 13 Nov 2026).
-      const readyBedForUnpulled = unpulled && unit.empty.value > 0 && freeLocked + freeOpen > 0;
+      // An unpulled arrival takes a bed only where a pull could reserve one now: the same
+      // reservation-aware Ready figure as `PULL_PATIENT` (Audit A01), which is 0 on a closed ward,
+      // never above Empty, and leaves out closed numbered beds and other journeys' held beds. With
+      // none, the arrival is one capacity conflict and takes no allocatable bed, so the departure
+      // that resolves it gives nothing back twice (journey review and Codex review, 13 Nov 2026).
+      const unpulledReservations = unpulled
+        ? pendingNumberedReservations(unit, state, movement.id, movement.referralId)
+        : undefined;
+      const freeLocked = Math.max(0, lockedBedsFree(unit) - (unpulledReservations?.locked ?? 0));
+      const freeOpen = Math.max(0, openBedsFree(unit) - (unpulledReservations?.open ?? 0));
+      const livePulledHere = state.admissions.filter(
+        (admission) => admission.unitId === unit.id && admission.state === "pulled" && admission.movementId !== null,
+      ).length;
+      const readyBedForUnpulled =
+        unpulled &&
+        pulledBedAvailability(unit, livePulledHere).ready - (unpulledReservations?.total ?? 0) > 0 &&
+        freeLocked + freeOpen > 0;
+      // The stay an unpulled arrival is given (below). A capacity conflict names it, so the journey,
+      // the stay and the conflict agree when a saved session is restored (Codex review, 13 Nov 2026).
+      const unpulledStayId = unpulled ? `AD-ARR-${String(state.admissionSequence + 1).padStart(2, "0")}` : undefined;
       const unpulledBedKind: "locked" | "open" =
         movement.security === "Secure" ? (freeLocked > 0 ? "locked" : "open") : freeOpen > 0 ? "open" : "locked";
       const isBedTurnaround = !bedAlreadyCounted && (unit.empty.value <= 0 || (unpulled && !readyBedForUnpulled));
@@ -550,9 +564,9 @@ export function reduceTransportEvent(
                 ...(unit.arrivalCapacityConflicts ?? []),
                 {
                   movementId: movement.id,
-                  ...((movement.admissionId ?? linkedAdmission?.id) === undefined
+                  ...((movement.admissionId ?? linkedAdmission?.id ?? unpulledStayId) === undefined
                     ? {}
-                    : { admissionId: movement.admissionId ?? linkedAdmission?.id }),
+                    : { admissionId: movement.admissionId ?? linkedAdmission?.id ?? unpulledStayId }),
                   at: event.now,
                 },
               ],
@@ -645,7 +659,7 @@ export function reduceTransportEvent(
             : undefined;
         const referral = movement.referralId ? findReferral(withUnit, movement.referralId) : undefined;
         const arrivedStay: Admission = {
-          id: `AD-ARR-${String(withUnit.admissionSequence + 1).padStart(2, "0")}`,
+          id: unpulledStayId ?? `AD-ARR-${String(withUnit.admissionSequence + 1).padStart(2, "0")}`,
           unitId: unit.id,
           observation: movement.observation,
           ...(movement.observationChanges === undefined

@@ -10,7 +10,7 @@ import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-
 import { calendarDateOf, type Instant } from "@/components/ward-management/ward-clock";
 import { MONTH_SHORT } from "@/components/ward-management/ward-month-names";
 import { bedStates, networkNamedHolds } from "@/components/ward-management/ward-bed-states";
-import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
 import {
   RECORDED_SEXES,
   type AtsCategory,
