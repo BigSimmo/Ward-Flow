@@ -70,11 +70,13 @@ export async function createSharedApiTlsProxy({ target, runRoot, port = 0 }) {
   );
   await waitForChild(certificate, "Local synthetic TLS certificate generation");
   const server = https.createServer({ key: readFileSync(key), cert: readFileSync(cert) }, (request, response) => {
+    // Only the path comes from the request; the host and port stay the local backend (CodeQL, PR C follow-up).
+    const target = new URL(request.url ?? "/", "http://localhost");
     const upstream = http.request(
       {
         hostname: backend.hostname,
         port: backend.port,
-        path: request.url,
+        path: `${target.pathname}${target.search}`,
         method: request.method,
         headers: { ...request.headers, "x-forwarded-proto": "https" },
       },

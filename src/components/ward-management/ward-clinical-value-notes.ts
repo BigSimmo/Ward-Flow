@@ -318,7 +318,7 @@ export function unsignedClinicalValueCount(): number {
  * `UPDATE_CLINICAL_VALUES_DOC=1` on that test rewrites it.
  */
 export function clinicalValuesMarkdownTable(): string {
-  const cell = (text: string) => text.replaceAll("|", "\\|");
+  const cell = (text: string) => text.replaceAll("\\", "\\\\").replaceAll("|", "\\|");
   // Plain concatenation, no nested templates: the travel-band guard's comment scanner reads this file.
   const rows = CLINICAL_VALUE_LIST.map((entry) => {
     const alternatives = (entry.alternatives ?? [])

@@ -15,7 +15,7 @@ const css = readFileSync(
 );
 
 function rule(selector: string): string {
-  const match = css.match(new RegExp(`(?:^|\\n)${selector.replace(".", "\\.")}\\s*\\{([^}]*)\\}`));
+  const match = css.match(new RegExp(`(?:^|\\n)${selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\{([^}]*)\\}`));
   return match?.[1] ?? "";
 }
 

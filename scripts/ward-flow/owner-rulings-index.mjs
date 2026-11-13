@@ -403,7 +403,7 @@ function render(perFile, patterns) {
     const occurrences = idIndex.get(id);
     if (occurrences.length === 1) {
       const o = occurrences[0];
-      lines.push(`| \`${id}\` | \`${o.file}\`:${o.line} | ${truncate(o.text, o.line).replace(/\|/g, "\\|")} |`);
+      lines.push(`| \`${id}\` | \`${o.file}\`:${o.line} | ${markdownCell(truncate(o.text, o.line))} |`);
     } else {
       const files = fileCount(id);
       lines.push(
@@ -412,7 +412,7 @@ function render(perFile, patterns) {
           : `| \`${id}\` **${occurrences.length} occurrences in one file — same item revisited** | | |`,
       );
       for (const o of occurrences) {
-        lines.push(`| ↳ | \`${o.file}\`:${o.line} | ${truncate(o.text, o.line).replace(/\|/g, "\\|")} |`);
+        lines.push(`| ↳ | \`${o.file}\`:${o.line} | ${markdownCell(truncate(o.text, o.line))} |`);
       }
     }
   }
@@ -506,3 +506,8 @@ writeFileSync(OUT, text, "utf8");
 const itemCount = perFile.reduce((n, f) => n + f.items.length, 0);
 const unparsedCount = perFile.filter((f) => f.items.length === 0 && !KNOWN_NON_RULING_FILES.has(f.file)).length;
 console.log(`wrote ${OUT} — ${itemCount} items across ${perFile.length} files (${unparsedCount} unparsed).`);
+
+/** A table cell: backslashes first, then pipes, so a cell cannot end early or eat its own escape. */
+function markdownCell(text) {
+  return text.replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
+}

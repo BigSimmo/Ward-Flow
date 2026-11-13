@@ -101,7 +101,7 @@ describe("Community gateway — the A-Z rail marks an empty letter accessibly-di
 describe("the A to Z letters meet the 24px target size (DA-21)", () => {
   const css = readFileSync("src/components/ward-management/community/community-index.module.css", "utf8");
   const rule = (selector: string) => {
-    const match = new RegExp(`(?:^|\\n)${selector.replace(".", "\\.")} \\{([^}]*)\\}`).exec(css);
+    const match = new RegExp(`(?:^|\\n)${selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} \\{([^}]*)\\}`).exec(css);
     expect(match, `${selector} rule not found`).not.toBeNull();
     return match?.[1] ?? "";
   };

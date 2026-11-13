@@ -463,12 +463,17 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
       if (anchor.hasAttribute("download")) return;
 
       const rawHref = anchor.getAttribute("href");
+      // Not a page change: an in-page link or a scheme the browser hands elsewhere. The scheme is
+      // compared trimmed and lower case, and data: and vbscript: count too (CodeQL, PR C follow-up).
+      const scheme = rawHref?.trim().toLowerCase() ?? "";
       if (
         !rawHref ||
-        rawHref.startsWith("#") ||
-        rawHref.startsWith("javascript:") ||
-        rawHref.startsWith("mailto:") ||
-        rawHref.startsWith("tel:")
+        scheme.startsWith("#") ||
+        scheme.startsWith("javascript:") ||
+        scheme.startsWith("data:") ||
+        scheme.startsWith("vbscript:") ||
+        scheme.startsWith("mailto:") ||
+        scheme.startsWith("tel:")
       ) {
         return;
       }
