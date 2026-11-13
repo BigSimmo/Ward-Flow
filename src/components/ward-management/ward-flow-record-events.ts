@@ -44,6 +44,7 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { isLegalClockFormCode } from "@/components/ward-management/ward-legal-clock";
+import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
 import {
   BLOCKERS_MEANING_NOTHING_IS_BLOCKING,
   ED_OUTCOMES,
@@ -357,8 +358,7 @@ export function reduceRecordedFactEvent(
       // Owner answer 1: the F4 gate mirrored for "for_discharge" only. A patient on a legal form
       // cannot go home before a conclusive examination outcome; "further_examination ordered"
       // settles nothing. Voluntary patients are never blocked.
-      const isOnLegalFormForDischarge =
-        !!movement.legalForm || (movement.legalStatus !== undefined && movement.legalStatus !== "Voluntary");
+      const isOnLegalFormForDischarge = !!movement.legalForm || isNotVoluntary(movement.legalStatus);
       if (
         event.outcome === "for_discharge" &&
         isOnLegalFormForDischarge &&

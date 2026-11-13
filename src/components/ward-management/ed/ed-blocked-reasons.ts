@@ -10,6 +10,7 @@ import type {
 } from "@/components/ward-management/ward-model";
 import type { ObservationLevel } from "@/components/ward-management/ward-observation";
 import { minuteOfDayFromClockText } from "@/components/ward-management/ward-clock";
+import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
 
 /**
  * THE ED SCREEN'S BLOCKED-REASON RULES — why a control on the ED screen is unavailable, or why an
@@ -215,7 +216,8 @@ export function communityReferralBlockedReason(movement: Movement): string | und
     // contact rather than a control this screen does not offer.
     return COLLECTED_ASK_COORDINATOR;
   }
-  const isOnForm = !!movement.legalForm || (movement.legalStatus !== undefined && movement.legalStatus !== "Voluntary");
+  // D-186 item 4: a recorded form, or the named "not voluntary" rule.
+  const isOnForm = !!movement.legalForm || isNotVoluntary(movement.legalStatus);
   if (isOnForm) {
     if (!movement.examination || movement.examination.outcome === "further_examination_ordered") {
       return "Not offered until the examination outcome is recorded.";
@@ -257,7 +259,7 @@ export function edOutcomeBlockedReason(movement: Movement): string | undefined {
  * needs a community follow-up is not being found fit to simply go home.
  */
 export function dischargeChoiceBlockedReason(movement: Movement): string | undefined {
-  const isOnForm = !!movement.legalForm || (movement.legalStatus !== undefined && movement.legalStatus !== "Voluntary");
+  const isOnForm = !!movement.legalForm || isNotVoluntary(movement.legalStatus);
   if (isOnForm && (!movement.examination || movement.examination.outcome === "further_examination_ordered")) {
     return "Not offered until the examination outcome is recorded.";
   }
@@ -350,7 +352,7 @@ export function bookTransportBlockedReason(movement: Movement, who?: string): st
  * booking stays fully possible in every case.
  */
 export function transportLegalFormNotice(movement: Movement): string | undefined {
-  if (movement.legalStatus === "Voluntary") return undefined;
+  if (!isNotVoluntary(movement.legalStatus)) return undefined;
   if (movement.legalForm?.code === "4A") return undefined;
   return `No ${legalFormName({ code: "4A" })} is recorded for this patient.`;
 }

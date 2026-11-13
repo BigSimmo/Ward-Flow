@@ -199,7 +199,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-186](#d-186-clinical-sign-off-sitting-part-1-timing-and-the-audit-backed-recommendations-13-november-2026)                                           | Clinical sign-off sitting, part 1: timing and the audit-backed recommendations         | Active                                           |
 | [D-187](#d-187-clinical-sign-off-sitting-part-2-the-recommendations-for-q17-to-q44-13-november-2026)                                                    | Clinical sign-off sitting, part 2: the recommendations for Q17 to Q44                  | Active                                           |
 | [D-188](#d-188-the-home-pull-form-is-filled-from-the-record-and-can-be-changed-13-november-2026)                                                        | The Home pull form is filled from the record and can be changed                        | Active                                           |
-| [D-189](#d-189-handling-the-sitting-questions-that-had-no-recommendation-13-november-2026)                                                              | Handling the sitting questions that had no recommendation                              | Active                                           |
+| [D-189](#d-189-handling-the-open-sitting-questions-and-how-the-remaining-items-are-built-13-november-2026)                                              | Handling the open sitting questions, and how the remaining items are built             | Active                                           |
 
 ---
 

@@ -89,6 +89,7 @@ export {
   eligibleCandidatesAmong,
 } from "./ward-derivations-shortlist";
 import { plannedInitialsLabel } from "./ward-flow-demo-storage-constants";
+import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
 export type { ShortlistCandidate } from "./ward-derivations-shortlist";
 export { changeAudit, MINIMUM_EFFECTIVENESS_SAMPLE, effectivenessNumbers } from "./ward-derivations-records";
 export type { ChangeAuditEntry } from "./ward-derivations-records";
@@ -1253,7 +1254,8 @@ export function expectFlagKindFor(
   now: Instant,
 ): "voluntary_48h" | "involuntary_7d" | null {
   const age = now - openedAt;
-  if (legalStatus === "Voluntary") {
+  // D-186 item 4: the named "not voluntary" rule picks the involuntary review time.
+  if (!isNotVoluntary(legalStatus)) {
     return age >= EXPECT_FLAG_VOLUNTARY_MINUTES ? "voluntary_48h" : null;
   }
   return age >= EXPECT_FLAG_INVOLUNTARY_MINUTES ? "involuntary_7d" : null;

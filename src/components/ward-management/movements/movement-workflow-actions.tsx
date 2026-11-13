@@ -13,6 +13,7 @@ import { isArrivalLate, isLegalClockFormCode, leaveBedNeedsOpenWarning } from ".
 import { perthDateTimeLocal } from "../ward-clock";
 import { legalFormTimeOrderProblem } from "../ward-legal-form-time-order";
 import { resolveSubjectPatient } from "../ward-patient-resolver";
+import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
 import styles from "./movement-workspace-cockpit.module.css";
 
 export function MovementWorkflowActions({ movement }: { movement: Movement }) {
@@ -115,7 +116,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
               } else {
                 raise("RAISE_EXPECT_FLAG", {
                   movementId: movement.id,
-                  kind: movement.legalStatus === "Voluntary" ? "voluntary_48h" : "involuntary_7d",
+                  kind: isNotVoluntary(movement.legalStatus) ? "involuntary_7d" : "voluntary_48h",
                 });
               }
             }}

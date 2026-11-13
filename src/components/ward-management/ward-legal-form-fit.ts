@@ -1,4 +1,5 @@
 import type { LegalStatus } from "./ward-model";
+import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
 
 /**
  * Findings 6 and 78 (Josh, 27 Oct 2026): a legal form that does not fit the legal status is a
@@ -16,7 +17,7 @@ export function legalFormStatusWarning(
   if (legalStatus === "Voluntary" && formCode !== null) {
     return `Check the legal form: Form ${formCode} is chosen, but the legal status is Voluntary.`;
   }
-  if (legalStatus !== "Voluntary" && formCode === null) {
+  if (isNotVoluntary(legalStatus) && formCode === null) {
     return `Check the legal form: no form is chosen, but the legal status is ${legalStatus}.`;
   }
   return null;

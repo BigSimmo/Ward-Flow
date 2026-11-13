@@ -37,6 +37,7 @@ import {
 } from "@/components/ward-management/ward-model";
 import { scenarioEmergencyDepartments, scenarioSite } from "@/components/ward-management/ward-scenarios";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
+import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
 import type { ReferralSendEventHelpers, WardFlowState } from "./ward-flow-reducer";
 import { isCommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import { communityPurposeOf } from "@/components/ward-management/ward-referrals";
@@ -498,8 +499,7 @@ export function reduceReferralSendEvent(
       // until a conclusive examination outcome is recorded ("further examination ordered" does not
       // unlock it). Enforced here as well as by `communityReferralBlockedReason` (ed-screen.tsx).
       // Voluntary patients are never blocked.
-      const isOnForm =
-        !!movement.legalForm || (movement.legalStatus !== undefined && movement.legalStatus !== "Voluntary");
+      const isOnForm = !!movement.legalForm || isNotVoluntary(movement.legalStatus);
       if (isOnForm && (!movement.examination || movement.examination.outcome === "further_examination_ordered")) {
         return reject(
           state,
