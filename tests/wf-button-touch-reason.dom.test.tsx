@@ -40,6 +40,22 @@ describe("tooltip reason on touch", () => {
   });
 });
 
+describe("reason the page draws itself", () => {
+  // Places (bed manager): the drawer body already prints the closed page's sentence in full, so the
+  // button keeps only its tooltip and description, never a second drawn copy on a phone.
+  it("keeps the description and draws no touch line", () => {
+    const { container } = render(
+      <Button disabledReason="This screen is not part of this desk." reasonDisplay="page">
+        Open ward
+      </Button>,
+    );
+    const button = screen.getByRole("button", { name: "Open ward" });
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).toHaveAccessibleDescription("This screen is not part of this desk.");
+    expect(container.querySelector("[data-touch-reason]")).toBeNull();
+  });
+});
+
 describe("tooltip reason with a mouse", () => {
   // Design parts item 6: `.reason { display: inline-flex }` comes after the hide rule, so at equal
   // weight it drew the touch line at the left under the value on a desktop. The hide rule must

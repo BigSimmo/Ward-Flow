@@ -609,7 +609,7 @@ export function HubScreen() {
         </Link>
       ) : (
         // ROLE BRANCH (bed_manager and every scoped desk): greyed, with the closed page's sentence.
-        <Button variant="sec" disabledReason={closedSentence} reasonDisplay="tooltip">
+        <Button variant="sec" disabledReason={closedSentence} reasonDisplay="page">
           {openLabel}
         </Button>
       );
@@ -645,7 +645,7 @@ export function HubScreen() {
                   {openLabel}
                 </Link>
               ) : (
-                <Button variant="sec" disabledReason={closedSentence} reasonDisplay="tooltip">
+                <Button variant="sec" disabledReason={closedSentence} reasonDisplay="page">
                   {openLabel}
                 </Button>
               )}
