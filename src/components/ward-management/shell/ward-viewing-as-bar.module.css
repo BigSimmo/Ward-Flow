@@ -68,11 +68,17 @@
   cursor: default;
 }
 
-/* Phones: the eye goes so the line and its link fit one row; the link keeps a 48px tap area from an
-   invisible cover (the kit's phone rule), drawn no taller than the strip. */
+/* Phones: the eye goes, and the words wrap to a second line rather than cutting the desk's name
+   (design parts item 9: names wrap before any ellipsis); the link stays at the right with a 48px tap
+   area from an invisible cover (the kit's phone rule). */
 @media (max-width: 46.4375rem) {
   .bar {
-    padding: 0 var(--wf-s-3);
+    padding: var(--wf-s-1) var(--wf-s-3);
+  }
+
+  .text {
+    overflow: visible;
+    white-space: normal;
   }
 
   .icon {

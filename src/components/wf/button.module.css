@@ -358,13 +358,14 @@
     width: 40px;
     min-width: 40px;
   }
+  /* The cover starts inside the 1px border, so 5px each way makes the 40px button a 48px target. */
   .b:not([data-placement-action])::after {
     content: "";
     position: absolute;
-    inset: -4px 0;
+    inset: -5px 0;
   }
   .iconOnly:not([data-placement-action])::after {
-    inset: -4px;
+    inset: -5px;
   }
 }
 

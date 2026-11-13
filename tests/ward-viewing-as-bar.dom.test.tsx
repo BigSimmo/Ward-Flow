@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -93,5 +94,12 @@ describe("Viewing as bar", () => {
     expect(screen.getByTestId("role")).toHaveTextContent("coordinator");
     expect(navigation.push).toHaveBeenLastCalledWith("/ward-flow");
     expect(screen.queryByTestId("ward-viewing-as-bar")).toBeNull();
+  });
+
+  it("wraps the words on a phone instead of cutting the desk's name", () => {
+    const css = readFileSync("src/components/ward-management/shell/ward-viewing-as-bar.module.css", "utf8");
+    const phone = css.slice(css.indexOf("@media (max-width: 46.4375rem)"));
+    const text = phone.slice(phone.indexOf(".text {"), phone.indexOf("}", phone.indexOf(".text {")));
+    expect(text).toContain("white-space: normal");
   });
 });
