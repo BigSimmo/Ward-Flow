@@ -99,7 +99,7 @@ function GroupHead({
 
 /**
  * Review FS-2: the group's note adds up to its rows. A held-up bed that is also past its date is
- * said once, inside the held-up figure: "2 held up, 1 of them past date · 2 past date".
+ * said once, inside the held-up figure: "2 held up, 1 of them past date · 2 more past date".
  */
 function needsALookNote({
   heldUp,
@@ -111,7 +111,8 @@ function needsALookNote({
   heldUpPastDate?: number;
 }): string {
   const held = heldUpPastDate > 0 ? `${heldUp} held up, ${heldUpPastDate} of them past date` : `${heldUp} held up`;
-  return `${held} · ${pastDate - heldUpPastDate} past date`;
+  // Audit G: "more" once part of Past date sits in the held-up figure, so one label never shows two numbers.
+  return `${held} · ${pastDate - heldUpPastDate}${heldUpPastDate > 0 ? " more" : ""} past date`;
 }
 
 export function WardComingAndGoing(props: ComingAndGoingProps) {

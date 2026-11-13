@@ -82,7 +82,7 @@ describe("Coming and going (wave 4)", () => {
       },
     });
     expect(screen.getByRole("heading", { name: /Needs a look · now/ })).toHaveTextContent(
-      "2 held up, 1 of them past date · 2 past date",
+      "2 held up, 1 of them past date · 2 more past date",
     );
   });
 
