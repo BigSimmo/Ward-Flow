@@ -469,7 +469,7 @@ Do not claim:
 
 **"What does Tier 1, most urgent mean?"**
 
-> "The tier is what the referrer chose. The app doesn't set it or sort by it."
+> "The tier is what the referrer chose. The app doesn't set it. Some lists, like the transport list, show the most urgent tier first."
 
 **"What are the other desks?"**
 
@@ -513,7 +513,7 @@ Keep this beside you. Each row is a press to avoid on the day, why, and what to 
 | **Pin**, and the ED tiles on Home                                                  | Both outlive Reset demo. Harmless                                                | Press again to clear                                                   |
 | Inside **Triage**                                                                  | Its see-by windows are unsigned                                                  | **Back**                                                               |
 | **Enlarge** on the ED board, or the full-screen timeline                           | No synthetic-data marker while enlarged                                          | **Esc**                                                                |
-| Reload to fix the clock                                                            | A reload does not put a drifted clock back                                       | Open one new tab, then **Reset demo**                                  |
+| Reload to fix the clock                                                            | A reload does not put a drifted clock back                                       | Close every Ward Flow tab, open one new tab, then **Reset demo**       |
 
 Things that happen without a wrong press:
 
