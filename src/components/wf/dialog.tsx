@@ -7,7 +7,7 @@ import { Button } from "./button";
 import { cx, present } from "./cx";
 import styles from "./dialog.module.css";
 import { useModalFocus } from "./use-modal-focus";
-import { useScrollBodyFocus } from "./use-scroll-region-focus";
+import { useScrollBodyFocus } from "./use-scroll-body-focus";
 
 export type DialogAction = {
   label: string;
