@@ -127,10 +127,12 @@ function ChoicePills<T extends string>({
   onChange: (value: T) => void;
   testId?: string;
 }) {
+  // Spec item 15 (C18, 13 Nov 2026): three or more answers list one per line on a phone, where they
+  // do not fit beside the label column.
   return (
     <fieldset className={styles.formRow} data-testid={testId}>
       <legend className={styles.formLabel}>{legend}</legend>
-      <span className={styles.choice}>
+      <span className={styles.choice} data-answers={options.length >= 3 ? "list" : undefined}>
         {options.map((option) => (
           <label key={option.value} className={styles.choiceItem}>
             <input

@@ -259,8 +259,13 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
 
       fireEvent.click(recordBtn);
 
+      // Spec item 5 (13 Nov 2026): a box that would open on a drop-down opens on its heading, so
+      // the first keys pressed never change the Movement answer; the drop-down is still in the box.
       const dialog = screen.getByRole("dialog", { name: "Record a form" });
-      await waitFor(() => expect(document.activeElement).toBe(within(dialog).getByLabelText("Movement")));
+      await waitFor(() =>
+        expect(document.activeElement).toBe(within(dialog).getByRole("heading", { name: "Record a form" })),
+      );
+      expect(within(dialog).getByLabelText("Movement")).toBeInTheDocument();
     });
   });
 

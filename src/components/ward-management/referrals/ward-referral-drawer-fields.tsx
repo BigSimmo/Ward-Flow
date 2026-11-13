@@ -124,10 +124,13 @@ export function Choice<T extends string>({
   /** Put on the first option, for an error summary link. */
   id?: string;
 }) {
+  // Spec item 15 (C18, 13 Nov 2026): four or more answers are separate chips across the full row
+  // (a one-per-line list on a phone), never equal columns that cut the words.
+  const answers = options.length >= 4 ? "chips" : undefined;
   return (
-    <fieldset className={styles.radioField}>
+    <fieldset className={styles.radioField} data-answers={answers}>
       <legend className={required ? styles.required : undefined}>{legend}</legend>
-      <div className={styles.segmented}>
+      <div className={styles.segmented} data-answers={answers}>
         {options.map((option, index) => (
           <label key={option} data-selected={value === option}>
             <input
